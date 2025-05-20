@@ -48,11 +48,11 @@ export default function Manager() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8">
-      <div className="bg-white p-8 rounded shadow w-full max-w-xl">
-        <h2 className="text-xl font-bold mb-4">Lập kế hoạch vận chuyển</h2>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-4 sm:py-8 px-2 sm:px-4">
+      <div className="bg-white p-4 sm:p-8 rounded shadow w-full max-w-full md:max-w-2xl lg:max-w-4xl xl:max-w-6xl">
+        <h2 className="text-xl md:text-2xl font-bold mb-4">Lập kế hoạch vận chuyển</h2>
         {submitted && (
-          <div className="mb-4 p-3 bg-green-100 text-green-800 rounded">Tạo kế hoạch thành công</div>
+          <div className="mb-4 p-3 bg-green-100 text-green-800 rounded text-center">Tạo kế hoạch thành công</div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

@@ -2,12 +2,12 @@ import React from 'react';
 
 export default function Accountant() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8">
-      <div className="bg-white p-8 rounded shadow w-full max-w-2xl">
-        <h2 className="text-xl font-bold mb-4">Kế toán - Lịch trình & Chi phí</h2>
-        <div className="mb-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-4 sm:py-8 px-2 sm:px-4">
+      <div className="bg-white p-4 sm:p-8 rounded shadow w-full max-w-full md:max-w-2xl lg:max-w-4xl xl:max-w-6xl">
+        <h2 className="text-xl md:text-2xl font-bold mb-4">Kế toán - Lịch trình & Chi phí</h2>
+        <div className="mb-6 overflow-x-auto">
           <h3 className="font-semibold mb-2">Bảng Lịch trình vận chuyển</h3>
-          <table className="w-full border mb-4">
+          <table className="w-full border mb-4 min-w-[600px]">
             <thead>
               <tr className="bg-gray-100">
                 <th>ID chuyến</th>
@@ -38,7 +38,7 @@ export default function Accountant() {
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Nhập chi phí theo chuyến</h3>
           <form className="space-y-2">
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label>Số km hàng</label>
                 <input className="border rounded w-full p-2" type="number" />
@@ -48,7 +48,7 @@ export default function Accountant() {
                 <input className="border rounded w-full p-2" type="number" />
               </div>
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label>Số lít dầu</label>
                 <input className="border rounded w-full p-2" type="number" />
@@ -68,7 +68,7 @@ export default function Accountant() {
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Nhập chi phí phát sinh theo xe (hàng tháng)</h3>
           <form className="space-y-2">
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label>Phí gửi xe</label>
                 <input className="border rounded w-full p-2" type="number" />
@@ -78,7 +78,7 @@ export default function Accountant() {
                 <input className="border rounded w-full p-2" type="number" />
               </div>
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label>Bảo hiểm</label>
                 <input className="border rounded w-full p-2" type="number" />
@@ -88,7 +88,7 @@ export default function Accountant() {
                 <input className="border rounded w-full p-2" type="number" />
               </div>
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label>Lương lái xe</label>
                 <input className="border rounded w-full p-2" type="number" />
