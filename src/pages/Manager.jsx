@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { formatCurrency } from '../utils/format';
 
 export default function Manager() {
+  const [activeView, setActiveView] = useState('planning'); // 'planning' or 'report'
   const [form, setForm] = useState({
     date: '',
     description: '',
@@ -47,10 +49,45 @@ export default function Manager() {
     }
   };
 
+  const mockFinancialData = [
+    { id: 1, vehicle: '51C-12345', month: '05/2025', profit: 15000000 },
+    { id: 2, vehicle: '51C-12345', month: '04/2025', profit: 12500000 },
+    { id: 3, vehicle: '60B-67890', month: '05/2025', profit: 18000000 },
+    { id: 4, vehicle: '60B-67890', month: '04/2025', profit: 16000000 },
+    { id: 5, vehicle: '29H-11223', month: '05/2025', profit: 13000000 },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-4 sm:py-8 px-2 sm:px-4">
       <div className="bg-white p-4 sm:p-8 rounded shadow w-full max-w-full md:max-w-2xl lg:max-w-4xl xl:max-w-6xl">
-        <h2 className="text-xl md:text-2xl font-bold mb-4">Lập kế hoạch vận chuyển</h2>
+                <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <button
+              onClick={() => setActiveView('planning')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
+                ${activeView === 'planning' 
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+              `}
+            >
+              Lập Kế Hoạch Vận Chuyển
+            </button>
+            <button
+              onClick={() => setActiveView('report')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
+                ${activeView === 'report' 
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+              `}
+            >
+              Xem Báo Cáo Tài Chính
+            </button>
+          </nav>
+        </div>
+
+        {activeView === 'planning' && (
+          <>
+            <h2 className="text-xl md:text-2xl font-bold mb-4">Lập kế hoạch vận chuyển</h2>
         {submitted && (
           <div className="mb-4 p-3 bg-green-100 text-green-800 rounded text-center">Tạo kế hoạch thành công</div>
         )}
@@ -132,6 +169,34 @@ export default function Manager() {
           </div>
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded font-semibold">Tạo kế hoạch</button>
         </form>
+          </>
+        )}
+
+        {activeView === 'report' && (
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold mb-4">Báo Cáo Tài Chính</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full w-full table-auto border-collapse border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-r border-gray-200">Xe</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-r border-gray-200">Tháng</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">Lợi nhuận</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {mockFinancialData.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm border-r border-gray-200">{item.vehicle}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm border-r border-gray-200">{item.month}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">{formatCurrency(item.profit)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

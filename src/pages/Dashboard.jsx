@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 const roles = [
   { key: 'manager', label: 'Quản lý', color: 'border-gray-200 bg-gray-50 text-gray-500', selected: 'bg-red-100 border-red-400 text-black' },
   { key: 'accountant', label: 'Kế toán', color: 'border-gray-200 bg-gray-50 text-gray-500', selected: 'bg-yellow-100 border-yellow-400 text-black' },
-  { key: 'dispatcher', label: 'Thu Nhận', color: 'border-gray-200 bg-gray-50 text-gray-500', selected: 'bg-purple-100 border-purple-400 text-black' },
+  { key: 'giaonhan', label: 'Giao Nhận', color: 'border-gray-200 bg-gray-50 text-gray-500', selected: 'bg-purple-100 border-purple-400 text-black' },
   { key: 'driver', label: 'Lái xe', color: 'border-gray-200 bg-gray-50 text-gray-500', selected: 'bg-green-100 border-green-400 text-black' },
 ];
 
