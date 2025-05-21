@@ -51,7 +51,9 @@ export default function Driver() {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
-  const formattedMonthYear = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+  const year = currentDate.getFullYear();
+  const formattedMonthYear = `${month}-${year}`;
 
   // Hardcoded data for Tong Quan section as per image
   const ngayCong = 22;
