@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReturnToHomeButton from '../components/ReturnToHomeButton';
 
 const mockScheduleData = [
   { id: 'S001', date: '2025-05-28', tripId: 'T101', customer: 'Công ty Alpha', origin: 'Cảng Cát Lái', destination: 'KCN Sóng Thần', status: 'Chưa thực hiện', contNumber: '', sealNumber: '' },
@@ -40,8 +41,8 @@ export default function GiaoNhan() {
 
   const handleSaveTripDetails = (e) => {
     e.preventDefault();
-    setSchedule(prevSchedule => 
-      prevSchedule.map(item => 
+    setSchedule(prevSchedule =>
+      prevSchedule.map(item =>
         item.id === selectedTrip.id ? { ...item, ...tripDetails, status: 'Đã cập nhật' } : item
       )
     );
@@ -60,9 +61,9 @@ export default function GiaoNhan() {
     }
 
     setCostRequest(prev => ({
-         ...prev, 
+         ...prev,
          [name]: value,
-         totalAmount: (name !== 'totalAmount' && name !== 'requestType' && name !== 'notes') ? String(newTotal) : (name === 'totalAmount' ? value : prev.totalAmount) 
+         totalAmount: (name !== 'totalAmount' && name !== 'requestType' && name !== 'notes') ? String(newTotal) : (name === 'totalAmount' ? value : prev.totalAmount)
     }));
   };
 
@@ -76,7 +77,7 @@ export default function GiaoNhan() {
   const TabButton = ({ tabName, title }) => (
     <button
       onClick={() => handleTabChange(tabName)}
-      className={`py-3 px-5 font-medium text-sm rounded-t-lg focus:outline-none whitespace-nowrap 
+      className={`py-3 px-5 font-medium text-sm rounded-t-lg focus:outline-none whitespace-nowrap
         ${
           activeTab === tabName
             ? 'bg-blue-600 text-white shadow-md'
@@ -202,7 +203,7 @@ export default function GiaoNhan() {
                 <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
                 <textarea name="notes" id="notes" rows="3" value={costRequest.notes} onChange={handleCostRequestChange} className="w-full p-2 border border-gray-300 rounded-md" placeholder="Thêm ghi chú cho yêu cầu..."></textarea>
               </div>
-              
+
               <div className="flex justify-end">
                 <button type="submit" className="px-6 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Gửi Yêu Cầu</button>
               </div>
@@ -210,6 +211,7 @@ export default function GiaoNhan() {
           </div>
         )}
       </div>
+      <ReturnToHomeButton />
     </div>
   );
 }

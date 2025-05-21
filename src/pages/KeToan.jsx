@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { formatCurrency } from '../utils/format'; // Assuming this utility exists
+import ReturnToHomeButton from '../components/ReturnToHomeButton';
 
 const TruckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
     <path strokeLinecap="round" strokeLinejoin="round" d="M13 17H6v-6h7V4H6V2h7l5 5v10h-5zM2 11h4" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19 17H6.236M10.264 4H6v7h4.264M15 7l-2-2m0 0L11 7" /> 
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 17H6.236M10.264 4H6v7h4.264M15 7l-2-2m0 0L11 7" />
   </svg>
 );
 
@@ -28,7 +29,7 @@ const mockDebtData = [
   { id: 'D003', entity: 'Đối tác Vận Tải C', receivable: 0, payable: 12000000, notes: 'Chưa thanh toán tiền cước' },
 ];
 
-export default function Accountant() {
+export default function KeToan() {
   const [activeTab, setActiveTab] = useState('plans'); // plans, vehicles, debt
   const [plans, setPlans] = useState(mockPlansData);
   const [selectedPlanId, setSelectedPlanId] = useState(null);
@@ -48,7 +49,7 @@ export default function Accountant() {
     setSelectedPlanId(planId);
     setSelectedVehicleId(null); // Clear vehicle selection
     // Mark plan as read if it's new
-    setPlans(prevPlans => 
+    setPlans(prevPlans =>
       prevPlans.map(p => p.id === planId ? { ...p, status: p.status === 'new' ? 'viewed' : p.status, notesRead: true } : p)
     );
     // Reset and potentially load existing costs for the selected plan in a real app
@@ -114,8 +115,8 @@ export default function Accountant() {
   const TabButton = ({ tabName, currentTab, setTab, children }) => (
     <button
       onClick={() => { setTab(tabName); setSelectedPlanId(null); setSelectedVehicleId(null); }}
-      className={`py-3 px-4 font-medium text-sm rounded-t-md focus:outline-none whitespace-nowrap 
-        ${currentTab === tabName 
+      className={`py-3 px-4 font-medium text-sm rounded-t-md focus:outline-none whitespace-nowrap
+        ${currentTab === tabName
           ? 'bg-white border-t border-l border-r border-gray-300 text-blue-600 -mb-px'
           : 'text-gray-500 hover:text-blue-600 hover:bg-gray-100'}`}
     >
@@ -140,7 +141,7 @@ export default function Accountant() {
                 <h3 className="text-lg font-medium mb-2 text-red-600">Mới ({plans.filter(p => p.status === 'new').length})</h3>
                 <ul className="space-y-2">
                   {plans.filter(p => p.status === 'new').map(plan => (
-                    <li key={plan.id} onClick={() => handlePlanSelect(plan.id)} 
+                    <li key={plan.id} onClick={() => handlePlanSelect(plan.id)}
                         className={`p-3 border rounded-md cursor-pointer hover:bg-red-50 ${selectedPlanId === plan.id ? 'bg-red-100 border-red-400 shadow-md' : 'border-gray-200'}`}>
                       <p className="font-semibold">{plan.id} - {plan.customer}</p>
                       <p className="text-sm text-gray-600">Ngày: {plan.date} - {plan.details}</p>
@@ -152,7 +153,7 @@ export default function Accountant() {
                 <h3 className="text-lg font-medium mb-2 text-green-600">Đã Xem / Hoàn Thành ({plans.filter(p => p.status !== 'new').length})</h3>
                 <ul className="space-y-2 max-h-96 overflow-y-auto">
                   {plans.filter(p => p.status !== 'new').map(plan => (
-                    <li key={plan.id} onClick={() => handlePlanSelect(plan.id)} 
+                    <li key={plan.id} onClick={() => handlePlanSelect(plan.id)}
                         className={`p-3 border rounded-md cursor-pointer hover:bg-green-50 ${selectedPlanId === plan.id ? 'bg-green-100 border-green-400 shadow-md' : 'border-gray-200'}`}>
                       <p className="font-semibold">{plan.id} - {plan.customer}</p>
                       <p className="text-sm text-gray-600">Ngày: {plan.date} - Trạng thái: {plan.status} - {plan.details}</p>
@@ -170,7 +171,7 @@ export default function Accountant() {
             <h2 className="text-xl font-semibold mb-3">Danh Sách Xe</h2>
             <ul className="space-y-2">
               {mockVehiclesData.map(vehicle => (
-                <li key={vehicle.id} onClick={() => handleVehicleSelect(vehicle.id)} 
+                <li key={vehicle.id} onClick={() => handleVehicleSelect(vehicle.id)}
                     className={`p-3 border rounded-md cursor-pointer hover:bg-indigo-50 flex items-center ${selectedVehicleId === vehicle.id ? 'bg-indigo-100 border-indigo-400 shadow-md' : 'border-gray-200'}`}>
                   <TruckIcon />
                   <div>
@@ -212,6 +213,7 @@ export default function Accountant() {
           </div>
         )}
       </div>
+      <ReturnToHomeButton />
     </div>
   );
 }

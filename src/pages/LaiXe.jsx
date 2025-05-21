@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReturnToHomeButton from '../components/ReturnToHomeButton';
 
 // Inline SVGs for icons
 const ChevronLeftIcon = () => (
@@ -39,7 +40,7 @@ const formatDate = (dateString) => {
   return `${day}-${month}-${year}`;
 };
 
-export default function Driver() {
+export default function LaiXe() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 4, 1)); // May 2025
   const [trips, setTrips] = useState(initialTripsData);
 
@@ -118,6 +119,7 @@ export default function Driver() {
           </table>
         </div>
       </div>
+      <ReturnToHomeButton />
     </div>
   );
 }
