@@ -60,7 +60,7 @@ export default function Driver() {
   const luong = 15000000;
 
   return (
-    <div className="p-4 md:p-6 text-gray-800" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
+    <div className="p-4 md:p-6 text-gray-800">
       {/* Month Picker */}
       <div className="flex items-center justify-start mb-8">
         <button onClick={handlePrevMonth} className="p-2 border border-gray-300 rounded hover:bg-gray-100">
