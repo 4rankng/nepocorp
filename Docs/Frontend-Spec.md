@@ -81,14 +81,28 @@ Trang báo cáo gồm bốn tab chính, mỗi tab đảm nhiệm một loại b�
   * Ghi chú
 - Nút “Xuất Excel” cố định ở góc dưới bên phải màn hình.
 
-### Tạo kế hoạch vận chuyển
+### Lịch vận chuyển
 
 Quy tắc chung:
 - Trường ký tự: Mặc định "-" nếu để trống
 - Trường số: Mặc định 0 nếu để trống
 - Có thể chỉnh sửa sau khi tạo
 
-Lịch vận chuyển:
+Hiển thị danh sách kế hoạch vận chuyển. Cấu trúc bảng dữ liệu gồm các cột:
+- Ngày tháng
+- Biển số xe
+- Đối tác (nếu không có, hiển thị “–”)
+- Diễn giải
+- Tuyến đường vận chuyển (tạo bởi điểm đi và các điểm đến)
+- Trạng thái
+- Số km chuyển hàng
+- Số km chuyển vỏ rỗng
+- Chi phí dầu (lít)
+- Đơn giá dầu
+- Chi phí dầu (Đồng)
+- Định mức đi đường
+- Chi phí khác
+
 Nút chức năng:
   - Nút "+" nổi góc dưới bên phải màn hình
   - Nhấn để mở form tạo kế hoạch vận chuyển mới
@@ -105,9 +119,11 @@ Form để tạo kế hoạch vận chuyển mới bao gồm
       * Số container (ví dụ: CSNU6879155)
       * Số seal (ví dụ: YMAT308024)
   - Ngày hạ hàng (Định dạng: dd/mm/yyyy ví dụ: 21/2/2025)
-- Nội dung chính của trang này là hiển thị tất cả các kế hoạch vận chuyển.
 
-### Tạo nhân viên
+
+### Nhân viên
+
+Hiển thị bảng dữ liệu danh sách nhân viên
 
 Nút chức năng
 - Nút "+" nổi góc dưới bên phải màn hình
@@ -120,9 +136,9 @@ Form để tạo nhân viên mới bao gồm
 - Email
 - Chức vụ (Quản lý, Kế toán, Giao nhận hoặc Lái xe)
 
-Nội dung chính của trang này là hiển thị danh sách nhân viên
+### Khách hàng
 
-### Tạo khách hàng
+Hiển thị bảng dữ liệu danh sách khách hàng
 
 Nút chức năng:
   - Nút "+" nổi góc dưới bên phải màn hình
@@ -133,18 +149,20 @@ Form để tạo khách hàng mới bao gồm
   - Địa chỉ
   - Số điện thoại
 
-Nội dung chính của trang này là hiển thị danh sách khách hàng
 
-### Tạo đối tác
+### Đối tác
+Hiển thị bảng dữ liệu danh sách đối tác
 
 Nút chức năng:
   - Nút "+" nổi góc dưới bên phải màn hình
   - Nhấn để mở form tạo đối tác mới
+
 Form để tạo đối tác mới bao gồm
   - Tên đối tác
   - Địa chỉ
   - Số điện thoại
-- Nội dung chính của trang này là hiển thị danh sách đối tác
+
+
 
 ### Phương tiện
 
