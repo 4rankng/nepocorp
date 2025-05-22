@@ -1,12 +1,12 @@
 // eslint.config.js
-import globals from "globals";
-import js from "@eslint/js";
+import globals from 'globals';
+import js from '@eslint/js';
 
 // React specific plugins/configs
 import pluginReactRecommended from 'eslint-plugin-react/configs/recommended.js';
 import pluginReactJsxRuntime from 'eslint-plugin-react/configs/jsx-runtime.js'; // Handles new JSX transform
-import pluginReactHooks from "eslint-plugin-react-hooks";
-import pluginReactRefresh from "eslint-plugin-react-refresh";
+import pluginReactHooks from 'eslint-plugin-react-hooks';
+import pluginReactRefresh from 'eslint-plugin-react-refresh';
 
 export default [
   // Global ESLint recommended rules
@@ -20,16 +20,30 @@ export default [
   {
     languageOptions: {
       parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
+        ecmaVersion: 'latest',
+        sourceType: 'module',
         ecmaFeatures: {
           jsx: true,
         },
       },
+      // Define globals explicitly to avoid whitespace issues
+      globals: {
+        document: true,
+        window: true,
+        console: true,
+        alert: true,
+        navigator: true,
+        fetch: true,
+        process: true,
+        module: true,
+        require: true,
+        __dirname: true,
+        __filename: true,
+      },
     },
     settings: {
       react: {
-        version: "detect", // Autodetect React version
+        version: 'detect', // Autodetect React version
       },
     },
   },
@@ -57,33 +71,33 @@ export default [
   // Your custom rules or overrides
   {
     rules: {
-      "react/prop-types": "off", // Disable prop-types as per original config
+      'react/prop-types': 'off', // Disable prop-types as per original config
       // Example: "no-unused-vars": "warn", // To make unused vars a warning
     },
   },
 
   // Configuration for .config.js files (like postcss.config.js, tailwind.config.js)
   {
-    files: ["postcss.config.cjs", "tailwind.config.cjs"],
+    files: ['postcss.config.cjs', 'tailwind.config.cjs'],
     languageOptions: {
       globals: {
-        module: "readonly",
-        require: "readonly",
-        process: "readonly",
-        __dirname: "readonly",
+        module: 'readonly',
+        require: 'readonly',
+        process: 'readonly',
+        __dirname: 'readonly',
       },
-      sourceType: "commonjs" // Explicitly treat these as CommonJS
+      sourceType: 'commonjs', // Explicitly treat these as CommonJS
     },
   },
 
   // Files to ignore
   {
     ignores: [
-      "node_modules/",
-      "dist/", 
-      ".vite/", 
-      "coverage/", // Common coverage directory
-      "eslint.config.js"
+      'node_modules/',
+      'dist/',
+      '.vite/',
+      'coverage/', // Common coverage directory
+      'eslint.config.js',
     ],
   },
 ];
