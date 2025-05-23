@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getDetailedCostReport } from '../../services/mockData';
+import DateRangeFilter from '../../components/DateRangeFilter';
+import { format } from 'date-fns';
 
 // Helper to format currency
 const formatCurrency = value => {
@@ -15,7 +17,8 @@ const formatMonthForDisplay = monthYear => {
 };
 
 const BaoCaoChiTietChiPhi = () => {
-  const [detailedCostData, setDetailedCostData] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -32,14 +35,15 @@ const BaoCaoChiTietChiPhi = () => {
     'bg-orange-500',
   ];
 
-  const fetchDetailedCostData = async () => {
+  const fetchReportData = async () => {
     setIsLoading(true);
     setError('');
     try {
       const data = await getDetailedCostReport();
-      setDetailedCostData(data);
+      setOriginalData(data);
+      setFilteredData(data);
     } catch (err) {
-      setError('Không thể tải dữ liệu chi tiết chi phí.');
+      setError('Không thể tải dữ liệu báo cáo.');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -47,13 +51,28 @@ const BaoCaoChiTietChiPhi = () => {
   };
 
   useEffect(() => {
-    fetchDetailedCostData();
+    fetchReportData();
   }, []);
 
-  const groupedDataForMobile = useMemo(() => {
-    if (!detailedCostData) return {};
+  const handleFilterChange = filterData => {
+    if (filterData.type === 'month') {
+      const monthStr = format(filterData.date, 'MM/yyyy');
+      const filtered = originalData.filter(item => item.monthYear === monthStr);
+      setFilteredData(filtered);
+    } else {
+      const filtered = originalData.filter(item => {
+        const [month, year] = item.monthYear.split('/');
+        const itemDate = new Date(parseInt(year), parseInt(month) - 1);
+        return itemDate >= filterData.startDate && itemDate <= filterData.endDate;
+      });
+      setFilteredData(filtered);
+    }
+  };
 
-    return detailedCostData.reduce((acc, item) => {
+  const groupedDataForMobile = useMemo(() => {
+    if (!filteredData) return {};
+
+    return filteredData.reduce((acc, item) => {
       const { bienSoXe, monthYear, category, amount } = item;
 
       if (!acc[bienSoXe]) {
@@ -67,77 +86,61 @@ const BaoCaoChiTietChiPhi = () => {
       acc[bienSoXe][monthYear].totalMonthCost += amount;
       return acc;
     }, {});
-  }, [detailedCostData]);
+  }, [filteredData]);
 
   return (
-    <div className="p-4 md:p-6 bg-white min-h-screen">
-      {' '}
-      {/* Ensure white background */}
-      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800 text-center">
-        Báo Cáo Chi Tiết Chi Phí
-      </h1>
-      {isLoading && <div className="text-center text-gray-500 py-10">Đang tải dữ liệu...</div>}
-      {!isLoading && error && (
-        <div className="text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>
-      )}
-      {!isLoading && !error && (detailedCostData || []).length === 0 && (
-        <div className="text-center text-gray-500 mt-10 py-10">
-          Không có dữ liệu chi phí để hiển thị.
-        </div>
-      )}
-      {/* Desktop Table View */}
-      {!isLoading && !error && (detailedCostData || []).length > 0 && (
-        <div className="hidden md:block bg-white shadow-sm border border-gray-200 rounded-lg overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Tháng
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Biển Số Xe
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Hạng Mục Chi Phí
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Số Tiền
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {(detailedCostData || []).map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {formatMonthForDisplay(item.monthYear)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                    {item.bienSoXe}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {item.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
-                    {formatCurrency(item.amount)}
-                  </td>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold mb-4">Báo Cáo Chi Tiết Chi Phí</h1>
+
+      <DateRangeFilter onFilterChange={handleFilterChange} />
+
+      {isLoading && <div className="text-center py-4">Đang tải dữ liệu...</div>}
+
+      {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
+
+      {!isLoading && !error && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tháng
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Biển Số Xe
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hạng Mục Chi Phí
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Số Tiền
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredData.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {item.monthYear}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {item.bienSoXe}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {item.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {formatCurrency(item.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
       {/* Mobile Card View with Stacked Bar Chart Simulation */}
       {!isLoading && !error && Object.keys(groupedDataForMobile || {}).length > 0 && (
         <div className="block md:hidden space-y-4">
@@ -149,7 +152,9 @@ const BaoCaoChiTietChiPhi = () => {
               <h2 className="text-lg font-semibold text-gray-700 mb-2">Xe: {bienSoXe}</h2>
               {Object.entries(monthsData || {}).map(([monthYear, data]) => {
                 // Sort categories by amount descending for consistent stacking order if desired
-                const sortedCategories = [...(data.categories || [])].sort((a, b) => b.amount - a.amount);
+                const sortedCategories = [...(data.categories || [])].sort(
+                  (a, b) => b.amount - a.amount
+                );
                 return (
                   <div
                     key={monthYear}

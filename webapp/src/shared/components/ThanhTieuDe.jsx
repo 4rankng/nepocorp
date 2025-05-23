@@ -6,8 +6,8 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm">
-      <div className="flex items-center h-12 justify-between px-4 sm:px-6 lg:px-8">
+    <header className="bg-white shadow-sm h-12">
+      <div className="flex items-center h-full justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center flex-shrink-0">
           <button
             className="relative md:hidden mr-2 p-2 rounded hover:bg-gray-100 focus:outline-none" // Added relative for absolute positioning of child SVGs

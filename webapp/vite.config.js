@@ -14,11 +14,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'recharts': ['recharts'],
-          'heroicons': ['@heroicons/react']
-        }
-      }
-    }
+          recharts: ['recharts'],
+          heroicons: ['@heroicons/react'],
+        },
+      },
+    },
   },
   resolve: {
     alias: {

@@ -1298,7 +1298,41 @@ Object.assign(mockData, {
 
 // --- START: Detailed Cost Report Functions ---
 export const getDetailedCostReport = () => {
-  /* ... */
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const vehicles = [
+        { id: 'V001', bienSo: '51C-12345' },
+        { id: 'V002', bienSo: '29H-67890' },
+        { id: 'V003', bienSo: '60A-11223' },
+      ];
+
+      const categories = ['Nhiên liệu', 'Bảo trì', 'Phí đường bộ', 'Chi phí khác'];
+      const data = [];
+
+      // Generate data for the last 12 months
+      for (let i = 0; i < 12; i++) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const monthYear = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+
+        vehicles.forEach(vehicle => {
+          categories.forEach(category => {
+            // Generate random amount between 5M and 50M VND
+            const amount = Math.floor(Math.random() * 45000000) + 5000000;
+
+            data.push({
+              monthYear,
+              bienSoXe: vehicle.bienSo,
+              category,
+              amount,
+            });
+          });
+        });
+      }
+
+      resolve(data);
+    }, 100);
+  });
 };
 // --- END: Detailed Cost Report Functions ---
 
@@ -1360,61 +1394,72 @@ export const getAvailableMonthsForReport = () => {
 
 export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
   return new Promise(resolve => {
-    const relevantPlans = shipmentPlansData.filter(
-      plan =>
-        plan.bienSoXeId === vehicleId &&
-        plan.ngayThang.endsWith(`/${monthYear.substring(5)}/${monthYear.substring(0, 4)}`) &&
-        plan.trangThai === 'Hoàn thành'
-    );
+    setTimeout(() => {
+      const data = [];
 
-    const relevantOtherCosts = otherVehicleCostsData.filter(
-      cost => cost.vehicleId === vehicleId && cost.monthYear === monthYear
-    );
+      // Generate data for 10-15 trips per vehicle per month
+      const numTrips = Math.floor(Math.random() * 6) + 10; // 10-15 trips
 
-    let totalRevenue = 0;
-    let totalShipmentCosts = 0;
+      // Sample routes with longer descriptions
+      const routes = [
+        'Kho Cảng Cát Lái - Khu Công Nghiệp Mỹ Phước 3 - Khu Công Nghiệp Mỹ Phước 4',
+        'Cảng Hải Phòng - Khu Công Nghiệp Đình Vũ - Khu Công Nghiệp Nomura',
+        'Kho Cảng Tân Cảng - Khu Công Nghiệp Long Thành - Khu Công Nghiệp Nhơn Trạch',
+        'Cảng Đà Nẵng - Khu Công Nghiệp Hòa Khánh - Khu Công Nghiệp Liên Chiểu',
+        'Kho Cảng Sài Gòn - Khu Công Nghiệp Vĩnh Lộc - Khu Công Nghiệp Tân Tạo',
+        'Cảng Cái Mép - Khu Công Nghiệp Phú Mỹ 1 - Khu Công Nghiệp Phú Mỹ 2',
+        'Kho Cảng Vũng Tàu - Khu Công Nghiệp Đồng Nai - Khu Công Nghiệp Amata',
+        'Cảng Quy Nhơn - Khu Công Nghiệp Nhơn Hội - Khu Công Nghiệp Hòa Hội',
+        'Kho Cảng Cần Thơ - Khu Công Nghiệp Trà Nóc - Khu Công Nghiệp Hưng Phú',
+        'Cảng Hải Phòng - Khu Công Nghiệp Đình Vũ - Khu Công Nghiệp Nomura',
+        'Kho Cảng Tân Cảng - Khu Công Nghiệp Long Thành - Khu Công Nghiệp Nhơn Trạch',
+        'Cảng Đà Nẵng - Khu Công Nghiệp Hòa Khánh - Khu Công Nghiệp Liên Chiểu',
+        'Kho Cảng Sài Gòn - Khu Công Nghiệp Vĩnh Lộc - Khu Công Nghiệp Tân Tạo',
+        'Cảng Cái Mép - Khu Công Nghiệp Phú Mỹ 1 - Khu Công Nghiệp Phú Mỹ 2',
+        'Kho Cảng Vũng Tàu - Khu Công Nghiệp Đồng Nai - Khu Công Nghiệp Amata',
+      ];
 
-    const shipmentDetails = relevantPlans.map(plan => {
-      totalRevenue += plan.cuocVanChuyen || 0;
-      totalShipmentCosts += plan.tongChiPhiPhuongTien || 0;
-      return {
-        id: plan.id,
-        ngayThang: plan.ngayThang,
-        dienGiai: plan.dienGiai,
-        soContainer: plan.thongTinContainer?.map(c => c.soContainer).join(', ') || '-',
-        tuyenDuong: plan.tuyenDuong,
-        dauLit: plan.dauLit || 0,
-        dauDong: plan.dauDong || 0,
-        phiDiDuong: plan.phiDiDuong || 0,
-        tongChiPhiPhuongTien: plan.tongChiPhiPhuongTien || 0,
-        cuocVanChuyen: plan.cuocVanChuyen || 0,
-        loiNhuanPhuongTien: plan.loiNhuanPhuongTien || 0,
+      // Generate container numbers
+      const generateContainerNumber = () => {
+        const prefix = ['CMAU', 'CMCU', 'CMRU', 'CMTU'];
+        const randomPrefix = prefix[Math.floor(Math.random() * prefix.length)];
+        const number = Math.floor(Math.random() * 1000000)
+          .toString()
+          .padStart(6, '0');
+        const checkDigit = Math.floor(Math.random() * 10);
+        return `${randomPrefix}${number}${checkDigit}`;
       };
-    });
 
-    const totalOtherCostsAmount = relevantOtherCosts.reduce((sum, cost) => sum + cost.amount, 0);
-    const grandTotalCosts = totalShipmentCosts + totalOtherCostsAmount;
-    const grandTotalProfit = totalRevenue - grandTotalCosts;
+      for (let i = 0; i < numTrips; i++) {
+        const numContainers = Math.floor(Math.random() * 3) + 1; // 1-3 containers per trip
+        const containers = Array.from({ length: numContainers }, () => ({
+          soContainer: generateContainerNumber(),
+          soSeal: `SEAL${Math.floor(Math.random() * 10000)
+            .toString()
+            .padStart(4, '0')}`,
+        }));
 
-    setTimeout(
-      () =>
-        resolve({
-          overview: {
-            totalRevenue,
-            totalShipmentCosts,
-            totalOtherCosts: totalOtherCostsAmount,
-            grandTotalCosts,
-            grandTotalProfit,
-          },
-          shipmentDetails,
-          otherCosts: relevantOtherCosts.map(c => ({
-            id: c.id,
-            description: c.description,
-            amount: c.amount,
-          })),
-        }),
-      200
-    );
+        // Add fuelLiters and roadCost
+        const fuelLiters = Math.floor(Math.random() * 200) + 50; // 50-249 liters
+        const roadCost = Math.floor(Math.random() * 500000) + 100000; // 100k - 599,999 VND
+
+        data.push({
+          tripId: `TRIP-${vehicleId}-${i + 1}`,
+          date: `${monthYear}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+          route: routes[i % routes.length],
+          containers,
+          distance: Math.floor(Math.random() * 500) + 100, // 100-600 km
+          fuelCost: Math.floor(Math.random() * 5000000) + 1000000, // 1M - 6M
+          maintenanceCost: Math.floor(Math.random() * 2000000) + 500000, // 500K - 2.5M
+          otherCost: Math.floor(Math.random() * 3000000) + 1000000, // 1M - 4M
+          revenue: Math.floor(Math.random() * 10000000) + 5000000, // 5M - 15M
+          fuelLiters,
+          roadCost,
+        });
+      }
+
+      resolve(data);
+    }, 100);
   });
 };
 // --- END: Vehicle Monthly Details Report Functions ---
@@ -1422,24 +1467,77 @@ export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
 // --- START: Debt Report Data & Functions ---
 export const getDebtReport = monthYear => {
   return new Promise(resolve => {
+    // Try to find existing data for the month
     const filteredData = debtReportData.filter(item => item.monthYear === monthYear);
-    setTimeout(() => resolve(filteredData), 200);
+
+    // If no data, generate mock data for demo
+    if (filteredData.length === 0) {
+      // Generate 4 demo entries (2 customers, 2 partners)
+      const demo = [
+        {
+          id: 'demo1',
+          entityName: 'Công ty TNHH ABC Vận Tải',
+          entityType: 'customer',
+          monthYear,
+          phaiThu: Math.floor(Math.random() * 20000000) + 5000000,
+          phaiTra: 0,
+          ghiChu: 'Demo công nợ khách hàng',
+        },
+        {
+          id: 'demo2',
+          entityName: 'Doanh nghiệp tư nhân XYZ Logistics',
+          entityType: 'customer',
+          monthYear,
+          phaiThu: Math.floor(Math.random() * 15000000) + 3000000,
+          phaiTra: 0,
+          ghiChu: 'Demo công nợ khách hàng',
+        },
+        {
+          id: 'demo3',
+          entityName: 'Đối tác Vận Tải An Phát',
+          entityType: 'partner',
+          monthYear,
+          phaiThu: 0,
+          phaiTra: Math.floor(Math.random() * 10000000) + 2000000,
+          ghiChu: 'Demo công nợ đối tác',
+        },
+        {
+          id: 'demo4',
+          entityName: 'Công ty Logistics Toàn Cầu',
+          entityType: 'partner',
+          monthYear,
+          phaiThu: 0,
+          phaiTra: Math.floor(Math.random() * 8000000) + 1000000,
+          ghiChu: 'Demo công nợ đối tác',
+        },
+      ];
+      setTimeout(() => resolve(demo), 200);
+    } else {
+      setTimeout(() => resolve(filteredData), 200);
+    }
   });
 };
 
 export const getAvailableMonthsForDebtReport = () => {
   return new Promise(resolve => {
-    const uniqueMonths = new Set();
-    debtReportData.forEach(item => {
-      uniqueMonths.add(item.monthYear);
-    });
-    const sortedMonths = Array.from(uniqueMonths)
-      .sort((a, b) => b.localeCompare(a))
-      .map(monthYear => {
-        const [year, month] = monthYear.split('-');
-        return { label: `${month}/${year}`, value: monthYear };
-      });
-    setTimeout(() => resolve(sortedMonths), 50);
+    setTimeout(() => {
+      const currentDate = new Date();
+      const months = [];
+
+      // Generate data for the last 12 months
+      for (let i = 0; i < 12; i++) {
+        const date = new Date(currentDate);
+        date.setMonth(date.getMonth() - i);
+        const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+        months.push({
+          value: monthYear,
+          label: `${date.getMonth() + 1}/${date.getFullYear()}`,
+        });
+      }
+
+      resolve(months);
+    }, 100);
   });
 };
 // --- END: Debt Report Data & Functions ---
@@ -1450,7 +1548,27 @@ export const mockEmployees = mockEmployeesOld;
 export function getMonthlyProfitAndRevenueReport() {
   return new Promise(resolve => {
     setTimeout(() => {
-      resolve(profitAndRevenueData);
+      const currentDate = new Date();
+      const data = [];
+
+      // Generate data for the last 12 months
+      for (let i = 0; i < 12; i++) {
+        const date = new Date(currentDate);
+        date.setMonth(date.getMonth() - i);
+        const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+        // Generate random but realistic values
+        const revenue = Math.floor(Math.random() * 500000000) + 100000000; // 100M - 600M
+        const profit = Math.floor(Math.random() * 200000000) - 50000000; // -50M to 150M
+
+        data.push({
+          monthYear,
+          revenue,
+          profit,
+        });
+      }
+
+      resolve(data);
     }, 100);
   });
 }

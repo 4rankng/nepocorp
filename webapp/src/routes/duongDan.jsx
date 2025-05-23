@@ -13,59 +13,66 @@ import DanhSachContainer from '../features/container/DanhSachContainer';
 import QuanLyChiPhi from '../features/chi-phi/QuanLyChiPhi';
 import QuanLyDinhMucDuong from '../features/chi-phi/QuanLyDinhMucDuong';
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <TrangChu />,
+      children: [
+        {
+          path: 'bao-cao',
+          element: <BaoCaoTaiChinh />,
+        },
+        {
+          path: 'lich-van-chuyen',
+          element: <LichVanChuyen />,
+        },
+        {
+          path: 'nhan-vien',
+          element: <DanhSachNhanVien />,
+        },
+        {
+          path: 'khach-hang',
+          element: <DanhSachKhachHang />,
+        },
+        {
+          path: 'doi-tac',
+          element: <DanhSachDoiTac />,
+        },
+        {
+          path: 'phuong-tien',
+          element: <DanhSachPhuongTien />,
+        },
+        {
+          path: 'container',
+          element: <DanhSachContainer />,
+        },
+        {
+          path: 'chi-phi',
+          element: <QuanLyChiPhi />,
+        },
+        {
+          path: 'chi-phi-cau-hinh',
+          element: <QuanLyDinhMucDuong />,
+        },
+      ],
+    },
+    {
+      path: '/xac-thuc',
+      element: <TrangXacThuc />,
+      children: [
+        {
+          path: 'dang-nhap',
+          element: <DangNhap />,
+        },
+      ],
+    },
+  ],
   {
-    path: '/',
-    element: <TrangChu />,
-    children: [
-      {
-        path: 'bao-cao',
-        element: <BaoCaoTaiChinh />,
-      },
-      {
-        path: 'lich-van-chuyen',
-        element: <LichVanChuyen />,
-      },
-      {
-        path: 'nhan-vien',
-        element: <DanhSachNhanVien />,
-      },
-      {
-        path: 'khach-hang',
-        element: <DanhSachKhachHang />,
-      },
-      {
-        path: 'doi-tac',
-        element: <DanhSachDoiTac />,
-      },
-      {
-        path: 'phuong-tien',
-        element: <DanhSachPhuongTien />,
-      },
-      {
-        path: 'container',
-        element: <DanhSachContainer />,
-      },
-      {
-        path: 'chi-phi',
-        element: <QuanLyChiPhi />,
-      },
-      {
-        path: 'chi-phi-cau-hinh',
-        element: <QuanLyDinhMucDuong />,
-      },
-    ],
-  },
-  {
-    path: '/xac-thuc',
-    element: <TrangXacThuc />,
-    children: [
-      {
-        path: 'dang-nhap',
-        element: <DangNhap />,
-      },
-    ],
-  },
-]);
+    future: {
+      v7_startTransition: true,
+    },
+  }
+);
 
 export default router;

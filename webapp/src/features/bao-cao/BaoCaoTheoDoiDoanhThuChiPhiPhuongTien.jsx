@@ -75,8 +75,43 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     setMessage('');
     try {
       const data = await getVehicleMonthlyDetailsReport(selectedVehicleId, selectedMonthYear);
-      setReportDetails(data);
-      if (!data || (data.shipmentDetails.length === 0 && data.otherCosts.length === 0)) {
+
+      // Transform the data into the expected format
+      const transformedData = {
+        overview: {
+          totalRevenue: data.reduce((sum, item) => sum + item.revenue, 0),
+          grandTotalCosts: data.reduce(
+            (sum, item) => sum + item.fuelCost + item.maintenanceCost + item.otherCost,
+            0
+          ),
+          grandTotalProfit: data.reduce(
+            (sum, item) =>
+              sum + (item.revenue - item.fuelCost - item.maintenanceCost - item.otherCost),
+            0
+          ),
+        },
+        shipmentDetails: data.map(item => ({
+          id: item.tripId,
+          ngayThang: item.date,
+          dienGiai: item.route,
+          tuyenDuong: {
+            diemDi: item.route.split(' - ')[0] || '',
+            diemDen: item.route.split(' - ')[1] || '',
+          },
+          dauLit: item.fuelLiters,
+          dauDong: item.fuelCost,
+          phiDiDuong: item.roadCost,
+          tongChiPhiPhuongTien: item.fuelCost + item.maintenanceCost + item.otherCost,
+          cuocVanChuyen: item.revenue,
+          loiNhuanPhuongTien:
+            item.revenue - (item.fuelCost + item.maintenanceCost + item.otherCost),
+          thongTinContainer: item.containers,
+        })),
+        otherCosts: [], // Not available in the new data structure
+      };
+
+      setReportDetails(transformedData);
+      if (!data || data.length === 0) {
         setMessage(`Không có dữ liệu cho xe và tháng đã chọn.`);
       }
     } catch (err) {
@@ -196,46 +231,70 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
           {reportDetails.shipmentDetails.length > 0 && (
             <div className="bg-white p-4 shadow rounded-lg">
               <h2 className="text-xl font-semibold mb-3 text-gray-700">Chi Tiết Theo Chuyến</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {reportDetails.shipmentDetails.map(plan => (
                   <div
                     key={plan.id}
-                    className="border border-gray-200 p-4 rounded-md space-y-2 bg-gray-50"
+                    className="relative group bg-white border border-gray-100 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden flex flex-col min-h-[270px]"
                   >
-                    <p>
-                      <strong>Ngày:</strong> {plan.ngayThang}
-                    </p>
-                    <p>
-                      <strong>Diễn giải:</strong> {plan.dienGiai}
-                    </p>
-                    <p>
-                      <strong>Số Cont:</strong>{' '}
-                      {plan.thongTinContainer?.map(c => c.soContainer).join(', ') || '-'}
-                    </p>
-                    <p>
-                      <strong>Tuyến:</strong> {plan.tuyenDuong.diemDi} -{' '}
-                      {Array.isArray(plan.tuyenDuong.diemDen)
-                        ? plan.tuyenDuong.diemDen.join(', ')
-                        : plan.tuyenDuong.diemDen}
-                    </p>
-                    <p>
-                      <strong>Dầu:</strong> {plan.dauLit || 0} lít (
-                      {formatCurrency(plan.dauDong || 0)})
-                    </p>
-                    <p>
-                      <strong>Phí đi đường:</strong> {formatCurrency(plan.phiDiDuong || 0)}
-                    </p>
-                    <p>
-                      <strong>Tổng chi phí chuyến:</strong>{' '}
-                      {formatCurrency(plan.tongChiPhiPhuongTien || 0)}
-                    </p>
-                    <p>
-                      <strong>Cước vận chuyển:</strong> {formatCurrency(plan.cuocVanChuyen || 0)}
-                    </p>
-                    <p className="font-semibold">
-                      <strong>Lợi nhuận chuyến:</strong>{' '}
-                      {formatCurrency(plan.loiNhuanPhuongTien || 0)}
-                    </p>
+                    {/* Accent bar */}
+                    <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-teal-400" />
+                    <div className="flex-1 p-4 pl-6 flex flex-col gap-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-gray-400 font-medium">Ngày</span>
+                        <span className="text-sm font-semibold text-gray-700">
+                          {plan.ngayThang}
+                        </span>
+                      </div>
+                      <div className="mb-1">
+                        <span className="block text-xs text-gray-400 font-medium">Diễn giải</span>
+                        <span
+                          className="block text-sm font-semibold text-blue-700 break-words"
+                          title={plan.dienGiai}
+                        >
+                          {plan.dienGiai}
+                        </span>
+                      </div>
+                      <div className="mb-1">
+                        <span className="block text-xs text-gray-400 font-medium">Số Cont</span>
+                        <span className="block text-sm font-mono text-teal-700 break-words">
+                          {plan.thongTinContainer?.map(c => c.soContainer).join(', ') || '-'}
+                        </span>
+                      </div>
+                      <div className="mb-1">
+                        <span className="block text-xs text-gray-400 font-medium">Tuyến</span>
+                        <span className="block text-xs font-medium text-gray-600 leading-tight break-words">
+                          {plan.tuyenDuong.diemDi} -{' '}
+                          {Array.isArray(plan.tuyenDuong.diemDen)
+                            ? plan.tuyenDuong.diemDen.join(', ')
+                            : plan.tuyenDuong.diemDen}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2 text-xs">
+                        <div className="text-gray-500">Dầu</div>
+                        <div className="text-right text-gray-700">
+                          {plan.dauLit || 0} lít{' '}
+                          <span className="text-gray-400">
+                            ({formatCurrency(plan.dauDong || 0)})
+                          </span>
+                        </div>
+                        <div className="text-gray-500">Phí đi đường</div>
+                        <div className="text-right text-gray-700">
+                          {formatCurrency(plan.phiDiDuong || 0)}
+                        </div>
+                        <div className="text-gray-500">Tổng chi phí</div>
+                        <div className="text-right text-gray-700">
+                          {formatCurrency(plan.tongChiPhiPhuongTien || 0)}
+                        </div>
+                        <div className="text-gray-500">Cước vận chuyển</div>
+                        <div className="text-right text-gray-700">
+                          {formatCurrency(plan.cuocVanChuyen || 0)}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-right text-base font-bold text-green-600">
+                        Lợi nhuận: {formatCurrency(plan.loiNhuanPhuongTien || 0)}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

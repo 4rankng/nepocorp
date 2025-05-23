@@ -23,39 +23,50 @@ const TrangChu = () => {
   // };
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* <button onClick={toggleUserRole} className="absolute top-0 right-60 z-50 p-2 bg-blue-500 text-white">Toggle Role</button> */}{' '}
-      {/* Test button */}
-      <ThanhTieuDe
-        onSidebarToggle={handleSidebarToggle}
-        sidebarOpen={sidebarOpen}
-        userName={userName}
-      />
-      <div className="flex flex-1">
-        {/* Sidebar for desktop */}
-        <div className="hidden md:block">
+    <div className="min-h-screen bg-gray-50">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <ThanhTieuDe
+          onSidebarToggle={handleSidebarToggle}
+          sidebarOpen={sidebarOpen}
+          userName={userName}
+        />
+      </div>
+
+      {/* Main Layout Container */}
+      <div className="flex pt-12">
+        {' '}
+        {/* Add padding-top to account for fixed header */}
+        {/* Fixed Sidebar for desktop */}
+        <div className="hidden md:block fixed top-12 left-0 bottom-0 z-40">
           <ThanhBen userRole={currentUserRole} onNavItemClick={handleSidebarClose} />
         </div>
-        {/* Sidebar overlay for mobile, appears below header */}
-        {/* Container for mobile sidebar and backdrop, always in DOM for transitions */}
+        {/* Mobile Sidebar Overlay */}
         <div
-          className={`fixed top-12 left-0 right-0 bottom-0 z-40 flex md:hidden ${sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+          className={`fixed top-12 left-0 right-0 bottom-0 z-40 flex md:hidden ${
+            sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'
+          }`}
         >
-          {/* Backdrop: fades in/out */}
+          {/* Backdrop */}
           <div
-            className={`fixed inset-0 bg-black transition-opacity duration-300 ease-out ${sidebarOpen ? 'bg-opacity-30' : 'bg-opacity-0'}`}
-            style={{ top: 48 }} // Ensures backdrop starts below the header
+            className={`fixed inset-0 bg-black transition-opacity duration-300 ease-out ${
+              sidebarOpen ? 'bg-opacity-30' : 'bg-opacity-0'
+            }`}
+            style={{ top: 48 }}
             onClick={handleSidebarClose}
           ></div>
-          {/* Sidebar: slides in/out */}
+          {/* Mobile Sidebar */}
           <div
-            className={`relative z-50 w-64 bg-white h-full shadow-lg transition-transform duration-300 ease-out transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`relative z-50 w-64 bg-white h-full shadow-lg transition-transform duration-300 ease-out transform ${
+              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
           >
             <ThanhBen userRole={currentUserRole} onNavItemClick={handleSidebarClose} />
           </div>
         </div>
-        <main className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto mt-1 bg-white">
-          <div className="flex-1 flex flex-col p-4">
+        {/* Main Content */}
+        <main className="flex-1 md:ml-64 min-h-screen bg-white">
+          <div className="p-4">
             <Outlet />
           </div>
         </main>
