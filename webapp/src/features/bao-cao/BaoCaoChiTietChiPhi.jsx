@@ -1,163 +1,134 @@
-import React, { useState } from 'react';
-import { mockVehicles, mockCosts } from '@services/mockData';
+import React, { useState, useEffect, useMemo } from 'react';
+import { getDetailedCostReport } from '../../services/mockData';
+
+// Helper to format currency
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+};
+
+// Helper to format month (YYYY-MM to MM/YYYY)
+const formatMonthForDisplay = (monthYear) => {
+  if (!monthYear || !monthYear.includes('-')) return monthYear;
+  const [year, month] = monthYear.split('-');
+  return `${month}/${year}`;
+};
 
 const BaoCaoChiTietChiPhi = () => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedVehicle, setSelectedVehicle] = useState('all');
+  const [detailedCostData, setDetailedCostData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const months = [
-    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
-  ];
-
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount);
+  const fetchDetailedCostData = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const data = await getDetailedCostReport();
+      setDetailedCostData(data);
+    } catch (err) {
+      setError('Không thể tải dữ liệu chi tiết chi phí.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Group costs by type
-  const groupedCosts = mockCosts.reduce((acc, cost) => {
-    if (!acc[cost.type]) {
-      acc[cost.type] = [];
-    }
-    acc[cost.type].push(cost);
-    return acc;
-  }, {});
+  useEffect(() => {
+    fetchDetailedCostData();
+  }, []);
 
-  // Calculate total for each cost type
-  const costTotals = Object.entries(groupedCosts).map(([type, costs]) => ({
-    type,
-    total: costs.reduce((sum, cost) => sum + cost.amount, 0),
-  }));
+  const groupedDataForMobile = useMemo(() => {
+    if (!detailedCostData) return {};
+    
+    return detailedCostData.reduce((acc, item) => {
+      const { bienSoXe, monthYear, category, amount } = item;
+      
+      if (!acc[bienSoXe]) {
+        acc[bienSoXe] = {};
+      }
+      if (!acc[bienSoXe][monthYear]) {
+        acc[bienSoXe][monthYear] = { totalMonthCost: 0, categories: [] };
+      }
+      
+      acc[bienSoXe][monthYear].categories.push({ category, amount });
+      acc[bienSoXe][monthYear].totalMonthCost += amount;
+      
+      return acc;
+    }, {});
+  }, [detailedCostData]);
+
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Báo cáo chi tiết chi phí</h2>
-        <div className="flex space-x-4">
-          <select
-            value={selectedVehicle}
-            onChange={(e) => setSelectedVehicle(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            <option value="all">Tất cả phương tiện</option>
-            {mockVehicles.map((vehicle) => (
-              <option key={vehicle.id} value={vehicle.id}>
-                {vehicle.licensePlate}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            {months.map((month, index) => (
-              <option key={month} value={index}>
-                {month}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+    <div className="p-4 md:p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800 text-center">Báo Cáo Chi Tiết Chi Phí</h1>
 
-      {/* Desktop View */}
-      <div className="hidden md:block">
-        <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+      {isLoading && <div className="text-center text-gray-500">Đang tải dữ liệu...</div>}
+      {!isLoading && error && <div className="text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>}
+      
+      {!isLoading && !error && detailedCostData.length === 0 && (
+        <div className="text-center text-gray-500 mt-10">Không có dữ liệu chi phí để hiển thị.</div>
+      )}
+
+      {/* Desktop Table View */}
+      {!isLoading && !error && detailedCostData.length > 0 && (
+        <div className="hidden md:block bg-white shadow-md rounded-lg overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Loại chi phí
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tổng chi phí
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Chi tiết
-                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tháng</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Biển Số Xe</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hạng Mục Chi Phí</th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Số Tiền</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {costTotals.map((cost) => (
-                <tr key={cost.type}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {cost.type}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {formatCurrency(cost.total)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button
-                      type="button"
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Xem chi tiết
-                    </button>
-                  </td>
+              {detailedCostData.map((item, index) => (
+                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatMonthForDisplay(item.monthYear)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.bienSoXe}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.category}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(item.amount)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
 
-      {/* Mobile View */}
-      <div className="md:hidden space-y-4">
-        {costTotals.map((cost) => (
-          <div key={cost.type} className="bg-white p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-medium text-gray-900">{cost.type}</h3>
-              <span className="text-sm text-gray-500">
-                {formatCurrency(cost.total)}
-              </span>
+      {/* Mobile Card View */}
+      {!isLoading && !error && Object.keys(groupedDataForMobile).length > 0 && (
+        <div className="block md:hidden space-y-6">
+          {Object.entries(groupedDataForMobile).map(([bienSoXe, monthsData]) => (
+            <div key={bienSoXe} className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-lg font-semibold text-gray-700 mb-2">Xe: {bienSoXe}</h2>
+              {Object.entries(monthsData).map(([monthYear, data]) => (
+                <div key={monthYear} className="mb-4 last:mb-0 border-t pt-2 mt-2 first:mt-0 first:border-t-0">
+                  <h3 className="text-md font-medium text-gray-600 mb-2">Tháng: {formatMonthForDisplay(monthYear)}</h3>
+                  <div className="space-y-2">
+                    {data.categories.map((cat, catIndex) => (
+                      <div key={catIndex}>
+                        <div className="flex justify-between text-xs mb-0.5">
+                          <span className="text-gray-600">{cat.category}</span>
+                          <span className="font-medium text-gray-700">{formatCurrency(cat.amount)}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3 md:h-4">
+                          <div
+                            className="bg-blue-500 h-3 md:h-4 rounded-full"
+                            style={{ width: `${data.totalMonthCost > 0 ? (cat.amount / data.totalMonthCost) * 100 : 0}%` }}
+                            title={`${cat.category}: ${formatCurrency(cat.amount)}`}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                   <div className="text-right mt-2 text-sm font-semibold text-gray-800">
+                        Tổng chi phí tháng: {formatCurrency(data.totalMonthCost)}
+                   </div>
+                </div>
+              ))}
             </div>
-            <div className="h-2 bg-gray-200 rounded-full">
-              <div
-                className="h-2 bg-blue-600 rounded-full"
-                style={{
-                  width: `${(cost.total / Math.max(...costTotals.map(c => c.total))) * 100}%`,
-                }}
-              />
-            </div>
-            <button
-              type="button"
-              className="mt-2 text-sm text-blue-600 hover:text-blue-900"
-            >
-              Xem chi tiết
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Xuất Excel
-        </button>
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.svg';
 
-const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
+const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -35,7 +35,7 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="flex items-center text-gray-700 hover:text-gray-900"
             >
-              <span className="mr-2">Nguyễn Văn A</span>
+              <span className="mr-2">{userName}</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
