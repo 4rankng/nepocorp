@@ -443,20 +443,45 @@ let shipmentPlansData = [
 ];
 export const getShipmentPlans = () =>
   new Promise(res => setTimeout(() => res([...shipmentPlansData]), 50));
-export const addShipmentPlan = planData => {
-  /* ... */
+export const addShipmentPlan = async (planData) => {
+  // ... existing code ...
 };
 export const updateShipmentPlan = (id, updatedPlanData) => {
-  /* ... */
+  // ... existing code ...
 };
 export const deleteShipmentPlan = id => {
-  /* ... */
+  // ... existing code ...
 };
+
+export const updateShipmentPlanField = async (planId, field, value) => {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  let updatedPlan = null;
+  shipmentPlansData = shipmentPlansData.map(plan => {
+    if (plan.id === planId) {
+      const newPlan = { ...plan, [field]: value };
+      updatedPlan = recalculateShipmentCosts(newPlan);
+      return updatedPlan;
+    }
+    return plan;
+  });
+  if (updatedPlan) {
+    return { ...updatedPlan };
+  }
+  throw new Error("Plan not found");
+};
+
 // --- START: CRUD for Detailed Other Costs ---
-export const addDetailedOtherCostItem = async (planId, itemName, itemAmount) => { /* ... */ };
-export const updateDetailedOtherCostItem = async (planId, itemId, updatedName, updatedAmount) => { /* ... */ };
-export const deleteDetailedOtherCostItem = async (planId, itemId) => { /* ... */ };
+export const addDetailedOtherCostItem = async (planId, itemName, itemAmount) => {
+  // ... existing code ...
+};
+export const updateDetailedOtherCostItem = async (planId, itemId, updatedName, updatedAmount) => {
+  // ... existing code ...
+};
+export const deleteDetailedOtherCostItem = async (planId, itemId) => {
+  // ... existing code ...
+};
 // --- END: CRUD for Detailed Other Costs ---
+
 // --- END: Shipment Plans (Lịch Vận Chuyển) Mock Data & Functions ---
 
 // --- START: Financial Report (Báo Cáo Tài Chính) Mock Data ---
@@ -1142,5 +1167,3 @@ export const getAvailableMonthsForDebtReport = () => {
 
 // Keep other existing mock data exports
 export const mockEmployees = mockEmployeesOld;
-export const mockCustomers = customersData;
-export const mockPartners = partnersData;

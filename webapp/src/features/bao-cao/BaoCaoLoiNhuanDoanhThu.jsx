@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getMonthlyProfitAndRevenueReport } from '../../services/mockData';
 
 // Helper to format currency
-<<<<<<< HEAD
-const formatCurrency = value => {
-=======
 const formatCurrency = (value) => {
   if (typeof value !== 'number' || isNaN(value)) return 'N/A'; // Handle NaN or non-number inputs
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
 
@@ -64,7 +60,7 @@ const BaoCaoLoiNhuanDoanhThu = () => {
         const maxCost = data.reduce((max,item) => Math.max(max, item.totalCost), 0);
         setMaxChartValue(Math.max(maxRevenue, maxCost, 1)); // Use Math.max(..., 1) to avoid 0
       } else {
-        setMaxChartValue(1); 
+        setMaxChartValue(1);
       }
     } catch (err) {
       setError('Không thể tải dữ liệu báo cáo.');
@@ -79,25 +75,12 @@ const BaoCaoLoiNhuanDoanhThu = () => {
   }, []);
 
   return (
-<<<<<<< HEAD
-    <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
-        Báo Cáo Lợi Nhuận & Doanh Thu
-      </h1>
-
-      {isLoading && <div className="text-center text-gray-500">Đang tải dữ liệu...</div>}
-      {!isLoading && error && (
-        <div className="text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>
-      )}
-
-=======
-    <div className="p-4 md:p-6 min-h-screen"> {/* Removed bg-gray-100 */}
+    <div className="p-4 md:p-6 min-h-screen">
       <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800 text-center">Báo Cáo Lợi Nhuận & Doanh Thu</h1>
 
       {isLoading && <div className="text-center text-gray-500 py-5">Đang tải dữ liệu...</div>}
       {!isLoading && error && <div className="text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>}
-      
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
+
       {!isLoading && !error && reportData.length === 0 && (
         <div className="text-center text-gray-500 mt-10 py-5">Không có dữ liệu để hiển thị.</div>
       )}
@@ -105,34 +88,20 @@ const BaoCaoLoiNhuanDoanhThu = () => {
       {!isLoading && !error && reportData.length > 0 && (
         <div className="space-y-6">
           {reportData.map((item, index) => (
-<<<<<<< HEAD
-            <div key={index} className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-gray-700 mb-1">Xe: {item.bienSoXe}</h2>
-              <p className="text-sm text-gray-500 mb-4">
-=======
             <div key={index} className="bg-white p-4 shadow-md rounded-lg border border-gray-200">
               <h2 className="text-lg font-semibold text-gray-700 mb-1">
                 Xe: {item.bienSoXe}
               </h2>
               <p className="text-xs text-gray-500 mb-3">
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
                 Tháng: {formatMonthForDisplay(item.monthYear)}
               </p>
 
               <div className="space-y-2.5">
                 {/* Revenue Bar */}
                 <div>
-<<<<<<< HEAD
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-green-600">Doanh thu:</span>
-                    <span className="font-semibold text-green-600">
-                      {formatCurrency(item.revenue)}
-                    </span>
-=======
                   <div className="flex justify-between text-xs mb-0.5">
                     <span className="font-medium text-green-700">Doanh thu:</span>
                     <span className="font-semibold text-green-700">{formatCurrency(item.revenue)}</span>
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-5 border border-gray-300">
                     <div
@@ -145,17 +114,9 @@ const BaoCaoLoiNhuanDoanhThu = () => {
 
                 {/* Profit Bar */}
                 <div>
-<<<<<<< HEAD
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-blue-600">Lợi nhuận:</span>
-                    <span
-                      className={`font-semibold ${item.profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}
-                    >
-=======
                   <div className="flex justify-between text-xs mb-0.5">
                     <span className="font-medium ${item.profit >= 0 ? 'text-sky-700' : 'text-red-700'}">Lợi nhuận:</span>
                     <span className={`font-semibold ${item.profit >= 0 ? 'text-sky-700' : 'text-red-700'}`}>
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
                       {formatCurrency(item.profit)}
                     </span>
                   </div>
@@ -164,21 +125,6 @@ const BaoCaoLoiNhuanDoanhThu = () => {
                       className={`${item.profit >= 0 ? 'bg-sky-500' : 'bg-red-500'} h-full rounded-full`}
                       style={{ width: `${maxChartValue > 0 ? (Math.abs(item.profit) / maxChartValue) * 100 : 0}%` }}
                       title={`Lợi nhuận: ${formatCurrency(item.profit)}`}
-<<<<<<< HEAD
-                    >
-                      {/* Optional: text inside bar */}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-orange-600">Chi phí:</span>
-                    <span className="font-semibold text-orange-600">
-                      {formatCurrency(item.totalCost)}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-6">
-=======
                     ></div>
                   </div>
                 </div>
@@ -190,18 +136,11 @@ const BaoCaoLoiNhuanDoanhThu = () => {
                     <span className="font-semibold text-amber-700">{formatCurrency(item.totalCost)}</span>
                   </div>
                    <div className="w-full bg-gray-200 rounded-full h-5 border border-gray-300">
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
                     <div
                       className="bg-amber-500 h-full rounded-full"
                       style={{ width: `${maxChartValue > 0 ? (item.totalCost / maxChartValue) * 100 : 0}%` }}
                       title={`Chi phí: ${formatCurrency(item.totalCost)}`}
-<<<<<<< HEAD
-                    >
-                      {/* Optional: text inside bar */}
-                    </div>
-=======
                     ></div>
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
                   </div>
                 </div>
               </div>

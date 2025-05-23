@@ -2,21 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   getShipmentPlans,
   updateShipmentPlanField,
-<<<<<<< HEAD
   addDetailedOtherCostItem,
   updateDetailedOtherCostItem,
   deleteDetailedOtherCostItem,
-=======
   addShipmentPlan, // Import addShipmentPlan
   getVehiclesForSelect,
   getPartnersForSelect,
   getCustomersForSelect,
   getContainerTypesForSelect,
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
 } from '../../services/mockData';
 import ShipmentPlanFormModal from './components/ShipmentPlanFormModal'; // Import the new modal
 
-<<<<<<< HEAD
 // SVG Icons
 const PlusCircleIcon = ({ className = 'w-5 h-5' }) => (
   <svg
@@ -88,14 +84,6 @@ const PencilIcon = (
     />
   </svg>
 );
-=======
-// SVG Icons (PlusCircleIcon already used, others might be needed by modal or main page)
-const PlusCircleIcon = ({ className = "w-5 h-5" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
 
 // Helper to format currency
 const formatCurrency = value => {
@@ -228,24 +216,10 @@ const KeToanLichVanChuyen = () => {
     return isCurrency ? formatCurrency(displayValue) : displayValue || 0;
   };
 
-<<<<<<< HEAD
-  // --- Other Costs Modal Functions ---
-  const openOtherCostsModal = plan => {
-    setSelectedPlanForOtherCosts(plan);
-    // Deep copy to avoid mutating original plan's detailedOtherCosts directly in modal state
-    setModalDetailedCosts(
-      plan.detailedOtherCosts ? JSON.parse(JSON.stringify(plan.detailedOtherCosts)) : []
-    );
-    setNewCostItemName('');
-    setNewCostItemAmount('');
-    setEditingCostItemId(null);
-    setIsOtherCostsModalOpen(true);
-=======
   // --- New Plan Modal Handlers ---
   const handleOpenAddNewPlanModal = () => {
     setModalError(''); // Clear previous modal errors
     setIsPlanModalOpen(true);
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
   };
 
   const handleCloseAddNewPlanModal = () => {
@@ -253,98 +227,6 @@ const KeToanLichVanChuyen = () => {
     setModalError('');
   };
 
-<<<<<<< HEAD
-  const handleModalCostItemChange = (index, field, value) => {
-    const updatedCosts = [...modalDetailedCosts];
-    updatedCosts[index] = {
-      ...updatedCosts[index],
-      [field]: field === 'amount' ? parseFloat(value) || 0 : value,
-    };
-    setModalDetailedCosts(updatedCosts);
-  };
-
-  const handleAddOrUpdateModalCostItem = () => {
-    if (
-      !newCostItemName.trim() ||
-      !newCostItemAmount.trim() ||
-      parseFloat(newCostItemAmount) <= 0
-    ) {
-      setError('Tên và số tiền hợp lệ là bắt buộc cho khoản chi.');
-      return;
-    }
-    const amount = parseFloat(newCostItemAmount);
-    if (editingCostItemId) {
-      // Update existing item in modal
-      setModalDetailedCosts(
-        modalDetailedCosts.map(item =>
-          item.id === editingCostItemId ? { ...item, name: newCostItemName.trim(), amount } : item
-        )
-      );
-    } else {
-      // Add new item to modal
-      setModalDetailedCosts([
-        ...modalDetailedCosts,
-        { id: `temp-${Date.now()}`, name: newCostItemName.trim(), amount },
-      ]);
-    }
-    setNewCostItemName('');
-    setNewCostItemAmount('');
-    setEditingCostItemId(null);
-    setError('');
-  };
-
-  const handleEditModalCostItem = item => {
-    setEditingCostItemId(item.id);
-    setNewCostItemName(item.name);
-    setNewCostItemAmount(String(item.amount));
-  };
-
-  const handleDeleteModalCostItem = itemId => {
-    setModalDetailedCosts(modalDetailedCosts.filter(item => item.id !== itemId));
-  };
-
-  const handleSaveOtherCosts = async () => {
-    if (!selectedPlanForOtherCosts) return;
-    setIsLoading(true);
-    setError('');
-    try {
-      // Compare initial detailedOtherCosts with modalDetailedCosts to find changes
-      const originalCosts = selectedPlanForOtherCosts.detailedOtherCosts || [];
-      const itemsToAdd = modalDetailedCosts.filter(
-        item =>
-          (!item.id.startsWith('temp-') && !originalCosts.find(oc => oc.id === item.id)) ||
-          item.id.startsWith('temp-')
-      ); // New items (temp or new from DB if IDs were fetched)
-      const itemsToUpdate = modalDetailedCosts.filter(
-        item =>
-          !item.id.startsWith('temp-') &&
-          originalCosts.find(
-            oc => oc.id === item.id && (oc.name !== item.name || oc.amount !== item.amount)
-          )
-      );
-      const itemsToDelete = originalCosts.filter(
-        oc => !modalDetailedCosts.find(item => item.id === oc.id)
-      );
-
-      for (const item of itemsToDelete) {
-        await deleteDetailedOtherCostItem(selectedPlanForOtherCosts.id, item.id);
-      }
-      for (const item of itemsToUpdate) {
-        await updateDetailedOtherCostItem(
-          selectedPlanForOtherCosts.id,
-          item.id,
-          item.name,
-          item.amount
-        );
-      }
-      for (const item of itemsToAdd) {
-        // Items with temp-id are definitely new
-        await addDetailedOtherCostItem(selectedPlanForOtherCosts.id, item.name, item.amount);
-      }
-
-      await fetchShipmentPlansData(); // Refresh main table
-      closeOtherCostsModal();
-=======
   const handleSaveNewPlan = async (planDataFromModal) => {
     setModalError('');
     setIsLoading(true); // Use main isLoading or a specific one for modal save
@@ -354,7 +236,6 @@ const KeToanLichVanChuyen = () => {
       await addShipmentPlan(planDataFromModal);
       await fetchShipmentPlansData(); // Refresh the main list
       handleCloseAddNewPlanModal();
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
     } catch (err) {
       setModalError(err.message || "Lỗi khi thêm kế hoạch vận chuyển mới.");
       console.error(err);
@@ -369,272 +250,6 @@ const KeToanLichVanChuyen = () => {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
           Sổ Kế Toán - Lịch Vận Chuyển
         </h1>
-<<<<<<< HEAD
-        <button onClick={handleAddNewPlan} /* ... */> {/* ... */} </button>
-      </div>
-
-      {/* Error display for main page */}
-      {error && !isOtherCostsModalOpen && (
-        <div className="mb-4 text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>
-      )}
-
-      {/* Main Table ... */}
-      {!isLoading && !error && shipmentPlans.length > 0 && (
-        <div className="bg-white shadow-md rounded-lg overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            {/* ... table head ... */}
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày tháng
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Biển số xe
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đối tác
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Diễn giải
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tuyến đường
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Số km (Hàng)
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Số km (Rỗng)
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Dầu (lít)
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đơn giá dầu
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Dầu (Đồng)
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ĐM Đi đường
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Chi phí khác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {shipmentPlans.map(plan => (
-                <tr key={plan.id} className="hover:bg-gray-50 transition-colors">
-                  {/* ... other cells ... */}
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                    {formatDateForDisplay(plan.ngayThang)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {plan.bienSoXe}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                    {plan.tenDoiTac || '-'}
-                  </td>
-                  <td
-                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate"
-                    title={plan.dienGiai}
-                  >
-                    {plan.dienGiai}
-                  </td>
-                  <td
-                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate"
-                    title={
-                      typeof plan.tuyenDuong === 'object'
-                        ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}`
-                        : plan.tuyenDuong
-                    }
-                  >
-                    {typeof plan.tuyenDuong === 'object'
-                      ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}`
-                      : plan.tuyenDuong}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                    {plan.trangThai}
-                  </td>
-                  <td
-                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right"
-                    onClick={() => handleCellClick(plan, 'kmChuyenHang')}
-                  >
-                    {renderEditableCell(plan, 'kmChuyenHang', plan.kmChuyenHang)}
-                  </td>
-                  <td
-                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right"
-                    onClick={() => handleCellClick(plan, 'kmChuyenVoRong')}
-                  >
-                    {renderEditableCell(plan, 'kmChuyenVoRong', plan.kmChuyenVoRong)}
-                  </td>
-                  <td
-                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right"
-                    onClick={() => handleCellClick(plan, 'dauLit')}
-                  >
-                    {renderEditableCell(plan, 'dauLit', plan.dauLit)}
-                  </td>
-                  <td
-                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right"
-                    onClick={() => handleCellClick(plan, 'donGiaDau')}
-                  >
-                    {renderEditableCell(plan, 'donGiaDau', plan.donGiaDau, true)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                    {formatCurrency(plan.dauDong)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                    {formatCurrency(plan.dinhMucDiDuong || 0)}
-                  </td>
-                  <td
-                    className="px-4 py-3 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800 underline cursor-pointer text-right"
-                    onClick={() => openOtherCostsModal(plan)}
-                  >
-                    {formatCurrency(plan.chiPhiKhac || 0)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Other Costs Modal */}
-      {isOtherCostsModalOpen && selectedPlanForOtherCosts && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 transition-opacity">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-xl max-h-[80vh] flex flex-col">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              Chi Tiết Chi Phí Khác cho:{' '}
-              <span className="font-normal">
-                {selectedPlanForOtherCosts.dienGiai} ({selectedPlanForOtherCosts.ngayThang})
-              </span>
-            </h2>
-
-            {/* Error display for modal */}
-            {error && <p className="text-red-500 text-sm mb-3 bg-red-100 p-2 rounded">{error}</p>}
-
-            <div className="flex-grow overflow-y-auto pr-2">
-              {modalDetailedCosts.length === 0 && (
-                <p className="text-gray-500 text-sm">Chưa có khoản chi phí khác nào.</p>
-              )}
-              {modalDetailedCosts.map((item, index) => (
-                <div
-                  key={item.id || `new-${index}`}
-                  className="flex items-center space-x-2 py-2 border-b last:border-b-0"
-                >
-                  {editingCostItemId === item.id ? (
-                    <>
-                      <input
-                        type="text"
-                        value={newCostItemName}
-                        onChange={e => setNewCostItemName(e.target.value)}
-                        placeholder="Tên khoản chi"
-                        className="flex-grow input-style text-sm p-1"
-                      />
-                      <input
-                        type="number"
-                        value={newCostItemAmount}
-                        onChange={e => setNewCostItemAmount(e.target.value)}
-                        placeholder="Số tiền"
-                        className="w-32 input-style text-sm p-1"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <span className="flex-grow text-sm text-gray-700">{item.name}</span>
-                      <span className="w-32 text-sm text-gray-700 text-right">
-                        {formatCurrency(item.amount)}
-                      </span>
-                    </>
-                  )}
-                  {editingCostItemId === item.id ? (
-                    <button
-                      onClick={handleAddOrUpdateModalCostItem}
-                      className="text-green-500 hover:text-green-700 p-1"
-                    >
-                      <PlusCircleIcon className="w-5 h-5" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleEditModalCostItem(item)}
-                      className="text-blue-500 hover:text-blue-700 p-1"
-                    >
-                      <EditIcon />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDeleteModalCostItem(item.id)}
-                    className="text-red-500 hover:text-red-700 p-1"
-                  >
-                    <DeleteIcon />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 pt-4 border-t">
-              <h3 className="text-md font-semibold mb-2 text-gray-700">
-                {editingCostItemId ? 'Cập nhật Khoản Chi' : 'Thêm Khoản Chi Mới'}
-              </h3>
-              <div className="flex items-center space-x-2 mb-4">
-                <input
-                  type="text"
-                  value={newCostItemName}
-                  onChange={e => setNewCostItemName(e.target.value)}
-                  placeholder="Tên khoản chi"
-                  className="flex-grow input-style p-2"
-                />
-                <input
-                  type="number"
-                  value={newCostItemAmount}
-                  onChange={e => setNewCostItemAmount(e.target.value)}
-                  placeholder="Số tiền"
-                  className="w-40 input-style p-2"
-                />
-                <button
-                  onClick={handleAddOrUpdateModalCostItem}
-                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md text-sm"
-                >
-                  {editingCostItemId ? 'Cập nhật' : 'Thêm'}
-                </button>
-                {editingCostItemId && (
-                  <button
-                    onClick={() => {
-                      setEditingCostItemId(null);
-                      setNewCostItemName('');
-                      setNewCostItemAmount('');
-                    }}
-                    className="text-gray-500 hover:text-gray-700 text-sm"
-                  >
-                    Hủy Sửa
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={closeOtherCostsModal}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSaveOtherCosts}
-                disabled={isLoading}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-md ${isLoading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-              >
-                {isLoading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-=======
         <button
           onClick={handleOpenAddNewPlanModal}
           className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-colors duration-150"
@@ -645,7 +260,7 @@ const KeToanLichVanChuyen = () => {
       </div>
 
       {error && <div className="mb-4 text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>}
-      
+
       <div className="bg-white shadow-md rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -709,7 +324,6 @@ const KeToanLichVanChuyen = () => {
           error={modalError} // Pass modal-specific error state
         />
       )}
->>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
     </div>
   );
 };
