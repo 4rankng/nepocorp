@@ -4,12 +4,12 @@ import { mockCosts, mockVehicles } from '@services/mockData';
 const QuanLyChiPhi = () => {
   const [costs] = useState(mockCosts);
 
-  const getVehicleInfo = (vehicleId) => {
-    const vehicle = mockVehicles.find((v) => v.id === vehicleId);
+  const getVehicleInfo = vehicleId => {
+    const vehicle = mockVehicles.find(v => v.id === vehicleId);
     return vehicle ? vehicle.licensePlate : 'N/A';
   };
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = amount => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -53,17 +53,13 @@ const QuanLyChiPhi = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {costs.map((cost) => (
+                  {costs.map(cost => (
                     <tr key={cost.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {cost.type}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{cost.type}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatCurrency(cost.amount)}
-                        </div>
+                        <div className="text-sm text-gray-900">{formatCurrency(cost.amount)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
@@ -76,16 +72,10 @@ const QuanLyChiPhi = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          type="button"
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                        >
+                        <button type="button" className="text-blue-600 hover:text-blue-900 mr-4">
                           Sửa
                         </button>
-                        <button
-                          type="button"
-                          className="text-red-600 hover:text-red-900"
-                        >
+                        <button type="button" className="text-red-600 hover:text-red-900">
                           Xóa
                         </button>
                       </td>

@@ -8,7 +8,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:js": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
+    "format:css": "prettier --write \"**/*.{css,scss}\"",
+    "format:json": "prettier --write \"**/*.json\""
   },
   "dependencies": {
     "react": "^18.2.0",

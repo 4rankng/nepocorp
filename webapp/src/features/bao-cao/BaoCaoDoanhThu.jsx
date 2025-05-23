@@ -17,11 +17,11 @@ const BaoCaoDoanhThu = () => {
       <div className="flex gap-4">
         <select
           value={selectedVehicle}
-          onChange={(e) => setSelectedVehicle(e.target.value)}
+          onChange={e => setSelectedVehicle(e.target.value)}
           className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:max-w-xs sm:text-sm sm:leading-6"
         >
           <option value="">Chọn biển số xe</option>
-          {vehicles.map((vehicle) => (
+          {vehicles.map(vehicle => (
             <option key={vehicle} value={vehicle}>
               {vehicle}
             </option>
@@ -30,11 +30,11 @@ const BaoCaoDoanhThu = () => {
 
         <select
           value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
+          onChange={e => setSelectedMonth(e.target.value)}
           className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:max-w-xs sm:text-sm sm:leading-6"
         >
           <option value="">Chọn tháng</option>
-          {months.map((month) => (
+          {months.map(month => (
             <option key={month} value={month}>
               {month}
             </option>
@@ -63,7 +63,10 @@ const BaoCaoDoanhThu = () => {
         <table className="min-w-full divide-y divide-gray-300">
           <thead>
             <tr>
-              <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+              <th
+                scope="col"
+                className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+              >
                 Ngày tháng
               </th>
               <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
@@ -103,30 +106,16 @@ const BaoCaoDoanhThu = () => {
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                 Chở hàng điện tử
               </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                CONT1234
-              </td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">CONT1234</td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                 Cảng Cát Lái - KCN Sóng Thần
               </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                40
-              </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                1,000,000
-              </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                500,000
-              </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                1,700,000
-              </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                3,000,000
-              </td>
-              <td className="whitespace-nowrap px-3 py-4 text-sm text-green-600">
-                1,300,000
-              </td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">40</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">1,000,000</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">500,000</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">1,700,000</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">3,000,000</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-green-600">1,300,000</td>
             </tr>
           </tbody>
         </table>

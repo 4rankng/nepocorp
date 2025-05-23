@@ -6,14 +6,25 @@ import {
 } from '../../services/mockData';
 
 // SVG Icon for Download
-const ArrowDownTrayIcon = ({ className = "w-6 h-6" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+const ArrowDownTrayIcon = ({ className = 'w-6 h-6' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className={className}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+    />
   </svg>
 );
 
 // Helper to format currency
-const formatCurrency = (value) => {
+const formatCurrency = value => {
   if (typeof value !== 'number') return 'N/A';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
@@ -21,12 +32,12 @@ const formatCurrency = (value) => {
 const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [selectedMonthYear, setSelectedMonthYear] = useState('');
-  
+
   const [reportDetails, setReportDetails] = useState(null);
-  
+
   const [vehiclesForSelect, setVehiclesForSelect] = useState([]);
   const [monthsForSelect, setMonthsForSelect] = useState([]);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('Vui lòng chọn xe và tháng để xem báo cáo.');
@@ -65,7 +76,7 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     try {
       const data = await getVehicleMonthlyDetailsReport(selectedVehicleId, selectedMonthYear);
       setReportDetails(data);
-      if (!data || data.shipmentDetails.length === 0 && data.otherCosts.length === 0) {
+      if (!data || (data.shipmentDetails.length === 0 && data.otherCosts.length === 0)) {
         setMessage(`Không có dữ liệu cho xe và tháng đã chọn.`);
       }
     } catch (err) {
@@ -76,11 +87,16 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
       setIsLoading(false);
     }
   };
-  
+
   const handleExportExcel = () => {
     // This is a UI placeholder as per requirements
-    console.log("Export to Excel clicked for:", selectedVehicleId, selectedMonthYear, reportDetails);
-    alert("Chức năng Xuất Excel chưa được triển khai trong bản demo này.");
+    console.log(
+      'Export to Excel clicked for:',
+      selectedVehicleId,
+      selectedMonthYear,
+      reportDetails
+    );
+    alert('Chức năng Xuất Excel chưa được triển khai trong bản demo này.');
   };
 
   return (
@@ -93,29 +109,41 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
       <div className="mb-6 p-4 bg-white shadow-md rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div>
-            <label htmlFor="vehicleSelect" className="block text-sm font-medium text-gray-700 mb-1">Biển số xe</label>
+            <label htmlFor="vehicleSelect" className="block text-sm font-medium text-gray-700 mb-1">
+              Biển số xe
+            </label>
             <select
               id="vehicleSelect"
               value={selectedVehicleId}
-              onChange={(e) => setSelectedVehicleId(e.target.value)}
+              onChange={e => setSelectedVehicleId(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white"
               disabled={isLoading}
             >
               <option value="">Chọn xe</option>
-              {vehiclesForSelect.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+              {vehiclesForSelect.map(v => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label htmlFor="monthSelect" className="block text-sm font-medium text-gray-700 mb-1">Tháng báo cáo</label>
+            <label htmlFor="monthSelect" className="block text-sm font-medium text-gray-700 mb-1">
+              Tháng báo cáo
+            </label>
             <select
               id="monthSelect"
               value={selectedMonthYear}
-              onChange={(e) => setSelectedMonthYear(e.target.value)}
+              onChange={e => setSelectedMonthYear(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white"
               disabled={isLoading}
             >
               <option value="">Chọn tháng</option>
-              {monthsForSelect.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              {monthsForSelect.map(m => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
             </select>
           </div>
           <button
@@ -130,8 +158,12 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
 
       {/* Report Display Area */}
       {isLoading && <div className="text-center py-4">Đang tải báo cáo...</div>}
-      {!isLoading && error && <div className="text-center py-4 text-red-600 bg-red-100 p-3 rounded-md">{error}</div>}
-      {!isLoading && !error && !reportDetails && <div className="text-center py-4 text-gray-600">{message}</div>}
+      {!isLoading && error && (
+        <div className="text-center py-4 text-red-600 bg-red-100 p-3 rounded-md">{error}</div>
+      )}
+      {!isLoading && !error && !reportDetails && (
+        <div className="text-center py-4 text-gray-600">{message}</div>
+      )}
 
       {reportDetails && (
         <div className="space-y-6">
@@ -141,15 +173,21 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
               <div className="p-3 bg-green-50 rounded-md">
                 <p className="text-sm text-green-700">Tổng Doanh Thu</p>
-                <p className="text-lg font-bold text-green-800">{formatCurrency(reportDetails.overview.totalRevenue)}</p>
+                <p className="text-lg font-bold text-green-800">
+                  {formatCurrency(reportDetails.overview.totalRevenue)}
+                </p>
               </div>
               <div className="p-3 bg-red-50 rounded-md">
                 <p className="text-sm text-red-700">Tổng Chi Phí</p>
-                <p className="text-lg font-bold text-red-800">{formatCurrency(reportDetails.overview.grandTotalCosts)}</p>
+                <p className="text-lg font-bold text-red-800">
+                  {formatCurrency(reportDetails.overview.grandTotalCosts)}
+                </p>
               </div>
               <div className="p-3 bg-blue-50 rounded-md">
                 <p className="text-sm text-blue-700">Tổng Lợi Nhuận</p>
-                <p className="text-lg font-bold text-blue-800">{formatCurrency(reportDetails.overview.grandTotalProfit)}</p>
+                <p className="text-lg font-bold text-blue-800">
+                  {formatCurrency(reportDetails.overview.grandTotalProfit)}
+                </p>
               </div>
             </div>
           </div>
@@ -160,22 +198,50 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
               <h2 className="text-xl font-semibold mb-3 text-gray-700">Chi Tiết Theo Chuyến</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {reportDetails.shipmentDetails.map(plan => (
-                  <div key={plan.id} className="border border-gray-200 p-4 rounded-md space-y-2 bg-gray-50">
-                    <p><strong>Ngày:</strong> {plan.ngayThang}</p>
-                    <p><strong>Diễn giải:</strong> {plan.dienGiai}</p>
-                    <p><strong>Số Cont:</strong> {plan.thongTinContainer?.map(c => c.soContainer).join(', ') || '-'}</p>
-                    <p><strong>Tuyến:</strong> {plan.tuyenDuong.diemDi} - {Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}</p>
-                    <p><strong>Dầu:</strong> {plan.dauLit || 0} lít ({formatCurrency(plan.dauDong || 0)})</p>
-                    <p><strong>Phí đi đường:</strong> {formatCurrency(plan.phiDiDuong || 0)}</p>
-                    <p><strong>Tổng chi phí chuyến:</strong> {formatCurrency(plan.tongChiPhiPhuongTien || 0)}</p>
-                    <p><strong>Cước vận chuyển:</strong> {formatCurrency(plan.cuocVanChuyen || 0)}</p>
-                    <p className="font-semibold"><strong>Lợi nhuận chuyến:</strong> {formatCurrency(plan.loiNhuanPhuongTien || 0)}</p>
+                  <div
+                    key={plan.id}
+                    className="border border-gray-200 p-4 rounded-md space-y-2 bg-gray-50"
+                  >
+                    <p>
+                      <strong>Ngày:</strong> {plan.ngayThang}
+                    </p>
+                    <p>
+                      <strong>Diễn giải:</strong> {plan.dienGiai}
+                    </p>
+                    <p>
+                      <strong>Số Cont:</strong>{' '}
+                      {plan.thongTinContainer?.map(c => c.soContainer).join(', ') || '-'}
+                    </p>
+                    <p>
+                      <strong>Tuyến:</strong> {plan.tuyenDuong.diemDi} -{' '}
+                      {Array.isArray(plan.tuyenDuong.diemDen)
+                        ? plan.tuyenDuong.diemDen.join(', ')
+                        : plan.tuyenDuong.diemDen}
+                    </p>
+                    <p>
+                      <strong>Dầu:</strong> {plan.dauLit || 0} lít (
+                      {formatCurrency(plan.dauDong || 0)})
+                    </p>
+                    <p>
+                      <strong>Phí đi đường:</strong> {formatCurrency(plan.phiDiDuong || 0)}
+                    </p>
+                    <p>
+                      <strong>Tổng chi phí chuyến:</strong>{' '}
+                      {formatCurrency(plan.tongChiPhiPhuongTien || 0)}
+                    </p>
+                    <p>
+                      <strong>Cước vận chuyển:</strong> {formatCurrency(plan.cuocVanChuyen || 0)}
+                    </p>
+                    <p className="font-semibold">
+                      <strong>Lợi nhuận chuyến:</strong>{' '}
+                      {formatCurrency(plan.loiNhuanPhuongTien || 0)}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
           )}
-          
+
           {/* Other Costs Section */}
           {reportDetails.otherCosts.length > 0 && (
             <div className="bg-white p-4 shadow rounded-lg">

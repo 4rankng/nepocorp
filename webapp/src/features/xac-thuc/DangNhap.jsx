@@ -9,7 +9,7 @@ const DangNhap = () => {
 
   const canLogin = username.trim() !== '' && password.trim() !== '';
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault(); // Prevent form submission
     setError('');
 
@@ -26,9 +26,7 @@ const DangNhap = () => {
 
   return (
     <>
-      <h2 className="text-center text-3xl font-extrabold text-gray-900 mb-6">
-        Đăng nhập
-      </h2>
+      <h2 className="text-center text-3xl font-extrabold text-gray-900 mb-6">Đăng nhập</h2>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-gray-700">
@@ -42,7 +40,7 @@ const DangNhap = () => {
               autoComplete="username"
               required
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={e => setUsername(e.target.value)}
               className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="Nhập tên đăng nhập"
             />
@@ -61,20 +59,27 @@ const DangNhap = () => {
               autoComplete="current-password"
               required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="Nhập mật khẩu"
             />
           </div>
         </div>
 
-        {error && (
-          <div className="text-red-500 text-sm text-center">{error}</div>
-        )}
+        {error && <div className="text-red-500 text-sm text-center">{error}</div>}
 
-        <div className="flex items-center justify-end"> {/* Changed to justify-end for only forgot password link */}
+        <div className="flex items-center justify-end">
+          {' '}
+          {/* Changed to justify-end for only forgot password link */}
           <div className="text-sm">
-            <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500" onClick={(e) => { e.preventDefault(); console.log('Forgot password clicked'); }}>
+            <a
+              href="#"
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+              onClick={e => {
+                e.preventDefault();
+                console.log('Forgot password clicked');
+              }}
+            >
               Quên mật khẩu?
             </a>
           </div>

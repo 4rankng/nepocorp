@@ -35,11 +35,11 @@ const BaoCaoLoiNhuan = () => {
       <div className="flex gap-4 items-center flex-wrap">
         <select
           value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
+          onChange={e => setSelectedMonth(e.target.value)}
           className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:max-w-xs sm:text-sm sm:leading-6"
         >
           <option value="">Tất cả các tháng</option>
-          {months.map((month) => (
+          {months.map(month => (
             <option key={month} value={month}>
               {month}
             </option>
@@ -47,8 +47,12 @@ const BaoCaoLoiNhuan = () => {
         </select>
         {/* Legend */}
         <div className="flex items-center gap-4 ml-4">
-          <span className="flex items-center"><span className="inline-block w-4 h-2 bg-blue-500 mr-1 rounded" /> Doanh thu</span>
-          <span className="flex items-center"><span className="inline-block w-4 h-2 bg-green-500 mr-1 rounded" /> Lợi nhuận</span>
+          <span className="flex items-center">
+            <span className="inline-block w-4 h-2 bg-blue-500 mr-1 rounded" /> Doanh thu
+          </span>
+          <span className="flex items-center">
+            <span className="inline-block w-4 h-2 bg-green-500 mr-1 rounded" /> Lợi nhuận
+          </span>
         </div>
       </div>
 
@@ -74,7 +78,13 @@ const BaoCaoLoiNhuan = () => {
           <div key={month} className="bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
               <h4 className="text-lg font-semibold text-gray-900">{month}</h4>
-              <span className="text-sm text-gray-500">Tổng doanh thu: {dataByMonth[month].reduce((sum, item) => sum + item.revenue, 0).toLocaleString('vi-VN')} VNĐ</span>
+              <span className="text-sm text-gray-500">
+                Tổng doanh thu:{' '}
+                {dataByMonth[month]
+                  .reduce((sum, item) => sum + item.revenue, 0)
+                  .toLocaleString('vi-VN')}{' '}
+                VNĐ
+              </span>
             </div>
             <div className="space-y-6">
               {dataByMonth[month].map(item => (
@@ -87,7 +97,9 @@ const BaoCaoLoiNhuan = () => {
                         style={{ width: `${(item.revenue / maxRevenueByMonth[month]) * 100}%` }}
                       ></div>
                     </div>
-                    <span className="ml-2 text-xs text-blue-600 font-semibold">{item.revenue.toLocaleString('vi-VN')} VNĐ</span>
+                    <span className="ml-2 text-xs text-blue-600 font-semibold">
+                      {item.revenue.toLocaleString('vi-VN')} VNĐ
+                    </span>
                   </div>
                   {/* Profit bar */}
                   <div className="flex items-center">
@@ -97,7 +109,9 @@ const BaoCaoLoiNhuan = () => {
                         style={{ width: `${(item.profit / maxRevenueByMonth[month]) * 100}%` }}
                       ></div>
                     </div>
-                    <span className="ml-2 text-xs text-green-600 font-semibold">{item.profit.toLocaleString('vi-VN')} VNĐ</span>
+                    <span className="ml-2 text-xs text-green-600 font-semibold">
+                      {item.profit.toLocaleString('vi-VN')} VNĐ
+                    </span>
                   </div>
                 </div>
               ))}

@@ -12,15 +12,35 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName }) => {
           <button
             className="relative md:hidden mr-2 p-2 rounded hover:bg-gray-100 focus:outline-none" // Added relative for absolute positioning of child SVGs
             onClick={onSidebarToggle}
-            aria-label={sidebarOpen ? "Đóng menu" : "Mở menu"}
+            aria-label={sidebarOpen ? 'Đóng menu' : 'Mở menu'}
           >
             {/* Hamburger Icon */}
-            <svg className={`h-6 w-6 transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-0' : 'opacity-100'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className={`h-6 w-6 transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-0' : 'opacity-100'}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
             {/* X Icon */}
-            <svg className={`h-6 w-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className={`h-6 w-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
           <Link to="/" className="flex items-center">
@@ -37,7 +57,11 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName }) => {
             >
               <span className="mr-2">{userName}</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
 
@@ -48,19 +72,27 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName }) => {
                           ${isMenuOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}`}
             >
               <div className="py-1">
-                  <Link to="/thiet-lap-email" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Thiết lập email
-                  </Link>
-                  <Link to="/doi-mat-khau" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Đổi mật khẩu
-                  </Link>
-                  <button
-                    onClick={() => {/* Handle logout */ setIsMenuOpen(false);}} // Added setIsMenuOpen(false) to close menu on action
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Đăng xuất
-                  </button>
-                </div>
+                <Link
+                  to="/thiet-lap-email"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Thiết lập email
+                </Link>
+                <Link
+                  to="/doi-mat-khau"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Đổi mật khẩu
+                </Link>
+                <button
+                  onClick={() => {
+                    /* Handle logout */ setIsMenuOpen(false);
+                  }} // Added setIsMenuOpen(false) to close menu on action
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Đăng xuất
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@ const TrangChu = () => {
   const [currentUserRole, setCurrentUserRole] = useState('manager'); // 'manager' or 'accountant'
   const [userName, setUserName] = useState('Nguyễn Văn Quản Lý'); // Example user name
 
-  const handleSidebarToggle = () => setSidebarOpen((open) => !open);
+  const handleSidebarToggle = () => setSidebarOpen(open => !open);
   const handleSidebarClose = () => setSidebarOpen(false);
 
   // Example function to simulate role change - for testing
@@ -24,8 +24,13 @@ const TrangChu = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* <button onClick={toggleUserRole} className="absolute top-0 right-60 z-50 p-2 bg-blue-500 text-white">Toggle Role</button> */} {/* Test button */}
-      <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} userName={userName} />
+      {/* <button onClick={toggleUserRole} className="absolute top-0 right-60 z-50 p-2 bg-blue-500 text-white">Toggle Role</button> */}{' '}
+      {/* Test button */}
+      <ThanhTieuDe
+        onSidebarToggle={handleSidebarToggle}
+        sidebarOpen={sidebarOpen}
+        userName={userName}
+      />
       <div className="flex flex-1">
         {/* Sidebar for desktop */}
         <div className="hidden md:block">
@@ -33,7 +38,9 @@ const TrangChu = () => {
         </div>
         {/* Sidebar overlay for mobile, appears below header */}
         {/* Container for mobile sidebar and backdrop, always in DOM for transitions */}
-        <div className={`fixed top-12 left-0 right-0 bottom-0 z-40 flex md:hidden ${sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+        <div
+          className={`fixed top-12 left-0 right-0 bottom-0 z-40 flex md:hidden ${sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        >
           {/* Backdrop: fades in/out */}
           <div
             className={`fixed inset-0 bg-black transition-opacity duration-300 ease-out ${sidebarOpen ? 'bg-opacity-30' : 'bg-opacity-0'}`}

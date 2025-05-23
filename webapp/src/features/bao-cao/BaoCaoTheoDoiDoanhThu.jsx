@@ -7,13 +7,23 @@ const BaoCaoTheoDoiDoanhThu = () => {
   const [selectedVehicle, setSelectedVehicle] = useState('all');
 
   const months = [
-    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+    'Tháng 1',
+    'Tháng 2',
+    'Tháng 3',
+    'Tháng 4',
+    'Tháng 5',
+    'Tháng 6',
+    'Tháng 7',
+    'Tháng 8',
+    'Tháng 9',
+    'Tháng 10',
+    'Tháng 11',
+    'Tháng 12',
   ];
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = amount => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -51,11 +61,11 @@ const BaoCaoTheoDoiDoanhThu = () => {
         <div className="flex space-x-4">
           <select
             value={selectedVehicle}
-            onChange={(e) => setSelectedVehicle(e.target.value)}
+            onChange={e => setSelectedVehicle(e.target.value)}
             className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
             <option value="all">Tất cả phương tiện</option>
-            {mockVehicles.map((vehicle) => (
+            {mockVehicles.map(vehicle => (
               <option key={vehicle.id} value={vehicle.id}>
                 {vehicle.licensePlate}
               </option>
@@ -63,7 +73,7 @@ const BaoCaoTheoDoiDoanhThu = () => {
           </select>
           <select
             value={selectedMonth}
-            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            onChange={e => setSelectedMonth(Number(e.target.value))}
             className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
             {months.map((month, index) => (
@@ -74,10 +84,10 @@ const BaoCaoTheoDoiDoanhThu = () => {
           </select>
           <select
             value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            onChange={e => setSelectedYear(Number(e.target.value))}
             className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
-            {years.map((year) => (
+            {years.map(year => (
               <option key={year} value={year}>
                 {year}
               </option>
@@ -157,9 +167,7 @@ const BaoCaoTheoDoiDoanhThu = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {item.containerCount}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {item.route}
-                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.route}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {item.fuelLiters}
                 </td>

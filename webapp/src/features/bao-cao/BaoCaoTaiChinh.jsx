@@ -33,7 +33,7 @@ const BaoCaoTaiChinh = () => {
     <div className="bg-gray-100 min-h-screen">
       <div className="border-b border-gray-200 bg-white">
         <nav className="flex -mb-px">
-          {tabs.map((tab) => (
+          {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
