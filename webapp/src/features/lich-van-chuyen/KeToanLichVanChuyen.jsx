@@ -2,11 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   getShipmentPlans,
   updateShipmentPlanField,
+<<<<<<< HEAD
   addDetailedOtherCostItem,
   updateDetailedOtherCostItem,
   deleteDetailedOtherCostItem,
+=======
+  addShipmentPlan, // Import addShipmentPlan
+  getVehiclesForSelect,
+  getPartnersForSelect,
+  getCustomersForSelect,
+  getContainerTypesForSelect,
+>>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
 } from '../../services/mockData';
+import ShipmentPlanFormModal from './components/ShipmentPlanFormModal'; // Import the new modal
 
+<<<<<<< HEAD
 // SVG Icons
 const PlusCircleIcon = ({ className = 'w-5 h-5' }) => (
   <svg
@@ -78,6 +88,14 @@ const PencilIcon = (
     />
   </svg>
 );
+=======
+// SVG Icons (PlusCircleIcon already used, others might be needed by modal or main page)
+const PlusCircleIcon = ({ className = "w-5 h-5" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+>>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
 
 // Helper to format currency
 const formatCurrency = value => {
@@ -93,18 +111,22 @@ const formatDateForDisplay = dateStr_DDMMYYYY => {
 const KeToanLichVanChuyen = () => {
   const [shipmentPlans, setShipmentPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); // For main page errors
 
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
 
-  // State for "Other Costs" Modal
-  const [isOtherCostsModalOpen, setIsOtherCostsModalOpen] = useState(false);
-  const [selectedPlanForOtherCosts, setSelectedPlanForOtherCosts] = useState(null);
-  const [modalDetailedCosts, setModalDetailedCosts] = useState([]); // Local copy for modal editing
-  const [newCostItemName, setNewCostItemName] = useState('');
-  const [newCostItemAmount, setNewCostItemAmount] = useState('');
-  const [editingCostItemId, setEditingCostItemId] = useState(null); // ID of item being edited in modal
+  // State for the new plan modal
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [selectOptions, setSelectOptions] = useState({
+    vehicles: [],
+    partners: [],
+    customers: [],
+    containerTypes: [],
+  });
+  const [isLoadingSelectOptions, setIsLoadingSelectOptions] = useState(false);
+  const [modalError, setModalError] = useState(''); // For modal specific errors
+
 
   const fetchShipmentPlansData = useCallback(async () => {
     setIsLoading(true);
@@ -120,13 +142,30 @@ const KeToanLichVanChuyen = () => {
     }
   }, []);
 
+  const fetchSelectOptionsData = useCallback(async () => {
+    setIsLoadingSelectOptions(true);
+    try {
+      const [vehicles, partners, customers, containerTypes] = await Promise.all([
+        getVehiclesForSelect(),
+        getPartnersForSelect(),
+        getCustomersForSelect(),
+        getContainerTypesForSelect(),
+      ]);
+      setSelectOptions({ vehicles, partners, customers, containerTypes });
+    } catch (err) {
+      setError('Không thể tải dữ liệu cho form lựa chọn.'); // Can use a more specific error state if needed
+      console.error(err);
+    } finally {
+      setIsLoadingSelectOptions(false);
+    }
+  }, []);
+
+
   useEffect(() => {
     fetchShipmentPlansData();
-  }, [fetchShipmentPlansData]);
+    fetchSelectOptionsData(); // Fetch options needed for the modal
+  }, [fetchShipmentPlansData, fetchSelectOptionsData]);
 
-  const handleAddNewPlan = () => {
-    alert("Chức năng 'Thêm Kế Hoạch Vận Chuyển' dành cho Kế toán sẽ được triển khai sau.");
-  };
 
   const handleCellClick = (plan, field) => {
     setEditingCell({ planId: plan.id, field });
@@ -149,6 +188,7 @@ const KeToanLichVanChuyen = () => {
       setError(`Giá trị nhập cho ${field} không hợp lệ.`);
       return;
     }
+    // For optimistic update, you might need to set isLoading state for the specific row/cell
     try {
       await updateShipmentPlanField(planId, field, numericValue);
       await fetchShipmentPlansData();
@@ -188,6 +228,7 @@ const KeToanLichVanChuyen = () => {
     return isCurrency ? formatCurrency(displayValue) : displayValue || 0;
   };
 
+<<<<<<< HEAD
   // --- Other Costs Modal Functions ---
   const openOtherCostsModal = plan => {
     setSelectedPlanForOtherCosts(plan);
@@ -199,15 +240,20 @@ const KeToanLichVanChuyen = () => {
     setNewCostItemAmount('');
     setEditingCostItemId(null);
     setIsOtherCostsModalOpen(true);
+=======
+  // --- New Plan Modal Handlers ---
+  const handleOpenAddNewPlanModal = () => {
+    setModalError(''); // Clear previous modal errors
+    setIsPlanModalOpen(true);
+>>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
   };
 
-  const closeOtherCostsModal = () => {
-    setIsOtherCostsModalOpen(false);
-    setSelectedPlanForOtherCosts(null);
-    setModalDetailedCosts([]);
-    setError(''); // Clear modal-specific errors
+  const handleCloseAddNewPlanModal = () => {
+    setIsPlanModalOpen(false);
+    setModalError('');
   };
 
+<<<<<<< HEAD
   const handleModalCostItemChange = (index, field, value) => {
     const updatedCosts = [...modalDetailedCosts];
     updatedCosts[index] = {
@@ -298,8 +344,19 @@ const KeToanLichVanChuyen = () => {
 
       await fetchShipmentPlansData(); // Refresh main table
       closeOtherCostsModal();
+=======
+  const handleSaveNewPlan = async (planDataFromModal) => {
+    setModalError('');
+    setIsLoading(true); // Use main isLoading or a specific one for modal save
+    try {
+      // The planDataFromModal already has fields processed by ShipmentPlanFormModal
+      // Ensure `trangThai: 'Nháp'` is set, which is done by initialPlanData prop
+      await addShipmentPlan(planDataFromModal);
+      await fetchShipmentPlansData(); // Refresh the main list
+      handleCloseAddNewPlanModal();
+>>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
     } catch (err) {
-      setError(`Lỗi khi lưu chi phí khác: ${err.message}`);
+      setModalError(err.message || "Lỗi khi thêm kế hoạch vận chuyển mới.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -307,11 +364,12 @@ const KeToanLichVanChuyen = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 bg-gray-100 min-h-screen">
+    <div className="p-4 md:p-6 min-h-screen"> {/* Further removed bg-gray-100, ensuring it's white by parent */}
       <div className="flex justify-between items-center mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
           Sổ Kế Toán - Lịch Vận Chuyển
         </h1>
+<<<<<<< HEAD
         <button onClick={handleAddNewPlan} /* ... */> {/* ... */} </button>
       </div>
 
@@ -576,12 +634,84 @@ const KeToanLichVanChuyen = () => {
           </div>
         </div>
       )}
+=======
+        <button
+          onClick={handleOpenAddNewPlanModal}
+          className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-colors duration-150"
+        >
+          <PlusCircleIcon className="mr-2" />
+          Thêm Kế Hoạch
+        </button>
+      </div>
+
+      {error && <div className="mb-4 text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>}
+      
+      <div className="bg-white shadow-md rounded-lg overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tháng</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Biển số xe</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đối tác</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diễn giải</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tuyến đường</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Số km (Hàng)</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Số km (Rỗng)</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dầu (lít)</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá dầu</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dầu (Đồng)</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ĐM Đi đường</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Chi phí khác</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isLoading && shipmentPlans.length === 0 && (
+              <tr><td colSpan="13" className="p-4 text-center text-gray-500">Đang tải dữ liệu...</td></tr>
+            )}
+            {!isLoading && !error && shipmentPlans.length === 0 && (
+              <tr><td colSpan="13" className="p-4 text-center text-gray-500">Chưa có lịch vận chuyển nào.</td></tr>
+            )}
+            {shipmentPlans.map((plan) => (
+              <tr key={plan.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatDateForDisplay(plan.ngayThang)}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{plan.bienSoXe}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{plan.tenDoiTac || '-'}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={plan.dienGiai}>{plan.dienGiai}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={typeof plan.tuyenDuong === 'object' ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}` : plan.tuyenDuong}>
+                    {typeof plan.tuyenDuong === 'object' ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}` : plan.tuyenDuong}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{plan.trangThai}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right" onClick={() => handleCellClick(plan, 'kmChuyenHang')}>{renderEditableCell(plan, 'kmChuyenHang', plan.kmChuyenHang)}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right" onClick={() => handleCellClick(plan, 'kmChuyenVoRong')}>{renderEditableCell(plan, 'kmChuyenVoRong', plan.kmChuyenVoRong)}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right" onClick={() => handleCellClick(plan, 'dauLit')}>{renderEditableCell(plan, 'dauLit', plan.dauLit)}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right" onClick={() => handleCellClick(plan, 'donGiaDau')}>{renderEditableCell(plan, 'donGiaDau', plan.donGiaDau, true)}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(plan.dauDong)}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(plan.dinhMucDiDuong || 0)}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                  {formatCurrency(plan.chiPhiKhac || 0)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {isPlanModalOpen && (
+        <ShipmentPlanFormModal
+          isOpen={isPlanModalOpen}
+          onClose={handleCloseAddNewPlanModal}
+          onSave={handleSaveNewPlan}
+          initialPlanData={{ trangThai: 'Nháp', ngayThang: new Date().toISOString().split('T')[0], thongTinContainer: [{ soContainer: '', soSeal: '' }] }}
+          editingPlan={null} // This modal instance is only for adding new
+          selectOptions={selectOptions}
+          isLoading={isLoading || isLoadingSelectOptions} // Pass loading state for save button
+          error={modalError} // Pass modal-specific error state
+        />
+      )}
+>>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
     </div>
   );
 };
-
-// Basic input styling (can be centralized later)
-// const InputStyle = "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm";
-// const SelectStyle = "mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white";
 
 export default KeToanLichVanChuyen;

@@ -193,8 +193,13 @@ const menuItemsAccountant = [
   { path: '/cong-no', label: 'Công nợ', icon: <DocumentTextIcon /> },
 ];
 
+<<<<<<< HEAD
 const ThanhBen = ({ userRole = 'manager' }) => {
   // Default role for safety, will be passed from TrangChu
+=======
+
+const ThanhBen = ({ userRole = 'manager', onNavItemClick }) => { // Added onNavItemClick prop
+>>>>>>> b196d40 (feat: Refine chart simulations and suggest libraries)
   let currentMenuItems = [];
   if (userRole === 'manager') {
     currentMenuItems = menuItemsManager;
@@ -218,6 +223,11 @@ const ThanhBen = ({ userRole = 'manager' }) => {
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`
               }
+              onClick={() => {
+                if (onNavItemClick) {
+                  onNavItemClick();
+                }
+              }}
             >
               <span className="mr-3">{item.icon}</span>
               {item.label}

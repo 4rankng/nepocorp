@@ -34,7 +34,7 @@ const TrangChu = () => {
       <div className="flex flex-1">
         {/* Sidebar for desktop */}
         <div className="hidden md:block">
-          <ThanhBen userRole={currentUserRole} />
+          <ThanhBen userRole={currentUserRole} onNavItemClick={handleSidebarClose} />
         </div>
         {/* Sidebar overlay for mobile, appears below header */}
         {/* Container for mobile sidebar and backdrop, always in DOM for transitions */}
@@ -51,7 +51,7 @@ const TrangChu = () => {
           <div
             className={`relative z-50 w-64 bg-white h-full shadow-lg transition-transform duration-300 ease-out transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
           >
-            <ThanhBen userRole={currentUserRole} />
+            <ThanhBen userRole={currentUserRole} onNavItemClick={handleSidebarClose} />
           </div>
         </div>
         <main className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto mt-1 bg-white">
