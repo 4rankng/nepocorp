@@ -7,6 +7,19 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    commonjsOptions: {
+      include: [/@heroicons\/react/, /recharts/, /node_modules/],
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'recharts': ['recharts'],
+          'heroicons': ['@heroicons/react']
+        }
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
