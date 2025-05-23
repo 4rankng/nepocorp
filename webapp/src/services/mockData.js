@@ -584,11 +584,536 @@ export const deleteShipmentPlan = id => {
 
 // --- END: Shipment Plans (Lịch Vận Chuyển) Mock Data & Functions ---
 
-// --- START: Financial Report (Báo Cáo Lợi Nhuận & Doanh Thu) Functions ---
-export const getMonthlyProfitAndRevenueReport = () => {
-  /* ... */
-};
-// --- END: Financial Report Functions ---
+// --- START: Financial Report (Báo Cáo Tài Chính) Mock Data ---
+export const financialReportData = [
+  {
+    id: 'fr1',
+    month: '01/2024',
+    vehicle: '51C-12345',
+    revenue: 25000000,
+    costs: {
+      fuel: 8000000,
+      maintenance: 2000000,
+      tolls: 1500000,
+      other: 1000000
+    },
+    profit: 11500000
+  },
+  {
+    id: 'fr2',
+    month: '01/2024',
+    vehicle: '29H-67890',
+    revenue: 35000000,
+    costs: {
+      fuel: 12000000,
+      maintenance: 3000000,
+      tolls: 2000000,
+      other: 1500000
+    },
+    profit: 16500000
+  },
+  {
+    id: 'fr3',
+    month: '02/2024',
+    vehicle: '51C-12345',
+    revenue: 28000000,
+    costs: {
+      fuel: 9000000,
+      maintenance: 2500000,
+      tolls: 1800000,
+      other: 1200000
+    },
+    profit: 13500000
+  },
+  {
+    id: 'fr4',
+    month: '02/2024',
+    vehicle: '29H-67890',
+    revenue: 32000000,
+    costs: {
+      fuel: 11000000,
+      maintenance: 2800000,
+      tolls: 1900000,
+      other: 1300000
+    },
+    profit: 15000000
+  },
+  {
+    id: 'fr5',
+    month: '03/2024',
+    vehicle: '51C-12345',
+    revenue: 30000000,
+    costs: {
+      fuel: 9500000,
+      maintenance: 2700000,
+      tolls: 1850000,
+      other: 1250000
+    },
+    profit: 14700000
+  },
+  {
+    id: 'fr6',
+    month: '03/2024',
+    vehicle: '29H-67890',
+    revenue: 38000000,
+    costs: {
+      fuel: 13000000,
+      maintenance: 3200000,
+      tolls: 2200000,
+      other: 1600000
+    },
+    profit: 18000000
+  },
+  {
+    id: 'fr7',
+    month: '04/2024',
+    vehicle: '51C-12345',
+    revenue: 27000000,
+    costs: {
+      fuel: 8800000,
+      maintenance: 2300000,
+      tolls: 1700000,
+      other: 1100000
+    },
+    profit: 13100000
+  },
+  {
+    id: 'fr8',
+    month: '04/2024',
+    vehicle: '29H-67890',
+    revenue: 33000000,
+    costs: {
+      fuel: 11500000,
+      maintenance: 2900000,
+      tolls: 1950000,
+      other: 1400000
+    },
+    profit: 15200000
+  },
+  {
+    id: 'fr9',
+    month: '05/2024',
+    vehicle: '51C-12345',
+    revenue: 29000000,
+    costs: {
+      fuel: 9200000,
+      maintenance: 2600000,
+      tolls: 1750000,
+      other: 1150000
+    },
+    profit: 14300000
+  },
+  {
+    id: 'fr10',
+    month: '05/2024',
+    vehicle: '29H-67890',
+    revenue: 36000000,
+    costs: {
+      fuel: 12500000,
+      maintenance: 3100000,
+      tolls: 2100000,
+      other: 1500000
+    },
+    profit: 16800000
+  }
+];
+
+// --- START: Profit & Revenue Report Mock Data ---
+export const profitAndRevenueData = [
+  {
+    id: 'pr1',
+    monthYear: '2024-01',
+    bienSoXe: '51C-12345',
+    revenue: 25000000,
+    costs: 12500000,
+    profit: 12500000
+  },
+  {
+    id: 'pr2',
+    monthYear: '2024-01',
+    bienSoXe: '29H-67890',
+    revenue: 35000000,
+    costs: 18500000,
+    profit: 16500000
+  },
+  {
+    id: 'pr3',
+    monthYear: '2024-02',
+    bienSoXe: '51C-12345',
+    revenue: 28000000,
+    costs: 14500000,
+    profit: 13500000
+  },
+  {
+    id: 'pr4',
+    monthYear: '2024-02',
+    bienSoXe: '29H-67890',
+    revenue: 32000000,
+    costs: 17000000,
+    profit: 15000000
+  },
+  {
+    id: 'pr5',
+    monthYear: '2024-03',
+    bienSoXe: '51C-12345',
+    revenue: 30000000,
+    costs: 15300000,
+    profit: 14700000
+  },
+  {
+    id: 'pr6',
+    monthYear: '2024-03',
+    bienSoXe: '29H-67890',
+    revenue: 38000000,
+    costs: 20000000,
+    profit: 18000000
+  },
+  {
+    id: 'pr7',
+    monthYear: '2024-04',
+    bienSoXe: '51C-12345',
+    revenue: 27000000,
+    costs: 13900000,
+    profit: 13100000
+  },
+  {
+    id: 'pr8',
+    monthYear: '2024-04',
+    bienSoXe: '29H-67890',
+    revenue: 33000000,
+    costs: 17800000,
+    profit: 15200000
+  },
+  {
+    id: 'pr9',
+    monthYear: '2024-05',
+    bienSoXe: '51C-12345',
+    revenue: 29000000,
+    costs: 14700000,
+    profit: 14300000
+  },
+  {
+    id: 'pr10',
+    monthYear: '2024-05',
+    bienSoXe: '29H-67890',
+    revenue: 36000000,
+    costs: 19200000,
+    profit: 16800000
+  }
+];
+
+// --- START: Cost Report Mock Data ---
+export const costReportData = [
+  {
+    id: 'cr1',
+    monthYear: '2024-01',
+    bienSoXe: '51C-12345',
+    category: 'Nhiên liệu',
+    amount: 8000000
+  },
+  {
+    id: 'cr2',
+    monthYear: '2024-01',
+    bienSoXe: '51C-12345',
+    category: 'Bảo trì',
+    amount: 2000000
+  },
+  {
+    id: 'cr3',
+    monthYear: '2024-01',
+    bienSoXe: '51C-12345',
+    category: 'Phí đường bộ',
+    amount: 1500000
+  },
+  {
+    id: 'cr4',
+    monthYear: '2024-01',
+    bienSoXe: '51C-12345',
+    category: 'Chi phí khác',
+    amount: 1000000
+  },
+  {
+    id: 'cr5',
+    monthYear: '2024-01',
+    bienSoXe: '29H-67890',
+    category: 'Nhiên liệu',
+    amount: 12000000
+  },
+  {
+    id: 'cr6',
+    monthYear: '2024-01',
+    bienSoXe: '29H-67890',
+    category: 'Bảo trì',
+    amount: 3000000
+  },
+  {
+    id: 'cr7',
+    monthYear: '2024-01',
+    bienSoXe: '29H-67890',
+    category: 'Phí đường bộ',
+    amount: 2000000
+  },
+  {
+    id: 'cr8',
+    monthYear: '2024-01',
+    bienSoXe: '29H-67890',
+    category: 'Chi phí khác',
+    amount: 1500000
+  },
+  {
+    id: 'cr9',
+    monthYear: '2024-02',
+    bienSoXe: '51C-12345',
+    category: 'Nhiên liệu',
+    amount: 9000000
+  },
+  {
+    id: 'cr10',
+    monthYear: '2024-02',
+    bienSoXe: '51C-12345',
+    category: 'Bảo trì',
+    amount: 2500000
+  }
+];
+
+// --- START: Revenue Tracking Report Mock Data ---
+export const revenueTrackingData = [
+  {
+    id: 'rt1',
+    date: '2024-01-01',
+    description: 'Vận chuyển hàng từ HCM đến HN',
+    containerCount: 2,
+    route: 'HCM - HN',
+    fuelLiters: 150,
+    fuelPrice: 25000,
+    roadCost: 500000,
+    totalCost: 4250000,
+    transportFee: 8000000,
+    profit: 3750000
+  },
+  {
+    id: 'rt2',
+    date: '2024-01-05',
+    description: 'Vận chuyển hàng từ HN đến Hải Phòng',
+    containerCount: 1,
+    route: 'HN - HP',
+    fuelLiters: 80,
+    fuelPrice: 25000,
+    roadCost: 200000,
+    totalCost: 2200000,
+    transportFee: 4500000,
+    profit: 2300000
+  },
+  {
+    id: 'rt3',
+    date: '2024-01-10',
+    description: 'Vận chuyển hàng từ Đà Nẵng đến HCM',
+    containerCount: 3,
+    route: 'DN - HCM',
+    fuelLiters: 200,
+    fuelPrice: 25000,
+    roadCost: 800000,
+    totalCost: 5800000,
+    transportFee: 12000000,
+    profit: 6200000
+  },
+  {
+    id: 'rt4',
+    date: '2024-01-15',
+    description: 'Vận chuyển hàng từ HCM đến Cần Thơ',
+    containerCount: 1,
+    route: 'HCM - CT',
+    fuelLiters: 70,
+    fuelPrice: 25000,
+    roadCost: 150000,
+    totalCost: 1900000,
+    transportFee: 4000000,
+    profit: 2100000
+  },
+  {
+    id: 'rt5',
+    date: '2024-01-20',
+    description: 'Vận chuyển hàng từ Hải Phòng đến HN',
+    containerCount: 2,
+    route: 'HP - HN',
+    fuelLiters: 90,
+    fuelPrice: 25000,
+    roadCost: 250000,
+    totalCost: 2500000,
+    transportFee: 5500000,
+    profit: 3000000
+  },
+  {
+    id: 'rt6',
+    date: '2024-01-25',
+    description: 'Vận chuyển hàng từ HCM đến Nha Trang',
+    containerCount: 1,
+    route: 'HCM - NT',
+    fuelLiters: 100,
+    fuelPrice: 25000,
+    roadCost: 300000,
+    totalCost: 2800000,
+    transportFee: 6000000,
+    profit: 3200000
+  },
+  {
+    id: 'rt7',
+    date: '2024-02-01',
+    description: 'Vận chuyển hàng từ HN đến Hải Phòng',
+    containerCount: 2,
+    route: 'HN - HP',
+    fuelLiters: 85,
+    fuelPrice: 25000,
+    roadCost: 220000,
+    totalCost: 2325000,
+    transportFee: 5000000,
+    profit: 2675000
+  },
+  {
+    id: 'rt8',
+    date: '2024-02-05',
+    description: 'Vận chuyển hàng từ HCM đến Đà Nẵng',
+    containerCount: 3,
+    route: 'HCM - DN',
+    fuelLiters: 190,
+    fuelPrice: 25000,
+    roadCost: 750000,
+    totalCost: 5500000,
+    transportFee: 11500000,
+    profit: 6000000
+  },
+  {
+    id: 'rt9',
+    date: '2024-02-10',
+    description: 'Vận chuyển hàng từ Cần Thơ đến HCM',
+    containerCount: 1,
+    route: 'CT - HCM',
+    fuelLiters: 75,
+    fuelPrice: 25000,
+    roadCost: 160000,
+    totalCost: 2035000,
+    transportFee: 4200000,
+    profit: 2165000
+  },
+  {
+    id: 'rt10',
+    date: '2024-02-15',
+    description: 'Vận chuyển hàng từ HCM đến HN',
+    containerCount: 2,
+    route: 'HCM - HN',
+    fuelLiters: 155,
+    fuelPrice: 25000,
+    roadCost: 520000,
+    totalCost: 4395000,
+    transportFee: 8500000,
+    profit: 4105000
+  }
+];
+
+// --- START: Debt Report Mock Data ---
+export const debtReportData = [
+  {
+    id: 'debt1',
+    entityName: 'Công ty TNHH ABC Vận Tải',
+    entityType: 'customer',
+    monthYear: '2024-01',
+    phaiThu: 15000000,
+    phaiTra: 0,
+    ghiChu: 'Thanh toán đúng hạn'
+  },
+  {
+    id: 'debt2',
+    entityName: 'Đối tác Vận Tải An Phát',
+    entityType: 'partner',
+    monthYear: '2024-01',
+    phaiThu: 0,
+    phaiTra: 5000000,
+    ghiChu: 'Đã thanh toán 1 phần'
+  },
+  {
+    id: 'debt3',
+    entityName: 'Doanh nghiệp tư nhân XYZ Logistics',
+    entityType: 'customer',
+    monthYear: '2024-01',
+    phaiThu: 8000000,
+    phaiTra: 0,
+    ghiChu: 'Chậm thanh toán'
+  },
+  {
+    id: 'debt4',
+    entityName: 'Công ty Logistics Toàn Cầu',
+    entityType: 'partner',
+    monthYear: '2024-02',
+    phaiThu: 2000000,
+    phaiTra: 12000000,
+    ghiChu: ''
+  },
+  {
+    id: 'debt5',
+    entityName: 'Công ty TNHH ABC Vận Tải',
+    entityType: 'customer',
+    monthYear: '2024-02',
+    phaiThu: 10000000,
+    phaiTra: 0,
+    ghiChu: 'Hợp đồng mới'
+  },
+  {
+    id: 'debt6',
+    entityName: 'Dịch vụ Kho Vận Miền Nam',
+    entityType: 'partner',
+    monthYear: '2024-02',
+    phaiThu: 0,
+    phaiTra: 3500000,
+    ghiChu: 'Ưu đãi thanh toán sớm'
+  },
+  {
+    id: 'debt7',
+    entityName: 'Công ty Cổ Phần DEF Giao Nhận',
+    entityType: 'customer',
+    monthYear: '2024-03',
+    phaiThu: 22000000,
+    phaiTra: 0,
+    ghiChu: 'Chưa thanh toán'
+  },
+  {
+    id: 'debt8',
+    entityName: 'Công ty TNHH Giao Nhận Quốc Tế',
+    entityType: 'partner',
+    monthYear: '2024-03',
+    phaiThu: 0,
+    phaiTra: 8000000,
+    ghiChu: 'Thanh toán định kỳ'
+  },
+  {
+    id: 'debt9',
+    entityName: 'Công ty TNHH Vận Tải Biển Đông',
+    entityType: 'customer',
+    monthYear: '2024-03',
+    phaiThu: 15000000,
+    phaiTra: 0,
+    ghiChu: 'Đang xử lý'
+  },
+  {
+    id: 'debt10',
+    entityName: 'Công ty Logistics Đông Nam Á',
+    entityType: 'partner',
+    monthYear: '2024-03',
+    phaiThu: 0,
+    phaiTra: 6000000,
+    ghiChu: 'Thanh toán theo hợp đồng'
+  }
+];
+
+// Update the mockData object to include the new data
+Object.assign(mockData, {
+  financialReport: financialReportData,
+  profitAndRevenue: profitAndRevenueData,
+  costReport: costReportData,
+  revenueTracking: revenueTrackingData,
+  debtReport: debtReportData
+});
+
+// --- END: Financial Report (Báo Cáo Tài Chính) Mock Data ---
 
 // --- START: Detailed Cost Report Functions ---
 export const getDetailedCostReport = () => {
@@ -716,72 +1241,6 @@ export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
 // --- END: Vehicle Monthly Details Report Functions ---
 
 // --- START: Debt Report Data & Functions ---
-let debtReportData = [
-  {
-    id: 'debt1',
-    entityName: 'Công ty TNHH ABC Vận Tải',
-    entityType: 'customer',
-    monthYear: '2024-01',
-    phaiThu: 15000000,
-    phaiTra: 0,
-    ghiChu: 'Thanh toán đúng hạn',
-  },
-  {
-    id: 'debt2',
-    entityName: 'Đối tác Vận Tải An Phát',
-    entityType: 'partner',
-    monthYear: '2024-01',
-    phaiThu: 0,
-    phaiTra: 5000000,
-    ghiChu: 'Đã thanh toán 1 phần',
-  },
-  {
-    id: 'debt3',
-    entityName: 'Doanh nghiệp tư nhân XYZ Logistics',
-    entityType: 'customer',
-    monthYear: '2024-01',
-    phaiThu: 8000000,
-    phaiTra: 0,
-    ghiChu: 'Chậm thanh toán',
-  },
-  {
-    id: 'debt4',
-    entityName: 'Công ty Logistics Toàn Cầu',
-    entityType: 'partner',
-    monthYear: '2024-02',
-    phaiThu: 2000000,
-    phaiTra: 12000000,
-    ghiChu: '',
-  },
-  {
-    id: 'debt5',
-    entityName: 'Công ty TNHH ABC Vận Tải',
-    entityType: 'customer',
-    monthYear: '2024-02',
-    phaiThu: 10000000,
-    phaiTra: 0,
-    ghiChu: 'Hợp đồng mới',
-  },
-  {
-    id: 'debt6',
-    entityName: 'Dịch vụ Kho Vận Miền Nam',
-    entityType: 'partner',
-    monthYear: '2024-02',
-    phaiThu: 0,
-    phaiTra: 3500000,
-    ghiChu: 'Ưu đãi thanh toán sớm',
-  },
-  {
-    id: 'debt7',
-    entityName: 'Công ty Cổ Phần DEF Giao Nhận',
-    entityType: 'customer',
-    monthYear: '2024-03',
-    phaiThu: 22000000,
-    phaiTra: 0,
-    ghiChu: 'Chưa thanh toán',
-  },
-];
-
 export const getDebtReport = monthYear => {
   return new Promise(resolve => {
     const filteredData = debtReportData.filter(item => item.monthYear === monthYear);
