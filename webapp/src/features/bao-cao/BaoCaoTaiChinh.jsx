@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BaoCaoLoiNhuanDoanhThu from './BaoCaoLoiNhuanDoanhThu';
 import BaoCaoChiTietChiPhi from './BaoCaoChiTietChiPhi';
 import BaoCaoTheoDoiDoanhThuChiPhiPhuongTien from './BaoCaoTheoDoiDoanhThuChiPhiPhuongTien';
 import BaoCaoCongNo from './BaoCaoCongNo';
+import { useLocation } from 'react-router-dom';
 
 const tabs = [
   { id: 'loi-nhuan-doanh-thu', label: 'Lợi nhuận & Doanh thu' },
@@ -13,6 +14,12 @@ const tabs = [
 
 const BaoCaoTaiChinh = () => {
   const [activeTab, setActiveTab] = useState('loi-nhuan-doanh-thu');
+  const location = useLocation();
+
+  // Set default tab when component mounts
+  useEffect(() => {
+    setActiveTab('loi-nhuan-doanh-thu');
+  }, []);
 
   const renderTabContent = () => {
     switch (activeTab) {

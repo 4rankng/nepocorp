@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.svg';
 
-const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName }) => {
+const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName, hideAvatar, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -55,14 +55,14 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName }) => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="flex items-center text-gray-700 hover:text-gray-900"
             >
-              <span className="mr-2">{userName}</span>
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
+              <span className="mr-2 hidden sm:block">{userName}</span>
+              {!hideAvatar && (
+                <img
+                  src="https://ui-avatars.com/api/?name=NVQL&background=0D8ABC&color=fff"
+                  alt="avatar"
+                  className="h-8 w-8 rounded-full border-2 border-white shadow-sm"
                 />
-              </svg>
+              )}
             </button>
 
             {/* User menu dropdown - always rendered, visibility and animation controlled by classes */}
@@ -86,8 +86,9 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, userName }) => {
                 </Link>
                 <button
                   onClick={() => {
-                    /* Handle logout */ setIsMenuOpen(false);
-                  }} // Added setIsMenuOpen(false) to close menu on action
+                    setIsMenuOpen(false);
+                    if (onLogout) onLogout();
+                  }}
                   className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   Đăng xuất
