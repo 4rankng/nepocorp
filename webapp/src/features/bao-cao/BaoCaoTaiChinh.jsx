@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
-import BaoCaoLoiNhuan from './BaoCaoLoiNhuan';
-import BaoCaoChiPhi from './BaoCaoChiPhi';
-import BaoCaoDoanhThu from './BaoCaoDoanhThu';
+import BaoCaoLoiNhuanDoanhThu from './BaoCaoLoiNhuanDoanhThu';
+import BaoCaoChiTietChiPhi from './BaoCaoChiTietChiPhi';
+import BaoCaoTheoDoiDoanhThuChiPhiPhuongTien from './BaoCaoTheoDoiDoanhThuChiPhiPhuongTien';
 import BaoCaoCongNo from './BaoCaoCongNo';
 
 const tabs = [
-  { id: 'loi-nhuan', label: 'Lợi nhuận & Doanh thu' },
-  { id: 'chi-phi', label: 'Chi tiết chi phí' },
-  { id: 'doanh-thu', label: 'Theo dõi Doanh thu/Chi phí' },
-  { id: 'cong-no', label: 'Báo cáo Công nợ' },
+  { id: 'loi-nhuan-doanh-thu', label: 'Lợi nhuận & Doanh thu' },
+  { id: 'chi-tiet-chi-phi', label: 'Chi tiết chi phí' },
+  { id: 'phuong-tien-van-chuyen', label: 'Theo dõi Doanh thu/Chi phí' },
+  { id: 'bao-cao-cong-no', label: 'Báo cáo Công nợ' },
 ];
 
 const BaoCaoTaiChinh = () => {
-  const [activeTab, setActiveTab] = useState('loi-nhuan');
+  const [activeTab, setActiveTab] = useState('loi-nhuan-doanh-thu');
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'loi-nhuan':
-        return <BaoCaoLoiNhuan />;
-      case 'chi-phi':
-        return <BaoCaoChiPhi />;
-      case 'doanh-thu':
-        return <BaoCaoDoanhThu />;
-      case 'cong-no':
+      case 'loi-nhuan-doanh-thu':
+        return <BaoCaoLoiNhuanDoanhThu />;
+      case 'chi-tiet-chi-phi':
+        return <BaoCaoChiTietChiPhi />;
+      case 'phuong-tien-van-chuyen':
+        return <BaoCaoTheoDoiDoanhThuChiPhiPhuongTien />;
+      case 'bao-cao-cong-no':
         return <BaoCaoCongNo />;
       default:
         return null;
@@ -30,7 +30,7 @@ const BaoCaoTaiChinh = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="bg-white min-h-screen">
       <div className="border-b border-gray-200 bg-white">
         <nav className="flex -mb-px">
           {tabs.map(tab => (

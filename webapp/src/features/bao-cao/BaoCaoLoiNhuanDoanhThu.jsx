@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getMonthlyProfitAndRevenueReport } from '../../services/mockData';
 import {
   ResponsiveContainer,
-  ComposedChart,
-  Area,
+  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -11,6 +10,7 @@ import {
   Tooltip,
   Legend,
   Dot,
+  ReferenceLine,
 } from 'recharts';
 import {
   ArrowUpIcon,
@@ -18,7 +18,8 @@ import {
   CurrencyDollarIcon,
   PresentationChartLineIcon,
   BriefcaseIcon,
-} from '@heroicons/react/24/outline'; // Example icons
+  CalendarIcon,
+} from '@heroicons/react/24/outline';
 
 // Helper to format currency
 const formatCurrency = value => {
@@ -33,44 +34,67 @@ const formatMonthForDisplay = monthYear => {
   return `${month}/${year}`;
 };
 
-// Custom tooltip component - remains largely the same, styling might be tweaked if needed
+// Helper to format currency in millions (triệu đồng)
+const formatMillionVND = value => {
+  if (typeof value !== 'number' || isNaN(value)) return 'N/A';
+  const million = value / 1_000_000;
+  return million.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+};
+
+// Enhanced custom tooltip with better styling and animations
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-4 shadow-xl rounded-lg border border-gray-200 z-50">
+      <div className="bg-white p-4 shadow-xl rounded-lg border border-gray-200 z-50 transform transition-all duration-200 ease-in-out">
         <p className="font-semibold text-gray-800 mb-2 text-lg">{label}</p>
-        {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.stroke || entry.fill }} className="text-sm my-1">
-            {entry.name}: {formatCurrency(entry.value)}
-          </p>
-        ))}
+        <div className="space-y-1">
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.stroke }} />
+                <span className="text-sm font-medium text-gray-600">{entry.name}:</span>
+              </div>
+              <span className="text-sm font-semibold" style={{ color: entry.stroke }}>
+                {formatMillionVND(entry.value)} triệu đồng
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
   return null;
 };
 
-// Custom Dot for the Profit Line for better emphasis
-const CustomizedProfitDot = props => {
+// Custom Dot for all lines with animation
+const CustomizedDot = props => {
   const { cx, cy, stroke, payload, value } = props;
-  if (payload.profit === undefined || payload.profit === null) return null; // Don't render if no profit data
+  if (value === undefined || value === null) return null;
 
-  return <Dot cx={cx} cy={cy} r={5} stroke={stroke} strokeWidth={2} fill="#fff" />;
+  return (
+    <Dot
+      cx={cx}
+      cy={cy}
+      r={6}
+      stroke={stroke}
+      strokeWidth={2}
+      fill="#fff"
+      className="transition-all duration-200 ease-in-out hover:r-8"
+    />
+  );
 };
 
 const BaoCaoLoiNhuanDoanhThu = () => {
   const [reportData, setReportData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  // Placeholder for future date range selection
-  // const [dateRange, setDateRange] = useState({ start: null, end: null });
+  const [selectedPeriod, setSelectedPeriod] = useState('all'); // 'all', '3m', '6m', '1y'
 
   const fetchReportData = async () => {
     setIsLoading(true);
     setError('');
     try {
       const data = await getMonthlyProfitAndRevenueReport();
-      // Sort data by month for chronological display
       const sortedData = [...data].sort((a, b) => a.monthYear.localeCompare(b.monthYear));
       setReportData(sortedData);
     } catch (err) {
@@ -83,22 +107,46 @@ const BaoCaoLoiNhuanDoanhThu = () => {
 
   useEffect(() => {
     fetchReportData();
-  }, []); // Consider adding dateRange to dependency array if implemented
+  }, []);
+
+  // Filter data based on selected period
+  const filteredData = useMemo(() => {
+    if (!reportData.length) return [];
+
+    const now = new Date();
+    const periods = {
+      '3m': new Date(now.setMonth(now.getMonth() - 3)),
+      '6m': new Date(now.setMonth(now.getMonth() - 6)),
+      '1y': new Date(now.setFullYear(now.getFullYear() - 1)),
+    };
+
+    if (selectedPeriod === 'all') return reportData;
+
+    return reportData.filter(item => {
+      const [year, month] = item.monthYear.split('-');
+      const itemDate = new Date(year, month - 1);
+      return itemDate >= periods[selectedPeriod];
+    });
+  }, [reportData, selectedPeriod]);
 
   // Aggregate data by month for the chart and KPIs
   const aggregatedData = useMemo(() => {
-    if (!reportData.length) return { chartData: [], totals: { revenue: 0, cost: 0, profit: 0 } };
+    if (!filteredData.length) return { chartData: [], totals: { revenue: 0, cost: 0, profit: 0 } };
 
-    const monthlyAggregates = reportData.reduce((acc, item) => {
+    const monthlyAggregates = filteredData.reduce((acc, item) => {
       const month = formatMonthForDisplay(item.monthYear);
       if (!acc[month]) {
-        acc[month] = { monthYearLabel: month, revenue: 0, cost: 0, profit: 0 };
+        acc[month] = { monthYearLabel: month, revenue: 0, profit: 0 };
       }
       acc[month].revenue += item.revenue || 0;
-      acc[month].cost += item.totalCost || 0;
       acc[month].profit += item.profit || 0;
       return acc;
     }, {});
+
+    // Calculate cost as revenue - profit
+    Object.values(monthlyAggregates).forEach(m => {
+      m.cost = m.revenue - m.profit;
+    });
 
     const chartData = Object.values(monthlyAggregates).sort((a, b) => {
       const [aMonth, aYear] = a.monthYearLabel.split('/');
@@ -109,204 +157,160 @@ const BaoCaoLoiNhuanDoanhThu = () => {
     const totals = chartData.reduce(
       (acc, item) => {
         acc.revenue += item.revenue;
-        acc.cost += item.cost;
         acc.profit += item.profit;
         return acc;
       },
-      { revenue: 0, cost: 0, profit: 0 }
+      { revenue: 0, profit: 0 }
     );
+    totals.cost = totals.revenue - totals.profit;
 
     return { chartData, totals };
-  }, [reportData]);
+  }, [filteredData]);
 
   const { chartData, totals } = aggregatedData;
-
-  // Placeholder for % change calculation
-  // const revenuePercentChange = '+5%';
-  // const costPercentChange = '+2%';
-  // const profitPercentChange = '+10%';
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
-        <p className="text-xl text-gray-500">Đang tải dữ liệu...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-6">
-        <PresentationChartLineIcon className="w-16 h-16 text-red-400 mb-4" />
-        <p className="text-xl text-red-500 bg-red-100 p-4 rounded-lg text-center">{error}</p>
-        <button
-          onClick={fetchReportData}
-          className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-        >
-          Thử lại
-        </button>
-      </div>
-    );
-  }
-
-  if (!isLoading && !error && chartData.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-6">
-        <PresentationChartLineIcon className="w-16 h-16 text-gray-400 mb-4" />
-        <p className="text-xl text-gray-500 text-center">Không có dữ liệu để hiển thị.</p>
-        {/* Optionally, add a button to refresh or guide user if appropriate */}
+      <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+        <div className="text-red-500 text-center">
+          <p className="text-xl font-semibold mb-2">{error}</p>
+          <button
+            onClick={fetchReportData}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <header className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 text-center">
+    <div className="p-2 md:p-4 bg-white min-h-screen">
+      <header className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 md:mb-4">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800 text-center md:text-left mb-2 md:mb-0">
           Báo Cáo Lợi Nhuận & Doanh Thu
         </h1>
-        {/* Placeholder for Date Range Selector */}
-        {/* <div className="text-center mt-2 text-sm text-gray-500">Jan 2023 - Dec 2023</div> */}
+        <div className="flex justify-center md:justify-end items-center gap-2">
+          <div className="flex items-center gap-1 bg-white px-2 py-1 rounded shadow-sm">
+            <CalendarIcon className="w-4 h-4 text-gray-500" />
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-gray-700 text-xs md:text-sm"
+            >
+              <option value="all">Tất cả</option>
+              <option value="3m">3 tháng gần nhất</option>
+              <option value="6m">6 tháng gần nhất</option>
+              <option value="1y">1 năm gần nhất</option>
+            </select>
+          </div>
+        </div>
       </header>
 
-      {/* KPI Cards Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* KPI Cards Row */}
+      <div className="flex flex-row flex-wrap justify-center md:justify-start gap-2 md:gap-4 mb-2 md:mb-3">
         {/* Total Revenue Card */}
-        <div className="bg-white p-6 shadow-lg rounded-xl border border-gray-200 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-semibold text-gray-600">Tổng Doanh Thu</h3>
-              <CurrencyDollarIcon className="w-8 h-8 text-green-500" />
-            </div>
-            <p className="text-3xl font-bold text-green-600">{formatCurrency(totals.revenue)}</p>
+        <div className="bg-white px-3 py-2 shadow rounded-lg border border-gray-200 flex-1 min-w-[120px] max-w-[180px] flex flex-col items-center">
+          <div className="flex items-center gap-1 mb-1">
+            <CurrencyDollarIcon className="w-4 h-4 text-green-500" />
+            <span className="text-xs font-semibold text-gray-600">Tổng Doanh Thu</span>
           </div>
-          {/* <p className="text-sm text-gray-500 mt-2 flex items-center">
-            <ArrowUpIcon className="w-4 h-4 text-green-500 mr-1" />
-            {revenuePercentChange} so với tháng trước
-          </p> */}
+          <span className="text-lg md:text-xl font-bold text-green-600">
+            {formatMillionVND(totals.revenue)} <span className="text-xs font-medium">triệu đồng</span>
+          </span>
         </div>
-
         {/* Total Costs Card */}
-        <div className="bg-white p-6 shadow-lg rounded-xl border border-gray-200 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-semibold text-gray-600">Tổng Chi Phí</h3>
-              <BriefcaseIcon className="w-8 h-8 text-amber-500" />
-            </div>
-            <p className="text-3xl font-bold text-amber-600">{formatCurrency(totals.cost)}</p>
+        <div className="bg-white px-3 py-2 shadow rounded-lg border border-gray-200 flex-1 min-w-[120px] max-w-[180px] flex flex-col items-center">
+          <div className="flex items-center gap-1 mb-1">
+            <BriefcaseIcon className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-semibold text-gray-600">Tổng Chi Phí</span>
           </div>
-          {/* <p className="text-sm text-gray-500 mt-2 flex items-center">
-            <ArrowUpIcon className="w-4 h-4 text-red-500 mr-1" />
-            {costPercentChange} so với tháng trước
-          </p> */}
+          <span className="text-lg md:text-xl font-bold text-amber-600">
+            {formatMillionVND(totals.cost)} <span className="text-xs font-medium">triệu đồng</span>
+          </span>
         </div>
-
         {/* Net Profit Card */}
-        <div className="bg-white p-6 shadow-lg rounded-xl border border-gray-200 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-semibold text-gray-600">Lợi Nhuận Ròng</h3>
-              <PresentationChartLineIcon className="w-8 h-8 text-blue-500" />
-            </div>
-            <p
-              className={`text-3xl font-bold ${totals.profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}
-            >
-              {formatCurrency(totals.profit)}
-            </p>
+        <div className="bg-white px-3 py-2 shadow rounded-lg border border-gray-200 flex-1 min-w-[120px] max-w-[180px] flex flex-col items-center">
+          <div className="flex items-center gap-1 mb-1">
+            <PresentationChartLineIcon className="w-4 h-4 text-blue-500" />
+            <span className="text-xs font-semibold text-gray-600">Lợi Nhuận Ròng</span>
           </div>
-          {/* <p className="text-sm text-gray-500 mt-2 flex items-center">
-            {totals.profit >= 0 ? <ArrowUpIcon className="w-4 h-4 text-green-500 mr-1" /> : <ArrowDownIcon className="w-4 h-4 text-red-500 mr-1" />}
-            {profitPercentChange} so với tháng trước
-          </p> */}
+          <span className={`text-lg md:text-xl font-bold ${totals.profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            {formatMillionVND(totals.profit)} <span className="text-xs font-medium">triệu đồng</span>
+          </span>
         </div>
       </div>
 
       {/* Main Chart Section */}
-      <div className="bg-white p-4 sm:p-6 shadow-xl rounded-xl border border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-700 mb-6 pl-2">
-          Phân Tích Xu Hướng Theo Tháng
-        </h2>
-        <div className="h-[500px] w-full">
+      <div className="bg-white px-2 py-2 md:px-4 md:py-3 rounded-lg shadow border border-gray-200">
+        <div className="relative h-[220px] md:h-[260px]">
+          {/* Chart Unit Note inside chart area */}
+          <div className="absolute top-2 right-3 text-xs text-gray-500 z-10">Đơn vị: Triệu đồng</div>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
+            <LineChart
               data={chartData}
-              margin={{
-                top: 5,
-                right: 20,
-                left: 50, // Increased left margin for YAxis labels
-                bottom: 70, // Increased bottom margin for angled XAxis labels
-              }}
+              margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
             >
-              <defs>
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#10B981" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.7} />
-                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis
                 dataKey="monthYearLabel"
-                angle={-40}
-                textAnchor="end"
-                height={80} // Adjusted height for angled labels
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-                stroke="#d1d5db"
-                dy={10} // Adjust position down
+                stroke="#6B7280"
+                tick={{ fill: '#4B5563', fontSize: 10 }}
+                tickLine={{ stroke: '#9CA3AF' }}
               />
               <YAxis
-                tickFormatter={value => `${formatCurrency(value / 1000000)}M`} // Format as millions
-                tickCount={6}
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-                stroke="#d1d5db"
-                label={{
-                  value: 'Số tiền (Triệu VND)',
-                  angle: -90,
-                  position: 'insideLeft',
-                  offset: -40,
-                  style: { fontSize: 14, fill: '#4b5563' },
-                }}
+                stroke="#6B7280"
+                tick={{ fill: '#4B5563', fontSize: 10 }}
+                tickLine={{ stroke: '#9CA3AF' }}
+                tickFormatter={value => formatMillionVND(value)}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(230, 230, 230, 0.3)' }} />
+              <Tooltip content={<CustomTooltip />} />
               <Legend
                 verticalAlign="top"
-                height={50}
-                iconSize={14}
-                wrapperStyle={{ fontSize: '14px' }}
+                height={24}
+                wrapperStyle={{
+                  paddingBottom: '4px',
+                  fontSize: '11px',
+                }}
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="revenue"
-                name="Doanh thu"
+                name="Doanh Thu"
                 stroke="#10B981"
-                fillOpacity={1}
-                fill="url(#colorRevenue)"
-                strokeWidth={2.5}
-                activeDot={{ r: 6, strokeWidth: 2, fill: '#fff', stroke: '#059669' }}
+                strokeWidth={2}
+                dot={<CustomizedDot />}
+                activeDot={{ r: 6, strokeWidth: 2 }}
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="cost"
-                name="Chi phí"
+                name="Chi Phí"
                 stroke="#F59E0B"
-                fillOpacity={1}
-                fill="url(#colorCost)"
-                strokeWidth={2.5}
-                activeDot={{ r: 6, strokeWidth: 2, fill: '#fff', stroke: '#D97706' }}
+                strokeWidth={2}
+                dot={<CustomizedDot />}
+                activeDot={{ r: 6, strokeWidth: 2 }}
               />
               <Line
                 type="monotone"
                 dataKey="profit"
-                name="Lợi nhuận"
+                name="Lợi Nhuận"
                 stroke="#3B82F6"
-                strokeWidth={3} // Bolder line for profit
-                dot={<CustomizedProfitDot />}
-                activeDot={{ r: 8, strokeWidth: 2, fill: '#fff', stroke: '#2563EB' }} // Larger active dot
+                strokeWidth={2}
+                dot={<CustomizedDot />}
+                activeDot={{ r: 6, strokeWidth: 2 }}
               />
-            </ComposedChart>
+              <ReferenceLine y={0} stroke="#9CA3AF" strokeDasharray="3 3" />
+            </LineChart>
           </ResponsiveContainer>
         </div>
       </div>

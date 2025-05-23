@@ -180,7 +180,7 @@ const QuanLyDinhMucDuong = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="p-6 bg-white min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Quản Lý Định Mức Đi Đường</h1>
 
       <div className="bg-white shadow-md rounded-lg overflow-x-auto">

@@ -11,6 +11,7 @@ import DanhSachDoiTac from '../features/doi-tac/DanhSachDoiTac';
 import DanhSachPhuongTien from '../features/phuong-tien/DanhSachPhuongTien';
 import DanhSachContainer from '../features/container/DanhSachContainer';
 import QuanLyChiPhi from '../features/chi-phi/QuanLyChiPhi';
+import QuanLyDinhMucDuong from '../features/chi-phi/QuanLyDinhMucDuong';
 
 const router = createBrowserRouter([
   {
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
       {
         path: 'chi-phi',
         element: <QuanLyChiPhi />,
+      },
+      {
+        path: 'chi-phi-cau-hinh',
+        element: <QuanLyDinhMucDuong />,
       },
     ],
   },

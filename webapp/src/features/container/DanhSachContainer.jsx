@@ -144,7 +144,7 @@ const QuanLyLoaiContainer = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="p-6 bg-white min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Quản Lý Loại Container</h1>
 
       {/* List Display */}
@@ -160,7 +160,7 @@ const QuanLyLoaiContainer = () => {
           {containerTypes.map(type => (
             <li
               key={type.id}
-              className="p-4 hover:bg-gray-50 flex justify-between items-center transition-colors"
+              className="p-4 hover:bg-gray-100 flex justify-between items-center transition-colors"
             >
               <span className="text-gray-700 text-lg">{type.name}</span>
               <div className="space-x-3">

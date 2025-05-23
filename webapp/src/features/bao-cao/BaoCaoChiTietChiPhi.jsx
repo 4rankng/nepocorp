@@ -80,13 +80,13 @@ const BaoCaoChiTietChiPhi = () => {
       {!isLoading && error && (
         <div className="text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>
       )}
-      {!isLoading && !error && detailedCostData.length === 0 && (
+      {!isLoading && !error && (detailedCostData || []).length === 0 && (
         <div className="text-center text-gray-500 mt-10 py-10">
           Không có dữ liệu chi phí để hiển thị.
         </div>
       )}
       {/* Desktop Table View */}
-      {!isLoading && !error && detailedCostData.length > 0 && (
+      {!isLoading && !error && (detailedCostData || []).length > 0 && (
         <div className="hidden md:block bg-white shadow-sm border border-gray-200 rounded-lg overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -118,7 +118,7 @@ const BaoCaoChiTietChiPhi = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {detailedCostData.map((item, index) => (
+              {(detailedCostData || []).map((item, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {formatMonthForDisplay(item.monthYear)}
@@ -139,17 +139,17 @@ const BaoCaoChiTietChiPhi = () => {
         </div>
       )}
       {/* Mobile Card View with Stacked Bar Chart Simulation */}
-      {!isLoading && !error && Object.keys(groupedDataForMobile).length > 0 && (
+      {!isLoading && !error && Object.keys(groupedDataForMobile || {}).length > 0 && (
         <div className="block md:hidden space-y-4">
-          {Object.entries(groupedDataForMobile).map(([bienSoXe, monthsData]) => (
+          {Object.entries(groupedDataForMobile || {}).map(([bienSoXe, monthsData]) => (
             <div
               key={bienSoXe}
               className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
             >
               <h2 className="text-lg font-semibold text-gray-700 mb-2">Xe: {bienSoXe}</h2>
-              {Object.entries(monthsData).map(([monthYear, data]) => {
+              {Object.entries(monthsData || {}).map(([monthYear, data]) => {
                 // Sort categories by amount descending for consistent stacking order if desired
-                const sortedCategories = [...data.categories].sort((a, b) => b.amount - a.amount);
+                const sortedCategories = [...(data.categories || [])].sort((a, b) => b.amount - a.amount);
                 return (
                   <div
                     key={monthYear}

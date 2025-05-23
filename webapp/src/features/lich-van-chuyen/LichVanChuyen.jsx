@@ -298,7 +298,7 @@ const QuanLyLichVanChuyen = () => {
       {' '}
       {/* Removed bg-gray-100 */}
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Lịch Vận Chuyển</h1>
-      <div className="bg-white shadow-md rounded-lg overflow-x-auto">
+      <div className="shadow-md rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>

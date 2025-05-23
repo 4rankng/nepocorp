@@ -137,7 +137,7 @@ const QuanLyPhuongTien = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="p-6 bg-white min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Quản Lý Phương Tiện</h1>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
@@ -154,7 +154,7 @@ const QuanLyPhuongTien = () => {
           {vehicles.map(vehicle => (
             <li
               key={vehicle.id}
-              className="p-4 hover:bg-gray-50 flex justify-between items-center transition-colors"
+              className="p-4 hover:bg-gray-100 flex justify-between items-center transition-colors"
             >
               <span className="text-gray-700 text-lg">{vehicle.licensePlate}</span>
               <div className="space-x-3">

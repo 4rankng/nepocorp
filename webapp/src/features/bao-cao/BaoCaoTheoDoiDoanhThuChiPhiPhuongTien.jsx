@@ -100,7 +100,7 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 bg-gray-100 min-h-screen">
+    <div className="p-4 md:p-6 bg-white min-h-screen">
       <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800 text-center">
         Theo Dõi Doanh Thu/Chi Phí Theo Phương Tiện
       </h1>

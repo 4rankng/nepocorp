@@ -1446,3 +1446,11 @@ export const getAvailableMonthsForDebtReport = () => {
 
 // Keep other existing mock data exports
 export const mockEmployees = mockEmployeesOld;
+
+export function getMonthlyProfitAndRevenueReport() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(profitAndRevenueData);
+    }, 100);
+  });
+}
