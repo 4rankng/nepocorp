@@ -1,0 +1,3715 @@
+openapi: 3.0.3
+info:
+  title: Backend API
+  version: 1.0.0
+  description: API specification for the backend services.
+
+paths:
+  /auth/login:
+    post:
+      summary: User login
+      description: Authenticates a user and returns a JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoginResponse'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/logout:
+    post:
+      summary: User logout
+      description: Logs out the current user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful logout
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/request-password-reset:
+    post:
+      summary: Request password reset
+      description: Sends a password reset link to the user's email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: Password reset email sent
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/reset-password:
+    post:
+      summary: Reset password
+      description: Resets the user's password using a token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetTokenRequest'
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          description: Invalid token or request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # User Management
+  /users:
+    get:
+      summary: List all users
+      description: Retrieves a list of all users (admin only).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not an admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new user
+      description: Creates a new user and links them to an Employee (admin only).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not an admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /users/{userId}:
+    get:
+      summary: Get user details
+      description: Retrieves details for a specific user (admin only).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the user to retrieve
+          schema:
+            type: string # Assuming UUID or integer, adjust if necessary
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not an admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update user details
+      description: Updates details for a specific user (admin only).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the user to update
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not an admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a user
+      description: Deletes a specific user (admin only).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the user to delete
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: User deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not an admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Employee Management
+  /employees:
+    get:
+      summary: List all employees
+      description: Retrieves a list of all employees.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new employee
+      description: Creates a new employee.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreateRequest'
+      responses:
+        '201':
+          description: Employee created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /employees/{employeeId}:
+    get:
+      summary: Get employee details
+      description: Retrieves details for a specific employee.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          description: ID of the employee to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: "abcdef01-e89b-12d3-a456-426614174001"
+      responses:
+        '200':
+          description: Employee details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update employee details
+      description: Updates details for a specific employee.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          description: ID of the employee to update
+          schema:
+            type: string
+            format: uuid
+            example: "abcdef01-e89b-12d3-a456-426614174001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeUpdateRequest'
+      responses:
+        '200':
+          description: Employee updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete an employee
+      description: Deletes a specific employee.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          description: ID of the employee to delete
+          schema:
+            type: string
+            format: uuid
+            example: "abcdef01-e89b-12d3-a456-426614174001"
+      responses:
+        '204':
+          description: Employee deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "abcdef01-e89b-12d3-a456-426614174001"
+        name:
+          type: string
+          example: "Nguyễn Văn A"
+        email:
+          type: string
+          format: email
+          example: "nv.a@example.com"
+        role:
+          type: string
+          enum: ["Quản lý", "Kế toán", "Giao nhận", "Lái xe"]
+          example: "Lái xe"
+      required:
+        - id
+        - name
+        - email
+        - role
+    EmployeeCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Trần Thị B"
+        email:
+          type: string
+          format: email
+          example: "tt.b@example.com"
+        role:
+          type: string
+          enum: ["Quản lý", "Kế toán", "Giao nhận", "Lái xe"]
+          example: "Kế toán"
+      required:
+        - name
+        - email
+        - role
+    EmployeeUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Lê Văn C"
+        email:
+          type: string
+          format: email
+          example: "lv.c@example.com"
+        role:
+          type: string
+          enum: ["Quản lý", "Kế toán", "Giao nhận", "Lái xe"]
+          example: "Quản lý"
+
+  # Customer Management
+  /customers:
+    get:
+      summary: List all customers
+      description: Retrieves a list of all customers.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new customer
+      description: Creates a new customer.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerCreateRequest'
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /customers/{customerId}:
+    get:
+      summary: Get customer details
+      description: Retrieves details for a specific customer.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: ID of the customer to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: "client-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Customer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update customer details
+      description: Updates details for a specific customer.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: ID of the customer to update
+          schema:
+            type: string
+            format: uuid
+            example: "client-123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerUpdateRequest'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a customer
+      description: Deletes a specific customer.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: ID of the customer to delete
+          schema:
+            type: string
+            format: uuid
+            example: "client-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: Customer deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "client-123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Công ty ABC"
+        address:
+          type: string
+          example: "123 Đường XYZ, Quận 1, TP. HCM"
+        phone:
+          type: string
+          example: "0901234567"
+      required:
+        - id
+        - name
+        - address
+        - phone
+    CustomerCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Công ty ABC"
+        address:
+          type: string
+          example: "123 Đường XYZ, Quận 1, TP. HCM"
+        phone:
+          type: string
+          example: "0901234567"
+      required:
+        - name
+        - address
+        - phone
+    CustomerUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Công ty ABC (Updated)"
+        address:
+          type: string
+          example: "456 Đường UVW, Quận 2, TP. HCM"
+        phone:
+          type: string
+          example: "0908765432"
+
+  # Partner Management
+  /partners:
+    get:
+      summary: List all partners
+      description: Retrieves a list of all partners.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of partners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Partner'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new partner
+      description: Creates a new partner.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerCreateRequest'
+      responses:
+        '201':
+          description: Partner created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partner'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /partners/{partnerId}:
+    get:
+      summary: Get partner details
+      description: Retrieves details for a specific partner.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: partnerId
+          in: path
+          required: true
+          description: ID of the partner to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: "partner-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Partner details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partner'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Partner not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update partner details
+      description: Updates details for a specific partner.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: partnerId
+          in: path
+          required: true
+          description: ID of the partner to update
+          schema:
+            type: string
+            format: uuid
+            example: "partner-123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerUpdateRequest'
+      responses:
+        '200':
+          description: Partner updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partner'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Partner not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a partner
+      description: Deletes a specific partner.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: partnerId
+          in: path
+          required: true
+          description: ID of the partner to delete
+          schema:
+            type: string
+            format: uuid
+            example: "partner-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: Partner deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Partner not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    Partner:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "partner-123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Đối tác Vận tải XYZ"
+        address:
+          type: string
+          example: "456 Đường LMN, Quận 3, TP. HCM"
+        phone:
+          type: string
+          example: "0987654321"
+      required:
+        - id
+        - name
+        - address
+        - phone
+    PartnerCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Đối tác Vận tải XYZ"
+        address:
+          type: string
+          example: "456 Đường LMN, Quận 3, TP. HCM"
+        phone:
+          type: string
+          example: "0987654321"
+      required:
+        - name
+        - address
+        - phone
+    PartnerUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Đối tác Vận tải XYZ (Updated)"
+        address:
+          type: string
+          example: "789 Đường OPQ, Quận 4, TP. HCM"
+        phone:
+          type: string
+          example: "0912345678"
+
+  # Vehicle Management
+  /vehicles:
+    get:
+      summary: List all vehicles
+      description: Retrieves a list of all vehicles.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vehicle'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new vehicle
+      description: Creates a new vehicle.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleCreateRequest'
+      responses:
+        '201':
+          description: Vehicle created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /vehicles/{vehicleId}:
+    get:
+      summary: Get vehicle details
+      description: Retrieves details for a specific vehicle.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          description: ID of the vehicle to retrieve
+          schema:
+            type: string
+            format: uuid # Assuming UUID for vehicle IDs
+            example: "vehicle-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Vehicle details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update vehicle details
+      description: Updates details for a specific vehicle.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          description: ID of the vehicle to update
+          schema:
+            type: string
+            format: uuid
+            example: "vehicle-123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleUpdateRequest'
+      responses:
+        '200':
+          description: Vehicle updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a vehicle
+      description: Deletes a specific vehicle.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          description: ID of the vehicle to delete
+          schema:
+            type: string
+            format: uuid
+            example: "vehicle-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: Vehicle deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "vehicle-123e4567-e89b-12d3-a456-426614174000"
+        licensePlate:
+          type: string
+          example: "51C-12345"
+      required:
+        - id
+        - licensePlate
+    VehicleCreateRequest:
+      type: object
+      properties:
+        licensePlate:
+          type: string
+          example: "51C-12345"
+      required:
+        - licensePlate
+    VehicleUpdateRequest:
+      type: object
+      properties:
+        licensePlate:
+          type: string
+          example: "51C-67890"
+
+  # Container Type Management
+  /container-types:
+    get:
+      summary: List all container types
+      description: Retrieves a list of all container types.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of container types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContainerType'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new container type
+      description: Creates a new container type.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerTypeCreateRequest'
+      responses:
+        '201':
+          description: Container type created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerType'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /container-types/{typeId}:
+    get:
+      summary: Get container type details
+      description: Retrieves details for a specific container type.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          description: ID of the container type to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: "ctype-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Container type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerType'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Container type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update container type details
+      description: Updates details for a specific container type.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          description: ID of the container type to update
+          schema:
+            type: string
+            format: uuid
+            example: "ctype-123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerTypeUpdateRequest'
+      responses:
+        '200':
+          description: Container type updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerType'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Container type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a container type
+      description: Deletes a specific container type.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          description: ID of the container type to delete
+          schema:
+            type: string
+            format: uuid
+            example: "ctype-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: Container type deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Container type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    ContainerType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "ctype-123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "20'DC"
+      required:
+        - id
+        - name
+    ContainerTypeCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "40'HC"
+      required:
+        - name
+    ContainerTypeUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "45'HC"
+
+  # Route Management
+  /routes:
+    get:
+      summary: List all routes
+      description: Retrieves a list of all routes.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of routes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Route'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new route
+      description: Creates a new route.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteCreateRequest'
+      responses:
+        '201':
+          description: Route created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /routes/{routeId}:
+    get:
+      summary: Get route details
+      description: Retrieves details for a specific route.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          description: ID of the route to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: "route-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Route details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Route not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update route details
+      description: Updates details for a specific route.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          description: ID of the route to update
+          schema:
+            type: string
+            format: uuid
+            example: "route-123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteUpdateRequest'
+      responses:
+        '200':
+          description: Route updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Route not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a route
+      description: Deletes a specific route.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          description: ID of the route to delete
+          schema:
+            type: string
+            format: uuid
+            example: "route-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: Route deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Route not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    Route:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "route-123e4567-e89b-12d3-a456-426614174000"
+        origin:
+          type: string
+          example: "Cảng Cát Lái"
+        destinationPoints:
+          type: array
+          items:
+            type: string
+          example: ["Kho A", "Kho B"]
+      required:
+        - id
+        - origin
+        - destinationPoints
+    RouteCreateRequest:
+      type: object
+      properties:
+        origin:
+          type: string
+          example: "Cảng Cát Lái"
+        destinationPoints:
+          type: array
+          items:
+            type: string
+          example: ["Kho A", "Kho B"]
+      required:
+        - origin
+        - destinationPoints
+    RouteUpdateRequest:
+      type: object
+      properties:
+        origin:
+          type: string
+          example: "Cảng Cái Mép"
+        destinationPoints:
+          type: array
+          items:
+            type: string
+          example: ["Kho C", "Kho D"]
+
+  # Transport Schedule (Shipment) Management
+  /transport-schedules:
+    get:
+      summary: List transport schedules
+      description: Retrieves a list of transport schedules with filtering options.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: Filter by specific date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: vehicleId
+          in: query
+          description: Filter by vehicle ID
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by schedule status
+          schema:
+            type: string
+            enum: [planned, in_progress, completed, cancelled] # Example statuses
+      responses:
+        '200':
+          description: A list of transport schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransportSchedule'
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new transport schedule
+      description: Creates a new transport schedule.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransportScheduleCreateRequest'
+      responses:
+        '201':
+          description: Transport schedule created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransportSchedule'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /transport-schedules/{scheduleId}:
+    get:
+      summary: Get transport schedule details
+      description: Retrieves details for a specific transport schedule.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          description: ID of the transport schedule to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: "schedule-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Transport schedule details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransportSchedule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Transport schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update transport schedule
+      description: Updates details for a specific transport schedule (e.g., status, costs, km).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          description: ID of the transport schedule to update
+          schema:
+            type: string
+            format: uuid
+            example: "schedule-123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransportScheduleUpdateRequest'
+      responses:
+        '200':
+          description: Transport schedule updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransportSchedule'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Transport schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a transport schedule
+      description: Deletes a specific transport schedule.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          description: ID of the transport schedule to delete
+          schema:
+            type: string
+            format: uuid
+            example: "schedule-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: Transport schedule deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Transport schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    CostItem:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Phí nâng/hạ container"
+        amount:
+          type: number
+          format: double
+          example: 500000
+      required:
+        - description
+        - amount
+    TransportSchedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "schedule-123e4567-e89b-12d3-a456-426614174000"
+        date:
+          type: string
+          format: date
+          example: "2024-07-28"
+        vehicleId:
+          type: string
+          format: uuid
+          example: "vehicle-123e4567-e89b-12d3-a456-426614174000"
+        partnerId: # Optional, if subcontracted
+          type: string
+          format: uuid
+          nullable: true
+          example: "partner-123e4567-e89b-12d3-a456-426614174000"
+        description:
+          type: string
+          example: "Vận chuyển hàng cho công ty ABC"
+        routeId:
+          type: string
+          format: uuid
+          example: "route-123e4567-e89b-12d3-a456-426614174000"
+        status:
+          type: string
+          enum: [planned, in_progress, completed, cancelled]
+          example: "completed"
+        cargoKm:
+          type: number
+          format: double
+          example: 150.5
+        emptyKm:
+          type: number
+          format: double
+          example: 20.0
+        fuelLiters:
+          type: number
+          format: double
+          example: 50.25
+        fuelUnitPrice:
+          type: number
+          format: double
+          example: 22000
+        fuelCost:
+          type: number
+          format: double
+          example: 1105500
+        roadCostPreset: # If using a preset value for road costs
+          type: number
+          format: double
+          nullable: true
+          example: 300000
+        otherCosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CostItem'
+        containerNumber:
+          type: string
+          nullable: true
+          example: "TCLU1234567"
+        sealNumber:
+          type: string
+          nullable: true
+          example: "SEAL12345"
+        deliveryDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-07-29T10:00:00Z"
+        customerId:
+          type: string
+          format: uuid
+          example: "client-123e4567-e89b-12d3-a456-426614174000"
+        containerTypeId:
+          type: string
+          format: uuid
+          example: "ctype-123e4567-e89b-12d3-a456-426614174000"
+        freightCharge: # Cước vận chuyển thu từ khách hàng
+          type: number
+          format: double
+          example: 5000000
+        subcontractedFreightCharge: # Cước trả cho đối tác (nếu có)
+          type: number
+          format: double
+          nullable: true
+          example: 4500000
+      required:
+        - id
+        - date
+        - vehicleId
+        - description
+        - routeId
+        - status
+        - customerId
+        - containerTypeId
+        - freightCharge
+    TransportScheduleCreateRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        vehicleId:
+          type: string
+          format: uuid
+        partnerId:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+        routeId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [planned, in_progress, completed, cancelled]
+          default: planned
+        cargoKm:
+          type: number
+          format: double
+          nullable: true
+        emptyKm:
+          type: number
+          format: double
+          nullable: true
+        fuelLiters:
+          type: number
+          format: double
+          nullable: true
+        fuelUnitPrice:
+          type: number
+          format: double
+          nullable: true
+        fuelCost:
+          type: number
+          format: double
+          nullable: true
+        roadCostPreset:
+          type: number
+          format: double
+          nullable: true
+        otherCosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CostItem'
+          nullable: true
+        containerNumber:
+          type: string
+          nullable: true
+        sealNumber:
+          type: string
+          nullable: true
+        deliveryDate:
+          type: string
+          format: date-time
+          nullable: true
+        customerId:
+          type: string
+          format: uuid
+        containerTypeId:
+          type: string
+          format: uuid
+        freightCharge:
+          type: number
+          format: double
+        subcontractedFreightCharge:
+          type: number
+          format: double
+          nullable: true
+      required:
+        - date
+        - vehicleId
+        - description
+        - routeId
+        - customerId
+        - containerTypeId
+        - freightCharge
+    TransportScheduleUpdateRequest: # Similar to Create, but fields are optional
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        vehicleId:
+          type: string
+          format: uuid
+        partnerId:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+        routeId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [planned, in_progress, completed, cancelled]
+        cargoKm:
+          type: number
+          format: double
+          nullable: true
+        emptyKm:
+          type: number
+          format: double
+          nullable: true
+        fuelLiters:
+          type: number
+          format: double
+          nullable: true
+        fuelUnitPrice:
+          type: number
+          format: double
+          nullable: true
+        fuelCost:
+          type: number
+          format: double
+          nullable: true
+        roadCostPreset:
+          type: number
+          format: double
+          nullable: true
+        otherCosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CostItem'
+          nullable: true
+        containerNumber:
+          type: string
+          nullable: true
+        sealNumber:
+          type: string
+          nullable: true
+        deliveryDate:
+          type: string
+          format: date-time
+          nullable: true
+        customerId:
+          type: string
+          format: uuid
+        containerTypeId:
+          type: string
+          format: uuid
+        freightCharge:
+          type: number
+          format: double
+        subcontractedFreightCharge:
+          type: number
+          format: double
+          nullable: true
+
+  # Cost Management
+  /costs:
+    get:
+      summary: List general costs
+      description: Retrieves a list of general costs with filtering options.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: query
+          description: Filter by vehicle ID
+          schema:
+            type: string
+            format: uuid
+        - name: month
+          in: query
+          description: Filter by month (YYYY-MM)
+          schema:
+            type: string
+            example: "2024-07"
+        - name: category
+          in: query
+          description: Filter by cost category
+          schema:
+            $ref: '#/components/schemas/CostCategory'
+      responses:
+        '200':
+          description: A list of general costs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GeneralCost'
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Add a general cost item
+      description: Adds a new general cost item (e.g., salary, repair, parking).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneralCostCreateRequest'
+      responses:
+        '201':
+          description: General cost item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralCost'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /costs/{costId}:
+    get:
+      summary: Get cost details
+      description: Retrieves details for a specific general cost item.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: costId
+          in: path
+          required: true
+          description: ID of the cost item to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: "cost-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: General cost item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralCost'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Cost item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update cost
+      description: Updates details for a specific general cost item.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: costId
+          in: path
+          required: true
+          description: ID of the cost item to update
+          schema:
+            type: string
+            format: uuid
+            example: "cost-123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneralCostUpdateRequest'
+      responses:
+        '200':
+          description: General cost item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralCost'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Cost item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete cost
+      description: Deletes a specific general cost item.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: costId
+          in: path
+          required: true
+          description: ID of the cost item to delete
+          schema:
+            type: string
+            format: uuid
+            example: "cost-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: General cost item deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Cost item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    CostCategory:
+      type: string
+      enum:
+        - "Phí gửi xe"
+        - "Chi phí sửa chữa / bảo dưỡng xe"
+        - "Lương lái xe"
+        - "Tiền bảo hiểm TNDS"
+        - "Tiền bảo hiểm vật chất"
+        - "Phí đường bộ"
+        - "Thay thế lốp xe"
+        - "Other" # For costs not fitting predefined categories
+      example: "Chi phí sửa chữa / bảo dưỡng xe"
+    GeneralCost:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "cost-123e4567-e89b-12d3-a456-426614174000"
+        date:
+          type: string
+          format: date
+          example: "2024-07-28"
+        vehicleId: # Optional, as some costs might not be vehicle-specific
+          type: string
+          format: uuid
+          nullable: true
+          example: "vehicle-123e4567-e89b-12d3-a456-426614174000"
+        category:
+          $ref: '#/components/schemas/CostCategory'
+        description:
+          type: string
+          example: "Thay nhớt xe 51C-12345"
+        amount:
+          type: number
+          format: double
+          example: 1200000
+        details: # For specific cost details, e.g., tire information
+          type: object
+          nullable: true
+          properties:
+            tireBrand:
+              type: string
+              example: "Michelin"
+            tireSize:
+              type: string
+              example: "295/80R22.5"
+            quantity:
+              type: integer
+              example: 2
+          # Add other relevant detail fields as needed
+      required:
+        - id
+        - date
+        - category
+        - description
+        - amount
+    GeneralCostCreateRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        vehicleId:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          $ref: '#/components/schemas/CostCategory'
+        description:
+          type: string
+        amount:
+          type: number
+          format: double
+        details:
+          type: object
+          nullable: true
+          properties:
+            tireBrand:
+              type: string
+            tireSize:
+              type: string
+            quantity:
+              type: integer
+      required:
+        - date
+        - category
+        - description
+        - amount
+    GeneralCostUpdateRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        vehicleId:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          $ref: '#/components/schemas/CostCategory'
+        description:
+          type: string
+        amount:
+          type: number
+          format: double
+        details:
+          type: object
+          nullable: true
+          properties:
+            tireBrand:
+              type: string
+            tireSize:
+              type: string
+            quantity:
+              type: integer
+
+  # Financial Reports
+  /reports/financial/profit-revenue:
+    get:
+      summary: Generate Profit and Revenue Report
+      description: Generates a report on profit and revenue, filterable by vehicle, month, and year.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: query
+          description: Optional Vehicle ID to filter the report
+          schema:
+            type: string
+            format: uuid
+        - name: month
+          in: query
+          required: true
+          description: Month for the report (YYYY-MM)
+          schema:
+            type: string
+            example: "2024-07"
+        - name: year
+          in: query
+          required: true
+          description: Year for the report (YYYY)
+          schema:
+            type: integer
+            example: 2024
+        - name: export
+          in: query
+          description: Set to 'excel' to download the report as an Excel file
+          schema:
+            type: string
+            enum: [excel]
+      responses:
+        '200':
+          description: Profit and Revenue report data or Excel file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfitRevenueReport'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /reports/financial/cost-details:
+    get:
+      summary: Generate Cost Details Report
+      description: Generates a detailed report of costs, filterable by vehicle, month, year, and category.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: query
+          description: Optional Vehicle ID to filter the report
+          schema:
+            type: string
+            format: uuid
+        - name: month
+          in: query
+          required: true
+          description: Month for the report (YYYY-MM)
+          schema:
+            type: string
+            example: "2024-07"
+        - name: year
+          in: query
+          required: true
+          description: Year for the report (YYYY)
+          schema:
+            type: integer
+            example: 2024
+        - name: category
+          in: query
+          description: Optional cost category to filter the report
+          schema:
+            $ref: '#/components/schemas/CostCategory'
+        - name: export
+          in: query
+          description: Set to 'excel' to download the report as an Excel file
+          schema:
+            type: string
+            enum: [excel]
+      responses:
+        '200':
+          description: Cost Details report data or Excel file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostDetailsReport'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /reports/financial/vehicle-summary:
+    get:
+      summary: Generate Vehicle Financial Summary Report
+      description: Generates a financial summary for a specific vehicle over a period.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: query
+          required: true
+          description: Vehicle ID for the report
+          schema:
+            type: string
+            format: uuid
+        - name: month
+          in: query
+          required: true
+          description: Month for the report (YYYY-MM)
+          schema:
+            type: string
+            example: "2024-07"
+        - name: year
+          in: query
+          required: true
+          description: Year for the report (YYYY)
+          schema:
+            type: integer
+            example: 2024
+        - name: export
+          in: query
+          description: Set to 'excel' to download the report as an Excel file
+          schema:
+            type: string
+            enum: [excel]
+      responses:
+        '200':
+          description: Vehicle Financial Summary report data or Excel file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleFinancialSummary'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /reports/debt:
+    get:
+      summary: Generate Debt Report
+      description: Generates a report of debts for a specific month and year.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          description: Month for the report (YYYY-MM)
+          schema:
+            type: string
+            example: "2024-07"
+        - name: year
+          in: query
+          required: true
+          description: Year for the report (YYYY)
+          schema:
+            type: integer
+            example: 2024
+        - name: export
+          in: query
+          description: Set to 'excel' to download the report as an Excel file
+          schema:
+            type: string
+            enum: [excel]
+      responses:
+        '200':
+          description: Debt report data or Excel file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DebtReport'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    ProfitRevenueReport:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2024-07"
+        totalRevenue:
+          type: number
+          format: double
+          example: 150000000
+        totalCost:
+          type: number
+          format: double
+          example: 120000000
+        profit:
+          type: number
+          format: double
+          example: 30000000
+        details: # Could be an array of per-vehicle or per-customer summaries
+          type: array
+          items:
+            type: object # Define structure as needed
+            properties:
+              entityName:
+                type: string
+                example: "Vehicle 51C-12345 / Customer ABC"
+              revenue:
+                type: number
+                format: double
+              cost:
+                type: number
+                format: double
+              profit:
+                type: number
+                format: double
+    CostDetailsReport:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2024-07"
+        vehicleId:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          $ref: '#/components/schemas/CostCategory'
+          nullable: true
+        totalCost:
+          type: number
+          format: double
+          example: 25000000
+        costItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneralCost' # Or a specific report-focused cost item
+    VehicleFinancialSummary:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2024-07"
+        vehicleId:
+          type: string
+          format: uuid
+        licensePlate:
+          type: string
+        totalRevenue:
+          type: number
+          format: double
+        totalFuelCost:
+          type: number
+          format: double
+        totalMaintenanceCost:
+          type: number
+          format: double
+        totalOtherCosts:
+          type: number
+          format: double
+        netProfit:
+          type: number
+          format: double
+    DebtReport:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2024-07"
+        totalReceivable:
+          type: number
+          format: double
+          example: 50000000
+        totalPayable:
+          type: number
+          format: double
+          example: 20000000
+        netDebtPosition:
+          type: number
+          format: double
+          example: 30000000
+        debtDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/Debt' # Or a specific report-focused debt item
+
+  # Debt Management
+  /debts:
+    get:
+      summary: List debt records
+      description: Retrieves a list of debt records, filterable by month and year.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          description: Filter by month (YYYY-MM)
+          schema:
+            type: string
+            example: "2024-07"
+        - name: year
+          in: query
+          description: Filter by year (YYYY)
+          schema:
+            type: integer
+            example: 2024
+      responses:
+        '200':
+          description: A list of debt records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Debt'
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new debt record
+      description: Creates a new debt record.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebtCreateRequest'
+      responses:
+        '201':
+          description: Debt record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /debts/{debtId}:
+    get:
+      summary: Get debt record details
+      description: Retrieves details for a specific debt record.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: debtId
+          in: path
+          required: true
+          description: ID of the debt record to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: "debt-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Debt record details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Debt record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update debt record
+      description: Updates details for a specific debt record.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: debtId
+          in: path
+          required: true
+          description: ID of the debt record to update
+          schema:
+            type: string
+            format: uuid
+            example: "debt-123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebtUpdateRequest'
+      responses:
+        '200':
+          description: Debt record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Debt record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a debt record
+      description: Deletes a specific debt record.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: debtId
+          in: path
+          required: true
+          description: ID of the debt record to delete
+          schema:
+            type: string
+            format: uuid
+            example: "debt-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '204':
+          description: Debt record deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Debt record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    Debt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "debt-123e4567-e89b-12d3-a456-426614174000"
+        entityName: # Could be customer name, partner name, etc.
+          type: string
+          example: "Công ty Khách hàng A"
+        receivableAmount: # Số tiền phải thu
+          type: number
+          format: double
+          example: 10000000
+        payableAmount: # Số tiền phải trả
+          type: number
+          format: double
+          example: 0
+        notes:
+          type: string
+          nullable: true
+          example: "Công nợ tháng 7/2024"
+        month:
+          type: string
+          example: "07"
+        year:
+          type: integer
+          example: 2024
+      required:
+        - id
+        - entityName
+        - month
+        - year
+    DebtCreateRequest:
+      type: object
+      properties:
+        entityName:
+          type: string
+        receivableAmount:
+          type: number
+          format: double
+          default: 0
+        payableAmount:
+          type: number
+          format: double
+          default: 0
+        notes:
+          type: string
+          nullable: true
+        month:
+          type: string
+        year:
+          type: integer
+      required:
+        - entityName
+        - month
+        - year
+    DebtUpdateRequest:
+      type: object
+      properties:
+        entityName:
+          type: string
+        receivableAmount:
+          type: number
+          format: double
+        payableAmount:
+          type: number
+          format: double
+        notes:
+          type: string
+          nullable: true
+        month:
+          type: string
+        year:
+          type: integer
+
+  # Supporting Entities
+
+  # Fuel Price Management
+  /fuel-prices:
+    get:
+      summary: List fuel prices
+      description: Retrieves a list of fuel prices, optionally filtered by date.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: Filter by specific date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: A list of fuel prices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FuelPrice'
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Add a new fuel price entry
+      description: Adds a new fuel price entry for a specific date.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuelPriceCreateRequest'
+      responses:
+        '201':
+          description: Fuel price entry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuelPrice'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /fuel-prices/{priceId}:
+    get:
+      summary: Get fuel price entry
+      description: Retrieves a specific fuel price entry by its ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: priceId
+          in: path
+          required: true
+          description: ID of the fuel price entry
+          schema:
+            type: string
+            format: uuid
+            example: "fprice-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Fuel price entry details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuelPrice'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Fuel price entry not found
+        '500':
+          description: Internal server error
+    put:
+      summary: Update fuel price entry
+      description: Updates a specific fuel price entry.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: priceId
+          in: path
+          required: true
+          description: ID of the fuel price entry to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuelPriceCreateRequest' # Re-use create schema for update
+      responses:
+        '200':
+          description: Fuel price entry updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuelPrice'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Fuel price entry not found
+        '500':
+          description: Internal server error
+    delete:
+      summary: Delete fuel price entry
+      description: Deletes a specific fuel price entry.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: priceId
+          in: path
+          required: true
+          description: ID of the fuel price entry to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Fuel price entry deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Fuel price entry not found
+        '500':
+          description: Internal server error
+
+  # Mileage Rate Management
+  /mileage-rates:
+    get:
+      summary: List mileage rates
+      description: Retrieves a list of all mileage rates.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of mileage rates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MileageRate'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Add a new mileage rate
+      description: Adds a new mileage rate.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MileageRateCreateRequest'
+      responses:
+        '201':
+          description: Mileage rate created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MileageRate'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /mileage-rates/{rateId}:
+    get:
+      summary: Get mileage rate
+      description: Retrieves a specific mileage rate by its ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: rateId
+          in: path
+          required: true
+          description: ID of the mileage rate
+          schema:
+            type: string
+            format: uuid
+            example: "mrate-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Mileage rate details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MileageRate'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Mileage rate not found
+        '500':
+          description: Internal server error
+    put:
+      summary: Update mileage rate
+      description: Updates a specific mileage rate.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: rateId
+          in: path
+          required: true
+          description: ID of the mileage rate to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MileageRateCreateRequest' # Re-use create schema for update
+      responses:
+        '200':
+          description: Mileage rate updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MileageRate'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Mileage rate not found
+        '500':
+          description: Internal server error
+    delete:
+      summary: Delete mileage rate
+      description: Deletes a specific mileage rate.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: rateId
+          in: path
+          required: true
+          description: ID of the mileage rate to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Mileage rate deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Mileage rate not found
+        '500':
+          description: Internal server error
+
+    FuelPrice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "fprice-123e4567-e89b-12d3-a456-426614174000"
+        date:
+          type: string
+          format: date
+          example: "2024-07-28"
+        pricePerLiter:
+          type: number
+          format: double
+          example: 22500
+      required:
+        - id
+        - date
+        - pricePerLiter
+    FuelPriceCreateRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2024-07-29"
+        pricePerLiter:
+          type: number
+          format: double
+          example: 22700
+      required:
+        - date
+        - pricePerLiter
+    MileageRate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "mrate-123e4567-e89b-12d3-a456-426614174000"
+        description:
+          type: string
+          example: "Định mức chung"
+        ratePerKm: # Định mức dầu / km
+          type: number
+          format: double
+          example: 0.3 # liters per km
+        minKm: # Km tối thiểu áp dụng định mức
+          type: number
+          format: double
+          example: 0
+        maxKm: # Km tối đa áp dụng định mức (optional)
+          type: number
+          format: double
+          nullable: true
+          example: 500
+      required:
+        - id
+        - description
+        - ratePerKm
+        - minKm
+    MileageRateCreateRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Định mức cho xe tải nặng"
+        ratePerKm:
+          type: number
+          format: double
+          example: 0.35
+        minKm:
+          type: number
+          format: double
+          example: 100
+        maxKm:
+          type: number
+          format: double
+          nullable: true
+          example: 1000
+      required:
+        - description
+        - ratePerKm
+        - minKm
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid # Assuming UUID for IDs
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        username:
+          type: string
+          example: "adminuser"
+        employeeId:
+          type: string
+          format: uuid
+          example: "abcdef01-e89b-12d3-a456-426614174001"
+        role:
+          type: string
+          enum: [admin, manager, accountant, dispatcher, driver] # Example roles
+          example: admin
+      required:
+        - id
+        - username
+        - employeeId
+        - role
+    UserCreateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "newuser"
+        password:
+          type: string
+          format: password
+          example: "secureP@ssw0rd"
+        employeeId:
+          type: string
+          format: uuid
+          example: "abcdef01-e89b-12d3-a456-426614174002"
+        role:
+          type: string
+          enum: [admin, manager, accountant, dispatcher, driver]
+          example: manager
+      required:
+        - username
+        - password
+        - employeeId
+        - role
+    UserUpdateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "updateduser"
+        employeeId:
+          type: string
+          format: uuid
+          example: "abcdef01-e89b-12d3-a456-426614174003"
+        role:
+          type: string
+          enum: [admin, manager, accountant, dispatcher, driver]
+          example: accountant
+    UserLoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: user1
+        password:
+          type: string
+          example: stringP@ssw0rd
+      required:
+        - username
+        - password
+    UserLoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+      required:
+        - email
+    PasswordResetTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          example: reset_token_string
+        newPassword:
+          type: string
+          example: newStringP@ssw0rd
+      required:
+        - token
+        - newPassword
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+          format: int32
+      required:
+        - message
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
