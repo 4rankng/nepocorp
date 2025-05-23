@@ -61,7 +61,7 @@ export const mockData = {
   },
   ketoan: {
     plans: [],
-    vehicles: [ 
+    vehicles: [
       { id: 'V001', bienSo: '51C-12345', name: 'Xe tải Huyndai', type: 'Container 20ft' },
       { id: 'V002', bienSo: '29H-67890', name: 'Xe đầu kéo Isuzu', type: 'Container 40ft' },
       { id: 'V003', bienSo: '60A-11223', name: 'Xe tải Thaco', type: 'Thùng bạt' },
@@ -102,11 +102,11 @@ export const mockCosts = [ /* ... */ ];
 
 // --- START: Container Types Mock Data & Functions ---
 let containerTypesData = [
-  { id: 'ct1', name: '20’DC' },
-  { id: 'ct2', name: '40’DC' },
-  { id: 'ct3', name: '40’HC' },
-  { id: 'ct4', name: '20’RF' },
-  { id: 'ct5', name: '45’HC' },
+  { id: 'ct1', name: "20'DC" },
+  { id: 'ct2', name: "40'DC" },
+  { id: 'ct3', name: "40'HC" },
+  { id: 'ct4', name: "20'RF" },
+  { id: 'ct5', name: "45'HC" },
 ];
 export const getContainerTypes = () => new Promise(res => setTimeout(() => res([...containerTypesData]), 50));
 export const getContainerTypesForSelect = () => new Promise(res => setTimeout(() => res(containerTypesData.map(ct => ({id: ct.id, name: ct.name}))), 50));
@@ -200,8 +200,8 @@ export const deleteCostRate = (id) => { /* ... */ };
 // --- START: Shipment Plans (Lịch Vận Chuyển) Mock Data & Functions ---
 const recalculateShipmentCosts = (plan) => {
   plan.dauDong = (plan.dauLit || 0) * (plan.donGiaDau || 0);
-  plan.costFuel = plan.dauDong; 
-  
+  plan.costFuel = plan.dauDong;
+
   let detailedOtherCostsSum = 0;
   if (plan.detailedOtherCosts && Array.isArray(plan.detailedOtherCosts)) {
     detailedOtherCostsSum = plan.detailedOtherCosts.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
@@ -209,10 +209,10 @@ const recalculateShipmentCosts = (plan) => {
   plan.chiPhiKhac = detailedOtherCostsSum; // This is now the sum of detailedOtherCosts
 
   plan.tongChiPhiPhuongTien = (plan.dauDong || 0) + (plan.phiDiDuong || 0) + (plan.cuocThueVanChuyen || 0);
-  
-  plan.totalCost = (plan.costFuel || 0) + 
-                   (plan.costTolls || 0) + 
-                   (plan.costMaintenance || 0) + 
+
+  plan.totalCost = (plan.costFuel || 0) +
+                   (plan.costTolls || 0) +
+                   (plan.costMaintenance || 0) +
                    plan.chiPhiKhac + // Sum from detailedOtherCosts
                    (plan.cuocThueVanChuyen || 0);
 
@@ -221,32 +221,32 @@ const recalculateShipmentCosts = (plan) => {
 };
 
 let shipmentPlansData = [
-  recalculateShipmentCosts({ 
-    id: 'sp1', ngayThang: '01/01/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: 'p1', tenDoiTac: 'Đối tác Vận Tải An Phát', 
+  recalculateShipmentCosts({
+    id: 'sp1', ngayThang: '01/01/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: 'p1', tenDoiTac: 'Đối tác Vận Tải An Phát',
     dienGiai: 'Chở hàng Tết đợt 1', tuyenDuong: { diemDi: 'Kho A', diemDen: ['Kho B', 'Kho C'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct1', tenLoaiContainer: '20’DC', 
-    cuocVanChuyen: 5000000, thongTinContainer: [{ soContainer: 'CONT111', soSeal: 'SEAL111' }], 
+    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct1', tenLoaiContainer: "20'DC",
+    cuocVanChuyen: 5000000, thongTinContainer: [{ soContainer: 'CONT111', soSeal: 'SEAL111' }],
     ngayHaHang: '02/01/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
-    dauLit: 100, donGiaDau: 20000, phiDiDuong: 500000, 
-    costTolls: 500000, costMaintenance: 200000, 
+    dauLit: 100, donGiaDau: 20000, phiDiDuong: 500000,
+    costTolls: 500000, costMaintenance: 200000,
     detailedOtherCosts: [ { id: 'doc1_1', name: "Bốc xếp", amount: 300000 }, { id: 'doc1_2', name: "Lưu kho", amount: 100000 } ],
     kmChuyenHang: 120, kmChuyenVoRong: 30, dinhMucDiDuong: 500000,
   }),
-  recalculateShipmentCosts({ 
+  recalculateShipmentCosts({
     id: 'sp2', ngayThang: '15/01/2024', bienSoXeId: 'v2', bienSoXe: '29H-54321', doiTacId: '', tenDoiTac: '-',
     dienGiai: 'Giao hàng cho siêu thị XYZ', tuyenDuong: { diemDi: 'Cảng X', diemDen: ['Siêu thị Y'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct2', tenLoaiContainer: '40’DC',
+    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct2', tenLoaiContainer: "40'DC",
     cuocVanChuyen: 7500000, thongTinContainer: [{ soContainer: 'CONT222', soSeal: 'SEAL222' }],
     ngayHaHang: '15/01/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
     dauLit: 150, donGiaDau: 20000, phiDiDuong: 700000,
-    costTolls: 700000, costMaintenance: 300000, 
+    costTolls: 700000, costMaintenance: 300000,
     detailedOtherCosts: [ { id: 'doc2_1', name: "Phí cảng", amount: 400000 } ],
     kmChuyenHang: 150, kmChuyenVoRong: 40, dinhMucDiDuong: 700000,
   }),
-  recalculateShipmentCosts({ 
+  recalculateShipmentCosts({
     id: 'sp3', ngayThang: '05/02/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: '', tenDoiTac: '-',
     dienGiai: 'Vận chuyển hàng đông lạnh', tuyenDuong: { diemDi: 'Kho Lạnh A', diemDen: ['Kho Lạnh B'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct4', tenLoaiContainer: '20’RF',
+    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct4', tenLoaiContainer: "20'RF",
     cuocVanChuyen: 6000000, thongTinContainer: [{ soContainer: 'CONT333', soSeal: 'SEAL333' }],
     ngayHaHang: '05/02/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
     dauLit: 120, donGiaDau: 21000, phiDiDuong: 600000,
@@ -255,24 +255,24 @@ let shipmentPlansData = [
   }),
   // ... other plans initialized with recalculateShipmentCosts and detailedOtherCosts
 ];
-export const getShipmentPlans = () => new Promise(res => setTimeout(() => res(shipmentPlansData.map(p => ({...p}))), 50)); 
-export const addShipmentPlan = (planData) => { /* ... */ }; 
-export const updateShipmentPlan = (id, updatedPlanData) => { /* ... */ }; 
-export const deleteShipmentPlan = (id) => { /* ... */ }; 
+export const getShipmentPlans = () => new Promise(res => setTimeout(() => res(shipmentPlansData.map(p => ({...p}))), 50));
+export const addShipmentPlan = (planData) => { /* ... */ };
+export const updateShipmentPlan = (id, updatedPlanData) => { /* ... */ };
+export const deleteShipmentPlan = (id) => { /* ... */ };
 
 export const updateShipmentPlanField = async (planId, field, value) => {
-  await new Promise(resolve => setTimeout(resolve, 100)); 
+  await new Promise(resolve => setTimeout(resolve, 100));
   let updatedPlan = null;
   shipmentPlansData = shipmentPlansData.map(plan => {
     if (plan.id === planId) {
       const newPlan = { ...plan, [field]: value };
-      updatedPlan = recalculateShipmentCosts(newPlan); 
+      updatedPlan = recalculateShipmentCosts(newPlan);
       return updatedPlan;
     }
     return plan;
   });
   if (updatedPlan) {
-    return { ...updatedPlan }; 
+    return { ...updatedPlan };
   }
   throw new Error("Plan not found");
 };
@@ -286,7 +286,7 @@ export const addDetailedOtherCostItem = async (planId, itemName, itemAmount) => 
   if (!itemName || itemName.trim() === '' || typeof itemAmount !== 'number' || itemAmount <= 0) {
     throw new Error("Invalid item name or amount.");
   }
-  
+
   const newItem = { id: `doc-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: itemName.trim(), amount: itemAmount };
   if (!shipmentPlansData[planIndex].detailedOtherCosts) {
     shipmentPlansData[planIndex].detailedOtherCosts = [];
@@ -316,7 +316,7 @@ export const updateDetailedOtherCostItem = async (planId, itemId, updatedName, u
     });
   }
   if (!itemUpdated) throw new Error("Detailed cost item not found for update.");
-  
+
   shipmentPlansData[planIndex] = recalculateShipmentCosts({...shipmentPlansData[planIndex]});
   return {...shipmentPlansData[planIndex]};
 };
@@ -368,12 +368,69 @@ export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => { /* ...
 // --- END: Vehicle Monthly Details Report Functions ---
 
 // --- START: Debt Report Data & Functions ---
-let debtReportData = [ /* ... */ ];
-export const getDebtReport = (monthYear) => { /* ... */ };
-export const getAvailableMonthsForDebtReport = () => { /* ... */ };
+let debtReportData = [
+  {
+    id: 'dr1',
+    monthYear: '2024-01',
+    entityName: 'Công ty TNHH ABC Vận Tải',
+    phaiThu: 15000000,
+    phaiTra: 5000000,
+    ghiChu: 'Thanh toán đợt 1'
+  },
+  {
+    id: 'dr2',
+    monthYear: '2024-01',
+    entityName: 'Doanh nghiệp tư nhân XYZ Logistics',
+    phaiThu: 8000000,
+    phaiTra: 3000000,
+    ghiChu: 'Đã thanh toán'
+  },
+  {
+    id: 'dr3',
+    monthYear: '2024-02',
+    entityName: 'Công ty TNHH ABC Vận Tải',
+    phaiThu: 12000000,
+    phaiTra: 4000000,
+    ghiChu: 'Chờ thanh toán'
+  },
+  {
+    id: 'dr4',
+    monthYear: '2024-02',
+    entityName: 'Doanh nghiệp tư nhân XYZ Logistics',
+    phaiThu: 10000000,
+    phaiTra: 3500000,
+    ghiChu: 'Đã thanh toán'
+  }
+];
+
+export const getDebtReport = (monthYear) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const filteredData = debtReportData.filter(item => item.monthYear === monthYear);
+      resolve(filteredData);
+    }, 50);
+  });
+};
+
+export const getAvailableMonthsForDebtReport = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const months = [...new Set(debtReportData.map(item => item.monthYear))];
+      const formattedMonths = months.map(month => {
+        const [year, monthNum] = month.split('-');
+        return {
+          value: month,
+          label: `Tháng ${monthNum}/${year}`
+        };
+      });
+      resolve(formattedMonths);
+    }, 50);
+  });
+};
 // --- END: Debt Report Data & Functions ---
 
 
 // Keep other existing mock data exports
-export const mockEmployees = mockEmployeesOld; 
-export { mockCustomers, mockPartners, mockSchedules, mockCosts };
+export const mockEmployees = mockEmployeesOld;
+export const mockCustomers = customersData;
+export const mockPartners = partnersData;
