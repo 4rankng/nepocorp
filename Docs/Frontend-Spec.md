@@ -33,15 +33,13 @@ Khôi phục mật khẩu:
 ## Trang quản lý
 
 ### Tổng quan
-Sidebar trái:
-- Báo cáo tài chính (mặc định)
+Đối với quản  lý thì sidebar trái sẽ bao gồm các mục sau
+- Báo cáo tài chính (hiển thị mặc định khi quản lý đăng nhập)
 - Lịch vận chuyển
 - Nhân viên
 - Khách hàng
 - Đối tác
 - Phương tiện
-- Loại container
-- Chi phí
 
 ### Báo cáo tài chính
 Trang báo cáo gồm bốn tab chính, mỗi tab đảm nhiệm một loại báo cáo riêng:
@@ -166,49 +164,38 @@ Form để tạo đối tác mới bao gồm
 
 ### Phương tiện
 
-Nút chức năng:
-  - Nút "+" nổi góc dưới bên phải màn hình
-  - Nhấn để mở form tạo biển số xe mới
-Form để tạo biển số xe mới bao gồm
-  - Biển số xe
-Nội dung chính của trang này là hiển thị danh sách biển số xe
+Đối với quản lý, mục này sẽ được sử dụng để
+- Thêm, sửa, xóa biển số xe
+- Thêm, sửa, xóa loại container
+- Thêm, sửa, xóa định mức dầu
+- Thêm, sửa, xóa bảo dưỡng
 
-### Loại container
+Đối với biển số xe
+- Hiện bảng danh sách biển số xe.
+- Với mỗi dòng bấm vào dòng để sửa, bấm vào icon thùng rác cuối dòng để xóa
+- Dưới dòng cuối cùng có lựa chọn để thêm
 
-Nút chức năng:
-  - Nút "+" nổi góc dưới bên phải màn hình
-  - Nhấn để mở form tạo loại container mới
+Đối với loại container
+- Hiện bảng danh sách loại container.
+- Với mỗi dòng bấm vào dòng để sửa, bấm vào icon thùng rác cuối dòng để xóa
+- Dưới dòng cuối cùng có lựa chọn để thêm
 
-Form để tạo loại container mới bao gồm
-  - Loại container
+Đối với định mức dầu
+- Hiện bảng định mức dầu.
+- Với mỗi dòng bấm vào dòng để sửa, bấm vào icon thùng rác cuối dòng để xóa
+- Dưới dòng cuối cùng có lựa chọn để thêm
 
-Nội dung chính của trang này là hiển thị danh sách loại container
-
-### Biển số xe
-
-Nút chức năng:
-  - Nút "+" nổi góc dưới bên phải màn hình
-  - Nhấn để mở form tạo biển số xe mới
-
-Form để tạo biển số xe mới bao gồm
-  - Biển số xe
-
-Nội dung chính của trang này là hiển thị danh sách biển số xe
-
-### Loại container
-
-Nút chức năng:
-  - Nút "+" nổi góc dưới bên phải màn hình
-  - Nhấn để mở form tạo loại container mới
-
-Form để tạo loại container mới bao gồm
-  - Loại container
-
-Nội dung chính của trang này là hiển thị danh sách loại container
-
-### Chi phí
-
-Hiển thị bảng định mức đi đường theo số km. Quản lý có thể thêm, sửa, xóa các định mức đi đường. Bảng định mức này sẽ được dùng để tính chi phí đi đường trong các kế hoạch vận chuyển dựa vào số km mà kế toán nhập.
+Đối với bảo dưỡng
+- Hiện tại thì chỉ quản lý bảng thay lốp xe.
+- Bảng gồm các cột:
+  * Biển số xe
+  * Ngày thay lốp
+  * Thời hạn bảo hành
+  * Số lượng
+  * Đơn giá
+  * Tổng tiền
+  * Ghi chú
+- Có thể lọc theo biển số xe
 
 ## Trang kế toán
 

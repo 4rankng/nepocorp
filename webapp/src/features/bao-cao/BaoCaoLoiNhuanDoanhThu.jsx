@@ -17,6 +17,11 @@ const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
 
+const formatMillion = value => {
+  if (typeof value !== 'number') return 'N/A';
+  return (value / 1_000_000).toFixed(2);
+};
+
 const BaoCaoLoiNhuanDoanhThu = () => {
   const [originalData, setOriginalData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -57,6 +62,9 @@ const BaoCaoLoiNhuanDoanhThu = () => {
     }
   };
 
+  // Sort data from earliest to latest
+  const sortedData = [...filteredData].sort((a, b) => a.monthYear.localeCompare(b.monthYear));
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold mb-4">Báo Cáo Lợi Nhuận và Doanh Thu</h1>
@@ -72,7 +80,7 @@ const BaoCaoLoiNhuanDoanhThu = () => {
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={filteredData}
+                data={sortedData}
                 margin={{
                   top: 5,
                   right: 30,
@@ -81,10 +89,42 @@ const BaoCaoLoiNhuanDoanhThu = () => {
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="monthYear" />
-                <YAxis tickFormatter={value => formatCurrency(value)} />
+                <XAxis
+                  dataKey="monthYear"
+                  tickFormatter={label => {
+                    if (!label) return '-';
+                    if (typeof label === 'string' && label.includes('/')) {
+                      const [month, year] = label.split('/');
+                      return `${month}/${year.slice(-2)}`;
+                    }
+                    return label;
+                  }}
+                  interval={0}
+                  tick={({ x, y, payload, index }) =>
+                    index % 2 === 0 ? (
+                      <text x={x} y={y + 10} textAnchor="middle" fontSize={12} fill="#555">
+                        {(() => {
+                          if (!payload.value) return '-';
+                          if (typeof payload.value === 'string' && payload.value.includes('/')) {
+                            const [month, year] = payload.value.split('/');
+                            return `${month}/${year.slice(-2)}`;
+                          }
+                          return payload.value;
+                        })()}
+                      </text>
+                    ) : null
+                  }
+                />
+                <YAxis
+                  tickFormatter={formatMillion}
+                  tick={({ x, y, payload }) => (
+                    <text x={x} y={y + 4} textAnchor="end" fontSize={12} fill="#555">
+                      {formatMillion(payload.value)}
+                    </text>
+                  )}
+                />
                 <Tooltip
-                  formatter={value => formatCurrency(value)}
+                  formatter={value => `${formatMillion(value)} triệu`}
                   labelFormatter={label => `Tháng ${label}`}
                 />
                 <Legend />
@@ -105,6 +145,7 @@ const BaoCaoLoiNhuanDoanhThu = () => {
               </LineChart>
             </ResponsiveContainer>
           </div>
+          <div className="text-xs text-gray-500 mt-2">Đơn vị: triệu đồng</div>
 
           <div className="mt-8">
             <h2 className="text-lg font-semibold mb-4">Chi tiết theo tháng</h2>
@@ -127,16 +168,23 @@ const BaoCaoLoiNhuanDoanhThu = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredData.map((item, index) => (
+                  {sortedData.map((item, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.monthYear}
+                        {(() => {
+                          if (!item.monthYear) return '-';
+                          if (typeof item.monthYear === 'string' && item.monthYear.includes('/')) {
+                            const [month, year] = item.monthYear.split('/');
+                            return `${month}/${year.slice(-2)}`;
+                          }
+                          return item.monthYear;
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {formatCurrency(item.revenue)}
+                        {formatMillion(item.revenue)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {formatCurrency(item.profit)}
+                        {formatMillion(item.profit)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                         {((item.profit / item.revenue) * 100).toFixed(2)}%

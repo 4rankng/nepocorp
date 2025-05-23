@@ -16,6 +16,11 @@ const formatMonthForDisplay = monthYear => {
   return `${month}/${year}`;
 };
 
+const formatMillion = value => {
+  if (typeof value !== 'number' || isNaN(value)) return 'N/A';
+  return (value / 1_000_000).toFixed(2);
+};
+
 const BaoCaoChiTietChiPhi = () => {
   const [originalData, setOriginalData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -88,6 +93,9 @@ const BaoCaoChiTietChiPhi = () => {
     }, {});
   }, [filteredData]);
 
+  // Sort data from earliest to latest
+  const sortedData = [...filteredData].sort((a, b) => a.monthYear.localeCompare(b.monthYear));
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold mb-4">Báo Cáo Chi Tiết Chi Phí</h1>
@@ -119,10 +127,14 @@ const BaoCaoChiTietChiPhi = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredData.map((item, index) => (
+                {sortedData.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.monthYear}
+                      {(() => {
+                        if (!item.monthYear || !item.monthYear.includes('/')) return item.monthYear;
+                        const [month, year] = item.monthYear.split('/');
+                        return `${month}/${year.slice(-2)}`;
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {item.bienSoXe}
@@ -131,12 +143,13 @@ const BaoCaoChiTietChiPhi = () => {
                       {item.category}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(item.amount)}
+                      {formatMillion(item.amount)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <div className="text-xs text-gray-500 mt-2">Đơn vị: triệu đồng</div>
           </div>
         </div>
       )}

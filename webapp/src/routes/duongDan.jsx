@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import TrangChu from '../layouts/TrangChu';
 import TrangXacThuc from '../layouts/TrangXacThuc';
 import DangNhap from '../features/xac-thuc/DangNhap';

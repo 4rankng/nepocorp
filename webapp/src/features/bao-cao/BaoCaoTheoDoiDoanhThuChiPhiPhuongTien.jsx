@@ -231,7 +231,7 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
           {reportDetails.shipmentDetails.length > 0 && (
             <div className="bg-white p-4 shadow rounded-lg">
               <h2 className="text-xl font-semibold mb-3 text-gray-700">Chi Tiết Theo Chuyến</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                 {reportDetails.shipmentDetails.map(plan => (
                   <div
                     key={plan.id}
@@ -239,7 +239,7 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
                   >
                     {/* Accent bar */}
                     <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-teal-400" />
-                    <div className="flex-1 p-4 pl-6 flex flex-col gap-2">
+                    <div className="flex-1 p-2 md:p-4 pl-6 flex flex-col gap-2">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-400 font-medium">Ngày</span>
                         <span className="text-sm font-semibold text-gray-700">
