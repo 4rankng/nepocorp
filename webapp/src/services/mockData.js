@@ -61,7 +61,7 @@ export const mockData = {
   },
   ketoan: {
     plans: [],
-    vehicles: [ 
+    vehicles: [
       { id: 'V001', bienSo: '51C-12345', name: 'Xe tải Huyndai', type: 'Container 20ft' },
       { id: 'V002', bienSo: '29H-67890', name: 'Xe đầu kéo Isuzu', type: 'Container 40ft' },
       { id: 'V003', bienSo: '60A-11223', name: 'Xe tải Thaco', type: 'Thùng bạt' },
@@ -102,11 +102,11 @@ export const mockCosts = [ /* ... */ ];
 
 // --- START: Container Types Mock Data & Functions ---
 let containerTypesData = [
-  { id: 'ct1', name: '20’DC' },
-  { id: 'ct2', name: '40’DC' },
-  { id: 'ct3', name: '40’HC' },
-  { id: 'ct4', name: '20’RF' },
-  { id: 'ct5', name: '45’HC' },
+  { id: 'ct1', name: "20'DC" },
+  { id: 'ct2', name: "40'DC" },
+  { id: 'ct3', name: "40'HC" },
+  { id: 'ct4', name: "20'RF" },
+  { id: 'ct5', name: "45'HC" },
 ];
 export const getContainerTypes = () => new Promise(res => setTimeout(() => res([...containerTypesData]), 50));
 export const getContainerTypesForSelect = () => new Promise(res => setTimeout(() => res(containerTypesData.map(ct => ({id: ct.id, name: ct.name}))), 50));
@@ -199,66 +199,66 @@ export const deleteCostRate = (id) => { /* ... */ };
 
 // --- START: Shipment Plans (Lịch Vận Chuyển) Mock Data & Functions ---
 let shipmentPlansData = [
-  { 
-    id: 'sp1', ngayThang: '01/01/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: 'p1', tenDoiTac: 'Đối tác Vận Tải An Phát', 
+  {
+    id: 'sp1', ngayThang: '01/01/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: 'p1', tenDoiTac: 'Đối tác Vận Tải An Phát',
     dienGiai: 'Chở hàng Tết đợt 1', tuyenDuong: { diemDi: 'Kho A', diemDen: ['Kho B', 'Kho C'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct1', tenLoaiContainer: '20’DC', 
-    cuocVanChuyen: 5000000, thongTinContainer: [{ soContainer: 'CONT111', soSeal: 'SEAL111' }], 
+    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct1', tenLoaiContainer: "20'DC",
+    cuocVanChuyen: 5000000, thongTinContainer: [{ soContainer: 'CONT111', soSeal: 'SEAL111' }],
     ngayHaHang: '02/01/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
     costFuel: 2000000, costTolls: 500000, costMaintenance: 200000, chiPhiKhac: { "Bốc xếp": 300000, "Lưu kho": 100000 },
     totalCost: 3100000, dauLit: 100, dauDong: 2000000, phiDiDuong: 500000,
     tongChiPhiPhuongTien: 2500000, loiNhuanPhuongTien: 2500000,
   },
-  { 
+  {
     id: 'sp2', ngayThang: '15/01/2024', bienSoXeId: 'v2', bienSoXe: '29H-54321', doiTacId: '', tenDoiTac: '-',
     dienGiai: 'Giao hàng cho siêu thị XYZ', tuyenDuong: { diemDi: 'Cảng X', diemDen: ['Siêu thị Y'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct2', tenLoaiContainer: '40’DC',
+    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct2', tenLoaiContainer: "40'DC",
     cuocVanChuyen: 7500000, thongTinContainer: [{ soContainer: 'CONT222', soSeal: 'SEAL222' }],
     ngayHaHang: '15/01/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
     costFuel: 3000000, costTolls: 700000, costMaintenance: 300000, chiPhiKhac: { "Phí cảng": 400000 },
     totalCost: 4400000, dauLit: 150, dauDong: 3000000, phiDiDuong: 700000,
     tongChiPhiPhuongTien: 3700000, loiNhuanPhuongTien: 3800000,
   },
-  { 
+  {
     id: 'sp3', ngayThang: '05/02/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: '', tenDoiTac: '-',
     dienGiai: 'Vận chuyển hàng đông lạnh', tuyenDuong: { diemDi: 'Kho Lạnh A', diemDen: ['Kho Lạnh B'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct4', tenLoaiContainer: '20’RF',
+    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct4', tenLoaiContainer: "20'RF",
     cuocVanChuyen: 6000000, thongTinContainer: [{ soContainer: 'CONT333', soSeal: 'SEAL333' }],
     ngayHaHang: '05/02/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
     costFuel: 2500000, costTolls: 600000, costMaintenance: 400000, chiPhiKhac: {},
     totalCost: 3500000, dauLit: 120, dauDong: 2500000, phiDiDuong: 600000,
     tongChiPhiPhuongTien: 3100000, loiNhuanPhuongTien: 2900000,
   },
-  { 
+  {
     id: 'sp4', ngayThang: '20/02/2024', bienSoXeId: 'v3', bienSoXe: '60A-98765', doiTacId: 'p2', tenDoiTac: 'Công ty Logistics Toàn Cầu',
     dienGiai: 'Chuyến hàng quá khổ', tuyenDuong: { diemDi: 'Cảng Z', diemDen: ['Công trình K'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct5', tenLoaiContainer: '45’HC',
+    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct5', tenLoaiContainer: "45'HC",
     cuocVanChuyen: 12000000, thongTinContainer: [{ soContainer: 'CONT444', soSeal: 'SEAL444' }],
-    ngayHaHang: '21/02/2024', soLuongContainer: 1, cuocThueVanChuyen: 3000000, 
+    ngayHaHang: '21/02/2024', soLuongContainer: 1, cuocThueVanChuyen: 3000000,
     costFuel: 4000000, costTolls: 1000000, costMaintenance: 500000, chiPhiKhac: {"Giấy phép": 200000},
     totalCost: 5700000 + 3000000, dauLit: 200, dauDong: 4000000, phiDiDuong: 1000000,
-    tongChiPhiPhuongTien: 5000000 + 3000000, loiNhuanPhuongTien: 4000000, // Revenue - (Vehicle Costs + Subcontracting Cost)
+    tongChiPhiPhuongTien: 5000000 + 3000000, loiNhuanPhuongTien: 4000000,
   },
-  { 
+  {
     id: 'sp5', ngayThang: '10/01/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: '', tenDoiTac: '-',
     dienGiai: 'Chở hàng lẻ', tuyenDuong: { diemDi: 'Kho M', diemDen: ['Kho N'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct1', tenLoaiContainer: '20’DC',
+    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct1', tenLoaiContainer: "20'DC",
     cuocVanChuyen: 4000000, thongTinContainer: [{ soContainer: 'CONT555', soSeal: 'SEAL555' }],
     ngayHaHang: '10/01/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
     costFuel: 1800000, costTolls: 400000, costMaintenance: 150000, chiPhiKhac: {},
     totalCost: 2350000, dauLit: 90, dauDong: 1800000, phiDiDuong: 400000,
     tongChiPhiPhuongTien: 2200000, loiNhuanPhuongTien: 1800000,
   },
-   { 
+  {
     id: 'sp6', ngayThang: '03/03/2024', bienSoXeId: 'v2', bienSoXe: '29H-54321', doiTacId: '', tenDoiTac: '-',
-    dienGiai: 'Vận chuyển thiết bị y tế', tuyenDuong: { diemDi: 'Bệnh viện A', diemDen: ['Bệnh viện B'] }, trangThai: 'Lên lịch', 
-    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct2', tenLoaiContainer: '40’DC',
+    dienGiai: 'Vận chuyển thiết bị y tế', tuyenDuong: { diemDi: 'Bệnh viện A', diemDen: ['Bệnh viện B'] }, trangThai: 'Lên lịch',
+    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct2', tenLoaiContainer: "40'DC",
     cuocVanChuyen: 8000000, thongTinContainer: [{ soContainer: 'CONT666', soSeal: 'SEAL666' }],
     ngayHaHang: '', soLuongContainer: 1, cuocThueVanChuyen: 0,
-    costFuel: 3500000, costTolls: 800000, costMaintenance: 200000, chiPhiKhac: {},
-    totalCost: 4500000, dauLit: 170, dauDong: 3500000, phiDiDuong: 800000,
-    tongChiPhiPhuongTien: 4300000, loiNhuanPhuongTien: 0, // Not completed, so profit might be considered 0 for report
-  },
+    costFuel: 0, costTolls: 0, costMaintenance: 0, chiPhiKhac: {},
+    totalCost: 0, dauLit: 0, dauDong: 0, phiDiDuong: 0,
+    tongChiPhiPhuongTien: 0, loiNhuanPhuongTien: 0,
+  }
 ];
 export const getShipmentPlans = () => new Promise(res => setTimeout(() => res([...shipmentPlansData]), 50));
 export const addShipmentPlan = (planData) => { /* ... */ };
@@ -310,13 +310,13 @@ export const getAvailableMonthsForReport = () => { // Can be used for multiple r
 
 export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
   return new Promise((resolve) => {
-    const relevantPlans = shipmentPlansData.filter(plan => 
-      plan.bienSoXeId === vehicleId && 
+    const relevantPlans = shipmentPlansData.filter(plan =>
+      plan.bienSoXeId === vehicleId &&
       plan.ngayThang.endsWith(`/${monthYear.substring(5)}/${monthYear.substring(0,4)}`) && // Match MM/YYYY part
       plan.trangThai === 'Hoàn thành'
     );
 
-    const relevantOtherCosts = otherVehicleCostsData.filter(cost => 
+    const relevantOtherCosts = otherVehicleCostsData.filter(cost =>
       cost.vehicleId === vehicleId && cost.monthYear === monthYear
     );
 
@@ -397,5 +397,6 @@ export const getAvailableMonthsForDebtReport = () => {
 
 
 // Keep other existing mock data exports
-export const mockEmployees = mockEmployeesOld; 
-export { mockCustomers, mockPartners, mockSchedules, mockCosts };
+export const mockEmployees = mockEmployeesOld;
+export const mockCustomers = customersData;
+export const mockPartners = partnersData;
