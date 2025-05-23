@@ -32,7 +32,7 @@ const BaoCaoTaiChinh = () => {
   return (
     <div className="bg-white">
       <div className="border-b border-gray-200">
-        <nav className="flex -mb-px">
+        <nav className="flex -mb-px overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}

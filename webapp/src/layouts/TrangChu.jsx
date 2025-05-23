@@ -26,7 +26,7 @@ const TrangChu = () => {
             </div>
           </div>
         )}
-        <main className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto mt-1 bg-white">
+        <main className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto bg-white pt-12 md:ml-64">
           <div className="flex-1 flex flex-col p-4">
             <Outlet />
           </div>

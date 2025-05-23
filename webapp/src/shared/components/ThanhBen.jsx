@@ -14,7 +14,7 @@ const menuItems = [
 
 const ThanhBen = () => {
   return (
-    <aside className="w-64 bg-white">
+    <aside className="w-64 bg-white md:fixed md:top-12 md:left-0 md:h-[calc(100vh-3rem)] md:z-40">
       <nav className="mt-5 px-2">
         <div className="space-y-1">
           {menuItems.map((item) => (

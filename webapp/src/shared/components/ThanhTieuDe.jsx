@@ -6,7 +6,7 @@ const ThanhTieuDe = ({ onSidebarToggle }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
       <div className="flex items-center h-12 justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center flex-shrink-0">
           <button
