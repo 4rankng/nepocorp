@@ -58,15 +58,23 @@ export const roles = [
 export const mockData = {
   quanly: {
     plans: [], // Simplified, main data below
+    plans: [], // Simplified, main data below
   },
   ketoan: {
+    plans: [],
     plans: [],
     vehicles: [
       { id: 'V001', bienSo: '51C-12345', name: 'Xe tải Huyndai', type: 'Container 20ft' },
       { id: 'V002', bienSo: '29H-67890', name: 'Xe đầu kéo Isuzu', type: 'Container 40ft' },
       { id: 'V003', bienSo: '60A-11223', name: 'Xe tải Thaco', type: 'Thùng bạt' },
+      { id: 'V001', bienSo: '51C-12345', name: 'Xe tải Huyndai', type: 'Container 20ft' },
+      { id: 'V002', bienSo: '29H-67890', name: 'Xe đầu kéo Isuzu', type: 'Container 40ft' },
+      { id: 'V003', bienSo: '60A-11223', name: 'Xe tải Thaco', type: 'Thùng bạt' },
     ],
   },
+  giaonhan: { schedule: [] },
+  laixe: { trips: [] },
+  financialReport: [] // Old, will be replaced by new function
   giaonhan: { schedule: [] },
   laixe: { trips: [] },
   financialReport: [] // Old, will be replaced by new function
@@ -84,6 +92,48 @@ export const verifyCredentials = (username, password) => {
 };
 
 // Mock data for authentication
+export const mockUsers = [ /* ... */ ];
+
+// Mock data for vehicles (existing, might be for other purposes)
+export const mockVehicles = [ /* ... */ ];
+
+// Mock data for containers (old, potentially different structure)
+export const mockContainers = [ /* ... */ ];
+
+// Mock data for employees (existing, different structure)
+export const mockEmployeesOld = [ /* ... */ ];
+
+// Mock data for schedules, costs...
+export const mockSchedules = [ /* ... */ ];
+export const mockCosts = [ /* ... */ ];
+
+
+// --- START: Container Types Mock Data & Functions ---
+let containerTypesData = [
+  { id: 'ct1', name: "20'DC" },
+  { id: 'ct2', name: "40'DC" },
+  { id: 'ct3', name: "40'HC" },
+  { id: 'ct4', name: "20'RF" },
+  { id: 'ct5', name: "45'HC" },
+];
+export const getContainerTypes = () => new Promise(res => setTimeout(() => res([...containerTypesData]), 50));
+export const getContainerTypesForSelect = () => new Promise(res => setTimeout(() => res(containerTypesData.map(ct => ({id: ct.id, name: ct.name}))), 50));
+const validateContainerTypeData = (name, id = null) => {
+  if (!name || name.trim() === '') return 'Tên loại container không được để trống.';
+  if (containerTypesData.some(c => c.name === name.trim() && c.id !== id)) return 'Tên loại container đã tồn tại.';
+  return null;
+};
+export const addContainerType = (typeName) => new Promise((resolve, reject) => setTimeout(() => { const err = validateContainerTypeData(typeName); if(err) reject(new Error(err)); else { const newType = { id: String(Date.now()), name: typeName.trim() }; containerTypesData.push(newType); resolve(newType);}}, 50));
+export const updateContainerType = (id, updatedName) => new Promise((resolve, reject) => setTimeout(() => { const err = validateContainerTypeData(updatedName, id); if(err) reject(new Error(err)); else { let ft=null; containerTypesData = containerTypesData.map(t => t.id === id ? (ft={ ...t, name: updatedName.trim() }) : t); if(ft) resolve(ft); else reject(new Error('Không tìm thấy loại container'));}}, 50));
+export const deleteContainerType = (id) => new Promise(res => setTimeout(() => { containerTypesData = containerTypesData.filter(t => t.id !== id); res({id});}, 50));
+
+
+// --- START: Vehicles (Phương tiện) Mock Data & Functions ---
+let vehiclesData = [
+  { id: 'v1', licensePlate: '51C-12345' },
+  { id: 'v2', licensePlate: '29H-54321' },
+  { id: 'v3', licensePlate: '60A-98765' },
+  { id: 'v4', licensePlate: '51F-11223' },
 export const mockUsers = [ /* ... */ ];
 
 // Mock data for vehicles (existing, might be for other purposes)
@@ -162,7 +212,68 @@ let customersData = [
   { id: 'cust3', tenKhachHang: 'Công ty Cổ Phần DEF Giao Nhận', diaChi: '789 Phố B, Quận C, TP. Hà Nội', soDienThoai: '0987123789' },
   { id: 'cust4', tenKhachHang: 'Tập đoàn GHI Xuất Nhập Khẩu', diaChi: 'Lô 1, KCN Sóng Thần, Bình Dương', soDienThoai: '0934567123' },
   { id: 'cust5', tenKhachHang: 'Công ty Liên Doanh JKL Express', diaChi: 'Số 10, Đường K, TP. Đà Nẵng', soDienThoai: '0977890456' },
+export const getVehicles = () => new Promise(res => setTimeout(() => res([...vehiclesData]), 50));
+export const getVehiclesForSelect = () => new Promise(res => setTimeout(() => res(vehiclesData.map(v => ({id: v.id, name: v.licensePlate}))), 50));
+const validateVehicleData = (licensePlate, id = null) => {
+    if (!licensePlate || licensePlate.trim() === '') return 'Biển số xe không được để trống.';
+    if (vehiclesData.some(v => v.licensePlate === licensePlate.trim() && v.id !== id)) return 'Biển số xe đã tồn tại.';
+    return null;
+};
+export const addVehicle = (licensePlate) => new Promise((resolve, reject) => setTimeout(() => { const err = validateVehicleData(licensePlate); if(err) reject(new Error(err)); else { const newV = { id: String(Date.now()), licensePlate: licensePlate.trim() }; vehiclesData.push(newV); resolve(newV);}}, 50));
+export const updateVehicle = (id, updatedLicensePlate) => new Promise((resolve, reject) => setTimeout(() => { const err = validateVehicleData(updatedLicensePlate, id); if(err) reject(new Error(err)); else { let fv=null; vehiclesData = vehiclesData.map(v => v.id === id ? (fv={ ...v, licensePlate: updatedLicensePlate.trim() }) : v); if(fv) resolve(fv); else reject(new Error('Không tìm thấy xe'));}}, 50));
+export const deleteVehicle = (id) => new Promise(res => setTimeout(() => { vehiclesData = vehiclesData.filter(v => v.id !== id); res({id});}, 50));
+
+
+// --- START: Employees (Nhân viên) Mock Data & Functions ---
+export const employeeRoles = ['Quản lý', 'Kế toán', 'Giao nhận', 'Lái xe'];
+let employeesData = [
+  { id: 'emp1', tenNhanVien: 'Nguyễn Văn An', tenDangNhap: 'an.nv', matKhau: 'password123', email: 'an.nv@example.com', chucVu: 'Quản lý' },
+  { id: 'emp2', tenNhanVien: 'Trần Thị Bình', tenDangNhap: 'binh.tt', matKhau: 'password123', email: 'binh.tt@example.com', chucVu: 'Kế toán' },
+  { id: 'emp3', tenNhanVien: 'Lê Văn Cường', tenDangNhap: 'cuong.lv', matKhau: 'password123', email: 'cuong.lv@example.com', chucVu: 'Giao nhận' },
+  { id: 'emp4', tenNhanVien: 'Phạm Thị Dung', tenDangNhap: 'dung.pt', matKhau: 'password123', email: 'dung.pt@example.com', chucVu: 'Lái xe' },
+  { id: 'emp5', tenNhanVien: 'Hoàng Văn Em', tenDangNhap: 'em.hv', matKhau: 'password123', email: 'em.hv@example.com', chucVu: 'Lái xe' },
 ];
+export const getEmployees = () => new Promise(res => setTimeout(() => res([...employeesData]), 50));
+const validateEmployeeData = (employeeData, isUpdate = false, id = null) => { /* ... */ return null; }; // Assume exists
+export const addEmployee = (employeeData) => { /* ... */ };
+export const updateEmployee = (id, updatedEmployeeData) => { /* ... */ };
+export const deleteEmployee = (id) => { /* ... */ };
+
+
+// --- START: Customers (Khách hàng) Mock Data & Functions ---
+let customersData = [
+  { id: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', diaChi: '123 Đường X, Quận Y, TP.HCM', soDienThoai: '0901234567' },
+  { id: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', diaChi: '456 Đại lộ Z, Khu A, TP. Biên Hòa', soDienThoai: '0918765432' },
+  { id: 'cust3', tenKhachHang: 'Công ty Cổ Phần DEF Giao Nhận', diaChi: '789 Phố B, Quận C, TP. Hà Nội', soDienThoai: '0987123789' },
+  { id: 'cust4', tenKhachHang: 'Tập đoàn GHI Xuất Nhập Khẩu', diaChi: 'Lô 1, KCN Sóng Thần, Bình Dương', soDienThoai: '0934567123' },
+  { id: 'cust5', tenKhachHang: 'Công ty Liên Doanh JKL Express', diaChi: 'Số 10, Đường K, TP. Đà Nẵng', soDienThoai: '0977890456' },
+];
+export const getCustomers = () => new Promise(res => setTimeout(() => res([...customersData]), 50));
+export const getCustomersForSelect = () => new Promise(res => setTimeout(() => res(customersData.map(c => ({id: c.id, name: c.tenKhachHang}))), 50));
+const validateCustomerData = (customerData, isUpdate = false, id = null) => { /* ... */ return null; }; // Assume exists
+export const addCustomer = (customerData) => { /* ... */ };
+export const updateCustomer = (id, updatedCustomerData) => { /* ... */ };
+export const deleteCustomer = (id) => { /* ... */ };
+
+
+// --- START: Partners (Đối tác) Mock Data & Functions ---
+let partnersData = [
+  { id: 'p1', tenDoiTac: 'Đối tác Vận Tải An Phát', diaChi: 'Số 1 Đường P, Quận Q, TP.HCM', soDienThoai: '0909111222' },
+  { id: 'p2', tenDoiTac: 'Công ty Logistics Toàn Cầu', diaChi: 'Số 2 Đường R, Quận S, TP. Hà Nội', soDienThoai: '0909333444' },
+  { id: 'p3', tenDoiTac: 'Dịch vụ Kho Vận Miền Nam', diaChi: 'Số 3 Đường T, KCN Biên Hòa, Đồng Nai', soDienThoai: '0909555666' },
+];
+export const getPartners = () => new Promise(res => setTimeout(() => res([...partnersData]), 50));
+export const getPartnersForSelect = () => new Promise(res => setTimeout(() => res(partnersData.map(p => ({id: p.id, name: p.tenDoiTac}))), 50));
+const validatePartnerData = (partnerData, isUpdate = false, id = null) => { /* ... */ return null; }; // Assume exists
+export const addPartner = (partnerData) => { /* ... */ };
+export const updatePartner = (id, updatedPartnerData) => { /* ... */ };
+export const deletePartner = (id) => { /* ... */ };
+
+
+// --- START: Cost Rates (Định Mức Đi Đường) Mock Data & Functions ---
+let costRatesData = [
+  { id: 'cr1', description: 'Nội thành TP.HCM', kmMin: 0, kmMax: 50, rate: 15000 },
+  { id: 'cr2', description: 'Liên tỉnh gần', kmMin: 51, kmMax: 100, rate: 12000 },
 export const getCustomers = () => new Promise(res => setTimeout(() => res([...customersData]), 50));
 export const getCustomersForSelect = () => new Promise(res => setTimeout(() => res(customersData.map(c => ({id: c.id, name: c.tenKhachHang}))), 50));
 const validateCustomerData = (customerData, isUpdate = false, id = null) => { /* ... */ return null; }; // Assume exists

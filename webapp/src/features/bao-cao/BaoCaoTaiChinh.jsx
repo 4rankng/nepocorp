@@ -30,8 +30,8 @@ const BaoCaoTaiChinh = () => {
   };
 
   return (
-    <div className="bg-white">
-      <div className="border-b border-gray-200">
+    <div className="bg-gray-100 min-h-screen">
+      <div className="border-b border-gray-200 bg-white">
         <nav className="flex -mb-px">
           {tabs.map((tab) => (
             <button
