@@ -115,7 +115,6 @@ const KeToanLichVanChuyen = () => {
   const [isLoadingSelectOptions, setIsLoadingSelectOptions] = useState(false);
   const [modalError, setModalError] = useState(''); // For modal specific errors
 
-
   const fetchShipmentPlansData = useCallback(async () => {
     setIsLoading(true);
     setError('');
@@ -148,12 +147,10 @@ const KeToanLichVanChuyen = () => {
     }
   }, []);
 
-
   useEffect(() => {
     fetchShipmentPlansData();
     fetchSelectOptionsData(); // Fetch options needed for the modal
   }, [fetchShipmentPlansData, fetchSelectOptionsData]);
-
 
   const handleCellClick = (plan, field) => {
     setEditingCell({ planId: plan.id, field });
@@ -227,7 +224,7 @@ const KeToanLichVanChuyen = () => {
     setModalError('');
   };
 
-  const handleSaveNewPlan = async (planDataFromModal) => {
+  const handleSaveNewPlan = async planDataFromModal => {
     setModalError('');
     setIsLoading(true); // Use main isLoading or a specific one for modal save
     try {
@@ -237,7 +234,7 @@ const KeToanLichVanChuyen = () => {
       await fetchShipmentPlansData(); // Refresh the main list
       handleCloseAddNewPlanModal();
     } catch (err) {
-      setModalError(err.message || "Lỗi khi thêm kế hoạch vận chuyển mới.");
+      setModalError(err.message || 'Lỗi khi thêm kế hoạch vận chuyển mới.');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -245,7 +242,9 @@ const KeToanLichVanChuyen = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 min-h-screen"> {/* Further removed bg-gray-100, ensuring it's white by parent */}
+    <div className="p-4 md:p-6 min-h-screen">
+      {' '}
+      {/* Further removed bg-gray-100, ensuring it's white by parent */}
       <div className="flex justify-between items-center mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
           Sổ Kế Toán - Lịch Vận Chuyển
@@ -258,51 +257,131 @@ const KeToanLichVanChuyen = () => {
           Thêm Kế Hoạch
         </button>
       </div>
-
-      {error && <div className="mb-4 text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>}
-
+      {error && (
+        <div className="mb-4 text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</div>
+      )}
       <div className="bg-white shadow-md rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tháng</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Biển số xe</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đối tác</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diễn giải</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tuyến đường</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Số km (Hàng)</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Số km (Rỗng)</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dầu (lít)</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá dầu</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dầu (Đồng)</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ĐM Đi đường</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Chi phí khác</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ngày tháng
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Biển số xe
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Đối tác
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Diễn giải
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tuyến đường
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Trạng thái
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Số km (Hàng)
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Số km (Rỗng)
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Dầu (lít)
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Đơn giá dầu
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Dầu (Đồng)
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ĐM Đi đường
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Chi phí khác
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {isLoading && shipmentPlans.length === 0 && (
-              <tr><td colSpan="13" className="p-4 text-center text-gray-500">Đang tải dữ liệu...</td></tr>
+              <tr>
+                <td colSpan="13" className="p-4 text-center text-gray-500">
+                  Đang tải dữ liệu...
+                </td>
+              </tr>
             )}
             {!isLoading && !error && shipmentPlans.length === 0 && (
-              <tr><td colSpan="13" className="p-4 text-center text-gray-500">Chưa có lịch vận chuyển nào.</td></tr>
-            )}
-            {shipmentPlans.map((plan) => (
-              <tr key={plan.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatDateForDisplay(plan.ngayThang)}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{plan.bienSoXe}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{plan.tenDoiTac || '-'}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={plan.dienGiai}>{plan.dienGiai}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={typeof plan.tuyenDuong === 'object' ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}` : plan.tuyenDuong}>
-                    {typeof plan.tuyenDuong === 'object' ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}` : plan.tuyenDuong}
+              <tr>
+                <td colSpan="13" className="p-4 text-center text-gray-500">
+                  Chưa có lịch vận chuyển nào.
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{plan.trangThai}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right" onClick={() => handleCellClick(plan, 'kmChuyenHang')}>{renderEditableCell(plan, 'kmChuyenHang', plan.kmChuyenHang)}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right" onClick={() => handleCellClick(plan, 'kmChuyenVoRong')}>{renderEditableCell(plan, 'kmChuyenVoRong', plan.kmChuyenVoRong)}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right" onClick={() => handleCellClick(plan, 'dauLit')}>{renderEditableCell(plan, 'dauLit', plan.dauLit)}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right" onClick={() => handleCellClick(plan, 'donGiaDau')}>{renderEditableCell(plan, 'donGiaDau', plan.donGiaDau, true)}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(plan.dauDong)}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(plan.dinhMucDiDuong || 0)}</td>
+              </tr>
+            )}
+            {shipmentPlans.map(plan => (
+              <tr key={plan.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                  {formatDateForDisplay(plan.ngayThang)}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                  {plan.bienSoXe}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                  {plan.tenDoiTac || '-'}
+                </td>
+                <td
+                  className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate"
+                  title={plan.dienGiai}
+                >
+                  {plan.dienGiai}
+                </td>
+                <td
+                  className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate"
+                  title={
+                    typeof plan.tuyenDuong === 'object'
+                      ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}`
+                      : plan.tuyenDuong
+                  }
+                >
+                  {typeof plan.tuyenDuong === 'object'
+                    ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}`
+                    : plan.tuyenDuong}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                  {plan.trangThai}
+                </td>
+                <td
+                  className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right"
+                  onClick={() => handleCellClick(plan, 'kmChuyenHang')}
+                >
+                  {renderEditableCell(plan, 'kmChuyenHang', plan.kmChuyenHang)}
+                </td>
+                <td
+                  className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right"
+                  onClick={() => handleCellClick(plan, 'kmChuyenVoRong')}
+                >
+                  {renderEditableCell(plan, 'kmChuyenVoRong', plan.kmChuyenVoRong)}
+                </td>
+                <td
+                  className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right"
+                  onClick={() => handleCellClick(plan, 'dauLit')}
+                >
+                  {renderEditableCell(plan, 'dauLit', plan.dauLit)}
+                </td>
+                <td
+                  className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right"
+                  onClick={() => handleCellClick(plan, 'donGiaDau')}
+                >
+                  {renderEditableCell(plan, 'donGiaDau', plan.donGiaDau, true)}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                  {formatCurrency(plan.dauDong)}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                  {formatCurrency(plan.dinhMucDiDuong || 0)}
+                </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                   {formatCurrency(plan.chiPhiKhac || 0)}
                 </td>
@@ -311,13 +390,16 @@ const KeToanLichVanChuyen = () => {
           </tbody>
         </table>
       </div>
-
       {isPlanModalOpen && (
         <ShipmentPlanFormModal
           isOpen={isPlanModalOpen}
           onClose={handleCloseAddNewPlanModal}
           onSave={handleSaveNewPlan}
-          initialPlanData={{ trangThai: 'Nháp', ngayThang: new Date().toISOString().split('T')[0], thongTinContainer: [{ soContainer: '', soSeal: '' }] }}
+          initialPlanData={{
+            trangThai: 'Nháp',
+            ngayThang: new Date().toISOString().split('T')[0],
+            thongTinContainer: [{ soContainer: '', soSeal: '' }],
+          }}
           editingPlan={null} // This modal instance is only for adding new
           selectOptions={selectOptions}
           isLoading={isLoading || isLoadingSelectOptions} // Pass loading state for save button

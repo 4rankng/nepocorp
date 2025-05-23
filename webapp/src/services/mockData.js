@@ -1,3 +1,5 @@
+/* global setTimeout */
+
 // Mock user data
 export const users = {
   quanly: {
@@ -265,18 +267,65 @@ let employeesData = [
   },
 ];
 export const getEmployees = () => new Promise(res => setTimeout(() => res([...employeesData]), 50));
-const validateEmployeeData = (employeeData, isUpdate = false, id = null) => {
-  /* ... */ return null;
-}; // Assume exists
-export const addEmployee = employeeData => {
-  /* ... */
+const validateEmployeeData = (employeeData, id = null) => {
+  if (!employeeData.tenNhanVien?.trim()) return 'Tên nhân viên không được để trống.';
+  if (!employeeData.tenDangNhap?.trim()) return 'Tên đăng nhập không được để trống.';
+  if (!employeeData.matKhau?.trim()) return 'Mật khẩu không được để trống.';
+  if (!employeeData.email?.trim()) return 'Email không được để trống.';
+  if (!employeeData.chucVu?.trim()) return 'Chức vụ không được để trống.';
+
+  const existingEmployee = employeesData.find(
+    e => e.tenDangNhap === employeeData.tenDangNhap.trim() && e.id !== id
+  );
+  if (existingEmployee) return 'Tên đăng nhập đã tồn tại.';
+
+  return null;
 };
-export const updateEmployee = (id, updatedEmployeeData) => {
-  /* ... */
-};
-export const deleteEmployee = id => {
-  /* ... */
-};
+export const addEmployee = employeeData =>
+  new Promise((resolve, reject) => {
+    const err = validateEmployeeData(employeeData);
+    if (err) {
+      reject(new Error(err));
+      return;
+    }
+    const newEmployee = {
+      id: String(Date.now()),
+      ...employeeData,
+      tenNhanVien: employeeData.tenNhanVien.trim(),
+      tenDangNhap: employeeData.tenDangNhap.trim(),
+      email: employeeData.email.trim(),
+      chucVu: employeeData.chucVu.trim(),
+    };
+    employeesData.push(newEmployee);
+    resolve(newEmployee);
+  });
+export const updateEmployee = (id, updatedEmployeeData) =>
+  new Promise((resolve, reject) => {
+    const err = validateEmployeeData(updatedEmployeeData, true, id);
+    if (err) {
+      reject(new Error(err));
+      return;
+    }
+    const index = employeesData.findIndex(e => e.id === id);
+    if (index === -1) {
+      reject(new Error('Không tìm thấy nhân viên'));
+      return;
+    }
+    employeesData[index] = {
+      ...employeesData[index],
+      ...updatedEmployeeData,
+      tenNhanVien: updatedEmployeeData.tenNhanVien.trim(),
+      tenDangNhap: updatedEmployeeData.tenDangNhap.trim(),
+      email: updatedEmployeeData.email.trim(),
+      chucVu: updatedEmployeeData.chucVu.trim(),
+    };
+    resolve(employeesData[index]);
+  });
+export const deleteEmployee = id =>
+  new Promise(resolve => {
+    employeesData = employeesData.filter(e => e.id !== id);
+    resolve({ id });
+  });
 
 // --- START: Customers (Khách hàng) Mock Data & Functions ---
 let customersData = [
@@ -316,18 +365,61 @@ export const getCustomersForSelect = () =>
   new Promise(res =>
     setTimeout(() => res(customersData.map(c => ({ id: c.id, name: c.tenKhachHang }))), 50)
   );
-const validateCustomerData = (customerData, isUpdate = false, id = null) => {
-  /* ... */ return null;
-}; // Assume exists
-export const addCustomer = customerData => {
-  /* ... */
+const validateCustomerData = (customerData, id = null) => {
+  if (!customerData.tenKhachHang?.trim()) return 'Tên khách hàng không được để trống.';
+  if (!customerData.maSoThue?.trim()) return 'Mã số thuế không được để trống.';
+  if (!customerData.diaChi?.trim()) return 'Địa chỉ không được để trống.';
+
+  const existingCustomer = customersData.find(
+    c => c.maSoThue === customerData.maSoThue.trim() && c.id !== id
+  );
+  if (existingCustomer) return 'Mã số thuế đã tồn tại.';
+
+  return null;
 };
-export const updateCustomer = (id, updatedCustomerData) => {
-  /* ... */
-};
-export const deleteCustomer = id => {
-  /* ... */
-};
+export const addCustomer = customerData =>
+  new Promise((resolve, reject) => {
+    const err = validateCustomerData(customerData);
+    if (err) {
+      reject(new Error(err));
+      return;
+    }
+    const newCustomer = {
+      id: String(Date.now()),
+      ...customerData,
+      tenKhachHang: customerData.tenKhachHang.trim(),
+      maSoThue: customerData.maSoThue.trim(),
+      diaChi: customerData.diaChi.trim(),
+    };
+    customersData.push(newCustomer);
+    resolve(newCustomer);
+  });
+export const updateCustomer = (id, updatedCustomerData) =>
+  new Promise((resolve, reject) => {
+    const err = validateCustomerData(updatedCustomerData, true, id);
+    if (err) {
+      reject(new Error(err));
+      return;
+    }
+    const index = customersData.findIndex(c => c.id === id);
+    if (index === -1) {
+      reject(new Error('Không tìm thấy khách hàng'));
+      return;
+    }
+    customersData[index] = {
+      ...customersData[index],
+      ...updatedCustomerData,
+      tenKhachHang: updatedCustomerData.tenKhachHang.trim(),
+      maSoThue: updatedCustomerData.maSoThue.trim(),
+      diaChi: updatedCustomerData.diaChi.trim(),
+    };
+    resolve(customersData[index]);
+  });
+export const deleteCustomer = id =>
+  new Promise(resolve => {
+    customersData = customersData.filter(c => c.id !== id);
+    resolve({ id });
+  });
 
 // --- START: Partners (Đối tác) Mock Data & Functions ---
 let partnersData = [
@@ -355,134 +447,323 @@ export const getPartnersForSelect = () =>
   new Promise(res =>
     setTimeout(() => res(partnersData.map(p => ({ id: p.id, name: p.tenDoiTac }))), 50)
   );
-const validatePartnerData = (partnerData, isUpdate = false, id = null) => {
-  /* ... */ return null;
-}; // Assume exists
-export const addPartner = partnerData => {
-  /* ... */
-};
-export const updatePartner = (id, updatedPartnerData) => {
-  /* ... */
-};
-export const deletePartner = id => {
-  /* ... */
-};
+const validatePartnerData = (partnerData, id = null) => {
+  if (!partnerData.tenDoiTac?.trim()) return 'Tên đối tác không được để trống.';
+  if (!partnerData.maSoThue?.trim()) return 'Mã số thuế không được để trống.';
+  if (!partnerData.diaChi?.trim()) return 'Địa chỉ không được để trống.';
 
-// --- START: Cost Rates (Định Mức Đi Đường) Mock Data & Functions ---
+  const existingPartner = partnersData.find(
+    p => p.maSoThue === partnerData.maSoThue.trim() && p.id !== id
+  );
+  if (existingPartner) return 'Mã số thuế đã tồn tại.';
+
+  return null;
+};
+export const addPartner = partnerData =>
+  new Promise((resolve, reject) => {
+    const err = validatePartnerData(partnerData);
+    if (err) {
+      reject(new Error(err));
+      return;
+    }
+    const newPartner = {
+      id: String(Date.now()),
+      ...partnerData,
+      tenDoiTac: partnerData.tenDoiTac.trim(),
+      maSoThue: partnerData.maSoThue.trim(),
+      diaChi: partnerData.diaChi.trim(),
+    };
+    partnersData.push(newPartner);
+    resolve(newPartner);
+  });
+export const updatePartner = (id, updatedPartnerData) =>
+  new Promise((resolve, reject) => {
+    const err = validatePartnerData(updatedPartnerData, true, id);
+    if (err) {
+      reject(new Error(err));
+      return;
+    }
+    const index = partnersData.findIndex(p => p.id === id);
+    if (index === -1) {
+      reject(new Error('Không tìm thấy đối tác'));
+      return;
+    }
+    partnersData[index] = {
+      ...partnersData[index],
+      ...updatedPartnerData,
+      tenDoiTac: updatedPartnerData.tenDoiTac.trim(),
+      maSoThue: updatedPartnerData.maSoThue.trim(),
+      diaChi: updatedPartnerData.diaChi.trim(),
+    };
+    resolve(partnersData[index]);
+  });
+export const deletePartner = id =>
+  new Promise(resolve => {
+    partnersData = partnersData.filter(p => p.id !== id);
+    resolve({ id });
+  });
+
+// --- START: Cost Rates (Định mức chi phí) Mock Data & Functions ---
 let costRatesData = [
   { id: 'cr1', description: 'Nội thành TP.HCM', kmMin: 0, kmMax: 50, rate: 15000 },
   { id: 'cr2', description: 'Liên tỉnh gần', kmMin: 51, kmMax: 100, rate: 12000 },
 ];
 export const getCostRates = () => new Promise(res => setTimeout(() => res([...costRatesData]), 50));
-const validateCostRateData = (rateData, isUpdate = false, id = null) => {
-  /* ... */ return null;
-}; // Assume exists
-export const addCostRate = rateData => {
-  /* ... */
-};
-export const updateCostRate = (id, updatedRateData) => {
-  /* ... */
-};
-export const deleteCostRate = id => {
-  /* ... */
-};
+const validateCostRateData = (rateData, id = null) => {
+  if (!rateData.tenChiPhi?.trim()) return 'Tên chi phí không được để trống.';
+  if (!rateData.donVi?.trim()) return 'Đơn vị không được để trống.';
+  if (typeof rateData.dinhMuc !== 'number' || rateData.dinhMuc <= 0)
+    return 'Định mức phải là số dương.';
 
-// --- START: Shipment Plans (Lịch Vận Chuyển) Mock Data & Functions ---
-const recalculateShipmentCosts = (plan) => {
+  const existingRate = costRatesData.find(
+    r => r.tenChiPhi === rateData.tenChiPhi.trim() && r.id !== id
+  );
+  if (existingRate) return 'Tên chi phí đã tồn tại.';
+
+  return null;
+};
+export const addCostRate = rateData =>
+  new Promise((resolve, reject) => {
+    const err = validateCostRateData(rateData);
+    if (err) {
+      reject(new Error(err));
+      return;
+    }
+    const newRate = {
+      id: String(Date.now()),
+      ...rateData,
+      tenChiPhi: rateData.tenChiPhi.trim(),
+      donVi: rateData.donVi.trim(),
+    };
+    costRatesData.push(newRate);
+    resolve(newRate);
+  });
+export const updateCostRate = (id, updatedRateData) =>
+  new Promise((resolve, reject) => {
+    const err = validateCostRateData(updatedRateData, true, id);
+    if (err) {
+      reject(new Error(err));
+      return;
+    }
+    const index = costRatesData.findIndex(r => r.id === id);
+    if (index === -1) {
+      reject(new Error('Không tìm thấy định mức chi phí'));
+      return;
+    }
+    costRatesData[index] = {
+      ...costRatesData[index],
+      ...updatedRateData,
+      tenChiPhi: updatedRateData.tenChiPhi.trim(),
+      donVi: updatedRateData.donVi.trim(),
+    };
+    resolve(costRatesData[index]);
+  });
+export const deleteCostRate = id =>
+  new Promise(resolve => {
+    costRatesData = costRatesData.filter(r => r.id !== id);
+    resolve({ id });
+  });
+
+// --- START: Shipment Plans (Kế hoạch vận chuyển) Mock Data & Functions ---
+const recalculateShipmentCosts = plan => {
   plan.dauDong = (plan.dauLit || 0) * (plan.donGiaDau || 0);
   plan.costFuel = plan.dauDong;
   let detailedOtherCostsSum = 0;
   if (plan.detailedOtherCosts && Array.isArray(plan.detailedOtherCosts)) {
-    detailedOtherCostsSum = plan.detailedOtherCosts.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    detailedOtherCostsSum = plan.detailedOtherCosts.reduce(
+      (sum, item) => sum + (parseFloat(item.amount) || 0),
+      0
+    );
   }
   plan.chiPhiKhac = detailedOtherCostsSum;
-  plan.tongChiPhiPhuongTien = (plan.dauDong || 0) + (plan.phiDiDuong || 0) + (plan.cuocThueVanChuyen || 0);
-  plan.totalCost = (plan.costFuel || 0) +
-                   (plan.costTolls || 0) +
-                   (plan.costMaintenance || 0) +
-                   plan.chiPhiKhac +
-                   (plan.cuocThueVanChuyen || 0);
+  plan.tongChiPhiPhuongTien =
+    (plan.dauDong || 0) + (plan.phiDiDuong || 0) + (plan.cuocThueVanChuyen || 0);
+  plan.totalCost =
+    (plan.costFuel || 0) +
+    (plan.costTolls || 0) +
+    (plan.costMaintenance || 0) +
+    plan.chiPhiKhac +
+    (plan.cuocThueVanChuyen || 0);
   plan.loiNhuanPhuongTien = (plan.cuocVanChuyen || 0) - plan.tongChiPhiPhuongTien;
   return plan;
 };
 
 let shipmentPlansData = [
   recalculateShipmentCosts({
-    id: 'sp1', ngayThang: '01/01/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: 'p1', tenDoiTac: 'Đối tác Vận Tải An Phát',
-    dienGiai: 'Chở hàng Tết đợt 1', tuyenDuong: { diemDi: 'Kho A', diemDen: ['Kho B', 'Kho C'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct1', tenLoaiContainer: "20'DC",
-    cuocVanChuyen: 5000000, thongTinContainer: [{ soContainer: 'CONT111', soSeal: 'SEAL111' }],
-    ngayHaHang: '02/01/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
-    dauLit: 100, donGiaDau: 20000, phiDiDuong: 500000,
-    costTolls: 500000, costMaintenance: 200000,
-    detailedOtherCosts: [ { id: 'doc1_1', name: "Bốc xếp", amount: 300000 }, { id: 'doc1_2', name: "Lưu kho", amount: 100000 } ],
-    kmChuyenHang: 120, kmChuyenVoRong: 30, dinhMucDiDuong: 500000,
+    id: 'sp1',
+    ngayThang: '01/01/2024',
+    bienSoXeId: 'v1',
+    bienSoXe: '51C-12345',
+    doiTacId: 'p1',
+    tenDoiTac: 'Đối tác Vận Tải An Phát',
+    dienGiai: 'Chở hàng Tết đợt 1',
+    tuyenDuong: { diemDi: 'Kho A', diemDen: ['Kho B', 'Kho C'] },
+    trangThai: 'Hoàn thành',
+    khachHangId: 'cust1',
+    tenKhachHang: 'Công ty TNHH ABC Vận Tải',
+    loaiContainerId: 'ct1',
+    tenLoaiContainer: "20'DC",
+    cuocVanChuyen: 5000000,
+    thongTinContainer: [{ soContainer: 'CONT111', soSeal: 'SEAL111' }],
+    ngayHaHang: '02/01/2024',
+    soLuongContainer: 1,
+    cuocThueVanChuyen: 0,
+    dauLit: 100,
+    donGiaDau: 20000,
+    phiDiDuong: 500000,
+    costTolls: 500000,
+    costMaintenance: 200000,
+    detailedOtherCosts: [
+      { id: 'doc1_1', name: 'Bốc xếp', amount: 300000 },
+      { id: 'doc1_2', name: 'Lưu kho', amount: 100000 },
+    ],
+    kmChuyenHang: 120,
+    kmChuyenVoRong: 30,
+    dinhMucDiDuong: 500000,
   }),
   recalculateShipmentCosts({
-    id: 'sp2', ngayThang: '15/01/2024', bienSoXeId: 'v2', bienSoXe: '29H-54321', doiTacId: '', tenDoiTac: '-',
-    dienGiai: 'Giao hàng cho siêu thị XYZ', tuyenDuong: { diemDi: 'Cảng X', diemDen: ['Siêu thị Y'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust2', tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics', loaiContainerId: 'ct2', tenLoaiContainer: "40'DC",
-    cuocVanChuyen: 7500000, thongTinContainer: [{ soContainer: 'CONT222', soSeal: 'SEAL222' }],
-    ngayHaHang: '15/01/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
-    dauLit: 150, donGiaDau: 20000, phiDiDuong: 700000,
-    costTolls: 700000, costMaintenance: 300000,
-    detailedOtherCosts: [ { id: 'doc2_1', name: "Phí cảng", amount: 400000 } ],
-    kmChuyenHang: 150, kmChuyenVoRong: 40, dinhMucDiDuong: 700000,
+    id: 'sp2',
+    ngayThang: '15/01/2024',
+    bienSoXeId: 'v2',
+    bienSoXe: '29H-54321',
+    doiTacId: '',
+    tenDoiTac: '-',
+    dienGiai: 'Giao hàng cho siêu thị XYZ',
+    tuyenDuong: { diemDi: 'Cảng X', diemDen: ['Siêu thị Y'] },
+    trangThai: 'Hoàn thành',
+    khachHangId: 'cust2',
+    tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics',
+    loaiContainerId: 'ct2',
+    tenLoaiContainer: "40'DC",
+    cuocVanChuyen: 7500000,
+    thongTinContainer: [{ soContainer: 'CONT222', soSeal: 'SEAL222' }],
+    ngayHaHang: '15/01/2024',
+    soLuongContainer: 1,
+    cuocThueVanChuyen: 0,
+    dauLit: 150,
+    donGiaDau: 20000,
+    phiDiDuong: 700000,
+    costTolls: 700000,
+    costMaintenance: 300000,
+    detailedOtherCosts: [{ id: 'doc2_1', name: 'Phí cảng', amount: 400000 }],
+    kmChuyenHang: 150,
+    kmChuyenVoRong: 40,
+    dinhMucDiDuong: 700000,
   }),
   recalculateShipmentCosts({
-    id: 'sp3', ngayThang: '05/02/2024', bienSoXeId: 'v1', bienSoXe: '51C-12345', doiTacId: '', tenDoiTac: '-',
-    dienGiai: 'Vận chuyển hàng đông lạnh', tuyenDuong: { diemDi: 'Kho Lạnh A', diemDen: ['Kho Lạnh B'] }, trangThai: 'Hoàn thành',
-    khachHangId: 'cust1', tenKhachHang: 'Công ty TNHH ABC Vận Tải', loaiContainerId: 'ct4', tenLoaiContainer: "20'RF",
-    cuocVanChuyen: 6000000, thongTinContainer: [{ soContainer: 'CONT333', soSeal: 'SEAL333' }],
-    ngayHaHang: '05/02/2024', soLuongContainer: 1, cuocThueVanChuyen: 0,
-    dauLit: 120, donGiaDau: 21000, phiDiDuong: 600000,
-    costTolls: 600000, costMaintenance: 400000, detailedOtherCosts: [],
-    kmChuyenHang: 100, kmChuyenVoRong: 20, dinhMucDiDuong: 600000,
+    id: 'sp3',
+    ngayThang: '05/02/2024',
+    bienSoXeId: 'v1',
+    bienSoXe: '51C-12345',
+    doiTacId: '',
+    tenDoiTac: '-',
+    dienGiai: 'Vận chuyển hàng đông lạnh',
+    tuyenDuong: { diemDi: 'Kho Lạnh A', diemDen: ['Kho Lạnh B'] },
+    trangThai: 'Hoàn thành',
+    khachHangId: 'cust1',
+    tenKhachHang: 'Công ty TNHH ABC Vận Tải',
+    loaiContainerId: 'ct4',
+    tenLoaiContainer: "20'RF",
+    cuocVanChuyen: 6000000,
+    thongTinContainer: [{ soContainer: 'CONT333', soSeal: 'SEAL333' }],
+    ngayHaHang: '05/02/2024',
+    soLuongContainer: 1,
+    cuocThueVanChuyen: 0,
+    dauLit: 120,
+    donGiaDau: 21000,
+    phiDiDuong: 600000,
+    costTolls: 600000,
+    costMaintenance: 400000,
+    detailedOtherCosts: [],
+    kmChuyenHang: 100,
+    kmChuyenVoRong: 20,
+    dinhMucDiDuong: 600000,
   }),
   // ... other plans
 ];
 export const getShipmentPlans = () =>
   new Promise(res => setTimeout(() => res([...shipmentPlansData]), 50));
-export const addShipmentPlan = async (planData) => {
-  // ... existing code ...
-};
-export const updateShipmentPlan = (id, updatedPlanData) => {
-  // ... existing code ...
-};
-export const deleteShipmentPlan = id => {
-  // ... existing code ...
-};
+export const addShipmentPlan = planData =>
+  new Promise((resolve, reject) => {
+    if (!planData.tenKeHoach?.trim()) {
+      reject(new Error('Tên kế hoạch không được để trống.'));
+      return;
+    }
+    const newPlan = {
+      id: String(Date.now()),
+      ...planData,
+      tenKeHoach: planData.tenKeHoach.trim(),
+      trangThai: 'Chờ xác nhận',
+      ngayTao: new Date().toISOString(),
+    };
+    shipmentPlansData.push(newPlan);
+    resolve(newPlan);
+  });
+export const updateShipmentPlan = (id, updatedPlanData) =>
+  new Promise((resolve, reject) => {
+    const index = shipmentPlansData.findIndex(p => p.id === id);
+    if (index === -1) {
+      reject(new Error('Không tìm thấy kế hoạch'));
+      return;
+    }
+    shipmentPlansData[index] = {
+      ...shipmentPlansData[index],
+      ...updatedPlanData,
+      tenKeHoach: updatedPlanData.tenKeHoach?.trim() || shipmentPlansData[index].tenKeHoach,
+    };
+    resolve(shipmentPlansData[index]);
+  });
+export const deleteShipmentPlan = id =>
+  new Promise(resolve => {
+    shipmentPlansData = shipmentPlansData.filter(p => p.id !== id);
+    resolve({ id });
+  });
 
 export const updateShipmentPlanField = async (planId, field, value) => {
-  await new Promise(resolve => setTimeout(resolve, 100));
-  let updatedPlan = null;
-  shipmentPlansData = shipmentPlansData.map(plan => {
-    if (plan.id === planId) {
-      const newPlan = { ...plan, [field]: value };
-      updatedPlan = recalculateShipmentCosts(newPlan);
-      return updatedPlan;
-    }
-    return plan;
-  });
-  if (updatedPlan) {
-    return { ...updatedPlan };
-  }
-  throw new Error("Plan not found");
+  const plan = shipmentPlansData.find(p => p.id === planId);
+  if (!plan) throw new Error('Không tìm thấy kế hoạch');
+  plan[field] = value;
+  return plan;
 };
 
-// --- START: CRUD for Detailed Other Costs ---
 export const addDetailedOtherCostItem = async (planId, itemName, itemAmount) => {
-  // ... existing code ...
-};
-export const updateDetailedOtherCostItem = async (planId, itemId, updatedName, updatedAmount) => {
-  // ... existing code ...
-};
-export const deleteDetailedOtherCostItem = async (planId, itemId) => {
-  // ... existing code ...
-};
-// --- END: CRUD for Detailed Other Costs ---
+  const plan = shipmentPlansData.find(p => p.id === planId);
+  if (!plan) throw new Error('Không tìm thấy kế hoạch');
 
-// --- END: Shipment Plans (Lịch Vận Chuyển) Mock Data & Functions ---
+  if (!plan.chiPhiKhac) plan.chiPhiKhac = [];
+  const newItem = {
+    id: String(Date.now()),
+    ten: itemName.trim(),
+    soTien: Number(itemAmount),
+  };
+  plan.chiPhiKhac.push(newItem);
+  return newItem;
+};
+
+export const updateDetailedOtherCostItem = async (planId, itemId, updatedName, updatedAmount) => {
+  const plan = shipmentPlansData.find(p => p.id === planId);
+  if (!plan) throw new Error('Không tìm thấy kế hoạch');
+
+  const item = plan.chiPhiKhac?.find(i => i.id === itemId);
+  if (!item) throw new Error('Không tìm thấy khoản chi phí');
+
+  item.ten = updatedName.trim();
+  item.soTien = Number(updatedAmount);
+  return item;
+};
+
+export const deleteDetailedOtherCostItem = async (planId, itemId) => {
+  const plan = shipmentPlansData.find(p => p.id === planId);
+  if (!plan) throw new Error('Không tìm thấy kế hoạch');
+
+  const index = plan.chiPhiKhac?.findIndex(i => i.id === itemId);
+  if (index === -1) throw new Error('Không tìm thấy khoản chi phí');
+
+  plan.chiPhiKhac.splice(index, 1);
+  return { id: itemId };
+};
+
+// --- END: Shipment Plans (Kế hoạch vận chuyển) Mock Data & Functions ---
 
 // --- START: Financial Report (Báo Cáo Tài Chính) Mock Data ---
 export const financialReportData = [
@@ -495,9 +776,9 @@ export const financialReportData = [
       fuel: 8000000,
       maintenance: 2000000,
       tolls: 1500000,
-      other: 1000000
+      other: 1000000,
     },
-    profit: 11500000
+    profit: 11500000,
   },
   {
     id: 'fr2',
@@ -508,9 +789,9 @@ export const financialReportData = [
       fuel: 12000000,
       maintenance: 3000000,
       tolls: 2000000,
-      other: 1500000
+      other: 1500000,
     },
-    profit: 16500000
+    profit: 16500000,
   },
   {
     id: 'fr3',
@@ -521,9 +802,9 @@ export const financialReportData = [
       fuel: 9000000,
       maintenance: 2500000,
       tolls: 1800000,
-      other: 1200000
+      other: 1200000,
     },
-    profit: 13500000
+    profit: 13500000,
   },
   {
     id: 'fr4',
@@ -534,9 +815,9 @@ export const financialReportData = [
       fuel: 11000000,
       maintenance: 2800000,
       tolls: 1900000,
-      other: 1300000
+      other: 1300000,
     },
-    profit: 15000000
+    profit: 15000000,
   },
   {
     id: 'fr5',
@@ -547,9 +828,9 @@ export const financialReportData = [
       fuel: 9500000,
       maintenance: 2700000,
       tolls: 1850000,
-      other: 1250000
+      other: 1250000,
     },
-    profit: 14700000
+    profit: 14700000,
   },
   {
     id: 'fr6',
@@ -560,9 +841,9 @@ export const financialReportData = [
       fuel: 13000000,
       maintenance: 3200000,
       tolls: 2200000,
-      other: 1600000
+      other: 1600000,
     },
-    profit: 18000000
+    profit: 18000000,
   },
   {
     id: 'fr7',
@@ -573,9 +854,9 @@ export const financialReportData = [
       fuel: 8800000,
       maintenance: 2300000,
       tolls: 1700000,
-      other: 1100000
+      other: 1100000,
     },
-    profit: 13100000
+    profit: 13100000,
   },
   {
     id: 'fr8',
@@ -586,9 +867,9 @@ export const financialReportData = [
       fuel: 11500000,
       maintenance: 2900000,
       tolls: 1950000,
-      other: 1400000
+      other: 1400000,
     },
-    profit: 15200000
+    profit: 15200000,
   },
   {
     id: 'fr9',
@@ -599,9 +880,9 @@ export const financialReportData = [
       fuel: 9200000,
       maintenance: 2600000,
       tolls: 1750000,
-      other: 1150000
+      other: 1150000,
     },
-    profit: 14300000
+    profit: 14300000,
   },
   {
     id: 'fr10',
@@ -612,10 +893,10 @@ export const financialReportData = [
       fuel: 12500000,
       maintenance: 3100000,
       tolls: 2100000,
-      other: 1500000
+      other: 1500000,
     },
-    profit: 16800000
-  }
+    profit: 16800000,
+  },
 ];
 
 // --- START: Profit & Revenue Report Mock Data ---
@@ -626,7 +907,7 @@ export const profitAndRevenueData = [
     bienSoXe: '51C-12345',
     revenue: 25000000,
     costs: 12500000,
-    profit: 12500000
+    profit: 12500000,
   },
   {
     id: 'pr2',
@@ -634,7 +915,7 @@ export const profitAndRevenueData = [
     bienSoXe: '29H-67890',
     revenue: 35000000,
     costs: 18500000,
-    profit: 16500000
+    profit: 16500000,
   },
   {
     id: 'pr3',
@@ -642,7 +923,7 @@ export const profitAndRevenueData = [
     bienSoXe: '51C-12345',
     revenue: 28000000,
     costs: 14500000,
-    profit: 13500000
+    profit: 13500000,
   },
   {
     id: 'pr4',
@@ -650,7 +931,7 @@ export const profitAndRevenueData = [
     bienSoXe: '29H-67890',
     revenue: 32000000,
     costs: 17000000,
-    profit: 15000000
+    profit: 15000000,
   },
   {
     id: 'pr5',
@@ -658,7 +939,7 @@ export const profitAndRevenueData = [
     bienSoXe: '51C-12345',
     revenue: 30000000,
     costs: 15300000,
-    profit: 14700000
+    profit: 14700000,
   },
   {
     id: 'pr6',
@@ -666,7 +947,7 @@ export const profitAndRevenueData = [
     bienSoXe: '29H-67890',
     revenue: 38000000,
     costs: 20000000,
-    profit: 18000000
+    profit: 18000000,
   },
   {
     id: 'pr7',
@@ -674,7 +955,7 @@ export const profitAndRevenueData = [
     bienSoXe: '51C-12345',
     revenue: 27000000,
     costs: 13900000,
-    profit: 13100000
+    profit: 13100000,
   },
   {
     id: 'pr8',
@@ -682,7 +963,7 @@ export const profitAndRevenueData = [
     bienSoXe: '29H-67890',
     revenue: 33000000,
     costs: 17800000,
-    profit: 15200000
+    profit: 15200000,
   },
   {
     id: 'pr9',
@@ -690,7 +971,7 @@ export const profitAndRevenueData = [
     bienSoXe: '51C-12345',
     revenue: 29000000,
     costs: 14700000,
-    profit: 14300000
+    profit: 14300000,
   },
   {
     id: 'pr10',
@@ -698,8 +979,8 @@ export const profitAndRevenueData = [
     bienSoXe: '29H-67890',
     revenue: 36000000,
     costs: 19200000,
-    profit: 16800000
-  }
+    profit: 16800000,
+  },
 ];
 
 // --- START: Cost Report Mock Data ---
@@ -709,71 +990,71 @@ export const costReportData = [
     monthYear: '2024-01',
     bienSoXe: '51C-12345',
     category: 'Nhiên liệu',
-    amount: 8000000
+    amount: 8000000,
   },
   {
     id: 'cr2',
     monthYear: '2024-01',
     bienSoXe: '51C-12345',
     category: 'Bảo trì',
-    amount: 2000000
+    amount: 2000000,
   },
   {
     id: 'cr3',
     monthYear: '2024-01',
     bienSoXe: '51C-12345',
     category: 'Phí đường bộ',
-    amount: 1500000
+    amount: 1500000,
   },
   {
     id: 'cr4',
     monthYear: '2024-01',
     bienSoXe: '51C-12345',
     category: 'Chi phí khác',
-    amount: 1000000
+    amount: 1000000,
   },
   {
     id: 'cr5',
     monthYear: '2024-01',
     bienSoXe: '29H-67890',
     category: 'Nhiên liệu',
-    amount: 12000000
+    amount: 12000000,
   },
   {
     id: 'cr6',
     monthYear: '2024-01',
     bienSoXe: '29H-67890',
     category: 'Bảo trì',
-    amount: 3000000
+    amount: 3000000,
   },
   {
     id: 'cr7',
     monthYear: '2024-01',
     bienSoXe: '29H-67890',
     category: 'Phí đường bộ',
-    amount: 2000000
+    amount: 2000000,
   },
   {
     id: 'cr8',
     monthYear: '2024-01',
     bienSoXe: '29H-67890',
     category: 'Chi phí khác',
-    amount: 1500000
+    amount: 1500000,
   },
   {
     id: 'cr9',
     monthYear: '2024-02',
     bienSoXe: '51C-12345',
     category: 'Nhiên liệu',
-    amount: 9000000
+    amount: 9000000,
   },
   {
     id: 'cr10',
     monthYear: '2024-02',
     bienSoXe: '51C-12345',
     category: 'Bảo trì',
-    amount: 2500000
-  }
+    amount: 2500000,
+  },
 ];
 
 // --- START: Revenue Tracking Report Mock Data ---
@@ -789,7 +1070,7 @@ export const revenueTrackingData = [
     roadCost: 500000,
     totalCost: 4250000,
     transportFee: 8000000,
-    profit: 3750000
+    profit: 3750000,
   },
   {
     id: 'rt2',
@@ -802,7 +1083,7 @@ export const revenueTrackingData = [
     roadCost: 200000,
     totalCost: 2200000,
     transportFee: 4500000,
-    profit: 2300000
+    profit: 2300000,
   },
   {
     id: 'rt3',
@@ -815,7 +1096,7 @@ export const revenueTrackingData = [
     roadCost: 800000,
     totalCost: 5800000,
     transportFee: 12000000,
-    profit: 6200000
+    profit: 6200000,
   },
   {
     id: 'rt4',
@@ -828,7 +1109,7 @@ export const revenueTrackingData = [
     roadCost: 150000,
     totalCost: 1900000,
     transportFee: 4000000,
-    profit: 2100000
+    profit: 2100000,
   },
   {
     id: 'rt5',
@@ -841,7 +1122,7 @@ export const revenueTrackingData = [
     roadCost: 250000,
     totalCost: 2500000,
     transportFee: 5500000,
-    profit: 3000000
+    profit: 3000000,
   },
   {
     id: 'rt6',
@@ -854,7 +1135,7 @@ export const revenueTrackingData = [
     roadCost: 300000,
     totalCost: 2800000,
     transportFee: 6000000,
-    profit: 3200000
+    profit: 3200000,
   },
   {
     id: 'rt7',
@@ -867,7 +1148,7 @@ export const revenueTrackingData = [
     roadCost: 220000,
     totalCost: 2325000,
     transportFee: 5000000,
-    profit: 2675000
+    profit: 2675000,
   },
   {
     id: 'rt8',
@@ -880,7 +1161,7 @@ export const revenueTrackingData = [
     roadCost: 750000,
     totalCost: 5500000,
     transportFee: 11500000,
-    profit: 6000000
+    profit: 6000000,
   },
   {
     id: 'rt9',
@@ -893,7 +1174,7 @@ export const revenueTrackingData = [
     roadCost: 160000,
     totalCost: 2035000,
     transportFee: 4200000,
-    profit: 2165000
+    profit: 2165000,
   },
   {
     id: 'rt10',
@@ -906,8 +1187,8 @@ export const revenueTrackingData = [
     roadCost: 520000,
     totalCost: 4395000,
     transportFee: 8500000,
-    profit: 4105000
-  }
+    profit: 4105000,
+  },
 ];
 
 // --- START: Debt Report Mock Data ---
@@ -919,7 +1200,7 @@ export const debtReportData = [
     monthYear: '2024-01',
     phaiThu: 15000000,
     phaiTra: 0,
-    ghiChu: 'Thanh toán đúng hạn'
+    ghiChu: 'Thanh toán đúng hạn',
   },
   {
     id: 'debt2',
@@ -928,7 +1209,7 @@ export const debtReportData = [
     monthYear: '2024-01',
     phaiThu: 0,
     phaiTra: 5000000,
-    ghiChu: 'Đã thanh toán 1 phần'
+    ghiChu: 'Đã thanh toán 1 phần',
   },
   {
     id: 'debt3',
@@ -937,7 +1218,7 @@ export const debtReportData = [
     monthYear: '2024-01',
     phaiThu: 8000000,
     phaiTra: 0,
-    ghiChu: 'Chậm thanh toán'
+    ghiChu: 'Chậm thanh toán',
   },
   {
     id: 'debt4',
@@ -946,7 +1227,7 @@ export const debtReportData = [
     monthYear: '2024-02',
     phaiThu: 2000000,
     phaiTra: 12000000,
-    ghiChu: ''
+    ghiChu: '',
   },
   {
     id: 'debt5',
@@ -955,7 +1236,7 @@ export const debtReportData = [
     monthYear: '2024-02',
     phaiThu: 10000000,
     phaiTra: 0,
-    ghiChu: 'Hợp đồng mới'
+    ghiChu: 'Hợp đồng mới',
   },
   {
     id: 'debt6',
@@ -964,7 +1245,7 @@ export const debtReportData = [
     monthYear: '2024-02',
     phaiThu: 0,
     phaiTra: 3500000,
-    ghiChu: 'Ưu đãi thanh toán sớm'
+    ghiChu: 'Ưu đãi thanh toán sớm',
   },
   {
     id: 'debt7',
@@ -973,7 +1254,7 @@ export const debtReportData = [
     monthYear: '2024-03',
     phaiThu: 22000000,
     phaiTra: 0,
-    ghiChu: 'Chưa thanh toán'
+    ghiChu: 'Chưa thanh toán',
   },
   {
     id: 'debt8',
@@ -982,7 +1263,7 @@ export const debtReportData = [
     monthYear: '2024-03',
     phaiThu: 0,
     phaiTra: 8000000,
-    ghiChu: 'Thanh toán định kỳ'
+    ghiChu: 'Thanh toán định kỳ',
   },
   {
     id: 'debt9',
@@ -991,7 +1272,7 @@ export const debtReportData = [
     monthYear: '2024-03',
     phaiThu: 15000000,
     phaiTra: 0,
-    ghiChu: 'Đang xử lý'
+    ghiChu: 'Đang xử lý',
   },
   {
     id: 'debt10',
@@ -1000,8 +1281,8 @@ export const debtReportData = [
     monthYear: '2024-03',
     phaiThu: 0,
     phaiTra: 6000000,
-    ghiChu: 'Thanh toán theo hợp đồng'
-  }
+    ghiChu: 'Thanh toán theo hợp đồng',
+  },
 ];
 
 // Update the mockData object to include the new data
@@ -1010,7 +1291,7 @@ Object.assign(mockData, {
   profitAndRevenue: profitAndRevenueData,
   costReport: costReportData,
   revenueTracking: revenueTrackingData,
-  debtReport: debtReportData
+  debtReport: debtReportData,
 });
 
 // --- END: Financial Report (Báo Cáo Tài Chính) Mock Data ---
@@ -1058,19 +1339,17 @@ let otherVehicleCostsData = [
 
 // --- START: Vehicle Monthly Details Report Functions ---
 export const getAvailableMonthsForReport = () => {
-  // Can be used for multiple reports if date source is consistent
   return new Promise(resolve => {
     const uniqueMonths = new Set();
     shipmentPlansData.forEach(plan => {
-      const [day, month, year] = plan.ngayThang.split('/');
+      const [, month, year] = plan.ngayThang.split('/');
       uniqueMonths.add(`${year}-${month}`);
     });
     otherVehicleCostsData.forEach(cost => {
-      // Also consider months from other costs
       uniqueMonths.add(cost.monthYear);
     });
     const sortedMonths = Array.from(uniqueMonths)
-      .sort((a, b) => b.localeCompare(a)) // Sorts YYYY-MM descending (most recent first)
+      .sort((a, b) => b.localeCompare(a))
       .map(monthYear => {
         const [year, month] = monthYear.split('-');
         return { label: `${month}/${year}`, value: monthYear };
@@ -1084,7 +1363,7 @@ export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
     const relevantPlans = shipmentPlansData.filter(
       plan =>
         plan.bienSoXeId === vehicleId &&
-        plan.ngayThang.endsWith(`/${monthYear.substring(5)}/${monthYear.substring(0, 4)}`) && // Match MM/YYYY part
+        plan.ngayThang.endsWith(`/${monthYear.substring(5)}/${monthYear.substring(0, 4)}`) &&
         plan.trangThai === 'Hoàn thành'
     );
 
@@ -1093,7 +1372,7 @@ export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
     );
 
     let totalRevenue = 0;
-    let totalShipmentCosts = 0; // Sum of tongChiPhiPhuongTien for each plan
+    let totalShipmentCosts = 0;
 
     const shipmentDetails = relevantPlans.map(plan => {
       totalRevenue += plan.cuocVanChuyen || 0;
@@ -1107,9 +1386,9 @@ export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
         dauLit: plan.dauLit || 0,
         dauDong: plan.dauDong || 0,
         phiDiDuong: plan.phiDiDuong || 0,
-        tongChiPhiPhuongTien: plan.tongChiPhiPhuongTien || 0, // Cost specific to this shipment
+        tongChiPhiPhuongTien: plan.tongChiPhiPhuongTien || 0,
         cuocVanChuyen: plan.cuocVanChuyen || 0,
-        loiNhuanPhuongTien: plan.loiNhuanPhuongTien || 0, // Profit specific to this shipment
+        loiNhuanPhuongTien: plan.loiNhuanPhuongTien || 0,
       };
     });
 
@@ -1122,9 +1401,9 @@ export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
         resolve({
           overview: {
             totalRevenue,
-            totalShipmentCosts, // Costs directly from shipments
-            totalOtherCosts: totalOtherCostsAmount, // Other general costs for the vehicle in that month
-            grandTotalCosts, // All costs combined
+            totalShipmentCosts,
+            totalOtherCosts: totalOtherCostsAmount,
+            grandTotalCosts,
             grandTotalProfit,
           },
           shipmentDetails,
@@ -1155,7 +1434,7 @@ export const getAvailableMonthsForDebtReport = () => {
       uniqueMonths.add(item.monthYear);
     });
     const sortedMonths = Array.from(uniqueMonths)
-      .sort((a, b) => b.localeCompare(a)) // Sorts YYYY-MM descending
+      .sort((a, b) => b.localeCompare(a))
       .map(monthYear => {
         const [year, month] = monthYear.split('-');
         return { label: `${month}/${year}`, value: monthYear };

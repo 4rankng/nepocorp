@@ -294,9 +294,10 @@ const QuanLyLichVanChuyen = () => {
   };
 
   return (
-    <div className="p-6 min-h-screen"> {/* Removed bg-gray-100 */}
+    <div className="p-6 min-h-screen">
+      {' '}
+      {/* Removed bg-gray-100 */}
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Lịch Vận Chuyển</h1>
-
       <div className="bg-white shadow-md rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -389,7 +390,6 @@ const QuanLyLichVanChuyen = () => {
           </tbody>
         </table>
       </div>
-
       <button
         onClick={handleOpenModalForAdd}
         className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -397,7 +397,6 @@ const QuanLyLichVanChuyen = () => {
       >
         <PlusIcon className="w-8 h-8" />
       </button>
-
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl transform transition-all max-h-[90vh] overflow-y-auto">
