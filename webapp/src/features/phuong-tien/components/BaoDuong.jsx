@@ -29,49 +29,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import StandardTable from '@shared/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
 import ConfirmationDialog from '@shared/components/ConfirmationDialog';
-
-// Mock API - Replace with actual API calls
-const mockApi = {
-  getMaintenanceRecords: async () => ({
-    data: [
-      {
-        id: 1,
-        licensePlate: '51A-123.45',
-        replacementDate: '2025-05-15',
-        warrantyPeriod: 6,
-        quantity: 6,
-        unitPrice: 2500000,
-        total: 15000000,
-        note: 'Thay lốp mới toàn bộ',
-      },
-      {
-        id: 2,
-        licensePlate: '51B-678.90',
-        replacementDate: '2025-04-20',
-        warrantyPeriod: 12,
-        quantity: 2,
-        unitPrice: 3000000,
-        total: 6000000,
-        note: 'Thay lốp trước',
-      },
-    ],
-  }),
-  getLicensePlates: async () => [
-    { id: 1, licensePlate: '51A-123.45' },
-    { id: 2, licensePlate: '51B-678.90' },
-  ],
-  addMaintenanceRecord: async data => ({
-    id: Date.now(),
-    total: data.quantity * data.unitPrice,
-    ...data,
-  }),
-  updateMaintenanceRecord: async (id, data) => ({
-    id,
-    total: data.quantity * data.unitPrice,
-    ...data,
-  }),
-  deleteMaintenanceRecord: async id => id,
-};
+import { maintenanceApi, vehicleApi } from '../../../services/mockApi.js';
 
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {
@@ -120,12 +78,15 @@ const BaoDuong = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [records, plates] = await Promise.all([
-        mockApi.getMaintenanceRecords(),
-        mockApi.getLicensePlates(),
-      ]);
+      const [records, vehicles] = await Promise.all([maintenanceApi.getAll(), vehicleApi.getAll()]);
       setMaintenanceRecords(records.data || []);
-      setLicensePlates(plates);
+      // Extract license plates from vehicles for dropdown
+      const licensePlateOptions =
+        vehicles.data?.map(v => ({
+          id: v.id,
+          licensePlate: v.licensePlate,
+        })) || [];
+      setLicensePlates(licensePlateOptions);
       setError('');
     } catch (err) {
       setError('Không thể tải dữ liệu bảo dưỡng');
@@ -232,10 +193,10 @@ const BaoDuong = () => {
       };
 
       if (isEdit) {
-        await mockApi.updateMaintenanceRecord(formData.id, data);
+        await maintenanceApi.update(formData.id, data);
         showSnackbar('Cập nhật thông tin bảo dưỡng thành công');
       } else {
-        await mockApi.addMaintenanceRecord(data);
+        await maintenanceApi.create(data);
         showSnackbar('Thêm thông tin bảo dưỡng mới thành công');
       }
       await fetchData();
@@ -275,7 +236,7 @@ const BaoDuong = () => {
 
     setIsLoading(true);
     try {
-      await mockApi.deleteMaintenanceRecord(deleteDialog.recordId);
+      await maintenanceApi.delete(deleteDialog.recordId);
       showSnackbar('Xóa thông tin bảo dưỡng thành công');
       await fetchData();
       handleDeleteClose();

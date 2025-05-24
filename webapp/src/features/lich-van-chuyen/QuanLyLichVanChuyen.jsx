@@ -8,7 +8,7 @@ import {
 import { getVehiclesForSelect } from '../../services/mockData/vehicles.js';
 import { getPartnersForSelect } from '../../services/mockData/partners.js';
 import { getCustomersForSelect } from '../../services/mockData/customers.js';
-import { getContainerTypesForSelect } from '../../services/mockData/containers.js';;
+import { getContainerTypesForSelect } from '../../services/mockData/containers.js';
 import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { Box, Typography, Paper, Alert, CircularProgress, IconButton, Button } from '@mui/material';

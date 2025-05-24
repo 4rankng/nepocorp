@@ -1,4 +1,4 @@
-/* global setTimeout, btoa */
+/* global btoa */
 
 import {
   // Authentication
@@ -13,6 +13,11 @@ import {
   addVehicle,
   updateVehicle,
   deleteVehicle,
+  // Maintenance
+  getMaintenanceRecords,
+  addMaintenanceRecord,
+  updateMaintenanceRecord,
+  deleteMaintenanceRecord,
   // Customers
   getCustomers,
   addCustomer,
@@ -34,6 +39,7 @@ import {
   deleteFuelStandard,
   // Reports
   getMonthlyProfitAndRevenueReport,
+  getVehicleMonthlyDetailsReport,
 } from './mockData/index.js';
 
 // Helper function to simulate API response with delay

@@ -293,79 +293,79 @@ export const financialReportData = [
 export const getMonthlyProfitAndRevenueReport = (filters = {}) =>
   new Promise(res => {
     let filteredData = monthlyProfitRevenueData;
-    
+
     if (filters.monthYear) {
       filteredData = filteredData.filter(item => item.monthYear === filters.monthYear);
     }
-    
+
     if (filters.bienSoXe) {
       filteredData = filteredData.filter(item => item.bienSoXe === filters.bienSoXe);
     }
-    
+
     setTimeout(() => res(filteredData), 50);
   });
 
 export const getDetailedCostReport = (filters = {}) =>
   new Promise(res => {
     let filteredData = costReportData;
-    
+
     if (filters.monthYear) {
       filteredData = filteredData.filter(item => item.monthYear === filters.monthYear);
     }
-    
+
     if (filters.bienSoXe) {
       filteredData = filteredData.filter(item => item.bienSoXe === filters.bienSoXe);
     }
-    
+
     if (filters.category) {
       filteredData = filteredData.filter(item => item.category === filters.category);
     }
-    
+
     setTimeout(() => res(filteredData), 50);
   });
 
 export const getRevenueTrackingReport = (filters = {}) =>
   new Promise(res => {
     let filteredData = revenueTrackingData;
-    
+
     if (filters.startDate && filters.endDate) {
-      filteredData = filteredData.filter(item => 
-        item.date >= filters.startDate && item.date <= filters.endDate
+      filteredData = filteredData.filter(
+        item => item.date >= filters.startDate && item.date <= filters.endDate
       );
     }
-    
+
     if (filters.route) {
-      filteredData = filteredData.filter(item => 
+      filteredData = filteredData.filter(item =>
         item.route.toLowerCase().includes(filters.route.toLowerCase())
       );
     }
-    
+
     setTimeout(() => res(filteredData), 50);
   });
 
 export const getDebtReport = (filters = {}) =>
   new Promise(res => {
     let filteredData = debtReportData;
-    
+
     if (filters.monthYear) {
       filteredData = filteredData.filter(item => item.monthYear === filters.monthYear);
     }
-    
+
     if (filters.entityType) {
       filteredData = filteredData.filter(item => item.entityType === filters.entityType);
     }
-    
+
     setTimeout(() => res(filteredData), 50);
   });
 
 export const getFinancialReport = (filters = {}) =>
   new Promise(res => {
     let filteredData = financialReportData;
-    
+
     if (filters.period) {
       filteredData = filteredData.filter(item => item.period === filters.period);
     }
-    
+
     setTimeout(() => res(filteredData), 50);
   });
 

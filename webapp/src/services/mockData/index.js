@@ -24,6 +24,10 @@ export const {
   addVehicle,
   updateVehicle,
   deleteVehicle,
+  getMaintenanceRecords,
+  addMaintenanceRecord,
+  updateMaintenanceRecord,
+  deleteMaintenanceRecord,
 } = vehicles;
 
 // Re-export everything from containers module
@@ -47,30 +51,15 @@ export const {
 } = employees;
 
 // Re-export everything from customers module
-export const {
-  getCustomers,
-  getCustomersForSelect,
-  addCustomer,
-  updateCustomer,
-  deleteCustomer,
-} = customers;
+export const { getCustomers, getCustomersForSelect, addCustomer, updateCustomer, deleteCustomer } =
+  customers;
 
 // Re-export everything from partners module
-export const {
-  getPartners,
-  getPartnersForSelect,
-  addPartner,
-  updatePartner,
-  deletePartner,
-} = partners;
+export const { getPartners, getPartnersForSelect, addPartner, updatePartner, deletePartner } =
+  partners;
 
 // Re-export everything from cost rates module
-export const {
-  getCostRates,
-  addCostRate,
-  updateCostRate,
-  deleteCostRate,
-} = costRates;
+export const { getCostRates, addCostRate, updateCostRate, deleteCostRate } = costRates;
 
 // Re-export everything from shipment plans module
 export const {

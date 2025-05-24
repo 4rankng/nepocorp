@@ -166,3 +166,79 @@ export const deleteVehicle = id =>
       res({ id });
     }, 50)
   );
+
+// Maintenance Records Management
+let maintenanceRecords = [
+  {
+    id: 1,
+    vehicleId: 'xe-001',
+    licensePlate: '51A-123.45',
+    replacementDate: '2025-05-15',
+    warrantyPeriod: 6,
+    quantity: 6,
+    unitPrice: 2500000,
+    total: 15000000,
+    note: 'Thay lốp mới toàn bộ',
+    type: 'tire_replacement',
+  },
+  {
+    id: 2,
+    vehicleId: 'xe-002',
+    licensePlate: '51B-678.90',
+    replacementDate: '2025-04-20',
+    warrantyPeriod: 12,
+    quantity: 1,
+    unitPrice: 45000000,
+    total: 45000000,
+    note: 'Thay động cơ',
+    type: 'engine_replacement',
+  },
+];
+
+export const getMaintenanceRecords = () =>
+  new Promise(resolve =>
+    setTimeout(() => {
+      resolve(maintenanceRecords);
+    }, 100)
+  );
+
+export const addMaintenanceRecord = data =>
+  new Promise(resolve =>
+    setTimeout(() => {
+      const newRecord = {
+        id: Date.now(),
+        ...data,
+        total: (data.quantity || 1) * (data.unitPrice || 0),
+      };
+      maintenanceRecords.push(newRecord);
+      resolve(newRecord);
+    }, 100)
+  );
+
+export const updateMaintenanceRecord = (id, data) =>
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const index = maintenanceRecords.findIndex(r => r.id == id);
+      if (index !== -1) {
+        const updatedRecord = {
+          ...maintenanceRecords[index],
+          ...data,
+          total:
+            (data.quantity || maintenanceRecords[index].quantity) *
+            (data.unitPrice || maintenanceRecords[index].unitPrice),
+        };
+        maintenanceRecords[index] = updatedRecord;
+        resolve(updatedRecord);
+      } else {
+        reject(new Error('Không tìm thấy bản ghi bảo dưỡng'));
+      }
+    }, 100)
+  );
+
+export const deleteMaintenanceRecord = id =>
+  new Promise(resolve =>
+    setTimeout(() => {
+      maintenanceRecords = maintenanceRecords.filter(r => r.id != id);
+      resolve({ id });
+    }, 100)
+  );

@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getPartners, addPartner, updatePartner, deletePartner } from '../../services/mockData/partners.js';;
+import {
+  getPartners,
+  addPartner,
+  updatePartner,
+  deletePartner,
+} from '../../services/mockData/partners.js';
 import { AddButton, EditButton, DeleteButton } from '@shared/components/ActionButtons';
 import StandardTable from '@shared/components/StandardTable';
 import ConfirmationModal from '@shared/components/ConfirmationDialog';

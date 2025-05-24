@@ -1,10 +1,10 @@
 // Modular mock data - New structure
-// 
+//
 // This file has been refactored into separate modules for better maintainability:
 //
 // /services/mockData/
 // ├── auth.js              - Authentication and user management
-// ├── vehicles.js          - Vehicle management  
+// ├── vehicles.js          - Vehicle management
 // ├── containers.js        - Container types management
 // ├── employees.js         - Employee management
 // ├── customers.js         - Customer management

@@ -39,6 +39,10 @@ export default [
         require: true,
         __dirname: true,
         __filename: true,
+        setTimeout: true,
+        clearTimeout: true,
+        setInterval: true,
+        clearInterval: true,
       },
     },
     settings: {

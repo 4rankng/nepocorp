@@ -11,12 +11,11 @@ let costRatesData = [
 export const getCostRates = () => new Promise(res => setTimeout(() => res([...costRatesData]), 50));
 
 const validateCostRateData = (data, id = null) => {
-  if (!data.description || data.description.trim() === '')
-    return 'Mô tả không được để trống.';
+  if (!data.description || data.description.trim() === '') return 'Mô tả không được để trống.';
   if (!data.kmMin && data.kmMin !== 0) return 'Km tối thiểu không được để trống.';
   if (!data.kmMax) return 'Km tối đa không được để trống.';
   if (!data.rate) return 'Đơn giá không được để trống.';
-  
+
   if (parseFloat(data.kmMin) >= parseFloat(data.kmMax))
     return 'Km tối đa phải lớn hơn km tối thiểu.';
 

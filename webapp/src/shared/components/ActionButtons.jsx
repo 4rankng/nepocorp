@@ -27,7 +27,7 @@ export const EditButton = ({
 }) => {
   // Filter out the jsx prop before spreading the rest
   const { jsx: _, ...filteredProps } = props || {};
-  
+
   return (
     <IconButton
       size={size}
@@ -66,7 +66,7 @@ export const DeleteButton = ({
 }) => {
   // Filter out the jsx prop before spreading the rest
   const { jsx: _, ...filteredProps } = props || {};
-  
+
   return (
     <IconButton
       size={size}
@@ -215,7 +215,8 @@ export const AddButton = forwardRef(
 
           // Disabled state styles
           '&.Mui-disabled': {
-            backgroundColor: variant === 'contained' ? theme.palette.action.disabledBackground : 'transparent',
+            backgroundColor:
+              variant === 'contained' ? theme.palette.action.disabledBackground : 'transparent',
             color: theme.palette.action.disabled,
             boxShadow: 'none',
             transform: 'none',
@@ -256,9 +257,7 @@ export const AddButton = forwardRef(
           ...sxProp,
         }}
         // Filter out the jsx prop before spreading the rest
-        {...Object.fromEntries(
-          Object.entries(buttonProps || {}).filter(([key]) => key !== 'jsx')
-        )}
+        {...Object.fromEntries(Object.entries(buttonProps || {}).filter(([key]) => key !== 'jsx'))}
       >
         {isIconOnly ? (
           loading ? null : (
