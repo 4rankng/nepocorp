@@ -88,7 +88,7 @@ const QuanLyDoiTac = () => {
 
   // Handle ESC key press to close modals
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape') {
         if (isModalOpen) {
           handleCloseModal();
@@ -183,7 +183,7 @@ const QuanLyDoiTac = () => {
           <DeleteButton onClick={() => handleDeleteClick(record)} disabled={isLoading} />
         </Box>
       ),
-    }
+    },
   ];
 
   return (
@@ -219,9 +219,7 @@ const QuanLyDoiTac = () => {
       </Paper>
 
       <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {selectedPartner ? 'Chỉnh sửa đối tác' : 'Thêm đối tác mới'}
-        </DialogTitle>
+        <DialogTitle>{selectedPartner ? 'Chỉnh sửa đối tác' : 'Thêm đối tác mới'}</DialogTitle>
         <form onSubmit={handleSavePartner}>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
@@ -303,14 +301,29 @@ const QuanLyDoiTac = () => {
               Bạn có chắc chắn muốn xóa đối tác này?
             </Typography>
             <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 1, fontSize: '0.875rem' }}>
-                <Typography variant="body2" color="text.secondary">Mã đối tác:</Typography>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr',
+                  gap: 1,
+                  fontSize: '0.875rem',
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Mã đối tác:
+                </Typography>
                 <Typography variant="body2">{partnerToDelete?.code}</Typography>
-                <Typography variant="body2" color="text.secondary">Tên đối tác:</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Tên đối tác:
+                </Typography>
                 <Typography variant="body2">{partnerToDelete?.name}</Typography>
-                <Typography variant="body2" color="text.secondary">Địa chỉ:</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Địa chỉ:
+                </Typography>
                 <Typography variant="body2">{partnerToDelete?.address}</Typography>
-                <Typography variant="body2" color="text.secondary">Mã số thuế:</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Mã số thuế:
+                </Typography>
                 <Typography variant="body2">{partnerToDelete?.taxCode}</Typography>
               </Box>
             </Box>

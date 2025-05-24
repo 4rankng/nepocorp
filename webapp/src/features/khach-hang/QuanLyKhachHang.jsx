@@ -89,7 +89,7 @@ const QuanLyKhachHang = () => {
 
   // Handle ESC key press to close modals
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape') {
         if (isModalOpen) {
           handleCloseModal();
@@ -304,14 +304,29 @@ const QuanLyKhachHang = () => {
               Bạn có chắc chắn muốn xóa khách hàng này?
             </Typography>
             <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 1, fontSize: '0.875rem' }}>
-                <Typography variant="body2" color="text.secondary">Mã khách hàng:</Typography>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr',
+                  gap: 1,
+                  fontSize: '0.875rem',
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Mã khách hàng:
+                </Typography>
                 <Typography variant="body2">{customerToDelete?.code}</Typography>
-                <Typography variant="body2" color="text.secondary">Tên khách hàng:</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Tên khách hàng:
+                </Typography>
                 <Typography variant="body2">{customerToDelete?.name}</Typography>
-                <Typography variant="body2" color="text.secondary">Địa chỉ:</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Địa chỉ:
+                </Typography>
                 <Typography variant="body2">{customerToDelete?.address}</Typography>
-                <Typography variant="body2" color="text.secondary">Mã số thuế:</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Mã số thuế:
+                </Typography>
                 <Typography variant="body2">{customerToDelete?.taxCode}</Typography>
               </Box>
             </Box>

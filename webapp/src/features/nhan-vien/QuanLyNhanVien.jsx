@@ -97,7 +97,7 @@ const QuanLyNhanVien = () => {
 
   // Handle ESC key press to close modal
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape' && isModalOpen) {
         handleCloseModal();
       }

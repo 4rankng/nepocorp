@@ -171,7 +171,7 @@ const QuanLyLichVanChuyen = () => {
 
   // Handle ESC key press to close modals
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape') {
         if (isModalOpen) {
           handleCloseModal();
@@ -288,29 +288,29 @@ const QuanLyLichVanChuyen = () => {
     {
       key: 'ngayThang',
       label: 'Ngày Tháng',
-      render: (value) => value || '-',
+      render: value => value || '-',
     },
     {
       key: 'bienSoXe',
       label: 'Biển Số Xe',
-      render: (value) => value || '-',
+      render: value => value || '-',
     },
     {
       key: 'tenDoiTac',
       label: 'Đối Tác',
-      render: (value) => value || '-',
+      render: value => value || '-',
     },
     {
       key: 'dienGiai',
       label: 'Diễn Giải',
-      render: (value) => value || '-',
+      render: value => value || '-',
       noWrap: true,
       maxWidth: 300,
     },
     {
       key: 'tuyenDuong',
       label: 'Tuyến Đường',
-      render: (value) => {
+      render: value => {
         if (!value) return '-';
         if (typeof value === 'object') {
           return `${value.diemDi} - ${Array.isArray(value.diemDen) ? value.diemDen.join(', ') : value.diemDen}`;
@@ -323,7 +323,7 @@ const QuanLyLichVanChuyen = () => {
     {
       key: 'trangThai',
       label: 'Trạng Thái',
-      render: (value) => value || '-',
+      render: value => value || '-',
     },
     {
       key: 'actions',
@@ -331,14 +331,8 @@ const QuanLyLichVanChuyen = () => {
       align: 'right',
       render: (_, record) => (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-          <EditButton 
-            onClick={() => handleOpenModalForEdit(record)} 
-            disabled={isLoading} 
-          />
-          <DeleteButton 
-            onClick={() => handleDeletePlan(record)} 
-            disabled={isLoading} 
-          />
+          <EditButton onClick={() => handleOpenModalForEdit(record)} disabled={isLoading} />
+          <DeleteButton onClick={() => handleDeletePlan(record)} disabled={isLoading} />
         </Box>
       ),
     },
@@ -376,61 +370,102 @@ const QuanLyLichVanChuyen = () => {
           emptyMessage="Chưa có lịch vận chuyển nào"
         />
       </Paper>
-    {isModalOpen && (
-      <Box sx={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50 }}>
-        <Box component="form" onSubmit={(e) => { e.preventDefault(); handleSavePlan(); }} sx={{ backgroundColor: 'white', p: 6, borderRadius: 2, maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', width: '100%' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-              {editingPlan ? 'Chỉnh Sửa Lịch Vận Chuyển' : 'Tạo Lịch Vận Chuyển Mới'}
-            </Typography>
-            <IconButton onClick={handleCloseModal} size="small" sx={{ ml: 2 }}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-          
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-              <div>
-                <label htmlFor="ngayThang" className="block text-sm font-medium text-gray-700">
-                  Ngày vận chuyển (*)
-                </label>
-                <input
-                  type="date"
-                  name="ngayThang"
-                  id="ngayThang"
-                  value={formData.ngayThang}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full input-style"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="khachHangId" className="block text-sm font-medium text-gray-700">
-                  Khách hàng (*)
-                </label>
-                <select
-                  name="khachHangId"
-                  id="khachHangId"
-                  value={formData.khachHangId}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full select-style"
-                  required
-                >
-                  <option value="">Chọn khách hàng</option>
-                  {selectOptions.customers.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {isModalOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 50,
+          }}
+        >
+          <Box
+            component="form"
+            onSubmit={e => {
+              e.preventDefault();
+              handleSavePlan();
+            }}
+            sx={{
+              backgroundColor: 'white',
+              p: 6,
+              borderRadius: 2,
+              maxWidth: '800px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              width: '100%',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 3,
+                pb: 2,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography
+                variant="h5"
+                component="h2"
+                sx={{ fontWeight: 600, color: 'text.primary' }}
+              >
+                {editingPlan ? 'Chỉnh Sửa Lịch Vận Chuyển' : 'Tạo Lịch Vận Chuyển Mới'}
+              </Typography>
+              <IconButton onClick={handleCloseModal} size="small" sx={{ ml: 2 }}>
+                <CloseIcon />
+              </IconButton>
             </Box>
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box
+                sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}
+              >
+                <div>
+                  <label htmlFor="ngayThang" className="block text-sm font-medium text-gray-700">
+                    Ngày vận chuyển (*)
+                  </label>
+                  <input
+                    type="date"
+                    name="ngayThang"
+                    id="ngayThang"
+                    value={formData.ngayThang}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full input-style"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="khachHangId" className="block text-sm font-medium text-gray-700">
+                    Khách hàng (*)
+                  </label>
+                  <select
+                    name="khachHangId"
+                    id="khachHangId"
+                    value={formData.khachHangId}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full select-style"
+                    required
+                  >
+                    <option value="">Chọn khách hàng</option>
+                    {selectOptions.customers.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </Box>
 
               <div>
                 <label htmlFor="dienGiai" className="block text-sm font-medium text-gray-700">
@@ -727,7 +762,9 @@ const QuanLyLichVanChuyen = () => {
         title="Xác nhận xóa"
         message={
           <Box>
-            <Typography variant="body1" sx={{ mb: 2 }}>Bạn có chắc chắn muốn xóa lịch vận chuyển này?</Typography>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Bạn có chắc chắn muốn xóa lịch vận chuyển này?
+            </Typography>
             <Box sx={{ backgroundColor: 'grey.100', p: 2, borderRadius: 1 }}>
               <Typography variant="body2">
                 <strong>Ngày:</strong> {planToDelete?.ngayThang}
