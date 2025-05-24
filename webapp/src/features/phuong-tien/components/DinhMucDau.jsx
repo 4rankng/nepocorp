@@ -790,26 +790,20 @@ const DinhMucDau = () => {
                     <StandardTable
                       columns={[
                         {
-                          key: 'range',
-                          label: 'Đoạn đường (km)',
-                          render: (_, row) =>
-                            `${row.fromKm.toLocaleString()} - ${row.toKm.toLocaleString()}`,
-                        },
-                        {
                           key: 'fromKm',
-                          label: 'Từ (km)',
+                          label: 'TỪ (KM)',
                           numeric: true,
                           render: value => value.toLocaleString(),
                         },
                         {
                           key: 'toKm',
-                          label: 'Đến (km)',
+                          label: 'ĐẾN (KM)',
                           numeric: true,
                           render: value => value.toLocaleString(),
                         },
                         {
                           key: 'standard',
-                          label: 'Định mức (l/km)',
+                          label: 'ĐỊNH MỨC (L/KM)',
                           numeric: true,
                           render: value => value.toFixed(2),
                           getColor: value =>
@@ -822,11 +816,8 @@ const DinhMucDau = () => {
                         },
                         {
                           key: 'note',
-                          label: 'Ghi chú',
-                          maxWidth: 200,
-                          noWrap: true,
-                          render: value => value || 'Không có ghi chú',
-                          getColor: value => (value ? 'text.primary' : 'text.disabled'),
+                          label: 'GHI CHÚ',
+                          render: value => value || '',
                         },
                       ]}
                       data={standards.sort((a, b) => a.fromKm - b.fromKm)}

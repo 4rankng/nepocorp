@@ -20,47 +20,12 @@ import {
   Typography,
   Grid,
   IconButton,
-  Collapse,
   MenuItem,
   Select,
   InputLabel,
   FormControl,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { ChevronDownIcon, ChevronUpIcon } from '@assets/icons';
-import { alpha } from '@mui/material/styles';
-
-// Theme variables
-const theme = {
-  spacing: 8,
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    fontSize: 14,
-    h6: { fontSize: '1rem', fontWeight: 600 },
-    body2: { fontSize: '0.8125rem' },
-    caption: { fontSize: '0.75rem', color: 'text.secondary' },
-  },
-  palette: {
-    primary: { main: '#1976d2' },
-    background: { default: '#f5f7fa', paper: '#ffffff' },
-    text: { primary: '#1a1a1a', secondary: '#6b7280' },
-    grey: { 100: '#f3f4f6', 200: '#e5e7eb' },
-    success: { light: '#4caf50', main: '#2e7d32' },
-    warning: { light: '#ff9800', main: '#ed6c02' },
-    error: { main: '#d32f2f' },
-  },
-  shape: { borderRadius: 6 },
-  shadows: [
-    'none',
-    '0px 2px 8px rgba(0, 0, 0, 0.08)',
-    '0px 4px 12px rgba(0, 0, 0, 0.1)',
-    '0px 6px 16px rgba(0, 0, 0, 0.12)',
-    '0px 8px 24px rgba(0, 0, 0, 0.15)',
-  ],
-};
-
-// Helper functions
-const spacing = value => `${value * theme.spacing}px`;
 
 // Vehicle types for dropdown
 const vehicleTypes = [
@@ -72,10 +37,12 @@ const vehicleTypes = [
 
 const XeVanChuyen = () => {
   const [vehicles, setVehicles] = useState([]);
+  const [filteredVehicles, setFilteredVehicles] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
@@ -86,8 +53,6 @@ const XeVanChuyen = () => {
   const [formData, setFormData] = useState({
     licensePlate: '',
     vehicleType: '',
-    capacity: '',
-    containerCount: 1,
     note: '',
   });
 
@@ -98,6 +63,7 @@ const XeVanChuyen = () => {
     try {
       const response = await vehicleApi.getAll();
       setVehicles(response.data || []);
+      setFilteredVehicles(response.data || []);
       setError('');
     } catch (err) {
       setError('Không thể tải danh sách phương tiện');
@@ -112,6 +78,25 @@ const XeVanChuyen = () => {
     fetchVehicles();
   }, []);
 
+  // Filter vehicles based on search term
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredVehicles(vehicles);
+    } else {
+      const filtered = vehicles.filter(vehicle => {
+        const licensePlate = (vehicle.licensePlate || vehicle.bienSo || '').toLowerCase();
+        const vehicleTypeLabel = vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label || vehicle.vehicleType || '';
+        const note = (vehicle.note || '').toLowerCase();
+        const search = searchTerm.toLowerCase();
+
+        return licensePlate.includes(search) ||
+               vehicleTypeLabel.toLowerCase().includes(search) ||
+               note.includes(search);
+      });
+      setFilteredVehicles(filtered);
+    }
+  }, [vehicles, searchTerm]);
+
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -120,28 +105,12 @@ const XeVanChuyen = () => {
     setFormData({
       licensePlate: '',
       vehicleType: '',
-      capacity: '',
-      containerCount: 1,
       note: '',
     });
     setErrors({});
     setIsEdit(false);
     setOpenDialog(false);
   }, []);
-
-  // Handle ESC key press to close dialog
-  useEffect(() => {
-    const handleKeyDown = e => {
-      if (e.key === 'Escape' && openDialog) {
-        handleCloseDialog();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [openDialog, handleCloseDialog]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -154,10 +123,6 @@ const XeVanChuyen = () => {
       newErrors.vehicleType = 'Vui lòng chọn loại xe';
     }
 
-    if (!formData.capacity) {
-      newErrors.capacity = 'Vui lòng nhập trọng tải';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -167,8 +132,6 @@ const XeVanChuyen = () => {
     setFormData({
       licensePlate: '',
       vehicleType: '',
-      capacity: '',
-      containerCount: 1,
       note: '',
     });
     setErrors({});
@@ -178,10 +141,8 @@ const XeVanChuyen = () => {
   const handleOpenEditDialog = vehicle => {
     setIsEdit(true);
     setFormData({
-      licensePlate: vehicle.licensePlate || vehicle.bienSoXe,
+      licensePlate: vehicle.licensePlate || vehicle.bienSo,
       vehicleType: vehicle.vehicleType || 'truck',
-      capacity: vehicle.capacity || '',
-      containerCount: vehicle.containerCount || 1,
       note: vehicle.note || '',
       id: vehicle.id,
     });
@@ -193,7 +154,7 @@ const XeVanChuyen = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'containerCount' ? parseInt(value) || 0 : value,
+      [name]: value,
     }));
 
     // Clear error when user types
@@ -234,7 +195,7 @@ const XeVanChuyen = () => {
     setDeleteDialog({
       open: true,
       vehicleId: vehicle.id,
-      details: `Bạn có chắc chắn muốn xóa phương tiện ${vehicle.licensePlate || vehicle.bienSoXe}?`,
+      details: `Bạn có chắc chắn muốn xóa phương tiện ${vehicle.licensePlate || vehicle.bienSo}?`,
     });
   };
 
@@ -257,6 +218,10 @@ const XeVanChuyen = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
   };
 
   const renderDialog = () => {
@@ -330,26 +295,15 @@ const XeVanChuyen = () => {
                   InputLabelProps={{
                     shrink: true,
                   }}
-                  inputProps={{
-                    style: {
-                      height: '40px',
-                      padding: '8px 12px',
-                      boxSizing: 'border-box',
-                      fontSize: '0.875rem',
-                    },
-                  }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '6px',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'text.secondary',
-                      },
                     },
                   }}
                 />
               </Grid>
 
-              <Grid item xs={6}>
+              <Grid item xs={12}>
                 <FormControl fullWidth size="small">
                   <InputLabel id="vehicle-type-label" shrink>
                     Loại xe
@@ -362,20 +316,6 @@ const XeVanChuyen = () => {
                     error={!!errors.vehicleType}
                     displayEmpty
                     notched
-                    sx={{
-                      '& .MuiSelect-select': {
-                        height: '40px',
-                        padding: '8px 12px',
-                        boxSizing: 'border-box',
-                        fontSize: '0.875rem',
-                      },
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: errors.vehicleType ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: errors.vehicleType ? 'error.main' : 'text.secondary',
-                      },
-                    }}
                   >
                     <MenuItem value="">
                       <em>Chọn loại xe</em>
@@ -394,79 +334,11 @@ const XeVanChuyen = () => {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Trọng tải"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleInputChange}
-                  error={!!errors.capacity}
-                  helperText={errors.capacity || ''}
-                  variant="outlined"
-                  margin="none"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  inputProps={{
-                    style: {
-                      height: '40px',
-                      padding: '8px 12px',
-                      boxSizing: 'border-box',
-                      fontSize: '0.875rem',
-                    },
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '6px',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'text.secondary',
-                      },
-                    },
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Số container"
-                  name="containerCount"
-                  type="number"
-                  value={formData.containerCount}
-                  onChange={handleInputChange}
-                  variant="outlined"
-                  margin="none"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  inputProps={{
-                    min: 0,
-                    style: {
-                      height: '40px',
-                      padding: '8px 12px',
-                      boxSizing: 'border-box',
-                      fontSize: '0.875rem',
-                    },
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '6px',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'text.secondary',
-                      },
-                    },
-                  }}
-                />
-              </Grid>
-
               <Grid item xs={12}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Ghi chú (tùy chọn)"
+                  label="Ghi chú"
                   name="note"
                   value={formData.note}
                   onChange={handleInputChange}
@@ -477,19 +349,9 @@ const XeVanChuyen = () => {
                   InputLabelProps={{
                     shrink: true,
                   }}
-                  inputProps={{
-                    style: {
-                      padding: '12px',
-                      boxSizing: 'border-box',
-                      fontSize: '0.875rem',
-                    },
-                  }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '6px',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'text.secondary',
-                      },
                     },
                   }}
                 />
@@ -525,13 +387,6 @@ const XeVanChuyen = () => {
               borderColor: 'action.disabled',
               borderRadius: '6px',
               textTransform: 'none',
-              '&:hover': {
-                borderColor: 'text.secondary',
-                backgroundColor: 'action.hover',
-              },
-              '&:active': {
-                backgroundColor: 'action.selected',
-              },
             }}
           >
             Hủy
@@ -550,18 +405,6 @@ const XeVanChuyen = () => {
               borderRadius: '6px',
               textTransform: 'none',
               boxShadow: 'none',
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)',
-                backgroundColor: 'primary.dark',
-              },
-              '&:active': {
-                boxShadow: 'none',
-                backgroundColor: 'primary.dark',
-              },
-              '&.Mui-disabled': {
-                backgroundColor: 'action.disabledBackground',
-                color: 'text.disabled',
-              },
             }}
             startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
           >
@@ -589,39 +432,31 @@ const XeVanChuyen = () => {
           }}
         >
           <StandardTable
+            searchTerm={searchTerm}
+            onSearchChange={handleSearchChange}
+            searchPlaceholder="Tìm kiếm xe theo biển số, loại xe..."
             headerAction={<AddButton onClick={handleOpenAddDialog} size="small" sx={{ ml: 2 }} />}
             columns={[
               {
                 key: 'licensePlate',
-                label: 'Biển số xe',
+                label: 'BIỂN SỐ XE',
+                render: (value, row) => value || row.bienSo || '',
               },
               {
                 key: 'vehicleType',
-                label: 'Loại xe',
+                label: 'LOẠI XE',
                 render: value => {
                   const type = vehicleTypes.find(t => t.value === value);
-                  return type ? type.label : value;
+                  return type ? type.label : value || '';
                 },
               },
               {
-                key: 'capacity',
-                label: 'Trọng tải',
-              },
-              {
-                key: 'containerCount',
-                label: 'Số container',
-                align: 'center',
-              },
-              {
                 key: 'note',
-                label: 'Ghi chú',
-                maxWidth: 200,
-                noWrap: true,
-                render: value => value || 'Không có ghi chú',
-                getColor: value => (value ? 'text.primary' : 'text.disabled'),
+                label: 'GHI CHÚ',
+                render: value => value || '',
               },
             ]}
-            data={vehicles}
+            data={filteredVehicles}
             loading={isLoading}
             emptyMessage="Không có dữ liệu xe vận chuyển"
             renderActions={row => (
