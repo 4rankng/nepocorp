@@ -6,13 +6,13 @@ import TrangChu from '../layouts/TrangChu';
 import TrangXacThuc from '../layouts/TrangXacThuc';
 import DangNhap from '../features/xac-thuc/DangNhap';
 import BaoCaoTaiChinh from '../features/bao-cao/BaoCaoTaiChinh';
-import LichVanChuyen from '../features/lich-van-chuyen/LichVanChuyen';
-import DanhSachNhanVien from '../features/nhan-vien/DanhSachNhanVien';
-import DanhSachKhachHang from '../features/khach-hang/DanhSachKhachHang';
-import DanhSachDoiTac from '../features/doi-tac/DanhSachDoiTac';
+import QuanLyLichVanChuyen from '../features/lich-van-chuyen/QuanLyLichVanChuyen';
+import QuanLyNhanVien from '../features/nhan-vien/QuanLyNhanVien';
+import QuanLyKhachHang from '../features/khach-hang/QuanLyKhachHang';
+import QuanLyDoiTac from '../features/doi-tac/QuanLyDoiTac';
 import QuanLyPhuongTien from '../features/phuong-tien/QuanLyPhuongTien';
-import QuanLyChiPhi from '../features/chi-phi/QuanLyChiPhi';
-import QuanLyDinhMucDuong from '../features/chi-phi/QuanLyDinhMucDuong';
+// import QuanLyChiPhi from '../features/chi-phi/QuanLyChiPhi';
+// import QuanLyDinhMucDuong from '../features/chi-phi/QuanLyDinhMucDuong';
 
 // Wrap the app with AuthProvider
 const AppWithAuth = ({ children }) => <AuthProvider>{children}</AuthProvider>;
@@ -45,22 +45,22 @@ const router = createBrowserRouter(
         },
         {
           path: 'lich-van-chuyen',
-          element: withErrorBoundary(LichVanChuyen),
+          element: withErrorBoundary(QuanLyLichVanChuyen),
           errorElement: <ErrorPage />,
         },
         {
           path: 'nhan-vien',
-          element: withErrorBoundary(DanhSachNhanVien),
+          element: withErrorBoundary(QuanLyNhanVien),
           errorElement: <ErrorPage />,
         },
         {
           path: 'khach-hang',
-          element: withErrorBoundary(DanhSachKhachHang),
+          element: withErrorBoundary(QuanLyKhachHang),
           errorElement: <ErrorPage />,
         },
         {
           path: 'doi-tac',
-          element: withErrorBoundary(DanhSachDoiTac),
+          element: withErrorBoundary(QuanLyDoiTac),
           errorElement: <ErrorPage />,
         },
         {
@@ -88,16 +88,16 @@ const router = createBrowserRouter(
           path: 'container',
           element: <Navigate to="/phuong-tien/loai-container" replace />,
         },
-        {
-          path: 'chi-phi',
-          element: withErrorBoundary(QuanLyChiPhi),
-          errorElement: <ErrorPage />,
-        },
-        {
-          path: 'chi-phi-cau-hinh',
-          element: withErrorBoundary(QuanLyDinhMucDuong),
-          errorElement: <ErrorPage />,
-        },
+        // {
+        //   path: 'chi-phi',
+        //   element: withErrorBoundary(QuanLyChiPhi),
+        //   errorElement: <ErrorPage />,
+        // },
+        // {
+        //   path: 'chi-phi-cau-hinh',
+        //   element: withErrorBoundary(QuanLyDinhMucDuong),
+        //   errorElement: <ErrorPage />,
+        // },
       ],
     },
     {

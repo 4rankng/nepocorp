@@ -1,3 +1,5 @@
+/* global setTimeout, btoa */
+
 import {
   // Authentication
   verifyCredentials,
@@ -73,7 +75,7 @@ export const containerTypeApi = {
       return apiError(error.message, 500);
     }
   },
-  getById: async (id) => {
+  getById: async id => {
     try {
       const containerTypes = await getContainerTypes();
       const containerType = containerTypes.find(ct => ct.id === id);
@@ -85,7 +87,7 @@ export const containerTypeApi = {
       return apiError(error.message, 500);
     }
   },
-  create: async (data) => {
+  create: async data => {
     try {
       const newContainerType = await addContainerType(data.name);
       return apiResponse(newContainerType, 201);
@@ -101,7 +103,7 @@ export const containerTypeApi = {
       return apiError(error.message, 400);
     }
   },
-  delete: async (id) => {
+  delete: async id => {
     try {
       await deleteContainerType(id);
       return apiResponse({ id }, 204);
@@ -121,7 +123,7 @@ export const vehicleApi = {
       return apiError(error.message, 500);
     }
   },
-  getById: async (id) => {
+  getById: async id => {
     try {
       const vehicles = await getVehicles();
       const vehicle = vehicles.find(v => v.id === id);
@@ -133,7 +135,7 @@ export const vehicleApi = {
       return apiError(error.message, 500);
     }
   },
-  create: async (data) => {
+  create: async data => {
     try {
       const newVehicle = await addVehicle(data.licensePlate);
       return apiResponse(newVehicle, 201);
@@ -149,7 +151,7 @@ export const vehicleApi = {
       return apiError(error.message, 400);
     }
   },
-  delete: async (id) => {
+  delete: async id => {
     try {
       await deleteVehicle(id);
       return apiResponse({ id }, 204);
@@ -164,28 +166,28 @@ export const shipmentPlanApi = {
   getAll: async (filters = {}) => {
     try {
       let plans = await getShipmentPlans();
-      
+
       // Apply filters if provided
       if (filters.startDate && filters.endDate) {
-        plans = plans.filter(plan => 
-          plan.ngayThang >= filters.startDate && plan.ngayThang <= filters.endDate
+        plans = plans.filter(
+          plan => plan.ngayThang >= filters.startDate && plan.ngayThang <= filters.endDate
         );
       }
-      
+
       if (filters.vehicleId) {
         plans = plans.filter(plan => plan.bienSoXeId === filters.vehicleId);
       }
-      
+
       if (filters.status) {
         plans = plans.filter(plan => plan.trangThai === filters.status);
       }
-      
+
       return apiResponse(plans);
     } catch (error) {
       return apiError(error.message, 500);
     }
   },
-  getById: async (id) => {
+  getById: async id => {
     try {
       const plans = await getShipmentPlans();
       const plan = plans.find(p => p.id === id);
@@ -197,7 +199,7 @@ export const shipmentPlanApi = {
       return apiError(error.message, 500);
     }
   },
-  create: async (data) => {
+  create: async data => {
     try {
       const newPlan = await addShipmentPlan(data);
       return apiResponse(newPlan, 201);
@@ -219,7 +221,7 @@ export const shipmentPlanApi = {
       return apiError(error.message, 400);
     }
   },
-  delete: async (id) => {
+  delete: async id => {
     try {
       await deleteShipmentPlan(id);
       return apiResponse({ id }, 204);
@@ -230,11 +232,7 @@ export const shipmentPlanApi = {
   // Additional methods for detailed costs
   addCostItem: async (planId, itemData) => {
     try {
-      const updatedPlan = await addDetailedOtherCostItem(
-        planId,
-        itemData.name,
-        itemData.amount
-      );
+      const updatedPlan = await addDetailedOtherCostItem(planId, itemData.name, itemData.amount);
       return apiResponse(updatedPlan);
     } catch (error) {
       return apiError(error.message, 400);
@@ -273,7 +271,7 @@ export const maintenanceApi = {
       return apiError(error.message, 500);
     }
   },
-  getById: async (id) => {
+  getById: async id => {
     try {
       const records = await getMaintenanceRecords();
       const record = records.find(r => r.id === id);
@@ -285,7 +283,7 @@ export const maintenanceApi = {
       return apiError(error.message, 500);
     }
   },
-  create: async (data) => {
+  create: async data => {
     try {
       const newRecord = await addMaintenanceRecord(data);
       return apiResponse(newRecord, 201);
@@ -301,7 +299,7 @@ export const maintenanceApi = {
       return apiError(error.message, 400);
     }
   },
-  delete: async (id) => {
+  delete: async id => {
     try {
       await deleteMaintenanceRecord(id);
       return apiResponse({ id }, 204);
@@ -321,7 +319,7 @@ export const fuelStandardApi = {
       return apiError(error.message, 500);
     }
   },
-  getById: async (id) => {
+  getById: async id => {
     try {
       const standards = await getFuelStandards();
       const standard = standards.find(fs => fs.id === id);
@@ -333,7 +331,7 @@ export const fuelStandardApi = {
       return apiError(error.message, 500);
     }
   },
-  create: async (data) => {
+  create: async data => {
     try {
       const newStandard = await addFuelStandard(data);
       return apiResponse(newStandard, 201);
@@ -349,7 +347,7 @@ export const fuelStandardApi = {
       return apiError(error.message, 400);
     }
   },
-  delete: async (id) => {
+  delete: async id => {
     try {
       await deleteFuelStandard(id);
       return apiResponse({ id }, 204);
@@ -364,16 +362,13 @@ export const reportApi = {
   // Financial Reports
   getProfitAndRevenue: async (filters = {}) => {
     try {
-      const report = await getMonthlyProfitAndRevenueReport(
-        filters.startDate,
-        filters.endDate
-      );
+      const report = await getMonthlyProfitAndRevenueReport(filters.startDate, filters.endDate);
       return apiResponse(report);
     } catch (error) {
       return apiError(error.message, 500);
     }
   },
-  
+
   // Vehicle Monthly Details Report
   getVehicleMonthlyDetails: async (vehicleId, monthYear) => {
     try {
@@ -383,14 +378,24 @@ export const reportApi = {
       return apiError(error.message, 500);
     }
   },
-  
+
   // Get available months for reports
   getAvailableReportMonths: async () => {
     try {
       // This would come from your data service
       const availableMonths = [
-        '2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06',
-        '2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12'
+        '2024-01',
+        '2024-02',
+        '2024-03',
+        '2024-04',
+        '2024-05',
+        '2024-06',
+        '2024-07',
+        '2024-08',
+        '2024-09',
+        '2024-10',
+        '2024-11',
+        '2024-12',
       ];
       return apiResponse(availableMonths);
     } catch (error) {

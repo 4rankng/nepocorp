@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Tabs, Tab, Box } from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import DanhSachBienSoXe from './components/DanhSachBienSoXe';
+import XeVanChuyen from './components/XeVanChuyen';
 import LoaiContainer from './components/LoaiContainer';
 import DinhMucDau from './components/DinhMucDau';
 import BaoDuong from './components/BaoDuong';
@@ -55,7 +55,7 @@ const QuanLyPhuongTien = () => {
           </Box>
 
           <TabPanel value="xe-van-chuyen" sx={{ p: 0, mt: 2 }}>
-            <DanhSachBienSoXe />
+            <XeVanChuyen />
           </TabPanel>
 
           <TabPanel value="loai-container" sx={{ p: 0, mt: 2 }}>

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import ConfirmationDialog from '../../../shared/components/ConfirmationDialog';
+
 import {
   Table,
   TableBody,
@@ -7,7 +9,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
   Button,
   TextField,
   Dialog,
@@ -25,13 +26,9 @@ import {
   MenuItem,
   InputAdornment,
   TablePagination,
+  IconButton,
 } from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+import { PlusIcon, PencilIcon, TrashIcon, SearchIcon } from '../../../assets/icons';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -102,12 +99,27 @@ const BaoDuong = () => {
     warrantyPeriod: 6,
     quantity: 1,
     unitPrice: 0,
+    total: 0,
     note: '',
   });
+
+  // Calculate total whenever quantity or unitPrice changes
+  useEffect(() => {
+    const total = (formData.quantity || 0) * (formData.unitPrice || 0);
+    setFormData(prev => ({
+      ...prev,
+      total: total
+    }));
+  }, [formData.quantity, formData.unitPrice]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    id: null,
+    details: null,
+  });
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -251,21 +263,47 @@ const BaoDuong = () => {
     }
   };
 
-  const handleDelete = async id => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa thông tin bảo dưỡng này?')) {
-      setIsLoading(true);
-      try {
-        await mockApi.deleteMaintenanceRecord(id);
-        showSnackbar('Xóa thông tin bảo dưỡng thành công');
-        await fetchData();
-      } catch (err) {
-        showSnackbar('Đã xảy ra lỗi khi xóa thông tin bảo dưỡng', 'error');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
+  const handleDeleteClick = useCallback(
+    id => {
+      const recordToDelete = maintenanceRecords.find(record => record.id === id);
+      if (!recordToDelete) return;
+
+      setDeleteDialog({
+        open: true,
+        id,
+        details: {
+          'Biển số xe': recordToDelete.licensePlate,
+          'Ngày thay lốp': new Date(recordToDelete.replacementDate).toLocaleDateString('vi-VN'),
+          'Số lượng': recordToDelete.quantity,
+          'Đơn giá': formatCurrency(recordToDelete.unitPrice),
+          'Thành tiền': formatCurrency(recordToDelete.total),
+          'Ghi chú': recordToDelete.note || 'Không có',
+        },
+      });
+    },
+    [maintenanceRecords]
+  );
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteDialog.id) return;
+
+    setIsLoading(true);
+    try {
+      await mockApi.deleteMaintenanceRecord(deleteDialog.id);
+      showSnackbar('Xóa thông tin bảo dưỡng thành công');
+      await fetchData();
+      setDeleteDialog(prev => ({ ...prev, open: false }));
+    } catch (err) {
+      showSnackbar('Đã xảy ra lỗi khi xóa thông tin bảo dưỡng', 'error');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [deleteDialog.id]);
+
+  const handleDeleteClose = useCallback(() => {
+    setDeleteDialog(prev => ({ ...prev, open: false }));
+  }, []);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -305,7 +343,7 @@ const BaoDuong = () => {
         />
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
+          startIcon={<PlusIcon className="w-5 h-5" />}
           onClick={handleOpenAddDialog}
           disabled={isLoading}
           sx={{ minWidth: 200 }}
@@ -360,21 +398,24 @@ const BaoDuong = () => {
                     <TableCell align="right">{formatCurrency(record.total)}</TableCell>
                     <TableCell>{record.note || '-'}</TableCell>
                     <TableCell align="right">
-                      <IconButton
-                        onClick={() => handleOpenEditDialog(record)}
-                        size="small"
-                        disabled={isLoading}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleDelete(record.id)}
-                        size="small"
-                        disabled={isLoading}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenEditDialog(record)}
+                          disabled={isLoading}
+                          color="primary"
+                        >
+                          <PencilIcon className="w-5 h-5" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteClick(record.id)}
+                          disabled={isLoading}
+                          color="error"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </IconButton>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))
@@ -401,70 +442,151 @@ const BaoDuong = () => {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            maxWidth: 500,
+        onKeyDown={(e) => e.key === 'Escape' && handleCloseDialog()}
+        sx={{
+          '& .MuiDialog-container': {
+            alignItems: 'flex-start',
+            paddingTop: '64px',
+          },
+          '& .MuiPaper-root': {
+            margin: '16px',
             width: '100%',
-            m: 1,
-            '& .MuiDialogContent-root': { p: 2 },
-            '& .MuiDialogActions-root': { p: 2, pt: 1 },
+            maxWidth: '500px',
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+          },
+          '& .MuiDialogTitle-root': {
+            padding: '16px 24px',
+            fontSize: '1.1rem',
+            fontWeight: 500,
+            color: '#111827',
+            borderBottom: '1px solid #E5E7EB',
+          },
+          '& .MuiDialogContent-root': {
+            padding: '24px',
+            '&:first-of-type': {
+              paddingTop: '24px',
+            },
+          },
+          '& .MuiDialogActions-root': {
+            padding: '16px 24px',
+            borderTop: '1px solid #E5E7EB',
+            justifyContent: 'flex-end',
+            gap: '8px',
           },
         }}
       >
-        <DialogTitle
-          sx={{
-            pb: 1,
-            pt: 2,
-            px: 2,
-            '& .MuiTypography-root': {
-              fontSize: '1.1rem',
-              fontWeight: 600,
-            },
-          }}
-        >
+        <DialogTitle>
           {editingId ? 'Cập nhật thông tin bảo dưỡng' : 'Thêm thông tin bảo dưỡng'}
         </DialogTitle>
 
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 0.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <FormControl fullWidth size="small" required>
+              <InputLabel 
+                id="license-plate-label" 
+                sx={{ 
+                  fontSize: '0.875rem',
+                  '&.Mui-focused': {
+                    color: '#4F46E5',
+                  },
+                }}
+              >
+                Biển số xe *
+              </InputLabel>
               <Select
                 id="licensePlate"
                 name="licensePlate"
                 value={formData.licensePlate}
                 onChange={handleInputChange}
-                displayEmpty
                 error={!!error && !formData.licensePlate}
                 disabled={isLoading}
-                sx={{ '& .MuiSelect-select': { py: 1.25 } }}
+                label="Biển số xe *"
+                sx={{
+                  '& .MuiSelect-select': { 
+                    py: '8px',
+                    fontSize: '0.875rem',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': { 
+                    borderColor: '#E5E7EB',
+                    '&:hover': {
+                      borderColor: '#9CA3AF',
+                    },
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#4F46E5',
+                    borderWidth: '1px',
+                  },
+                }}
               >
-                <MenuItem value="" disabled>
-                  <em>Chọn biển số xe *</em>
-                </MenuItem>
                 {licensePlates.map(plate => (
-                  <MenuItem key={plate.id} value={plate.licensePlate}>
+                  <MenuItem 
+                    key={plate.id} 
+                    value={plate.licensePlate} 
+                    sx={{ 
+                      fontSize: '0.875rem',
+                      '&:hover': {
+                        backgroundColor: '#F3F4F6',
+                      },
+                      '&.Mui-selected': {
+                        backgroundColor: '#EEF2FF',
+                        '&:hover': {
+                          backgroundColor: '#E0E7FF',
+                        },
+                      },
+                    }}
+                  >
                     {plate.licensePlate}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            <Box sx={{ display: 'flex', gap: 1.5, '& > *': { flex: 1 } }}>
+            <Box sx={{ display: 'flex', gap: 2, '& > *': { flex: 1 } }}>
               <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
                 <DatePicker
                   label="Ngày thay lốp *"
+                  inputFormat="dd/MM/yyyy"
                   value={formData.replacementDate}
-                  onChange={handleDateChange}
-                  renderInput={params => (
+                  onChange={(date) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      replacementDate: date,
+                    }));
+                  }}
+                  renderInput={(params) => (
                     <TextField
                       {...params}
                       size="small"
-                      error={!!error && !formData.replacementDate}
-                      helperText=""
-                      sx={{ '& .MuiInputBase-root': { height: 40 } }}
+                      fullWidth
+                      sx={{
+                        '& .MuiInputBase-root': {
+                          height: 40,
+                          '& input': {
+                            py: '8px',
+                            fontSize: '0.875rem',
+                            cursor: 'pointer',
+                          },
+                          '& .MuiInputAdornment-root .MuiSvgIcon-root': {
+                            fontSize: '1.1rem',
+                            color: 'text.secondary',
+                          },
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': {
+                            borderColor: '#9CA3AF',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#4F46E5',
+                            borderWidth: '1px',
+                          },
+                        },
+                      }}
                     />
                   )}
-                  inputFormat="dd/MM/yyyy"
+                  components={{
+                    OpenPickerIcon: () => <CalendarMonthIcon fontSize="small" />,
+                  }}
                 />
               </LocalizationProvider>
 
@@ -486,10 +608,18 @@ const BaoDuong = () => {
                   min: 0,
                   inputMode: 'numeric',
                   pattern: '[0-9]*',
+                  style: {
+                    textAlign: 'right',
+                    paddingRight: '8px',
+                  }
                 }}
                 sx={{
                   '& .MuiInputBase-root': {
                     height: 40,
+                    '& input': {
+                      py: '8px',
+                      fontSize: '0.875rem',
+                    },
                     '& input[type=number]': {
                       '-moz-appearance': 'textfield',
                       '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
@@ -497,15 +627,26 @@ const BaoDuong = () => {
                         margin: 0,
                       },
                     },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#9CA3AF',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4F46E5',
+                      borderWidth: '1px',
+                    },
                   },
                 }}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end">tháng</InputAdornment>,
+                  endAdornment: (
+                    <InputAdornment position="end" sx={{ color: '#6B7280', mr: 0.5 }}>
+                      tháng
+                    </InputAdornment>
+                  ),
                 }}
               />
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 1.5, '& > *': { flex: 1 } }}>
+            <Box sx={{ display: 'flex', gap: 2, '& > *': { flex: 1 } }}>
               <TextField
                 name="quantity"
                 type="number"
@@ -515,8 +656,7 @@ const BaoDuong = () => {
                   const value = Math.max(0, parseInt(e.target.value) || 0);
                   setFormData(prev => ({
                     ...prev,
-                    quantity: value,
-                    total: value * (prev.unitPrice || 0),
+                    quantity: value
                   }));
                 }}
                 size="small"
@@ -525,16 +665,31 @@ const BaoDuong = () => {
                   min: 0,
                   inputMode: 'numeric',
                   pattern: '[0-9]*',
+                  style: {
+                    textAlign: 'right',
+                    paddingRight: '8px',
+                  },
                 }}
                 sx={{
                   '& .MuiInputBase-root': {
                     height: 40,
+                    '& input': {
+                      py: '8px',
+                      fontSize: '0.875rem',
+                    },
                     '& input[type=number]': {
                       '-moz-appearance': 'textfield',
                       '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
                         '-webkit-appearance': 'none',
                         margin: 0,
                       },
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#9CA3AF',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4F46E5',
+                      borderWidth: '1px',
                     },
                   },
                 }}
@@ -549,8 +704,7 @@ const BaoDuong = () => {
                   const value = Math.max(0, parseInt(e.target.value) || 0);
                   setFormData(prev => ({
                     ...prev,
-                    unitPrice: value,
-                    total: value * (prev.quantity || 0),
+                    unitPrice: value
                   }));
                 }}
                 size="small"
@@ -559,10 +713,18 @@ const BaoDuong = () => {
                   min: 0,
                   inputMode: 'numeric',
                   pattern: '[0-9]*',
+                  style: {
+                    textAlign: 'right',
+                    paddingRight: '8px',
+                  },
                 }}
                 sx={{
                   '& .MuiInputBase-root': {
                     height: 40,
+                    '& input': {
+                      py: '8px',
+                      fontSize: '0.875rem',
+                    },
                     '& input[type=number]': {
                       '-moz-appearance': 'textfield',
                       '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
@@ -570,62 +732,76 @@ const BaoDuong = () => {
                         margin: 0,
                       },
                     },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#9CA3AF',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4F46E5',
+                      borderWidth: '1px',
+                    },
                   },
                 }}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end">đ</InputAdornment>,
+                  endAdornment: (
+                    <InputAdornment position="end" sx={{ color: '#6B7280', mr: 0.5 }}>
+                      đ
+                    </InputAdornment>
+                  ),
                 }}
               />
             </Box>
 
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                p: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
-                bgcolor: 'action.hover',
-                height: 40,
-              }}
-            >
-              <span style={{ fontSize: '0.875rem' }}>Thành tiền:</span>
-              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
-                {formatCurrency(calculateTotal(formData.quantity, formData.unitPrice))}
-              </span>
+            <Box sx={{ display: 'flex', gap: 2, '& > *': { flex: 1 } }}>
+              <TextField
+                name="total"
+                type="text"
+                label="Tổng tiền (VND)"
+                value={formatCurrency(formData.total || 0)}
+                size="small"
+                fullWidth
+                inputProps={{
+                  readOnly: true,
+                  style: {
+                    textAlign: 'right',
+                    paddingRight: '8px',
+                  },
+                }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    height: 40,
+                    '& input': {
+                      py: '8px',
+                      fontSize: '0.875rem',
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end" sx={{ color: '#6B7280', mr: 0.5 }}>
+                      đ
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Box>
 
-            <TextField
-              placeholder="Ghi chú (tùy chọn)"
-              fullWidth
-              size="small"
-              variant="outlined"
-              multiline
-              rows={1}
-              name="note"
-              value={formData.note}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              sx={{
-                mt: 0.5,
-                '& .MuiInputBase-root': {
-                  minHeight: 40,
-                  alignItems: 'flex-start',
-                  pt: 1,
-                },
-              }}
-            />
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ justifyContent: 'space-between', px: 2, pt: 0, pb: 1 }}>
+        <DialogActions>
           <Button
             onClick={handleCloseDialog}
-            disabled={isLoading}
+            variant="outlined"
             size="small"
-            sx={{ minWidth: 80 }}
+            disabled={isLoading}
+            sx={{
+              borderColor: '#D1D5DB',
+              color: '#374151',
+              '&:hover': {
+                borderColor: '#9CA3AF',
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+              },
+            }}
           >
             Hủy
           </Button>
@@ -634,13 +810,61 @@ const BaoDuong = () => {
             variant="contained"
             size="small"
             disabled={isLoading || !formData.licensePlate || !formData.replacementDate}
-            startIcon={isLoading ? <CircularProgress size={18} /> : null}
-            sx={{ minWidth: 100 }}
+            startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
+            sx={{
+              backgroundColor: '#3B82F6',
+              '&:hover': {
+                backgroundColor: '#2563EB',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: '#E5E7EB',
+                color: '#9CA3AF',
+              },
+            }}
           >
             {isLoading ? 'Đang lưu...' : 'Lưu'}
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onCancel={handleDeleteClose}
+        onConfirm={handleDeleteConfirm}
+        title="Xác nhận xóa thông tin bảo dưỡng"
+        message="Bạn có chắc chắn muốn xóa thông tin bảo dưỡng này?"
+        details={deleteDialog.details}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity || 'success'}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onCancel={handleDeleteClose}
+        onConfirm={handleDeleteConfirm}
+        title="Xác nhận xóa thông tin bảo dưỡng"
+        message="Bạn có chắc chắn muốn xóa thông tin bảo dưỡng này?"
+        details={deleteDialog.details}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
+      />
 
       <Snackbar
         open={snackbar.open}

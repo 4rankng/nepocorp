@@ -330,178 +330,215 @@ export const deleteEmployee = id =>
 // --- START: Customers (Khách hàng) Mock Data & Functions ---
 let customersData = [
   {
-    id: 'cust1',
-    tenKhachHang: 'Công ty TNHH ABC Vận Tải',
-    diaChi: '123 Đường X, Quận Y, TP.HCM',
-    soDienThoai: '0901234567',
+    id: 'c1',
+    code: 'CDMC',
+    name: 'Công ty Cổ phần Chè Đắk Lắk',
+    address: '123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh',
+    taxCode: '5500157123',
   },
   {
-    id: 'cust2',
-    tenKhachHang: 'Doanh nghiệp tư nhân XYZ Logistics',
-    diaChi: '456 Đại lộ Z, Khu A, TP. Biên Hòa',
-    soDienThoai: '0918765432',
+    id: 'c2',
+    code: 'VNM',
+    name: 'Công ty Cổ phần Sữa Việt Nam',
+    address: '10 Tôn Đản, Quận 4, TP. Hồ Chí Minh',
+    taxCode: '0300584870',
   },
   {
-    id: 'cust3',
-    tenKhachHang: 'Công ty Cổ Phần DEF Giao Nhận',
-    diaChi: '789 Phố B, Quận C, TP. Hà Nội',
-    soDienThoai: '0987123789',
+    id: 'c3',
+    code: 'THP',
+    name: 'Công ty Cổ phần Tập đoàn THP',
+    address: '25 Nguyễn Thị Minh Khai, Quận 1, TP. Hồ Chí Minh',
+    taxCode: '0300584871',
   },
   {
-    id: 'cust4',
-    tenKhachHang: 'Tập đoàn GHI Xuất Nhập Khẩu',
-    diaChi: 'Lô 1, KCN Sóng Thần, Bình Dương',
-    soDienThoai: '0934567123',
-  },
-  {
-    id: 'cust5',
-    tenKhachHang: 'Công ty Liên Doanh JKL Express',
-    diaChi: 'Số 10, Đường K, TP. Đà Nẵng',
-    soDienThoai: '0977890456',
+    id: 'c4',
+    code: 'VNM2',
+    name: 'Công ty Cổ phần Đường Quảng Ngãi',
+    address: '15 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
+    taxCode: '0300584872',
   },
 ];
+
 export const getCustomers = () => new Promise(res => setTimeout(() => res([...customersData]), 50));
+
 export const getCustomersForSelect = () =>
   new Promise(res =>
-    setTimeout(() => res(customersData.map(c => ({ id: c.id, name: c.tenKhachHang }))), 50)
+    setTimeout(() => res(customersData.map(c => ({ id: c.id, name: c.name }))), 50)
   );
+
 const validateCustomerData = (customerData, id = null) => {
-  if (!customerData.tenKhachHang?.trim()) return 'Tên khách hàng không được để trống.';
-  if (!customerData.maSoThue?.trim()) return 'Mã số thuế không được để trống.';
-  if (!customerData.diaChi?.trim()) return 'Địa chỉ không được để trống.';
+  if (!customerData.code || customerData.code.trim() === '')
+    return 'Mã khách hàng không được để trống.';
+  if (!customerData.name || customerData.name.trim() === '')
+    return 'Tên khách hàng không được để trống.';
+  if (!customerData.address || customerData.address.trim() === '')
+    return 'Địa chỉ không được để trống.';
+  if (!customerData.taxCode || customerData.taxCode.trim() === '')
+    return 'Mã số thuế không được để trống.';
 
-  const existingCustomer = customersData.find(
-    c => c.maSoThue === customerData.maSoThue.trim() && c.id !== id
-  );
-  if (existingCustomer) return 'Mã số thuế đã tồn tại.';
-
+  if (customersData.some(c => c.code === customerData.code.trim() && c.id !== id))
+    return 'Mã khách hàng đã tồn tại.';
+  if (customersData.some(c => c.taxCode === customerData.taxCode.trim() && c.id !== id))
+    return 'Mã số thuế đã tồn tại.';
   return null;
 };
+
 export const addCustomer = customerData =>
-  new Promise((resolve, reject) => {
-    const err = validateCustomerData(customerData);
-    if (err) {
-      reject(new Error(err));
-      return;
-    }
-    const newCustomer = {
-      id: String(Date.now()),
-      ...customerData,
-      tenKhachHang: customerData.tenKhachHang.trim(),
-      maSoThue: customerData.maSoThue.trim(),
-      diaChi: customerData.diaChi.trim(),
-    };
-    customersData.push(newCustomer);
-    resolve(newCustomer);
-  });
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const err = validateCustomerData(customerData);
+      if (err) reject(new Error(err));
+      else {
+        const newCustomer = {
+          id: String(Date.now()),
+          code: customerData.code.trim(),
+          name: customerData.name.trim(),
+          address: customerData.address.trim(),
+          taxCode: customerData.taxCode.trim(),
+        };
+        customersData.push(newCustomer);
+        resolve(newCustomer);
+      }
+    }, 50)
+  );
+
 export const updateCustomer = (id, updatedCustomerData) =>
-  new Promise((resolve, reject) => {
-    const err = validateCustomerData(updatedCustomerData, true, id);
-    if (err) {
-      reject(new Error(err));
-      return;
-    }
-    const index = customersData.findIndex(c => c.id === id);
-    if (index === -1) {
-      reject(new Error('Không tìm thấy khách hàng'));
-      return;
-    }
-    customersData[index] = {
-      ...customersData[index],
-      ...updatedCustomerData,
-      tenKhachHang: updatedCustomerData.tenKhachHang.trim(),
-      maSoThue: updatedCustomerData.maSoThue.trim(),
-      diaChi: updatedCustomerData.diaChi.trim(),
-    };
-    resolve(customersData[index]);
-  });
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const err = validateCustomerData(updatedCustomerData, id);
+      if (err) reject(new Error(err));
+      else {
+        let fc = null;
+        customersData = customersData.map(c =>
+          c.id === id
+            ? (fc = {
+                ...c,
+                code: updatedCustomerData.code.trim(),
+                name: updatedCustomerData.name.trim(),
+                address: updatedCustomerData.address.trim(),
+                taxCode: updatedCustomerData.taxCode.trim(),
+              })
+            : c
+        );
+        if (fc) resolve(fc);
+        else reject(new Error('Không tìm thấy khách hàng'));
+      }
+    }, 50)
+  );
+
 export const deleteCustomer = id =>
-  new Promise(resolve => {
-    customersData = customersData.filter(c => c.id !== id);
-    resolve({ id });
-  });
+  new Promise(res =>
+    setTimeout(() => {
+      customersData = customersData.filter(c => c.id !== id);
+      res({ id });
+    }, 50)
+  );
 
 // --- START: Partners (Đối tác) Mock Data & Functions ---
 let partnersData = [
   {
     id: 'p1',
-    tenDoiTac: 'Đối tác Vận Tải An Phát',
-    diaChi: 'Số 1 Đường P, Quận Q, TP.HCM',
-    soDienThoai: '0909111222',
+    code: 'VNT',
+    name: 'Công ty Cổ phần Vận tải Việt Nam',
+    address: '456 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
+    taxCode: '0300584873',
   },
   {
     id: 'p2',
-    tenDoiTac: 'Công ty Logistics Toàn Cầu',
-    diaChi: 'Số 2 Đường R, Quận S, TP. Hà Nội',
-    soDienThoai: '0909333444',
+    code: 'VTL',
+    name: 'Công ty Cổ phần Vận tải và Logistics',
+    address: '789 Đường Lê Duẩn, Quận 1, TP. Hồ Chí Minh',
+    taxCode: '0300584874',
   },
   {
     id: 'p3',
-    tenDoiTac: 'Dịch vụ Kho Vận Miền Nam',
-    diaChi: 'Số 3 Đường T, KCN Biên Hòa, Đồng Nai',
-    soDienThoai: '0909555666',
+    code: 'VTC',
+    name: 'Công ty Cổ phần Vận tải Container',
+    address: '321 Đường Võ Văn Kiệt, Quận 5, TP. Hồ Chí Minh',
+    taxCode: '0300584875',
+  },
+  {
+    id: 'p4',
+    code: 'VTS',
+    name: 'Công ty Cổ phần Vận tải Sài Gòn',
+    address: '654 Đường Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh',
+    taxCode: '0300584876',
   },
 ];
+
 export const getPartners = () => new Promise(res => setTimeout(() => res([...partnersData]), 50));
+
 export const getPartnersForSelect = () =>
   new Promise(res =>
-    setTimeout(() => res(partnersData.map(p => ({ id: p.id, name: p.tenDoiTac }))), 50)
+    setTimeout(() => res(partnersData.map(p => ({ id: p.id, name: p.name }))), 50)
   );
+
 const validatePartnerData = (partnerData, id = null) => {
-  if (!partnerData.tenDoiTac?.trim()) return 'Tên đối tác không được để trống.';
-  if (!partnerData.maSoThue?.trim()) return 'Mã số thuế không được để trống.';
-  if (!partnerData.diaChi?.trim()) return 'Địa chỉ không được để trống.';
+  if (!partnerData.code || partnerData.code.trim() === '') return 'Mã đối tác không được để trống.';
+  if (!partnerData.name || partnerData.name.trim() === '')
+    return 'Tên đối tác không được để trống.';
+  if (!partnerData.address || partnerData.address.trim() === '')
+    return 'Địa chỉ không được để trống.';
+  if (!partnerData.taxCode || partnerData.taxCode.trim() === '')
+    return 'Mã số thuế không được để trống.';
 
-  const existingPartner = partnersData.find(
-    p => p.maSoThue === partnerData.maSoThue.trim() && p.id !== id
-  );
-  if (existingPartner) return 'Mã số thuế đã tồn tại.';
-
+  if (partnersData.some(p => p.code === partnerData.code.trim() && p.id !== id))
+    return 'Mã đối tác đã tồn tại.';
+  if (partnersData.some(p => p.taxCode === partnerData.taxCode.trim() && p.id !== id))
+    return 'Mã số thuế đã tồn tại.';
   return null;
 };
+
 export const addPartner = partnerData =>
-  new Promise((resolve, reject) => {
-    const err = validatePartnerData(partnerData);
-    if (err) {
-      reject(new Error(err));
-      return;
-    }
-    const newPartner = {
-      id: String(Date.now()),
-      ...partnerData,
-      tenDoiTac: partnerData.tenDoiTac.trim(),
-      maSoThue: partnerData.maSoThue.trim(),
-      diaChi: partnerData.diaChi.trim(),
-    };
-    partnersData.push(newPartner);
-    resolve(newPartner);
-  });
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const err = validatePartnerData(partnerData);
+      if (err) reject(new Error(err));
+      else {
+        const newPartner = {
+          id: String(Date.now()),
+          code: partnerData.code.trim(),
+          name: partnerData.name.trim(),
+          address: partnerData.address.trim(),
+          taxCode: partnerData.taxCode.trim(),
+        };
+        partnersData.push(newPartner);
+        resolve(newPartner);
+      }
+    }, 50)
+  );
+
 export const updatePartner = (id, updatedPartnerData) =>
-  new Promise((resolve, reject) => {
-    const err = validatePartnerData(updatedPartnerData, true, id);
-    if (err) {
-      reject(new Error(err));
-      return;
-    }
-    const index = partnersData.findIndex(p => p.id === id);
-    if (index === -1) {
-      reject(new Error('Không tìm thấy đối tác'));
-      return;
-    }
-    partnersData[index] = {
-      ...partnersData[index],
-      ...updatedPartnerData,
-      tenDoiTac: updatedPartnerData.tenDoiTac.trim(),
-      maSoThue: updatedPartnerData.maSoThue.trim(),
-      diaChi: updatedPartnerData.diaChi.trim(),
-    };
-    resolve(partnersData[index]);
-  });
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const err = validatePartnerData(updatedPartnerData, id);
+      if (err) reject(new Error(err));
+      else {
+        let fp = null;
+        partnersData = partnersData.map(p =>
+          p.id === id
+            ? (fp = {
+                ...p,
+                code: updatedPartnerData.code.trim(),
+                name: updatedPartnerData.name.trim(),
+                address: updatedPartnerData.address.trim(),
+                taxCode: updatedPartnerData.taxCode.trim(),
+              })
+            : p
+        );
+        if (fp) resolve(fp);
+        else reject(new Error('Không tìm thấy đối tác'));
+      }
+    }, 50)
+  );
+
 export const deletePartner = id =>
-  new Promise(resolve => {
-    partnersData = partnersData.filter(p => p.id !== id);
-    resolve({ id });
-  });
+  new Promise(res =>
+    setTimeout(() => {
+      partnersData = partnersData.filter(p => p.id !== id);
+      res({ id });
+    }, 50)
+  );
 
 // --- START: Cost Rates (Định mức chi phí) Mock Data & Functions ---
 let costRatesData = [

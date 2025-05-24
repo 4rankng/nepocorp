@@ -1,26 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { PlusIcon, PencilIcon, TrashIcon } from '../../../assets/icons';
+import ConfirmationModal from '../../../components/ConfirmationModal';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Button,
   TextField,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  DialogContentText,
+  Box,
+  Typography,
   CircularProgress,
   Alert,
-  Snackbar,
-  Box,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 
 // Mock data service - Replace with actual API calls
 const mockApi = {
@@ -39,13 +31,13 @@ const mockApi = {
 
 const LoaiContainer = () => {
   const [containerTypes, setContainerTypes] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [currentType, setCurrentType] = useState('');
-  const [currentDescription, setCurrentDescription] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedContainerType, setSelectedContainerType] = useState(null);
+  const [containerTypeToDelete, setContainerTypeToDelete] = useState(null);
+  const [formData, setFormData] = useState({ type: '', description: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchContainerTypes = async () => {
     setIsLoading(true);
@@ -54,7 +46,6 @@ const LoaiContainer = () => {
       setContainerTypes(data);
     } catch (err) {
       setError('Không thể tải danh sách loại container');
-      showSnackbar('Đã xảy ra lỗi khi tải dữ liệu', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -64,31 +55,52 @@ const LoaiContainer = () => {
     fetchContainerTypes();
   }, []);
 
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
+  const handleInputChange = e => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleOpenAddDialog = () => {
-    setEditingId(null);
-    setCurrentType('');
-    setCurrentDescription('');
-    setOpenDialog(true);
-  };
-
-  const handleOpenEditDialog = containerType => {
-    setEditingId(containerType.id);
-    setCurrentType(containerType.type);
-    setCurrentDescription(containerType.description || '');
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
+  const handleOpenModalForAdd = () => {
+    setSelectedContainerType(null);
+    setFormData({ type: '', description: '' });
     setError('');
+    setIsModalOpen(true);
   };
 
-  const handleSave = async () => {
-    if (!currentType.trim()) {
+  const handleOpenModalForEdit = containerType => {
+    setSelectedContainerType(containerType);
+    setFormData({
+      type: containerType.type,
+      description: containerType.description || '',
+    });
+    setError('');
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+    setSelectedContainerType(null);
+    setFormData({ type: '', description: '' });
+    setError('');
+  }, []);
+
+  // Handle ESC key press to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        handleCloseModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen, handleCloseModal]);
+
+  const handleSave = async e => {
+    e.preventDefault();
+    if (!formData.type.trim()) {
       setError('Vui lòng nhập loại container');
       return;
     }
@@ -96,19 +108,17 @@ const LoaiContainer = () => {
     setIsLoading(true);
     try {
       const data = {
-        type: currentType.trim(),
-        description: currentDescription.trim(),
+        type: formData.type.trim(),
+        description: formData.description.trim(),
       };
 
-      if (editingId) {
-        await mockApi.updateContainerType(editingId, data);
-        showSnackbar('Cập nhật loại container thành công');
+      if (selectedContainerType) {
+        await mockApi.updateContainerType(selectedContainerType.id, data);
       } else {
         await mockApi.addContainerType(data);
-        showSnackbar('Thêm loại container thành công');
       }
       await fetchContainerTypes();
-      handleCloseDialog();
+      handleCloseModal();
     } catch (err) {
       setError('Đã xảy ra lỗi khi lưu loại container');
       console.error(err);
@@ -117,151 +127,233 @@ const LoaiContainer = () => {
     }
   };
 
-  const handleDelete = async id => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa loại container này?')) {
-      setIsLoading(true);
-      try {
-        await mockApi.deleteContainerType(id);
-        showSnackbar('Xóa loại container thành công');
-        await fetchContainerTypes();
-      } catch (err) {
-        showSnackbar('Đã xảy ra lỗi khi xóa loại container', 'error');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
+  const handleDeleteClick = containerType => {
+    setContainerTypeToDelete(containerType);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await mockApi.deleteContainerType(containerTypeToDelete.id);
+      setContainerTypes(containerTypes.filter(ct => ct.id !== containerTypeToDelete.id));
+      setIsDeleteModalOpen(false);
+      setContainerTypeToDelete(null);
+    } catch (error) {
+      setError(error.message);
     }
   };
 
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+    setContainerTypeToDelete(null);
+  };
+
   return (
-    <div>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddDialog}
-          disabled={isLoading}
+    <div className="p-4 sm:p-6 bg-white min-h-screen">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Danh sách loại container</h1>
+        <button
+          onClick={handleOpenModalForAdd}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
+          <PlusIcon className="w-5 h-5 mr-2" />
           Thêm
-        </Button>
-      </Box>
+        </button>
+      </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>STT</TableCell>
-              <TableCell>Loại Container</TableCell>
-              <TableCell>Mô Tả</TableCell>
-              <TableCell align="right">Thao Tác</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading && containerTypes.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
-            ) : containerTypes.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Không có dữ liệu
-                </TableCell>
-              </TableRow>
-            ) : (
-              containerTypes.map((item, index) => (
-                <TableRow key={item.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{item.type}</TableCell>
-                  <TableCell>{item.description || '-'}</TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      onClick={() => handleOpenEditDialog(item)}
-                      size="small"
-                      disabled={isLoading}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDelete(item.id)}
-                      size="small"
-                      disabled={isLoading}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                STT
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Loại Container
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Mô Tả
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Thao Tác
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isLoading && containerTypes.length === 0 && (
+              <tr>
+                <td colSpan="4" className="p-4 text-center text-gray-500">
+                  Đang tải...
+                </td>
+              </tr>
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            {!isLoading && error && containerTypes.length === 0 && (
+              <tr>
+                <td colSpan="4" className="p-4 text-center text-red-500">
+                  {error}
+                </td>
+              </tr>
+            )}
+            {!isLoading && !error && containerTypes.length === 0 && (
+              <tr>
+                <td colSpan="4" className="p-4 text-center text-gray-500">
+                  Chưa có loại container nào.
+                </td>
+              </tr>
+            )}
+            {containerTypes.map((item, index) => (
+              <tr key={item.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.type}</td>
+                <td className="px-6 py-4 text-sm text-gray-900">{item.description || '-'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={() => handleOpenModalForEdit(item)}
+                    className="text-blue-600 hover:text-blue-900 mr-4"
+                  >
+                    <PencilIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(item)}
+                    className="text-red-600 hover:text-red-900"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        maxWidth="sm"
+        fullWidth
+        sx={{
+          '& .MuiDialog-container': {
+            alignItems: 'flex-start',
+            paddingTop: '64px',
+          },
+          '& .MuiPaper-root': {
+            margin: '16px',
+            width: '100%',
+            maxWidth: '500px',
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+          },
+          '& .MuiDialogTitle-root': {
+            padding: '16px 24px',
+            fontSize: '1.125rem',
+            fontWeight: 600,
+            color: '#111827',
+            borderBottom: '1px solid #E5E7EB',
+          },
+          '& .MuiDialogContent-root': {
+            padding: '24px',
+            '&:first-of-type': {
+              paddingTop: '24px',
+            },
+          },
+          '& .MuiDialogActions-root': {
+            padding: '16px 24px',
+            borderTop: '1px solid #E5E7EB',
+            justifyContent: 'flex-end',
+            gap: '8px',
+          },
+        }}
+      >
         <DialogTitle>
-          {editingId ? 'Chỉnh Sửa Loại Container' : 'Thêm Mới Loại Container'}
+          {selectedContainerType ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'}
         </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            {editingId ? 'Cập nhật thông tin loại container' : 'Nhập thông tin loại container mới'}
-          </DialogContentText>
-
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Loại container"
-            fullWidth
-            variant="outlined"
-            value={currentType}
-            onChange={e => setCurrentType(e.target.value)}
-            error={!!error && !currentType.trim()}
-            helperText={!currentType.trim() ? error : ''}
-            disabled={isLoading}
-            sx={{ mb: 2 }}
-          />
-
-          <TextField
-            margin="dense"
-            label="Mô tả"
-            fullWidth
-            variant="outlined"
-            multiline
-            rows={3}
-            value={currentDescription}
-            onChange={e => setCurrentDescription(e.target.value)}
-            disabled={isLoading}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} disabled={isLoading}>
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            disabled={isLoading || !currentType.trim()}
-            startIcon={isLoading ? <CircularProgress size={20} /> : null}
-          >
-            Lưu
-          </Button>
-        </DialogActions>
+        <form onSubmit={handleSave}>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
+                fullWidth
+                label="Loại container"
+                name="type"
+                value={formData.type}
+                onChange={handleInputChange}
+                placeholder="Ví dụ: 20'DC"
+                variant="outlined"
+                size="small"
+                required
+              />
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Mô tả"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Ví dụ: Container khô 20 feet tiêu chuẩn"
+                variant="outlined"
+                size="small"
+              />
+              {error && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {error}
+                </Alert>
+              )}
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={handleCloseModal}
+              variant="outlined"
+              sx={{
+                height: 36,
+                px: 2,
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{
+                height: 36,
+                px: 2,
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                '&:hover': {
+                  backgroundColor: '#1d4ed8',
+                },
+              }}
+            >
+              {selectedContainerType ? 'Lưu' : 'Thêm'}
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Xác nhận xóa"
+        message={
+          <div className="mt-2">
+            <p className="text-sm text-gray-500 mb-4">
+              Bạn có chắc chắn muốn xóa loại container này?
+            </p>
+            <div className="bg-gray-50 p-4 rounded-md">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="font-medium text-gray-500">Loại container:</div>
+                <div className="text-gray-900">{containerTypeToDelete?.type}</div>
+                <div className="font-medium text-gray-500">Mô tả:</div>
+                <div className="text-gray-900">{containerTypeToDelete?.description || '-'}</div>
+              </div>
+            </div>
+          </div>
+        }
+      />
     </div>
   );
 };

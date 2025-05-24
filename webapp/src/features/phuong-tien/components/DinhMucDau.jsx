@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ConfirmationDialog from '../../../shared/components/ConfirmationDialog';
+
 import {
   Box,
   Button,
@@ -31,12 +32,12 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-} from '@mui/icons-material';
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from '../../../assets/icons';
 import { visuallyHidden } from '@mui/utils';
 
 // Mock API for demonstration
@@ -117,7 +118,11 @@ const DinhMucDau = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    id: null,
+    details: null,
+  });
   const [orderBy, setOrderBy] = useState('fromKm');
   const [order, setOrder] = useState('asc');
 
@@ -285,11 +290,25 @@ const DinhMucDau = () => {
   };
 
   const handleDeleteClick = id => {
-    setDeleteDialog({ open: true, id });
+    const itemToDelete = fuelStandards.find(item => item.id === id);
+    if (!itemToDelete) return;
+
+    setDeleteDialog({
+      open: true,
+      id,
+      details: {
+        'Biển số xe': itemToDelete.licensePlate,
+        'Từ km': itemToDelete.fromKm.toLocaleString(),
+        'Đến km': itemToDelete.toKm.toLocaleString(),
+        'Định mức (l/km)': itemToDelete.standard,
+        'Ghi chú': itemToDelete.note || 'Không có',
+      },
+    });
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.id) return;
+    setDeleteDialog(prev => ({ ...prev, isDeleting: true }));
 
     setIsLoading(true);
     try {
@@ -305,9 +324,9 @@ const DinhMucDau = () => {
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, id: null });
-  };
+  const handleDeleteClose = useCallback(() => {
+    setDeleteDialog(prev => ({ ...prev, open: false }));
+  }, []);
 
   const getRouteTypeLabel = type => {
     const found = routeTypes.find(rt => rt.value === type);
@@ -399,9 +418,9 @@ const DinhMucDau = () => {
                     )}
                   </Box>
                   {expandedPlates[licensePlate] ? (
-                    <ExpandLessIcon fontSize="small" />
+                    <ChevronUpIcon className="w-5 h-5" />
                   ) : (
-                    <ExpandMoreIcon fontSize="small" />
+                    <ChevronDownIcon className="w-5 h-5" />
                   )}
                 </Box>
 
@@ -435,7 +454,7 @@ const DinhMucDau = () => {
                               <Button
                                 variant="contained"
                                 size="small"
-                                startIcon={<AddIcon />}
+                                startIcon={<PlusIcon className="w-5 h-5" />}
                                 onClick={e => {
                                   e.stopPropagation();
                                   handleOpenAddDialog(licensePlate);
@@ -480,26 +499,28 @@ const DinhMucDau = () => {
                                     {row.note || '-'}
                                   </TableCell>
                                   <TableCell align="right" sx={{ py: 0.75, pl: 1, pr: 2 }}>
-                                    <IconButton
-                                      size="small"
-                                      onClick={e => {
-                                        e.stopPropagation();
-                                        handleOpenEditDialog(row);
-                                      }}
-                                      sx={{ '&:hover': { color: 'primary.main' } }}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      onClick={e => {
-                                        e.stopPropagation();
-                                        handleDeleteClick(row.id);
-                                      }}
-                                      sx={{ '&:hover': { color: 'error.main' } }}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
+                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                      <IconButton
+                                        size="small"
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          handleOpenEditDialog(row);
+                                        }}
+                                        color="primary"
+                                      >
+                                        <PencilIcon className="w-5 h-5" />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          handleDeleteClick(row.id);
+                                        }}
+                                        color="error"
+                                      >
+                                        <TrashIcon className="w-5 h-5" />
+                                      </IconButton>
+                                    </Box>
                                   </TableCell>
                                 </TableRow>
                               ))
@@ -515,13 +536,49 @@ const DinhMucDau = () => {
         )}
       </Box>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ pb: 1, pt: 2, px: 2 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            {editingId ? 'Chỉnh Sửa Định Mức Dầu' : 'Thêm Định Mức Dầu Mới'}
-          </Typography>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="sm" 
+        fullWidth
+        onKeyDown={(e) => e.key === 'Escape' && handleCloseDialog()}
+        sx={{
+          '& .MuiDialog-container': {
+            alignItems: 'flex-start',
+            paddingTop: '64px',
+          },
+          '& .MuiPaper-root': {
+            margin: '16px',
+            width: '100%',
+            maxWidth: '500px',
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+          },
+          '& .MuiDialogTitle-root': {
+            padding: '16px 24px',
+            fontSize: '1.125rem',
+            fontWeight: 600,
+            color: '#111827',
+            borderBottom: '1px solid #E5E7EB',
+          },
+          '& .MuiDialogContent-root': {
+            padding: '24px',
+            '&:first-of-type': {
+              paddingTop: '24px',
+            },
+          },
+          '& .MuiDialogActions-root': {
+            padding: '16px 24px',
+            borderTop: '1px solid #E5E7EB',
+            justifyContent: 'flex-end',
+            gap: '8px',
+          },
+        }}
+      >
+        <DialogTitle>
+          {editingId ? 'Chỉnh Sửa Định Mức Dầu' : 'Thêm Định Mức Dầu Mới'}
         </DialogTitle>
-        <DialogContent sx={{ px: 2, py: 1 }}>
+        <DialogContent>
           {error && (
             <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.8125rem' }}>
               {error}
@@ -601,12 +658,28 @@ const DinhMucDau = () => {
             />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 2, py: 1.5, gap: 1 }}>
+        <DialogActions>
           <Button
             onClick={handleCloseDialog}
+            variant="outlined"
             disabled={isLoading}
-            size="small"
-            sx={{ minWidth: 80 }}
+            sx={{
+              height: 36,
+              px: 2,
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+              color: '#4B5563',
+              borderColor: '#D1D5DB',
+              backgroundColor: 'white',
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                borderColor: '#9CA3AF',
+              },
+              '&:active': {
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              },
+            }}
           >
             Hủy
           </Button>
@@ -614,9 +687,22 @@ const DinhMucDau = () => {
             onClick={handleSave}
             variant="contained"
             disabled={isLoading}
-            size="small"
-            sx={{ minWidth: 100 }}
-            startIcon={isLoading ? <CircularProgress size={18} /> : null}
+            sx={{
+              height: 36,
+              px: 3,
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+              backgroundColor: '#3B82F6',
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: '#2563EB',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: '#E5E7EB',
+                color: '#9CA3AF',
+              },
+            }}
+            startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
           >
             {isLoading ? 'Đang lưu...' : 'Lưu'}
           </Button>
@@ -640,10 +726,11 @@ const DinhMucDau = () => {
 
       <ConfirmationDialog
         open={deleteDialog.open}
-        title="Xóa định mức dầu"
-        message="Bạn có chắc chắn muốn xóa định mức dầu này?"
+        onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
+        title="Xác nhận xóa định mức dầu"
+        message="Bạn có chắc chắn muốn xóa định mức dầu này?"
+        details={deleteDialog.details}
         confirmText="Xóa"
         cancelText="Hủy"
         confirmColor="error"
