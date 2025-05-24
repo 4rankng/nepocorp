@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import ConfirmationDialog from '../../../shared/components/ConfirmationDialog';
+import ConfirmationDialog from '@shared/components/ConfirmationDialog';
 
 import {
   Table,
@@ -28,7 +28,7 @@ import {
   TablePagination,
   IconButton,
 } from '@mui/material';
-import { PlusIcon, PencilIcon, TrashIcon, SearchIcon } from '../../../assets/icons';
+import { PlusIcon, PencilIcon, TrashIcon, SearchIcon } from '@assets/icons';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -108,7 +108,7 @@ const BaoDuong = () => {
     const total = (formData.quantity || 0) * (formData.unitPrice || 0);
     setFormData(prev => ({
       ...prev,
-      total: total
+      total: total,
     }));
   }, [formData.quantity, formData.unitPrice]);
 
@@ -348,7 +348,6 @@ const BaoDuong = () => {
           disabled={isLoading}
           sx={{ minWidth: 200 }}
         >
-          Thêm
         </Button>
       </Box>
 
@@ -442,7 +441,7 @@ const BaoDuong = () => {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
-        onKeyDown={(e) => e.key === 'Escape' && handleCloseDialog()}
+        onKeyDown={e => e.key === 'Escape' && handleCloseDialog()}
         sx={{
           '& .MuiDialog-container': {
             alignItems: 'flex-start',
@@ -483,9 +482,9 @@ const BaoDuong = () => {
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <FormControl fullWidth size="small" required>
-              <InputLabel 
-                id="license-plate-label" 
-                sx={{ 
+              <InputLabel
+                id="license-plate-label"
+                sx={{
                   fontSize: '0.875rem',
                   '&.Mui-focused': {
                     color: '#4F46E5',
@@ -503,11 +502,11 @@ const BaoDuong = () => {
                 disabled={isLoading}
                 label="Biển số xe *"
                 sx={{
-                  '& .MuiSelect-select': { 
+                  '& .MuiSelect-select': {
                     py: '8px',
                     fontSize: '0.875rem',
                   },
-                  '& .MuiOutlinedInput-notchedOutline': { 
+                  '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: '#E5E7EB',
                     '&:hover': {
                       borderColor: '#9CA3AF',
@@ -520,10 +519,10 @@ const BaoDuong = () => {
                 }}
               >
                 {licensePlates.map(plate => (
-                  <MenuItem 
-                    key={plate.id} 
-                    value={plate.licensePlate} 
-                    sx={{ 
+                  <MenuItem
+                    key={plate.id}
+                    value={plate.licensePlate}
+                    sx={{
                       fontSize: '0.875rem',
                       '&:hover': {
                         backgroundColor: '#F3F4F6',
@@ -548,13 +547,13 @@ const BaoDuong = () => {
                   label="Ngày thay lốp *"
                   inputFormat="dd/MM/yyyy"
                   value={formData.replacementDate}
-                  onChange={(date) => {
+                  onChange={date => {
                     setFormData(prev => ({
                       ...prev,
                       replacementDate: date,
                     }));
                   }}
-                  renderInput={(params) => (
+                  renderInput={params => (
                     <TextField
                       {...params}
                       size="small"
@@ -611,7 +610,7 @@ const BaoDuong = () => {
                   style: {
                     textAlign: 'right',
                     paddingRight: '8px',
-                  }
+                  },
                 }}
                 sx={{
                   '& .MuiInputBase-root': {
@@ -656,7 +655,7 @@ const BaoDuong = () => {
                   const value = Math.max(0, parseInt(e.target.value) || 0);
                   setFormData(prev => ({
                     ...prev,
-                    quantity: value
+                    quantity: value,
                   }));
                 }}
                 size="small"
@@ -704,7 +703,7 @@ const BaoDuong = () => {
                   const value = Math.max(0, parseInt(e.target.value) || 0);
                   setFormData(prev => ({
                     ...prev,
-                    unitPrice: value
+                    unitPrice: value,
                   }));
                 }}
                 size="small"
@@ -784,7 +783,6 @@ const BaoDuong = () => {
                 }}
               />
             </Box>
-
           </Box>
         </DialogContent>
 

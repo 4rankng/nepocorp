@@ -9,7 +9,7 @@ import {
   getCustomersForSelect,
   getContainerTypesForSelect,
 } from '../../services/mockData';
-import { PlusIcon, PencilIcon, TrashIcon } from '../../assets/icons/index.jsx';
+import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
 import ConfirmationModal from '../../components/ConfirmationModal';
 
 const initialFormState = {

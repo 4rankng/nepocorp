@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getDebtReport } from '../../services/mockData';
+import { getDebtReport } from '@services/mockData';
 import DateRangeFilter from '../../components/DateRangeFilter';
 import { format } from 'date-fns';
 

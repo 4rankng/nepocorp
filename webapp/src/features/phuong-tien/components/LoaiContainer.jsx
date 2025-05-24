@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon } from '../../../assets/icons';
-import ConfirmationModal from '../../../components/ConfirmationModal';
+import { useState, useEffect, useCallback } from 'react';
+import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons';
+import ConfirmationModal from '@components/ConfirmationModal';
 import {
   Dialog,
   DialogTitle,
@@ -86,7 +86,7 @@ const LoaiContainer = () => {
 
   // Handle ESC key press to close modal
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape' && isModalOpen) {
         handleCloseModal();
       }
@@ -157,7 +157,6 @@ const LoaiContainer = () => {
           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <PlusIcon className="w-5 h-5 mr-2" />
-          Thêm
         </button>
       </div>
 

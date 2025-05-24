@@ -8,7 +8,7 @@ import {
 } from '../../services/mockData';
 
 // Import icons from centralized location
-import { PlusIcon, PencilIcon, TrashIcon } from '../../assets/icons/index.jsx';
+import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
 
 const initialFormState = {
   tenNhanVien: '',

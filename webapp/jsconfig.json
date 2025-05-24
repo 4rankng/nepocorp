@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@features/*": ["./src/features/*"],
+      "@layouts/*": ["./src/layouts/*"],
+      "@services/*": ["./src/services/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@contexts/*": ["./src/contexts/*"],
+      "@routes/*": ["./src/routes/*"],
+      "@constants/*": ["./src/constants/*"],
+      "@types/*": ["./src/types/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@shared/*": ["./src/shared/*"]
+    },
+    "module": "esnext",
+    "target": "es6",
+    "jsx": "preserve",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "build"]
+}

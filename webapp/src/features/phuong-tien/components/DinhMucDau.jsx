@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import ConfirmationDialog from '../../../shared/components/ConfirmationDialog';
+import ConfirmationDialog from '@shared/components/ConfirmationDialog';
 
 import {
   Box,
@@ -461,7 +461,6 @@ const DinhMucDau = () => {
                                 }}
                                 sx={{ height: 28, fontSize: '0.75rem' }}
                               >
-                                Thêm
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -499,7 +498,9 @@ const DinhMucDau = () => {
                                     {row.note || '-'}
                                   </TableCell>
                                   <TableCell align="right" sx={{ py: 0.75, pl: 1, pr: 2 }}>
-                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                    <Box
+                                      sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}
+                                    >
                                       <IconButton
                                         size="small"
                                         onClick={e => {
@@ -536,12 +537,12 @@ const DinhMucDau = () => {
         )}
       </Box>
 
-      <Dialog 
-        open={openDialog} 
-        onClose={handleCloseDialog} 
-        maxWidth="sm" 
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
         fullWidth
-        onKeyDown={(e) => e.key === 'Escape' && handleCloseDialog()}
+        onKeyDown={e => e.key === 'Escape' && handleCloseDialog()}
         sx={{
           '& .MuiDialog-container': {
             alignItems: 'flex-start',
@@ -575,9 +576,7 @@ const DinhMucDau = () => {
           },
         }}
       >
-        <DialogTitle>
-          {editingId ? 'Chỉnh Sửa Định Mức Dầu' : 'Thêm Định Mức Dầu Mới'}
-        </DialogTitle>
+        <DialogTitle>{editingId ? 'Chỉnh Sửa Định Mức Dầu' : 'Thêm Định Mức Dầu Mới'}</DialogTitle>
         <DialogContent>
           {error && (
             <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.8125rem' }}>

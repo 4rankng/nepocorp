@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { ROLES } from '../shared/config/roles';
+import { ROLES } from '@shared/config/roles';
 
 // Mock user data - in a real app, this would come from your authentication service
 const MOCK_USERS = {

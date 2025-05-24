@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ROLES, getRoleLabel } from '../shared/config/roles';
+import { ROLES, getRoleLabel } from '@shared/config/roles';
 import ThanhTieuDe from '../shared/components/ThanhTieuDe';
 import ThanhBen from '../shared/components/ThanhBen';
 

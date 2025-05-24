@@ -176,7 +176,7 @@ const DocumentTextIcon = ({ className = 'w-6 h-6' }) => (
 );
 
 import { useAuth } from '../../contexts/AuthContext';
-import { getMenuItems } from '../../shared/config/roles';
+import { getMenuItems } from '@shared/config/roles';
 
 // Icon mapping
 const iconComponents = {

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Table,
@@ -21,7 +20,7 @@ import {
   Snackbar,
   IconButton,
 } from '@mui/material';
-import { PlusIcon, PencilIcon, TrashIcon } from '../../../assets/icons';
+import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons';
 import ConfirmationModal from '../../../components/ConfirmationModal';
 
 // Mock data service - Replace with actual API calls
@@ -100,7 +99,7 @@ const XeVanChuyen = () => {
 
   // Handle ESC key press to close dialog
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape' && openDialog) {
         handleCloseDialog();
       }
@@ -143,8 +142,6 @@ const XeVanChuyen = () => {
       [name]: name === 'containerCount' ? parseInt(value) || 0 : value,
     }));
   };
-
-
 
   const handleSave = async () => {
     if (!formData.licensePlate.trim()) {
@@ -218,7 +215,6 @@ const XeVanChuyen = () => {
           onClick={handleOpenAddDialog}
           disabled={isLoading}
         >
-          Thêm
         </Button>
       </Box>
 
@@ -343,9 +339,7 @@ const XeVanChuyen = () => {
           },
         }}
       >
-        <DialogTitle>
-          {editingId ? 'Sửa' : 'Thêm'} Thông Tin Xe
-        </DialogTitle>
+        <DialogTitle>{editingId ? 'Sửa' : 'Thêm'} Thông Tin Xe</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -413,7 +407,7 @@ const XeVanChuyen = () => {
                 onChange={handleInputChange}
                 inputProps={{
                   min: 0,
-                  style: { textAlign: 'right' }
+                  style: { textAlign: 'right' },
                 }}
                 sx={{
                   flex: 2,
