@@ -2,7 +2,19 @@ openapi: 3.0.3
 info:
   title: Backend API
   version: 1.0.0
-  description: API specification for the backend services.
+  description: |
+    API specification for the backend services of the Transportation Management System.
+    This API provides endpoints for managing vehicles, containers, shipments, and financial reports.
+    
+    ## Authentication
+    All endpoints require authentication using JWT Bearer token in the Authorization header.
+    
+    ## Error Responses
+    - 400: Bad Request - Invalid request data
+    - 401: Unauthorized - Authentication required
+    - 403: Forbidden - Insufficient permissions
+    - 404: Not Found - Resource not found
+    - 500: Internal Server Error - Server error
 
 paths:
   /auth/login:
@@ -118,7 +130,466 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  # User Management
+  # --- Container Types Management ---
+  /api/container-types:
+    get:
+      summary: List all container types
+      description: Retrieves a list of all container types.
+      tags: [Container Types]
+      responses:
+        '200':
+          description: A list of container types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContainerType'
+    post:
+      summary: Create a new container type
+      description: Creates a new container type.
+      tags: [Container Types]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerTypeCreateRequest'
+      responses:
+        '201':
+          description: Container type created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerType'
+
+  /api/container-types/{containerTypeId}:
+    get:
+      summary: Get container type details
+      description: Retrieves details for a specific container type.
+      tags: [Container Types]
+      parameters:
+        - $ref: '#/components/parameters/containerTypeId'
+      responses:
+        '200':
+          description: Container type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerType'
+    put:
+      summary: Update a container type
+      description: Updates an existing container type.
+      tags: [Container Types]
+      parameters:
+        - $ref: '#/components/parameters/containerTypeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerTypeUpdateRequest'
+      responses:
+        '200':
+          description: Container type updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerType'
+    delete:
+      summary: Delete a container type
+      description: Deletes a container type.
+      tags: [Container Types]
+      parameters:
+        - $ref: '#/components/parameters/containerTypeId'
+      responses:
+        '204':
+          description: Container type deleted successfully
+
+  # --- Vehicle Management ---
+  /api/vehicles:
+    get:
+      summary: List all vehicles
+      description: Retrieves a list of all vehicles.
+      tags: [Vehicles]
+      responses:
+        '200':
+          description: A list of vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vehicle'
+    post:
+      summary: Create a new vehicle
+      description: Creates a new vehicle.
+      tags: [Vehicles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleCreateRequest'
+      responses:
+        '201':
+          description: Vehicle created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+
+  /api/vehicles/{vehicleId}:
+    get:
+      summary: Get vehicle details
+      description: Retrieves details for a specific vehicle.
+      tags: [Vehicles]
+      parameters:
+        - $ref: '#/components/parameters/vehicleId'
+      responses:
+        '200':
+          description: Vehicle details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+    put:
+      summary: Update a vehicle
+      description: Updates an existing vehicle.
+      tags: [Vehicles]
+      parameters:
+        - $ref: '#/components/parameters/vehicleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleUpdateRequest'
+      responses:
+        '200':
+          description: Vehicle updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+    delete:
+      summary: Delete a vehicle
+      description: Deletes a vehicle.
+      tags: [Vehicles]
+      parameters:
+        - $ref: '#/components/parameters/vehicleId'
+      responses:
+        '204':
+          description: Vehicle deleted successfully
+
+  # --- Shipment Plans Management ---
+  /api/shipment-plans:
+    get:
+      summary: List all shipment plans
+      description: Retrieves a list of all shipment plans with optional filtering.
+      tags: [Shipment Plans]
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [Chờ xác nhận, Đang vận chuyển, Hoàn thành, Đã hủy]
+        - name: fromDate
+          in: query
+          description: Filter by start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: Filter by end date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: A list of shipment plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShipmentPlan'
+    post:
+      summary: Create a new shipment plan
+      description: Creates a new shipment plan.
+      tags: [Shipment Plans]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentPlanCreateRequest'
+      responses:
+        '201':
+          description: Shipment plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentPlan'
+
+  /api/shipment-plans/{shipmentPlanId}:
+    get:
+      summary: Get shipment plan details
+      description: Retrieves details for a specific shipment plan.
+      tags: [Shipment Plans]
+      parameters:
+        - $ref: '#/components/parameters/shipmentPlanId'
+      responses:
+        '200':
+          description: Shipment plan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentPlan'
+    put:
+      summary: Update a shipment plan
+      description: Updates an existing shipment plan.
+      tags: [Shipment Plans]
+      parameters:
+        - $ref: '#/components/parameters/shipmentPlanId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentPlanUpdateRequest'
+      responses:
+        '200':
+          description: Shipment plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentPlan'
+    delete:
+      summary: Delete a shipment plan
+      description: Deletes a shipment plan.
+      tags: [Shipment Plans]
+      parameters:
+        - $ref: '#/components/parameters/shipmentPlanId'
+      responses:
+        '204':
+          description: Shipment plan deleted successfully
+
+  # --- Maintenance Management ---
+  /api/maintenance-records:
+    get:
+      summary: List all maintenance records
+      description: Retrieves a list of all vehicle maintenance records.
+      tags: [Maintenance]
+      responses:
+        '200':
+          description: A list of maintenance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceRecord'
+    post:
+      summary: Create a new maintenance record
+      description: Creates a new vehicle maintenance record.
+      tags: [Maintenance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceRecordCreateRequest'
+      responses:
+        '201':
+          description: Maintenance record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceRecord'
+
+  /api/maintenance-records/{maintenanceRecordId}:
+    get:
+      summary: Get maintenance record details
+      description: Retrieves details for a specific maintenance record.
+      tags: [Maintenance]
+      parameters:
+        - $ref: '#/components/parameters/maintenanceRecordId'
+      responses:
+        '200':
+          description: Maintenance record details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceRecord'
+    put:
+      summary: Update a maintenance record
+      description: Updates an existing maintenance record.
+      tags: [Maintenance]
+      parameters:
+        - $ref: '#/components/parameters/maintenanceRecordId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceRecordUpdateRequest'
+      responses:
+        '200':
+          description: Maintenance record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceRecord'
+    delete:
+      summary: Delete a maintenance record
+      description: Deletes a maintenance record.
+      tags: [Maintenance]
+      parameters:
+        - $ref: '#/components/parameters/maintenanceRecordId'
+      responses:
+        '204':
+          description: Maintenance record deleted successfully
+
+  # --- Fuel Standards Management ---
+  /api/fuel-standards:
+    get:
+      summary: List all fuel standards
+      description: Retrieves a list of all fuel standards.
+      tags: [Fuel Standards]
+      responses:
+        '200':
+          description: A list of fuel standards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FuelStandard'
+    post:
+      summary: Create a new fuel standard
+      description: Creates a new fuel standard.
+      tags: [Fuel Standards]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuelStandardCreateRequest'
+      responses:
+        '201':
+          description: Fuel standard created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuelStandard'
+
+  /api/fuel-standards/{fuelStandardId}:
+    get:
+      summary: Get fuel standard details
+      description: Retrieves details for a specific fuel standard.
+      tags: [Fuel Standards]
+      parameters:
+        - $ref: '#/components/parameters/fuelStandardId'
+      responses:
+        '200':
+          description: Fuel standard details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuelStandard'
+    put:
+      summary: Update a fuel standard
+      description: Updates an existing fuel standard.
+      tags: [Fuel Standards]
+      parameters:
+        - $ref: '#/components/parameters/fuelStandardId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuelStandardUpdateRequest'
+      responses:
+        '200':
+          description: Fuel standard updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuelStandard'
+    delete:
+      summary: Delete a fuel standard
+      description: Deletes a fuel standard.
+      tags: [Fuel Standards]
+      parameters:
+        - $ref: '#/components/parameters/fuelStandardId'
+      responses:
+        '204':
+          description: Fuel standard deleted successfully
+
+  # --- Reports ---
+  /api/reports/financial/profit-revenue:
+    get:
+      summary: Generate profit and revenue report
+      description: Generates a report on profit and revenue, filterable by date range and vehicle.
+      tags: [Reports]
+      parameters:
+        - name: startDate
+          in: query
+          description: Start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: End date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: vehicleId
+          in: query
+          description: Filter by vehicle ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profit and revenue report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfitRevenueReport'
+
+  /api/reports/vehicle-monthly-details:
+    get:
+      summary: Generate vehicle monthly details report
+      description: Generates a detailed report for a specific vehicle and month.
+      tags: [Reports]
+      parameters:
+        - name: vehicleId
+          in: query
+          description: Vehicle ID
+          required: true
+          schema:
+            type: string
+        - name: monthYear
+          in: query
+          description: Month and year (YYYY-MM)
+          required: true
+          schema:
+            type: string
+            format: date
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      responses:
+        '200':
+          description: Vehicle monthly details report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleMonthlyDetailsReport'
+
+  # --- User Management ---
   /users:
     get:
       summary: List all users
@@ -528,7 +999,537 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 components:
+  # --- Parameters ---
+  parameters:
+    containerTypeId:
+      name: containerTypeId
+      in: path
+      description: ID of the container type
+      required: true
+      schema:
+        type: string
+    vehicleId:
+      name: vehicleId
+      in: path
+      description: ID of the vehicle
+      required: true
+      schema:
+        type: string
+    shipmentPlanId:
+      name: shipmentPlanId
+      in: path
+      description: ID of the shipment plan
+      required: true
+      schema:
+        type: string
+    maintenanceRecordId:
+      name: maintenanceRecordId
+      in: path
+      description: ID of the maintenance record
+      required: true
+      schema:
+        type: string
+    fuelStandardId:
+      name: fuelStandardId
+      in: path
+      description: ID of the fuel standard
+      required: true
+      schema:
+        type: string
+
+  # --- Schemas ---
   schemas:
+    # --- Container Types ---
+    ContainerType:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the container type
+        name:
+          type: string
+          description: Name of the container type
+      required: [id, name]
+
+    ContainerTypeCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the container type
+      required: [name]
+
+    ContainerTypeUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name for the container type
+      required: [name]
+
+    # --- Vehicles ---
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the vehicle
+        licensePlate:
+          type: string
+          description: License plate number of the vehicle
+        name:
+          type: string
+          description: Name of the vehicle
+        type:
+          type: string
+          description: Type of the vehicle
+      required: [id, licensePlate]
+
+    VehicleCreateRequest:
+      type: object
+      properties:
+        licensePlate:
+          type: string
+          description: License plate number of the vehicle
+        name:
+          type: string
+          description: Name of the vehicle
+        type:
+          type: string
+          description: Type of the vehicle
+      required: [licensePlate]
+
+    VehicleUpdateRequest:
+      type: object
+      properties:
+        licensePlate:
+          type: string
+          description: New license plate number
+        name:
+          type: string
+          description: New name for the vehicle
+        type:
+          type: string
+          description: New type for the vehicle
+
+    # --- Shipment Plans ---
+    ShipmentPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the shipment plan
+        ngayThang:
+          type: string
+          format: date
+          description: Date of the shipment
+        bienSoXeId:
+          type: string
+          description: ID of the vehicle
+        bienSoXe:
+          type: string
+          description: License plate number of the vehicle
+        doiTacId:
+          type: string
+          description: ID of the partner (if any)
+        tenDoiTac:
+          type: string
+          description: Name of the partner
+        dienGiai:
+          type: string
+          description: Description of the shipment
+        tuyenDuong:
+          type: object
+          properties:
+            diemDi:
+              type: string
+              description: Starting point
+            diemDen:
+              type: array
+              items:
+                type: string
+              description: List of destinations
+        trangThai:
+          type: string
+          enum: [Chờ xác nhận, Đang vận chuyển, Hoàn thành, Đã hủy]
+          description: Status of the shipment
+        khachHangId:
+          type: string
+          description: ID of the customer
+        tenKhachHang:
+          type: string
+          description: Name of the customer
+        loaiContainerId:
+          type: string
+          description: ID of the container type
+        tenLoaiContainer:
+          type: string
+          description: Name of the container type
+        cuocVanChuyen:
+          type: number
+          description: Shipping fee
+        thongTinContainer:
+          type: array
+          items:
+            type: object
+            properties:
+              soContainer:
+                type: string
+                description: Container number
+              soSeal:
+                type: string
+                description: Seal number
+        ngayHaHang:
+          type: string
+          format: date
+          description: Date of cargo unloading
+        soLuongContainer:
+          type: integer
+          description: Number of containers
+        cuocThueVanChuyen:
+          type: number
+          description: Shipping rental fee
+        dauLit:
+          type: number
+          description: Fuel consumption in liters
+        donGiaDau:
+          type: number
+          description: Fuel price per liter
+        phiDiDuong:
+          type: number
+          description: Road toll fee
+        costTolls:
+          type: number
+          description: Total toll fees
+        costMaintenance:
+          type: number
+          description: Maintenance cost
+        detailedOtherCosts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier for the cost item
+              name:
+                type: string
+                description: Name of the cost item
+              amount:
+                type: number
+                description: Amount of the cost item
+        kmChuyenHang:
+          type: number
+          description: Distance with cargo (km)
+        kmChuyenVoRong:
+          type: number
+          description: Distance without cargo (km)
+        dinhMucDiDuong:
+          type: number
+          description: Standard road fee
+
+    ShipmentPlanCreateRequest:
+      type: object
+      properties:
+        ngayThang:
+          type: string
+          format: date
+          description: Date of the shipment
+        bienSoXeId:
+          type: string
+          description: ID of the vehicle
+        doiTacId:
+          type: string
+          description: ID of the partner (if any)
+        dienGiai:
+          type: string
+          description: Description of the shipment
+        tuyenDuong:
+          type: object
+          properties:
+            diemDi:
+              type: string
+              description: Starting point
+            diemDen:
+              type: array
+              items:
+                type: string
+              description: List of destinations
+        khachHangId:
+          type: string
+          description: ID of the customer
+        loaiContainerId:
+          type: string
+          description: ID of the container type
+        cuocVanChuyen:
+          type: number
+          description: Shipping fee
+        thongTinContainer:
+          type: array
+          items:
+            type: object
+            properties:
+              soContainer:
+                type: string
+                description: Container number
+              soSeal:
+                type: string
+                description: Seal number
+        ngayHaHang:
+          type: string
+          format: date
+          description: Date of cargo unloading
+        soLuongContainer:
+          type: integer
+          description: Number of containers
+      required: [ngayThang, bienSoXeId, khachHangId, loaiContainerId]
+
+    ShipmentPlanUpdateRequest:
+      type: object
+      properties:
+        ngayThang:
+          type: string
+          format: date
+          description: New date of the shipment
+        bienSoXeId:
+          type: string
+          description: New ID of the vehicle
+        doiTacId:
+          type: string
+          description: New ID of the partner (if any)
+        dienGiai:
+          type: string
+          description: New description of the shipment
+        tuyenDuong:
+          type: object
+          properties:
+            diemDi:
+              type: string
+              description: New starting point
+            diemDen:
+              type: array
+              items:
+                type: string
+              description: New list of destinations
+        khachHangId:
+          type: string
+          description: New ID of the customer
+        loaiContainerId:
+          type: string
+          description: New ID of the container type
+        cuocVanChuyen:
+          type: number
+          description: New shipping fee
+        thongTinContainer:
+          type: array
+          items:
+            type: object
+            properties:
+              soContainer:
+                type: string
+                description: New container number
+              soSeal:
+                type: string
+                description: New seal number
+        ngayHaHang:
+          type: string
+          format: date
+          description: New date of cargo unloading
+        soLuongContainer:
+          type: integer
+          description: New number of containers
+
+    # --- Maintenance Records ---
+    MaintenanceRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the maintenance record
+        vehicleId:
+          type: string
+          description: ID of the vehicle
+        maintenanceDate:
+          type: string
+          format: date
+          description: Date of maintenance
+        description:
+          type: string
+          description: Description of the maintenance
+        cost:
+          type: number
+          description: Cost of the maintenance
+      required: [id, vehicleId, maintenanceDate, description]
+
+    MaintenanceRecordCreateRequest:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          description: ID of the vehicle
+        maintenanceDate:
+          type: string
+          format: date
+          description: Date of maintenance
+        description:
+          type: string
+          description: Description of the maintenance
+        cost:
+          type: number
+          description: Cost of the maintenance
+      required: [vehicleId, maintenanceDate, description]
+
+    MaintenanceRecordUpdateRequest:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          description: New ID of the vehicle
+        maintenanceDate:
+          type: string
+          format: date
+          description: New date of maintenance
+        description:
+          type: string
+          description: New description of the maintenance
+        cost:
+          type: number
+          description: New cost of the maintenance
+
+    # --- Fuel Standards ---
+    FuelStandard:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the fuel standard
+        vehicleType:
+          type: string
+          description: Type of vehicle this standard applies to
+        standardValue:
+          type: number
+          description: Standard fuel consumption value
+        unit:
+          type: string
+          description: Unit of measurement (e.g., liters/km)
+      required: [id, vehicleType, standardValue, unit]
+
+    FuelStandardCreateRequest:
+      type: object
+      properties:
+        vehicleType:
+          type: string
+          description: Type of vehicle this standard applies to
+        standardValue:
+          type: number
+          description: Standard fuel consumption value
+        unit:
+          type: string
+          description: Unit of measurement (e.g., liters/km)
+      required: [vehicleType, standardValue, unit]
+
+    FuelStandardUpdateRequest:
+      type: object
+      properties:
+        vehicleType:
+          type: string
+          description: New type of vehicle this standard applies to
+        standardValue:
+          type: number
+          description: New standard fuel consumption value
+        unit:
+          type: string
+          description: New unit of measurement (e.g., liters/km)
+
+    # --- Reports ---
+    ProfitRevenueReport:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+        totalRevenue:
+          type: number
+          description: Total revenue in the period
+        totalCost:
+          type: number
+          description: Total cost in the period
+        totalProfit:
+          type: number
+          description: Total profit in the period
+        vehicleBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              vehicleId:
+                type: string
+              vehicleName:
+                type: string
+              revenue:
+                type: number
+              cost:
+                type: number
+              profit:
+                type: number
+
+    VehicleMonthlyDetailsReport:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+        vehicleName:
+          type: string
+        monthYear:
+          type: string
+          format: date
+        totalDistance:
+          type: number
+          description: Total distance traveled in km
+        totalFuelConsumption:
+          type: number
+          description: Total fuel consumed in liters
+        averageFuelConsumption:
+          type: number
+          description: Average fuel consumption in liters/km
+        totalMaintenanceCost:
+          type: number
+          description: Total maintenance cost
+        totalRevenue:
+          type: number
+          description: Total revenue generated
+        totalCost:
+          type: number
+          description: Total cost incurred
+        totalProfit:
+          type: number
+          description: Total profit
+        shipments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipmentPlan'
+
+    # --- Common Schemas ---
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details
+
+    # --- Employee Schema ---
     Employee:
       type: object
       properties:
