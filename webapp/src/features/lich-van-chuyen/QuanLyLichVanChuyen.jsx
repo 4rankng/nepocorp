@@ -11,6 +11,10 @@ import {
 } from '../../services/mockData';
 import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import { Box, Typography, Paper, Alert, CircularProgress, IconButton, Button } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import StandardTable from '../../shared/components/StandardTable';
+import { AddButton, EditButton, DeleteButton } from '../../shared/components/ActionButtons';
 
 const initialFormState = {
   ngayThang: '', // YYYY-MM-DD for input type="date"
@@ -165,6 +169,24 @@ const QuanLyLichVanChuyen = () => {
     setError('');
   };
 
+  // Handle ESC key press to close modals
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (isModalOpen) {
+          handleCloseModal();
+        } else if (isDeleteModalOpen) {
+          handleDeleteCancel();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen, isDeleteModalOpen]);
+
   const handleSavePlan = async () => {
     setError('');
     // Basic validation for required fields
@@ -261,154 +283,154 @@ const QuanLyLichVanChuyen = () => {
     return entity ? entity[nameField] : '-';
   };
 
+  // Define table columns
+  const columns = [
+    {
+      key: 'ngayThang',
+      label: 'Ngày Tháng',
+      render: (value) => value || '-',
+    },
+    {
+      key: 'bienSoXe',
+      label: 'Biển Số Xe',
+      render: (value) => value || '-',
+    },
+    {
+      key: 'tenDoiTac',
+      label: 'Đối Tác',
+      render: (value) => value || '-',
+    },
+    {
+      key: 'dienGiai',
+      label: 'Diễn Giải',
+      render: (value) => value || '-',
+      noWrap: true,
+      maxWidth: 300,
+    },
+    {
+      key: 'tuyenDuong',
+      label: 'Tuyến Đường',
+      render: (value) => {
+        if (!value) return '-';
+        if (typeof value === 'object') {
+          return `${value.diemDi} - ${Array.isArray(value.diemDen) ? value.diemDen.join(', ') : value.diemDen}`;
+        }
+        return value;
+      },
+      noWrap: true,
+      maxWidth: 300,
+    },
+    {
+      key: 'trangThai',
+      label: 'Trạng Thái',
+      render: (value) => value || '-',
+    },
+    {
+      key: 'actions',
+      label: 'Thao tác',
+      align: 'right',
+      render: (_, record) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <EditButton 
+            onClick={() => handleOpenModalForEdit(record)} 
+            disabled={isLoading} 
+          />
+          <DeleteButton 
+            onClick={() => handleDeletePlan(record)} 
+            disabled={isLoading} 
+          />
+        </Box>
+      ),
+    },
+  ];
+
   return (
-    <div className="p-6 min-h-screen">
-      {' '}
-      {/* Removed bg-gray-100 */}
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Lịch Vận Chuyển</h1>
-      <div className="shadow-md rounded-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ngày Tháng
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Biển Số Xe
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Đối Tác
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Diễn Giải
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tuyến Đường
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Trạng Thái
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Hành động
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading && shipmentPlans.length === 0 && (
-              <tr>
-                <td colSpan="7" className="p-4 text-center text-gray-500">
-                  Đang tải...
-                </td>
-              </tr>
-            )}
-            {!isLoading && error && shipmentPlans.length === 0 && (
-              <tr>
-                <td colSpan="7" className="p-4 text-center text-red-500">
-                  {error}
-                </td>
-              </tr>
-            )}
-            {!isLoading && !error && shipmentPlans.length === 0 && (
-              <tr>
-                <td colSpan="7" className="p-4 text-center text-gray-500">
-                  Chưa có lịch vận chuyển nào.
-                </td>
-              </tr>
-            )}
-            {shipmentPlans.map(plan => (
-              <tr key={plan.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {plan.ngayThang}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {plan.bienSoXe}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {plan.tenDoiTac || '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">
-                  {plan.dienGiai}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">
-                  {typeof plan.tuyenDuong === 'object'
-                    ? `${plan.tuyenDuong.diemDi} - ${Array.isArray(plan.tuyenDuong.diemDen) ? plan.tuyenDuong.diemDen.join(', ') : plan.tuyenDuong.diemDen}`
-                    : plan.tuyenDuong}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {plan.trangThai}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                  <button
-                    onClick={() => handleOpenModalForEdit(plan)}
-                    className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-100"
-                    title="Chỉnh sửa"
-                  >
-                    <PencilIcon />
-                  </button>
-                  <button
-                    onClick={() => handleDeletePlan(plan)}
-                    className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-100"
-                    title="Xóa"
-                  >
-                    <TrashIcon />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <button
-        onClick={handleOpenModalForAdd}
-        className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        title="Thêm lịch vận chuyển mới"
+    <Box sx={{ p: 3, minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          Lịch Vận Chuyển
+        </Typography>
+        <AddButton onClick={handleOpenModalForAdd} />
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper
+        elevation={0}
+        sx={{
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 1,
+          overflow: 'hidden',
+          mb: 3,
+        }}
       >
-        <PlusIcon className="w-8 h-8" />
-      </button>
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl transform transition-all max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        <StandardTable
+          columns={columns}
+          data={shipmentPlans}
+          loading={isLoading}
+          emptyMessage="Chưa có lịch vận chuyển nào"
+        />
+      </Paper>
+    {isModalOpen && (
+      <Box sx={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50 }}>
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); handleSavePlan(); }} sx={{ backgroundColor: 'white', p: 6, borderRadius: 2, maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
               {editingPlan ? 'Chỉnh Sửa Lịch Vận Chuyển' : 'Tạo Lịch Vận Chuyển Mới'}
-            </h2>
+            </Typography>
+            <IconButton onClick={handleCloseModal} size="small" sx={{ ml: 2 }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
 
-            {error && <p className="text-red-500 text-sm mb-4 bg-red-100 p-3 rounded">{error}</p>}
-
-            <form className="space-y-6" onSubmit={e => e.preventDefault()}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="ngayThang" className="block text-sm font-medium text-gray-700">
-                    Ngày vận chuyển (*)
-                  </label>
-                  <input
-                    type="date"
-                    name="ngayThang"
-                    id="ngayThang"
-                    value={formData.ngayThang}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full input-style"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="khachHangId" className="block text-sm font-medium text-gray-700">
-                    Khách hàng (*)
-                  </label>
-                  <select
-                    name="khachHangId"
-                    id="khachHangId"
-                    value={formData.khachHangId}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full select-style"
-                  >
-                    <option value="">Chọn khách hàng</option>
-                    {selectOptions.customers.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+              <div>
+                <label htmlFor="ngayThang" className="block text-sm font-medium text-gray-700">
+                  Ngày vận chuyển (*)
+                </label>
+                <input
+                  type="date"
+                  name="ngayThang"
+                  id="ngayThang"
+                  value={formData.ngayThang}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full input-style"
+                  required
+                />
               </div>
+              <div>
+                <label htmlFor="khachHangId" className="block text-sm font-medium text-gray-700">
+                  Khách hàng (*)
+                </label>
+                <select
+                  name="khachHangId"
+                  id="khachHangId"
+                  value={formData.khachHangId}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full select-style"
+                  required
+                >
+                  <option value="">Chọn khách hàng</option>
+                  {selectOptions.customers.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </Box>
 
               <div>
                 <label htmlFor="dienGiai" className="block text-sm font-medium text-gray-700">
@@ -664,26 +686,39 @@ const QuanLyLichVanChuyen = () => {
                 </div>
               )}
 
-              <div className="mt-8 flex justify-end space-x-3">
-                <button
-                  type="button"
+              <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Button
+                  variant="outlined"
                   onClick={handleCloseModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  disabled={isLoading}
+                  sx={{
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    },
+                  }}
                 >
                   Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSavePlan}
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
                   disabled={isLoading}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${isLoading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
+                  startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+                  sx={{
+                    textTransform: 'none',
+                    '&.Mui-disabled': {
+                      backgroundColor: 'action.disabledBackground',
+                      color: 'action.disabled',
+                    },
+                  }}
                 >
                   {isLoading ? (editingPlan ? 'Đang cập nhật...' : 'Đang lưu...') : 'Lưu'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
       )}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
@@ -691,34 +726,23 @@ const QuanLyLichVanChuyen = () => {
         onConfirm={handleDeleteConfirm}
         title="Xác nhận xóa"
         message={
-          <div className="mt-2">
-            <p className="text-sm text-gray-500 mb-4">
-              Bạn có chắc chắn muốn xóa lịch vận chuyển này?
-            </p>
-            <div className="bg-gray-50 p-4 rounded-md">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium text-gray-500">Ngày tháng:</div>
-                <div className="text-gray-900">{planToDelete?.ngayThang}</div>
-                <div className="font-medium text-gray-500">Biển số xe:</div>
-                <div className="text-gray-900">{planToDelete?.bienSoXe}</div>
-                <div className="font-medium text-gray-500">Đối tác:</div>
-                <div className="text-gray-900">{planToDelete?.tenDoiTac || '-'}</div>
-                <div className="font-medium text-gray-500">Diễn giải:</div>
-                <div className="text-gray-900">{planToDelete?.dienGiai}</div>
-                <div className="font-medium text-gray-500">Tuyến đường:</div>
-                <div className="text-gray-900">
-                  {typeof planToDelete?.tuyenDuong === 'object'
-                    ? `${planToDelete.tuyenDuong.diemDi} - ${Array.isArray(planToDelete.tuyenDuong.diemDen) ? planToDelete.tuyenDuong.diemDen.join(', ') : planToDelete.tuyenDuong.diemDen}`
-                    : planToDelete?.tuyenDuong}
-                </div>
-                <div className="font-medium text-gray-500">Trạng thái:</div>
-                <div className="text-gray-900">{planToDelete?.trangThai}</div>
-              </div>
-            </div>
-          </div>
+          <Box>
+            <Typography variant="body1" sx={{ mb: 2 }}>Bạn có chắc chắn muốn xóa lịch vận chuyển này?</Typography>
+            <Box sx={{ backgroundColor: 'grey.100', p: 2, borderRadius: 1 }}>
+              <Typography variant="body2">
+                <strong>Ngày:</strong> {planToDelete?.ngayThang}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Biển số xe:</strong> {planToDelete?.bienSoXe}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Đối tác:</strong> {planToDelete?.tenDoiTac || '-'}
+              </Typography>
+            </Box>
+          </Box>
         }
       />
-    </div>
+    </Box>
   );
 };
 
@@ -727,10 +751,5 @@ const InputStyle =
   'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm';
 const SelectStyle =
   'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white';
-
-// Replace className="input-style" and className="select-style" in JSX with these if needed, or define them in a global CSS / Tailwind config.
-// For this exercise, I've added them directly to the elements for simplicity.
-// Note: I've used "input-style" and "select-style" as placeholders in the JSX for brevity during generation.
-// The actual Tailwind classes are applied directly on the elements.
 
 export default QuanLyLichVanChuyen;

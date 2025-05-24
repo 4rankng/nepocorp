@@ -352,9 +352,7 @@ const BaoDuong = () => {
         <Typography variant="h5" component="h1" sx={{ fontWeight: 700, color: 'text.primary' }}>
           Quản lý bảo dưỡng phương tiện
         </Typography>
-        <AddButton onClick={handleOpenAddDialog} disabled={isLoading}>
-          Thêm mới
-        </AddButton>
+        <AddButton onClick={handleOpenAddDialog} disabled={isLoading} />
       </Box>
 
       <Paper

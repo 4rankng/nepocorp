@@ -11,8 +11,7 @@ import QuanLyNhanVien from '../features/nhan-vien/QuanLyNhanVien';
 import QuanLyKhachHang from '../features/khach-hang/QuanLyKhachHang';
 import QuanLyDoiTac from '../features/doi-tac/QuanLyDoiTac';
 import QuanLyPhuongTien from '../features/phuong-tien/QuanLyPhuongTien';
-// import QuanLyChiPhi from '../features/chi-phi/QuanLyChiPhi';
-// import QuanLyDinhMucDuong from '../features/chi-phi/QuanLyDinhMucDuong';
+
 
 // Wrap the app with AuthProvider
 const AppWithAuth = ({ children }) => <AuthProvider>{children}</AuthProvider>;

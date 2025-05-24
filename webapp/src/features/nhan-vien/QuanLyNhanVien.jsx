@@ -1,14 +1,33 @@
 import React, { useState, useEffect } from 'react';
+import { AddButton, EditButton, DeleteButton } from '@shared/components/ActionButtons';
 import {
   getEmployees,
   addEmployee,
   updateEmployee,
   deleteEmployee,
-  employeeRoles, // Import predefined roles
+  employeeRoles,
 } from '../../services/mockData';
-
-// Import icons from centralized location
-import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
+import StandardTable from '@shared/components/StandardTable';
+import { PlusIcon } from '@assets/icons/index.jsx';
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  CircularProgress,
+  Alert,
+  Snackbar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  IconButton,
+} from '@mui/material';
 
 const initialFormState = {
   tenNhanVien: '',
@@ -76,6 +95,20 @@ const QuanLyNhanVien = () => {
     setError('');
   };
 
+  // Handle ESC key press to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        handleCloseModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen]);
+
   const handleSaveEmployee = async () => {
     setError(''); // Clear previous errors
     // Basic frontend validation
@@ -133,111 +166,73 @@ const QuanLyNhanVien = () => {
     }
   };
 
+  const handleDeleteClick = async record => {
+    await handleDeleteEmployee(record.id);
+  };
+
+  // Define table columns
+  const columns = [
+    {
+      key: 'tenNhanVien',
+      label: 'Tên nhân viên',
+    },
+    {
+      key: 'tenDangNhap',
+      label: 'Tên đăng nhập',
+    },
+    {
+      key: 'email',
+      label: 'Email',
+    },
+    {
+      key: 'chucVu',
+      label: 'Chức vụ',
+      render: value => value || 'Chưa xác định',
+    },
+    {
+      key: 'actions',
+      label: 'Thao tác',
+      align: 'right',
+      render: (_, record) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <EditButton onClick={() => handleOpenModalForEdit(record)} disabled={isLoading} />
+          <DeleteButton onClick={() => handleDeleteClick(record)} disabled={isLoading} />
+        </Box>
+      ),
+    },
+  ];
+
   return (
-    <div className="p-6 bg-white min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Quản Lý Nhân Viên</h1>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
+          Quản Lý Nhân Viên
+        </Typography>
+        <AddButton onClick={handleOpenModalForAdd} />
+      </Box>
 
-      <div className="bg-white shadow-md rounded-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Tên Nhân Viên
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Tên Đăng Nhập
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Email
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Chức Vụ
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Hành động
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading && employees.length === 0 && (
-              <tr>
-                <td colSpan="5" className="p-4 text-center text-gray-500">
-                  Đang tải...
-                </td>
-              </tr>
-            )}
-            {!isLoading && error && employees.length === 0 && (
-              <tr>
-                <td colSpan="5" className="p-4 text-center text-red-500">
-                  {error}
-                </td>
-              </tr>
-            )}
-            {!isLoading && !error && employees.length === 0 && (
-              <tr>
-                <td colSpan="5" className="p-4 text-center text-gray-500">
-                  Chưa có nhân viên nào.
-                </td>
-              </tr>
-            )}
-            {employees.map(employee => (
-              <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {employee.tenNhanVien}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {employee.tenDangNhap}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {employee.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {employee.chucVu}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                  <button
-                    onClick={() => handleOpenModalForEdit(employee)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded hover:bg-blue-100"
-                    title="Chỉnh sửa"
-                  >
-                    <PencilIcon />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteEmployee(employee.id)}
-                    className="text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-100"
-                    title="Xóa"
-                  >
-                    <TrashIcon />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-      <button
-        onClick={handleOpenModalForAdd}
-        className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        title="Thêm nhân viên mới"
+      <Paper
+        elevation={0}
+        sx={{
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 1,
+          overflow: 'hidden',
+        }}
       >
-        <PlusIcon className="w-8 h-8" />
-      </button>
+        <StandardTable
+          columns={columns}
+          data={employees}
+          loading={isLoading}
+          emptyMessage="Chưa có nhân viên nào"
+        />
+      </Paper>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity">
@@ -340,7 +335,7 @@ const QuanLyNhanVien = () => {
           </div>
         </div>
       )}
-    </div>
+    </Box>
   );
 };
 

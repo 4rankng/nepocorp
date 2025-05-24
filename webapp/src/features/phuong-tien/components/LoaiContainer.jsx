@@ -421,9 +421,7 @@ const LoaiContainer = () => {
         <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
           Quản Lý Loại Container
         </Typography>
-        <AddButton onClick={handleOpenAddDialog} size="small">
-          Thêm loại container
-        </AddButton>
+        <AddButton onClick={handleOpenAddDialog} size="small"/>
       </Box>
 
       {error ? (
