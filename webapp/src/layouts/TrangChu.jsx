@@ -1,33 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { ROLES, getRoleLabel } from '../shared/config/roles';
 import ThanhTieuDe from '../shared/components/ThanhTieuDe';
 import ThanhBen from '../shared/components/ThanhBen';
 
 const ROLE_CARDS = [
   {
-    key: 'quan-ly',
-    label: 'Quản lý',
+    key: ROLES.QUAN_LY,
+    label: getRoleLabel(ROLES.QUAN_LY),
     desc: 'Xem giao diện quản lý',
     color: 'bg-blue-100 border-blue-400',
     fullName: 'Nguyễn Văn Phú',
   },
   {
-    key: 'ke-toan',
-    label: 'Kế toán',
+    key: ROLES.KE_TOAN,
+    label: getRoleLabel(ROLES.KE_TOAN),
     desc: 'Xem giao diện kế toán',
     color: 'bg-yellow-100 border-yellow-400',
     fullName: 'Tạ Thị Linh',
   },
   {
-    key: 'giao-nhan',
-    label: 'Giao nhận',
+    key: ROLES.GIAO_NHAN,
+    label: getRoleLabel(ROLES.GIAO_NHAN),
     desc: 'Xem giao diện giao nhận',
     color: 'bg-green-100 border-green-400',
     fullName: 'Lưu Đức Cường',
   },
   {
-    key: 'lai-xe',
-    label: 'Lái xe',
+    key: ROLES.LAI_XE,
+    label: getRoleLabel(ROLES.LAI_XE),
     desc: 'Xem giao diện lái xe',
     color: 'bg-purple-100 border-purple-400',
     fullName: 'Ngô Tử Đức',
@@ -36,33 +38,37 @@ const ROLE_CARDS = [
 
 const TrangChu = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState('');
-  const [userName, setUserName] = useState('');
+  const { login, logout, currentUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSidebarToggle = () => setSidebarOpen(open => !open);
   const handleSidebarClose = () => setSidebarOpen(false);
 
-  const handleRoleSelect = roleKey => {
-    setCurrentUserRole(roleKey);
-    const selectedRole = ROLE_CARDS.find(role => role.key === roleKey);
-    setUserName(selectedRole.fullName);
-
-    // Navigate to /bao-cao if manager role is selected
-    if (roleKey === 'quan-ly') {
-      navigate('/bao-cao');
-    } else if (roleKey === 'ke-toan') {
-      navigate('/lich-van-chuyen');
-    } else if (roleKey === 'giao-nhan') {
-      navigate('/bao-cao');
-    } else if (roleKey === 'lai-xe') {
-      navigate('/bao-cao');
+  const handleRoleSelect = async (roleKey) => {
+    const success = login(roleKey);
+    if (success) {
+      // Navigate based on role
+      switch (roleKey) {
+        case ROLES.QUAN_LY:
+          navigate('/bao-cao');
+          break;
+        case ROLES.KE_TOAN:
+          navigate('/chi-phi');
+          break;
+        case ROLES.GIAO_NHAN:
+          navigate('/don-hang');
+          break;
+        case ROLES.LAI_XE:
+          navigate('/lich-lam-viec');
+          break;
+        default:
+          navigate('/');
+      }
     }
   };
 
   const handleLogout = () => {
-    setCurrentUserRole('');
-    setUserName('');
+    logout();
     setSidebarOpen(false);
   };
 
@@ -73,14 +79,11 @@ const TrangChu = () => {
         <ThanhTieuDe
           onSidebarToggle={handleSidebarToggle}
           sidebarOpen={sidebarOpen}
-          userName={currentUserRole ? userName : ''}
-          hideAvatar={!currentUserRole}
-          onLogout={handleLogout}
         />
       </div>
 
       {/* If no role, show role selection cards centered on white, no sidebar, no overlay */}
-      {!currentUserRole && (
+      {!currentUser && (
         <div className="flex flex-col items-center justify-center min-h-screen pt-24 bg-white">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Chọn Vai Trò</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
@@ -99,11 +102,11 @@ const TrangChu = () => {
       )}
 
       {/* Main Layout Container, only show if role is picked */}
-      {currentUserRole && (
+      {currentUser && (
         <div className="flex pt-12 w-full">
           {/* Fixed Sidebar for desktop */}
           <div className="hidden md:block fixed top-12 left-0 bottom-0 z-40">
-            <ThanhBen userRole={currentUserRole} onNavItemClick={handleSidebarClose} />
+            <ThanhBen onNavItemClick={handleSidebarClose} />
           </div>
           {/* Mobile Sidebar Overlay */}
           <div
@@ -125,7 +128,7 @@ const TrangChu = () => {
                 sidebarOpen ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
-              <ThanhBen userRole={currentUserRole} onNavItemClick={handleSidebarClose} />
+              <ThanhBen onNavItemClick={handleSidebarClose} />
             </div>
           </div>
           {/* Main Content */}
