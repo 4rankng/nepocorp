@@ -175,38 +175,37 @@ const DocumentTextIcon = ({ className = 'w-6 h-6' }) => (
   </svg>
 );
 
-// Role-based menu items
-const menuItemsManager = [
-  { path: '/bao-cao', label: 'Báo cáo tài chính', icon: <ChartBarIcon /> },
-  { path: '/lich-van-chuyen', label: 'Lịch vận chuyển', icon: <CalendarIcon /> },
-  { path: '/nhan-vien', label: 'Nhân viên', icon: <UsersIcon /> },
-  { path: '/khach-hang', label: 'Khách hàng', icon: <UserIcon /> }, // UserIcon can represent a single client, suitable here
-  { path: '/doi-tac', label: 'Đối tác', icon: <UserGroupIcon /> },
-  { path: '/phuong-tien', label: 'Phương tiện', icon: <TruckIcon /> },
-  { path: '/container', label: 'Loại container', icon: <ArchiveBoxIcon /> },
-  { path: '/chi-phi-cau-hinh', label: 'Chi phí', icon: <Cog8ToothIcon /> }, // For manager: cost configuration
-];
+import { useAuth } from '../../contexts/AuthContext';
+import { getMenuItems } from '../../shared/config/roles';
 
-const menuItemsAccountant = [
-  { path: '/lich-van-chuyen', label: 'Lịch vận chuyển', icon: <CalendarIcon /> },
-  { path: '/chi-phi-ke-toan', label: 'Chi phí', icon: <CurrencyDollarIcon /> }, // For accountant: expenses
-  { path: '/cong-no', label: 'Công nợ', icon: <DocumentTextIcon /> },
-];
+// Icon mapping
+const iconComponents = {
+  ChartBar: ChartBarIcon,
+  Calendar: CalendarIcon,
+  Users: UsersIcon,
+  User: UserIcon,
+  UserGroup: UserGroupIcon,
+  Truck: TruckIcon,
+  CurrencyDollar: CurrencyDollarIcon,
+  DocumentText: DocumentTextIcon
+};
 
-const ThanhBen = ({ userRole = 'manager', onNavItemClick }) => {
-  let currentMenuItems = [];
-  if (userRole === 'manager') {
-    currentMenuItems = menuItemsManager;
-  } else if (userRole === 'accountant') {
-    currentMenuItems = menuItemsAccountant;
-  }
+const ThanhBen = ({ onNavItemClick }) => {
+  const { currentUser } = useAuth();
+  
+  if (!currentUser) return null;
+  
+  const menuItems = getMenuItems(currentUser.role).map(item => ({
+    ...item,
+    icon: iconComponents[item.icon] || null
+  }));
   // Add more roles here if needed
 
   return (
     <aside className="w-64 bg-white h-full overflow-y-auto">
       <nav className="mt-5 px-2">
         <div className="space-y-1">
-          {currentMenuItems.map(item => (
+          {menuItems.map(item => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -223,7 +222,7 @@ const ThanhBen = ({ userRole = 'manager', onNavItemClick }) => {
                 }
               }}
             >
-              <span className="mr-3">{item.icon}</span>
+              <span className="mr-3">{item.icon && <item.icon className="w-5 h-5" />}</span>
               {item.label}
             </NavLink>
           ))}
