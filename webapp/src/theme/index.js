@@ -1,7 +1,7 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 
 // Enhanced theme configuration based on DinhMucDau.jsx
-const theme = {
+const themeConfig = {
   spacing: 8,
   typography: {
     fontFamily:
@@ -71,7 +71,7 @@ const theme = {
       fontSize: '0.875rem',
       lineHeight: 1.6,
       margin: '0.5rem 0',
-      color: theme.palette.text.secondary,
+      color: 'rgba(0, 0, 0, 0.6)', // Default secondary text color
     },
     button: {
       textTransform: 'none',
@@ -81,7 +81,7 @@ const theme = {
     caption: {
       fontSize: '0.75rem',
       lineHeight: 1.5,
-      color: theme.palette.text.secondary,
+      color: 'rgba(0, 0, 0, 0.6)', // Default secondary text color
       display: 'inline-block',
       margin: '0.25rem 0',
     },
@@ -91,7 +91,7 @@ const theme = {
       lineHeight: 1.5,
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
-      color: theme.palette.text.secondary,
+      color: 'rgba(0, 0, 0, 0.6)', // Default secondary text color
     },
   },
   palette: {
@@ -223,7 +223,7 @@ const theme = {
 };
 
 // Helper function for spacing
-export const spacing = value => `${value * theme.spacing}px`;
+export const spacing = value => `${value * themeConfig.spacing}px`;
 
 // Helper function for alpha colors
 export const alpha = (color, opacity) => {
@@ -237,18 +237,21 @@ export const alpha = (color, opacity) => {
   return color;
 };
 
-// Material-UI theme with enhanced configuration
-const baseTheme = createTheme({
-  spacing: theme.spacing,
-  typography: theme.typography,
-  palette: theme.palette,
-  shape: theme.shape,
+// Create Material-UI theme with enhanced configuration
+let theme = createTheme({
+  spacing: themeConfig.spacing,
+  typography: themeConfig.typography,
+  palette: themeConfig.palette,
+  shape: themeConfig.shape,
+  shadows: themeConfig.shadows,
+  transitions: themeConfig.transitions,
+  zIndex: themeConfig.zIndex,
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: theme.shape.borderRadius,
+          borderRadius: themeConfig.shape.borderRadius,
           fontWeight: 500,
           padding: '6px 16px',
           boxShadow: 'none',
@@ -276,7 +279,7 @@ const baseTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: theme.shape.borderRadius,
+            borderRadius: themeConfig.shape.borderRadius,
             '&:hover .MuiOutlinedInput-notchedOutline': {
               borderColor: 'rgba(0, 0, 0, 0.23)',
             },
@@ -328,12 +331,12 @@ const baseTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiTableCell-root': {
-            borderColor: theme.palette.grey[200],
+            borderColor: 'rgba(0, 0, 0, 0.12)',
           },
           '& .MuiTableHead-root': {
             '& .MuiTableCell-root': {
-              backgroundColor: theme.palette.grey[50],
-              color: theme.palette.text.secondary,
+              backgroundColor: '#f9fafb',
+              color: 'rgba(0, 0, 0, 0.6)',
               fontWeight: 600,
               fontSize: '0.75rem',
               letterSpacing: '0.5px',
@@ -347,7 +350,7 @@ const baseTheme = createTheme({
               borderBottom: 'none',
             },
             '& tr:hover': {
-              backgroundColor: alpha(theme.palette.primary.main, 0.02),
+              backgroundColor: 'rgba(25, 118, 210, 0.02)',
             },
           },
         },
@@ -356,13 +359,17 @@ const baseTheme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: theme.shape.borderRadius,
+          borderRadius: themeConfig.shape.borderRadius,
         },
       },
     },
   },
 });
 
-// Export both the raw theme object and the Material-UI theme
+// Add responsive font sizes
+theme = responsiveFontSizes(theme);
+
+// Export the theme
 export { theme };
-export default baseTheme;
+
+export default theme;

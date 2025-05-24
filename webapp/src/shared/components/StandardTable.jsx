@@ -12,7 +12,10 @@ import {
   TablePagination,
   CircularProgress,
   Alert,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { alpha } from '@mui/material/styles';
 
 // Enhanced theme configuration based on DinhMucDau.jsx
@@ -53,8 +56,13 @@ const StandardTable = ({
   totalCount = 0,
   onPageChange = () => {},
   onRowsPerPageChange = () => {},
+  searchTerm,
+  onSearchChange,
+  searchPlaceholder,
   ...tableProps
 }) => {
+  // Extract non-DOM props to prevent them from being passed to the DOM
+  const { jsx, component, ...filteredTableProps } = tableProps || {};
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
@@ -71,6 +79,14 @@ const StandardTable = ({
     );
   }
 
+  // Extract search-related props and remove them from tableProps to prevent them from being passed to DOM
+  const {
+    searchTerm: _searchTerm,
+    onSearchChange: _onSearchChange,
+    searchPlaceholder: _searchPlaceholder,
+    ...cleanTableProps
+  } = tableProps || {};
+
   return (
     <Paper
       elevation={0}
@@ -85,11 +101,35 @@ const StandardTable = ({
         },
       }}
     >
-      <TableContainer>
+      {/* Search Input */}
+      {onSearchChange && (
+        <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <TextField
+            size="small"
+            placeholder={searchPlaceholder || 'Tìm kiếm...'}
+            value={searchTerm || ''}
+            onChange={onSearchChange}
+            fullWidth
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'background.paper',
+              },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+      )}
+      <TableContainer {...cleanTableProps} component="div">
         <Table
           size="small"
           sx={{
-            minWidth: 600,
+            minWidth: 650,
             '& .MuiTableCell-root': {
               py: 1,
               px: 2,
@@ -116,8 +156,9 @@ const StandardTable = ({
                 backgroundColor: alpha(theme.palette.primary.main, 0.02),
               },
             },
+            ...(filteredTableProps.sx || {}), // Merge any additional sx props
           }}
-          {...tableProps}
+          {...filteredTableProps} // Spread filtered props (excluding jsx)
         >
           <TableHead>
             <TableRow>

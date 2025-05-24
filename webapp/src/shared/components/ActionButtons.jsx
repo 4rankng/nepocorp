@@ -21,7 +21,8 @@ export const EditButton = ({
   size = 'small',
   disabled = false,
   tooltip = 'Chỉnh sửa',
-  ...props
+  jsx, // Extract jsx prop to prevent it from being passed to DOM
+  ...buttonProps
 }) => {
   return (
     <IconButton
@@ -43,7 +44,7 @@ export const EditButton = ({
           color: 'rgba(0, 0, 0, 0.26)',
         },
       }}
-      {...props}
+      {...buttonProps}
     >
       <PencilIcon />
     </IconButton>
@@ -55,7 +56,8 @@ export const DeleteButton = ({
   size = 'small',
   disabled = false,
   tooltip = 'Xóa',
-  ...props
+  jsx, // Extract jsx prop to prevent it from being passed to DOM
+  ...buttonProps
 }) => {
   return (
     <IconButton
@@ -77,7 +79,7 @@ export const DeleteButton = ({
           color: 'rgba(0, 0, 0, 0.26)',
         },
       }}
-      {...props}
+      {...buttonProps}
     >
       <TrashIcon />
     </IconButton>
@@ -97,7 +99,9 @@ export const AddButton = forwardRef(
       loading = false,
       iconOnly = false,
       'aria-label': ariaLabel,
-      ...props
+      jsx, // Extract jsx prop to prevent it from being passed to DOM
+      sx: sxProp,
+      ...buttonProps
     },
     ref
   ) => {
@@ -258,9 +262,9 @@ export const AddButton = forwardRef(
           },
 
           // Custom styles override
-          ...props.sx,
+          ...sxProp,
         }}
-        {...props}
+        {...buttonProps}
       >
         {isIconOnly ? (
           loading ? null : (

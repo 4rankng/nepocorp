@@ -510,98 +510,102 @@ const BaoDuong = () => {
                 />
               </LocalizationProvider>
 
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Số lượng *"
-                  name="quantity"
-                  type="number"
-                  value={formData.quantity}
-                  onChange={e => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setFormData(prev => ({
-                      ...prev,
-                      quantity: value,
-                    }));
-                    if (errors.quantity) {
-                      setErrors(prev => ({ ...prev, quantity: '' }));
-                    }
-                  }}
-                  error={!!errors.quantity}
-                  helperText={errors.quantity || ''}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  inputProps={{
-                    min: 1,
-                    style: {
-                      height: '40px',
-                      padding: '8px 12px',
-                      boxSizing: 'border-box',
-                      fontSize: '0.875rem',
-                    },
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '6px',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'text.secondary',
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                <Box sx={{ width: '30%' }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Số lượng *"
+                    name="quantity"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={e => {
+                      const value = Math.max(0, parseInt(e.target.value) || 0);
+                      setFormData(prev => ({
+                        ...prev,
+                        quantity: value,
+                      }));
+                      if (errors.quantity) {
+                        setErrors(prev => ({ ...prev, quantity: '' }));
+                      }
+                    }}
+                    error={!!errors.quantity}
+                    helperText={errors.quantity || ''}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    inputProps={{
+                      min: 1,
+                      style: {
+                        height: '40px',
+                        padding: '8px 12px',
+                        boxSizing: 'border-box',
+                        fontSize: '0.875rem',
                       },
-                    },
-                  }}
-                />
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '6px',
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'text.secondary',
+                        },
+                      },
+                    }}
+                  />
+                </Box>
 
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Đơn giá (VND) *"
-                  name="unitPrice"
-                  type="number"
-                  value={formData.unitPrice}
-                  onChange={e => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setFormData(prev => ({
-                      ...prev,
-                      unitPrice: value,
-                    }));
-                    if (errors.unitPrice) {
-                      setErrors(prev => ({ ...prev, unitPrice: '' }));
-                    }
-                  }}
-                  error={!!errors.unitPrice}
-                  helperText={errors.unitPrice || ''}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Typography variant="body2" color="text.secondary">
-                          VND
-                        </Typography>
-                      </InputAdornment>
-                    ),
-                  }}
-                  inputProps={{
-                    min: 0,
-                    style: {
-                      height: '40px',
-                      padding: '8px 12px',
-                      boxSizing: 'border-box',
-                      fontSize: '0.875rem',
-                      textAlign: 'right',
-                    },
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '6px',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'text.secondary',
+                <Box sx={{ width: '70%' }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Đơn giá (VND) *"
+                    name="unitPrice"
+                    type="number"
+                    value={formData.unitPrice}
+                    onChange={e => {
+                      const value = Math.max(0, parseInt(e.target.value) || 0);
+                      setFormData(prev => ({
+                        ...prev,
+                        unitPrice: value,
+                      }));
+                      if (errors.unitPrice) {
+                        setErrors(prev => ({ ...prev, unitPrice: '' }));
+                      }
+                    }}
+                    error={!!errors.unitPrice}
+                    helperText={errors.unitPrice || ''}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Typography variant="body2" color="text.secondary">
+                            VND
+                          </Typography>
+                        </InputAdornment>
+                      ),
+                    }}
+                    inputProps={{
+                      min: 0,
+                      style: {
+                        height: '40px',
+                        padding: '8px 12px',
+                        boxSizing: 'border-box',
+                        fontSize: '0.875rem',
+                        textAlign: 'right',
                       },
-                    },
-                  }}
-                />
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '6px',
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'text.secondary',
+                        },
+                      },
+                    }}
+                  />
+                </Box>
               </Box>
 
               <TextField
