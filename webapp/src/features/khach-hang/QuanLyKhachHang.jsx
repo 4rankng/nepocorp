@@ -189,12 +189,13 @@ const QuanLyKhachHang = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
-          Danh sách khách hàng
-        </Typography>
-        <AddButton onClick={handleOpenModalForAdd} />
-      </Box>
+      <Typography
+        variant="h5"
+        component="h1"
+        sx={{ mb: 3, fontWeight: 600, color: 'text.primary' }}
+      >
+        Quản lý khách hàng
+      </Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -202,20 +203,13 @@ const QuanLyKhachHang = () => {
         </Alert>
       )}
 
-      <Paper
-        elevation={0}
-        sx={{
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
-          overflow: 'hidden',
-        }}
-      >
+      <Paper elevation={0} sx={{ p: 2 }}>
         <StandardTable
           columns={columns}
           data={customers}
           loading={isLoading}
-          emptyMessage="Chưa có khách hàng nào"
+          emptyMessage="Không có dữ liệu khách hàng"
+          headerAction={<AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} />}
         />
       </Paper>
 

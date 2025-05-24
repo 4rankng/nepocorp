@@ -348,13 +348,6 @@ const BaoDuong = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 700, color: 'text.primary' }}>
-          Quản lý bảo dưỡng phương tiện
-        </Typography>
-        <AddButton onClick={handleOpenAddDialog} disabled={isLoading} />
-      </Box>
-
       <Paper
         elevation={0}
         sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'background.paper' }}
@@ -368,6 +361,14 @@ const BaoDuong = () => {
           onSearchChange={e => setSearchTerm(e.target.value)}
           searchPlaceholder="Tìm kiếm theo biển số hoặc ghi chú..."
           emptyMessage="Không có dữ liệu bảo dưỡng nào"
+          headerAction={
+            <AddButton
+              onClick={handleOpenAddDialog}
+              disabled={isLoading}
+              size="small"
+              sx={{ ml: 2 }}
+            />
+          }
           sx={{
             '& .MuiTableRow-hover:hover': {
               backgroundColor: 'action.hover',

@@ -340,12 +340,13 @@ const QuanLyLichVanChuyen = () => {
 
   return (
     <Box sx={{ p: 3, minHeight: '100vh' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 600, color: 'text.primary' }}>
-          Lịch Vận Chuyển
-        </Typography>
-        <AddButton onClick={handleOpenModalForAdd} />
-      </Box>
+      <Typography
+        variant="h4"
+        component="h1"
+        sx={{ mb: 3, fontWeight: 600, color: 'text.primary' }}
+      >
+        Quản lý lịch vận chuyển
+      </Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -353,21 +354,13 @@ const QuanLyLichVanChuyen = () => {
         </Alert>
       )}
 
-      <Paper
-        elevation={0}
-        sx={{
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
-          overflow: 'hidden',
-          mb: 3,
-        }}
-      >
+      <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
         <StandardTable
           columns={columns}
           data={shipmentPlans}
           loading={isLoading}
           emptyMessage="Chưa có lịch vận chuyển nào"
+          headerAction={<AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} />}
         />
       </Paper>
       {isModalOpen && (

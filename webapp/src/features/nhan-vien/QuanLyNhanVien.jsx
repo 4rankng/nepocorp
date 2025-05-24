@@ -204,12 +204,13 @@ const QuanLyNhanVien = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
-          Quản Lý Nhân Viên
-        </Typography>
-        <AddButton onClick={handleOpenModalForAdd} />
-      </Box>
+      <Typography
+        variant="h5"
+        component="h1"
+        sx={{ mb: 3, fontWeight: 600, color: 'text.primary' }}
+      >
+        Quản lý nhân viên
+      </Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -217,20 +218,13 @@ const QuanLyNhanVien = () => {
         </Alert>
       )}
 
-      <Paper
-        elevation={0}
-        sx={{
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
-          overflow: 'hidden',
-        }}
-      >
+      <Paper elevation={0} sx={{ p: 2 }}>
         <StandardTable
           columns={columns}
           data={employees}
           loading={isLoading}
-          emptyMessage="Chưa có nhân viên nào"
+          emptyMessage="Không có dữ liệu nhân viên"
+          headerAction={<AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} />}
         />
       </Paper>
 

@@ -704,12 +704,6 @@ const DinhMucDau = () => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-        <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-          Quản Lý Định Mức Dầu
-        </Typography>
-      </Box>
-
       <Box sx={{ mt: 2 }}>
         {isLoading ? (
           <Box display="flex" justifyContent="center" my={4}>

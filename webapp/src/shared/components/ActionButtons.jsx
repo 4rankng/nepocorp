@@ -21,9 +21,13 @@ export const EditButton = ({
   size = 'small',
   disabled = false,
   tooltip = 'Chỉnh sửa',
-  jsx, // Extract jsx prop to prevent it from being passed to DOM
-  ...buttonProps
+  // Extract and omit the jsx prop to prevent it from being passed to DOM
+  jsx: _jsx,
+  ...props
 }) => {
+  // Filter out the jsx prop before spreading the rest
+  const { jsx: _, ...filteredProps } = props || {};
+  
   return (
     <IconButton
       size={size}
@@ -44,7 +48,7 @@ export const EditButton = ({
           color: 'rgba(0, 0, 0, 0.26)',
         },
       }}
-      {...buttonProps}
+      {...filteredProps}
     >
       <PencilIcon />
     </IconButton>
@@ -56,9 +60,13 @@ export const DeleteButton = ({
   size = 'small',
   disabled = false,
   tooltip = 'Xóa',
-  jsx, // Extract jsx prop to prevent it from being passed to DOM
-  ...buttonProps
+  // Extract and omit the jsx prop to prevent it from being passed to DOM
+  jsx: _jsx,
+  ...props
 }) => {
+  // Filter out the jsx prop before spreading the rest
+  const { jsx: _, ...filteredProps } = props || {};
+  
   return (
     <IconButton
       size={size}
@@ -79,7 +87,7 @@ export const DeleteButton = ({
           color: 'rgba(0, 0, 0, 0.26)',
         },
       }}
-      {...buttonProps}
+      {...filteredProps}
     >
       <TrashIcon />
     </IconButton>
@@ -99,7 +107,8 @@ export const AddButton = forwardRef(
       loading = false,
       iconOnly = false,
       'aria-label': ariaLabel,
-      jsx, // Extract jsx prop to prevent it from being passed to DOM
+      // Extract and omit the jsx prop to prevent it from being passed to DOM
+      jsx: _jsx,
       sx: sxProp,
       ...buttonProps
     },
@@ -199,62 +208,44 @@ export const AddButton = forwardRef(
             color: theme.palette.primary.main,
             backgroundColor: 'transparent',
             '&:hover': {
-              backgroundColor: theme.palette.action.hover,
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+              transform: 'translateY(-1px)',
             },
           }),
 
-          // Icon-only specific styles
-          ...(isIconOnly && {
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            '& .MuiButton-startIcon': {
-              margin: 0,
-            },
-          }),
-
-          // Disabled state
+          // Disabled state styles
           '&.Mui-disabled': {
-            backgroundColor: theme.palette.action.disabledBackground,
-            color: theme.palette.text.disabled,
-            transform: 'none',
+            backgroundColor: variant === 'contained' ? theme.palette.action.disabledBackground : 'transparent',
+            color: theme.palette.action.disabled,
             boxShadow: 'none',
-            cursor: 'not-allowed',
+            transform: 'none',
           },
 
-          // Loading state
+          // Loading state styles
           ...(loading && {
             color: 'transparent',
-            '&::after': {
+            '&:after': {
               content: '""',
               position: 'absolute',
-              width: 16,
-              height: 16,
-              border: `2px solid ${theme.palette.primary.contrastText}`,
-              borderTop: '2px solid transparent',
+              width: 20,
+              height: 20,
+              top: '50%',
+              left: '50%',
+              margin: -10,
+              border: '2px solid',
+              borderColor: 'currentColor',
+              borderRightColor: 'transparent',
               borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
+              animation: 'spin 0.8s linear infinite',
             },
           }),
 
-          // Focus styles for accessibility
-          '&:focus-visible': {
-            outline: `2px solid ${theme.palette.primary.main}`,
-            outlineOffset: 2,
-          },
-
-          // Mobile responsiveness
-          [theme.breakpoints.down('sm')]: {
-            ...(fullWidth && {
-              width: '100%',
-              minWidth: '100%',
-            }),
-            ...(isIconOnly && {
-              width: 44,
-              height: 44,
-              minWidth: 44,
-            }),
-          },
+          // Icon-only button styles
+          ...(isIconOnly && {
+            width: 44,
+            height: 44,
+            minWidth: 44,
+          }),
 
           // Ripple effect enhancement
           '& .MuiTouchRipple-root': {
@@ -264,7 +255,10 @@ export const AddButton = forwardRef(
           // Custom styles override
           ...sxProp,
         }}
-        {...buttonProps}
+        // Filter out the jsx prop before spreading the rest
+        {...Object.fromEntries(
+          Object.entries(buttonProps || {}).filter(([key]) => key !== 'jsx')
+        )}
       >
         {isIconOnly ? (
           loading ? null : (
@@ -275,7 +269,7 @@ export const AddButton = forwardRef(
         )}
 
         {/* Add keyframes for loading animation */}
-        <style jsx>{`
+        <style jsx="true">{`
           @keyframes spin {
             0% {
               transform: rotate(0deg);
@@ -291,5 +285,3 @@ export const AddButton = forwardRef(
 );
 
 AddButton.displayName = 'AddButton';
-
-export default { EditButton, DeleteButton, AddButton };

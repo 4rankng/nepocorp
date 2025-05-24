@@ -417,13 +417,6 @@ const LoaiContainer = () => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-          Quản Lý Loại Container
-        </Typography>
-        <AddButton onClick={handleOpenAddDialog} size="small" />
-      </Box>
-
       {error ? (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -439,6 +432,7 @@ const LoaiContainer = () => {
           }}
         >
           <StandardTable
+            headerAction={<AddButton onClick={handleOpenAddDialog} size="small" sx={{ ml: 2 }} />}
             columns={[
               {
                 key: 'type',

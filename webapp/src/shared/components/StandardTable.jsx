@@ -56,13 +56,14 @@ const StandardTable = ({
   totalCount = 0,
   onPageChange = () => {},
   onRowsPerPageChange = () => {},
-  searchTerm,
+  searchTerm = '',
   onSearchChange,
-  searchPlaceholder,
+  searchPlaceholder = 'Tìm kiếm...',
+  headerAction = null,
   ...tableProps
 }) => {
-  // Extract non-DOM props to prevent them from being passed to the DOM
-  const { jsx, component, ...filteredTableProps } = tableProps || {};
+  // Extract and omit non-DOM props to prevent them from being passed to the DOM
+  const { jsx: _jsx, component: _component, ...filteredTableProps } = tableProps || {};
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
@@ -79,11 +80,13 @@ const StandardTable = ({
     );
   }
 
-  // Extract search-related props and remove them from tableProps to prevent them from being passed to DOM
+  // Extract and omit search-related props and non-DOM props to prevent them from being passed to DOM
   const {
     searchTerm: _searchTerm,
     onSearchChange: _onSearchChange,
     searchPlaceholder: _searchPlaceholder,
+    jsx: _jsxProp,
+    component: _componentProp,
     ...cleanTableProps
   } = tableProps || {};
 
@@ -102,27 +105,41 @@ const StandardTable = ({
       }}
     >
       {/* Search Input */}
-      {onSearchChange && (
-        <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <TextField
-            size="small"
-            placeholder={searchPlaceholder || 'Tìm kiếm...'}
-            value={searchTerm || ''}
-            onChange={onSearchChange}
-            fullWidth
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'background.paper',
-              },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
+      {(onSearchChange || headerAction) && (
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          {onSearchChange && (
+            <TextField
+              size="small"
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={onSearchChange}
+              sx={{
+                flex: 1,
+                maxWidth: 400,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'background.paper',
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          )}
+          {headerAction && <Box sx={{ ml: 'auto' }}>{headerAction}</Box>}
         </Box>
       )}
       <TableContainer {...cleanTableProps} component="div">
