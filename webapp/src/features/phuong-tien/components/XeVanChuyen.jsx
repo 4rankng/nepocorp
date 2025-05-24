@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import AddButton from '@shared/components/AddButton';
 import {
   Box,
   Table,
@@ -208,15 +209,9 @@ const XeVanChuyen = () => {
 
   return (
     <div>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<PlusIcon className="w-5 h-5" />}
-          onClick={handleOpenAddDialog}
-          disabled={isLoading}
-        >
-        </Button>
-      </Box>
+      <div className="flex justify-end mb-6">
+        <AddButton onClick={handleOpenAddDialog} disabled={isLoading} />
+      </div>
 
       <TableContainer component={Paper}>
         <Table>

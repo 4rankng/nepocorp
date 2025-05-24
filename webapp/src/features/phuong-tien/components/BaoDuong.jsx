@@ -28,7 +28,8 @@ import {
   TablePagination,
   IconButton,
 } from '@mui/material';
-import { PlusIcon, PencilIcon, TrashIcon, SearchIcon } from '@assets/icons';
+import { PencilIcon, TrashIcon, SearchIcon } from '@assets/icons';
+import AddButton from '@shared/components/AddButton';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -322,34 +323,27 @@ const BaoDuong = () => {
   };
 
   return (
-    <div>
-      <Box
-        sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 2 }}
-      >
-        <TextField
-          variant="outlined"
-          size="small"
-          placeholder="Tìm kiếm theo biển số xe..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ minWidth: 300, flex: 1 }}
-        />
-        <Button
-          variant="contained"
-          startIcon={<PlusIcon className="w-5 h-5" />}
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="w-full sm:w-auto">
+          <TextField
+            size="small"
+            placeholder="Tìm kiếm..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <SearchIcon className="w-5 h-5 text-gray-400 mr-2" />,
+            }}
+            sx={{ width: 300 }}
+            className="w-full sm:w-auto"
+          />
+        </div>
+        <AddButton
           onClick={handleOpenAddDialog}
           disabled={isLoading}
-          sx={{ minWidth: 200 }}
-        >
-        </Button>
-      </Box>
+          className="w-full sm:w-auto"
+        />
+      </div>
 
       <TableContainer component={Paper}>
         <Table>

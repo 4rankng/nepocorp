@@ -39,6 +39,7 @@ import {
   ChevronUpIcon,
 } from '../../../assets/icons';
 import { visuallyHidden } from '@mui/utils';
+import AddButton from '@shared/components/AddButton';
 
 // Mock API for demonstration
 const mockApi = {
@@ -397,35 +398,49 @@ const DinhMucDau = () => {
                     '&:hover': { backgroundColor: 'action.hover' },
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {licensePlate}
-                    </Typography>
-                    {standards.length > 0 && (
-                      <Box
-                        sx={{
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          borderRadius: '12px',
-                          px: 1,
-                          py: 0.25,
-                          fontSize: '0.75rem',
-                          fontWeight: 500,
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        {licensePlate}
+                      </Typography>
+                      {standards.length > 0 && (
+                        <Box
+                          sx={{
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            borderRadius: '12px',
+                            px: 1,
+                            py: 0.25,
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {standards.length} mức
+                        </Box>
+                      )}
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <AddButton 
+                        size="small"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleOpenAddDialog(licensePlate);
                         }}
-                      >
-                        {standards.length} mức
-                      </Box>
-                    )}
+                        className="h-7 min-w-0 p-1"
+                        sx={{ minWidth: '28px' }}
+                      />
+                      {expandedPlates[licensePlate] ? (
+                        <ChevronUpIcon className="w-5 h-5" />
+                      ) : (
+                        <ChevronDownIcon className="w-5 h-5" />
+                      )}
+                    </Box>
                   </Box>
-                  {expandedPlates[licensePlate] ? (
-                    <ChevronUpIcon className="w-5 h-5" />
-                  ) : (
-                    <ChevronDownIcon className="w-5 h-5" />
-                  )}
+
                 </Box>
 
                 <Collapse in={expandedPlates[licensePlate] !== false} timeout="auto" unmountOnExit>
-                  <Box sx={{ p: 1.5, pt: 1 }}>
+                  <Box sx={{ p: 1.5, pt: 1.5 }}>
                     <TableContainer component={Paper} variant="outlined">
                       <Table size="small" sx={{ minWidth: 600 }}>
                         <TableHead>
@@ -450,29 +465,18 @@ const DinhMucDau = () => {
                             >
                               Ghi chú
                             </TableCell>
-                            <TableCell align="right" sx={{ py: 1, pl: 1, pr: 2, width: '100px' }}>
-                              <Button
-                                variant="contained"
-                                size="small"
-                                startIcon={<PlusIcon className="w-5 h-5" />}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleOpenAddDialog(licensePlate);
-                                }}
-                                sx={{ height: 28, fontSize: '0.75rem' }}
-                              >
-                              </Button>
+                            <TableCell 
+                              align="right" 
+                              sx={{ fontWeight: 600, py: 1, px: 1, fontSize: '0.8125rem', width: '120px' }}
+                            >
+                              Thao tác
                             </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
                           {standards.length === 0 ? (
                             <TableRow>
-                              <TableCell
-                                colSpan={5}
-                                align="center"
-                                sx={{ py: 2, color: 'text.secondary' }}
-                              >
+                              <TableCell colSpan={5} align="center" sx={{ py: 2, color: 'text.secondary' }}>
                                 Chưa có dữ liệu định mức dầu
                               </TableCell>
                             </TableRow>

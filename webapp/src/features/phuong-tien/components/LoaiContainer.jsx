@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons';
+import { PencilIcon, TrashIcon } from '@assets/icons';
+import AddButton from '@shared/components/AddButton';
 import ConfirmationModal from '@components/ConfirmationModal';
 import {
   Dialog,
@@ -152,12 +153,7 @@ const LoaiContainer = () => {
     <div className="p-4 sm:p-6 bg-white min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Danh sách loại container</h1>
-        <button
-          onClick={handleOpenModalForAdd}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-        </button>
+        <AddButton onClick={handleOpenModalForAdd} />
       </div>
 
       <div className="overflow-x-auto bg-white rounded-lg shadow">

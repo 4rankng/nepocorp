@@ -84,7 +84,7 @@ const TrangChu = () => {
     <div className="min-h-screen w-full bg-white overflow-x-hidden">
       {/* Version badge - always visible */}
       <VersionBadge />
-      
+
       {/* Banner/Header always visible */}
       <div className="fixed top-0 left-0 right-0 z-50 w-full" style={{ minWidth: 0 }}>
         <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
