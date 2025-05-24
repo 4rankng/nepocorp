@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@contexts/AuthContext';
 import { ROLES, getRoleLabel } from '@shared/config/roles';
-import ThanhTieuDe from '../shared/components/ThanhTieuDe';
-import ThanhBen from '../shared/components/ThanhBen';
+import ThanhTieuDe from '@shared/components/ThanhTieuDe';
+import ThanhBen from '@shared/components/ThanhBen';
+import packageJson from '../../package.json';
 
 const ROLE_CARDS = [
   {
@@ -72,8 +73,18 @@ const TrangChu = () => {
     setSidebarOpen(false);
   };
 
+  // Version badge component
+  const VersionBadge = () => (
+    <div className="fixed bottom-4 right-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm text-gray-500 border border-gray-200 shadow-sm z-50">
+      Bản Demo v{packageJson.version}
+    </div>
+  );
+
   return (
     <div className="min-h-screen w-full bg-white overflow-x-hidden">
+      {/* Version badge - always visible */}
+      <VersionBadge />
+      
       {/* Banner/Header always visible */}
       <div className="fixed top-0 left-0 right-0 z-50 w-full" style={{ minWidth: 0 }}>
         <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
@@ -130,7 +141,7 @@ const TrangChu = () => {
           </div>
           {/* Main Content */}
           <main className="flex-1 md:ml-64 min-h-screen bg-white w-full">
-            <div className="p-2 sm:p-4 w-full">
+            <div className="p-2 sm:p-4 w-full relative min-h-screen">
               <Outlet />
             </div>
           </main>
