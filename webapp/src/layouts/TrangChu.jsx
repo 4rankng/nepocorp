@@ -75,7 +75,7 @@ const TrangChu = () => {
 
   // Version badge component
   const VersionBadge = () => (
-    <div className="fixed bottom-4 right-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm text-gray-500 border border-gray-200 shadow-sm z-50">
+    <div className="fixed bottom-4 left-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm text-gray-500 border border-gray-200 shadow-sm z-50">
       Bản Demo v{packageJson.version}
     </div>
   );

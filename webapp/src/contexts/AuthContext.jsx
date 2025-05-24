@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { ROLES } from '@shared/config/roles';
 
 // Mock user data - in a real app, this would come from your authentication service
@@ -11,24 +11,53 @@ const MOCK_USERS = {
 
 const AuthContext = createContext();
 
+// Helper function to get stored auth data
+const getStoredAuthData = () => {
+  if (typeof window === 'undefined') return null;
+  const storedData = localStorage.getItem('auth');
+  return storedData ? JSON.parse(storedData) : null;
+};
+
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const storedData = getStoredAuthData();
+    return storedData?.currentUser || null;
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const storedData = getStoredAuthData();
+    return storedData?.isAuthenticated || false;
+  });
 
   // Login function - in a real app, this would call your auth API
   const login = useCallback(role => {
     const user = MOCK_USERS[role];
     if (user) {
+      const authData = {
+        currentUser: user,
+        isAuthenticated: true,
+        timestamp: new Date().toISOString(),
+      };
       setCurrentUser(user);
       setIsAuthenticated(true);
+      localStorage.setItem('auth', JSON.stringify(authData));
       return true;
     }
     return false;
   }, []);
 
+  useEffect(() => {
+    const storedData = getStoredAuthData();
+    if (storedData) {
+      // Optional: Add token expiration check here if needed
+      setCurrentUser(storedData.currentUser);
+      setIsAuthenticated(storedData.isAuthenticated);
+    }
+  }, []);
+
   const logout = useCallback(() => {
     setCurrentUser(null);
     setIsAuthenticated(false);
+    localStorage.removeItem('auth');
   }, []);
 
   // Check if current user has a specific role

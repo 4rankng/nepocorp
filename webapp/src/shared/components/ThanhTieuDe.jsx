@@ -74,7 +74,9 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
                     .map(n => n[0])
                     .join('')}
                 </div>
-                <span className="ml-2 font-medium text-gray-700">{currentUser.name}</span>
+                <span className="ml-2 font-medium text-gray-700 hidden sm:inline">
+                  {currentUser.name}
+                </span>
               </button>
 
               {/* Dropdown menu */}

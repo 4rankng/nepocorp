@@ -13,6 +13,11 @@ import {
   addVehicle,
   updateVehicle,
   deleteVehicle,
+  // Customers
+  getCustomers,
+  addCustomer,
+  updateCustomer,
+  deleteCustomer,
   // Shipment Plans
   getShipmentPlans,
   addShipmentPlan,
@@ -128,7 +133,7 @@ export const vehicleApi = {
       const vehicles = await getVehicles();
       const vehicle = vehicles.find(v => v.id === id);
       if (!vehicle) {
-        return apiError('Vehicle not found', 404);
+        return apiError('Không tìm thấy thông tin xe', 404);
       }
       return apiResponse(vehicle);
     } catch (error) {
@@ -137,7 +142,21 @@ export const vehicleApi = {
   },
   create: async data => {
     try {
-      const newVehicle = await addVehicle(data.licensePlate);
+      const newVehicle = await addVehicle({
+        licensePlate: data.licensePlate,
+        vehicleType: data.vehicleType,
+        capacity: data.capacity,
+        containerCount: data.containerCount,
+        note: data.note,
+        // Include additional fields if provided
+        ...(data.status && { status: data.status }),
+        ...(data.registrationDate && { registrationDate: data.registrationDate }),
+        ...(data.lastMaintenance && { lastMaintenance: data.lastMaintenance }),
+        ...(data.nextMaintenance && { nextMaintenance: data.nextMaintenance }),
+        ...(data.insuranceExpiry && { insuranceExpiry: data.insuranceExpiry }),
+        ...(data.driver && { driver: data.driver }),
+        ...(data.phone && { phone: data.phone }),
+      });
       return apiResponse(newVehicle, 201);
     } catch (error) {
       return apiError(error.message, 400);
@@ -145,7 +164,21 @@ export const vehicleApi = {
   },
   update: async (id, data) => {
     try {
-      const updatedVehicle = await updateVehicle(id, data);
+      const updatedVehicle = await updateVehicle(id, {
+        licensePlate: data.licensePlate,
+        vehicleType: data.vehicleType,
+        capacity: data.capacity,
+        containerCount: data.containerCount,
+        note: data.note,
+        // Include additional fields if provided
+        ...(data.status && { status: data.status }),
+        ...(data.registrationDate && { registrationDate: data.registrationDate }),
+        ...(data.lastMaintenance && { lastMaintenance: data.lastMaintenance }),
+        ...(data.nextMaintenance && { nextMaintenance: data.nextMaintenance }),
+        ...(data.insuranceExpiry && { insuranceExpiry: data.insuranceExpiry }),
+        ...(data.driver && { driver: data.driver }),
+        ...(data.phone && { phone: data.phone }),
+      });
       return apiResponse(updatedVehicle);
     } catch (error) {
       return apiError(error.message, 400);
@@ -154,6 +187,54 @@ export const vehicleApi = {
   delete: async id => {
     try {
       await deleteVehicle(id);
+      return apiResponse({ id }, 204);
+    } catch (error) {
+      return apiError(error.message, 400);
+    }
+  },
+};
+
+// Customers API
+export const customerApi = {
+  getAll: async () => {
+    try {
+      const customers = await getCustomers();
+      return apiResponse(customers);
+    } catch (error) {
+      return apiError(error.message, 500);
+    }
+  },
+  getById: async id => {
+    try {
+      const customers = await getCustomers();
+      const customer = customers.find(c => c.id === id);
+      if (!customer) {
+        return apiError('Customer not found', 404);
+      }
+      return apiResponse(customer);
+    } catch (error) {
+      return apiError(error.message, 500);
+    }
+  },
+  create: async data => {
+    try {
+      const newCustomer = await addCustomer(data);
+      return apiResponse(newCustomer, 201);
+    } catch (error) {
+      return apiError(error.message, 400);
+    }
+  },
+  update: async (id, data) => {
+    try {
+      const updatedCustomer = await updateCustomer(id, data);
+      return apiResponse(updatedCustomer);
+    } catch (error) {
+      return apiError(error.message, 400);
+    }
+  },
+  delete: async id => {
+    try {
+      await deleteCustomer(id);
       return apiResponse({ id }, 204);
     } catch (error) {
       return apiError(error.message, 400);
@@ -408,6 +489,7 @@ export default {
   login,
   containerTypeApi,
   vehicleApi,
+  customerApi,
   shipmentPlanApi,
   maintenanceApi,
   fuelStandardApi,

@@ -1,58 +1,88 @@
-import { useState, useEffect, useCallback } from 'react';
-import AddButton from '@shared/components/AddButton';
+import React, { useState, useEffect, useCallback } from 'react';
+import ConfirmationDialog from '@shared/components/ConfirmationDialog';
+import StandardTable from '@shared/components/StandardTable';
+import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
+import { vehicleApi } from '@services/mockApi';
+
 import {
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Button,
-  TextField,
+  Paper,
   Dialog,
-  DialogActions,
-  DialogContent,
   DialogTitle,
+  DialogContent,
   DialogContentText,
+  DialogActions,
+  TextField,
   CircularProgress,
-  Alert,
   Snackbar,
+  Alert,
+  Typography,
+  Grid,
   IconButton,
+  Collapse,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
 } from '@mui/material';
-import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons';
-import ConfirmationModal from '../../../components/ConfirmationModal';
+import CloseIcon from '@mui/icons-material/Close';
+import { ChevronDownIcon, ChevronUpIcon } from '@assets/icons';
+import { alpha } from '@mui/material/styles';
 
-// Mock data service - Replace with actual API calls
-const mockApi = {
-  getLicensePlates: async () => [
-    {
-      id: 1,
-      licensePlate: '51A-123.45',
-      vehicleType: 'Xe tải',
-      capacity: '5 tấn',
-      containerCount: 2,
-      note: 'Xe mới nhập',
-    },
-    {
-      id: 2,
-      licensePlate: '51B-678.90',
-      vehicleType: 'Xe container',
-      capacity: '10 tấn',
-      containerCount: 1,
-      note: 'Đang bảo trì',
-    },
+// Theme variables
+const theme = {
+  spacing: 8,
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontSize: 14,
+    h6: { fontSize: '1rem', fontWeight: 600 },
+    body2: { fontSize: '0.8125rem' },
+    caption: { fontSize: '0.75rem', color: 'text.secondary' },
+  },
+  palette: {
+    primary: { main: '#1976d2' },
+    background: { default: '#f5f7fa', paper: '#ffffff' },
+    text: { primary: '#1a1a1a', secondary: '#6b7280' },
+    grey: { 100: '#f3f4f6', 200: '#e5e7eb' },
+    success: { light: '#4caf50', main: '#2e7d32' },
+    warning: { light: '#ff9800', main: '#ed6c02' },
+    error: { main: '#d32f2f' },
+  },
+  shape: { borderRadius: 6 },
+  shadows: [
+    'none',
+    '0px 2px 8px rgba(0, 0, 0, 0.08)',
+    '0px 4px 12px rgba(0, 0, 0, 0.1)',
+    '0px 6px 16px rgba(0, 0, 0, 0.12)',
+    '0px 8px 24px rgba(0, 0, 0, 0.15)',
   ],
-  addVehicle: async data => ({ id: Date.now(), ...data }),
-  updateVehicle: async (id, data) => ({ id, ...data }),
-  deleteVehicle: async id => id,
 };
 
+// Helper functions
+const spacing = value => `${value * theme.spacing}px`;
+
+// Vehicle types for dropdown
+const vehicleTypes = [
+  { value: 'truck', label: 'Xe tải' },
+  { value: 'container', label: 'Xe container' },
+  { value: 'tractor', label: 'Đầu kéo' },
+  { value: 'trailer', label: 'Rơ moóc' },
+];
+
 const XeVanChuyen = () => {
-  const [licensePlates, setLicensePlates] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [isEdit, setIsEdit] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    vehicleId: null,
+    details: '',
+  });
+
   const [formData, setFormData] = useState({
     licensePlate: '',
     vehicleType: '',
@@ -60,25 +90,26 @@ const XeVanChuyen = () => {
     containerCount: 1,
     note: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  const fetchLicensePlates = async () => {
+  const [errors, setErrors] = useState({});
+
+  const fetchVehicles = async () => {
     setIsLoading(true);
     try {
-      const data = await mockApi.getLicensePlates();
-      setLicensePlates(data);
+      const response = await vehicleApi.getAll();
+      setVehicles(response.data || []);
+      setError('');
     } catch (err) {
-      setError('Không thể tải danh sách biển số xe');
+      setError('Không thể tải danh sách phương tiện');
       showSnackbar('Đã xảy ra lỗi khi tải dữ liệu', 'error');
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLicensePlates();
+    fetchVehicles();
   }, []);
 
   const showSnackbar = (message, severity = 'success') => {
@@ -90,11 +121,11 @@ const XeVanChuyen = () => {
       licensePlate: '',
       vehicleType: '',
       capacity: '',
-      containerCount: '',
+      containerCount: 1,
       note: '',
     });
-    setEditingId(null);
-    setError('');
+    setErrors({});
+    setIsEdit(false);
     setOpenDialog(false);
   }, []);
 
@@ -112,8 +143,27 @@ const XeVanChuyen = () => {
     };
   }, [openDialog, handleCloseDialog]);
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.licensePlate.trim()) {
+      newErrors.licensePlate = 'Vui lòng nhập biển số xe';
+    }
+
+    if (!formData.vehicleType) {
+      newErrors.vehicleType = 'Vui lòng chọn loại xe';
+    }
+
+    if (!formData.capacity) {
+      newErrors.capacity = 'Vui lòng nhập trọng tải';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleOpenAddDialog = () => {
-    setEditingId(null);
+    setIsEdit(false);
     setFormData({
       licensePlate: '',
       vehicleType: '',
@@ -121,18 +171,21 @@ const XeVanChuyen = () => {
       containerCount: 1,
       note: '',
     });
+    setErrors({});
     setOpenDialog(true);
   };
 
-  const handleRowClick = vehicle => {
-    setEditingId(vehicle.id);
+  const handleOpenEditDialog = vehicle => {
+    setIsEdit(true);
     setFormData({
-      licensePlate: vehicle.licensePlate,
-      vehicleType: vehicle.vehicleType,
-      capacity: vehicle.capacity,
-      containerCount: vehicle.containerCount,
+      licensePlate: vehicle.licensePlate || vehicle.bienSoXe,
+      vehicleType: vehicle.vehicleType || 'truck',
+      capacity: vehicle.capacity || '',
+      containerCount: vehicle.containerCount || 1,
       note: vehicle.note || '',
+      id: vehicle.id,
     });
+    setErrors({});
     setOpenDialog(true);
   };
 
@@ -142,330 +195,342 @@ const XeVanChuyen = () => {
       ...prev,
       [name]: name === 'containerCount' ? parseInt(value) || 0 : value,
     }));
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
   };
 
   const handleSave = async () => {
-    if (!formData.licensePlate.trim()) {
-      setError('Vui lòng nhập biển số xe');
-      return;
-    }
-    if (!formData.vehicleType.trim()) {
-      setError('Vui lòng chọn loại xe');
-      return;
-    }
-    if (!formData.capacity.trim()) {
-      setError('Vui lòng nhập trọng tải');
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      if (editingId) {
-        await mockApi.updateVehicle(editingId, formData);
+      if (isEdit) {
+        await vehicleApi.update(formData.id, formData);
         showSnackbar('Cập nhật thông tin xe thành công');
       } else {
-        await mockApi.addVehicle(formData);
+        await vehicleApi.create(formData);
         showSnackbar('Thêm xe mới thành công');
       }
-      await fetchLicensePlates();
+      await fetchVehicles();
       handleCloseDialog();
     } catch (err) {
-      setError('Đã xảy ra lỗi khi lưu biển số xe');
+      const errorMessage = isEdit
+        ? 'Đã xảy ra lỗi khi cập nhật thông tin xe'
+        : 'Đã xảy ra lỗi khi thêm xe mới';
+      showSnackbar(errorMessage, 'error');
       console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const [deleteDialog, setDeleteDialog] = useState({
-    open: false,
-    vehicle: null,
-  });
-
   const handleDeleteClick = vehicle => {
-    setDeleteDialog({ open: true, vehicle });
+    setDeleteDialog({
+      open: true,
+      vehicleId: vehicle.id,
+      details: `Bạn có chắc chắn muốn xóa phương tiện ${vehicle.licensePlate || vehicle.bienSoXe}?`,
+    });
+  };
+
+  const handleDeleteClose = () => {
+    setDeleteDialog(prev => ({ ...prev, open: false }));
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteDialog.vehicle) return;
+    if (!deleteDialog.vehicleId) return;
 
     setIsLoading(true);
     try {
-      await mockApi.deleteVehicle(deleteDialog.vehicle.id);
-      showSnackbar('Xóa biển số xe thành công');
-      await fetchLicensePlates();
+      await vehicleApi.delete(deleteDialog.vehicleId);
+      showSnackbar('Xóa phương tiện thành công');
+      await fetchVehicles();
+      handleDeleteClose();
     } catch (err) {
-      showSnackbar('Đã xảy ra lỗi khi xóa biển số xe', 'error');
+      showSnackbar('Đã xảy ra lỗi khi xóa phương tiện', 'error');
       console.error(err);
     } finally {
       setIsLoading(false);
-      setDeleteDialog({ open: false, vehicle: null });
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, vehicle: null });
-  };
-
-  return (
-    <div>
-      <div className="flex justify-end mb-6">
-        <AddButton onClick={handleOpenAddDialog} disabled={isLoading} />
-      </div>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>STT</TableCell>
-              <TableCell>Biển Số Xe</TableCell>
-              <TableCell>Loại Xe</TableCell>
-              <TableCell>Trọng Tải</TableCell>
-              <TableCell align="center">Số Lượng Container</TableCell>
-              <TableCell>Ghi Chú</TableCell>
-              <TableCell align="right">Thao Tác</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading && licensePlates.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
-            ) : licensePlates.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  Không có dữ liệu
-                </TableCell>
-              </TableRow>
-            ) : (
-              licensePlates.map((vehicle, index) => (
-                <TableRow
-                  key={vehicle.id}
-                  hover
-                  onClick={() => handleRowClick(vehicle)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{vehicle.licensePlate}</TableCell>
-                  <TableCell>{vehicle.vehicleType}</TableCell>
-                  <TableCell>{vehicle.capacity}</TableCell>
-                  <TableCell align="center">{vehicle.containerCount}</TableCell>
-                  <TableCell
-                    sx={{
-                      maxWidth: 200,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                    title={vehicle.note}
-                  >
-                    {vehicle.note}
-                  </TableCell>
-                  <TableCell align="right" onClick={e => e.stopPropagation()}>
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                      <IconButton
-                        size="small"
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleRowClick(vehicle);
-                        }}
-                        disabled={isLoading}
-                        color="primary"
-                      >
-                        <PencilIcon className="w-5 h-5" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleDeleteClick(vehicle);
-                        }}
-                        disabled={isLoading}
-                        color="error"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </IconButton>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
+  const renderDialog = () => {
+    return (
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
-        sx={{
-          '& .MuiDialog-container': {
-            alignItems: 'flex-start',
-            paddingTop: '64px',
-          },
-          '& .MuiPaper-root': {
-            margin: '16px',
-            width: '100%',
-            maxWidth: '500px',
+        PaperProps={{
+          sx: {
             borderRadius: '8px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-          },
-          '& .MuiDialogTitle-root': {
-            padding: '16px 24px',
-            fontSize: '1.125rem',
-            fontWeight: 600,
-            color: '#111827',
-            borderBottom: '1px solid #E5E7EB',
-          },
-          '& .MuiDialogContent-root': {
-            padding: '24px',
-            '&:first-of-type': {
-              paddingTop: '24px',
-            },
-          },
-          '& .MuiDialogActions-root': {
-            padding: '16px 24px',
-            borderTop: '1px solid #E5E7EB',
-            justifyContent: 'flex-end',
-            gap: '8px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
           },
         }}
       >
-        <DialogTitle>{editingId ? 'Sửa' : 'Thêm'} Thông Tin Xe</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                autoFocus
-                name="licensePlate"
-                label="Biển số xe"
-                fullWidth
-                variant="outlined"
-                size="small"
-                value={formData.licensePlate}
-                onChange={handleInputChange}
-                error={!!error && !formData.licensePlate.trim()}
-                required
-                sx={{
-                  '& .MuiInputBase-root': { height: 40 },
-                  '& .MuiInputLabel-root': { fontSize: '0.8125rem' },
-                  '& .MuiInputBase-input': { fontSize: '0.875rem' },
-                }}
-              />
-              <TextField
-                name="vehicleType"
-                label="Loại xe"
-                fullWidth
-                variant="outlined"
-                size="small"
-                value={formData.vehicleType}
-                onChange={handleInputChange}
-                error={!!error && !formData.vehicleType.trim()}
-                required
-                sx={{
-                  '& .MuiInputBase-root': { height: 40 },
-                  '& .MuiInputLabel-root': { fontSize: '0.8125rem' },
-                  '& .MuiInputBase-input': { fontSize: '0.875rem' },
-                }}
-              />
-            </Box>
+        <DialogTitle
+          sx={{
+            p: '16px 24px',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="h6" sx={{ fontSize: '1.125rem', fontWeight: 600 }}>
+            {isEdit ? 'Chỉnh sửa thông tin xe' : 'Thêm xe mới'}
+          </Typography>
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseDialog}
+            size="small"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                name="capacity"
-                label="Trọng tải"
-                fullWidth
-                variant="outlined"
-                size="small"
-                value={formData.capacity}
-                onChange={handleInputChange}
-                error={!!error && !formData.capacity.trim()}
-                required
-                sx={{
-                  flex: 3,
-                  '& .MuiInputBase-root': { height: 40 },
-                  '& .MuiInputLabel-root': { fontSize: '0.8125rem' },
-                  '& .MuiInputBase-input': { fontSize: '0.875rem' },
-                }}
-              />
-              <TextField
-                name="containerCount"
-                label="Số lượng container"
-                type="number"
-                fullWidth
-                variant="outlined"
-                size="small"
-                value={formData.containerCount}
-                onChange={handleInputChange}
-                inputProps={{
-                  min: 0,
-                  style: { textAlign: 'right' },
-                }}
-                sx={{
-                  flex: 2,
-                  '& .MuiInputBase-root': { height: 40 },
-                  '& .MuiInputLabel-root': { fontSize: '0.8125rem' },
-                  '& .MuiInputBase-input': { fontSize: '0.875rem' },
-                }}
-              />
-            </Box>
+        <DialogContent sx={{ p: '24px' }}>
+          <DialogContentText
+            sx={{
+              mb: 3,
+              color: 'text.primary',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+            }}
+          >
+            {isEdit ? 'Cập nhật thông tin phương tiện.' : 'Nhập thông tin phương tiện mới.'}
+          </DialogContentText>
 
-            <TextField
-              name="note"
-              label="Ghi chú bổ sung (tùy chọn)"
-              fullWidth
-              multiline
-              rows={2}
-              variant="outlined"
-              size="small"
-              value={formData.note}
-              onChange={handleInputChange}
-              sx={{
-                '& .MuiInputLabel-root': { fontSize: '0.8125rem' },
-                '& .MuiInputBase-input': { fontSize: '0.875rem' },
-                '& .MuiInputBase-multiline': {
-                  padding: '8px 12px',
-                  minHeight: '64px',
-                },
-              }}
-            />
+          <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Biển số xe"
+                  name="licensePlate"
+                  value={formData.licensePlate}
+                  onChange={handleInputChange}
+                  error={!!errors.licensePlate}
+                  helperText={errors.licensePlate || ''}
+                  variant="outlined"
+                  margin="none"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  inputProps={{
+                    style: {
+                      height: '40px',
+                      padding: '8px 12px',
+                      boxSizing: 'border-box',
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '6px',
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'text.secondary',
+                      },
+                    },
+                  }}
+                />
+              </Grid>
 
-            {error && (
-              <Alert
-                severity="error"
-                sx={{
-                  mt: 0.5,
-                  fontSize: '0.8125rem',
-                  '& .MuiAlert-message': { py: 0.5 },
-                }}
-              >
-                {error}
-              </Alert>
-            )}
+              <Grid item xs={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="vehicle-type-label" shrink>
+                    Loại xe
+                  </InputLabel>
+                  <Select
+                    labelId="vehicle-type-label"
+                    name="vehicleType"
+                    value={formData.vehicleType}
+                    onChange={handleInputChange}
+                    error={!!errors.vehicleType}
+                    displayEmpty
+                    notched
+                    sx={{
+                      '& .MuiSelect-select': {
+                        height: '40px',
+                        padding: '8px 12px',
+                        boxSizing: 'border-box',
+                        fontSize: '0.875rem',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: errors.vehicleType ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: errors.vehicleType ? 'error.main' : 'text.secondary',
+                      },
+                    }}
+                  >
+                    <MenuItem value="">
+                      <em>Chọn loại xe</em>
+                    </MenuItem>
+                    {vehicleTypes.map(type => (
+                      <MenuItem key={type.value} value={type.value}>
+                        {type.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.vehicleType && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                      {errors.vehicleType}
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Trọng tải"
+                  name="capacity"
+                  value={formData.capacity}
+                  onChange={handleInputChange}
+                  error={!!errors.capacity}
+                  helperText={errors.capacity || ''}
+                  variant="outlined"
+                  margin="none"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  inputProps={{
+                    style: {
+                      height: '40px',
+                      padding: '8px 12px',
+                      boxSizing: 'border-box',
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '6px',
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'text.secondary',
+                      },
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Số container"
+                  name="containerCount"
+                  type="number"
+                  value={formData.containerCount}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  margin="none"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  inputProps={{
+                    min: 0,
+                    style: {
+                      height: '40px',
+                      padding: '8px 12px',
+                      boxSizing: 'border-box',
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '6px',
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'text.secondary',
+                      },
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Ghi chú (tùy chọn)"
+                  name="note"
+                  value={formData.note}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  margin="none"
+                  multiline
+                  rows={3}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  inputProps={{
+                    style: {
+                      padding: '12px',
+                      boxSizing: 'border-box',
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '6px',
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'text.secondary',
+                      },
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
           </Box>
         </DialogContent>
-        <DialogActions>
+
+        <DialogActions
+          sx={{
+            p: '16px 24px',
+            bgcolor: 'background.paper',
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            justifyContent: 'flex-end',
+            gap: '12px',
+            '& > *': {
+              margin: '0 !important',
+            },
+          }}
+        >
           <Button
             onClick={handleCloseDialog}
             variant="outlined"
+            color="inherit"
+            size="small"
             sx={{
-              height: 36,
-              px: 2,
-              fontSize: '0.8125rem',
+              height: '36px',
+              px: '16px',
+              fontSize: '0.875rem',
               fontWeight: 500,
-              color: '#4B5563',
-              borderColor: '#D1D5DB',
-              backgroundColor: 'white',
+              color: 'text.primary',
+              borderColor: 'action.disabled',
+              borderRadius: '6px',
               textTransform: 'none',
               '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                borderColor: '#9CA3AF',
+                borderColor: 'text.secondary',
+                backgroundColor: 'action.hover',
               },
               '&:active': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                backgroundColor: 'action.selected',
               },
             }}
           >
@@ -473,71 +538,147 @@ const XeVanChuyen = () => {
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isLoading}
             variant="contained"
+            color="primary"
+            size="small"
+            disabled={isLoading}
             sx={{
-              height: 36,
-              px: 3,
-              fontSize: '0.8125rem',
+              height: '36px',
+              px: '20px',
+              fontSize: '0.875rem',
               fontWeight: 500,
-              backgroundColor: '#3B82F6',
+              borderRadius: '6px',
+              textTransform: 'none',
+              boxShadow: 'none',
               '&:hover': {
-                backgroundColor: '#2563EB',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)',
+                backgroundColor: 'primary.dark',
+              },
+              '&:active': {
+                boxShadow: 'none',
+                backgroundColor: 'primary.dark',
               },
               '&.Mui-disabled': {
-                backgroundColor: '#E5E7EB',
-                color: '#9CA3AF',
+                backgroundColor: 'action.disabledBackground',
+                color: 'text.disabled',
               },
             }}
             startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
           >
-            {editingId ? 'Lưu' : 'Thêm'}
+            {isLoading ? 'Đang xử lý...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
           </Button>
         </DialogActions>
       </Dialog>
+    );
+  };
+
+  return (
+    <Box sx={{ p: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          Quản Lý Xe Vận Chuyển
+        </Typography>
+        <AddButton onClick={handleOpenAddDialog} />
+      </Box>
+
+      {error ? (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      ) : (
+        <Paper
+          elevation={0}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            overflow: 'hidden',
+          }}
+        >
+          <StandardTable
+            columns={[
+              {
+                key: 'licensePlate',
+                label: 'Biển số xe',
+              },
+              {
+                key: 'vehicleType',
+                label: 'Loại xe',
+                render: value => {
+                  const type = vehicleTypes.find(t => t.value === value);
+                  return type ? type.label : value;
+                },
+              },
+              {
+                key: 'capacity',
+                label: 'Trọng tải',
+              },
+              {
+                key: 'containerCount',
+                label: 'Số container',
+                align: 'center',
+              },
+              {
+                key: 'note',
+                label: 'Ghi chú',
+                maxWidth: 200,
+                noWrap: true,
+                render: value => value || 'Không có ghi chú',
+                getColor: value => (value ? 'text.primary' : 'text.disabled'),
+              },
+            ]}
+            data={vehicles}
+            loading={isLoading}
+            emptyMessage="Không có dữ liệu xe vận chuyển"
+            renderActions={row => (
+              <>
+                <EditButton
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleOpenEditDialog(row);
+                  }}
+                />
+                <DeleteButton
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDeleteClick(row);
+                  }}
+                />
+              </>
+            )}
+          />
+        </Paper>
+      )}
+
+      {/* Render dialogs */}
+      {renderDialog()}
 
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
-          severity={snackbar.severity}
           onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>
       </Snackbar>
 
-      <ConfirmationModal
-        isOpen={deleteDialog.open}
-        onClose={handleDeleteCancel}
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}
-        title="Xác nhận xóa"
-        message={
-          <div className="mt-2">
-            <p className="text-sm text-gray-500 mb-4">
-              Bạn có chắc chắn muốn xóa xe vận chuyển này?
-            </p>
-            <div className="bg-gray-50 p-4 rounded-md">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium text-gray-500">Biển số xe:</div>
-                <div className="text-gray-900">{deleteDialog.vehicle?.licensePlate}</div>
-                <div className="font-medium text-gray-500">Loại xe:</div>
-                <div className="text-gray-900">{deleteDialog.vehicle?.vehicleType}</div>
-                <div className="font-medium text-gray-500">Trọng tải:</div>
-                <div className="text-gray-900">{deleteDialog.vehicle?.capacity}</div>
-                <div className="font-medium text-gray-500">Số lượng container:</div>
-                <div className="text-gray-900">{deleteDialog.vehicle?.containerCount}</div>
-                <div className="font-medium text-gray-500">Ghi chú:</div>
-                <div className="text-gray-900">{deleteDialog.vehicle?.note || '-'}</div>
-              </div>
-            </div>
-          </div>
-        }
+        title="Xác nhận xóa xe vận chuyển"
+        message={deleteDialog.details}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
       />
-    </div>
+    </Box>
   );
 };
 

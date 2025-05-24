@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getDebtReport } from '@services/mockData';
 import DateRangeFilter from '../../components/DateRangeFilter';
+import StandardTable from '@shared/components/StandardTable';
 import { format } from 'date-fns';
 
 // SVG Icon for Download
@@ -32,6 +33,40 @@ const BaoCaoCongNo = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [filteredData, setFilteredData] = useState([]);
+
+  // Table columns configuration
+  const columns = [
+    {
+      key: 'entityName',
+      label: 'Tên',
+      align: 'left',
+    },
+    {
+      key: 'entityType',
+      label: 'Nhóm',
+      align: 'left',
+      render: value => (value === 'customer' ? 'Khách hàng' : 'Đối tác'),
+    },
+    {
+      key: 'phaiThu',
+      label: 'Phải Thu',
+      align: 'right',
+      numeric: true,
+      render: value => formatCurrency(value),
+    },
+    {
+      key: 'phaiTra',
+      label: 'Phải Trả',
+      align: 'right',
+      numeric: true,
+      render: value => formatCurrency(value),
+    },
+    {
+      key: 'ghiChu',
+      label: 'Ghi Chú',
+      align: 'left',
+    },
+  ];
 
   const fetchReportData = async monthYear => {
     setIsLoading(true);
@@ -83,75 +118,27 @@ const BaoCaoCongNo = () => {
 
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
 
-      {!isLoading && !error && filteredData.length > 0 && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tên Đối Tượng
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Loại
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phải Thu
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phải Trả
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ghi Chú
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.entityName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.entityType === 'customer' ? 'Khách hàng' : 'Đối tác'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(item.phaiThu)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(item.phaiTra)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.ghiChu}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-gray-50">
-                <tr>
-                  <td
-                    colSpan="2"
-                    className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-                  >
-                    Tổng cộng
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                    {formatCurrency(filteredData.reduce((sum, item) => sum + item.phaiThu, 0))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                    {formatCurrency(filteredData.reduce((sum, item) => sum + item.phaiTra, 0))}
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
+      <StandardTable
+        columns={columns}
+        data={filteredData}
+        loading={isLoading}
+        error={error}
+        emptyMessage="Không có dữ liệu công nợ cho khoảng thời gian đã chọn"
+      />
 
-      {!isLoading && !error && filteredData.length === 0 && (
-        <div className="text-center text-gray-500 bg-white p-8 rounded-lg shadow">
-          Không có dữ liệu công nợ cho khoảng thời gian đã chọn
+      {/* Summary totals */}
+      {!isLoading && !error && filteredData.length > 0 && (
+        <div className="bg-gray-50 px-6 py-4 border border-gray-200 rounded-b-lg -mt-2">
+          <div className="grid grid-cols-5 gap-4 text-sm font-medium text-gray-900">
+            <div className="col-span-2">Tổng cộng</div>
+            <div className="text-right">
+              {formatCurrency(filteredData.reduce((sum, item) => sum + item.phaiThu, 0))}
+            </div>
+            <div className="text-right">
+              {formatCurrency(filteredData.reduce((sum, item) => sum + item.phaiTra, 0))}
+            </div>
+            <div></div>
+          </div>
         </div>
       )}
 

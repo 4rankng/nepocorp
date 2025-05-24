@@ -1,52 +1,79 @@
-import { useState, useEffect, useCallback } from 'react';
-import { PencilIcon, TrashIcon } from '@assets/icons';
-import AddButton from '@shared/components/AddButton';
-import ConfirmationModal from '@components/ConfirmationModal';
+import React, { useState, useEffect, useCallback } from 'react';
+import ConfirmationDialog from '@shared/components/ConfirmationDialog';
+import StandardTable from '@shared/components/StandardTable';
+import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
+
 import {
+  Box,
+  Button,
+  Paper,
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
-  Button,
   TextField,
-  Box,
-  Typography,
   CircularProgress,
+  Snackbar,
   Alert,
+  Typography,
+  IconButton,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
-// Mock data service - Replace with actual API calls
+// Mock API - Replace with actual API calls
 const mockApi = {
-  getContainerTypes: async () => [
-    { id: 1, type: "20'DC", description: 'Container khô 20 feet tiêu chuẩn' },
-    { id: 2, type: "40'DC", description: 'Container khô 40 feet tiêu chuẩn' },
-    { id: 3, type: "40'HC", description: 'Container cao 40 feet' },
-    { id: 4, type: "40'RF", description: 'Container lạnh 40 feet' },
-    { id: 5, type: "40'OT", description: 'Container mở nóc 40 feet' },
-    { id: 6, type: "45'HC", description: 'Container cao 45 feet' },
-  ],
-  addContainerType: async data => ({ id: Date.now(), ...data }),
-  updateContainerType: async (id, data) => ({ id, ...data }),
+  getContainerTypes: async () => ({
+    data: [
+      { id: 1, type: "20'DC", description: 'Container khô 20 feet tiêu chuẩn' },
+      { id: 2, type: "40'DC", description: 'Container khô 40 feet tiêu chuẩn' },
+      { id: 3, type: "40'HC", description: 'Container cao 40 feet' },
+      { id: 4, type: "40'RF", description: 'Container lạnh 40 feet' },
+      { id: 5, type: "40'OT", description: 'Container mở nóc 40 feet' },
+      { id: 6, type: "45'HC", description: 'Container cao 45 feet' },
+    ],
+  }),
+  addContainerType: async data => ({
+    id: Date.now(),
+    ...data,
+  }),
+  updateContainerType: async (id, data) => ({
+    id,
+    ...data,
+  }),
   deleteContainerType: async id => id,
 };
 
 const LoaiContainer = () => {
   const [containerTypes, setContainerTypes] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedContainerType, setSelectedContainerType] = useState(null);
-  const [containerTypeToDelete, setContainerTypeToDelete] = useState(null);
-  const [formData, setFormData] = useState({ type: '', description: '' });
+  const [openDialog, setOpenDialog] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    containerTypeId: null,
+    details: '',
+  });
+
+  const [formData, setFormData] = useState({
+    type: '',
+    description: '',
+  });
+
+  const [errors, setErrors] = useState({});
 
   const fetchContainerTypes = async () => {
     setIsLoading(true);
     try {
-      const data = await mockApi.getContainerTypes();
-      setContainerTypes(data);
+      const response = await mockApi.getContainerTypes();
+      setContainerTypes(response.data || []);
+      setError('');
     } catch (err) {
       setError('Không thể tải danh sách loại container');
+      showSnackbar('Đã xảy ra lỗi khi tải dữ liệu', 'error');
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -56,40 +83,25 @@ const LoaiContainer = () => {
     fetchContainerTypes();
   }, []);
 
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
 
-  const handleOpenModalForAdd = () => {
-    setSelectedContainerType(null);
-    setFormData({ type: '', description: '' });
-    setError('');
-    setIsModalOpen(true);
-  };
-
-  const handleOpenModalForEdit = containerType => {
-    setSelectedContainerType(containerType);
+  const handleCloseDialog = useCallback(() => {
     setFormData({
-      type: containerType.type,
-      description: containerType.description || '',
+      type: '',
+      description: '',
     });
-    setError('');
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false);
-    setSelectedContainerType(null);
-    setFormData({ type: '', description: '' });
-    setError('');
+    setErrors({});
+    setIsEdit(false);
+    setOpenDialog(false);
   }, []);
 
-  // Handle ESC key press to close modal
+  // Handle ESC key press to close dialog
   useEffect(() => {
     const handleKeyDown = e => {
-      if (e.key === 'Escape' && isModalOpen) {
-        handleCloseModal();
+      if (e.key === 'Escape' && openDialog) {
+        handleCloseDialog();
       }
     };
 
@@ -97,14 +109,59 @@ const LoaiContainer = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isModalOpen, handleCloseModal]);
+  }, [openDialog, handleCloseDialog]);
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.type.trim()) {
+      newErrors.type = 'Vui lòng nhập loại container';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleOpenAddDialog = () => {
+    setIsEdit(false);
+    setFormData({
+      type: '',
+      description: '',
+    });
+    setErrors({});
+    setOpenDialog(true);
+  };
+
+  const handleOpenEditDialog = containerType => {
+    setIsEdit(true);
+    setFormData({
+      type: containerType.type,
+      description: containerType.description || '',
+      id: containerType.id,
+    });
+    setErrors({});
+    setOpenDialog(true);
+  };
+
+  const handleInputChange = e => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
+  };
 
   const handleSave = async e => {
     e.preventDefault();
-    if (!formData.type.trim()) {
-      setError('Vui lòng nhập loại container');
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     try {
@@ -113,15 +170,20 @@ const LoaiContainer = () => {
         description: formData.description.trim(),
       };
 
-      if (selectedContainerType) {
-        await mockApi.updateContainerType(selectedContainerType.id, data);
+      if (isEdit) {
+        await mockApi.updateContainerType(formData.id, data);
+        showSnackbar('Cập nhật loại container thành công');
       } else {
         await mockApi.addContainerType(data);
+        showSnackbar('Thêm loại container mới thành công');
       }
       await fetchContainerTypes();
-      handleCloseModal();
+      handleCloseDialog();
     } catch (err) {
-      setError('Đã xảy ra lỗi khi lưu loại container');
+      const errorMessage = isEdit
+        ? 'Đã xảy ra lỗi khi cập nhật loại container'
+        : 'Đã xảy ra lỗi khi thêm loại container mới';
+      showSnackbar(errorMessage, 'error');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -129,227 +191,343 @@ const LoaiContainer = () => {
   };
 
   const handleDeleteClick = containerType => {
-    setContainerTypeToDelete(containerType);
-    setIsDeleteModalOpen(true);
+    setDeleteDialog({
+      open: true,
+      containerTypeId: containerType.id,
+      details: `Bạn có chắc chắn muốn xóa loại container ${containerType.type}?`,
+      containerType,
+    });
+  };
+
+  const handleDeleteClose = () => {
+    setDeleteDialog(prev => ({ ...prev, open: false }));
   };
 
   const handleDeleteConfirm = async () => {
+    if (!deleteDialog.containerTypeId) return;
+
+    setIsLoading(true);
     try {
-      await mockApi.deleteContainerType(containerTypeToDelete.id);
-      setContainerTypes(containerTypes.filter(ct => ct.id !== containerTypeToDelete.id));
-      setIsDeleteModalOpen(false);
-      setContainerTypeToDelete(null);
-    } catch (error) {
-      setError(error.message);
+      await mockApi.deleteContainerType(deleteDialog.containerTypeId);
+      showSnackbar('Xóa loại container thành công');
+      await fetchContainerTypes();
+      handleDeleteClose();
+    } catch (err) {
+      showSnackbar('Đã xảy ra lỗi khi xóa loại container', 'error');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDeleteCancel = () => {
-    setIsDeleteModalOpen(false);
-    setContainerTypeToDelete(null);
-  };
-
-  return (
-    <div className="p-4 sm:p-6 bg-white min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Danh sách loại container</h1>
-        <AddButton onClick={handleOpenModalForAdd} />
-      </div>
-
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                STT
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Loại Container
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Mô Tả
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Thao Tác
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading && containerTypes.length === 0 && (
-              <tr>
-                <td colSpan="4" className="p-4 text-center text-gray-500">
-                  Đang tải...
-                </td>
-              </tr>
-            )}
-            {!isLoading && error && containerTypes.length === 0 && (
-              <tr>
-                <td colSpan="4" className="p-4 text-center text-red-500">
-                  {error}
-                </td>
-              </tr>
-            )}
-            {!isLoading && !error && containerTypes.length === 0 && (
-              <tr>
-                <td colSpan="4" className="p-4 text-center text-gray-500">
-                  Chưa có loại container nào.
-                </td>
-              </tr>
-            )}
-            {containerTypes.map((item, index) => (
-              <tr key={item.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.type}</td>
-                <td className="px-6 py-4 text-sm text-gray-900">{item.description || '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleOpenModalForEdit(item)}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(item)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
+  const renderDialog = () => {
+    return (
       <Dialog
-        open={isModalOpen}
-        onClose={handleCloseModal}
+        open={openDialog}
+        onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
-        sx={{
-          '& .MuiDialog-container': {
-            alignItems: 'flex-start',
-            paddingTop: '64px',
-          },
-          '& .MuiPaper-root': {
-            margin: '16px',
-            width: '100%',
-            maxWidth: '500px',
+        PaperProps={{
+          sx: {
             borderRadius: '8px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-          },
-          '& .MuiDialogTitle-root': {
-            padding: '16px 24px',
-            fontSize: '1.125rem',
-            fontWeight: 600,
-            color: '#111827',
-            borderBottom: '1px solid #E5E7EB',
-          },
-          '& .MuiDialogContent-root': {
-            padding: '24px',
-            '&:first-of-type': {
-              paddingTop: '24px',
-            },
-          },
-          '& .MuiDialogActions-root': {
-            padding: '16px 24px',
-            borderTop: '1px solid #E5E7EB',
-            justifyContent: 'flex-end',
-            gap: '8px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
           },
         }}
       >
-        <DialogTitle>
-          {selectedContainerType ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'}
+        <DialogTitle
+          sx={{
+            p: '16px 24px',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="h6" sx={{ fontSize: '1.125rem', fontWeight: 600 }}>
+            {isEdit ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'}
+          </Typography>
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseDialog}
+            size="small"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
-        <form onSubmit={handleSave}>
-          <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                fullWidth
-                label="Loại container"
-                name="type"
-                value={formData.type}
-                onChange={handleInputChange}
-                placeholder="Ví dụ: 20'DC"
-                variant="outlined"
-                size="small"
-                required
-              />
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Mô tả"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Ví dụ: Container khô 20 feet tiêu chuẩn"
-                variant="outlined"
-                size="small"
-              />
-              {error && (
-                <Alert severity="error" sx={{ mt: 1 }}>
-                  {error}
-                </Alert>
-              )}
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={handleCloseModal}
+
+        <DialogContent sx={{ p: '24px' }}>
+          <DialogContentText
+            sx={{
+              mb: 3,
+              color: 'text.primary',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+            }}
+          >
+            {isEdit ? 'Cập nhật thông tin loại container.' : 'Nhập thông tin loại container mới.'}
+          </DialogContentText>
+
+          <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Loại container"
+              name="type"
+              value={formData.type}
+              onChange={handleInputChange}
+              error={!!errors.type}
+              helperText={errors.type || "Ví dụ: 20'DC"}
               variant="outlined"
-              sx={{
-                height: 36,
-                px: 2,
-                fontSize: '0.8125rem',
-                fontWeight: 500,
+              margin="none"
+              InputLabelProps={{
+                shrink: true,
               }}
-            >
-              Hủy
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{
-                height: 36,
-                px: 2,
-                fontSize: '0.8125rem',
-                fontWeight: 500,
-                '&:hover': {
-                  backgroundColor: '#1d4ed8',
+              inputProps={{
+                style: {
+                  height: '40px',
+                  padding: '8px 12px',
+                  boxSizing: 'border-box',
+                  fontSize: '0.875rem',
                 },
               }}
-            >
-              {selectedContainerType ? 'Lưu' : 'Thêm'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+              sx={{
+                mb: 3,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '6px',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'text.secondary',
+                  },
+                },
+              }}
+            />
 
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={handleDeleteCancel}
+            <TextField
+              fullWidth
+              size="small"
+              label="Mô tả (tùy chọn)"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              variant="outlined"
+              margin="none"
+              multiline
+              rows={3}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              inputProps={{
+                style: {
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  fontSize: '0.875rem',
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '6px',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'text.secondary',
+                  },
+                },
+              }}
+            />
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            p: '16px 24px',
+            bgcolor: 'background.paper',
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            justifyContent: 'flex-end',
+            gap: '12px',
+            '& > *': {
+              margin: '0 !important',
+            },
+          }}
+        >
+          <Button
+            onClick={handleCloseDialog}
+            variant="outlined"
+            color="inherit"
+            size="small"
+            sx={{
+              height: '36px',
+              px: '16px',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: 'text.primary',
+              borderColor: 'action.disabled',
+              borderRadius: '6px',
+              textTransform: 'none',
+              '&:hover': {
+                borderColor: 'text.secondary',
+                backgroundColor: 'action.hover',
+              },
+              '&:active': {
+                backgroundColor: 'action.selected',
+              },
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isLoading}
+            variant="contained"
+            color="primary"
+            size="small"
+            sx={{
+              height: '36px',
+              px: '20px',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              borderRadius: '6px',
+              textTransform: 'none',
+              boxShadow: 'none',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)',
+                backgroundColor: 'primary.dark',
+              },
+              '&:active': {
+                boxShadow: 'none',
+                backgroundColor: 'primary.dark',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: 'action.disabledBackground',
+                color: 'text.disabled',
+              },
+            }}
+            startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
+          >
+            {isLoading ? 'Đang xử lý...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  return (
+    <Box sx={{ p: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          Quản Lý Loại Container
+        </Typography>
+        <AddButton onClick={handleOpenAddDialog} size="small">
+          Thêm loại container
+        </AddButton>
+      </Box>
+
+      {error ? (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      ) : (
+        <Paper
+          elevation={0}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            overflow: 'hidden',
+          }}
+        >
+          <StandardTable
+            columns={[
+              {
+                key: 'type',
+                label: 'Loại container',
+              },
+              {
+                key: 'description',
+                label: 'Mô tả',
+                maxWidth: 400,
+                noWrap: true,
+                render: value => value || 'Không có mô tả',
+                getColor: value => (value ? 'text.primary' : 'text.disabled'),
+              },
+            ]}
+            data={containerTypes}
+            loading={isLoading}
+            emptyMessage="Không có dữ liệu loại container"
+            renderActions={row => (
+              <>
+                <EditButton
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleOpenEditDialog(row);
+                  }}
+                />
+                <DeleteButton
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDeleteClick(row);
+                  }}
+                />
+              </>
+            )}
+          />
+        </Paper>
+      )}
+
+      {/* Render dialogs */}
+      {renderDialog()}
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}
-        title="Xác nhận xóa"
+        title="Xác nhận xóa loại container"
         message={
-          <div className="mt-2">
-            <p className="text-sm text-gray-500 mb-4">
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Bạn có chắc chắn muốn xóa loại container này?
-            </p>
-            <div className="bg-gray-50 p-4 rounded-md">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium text-gray-500">Loại container:</div>
-                <div className="text-gray-900">{containerTypeToDelete?.type}</div>
-                <div className="font-medium text-gray-500">Mô tả:</div>
-                <div className="text-gray-900">{containerTypeToDelete?.description || '-'}</div>
-              </div>
-            </div>
-          </div>
+            </Typography>
+            <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                  Loại container:
+                </Typography>
+                <Typography variant="body2">{deleteDialog.containerType?.type}</Typography>
+
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                  Mô tả:
+                </Typography>
+                <Typography variant="body2">
+                  {deleteDialog.containerType?.description || 'Không có mô tả'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
         }
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
       />
-    </div>
+    </Box>
   );
 };
 

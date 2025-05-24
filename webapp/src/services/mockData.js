@@ -171,46 +171,149 @@ export const deleteContainerType = id =>
 
 // --- START: Vehicles (Phương tiện) Mock Data & Functions ---
 let vehiclesData = [
-  { id: 'v1', licensePlate: '51C-12345' },
-  { id: 'v2', licensePlate: '29H-54321' },
-  { id: 'v3', licensePlate: '60A-98765' },
-  { id: 'v4', licensePlate: '51F-11223' },
+  {
+    id: 'v1',
+    licensePlate: '51C-12345',
+    vehicleType: 'truck',
+    capacity: '5 tấn',
+    containerCount: 1,
+    note: 'Xe tải thùng kín',
+    status: 'active',
+    registrationDate: '2023-01-15',
+    lastMaintenance: '2023-11-20',
+    nextMaintenance: '2024-02-20',
+    insuranceExpiry: '2024-12-31',
+    driver: 'Nguyễn Văn A',
+    phone: '0912345678',
+  },
+  {
+    id: 'v2',
+    licensePlate: '29H-54321',
+    vehicleType: 'container',
+    capacity: '20 tấn',
+    containerCount: 2,
+    note: 'Xe container 40 feet',
+    status: 'active',
+    registrationDate: '2022-11-10',
+    lastMaintenance: '2023-12-15',
+    nextMaintenance: '2024-03-15',
+    insuranceExpiry: '2024-10-30',
+    driver: 'Trần Văn B',
+    phone: '0987654321',
+  },
+  {
+    id: 'v3',
+    licensePlate: '60A-98765',
+    vehicleType: 'tractor',
+    capacity: '40 tấn',
+    containerCount: 1,
+    note: 'Đầu kéo container',
+    status: 'maintenance',
+    registrationDate: '2023-03-22',
+    lastMaintenance: '2023-10-05',
+    nextMaintenance: '2024-01-05',
+    insuranceExpiry: '2024-09-15',
+    driver: 'Lê Thị C',
+    phone: '0905123456',
+  },
+  {
+    id: 'v4',
+    licensePlate: '51F-11223',
+    vehicleType: 'trailer',
+    capacity: '35 tấn',
+    containerCount: 1,
+    note: 'Rơ moóc 3 trục',
+    status: 'active',
+    registrationDate: '2023-02-18',
+    lastMaintenance: '2023-11-30',
+    nextMaintenance: '2024-02-28',
+    insuranceExpiry: '2024-11-30',
+    driver: 'Phạm Văn D',
+    phone: '0918765432',
+  },
 ];
 export const getVehicles = () => new Promise(res => setTimeout(() => res([...vehiclesData]), 50));
 export const getVehiclesForSelect = () =>
   new Promise(res =>
     setTimeout(() => res(vehiclesData.map(v => ({ id: v.id, name: v.licensePlate }))), 50)
   );
-const validateVehicleData = (licensePlate, id = null) => {
-  if (!licensePlate || licensePlate.trim() === '') return 'Biển số xe không được để trống.';
-  if (vehiclesData.some(v => v.licensePlate === licensePlate.trim() && v.id !== id))
+const validateVehicleData = (data, id = null) => {
+  if (!data.licensePlate || data.licensePlate.trim() === '')
+    return 'Biển số xe không được để trống.';
+  if (vehiclesData.some(v => v.licensePlate === data.licensePlate.trim() && v.id !== id))
     return 'Biển số xe đã tồn tại.';
+  if (!data.vehicleType) return 'Vui lòng chọn loại xe';
+  if (!data.capacity) return 'Vui lòng nhập trọng tải';
   return null;
 };
-export const addVehicle = licensePlate =>
+
+export const addVehicle = data =>
   new Promise((resolve, reject) =>
     setTimeout(() => {
-      const err = validateVehicleData(licensePlate);
-      if (err) reject(new Error(err));
-      else {
-        const newV = { id: String(Date.now()), licensePlate: licensePlate.trim() };
-        vehiclesData.push(newV);
-        resolve(newV);
+      const err = validateVehicleData(data);
+      if (err) {
+        reject(new Error(err));
+        return;
       }
+
+      const newVehicle = {
+        id: `v${Date.now()}`,
+        licensePlate: data.licensePlate.trim(),
+        vehicleType: data.vehicleType,
+        capacity: data.capacity,
+        containerCount: data.containerCount || 1,
+        note: data.note || '',
+        status: 'active',
+        registrationDate: new Date().toISOString().split('T')[0],
+        lastMaintenance: '',
+        nextMaintenance: '',
+        insuranceExpiry: '',
+        driver: '',
+        phone: '',
+      };
+
+      vehiclesData.push(newVehicle);
+      resolve(newVehicle);
     }, 50)
   );
-export const updateVehicle = (id, updatedLicensePlate) =>
+
+export const updateVehicle = (id, updatedData) =>
   new Promise((resolve, reject) =>
     setTimeout(() => {
-      const err = validateVehicleData(updatedLicensePlate, id);
-      if (err) reject(new Error(err));
-      else {
-        let fv = null;
-        vehiclesData = vehiclesData.map(v =>
-          v.id === id ? (fv = { ...v, licensePlate: updatedLicensePlate.trim() }) : v
-        );
-        if (fv) resolve(fv);
-        else reject(new Error('Không tìm thấy xe'));
+      const err = validateVehicleData(updatedData, id);
+      if (err) {
+        reject(new Error(err));
+        return;
+      }
+
+      let updatedVehicle = null;
+      vehiclesData = vehiclesData.map(v => {
+        if (v.id === id) {
+          updatedVehicle = {
+            ...v,
+            licensePlate: updatedData.licensePlate.trim(),
+            vehicleType: updatedData.vehicleType,
+            capacity: updatedData.capacity,
+            containerCount: updatedData.containerCount || 1,
+            note: updatedData.note || '',
+            // Keep existing values for other fields unless explicitly updated
+            ...(updatedData.status && { status: updatedData.status }),
+            ...(updatedData.registrationDate && { registrationDate: updatedData.registrationDate }),
+            ...(updatedData.lastMaintenance && { lastMaintenance: updatedData.lastMaintenance }),
+            ...(updatedData.nextMaintenance && { nextMaintenance: updatedData.nextMaintenance }),
+            ...(updatedData.insuranceExpiry && { insuranceExpiry: updatedData.insuranceExpiry }),
+            ...(updatedData.driver && { driver: updatedData.driver }),
+            ...(updatedData.phone && { phone: updatedData.phone }),
+          };
+          return updatedVehicle;
+        }
+        return v;
+      });
+
+      if (updatedVehicle) {
+        resolve(updatedVehicle);
+      } else {
+        reject(new Error('Không tìm thấy xe'));
       }
     }, 50)
   );
@@ -1579,6 +1682,130 @@ export const getAvailableMonthsForDebtReport = () => {
 };
 // --- END: Debt Report Data & Functions ---
 
+// --- START: Maintenance Records (Bảo dưỡng) Mock Data & Functions ---
+let maintenanceRecordsData = [
+  {
+    id: 'mr1',
+    vehicleId: 'v1',
+    licensePlate: '51C-12345',
+    maintenanceDate: '2024-05-15',
+    maintenanceType: 'Định kỳ',
+    description: 'Thay dầu động cơ, lọc gió',
+    cost: 3500000,
+    odometer: 5000,
+    nextMaintenanceOdometer: 10000,
+    nextMaintenanceDate: '2024-08-15',
+    notes: 'Đã thay dầu động cơ 5W-30',
+    createdAt: '2024-05-15T08:30:00Z',
+    updatedAt: '2024-05-15T08:30:00Z',
+  },
+  {
+    id: 'mr2',
+    vehicleId: 'v2',
+    licensePlate: '51C-67890',
+    maintenanceDate: '2024-05-10',
+    maintenanceType: 'Đột xuất',
+    description: 'Thay phanh trước',
+    cost: 2500000,
+    odometer: 15000,
+    nextMaintenanceOdometer: 25000,
+    nextMaintenanceDate: '2024-11-10',
+    notes: 'Má phanh mòn nhiều cần thay mới',
+    createdAt: '2024-05-10T14:15:00Z',
+    updatedAt: '2024-05-10T14:15:00Z',
+  },
+];
+
+export const getMaintenanceRecords = () =>
+  new Promise(resolve => {
+    setTimeout(() => {
+      resolve([...maintenanceRecordsData]);
+    }, 300);
+  });
+
+const validateMaintenanceRecordData = (data, id = null) => {
+  if (!data.vehicleId) return 'Vui lòng chọn phương tiện';
+  if (!data.maintenanceDate) return 'Vui lòng chọn ngày bảo dưỡng';
+  if (!data.maintenanceType) return 'Vui lòng chọn loại bảo dưỡng';
+  if (!data.description?.trim()) return 'Vui lòng nhập mô tả công việc';
+  if (isNaN(Number(data.cost)) || Number(data.cost) <= 0) return 'Chi phí không hợp lệ';
+  if (isNaN(Number(data.odometer)) || Number(data.odometer) < 0) return 'Số km không hợp lệ';
+
+  // Check for duplicate vehicle and maintenance date
+  const duplicate = maintenanceRecordsData.find(
+    mr =>
+      mr.vehicleId === data.vehicleId &&
+      mr.maintenanceDate === data.maintenanceDate &&
+      (id ? mr.id !== id : true)
+  );
+
+  if (duplicate) return 'Đã có bản ghi bảo dưỡng cho phương tiện này vào ngày này';
+
+  return null;
+};
+
+export const addMaintenanceRecord = data =>
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const err = validateMaintenanceRecordData(data);
+      if (err) {
+        reject(new Error(err));
+        return;
+      }
+
+      const newRecord = {
+        ...data,
+        id: `mr${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      maintenanceRecordsData = [...maintenanceRecordsData, newRecord];
+      resolve(newRecord);
+    }, 300)
+  );
+
+export const updateMaintenanceRecord = (id, updatedData) =>
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const err = validateMaintenanceRecordData(updatedData, id);
+      if (err) {
+        reject(new Error(err));
+        return;
+      }
+
+      const index = maintenanceRecordsData.findIndex(mr => mr.id === id);
+      if (index === -1) {
+        reject(new Error('Không tìm thấy bản ghi bảo dưỡng'));
+        return;
+      }
+
+      const updatedRecord = {
+        ...maintenanceRecordsData[index],
+        ...updatedData,
+        updatedAt: new Date().toISOString(),
+      };
+
+      maintenanceRecordsData = [
+        ...maintenanceRecordsData.slice(0, index),
+        updatedRecord,
+        ...maintenanceRecordsData.slice(index + 1),
+      ];
+
+      resolve(updatedRecord);
+    }, 300)
+  );
+
+export const deleteMaintenanceRecord = id =>
+  new Promise(resolve =>
+    setTimeout(() => {
+      maintenanceRecordsData = maintenanceRecordsData.filter(mr => mr.id !== id);
+      resolve({ id });
+    }, 300)
+  );
+
+// --- END: Maintenance Records (Bảo dưỡng) Mock Data & Functions ---
+
 // Keep other existing mock data exports
 export const mockEmployees = mockEmployeesOld;
 
@@ -1609,3 +1836,103 @@ export function getMonthlyProfitAndRevenueReport() {
     }, 100);
   });
 }
+
+// --- START: Fuel Standards (Định mức dầu) Mock Data & Functions ---
+let fuelStandardsData = [
+  { id: 1, licensePlate: '51C-12345', fromKm: 0, toKm: 10000, standard: 0.35, note: 'Mới' },
+  { id: 2, licensePlate: '51C-12345', fromKm: 10000, toKm: 30000, standard: 0.32, note: 'Chạy rà' },
+  { id: 3, licensePlate: '51C-12345', fromKm: 30000, toKm: 100000, standard: 0.3, note: 'Ổn định' },
+  { id: 4, licensePlate: '29H-54321', fromKm: 0, toKm: 5000, standard: 0.38, note: 'Mới' },
+  { id: 5, licensePlate: '29H-54321', fromKm: 5000, toKm: 20000, standard: 0.35, note: 'Chạy rà' },
+];
+
+export const getFuelStandards = () =>
+  new Promise(res => setTimeout(() => res([...fuelStandardsData]), 50));
+
+export const getLicensePlatesForFuelStandards = () =>
+  new Promise(res =>
+    setTimeout(() => res(vehiclesData.map(v => ({ id: v.id, licensePlate: v.licensePlate }))), 50)
+  );
+
+const validateFuelStandardData = (data, id = null) => {
+  if (!data.licensePlate || data.licensePlate.trim() === '')
+    return 'Biển số xe không được để trống.';
+  if (!data.fromKm && data.fromKm !== 0) return 'Km bắt đầu không được để trống.';
+  if (!data.toKm) return 'Km kết thúc không được để trống.';
+  if (parseFloat(data.fromKm) >= parseFloat(data.toKm))
+    return 'Km kết thúc phải lớn hơn km bắt đầu.';
+  if (!data.standard) return 'Định mức không được để trống.';
+
+  // Check for overlapping ranges
+  const from = parseFloat(data.fromKm);
+  const to = parseFloat(data.toKm);
+  const overlapping = fuelStandardsData.some(item => {
+    if (item.id === id) return false; // Skip current item when editing
+    if (item.licensePlate !== data.licensePlate) return false;
+    return (
+      (from >= item.fromKm && from < item.toKm) ||
+      (to > item.fromKm && to <= item.toKm) ||
+      (from <= item.fromKm && to >= item.toKm)
+    );
+  });
+
+  if (overlapping) {
+    return 'Khoảng km này đã được định nghĩa cho biển số xe này.';
+  }
+
+  return null;
+};
+
+export const addFuelStandard = data =>
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const err = validateFuelStandardData(data);
+      if (err) reject(new Error(err));
+      else {
+        const newStandard = {
+          id: Date.now(),
+          licensePlate: data.licensePlate.trim(),
+          fromKm: Number(data.fromKm),
+          toKm: Number(data.toKm),
+          standard: Number(data.standard),
+          note: data.note ? data.note.trim() : '',
+        };
+        fuelStandardsData.push(newStandard);
+        resolve(newStandard);
+      }
+    }, 50)
+  );
+
+export const updateFuelStandard = (id, data) =>
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      const err = validateFuelStandardData(data, id);
+      if (err) reject(new Error(err));
+      else {
+        let updatedStandard = null;
+        fuelStandardsData = fuelStandardsData.map(item =>
+          item.id === id
+            ? (updatedStandard = {
+                id,
+                licensePlate: data.licensePlate.trim(),
+                fromKm: Number(data.fromKm),
+                toKm: Number(data.toKm),
+                standard: Number(data.standard),
+                note: data.note ? data.note.trim() : '',
+              })
+            : item
+        );
+        if (updatedStandard) resolve(updatedStandard);
+        else reject(new Error('Không tìm thấy định mức dầu'));
+      }
+    }, 50)
+  );
+
+export const deleteFuelStandard = id =>
+  new Promise(res =>
+    setTimeout(() => {
+      fuelStandardsData = fuelStandardsData.filter(item => item.id !== id);
+      res({ id });
+    }, 50)
+  );
+// --- END: Fuel Standards Functions ---

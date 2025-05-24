@@ -1,97 +1,57 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ConfirmationDialog from '@shared/components/ConfirmationDialog';
+import StandardTable from '@shared/components/StandardTable';
+import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
+import { fuelStandardApi, vehicleApi } from '@services/mockApi';
 
 import {
   Box,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   Paper,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  InputAdornment,
   CircularProgress,
   Snackbar,
   Alert,
-  Card,
-  CardHeader,
-  CardContent,
   Collapse,
   Typography,
+  Grid,
+  IconButton,
 } from '@mui/material';
-import {
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '../../../assets/icons';
-import { visuallyHidden } from '@mui/utils';
-import AddButton from '@shared/components/AddButton';
+import CloseIcon from '@mui/icons-material/Close';
+import { ChevronDownIcon, ChevronUpIcon } from '../../../assets/icons';
+import { alpha } from '@mui/material/styles';
 
-// Mock API for demonstration
-const mockApi = {
-  getFuelStandards: async () => [
-    { id: 1, licensePlate: '51G-12345', fromKm: 0, toKm: 10000, standard: 0.35, note: 'Mới' },
-    {
-      id: 2,
-      licensePlate: '51G-12345',
-      fromKm: 10000,
-      toKm: 30000,
-      standard: 0.32,
-      note: 'Chạy rà',
-    },
-    {
-      id: 3,
-      licensePlate: '51G-12345',
-      fromKm: 30000,
-      toKm: 100000,
-      standard: 0.3,
-      note: 'Ổn định',
-    },
-    { id: 4, licensePlate: '51G-67890', fromKm: 0, toKm: 5000, standard: 0.38, note: 'Mới' },
-    {
-      id: 5,
-      licensePlate: '51G-67890',
-      fromKm: 5000,
-      toKm: 20000,
-      standard: 0.35,
-      note: 'Chạy rà',
-    },
-  ],
-  getLicensePlates: async () => [
-    { id: 1, licensePlate: '51G-12345' },
-    { id: 2, licensePlate: '51G-67890' },
-    { id: 3, licensePlate: '51G-54321' },
-  ],
-  addFuelStandard: async data => ({
-    id: Date.now(),
-    ...data,
-    fromKm: Number(data.fromKm),
-    toKm: Number(data.toKm),
-    standard: Number(data.standard),
-  }),
-  updateFuelStandard: async (id, data) => ({
-    id,
-    ...data,
-    fromKm: Number(data.fromKm),
-    toKm: Number(data.toKm),
-    standard: Number(data.standard),
-  }),
-  deleteFuelStandard: async id => id,
+// Theme variables
+const theme = {
+  spacing: 8,
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontSize: 14,
+    h6: { fontSize: '1rem', fontWeight: 600 },
+    body2: { fontSize: '0.8125rem' },
+    caption: { fontSize: '0.75rem', color: 'text.secondary' },
+  },
+  palette: {
+    primary: { main: '#1976d2' },
+    background: { default: '#f5f7fa', paper: '#ffffff' },
+    text: { primary: '#1a1a1a', secondary: '#6b7280' },
+    grey: { 100: '#f3f4f6', 200: '#e5e7eb' },
+    success: { light: '#4caf50', main: '#2e7d32' },
+    warning: { light: '#ff9800', main: '#ed6c02' },
+    error: { main: '#d32f2f' },
+  },
+  shape: { borderRadius: 6 },
+  shadows: ['none', '0px 2px 8px rgba(0, 0, 0, 0.08)', '0px 4px 12px rgba(0, 0, 0, 0.1)'],
 };
+
+// Helper functions
+const spacing = value => `${value * theme.spacing}px`;
 
 // Function to group fuel standards by license plate
 const groupByLicensePlate = standards => {
@@ -106,8 +66,9 @@ const groupByLicensePlate = standards => {
 const DinhMucDau = () => {
   const [fuelStandards, setFuelStandards] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [currentStandard, setCurrentStandard] = useState(null);
   const [expandedPlates, setExpandedPlates] = useState({});
   const [formData, setFormData] = useState({
     licensePlate: '',
@@ -116,6 +77,7 @@ const DinhMucDau = () => {
     standard: '',
     note: '',
   });
+  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -156,10 +118,20 @@ const DinhMucDau = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [standards, plates] = await Promise.all([
-        mockApi.getFuelStandards(),
-        mockApi.getLicensePlates(),
+      const [standardsResponse, vehiclesResponse] = await Promise.all([
+        fuelStandardApi.getAll(),
+        vehicleApi.getAll(),
       ]);
+
+      const standards = standardsResponse.data || [];
+      const vehicles = vehiclesResponse.data || [];
+
+      // Extract license plates from vehicles
+      const plates = vehicles.map(vehicle => ({
+        id: vehicle.id,
+        licensePlate: vehicle.licensePlate || vehicle.bienSoXe,
+      }));
+
       setFuelStandards(standards);
       setLicensePlates(plates);
 
@@ -184,35 +156,29 @@ const DinhMucDau = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleOpenAddDialog = (licensePlate = '') => {
-    if (!licensePlate) return; // Prevent opening dialog without a license plate
-
-    setEditingId(null);
+  const handleOpenAddDialog = licensePlate => {
     setFormData({
-      licensePlate,
       fromKm: '',
       toKm: '',
       standard: '',
       note: '',
+      licensePlate,
     });
-    setOpenDialog(true);
+    setErrors({});
+    setOpenAddDialog(true);
   };
 
-  const handleOpenEditDialog = item => {
-    setEditingId(item.id);
+  const handleOpenEditDialog = standard => {
     setFormData({
-      licensePlate: item.licensePlate,
-      fromKm: item.fromKm,
-      toKm: item.toKm,
-      standard: item.standard,
-      note: item.note || '',
+      fromKm: standard.fromKm,
+      toKm: standard.toKm,
+      standard: standard.standard,
+      note: standard.note || '',
+      id: standard.id,
+      licensePlate: standard.licensePlate,
     });
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setError('');
+    setErrors({});
+    setOpenEditDialog(true);
   };
 
   const handleInputChange = e => {
@@ -221,69 +187,97 @@ const DinhMucDau = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
   };
 
   const validateForm = () => {
-    if (!formData.licensePlate) {
-      setError('Vui lòng chọn biển số xe');
-      return false;
+    const newErrors = {};
+    if (!formData.fromKm) newErrors.fromKm = 'Vui lòng nhập km bắt đầu';
+    if (!formData.toKm) newErrors.toKm = 'Vui lòng nhập km kết thúc';
+    if (parseFloat(formData.fromKm) >= parseFloat(formData.toKm)) {
+      newErrors.toKm = 'Km kết thúc phải lớn hơn km bắt đầu';
     }
-    if (!formData.fromKm || isNaN(formData.fromKm) || formData.fromKm < 0) {
-      setError('Giá trị "Từ km" phải là số dương');
-      return false;
-    }
-    if (!formData.toKm || isNaN(formData.toKm) || formData.toKm <= 0) {
-      setError('Giá trị "Đến km" phải là số dương');
-      return false;
-    }
-    if (Number(formData.fromKm) >= Number(formData.toKm)) {
-      setError('Giá trị "Đến km" phải lớn hơn "Từ km"');
-      return false;
-    }
-    if (!formData.standard || isNaN(formData.standard) || formData.standard <= 0) {
-      setError('Định mức (l/km) phải là số dương');
-      return false;
-    }
+    if (!formData.standard) newErrors.standard = 'Vui lòng nhập định mức';
 
-    // Check for overlapping ranges
-    const from = Number(formData.fromKm);
-    const to = Number(formData.toKm);
-    const overlapping = fuelStandards.some(item => {
-      if (editingId && item.id === editingId) return false;
-      if (item.licensePlate !== formData.licensePlate) return false;
-      return (
-        (from >= item.fromKm && from < item.toKm) ||
-        (to > item.fromKm && to <= item.toKm) ||
-        (from <= item.fromKm && to >= item.toKm)
-      );
-    });
-
-    if (overlapping) {
-      setError('Khoảng km này đã được định nghĩa cho biển số xe này');
-      return false;
-    }
-
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
+  const handleSaveAdd = async () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      const data = { ...formData };
+      // Check for overlapping ranges
+      const from = parseFloat(formData.fromKm);
+      const to = parseFloat(formData.toKm);
+      const overlapping = fuelStandards.some(item => {
+        if (item.licensePlate !== formData.licensePlate) return false;
+        return (
+          (from >= item.fromKm && from < item.toKm) ||
+          (to > item.fromKm && to <= item.toKm) ||
+          (from <= item.fromKm && to >= item.toKm)
+        );
+      });
 
-      if (editingId) {
-        await mockApi.updateFuelStandard(editingId, data);
-        showSnackbar('Cập nhật định mức dầu thành công');
-      } else {
-        await mockApi.addFuelStandard(data);
-        showSnackbar('Thêm định mức dầu thành công');
+      if (overlapping) {
+        setErrors(prev => ({
+          ...prev,
+          toKm: 'Khoảng km này đã được định nghĩa cho biển số xe này',
+        }));
+        return;
       }
+
+      await fuelStandardApi.create(formData);
+      showSnackbar('Thêm định mức dầu thành công');
       await fetchData();
-      handleCloseDialog();
+      setOpenAddDialog(false);
     } catch (err) {
-      setError('Đã xảy ra lỗi khi lưu định mức dầu');
+      showSnackbar('Đã xảy ra lỗi khi lưu định mức dầu', 'error');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      // Check for overlapping ranges, excluding current item
+      const from = parseFloat(formData.fromKm);
+      const to = parseFloat(formData.toKm);
+      const overlapping = fuelStandards.some(item => {
+        if (item.id === formData.id) return false; // Skip current item
+        if (item.licensePlate !== formData.licensePlate) return false;
+        return (
+          (from >= item.fromKm && from < item.toKm) ||
+          (to > item.fromKm && to <= item.toKm) ||
+          (from <= item.fromKm && to >= item.toKm)
+        );
+      });
+
+      if (overlapping) {
+        setErrors(prev => ({
+          ...prev,
+          toKm: 'Khoảng km này đã được định nghĩa cho biển số xe này',
+        }));
+        return;
+      }
+
+      await fuelStandardApi.update(formData.id, formData);
+      showSnackbar('Cập nhật định mức dầu thành công');
+      await fetchData();
+      setOpenEditDialog(false);
+    } catch (err) {
+      showSnackbar('Đã xảy ra lỗi khi cập nhật định mức dầu', 'error');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -313,7 +307,7 @@ const DinhMucDau = () => {
 
     setIsLoading(true);
     try {
-      await mockApi.deleteFuelStandard(deleteDialog.id);
+      await fuelStandardApi.delete(deleteDialog.id);
       showSnackbar('Xóa định mức dầu thành công');
       await fetchData();
     } catch (err) {
@@ -329,30 +323,383 @@ const DinhMucDau = () => {
     setDeleteDialog(prev => ({ ...prev, open: false }));
   }, []);
 
-  const getRouteTypeLabel = type => {
-    const found = routeTypes.find(rt => rt.value === type);
-    return found ? found.label : type;
-  };
+  const renderDialog = (isEdit = false) => {
+    const open = isEdit ? openEditDialog : openAddDialog;
+    const handleClose = isEdit ? () => setOpenEditDialog(false) : () => setOpenAddDialog(false);
+    const handleSave = isEdit ? handleSaveEdit : handleSaveAdd;
 
-  // Sort standards by fromKm
-  const sortStandards = standards => {
-    return [...standards].sort((a, b) => {
-      if (order === 'asc') {
-        return a[orderBy] - b[orderBy];
-      } else {
-        return b[orderBy] - a[orderBy];
-      }
-    });
-  };
+    return (
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        sx={{
+          '& .MuiPaper-root': {
+            width: '100%',
+            maxWidth: '480px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            overflow: 'hidden',
+            margin: '16px',
+          },
+          '& .MuiBackdrop-root': {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(2px)',
+          },
+        }}
+        onKeyDown={e => e.key === 'Escape' && handleClose()}
+        onClick={e => e.target === e.currentTarget && handleClose()}
+      >
+        <DialogTitle
+          sx={{
+            p: '16px 24px',
+            bgcolor: 'background.paper',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            '& .MuiTypography-root': {
+              fontSize: '1.125rem',
+              fontWeight: 600,
+              color: 'text.primary',
+              lineHeight: 1.4,
+              m: 0,
+            },
+          }}
+        >
+          {isEdit ? 'Chỉnh sửa định mức dầu' : 'Thêm định mức dầu mới'}
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            size="small"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+                color: 'text.primary',
+              },
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
 
-  const handleSort = property => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
+        <DialogContent
+          sx={{
+            p: '24px',
+            '&.MuiDialogContent-root': {
+              paddingTop: '16px',
+            },
+          }}
+        >
+          <DialogContentText
+            sx={{
+              mb: '20px',
+              color: 'text.secondary',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+            }}
+          >
+            {isEdit
+              ? 'Cập nhật thông tin định mức dầu cho phương tiện.'
+              : 'Nhập thông tin định mức dầu mới cho phương tiện.'}
+          </DialogContentText>
 
-  const createSortHandler = property => event => {
-    handleSort(property);
+          <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 1, color: 'text.secondary', fontWeight: 500 }}
+                >
+                  Phạm vi số km
+                </Typography>
+                <Grid container spacing={2} sx={{ mb: 1, display: 'flex', flexWrap: 'nowrap' }}>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Từ km"
+                      name="fromKm"
+                      type="number"
+                      value={formData.fromKm}
+                      onChange={handleInputChange}
+                      onBlur={validateForm}
+                      error={!!errors.fromKm}
+                      helperText={errors.fromKm || ''}
+                      variant="outlined"
+                      margin="none"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      inputProps={{
+                        min: 0,
+                        step: 1,
+                        style: {
+                          textAlign: 'right',
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                        },
+                      }}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end" sx={{ color: 'text.secondary' }}>
+                            km
+                          </InputAdornment>
+                        ),
+                        sx: {
+                          '&.Mui-focused': {
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '1px',
+                            },
+                          },
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Đến km"
+                      name="toKm"
+                      type="number"
+                      value={formData.toKm}
+                      onChange={handleInputChange}
+                      onBlur={validateForm}
+                      error={!!errors.toKm}
+                      helperText={errors.toKm || ''}
+                      variant="outlined"
+                      margin="none"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      inputProps={{
+                        min: 1,
+                        step: 1,
+                        style: {
+                          textAlign: 'right',
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                        },
+                      }}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end" sx={{ color: 'text.secondary' }}>
+                            km
+                          </InputAdornment>
+                        ),
+                        sx: {
+                          '&.Mui-focused': {
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: '1px',
+                            },
+                          },
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              <Grid item xs={4}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 1, color: 'text.secondary', fontWeight: 500 }}
+                >
+                  Định mức nhiên liệu
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder=""
+                  name="standard"
+                  type="number"
+                  value={formData.standard}
+                  onChange={handleInputChange}
+                  onBlur={validateForm}
+                  error={!!errors.standard}
+                  helperText={errors.standard || ''}
+                  variant="outlined"
+                  margin="none"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  inputProps={{
+                    step: '0.01',
+                    min: '0.01',
+                    style: {
+                      textAlign: 'right',
+                      height: '40px',
+                      padding: '8px 12px',
+                      boxSizing: 'border-box',
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end" sx={{ color: 'text.secondary' }}>
+                        lít/km
+                      </InputAdornment>
+                    ),
+                    sx: {
+                      '&.Mui-focused': {
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main',
+                          borderWidth: '1px',
+                        },
+                      },
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '6px',
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'text.secondary',
+                      },
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sx={{ width: '100%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Ghi chú (tùy chọn)"
+                  name="note"
+                  value={formData.note}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  margin="none"
+                  multiline
+                  rows={4}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  inputProps={{
+                    style: {
+                      padding: '12px',
+                      boxSizing: 'border-box',
+                      width: '100%',
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                  sx={{
+                    width: '100%',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '6px',
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'text.secondary',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                        borderWidth: '1px',
+                      },
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            p: '16px 24px',
+            bgcolor: 'background.paper',
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            justifyContent: 'flex-end',
+            gap: '12px',
+            '& > *': {
+              margin: '0 !important',
+            },
+          }}
+        >
+          <Button
+            onClick={handleClose}
+            variant="outlined"
+            color="inherit"
+            size="small"
+            sx={{
+              height: '36px',
+              px: '16px',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: 'text.primary',
+              borderColor: 'action.disabled',
+              borderRadius: '6px',
+              textTransform: 'none',
+              '&:hover': {
+                borderColor: 'text.secondary',
+                backgroundColor: 'action.hover',
+              },
+              '&:active': {
+                backgroundColor: 'action.selected',
+              },
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            color="primary"
+            size="small"
+            disabled={isLoading}
+            sx={{
+              height: '36px',
+              px: '20px',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              borderRadius: '6px',
+              textTransform: 'none',
+              boxShadow: 'none',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)',
+                backgroundColor: 'primary.dark',
+              },
+              '&:active': {
+                boxShadow: 'none',
+                backgroundColor: 'primary.dark',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: 'action.disabledBackground',
+                color: 'text.disabled',
+              },
+            }}
+            startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
+          >
+            {isLoading ? 'Đang xử lý...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
   };
 
   return (
@@ -387,7 +734,7 @@ const DinhMucDau = () => {
                 <Box
                   onClick={() => toggleExpand(licensePlate)}
                   sx={{
-                    p: 1.5,
+                    p: spacing(1.5),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -395,7 +742,13 @@ const DinhMucDau = () => {
                     backgroundColor: 'background.paper',
                     borderBottom: '1px solid',
                     borderColor: 'divider',
-                    '&:hover': { backgroundColor: 'action.hover' },
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                      '& .MuiTypography-root': {
+                        color: theme.palette.primary.main,
+                      },
+                    },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
@@ -420,7 +773,7 @@ const DinhMucDau = () => {
                       )}
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AddButton 
+                      <AddButton
                         size="small"
                         onClick={e => {
                           e.stopPropagation();
@@ -436,103 +789,71 @@ const DinhMucDau = () => {
                       )}
                     </Box>
                   </Box>
-
                 </Box>
 
                 <Collapse in={expandedPlates[licensePlate] !== false} timeout="auto" unmountOnExit>
-                  <Box sx={{ p: 1.5, pt: 1.5 }}>
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small" sx={{ minWidth: 600 }}>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell
-                              sx={{ fontWeight: 600, py: 1, pl: 2, pr: 1, fontSize: '0.8125rem' }}
-                            >
-                              Từ (km)
-                            </TableCell>
-                            <TableCell
-                              sx={{ fontWeight: 600, py: 1, px: 1, fontSize: '0.8125rem' }}
-                            >
-                              Đến (km)
-                            </TableCell>
-                            <TableCell
-                              sx={{ fontWeight: 600, py: 1, px: 1, fontSize: '0.8125rem' }}
-                            >
-                              Định mức (l/km)
-                            </TableCell>
-                            <TableCell
-                              sx={{ fontWeight: 600, py: 1, px: 1, fontSize: '0.8125rem' }}
-                            >
-                              Ghi chú
-                            </TableCell>
-                            <TableCell 
-                              align="right" 
-                              sx={{ fontWeight: 600, py: 1, px: 1, fontSize: '0.8125rem', width: '120px' }}
-                            >
-                              Thao tác
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {standards.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={5} align="center" sx={{ py: 2, color: 'text.secondary' }}>
-                                Chưa có dữ liệu định mức dầu
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            standards
-                              .sort((a, b) => a.fromKm - b.fromKm)
-                              .map(row => (
-                                <TableRow
-                                  key={row.id}
-                                  hover
-                                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                >
-                                  <TableCell sx={{ py: 0.75, pl: 2, pr: 1, fontSize: '0.8125rem' }}>
-                                    {row.fromKm.toLocaleString()}
-                                  </TableCell>
-                                  <TableCell sx={{ py: 0.75, px: 1, fontSize: '0.8125rem' }}>
-                                    {row.toKm.toLocaleString()}
-                                  </TableCell>
-                                  <TableCell sx={{ py: 0.75, px: 1, fontSize: '0.8125rem' }}>
-                                    {row.standard}
-                                  </TableCell>
-                                  <TableCell sx={{ py: 0.75, px: 1, fontSize: '0.8125rem' }}>
-                                    {row.note || '-'}
-                                  </TableCell>
-                                  <TableCell align="right" sx={{ py: 0.75, pl: 1, pr: 2 }}>
-                                    <Box
-                                      sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}
-                                    >
-                                      <IconButton
-                                        size="small"
-                                        onClick={e => {
-                                          e.stopPropagation();
-                                          handleOpenEditDialog(row);
-                                        }}
-                                        color="primary"
-                                      >
-                                        <PencilIcon className="w-5 h-5" />
-                                      </IconButton>
-                                      <IconButton
-                                        size="small"
-                                        onClick={e => {
-                                          e.stopPropagation();
-                                          handleDeleteClick(row.id);
-                                        }}
-                                        color="error"
-                                      >
-                                        <TrashIcon className="w-5 h-5" />
-                                      </IconButton>
-                                    </Box>
-                                  </TableCell>
-                                </TableRow>
-                              ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                  <Box sx={{ p: spacing(1.5) }}>
+                    <StandardTable
+                      columns={[
+                        {
+                          key: 'range',
+                          label: 'Đoạn đường (km)',
+                          render: (_, row) =>
+                            `${row.fromKm.toLocaleString()} - ${row.toKm.toLocaleString()}`,
+                        },
+                        {
+                          key: 'fromKm',
+                          label: 'Từ (km)',
+                          numeric: true,
+                          render: value => value.toLocaleString(),
+                        },
+                        {
+                          key: 'toKm',
+                          label: 'Đến (km)',
+                          numeric: true,
+                          render: value => value.toLocaleString(),
+                        },
+                        {
+                          key: 'standard',
+                          label: 'Định mức (l/km)',
+                          numeric: true,
+                          render: value => value.toFixed(2),
+                          getColor: value =>
+                            value > 0.4
+                              ? theme.palette.error.main
+                              : value > 0.3
+                                ? theme.palette.warning.main
+                                : theme.palette.success.main,
+                          fontWeight: 500,
+                        },
+                        {
+                          key: 'note',
+                          label: 'Ghi chú',
+                          maxWidth: 200,
+                          noWrap: true,
+                          render: value => value || 'Không có ghi chú',
+                          getColor: value => (value ? 'text.primary' : 'text.disabled'),
+                        },
+                      ]}
+                      data={standards.sort((a, b) => a.fromKm - b.fromKm)}
+                      renderActions={row => (
+                        <>
+                          <EditButton
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleOpenEditDialog(row);
+                            }}
+                          />
+                          <DeleteButton
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleDeleteClick(row.id);
+                            }}
+                          />
+                        </>
+                      )}
+                      emptyMessage="Chưa có dữ liệu định mức dầu"
+                    />
                   </Box>
                 </Collapse>
               </Paper>
@@ -541,176 +862,9 @@ const DinhMucDau = () => {
         )}
       </Box>
 
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-        onKeyDown={e => e.key === 'Escape' && handleCloseDialog()}
-        sx={{
-          '& .MuiDialog-container': {
-            alignItems: 'flex-start',
-            paddingTop: '64px',
-          },
-          '& .MuiPaper-root': {
-            margin: '16px',
-            width: '100%',
-            maxWidth: '500px',
-            borderRadius: '8px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-          },
-          '& .MuiDialogTitle-root': {
-            padding: '16px 24px',
-            fontSize: '1.125rem',
-            fontWeight: 600,
-            color: '#111827',
-            borderBottom: '1px solid #E5E7EB',
-          },
-          '& .MuiDialogContent-root': {
-            padding: '24px',
-            '&:first-of-type': {
-              paddingTop: '24px',
-            },
-          },
-          '& .MuiDialogActions-root': {
-            padding: '16px 24px',
-            borderTop: '1px solid #E5E7EB',
-            justifyContent: 'flex-end',
-            gap: '8px',
-          },
-        }}
-      >
-        <DialogTitle>{editingId ? 'Chỉnh Sửa Định Mức Dầu' : 'Thêm Định Mức Dầu Mới'}</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.8125rem' }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 0.5 }}>
-            <TextField
-              size="small"
-              id="licensePlate"
-              name="licensePlate"
-              label="Biển Số Xe"
-              value={formData.licensePlate}
-              disabled={true}
-              margin="none"
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-
-            <Box sx={{ display: 'flex', gap: 1.5, '& .MuiTextField-root': { flex: 1 } }}>
-              <TextField
-                size="small"
-                label="Từ (km)"
-                name="fromKm"
-                type="number"
-                value={formData.fromKm}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                margin="none"
-                inputProps={{ min: 0, step: 1, style: { textAlign: 'right' } }}
-              />
-              <TextField
-                size="small"
-                label="Đến (km)"
-                name="toKm"
-                type="number"
-                value={formData.toKm}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                margin="none"
-                inputProps={{ min: 1, step: 1, style: { textAlign: 'right' } }}
-              />
-            </Box>
-
-            <TextField
-              size="small"
-              id="standard"
-              name="standard"
-              label="Định mức (l/km)"
-              type="number"
-              value={formData.standard}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              margin="none"
-              inputProps={{
-                min: 0.001,
-                step: 0.001,
-                style: { textAlign: 'right' },
-              }}
-            />
-
-            <TextField
-              size="small"
-              id="note"
-              name="note"
-              label="Ghi chú"
-              value={formData.note}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              margin="none"
-              multiline
-              rows={2}
-              inputProps={{
-                style: { fontSize: '0.875rem' },
-              }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={handleCloseDialog}
-            variant="outlined"
-            disabled={isLoading}
-            sx={{
-              height: 36,
-              px: 2,
-              fontSize: '0.8125rem',
-              fontWeight: 500,
-              color: '#4B5563',
-              borderColor: '#D1D5DB',
-              backgroundColor: 'white',
-              textTransform: 'none',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                borderColor: '#9CA3AF',
-              },
-              '&:active': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              },
-            }}
-          >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            disabled={isLoading}
-            sx={{
-              height: 36,
-              px: 3,
-              fontSize: '0.8125rem',
-              fontWeight: 500,
-              backgroundColor: '#3B82F6',
-              textTransform: 'none',
-              '&:hover': {
-                backgroundColor: '#2563EB',
-              },
-              '&.Mui-disabled': {
-                backgroundColor: '#E5E7EB',
-                color: '#9CA3AF',
-              },
-            }}
-            startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
-          >
-            {isLoading ? 'Đang lưu...' : 'Lưu'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Render dialogs */}
+      {renderDialog()}
+      {renderDialog(true)}
 
       <Snackbar
         open={snackbar.open}

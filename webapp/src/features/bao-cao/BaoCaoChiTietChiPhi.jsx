@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getDetailedCostReport } from '@services/mockData';
 import DateRangeFilter from '../../components/DateRangeFilter';
+import StandardTable from '@shared/components/StandardTable';
 import { format } from 'date-fns';
 
 // Helper to format currency
@@ -26,6 +27,37 @@ const BaoCaoChiTietChiPhi = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Table columns configuration
+  const columns = [
+    {
+      key: 'monthYear',
+      label: 'Tháng',
+      align: 'left',
+      render: value => {
+        if (!value || !value.includes('/')) return value;
+        const [month, year] = value.split('/');
+        return `${month}/${year.slice(-2)}`;
+      },
+    },
+    {
+      key: 'bienSoXe',
+      label: 'Biển Số Xe',
+      align: 'left',
+    },
+    {
+      key: 'category',
+      label: 'Hạng Mục Chi Phí',
+      align: 'left',
+    },
+    {
+      key: 'amount',
+      label: 'Số Tiền',
+      align: 'right',
+      numeric: true,
+      render: value => formatMillion(value),
+    },
+  ];
 
   // Define a color palette for chart segments
   const segmentColors = [
@@ -106,52 +138,16 @@ const BaoCaoChiTietChiPhi = () => {
 
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
 
-      {!isLoading && !error && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tháng
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Biển Số Xe
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hạng Mục Chi Phí
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Số Tiền
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {sortedData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {(() => {
-                        if (!item.monthYear || !item.monthYear.includes('/')) return item.monthYear;
-                        const [month, year] = item.monthYear.split('/');
-                        return `${month}/${year.slice(-2)}`;
-                      })()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.bienSoXe}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.category}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatMillion(item.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="text-xs text-gray-500 mt-2">Đơn vị: triệu đồng</div>
-          </div>
-        </div>
+      <StandardTable
+        columns={columns}
+        data={sortedData}
+        loading={isLoading}
+        error={error}
+        emptyMessage="Không có dữ liệu cho khoảng thời gian đã chọn"
+      />
+
+      {!isLoading && !error && sortedData.length > 0 && (
+        <div className="text-xs text-gray-500 mt-2 px-2">Đơn vị: triệu đồng</div>
       )}
 
       {/* Mobile Card View with Stacked Bar Chart Simulation */}

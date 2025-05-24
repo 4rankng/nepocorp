@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMonthlyProfitAndRevenueReport } from '@services/mockData';
 import DateRangeFilter from '../../components/DateRangeFilter';
+import StandardTable from '@shared/components/StandardTable';
 import { format } from 'date-fns';
 import {
   LineChart,
@@ -27,6 +28,44 @@ const BaoCaoLoiNhuanDoanhThu = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Table columns configuration
+  const columns = [
+    {
+      key: 'monthYear',
+      label: 'Tháng',
+      align: 'left',
+      render: value => {
+        if (!value) return '-';
+        if (typeof value === 'string' && value.includes('/')) {
+          const [month, year] = value.split('/');
+          return `${month}/${year.slice(-2)}`;
+        }
+        return value;
+      },
+    },
+    {
+      key: 'revenue',
+      label: 'Doanh Thu',
+      align: 'right',
+      numeric: true,
+      render: value => formatMillion(value),
+    },
+    {
+      key: 'profit',
+      label: 'Lợi Nhuận',
+      align: 'right',
+      numeric: true,
+      render: value => formatMillion(value),
+    },
+    {
+      key: 'profitMargin',
+      label: 'Tỷ Suất Lợi Nhuận',
+      align: 'right',
+      numeric: true,
+      render: (value, row) => ((row.profit / row.revenue) * 100).toFixed(2) + '%',
+    },
+  ];
 
   const fetchReportData = async () => {
     setIsLoading(true);
@@ -149,51 +188,14 @@ const BaoCaoLoiNhuanDoanhThu = () => {
 
           <div className="mt-8">
             <h2 className="text-lg font-semibold mb-4">Chi tiết theo tháng</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tháng
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Doanh Thu
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Lợi Nhuận
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tỷ Suất Lợi Nhuận
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {sortedData.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(() => {
-                          if (!item.monthYear) return '-';
-                          if (typeof item.monthYear === 'string' && item.monthYear.includes('/')) {
-                            const [month, year] = item.monthYear.split('/');
-                            return `${month}/${year.slice(-2)}`;
-                          }
-                          return item.monthYear;
-                        })()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {formatMillion(item.revenue)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {formatMillion(item.profit)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {((item.profit / item.revenue) * 100).toFixed(2)}%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandardTable
+              columns={columns}
+              data={sortedData}
+              loading={isLoading}
+              error={null}
+              emptyMessage="Không có dữ liệu cho khoảng thời gian đã chọn"
+            />
+            <div className="text-xs text-gray-500 mt-2 px-2">Đơn vị: triệu đồng</div>
           </div>
         </div>
       )}
