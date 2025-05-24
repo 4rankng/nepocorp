@@ -3,7 +3,7 @@ export const ROLES = {
   QUAN_LY: 'quan-ly',
   KE_TOAN: 'ke-toan',
   GIAO_NHAN: 'giao-nhan',
-  LAI_XE: 'lai-xe'
+  LAI_XE: 'lai-xe',
 };
 
 // Role labels for display
@@ -11,7 +11,7 @@ export const ROLE_LABELS = {
   [ROLES.QUAN_LY]: 'Quản lý',
   [ROLES.KE_TOAN]: 'Kế toán',
   [ROLES.GIAO_NHAN]: 'Giao nhận',
-  [ROLES.LAI_XE]: 'Lái xe'
+  [ROLES.LAI_XE]: 'Lái xe',
 };
 
 // Role descriptions
@@ -19,7 +19,7 @@ export const ROLE_DESCRIPTIONS = {
   [ROLES.QUAN_LY]: 'Toàn quyền truy cập hệ thống',
   [ROLES.KE_TOAN]: 'Quản lý tài chính và kế toán',
   [ROLES.GIAO_NHAN]: 'Quản lý đơn hàng và giao nhận',
-  [ROLES.LAI_XE]: 'Tài xế vận chuyển'
+  [ROLES.LAI_XE]: 'Tài xế vận chuyển',
 };
 
 // Role-based menu items configuration
@@ -44,7 +44,7 @@ export const MENU_ITEMS = {
   [ROLES.LAI_XE]: [
     { path: '/lich-lam-viec', label: 'Lịch làm việc', icon: 'Calendar' },
     { path: '/tai-lieu', label: 'Tài liệu', icon: 'DocumentText' },
-  ]
+  ],
 };
 
 // Role-based permissions
@@ -55,32 +55,18 @@ export const PERMISSIONS = {
     'manage_vehicles',
     'view_reports',
     'manage_finance',
-    'manage_orders'
+    'manage_orders',
   ],
-  [ROLES.KE_TOAN]: [
-    'view_dashboard',
-    'view_reports',
-    'manage_finance',
-    'view_orders'
-  ],
-  [ROLES.GIAO_NHAN]: [
-    'view_orders',
-    'update_order_status',
-    'view_schedule'
-  ],
-  [ROLES.LAI_XE]: [
-    'view_schedule',
-    'update_delivery_status',
-    'view_documents'
-  ]
+  [ROLES.KE_TOAN]: ['view_dashboard', 'view_reports', 'manage_finance', 'view_orders'],
+  [ROLES.GIAO_NHAN]: ['view_orders', 'update_order_status', 'view_schedule'],
+  [ROLES.LAI_XE]: ['view_schedule', 'update_delivery_status', 'view_documents'],
 };
 
 // Helper functions
-export const getRoleLabel = (role) => ROLE_LABELS[role] || role;
-export const getRoleDescription = (role) => ROLE_DESCRIPTIONS[role] || '';
-export const getMenuItems = (role) => MENU_ITEMS[role] || [];
-export const hasPermission = (role, permission) =>
-  PERMISSIONS[role]?.includes(permission) || false;
+export const getRoleLabel = role => ROLE_LABELS[role] || role;
+export const getRoleDescription = role => ROLE_DESCRIPTIONS[role] || '';
+export const getMenuItems = role => MENU_ITEMS[role] || [];
+export const hasPermission = (role, permission) => PERMISSIONS[role]?.includes(permission) || false;
 
 export default {
   ROLES,
@@ -91,5 +77,5 @@ export default {
   getRoleLabel,
   getRoleDescription,
   getMenuItems,
-  hasPermission
+  hasPermission,
 };

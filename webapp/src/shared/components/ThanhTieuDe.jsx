@@ -71,7 +71,7 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
                 <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
                   {currentUser.name
                     .split(' ')
-                    .map((n) => n[0])
+                    .map(n => n[0])
                     .join('')}
                 </div>
                 <span className="ml-2 font-medium text-gray-700">{currentUser.name}</span>

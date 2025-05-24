@@ -44,7 +44,7 @@ const TrangChu = () => {
   const handleSidebarToggle = () => setSidebarOpen(open => !open);
   const handleSidebarClose = () => setSidebarOpen(false);
 
-  const handleRoleSelect = async (roleKey) => {
+  const handleRoleSelect = async roleKey => {
     const success = login(roleKey);
     if (success) {
       // Navigate based on role
@@ -76,10 +76,7 @@ const TrangChu = () => {
     <div className="min-h-screen w-full bg-white overflow-x-hidden">
       {/* Banner/Header always visible */}
       <div className="fixed top-0 left-0 right-0 z-50 w-full" style={{ minWidth: 0 }}>
-        <ThanhTieuDe
-          onSidebarToggle={handleSidebarToggle}
-          sidebarOpen={sidebarOpen}
-        />
+        <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
       </div>
 
       {/* If no role, show role selection cards centered on white, no sidebar, no overlay */}

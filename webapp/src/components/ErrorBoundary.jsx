@@ -50,7 +50,7 @@ function ErrorPage() {
   console.error(error);
 
   let errorMessage = 'Đã xảy ra lỗi không xác định';
-  
+
   if (isRouteErrorResponse(error)) {
     // Error from the router
     errorMessage = error.statusText || error.data?.message || `Lỗi ${error.status}`;
@@ -62,9 +62,7 @@ function ErrorPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">Đã xảy ra lỗi!</h1>
-        <p className="text-gray-700 mb-6">
-          {errorMessage}
-        </p>
+        <p className="text-gray-700 mb-6">{errorMessage}</p>
         <div className="flex justify-center space-x-4">
           <button
             onClick={() => window.history.back()}
@@ -73,7 +71,7 @@ function ErrorPage() {
             Quay lại
           </button>
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => (window.location.href = '/')}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Về trang chủ

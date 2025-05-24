@@ -48,12 +48,8 @@ const QuanLyPhuongTien = () => {
               scrollButtons="auto"
               aria-label="Quản lý phương tiện tabs"
             >
-              {TABS.map((tab) => (
-                <Tab
-                  key={tab.value}
-                  label={tab.label}
-                  value={tab.value}
-                />
+              {TABS.map(tab => (
+                <Tab key={tab.value} label={tab.label} value={tab.value} />
               ))}
             </Tabs>
           </Box>

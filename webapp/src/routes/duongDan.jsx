@@ -15,13 +15,9 @@ import QuanLyChiPhi from '../features/chi-phi/QuanLyChiPhi';
 import QuanLyDinhMucDuong from '../features/chi-phi/QuanLyDinhMucDuong';
 
 // Wrap the app with AuthProvider
-const AppWithAuth = ({ children }) => (
-  <AuthProvider>
-    {children}
-  </AuthProvider>
-);
+const AppWithAuth = ({ children }) => <AuthProvider>{children}</AuthProvider>;
 
-const withErrorBoundary = (Component) => {
+const withErrorBoundary = Component => {
   return (
     <ErrorBoundary>
       <Component />
@@ -45,27 +41,27 @@ const router = createBrowserRouter(
         {
           path: 'bao-cao',
           element: withErrorBoundary(BaoCaoTaiChinh),
-          errorElement: <ErrorPage />
+          errorElement: <ErrorPage />,
         },
         {
           path: 'lich-van-chuyen',
           element: withErrorBoundary(LichVanChuyen),
-          errorElement: <ErrorPage />
+          errorElement: <ErrorPage />,
         },
         {
           path: 'nhan-vien',
           element: withErrorBoundary(DanhSachNhanVien),
-          errorElement: <ErrorPage />
+          errorElement: <ErrorPage />,
         },
         {
           path: 'khach-hang',
           element: withErrorBoundary(DanhSachKhachHang),
-          errorElement: <ErrorPage />
+          errorElement: <ErrorPage />,
         },
         {
           path: 'doi-tac',
           element: withErrorBoundary(DanhSachDoiTac),
-          errorElement: <ErrorPage />
+          errorElement: <ErrorPage />,
         },
         {
           path: 'phuong-tien',
@@ -75,7 +71,7 @@ const router = createBrowserRouter(
             {
               path: ':tab',
               element: withErrorBoundary(QuanLyPhuongTien),
-              errorElement: <ErrorPage />
+              errorElement: <ErrorPage />,
             },
             {
               path: '',
@@ -95,12 +91,12 @@ const router = createBrowserRouter(
         {
           path: 'chi-phi',
           element: withErrorBoundary(QuanLyChiPhi),
-          errorElement: <ErrorPage />
+          errorElement: <ErrorPage />,
         },
         {
           path: 'chi-phi-cau-hinh',
           element: withErrorBoundary(QuanLyDinhMucDuong),
-          errorElement: <ErrorPage />
+          errorElement: <ErrorPage />,
         },
       ],
     },
@@ -116,7 +112,7 @@ const router = createBrowserRouter(
         {
           path: 'dang-nhap',
           element: withErrorBoundary(DangNhap),
-          errorElement: <ErrorPage />
+          errorElement: <ErrorPage />,
         },
       ],
     },

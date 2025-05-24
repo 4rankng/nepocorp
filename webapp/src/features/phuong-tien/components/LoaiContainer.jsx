@@ -18,7 +18,7 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
-  Box
+  Box,
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 
@@ -32,9 +32,9 @@ const mockApi = {
     { id: 5, type: "40'OT", description: 'Container mở nóc 40 feet' },
     { id: 6, type: "45'HC", description: 'Container cao 45 feet' },
   ],
-  addContainerType: async (data) => ({ id: Date.now(), ...data }),
+  addContainerType: async data => ({ id: Date.now(), ...data }),
   updateContainerType: async (id, data) => ({ id, ...data }),
-  deleteContainerType: async (id) => id,
+  deleteContainerType: async id => id,
 };
 
 const LoaiContainer = () => {
@@ -75,7 +75,7 @@ const LoaiContainer = () => {
     setOpenDialog(true);
   };
 
-  const handleOpenEditDialog = (containerType) => {
+  const handleOpenEditDialog = containerType => {
     setEditingId(containerType.id);
     setCurrentType(containerType.type);
     setCurrentDescription(containerType.description || '');
@@ -97,7 +97,7 @@ const LoaiContainer = () => {
     try {
       const data = {
         type: currentType.trim(),
-        description: currentDescription.trim()
+        description: currentDescription.trim(),
       };
 
       if (editingId) {
@@ -117,7 +117,7 @@ const LoaiContainer = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async id => {
     if (window.confirm('Bạn có chắc chắn muốn xóa loại container này?')) {
       setIsLoading(true);
       try {
@@ -205,9 +205,7 @@ const LoaiContainer = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            {editingId
-              ? 'Cập nhật thông tin loại container'
-              : 'Nhập thông tin loại container mới'}
+            {editingId ? 'Cập nhật thông tin loại container' : 'Nhập thông tin loại container mới'}
           </DialogContentText>
 
           <TextField
@@ -217,7 +215,7 @@ const LoaiContainer = () => {
             fullWidth
             variant="outlined"
             value={currentType}
-            onChange={(e) => setCurrentType(e.target.value)}
+            onChange={e => setCurrentType(e.target.value)}
             error={!!error && !currentType.trim()}
             helperText={!currentType.trim() ? error : ''}
             disabled={isLoading}
@@ -232,7 +230,7 @@ const LoaiContainer = () => {
             multiline
             rows={3}
             value={currentDescription}
-            onChange={(e) => setCurrentDescription(e.target.value)}
+            onChange={e => setCurrentDescription(e.target.value)}
             disabled={isLoading}
           />
         </DialogContent>

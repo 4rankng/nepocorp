@@ -18,7 +18,7 @@ import {
   DialogContentText,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
 } from '@mui/material';
 import ConfirmationDialog from '../../../shared/components/ConfirmationDialog';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
@@ -26,26 +26,26 @@ import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/ico
 // Mock data service - Replace with actual API calls
 const mockApi = {
   getLicensePlates: async () => [
-    { 
-      id: 1, 
+    {
+      id: 1,
       licensePlate: '51A-123.45',
       vehicleType: 'Xe tải',
       capacity: '5 tấn',
       containerCount: 2,
-      note: 'Xe mới nhập'
+      note: 'Xe mới nhập',
     },
-    { 
-      id: 2, 
+    {
+      id: 2,
       licensePlate: '51B-678.90',
       vehicleType: 'Xe container',
       capacity: '10 tấn',
       containerCount: 1,
-      note: 'Đang bảo trì'
+      note: 'Đang bảo trì',
     },
   ],
-  addVehicle: async (data) => ({ id: Date.now(), ...data }),
+  addVehicle: async data => ({ id: Date.now(), ...data }),
   updateVehicle: async (id, data) => ({ id, ...data }),
-  deleteVehicle: async (id) => id,
+  deleteVehicle: async id => id,
 };
 
 const DanhSachBienSoXe = () => {
@@ -53,12 +53,12 @@ const DanhSachBienSoXe = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-  licensePlate: '',
-  vehicleType: '',
-  capacity: '',
-  containerCount: 1,
-  note: ''
-});
+    licensePlate: '',
+    vehicleType: '',
+    capacity: '',
+    containerCount: 1,
+    note: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -91,28 +91,28 @@ const DanhSachBienSoXe = () => {
       vehicleType: '',
       capacity: '',
       containerCount: 1,
-      note: ''
+      note: '',
     });
     setOpenDialog(true);
   };
 
-  const handleRowClick = (vehicle) => {
+  const handleRowClick = vehicle => {
     setEditingId(vehicle.id);
     setFormData({
       licensePlate: vehicle.licensePlate,
       vehicleType: vehicle.vehicleType,
       capacity: vehicle.capacity,
       containerCount: vehicle.containerCount,
-      note: vehicle.note || ''
+      note: vehicle.note || '',
     });
     setOpenDialog(true);
-  }; 
-  
-  const handleInputChange = (e) => {
+  };
+
+  const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'containerCount' ? parseInt(value) || 0 : value
+      [name]: name === 'containerCount' ? parseInt(value) || 0 : value,
     }));
   };
 
@@ -159,7 +159,7 @@ const DanhSachBienSoXe = () => {
     id: null,
   });
 
-  const handleDeleteClick = (id) => {
+  const handleDeleteClick = id => {
     setDeleteDialog({ open: true, id });
   };
 
@@ -225,9 +225,9 @@ const DanhSachBienSoXe = () => {
               </TableRow>
             ) : (
               licensePlates.map((vehicle, index) => (
-                <TableRow 
-                  key={vehicle.id} 
-                  hover 
+                <TableRow
+                  key={vehicle.id}
+                  hover
                   onClick={() => handleRowClick(vehicle)}
                   sx={{ cursor: 'pointer' }}
                 >
@@ -236,20 +236,20 @@ const DanhSachBienSoXe = () => {
                   <TableCell>{vehicle.vehicleType}</TableCell>
                   <TableCell>{vehicle.capacity}</TableCell>
                   <TableCell align="center">{vehicle.containerCount}</TableCell>
-                  <TableCell 
-                    sx={{ 
-                      maxWidth: 200, 
-                      whiteSpace: 'nowrap', 
-                      overflow: 'hidden', 
-                      textOverflow: 'ellipsis' 
+                  <TableCell
+                    sx={{
+                      maxWidth: 200,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }}
                     title={vehicle.note}
                   >
                     {vehicle.note}
                   </TableCell>
-                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                  <TableCell align="right" onClick={e => e.stopPropagation()}>
                     <IconButton
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         handleDeleteClick(vehicle.id);
                       }}
@@ -266,110 +266,106 @@ const DanhSachBienSoXe = () => {
         </Table>
       </TableContainer>
 
-    <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-      <DialogTitle>{editingId ? 'Sửa' : 'Thêm'} Thông Tin Xe</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="licensePlate"
-            label="Biển số xe"
-            fullWidth
-            variant="outlined"
-            value={formData.licensePlate}
-            onChange={handleInputChange}
-            error={!!error && !formData.licensePlate.trim()}
-            required
-          />
-          
-          <TextField
-            margin="dense"
-            name="vehicleType"
-            label="Loại xe"
-            fullWidth
-            variant="outlined"
-            value={formData.vehicleType}
-            onChange={handleInputChange}
-            error={!!error && !formData.vehicleType.trim()}
-            required
-          />
-          
-          <TextField
-            margin="dense"
-            name="capacity"
-            label="Trọng tải"
-            fullWidth
-            variant="outlined"
-            value={formData.capacity}
-            onChange={handleInputChange}
-            error={!!error && !formData.capacity.trim()}
-            required
-          />
-          
-          <TextField
-            margin="dense"
-            name="containerCount"
-            label="Số lượng container"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={formData.containerCount}
-            onChange={handleInputChange}
-            inputProps={{ min: 0 }}
-          />
-          
-          <TextField
-            margin="dense"
-            name="note"
-            label="Ghi chú"
-            fullWidth
-            multiline
-            rows={3}
-            variant="outlined"
-            value={formData.note}
-            onChange={handleInputChange}
-          />
-          
-          {error && (
-            <Alert severity="error" sx={{ mt: 1 }}>
-              {error}
-            </Alert>
-          )}
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button 
-          onClick={handleCloseDialog} 
-          disabled={isLoading}
-          variant="outlined"
-        >
-          Hủy
-        </Button>
-        <Button 
-          onClick={handleSave} 
-          disabled={isLoading} 
-          variant="contained"
-          startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
-        >
-          {editingId ? 'Cập nhật' : 'Thêm mới'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{editingId ? 'Sửa' : 'Thêm'} Thông Tin Xe</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              name="licensePlate"
+              label="Biển số xe"
+              fullWidth
+              variant="outlined"
+              value={formData.licensePlate}
+              onChange={handleInputChange}
+              error={!!error && !formData.licensePlate.trim()}
+              required
+            />
 
-    <Snackbar
-      open={snackbar.open}
-      autoHideDuration={6000}
-      onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-    >
-      <Alert
-        severity={snackbar.severity}
+            <TextField
+              margin="dense"
+              name="vehicleType"
+              label="Loại xe"
+              fullWidth
+              variant="outlined"
+              value={formData.vehicleType}
+              onChange={handleInputChange}
+              error={!!error && !formData.vehicleType.trim()}
+              required
+            />
+
+            <TextField
+              margin="dense"
+              name="capacity"
+              label="Trọng tải"
+              fullWidth
+              variant="outlined"
+              value={formData.capacity}
+              onChange={handleInputChange}
+              error={!!error && !formData.capacity.trim()}
+              required
+            />
+
+            <TextField
+              margin="dense"
+              name="containerCount"
+              label="Số lượng container"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={formData.containerCount}
+              onChange={handleInputChange}
+              inputProps={{ min: 0 }}
+            />
+
+            <TextField
+              margin="dense"
+              name="note"
+              label="Ghi chú"
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              value={formData.note}
+              onChange={handleInputChange}
+            />
+
+            {error && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                {error}
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseDialog} disabled={isLoading} variant="outlined">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isLoading}
+            variant="contained"
+            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {editingId ? 'Cập nhật' : 'Thêm mới'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-        sx={{ width: '100%' }}
       >
-        {snackbar.message}
-      </Alert>
-    </Snackbar>
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       <ConfirmationDialog
         open={deleteDialog.open}

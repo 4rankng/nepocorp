@@ -24,13 +24,13 @@ import {
   Select,
   MenuItem,
   InputAdornment,
-  TablePagination
+  TablePagination,
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -48,7 +48,7 @@ const mockApi = {
       quantity: 6,
       unitPrice: 2500000,
       total: 15000000,
-      note: 'Thay lốp mới toàn bộ'
+      note: 'Thay lốp mới toàn bộ',
     },
     {
       id: 2,
@@ -58,31 +58,31 @@ const mockApi = {
       quantity: 2,
       unitPrice: 3000000,
       total: 6000000,
-      note: 'Thay lốp trước'
+      note: 'Thay lốp trước',
     },
   ],
   getLicensePlates: async () => [
     { id: 1, licensePlate: '51A-123.45' },
     { id: 2, licensePlate: '51B-678.90' },
   ],
-  addMaintenanceRecord: async (data) => ({
+  addMaintenanceRecord: async data => ({
     id: Date.now(),
     total: data.quantity * data.unitPrice,
-    ...data
+    ...data,
   }),
   updateMaintenanceRecord: async (id, data) => ({
     id,
     total: data.quantity * data.unitPrice,
-    ...data
+    ...data,
   }),
-  deleteMaintenanceRecord: async (id) => id,
+  deleteMaintenanceRecord: async id => id,
 };
 
-const formatCurrency = (value) => {
+const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
-    minimumFractionDigits: 0
+    minimumFractionDigits: 0,
   }).format(value);
 };
 
@@ -102,7 +102,7 @@ const BaoDuong = () => {
     warrantyPeriod: 6,
     quantity: 1,
     unitPrice: 0,
-    note: ''
+    note: '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -114,7 +114,7 @@ const BaoDuong = () => {
     try {
       const [records, plates] = await Promise.all([
         mockApi.getMaintenanceRecords(),
-        mockApi.getLicensePlates()
+        mockApi.getLicensePlates(),
       ]);
       setMaintenanceRecords(records);
       setFilteredRecords(records);
@@ -156,12 +156,12 @@ const BaoDuong = () => {
       warrantyPeriod: 6,
       quantity: 1,
       unitPrice: 0,
-      note: ''
+      note: '',
     });
     setOpenDialog(true);
   };
 
-  const handleOpenEditDialog = (record) => {
+  const handleOpenEditDialog = record => {
     setEditingId(record.id);
     setFormData({
       licensePlate: record.licensePlate,
@@ -169,7 +169,7 @@ const BaoDuong = () => {
       warrantyPeriod: record.warrantyPeriod,
       quantity: record.quantity,
       unitPrice: record.unitPrice,
-      note: record.note || ''
+      note: record.note || '',
     });
     setOpenDialog(true);
   };
@@ -179,18 +179,18 @@ const BaoDuong = () => {
     setError('');
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleDateChange = (date) => {
+  const handleDateChange = date => {
     setFormData(prev => ({
       ...prev,
-      replacementDate: date
+      replacementDate: date,
     }));
   };
 
@@ -231,7 +231,7 @@ const BaoDuong = () => {
         warrantyPeriod: Number(formData.warrantyPeriod),
         quantity: Number(formData.quantity),
         unitPrice: Number(formData.unitPrice),
-        total: calculateTotal(formData.quantity, formData.unitPrice)
+        total: calculateTotal(formData.quantity, formData.unitPrice),
       };
 
       if (editingId) {
@@ -251,7 +251,7 @@ const BaoDuong = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async id => {
     if (window.confirm('Bạn có chắc chắn muốn xóa thông tin bảo dưỡng này?')) {
       setIsLoading(true);
       try {
@@ -271,7 +271,7 @@ const BaoDuong = () => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -285,13 +285,15 @@ const BaoDuong = () => {
 
   return (
     <div>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 2 }}
+      >
         <TextField
           variant="outlined"
           size="small"
           placeholder="Tìm kiếm theo biển số xe..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -394,30 +396,32 @@ const BaoDuong = () => {
         />
       </TableContainer>
 
-      <Dialog 
-        open={openDialog} 
-        onClose={handleCloseDialog} 
-        maxWidth="sm" 
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { 
+          sx: {
             maxWidth: 500,
             width: '100%',
             m: 1,
             '& .MuiDialogContent-root': { p: 2 },
-            '& .MuiDialogActions-root': { p: 2, pt: 1 }
-          }
+            '& .MuiDialogActions-root': { p: 2, pt: 1 },
+          },
         }}
       >
-        <DialogTitle sx={{ 
-          pb: 1, 
-          pt: 2, 
-          px: 2,
-          '& .MuiTypography-root': { 
-            fontSize: '1.1rem',
-            fontWeight: 600 
-          }
-        }}>
+        <DialogTitle
+          sx={{
+            pb: 1,
+            pt: 2,
+            px: 2,
+            '& .MuiTypography-root': {
+              fontSize: '1.1rem',
+              fontWeight: 600,
+            },
+          }}
+        >
           {editingId ? 'Cập nhật thông tin bảo dưỡng' : 'Thêm thông tin bảo dưỡng'}
         </DialogTitle>
 
@@ -437,7 +441,7 @@ const BaoDuong = () => {
                 <MenuItem value="" disabled>
                   <em>Chọn biển số xe *</em>
                 </MenuItem>
-                {licensePlates.map((plate) => (
+                {licensePlates.map(plate => (
                   <MenuItem key={plate.id} value={plate.licensePlate}>
                     {plate.licensePlate}
                   </MenuItem>
@@ -451,7 +455,7 @@ const BaoDuong = () => {
                   label="Ngày thay lốp *"
                   value={formData.replacementDate}
                   onChange={handleDateChange}
-                  renderInput={(params) => (
+                  renderInput={params => (
                     <TextField
                       {...params}
                       size="small"
@@ -469,31 +473,31 @@ const BaoDuong = () => {
                 type="number"
                 label="Bảo hành (tháng)"
                 value={formData.warrantyPeriod || 0}
-                onChange={(e) => {
+                onChange={e => {
                   const value = Math.max(0, parseInt(e.target.value) || 0);
                   setFormData(prev => ({
                     ...prev,
-                    warrantyPeriod: value
+                    warrantyPeriod: value,
                   }));
                 }}
                 size="small"
                 fullWidth
-                inputProps={{ 
+                inputProps={{
                   min: 0,
                   inputMode: 'numeric',
-                  pattern: '[0-9]*'
+                  pattern: '[0-9]*',
                 }}
-                sx={{ 
-                  '& .MuiInputBase-root': { 
+                sx={{
+                  '& .MuiInputBase-root': {
                     height: 40,
                     '& input[type=number]': {
                       '-moz-appearance': 'textfield',
                       '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
                         '-webkit-appearance': 'none',
-                        margin: 0
-                      }
-                    }
-                  } 
+                        margin: 0,
+                      },
+                    },
+                  },
                 }}
                 InputProps={{
                   endAdornment: <InputAdornment position="end">tháng</InputAdornment>,
@@ -507,32 +511,32 @@ const BaoDuong = () => {
                 type="number"
                 label="Số lượng"
                 value={formData.quantity || 0}
-                onChange={(e) => {
+                onChange={e => {
                   const value = Math.max(0, parseInt(e.target.value) || 0);
                   setFormData(prev => ({
                     ...prev,
                     quantity: value,
-                    total: value * (prev.unitPrice || 0)
+                    total: value * (prev.unitPrice || 0),
                   }));
                 }}
                 size="small"
                 fullWidth
-                inputProps={{ 
+                inputProps={{
                   min: 0,
                   inputMode: 'numeric',
-                  pattern: '[0-9]*'
+                  pattern: '[0-9]*',
                 }}
-                sx={{ 
-                  '& .MuiInputBase-root': { 
+                sx={{
+                  '& .MuiInputBase-root': {
                     height: 40,
                     '& input[type=number]': {
                       '-moz-appearance': 'textfield',
                       '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
                         '-webkit-appearance': 'none',
-                        margin: 0
-                      }
-                    }
-                  } 
+                        margin: 0,
+                      },
+                    },
+                  },
                 }}
               />
 
@@ -541,32 +545,32 @@ const BaoDuong = () => {
                 type="number"
                 label="Đơn giá (VND)"
                 value={formData.unitPrice || 0}
-                onChange={(e) => {
+                onChange={e => {
                   const value = Math.max(0, parseInt(e.target.value) || 0);
                   setFormData(prev => ({
                     ...prev,
                     unitPrice: value,
-                    total: value * (prev.quantity || 0)
+                    total: value * (prev.quantity || 0),
                   }));
                 }}
                 size="small"
                 fullWidth
-                inputProps={{ 
+                inputProps={{
                   min: 0,
                   inputMode: 'numeric',
-                  pattern: '[0-9]*'
+                  pattern: '[0-9]*',
                 }}
-                sx={{ 
-                  '& .MuiInputBase-root': { 
+                sx={{
+                  '& .MuiInputBase-root': {
                     height: 40,
                     '& input[type=number]': {
                       '-moz-appearance': 'textfield',
                       '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
                         '-webkit-appearance': 'none',
-                        margin: 0
-                      }
-                    }
-                  } 
+                        margin: 0,
+                      },
+                    },
+                  },
                 }}
                 InputProps={{
                   endAdornment: <InputAdornment position="end">đ</InputAdornment>,
@@ -574,17 +578,19 @@ const BaoDuong = () => {
               />
             </Box>
 
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              p: 1,
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 1,
-              bgcolor: 'action.hover',
-              height: 40
-            }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                p: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'action.hover',
+                height: 40,
+              }}
+            >
               <span style={{ fontSize: '0.875rem' }}>Thành tiền:</span>
               <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
                 {formatCurrency(calculateTotal(formData.quantity, formData.unitPrice))}
@@ -602,21 +608,21 @@ const BaoDuong = () => {
               value={formData.note}
               onChange={handleInputChange}
               disabled={isLoading}
-              sx={{ 
+              sx={{
                 mt: 0.5,
-                '& .MuiInputBase-root': { 
+                '& .MuiInputBase-root': {
                   minHeight: 40,
                   alignItems: 'flex-start',
-                  pt: 1
-                }
+                  pt: 1,
+                },
               }}
             />
           </Box>
         </DialogContent>
 
         <DialogActions sx={{ justifyContent: 'space-between', px: 2, pt: 0, pb: 1 }}>
-          <Button 
-            onClick={handleCloseDialog} 
+          <Button
+            onClick={handleCloseDialog}
             disabled={isLoading}
             size="small"
             sx={{ minWidth: 80 }}

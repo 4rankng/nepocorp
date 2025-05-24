@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Login function - in a real app, this would call your auth API
-  const login = useCallback((role) => {
+  const login = useCallback(role => {
     const user = MOCK_USERS[role];
     if (user) {
       setCurrentUser(user);
@@ -32,14 +32,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Check if current user has a specific role
-  const hasRole = useCallback((role) => {
-    return currentUser?.role === role;
-  }, [currentUser]);
+  const hasRole = useCallback(
+    role => {
+      return currentUser?.role === role;
+    },
+    [currentUser]
+  );
 
   // Check if current user has any of the specified roles
-  const hasAnyRole = useCallback((roles = []) => {
-    return roles.includes(currentUser?.role);
-  }, [currentUser]);
+  const hasAnyRole = useCallback(
+    (roles = []) => {
+      return roles.includes(currentUser?.role);
+    },
+    [currentUser]
+  );
 
   const value = {
     currentUser,

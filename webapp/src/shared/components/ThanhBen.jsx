@@ -187,17 +187,17 @@ const iconComponents = {
   UserGroup: UserGroupIcon,
   Truck: TruckIcon,
   CurrencyDollar: CurrencyDollarIcon,
-  DocumentText: DocumentTextIcon
+  DocumentText: DocumentTextIcon,
 };
 
 const ThanhBen = ({ onNavItemClick }) => {
   const { currentUser } = useAuth();
-  
+
   if (!currentUser) return null;
-  
+
   const menuItems = getMenuItems(currentUser.role).map(item => ({
     ...item,
-    icon: iconComponents[item.icon] || null
+    icon: iconComponents[item.icon] || null,
   }));
   // Add more roles here if needed
 
