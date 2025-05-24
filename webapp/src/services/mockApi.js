@@ -27,11 +27,6 @@ import {
   addDetailedOtherCostItem,
   updateDetailedOtherCostItem,
   deleteDetailedOtherCostItem,
-  // Maintenance Records
-  getMaintenanceRecords,
-  addMaintenanceRecord,
-  updateMaintenanceRecord,
-  deleteMaintenanceRecord,
   // Fuel Standards
   getFuelStandards,
   addFuelStandard,
@@ -39,8 +34,7 @@ import {
   deleteFuelStandard,
   // Reports
   getMonthlyProfitAndRevenueReport,
-  getVehicleMonthlyDetailsReport,
-} from './mockData';
+} from './mockData/index.js';
 
 // Helper function to simulate API response with delay
 const apiResponse = (data, status = 200, delay = 200) =>
