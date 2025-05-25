@@ -132,7 +132,7 @@ function main() {
       cleanupOldBackups();
       break;
 
-    case 'restore':
+    case 'restore': {
       const backups = listBackups();
       if (backups.length === 0) {
         console.log('❌ No backups available to restore');
@@ -148,16 +148,16 @@ function main() {
       const selectedBackup = backups[backupIndex - 1];
       restoreBackup(path.join(BACKUP_DIR, selectedBackup));
       break;
-
+    }
     case 'list':
       listBackups();
       break;
 
-    case 'clean':
+    case 'clean': {
       const keepCount = parseInt(process.argv[3]) || 5;
       cleanupOldBackups(keepCount);
       break;
-
+    }
     default:
       console.log(`
 Migration Backup Tool

@@ -13,6 +13,7 @@ npm run migrate
 ```
 
 This will:
+
 1. Create a backup of your codebase
 2. Run a dry-run to check for potential issues
 3. Perform the actual migration
@@ -25,6 +26,7 @@ This will:
 If you prefer more control, you can run each step individually:
 
 1. **Analyze current state**: See what needs to be migrated
+
    ```bash
    npm run migrate:test
    ```

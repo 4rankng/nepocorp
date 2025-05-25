@@ -109,7 +109,7 @@ async function runTestCases() {
 
   try {
     // Import the migration functions
-    const { getAliasPath, processImports } = await import('./migrate-aliases-enhanced.js');
+    const { processImports } = await import('./migrate-aliases-enhanced.js');
 
     TEST_CASES.forEach((testCase, index) => {
       try {
@@ -252,25 +252,25 @@ async function main() {
 
   try {
     switch (command) {
-      case 'test':
-        const { passed, failed } = await runTestCases();
+      case 'test': {
+        const { failed } = await runTestCases();
         process.exit(failed > 0 ? 1 : 0);
         break;
-
+      }
       case 'analyze':
         validateProject();
         break;
 
-      case 'build':
+      case 'build': {
         const buildSuccess = checkBuildAfterMigration();
         process.exit(buildSuccess ? 0 : 1);
         break;
-
-      case 'lint':
+      }
+      case 'lint': {
         const lintSuccess = checkESLint();
         process.exit(lintSuccess ? 0 : 1);
         break;
-
+      }
       case 'full':
         console.log('🚀 Running full validation suite...\n');
 

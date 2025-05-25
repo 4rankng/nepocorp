@@ -45,7 +45,8 @@ function getLatestBackup() {
     return null;
   }
 
-  const backups = fs.readdirSync(backupDir)
+  const backups = fs
+    .readdirSync(backupDir)
     .filter(name => name.startsWith('backup-'))
     .sort()
     .reverse();
@@ -58,7 +59,7 @@ async function runMigration() {
   try {
     log('Starting comprehensive migration workflow...', 'info');
     log('Step 1: Creating backup...', 'step');
-    
+
     // Create backup
     execCommand('npm run migrate:backup');
     const backupPath = getLatestBackup();
@@ -82,9 +83,9 @@ async function runMigration() {
 
     // Validate the results
     log('Step 4: Validating changes...', 'step');
-    const validationOutput = execCommand('npm run migrate:validate', { 
+    const validationOutput = execCommand('npm run migrate:validate', {
       quiet: true,
-      throwOnError: false 
+      throwOnError: false,
     });
 
     // Check validation results
@@ -109,9 +110,8 @@ async function runMigration() {
     // Run build as final check
     log('Step 5: Running final build check...', 'step');
     execCommand('npm run build');
-    
-    log('🎉 Migration workflow completed successfully!', 'success');
 
+    log('🎉 Migration workflow completed successfully!', 'success');
   } catch (error) {
     log('Error during migration:', 'error');
     log(error.message, 'error');

@@ -323,7 +323,7 @@ async function main() {
             log('Code formatted successfully', 'success');
             formatted = true;
             break;
-          } catch (e) {
+          } catch (_e) {
             // Try next command
           }
         }

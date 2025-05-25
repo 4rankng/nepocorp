@@ -13,6 +13,7 @@ const ROLE_CARDS = [
     desc: 'Xem giao diện quản lý',
     color: 'bg-blue-100 border-blue-400',
     fullName: 'Nguyễn Văn Phú',
+    enabled: true,
   },
   {
     key: ROLES.KE_TOAN,
@@ -20,6 +21,7 @@ const ROLE_CARDS = [
     desc: 'Xem giao diện kế toán',
     color: 'bg-yellow-100 border-yellow-400',
     fullName: 'Tạ Thị Linh',
+    enabled: false,
   },
   {
     key: ROLES.GIAO_NHAN,
@@ -27,6 +29,7 @@ const ROLE_CARDS = [
     desc: 'Xem giao diện giao nhận',
     color: 'bg-green-100 border-green-400',
     fullName: 'Lưu Đức Cường',
+    enabled: false,
   },
   {
     key: ROLES.LAI_XE,
@@ -34,6 +37,7 @@ const ROLE_CARDS = [
     desc: 'Xem giao diện lái xe',
     color: 'bg-purple-100 border-purple-400',
     fullName: 'Ngô Tử Đức',
+    enabled: false,
   },
 ];
 
@@ -123,9 +127,19 @@ const TrangChu = () => {
             {ROLE_CARDS.map(role => (
               <button
                 key={role.key}
-                onClick={() => handleRoleSelect(role.key)}
-                className={`p-6 rounded-xl border-2 ${role.color} hover:shadow-lg transition-all duration-200 text-left`}
+                onClick={() => role.enabled && handleRoleSelect(role.key)}
+                className={`p-6 rounded-xl border-2 relative transition-all duration-200 text-left ${
+                  role.enabled
+                    ? `${role.color} hover:shadow-lg cursor-pointer`
+                    : 'bg-gray-100 border-gray-300 opacity-75 cursor-not-allowed'
+                }`}
+                disabled={!role.enabled}
               >
+                {!role.enabled && (
+                  <div className="absolute top-3 right-3 bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
+                    Coming Soon
+                  </div>
+                )}
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{role.label}</h3>
                 <p className="text-gray-600">{role.desc}</p>
               </button>
