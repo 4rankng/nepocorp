@@ -79,7 +79,8 @@ const DinhMucDau = () => {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [currentStandard, setCurrentStandard] = useState(null);
-  const [expandedPlates, setExpandedPlates] = useState({});
+  // Initialize with the first license plate expanded by default on mobile
+
   const [expandedCards, setExpandedCards] = useState({});
   const [formData, setFormData] = useState({
     licensePlate: '',
@@ -118,12 +119,17 @@ const DinhMucDau = () => {
     }));
   }, [fuelStandards, licensePlates]);
 
+  // Initialize all cards as collapsed by default
+  const [expandedPlates, setExpandedPlates] = useState({});
+
   // Toggle expand/collapse for a license plate
   const toggleExpand = licensePlate => {
-    setExpandedPlates(prev => ({
-      ...prev,
-      [licensePlate]: !prev[licensePlate],
-    }));
+    setExpandedPlates(prev => {
+      return {
+        ...prev,
+        [licensePlate]: !prev[licensePlate],
+      };
+    });
   };
 
   // Toggle expand/collapse for individual cards on mobile
@@ -314,11 +320,6 @@ const DinhMucDau = () => {
 
       setFuelStandards(standards);
       setLicensePlates(plates);
-
-      // Expand first license plate by default
-      if (standards.length > 0 && Object.keys(expandedPlates).length === 0) {
-        setExpandedPlates({ [standards[0].licensePlate]: true });
-      }
     } catch (err) {
       setError('Không thể tải dữ liệu định mức dầu');
       showSnackbar('Đã xảy ra lỗi khi tải dữ liệu', 'error');
@@ -992,7 +993,7 @@ const DinhMucDau = () => {
                       {standards.length > 0 && (
                         <Box
                           sx={{
-                            bgcolor: 'primary.main',
+                            bgcolor: '#6B7280',
                             color: 'primary.contrastText',
                             borderRadius: '12px',
                             px: isMobile ? 1.5 : 1,
@@ -1001,7 +1002,7 @@ const DinhMucDau = () => {
                             fontWeight: 500,
                           }}
                         >
-                          {standards.length} định mức
+                          {standards.length}
                         </Box>
                       )}
                     </Box>
@@ -1017,7 +1018,7 @@ const DinhMucDau = () => {
                           height: isMobile ? '36px' : 'auto',
                         }}
                       />
-                      {expandedPlates[licensePlate] ? (
+                      {expandedPlates[licensePlate] === true ? (
                         <ChevronUpIcon className={isMobile ? 'w-6 h-6' : 'w-5 h-5'} />
                       ) : (
                         <ChevronDownIcon className={isMobile ? 'w-6 h-6' : 'w-5 h-5'} />
@@ -1026,7 +1027,7 @@ const DinhMucDau = () => {
                   </Box>
                 </Box>
 
-                <Collapse in={expandedPlates[licensePlate] !== false} timeout="auto" unmountOnExit>
+                <Collapse in={expandedPlates[licensePlate] === true} timeout="auto" unmountOnExit>
                   <Box sx={{ p: isMobile ? spacing(1) : spacing(1.5) }}>
                     {isMobile ? (
                       // Mobile Card Layout
