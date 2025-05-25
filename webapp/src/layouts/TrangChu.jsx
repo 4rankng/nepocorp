@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { ROLES, getRoleLabel } from '@shared/config/roles';
 import ThanhTieuDe from '@shared/components/ThanhTieuDe';
@@ -39,8 +39,33 @@ const ROLE_CARDS = [
 
 const TrangChu = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { login, logout, currentUser } = useAuth();
+  const { login, logout, currentUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Auto-navigate authenticated users from root path to their default page
+  useEffect(() => {
+    if (isAuthenticated && currentUser && location.pathname === '/') {
+      // Navigate based on role
+      switch (currentUser.role) {
+        case ROLES.QUAN_LY:
+          navigate('/bao-cao', { replace: true });
+          break;
+        case ROLES.KE_TOAN:
+          navigate('/chi-phi', { replace: true });
+          break;
+        case ROLES.GIAO_NHAN:
+          navigate('/don-hang', { replace: true });
+          break;
+        case ROLES.LAI_XE:
+          navigate('/lich-lam-viec', { replace: true });
+          break;
+        default:
+          // Stay on root if role is unknown
+          break;
+      }
+    }
+  }, [isAuthenticated, currentUser, location.pathname, navigate]);
 
   const handleSidebarToggle = () => setSidebarOpen(open => !open);
   const handleSidebarClose = () => setSidebarOpen(false);

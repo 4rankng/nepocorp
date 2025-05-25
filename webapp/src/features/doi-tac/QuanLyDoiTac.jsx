@@ -23,6 +23,7 @@ import {
   Snackbar,
   IconButton,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
 const initialFormState = {
   code: '',

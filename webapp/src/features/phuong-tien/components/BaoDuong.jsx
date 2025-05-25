@@ -541,7 +541,7 @@ const BaoDuong = () => {
             backgroundColor: '#f8f9fa',
             position: 'sticky',
             top: 0,
-            zIndex: 100,
+            zIndex: 30,
             borderBottom: '1px solid #e0e0e0',
           }}
         >

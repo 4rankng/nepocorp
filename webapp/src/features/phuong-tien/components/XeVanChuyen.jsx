@@ -393,19 +393,6 @@ const XeVanChuyen = () => {
   // Mobile Search Header Component
   const MobileSearchHeader = () => (
     <Box sx={{ mb: 3 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
-          Xe Vận Chuyển
-        </Typography>
-      </Box>
-
       <TextField
         fullWidth
         size="medium"
