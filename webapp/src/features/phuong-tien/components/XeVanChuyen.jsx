@@ -194,7 +194,7 @@ const XeVanChuyen = () => {
     try {
       if (isEdit) {
         await vehicleApi.update(formData.id, formData);
-        showSnackbar('Cập nhật thông tin xe thành công');
+        showSnackbar('Sửa thông tin xe thành công');
       } else {
         await vehicleApi.create(formData);
         showSnackbar('Thêm xe mới thành công');
@@ -203,7 +203,7 @@ const XeVanChuyen = () => {
       handleCloseDialog();
     } catch (err) {
       const errorMessage = isEdit
-        ? 'Đã xảy ra lỗi khi cập nhật thông tin xe'
+        ? 'Đã xảy ra lỗi khi sửa thông tin xe'
         : 'Đã xảy ra lỗi khi thêm xe mới';
       showSnackbar(errorMessage, 'error');
       console.error(err);
@@ -476,7 +476,7 @@ const XeVanChuyen = () => {
                 lineHeight: 1.5,
               }}
             >
-              {isEdit ? 'Cập nhật thông tin.' : 'Nhập thông tin mới.'}
+              {isEdit ? 'Sửa thông tin.' : 'Nhập thông tin mới.'}
             </DialogContentText>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <Box sx={{

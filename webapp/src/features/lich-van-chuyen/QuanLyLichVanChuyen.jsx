@@ -6,8 +6,8 @@ import {
   deleteShipmentPlan,
 } from '../../services/mockData/shipmentPlans.js';
 import { getVehiclesForSelect } from '../../services/mockData/vehicles.js';
-import { getPartnersForSelect } from '../../services/mockData/partners.js';
-import { getCustomersForSelect } from '../../services/mockData/customers.js';
+import { getPartnersForSelect, addPartner } from '../../services/mockData/partners.js';
+import { getCustomersForSelect, addQuickCustomer } from '../../services/mockData/customers.js';
 import { getContainerTypesForSelect } from '../../services/mockData/containers.js';
 import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -38,6 +38,7 @@ import {
   Fab,
   LinearProgress,
   InputAdornment,
+  Tooltip,
   Divider,
   Accordion,
   AccordionSummary,
@@ -319,7 +320,7 @@ const QuanLyLichVanChuyen = () => {
       await fetchPageData(); // Refresh list and select options
       handleCloseModal();
     } catch (err) {
-      setError(err.message || `Lỗi khi ${editingPlan ? 'cập nhật' : 'thêm'} lịch vận chuyển.`);
+      setError(err.message || `Lỗi khi ${editingPlan ? 'sửa' : 'thêm'} lịch vận chuyển.`);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -455,21 +456,6 @@ const QuanLyLichVanChuyen = () => {
     },
   ];
 
-  // getStatusColor is now part of MobileShipmentCard.jsx,
-  // but it's also used by the Chip in the desktop table's 'trangThai' column.
-  // So, it needs to remain in this file or be moved to a shared util and imported in both places.
-  // For now, let's define it here for the desktop table and MobileShipmentCard will use its own copy.
-  // Ideally, this should be in a utils file.
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Lên lịch': return '#2196f3';
-      case 'Đang vận chuyển': return '#ff9800';
-      case 'Hoàn thành': return '#4caf50';
-      case 'Hủy': return '#f44336';
-      default: return '#9e9e9e';
-    }
-  };
-
   // MobileFormStepper and its related functions (renderStepContent, getFormSteps, etc.)
   // are now moved to MobileShipmentFormStepper.jsx
 
@@ -488,6 +474,50 @@ const QuanLyLichVanChuyen = () => {
   const resetForm = () => {
     setFormData(initialFormState);
     setError('');
+  };
+
+    // Handle adding new customer from stepper
+  const handleAddNewCustomer = async (customerName) => {
+    try {
+      const newCustomer = await addQuickCustomer(customerName);
+
+      // Refresh customer list
+      const updatedCustomers = await getCustomersForSelect();
+      setSelectOptions(prev => ({
+        ...prev,
+        customers: updatedCustomers.map(c => ({ value: c.id, label: c.name }))
+      }));
+
+      return newCustomer.id; // Return new customer ID to select it
+    } catch (error) {
+      throw error; // Let child component handle the error
+    }
+  };
+
+  // Handle adding new partner from stepper
+  const handleAddNewPartner = async (partnerName) => {
+    try {
+      // Create partner data for quick add
+      const partnerData = {
+        code: partnerName.split(' ').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 10) || 'DT',
+        name: partnerName.trim(),
+        address: 'Chưa cập nhật',
+        taxCode: 'Chưa cập nhật',
+      };
+
+      const newPartner = await addPartner(partnerData);
+
+      // Refresh partner list
+      const updatedPartners = await getPartnersForSelect();
+      setSelectOptions(prev => ({
+        ...prev,
+        partners: updatedPartners.map(p => ({ value: p.id, label: p.name }))
+      }));
+
+      return newPartner.id; // Return new partner ID to select it
+    } catch (error) {
+      throw error; // Let child component handle the error
+    }
   };
 
   // Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
@@ -585,9 +615,9 @@ const QuanLyLichVanChuyen = () => {
               bottom: 24,
               right: 24,
               zIndex: 1000,
-              boxShadow: '0 4px 12px rgba(25,118,210,0.3)',
+              boxShadow: 3, // Use theme shadow value instead of custom
               '&:hover': {
-                boxShadow: '0 6px 16px rgba(25,118,210,0.4)',
+                boxShadow: 6, // Use theme shadow value instead of custom
                 transform: 'scale(1.05)',
               },
               transition: 'all 0.2s ease-in-out',
@@ -619,60 +649,58 @@ const QuanLyLichVanChuyen = () => {
           TransitionProps={{ direction: "up" }}
           sx={{
             '& .MuiDialog-paper': {
-              background: 'linear-gradient(180deg, #f5f5f5 0%, #ffffff 20%)'
+              background: '#ffffff'
             }
           }}
         >
-          <DialogTitle sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            pb: 1,
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-            color: 'white'
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <LocalShippingIcon sx={{ mr: 1 }} />
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {editingPlan ? 'Chỉnh sửa' : 'Thêm mới'}
-              </Typography>
-            </Box>
-            <IconButton
-              edge="end"
-              color="inherit"
-              onClick={handleCloseModalMobile}
-              aria-label="close"
+
+          <DialogContent
+            sx={{
+              p: 2,
+              pb: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              overflow: 'hidden'
+            }}
+          >
+            <Box
+              sx={{
+                flex: 1,
+                overflow: 'auto',
+                pr: 1,
+                mr: -1,
+                pb: 2
+              }}
             >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
+              {error && (
+                <Alert
+                  severity="error"
+                  sx={{
+                    mb: 2,
+                    borderRadius: 2
+                  }}
+                >
+                  {error}
+                </Alert>
+              )}
 
-          <DialogContent sx={{ p: 2 }}>
-            {error && (
-              <Alert
-                severity="error"
-                sx={{
-                  mb: 2,
-                  borderRadius: 2
-                }}
-              >
-                {error}
-              </Alert>
-            )}
-
-            <MobileShipmentFormStepper
-              editingPlan={editingPlan}
-              formData={formData}
-              onFormChange={handleInputChange}
-              onContainerFormChange={handleContainerInfoChange}
-              onAddContainerField={addContainerField}
-              onRemoveContainerField={removeContainerField}
-              onSave={handleSubmit} // Renamed from handleSavePlan for clarity if needed, or use handleSavePlan directly
-              isLoading={isLoading}
-              error={error} // Pass the global error state
-              selectOptions={selectOptions}
-              onClose={handleCloseModalMobile} // Pass close handler
-            />
+              <MobileShipmentFormStepper
+                editingPlan={editingPlan}
+                formData={formData}
+                onFormChange={handleInputChange}
+                onContainerFormChange={handleContainerInfoChange}
+                onAddContainerField={addContainerField}
+                onRemoveContainerField={removeContainerField}
+                onSave={handleSubmit} // Renamed from handleSavePlan for clarity if needed, or use handleSavePlan directly
+                isLoading={isLoading}
+                error={error} // Pass the global error state
+                selectOptions={selectOptions}
+                onClose={handleCloseModalMobile} // Pass close handler
+                onAddNewCustomer={handleAddNewCustomer} // Pass the new customer handler
+                onAddNewPartner={handleAddNewPartner} // Pass the new partner handler
+              />
+            </Box>
           </DialogContent>
         </Dialog>
       ) : (

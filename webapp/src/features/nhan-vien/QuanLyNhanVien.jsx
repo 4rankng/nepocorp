@@ -143,7 +143,7 @@ const QuanLyNhanVien = () => {
       await fetchEmployeesData();
       handleCloseModal();
     } catch (err) {
-      setError(err.message || `Lỗi khi ${editingEmployee ? 'cập nhật' : 'thêm'} nhân viên.`);
+      setError(err.message || `Lỗi khi ${editingEmployee ? 'sửa' : 'thêm'} nhân viên.`);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -323,7 +323,7 @@ const QuanLyNhanVien = () => {
                 disabled={isLoading}
                 className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${isLoading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
               >
-                {isLoading ? (editingEmployee ? 'Đang cập nhật...' : 'Đang lưu...') : 'Lưu'}
+                {isLoading ? (editingEmployee ? 'Đang sửa...' : 'Đang lưu...') : 'Lưu'}
               </button>
             </div>
           </div>

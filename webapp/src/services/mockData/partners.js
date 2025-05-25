@@ -3,28 +3,24 @@
 let partnersData = [
   {
     id: 'p1',
-    code: 'VNT',
     name: 'Công ty Cổ phần Vận tải Việt Nam',
     address: '456 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
     taxCode: '0300584873',
   },
   {
     id: 'p2',
-    code: 'VTL',
     name: 'Công ty Cổ phần Vận tải và Logistics',
     address: '789 Đường Lê Duẩn, Quận 1, TP. Hồ Chí Minh',
     taxCode: '0300584874',
   },
   {
     id: 'p3',
-    code: 'VTC',
     name: 'Công ty Cổ phần Vận tải Container',
     address: '321 Đường Võ Văn Kiệt, Quận 5, TP. Hồ Chí Minh',
     taxCode: '0300584875',
   },
   {
     id: 'p4',
-    code: 'VTS',
     name: 'Công ty Cổ phần Vận tải Sài Gòn',
     address: '654 Đường Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh',
     taxCode: '0300584876',
@@ -40,18 +36,15 @@ export const getPartnersForSelect = () =>
   );
 
 const validatePartnerData = (partnerData, id = null) => {
-  if (!partnerData.code || partnerData.code.trim() === '') return 'Mã đối tác không được để trống.';
   if (!partnerData.name || partnerData.name.trim() === '')
     return 'Tên đối tác không được để trống.';
-  if (!partnerData.address || partnerData.address.trim() === '')
-    return 'Địa chỉ không được để trống.';
-  if (!partnerData.taxCode || partnerData.taxCode.trim() === '')
-    return 'Mã số thuế không được để trống.';
 
-  if (partnersData.some(p => p.code === partnerData.code.trim() && p.id !== id))
-    return 'Mã đối tác đã tồn tại.';
-  if (partnersData.some(p => p.taxCode === partnerData.taxCode.trim() && p.id !== id))
-    return 'Mã số thuế đã tồn tại.';
+  // Check for duplicate tax code only if provided
+  if (partnerData.taxCode && partnerData.taxCode.trim() !== '') {
+    if (partnersData.some(p => p.taxCode === partnerData.taxCode.trim() && p.id !== id))
+      return 'Mã số thuế đã tồn tại.';
+  }
+
   return null;
 };
 
@@ -63,10 +56,9 @@ export const addPartner = partnerData =>
       else {
         const newPartner = {
           id: String(Date.now()),
-          code: partnerData.code.trim(),
           name: partnerData.name.trim(),
-          address: partnerData.address.trim(),
-          taxCode: partnerData.taxCode.trim(),
+          address: partnerData.address ? partnerData.address.trim() : '',
+          taxCode: partnerData.taxCode ? partnerData.taxCode.trim() : '',
         };
         partnersData.push(newPartner);
         resolve(newPartner);
@@ -85,10 +77,9 @@ export const updatePartner = (id, updatedPartnerData) =>
           p.id === id
             ? (updatedPartner = {
                 ...p,
-                code: updatedPartnerData.code.trim(),
                 name: updatedPartnerData.name.trim(),
-                address: updatedPartnerData.address.trim(),
-                taxCode: updatedPartnerData.taxCode.trim(),
+                address: updatedPartnerData.address ? updatedPartnerData.address.trim() : '',
+                taxCode: updatedPartnerData.taxCode ? updatedPartnerData.taxCode.trim() : '',
               })
             : p
         );
@@ -104,4 +95,33 @@ export const deletePartner = id =>
       partnersData = partnersData.filter(p => p.id !== id);
       res({ id });
     }, 50)
+  );
+
+// Quick partner add with minimal info (for form stepper)
+export const addQuickPartner = name =>
+  new Promise((resolve, reject) =>
+    setTimeout(() => {
+      if (!name || name.trim() === '') {
+        reject(new Error('Tên đối tác không được để trống.'));
+        return;
+      }
+
+      const trimmedName = name.trim();
+
+      // Check if partner name already exists
+      if (partnersData.some(p => p.name.toLowerCase() === trimmedName.toLowerCase())) {
+        reject(new Error('Đối tác đã tồn tại.'));
+        return;
+      }
+
+      const newPartner = {
+        id: String(Date.now()),
+        name: trimmedName,
+        address: '',
+        taxCode: '',
+      };
+
+      partnersData.push(newPartner);
+      resolve(newPartner);
+    }, 500)
   );

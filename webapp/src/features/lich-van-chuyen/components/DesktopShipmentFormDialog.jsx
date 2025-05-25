@@ -87,7 +87,7 @@ const DesktopShipmentFormDialog = ({
                   size="small"
                   required
                 >
-                  <MenuItem value="">
+                  <MenuItem key="empty-customer" value="">
                     <em>Chọn khách hàng</em>
                   </MenuItem>
                   {selectOptions.customers.map(c => (
@@ -171,7 +171,7 @@ const DesktopShipmentFormDialog = ({
                   size="small"
                   required
                 >
-                  <MenuItem value="">
+                  <MenuItem key="empty-container" value="">
                     <em>Chọn loại container</em>
                   </MenuItem>
                   {selectOptions.containerTypes.map(ct => (
@@ -215,7 +215,7 @@ const DesktopShipmentFormDialog = ({
                     size="small"
                     required
                   >
-                    <MenuItem value="">
+                    <MenuItem key="empty-vehicle" value="">
                       <em>Chọn xe</em>
                     </MenuItem>
                     {selectOptions.vehicles.map(v => (
@@ -376,7 +376,7 @@ const DesktopShipmentFormDialog = ({
             startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
             sx={{ textTransform: 'none' }}
           >
-            {isLoading ? (editingPlan ? 'Đang cập nhật...' : 'Đang lưu...') : (editingPlan ? 'Cập nhật' : 'Lưu')}
+            {isLoading ? (editingPlan ? 'Đang sửa...' : 'Đang lưu...') : (editingPlan ? 'Sửa' : 'Lưu')}
           </Button>
         </DialogActions>
       </form>

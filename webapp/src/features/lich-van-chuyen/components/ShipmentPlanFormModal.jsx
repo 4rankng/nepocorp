@@ -484,7 +484,7 @@ const ShipmentPlanFormModal = ({
             disabled={isLoading}
             className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${isLoading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
           >
-            {isLoading ? (editingPlan ? 'Đang cập nhật...' : 'Đang lưu...') : 'Lưu'}
+            {isLoading ? (editingPlan ? 'Đang sửa...' : 'Đang lưu...') : 'Lưu'}
           </button>
         </div>
       </div>

@@ -1,219 +1,96 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import ConfirmationDialog from '@shared/components/ConfirmationDialog';
-import StandardTable from '@shared/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
+import ContainerTypeForm from './ContainerTypeForm';
+import ContainerTypeList from './ContainerTypeList';
+import useContainerTypeManagement from '../hooks/useContainerTypeManagement';
 
 import {
   Box,
-  Button,
   Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  TextField,
   CircularProgress,
   Snackbar,
   Alert,
   Typography,
-  IconButton,
   Card,
   CardContent,
-  CardActions,
-  Divider,
   useTheme,
   useMediaQuery,
-  Collapse,
-  Chip,
-  Stack,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-
-// Mock API - Replace with actual API calls
-const mockApi = {
-  getContainerTypes: async () => ({
-    data: [
-      { id: 1, type: "20'DC", description: 'Container khô 20 feet tiêu chuẩn' },
-      { id: 2, type: "40'DC", description: 'Container khô 40 feet tiêu chuẩn' },
-      { id: 3, type: "40'HC", description: 'Container cao 40 feet' },
-      { id: 4, type: "40'RF", description: 'Container lạnh 40 feet' },
-      { id: 5, type: "40'OT", description: 'Container mở nóc 40 feet' },
-      { id: 6, type: "45'HC", description: 'Container cao 45 feet' },
-    ],
-  }),
-  addContainerType: async data => ({
-    id: Date.now(),
-    ...data,
-  }),
-  updateContainerType: async (id, data) => ({
-    id,
-    ...data,
-  }),
-  deleteContainerType: async id => id,
-};
 
 const LoaiContainer = () => {
-  const [containerTypes, setContainerTypes] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const {
+    containerTypes,
+    loading,
+    error,
+    addContainerType,
+    updateContainerType,
+    deleteContainerType,
+    clearError,
+  } = useContainerTypeManagement();
+
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
     containerTypeId: null,
     details: '',
   });
-  
-  const [expandedCards, setExpandedCards] = useState({});
+
+  // Form state
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedContainerType, setSelectedContainerType] = useState(null);
+  const [formError, setFormError] = useState('');
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-  const [formData, setFormData] = useState({
-    type: '',
-    description: '',
-  });
-
-  const [errors, setErrors] = useState({});
-
-  const fetchContainerTypes = async () => {
-    setIsLoading(true);
-    try {
-      const response = await mockApi.getContainerTypes();
-      setContainerTypes(response.data || []);
-      setError('');
-    } catch (err) {
-      setError('Không thể tải danh sách loại container');
-      showSnackbar('Đã xảy ra lỗi khi tải dữ liệu', 'error');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchContainerTypes();
-  }, []);
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleCloseDialog = useCallback(() => {
-    setFormData({
-      type: '',
-      description: '',
-    });
-    setErrors({});
-    setIsEdit(false);
-    setOpenDialog(false);
-  }, []);
-
-  // Toggle card expansion for mobile view
-  const toggleCardExpand = (id) => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+  // Form handlers
+  const handleOpenFormForAdd = () => {
+    setSelectedContainerType(null);
+    setFormError('');
+    setIsFormOpen(true);
   };
 
-  // Handle ESC key press to close dialog
-  useEffect(() => {
-    const handleKeyDown = e => {
-      if (e.key === 'Escape' && openDialog) {
-        handleCloseDialog();
-      }
-    };
+  const handleOpenFormForEdit = (containerType) => {
+    setSelectedContainerType(containerType);
+    setFormError('');
+    setIsFormOpen(true);
+  };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [openDialog, handleCloseDialog]);
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setSelectedContainerType(null);
+    setFormError('');
+  };
 
-  const validateForm = () => {
-    const newErrors = {};
+  const handleSaveContainerType = async (formData) => {
+    setFormError('');
 
-    if (!formData.type.trim()) {
-      newErrors.type = 'Vui lòng nhập loại container';
+    let result;
+    if (selectedContainerType) {
+      result = await updateContainerType(selectedContainerType.id, formData);
+    } else {
+      result = await addContainerType(formData);
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleOpenAddDialog = () => {
-    setIsEdit(false);
-    setFormData({
-      type: '',
-      description: '',
-    });
-    setErrors({});
-    setOpenDialog(true);
-  };
-
-  const handleOpenEditDialog = containerType => {
-    setIsEdit(true);
-    setFormData({
-      type: containerType.type,
-      description: containerType.description || '',
-      id: containerType.id,
-    });
-    setErrors({});
-    setOpenDialog(true);
-  };
-
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: '',
-      }));
+    if (result.success) {
+      handleCloseForm();
+      showSnackbar(
+        selectedContainerType
+          ? 'Sửa loại container thành công'
+          : 'Thêm loại container thành công'
+      );
+    } else {
+      setFormError(result.error);
     }
   };
 
-  const handleSave = async e => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-    try {
-      const data = {
-        type: formData.type.trim(),
-        description: formData.description.trim(),
-      };
-
-      if (isEdit) {
-        await mockApi.updateContainerType(formData.id, data);
-        showSnackbar('Cập nhật loại container thành công');
-      } else {
-        await mockApi.addContainerType(data);
-        showSnackbar('Thêm loại container mới thành công');
-      }
-      await fetchContainerTypes();
-      handleCloseDialog();
-    } catch (err) {
-      const errorMessage = isEdit
-        ? 'Đã xảy ra lỗi khi cập nhật loại container'
-        : 'Đã xảy ra lỗi khi thêm loại container mới';
-      showSnackbar(errorMessage, 'error');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteClick = containerType => {
+  // Delete handlers
+  const handleDeleteClick = (containerType) => {
     setDeleteDialog({
       open: true,
       containerTypeId: containerType.id,
@@ -229,202 +106,32 @@ const LoaiContainer = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.containerTypeId) return;
 
-    setIsLoading(true);
-    try {
-      await mockApi.deleteContainerType(deleteDialog.containerTypeId);
+    const result = await deleteContainerType(deleteDialog.containerTypeId);
+
+    if (result.success) {
       showSnackbar('Xóa loại container thành công');
-      await fetchContainerTypes();
-      handleDeleteClose();
-    } catch (err) {
-      showSnackbar('Đã xảy ra lỗi khi xóa loại container', 'error');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+    } else {
+      showSnackbar(result.error, 'error');
     }
-  };
 
-  const renderDialog = () => {
-    return (
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: '8px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          },
-        }}
-      >
-        <DialogContent sx={{ p: '24px' }}>
-          <DialogContentText
-            sx={{
-              mb: 3,
-              color: 'text.primary',
-              fontSize: '0.875rem',
-              lineHeight: 1.5,
-            }}
-          >
-            {isEdit ? 'Cập nhật thông tin loại container.' : 'Nhập thông tin loại container mới.'}
-          </DialogContentText>
-
-          <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Loại container"
-              name="type"
-              value={formData.type}
-              onChange={handleInputChange}
-              error={!!errors.type}
-              helperText={errors.type || "Ví dụ: 20'DC"}
-              variant="outlined"
-              margin="none"
-              InputLabelProps={{
-                shrink: true,
-              }}
-              inputProps={{
-                style: {
-                  height: '40px',
-                  padding: '8px 12px',
-                  boxSizing: 'border-box',
-                  fontSize: '0.875rem',
-                },
-              }}
-              sx={{
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '6px',
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'text.secondary',
-                  },
-                },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              size="small"
-              label="Mô tả (tùy chọn)"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              variant="outlined"
-              margin="none"
-              multiline
-              rows={3}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              inputProps={{
-                style: {
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  fontSize: '0.875rem',
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '6px',
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'text.secondary',
-                  },
-                },
-              }}
-            />
-          </Box>
-        </DialogContent>
-
-        <DialogActions
-          sx={{
-            p: '16px 24px',
-            bgcolor: 'background.paper',
-            borderTop: '1px solid',
-            borderColor: 'divider',
-            justifyContent: 'flex-end',
-            gap: '12px',
-            '& > *': {
-              margin: '0 !important',
-            },
-          }}
-        >
-          <Button
-            onClick={handleCloseDialog}
-            variant="outlined"
-            color="inherit"
-            size="small"
-            sx={{
-              height: '36px',
-              px: '16px',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: 'text.primary',
-              borderColor: 'action.disabled',
-              borderRadius: '6px',
-              textTransform: 'none',
-              '&:hover': {
-                borderColor: 'text.secondary',
-                backgroundColor: 'action.hover',
-              },
-              '&:active': {
-                backgroundColor: 'action.selected',
-              },
-            }}
-          >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isLoading}
-            variant="contained"
-            color="primary"
-            size="small"
-            sx={{
-              height: '36px',
-              px: '20px',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              borderRadius: '6px',
-              textTransform: 'none',
-              boxShadow: 'none',
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)',
-                backgroundColor: 'primary.dark',
-              },
-              '&:active': {
-                boxShadow: 'none',
-                backgroundColor: 'primary.dark',
-              },
-              '&.Mui-disabled': {
-                backgroundColor: 'action.disabledBackground',
-                color: 'text.disabled',
-              },
-            }}
-            startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
-          >
-            {isLoading ? 'Đang xử lý...' : isEdit ? 'Lưu' : 'Thêm'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    );
+    handleDeleteClose();
   };
 
   // Render mobile card view
   const renderMobileView = () => (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: 2, 
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 2,
       mt: 2,
       pb: 8 // Add padding to prevent content from being hidden behind floating button
     }}>
-      
+
       {containerTypes.length === 0 ? (
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: 3, 
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
             textAlign: 'center',
             border: '1px dashed',
             borderColor: 'divider',
@@ -437,86 +144,83 @@ const LoaiContainer = () => {
           </Typography>
         </Paper>
       ) : (
-        containerTypes.map((item) => {
-          const isExpanded = expandedCards[item.id];
-          return (
-            <Card 
-              key={item.id}
-              elevation={1}
-              sx={{
-                borderRadius: 2,
-                overflow: 'visible',
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  boxShadow: theme.shadows[4],
-                  transform: 'translateY(-2px)',
-                },
-              }}
-            >
-              <CardContent sx={{ p: 2, '&:last-child': { p: 2 } }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                  <Box sx={{ flex: 1, mr: 1 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                      <Typography 
-                        variant="subtitle1" 
-                        fontWeight={600}
-                        sx={{ 
-                          fontSize: '1.1rem',
-                          color: 'primary.main'
-                        }}
-                      >
-                        {item.type}
-                      </Typography>
-                    </Box>
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary" 
+        containerTypes.map((item) => (
+          <Card
+            key={item.id}
+            elevation={1}
+            sx={{
+              borderRadius: 2,
+              overflow: 'visible',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                boxShadow: theme.shadows[4],
+                transform: 'translateY(-2px)',
+              },
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { p: 2 } }}>
+              <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                <Box sx={{ flex: 1, mr: 1 }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={600}
                       sx={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        fontSize: '1.1rem',
+                        color: 'primary.main'
                       }}
                     >
-                      {item.description || 'Không có mô tả'}
+                      {item.type}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <EditButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenEditDialog(item);
-                      }}
-                      sx={{ 
-                        opacity: 0.9,
-                        '&:hover': { 
-                          opacity: 1,
-                          backgroundColor: 'rgba(25, 118, 210, 0.04)' 
-                        } 
-                      }}
-                    />
-                    <DeleteButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(item);
-                      }}
-                      sx={{ 
-                        opacity: 0.9,
-                        '&:hover': { 
-                          opacity: 1,
-                          backgroundColor: 'rgba(211, 47, 47, 0.04)' 
-                        } 
-                      }}
-                    />
-                  </Box>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {item.description || 'Không có mô tả'}
+                  </Typography>
                 </Box>
-              </CardContent>
-            </Card>
-          );
-        })
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <EditButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenFormForEdit(item);
+                    }}
+                    sx={{
+                      opacity: 0.9,
+                      '&:hover': {
+                        opacity: 1,
+                        backgroundColor: 'rgba(25, 118, 210, 0.04)'
+                      }
+                    }}
+                  />
+                  <DeleteButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(item);
+                    }}
+                    sx={{
+                      opacity: 0.9,
+                      '&:hover': {
+                        opacity: 1,
+                        backgroundColor: 'rgba(211, 47, 47, 0.04)'
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        ))
       )}
     </Box>
   );
@@ -532,47 +236,12 @@ const LoaiContainer = () => {
         overflow: 'hidden',
       }}
     >
-      <StandardTable
-        headerAction={
-          <AddButton 
-            onClick={handleOpenAddDialog} 
-            size="small" 
-            sx={{ ml: 2 }} 
-          />
-        }
-        columns={[
-          {
-            key: 'type',
-            label: 'Loại container',
-          },
-          {
-            key: 'description',
-            label: 'Mô tả',
-            maxWidth: 400,
-            noWrap: true,
-            render: value => value || 'Không có mô tả',
-            getColor: value => (value ? 'text.primary' : 'text.disabled'),
-          },
-        ]}
-        data={containerTypes}
-        loading={isLoading}
-        emptyMessage="Không có dữ liệu loại container"
-        renderActions={row => (
-          <>
-            <EditButton
-              onClick={e => {
-                e.stopPropagation();
-                handleOpenEditDialog(row);
-              }}
-            />
-            <DeleteButton
-              onClick={e => {
-                e.stopPropagation();
-                handleDeleteClick(row);
-              }}
-            />
-          </>
-        )}
+      <ContainerTypeList
+        containerTypes={containerTypes}
+        loading={loading}
+        onEdit={handleOpenFormForEdit}
+        onDelete={handleDeleteClick}
+        error={error}
       />
     </Paper>
   );
@@ -589,7 +258,7 @@ const LoaiContainer = () => {
       }}
     >
       <AddButton
-        onClick={handleOpenAddDialog}
+        onClick={handleOpenFormForAdd}
         size="large"
         sx={{
           width: 56,
@@ -609,22 +278,41 @@ const LoaiContainer = () => {
   return (
     <Box sx={{ p: 2, position: 'relative' }}>
       {error ? (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
           {error}
         </Alert>
-      ) : isLoading ? (
+      ) : loading && containerTypes.length === 0 ? (
         <Box display="flex" justifyContent="center" p={4}>
           <CircularProgress />
         </Box>
       ) : isMobile ? (
         renderMobileView()
       ) : (
-        renderDesktopView()
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+              Quản lý loại container
+            </Typography>
+            <AddButton
+              onClick={handleOpenFormForAdd}
+              label="Thêm loại container"
+              size="small"
+            />
+          </Box>
+          {renderDesktopView()}
+        </Box>
       )}
 
-      {/* Render dialogs */}
-      {renderDialog()}
-      
+      {/* Container Type Form */}
+      <ContainerTypeForm
+        open={isFormOpen}
+        onClose={handleCloseForm}
+        onSave={handleSaveContainerType}
+        containerType={selectedContainerType}
+        isLoading={loading}
+        error={formError}
+      />
+
       {/* Floating Add Button for Mobile */}
       <FloatingAddButton />
 

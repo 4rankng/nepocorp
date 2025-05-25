@@ -454,11 +454,11 @@ const DinhMucDau = () => {
       }
 
       await fuelStandardApi.update(formData.id, formData);
-      showSnackbar('Cập nhật định mức dầu thành công');
+      showSnackbar('Sửa định mức dầu thành công');
       await fetchData();
       setOpenEditDialog(false);
     } catch (err) {
-      showSnackbar('Đã xảy ra lỗi khi cập nhật định mức dầu', 'error');
+      showSnackbar('Đã xảy ra lỗi khi sửa định mức dầu', 'error');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -570,7 +570,7 @@ const DinhMucDau = () => {
                 mb: 1,
               }}
             >
-              {isEdit ? 'Cập nhật định mức dầu' : 'Thêm định mức dầu'}
+              {isEdit ? 'Sửa định mức dầu' : 'Thêm định mức dầu'}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="body2" color="text.secondary">
@@ -598,7 +598,7 @@ const DinhMucDau = () => {
             }}
           >
             {isEdit
-              ? 'Cập nhật thông tin định mức dầu cho phương tiện.'
+              ? 'Sửa thông tin định mức dầu cho phương tiện.'
               : 'Nhập thông tin định mức dầu mới cho phương tiện.'}
           </DialogContentText>
 

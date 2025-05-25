@@ -1,11 +1,12 @@
 // Container types management mock data and functions
 
 let containerTypesData = [
-  { id: 'ct1', name: "20'DC" },
-  { id: 'ct2', name: "40'DC" },
-  { id: 'ct3', name: "40'HC" },
-  { id: 'ct4', name: "20'RF" },
-  { id: 'ct5', name: "45'HC" },
+  { id: 'ct1', type: "20'DC", description: 'Container khô 20 feet tiêu chuẩn' },
+  { id: 'ct2', type: "40'DC", description: 'Container khô 40 feet tiêu chuẩn' },
+  { id: 'ct3', type: "40'HC", description: 'Container cao 40 feet' },
+  { id: 'ct4', type: "40'RF", description: 'Container lạnh 40 feet' },
+  { id: 'ct5', type: "40'OT", description: 'Container mở nóc 40 feet' },
+  { id: 'ct6', type: "45'HC", description: 'Container cao 45 feet' },
 ];
 
 // Mock containers for backward compatibility
@@ -20,38 +21,51 @@ export const getContainerTypes = () =>
 
 export const getContainerTypesForSelect = () =>
   new Promise(res =>
-    setTimeout(() => res(containerTypesData.map(ct => ({ id: ct.id, name: ct.name }))), 50)
+    setTimeout(() => res(containerTypesData.map(ct => ({ id: ct.id, name: ct.type }))), 50)
   );
 
-const validateContainerTypeData = (name, id = null) => {
-  if (!name || name.trim() === '') return 'Tên loại container không được để trống.';
-  if (containerTypesData.some(c => c.name === name.trim() && c.id !== id))
-    return 'Tên loại container đã tồn tại.';
+const validateContainerTypeData = (containerTypeData, id = null) => {
+  if (!containerTypeData.type || containerTypeData.type.trim() === '')
+    return 'Loại container không được để trống.';
+
+  if (containerTypesData.some(c => c.type === containerTypeData.type.trim() && c.id !== id))
+    return 'Loại container đã tồn tại.';
+
   return null;
 };
 
-export const addContainerType = typeName =>
+export const addContainerType = containerTypeData =>
   new Promise((resolve, reject) =>
     setTimeout(() => {
-      const err = validateContainerTypeData(typeName);
+      const err = validateContainerTypeData(containerTypeData);
       if (err) reject(new Error(err));
       else {
-        const newType = { id: String(Date.now()), name: typeName.trim() };
+        const newType = {
+          id: String(Date.now()),
+          type: containerTypeData.type.trim(),
+          description: containerTypeData.description ? containerTypeData.description.trim() : '',
+        };
         containerTypesData.push(newType);
         resolve(newType);
       }
     }, 50)
   );
 
-export const updateContainerType = (id, updatedName) =>
+export const updateContainerType = (id, updatedContainerTypeData) =>
   new Promise((resolve, reject) =>
     setTimeout(() => {
-      const err = validateContainerTypeData(updatedName, id);
+      const err = validateContainerTypeData(updatedContainerTypeData, id);
       if (err) reject(new Error(err));
       else {
         let updatedType = null;
         containerTypesData = containerTypesData.map(t =>
-          t.id === id ? (updatedType = { ...t, name: updatedName.trim() }) : t
+          t.id === id
+            ? (updatedType = {
+                ...t,
+                type: updatedContainerTypeData.type.trim(),
+                description: updatedContainerTypeData.description ? updatedContainerTypeData.description.trim() : '',
+              })
+            : t
         );
         if (updatedType) resolve(updatedType);
         else reject(new Error('Không tìm thấy loại container'));

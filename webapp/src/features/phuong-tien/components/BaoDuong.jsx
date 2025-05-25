@@ -418,7 +418,7 @@ const BaoDuong = () => {
 
       if (isEdit) {
         await maintenanceApi.update(formData.id, data);
-        showSnackbar('Cập nhật thông tin bảo dưỡng thành công');
+        showSnackbar('Sửa thông tin bảo dưỡng thành công');
       } else {
         await maintenanceApi.create(data);
         showSnackbar('Thêm thông tin bảo dưỡng mới thành công');
@@ -427,7 +427,7 @@ const BaoDuong = () => {
       handleCloseDialog();
     } catch (err) {
       const errorMessage = isEdit
-        ? 'Đã xảy ra lỗi khi cập nhật thông tin bảo dưỡng'
+        ? 'Đã xảy ra lỗi khi sửa thông tin bảo dưỡng'
         : 'Đã xảy ra lỗi khi thêm thông tin bảo dưỡng mới';
       showSnackbar(errorMessage, 'error');
       console.error(err);
@@ -547,7 +547,7 @@ const BaoDuong = () => {
         >
           <TextField
             fullWidth
-            placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
+            placeholder="Tìm biển số hoặc ghi chú..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             sx={{
@@ -578,7 +578,7 @@ const BaoDuong = () => {
             error={error}
             searchTerm={searchTerm}
             onSearchChange={e => setSearchTerm(e.target.value)}
-            searchPlaceholder="Tìm kiếm theo biển số hoặc ghi chú..."
+            searchPlaceholder="Tìm biển số hoặc ghi chú..."
             emptyMessage="Không có dữ liệu bảo dưỡng nào"
             headerAction={
               <AddButton
@@ -670,7 +670,7 @@ const BaoDuong = () => {
             }}
           >
             {isEdit
-              ? 'Cập nhật thông tin bảo dưỡng phương tiện.'
+              ? 'Sửa thông tin bảo dưỡng phương tiện.'
               : 'Nhập thông tin bảo dưỡng mới cho phương tiện.'}
           </DialogContentText>
 

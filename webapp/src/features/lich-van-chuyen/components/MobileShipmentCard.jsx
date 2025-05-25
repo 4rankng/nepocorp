@@ -20,10 +20,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import BusinessIcon from '@mui/icons-material/Business';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { getStatusColor } from '../utils/styleUtils'; // Added import
-
-// Local getStatusColor removed
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { getStatusColor } from '../utils/styleUtils';
 
 const MobileShipmentCard = ({
   plan,
@@ -38,35 +37,27 @@ const MobileShipmentCard = ({
     <Card
       sx={{
         mb: 2,
-        borderRadius: 2,
+        borderRadius: '12px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        border: 'none',
+        border: '1px solid',
+        borderColor: 'divider',
+        overflow: 'visible',
         '&:hover': {
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         },
         transition: 'all 0.2s ease-in-out',
       }}
     >
-      <CardContent sx={{ pb: '16px !important' }}>
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-          <Avatar
-            sx={{
-              bgcolor: statusColor,
-              width: 40,
-              height: 40,
-              mr: 2,
-              mt: 0.5
-            }}
-          >
-            {plan.trangThai === 'Hoàn thành' ? <CheckCircleIcon /> : <LocalShippingIcon />}
-          </Avatar>
-
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
-              variant="subtitle1"
+              variant="h6"
               sx={{
-                fontWeight: 600,
+                fontSize: '18px',
+                fontWeight: 700,
+                color: '#1976d2',
                 mb: 0.5,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -81,50 +72,86 @@ const MobileShipmentCard = ({
                 label={plan.trangThai}
                 size="small"
                 sx={{
-                  backgroundColor: statusColor,
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: '0.75rem'
+                  backgroundColor: '#e5e7eb',
+                  color: '#374151',
+                  fontWeight: 500,
+                  fontSize: '12px'
                 }}
               />
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '12px' }}>
                 {plan.ngayThang}
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <BusinessIcon sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
-                <Typography variant="caption" color="text.secondary">
+                <BusinessIcon sx={{ fontSize: 14, mr: 0.5, color: '#6b7280' }} />
+                <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '12px' }}>
                   {plan.khachHang || 'N/A'}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <LocalShippingIcon sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
-                <Typography variant="caption" color="text.secondary">
+                <LocalShippingIcon sx={{ fontSize: 14, mr: 0.5, color: '#6b7280' }} />
+                <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '12px' }}>
                   {plan.bienSoXe || 'N/A'}
                 </Typography>
               </Box>
             </Box>
           </Box>
 
-          <IconButton
-            size="small"
-            onClick={() => onCardExpand(plan.id)}
-            sx={{
-              mt: 0.5,
-              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.3s ease'
-            }}
-          >
-            <ExpandMoreIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              size="small"
+              onClick={() => onEdit(plan)}
+              sx={{
+                color: '#6b7280',
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                  color: '#1976d2'
+                },
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => onDelete(plan)}
+              sx={{
+                color: '#6b7280',
+                '&:hover': {
+                  backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                  color: '#d32f2f'
+                },
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => onCardExpand(plan.id)}
+              sx={{
+                color: '#6b7280',
+                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s ease'
+              }}
+            >
+              <ExpandMoreIcon />
+            </IconButton>
+          </Box>
         </Box>
 
         {/* Route Info */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-          <LocationOnIcon sx={{ color: 'success.main', mr: 1, fontSize: 18 }} />
-          <Typography variant="body2" sx={{ flexGrow: 1 }}>
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2,
+          p: 1.5,
+          bgcolor: '#f8f9fa',
+          borderRadius: 1,
+          border: '1px solid #e5e7eb'
+        }}>
+          <LocationOnIcon sx={{ color: '#6b7280', mr: 1, fontSize: 18 }} />
+          <Typography variant="body2" sx={{ flexGrow: 1, color: '#374151', fontSize: '14px' }}>
             <strong>{plan.tuyenDuong?.diemDi || 'N/A'}</strong>
             {' → '}
             <strong>{
@@ -136,73 +163,73 @@ const MobileShipmentCard = ({
         </Box>
 
         {/* Expandable Content */}
-        <Collapse in={isExpanded} timeout="auto">
-          <Divider sx={{ mb: 2 }} />
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+          <Divider sx={{ mb: 2, borderColor: '#e5e7eb' }} />
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
-            <Box>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Số lượng container
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
+                Số lượng container:
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
                 {plan.soLuongContainer || 0}
               </Typography>
             </Box>
 
-            <Box>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Loại container
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
+                Loại container:
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
                 {plan.loaiContainer || 'N/A'}
               </Typography>
             </Box>
 
-            <Box>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Cước vận chuyển
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
+                Cước vận chuyển:
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
                 {plan.cuocVanChuyen?.toLocaleString('vi-VN') || 0} VNĐ
               </Typography>
             </Box>
 
-            <Box>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Cước thuê vận chuyển
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
+                Cước thuê vận chuyển:
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.main' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
                 {plan.cuocThueVanChuyen?.toLocaleString('vi-VN') || 0} VNĐ
               </Typography>
             </Box>
+
+            {plan.doiTac && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
+                  Đối tác vận chuyển:
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
+                  {plan.doiTac}
+                </Typography>
+              </Box>
+            )}
+
+            {plan.ngayHaHang && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
+                  Ngày hạ hàng:
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
+                  {plan.ngayHaHang}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
-          {plan.doiTac && (
-            <Box sx={{ mb: 2, p: 1, bgcolor: 'info.50', borderRadius: 1 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Đối tác vận chuyển
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {plan.doiTac}
-              </Typography>
-            </Box>
-          )}
-
-          {plan.ngayHaHang && (
-            <Box sx={{ mb: 2, p: 1, bgcolor: 'warning.50', borderRadius: 1 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Ngày hạ hàng
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {plan.ngayHaHang}
-              </Typography>
-            </Box>
-          )}
-
           {plan.thongTinContainer && plan.thongTinContainer.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                Thông tin container
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', mb: 1 }}>
+                Thông tin container:
               </Typography>
               {plan.thongTinContainer.map((container, index) => (
                 <Box
@@ -210,53 +237,23 @@ const MobileShipmentCard = ({
                   sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    p: 1,
+                    p: 1.5,
                     mb: 1,
-                    bgcolor: 'grey.100',
-                    borderRadius: 1
+                    bgcolor: '#f8f9fa',
+                    borderRadius: 1,
+                    border: '1px solid #e5e7eb'
                   }}
                 >
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ color: '#374151' }}>
                     <strong>Container:</strong> {container.soContainer || 'N/A'}
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ color: '#374151' }}>
                     <strong>Seal:</strong> {container.soSeal || 'N/A'}
                   </Typography>
                 </Box>
               ))}
             </Box>
           )}
-
-          {/* Action Buttons */}
-          <Box sx={{ display: 'flex', gap: 1, pt: 1 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<PencilIcon />}
-              onClick={() => onEdit(plan)} // Changed to pass the whole plan
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                minHeight: 44 // Touch-optimized
-              }}
-            >
-              Sửa
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              startIcon={<TrashIcon />}
-              onClick={() => onDelete(plan)} // Changed to pass the whole plan
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                minHeight: 44 // Touch-optimized
-              }}
-            >
-              Xóa
-            </Button>
-          </Box>
         </Collapse>
       </CardContent>
     </Card>

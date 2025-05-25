@@ -127,14 +127,14 @@ export const getShipmentPlans = () =>
 
 export const addShipmentPlan = planData =>
   new Promise((resolve, reject) => {
-    if (!planData.tenKeHoach?.trim()) {
-      reject(new Error('Tên kế hoạch không được để trống.'));
+    if (!planData.dienGiai?.trim()) {
+      reject(new Error('Diễn giải không được để trống.'));
       return;
     }
     const newPlan = recalculateShipmentCosts({
       id: String(Date.now()),
       ...planData,
-      tenKeHoach: planData.tenKeHoach.trim(),
+      dienGiai: planData.dienGiai.trim(),
       trangThai: 'Chờ xác nhận',
       ngayTao: new Date().toISOString(),
     });
@@ -152,7 +152,7 @@ export const updateShipmentPlan = (id, updatedPlanData) =>
     shipmentPlansData[index] = recalculateShipmentCosts({
       ...shipmentPlansData[index],
       ...updatedPlanData,
-      tenKeHoach: updatedPlanData.tenKeHoach?.trim() || shipmentPlansData[index].tenKeHoach,
+      dienGiai: updatedPlanData.dienGiai?.trim() || shipmentPlansData[index].dienGiai,
     });
     resolve(shipmentPlansData[index]);
   });

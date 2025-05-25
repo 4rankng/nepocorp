@@ -13,8 +13,7 @@ import {
   Button,
 } from '@mui/material';
 import StandardTable from '@shared/components/StandardTable';
-import { EditButton, DeleteButton } from '@shared/components/ActionButtons';
-import AddButton from '@shared/components/ActionButtons';
+import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
 import ConfirmationDialog from '@shared/components/ConfirmationDialog';
 import { customerApi } from '@services/mockApi';
 
@@ -165,7 +164,7 @@ const KhachHangList = () => {
         setCustomers(prev =>
           prev.map(c => (c.id === editingCustomer.id ? { ...c, ...formData } : c))
         );
-        showSnackbar('Cập nhật khách hàng thành công');
+        showSnackbar('Sửa khách hàng thành công');
       } else {
         // Add new customer
         const newCustomer = {
