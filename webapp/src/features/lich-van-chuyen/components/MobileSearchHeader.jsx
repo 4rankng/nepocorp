@@ -53,12 +53,27 @@ const MobileSearchHeader = ({
 
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
         <FormControl size="small" sx={{ minWidth: 140, flexGrow: 1 }}>
-          <InputLabel>Trạng thái</InputLabel>
+          <InputLabel id="status-filter-label" shrink={true}>Trạng thái</InputLabel>
           <Select
+            labelId="status-filter-label"
             value={filterStatus}
             onChange={onFilterStatusChange}
             label="Trạng thái"
-            displayEmpty // Allows the label to be shown when value is empty
+            displayEmpty
+            notched={true}
+            sx={{
+              '& .MuiSelect-select': {
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                legend: {
+                  span: {
+                    px: 1,
+                  },
+                },
+              },
+            }}
           >
             <MenuItem value="">
               <em>Tất cả</em>
