@@ -19,6 +19,14 @@ import {
   MenuItem,
   InputAdornment,
   Paper,
+  Card,
+  CardContent,
+  Chip,
+  Collapse,
+  Fab,
+  useMediaQuery,
+  useTheme,
+  Divider,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -26,6 +34,11 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
 import CloseIcon from '@mui/icons-material/Close';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import StandardTable from '@shared/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
 import ConfirmationDialog from '@shared/components/ConfirmationDialog';
@@ -39,7 +52,218 @@ const formatCurrency = value => {
   }).format(value);
 };
 
+// Mobile Card Component
+const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const handleExpandClick = () => {
+    setExpanded(!expanded);
+  };
+
+  return (
+    <Card
+      sx={{
+        mb: 2,
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        borderLeft: '4px solid #1976d2',
+        overflow: 'visible',
+      }}
+    >
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        {/* Card Header */}
+        <Box
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}
+        >
+          <Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: '18px',
+                fontWeight: 700,
+                color: '#1976d2',
+                mb: 0.5,
+              }}
+            >
+              {record.licensePlate}
+            </Typography>
+            <Chip
+              label={new Date(record.replacementDate).toLocaleDateString('vi-VN')}
+              size="small"
+              sx={{
+                backgroundColor: '#e3f2fd',
+                color: '#1976d2',
+                fontSize: '12px',
+                fontWeight: 500,
+              }}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              size="small"
+              onClick={() => onEdit(record)}
+              disabled={isLoading}
+              sx={{
+                color: '#1976d2',
+                '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' },
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => onDelete(record)}
+              disabled={isLoading}
+              sx={{
+                color: '#d32f2f',
+                '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' },
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+
+        {/* Cost Section */}
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: '16px',
+              fontWeight: 700,
+              color: '#2e7d32',
+              mb: 0.5,
+            }}
+          >
+            {formatCurrency(record.total)}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              fontSize: '12px',
+              color: '#666',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            }}
+          >
+            Thành tiền
+          </Typography>
+        </Box>
+
+        {/* Expand Toggle */}
+        <Button
+          onClick={handleExpandClick}
+          size="small"
+          endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          sx={{
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#1976d2',
+            textTransform: 'none',
+            p: 0,
+            minWidth: 'auto',
+            '&:hover': { backgroundColor: 'transparent' },
+          }}
+        >
+          {expanded ? 'Thu gọn' : 'Chi tiết'}
+        </Button>
+
+        {/* Expandable Content */}
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0', mt: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  py: 1,
+                  borderBottom: '1px solid #f5f5f5',
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#666', flex: 1 }}>
+                  Số lượng:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: '#333', textAlign: 'right', flex: 1 }}
+                >
+                  {record.quantity}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  py: 1,
+                  borderBottom: '1px solid #f5f5f5',
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#666', flex: 1 }}>
+                  Đơn giá:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: '#333', textAlign: 'right', flex: 1 }}
+                >
+                  {formatCurrency(record.unitPrice)}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  py: 1,
+                  borderBottom: '1px solid #f5f5f5',
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#666', flex: 1 }}>
+                  Bảo hành:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: '#333', textAlign: 'right', flex: 1 }}
+                >
+                  {record.warrantyPeriod} tháng
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  py: 1,
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#666', flex: 1 }}>
+                  Ghi chú:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: '#333',
+                    textAlign: 'right',
+                    flex: 1,
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {record.note || 'Không có'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Collapse>
+      </CardContent>
+    </Card>
+  );
+};
+
 const BaoDuong = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [maintenanceRecords, setMaintenanceRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -308,35 +532,120 @@ const BaoDuong = () => {
   ];
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Paper
-        elevation={0}
-        sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'background.paper' }}
-      >
-        <StandardTable
-          columns={columns}
-          data={filteredRecords}
-          loading={isLoading}
-          error={error}
-          searchTerm={searchTerm}
-          onSearchChange={e => setSearchTerm(e.target.value)}
-          searchPlaceholder="Tìm kiếm theo biển số hoặc ghi chú..."
-          emptyMessage="Không có dữ liệu bảo dưỡng nào"
-          headerAction={
-            <AddButton
-              onClick={handleOpenAddDialog}
-              disabled={isLoading}
-              size="small"
-              sx={{ ml: 2 }}
-            />
-          }
+    <Box sx={{ width: '100%', position: 'relative' }}>
+      {/* Mobile Search Container */}
+      {isMobile && (
+        <Box
           sx={{
-            '& .MuiTableRow-hover:hover': {
-              backgroundColor: 'action.hover',
-            },
+            p: 2,
+            backgroundColor: '#f8f9fa',
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            borderBottom: '1px solid #e0e0e0',
           }}
-        />
-      </Paper>
+        >
+          <TextField
+            fullWidth
+            placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                height: '48px',
+                fontSize: '16px',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#ddd',
+                },
+              },
+            }}
+          />
+        </Box>
+      )}
+
+      {/* Desktop Table View */}
+      {!isMobile && (
+        <Paper
+          elevation={0}
+          sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'background.paper' }}
+        >
+          <StandardTable
+            columns={columns}
+            data={filteredRecords}
+            loading={isLoading}
+            error={error}
+            searchTerm={searchTerm}
+            onSearchChange={e => setSearchTerm(e.target.value)}
+            searchPlaceholder="Tìm kiếm theo biển số hoặc ghi chú..."
+            emptyMessage="Không có dữ liệu bảo dưỡng nào"
+            headerAction={
+              <AddButton
+                onClick={handleOpenAddDialog}
+                disabled={isLoading}
+                size="small"
+                sx={{ ml: 2 }}
+              />
+            }
+            sx={{
+              '& .MuiTableRow-hover:hover': {
+                backgroundColor: 'action.hover',
+              },
+            }}
+          />
+        </Paper>
+      )}
+
+      {/* Mobile Card View */}
+      {isMobile && (
+        <Box sx={{ p: 2 }}>
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#ffebee' }}>
+              <Typography color="error">{error}</Typography>
+            </Paper>
+          ) : filteredRecords.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                {searchTerm ? 'Không tìm thấy kết quả nào' : 'Không có dữ liệu bảo dưỡng nào'}
+              </Typography>
+            </Paper>
+          ) : (
+            filteredRecords.map(record => (
+              <MaintenanceCard
+                key={record.id}
+                record={record}
+                onEdit={handleOpenEditDialog}
+                onDelete={handleDeleteClick}
+                isLoading={isLoading}
+              />
+            ))
+          )}
+        </Box>
+      )}
+
+      {/* Mobile Floating Action Button */}
+      {isMobile && (
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={handleOpenAddDialog}
+          disabled={isLoading}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(25,118,210,0.3)',
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
 
       {/* Add/Edit Dialog */}
       <Dialog
@@ -351,34 +660,6 @@ const BaoDuong = () => {
           },
         }}
       >
-        <DialogTitle
-          sx={{
-            p: '16px 24px',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="h6" sx={{ fontSize: '1.125rem', fontWeight: 600 }}>
-            {isEdit ? 'Chỉnh sửa thông tin bảo dưỡng' : 'Thêm thông tin bảo dưỡng mới'}
-          </Typography>
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseDialog}
-            size="small"
-            sx={{
-              color: 'text.secondary',
-              '&:hover': {
-                backgroundColor: 'action.hover',
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
         <DialogContent sx={{ p: '24px' }}>
           <DialogContentText
             sx={{

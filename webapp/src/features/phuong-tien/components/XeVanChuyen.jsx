@@ -24,8 +24,21 @@ import {
   Select,
   InputLabel,
   FormControl,
+  FormHelperText,
+  Card,
+  CardContent,
+  Chip,
+  useMediaQuery,
+  useTheme,
+  InputAdornment,
+  Divider,
+  Fab,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 // Vehicle types for dropdown
 const vehicleTypes = [
@@ -36,6 +49,9 @@ const vehicleTypes = [
 ];
 
 const XeVanChuyen = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [vehicles, setVehicles] = useState([]);
   const [filteredVehicles, setFilteredVehicles] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -85,13 +101,18 @@ const XeVanChuyen = () => {
     } else {
       const filtered = vehicles.filter(vehicle => {
         const licensePlate = (vehicle.licensePlate || vehicle.bienSo || '').toLowerCase();
-        const vehicleTypeLabel = vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label || vehicle.vehicleType || '';
+        const vehicleTypeLabel =
+          vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label ||
+          vehicle.vehicleType ||
+          '';
         const note = (vehicle.note || '').toLowerCase();
         const search = searchTerm.toLowerCase();
 
-        return licensePlate.includes(search) ||
-               vehicleTypeLabel.toLowerCase().includes(search) ||
-               note.includes(search);
+        return (
+          licensePlate.includes(search) ||
+          vehicleTypeLabel.toLowerCase().includes(search) ||
+          note.includes(search)
+        );
       });
       setFilteredVehicles(filtered);
     }
@@ -220,9 +241,200 @@ const XeVanChuyen = () => {
     }
   };
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = e => {
     setSearchTerm(e.target.value);
   };
+
+  // Mobile Vehicle Card Component
+  const MobileVehicleCard = ({ vehicle }) => {
+    const vehicleTypeLabel = vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label || vehicle.vehicleType || '';
+
+    return (
+      <Card
+        sx={{
+          mb: 2,
+          borderRadius: 2,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          border: 'none',
+          '&:hover': {
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          },
+          transition: 'all 0.2s ease-in-out',
+        }}
+      >
+        <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+          {/* Header with License Plate, Vehicle Type Chip and Actions */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 3,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  color: '#1976d2',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                {vehicle.licensePlate || vehicle.bienSo || 'N/A'}
+              </Typography>
+              <Chip
+                label={vehicleTypeLabel}
+                size="small"
+                sx={{
+                  backgroundColor: '#1976d2',
+                  color: 'white',
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  height: '24px',
+                  '& .MuiChip-label': {
+                    px: 1,
+                  },
+                }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditDialog(vehicle);
+                }}
+                sx={{
+                  color: '#666',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    color: '#1976d2',
+                  },
+                }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick(vehicle);
+                }}
+                sx={{
+                  color: '#666',
+                  '&:hover': {
+                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                    color: '#d32f2f',
+                  },
+                }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+
+          {/* Information Rows */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* First Row */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#666',
+                    fontSize: '0.875rem',
+                    mb: 0.5,
+                  }}
+                >
+                  Loại xe
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#333',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  {vehicleTypeLabel || 'Chưa xác định'}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#666',
+                    fontSize: '0.875rem',
+                    mb: 0.5,
+                  }}
+                >
+                  Ghi chú
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#333',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  {vehicle.note || 'Không có'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Mobile Search Header Component
+  const MobileSearchHeader = () => (
+    <Box sx={{ mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          Xe Vận Chuyển
+        </Typography>
+      </Box>
+
+      <TextField
+        fullWidth
+        size="medium"
+        placeholder="Tìm kiếm xe theo biển số, loại xe..."
+        value={searchTerm}
+        onChange={handleSearchChange}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon color="action" />
+            </InputAdornment>
+          ),
+          sx: {
+            borderRadius: 2,
+            backgroundColor: 'background.paper',
+          },
+        }}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            '&:hover': {
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'primary.main',
+              },
+            },
+          },
+        }}
+      />
+    </Box>
+  );
 
   const renderDialog = () => {
     return (
@@ -233,139 +445,269 @@ const XeVanChuyen = () => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: '8px',
+            borderRadius: '12px',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            position: 'relative',
+            overflow: 'hidden',
+            margin: isMobile ? 2 : 3,
+            width: isMobile ? 'calc(100% - 32px)' : 'auto',
+            maxHeight: isMobile ? 'calc(100vh - 64px)' : '90vh',
           },
         }}
       >
-        <DialogTitle
+        <IconButton
+          onClick={handleCloseDialog}
+          size="small"
           sx={{
-            p: '16px 24px',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'text.secondary',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
           }}
         >
-          <Typography variant="h6" sx={{ fontSize: '1.125rem', fontWeight: 600 }}>
-            {isEdit ? 'Chỉnh sửa thông tin xe' : 'Thêm xe mới'}
-          </Typography>
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseDialog}
-            size="small"
+          <CloseIcon fontSize="small" />
+        </IconButton>
+        <DialogContent sx={{ p: isMobile ? 2 : 3, pt: isMobile ? 2.5 : 4 }}>
+          <Box
+            component="form"
+            noValidate
+            autoComplete="off"
             sx={{
-              color: 'text.secondary',
-              '&:hover': {
-                backgroundColor: 'action.hover',
-              },
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2.5,
             }}
           >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{ p: '24px' }}>
-          <DialogContentText
-            sx={{
-              mb: 3,
-              color: 'text.primary',
-              fontSize: '0.875rem',
-              lineHeight: 1.5,
-            }}
-          >
-            {isEdit ? 'Cập nhật thông tin phương tiện.' : 'Nhập thông tin phương tiện mới.'}
-          </DialogContentText>
-
-          <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Biển số xe"
-                  name="licensePlate"
-                  value={formData.licensePlate}
-                  onChange={handleInputChange}
-                  error={!!errors.licensePlate}
-                  helperText={errors.licensePlate || ''}
-                  variant="outlined"
-                  margin="none"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '6px',
-                    },
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <FormControl fullWidth size="small">
-                  <InputLabel id="vehicle-type-label" shrink>
-                    Loại xe
-                  </InputLabel>
-                  <Select
-                    labelId="vehicle-type-label"
-                    name="vehicleType"
-                    value={formData.vehicleType}
+            <DialogContentText
+              sx={{
+                mb: 3,
+                color: 'text.primary',
+                fontSize: '0.875rem',
+                lineHeight: 1.5,
+              }}
+            >
+              {isEdit ? 'Cập nhật thông tin.' : 'Nhập thông tin mới.'}
+            </DialogContentText>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{
+                display: 'flex',
+                gap: 2,
+                alignItems: 'flex-start',
+                flexDirection: { xs: 'column', sm: 'row' }
+              }}>
+                <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Biển số xe *"
+                    name="licensePlate"
+                    value={formData.licensePlate}
                     onChange={handleInputChange}
-                    error={!!errors.vehicleType}
-                    displayEmpty
-                    notched
-                  >
-                    <MenuItem value="">
-                      <em>Chọn loại xe</em>
-                    </MenuItem>
-                    {vehicleTypes.map(type => (
-                      <MenuItem key={type.value} value={type.value}>
-                        {type.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.vehicleType && (
-                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                      {errors.vehicleType}
-                    </Typography>
-                  )}
-                </FormControl>
-              </Grid>
+                    error={!!errors.licensePlate}
+                    helperText={errors.licensePlate || 'Ví dụ: 30A-12345'}
+                    variant="outlined"
+                    placeholder="Nhập biển số xe"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        backgroundColor: 'background.paper',
+                        '&:hover': {
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          },
+                        },
+                        '&.Mui-focused': {
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderWidth: 2,
+                          },
+                        },
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontWeight: 500,
+                      },
+                    }}
+                  />
+                </Box>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Ghi chú"
-                  name="note"
-                  value={formData.note}
-                  onChange={handleInputChange}
-                  variant="outlined"
-                  margin="none"
-                  multiline
-                  rows={3}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '6px',
+                <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
+                  <FormControl
+                    fullWidth
+                    size="small"
+                    error={!!errors.vehicleType}
+                    sx={{
+                      '& .MuiInputBase-root': {
+                        fontSize: '0.875rem',
+                        '& .MuiSelect-select': {
+                          fontSize: '0.875rem',
+                          lineHeight: 1.5,
+                        },
+                      },
+                      width: '100%',
+                    }}
+                  >
+                    <InputLabel
+                      id="vehicle-type-label"
+                      shrink
+                      sx={{
+                        fontWeight: 500,
+                        fontSize: '0.875rem',
+                        '&.Mui-focused': {
+                          color: 'text.primary',
+                        },
+                      }}
+                    >
+                      Loại xe *
+                    </InputLabel>
+                    <Select
+                      labelId="vehicle-type-label"
+                      name="vehicleType"
+                      value={formData.vehicleType}
+                      onChange={handleInputChange}
+                      displayEmpty
+                      label="Loại xe *"
+                      sx={{
+                        width: '100%',
+                        minWidth: '200px',
+                        borderRadius: 2,
+                        backgroundColor: 'background.paper',
+                        '&:hover': {
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          },
+                        },
+                        '&.Mui-focused': {
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderWidth: 2,
+                            borderColor: 'primary.main',
+                          },
+                        },
+                        '& .MuiSelect-select': {
+                          minHeight: 'auto',
+                          height: 'auto',
+                          padding: '8.5px 14px',
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'rgba(0, 0, 0, 0.23)',
+                          },
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            marginTop: 1,
+                            borderRadius: 2,
+                            boxShadow: 3,
+                            '& .MuiMenuItem-root': {
+                              fontSize: '0.875rem',
+                              padding: '8px 16px',
+                              '&:hover': {
+                                backgroundColor: 'action.hover',
+                              },
+                            },
+                          },
+                        },
+                      }}
+                    >
+                      <MenuItem value="" disabled>
+                        <Box
+                          sx={{
+                            color: 'text.secondary',
+                            fontStyle: 'italic',
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          Chọn loại xe
+                        </Box>
+                      </MenuItem>
+                      {vehicleTypes.map(type => (
+                        <MenuItem
+                          key={type.value}
+                          value={type.value}
+                          sx={{
+                            fontSize: '0.875rem',
+                            '&:hover': {
+                              backgroundColor: 'action.hover',
+                            },
+                          }}
+                        >
+                          {type.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.vehicleType && (
+                      <FormHelperText error sx={{ ml: 1.5, mt: 0.5 }}>
+                        {errors.vehicleType}
+                      </FormHelperText>
+                    )}
+                  </FormControl>
+                </Box>
+              </Box>
+
+              <TextField
+                fullWidth
+                size="small"
+                label="Ghi chú"
+                name="note"
+                value={formData.note}
+                onChange={handleInputChange}
+                variant="outlined"
+                multiline
+                rows={3}
+                placeholder="Nhập ghi chú (tùy chọn)"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                InputProps={{
+                  sx: {
+                    '& textarea': {
+                      fontSize: '0.875rem',
+                      lineHeight: 1.5,
+                      resize: 'vertical',
                     },
-                  }}
-                />
-              </Grid>
-            </Grid>
+                  },
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: 'background.paper',
+                    '&:hover': {
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                      },
+                    },
+                    '&.Mui-focused': {
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderWidth: 2,
+                      },
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontWeight: 500,
+                  },
+                }}
+              />
+            </Box>
           </Box>
         </DialogContent>
 
         <DialogActions
           sx={{
-            p: '16px 24px',
+            p: isMobile ? '12px 16px' : '16px 24px',
             bgcolor: 'background.paper',
             borderTop: '1px solid',
             borderColor: 'divider',
+            borderBottomLeftRadius: '12px',
+            borderBottomRightRadius: '12px',
             justifyContent: 'flex-end',
             gap: '12px',
             '& > *': {
@@ -408,7 +750,7 @@ const XeVanChuyen = () => {
             }}
             startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
           >
-            {isLoading ? 'Đang xử lý...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
+            {isLoading ? 'Đang xử lý...' : isEdit ? 'Lưu' : 'Thêm'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -416,67 +758,141 @@ const XeVanChuyen = () => {
   };
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: isMobile ? 1 : 2 }}>
       {error ? (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       ) : (
-        <Paper
-          elevation={0}
+        <>
+          {isMobile ? (
+            // Mobile View
+            <Box>
+              <MobileSearchHeader />
+
+              {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : filteredVehicles.length === 0 ? (
+                <Paper
+                  sx={{
+                    p: 4,
+                    textAlign: 'center',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {searchTerm ? 'Không tìm thấy xe nào phù hợp' : 'Không có dữ liệu xe vận chuyển'}
+                  </Typography>
+                </Paper>
+              ) : (
+                <Box>
+                  {filteredVehicles.map(vehicle => (
+                    <MobileVehicleCard key={vehicle.id} vehicle={vehicle} />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          ) : (
+            // Desktop View
+            <Paper
+              elevation={0}
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                overflow: 'hidden',
+              }}
+            >
+              <StandardTable
+                searchTerm={searchTerm}
+                onSearchChange={handleSearchChange}
+                searchPlaceholder="Tìm kiếm xe theo biển số, loại xe..."
+                headerAction={
+                  <AddButton
+                    onClick={handleOpenAddDialog}
+                    size="small"
+                    sx={{
+                      ml: 2,
+                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)',
+                      '&:hover': {
+                        boxShadow: '0 6px 16px rgba(25, 118, 210, 0.3)',
+                        transform: 'translateY(-1px)',
+                      },
+                      transition: 'all 0.2s ease-in-out',
+                    }}
+                  />
+                }
+                columns={[
+                  {
+                    key: 'licensePlate',
+                    label: 'BIỂN SỐ XE',
+                    render: (value, row) => value || row.bienSo || '',
+                  },
+                  {
+                    key: 'vehicleType',
+                    label: 'LOẠI XE',
+                    render: value => {
+                      const type = vehicleTypes.find(t => t.value === value);
+                      return type ? type.label : value || '';
+                    },
+                  },
+                  {
+                    key: 'note',
+                    label: 'GHI CHÚ',
+                    render: value => value || '',
+                  },
+                ]}
+                data={filteredVehicles}
+                loading={isLoading}
+                emptyMessage="Không có dữ liệu xe vận chuyển"
+                renderActions={row => (
+                  <>
+                    <EditButton
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleOpenEditDialog(row);
+                      }}
+                    />
+                    <DeleteButton
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleDeleteClick(row);
+                      }}
+                    />
+                  </>
+                )}
+              />
+            </Paper>
+          )}
+        </>
+      )}
+
+      {/* Mobile Floating Action Button */}
+      {isMobile && (
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={handleOpenAddDialog}
+          disabled={isLoading}
           sx={{
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            overflow: 'hidden',
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(25,118,210,0.3)',
+            '&:hover': {
+              boxShadow: '0 6px 16px rgba(25,118,210,0.4)',
+              transform: 'scale(1.05)',
+            },
+            transition: 'all 0.2s ease-in-out',
           }}
         >
-          <StandardTable
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            searchPlaceholder="Tìm kiếm xe theo biển số, loại xe..."
-            headerAction={<AddButton onClick={handleOpenAddDialog} size="small" sx={{ ml: 2 }} />}
-            columns={[
-              {
-                key: 'licensePlate',
-                label: 'BIỂN SỐ XE',
-                render: (value, row) => value || row.bienSo || '',
-              },
-              {
-                key: 'vehicleType',
-                label: 'LOẠI XE',
-                render: value => {
-                  const type = vehicleTypes.find(t => t.value === value);
-                  return type ? type.label : value || '';
-                },
-              },
-              {
-                key: 'note',
-                label: 'GHI CHÚ',
-                render: value => value || '',
-              },
-            ]}
-            data={filteredVehicles}
-            loading={isLoading}
-            emptyMessage="Không có dữ liệu xe vận chuyển"
-            renderActions={row => (
-              <>
-                <EditButton
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleOpenEditDialog(row);
-                  }}
-                />
-                <DeleteButton
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleDeleteClick(row);
-                  }}
-                />
-              </>
-            )}
-          />
-        </Paper>
+          <AddIcon />
+        </Fab>
       )}
 
       {/* Render dialogs */}
@@ -486,7 +902,11 @@ const XeVanChuyen = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{
+          vertical: isMobile ? 'bottom' : 'top',
+          horizontal: isMobile ? 'center' : 'right',
+        }}
+        sx={isMobile ? { bottom: 90 } : {}}
       >
         <Alert
           onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
@@ -501,11 +921,12 @@ const XeVanChuyen = () => {
         open={deleteDialog.open}
         onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}
-        title="Xác nhận xóa xe vận chuyển"
+        title=""
         message={deleteDialog.details}
         confirmText="Xóa"
         cancelText="Hủy"
         confirmColor="error"
+        hideHeader={true}
       />
     </Box>
   );

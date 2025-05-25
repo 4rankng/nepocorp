@@ -22,8 +22,16 @@ import {
   Typography,
   Grid,
   IconButton,
+  Chip,
+  Card,
+  CardContent,
+  Divider,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { ChevronDownIcon, ChevronUpIcon } from '../../../assets/icons';
 import { alpha } from '@mui/material/styles';
 
@@ -64,12 +72,15 @@ const groupByLicensePlate = standards => {
 };
 
 const DinhMucDau = () => {
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [fuelStandards, setFuelStandards] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [currentStandard, setCurrentStandard] = useState(null);
   const [expandedPlates, setExpandedPlates] = useState({});
+  const [expandedCards, setExpandedCards] = useState({});
   const [formData, setFormData] = useState({
     licensePlate: '',
     fromKm: '',
@@ -113,6 +124,175 @@ const DinhMucDau = () => {
       ...prev,
       [licensePlate]: !prev[licensePlate],
     }));
+  };
+
+  // Toggle expand/collapse for individual cards on mobile
+  const toggleCardExpand = cardId => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [cardId]: !prev[cardId],
+    }));
+  };
+
+  // Mobile Card Component for individual fuel standards
+  const MobileFuelStandardCard = ({ standard, licensePlate }) => {
+    const cardId = `${licensePlate}-${standard.id}`;
+    const isExpanded = expandedCards[cardId];
+
+    const getStatusColor = value => {
+      if (value > 0.4) return theme.palette.error.main;
+      if (value > 0.3) return theme.palette.warning.main;
+      return theme.palette.success.main;
+    };
+
+    const getStatusLabel = value => {
+      if (value > 0.4) return 'Cao';
+      if (value > 0.3) return 'Trung bình';
+      return 'Tốt';
+    };
+
+    return (
+      <Card
+        sx={{
+          mb: 1,
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 2,
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: 1,
+            borderColor: 'primary.main',
+          },
+        }}
+      >
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+          {/* Primary Information - Always Visible */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              mb: 1,
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Chip
+                label={getStatusLabel(standard.standard)}
+                size="small"
+                sx={{
+                  backgroundColor: alpha(getStatusColor(standard.standard), 0.1),
+                  color: getStatusColor(standard.standard),
+                  fontWeight: 500,
+                  fontSize: '0.75rem',
+                }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <EditButton
+                size="small"
+                onClick={e => {
+                  e.stopPropagation();
+                  handleOpenEditDialog(standard);
+                }}
+              />
+              <DeleteButton
+                size="small"
+                onClick={e => {
+                  e.stopPropagation();
+                  handleDeleteClick(standard.id);
+                }}
+              />
+              <IconButton size="small" onClick={() => toggleCardExpand(cardId)} sx={{ ml: 1 }}>
+                {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+          </Box>
+
+          {/* Secondary Information - Collapsed by default */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: isExpanded ? 1 : 0,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+              {standard.fromKm.toLocaleString()} - {standard.toKm.toLocaleString()} km
+            </Typography>
+            <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
+              {standard.standard.toFixed(2)} l/km
+            </Typography>
+          </Box>
+
+          {/* Expandable Section - Detailed Information */}
+          <Collapse in={isExpanded}>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ pt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 0.5 }}
+                  >
+                    Từ KM
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {standard.fromKm.toLocaleString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 0.5 }}
+                  >
+                    Đến KM
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {standard.toKm.toLocaleString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 0.5 }}
+                  >
+                    Định mức tiêu thụ
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: getStatusColor(standard.standard),
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {standard.standard.toFixed(2)} lít/km
+                  </Typography>
+                </Grid>
+                {standard.note && (
+                  <Grid item xs={12}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mb: 0.5 }}
+                    >
+                      Ghi chú
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                      {standard.note}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          </Collapse>
+        </CardContent>
+      </Card>
+    );
   };
 
   const fetchData = async () => {
@@ -334,14 +514,16 @@ const DinhMucDau = () => {
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
         sx={{
           '& .MuiPaper-root': {
             width: '100%',
-            maxWidth: '480px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            maxWidth: isMobile ? 'none' : '480px',
+            borderRadius: isMobile ? 0 : '8px',
+            boxShadow: isMobile ? 'none' : '0 4px 20px rgba(0, 0, 0, 0.15)',
             overflow: 'hidden',
-            margin: '16px',
+            margin: isMobile ? 0 : '16px',
+            height: isMobile ? '100vh' : 'auto',
           },
           '& .MuiBackdrop-root': {
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -351,30 +533,21 @@ const DinhMucDau = () => {
         onKeyDown={e => e.key === 'Escape' && handleClose()}
         onClick={e => e.target === e.currentTarget && handleClose()}
       >
-        <DialogTitle
+        <DialogContent
           sx={{
-            p: '16px 24px',
-            bgcolor: 'background.paper',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            '& .MuiTypography-root': {
-              fontSize: '1.125rem',
-              fontWeight: 600,
-              color: 'text.primary',
-              lineHeight: 1.4,
-              m: 0,
-            },
+            p: isMobile ? '24px 16px 16px' : '32px 24px 24px',
+            flex: isMobile ? 1 : 'none',
+            overflowY: 'auto',
+            position: 'relative',
           }}
         >
-          {isEdit ? 'Chỉnh sửa định mức dầu' : 'Thêm định mức dầu mới'}
+          {/* Close Button */}
           <IconButton
-            aria-label="close"
             onClick={handleClose}
-            size="small"
             sx={{
+              position: 'absolute',
+              right: isMobile ? 8 : 16,
+              top: isMobile ? 8 : 16,
               color: 'text.secondary',
               '&:hover': {
                 backgroundColor: 'action.hover',
@@ -382,23 +555,44 @@ const DinhMucDau = () => {
               },
             }}
           >
-            <CloseIcon fontSize="small" />
+            <CloseIcon fontSize={isMobile ? 'medium' : 'small'} />
           </IconButton>
-        </DialogTitle>
 
-        <DialogContent
-          sx={{
-            p: '24px',
-            '&.MuiDialogContent-root': {
-              paddingTop: '16px',
-            },
-          }}
-        >
+          {/* License Plate Display */}
+          <Box sx={{ mb: 3, pr: 5 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: isMobile ? '1.25rem' : '1.1rem',
+                fontWeight: 600,
+                color: 'primary.main',
+                mb: 1,
+              }}
+            >
+              {isEdit ? 'Cập nhật định mức dầu' : 'Thêm định mức dầu'}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Biển số xe:
+              </Typography>
+              <Chip
+                label={formData.licensePlate}
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontWeight: 500,
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                }}
+              />
+            </Box>
+          </Box>
+
           <DialogContentText
             sx={{
               mb: '20px',
               color: 'text.secondary',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.9rem' : '0.875rem',
               lineHeight: 1.5,
             }}
           >
@@ -408,11 +602,16 @@ const DinhMucDau = () => {
           </DialogContentText>
 
           <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
-            <Grid container spacing={2}>
+            <Grid container spacing={isMobile ? 3 : 2}>
               <Grid item xs={12}>
                 <Typography
                   variant="subtitle2"
-                  sx={{ mb: 1, color: 'text.secondary', fontWeight: 500 }}
+                  sx={{
+                    mb: 1,
+                    color: 'text.secondary',
+                    fontWeight: 500,
+                    fontSize: isMobile ? '0.9rem' : '0.8rem',
+                  }}
                 >
                   Phạm vi số km
                 </Typography>
@@ -420,7 +619,7 @@ const DinhMucDau = () => {
                   <Grid item xs={6}>
                     <TextField
                       fullWidth
-                      size="small"
+                      size={isMobile ? 'medium' : 'small'}
                       label="Từ km"
                       name="fromKm"
                       type="number"
@@ -439,8 +638,8 @@ const DinhMucDau = () => {
                         step: 1,
                         style: {
                           textAlign: 'right',
-                          height: '40px',
-                          padding: '8px 12px',
+                          height: isMobile ? '48px' : '40px',
+                          padding: isMobile ? '12px 14px' : '8px 12px',
                           boxSizing: 'border-box',
                           fontSize: '0.875rem',
                         },
@@ -473,7 +672,7 @@ const DinhMucDau = () => {
                   <Grid item xs={6}>
                     <TextField
                       fullWidth
-                      size="small"
+                      size={isMobile ? 'medium' : 'small'}
                       label="Đến km"
                       name="toKm"
                       type="number"
@@ -492,8 +691,8 @@ const DinhMucDau = () => {
                         step: 1,
                         style: {
                           textAlign: 'right',
-                          height: '40px',
-                          padding: '8px 12px',
+                          height: isMobile ? '48px' : '40px',
+                          padding: isMobile ? '12px 14px' : '8px 12px',
                           boxSizing: 'border-box',
                           fontSize: '0.875rem',
                         },
@@ -526,16 +725,21 @@ const DinhMucDau = () => {
                 </Grid>
               </Grid>
 
-              <Grid item xs={4}>
+              <Grid item xs={12}>
                 <Typography
                   variant="subtitle2"
-                  sx={{ mb: 1, color: 'text.secondary', fontWeight: 500 }}
+                  sx={{
+                    mb: 1,
+                    color: 'text.secondary',
+                    fontWeight: 500,
+                    fontSize: isMobile ? '0.9rem' : '0.8rem',
+                  }}
                 >
                   Định mức nhiên liệu
                 </Typography>
                 <TextField
                   fullWidth
-                  size="small"
+                  size={isMobile ? 'medium' : 'small'}
                   placeholder=""
                   name="standard"
                   type="number"
@@ -554,8 +758,8 @@ const DinhMucDau = () => {
                     min: '0.01',
                     style: {
                       textAlign: 'right',
-                      height: '40px',
-                      padding: '8px 12px',
+                      height: isMobile ? '48px' : '40px',
+                      padding: isMobile ? '12px 14px' : '8px 12px',
                       boxSizing: 'border-box',
                       fontSize: '0.875rem',
                     },
@@ -587,23 +791,34 @@ const DinhMucDau = () => {
               </Grid>
 
               <Grid item xs={12} sx={{ width: '100%' }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    mb: 1,
+                    color: 'text.secondary',
+                    fontWeight: 500,
+                    fontSize: isMobile ? '0.9rem' : '0.8rem',
+                  }}
+                >
+                  Ghi chú (tùy chọn)
+                </Typography>
                 <TextField
                   fullWidth
-                  size="small"
-                  label="Ghi chú (tùy chọn)"
+                  size={isMobile ? 'medium' : 'small'}
+                  placeholder="Nhập ghi chú..."
                   name="note"
                   value={formData.note}
                   onChange={handleInputChange}
                   variant="outlined"
                   margin="none"
                   multiline
-                  rows={4}
+                  rows={isMobile ? 3 : 4}
                   InputLabelProps={{
                     shrink: true,
                   }}
                   inputProps={{
                     style: {
-                      padding: '12px',
+                      padding: isMobile ? '14px' : '12px',
                       boxSizing: 'border-box',
                       width: '100%',
                       fontSize: '0.875rem',
@@ -630,12 +845,13 @@ const DinhMucDau = () => {
 
         <DialogActions
           sx={{
-            p: '16px 24px',
+            p: isMobile ? '16px 24px 24px' : '16px 24px',
             bgcolor: 'background.paper',
             borderTop: '1px solid',
             borderColor: 'divider',
             justifyContent: 'flex-end',
-            gap: '12px',
+            gap: isMobile ? 2 : '12px',
+            flexDirection: isMobile ? 'column' : 'row',
             '& > *': {
               margin: '0 !important',
             },
@@ -645,10 +861,11 @@ const DinhMucDau = () => {
             onClick={handleClose}
             variant="outlined"
             color="inherit"
-            size="small"
+            size={isMobile ? 'large' : 'small'}
+            fullWidth={isMobile}
             sx={{
-              height: '36px',
-              px: '16px',
+              height: isMobile ? '48px' : '36px',
+              px: isMobile ? '24px' : '16px',
               fontSize: '0.875rem',
               fontWeight: 500,
               color: 'text.primary',
@@ -670,11 +887,12 @@ const DinhMucDau = () => {
             onClick={handleSave}
             variant="contained"
             color="primary"
-            size="small"
+            size={isMobile ? 'large' : 'small'}
+            fullWidth={isMobile}
             disabled={isLoading}
             sx={{
-              height: '36px',
-              px: '20px',
+              height: isMobile ? '48px' : '36px',
+              px: isMobile ? '24px' : '20px',
               fontSize: '0.875rem',
               fontWeight: 500,
               borderRadius: '6px',
@@ -695,7 +913,7 @@ const DinhMucDau = () => {
             }}
             startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
           >
-            {isLoading ? 'Đang xử lý...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
+            {isLoading ? 'Đang xử lý...' : isEdit ? 'Lưu' : 'Thêm'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -703,8 +921,8 @@ const DinhMucDau = () => {
   };
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Box sx={{ mt: 2 }}>
+    <Box sx={{ p: isMobile ? 1 : 2 }}>
+      <Box sx={{ mt: isMobile ? 1 : 2 }}>
         {isLoading ? (
           <Box display="flex" justifyContent="center" my={4}>
             <CircularProgress size={24} />
@@ -718,17 +936,23 @@ const DinhMucDau = () => {
             Chưa có dữ liệu biển số xe. Vui lòng thêm biển số xe trước.
           </Alert>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 1 : 2 }}>
             {allLicensePlatesWithStandards.map(({ licensePlate, standards }) => (
               <Paper
                 key={licensePlate}
                 elevation={0}
-                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: isMobile ? 2 : 1,
+                  overflow: 'hidden',
+                  boxShadow: isMobile ? 1 : 'none',
+                }}
               >
                 <Box
                   onClick={() => toggleExpand(licensePlate)}
                   sx={{
-                    p: spacing(1.5),
+                    p: isMobile ? spacing(2) : spacing(1.5),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -746,8 +970,23 @@ const DinhMucDau = () => {
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        flexGrow: 1,
+                        flexDirection: isMobile ? 'column' : 'row',
+                        alignItems: isMobile ? 'flex-start' : 'center',
+                      }}
+                    >
+                      <Typography
+                        variant={isMobile ? 'h6' : 'subtitle2'}
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: isMobile ? '1.1rem' : '0.875rem',
+                        }}
+                      >
                         {licensePlate}
                       </Typography>
                       {standards.length > 0 && (
@@ -756,89 +995,117 @@ const DinhMucDau = () => {
                             bgcolor: 'primary.main',
                             color: 'primary.contrastText',
                             borderRadius: '12px',
-                            px: 1,
-                            py: 0.25,
-                            fontSize: '0.75rem',
+                            px: isMobile ? 1.5 : 1,
+                            py: isMobile ? 0.5 : 0.25,
+                            fontSize: isMobile ? '0.8rem' : '0.75rem',
                             fontWeight: 500,
                           }}
                         >
-                          {standards.length} mức
+                          {standards.length} định mức
                         </Box>
                       )}
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <AddButton
-                        size="small"
+                        size={isMobile ? 'medium' : 'small'}
                         onClick={e => {
                           e.stopPropagation();
                           handleOpenAddDialog(licensePlate);
                         }}
-                        className="h-7 min-w-0 p-1"
-                        sx={{ minWidth: '28px' }}
+                        sx={{
+                          minWidth: isMobile ? '36px' : '28px',
+                          height: isMobile ? '36px' : 'auto',
+                        }}
                       />
                       {expandedPlates[licensePlate] ? (
-                        <ChevronUpIcon className="w-5 h-5" />
+                        <ChevronUpIcon className={isMobile ? 'w-6 h-6' : 'w-5 h-5'} />
                       ) : (
-                        <ChevronDownIcon className="w-5 h-5" />
+                        <ChevronDownIcon className={isMobile ? 'w-6 h-6' : 'w-5 h-5'} />
                       )}
                     </Box>
                   </Box>
                 </Box>
 
                 <Collapse in={expandedPlates[licensePlate] !== false} timeout="auto" unmountOnExit>
-                  <Box sx={{ p: spacing(1.5) }}>
-                    <StandardTable
-                      columns={[
-                        {
-                          key: 'fromKm',
-                          label: 'TỪ (KM)',
-                          numeric: true,
-                          render: value => value.toLocaleString(),
-                        },
-                        {
-                          key: 'toKm',
-                          label: 'ĐẾN (KM)',
-                          numeric: true,
-                          render: value => value.toLocaleString(),
-                        },
-                        {
-                          key: 'standard',
-                          label: 'ĐỊNH MỨC (L/KM)',
-                          numeric: true,
-                          render: value => value.toFixed(2),
-                          getColor: value =>
-                            value > 0.4
-                              ? theme.palette.error.main
-                              : value > 0.3
-                                ? theme.palette.warning.main
-                                : theme.palette.success.main,
-                          fontWeight: 500,
-                        },
-                        {
-                          key: 'note',
-                          label: 'GHI CHÚ',
-                          render: value => value || '',
-                        },
-                      ]}
-                      data={standards.sort((a, b) => a.fromKm - b.fromKm)}
-                      renderActions={row => (
-                        <>
-                          <EditButton
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleOpenEditDialog(row);
-                            }}
-                          />
-                          <DeleteButton
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleDeleteClick(row.id);
-                            }}
-                          />
-                        </>
-                      )}
-                      emptyMessage="Chưa có dữ liệu định mức dầu"
-                    />
+                  <Box sx={{ p: isMobile ? spacing(1) : spacing(1.5) }}>
+                    {isMobile ? (
+                      // Mobile Card Layout
+                      standards.length === 0 ? (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ textAlign: 'center', py: 3 }}
+                        >
+                          Chưa có dữ liệu định mức dầu
+                        </Typography>
+                      ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          {standards
+                            .sort((a, b) => a.fromKm - b.fromKm)
+                            .map(standard => (
+                              <MobileFuelStandardCard
+                                key={standard.id}
+                                standard={standard}
+                                licensePlate={licensePlate}
+                              />
+                            ))}
+                        </Box>
+                      )
+                    ) : (
+                      // Desktop Table Layout
+                      <StandardTable
+                        columns={[
+                          {
+                            key: 'fromKm',
+                            label: 'TỪ (KM)',
+                            numeric: true,
+                            render: value => value.toLocaleString(),
+                          },
+                          {
+                            key: 'toKm',
+                            label: 'ĐẾN (KM)',
+                            numeric: true,
+                            render: value => value.toLocaleString(),
+                          },
+                          {
+                            key: 'standard',
+                            label: 'ĐỊNH MỨC (L/KM)',
+                            numeric: true,
+                            render: value => value.toFixed(2),
+                            getColor: value =>
+                              value > 0.4
+                                ? theme.palette.error.main
+                                : value > 0.3
+                                  ? theme.palette.warning.main
+                                  : theme.palette.success.main,
+                            fontWeight: 500,
+                          },
+                          {
+                            key: 'note',
+                            label: 'GHI CHÚ',
+                            render: value => value || '',
+                          },
+                        ]}
+                        data={standards.sort((a, b) => a.fromKm - b.fromKm)}
+                        renderActions={row => (
+                          <>
+                            <EditButton
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleOpenEditDialog(row);
+                              }}
+                            />
+                            <DeleteButton
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleDeleteClick(row.id);
+                              }}
+                            />
+                          </>
+                        )}
+                        emptyMessage="Chưa có dữ liệu định mức dầu"
+                      />
+                    )}
                   </Box>
                 </Collapse>
               </Paper>
@@ -855,7 +1122,11 @@ const DinhMucDau = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{
+          vertical: isMobile ? 'bottom' : 'top',
+          horizontal: isMobile ? 'center' : 'right',
+        }}
+        sx={isMobile ? { bottom: 90 } : {}}
       >
         <Alert
           onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}

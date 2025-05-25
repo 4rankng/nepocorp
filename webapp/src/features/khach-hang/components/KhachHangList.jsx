@@ -242,9 +242,6 @@ const KhachHangList = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingCustomer ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới'}
-        </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
@@ -291,7 +288,7 @@ const KhachHangList = () => {
             variant="contained"
             disabled={loading || !formData.name || !formData.phone}
           >
-            {editingCustomer ? 'Cập nhật' : 'Thêm mới'}
+            {editingCustomer ? 'Lưu' : 'Thêm'}
           </Button>
         </DialogActions>
       </Dialog>

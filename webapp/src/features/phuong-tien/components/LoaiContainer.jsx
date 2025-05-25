@@ -18,8 +18,19 @@ import {
   Alert,
   Typography,
   IconButton,
+  Card,
+  CardContent,
+  CardActions,
+  Divider,
+  useTheme,
+  useMediaQuery,
+  Collapse,
+  Chip,
+  Stack,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 // Mock API - Replace with actual API calls
 const mockApi = {
@@ -56,6 +67,10 @@ const LoaiContainer = () => {
     containerTypeId: null,
     details: '',
   });
+  
+  const [expandedCards, setExpandedCards] = useState({});
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [formData, setFormData] = useState({
     type: '',
@@ -96,6 +111,14 @@ const LoaiContainer = () => {
     setIsEdit(false);
     setOpenDialog(false);
   }, []);
+
+  // Toggle card expansion for mobile view
+  const toggleCardExpand = (id) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   // Handle ESC key press to close dialog
   useEffect(() => {
@@ -234,34 +257,6 @@ const LoaiContainer = () => {
           },
         }}
       >
-        <DialogTitle
-          sx={{
-            p: '16px 24px',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="h6" sx={{ fontSize: '1.125rem', fontWeight: 600 }}>
-            {isEdit ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'}
-          </Typography>
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseDialog}
-            size="small"
-            sx={{
-              color: 'text.secondary',
-              '&:hover': {
-                backgroundColor: 'action.hover',
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
         <DialogContent sx={{ p: '24px' }}>
           <DialogContentText
             sx={{
@@ -408,70 +403,230 @@ const LoaiContainer = () => {
             }}
             startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : null}
           >
-            {isLoading ? 'Đang xử lý...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
+            {isLoading ? 'Đang xử lý...' : isEdit ? 'Lưu' : 'Thêm'}
           </Button>
         </DialogActions>
       </Dialog>
     );
   };
 
+  // Render mobile card view
+  const renderMobileView = () => (
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 2, 
+      mt: 2,
+      pb: 8 // Add padding to prevent content from being hidden behind floating button
+    }}>
+      
+      {containerTypes.length === 0 ? (
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 3, 
+            textAlign: 'center',
+            border: '1px dashed',
+            borderColor: 'divider',
+            borderRadius: 2,
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Không có dữ liệu loại container
+          </Typography>
+        </Paper>
+      ) : (
+        containerTypes.map((item) => {
+          const isExpanded = expandedCards[item.id];
+          return (
+            <Card 
+              key={item.id}
+              elevation={1}
+              sx={{
+                borderRadius: 2,
+                overflow: 'visible',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  boxShadow: theme.shadows[4],
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 2, '&:last-child': { p: 2 } }}>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                  <Box sx={{ flex: 1, mr: 1 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                      <Typography 
+                        variant="subtitle1" 
+                        fontWeight={600}
+                        sx={{ 
+                          fontSize: '1.1rem',
+                          color: 'primary.main'
+                        }}
+                      >
+                        {item.type}
+                      </Typography>
+                    </Box>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {item.description || 'Không có mô tả'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <EditButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditDialog(item);
+                      }}
+                      sx={{ 
+                        opacity: 0.9,
+                        '&:hover': { 
+                          opacity: 1,
+                          backgroundColor: 'rgba(25, 118, 210, 0.04)' 
+                        } 
+                      }}
+                    />
+                    <DeleteButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(item);
+                      }}
+                      sx={{ 
+                        opacity: 0.9,
+                        '&:hover': { 
+                          opacity: 1,
+                          backgroundColor: 'rgba(211, 47, 47, 0.04)' 
+                        } 
+                      }}
+                    />
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          );
+        })
+      )}
+    </Box>
+  );
+
+  // Render desktop table view
+  const renderDesktopView = () => (
+    <Paper
+      elevation={0}
+      sx={{
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1,
+        overflow: 'hidden',
+      }}
+    >
+      <StandardTable
+        headerAction={
+          <AddButton 
+            onClick={handleOpenAddDialog} 
+            size="small" 
+            sx={{ ml: 2 }} 
+          />
+        }
+        columns={[
+          {
+            key: 'type',
+            label: 'Loại container',
+          },
+          {
+            key: 'description',
+            label: 'Mô tả',
+            maxWidth: 400,
+            noWrap: true,
+            render: value => value || 'Không có mô tả',
+            getColor: value => (value ? 'text.primary' : 'text.disabled'),
+          },
+        ]}
+        data={containerTypes}
+        loading={isLoading}
+        emptyMessage="Không có dữ liệu loại container"
+        renderActions={row => (
+          <>
+            <EditButton
+              onClick={e => {
+                e.stopPropagation();
+                handleOpenEditDialog(row);
+              }}
+            />
+            <DeleteButton
+              onClick={e => {
+                e.stopPropagation();
+                handleDeleteClick(row);
+              }}
+            />
+          </>
+        )}
+      />
+    </Paper>
+  );
+
+  // Floating Add Button for Mobile
+  const FloatingAddButton = () => (
+    <Box
+      sx={{
+        position: 'fixed',
+        bottom: 24,
+        right: 16,
+        zIndex: 1000,
+        display: { xs: 'block', md: 'none' },
+      }}
+    >
+      <AddButton
+        onClick={handleOpenAddDialog}
+        size="large"
+        sx={{
+          width: 56,
+          height: 56,
+          borderRadius: '50%',
+          boxShadow: theme.shadows[8],
+          '&:hover': {
+            boxShadow: theme.shadows[12],
+            transform: 'scale(1.05)',
+          },
+          transition: 'all 0.2s ease-in-out',
+        }}
+      />
+    </Box>
+  );
+
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: 2, position: 'relative' }}>
       {error ? (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
+      ) : isLoading ? (
+        <Box display="flex" justifyContent="center" p={4}>
+          <CircularProgress />
+        </Box>
+      ) : isMobile ? (
+        renderMobileView()
       ) : (
-        <Paper
-          elevation={0}
-          sx={{
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            overflow: 'hidden',
-          }}
-        >
-          <StandardTable
-            headerAction={<AddButton onClick={handleOpenAddDialog} size="small" sx={{ ml: 2 }} />}
-            columns={[
-              {
-                key: 'type',
-                label: 'Loại container',
-              },
-              {
-                key: 'description',
-                label: 'Mô tả',
-                maxWidth: 400,
-                noWrap: true,
-                render: value => value || 'Không có mô tả',
-                getColor: value => (value ? 'text.primary' : 'text.disabled'),
-              },
-            ]}
-            data={containerTypes}
-            loading={isLoading}
-            emptyMessage="Không có dữ liệu loại container"
-            renderActions={row => (
-              <>
-                <EditButton
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleOpenEditDialog(row);
-                  }}
-                />
-                <DeleteButton
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleDeleteClick(row);
-                  }}
-                />
-              </>
-            )}
-          />
-        </Paper>
+        renderDesktopView()
       )}
 
       {/* Render dialogs */}
       {renderDialog()}
+      
+      {/* Floating Add Button for Mobile */}
+      <FloatingAddButton />
 
       <Snackbar
         open={snackbar.open}

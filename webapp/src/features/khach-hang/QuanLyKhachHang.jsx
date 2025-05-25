@@ -219,9 +219,6 @@ const QuanLyKhachHang = () => {
       </Paper>
 
       <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {selectedCustomer ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới'}
-        </DialogTitle>
         <form onSubmit={handleSaveCustomer}>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>

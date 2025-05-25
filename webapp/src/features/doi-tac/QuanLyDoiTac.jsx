@@ -217,10 +217,36 @@ const QuanLyDoiTac = () => {
         />
       </Paper>
 
-      <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedPartner ? 'Chỉnh sửa đối tác' : 'Thêm đối tác mới'}</DialogTitle>
+      <Dialog
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            position: 'relative',
+            overflow: 'visible',
+          },
+        }}
+      >
+        <IconButton
+          onClick={handleCloseModal}
+          size="small"
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'text.secondary',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+            zIndex: 1,
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
         <form onSubmit={handleSavePartner}>
-          <DialogContent>
+          <DialogContent sx={{ pt: 4 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
               <TextField
                 label="Mã"
