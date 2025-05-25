@@ -16,32 +16,7 @@ import {
   InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { alpha } from '@mui/material/styles';
-
-// Enhanced theme configuration based on DinhMucDau.jsx
-const theme = {
-  spacing: 8,
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    fontSize: 14,
-    h6: { fontSize: '1rem', fontWeight: 600 },
-    body2: { fontSize: '0.8125rem' },
-    caption: { fontSize: '0.75rem', color: 'text.secondary' },
-  },
-  palette: {
-    primary: { main: '#1976d2' },
-    background: { default: '#f5f7fa', paper: '#ffffff' },
-    text: { primary: '#1a1a1a', secondary: '#6b7280' },
-    grey: { 100: '#f3f4f6', 200: '#e5e7eb' },
-    success: { light: '#4caf50', main: '#2e7d32' },
-    warning: { light: '#ff9800', main: '#ed6c02' },
-    error: { main: '#d32f2f' },
-  },
-  shape: { borderRadius: 6 },
-  shadows: ['none', '0px 2px 8px rgba(0, 0, 0, 0.08)', '0px 4px 12px rgba(0, 0, 0, 0.1)'],
-};
-
-const spacing = value => `${value * theme.spacing}px`;
+import { alpha, useTheme } from '@mui/material/styles';
 
 const StandardTable = ({
   columns = [],
@@ -62,6 +37,7 @@ const StandardTable = ({
   headerAction = null,
   ...tableProps
 }) => {
+  const theme = useTheme();
   // Extract and omit non-DOM props to prevent them from being passed to the DOM
   const { jsx: _jsx, component: _component, ...filteredTableProps } = tableProps || {};
   if (loading) {
@@ -96,7 +72,7 @@ const StandardTable = ({
       sx={{
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: `${theme.shape.borderRadius}px`,
+        borderRadius: theme.shape.borderRadius,
         boxShadow: theme.shadows[1],
         overflow: 'hidden',
         '&:hover': {

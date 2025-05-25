@@ -71,7 +71,7 @@ const themeConfig = {
       fontSize: '0.875rem',
       lineHeight: 1.6,
       margin: '0.5rem 0',
-      color: 'rgba(0, 0, 0, 0.6)', // Default secondary text color
+      color: '#6b7280', // Default secondary text color
     },
     button: {
       textTransform: 'none',
@@ -81,7 +81,7 @@ const themeConfig = {
     caption: {
       fontSize: '0.75rem',
       lineHeight: 1.5,
-      color: 'rgba(0, 0, 0, 0.6)', // Default secondary text color
+      color: '#6b7280', // Default secondary text color
       display: 'inline-block',
       margin: '0.25rem 0',
     },
@@ -91,7 +91,7 @@ const themeConfig = {
       lineHeight: 1.5,
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
-      color: 'rgba(0, 0, 0, 0.6)', // Default secondary text color
+      color: '#6b7280', // Default secondary text color
     },
   },
   palette: {
