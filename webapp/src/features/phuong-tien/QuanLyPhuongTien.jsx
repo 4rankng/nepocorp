@@ -2,10 +2,10 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Tabs, Tab, Box, useTheme, useMediaQuery } from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import XeVanChuyen from './components/XeVanChuyen';
-import LoaiContainer from './components/LoaiContainer';
-import DinhMucDau from './components/DinhMucDau';
-import BaoDuong from './components/BaoDuong';
+import XeVanChuyen from '@features/phuong-tien/components/XeVanChuyen';
+import LoaiContainer from '@features/phuong-tien/components/LoaiContainer';
+import DinhMucDau from '@features/phuong-tien/components/DinhMucDau';
+import BaoDuong from '@features/phuong-tien/components/BaoDuong';
 
 // Define valid tabs and their labels
 const TABS = [
@@ -22,50 +22,59 @@ const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight, isAnimating }) => 
   const [swipeOffset, setSwipeOffset] = useState(0);
   const containerRef = useRef(null);
 
-  const handleTouchStart = useCallback((e) => {
-    if (isAnimating) return;
-    const touch = e.touches[0];
-    touchStartX.current = touch.clientX;
-    touchStartY.current = touch.clientY;
-    setSwipeOffset(0);
-  }, [isAnimating]);
+  const handleTouchStart = useCallback(
+    e => {
+      if (isAnimating) return;
+      const touch = e.touches[0];
+      touchStartX.current = touch.clientX;
+      touchStartY.current = touch.clientY;
+      setSwipeOffset(0);
+    },
+    [isAnimating]
+  );
 
-  const handleTouchMove = useCallback((e) => {
-    if (isAnimating) return;
+  const handleTouchMove = useCallback(
+    e => {
+      if (isAnimating) return;
 
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - touchStartX.current;
-    const deltaY = touch.clientY - touchStartY.current;
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartX.current;
+      const deltaY = touch.clientY - touchStartY.current;
 
-    // Only handle horizontal swipes (with 2:1 ratio)
-    if (Math.abs(deltaY) > Math.abs(deltaX) * 0.5) return;
+      // Only handle horizontal swipes (with 2:1 ratio)
+      if (Math.abs(deltaY) > Math.abs(deltaX) * 0.5) return;
 
-    e.preventDefault();
-    setSwipeOffset(deltaX);
-  }, [isAnimating]);
+      e.preventDefault();
+      setSwipeOffset(deltaX);
+    },
+    [isAnimating]
+  );
 
-  const handleTouchEnd = useCallback((e) => {
-    if (isAnimating) return;
+  const handleTouchEnd = useCallback(
+    e => {
+      if (isAnimating) return;
 
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStartX.current;
-    const deltaY = touch.clientY - touchStartY.current;
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStartX.current;
+      const deltaY = touch.clientY - touchStartY.current;
 
-    // Reset visual feedback
-    setSwipeOffset(0);
+      // Reset visual feedback
+      setSwipeOffset(0);
 
-    // Only process horizontal swipes
-    if (Math.abs(deltaY) > Math.abs(deltaX) * 0.5) return;
+      // Only process horizontal swipes
+      if (Math.abs(deltaY) > Math.abs(deltaX) * 0.5) return;
 
-    const minDistance = 50;
-    if (Math.abs(deltaX) > minDistance) {
-      if (deltaX > 0) {
-        onSwipeRight?.();
-      } else {
-        onSwipeLeft?.();
+      const minDistance = 50;
+      if (Math.abs(deltaX) > minDistance) {
+        if (deltaX > 0) {
+          onSwipeRight?.();
+        } else {
+          onSwipeLeft?.();
+        }
       }
-    }
-  }, [isAnimating, onSwipeLeft, onSwipeRight]);
+    },
+    [isAnimating, onSwipeLeft, onSwipeRight]
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -90,7 +99,7 @@ const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight, isAnimating }) => 
         touchAction: 'pan-y',
         WebkitOverflowScrolling: 'touch',
         overscrollBehavior: 'contain',
-        '& *': { pointerEvents: 'auto' }
+        '& *': { pointerEvents: 'auto' },
       }}
     >
       {/* Visual feedback for swipe */}
@@ -101,13 +110,14 @@ const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight, isAnimating }) => 
           left: 0,
           right: 0,
           bottom: 0,
-          background: swipeOffset > 0
-            ? `linear-gradient(to right, rgba(0,0,0,0.05) ${Math.abs(swipeOffset) / 2}%, transparent)`
-            : `linear-gradient(to left, rgba(0,0,0,0.05) ${Math.abs(swipeOffset) / 2}%, transparent)`,
+          background:
+            swipeOffset > 0
+              ? `linear-gradient(to right, rgba(0,0,0,0.05) ${Math.abs(swipeOffset) / 2}%, transparent)`
+              : `linear-gradient(to left, rgba(0,0,0,0.05) ${Math.abs(swipeOffset) / 2}%, transparent)`,
           pointerEvents: 'none',
           opacity: Math.min(Math.abs(swipeOffset) / 100, 0.3),
           transition: swipeOffset === 0 ? 'opacity 0.2s ease-out' : 'none',
-          zIndex: 1
+          zIndex: 1,
         }}
       />
       {children}
@@ -139,18 +149,21 @@ const QuanLyPhuongTien = () => {
   };
 
   // Handle tab navigation with animation
-  const navigateToTab = useCallback((direction) => {
-    const currentIndex = TABS.findIndex(tab => tab.value === activeTab);
-    const newIndex = currentIndex + direction;
+  const navigateToTab = useCallback(
+    direction => {
+      const currentIndex = TABS.findIndex(tab => tab.value === activeTab);
+      const newIndex = currentIndex + direction;
 
-    if (newIndex >= 0 && newIndex < TABS.length) {
-      setIsAnimating(true);
-      navigate(`/phuong-tien/${TABS[newIndex].value}`);
-      setTimeout(() => setIsAnimating(false), 200);
-      return true;
-    }
-    return false;
-  }, [activeTab, navigate]);
+      if (newIndex >= 0 && newIndex < TABS.length) {
+        setIsAnimating(true);
+        navigate(`/phuong-tien/${TABS[newIndex].value}`);
+        setTimeout(() => setIsAnimating(false), 200);
+        return true;
+      }
+      return false;
+    },
+    [activeTab, navigate]
+  );
 
   // Handle swipe gestures
   const handleSwipeLeft = useCallback(() => {

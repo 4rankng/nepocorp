@@ -63,7 +63,9 @@ export const updateContainerType = (id, updatedContainerTypeData) =>
             ? (updatedType = {
                 ...t,
                 type: updatedContainerTypeData.type.trim(),
-                description: updatedContainerTypeData.description ? updatedContainerTypeData.description.trim() : '',
+                description: updatedContainerTypeData.description
+                  ? updatedContainerTypeData.description.trim()
+                  : '',
               })
             : t
         );

@@ -16,14 +16,7 @@ const initialFormState = {
   taxCode: '',
 };
 
-const PartnerForm = ({
-  open,
-  onClose,
-  onSave,
-  partner = null,
-  isLoading = false,
-  error = '',
-}) => {
+const PartnerForm = ({ open, onClose, onSave, partner = null, isLoading = false, error = '' }) => {
   const [formData, setFormData] = useState(initialFormState);
   const [localError, setLocalError] = useState('');
 

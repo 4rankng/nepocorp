@@ -1,27 +1,14 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Alert,
-  Snackbar,
-} from '@mui/material';
+import { Box, Paper, Typography, Alert, Snackbar } from '@mui/material';
 import { AddButton } from '@shared/components/ActionButtons';
 import ConfirmationModal from '@shared/components/ConfirmationDialog';
-import PartnerForm from './PartnerForm';
-import PartnerList from './PartnerList';
-import usePartnerManagement from '../hooks/usePartnerManagement';
+import PartnerForm from '@features/doi-tac/components/PartnerForm';
+import PartnerList from '@features/doi-tac/components/PartnerList';
+import usePartnerManagement from '@features/doi-tac/hooks/usePartnerManagement';
 
 const PartnerManagement = () => {
-  const {
-    partners,
-    loading,
-    error,
-    addPartner,
-    updatePartner,
-    deletePartner,
-    clearError,
-  } = usePartnerManagement();
+  const { partners, loading, error, addPartner, updatePartner, deletePartner, clearError } =
+    usePartnerManagement();
 
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -54,7 +41,7 @@ const PartnerManagement = () => {
     setIsFormOpen(true);
   };
 
-  const handleOpenFormForEdit = (partner) => {
+  const handleOpenFormForEdit = partner => {
     setSelectedPartner(partner);
     setFormError('');
     setIsFormOpen(true);
@@ -66,7 +53,7 @@ const PartnerManagement = () => {
     setFormError('');
   };
 
-  const handleSavePartner = async (formData) => {
+  const handleSavePartner = async formData => {
     setFormError('');
 
     let result;
@@ -78,18 +65,14 @@ const PartnerManagement = () => {
 
     if (result.success) {
       handleCloseForm();
-      showSnackbar(
-        selectedPartner
-          ? 'Sửa đối tác thành công'
-          : 'Thêm đối tác thành công'
-      );
+      showSnackbar(selectedPartner ? 'Sửa đối tác thành công' : 'Thêm đối tác thành công');
     } else {
       setFormError(result.error);
     }
   };
 
   // Delete handlers
-  const handleDeleteClick = (partner) => {
+  const handleDeleteClick = partner => {
     setPartnerToDelete(partner);
     setIsDeleteModalOpen(true);
   };
@@ -125,11 +108,7 @@ const PartnerManagement = () => {
       </Typography>
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={clearError}
-        >
+        <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
           {error}
         </Alert>
       )}
@@ -139,11 +118,7 @@ const PartnerManagement = () => {
           <Typography variant="h6" component="h2">
             Danh sách đối tác
           </Typography>
-          <AddButton
-            onClick={handleOpenFormForAdd}
-            label="Thêm đối tác"
-            size="small"
-          />
+          <AddButton onClick={handleOpenFormForAdd} label="Thêm đối tác" size="small" />
         </Box>
 
         <PartnerList
@@ -217,11 +192,7 @@ const PartnerManagement = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

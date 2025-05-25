@@ -35,13 +35,13 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import CloseIcon from '@mui/icons-material/Close';
 import { CustomerForm } from '@features/khach-hang';
-import PartnerForm from '../../../features/doi-tac/components/PartnerForm';
+import PartnerForm from '@features/doi-tac/components/PartnerForm';
 
 // Import mock API services
-import { getVehiclesForSelect } from '../../../services/mockData/vehicles.js';
-import { getPartnersForSelect, addPartner } from '../../../services/mockData/partners.js';
-import { getCustomersForSelect, addQuickCustomer } from '../../../services/mockData/customers.js';
-import { getContainerTypesForSelect } from '../../../services/mockData/containers.js';
+import { getVehiclesForSelect } from '@services/mockData/vehicles';
+import { getPartnersForSelect, addPartner } from '@services/mockData/partners';
+import { getCustomersForSelect, addQuickCustomer } from '@services/mockData/customers';
+import { getContainerTypesForSelect } from '@services/mockData/containers';
 
 // Props: editingPlan, initialFormData, onFormChange, onContainerFormChange, onAddContainerField, onRemoveContainerField,
 // onSave, isLoading, error, selectOptions, initialActiveStep = 0
@@ -64,11 +64,11 @@ const MobileShipmentFormStepper = ({
   const [activeStep, setActiveStep] = useState(0);
   const [validationAttempted, setValidationAttempted] = useState({}); // Track validation attempts per step
   const [customerDialog, setCustomerDialog] = useState({ open: false });
-  const [partnerDialog, setPartnerDialog] = useState({ 
+  const [partnerDialog, setPartnerDialog] = useState({
     open: false,
-    partner: null
+    partner: null,
   });
-  
+
   // Internal state for select options
   const [selectOptions, setSelectOptions] = useState({
     vehicles: [],
@@ -83,10 +83,10 @@ const MobileShipmentFormStepper = ({
   const fetchSelectOptionsData = async () => {
     setIsLoadingData(true);
     setDataError('');
-    
+
     try {
       console.log('MobileShipmentFormStepper - Fetching select options data...');
-      
+
       const [vehicles, partners, customers, containerTypes] = await Promise.all([
         getVehiclesForSelect(),
         getPartnersForSelect(),
@@ -103,7 +103,7 @@ const MobileShipmentFormStepper = ({
       };
 
       setSelectOptions(transformedData);
-      
+
       console.log('MobileShipmentFormStepper - Successfully fetched select options:', {
         vehicleCount: transformedData.vehicles.length,
         partnerCount: transformedData.partners.length,
@@ -112,9 +112,8 @@ const MobileShipmentFormStepper = ({
         sampleData: {
           vehicles: transformedData.vehicles.slice(0, 2),
           customers: transformedData.customers.slice(0, 2),
-        }
+        },
       });
-      
     } catch (err) {
       console.error('MobileShipmentFormStepper - Error fetching select options:', err);
       setDataError('Không thể tải dữ liệu danh sách. Vui lòng thử lại.');
@@ -128,18 +127,18 @@ const MobileShipmentFormStepper = ({
   useEffect(() => {
     setActiveStep(0);
     setValidationAttempted({});
-    
+
     // Fetch select options data when component loads
     fetchSelectOptionsData();
-    
+
     // Log the received props for debugging
     console.log('MobileShipmentFormStepper - Component mounted/updated:', {
       formData,
-      editingPlan
+      editingPlan,
     });
   }, [editingPlan]); // Only depend on editingPlan to avoid unnecessary re-fetches
 
-  const getFieldOptions = (field) => {
+  const getFieldOptions = field => {
     // Handle different field types and their options
     switch (field) {
       case 'khachHangId':
@@ -169,7 +168,14 @@ const MobileShipmentFormStepper = ({
       },
       {
         label: 'Phương tiện',
-        fields: ['loaiContainerId', 'soLuongContainer', 'loaiXe', 'bienSoXeId', 'doiTacVanChuyen', 'cuocVanChuyen'],
+        fields: [
+          'loaiContainerId',
+          'soLuongContainer',
+          'loaiXe',
+          'bienSoXeId',
+          'doiTacVanChuyen',
+          'cuocVanChuyen',
+        ],
         icon: <LocalShippingIcon />,
       },
     ];
@@ -186,7 +192,7 @@ const MobileShipmentFormStepper = ({
     return steps;
   };
 
-  const getFieldLabel = (field) => {
+  const getFieldLabel = field => {
     const labels = {
       ngayThang: 'Ngày tháng',
       dienGiai: 'Diễn giải',
@@ -207,11 +213,11 @@ const MobileShipmentFormStepper = ({
     return labels[field] || field;
   };
 
-  const isStepComplete = (stepIndex) => {
+  const isStepComplete = stepIndex => {
     return getStepValidationErrors(stepIndex).length === 0;
   };
 
-  const getStepValidationErrors = (stepIndex) => {
+  const getStepValidationErrors = stepIndex => {
     const currentErrors = [];
 
     switch (stepIndex) {
@@ -274,7 +280,6 @@ const MobileShipmentFormStepper = ({
     return currentErrors;
   };
 
-
   const handleNextStep = () => {
     // Mark validation as attempted for current step
     setValidationAttempted(prev => ({ ...prev, [activeStep]: true }));
@@ -297,9 +302,7 @@ const MobileShipmentFormStepper = ({
     // Don't reset validation attempts when going back - user might want to see previous errors
   };
 
-
-
-    const handleSubmit = () => {
+  const handleSubmit = () => {
     // Mark validation as attempted for final step
     setValidationAttempted(prev => ({ ...prev, [activeStep]: true }));
 
@@ -314,7 +317,7 @@ const MobileShipmentFormStepper = ({
     onSave();
   };
 
-    const handleOpenCustomerDialog = () => {
+  const handleOpenCustomerDialog = () => {
     setCustomerDialog({ open: true });
   };
 
@@ -322,7 +325,7 @@ const MobileShipmentFormStepper = ({
     setCustomerDialog({ open: false });
   };
 
-  const handleCustomerSave = async (customerData) => {
+  const handleCustomerSave = async customerData => {
     // Add customer and refresh customer list
     try {
       // Call the parent function if provided, otherwise use our own API call
@@ -337,7 +340,7 @@ const MobileShipmentFormStepper = ({
         await addQuickCustomer(customerData.name);
         await fetchSelectOptionsData(); // Refresh the options
       }
-      
+
       // Close the dialog
       handleCloseCustomerDialog();
     } catch (error) {
@@ -348,9 +351,9 @@ const MobileShipmentFormStepper = ({
   };
 
   const handleOpenPartnerDialog = () => {
-    setPartnerDialog({ 
+    setPartnerDialog({
       open: true,
-      partner: null // New partner
+      partner: null, // New partner
     });
   };
 
@@ -358,20 +361,20 @@ const MobileShipmentFormStepper = ({
     setPartnerDialog({ open: false });
   };
 
-  const handleSavePartner = async (partnerData) => {
+  const handleSavePartner = async partnerData => {
     try {
       // Add the new partner
       const newPartner = await addPartner(partnerData);
-      
+
       // Update the form field with the new partner's name
       onFormChange({ target: { name: 'doiTacVanChuyen', value: newPartner.name } });
-      
+
       // Refresh our select options to include the new partner
       await fetchSelectOptionsData();
-      
+
       // Close the dialog
       handleClosePartnerDialog();
-      
+
       return { success: true };
     } catch (error) {
       console.error('Error adding partner:', error);
@@ -384,10 +387,8 @@ const MobileShipmentFormStepper = ({
   const currentStepErrors = getStepValidationErrors(activeStep);
   const shouldShowErrors = validationAttempted[activeStep] && currentStepErrors.length > 0;
 
-
-
   // This function was originally part of QuanLyLichVanChuyen, now self-contained for the stepper's rendering logic
-  const renderStepContent = (stepIndex) => {
+  const renderStepContent = stepIndex => {
     const stepFields = steps[stepIndex].fields;
 
     return (
@@ -430,8 +431,8 @@ const MobileShipmentFormStepper = ({
                     height: '40px',
                     '& .MuiSelect-select': {
                       display: 'flex',
-                      alignItems: 'center'
-                    }
+                      alignItems: 'center',
+                    },
                   }}
                   MenuProps={{
                     PaperProps: {
@@ -439,10 +440,10 @@ const MobileShipmentFormStepper = ({
                         maxHeight: 200,
                         '& .MuiMenuItem-root': {
                           fontSize: '14px',
-                          py: 1
-                        }
-                      }
-                    }
+                          py: 1,
+                        },
+                      },
+                    },
                   }}
                 >
                   {(selectOptions.customers || []).map(customer => (
@@ -466,8 +467,8 @@ const MobileShipmentFormStepper = ({
                   '&:hover': {
                     color: '#374151',
                     backgroundColor: '#f3f4f6',
-                    borderColor: '#9ca3af'
-                  }
+                    borderColor: '#9ca3af',
+                  },
                 }}
               >
                 <AddIcon fontSize="small" />
@@ -476,7 +477,7 @@ const MobileShipmentFormStepper = ({
           </>
         )}
 
-                {stepIndex === 1 && (
+        {stepIndex === 1 && (
           <>
             {/* Tuyến đường - Direct Route Input */}
             <Box>
@@ -486,7 +487,9 @@ const MobileShipmentFormStepper = ({
                   fullWidth
                   placeholder="Nhập điểm đi"
                   value={formData.tuyenDuongDi || ''}
-                  onChange={(e) => onFormChange({ target: { name: 'tuyenDuongDi', value: e.target.value } })}
+                  onChange={e =>
+                    onFormChange({ target: { name: 'tuyenDuongDi', value: e.target.value } })
+                  }
                   size="small"
                   variant="outlined"
                   sx={{
@@ -501,7 +504,7 @@ const MobileShipmentFormStepper = ({
                       '&.Mui-focused': {
                         borderColor: '#6b7280',
                         backgroundColor: '#f9fafb',
-                      }
+                      },
                     },
                     '& .MuiOutlinedInput-input': {
                       textAlign: 'center',
@@ -509,27 +512,31 @@ const MobileShipmentFormStepper = ({
                       fontWeight: 500,
                       color: '#374151',
                       padding: '8px 12px',
-                    }
+                    },
                   }}
                 />
 
-                                {/* Điểm đến */}
+                {/* Điểm đến */}
                 {(() => {
                   // Parse destinations and ensure we always have at least one empty field for new input
                   const destinationsStr = formData.tuyenDuongDen || '';
-                  const destinations = destinationsStr ? destinationsStr.split(',').map(d => d.trim()) : [''];
+                  const destinations = destinationsStr
+                    ? destinationsStr.split(',').map(d => d.trim())
+                    : [''];
 
                   return destinations.map((destination, index) => (
                     <Box key={index}>
                       {/* Mũi tên */}
                       <Box sx={{ display: 'flex', justifyContent: 'center', my: 0.3 }}>
-                        <Box sx={{
-                          width: 0,
-                          height: 0,
-                          borderLeft: '6px solid transparent',
-                          borderRight: '6px solid transparent',
-                          borderTop: '8px solid #1976D2'
-                        }} />
+                        <Box
+                          sx={{
+                            width: 0,
+                            height: 0,
+                            borderLeft: '6px solid transparent',
+                            borderRight: '6px solid transparent',
+                            borderTop: '8px solid #1976D2',
+                          }}
+                        />
                       </Box>
 
                       {/* Ô nhập điểm đến */}
@@ -538,7 +545,7 @@ const MobileShipmentFormStepper = ({
                           fullWidth
                           placeholder="Nhập điểm đến"
                           value={destination}
-                          onChange={(e) => {
+                          onChange={e => {
                             const newDestinations = [...destinations];
                             newDestinations[index] = e.target.value;
                             // Keep all destinations, including empty ones for editing
@@ -559,7 +566,7 @@ const MobileShipmentFormStepper = ({
                               '&.Mui-focused': {
                                 borderColor: '#6b7280',
                                 backgroundColor: '#f8f9fa',
-                              }
+                              },
                             },
                             '& .MuiOutlinedInput-input': {
                               textAlign: 'center',
@@ -567,7 +574,7 @@ const MobileShipmentFormStepper = ({
                               fontWeight: 500,
                               color: '#374151',
                               padding: '8px 12px',
-                            }
+                            },
                           }}
                         />
 
@@ -612,7 +619,7 @@ const MobileShipmentFormStepper = ({
                     '&:hover': {
                       borderColor: '#6b7280',
                       backgroundColor: 'rgba(107, 114, 128, 0.04)',
-                    }
+                    },
                   }}
                   size="small"
                 >
@@ -650,7 +657,7 @@ const MobileShipmentFormStepper = ({
                 value={formData.soLuongContainer}
                 onChange={onFormChange}
                 InputProps={{
-                  inputProps: { min: 1, max: 50 }
+                  inputProps: { min: 1, max: 50 },
                 }}
                 size="small"
               />
@@ -685,7 +692,7 @@ const MobileShipmentFormStepper = ({
                   ))}
                 </Select>
               </FormControl>
-                        ) : (
+            ) : (
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'stretch' }}>
                 <TextField
                   fullWidth
@@ -697,8 +704,8 @@ const MobileShipmentFormStepper = ({
                   size="small"
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '40px'
-                    }
+                      height: '40px',
+                    },
                   }}
                 />
                 <IconButton
@@ -715,8 +722,8 @@ const MobileShipmentFormStepper = ({
                     '&:hover': {
                       color: '#374151',
                       backgroundColor: '#f3f4f6',
-                      borderColor: '#9ca3af'
-                    }
+                      borderColor: '#9ca3af',
+                    },
                   }}
                 >
                   <AddIcon fontSize="small" />
@@ -733,7 +740,7 @@ const MobileShipmentFormStepper = ({
               onChange={onFormChange}
               InputProps={{
                 inputProps: { min: 0, step: 1000 },
-                endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>
+                endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>,
               }}
               size="small"
             />
@@ -775,10 +782,15 @@ const MobileShipmentFormStepper = ({
               </Typography>
               {(formData.thongTinContainer || []).map((container, index) => (
                 <Card key={index} variant="outlined" sx={{ mb: 2, p: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="subtitle2">
-                      Container {index + 1}
-                    </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      mb: 2,
+                    }}
+                  >
+                    <Typography variant="subtitle2">Container {index + 1}</Typography>
                     {formData.thongTinContainer.length > 1 && (
                       <IconButton
                         size="small"
@@ -796,7 +808,7 @@ const MobileShipmentFormStepper = ({
                       label="Số container"
                       name="soContainer"
                       value={container.soContainer}
-                      onChange={(e) => onContainerFormChange(index, e)}
+                      onChange={e => onContainerFormChange(index, e)}
                       placeholder="Ví dụ: CONT123456"
                       size="small"
                     />
@@ -805,7 +817,7 @@ const MobileShipmentFormStepper = ({
                       label="Số seal"
                       name="soSeal"
                       value={container.soSeal}
-                      onChange={(e) => onContainerFormChange(index, e)}
+                      onChange={e => onContainerFormChange(index, e)}
                       placeholder="Ví dụ: SEAL789"
                       size="small"
                     />
@@ -821,7 +833,7 @@ const MobileShipmentFormStepper = ({
                 sx={{
                   minHeight: 48,
                   borderStyle: 'dashed',
-                  borderWidth: 2
+                  borderWidth: 2,
                 }}
               >
                 Thêm container
@@ -833,35 +845,45 @@ const MobileShipmentFormStepper = ({
     );
   };
 
-
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      minHeight: '0'
-    }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: '0',
+      }}
+    >
       {/* Scrollable Content Area */}
-      <Box sx={{
-        flex: 1,
-        overflow: 'auto',
-        minHeight: '0'
-      }}>
+      <Box
+        sx={{
+          flex: 1,
+          overflow: 'auto',
+          minHeight: '0',
+        }}
+      >
         {/* Progress Indicator */}
         <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
             <Typography variant="h6" sx={{ fontWeight: 600, color: '#374151' }}>
               {editingPlan ? 'Chỉnh sửa lịch vận chuyển' : 'Thêm lịch vận chuyển mới'}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{
-                backgroundColor: '#f3f4f6',
-                px: 2,
-                py: 0.5,
-                borderRadius: 2,
-                border: '1px solid #d1d5db'
-              }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 500, fontSize: '14px' }}>
+              <Box
+                sx={{
+                  backgroundColor: '#f3f4f6',
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: 2,
+                  border: '1px solid #d1d5db',
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{ color: '#6b7280', fontWeight: 500, fontSize: '14px' }}
+                >
                   {activeStep + 1}/{steps.length}
                 </Typography>
               </Box>
@@ -872,8 +894,8 @@ const MobileShipmentFormStepper = ({
                   color: '#6b7280',
                   '&:hover': {
                     color: '#374151',
-                    backgroundColor: '#f3f4f6'
-                  }
+                    backgroundColor: '#f3f4f6',
+                  },
                 }}
               >
                 <CloseIcon />
@@ -895,18 +917,20 @@ const MobileShipmentFormStepper = ({
           />
         </Box>
 
-
-
         {/* Error display for the current step, or global form error passed from parent, or data loading error */}
-        {(error || dataError) && !shouldShowErrors && ( // Show global error if no step validation errors being shown
-           <Alert severity="error" sx={{ mb: 2, borderRadius: 2}}>
-             {dataError || error}
-           </Alert>
-        )}
+        {(error || dataError) &&
+          !shouldShowErrors && ( // Show global error if no step validation errors being shown
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+              {dataError || error}
+            </Alert>
+          )}
 
         {/* Loading indicator for data fetching */}
         {isLoadingData && (
-          <Alert severity="info" sx={{ mb: 2, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Alert
+            severity="info"
+            sx={{ mb: 2, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+          >
             <CircularProgress size={16} />
             Đang tải dữ liệu danh sách...
           </Alert>
@@ -914,14 +938,14 @@ const MobileShipmentFormStepper = ({
 
         {/* Current Step Content */}
         <Fade in={true} key={activeStep} timeout={300}>
-                      <Card
+          <Card
             variant="outlined"
             sx={{
               mb: 3,
               backgroundColor: '#ffffff',
               border: '1px solid #e5e7eb',
               borderRadius: 2,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <CardContent sx={{ pt: 3 }}>
@@ -940,14 +964,19 @@ const MobileShipmentFormStepper = ({
                     borderRadius: 2,
                     backgroundColor: '#fef2f2',
                     border: '1px solid #fecaca',
-                    color: '#dc2626'
+                    color: '#dc2626',
                   }}
                 >
                   <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: '#dc2626' }}>
                     Vui lòng kiểm tra lại:
                   </Typography>
                   {currentStepErrors.map((err, index) => (
-                    <Typography key={index} variant="caption" display="block" sx={{ color: '#dc2626' }}>
+                    <Typography
+                      key={index}
+                      variant="caption"
+                      display="block"
+                      sx={{ color: '#dc2626' }}
+                    >
                       • {err}
                     </Typography>
                   ))}
@@ -959,17 +988,19 @@ const MobileShipmentFormStepper = ({
       </Box>
 
       {/* Fixed Navigation Buttons */}
-      <Box sx={{
-        flexShrink: 0,
-        p: 2,
-        pt: 1,
-        borderTop: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
+      <Box
+        sx={{
+          flexShrink: 0,
+          p: 2,
+          pt: 1,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Button
           variant="outlined"
           startIcon={<NavigateBeforeIcon sx={{ fontSize: 16 }} />}
@@ -982,7 +1013,7 @@ const MobileShipmentFormStepper = ({
             fontSize: '14px',
             fontWeight: 500,
             textTransform: 'none',
-            px: 1.5
+            px: 1.5,
           }}
         >
           Trước
@@ -1006,7 +1037,7 @@ const MobileShipmentFormStepper = ({
             '&:hover': {
               borderColor: '#d32f2f',
               backgroundColor: 'rgba(244, 67, 54, 0.04)',
-            }
+            },
           }}
         >
           Hủy
@@ -1015,7 +1046,13 @@ const MobileShipmentFormStepper = ({
         {activeStep === steps.length - 1 ? (
           <Button
             variant="contained"
-            startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}
+            startIcon={
+              isLoading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <CheckCircleIcon sx={{ fontSize: 16 }} />
+              )
+            }
             onClick={handleSubmit}
             disabled={isLoading}
             sx={{
@@ -1029,7 +1066,7 @@ const MobileShipmentFormStepper = ({
               background: 'linear-gradient(45deg, #4caf50 30%, #66bb6a 90%)',
             }}
           >
-            {isLoading ? (editingPlan ? 'Sửa' : 'Tạo') : (editingPlan ? 'Sửa' : 'Tạo')}
+            {isLoading ? (editingPlan ? 'Sửa' : 'Tạo') : editingPlan ? 'Sửa' : 'Tạo'}
           </Button>
         ) : (
           <Button
@@ -1044,7 +1081,7 @@ const MobileShipmentFormStepper = ({
               fontSize: '14px',
               fontWeight: 500,
               textTransform: 'none',
-              px: 1.5
+              px: 1.5,
             }}
           >
             Tiếp

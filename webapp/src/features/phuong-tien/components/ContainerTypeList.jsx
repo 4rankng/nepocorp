@@ -20,9 +20,9 @@ const ContainerTypeList = ({
     {
       key: 'description',
       label: 'Mô tả',
-      render: (value) => value || 'Không có mô tả',
+      render: value => value || 'Không có mô tả',
       maxWidth: 400,
-      getColor: (value) => value ? 'text.primary' : 'text.disabled',
+      getColor: value => (value ? 'text.primary' : 'text.disabled'),
     },
     {
       key: 'actions',

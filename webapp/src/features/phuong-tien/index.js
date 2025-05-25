@@ -6,10 +6,10 @@ export {
   ContainerTypeList,
   ContainerTypeManagement,
   LoaiContainer,
-} from './components';
+} from '@features/phuong-tien/components';
 
 // Container Type Hooks
-export { useContainerTypeManagement } from './hooks';
+export { useContainerTypeManagement } from '@features/phuong-tien/hooks';
 
 // Default export for the main LoaiContainer component
-export { default } from './components/LoaiContainer';
+export { default } from '@features/phuong-tien/components/LoaiContainer';

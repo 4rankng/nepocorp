@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   getVehicleMonthlyDetailsReport,
   getAvailableMonthsForReport,
-} from '../../services/mockData/reports.js';
-import { getVehiclesForSelect } from '../../services/mockData/vehicles.js';
+} from '@services/mockData/reports';
+import { getVehiclesForSelect } from '@services/mockData/vehicles';
 
 // SVG Icon for Download
 const ArrowDownTrayIcon = ({ className = 'w-6 h-6' }) => (

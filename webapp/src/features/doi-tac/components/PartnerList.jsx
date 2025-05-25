@@ -20,13 +20,13 @@ const PartnerList = ({
     {
       key: 'address',
       label: 'Địa chỉ',
-      render: (value) => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa cập nhật',
       maxWidth: 300,
     },
     {
       key: 'taxCode',
       label: 'Mã số thuế',
-      render: (value) => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa cập nhật',
     },
     {
       key: 'actions',
@@ -39,11 +39,7 @@ const PartnerList = ({
             disabled={loading}
             tooltip="Chỉnh sửa đối tác"
           />
-          <DeleteButton
-            onClick={() => onDelete(record)}
-            disabled={loading}
-            tooltip="Xóa đối tác"
-          />
+          <DeleteButton onClick={() => onDelete(record)} disabled={loading} tooltip="Xóa đối tác" />
         </Box>
       ),
     },

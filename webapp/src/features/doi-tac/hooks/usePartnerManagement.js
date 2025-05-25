@@ -23,7 +23,7 @@ const usePartnerManagement = () => {
   };
 
   // Add new partner
-  const addNewPartner = async (partnerData) => {
+  const addNewPartner = async partnerData => {
     setLoading(true);
     setError('');
     try {
@@ -61,7 +61,7 @@ const usePartnerManagement = () => {
   };
 
   // Delete partner
-  const deleteExistingPartner = async (id) => {
+  const deleteExistingPartner = async id => {
     setLoading(true);
     setError('');
     try {
@@ -82,7 +82,7 @@ const usePartnerManagement = () => {
   };
 
   // Get partner by ID
-  const getPartnerById = async (id) => {
+  const getPartnerById = async id => {
     try {
       const partner = partners.find(p => p.id === id);
       if (partner) {

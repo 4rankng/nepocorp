@@ -33,7 +33,7 @@ const DesktopShipmentFormDialog = ({
   error,
   selectOptions,
 }) => {
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
     onSave();
   };
@@ -291,7 +291,13 @@ const DesktopShipmentFormDialog = ({
                 Thông tin Container
               </Typography>
               {formData.thongTinContainer.map((cont, index) => (
-                <Grid container spacing={2} key={index} alignItems="center" sx={{ mb: index < formData.thongTinContainer.length - 1 ? 2 : 0 }}>
+                <Grid
+                  container
+                  spacing={2}
+                  key={index}
+                  alignItems="center"
+                  sx={{ mb: index < formData.thongTinContainer.length - 1 ? 2 : 0 }}
+                >
                   <Grid item xs={12} sm={5}>
                     <TextField
                       fullWidth
@@ -316,7 +322,11 @@ const DesktopShipmentFormDialog = ({
                   </Grid>
                   <Grid item xs={12} sm={2}>
                     {formData.thongTinContainer.length > 1 && (
-                      <IconButton onClick={() => onRemoveContainerField(index)} color="error" size="small">
+                      <IconButton
+                        onClick={() => onRemoveContainerField(index)}
+                        color="error"
+                        size="small"
+                      >
                         <RemoveIcon />
                       </IconButton>
                     )}
@@ -359,7 +369,9 @@ const DesktopShipmentFormDialog = ({
             )}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ py: 2, px: 3, borderTop: '1px solid', borderColor: 'divider', gap: 1 }}>
+        <DialogActions
+          sx={{ py: 2, px: 3, borderTop: '1px solid', borderColor: 'divider', gap: 1 }}
+        >
           <Button
             variant="outlined"
             color="inherit"
@@ -376,7 +388,13 @@ const DesktopShipmentFormDialog = ({
             startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
             sx={{ textTransform: 'none' }}
           >
-            {isLoading ? (editingPlan ? 'Đang sửa...' : 'Đang lưu...') : (editingPlan ? 'Sửa' : 'Lưu')}
+            {isLoading
+              ? editingPlan
+                ? 'Đang sửa...'
+                : 'Đang lưu...'
+              : editingPlan
+                ? 'Sửa'
+                : 'Lưu'}
           </Button>
         </DialogActions>
       </form>

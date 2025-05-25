@@ -12,25 +12,16 @@ import {
   Avatar,
   Button,
 } from '@mui/material';
-import {
-  PencilIcon,
-  TrashIcon
-} from '@assets/icons/index.jsx'; // Assuming path to project icons
+import { PencilIcon, TrashIcon } from '@assets/icons/index.jsx'; // Assuming path to project icons
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import BusinessIcon from '@mui/icons-material/Business';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { getStatusColor } from '../utils/styleUtils';
+import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
 
-const MobileShipmentCard = ({
-  plan,
-  isExpanded,
-  onCardExpand,
-  onEdit,
-  onDelete
-}) => {
+const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete }) => {
   const statusColor = getStatusColor(plan.trangThai);
 
   return (
@@ -50,7 +41,9 @@ const MobileShipmentCard = ({
     >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}
+        >
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="h6"
@@ -61,7 +54,7 @@ const MobileShipmentCard = ({
                 mb: 0.5,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
               }}
             >
               {plan.dienGiai || 'Không có diễn giải'}
@@ -75,7 +68,7 @@ const MobileShipmentCard = ({
                   backgroundColor: '#e5e7eb',
                   color: '#374151',
                   fontWeight: 500,
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '12px' }}>
@@ -107,7 +100,7 @@ const MobileShipmentCard = ({
                 color: '#6b7280',
                 '&:hover': {
                   backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                  color: '#1976d2'
+                  color: '#1976d2',
                 },
               }}
             >
@@ -120,7 +113,7 @@ const MobileShipmentCard = ({
                 color: '#6b7280',
                 '&:hover': {
                   backgroundColor: 'rgba(211, 47, 47, 0.04)',
-                  color: '#d32f2f'
+                  color: '#d32f2f',
                 },
               }}
             >
@@ -132,7 +125,7 @@ const MobileShipmentCard = ({
               sx={{
                 color: '#6b7280',
                 transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.3s ease'
+                transition: 'transform 0.3s ease',
               }}
             >
               <ExpandMoreIcon />
@@ -141,24 +134,26 @@ const MobileShipmentCard = ({
         </Box>
 
         {/* Route Info */}
-        <Box sx={{
-          display: 'flex',
-          alignItems: 'center',
-          mb: 2,
-          p: 1.5,
-          bgcolor: '#f8f9fa',
-          borderRadius: 1,
-          border: '1px solid #e5e7eb'
-        }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            mb: 2,
+            p: 1.5,
+            bgcolor: '#f8f9fa',
+            borderRadius: 1,
+            border: '1px solid #e5e7eb',
+          }}
+        >
           <LocationOnIcon sx={{ color: '#6b7280', mr: 1, fontSize: 18 }} />
           <Typography variant="body2" sx={{ flexGrow: 1, color: '#374151', fontSize: '14px' }}>
             <strong>{plan.tuyenDuong?.diemDi || 'N/A'}</strong>
             {' → '}
-            <strong>{
-              Array.isArray(plan.tuyenDuong?.diemDen)
+            <strong>
+              {Array.isArray(plan.tuyenDuong?.diemDen)
                 ? plan.tuyenDuong.diemDen.join(', ')
-                : plan.tuyenDuong?.diemDen || 'N/A'
-            }</strong>
+                : plan.tuyenDuong?.diemDen || 'N/A'}
+            </strong>
           </Typography>
         </Box>
 
@@ -167,59 +162,125 @@ const MobileShipmentCard = ({
           <Divider sx={{ mb: 2, borderColor: '#e5e7eb' }} />
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                py: 1,
+                borderBottom: '1px solid #f5f5f5',
+              }}
+            >
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
                 Số lượng container:
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}
+              >
                 {plan.soLuongContainer || 0}
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                py: 1,
+                borderBottom: '1px solid #f5f5f5',
+              }}
+            >
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
                 Loại container:
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}
+              >
                 {plan.loaiContainer || 'N/A'}
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                py: 1,
+                borderBottom: '1px solid #f5f5f5',
+              }}
+            >
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
                 Cước vận chuyển:
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}
+              >
                 {plan.cuocVanChuyen?.toLocaleString('vi-VN') || 0} VNĐ
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                py: 1,
+                borderBottom: '1px solid #f5f5f5',
+              }}
+            >
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
                 Cước thuê vận chuyển:
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}
+              >
                 {plan.cuocThueVanChuyen?.toLocaleString('vi-VN') || 0} VNĐ
               </Typography>
             </Box>
 
             {plan.doiTac && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  py: 1,
+                  borderBottom: '1px solid #f5f5f5',
+                }}
+              >
                 <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
                   Đối tác vận chuyển:
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}
+                >
                   {plan.doiTac}
                 </Typography>
               </Box>
             )}
 
             {plan.ngayHaHang && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f5f5f5' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  py: 1,
+                  borderBottom: '1px solid #f5f5f5',
+                }}
+              >
                 <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', flex: 1 }}>
                   Ngày hạ hàng:
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: '#374151', textAlign: 'right', flex: 1 }}
+                >
                   {plan.ngayHaHang}
                 </Typography>
               </Box>
@@ -241,7 +302,7 @@ const MobileShipmentCard = ({
                     mb: 1,
                     bgcolor: '#f8f9fa',
                     borderRadius: 1,
-                    border: '1px solid #e5e7eb'
+                    border: '1px solid #e5e7eb',
                   }}
                 >
                   <Typography variant="body2" sx={{ color: '#374151' }}>
@@ -278,10 +339,12 @@ MobileShipmentCard.propTypes = {
     cuocThueVanChuyen: PropTypes.number,
     doiTac: PropTypes.string,
     ngayHaHang: PropTypes.string,
-    thongTinContainer: PropTypes.arrayOf(PropTypes.shape({
-      soContainer: PropTypes.string,
-      soSeal: PropTypes.string,
-    })),
+    thongTinContainer: PropTypes.arrayOf(
+      PropTypes.shape({
+        soContainer: PropTypes.string,
+        soSeal: PropTypes.string,
+      })
+    ),
   }).isRequired,
   isExpanded: PropTypes.bool.isRequired,
   onCardExpand: PropTypes.func.isRequired,

@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, Stack } from '@mui/material';
-import { CustomerForm, CustomerList, useCustomerManagement } from '../index';
+import { CustomerForm, CustomerList, useCustomerManagement } from '@features/khach-hang';
 
 // Example 1: Using individual components with custom hook
 const BasicCustomerUsage = () => {
-  const {
-    customers,
-    loading,
-    error,
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-  } = useCustomerManagement();
+  const { customers, loading, error, addCustomer, updateCustomer, deleteCustomer } =
+    useCustomerManagement();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  const handleSaveCustomer = async (formData) => {
+  const handleSaveCustomer = async formData => {
     let result;
     if (selectedCustomer) {
       result = await updateCustomer(selectedCustomer.id, formData);
@@ -31,12 +25,12 @@ const BasicCustomerUsage = () => {
     }
   };
 
-  const handleEdit = (customer) => {
+  const handleEdit = customer => {
     setSelectedCustomer(customer);
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (customer) => {
+  const handleDelete = async customer => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa khách hàng ${customer.name}?`)) {
       const result = await deleteCustomer(customer.id);
       if (result.success) {
@@ -91,7 +85,7 @@ const BasicCustomerUsage = () => {
 export const CustomerFormExample = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleSave = (formData) => {
+  const handleSave = formData => {
     console.log('Form data:', formData);
     // Here you would typically call your API
     setIsOpen(false);
@@ -107,11 +101,7 @@ export const CustomerFormExample = () => {
         Open Customer Form
       </Button>
 
-      <CustomerForm
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        onSave={handleSave}
-      />
+      <CustomerForm open={isOpen} onClose={() => setIsOpen(false)} onSave={handleSave} />
     </Box>
   );
 };
@@ -131,8 +121,8 @@ export const CustomerListExample = () => {
 
       <CustomerList
         customers={mockCustomers}
-        onEdit={(customer) => console.log('Edit:', customer)}
-        onDelete={(customer) => console.log('Delete:', customer)}
+        onEdit={customer => console.log('Edit:', customer)}
+        onDelete={customer => console.log('Delete:', customer)}
       />
     </Box>
   );

@@ -1,27 +1,14 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Alert,
-  Snackbar,
-} from '@mui/material';
+import { Box, Paper, Typography, Alert, Snackbar } from '@mui/material';
 import { AddButton } from '@shared/components/ActionButtons';
 import ConfirmationModal from '@shared/components/ConfirmationDialog';
-import CustomerForm from './CustomerForm';
-import CustomerList from './CustomerList';
-import useCustomerManagement from '../hooks/useCustomerManagement';
+import CustomerForm from '@features/khach-hang/components/CustomerForm';
+import CustomerList from '@features/khach-hang/components/CustomerList';
+import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
 
 const CustomerManagement = () => {
-  const {
-    customers,
-    loading,
-    error,
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    clearError,
-  } = useCustomerManagement();
+  const { customers, loading, error, addCustomer, updateCustomer, deleteCustomer, clearError } =
+    useCustomerManagement();
 
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -54,7 +41,7 @@ const CustomerManagement = () => {
     setIsFormOpen(true);
   };
 
-  const handleOpenFormForEdit = (customer) => {
+  const handleOpenFormForEdit = customer => {
     setSelectedCustomer(customer);
     setFormError('');
     setIsFormOpen(true);
@@ -66,7 +53,7 @@ const CustomerManagement = () => {
     setFormError('');
   };
 
-  const handleSaveCustomer = async (formData) => {
+  const handleSaveCustomer = async formData => {
     setFormError('');
 
     let result;
@@ -78,18 +65,14 @@ const CustomerManagement = () => {
 
     if (result.success) {
       handleCloseForm();
-      showSnackbar(
-        selectedCustomer
-          ? 'Sửa khách hàng thành công'
-          : 'Thêm khách hàng thành công'
-      );
+      showSnackbar(selectedCustomer ? 'Sửa khách hàng thành công' : 'Thêm khách hàng thành công');
     } else {
       setFormError(result.error);
     }
   };
 
   // Delete handlers
-  const handleDeleteClick = (customer) => {
+  const handleDeleteClick = customer => {
     setCustomerToDelete(customer);
     setIsDeleteModalOpen(true);
   };
@@ -125,11 +108,7 @@ const CustomerManagement = () => {
       </Typography>
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={clearError}
-        >
+        <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
           {error}
         </Alert>
       )}
@@ -139,11 +118,7 @@ const CustomerManagement = () => {
           <Typography variant="h6" component="h2">
             Danh sách khách hàng
           </Typography>
-          <AddButton
-            onClick={handleOpenFormForAdd}
-            label="Thêm khách hàng"
-            size="small"
-          />
+          <AddButton onClick={handleOpenFormForAdd} label="Thêm khách hàng" size="small" />
         </Box>
 
         <CustomerList
@@ -217,11 +192,7 @@ const CustomerManagement = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

@@ -25,14 +25,15 @@ import { CustomerForm } from '@features/khach-hang';
 <CustomerForm
   open={isFormOpen}
   onClose={() => setIsFormOpen(false)}
-  onSave={(formData) => handleSave(formData)}
+  onSave={formData => handleSave(formData)}
   customer={selectedCustomer} // null for add, object for edit
   isLoading={loading}
   error={errorMessage}
-/>
+/>;
 ```
 
 **Props:**
+
 - `open` (boolean): Controls form visibility
 - `onClose` (function): Called when form is closed
 - `onSave` (function): Called when form is submitted with form data
@@ -50,14 +51,15 @@ import { CustomerList } from '@features/khach-hang';
 <CustomerList
   customers={customerArray}
   loading={isLoading}
-  onEdit={(customer) => handleEdit(customer)}
-  onDelete={(customer) => handleDelete(customer)}
+  onEdit={customer => handleEdit(customer)}
+  onDelete={customer => handleDelete(customer)}
   error={errorMessage}
   emptyMessage="No customers found"
-/>
+/>;
 ```
 
 **Props:**
+
 - `customers` (array): Array of customer objects
 - `loading` (boolean): Shows loading state
 - `onEdit` (function): Called when edit button is clicked
@@ -73,7 +75,7 @@ A complete customer management component with all functionality.
 import { CustomerManagement } from '@features/khach-hang';
 
 // Use as-is for complete functionality
-<CustomerManagement />
+<CustomerManagement />;
 ```
 
 ### 4. useCustomerManagement Hook
@@ -100,6 +102,7 @@ const {
 ```
 
 **Hook Methods:**
+
 - `fetchCustomers()`: Reload customer list
 - `addCustomer(data)`: Add new customer
 - `updateCustomer(id, data)`: Update existing customer
@@ -127,11 +130,12 @@ const MyPage = () => {
 import { useCustomerManagement, CustomerForm, CustomerList } from '@features/khach-hang';
 
 const CustomCustomerPage = () => {
-  const { customers, loading, addCustomer, updateCustomer, deleteCustomer } = useCustomerManagement();
+  const { customers, loading, addCustomer, updateCustomer, deleteCustomer } =
+    useCustomerManagement();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  const handleSave = async (formData) => {
+  const handleSave = async formData => {
     const result = selectedCustomer
       ? await updateCustomer(selectedCustomer.id, formData)
       : await addCustomer(formData);
@@ -149,11 +153,11 @@ const CustomCustomerPage = () => {
       <CustomerList
         customers={customers}
         loading={loading}
-        onEdit={(customer) => {
+        onEdit={customer => {
           setSelectedCustomer(customer);
           setIsFormOpen(true);
         }}
-        onDelete={(customer) => deleteCustomer(customer.id)}
+        onDelete={customer => deleteCustomer(customer.id)}
       />
 
       <CustomerForm
@@ -174,19 +178,13 @@ const CustomCustomerPage = () => {
 import { CustomerForm } from '@features/khach-hang';
 
 const AddCustomerModal = ({ open, onClose }) => {
-  const handleSave = (formData) => {
+  const handleSave = formData => {
     // Your custom save logic
     console.log('Customer data:', formData);
     onClose();
   };
 
-  return (
-    <CustomerForm
-      open={open}
-      onClose={onClose}
-      onSave={handleSave}
-    />
-  );
+  return <CustomerForm open={open} onClose={onClose} onSave={handleSave} />;
 };
 ```
 

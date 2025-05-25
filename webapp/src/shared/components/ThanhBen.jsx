@@ -175,7 +175,7 @@ const DocumentTextIcon = ({ className = 'w-6 h-6' }) => (
   </svg>
 );
 
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@contexts/AuthContext';
 import { getMenuItems } from '@shared/config/roles';
 
 // Icon mapping

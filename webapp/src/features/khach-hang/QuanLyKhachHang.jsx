@@ -1,5 +1,5 @@
 import React from 'react';
-import CustomerManagement from './components/CustomerManagement';
+import CustomerManagement from '@features/khach-hang/components/CustomerManagement';
 
 const QuanLyKhachHang = () => {
   return <CustomerManagement />;

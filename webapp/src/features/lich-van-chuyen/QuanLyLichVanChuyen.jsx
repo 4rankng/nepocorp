@@ -4,13 +4,13 @@ import {
   addShipmentPlan,
   updateShipmentPlan,
   deleteShipmentPlan,
-} from '../../services/mockData/shipmentPlans.js';
-import { getVehiclesForSelect } from '../../services/mockData/vehicles.js';
-import { getPartnersForSelect, addPartner } from '../../services/mockData/partners.js';
-import { getCustomersForSelect, addQuickCustomer } from '../../services/mockData/customers.js';
-import { getContainerTypesForSelect } from '../../services/mockData/containers.js';
+} from '@services/mockData/shipmentPlans';
+import { getVehiclesForSelect } from '@services/mockData/vehicles';
+import { getPartnersForSelect, addPartner } from '@services/mockData/partners';
+import { getCustomersForSelect, addQuickCustomer } from '@services/mockData/customers';
+import { getContainerTypesForSelect } from '@services/mockData/containers';
 import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
-import ConfirmationModal from '../../components/ConfirmationModal';
+import ConfirmationModal from '@components/ConfirmationModal';
 import {
   Box,
   Typography,
@@ -49,7 +49,7 @@ import {
   Select,
   Slide,
   Fade,
-  Avatar
+  Avatar,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -67,13 +67,13 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SortIcon from '@mui/icons-material/Sort';
-import StandardTable from '../../shared/components/StandardTable';
-import { AddButton, EditButton, DeleteButton } from '../../shared/components/ActionButtons';
-import MobileShipmentCard from './components/MobileShipmentCard'; // Added import
-import MobileSearchHeader from './components/MobileSearchHeader'; // Added import
-import DesktopShipmentFormDialog from './components/DesktopShipmentFormDialog'; // Added import
-import MobileShipmentFormStepper from './components/MobileShipmentFormStepper'; // Added import
-import { getStatusColor } from './utils/styleUtils'; // Added import
+import StandardTable from '@shared/components/StandardTable';
+import { AddButton, EditButton, DeleteButton } from '@shared/components/ActionButtons';
+import MobileShipmentCard from '@features/lich-van-chuyen/components/MobileShipmentCard'; // Added import
+import MobileSearchHeader from '@features/lich-van-chuyen/components/MobileSearchHeader'; // Added import
+import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog'; // Added import
+import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper'; // Added import
+import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils'; // Added import
 
 const initialFormState = {
   ngayThang: '', // YYYY-MM-DD for input type="date"
@@ -137,7 +137,7 @@ const QuanLyLichVanChuyen = () => {
   // const [activeStep, setActiveStep] = useState(0); // No longer needed here
   const [isFormExpanded, setIsFormExpanded] = useState(!isMobile);
 
-  const mapPlanToFormData = (plan) => {
+  const mapPlanToFormData = plan => {
     if (!plan) return initialFormState;
     return {
       ngayThang: formatDateForInput(plan.ngayThang) || '',
@@ -361,7 +361,7 @@ const QuanLyLichVanChuyen = () => {
   };
 
   // Mobile-specific handlers
-  const handleCardExpand = (planId) => {
+  const handleCardExpand = planId => {
     setExpandedCard(expandedCard === planId ? null : planId);
   };
 
@@ -370,7 +370,8 @@ const QuanLyLichVanChuyen = () => {
 
   // Filter functions for mobile search
   const filteredPlans = shipmentPlans.filter(plan => {
-    const matchesSearch = !searchTerm ||
+    const matchesSearch =
+      !searchTerm ||
       plan.dienGiai?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       plan.khachHang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       plan.bienSoXe?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -461,12 +462,13 @@ const QuanLyLichVanChuyen = () => {
 
   // Handle form submission for mobile stepper
   // This handleSubmit is called by MobileShipmentFormStepper via onSave prop
-  const handleSubmit = () => { // This name is a bit generic, but it's what MobileFormStepper used.
+  const handleSubmit = () => {
+    // This name is a bit generic, but it's what MobileFormStepper used.
     handleSavePlan();
   };
 
   // Handle delete confirmation for mobile
-  const handleDeleteClick = (plan) => {
+  const handleDeleteClick = plan => {
     handleDeletePlan(plan);
   };
 
@@ -476,8 +478,8 @@ const QuanLyLichVanChuyen = () => {
     setError('');
   };
 
-    // Handle adding new customer from stepper
-  const handleAddNewCustomer = async (customerName) => {
+  // Handle adding new customer from stepper
+  const handleAddNewCustomer = async customerName => {
     try {
       const newCustomer = await addQuickCustomer(customerName);
 
@@ -485,7 +487,7 @@ const QuanLyLichVanChuyen = () => {
       const updatedCustomers = await getCustomersForSelect();
       setSelectOptions(prev => ({
         ...prev,
-        customers: updatedCustomers.map(c => ({ value: c.id, label: c.name }))
+        customers: updatedCustomers.map(c => ({ value: c.id, label: c.name })),
       }));
 
       return newCustomer.id; // Return new customer ID to select it
@@ -495,11 +497,16 @@ const QuanLyLichVanChuyen = () => {
   };
 
   // Handle adding new partner from stepper
-  const handleAddNewPartner = async (partnerName) => {
+  const handleAddNewPartner = async partnerName => {
     try {
       // Create partner data for quick add
       const partnerData = {
-        code: partnerName.split(' ').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 10) || 'DT',
+        code:
+          partnerName
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase())
+            .join('')
+            .slice(0, 10) || 'DT',
         name: partnerName.trim(),
         address: 'Chưa cập nhật',
         taxCode: 'Chưa cập nhật',
@@ -511,7 +518,7 @@ const QuanLyLichVanChuyen = () => {
       const updatedPartners = await getPartnersForSelect();
       setSelectOptions(prev => ({
         ...prev,
-        partners: updatedPartners.map(p => ({ value: p.id, label: p.name }))
+        partners: updatedPartners.map(p => ({ value: p.id, label: p.name })),
       }));
 
       return newPartner.id; // Return new partner ID to select it
@@ -527,7 +534,7 @@ const QuanLyLichVanChuyen = () => {
     handleOpenModalForAdd();
   };
 
-  const handleOpenModalForEditMobile = (plan) => {
+  const handleOpenModalForEditMobile = plan => {
     // This is effectively the same as handleOpenModalForEdit now.
     handleOpenModalForEdit(plan);
   };
@@ -561,9 +568,9 @@ const QuanLyLichVanChuyen = () => {
           {/* Mobile Search Header */}
           <MobileSearchHeader
             searchTerm={searchTerm}
-            onSearchTermChange={(e) => setSearchTerm(e.target.value)}
+            onSearchTermChange={e => setSearchTerm(e.target.value)}
             filterStatus={filterStatus}
-            onFilterStatusChange={(e) => setFilterStatus(e.target.value)}
+            onFilterStatusChange={e => setFilterStatus(e.target.value)}
             resultCount={filteredPlans.length}
           />
 
@@ -577,21 +584,24 @@ const QuanLyLichVanChuyen = () => {
           {/* Mobile Cards List */}
           <Box sx={{ mb: 2 }}>
             {filteredPlans.length === 0 ? (
-              <Paper sx={{ textAlign: 'center', py: 6, border: '1px dashed', borderColor: 'divider' }}>
+              <Paper
+                sx={{ textAlign: 'center', py: 6, border: '1px dashed', borderColor: 'divider' }}
+              >
                 <LocalShippingIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                  {searchTerm || filterStatus ? 'Không tìm thấy kết quả' : 'Chưa có lịch vận chuyển nào'}
+                  {searchTerm || filterStatus
+                    ? 'Không tìm thấy kết quả'
+                    : 'Chưa có lịch vận chuyển nào'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {searchTerm || filterStatus
                     ? 'Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc'
-                    : 'Nhấn nút "Thêm" để tạo lịch vận chuyển mới'
-                  }
+                    : 'Nhấn nút "Thêm" để tạo lịch vận chuyển mới'}
                 </Typography>
               </Paper>
             ) : (
               <Box>
-                {filteredPlans.map((plan) => (
+                {filteredPlans.map(plan => (
                   <MobileShipmentCard
                     key={plan.id}
                     plan={plan}
@@ -646,14 +656,13 @@ const QuanLyLichVanChuyen = () => {
           open={isModalOpen}
           onClose={handleCloseModalMobile}
           TransitionComponent={Slide}
-          TransitionProps={{ direction: "up" }}
+          TransitionProps={{ direction: 'up' }}
           sx={{
             '& .MuiDialog-paper': {
-              background: '#ffffff'
-            }
+              background: '#ffffff',
+            },
           }}
         >
-
           <DialogContent
             sx={{
               p: 2,
@@ -661,7 +670,7 @@ const QuanLyLichVanChuyen = () => {
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
-              overflow: 'hidden'
+              overflow: 'hidden',
             }}
           >
             <Box
@@ -670,7 +679,7 @@ const QuanLyLichVanChuyen = () => {
                 overflow: 'auto',
                 pr: 1,
                 mr: -1,
-                pb: 2
+                pb: 2,
               }}
             >
               {error && (
@@ -678,7 +687,7 @@ const QuanLyLichVanChuyen = () => {
                   severity="error"
                   sx={{
                     mb: 2,
-                    borderRadius: 2
+                    borderRadius: 2,
                   }}
                 >
                   {error}
@@ -748,7 +757,5 @@ const QuanLyLichVanChuyen = () => {
     </Box>
   );
 };
-
-
 
 export default QuanLyLichVanChuyen;

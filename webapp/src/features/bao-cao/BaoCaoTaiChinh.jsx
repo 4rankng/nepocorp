@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import BaoCaoLoiNhuanDoanhThu from './BaoCaoLoiNhuanDoanhThu';
-import BaoCaoChiTietChiPhi from './BaoCaoChiTietChiPhi';
-import BaoCaoTheoDoiDoanhThuChiPhiPhuongTien from './BaoCaoTheoDoiDoanhThuChiPhiPhuongTien';
-import BaoCaoCongNo from './BaoCaoCongNo';
+import BaoCaoLoiNhuanDoanhThu from '@features/bao-cao/BaoCaoLoiNhuanDoanhThu';
+import BaoCaoChiTietChiPhi from '@features/bao-cao/BaoCaoChiTietChiPhi';
+import BaoCaoTheoDoiDoanhThuChiPhiPhuongTien from '@features/bao-cao/BaoCaoTheoDoiDoanhThuChiPhiPhuongTien';
+import BaoCaoCongNo from '@features/bao-cao/BaoCaoCongNo';
 import { useLocation } from 'react-router-dom';
 
 const tabs = [

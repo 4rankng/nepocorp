@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getContainerTypes, addContainerType, updateContainerType, deleteContainerType } from '@services/mockData/containers';
+import {
+  getContainerTypes,
+  addContainerType,
+  updateContainerType,
+  deleteContainerType,
+} from '@services/mockData/containers';
 
 const useContainerTypeManagement = () => {
   const [containerTypes, setContainerTypes] = useState([]);
@@ -23,7 +28,7 @@ const useContainerTypeManagement = () => {
   };
 
   // Add new container type
-  const addNewContainerType = async (containerTypeData) => {
+  const addNewContainerType = async containerTypeData => {
     setLoading(true);
     setError('');
     try {
@@ -61,7 +66,7 @@ const useContainerTypeManagement = () => {
   };
 
   // Delete container type
-  const deleteExistingContainerType = async (id) => {
+  const deleteExistingContainerType = async id => {
     setLoading(true);
     setError('');
     try {
@@ -82,7 +87,7 @@ const useContainerTypeManagement = () => {
   };
 
   // Get container type by ID
-  const getContainerTypeById = async (id) => {
+  const getContainerTypeById = async id => {
     try {
       const containerType = containerTypes.find(ct => ct.id === id);
       if (containerType) {

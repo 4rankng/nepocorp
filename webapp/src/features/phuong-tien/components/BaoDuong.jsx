@@ -42,7 +42,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import StandardTable from '@shared/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
 import ConfirmationDialog from '@shared/components/ConfirmationDialog';
-import { maintenanceApi, vehicleApi } from '../../../services/mockApi.js';
+import { maintenanceApi, vehicleApi } from '@services/mockApi';
 
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {

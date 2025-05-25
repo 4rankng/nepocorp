@@ -2,16 +2,16 @@
 // This file consolidates all mock data modules while maintaining backward compatibility
 
 // Import all modules
-import * as auth from './auth.js';
-import * as vehicles from './vehicles.js';
-import * as containers from './containers.js';
-import * as employees from './employees.js';
-import * as customers from './customers.js';
-import * as partners from './partners.js';
-import * as costRates from './costRates.js';
-import * as shipmentPlans from './shipmentPlans.js';
-import * as reports from './reports.js';
-import * as fuelStandards from './fuelStandards.js';
+import * as auth from '@services/mockData/auth';
+import * as vehicles from '@services/mockData/vehicles';
+import * as containers from '@services/mockData/containers';
+import * as employees from '@services/mockData/employees';
+import * as customers from '@services/mockData/customers';
+import * as partners from '@services/mockData/partners';
+import * as costRates from '@services/mockData/costRates';
+import * as shipmentPlans from '@services/mockData/shipmentPlans';
+import * as reports from '@services/mockData/reports';
+import * as fuelStandards from '@services/mockData/fuelStandards';
 
 // Re-export everything from auth module
 export const { users, roles, getUserByUsername, verifyCredentials } = auth;

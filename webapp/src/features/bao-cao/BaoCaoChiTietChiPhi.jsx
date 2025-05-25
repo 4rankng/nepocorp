@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getDetailedCostReport } from '../../services/mockData/reports.js';
-import DateRangeFilter from '../../components/DateRangeFilter';
+import { getDetailedCostReport } from '@services/mockData/reports';
+import DateRangeFilter from '@components/DateRangeFilter';
 import StandardTable from '@shared/components/StandardTable';
 import { format } from 'date-fns';
 

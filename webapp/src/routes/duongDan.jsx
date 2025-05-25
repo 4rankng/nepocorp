@@ -1,16 +1,16 @@
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { AuthProvider } from '../contexts/AuthContext';
-import { ErrorBoundary, ErrorPage } from '../components/ErrorBoundary';
-import TrangChu from '../layouts/TrangChu';
-import TrangXacThuc from '../layouts/TrangXacThuc';
-import DangNhap from '../features/xac-thuc/DangNhap';
-import BaoCaoTaiChinh from '../features/bao-cao/BaoCaoTaiChinh';
-import QuanLyLichVanChuyen from '../features/lich-van-chuyen/QuanLyLichVanChuyen';
-import QuanLyNhanVien from '../features/nhan-vien/QuanLyNhanVien';
-import QuanLyKhachHang from '../features/khach-hang/QuanLyKhachHang';
-import QuanLyDoiTac from '../features/doi-tac/QuanLyDoiTac';
-import QuanLyPhuongTien from '../features/phuong-tien/QuanLyPhuongTien';
+import { AuthProvider } from '@contexts/AuthContext';
+import { ErrorBoundary, ErrorPage } from '@components/ErrorBoundary';
+import TrangChu from '@layouts/TrangChu';
+import TrangXacThuc from '@layouts/TrangXacThuc';
+import DangNhap from '@features/xac-thuc/DangNhap';
+import BaoCaoTaiChinh from '@features/bao-cao/BaoCaoTaiChinh';
+import QuanLyLichVanChuyen from '@features/lich-van-chuyen/QuanLyLichVanChuyen';
+import QuanLyNhanVien from '@features/nhan-vien/QuanLyNhanVien';
+import QuanLyKhachHang from '@features/khach-hang/QuanLyKhachHang';
+import QuanLyDoiTac from '@features/doi-tac/QuanLyDoiTac';
+import QuanLyPhuongTien from '@features/phuong-tien/QuanLyPhuongTien';
 
 // Wrap the app with AuthProvider
 const AppWithAuth = ({ children }) => <AuthProvider>{children}</AuthProvider>;

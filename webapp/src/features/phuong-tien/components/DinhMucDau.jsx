@@ -32,7 +32,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { ChevronDownIcon, ChevronUpIcon } from '../../../assets/icons';
+import { ChevronDownIcon, ChevronUpIcon } from '@assets/icons';
 import { alpha } from '@mui/material/styles';
 
 // Theme variables
@@ -974,7 +974,6 @@ const DinhMucDau = () => {
                     <Box
                       sx={{
                         display: 'flex',
-                        alignItems: 'center',
                         gap: 1,
                         flexGrow: 1,
                         flexDirection: isMobile ? 'column' : 'row',

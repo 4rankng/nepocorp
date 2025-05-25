@@ -23,7 +23,7 @@ const useCustomerManagement = () => {
   };
 
   // Add new customer
-  const addCustomer = async (customerData) => {
+  const addCustomer = async customerData => {
     setLoading(true);
     setError('');
     try {
@@ -61,7 +61,7 @@ const useCustomerManagement = () => {
   };
 
   // Delete customer
-  const deleteCustomer = async (id) => {
+  const deleteCustomer = async id => {
     setLoading(true);
     setError('');
     try {
@@ -82,7 +82,7 @@ const useCustomerManagement = () => {
   };
 
   // Get customer by ID
-  const getCustomerById = async (id) => {
+  const getCustomerById = async id => {
     try {
       const response = await customerApi.getById(id);
       return { success: true, data: response.data };

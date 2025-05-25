@@ -18,4 +18,4 @@
 // All existing exports are preserved for backward compatibility
 
 // Re-export everything from the new modular structure
-export * from './mockData/index.js';
+export * from '@services/mockData';

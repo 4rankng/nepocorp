@@ -1,4 +1,4 @@
 // Partner Management Components
-export { default as PartnerForm } from './PartnerForm';
-export { default as PartnerList } from './PartnerList';
-export { default as PartnerManagement } from './PartnerManagement';
+export { default as PartnerForm } from '@features/doi-tac/components/PartnerForm';
+export { default as PartnerList } from '@features/doi-tac/components/PartnerList';
+export { default as PartnerManagement } from '@features/doi-tac/components/PartnerManagement';

@@ -1,6 +1,6 @@
 {
   "name": "nepocorp-demo",
-  "version": "0.8",
+  "version": "0.9",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,15 @@
     "format:check": "prettier --check .",
     "format:js": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
     "format:css": "prettier --write \"**/*.{css,scss}\"",
-    "format:json": "prettier --write \"**/*.json\""
+    "format:json": "prettier --write \"**/*.json\"",
+    "migrate:aliases": "node scripts/migrate-aliases-enhanced.js",
+    "migrate:aliases:dry": "node scripts/migrate-aliases-enhanced.js --dry-run",
+    "migrate:aliases:verbose": "node scripts/migrate-aliases-enhanced.js --verbose",
+    "migrate:backup": "node scripts/backup-tool.js create",
+    "migrate:restore": "node scripts/backup-tool.js restore",
+    "migrate:test": "node scripts/test-migration.js analyze",
+    "migrate:validate": "node scripts/test-migration.js full",
+    "migrate": "node scripts/migrate-workflow.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

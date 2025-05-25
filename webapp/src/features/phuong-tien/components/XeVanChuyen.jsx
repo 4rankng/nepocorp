@@ -247,7 +247,8 @@ const XeVanChuyen = () => {
 
   // Mobile Vehicle Card Component
   const MobileVehicleCard = ({ vehicle }) => {
-    const vehicleTypeLabel = vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label || vehicle.vehicleType || '';
+    const vehicleTypeLabel =
+      vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label || vehicle.vehicleType || '';
 
     return (
       <Card
@@ -302,7 +303,7 @@ const XeVanChuyen = () => {
             <Box sx={{ display: 'flex', gap: 0.5 }}>
               <IconButton
                 size="small"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   handleOpenEditDialog(vehicle);
                 }}
@@ -318,7 +319,7 @@ const XeVanChuyen = () => {
               </IconButton>
               <IconButton
                 size="small"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   handleDeleteClick(vehicle);
                 }}
@@ -479,12 +480,14 @@ const XeVanChuyen = () => {
               {isEdit ? 'Sửa thông tin.' : 'Nhập thông tin mới.'}
             </DialogContentText>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <Box sx={{
-                display: 'flex',
-                gap: 2,
-                alignItems: 'flex-start',
-                flexDirection: { xs: 'column', sm: 'row' }
-              }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  alignItems: 'flex-start',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                }}
+              >
                 <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
                   <TextField
                     fullWidth
@@ -772,7 +775,9 @@ const XeVanChuyen = () => {
                   }}
                 >
                   <Typography variant="body2" color="text.secondary">
-                    {searchTerm ? 'Không tìm thấy xe nào phù hợp' : 'Không có dữ liệu xe vận chuyển'}
+                    {searchTerm
+                      ? 'Không tìm thấy xe nào phù hợp'
+                      : 'Không có dữ liệu xe vận chuyển'}
                   </Typography>
                 </Paper>
               ) : (

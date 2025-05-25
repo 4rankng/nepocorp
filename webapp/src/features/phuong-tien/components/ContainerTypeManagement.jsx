@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Alert,
-  Snackbar,
-} from '@mui/material';
+import { Box, Paper, Typography, Alert, Snackbar } from '@mui/material';
 import { AddButton } from '@shared/components/ActionButtons';
 import ConfirmationModal from '@shared/components/ConfirmationDialog';
-import ContainerTypeForm from './ContainerTypeForm';
-import ContainerTypeList from './ContainerTypeList';
-import useContainerTypeManagement from '../hooks/useContainerTypeManagement';
+import ContainerTypeForm from '@features/phuong-tien/components/ContainerTypeForm';
+import ContainerTypeList from '@features/phuong-tien/components/ContainerTypeList';
+import useContainerTypeManagement from '@features/phuong-tien/hooks/useContainerTypeManagement';
 
 const ContainerTypeManagement = () => {
   const {
@@ -54,7 +48,7 @@ const ContainerTypeManagement = () => {
     setIsFormOpen(true);
   };
 
-  const handleOpenFormForEdit = (containerType) => {
+  const handleOpenFormForEdit = containerType => {
     setSelectedContainerType(containerType);
     setFormError('');
     setIsFormOpen(true);
@@ -66,7 +60,7 @@ const ContainerTypeManagement = () => {
     setFormError('');
   };
 
-  const handleSaveContainerType = async (formData) => {
+  const handleSaveContainerType = async formData => {
     setFormError('');
 
     let result;
@@ -79,9 +73,7 @@ const ContainerTypeManagement = () => {
     if (result.success) {
       handleCloseForm();
       showSnackbar(
-        selectedContainerType
-          ? 'Sửa loại container thành công'
-          : 'Thêm loại container thành công'
+        selectedContainerType ? 'Sửa loại container thành công' : 'Thêm loại container thành công'
       );
     } else {
       setFormError(result.error);
@@ -89,7 +81,7 @@ const ContainerTypeManagement = () => {
   };
 
   // Delete handlers
-  const handleDeleteClick = (containerType) => {
+  const handleDeleteClick = containerType => {
     setContainerTypeToDelete(containerType);
     setIsDeleteModalOpen(true);
   };
@@ -125,11 +117,7 @@ const ContainerTypeManagement = () => {
       </Typography>
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={clearError}
-        >
+        <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
           {error}
         </Alert>
       )}
@@ -139,11 +127,7 @@ const ContainerTypeManagement = () => {
           <Typography variant="h6" component="h2">
             Danh sách loại container
           </Typography>
-          <AddButton
-            onClick={handleOpenFormForAdd}
-            label="Thêm loại container"
-            size="small"
-          />
+          <AddButton onClick={handleOpenFormForAdd} label="Thêm loại container" size="small" />
         </Box>
 
         <ContainerTypeList
@@ -211,11 +195,7 @@ const ContainerTypeManagement = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

@@ -74,7 +74,7 @@ const MobileSearchHeader = ({
               color: '#6b7280',
               '&.Mui-focused': {
                 color: '#1976d2',
-              }
+              },
             }}
           >
             Trạng thái
@@ -114,10 +114,18 @@ const MobileSearchHeader = ({
             <MenuItem value="" sx={{ color: '#6b7280', fontStyle: 'italic' }}>
               Tất cả
             </MenuItem>
-            <MenuItem value="Lên lịch" sx={{ color: '#374151' }}>Lên lịch</MenuItem>
-            <MenuItem value="Đang vận chuyển" sx={{ color: '#374151' }}>Đang vận chuyển</MenuItem>
-            <MenuItem value="Hoàn thành" sx={{ color: '#374151' }}>Hoàn thành</MenuItem>
-            <MenuItem value="Hủy" sx={{ color: '#374151' }}>Hủy</MenuItem>
+            <MenuItem value="Lên lịch" sx={{ color: '#374151' }}>
+              Lên lịch
+            </MenuItem>
+            <MenuItem value="Đang vận chuyển" sx={{ color: '#374151' }}>
+              Đang vận chuyển
+            </MenuItem>
+            <MenuItem value="Hoàn thành" sx={{ color: '#374151' }}>
+              Hoàn thành
+            </MenuItem>
+            <MenuItem value="Hủy" sx={{ color: '#374151' }}>
+              Hủy
+            </MenuItem>
           </Select>
         </FormControl>
 

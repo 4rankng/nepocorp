@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import ConfirmationDialog from '@shared/components/ConfirmationDialog';
 import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
-import ContainerTypeForm from './ContainerTypeForm';
-import ContainerTypeList from './ContainerTypeList';
-import useContainerTypeManagement from '../hooks/useContainerTypeManagement';
+import ContainerTypeForm from '@features/phuong-tien/components/ContainerTypeForm';
+import ContainerTypeList from '@features/phuong-tien/components/ContainerTypeList';
+import useContainerTypeManagement from '@features/phuong-tien/hooks/useContainerTypeManagement';
 
 import {
   Box,
@@ -55,7 +55,7 @@ const LoaiContainer = () => {
     setIsFormOpen(true);
   };
 
-  const handleOpenFormForEdit = (containerType) => {
+  const handleOpenFormForEdit = containerType => {
     setSelectedContainerType(containerType);
     setFormError('');
     setIsFormOpen(true);
@@ -67,7 +67,7 @@ const LoaiContainer = () => {
     setFormError('');
   };
 
-  const handleSaveContainerType = async (formData) => {
+  const handleSaveContainerType = async formData => {
     setFormError('');
 
     let result;
@@ -80,9 +80,7 @@ const LoaiContainer = () => {
     if (result.success) {
       handleCloseForm();
       showSnackbar(
-        selectedContainerType
-          ? 'Sửa loại container thành công'
-          : 'Thêm loại container thành công'
+        selectedContainerType ? 'Sửa loại container thành công' : 'Thêm loại container thành công'
       );
     } else {
       setFormError(result.error);
@@ -90,7 +88,7 @@ const LoaiContainer = () => {
   };
 
   // Delete handlers
-  const handleDeleteClick = (containerType) => {
+  const handleDeleteClick = containerType => {
     setDeleteDialog({
       open: true,
       containerTypeId: containerType.id,
@@ -119,14 +117,15 @@ const LoaiContainer = () => {
 
   // Render mobile card view
   const renderMobileView = () => (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 2,
-      mt: 2,
-      pb: 8 // Add padding to prevent content from being hidden behind floating button
-    }}>
-
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        mt: 2,
+        pb: 8, // Add padding to prevent content from being hidden behind floating button
+      }}
+    >
       {containerTypes.length === 0 ? (
         <Paper
           elevation={0}
@@ -144,7 +143,7 @@ const LoaiContainer = () => {
           </Typography>
         </Paper>
       ) : (
-        containerTypes.map((item) => (
+        containerTypes.map(item => (
           <Card
             key={item.id}
             elevation={1}
@@ -167,7 +166,7 @@ const LoaiContainer = () => {
                       fontWeight={600}
                       sx={{
                         fontSize: '1.1rem',
-                        color: 'primary.main'
+                        color: 'primary.main',
                       }}
                     >
                       {item.type}
@@ -190,7 +189,7 @@ const LoaiContainer = () => {
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                   <EditButton
                     size="small"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       handleOpenFormForEdit(item);
                     }}
@@ -198,13 +197,13 @@ const LoaiContainer = () => {
                       opacity: 0.9,
                       '&:hover': {
                         opacity: 1,
-                        backgroundColor: 'rgba(25, 118, 210, 0.04)'
-                      }
+                        backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                      },
                     }}
                   />
                   <DeleteButton
                     size="small"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       handleDeleteClick(item);
                     }}
@@ -212,8 +211,8 @@ const LoaiContainer = () => {
                       opacity: 0.9,
                       '&:hover': {
                         opacity: 1,
-                        backgroundColor: 'rgba(211, 47, 47, 0.04)'
-                      }
+                        backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                      },
                     }}
                   />
                 </Box>
@@ -289,15 +288,13 @@ const LoaiContainer = () => {
         renderMobileView()
       ) : (
         <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
             <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
               Quản lý loại container
             </Typography>
-            <AddButton
-              onClick={handleOpenFormForAdd}
-              label="Thêm loại container"
-              size="small"
-            />
+            <AddButton onClick={handleOpenFormForAdd} label="Thêm loại container" size="small" />
           </Box>
           {renderDesktopView()}
         </Box>

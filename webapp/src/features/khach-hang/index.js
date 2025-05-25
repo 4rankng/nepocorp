@@ -1,7 +1,7 @@
 // Main entry point for customer management feature
 
 // Main component
-export { default as QuanLyKhachHang } from './QuanLyKhachHang';
+export { default as QuanLyKhachHang } from '@features/khach-hang/QuanLyKhachHang';
 
 // Reusable components
 export {
@@ -9,10 +9,10 @@ export {
   CustomerList,
   CustomerManagement,
   KhachHangList,
-} from './components';
+} from '@features/khach-hang/components';
 
 // Custom hooks
-export { useCustomerManagement } from './hooks';
+export { useCustomerManagement } from '@features/khach-hang/hooks';
 
 // Default export for the main component
-export { default } from './QuanLyKhachHang';
+export { default } from '@features/khach-hang/QuanLyKhachHang';

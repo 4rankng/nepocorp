@@ -20,13 +20,13 @@ const CustomerList = ({
     {
       key: 'address',
       label: 'Địa chỉ',
-      render: (value) => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa cập nhật',
       maxWidth: 300,
     },
     {
       key: 'taxCode',
       label: 'Mã số thuế',
-      render: (value) => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa cập nhật',
     },
     {
       key: 'actions',

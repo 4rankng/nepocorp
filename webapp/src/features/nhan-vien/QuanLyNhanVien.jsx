@@ -6,7 +6,7 @@ import {
   updateEmployee,
   deleteEmployee,
   employeeRoles,
-} from '../../services/mockData/employees.js';
+} from '@services/mockData/employees';
 import StandardTable from '@shared/components/StandardTable';
 import { PlusIcon } from '@assets/icons/index.jsx';
 import {
