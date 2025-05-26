@@ -21,7 +21,7 @@ const ROLE_CARDS = [
     desc: 'Xem giao diện kế toán',
     color: 'bg-yellow-100 border-yellow-400',
     fullName: 'Tạ Thị Linh',
-    enabled: false,
+    enabled: true,
   },
   {
     key: ROLES.GIAO_NHAN,
@@ -56,7 +56,7 @@ const TrangChu = () => {
           navigate('/bao-cao', { replace: true });
           break;
         case ROLES.KE_TOAN:
-          navigate('/chi-phi', { replace: true });
+          navigate('/lich-van-chuyen', { replace: true });
           break;
         case ROLES.GIAO_NHAN:
           navigate('/don-hang', { replace: true });
@@ -83,7 +83,7 @@ const TrangChu = () => {
           navigate('/bao-cao');
           break;
         case ROLES.KE_TOAN:
-          navigate('/chi-phi');
+          navigate('/lich-van-chuyen');
           break;
         case ROLES.GIAO_NHAN:
           navigate('/don-hang');

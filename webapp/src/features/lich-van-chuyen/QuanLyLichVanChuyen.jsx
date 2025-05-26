@@ -4,7 +4,11 @@ import {
   addShipmentPlan,
   updateShipmentPlan,
   deleteShipmentPlan,
+  updateShipmentPlanField, // Assuming this will be added to mockData
 } from '@services/mockData/shipmentPlans';
+import { useAuth } from '@contexts/AuthContext';
+import { ROLES } from '@shared/config/roles'; // Added
+import { getConfigForRole } from './lichVanChuyenConfig';
 import { getVehiclesForSelect } from '@services/mockData/vehicles';
 import { getPartnersForSelect, addPartner } from '@services/mockData/partners';
 import { getCustomersForSelect, addQuickCustomer } from '@services/mockData/customers';
@@ -69,28 +73,30 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import SortIcon from '@mui/icons-material/Sort';
 import StandardTable from '@shared/components/StandardTable';
 import { AddButton, EditButton, DeleteButton } from '@shared/components/ActionButtons';
-import MobileShipmentCard from '@features/lich-van-chuyen/components/MobileShipmentCard'; // Added import
-import MobileSearchHeader from '@features/lich-van-chuyen/components/MobileSearchHeader'; // Added import
-import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog'; // Added import
-import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper'; // Added import
-import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils'; // Added import
+import MobileShipmentCard from '@features/lich-van-chuyen/components/MobileShipmentCard';
+import MobileSearchHeader from '@features/lich-van-chuyen/components/MobileSearchHeader';
+import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog';
+import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper';
+import DetailedCostsModal from '@features/lich-van-chuyen/components/DetailedCostsModal'; // Added import
+import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
 
-const initialFormState = {
-  ngayThang: '', // YYYY-MM-DD for input type="date"
+// initialFormState will now be derived based on roleConfig in handleOpenModalForAdd
+// However, we can keep a base structure for non-role-specific defaults.
+const baseInitialFormState = {
+  ngayThang: '',
   dienGiai: '',
   khachHangId: '',
-  soLuongContainer: 1, // Default to 1
-  loaiContainerId: '',
-  tuyenDuongDi: '',
-  tuyenDuongDen: '',
-  cuocVanChuyen: 0,
+  soLuongContainer: 1,
+  loaiContainerId: '', // This might become role-specific or part of a sub-form
+  tuyenDuongDi: '', // This is a temporary field for the form
+  tuyenDuongDen: '', // This is a temporary field for the form
+  cuocVanChuyen: 0, // Likely role-specific (e.g., for QuanLy or GiaoNhan)
   bienSoXeId: '',
-  cuocThueVanChuyen: 0,
+  cuocThueVanChuyen: 0, // Likely role-specific
   doiTacId: '',
-  thongTinContainer: [{ soContainer: '', soSeal: '' }], // Start with one container
-  ngayHaHang: '', // YYYY-MM-DD for input type="date"
-  trangThai: 'Lên lịch',
-  // Fields not directly on form but part of data model, defaults applied in mockData
+  thongTinContainer: [{ soContainer: '', soSeal: '' }],
+  ngayHaHang: '',
+  // trangThai will be set by roleConfig.defaultValues.trangThai
 };
 
 // Helper to format date from YYYY-MM-DD to DD/MM/YYYY for display
@@ -115,10 +121,20 @@ const QuanLyLichVanChuyen = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
 
+  const { currentUser } = useAuth();
+  const roleConfig = getConfigForRole(currentUser.role);
+  const initialFormState = { // Define initialFormState using roleConfig
+    ...baseInitialFormState,
+    ...roleConfig.defaultValues,
+    ngayThang: roleConfig.defaultValues.ngayThang || new Date().toISOString().split('T')[0], // Ensure date format
+    thongTinContainer: roleConfig.defaultValues.thongTinContainer || [{ soContainer: '', soSeal: '' }],
+  };
+
+
   const [shipmentPlans, setShipmentPlans] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState(initialFormState); // Use the new initialFormState
   const [selectOptions, setSelectOptions] = useState({
     vehicles: [],
     partners: [],
@@ -130,6 +146,15 @@ const QuanLyLichVanChuyen = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState(null);
 
+  // State for DetailedCostsModal
+  const [isDetailedCostsModalOpen, setIsDetailedCostsModalOpen] = useState(false);
+  const [currentPlanForDetailedCosts, setCurrentPlanForDetailedCosts] = useState(null);
+
+  // State for Inline Editing
+  const [editingCell, setEditingCell] = useState(null); // { planId, fieldKey }
+  const [editingValue, setEditingValue] = useState('');
+  const [inlineEditLoading, setInlineEditLoading] = useState(false);
+
   // Mobile-specific state
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -138,30 +163,38 @@ const QuanLyLichVanChuyen = () => {
   const [isFormExpanded, setIsFormExpanded] = useState(!isMobile);
 
   const mapPlanToFormData = plan => {
-    if (!plan) return initialFormState;
-    return {
-      ngayThang: formatDateForInput(plan.ngayThang) || '',
-      dienGiai: plan.dienGiai || '',
-      khachHangId: plan.khachHangId || '',
-      soLuongContainer: plan.soLuongContainer || 1,
-      loaiContainerId: plan.loaiContainerId || '',
-      tuyenDuongDi: plan.tuyenDuong?.diemDi || '',
-      tuyenDuongDen: plan.tuyenDuong?.diemDen
-        ? Array.isArray(plan.tuyenDuong.diemDen)
-          ? plan.tuyenDuong.diemDen.join(', ')
-          : plan.tuyenDuong.diemDen
-        : '',
-      cuocVanChuyen: plan.cuocVanChuyen || 0,
-      bienSoXeId: plan.bienSoXeId || '',
-      cuocThueVanChuyen: plan.cuocThueVanChuyen || 0,
-      doiTacId: plan.doiTacId || '',
-      thongTinContainer:
-        plan.thongTinContainer && plan.thongTinContainer.length > 0
-          ? plan.thongTinContainer
-          : [{ soContainer: '', soSeal: '' }],
-      ngayHaHang: formatDateForInput(plan.ngayHaHang) || '',
-      trangThai: plan.trangThai || 'Lên lịch',
-    };
+    if (!plan) return initialFormState; // Use the role-aware initialFormState
+
+    // Create a form data object based on the plan and roleConfig.formFields
+    // This ensures that only fields relevant to the current role are mapped.
+    const mappedData = { ...initialFormState }; // Start with defaults
+
+    roleConfig.formFields.forEach(field => {
+        if (field.name === 'ngayThang' || field.name === 'ngayHaHang') {
+            mappedData[field.name] = formatDateForInput(plan[field.name]) || initialFormState[field.name] || '';
+        } else if (field.name === 'tuyenDuongDi') {
+            mappedData.tuyenDuongDi = plan.tuyenDuong?.diemDi || initialFormState.tuyenDuongDi || '';
+        } else if (field.name === 'tuyenDuongDen') {
+            mappedData.tuyenDuongDen = plan.tuyenDuong?.diemDen
+                ? Array.isArray(plan.tuyenDuong.diemDen)
+                    ? plan.tuyenDuong.diemDen.join(', ')
+                    : plan.tuyenDuong.diemDen
+                : initialFormState.tuyenDuongDen || '';
+        } else if (field.name === 'thongTinContainer') {
+            mappedData.thongTinContainer =
+                plan.thongTinContainer && plan.thongTinContainer.length > 0
+                    ? plan.thongTinContainer
+                    : initialFormState.thongTinContainer || [{ soContainer: '', soSeal: '' }];
+        } else if (plan.hasOwnProperty(field.name)) {
+            mappedData[field.name] = plan[field.name] ?? initialFormState[field.name] ?? '';
+        } else {
+            // If the field is not in the plan, use the default from initialFormState (which includes roleConfig.defaultValues)
+            mappedData[field.name] = initialFormState[field.name] ?? '';
+        }
+    });
+    // Ensure trangThai from plan is prioritized if available
+    mappedData.trangThai = plan.trangThai || initialFormState.trangThai;
+    return mappedData;
   };
 
   const fetchPageData = useCallback(async () => {
@@ -221,10 +254,12 @@ const QuanLyLichVanChuyen = () => {
 
   const handleOpenModalForAdd = () => {
     setEditingPlan(null);
+    // Set formData using roleConfig.defaultValues
     setFormData({
-      ...initialFormState,
-      ngayThang: new Date().toISOString().split('T')[0], // Default to today
-      thongTinContainer: [{ soContainer: '', soSeal: '' }], // Ensure it's reset
+      ...baseInitialFormState, // Base defaults
+      ...roleConfig.defaultValues, // Role-specific defaults (e.g., trangThai)
+      ngayThang: roleConfig.defaultValues.ngayThang || new Date().toISOString().split('T')[0], // Ensure date format
+      thongTinContainer: roleConfig.defaultValues.thongTinContainer || [{ soContainer: '', soSeal: '' }], // Ensure it's reset
     });
     setError('');
     setIsModalOpen(true);
@@ -266,7 +301,17 @@ const QuanLyLichVanChuyen = () => {
 
   const handleSavePlan = async () => {
     setError('');
-    // Basic validation for required fields
+
+    // Additional validation for Kế toán completing a shipment
+    if (currentUser.role === ROLES.KE_TOAN && formData.trangThai === 'Hoàn thành') {
+      if (!formData.ngayHaHang || formData.ngayHaHang.trim() === '') {
+        setError('Ngày hạ hàng là bắt buộc khi cập nhật trạng thái là "Hoàn thành".');
+        return; // Prevent saving
+      }
+    }
+
+    // Basic validation for required fields (example, adjust as per actual required fields from config)
+    // This existing validation might need to be made more dynamic based on roleConfig.formFields[*].required
     if (
       !formData.ngayThang ||
       !formData.dienGiai.trim() ||
@@ -385,77 +430,166 @@ const QuanLyLichVanChuyen = () => {
   // getFormSteps, getCurrentStepFields, isStepComplete, getStepValidationErrors, getFieldLabel
   // are all moved to MobileShipmentFormStepper.jsx
 
-  // Define table columns
-  const columns = [
-    {
-      key: 'ngayThang',
-      label: 'Ngày Tháng',
+  const handleTriggerInlineEdit = (plan, fieldKey) => {
+    setEditingCell({ planId: plan.id, fieldKey });
+    const currentValue = plan[fieldKey];
+    setEditingValue(currentValue !== undefined && currentValue !== null ? String(currentValue) : '');
+  };
+
+  const handleInlineEditSave = async (planId, fieldKey, newValueString, columnType) => {
+    setInlineEditLoading(true);
+    setError(''); // Clear previous errors
+
+    let processedValue = newValueString;
+    if (columnType === 'number') {
+      processedValue = parseFloat(newValueString);
+      if (isNaN(processedValue)) {
+        setError(`Giá trị nhập cho ${fieldKey} không hợp lệ.`);
+        setInlineEditLoading(false);
+        setEditingCell(null); // Exit editing mode on error
+        return;
+      }
+    }
+
+    try {
+      // await updateShipmentPlanField(planId, fieldKey, processedValue); // Actual API call
+      // Mock implementation for now:
+      console.log(`Mock saving: planId=${planId}, fieldKey=${fieldKey}, value=${processedValue}`);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Update local data to reflect change immediately for better UX
+      setShipmentPlans(prevPlans =>
+        prevPlans.map(p =>
+          p.id === planId ? { ...p, [fieldKey]: processedValue } : p
+        )
+      );
+      // If this save affects other calculated fields (like chiPhiDauThanhTien),
+      // you might need to re-fetch the specific plan or the whole list.
+      // For now, just updating the field that was edited.
+      // await fetchPageData(); // Or fetch just the updated plan
+
+    } catch (err) {
+      console.error('Error updating shipment plan field:', err);
+      setError(`Lỗi khi cập nhật ${fieldKey}: ${err.message}`);
+      // Optionally, revert optimistic update if API call fails, or refetch data
+    } finally {
+      setEditingCell(null);
+      setInlineEditLoading(false);
+    }
+  };
+
+
+  // Define table columns based on roleConfig
+  const columns = roleConfig.tableColumns.map(colConfig => {
+    // Actions column
+    if (colConfig.key === 'actions') {
+      return {
+        ...colConfig,
+        render: (_, record) => (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}> {/* Reduced gap for more buttons */}
+            {roleConfig.actions?.includes('edit') && roleConfig.permissions.canEdit && (
+              <Tooltip title="Sửa Toàn Bộ">
+                <IconButton onClick={() => handleOpenModalForEdit(record)} disabled={isLoading || inlineEditLoading} size="small">
+                   <PencilIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {roleConfig.actions?.includes('manageDetailedCosts') && (
+              <Tooltip title="Chi Phí Khác">
+                <IconButton onClick={() => handleOpenDetailedCostsModal(record)} size="small" disabled={isLoading || inlineEditLoading}>
+                  <AttachMoneyIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {roleConfig.actions?.includes('delete') && roleConfig.permissions.canDelete && (
+              <Tooltip title="Xóa">
+                 <IconButton onClick={() => handleDeletePlan(record)} disabled={isLoading || inlineEditLoading} size="small" color="error">
+                    <TrashIcon fontSize="small" />
+                 </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        ),
+      };
+    }
+
+    // Inline editable columns for Kế toán
+    if (currentUser.role === ROLES.KE_TOAN && colConfig.editable) {
+      return {
+        ...colConfig,
+        render: (value, row) => {
+          const isEditingThisCell = editingCell?.planId === row.id && editingCell?.fieldKey === colConfig.key;
+          if (isEditingThisCell) {
+            return (
+              <TextField
+                value={editingValue}
+                onChange={(e) => setEditingValue(e.target.value)}
+                size="small"
+                autoFocus
+                type={colConfig.type || 'text'} // Use number type for number fields
+                InputProps={{
+                  sx: { fontSize: '0.875rem', padding: '6px 8px', height: '36px' }, // Compact input
+                  endAdornment: inlineEditLoading ? <CircularProgress size={15} sx={{mr:1}} /> : null,
+                }}
+                sx={{ minWidth: '100px', maxWidth: '150px' }} // Prevent overly wide input
+                onBlur={() => {
+                  // Only save if not loading to prevent double submission if Enter was pressed
+                  if (!inlineEditLoading) {
+                     handleInlineEditSave(row.id, colConfig.key, editingValue, colConfig.type);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!inlineEditLoading) {
+                        handleInlineEditSave(row.id, colConfig.key, editingValue, colConfig.type);
+                    }
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setEditingCell(null);
+                  }
+                }}
+                disabled={inlineEditLoading}
+              />
+            );
+          }
+          // Display value (clickable)
+          const displayValue = colConfig.render ? colConfig.render(row[colConfig.key], row) : (row[colConfig.key] ?? '-');
+          return (
+            <Box
+              onClick={() => !inlineEditLoading && handleTriggerInlineEdit(row, colConfig.key)}
+              sx={{ 
+                cursor: 'pointer', 
+                minHeight: '24px', 
+                width: '100%', 
+                py: '6px', // Match TextField padding for alignment
+                px: '8px',
+                borderRadius: 1, // Slight rounding
+                '&:hover': { backgroundColor: 'action.hover' } 
+              }}
+            >
+              {displayValue}
+            </Box>
+          );
+        },
+      };
+    }
+    
+    // Default column rendering (non-editable or for other roles)
+    if (colConfig.render) {
+        return {
+            ...colConfig, // Spread the original config first
+            render: (value, item) => colConfig.render(item[colConfig.key], item),
+        };
+    }
+    return {
+      ...colConfig, // Spread the original config
       render: value => value || '-',
-    },
-    {
-      key: 'bienSoXe',
-      label: 'Biển Số Xe',
-      render: value => value || '-',
-    },
-    {
-      key: 'tenDoiTac',
-      label: 'Đối Tác',
-      render: value => value || '-',
-    },
-    {
-      key: 'dienGiai',
-      label: 'Diễn Giải',
-      render: value => value || '-',
-      noWrap: true,
-      maxWidth: 300,
-    },
-    {
-      key: 'tuyenDuong',
-      label: 'Tuyến Đường',
-      render: value => {
-        if (!value) return '-';
-        if (typeof value === 'object') {
-          return `${value.diemDi} - ${Array.isArray(value.diemDen) ? value.diemDen.join(', ') : value.diemDen}`;
-        }
-        return value;
-      },
-      noWrap: true,
-      maxWidth: 300,
-    },
-    {
-      key: 'trangThai',
-      label: 'Trạng Thái',
-      render: value => {
-        const status = value || '-';
-        return (
-          <Chip
-            label={status}
-            size="small"
-            sx={{
-              backgroundColor: getStatusColor(status),
-              color: 'white',
-              fontWeight: 500, // Guideline: Use icons alongside text for better visual communication - color helps
-            }}
-          />
-        );
-      },
-    },
-    {
-      key: 'actions',
-      label: 'Thao tác',
-      align: 'right',
-      render: (_, record) => (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-          <Tooltip title="Chỉnh sửa">
-            <EditButton onClick={() => handleOpenModalForEdit(record)} disabled={isLoading} />
-          </Tooltip>
-          <Tooltip title="Xóa">
-            <DeleteButton onClick={() => handleDeletePlan(record)} disabled={isLoading} />
-          </Tooltip>
-        </Box>
-      ),
-    },
-  ];
+    };
+  });
+
 
   // MobileFormStepper and its related functions (renderStepContent, getFormSteps, etc.)
   // are now moved to MobileShipmentFormStepper.jsx
@@ -540,8 +674,19 @@ const QuanLyLichVanChuyen = () => {
   };
 
   const handleCloseModalMobile = () => {
-    // This is effectively the same as handleCloseModal now.
     handleCloseModal();
+  };
+
+  // Handler for opening the detailed costs modal
+  const handleOpenDetailedCostsModal = (plan) => {
+    setCurrentPlanForDetailedCosts(plan);
+    setIsDetailedCostsModalOpen(true);
+  };
+
+  // Handler for when detailed costs are saved successfully
+  const handleDetailedCostsSaveSuccess = () => {
+    fetchPageData(); // Refresh the main list to show updated sums or other data
+    // No need to close modal here as it's handled by the modal itself or via onClose prop if needed for other scenarios
   };
 
   return (
@@ -616,10 +761,12 @@ const QuanLyLichVanChuyen = () => {
           </Box>
 
           {/* Floating Action Button for Add */}
+          {/* Floating Action Button for Add - Conditionally render based on role permission */}
+          {roleConfig.permissions.canAdd && (
           <Fab
             color="primary"
             aria-label="add"
-            onClick={handleOpenModalForAddMobile}
+            onClick={handleOpenModalForAddMobile} // This now uses roleConfig.defaultValues
             sx={{
               position: 'fixed',
               bottom: 24,
@@ -635,16 +782,22 @@ const QuanLyLichVanChuyen = () => {
           >
             <AddIcon />
           </Fab>
+          )}
         </Box>
       ) : (
         /* Desktop Layout */
         <Paper elevation={0} sx={{ p: 2 }}>
           <StandardTable
-            columns={columns}
+            columns={columns} // Use dynamically generated columns
             data={shipmentPlans}
             loading={isLoading}
             emptyMessage="Chưa có lịch vận chuyển nào"
-            headerAction={<AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} />}
+            // Conditionally render AddButton based on role permission
+            headerAction={
+              roleConfig.permissions.canAdd ? (
+                <AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} />
+              ) : null
+            }
           />
         </Paper>
       )}
@@ -701,13 +854,14 @@ const QuanLyLichVanChuyen = () => {
                 onContainerFormChange={handleContainerInfoChange}
                 onAddContainerField={addContainerField}
                 onRemoveContainerField={removeContainerField}
-                onSave={handleSubmit} // Renamed from handleSavePlan for clarity if needed, or use handleSavePlan directly
+                onSave={handleSubmit}
                 isLoading={isLoading}
-                error={error} // Pass the global error state
+                error={error}
                 selectOptions={selectOptions}
-                onClose={handleCloseModalMobile} // Pass close handler
-                onAddNewCustomer={handleAddNewCustomer} // Pass the new customer handler
-                onAddNewPartner={handleAddNewPartner} // Pass the new partner handler
+                onClose={handleCloseModalMobile}
+                onAddNewCustomer={handleAddNewCustomer}
+                onAddNewPartner={handleAddNewPartner}
+                roleConfig={roleConfig} // Pass roleConfig
               />
             </Box>
           </DialogContent>
@@ -726,6 +880,7 @@ const QuanLyLichVanChuyen = () => {
           isLoading={isLoading}
           error={error}
           selectOptions={selectOptions}
+          roleConfig={roleConfig} // Pass roleConfig
         />
       )}
 
@@ -754,6 +909,17 @@ const QuanLyLichVanChuyen = () => {
           </Box>
         }
       />
+
+      {/* Detailed Costs Modal */}
+      {currentPlanForDetailedCosts && (
+        <DetailedCostsModal
+          open={isDetailedCostsModalOpen}
+          onClose={() => setIsDetailedCostsModalOpen(false)}
+          planId={currentPlanForDetailedCosts.id}
+          initialCosts={currentPlanForDetailedCosts.detailedOtherCosts || []} // Ensure initialCosts is always an array
+          onSaveSuccess={handleDetailedCostsSaveSuccess}
+        />
+      )}
     </Box>
   );
 };

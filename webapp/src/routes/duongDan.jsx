@@ -11,6 +11,7 @@ import QuanLyNhanVien from '@features/nhan-vien/QuanLyNhanVien';
 import QuanLyKhachHang from '@features/khach-hang/QuanLyKhachHang';
 import QuanLyDoiTac from '@features/doi-tac/QuanLyDoiTac';
 import QuanLyPhuongTien from '@features/phuong-tien/QuanLyPhuongTien';
+import PlaceholderPage from '@components/PlaceholderPage'; // Added import
 
 // Wrap the app with AuthProvider
 const AppWithAuth = ({ children }) => <AuthProvider>{children}</AuthProvider>;
