@@ -6,7 +6,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Global } from '@emotion/react';
 import { theme } from '@/theme';
 import router from '@routes/duongDan';
-import { mobileInputStyles } from '@/shared/utils/mobileInput';
+import { mobileInputStyles } from '@/utils/mobileInput';
 import MobileInputHandler from '@/components/MobileInputHandler';
 import '@/index.css';
 

@@ -21,7 +21,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
 
-const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete }) => {
+const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete, canEditDelete }) => {
   const statusColor = getStatusColor(plan.trangThai);
 
   return (
@@ -93,9 +93,10 @@ const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete }
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              size="small"
-              onClick={() => onEdit(plan)}
+            {canEditDelete && (
+              <IconButton
+                size="small"
+                onClick={() => onEdit(plan)}
               sx={{
                 color: '#6b7280',
                 '&:hover': {
@@ -103,12 +104,14 @@ const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete }
                   color: '#1976d2',
                 },
               }}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => onDelete(plan)}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            )}
+            {canEditDelete && (
+              <IconButton
+                size="small"
+                onClick={() => onDelete(plan)}
               sx={{
                 color: '#6b7280',
                 '&:hover': {
@@ -116,9 +119,10 @@ const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete }
                   color: '#d32f2f',
                 },
               }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            )}
             <IconButton
               size="small"
               onClick={() => onCardExpand(plan.id)}
@@ -350,6 +354,11 @@ MobileShipmentCard.propTypes = {
   onCardExpand: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  canEditDelete: PropTypes.bool, // Added prop type
+};
+
+MobileShipmentCard.defaultProps = {
+  canEditDelete: false, // Default to false if not provided
 };
 
 export default MobileShipmentCard;

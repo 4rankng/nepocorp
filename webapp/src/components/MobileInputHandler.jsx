@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { setupMobileInputHandlers } from '@/shared/utils/mobileInput';
+import { setupMobileInputHandlers } from '@/utils/mobileInput';
 
 /**
  * Component that sets up mobile input handlers to prevent zooming issues

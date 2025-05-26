@@ -39,9 +39,9 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import StandardTable from '@shared/components/StandardTable';
-import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
-import ConfirmationDialog from '@shared/components/ConfirmationDialog';
+import StandardTable from '@/components/StandardTable';
+import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { maintenanceApi, vehicleApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 

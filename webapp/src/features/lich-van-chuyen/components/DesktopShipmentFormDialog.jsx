@@ -90,8 +90,8 @@ const DesktopShipmentFormDialog = ({
                   <MenuItem key="empty-customer" value="">
                     <em>Chọn khách hàng</em>
                   </MenuItem>
-                  {selectOptions.customers.map(c => (
-                    <MenuItem key={c.value} value={c.value}>
+                  {selectOptions?.customers?.map(c => (
+                    <MenuItem key={`customer-${c.value}`} value={c.value}>
                       {c.label}
                     </MenuItem>
                   ))}
@@ -174,8 +174,8 @@ const DesktopShipmentFormDialog = ({
                   <MenuItem key="empty-container" value="">
                     <em>Chọn loại container</em>
                   </MenuItem>
-                  {selectOptions.containerTypes.map(ct => (
-                    <MenuItem key={ct.value} value={ct.value}>
+                  {selectOptions?.containerTypes?.map(ct => (
+                    <MenuItem key={`container-type-${ct.value}`} value={ct.value}>
                       {ct.label}
                     </MenuItem>
                   ))}
@@ -218,8 +218,8 @@ const DesktopShipmentFormDialog = ({
                     <MenuItem key="empty-vehicle" value="">
                       <em>Chọn xe</em>
                     </MenuItem>
-                    {selectOptions.vehicles.map(v => (
-                      <MenuItem key={v.value} value={v.value}>
+                    {selectOptions?.vehicles?.map(v => (
+                      <MenuItem key={`vehicle-${v.value}`} value={v.value}>
                         {v.label}
                       </MenuItem>
                     ))}
@@ -262,8 +262,8 @@ const DesktopShipmentFormDialog = ({
                     <MenuItem key="empty-partner" value="">
                       <em>Chọn đối tác</em>
                     </MenuItem>
-                    {selectOptions.partners.map(p => (
-                      <MenuItem key={p.value} value={p.value}>
+                    {selectOptions?.partners?.map(p => (
+                      <MenuItem key={`partner-${p.value}`} value={p.value}>
                         {p.label}
                       </MenuItem>
                     ))}
@@ -359,10 +359,10 @@ const DesktopShipmentFormDialog = ({
                     variant="outlined"
                     size="small"
                   >
-                    <MenuItem key="len-lich" value="Lên lịch">Lên lịch</MenuItem>
-                    <MenuItem key="dang-van-chuyen" value="Đang vận chuyển">Đang vận chuyển</MenuItem>
-                    <MenuItem key="hoan-thanh" value="Hoàn thành">Hoàn thành</MenuItem>
-                    <MenuItem key="huy" value="Hủy">Hủy</MenuItem>
+                    <MenuItem key="status-len-lich" value="Lên lịch">Lên lịch</MenuItem>
+                    <MenuItem key="status-dang-van-chuyen" value="Đang vận chuyển">Đang vận chuyển</MenuItem>
+                    <MenuItem key="status-hoan-thanh" value="Hoàn thành">Hoàn thành</MenuItem>
+                    <MenuItem key="status-huy" value="Hủy">Hủy</MenuItem>
                   </TextField>
                 </Grid>
               </Grid>

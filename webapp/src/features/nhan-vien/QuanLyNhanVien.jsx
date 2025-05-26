@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { AddButton, EditButton, DeleteButton } from '@shared/components/ActionButtons';
-import {
-  getEmployees,
-  addEmployee,
-  updateEmployee,
-  deleteEmployee,
-  employeeRoles,
-} from '@services/mockData/employees';
-import StandardTable from '@shared/components/StandardTable';
+import React, { useState, useEffect } from 'react'; // useEffect might not be needed if all async logic is in hook
+import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
+// Employee service imports are now in the hook
+import StandardTable from '@/components/StandardTable';
 import { PlusIcon } from '@assets/icons/index.jsx';
+import useNhanVienManagement from './hooks/useNhanVienManagement'; // Import the hook
 import {
   Box,
   Paper,
@@ -31,154 +26,50 @@ import {
   Fab,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import EmployeeCard from './EmployeeCard';
+import EmployeeCard from './components/EmployeeCard'; // Adjusted path
+import NhanVienForm from './components/NhanVienForm'; // Import the new form
 import { useTheme, useMediaQuery } from '@mui/material';
 
-const initialFormState = {
-  tenNhanVien: '',
-  tenDangNhap: '',
-  matKhau: '',
-  email: '',
-  chucVu: employeeRoles[0] || '', // Default to the first role or empty string
-};
+// initialFormState is now handled by the hook
 
 const QuanLyNhanVien = () => {
-  const [employees, setEmployees] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState(null);
-  const [formData, setFormData] = useState(initialFormState);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const {
+    employees,
+    isModalOpen,
+    editingEmployee,
+    formData,
+    isLoading,
+    error, // This error from the hook will be used for the form
+    // fetchEmployeesData, // Not needed directly by component if hook handles initial fetch
+    handleInputChange,
+    handleOpenModalForAdd,
+    handleOpenModalForEdit,
+    handleCloseModal,
+    handleSaveEmployee,
+    handleDeleteEmployee: deleteEmployeeById, // Renamed to avoid conflict with a potential local var
+    employeeRoles, // Get this from the hook for the form
+  } = useNhanVienManagement();
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(''); // Search remains component-local state
+  const [pageError, setPageError] = useState(''); // For errors not directly related to form save
 
-  const fetchEmployeesData = async () => {
-    setIsLoading(true);
-    setError('');
-    try {
-      const data = await getEmployees();
-      setEmployees(data);
-    } catch (err) {
-      setError('Không thể tải danh sách nhân viên.');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // useEffect for initial data fetch is in the hook.
+  // useEffect for ESC key is in the hook.
 
-  useEffect(() => {
-    fetchEmployeesData();
-  }, []);
-
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleOpenModalForAdd = () => {
-    setEditingEmployee(null);
-    setFormData(initialFormState);
-    setError('');
-    setIsModalOpen(true);
-  };
-
-  const handleOpenModalForEdit = employee => {
-    setEditingEmployee(employee);
-    setFormData({
-      tenNhanVien: employee.tenNhanVien,
-      tenDangNhap: employee.tenDangNhap,
-      matKhau: '', // Password field is cleared for edit, or handled differently
-      email: employee.email,
-      chucVu: employee.chucVu,
-    });
-    setError('');
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingEmployee(null);
-    setFormData(initialFormState);
-    setError('');
-  };
-
-  // Handle ESC key press to close modal
-  useEffect(() => {
-    const handleKeyDown = e => {
-      if (e.key === 'Escape' && isModalOpen) {
-        handleCloseModal();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isModalOpen]);
-
-  const handleSaveEmployee = async () => {
-    setError(''); // Clear previous errors
-    // Basic frontend validation
-    if (
-      !formData.tenNhanVien.trim() ||
-      !formData.tenDangNhap.trim() ||
-      !formData.email.trim() ||
-      !formData.chucVu.trim()
-    ) {
-      setError('Vui lòng điền đầy đủ các trường: Tên nhân viên, Tên đăng nhập, Email, Chức vụ.');
-      return;
-    }
-    if (!editingEmployee && !formData.matKhau.trim()) {
-      // Password required for new employee
-      setError('Mật khẩu là bắt buộc khi thêm nhân viên mới.');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      if (editingEmployee) {
-        // For update, ensure matKhau is only included if changed.
-        const dataToUpdate = { ...formData };
-        if (!formData.matKhau.trim()) {
-          // If password field empty during edit, don't update it
-          delete dataToUpdate.matKhau;
-        }
-        await updateEmployee(editingEmployee.id, dataToUpdate);
-      } else {
-        await addEmployee(formData);
-      }
-      await fetchEmployeesData();
-      handleCloseModal();
-    } catch (err) {
-      setError(err.message || `Lỗi khi ${editingEmployee ? 'sửa' : 'thêm'} nhân viên.`);
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteEmployee = async id => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
-      setIsLoading(true);
-      setError('');
-      try {
-        await deleteEmployee(id);
-        await fetchEmployeesData();
-      } catch (err) {
-        setError('Lỗi khi xóa nhân viên.');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
+  // If there's an error from the hook (e.g. save error), it will be passed to NhanVienForm.
+  // If there's a page-level error (e.g., initial load error), it could be set via setPageError.
+  // For simplicity, we can use the 'error' from the hook for the main Alert,
+  // and NhanVienForm will also display it.
 
   const handleDeleteClick = async record => {
-    await handleDeleteEmployee(record.id);
+    if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
+      await deleteEmployeeById(record.id);
+    }
   };
 
-  // Define table columns
+  // Define table columns. This is display logic, so it stays.
   const columns = [
     {
       key: 'tenNhanVien',

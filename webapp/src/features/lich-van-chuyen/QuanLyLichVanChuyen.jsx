@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@contexts/AuthContext'; // Import useAuth
+import { ROLES } from '@/config/roles'; // Import ROLES
 import {
   getShipmentPlans,
   addShipmentPlan,
@@ -67,8 +69,8 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SortIcon from '@mui/icons-material/Sort';
-import StandardTable from '@shared/components/StandardTable';
-import { AddButton, EditButton, DeleteButton } from '@shared/components/ActionButtons';
+import StandardTable from '@/components/StandardTable';
+import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
 import MobileShipmentCard from '@features/lich-van-chuyen/components/MobileShipmentCard'; // Added import
 import MobileSearchHeader from '@features/lich-van-chuyen/components/MobileSearchHeader'; // Added import
 import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog'; // Added import
@@ -114,6 +116,9 @@ const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+
+  const { hasAnyRole } = useAuth(); // Get role checker
+  const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]); // Example: Manager and Dispatcher can add
 
   const [shipmentPlans, setShipmentPlans] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -446,12 +451,16 @@ const QuanLyLichVanChuyen = () => {
       align: 'right',
       render: (_, record) => (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-          <Tooltip title="Chỉnh sửa">
-            <EditButton onClick={() => handleOpenModalForEdit(record)} disabled={isLoading} />
-          </Tooltip>
-          <Tooltip title="Xóa">
-            <DeleteButton onClick={() => handleDeletePlan(record)} disabled={isLoading} />
-          </Tooltip>
+          {canAddPlan && ( // Use the same permission for edit/delete for this example
+            <>
+              <Tooltip title="Chỉnh sửa">
+                <EditButton onClick={() => handleOpenModalForEdit(record)} disabled={isLoading} />
+              </Tooltip>
+              <Tooltip title="Xóa">
+                <DeleteButton onClick={() => handleDeletePlan(record)} disabled={isLoading} />
+              </Tooltip>
+            </>
+          )}
         </Box>
       ),
     },
@@ -607,8 +616,9 @@ const QuanLyLichVanChuyen = () => {
                     plan={plan}
                     isExpanded={expandedCard === plan.id}
                     onCardExpand={handleCardExpand}
-                    onEdit={handleOpenModalForEditMobile} // Ensure this handler is adapted if needed
-                    onDelete={handleDeleteClick} // Ensure this handler is adapted if needed
+                    onEdit={handleOpenModalForEditMobile}
+                    onDelete={handleDeleteClick}
+                    canEditDelete={canAddPlan} // Pass permission to card
                   />
                 ))}
               </Box>
@@ -616,10 +626,11 @@ const QuanLyLichVanChuyen = () => {
           </Box>
 
           {/* Floating Action Button for Add */}
-          <Fab
-            color="primary"
-            aria-label="add"
-            onClick={handleOpenModalForAddMobile}
+          {canAddPlan && (
+            <Fab
+              color="primary"
+              aria-label="add"
+              onClick={handleOpenModalForAddMobile}
             sx={{
               position: 'fixed',
               bottom: 24,
@@ -633,8 +644,9 @@ const QuanLyLichVanChuyen = () => {
               transition: 'all 0.2s ease-in-out',
             }}
           >
-            <AddIcon />
-          </Fab>
+              <AddIcon />
+            </Fab>
+          )}
         </Box>
       ) : (
         /* Desktop Layout */
@@ -644,7 +656,7 @@ const QuanLyLichVanChuyen = () => {
             data={shipmentPlans}
             loading={isLoading}
             emptyMessage="Chưa có lịch vận chuyển nào"
-            headerAction={<AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} />}
+            headerAction={canAddPlan ? <AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} /> : null}
           />
         </Paper>
       )}
@@ -653,7 +665,7 @@ const QuanLyLichVanChuyen = () => {
       {isMobile ? (
         <Dialog
           fullScreen
-          open={isModalOpen}
+          open={isModalOpen && canAddPlan} // Also check permission to open modal for add/edit
           onClose={handleCloseModalMobile}
           TransitionComponent={Slide}
           TransitionProps={{ direction: 'up' }}

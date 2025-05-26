@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import StandardTable from '@shared/components/StandardTable';
-import { EditButton, DeleteButton } from '@shared/components/ActionButtons';
+import StandardTable from '@/components/StandardTable';
+import { EditButton, DeleteButton } from '@/components/ActionButtons';
 
 const CustomerList = ({
   customers = [],

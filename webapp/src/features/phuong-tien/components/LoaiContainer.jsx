@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import ConfirmationDialog from '@shared/components/ConfirmationDialog';
-import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import ContainerTypeForm from '@features/phuong-tien/components/ContainerTypeForm';
 import ContainerTypeList from '@features/phuong-tien/components/ContainerTypeList';
 import useContainerTypeManagement from '@features/phuong-tien/hooks/useContainerTypeManagement';

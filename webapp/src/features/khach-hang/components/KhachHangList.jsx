@@ -12,9 +12,9 @@ import {
   TextField,
   Button,
 } from '@mui/material';
-import StandardTable from '@shared/components/StandardTable';
-import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
-import ConfirmationDialog from '@shared/components/ConfirmationDialog';
+import StandardTable from '@/components/StandardTable';
+import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { customerApi } from '@services/mockApi';
 
 // Enhanced theme configuration based on DinhMucDau.jsx
