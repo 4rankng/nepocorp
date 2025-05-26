@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Tabs, Tab, Box, useTheme, useMediaQuery } from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import XeVanChuyen from '@features/phuong-tien/components/XeVanChuyen';
 import LoaiContainer from '@features/phuong-tien/components/LoaiContainer';
 import DinhMucDau from '@features/phuong-tien/components/DinhMucDau';
@@ -16,110 +16,57 @@ const TABS = [
 ];
 
 // SwipeDetector component for handling touch events
-const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight, isAnimating }) => {
+const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight }) => {
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
-  const [swipeOffset, setSwipeOffset] = useState(0);
   const containerRef = useRef(null);
 
-  const handleTouchStart = useCallback(
-    e => {
-      if (isAnimating) return;
-      const touch = e.touches[0];
-      touchStartX.current = touch.clientX;
-      touchStartY.current = touch.clientY;
-      setSwipeOffset(0);
-    },
-    [isAnimating]
-  );
+  const handleTouchStart = useCallback((e) => {
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+  }, []);
 
-  const handleTouchMove = useCallback(
-    e => {
-      if (isAnimating) return;
+  const handleTouchEnd = useCallback((e) => {
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartX.current;
+    const deltaY = touch.clientY - touchStartY.current;
 
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - touchStartX.current;
-      const deltaY = touch.clientY - touchStartY.current;
+    // Only process horizontal swipes (ignore vertical scrolling)
+    if (Math.abs(deltaY) > Math.abs(deltaX)) return;
 
-      // Only handle horizontal swipes (with 2:1 ratio)
-      if (Math.abs(deltaY) > Math.abs(deltaX) * 0.5) return;
-
-      e.preventDefault();
-      setSwipeOffset(deltaX);
-    },
-    [isAnimating]
-  );
-
-  const handleTouchEnd = useCallback(
-    e => {
-      if (isAnimating) return;
-
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - touchStartX.current;
-      const deltaY = touch.clientY - touchStartY.current;
-
-      // Reset visual feedback
-      setSwipeOffset(0);
-
-      // Only process horizontal swipes
-      if (Math.abs(deltaY) > Math.abs(deltaX) * 0.5) return;
-
-      const minDistance = 50;
-      if (Math.abs(deltaX) > minDistance) {
-        if (deltaX > 0) {
-          onSwipeRight?.();
-        } else {
-          onSwipeLeft?.();
-        }
+    const minDistance = 50;
+    if (Math.abs(deltaX) > minDistance) {
+      if (deltaX > 0) {
+        onSwipeRight?.();
+      } else {
+        onSwipeLeft?.();
       }
-    },
-    [isAnimating, onSwipeLeft, onSwipeRight]
-  );
+    }
+  }, [onSwipeLeft, onSwipeRight]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [handleTouchStart, handleTouchEnd]);
 
   return (
     <Box
       ref={containerRef}
       sx={{
-        position: 'relative',
-        touchAction: 'pan-y',
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehavior: 'contain',
-        '& *': { pointerEvents: 'auto' },
+        width: '100%',
+        height: '100%',
+        touchAction: 'pan-y', // Allow vertical scrolling but handle horizontal swipes
       }}
     >
-      {/* Visual feedback for swipe */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background:
-            swipeOffset > 0
-              ? `linear-gradient(to right, rgba(0,0,0,0.05) ${Math.abs(swipeOffset) / 2}%, transparent)`
-              : `linear-gradient(to left, rgba(0,0,0,0.05) ${Math.abs(swipeOffset) / 2}%, transparent)`,
-          pointerEvents: 'none',
-          opacity: Math.min(Math.abs(swipeOffset) / 100, 0.3),
-          transition: swipeOffset === 0 ? 'opacity 0.2s ease-out' : 'none',
-          zIndex: 1,
-        }}
-      />
       {children}
     </Box>
   );
@@ -130,8 +77,7 @@ const QuanLyPhuongTien = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [isAnimating, setIsAnimating] = useState(false);
-  const containerRef = useRef(null);
+  const tabsRef = useRef(null);
 
   // Set the active tab based on URL parameter
   const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'xe-van-chuyen';
@@ -144,99 +90,120 @@ const QuanLyPhuongTien = () => {
     }
   }, [tabFromUrl, navigate]);
 
+  // Center the active tab when it changes
+  useEffect(() => {
+    if (tabsRef.current && currentTabIndex !== -1) {
+      const tabElement = tabsRef.current.querySelector(`[data-value="${activeTab}"]`);
+      if (tabElement) {
+        tabElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }
+  }, [activeTab, currentTabIndex]);
+
   const handleTabChange = (event, newValue) => {
     navigate(`/phuong-tien/${newValue}`);
   };
 
-  // Handle tab navigation with animation
-  const navigateToTab = useCallback(
-    direction => {
-      const currentIndex = TABS.findIndex(tab => tab.value === activeTab);
-      const newIndex = currentIndex + direction;
-
-      if (newIndex >= 0 && newIndex < TABS.length) {
-        setIsAnimating(true);
-        navigate(`/phuong-tien/${TABS[newIndex].value}`);
-        setTimeout(() => setIsAnimating(false), 200);
-        return true;
-      }
-      return false;
-    },
-    [activeTab, navigate]
-  );
-
-  // Handle swipe gestures
+  // Handle swipe gestures - navigate to next/previous tab
   const handleSwipeLeft = useCallback(() => {
-    navigateToTab(1);
-  }, [navigateToTab]);
+    // Swipe left = go to next tab (if not on last tab)
+    if (currentTabIndex < TABS.length - 1) {
+      const nextTab = TABS[currentTabIndex + 1].value;
+      navigate(`/phuong-tien/${nextTab}`);
+    }
+  }, [currentTabIndex, navigate]);
 
   const handleSwipeRight = useCallback(() => {
-    navigateToTab(-1);
-  }, [navigateToTab]);
+    // Swipe right = go to previous tab (if not on first tab)
+    if (currentTabIndex > 0) {
+      const prevTab = TABS[currentTabIndex - 1].value;
+      navigate(`/phuong-tien/${prevTab}`);
+    }
+  }, [currentTabIndex, navigate]);
 
   return (
-    <Box className="p-6" ref={containerRef}>
-      <h1 className="text-2xl font-bold mb-6">Quản Lý Phương Tiện</h1>
+    <SwipeDetector onSwipeLeft={handleSwipeLeft} onSwipeRight={handleSwipeRight}>
+      <Box className="p-6">
+        <h1 className="text-2xl font-bold mb-6">Quản Lý Phương Tiện</h1>
 
-      <Box sx={{ width: '100%', typography: 'body1' }}>
-        <TabContext value={activeTab}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons="auto"
-              aria-label="Quản lý phương tiện tabs"
-              sx={{
-                '& .MuiTabs-scrollButtons': {
-                  opacity: 1,
-                  '&.Mui-disabled': { opacity: 0.3 },
-                },
-              }}
-            >
-              {TABS.map(tab => (
-                <Tab key={tab.value} label={tab.label} value={tab.value} />
-              ))}
-            </Tabs>
-          </Box>
+        <Box sx={{ width: '100%', typography: 'body1' }}>
+          <TabContext value={activeTab}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs
+                ref={tabsRef}
+                value={activeTab}
+                onChange={handleTabChange}
+                variant="scrollable"
+                scrollButtons="auto"
+                centered={!isMobile}
+                aria-label="Quản lý phương tiện tabs"
+                sx={{
+                  '& .MuiTabs-scrollButtons': {
+                    opacity: 1,
+                    '&.Mui-disabled': { opacity: 0.3 },
+                  },
+                  '& .MuiTabs-indicator': {
+                    transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+                  },
+                  '& .MuiTabs-scroller': {
+                    '& .MuiTabs-flexContainer': {
+                      justifyContent: isMobile ? 'flex-start' : 'center',
+                    },
+                  },
+                }}
+                TabIndicatorProps={{
+                  children: (
+                    <span className="MuiTabs-indicatorSpan" />
+                  ),
+                }}
+              >
+                {TABS.map(tab => (
+                  <Tab 
+                    key={tab.value} 
+                    label={tab.label} 
+                    value={tab.value}
+                    disableRipple
+                    sx={{
+                      transition: 'color 0.3s ease-in-out',
+                      '&.Mui-selected': {
+                        color: 'primary.main',
+                        fontWeight: 600,
+                      },
+                    }}
+                  />
+                ))}
+              </Tabs>
+            </Box>
 
-          {/* Swipeable container for mobile */}
-          <SwipeDetector
-            onSwipeLeft={handleSwipeLeft}
-            onSwipeRight={handleSwipeRight}
-            isAnimating={isAnimating}
-          >
+            {/* Tab content with swipe support */}
             <Box
               sx={{
                 position: 'relative',
                 minHeight: '60vh',
-                touchAction: 'pan-y',
-                WebkitOverflowScrolling: 'touch',
-                overscrollBehavior: 'contain',
-                '& *': { pointerEvents: 'auto' },
-                animation: 'edgePulse 0.3s ease-out',
+                overflow: 'hidden',
               }}
             >
               <TabPanel value="xe-van-chuyen" sx={{ p: 0, mt: 2 }}>
                 <XeVanChuyen />
               </TabPanel>
-
               <TabPanel value="loai-container" sx={{ p: 0, mt: 2 }}>
                 <LoaiContainer />
               </TabPanel>
-
               <TabPanel value="dinh-muc-dau" sx={{ p: 0, mt: 2 }}>
                 <DinhMucDau />
               </TabPanel>
-
               <TabPanel value="bao-duong" sx={{ p: 0, mt: 2 }}>
                 <BaoDuong />
               </TabPanel>
             </Box>
-          </SwipeDetector>
-        </TabContext>
+          </TabContext>
+        </Box>
       </Box>
-    </Box>
+    </SwipeDetector>
   );
 };
 

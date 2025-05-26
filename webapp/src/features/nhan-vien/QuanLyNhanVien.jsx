@@ -27,8 +27,10 @@ import {
   Select,
   MenuItem,
   IconButton,
+  InputAdornment,
   Fab,
 } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import EmployeeCard from './EmployeeCard';
 import { useTheme, useMediaQuery } from '@mui/material';
 
@@ -229,14 +231,20 @@ const QuanLyNhanVien = () => {
       </Typography>
 
       {/* Search bar */}
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ mb: 3 }}>
         <TextField
+          fullWidth
           variant="outlined"
-          size="small"
-          placeholder="Tìm kiếm nhân viên..."
+          placeholder="Tìm kiếm theo tên, tên đăng nhập hoặc email..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          sx={{ flex: 1, maxWidth: 300 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
         />
       </Box>
 

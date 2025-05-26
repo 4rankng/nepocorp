@@ -98,10 +98,12 @@
         *   Chỉnh sửa thông tin loại container.
         *   Xóa loại container.
     *   `[ ]` **Quản lý Định mức dầu:**
-        *   Xem bảng định mức tiêu hao nhiên liệu (có thể theo loại xe, tuyến đường, v.v.).
-        *   Thêm định mức dầu mới.
-        *   Chỉnh sửa định mức dầu.
-        *   Xóa định mức dầu.
+        *   Cho phép nhập định mức dầu riêng cho từng xe, gồm 2 loại: "Định mức hàng" (áp dụng cho km có hàng) và "Định mức vỏ" (áp dụng cho km chạy vỏ/không hàng).
+        *   Khi tính toán lượng dầu cấp cho chuyến đi, phần mềm sẽ tự động tra cứu định mức của từng xe để áp dụng vào công thức tính toán.
+        *   Công thức tính: **Số lít dầu được cấp = Số km hàng * Định mức hàng + Số km vỏ * Định mức vỏ + Bổ sung**.
+        *   Mức bổ sung (mặc định 3L/chuyến) là giá trị do Quản lý cài đặt, áp dụng cho tất cả các xe, có thể thay đổi trong phần cấu hình.
+        *   Đối với các tuyến đường công ty đã khoán số lít dầu theo tuyến, cho phép kế toán nhập trực tiếp số lít dầu vào phần nhập liệu kế hoạch vận chuyển. Nếu đã nhập số lít dầu, phần mềm sẽ lấy giá trị này, không tính toán theo công thức nữa. Nếu không nhập số lít dầu, phần mềm sẽ tự động tính dựa trên số km hàng, số km vỏ và định mức của xe.
+        *   Không cần nhập bảng định mức dầu theo tuyến trong UI, chỉ cần nhập trực tiếp số lít dầu cho các tuyến khoán khi cần.
     *   `[ ]` **Quản lý Bảo dưỡng (Thay lốp xe):**
         *   Xem lịch sử thay lốp cho các xe, bao gồm: Biển số xe, Ngày thay lốp, Thời hạn bảo hành, Số lượng, Đơn giá, Tổng tiền, Ghi chú.
         *   Lọc danh sách thay lốp theo biển số xe.
@@ -131,8 +133,11 @@ Kế toán viên chịu trách nhiệm về các vấn đề tài chính, chi ph
     *   `[ ]` **Tạo kế hoạch vận chuyển mới:**
         *   Sử dụng nút "Thêm" (thường ở phía trên bảng dữ liệu) để mở form tạo mới kế hoạch vận chuyển.
         *   Điền các thông tin tương tự như khi Quản lý tạo, trạng thái mặc định sẽ là "Nháp".
-    *   `[ ]` **Tính toán chi phí dầu tự động:** Hệ thống tự động tính "Chi phí dầu (Đồng)" bằng cách nhân "Chi phí dầu (lít)" với "Đơn giá dầu".
     *   `[ ]` **Tự động điền định mức đi đường:** Hệ thống tự động điền giá trị "Định mức đi đường" dựa trên bảng định mức do Quản lý đã thiết lập sẵn (ví dụ: theo tuyến đường hoặc loại xe).
+    *   `[ ]` **Tính toán chi phí dầu tự động:**
+        *   Khi kế toán nhập số km hàng và số km vỏ, phần mềm sẽ tự động tính số lít dầu cấp cho chuyến đi theo công thức: **Số lít dầu được cấp = Số km hàng * Định mức hàng + Số km vỏ * Định mức vỏ + Bổ sung** (bổ sung mặc định 3L/chuyến, có thể thay đổi bởi Quản lý).
+        *   Nếu kế toán nhập trực tiếp số lít dầu (áp dụng cho các tuyến khoán hoặc trường hợp đặc biệt), phần mềm sẽ lấy giá trị này và không tính toán theo công thức nữa.
+        *   Định mức hàng và định mức vỏ được lưu theo từng xe, phần mềm sẽ tự động tra cứu theo biển số xe của chuyến đi.
 
 ### 2. Epic: Quản lý và Báo cáo Tổng hợp Chi phí Hoạt động
 
@@ -264,3 +269,45 @@ Tài xế là người trực tiếp thực hiện các chuyến vận chuyển,
         *   Nếu phát hiện các vấn đề kỹ thuật hoặc hư hỏng nhẹ của xe trong quá trình vận hành, có thể gửi báo cáo nhanh cho bộ phận quản lý xe/sửa chữa.
 
 ---
+
+#### UI Specification: Định mức dầu (Fuel Quota) Management
+
+**1. Bảng Định mức dầu theo xe (Per-Vehicle Fuel Quota Table)**
+- **Purpose:** Quản lý định mức dầu riêng cho từng xe đầu kéo.
+- **Fields/Columns:**
+    - STT (Index)
+    - Biển số xe (Vehicle Plate Number)
+    - Rơ-mooc (Trailer Plate Number)
+    - Loại rơ-mooc (Trailer Type, e.g. 20', 40')
+    - Định mức hàng (L/100km) (Cargo quota, e.g. 43)
+    - Định mức vỏ (L/100km) (Empty quota, e.g. 39)
+    - Động cơ (Engine type, optional)
+    - Định mức bổ sung (Supplement, e.g. +3L/trip, manager-configurable, default 3)
+- **Actions:**
+    - Thêm/Sửa/Xóa xe và các định mức liên quan
+    - Import/Export Excel (optional, for bulk update)
+
+**2. Bảng Định mức dầu theo tuyến khoán (Fixed-Route Fuel Quota Table)**
+- **Purpose:** Quản lý các tuyến đường đã khoán số lít dầu cụ thể, cho phép nhập trực tiếp số lít dầu cho từng tuyến.
+- **Fields/Columns:**
+    - STT (Index)
+    - Tuyến đường vận chuyển (Route description)
+    - Định mức dầu 40' (Lít)
+    - Định mức dầu 20' (Lít)
+    - Ghi chú (Notes, optional)
+- **Actions:**
+    - Thêm/Sửa/Xóa tuyến khoán và định mức
+    - Import/Export Excel (optional)
+
+**3. Cấu hình bổ sung (Supplemental Quota Config)**
+- **Purpose:** Cho phép quản lý cài đặt giá trị bổ sung (Lít/trip) áp dụng cho tất cả các xe (default 3L, editable).
+- **Field:**
+    - Định mức bổ sung mặc định (Default supplement, number input)
+- **Action:**
+    - Lưu cấu hình
+
+**4. Lưu ý về nhập liệu:**
+- Khi nhập liệu kế hoạch vận chuyển, nếu tuyến thuộc danh sách khoán thì kế toán có thể nhập trực tiếp số lít dầu. Nếu không, phần mềm sẽ tự động tính theo công thức: Số lít dầu = Số km hàng * Định mức hàng + Số km vỏ * Định mức vỏ + bổ sung.
+
+---
+

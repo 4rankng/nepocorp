@@ -53,12 +53,11 @@ const XeVanChuyen = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [vehicles, setVehicles] = useState([]);
-  const [filteredVehicles, setFilteredVehicles] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
@@ -79,7 +78,6 @@ const XeVanChuyen = () => {
     try {
       const response = await vehicleApi.getAll();
       setVehicles(response.data || []);
-      setFilteredVehicles(response.data || []);
       setError('');
     } catch (err) {
       setError('Không thể tải danh sách phương tiện');
@@ -95,27 +93,22 @@ const XeVanChuyen = () => {
   }, []);
 
   // Filter vehicles based on search term
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredVehicles(vehicles);
-    } else {
-      const filtered = vehicles.filter(vehicle => {
-        const licensePlate = (vehicle.licensePlate || vehicle.bienSo || '').toLowerCase();
-        const vehicleTypeLabel =
-          vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label ||
-          vehicle.vehicleType ||
-          '';
-        const note = (vehicle.note || '').toLowerCase();
-        const search = searchTerm.toLowerCase();
-
-        return (
-          licensePlate.includes(search) ||
-          vehicleTypeLabel.toLowerCase().includes(search) ||
-          note.includes(search)
-        );
-      });
-      setFilteredVehicles(filtered);
-    }
+  const filteredVehicles = React.useMemo(() => {
+    if (!searchTerm.trim()) return vehicles;
+    const search = searchTerm.toLowerCase();
+    return vehicles.filter(vehicle => {
+      const licensePlate = (vehicle.licensePlate || vehicle.bienSo || '').toLowerCase();
+      const vehicleTypeLabel =
+        vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label ||
+        vehicle.vehicleType ||
+        '';
+      const note = (vehicle.note || '').toLowerCase();
+      return (
+        licensePlate.includes(search) ||
+        vehicleTypeLabel.toLowerCase().includes(search) ||
+        note.includes(search)
+      );
+    });
   }, [vehicles, searchTerm]);
 
   const showSnackbar = (message, severity = 'success') => {
@@ -239,10 +232,6 @@ const XeVanChuyen = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSearchChange = e => {
-    setSearchTerm(e.target.value);
   };
 
   // Mobile Vehicle Card Component
@@ -391,37 +380,63 @@ const XeVanChuyen = () => {
     );
   };
 
-  // Mobile Search Header Component
-  const MobileSearchHeader = () => (
-    <Box sx={{ mb: 3 }}>
-      <TextField
-        fullWidth
-        size="medium"
-        placeholder="Tìm kiếm xe theo biển số, loại xe..."
-        value={searchTerm}
-        onChange={handleSearchChange}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon color="action" />
-            </InputAdornment>
-          ),
-          sx: {
-            borderRadius: 2,
-            backgroundColor: 'background.paper',
-          },
-        }}
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            '&:hover': {
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'primary.main',
-              },
-            },
-          },
-        }}
-      />
+  // Render mobile view
+  const renderMobileView = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+      {filteredVehicles.map(vehicle => (
+        <MobileVehicleCard key={vehicle.id} vehicle={vehicle} />
+      ))}
+      {!isLoading && filteredVehicles.length === 0 && (
+        <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
+          {searchTerm ? 'Không tìm thấy phương tiện phù hợp' : 'Không có dữ liệu phương tiện'}
+        </Typography>
+      )}
     </Box>
+  );
+
+  // Render desktop view
+  const renderDesktopView = () => (
+    <StandardTable
+      columns={[
+        {
+          key: 'licensePlate',
+          label: 'BIỂN SỐ XE',
+          render: (value, row) => value || row.bienSo || '',
+        },
+        {
+          key: 'vehicleType',
+          label: 'LOẠI XE',
+          render: value => {
+            const type = vehicleTypes.find(t => t.value === value);
+            return type ? type.label : value || '';
+          },
+        },
+        {
+          key: 'note',
+          label: 'GHI CHÚ',
+          render: value => value || '',
+        },
+      ]}
+      data={filteredVehicles}
+      loading={isLoading}
+      emptyMessage={searchTerm ? 'Không tìm thấy phương tiện phù hợp' : 'Không có dữ liệu phương tiện'}
+      renderActions={row => (
+        <>
+          <EditButton
+            onClick={e => {
+              e.stopPropagation();
+              handleOpenEditDialog(row);
+            }}
+          />
+          <DeleteButton
+            onClick={e => {
+              e.stopPropagation();
+              handleDeleteClick(row);
+            }}
+          />
+        </>
+      )}
+    />
   );
 
   const renderDialog = () => {
@@ -748,145 +763,56 @@ const XeVanChuyen = () => {
   };
 
   return (
-    <Box sx={{ p: isMobile ? 1 : 2 }}>
-      {error ? (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      ) : (
-        <>
-          {isMobile ? (
-            // Mobile View
-            <Box>
-              <MobileSearchHeader />
-
-              {isLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : filteredVehicles.length === 0 ? (
-                <Paper
-                  sx={{
-                    p: 4,
-                    textAlign: 'center',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 2,
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    {searchTerm
-                      ? 'Không tìm thấy xe nào phù hợp'
-                      : 'Không có dữ liệu xe vận chuyển'}
-                  </Typography>
-                </Paper>
-              ) : (
-                <Box>
-                  {filteredVehicles.map(vehicle => (
-                    <MobileVehicleCard key={vehicle.id} vehicle={vehicle} />
-                  ))}
-                </Box>
-              )}
-            </Box>
-          ) : (
-            // Desktop View
-            <Paper
-              elevation={0}
-              sx={{
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
-                overflow: 'hidden',
-              }}
-            >
-              <StandardTable
-                searchTerm={searchTerm}
-                onSearchChange={handleSearchChange}
-                searchPlaceholder="Tìm kiếm xe theo biển số, loại xe..."
-                headerAction={
-                  <AddButton
-                    onClick={handleOpenAddDialog}
-                    size="small"
-                    sx={{
-                      ml: 2,
-                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)',
-                      '&:hover': {
-                        boxShadow: '0 6px 16px rgba(25, 118, 210, 0.3)',
-                        transform: 'translateY(-1px)',
-                      },
-                      transition: 'all 0.2s ease-in-out',
-                    }}
-                  />
-                }
-                columns={[
-                  {
-                    key: 'licensePlate',
-                    label: 'BIỂN SỐ XE',
-                    render: (value, row) => value || row.bienSo || '',
-                  },
-                  {
-                    key: 'vehicleType',
-                    label: 'LOẠI XE',
-                    render: value => {
-                      const type = vehicleTypes.find(t => t.value === value);
-                      return type ? type.label : value || '';
-                    },
-                  },
-                  {
-                    key: 'note',
-                    label: 'GHI CHÚ',
-                    render: value => value || '',
-                  },
-                ]}
-                data={filteredVehicles}
-                loading={isLoading}
-                emptyMessage="Không có dữ liệu xe vận chuyển"
-                renderActions={row => (
-                  <>
-                    <EditButton
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleOpenEditDialog(row);
-                      }}
-                    />
-                    <DeleteButton
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleDeleteClick(row);
-                      }}
-                    />
-                  </>
-                )}
-              />
-            </Paper>
-          )}
-        </>
-      )}
-
-      {/* Mobile Floating Action Button */}
-      {isMobile && (
-        <Fab
-          color="primary"
-          aria-label="add"
-          onClick={handleOpenAddDialog}
-          disabled={isLoading}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: 1000,
-            boxShadow: '0 4px 12px rgba(25,118,210,0.3)',
-            '&:hover': {
-              boxShadow: '0 6px 16px rgba(25,118,210,0.4)',
-              transform: 'scale(1.05)',
-            },
-            transition: 'all 0.2s ease-in-out',
+    <Box>
+      {/* Search Bar */}
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Tìm kiếm theo biển số, loại xe hoặc ghi chú..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
           }}
-        >
-          <AddIcon />
-        </Fab>
+        />
+      </Box>
+      {/* Loading state */}
+      {isLoading && (
+        <Box textAlign="center" py={4}>
+          <Typography>Đang tải dữ liệu...</Typography>
+        </Box>
       )}
-
+      {/* Error state */}
+      {error && (
+        <Box color="error.main" py={2}>
+          <Typography>{error}</Typography>
+        </Box>
+      )}
+      {/* Content */}
+      {!isLoading && !error && (
+        <>{isMobile ? renderMobileView() : renderDesktopView()}</>
+      )}
+      {/* FAB for add at bottom right (always visible) */}
+      <Fab
+        color="primary"
+        aria-label="add"
+        onClick={handleOpenAddDialog}
+        disabled={isLoading}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 24, md: 32 },
+          right: { xs: 24, md: 32 },
+          zIndex: 1201,
+          boxShadow: 6,
+        }}
+      >
+        <AddIcon />
+      </Fab>
       {/* Render dialogs */}
       {renderDialog()}
 

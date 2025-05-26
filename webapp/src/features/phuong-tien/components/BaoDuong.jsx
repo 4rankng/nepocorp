@@ -43,6 +43,7 @@ import StandardTable from '@shared/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
 import ConfirmationDialog from '@shared/components/ConfirmationDialog';
 import { maintenanceApi, vehicleApi } from '@services/mockApi';
+import { Search as SearchIcon } from '@mui/icons-material';
 
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {
@@ -52,7 +53,7 @@ const formatCurrency = value => {
   }).format(value);
 };
 
-// Mobile Card Component
+// Mobile Card Component following DinhMucDau.jsx pattern
 const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -62,26 +63,37 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
 
   return (
     <Card
+      onClick={handleExpandClick}
       sx={{
-        mb: 2,
-        borderRadius: '12px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        borderLeft: '4px solid #1976d2',
-        overflow: 'visible',
+        mb: 1,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        boxShadow: 'none',
+        cursor: 'pointer',
+        '&:hover': {
+          boxShadow: 1,
+          borderColor: 'primary.main',
+        },
       }}
     >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        {/* Card Header */}
+        {/* Primary Information - Always Visible */}
         <Box
-          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            mb: 1,
+          }}
         >
-          <Box>
+          <Box sx={{ flex: 1 }}>
             <Typography
               variant="h6"
               sx={{
-                fontSize: '18px',
-                fontWeight: 700,
-                color: '#1976d2',
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: 'primary.main',
                 mb: 0.5,
               }}
             >
@@ -91,168 +103,132 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
               label={new Date(record.replacementDate).toLocaleDateString('vi-VN')}
               size="small"
               sx={{
-                backgroundColor: '#e3f2fd',
-                color: '#1976d2',
-                fontSize: '12px',
+                backgroundColor: 'primary.light',
+                color: 'white',
+                fontSize: '0.75rem',
                 fontWeight: 500,
               }}
             />
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <IconButton
-              size="small"
-              onClick={() => onEdit(record)}
-              disabled={isLoading}
-              sx={{
-                color: '#1976d2',
-                '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' },
-              }}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => onDelete(record)}
-              disabled={isLoading}
-              sx={{
-                color: '#d32f2f',
-                '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' },
-              }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Arrow as indicator only - not clickable */}
+            <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
+              {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </Box>
           </Box>
         </Box>
 
-        {/* Cost Section */}
-        <Box sx={{ mb: 2 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              fontSize: '16px',
-              fontWeight: 700,
-              color: '#2e7d32',
-              mb: 0.5,
-            }}
-          >
-            {formatCurrency(record.total)}
+        {/* Secondary Information - Collapsed by default */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: expanded ? 1 : 0,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+            {record.quantity} x {formatCurrency(record.unitPrice)}
           </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              fontSize: '12px',
-              color: '#666',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}
-          >
-            Thành tiền
+          <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
+            {formatCurrency(record.total)}
           </Typography>
         </Box>
 
-        {/* Expand Toggle */}
-        <Button
-          onClick={handleExpandClick}
-          size="small"
-          endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          sx={{
-            fontSize: '14px',
-            fontWeight: 500,
-            color: '#1976d2',
-            textTransform: 'none',
-            p: 0,
-            minWidth: 'auto',
-            '&:hover': { backgroundColor: 'transparent' },
-          }}
-        >
-          {expanded ? 'Thu gọn' : 'Chi tiết'}
-        </Button>
-
-        {/* Expandable Content */}
-        <Collapse in={expanded} timeout="auto" unmountOnExit>
-          <Box sx={{ pt: 2, borderTop: '1px solid #f0f0f0', mt: 2 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  py: 1,
-                  borderBottom: '1px solid #f5f5f5',
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 500, color: '#666', flex: 1 }}>
-                  Số lượng:
-                </Typography>
+        {/* Expandable Section - Detailed Information */}
+        <Collapse in={expanded}>
+          <Divider sx={{ my: 1 }} />
+          <Box sx={{ pt: 1 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+              <Box>
                 <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, color: '#333', textAlign: 'right', flex: 1 }}
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mb: 0.5 }}
                 >
+                  Số lượng
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {record.quantity}
                 </Typography>
               </Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  py: 1,
-                  borderBottom: '1px solid #f5f5f5',
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 500, color: '#666', flex: 1 }}>
-                  Đơn giá:
-                </Typography>
+              <Box>
                 <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, color: '#333', textAlign: 'right', flex: 1 }}
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mb: 0.5 }}
                 >
+                  Đơn giá
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {formatCurrency(record.unitPrice)}
                 </Typography>
               </Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  py: 1,
-                  borderBottom: '1px solid #f5f5f5',
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 500, color: '#666', flex: 1 }}>
-                  Bảo hành:
-                </Typography>
+              <Box>
                 <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, color: '#333', textAlign: 'right', flex: 1 }}
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mb: 0.5 }}
                 >
+                  Thời hạn bảo hành
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {record.warrantyPeriod} tháng
                 </Typography>
               </Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  py: 1,
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 500, color: '#666', flex: 1 }}>
-                  Ghi chú:
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mb: 0.5 }}
+                >
+                  Thành tiền
                 </Typography>
                 <Typography
                   variant="body2"
                   sx={{
                     fontWeight: 600,
-                    color: '#333',
-                    textAlign: 'right',
-                    flex: 1,
-                    wordBreak: 'break-word',
+                    color: 'success.main',
+                    fontFamily: 'monospace',
                   }}
                 >
-                  {record.note || 'Không có'}
+                  {formatCurrency(record.total)}
                 </Typography>
               </Box>
+              {record.note && (
+                <Box sx={{ gridColumn: '1 / -1' }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 0.5 }}
+                  >
+                    Ghi chú
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                    {record.note}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Action Buttons - Only visible in expanded mode at bottom */}
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>
+              <EditButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(record);
+                }}
+                disabled={isLoading}
+              />
+              <DeleteButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(record);
+                }}
+                disabled={isLoading}
+              />
             </Box>
           </Box>
         </Collapse>
@@ -472,30 +448,44 @@ const BaoDuong = () => {
     }
   };
 
-  const filteredRecords = maintenanceRecords.filter(
-    record =>
-      !searchTerm ||
-      record.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (record.note && record.note.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filter maintenance records based on search term
+  const filteredRecords = React.useMemo(() => {
+    if (!searchTerm.trim()) return maintenanceRecords;
+    const search = searchTerm.toLowerCase();
+    return maintenanceRecords.filter(record =>
+      (record.licensePlate && record.licensePlate.toLowerCase().includes(search)) ||
+      (record.note && record.note.toLowerCase().includes(search))
+    );
+  }, [maintenanceRecords, searchTerm]);
 
   const columns = [
     {
       key: 'licensePlate',
       label: 'Biển số xe',
       sortable: true,
+      minWidth: 120,
     },
     {
       key: 'replacementDate',
       label: 'Ngày thay lốp',
       render: value => new Date(value).toLocaleDateString('vi-VN'),
       sortable: true,
+      minWidth: 120,
+    },
+    {
+      key: 'warrantyPeriod',
+      label: 'Thời hạn bảo hành',
+      render: value => `${value} tháng`,
+      align: 'center',
+      sortable: true,
+      minWidth: 140,
     },
     {
       key: 'quantity',
       label: 'Số lượng',
       align: 'right',
       sortable: true,
+      minWidth: 100,
     },
     {
       key: 'unitPrice',
@@ -503,6 +493,7 @@ const BaoDuong = () => {
       render: formatCurrency,
       align: 'right',
       sortable: true,
+      minWidth: 120,
     },
     {
       key: 'total',
@@ -510,12 +501,13 @@ const BaoDuong = () => {
       render: formatCurrency,
       align: 'right',
       sortable: true,
+      minWidth: 140,
     },
     {
       key: 'note',
       label: 'Ghi chú',
       render: value => value || 'Không có',
-      maxWidth: 300,
+      minWidth: 200,
       noWrap: true,
     },
     {
@@ -531,121 +523,106 @@ const BaoDuong = () => {
     },
   ];
 
+  // Render mobile card view following DinhMucDau.jsx pattern
+  const renderMobileView = () => (
+    <Box 
+      sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 1, // Reduced gap to match DinhMucDau pattern
+        mt: 2,
+        pb: 2
+      }}
+    >
+      {filteredRecords.map(record => (
+        <MaintenanceCard
+          key={record.id}
+          record={record}
+          onEdit={handleOpenEditDialog}
+          onDelete={handleDeleteClick}
+          isLoading={isLoading}
+        />
+      ))}
+      {!isLoading && filteredRecords.length === 0 && (
+        <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
+          {searchTerm ? 'Không tìm thấy bảo dưỡng phù hợp' : 'Không có dữ liệu bảo dưỡng'}
+        </Typography>
+      )}
+    </Box>
+  );
+
+  // Render desktop table view
+  const renderDesktopView = () => (
+    <Paper
+      elevation={0}
+      sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'background.paper' }}
+    >
+      <StandardTable
+        columns={columns}
+        data={filteredRecords}
+        loading={isLoading}
+        error={error}
+        emptyMessage="Không có dữ liệu bảo dưỡng nào"
+        sx={{
+          '& .MuiTableRow-hover:hover': {
+            backgroundColor: 'action.hover',
+          },
+        }}
+      />
+    </Paper>
+  );
+
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
-      {/* Mobile Search Container */}
-      {isMobile && (
-        <Box
-          sx={{
-            p: 2,
-            backgroundColor: '#f8f9fa',
-            position: 'sticky',
-            top: 0,
-            zIndex: 30,
-            borderBottom: '1px solid #e0e0e0',
+      {/* Search Bar */}
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
           }}
-        >
-          <TextField
-            fullWidth
-            placeholder="Tìm biển số hoặc ghi chú..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                height: '48px',
-                fontSize: '16px',
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#ddd',
-                },
-              },
-            }}
-          />
+        />
+      </Box>
+      {/* Loading state */}
+      {isLoading && (
+        <Box textAlign="center" py={4}>
+          <Typography>Đang tải dữ liệu...</Typography>
         </Box>
       )}
-
-      {/* Desktop Table View */}
-      {!isMobile && (
-        <Paper
-          elevation={0}
-          sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'background.paper' }}
-        >
-          <StandardTable
-            columns={columns}
-            data={filteredRecords}
-            loading={isLoading}
-            error={error}
-            searchTerm={searchTerm}
-            onSearchChange={e => setSearchTerm(e.target.value)}
-            searchPlaceholder="Tìm biển số hoặc ghi chú..."
-            emptyMessage="Không có dữ liệu bảo dưỡng nào"
-            headerAction={
-              <AddButton
-                onClick={handleOpenAddDialog}
-                disabled={isLoading}
-                size="small"
-                sx={{ ml: 2 }}
-              />
-            }
-            sx={{
-              '& .MuiTableRow-hover:hover': {
-                backgroundColor: 'action.hover',
-              },
-            }}
-          />
-        </Paper>
-      )}
-
-      {/* Mobile Card View */}
-      {isMobile && (
-        <Box sx={{ p: 2 }}>
-          {isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : error ? (
-            <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#ffebee' }}>
-              <Typography color="error">{error}</Typography>
-            </Paper>
-          ) : filteredRecords.length === 0 ? (
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography color="text.secondary">
-                {searchTerm ? 'Không tìm thấy kết quả nào' : 'Không có dữ liệu bảo dưỡng nào'}
-              </Typography>
-            </Paper>
-          ) : (
-            filteredRecords.map(record => (
-              <MaintenanceCard
-                key={record.id}
-                record={record}
-                onEdit={handleOpenEditDialog}
-                onDelete={handleDeleteClick}
-                isLoading={isLoading}
-              />
-            ))
-          )}
+      {/* Error state */}
+      {error && (
+        <Box color="error.main" py={2}>
+          <Typography>{error}</Typography>
         </Box>
       )}
-
-      {/* Mobile Floating Action Button */}
-      {isMobile && (
-        <Fab
-          color="primary"
-          aria-label="add"
-          onClick={handleOpenAddDialog}
-          disabled={isLoading}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: 1000,
-            boxShadow: '0 4px 12px rgba(25,118,210,0.3)',
-          }}
-        >
-          <AddIcon />
-        </Fab>
+      {/* Content */}
+      {!isLoading && !error && (
+        <>{isMobile ? renderMobileView() : renderDesktopView()}</>
       )}
+      {/* FAB for add at bottom right (always visible) */}
+      <Fab
+        color="primary"
+        aria-label="add"
+        onClick={handleOpenAddDialog}
+        disabled={isLoading}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 24, md: 32 },
+          right: { xs: 24, md: 32 },
+          zIndex: 1201,
+          boxShadow: 6,
+        }}
+      >
+        <AddIcon />
+      </Fab>
 
       {/* Add/Edit Dialog */}
       <Dialog

@@ -98,7 +98,7 @@ const PartnerManagement = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
       <Typography
         variant="h5"
         component="h1"
@@ -113,22 +113,32 @@ const PartnerManagement = () => {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" component="h2">
-            Danh sách đối tác
-          </Typography>
-          <AddButton onClick={handleOpenFormForAdd} label="Thêm đối tác" size="small" />
-        </Box>
-
-        <PartnerList
+      <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
+        <PartnerListResponsive
           partners={partners}
           loading={loading}
           onEdit={handleOpenFormForEdit}
           onDelete={handleDeleteClick}
           error={error}
+          emptyMessage="Chưa có đối tác nào"
         />
       </Paper>
+
+      {/* Floating Action Button */}
+      <Zoom in={!loading}>
+        <Fab
+          color="primary"
+          aria-label="Thêm đối tác"
+          onClick={handleOpenFormForAdd}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 24, sm: 32 },
+            right: { xs: 24, sm: 32 },
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Zoom>
 
       {/* Add/Edit Form */}
       <PartnerForm
