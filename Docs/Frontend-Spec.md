@@ -1,258 +1,272 @@
-# Đặc tả Giao diện Người dùng - Hệ thống Quản lý Vận tải NePO
+# Cẩm nang Sử dụng Hệ thống Quản lý Vận tải NePO
 
-## Thanh tiêu đề
-Vị trí: Hiển thị cố định phía trên cùng mọi trang
+## Giới thiệu
 
-Thành phần bên trái:
-- Logo công ty NePO (có thể nhấn để về trang chủ)
-- Tên ứng dụng "NePO Transport"
+Chào mừng quý khách đến với Hệ thống Quản lý Vận tải NePO! Tài liệu này là cẩm nang hướng dẫn quý khách sử dụng các tính năng của hệ thống một cách hiệu quả, tập trung vào quy trình nghiệp vụ và trải nghiệm người dùng.
 
-Thành phần bên phải:
-- Tên người dùng (hiển thị đầy đủ họ tên)
-- Menu thả xuống khi nhấn vào tên người dùng:
-    - Thiết lập email
-    - Đổi mật khẩu
-    - Đăng xuất
+Mỗi vai trò trong hệ thống sẽ có những chức năng và quy trình làm việc riêng. Vui lòng tham khảo mục tương ứng với vai trò của bạn.
 
-## Trang đăng nhập
-Hiển thị khi: Người dùng chưa xác thực
+**Cách theo dõi tiến độ:** Mỗi chức năng (user story) sẽ có trạng thái:
+*   `[ ]` Chưa hoàn thành / Đang phát triển
+*   `[x]` Đã hoàn thành
 
-Bố cục: Form đăng nhập căn giữa màn hình
+---
 
-Các trường nhập liệu:
-- Tên đăng nhập
-- Mật khẩu
+## I. Vai trò: Quản lý (Manager)
 
-Các nút chức năng:
-- Nút "Đăng nhập" (chỉ kích hoạt khi đã nhập đủ thông tin)
-- Liên kết "Quên mật khẩu?"
+Người quản lý có quyền truy cập và điều hành toàn bộ các khía cạnh của hệ thống.
 
-Khôi phục mật khẩu:
-- Gửi link đặt lại mật khẩu qua email (nếu có)
+### 1. Epic: Quản lý Báo cáo và Phân tích Kinh doanh
 
-## Trang quản lý
+*   **Mục tiêu:** Theo dõi sức khỏe tài chính, hiệu quả hoạt động và đưa ra quyết định dựa trên dữ liệu.
 
-### Tổng quan
-Đối với quản  lý thì sidebar trái sẽ bao gồm các mục sau
-- Báo cáo tài chính (hiển thị mặc định khi quản lý đăng nhập)
-- Lịch vận chuyển
-- Nhân viên
-- Khách hàng
-- Đối tác
-- Phương tiện
+*   **User Stories:**
+    *   `[ ]` **Xem báo cáo Lợi nhuận & Doanh thu:** Hiểu rõ doanh thu và lợi nhuận được tạo ra bởi từng xe, được phân bổ theo từng tháng. Báo cáo này thường được trình bày dưới dạng biểu đồ cột ngang để dễ dàng so sánh hiệu suất giữa các xe và qua các tháng.
+    *   `[ ]` **Phân tích Chi tiết chi phí:** Xem xét kỹ lưỡng các khoản chi phí theo từng hạng mục (ví dụ: nhiên liệu, sửa chữa, lương), theo từng biển số xe cụ thể và theo tháng. Trên máy tính, dữ liệu này thường hiển thị dạng bảng; trên điện thoại, mỗi xe có thể hiển thị như một "thẻ" thông tin với biểu đồ chi phí riêng.
+    *   `[ ]` **Theo dõi Doanh thu/Chi phí theo từng Phương tiện:**
+        *   Chọn một biển số xe và một tháng cụ thể để xem báo cáo chi tiết.
+        *   Xem tổng quan về tổng chi phí, tổng cước vận chuyển và tổng lợi nhuận cho lựa chọn đó.
+        *   Xem bảng kê chi tiết các chuyến hàng trong tháng của xe đó, bao gồm: ngày tháng, mô tả chuyến đi, số container, tuyến đường, chi phí dầu (lít và đồng), chi phí cầu đường, tổng chi phí chuyến, cước vận chuyển thu về, và lợi nhuận của chuyến.
+        *   Xem danh sách các chi phí khác phát sinh cho xe trong tháng (ngoài chi phí chuyến đi) như phí gửi xe, Epass, lương lái xe.
+    *   `[ ]` **Xuất dữ liệu báo cáo ra Excel:** Tải về các báo cáo (Lợi nhuận & Doanh thu, Chi tiết chi phí, Theo dõi Doanh thu/Chi phí phương tiện, Báo cáo Công nợ) dưới dạng file Excel để lưu trữ hoặc phân tích thêm. Nút "Xuất Excel" thường nằm ở vị trí dễ thấy trên trang báo cáo.
+    *   `[ ]` **Xem và theo dõi Báo cáo Công nợ:**
+        *   Chọn tháng để xem công nợ.
+        *   Xem bảng kê các khoản phải thu từ khách hàng và các khoản phải trả cho đối tác, cùng với ghi chú nếu có.
 
-### Báo cáo tài chính
-Trang báo cáo gồm bốn tab chính, mỗi tab đảm nhiệm một loại báo cáo riêng:
+### 2. Epic: Quản lý Lịch vận chuyển
 
-1. Tab Lợi nhuận & Doanh thu
-- Hiển thị doanh thu và lợi nhuận theo từng biển số xe, phân bổ theo tháng.
-- Biểu đồ cột ngang giúp so sánh nhanh giữa các xe và các tháng.
+*   **Mục tiêu:** Lập kế hoạch, điều phối và theo dõi tất cả các chuyến vận chuyển một cách hiệu quả.
 
-2. Tab Chi tiết chi phí
-- Phân tích chi phí theo hạng mục, theo biển số và theo tháng.
-- Trên desktop: dữ liệu trình bày dưới dạng bảng.
-- Trên mobile: mỗi biển số xe được thể hiện qua một card, trong đó chi phí hiển thị dưới dạng biểu đồ cột ngang.
+*   **User Stories:**
+    *   `[ ]` **Xem danh sách kế hoạch vận chuyển:** Hiển thị tất cả các chuyến đi đã lên kế hoạch hoặc đang thực hiện với các cột thông tin chính như: Ngày tháng, Biển số xe, Đối tác (nếu có), Diễn giải (mô tả chuyến đi), Tuyến đường, Trạng thái chuyến, Số km vận chuyển (có hàng và rỗng), Chi phí dầu (lít, đơn giá, tổng tiền), Định mức chi phí đi đường, và các Chi phí khác.
+    *   `[ ]` **Tạo kế hoạch vận chuyển mới:**
+        *   Nhấn nút "+" (thường ở góc dưới màn hình) để mở form tạo mới.
+        *   Nhập các thông tin cần thiết: Ngày vận chuyển (chọn từ lịch), Diễn giải, Khách hàng (chọn từ danh sách, có thể thêm nhanh khách hàng mới), Số lượng container, Loại container (chọn từ danh sách, có thể thêm nhanh loại mới), Tuyến đường (điểm đi, điểm đến, có thể thêm nhanh tuyến mới).
+        *   Nhập Cước vận chuyển thu từ khách hàng và chọn Biển số xe thực hiện (có thể thêm nhanh xe mới).
+        *   Nếu thuê ngoài, nhập Cước thuê vận chuyển và chọn Đối tác (có thể thêm nhanh đối tác mới).
+        *   Nhập Thông tin container chi tiết: Số container, Số seal.
+        *   Nhập Ngày hạ hàng dự kiến.
+        *   *Lưu ý: Các trường không bắt buộc nếu để trống sẽ mặc định là "-" (cho chữ) hoặc 0 (cho số).*
+    *   `[ ]` **Chỉnh sửa kế hoạch vận chuyển:** Thay đổi các thông tin đã nhập cho một kế hoạch vận chuyển sau khi đã tạo.
+    *   `[ ]` **Xóa kế hoạch vận chuyển:** Loại bỏ một kế hoạch vận chuyển khỏi hệ thống (thường chỉ áp dụng cho các kế hoạch ở trạng thái "Nháp" hoặc chưa phát sinh giao dịch).
+    *   `[ ]` **Cập nhật trạng thái chuyến hàng:** Thay đổi trạng thái của chuyến đi, ví dụ từ "Nháp" -> "Lên lịch" -> "Đang chạy" -> "Hoàn thành". Trạng thái "Lên lịch" thường là mặc định khi Quản lý tạo.
+    *   `[ ]` **Quản lý thông tin chi tiết container:** Đảm bảo thông tin số container, số seal, ngày hạ hàng là chính xác cho mỗi chuyến.
 
-3. Tab Theo dõi Doanh thu/Chi phí theo phương tiện
-- Thanh điều khiển cho phép chọn biển số xe và tháng báo cáo.
-- Phần tổng quan: tổng chi phí, tổng cước vận chuyển và tổng lợi nhuận của lựa chọn hiện tại.
-- Bảng chi tiết gồm các cột:
-  * Ngày tháng
-  * Diễn giải
-  * Số container
-  * Tuyến đường vận chuyển
-  * Dầu (lít)
-  * Dầu (đồng)
-  * Đi đường
-  * Tổng chi phí
-  * Cước vận chuyển
-  * Lợi nhuận
-- Dưới bảng là danh sách chi phí khác trong tháng (ví dụ: phí gửi xe, tiền Epass, lương lái xe…).
-- Nút “Xuất Excel” cố định ở góc dưới bên phải màn hình.
+### 3. Epic: Quản lý Nhân sự
 
-4. Tab Báo cáo Công nợ
-- Thanh điều khiển để chọn tháng theo dõi.
-- Bảng công nợ với các cột:
-  * Tên đơn vị
-  * Phải thu
-  * Phải trả
-  * Ghi chú
-- Nút “Xuất Excel” cố định ở góc dưới bên phải màn hình.
+*   **Mục tiêu:** Quản lý thông tin và tài khoản truy cập của tất cả nhân viên trong công ty.
 
-### Lịch vận chuyển
+*   **User Stories:**
+    *   `[ ]` **Xem danh sách nhân viên:** Hiển thị bảng thông tin các nhân viên.
+    *   `[ ]` **Thêm nhân viên mới:**
+        *   Nhấn nút "+" để mở form tạo mới.
+        *   Nhập các thông tin: Tên nhân viên, Tên đăng nhập (để vào hệ thống), Mật khẩu, Email, Chức vụ (chọn từ: Quản lý, Kế toán, Giao nhận, Lái xe).
+    *   `[ ]` **Chỉnh sửa thông tin nhân viên:** Cập nhật lại thông tin cho nhân viên đã có.
+    *   `[ ]` **Xóa/Vô hiệu hóa nhân viên:** Loại bỏ hoặc khóa tài khoản của nhân viên đã nghỉ việc. (Quy trình cụ thể cần được xác định: xóa hẳn hay chỉ vô hiệu hóa).
 
-Quy tắc chung:
-- Trường ký tự: Mặc định "-" nếu để trống
-- Trường số: Mặc định 0 nếu để trống
-- Có thể chỉnh sửa sau khi tạo
+### 4. Epic: Quản lý Khách hàng
 
-Hiển thị danh sách kế hoạch vận chuyển. Cấu trúc bảng dữ liệu gồm các cột:
-- Ngày tháng
-- Biển số xe
-- Đối tác (nếu không có, hiển thị “–”)
-- Diễn giải
-- Tuyến đường vận chuyển (tạo bởi điểm đi và các điểm đến)
-- Trạng thái
-- Số km chuyển hàng
-- Số km chuyển vỏ rỗng
-- Chi phí dầu (lít)
-- Đơn giá dầu
-- Chi phí dầu (Đồng)
-- Định mức đi đường
-- Chi phí khác
+*   **Mục tiêu:** Duy trì cơ sở dữ liệu đầy đủ và chính xác về các khách hàng sử dụng dịch vụ.
 
-Nút chức năng:
-  - Nút "+" nổi góc dưới bên phải màn hình
-  - Nhấn để mở form tạo kế hoạch vận chuyển mới
-Form để tạo kế hoạch vận chuyển mới bao gồm
-  - Ngày vận chuyển (định dạng dd/mm/yyyy, có lịch chọn)
-  - Diễn giải (mục đích vận chuyển)
-  - Khách hàng (chọn từ danh sách có sẵn). (có thể thêm mới bằng nút "+")
-  - Số lượng container (số nguyên dương)
-  - Loại container (dropdown chọn: 20’DC, 40’DC, 40’HC, 40’RF, 40’OT và 45’HC). (có thể thêm mới bằng nút "+")
-  - Tuyến đường bao gồm điểm đi và điểm đến (có thể thêm mới bằng nút "+")
-  - Cước vận chuyển và chọn biển số xe (có thể thêm mới bằng nút "+")
-  - Cước thuê vận chuyển và chọn đối tác (có thể thêm mới bằng nút "+")
-  - Thông tin container:
-      * Số container (ví dụ: CSNU6879155)
-      * Số seal (ví dụ: YMAT308024)
-  - Ngày hạ hàng (Định dạng: dd/mm/yyyy ví dụ: 21/2/2025)
+*   **User Stories:**
+    *   `[ ]` **Xem danh sách khách hàng:** Hiển thị bảng thông tin các khách hàng.
+    *   `[ ]` **Thêm khách hàng mới:**
+        *   Nhấn nút "+" để mở form tạo mới.
+        *   Nhập các thông tin: Tên khách hàng, Địa chỉ, Số điện thoại.
+    *   `[ ]` **Chỉnh sửa thông tin khách hàng:** Cập nhật lại thông tin cho khách hàng đã có.
+    *   `[ ]` **Xóa khách hàng:** Loại bỏ thông tin khách hàng không còn giao dịch (cần cân nhắc nếu đã có lịch sử giao dịch).
 
+### 5. Epic: Quản lý Đối tác Vận tải
 
-### Nhân viên
+*   **Mục tiêu:** Quản lý thông tin các nhà cung cấp dịch vụ vận tải hoặc các đối tác liên quan.
 
-Hiển thị bảng dữ liệu danh sách nhân viên
+*   **User Stories:**
+    *   `[ ]` **Xem danh sách đối tác:** Hiển thị bảng thông tin các đối tác.
+    *   `[ ]` **Thêm đối tác mới:**
+        *   Nhấn nút "+" để mở form tạo mới.
+        *   Nhập các thông tin: Tên đối tác, Địa chỉ, Số điện thoại.
+    *   `[ ]` **Chỉnh sửa thông tin đối tác:** Cập nhật lại thông tin cho đối tác đã có.
+    *   `[ ]` **Xóa đối tác:** Loại bỏ thông tin đối tác không còn hợp tác (cần cân nhắc nếu đã có lịch sử giao dịch).
 
-Nút chức năng
-- Nút "+" nổi góc dưới bên phải màn hình
-- Nhấn để mở form tạo nhân viên mới
+### 6. Epic: Quản lý Phương tiện và Tài sản Vận tải
 
-Form để tạo nhân viên mới bao gồm
-- Tên nhân viên
-- Tên đăng nhập
-- Mật khẩu
-- Email
-- Chức vụ (Quản lý, Kế toán, Giao nhận hoặc Lái xe)
+*   **Mục tiêu:** Quản lý toàn bộ thông tin về đội xe, các loại container, định mức nhiên liệu và lịch sử bảo dưỡng.
 
-### Khách hàng
+*   **User Stories:**
+    *   `[ ]` **Quản lý Biển số xe:**
+        *   Xem danh sách các xe hiện có.
+        *   Thêm biển số xe mới.
+        *   Chỉnh sửa thông tin xe (nhấn vào dòng để sửa).
+        *   Xóa biển số xe (nhấn vào biểu tượng thùng rác).
+    *   `[ ]` **Quản lý Loại container:**
+        *   Xem danh sách các loại container (ví dụ: 20'DC, 40'HC).
+        *   Thêm loại container mới.
+        *   Chỉnh sửa thông tin loại container.
+        *   Xóa loại container.
+    *   `[ ]` **Quản lý Định mức dầu:**
+        *   Xem bảng định mức tiêu hao nhiên liệu (có thể theo loại xe, tuyến đường, v.v.).
+        *   Thêm định mức dầu mới.
+        *   Chỉnh sửa định mức dầu.
+        *   Xóa định mức dầu.
+    *   `[ ]` **Quản lý Bảo dưỡng (Thay lốp xe):**
+        *   Xem lịch sử thay lốp cho các xe, bao gồm: Biển số xe, Ngày thay lốp, Thời hạn bảo hành, Số lượng, Đơn giá, Tổng tiền, Ghi chú.
+        *   Lọc danh sách thay lốp theo biển số xe.
+        *   Thêm, sửa, xóa thông tin một lần thay lốp.
 
-Hiển thị bảng dữ liệu danh sách khách hàng
+---
 
-Nút chức năng:
-  - Nút "+" nổi góc dưới bên phải màn hình
-  - Nhấn để mở form tạo khách hàng mới
+## II. Vai trò: Kế toán (Accountant)
 
-Form để tạo khách hàng mới bao gồm
-  - Tên khách hàng
-  - Địa chỉ
-  - Số điện thoại
+Kế toán viên chịu trách nhiệm về các vấn đề tài chính, chi phí và công nợ liên quan đến hoạt động vận tải. Người dùng Kế toán sẽ thấy thanh điều hướng (sidebar) bên trái bao gồm các mục chính: Lịch vận chuyển, Chi phí, và Công nợ.
 
+### 1. Epic: Quản lý Chi tiết Lịch vận chuyển và Chi phí Phát sinh
 
-### Đối tác
-Hiển thị bảng dữ liệu danh sách đối tác
+*   **Mục tiêu:** Đảm bảo tính chính xác của dữ liệu tài chính và chi phí cho mỗi chuyến đi, đồng thời cập nhật các thông tin vận hành liên quan.
 
-Nút chức năng:
-  - Nút "+" nổi góc dưới bên phải màn hình
-  - Nhấn để mở form tạo đối tác mới
+*   **User Stories:**
+    *   `[ ]` **Xem danh sách kế hoạch vận chuyển:** Hiển thị tất cả các chuyến đi với các thông tin tương tự như Quản lý: Ngày tháng, Biển số xe, Đối tác, Diễn giải, Tuyến đường, Trạng thái, Km vận chuyển (có hàng/rỗng), Chi phí dầu (lít, đơn giá, tổng tiền), Định mức đi đường, và các Chi phí khác.
+    *   `[ ]` **Chỉnh sửa thông tin trên lịch vận chuyển:**
+        *   Nhấp trực tiếp vào các ô trong bảng dữ liệu lịch vận chuyển để sửa thông tin (ví dụ: số km thực tế, lượng dầu tiêu thụ, các chi phí).
+        *   Khi chọn ô "Chi phí khác", một cửa sổ chi tiết sẽ hiện ra để xem và nhập các khoản chi phí nhỏ lẻ cho chuyến đi đó (ví dụ: tiền vé cầu đường, phí nâng hạ container). Trong cửa sổ này, có thể thêm dòng chi phí mới, xóa dòng không cần thiết, và lưu lại thay đổi.
+    *   `[ ]` **Cập nhật trạng thái chuyến đi:**
+        *   Thay đổi trạng thái của chuyến đi dựa trên tiến độ thực tế. Các trạng thái bao gồm:
+            *   *Nháp:* Trạng thái mặc định nếu Kế toán tạo kế hoạch vận chuyển.
+            *   *Lên lịch:* Trạng thái thường do Quản lý đặt sau khi duyệt.
+            *   *Đang chạy:* Khi chuyến đi đang được thực hiện.
+            *   *Hoàn thành:* Khi đã nhập ngày hạ hàng, xác nhận chuyến đi kết thúc.
+    *   `[ ]` **Tạo kế hoạch vận chuyển mới:**
+        *   Sử dụng nút "Thêm" (thường ở phía trên bảng dữ liệu) để mở form tạo mới kế hoạch vận chuyển.
+        *   Điền các thông tin tương tự như khi Quản lý tạo, trạng thái mặc định sẽ là "Nháp".
+    *   `[ ]` **Tính toán chi phí dầu tự động:** Hệ thống tự động tính "Chi phí dầu (Đồng)" bằng cách nhân "Chi phí dầu (lít)" với "Đơn giá dầu".
+    *   `[ ]` **Tự động điền định mức đi đường:** Hệ thống tự động điền giá trị "Định mức đi đường" dựa trên bảng định mức do Quản lý đã thiết lập sẵn (ví dụ: theo tuyến đường hoặc loại xe).
 
-Form để tạo đối tác mới bao gồm
-  - Tên đối tác
-  - Địa chỉ
-  - Số điện thoại
+### 2. Epic: Quản lý và Báo cáo Tổng hợp Chi phí Hoạt động
 
+*   **Mục tiêu:** Theo dõi, ghi nhận đầy đủ và phân loại tất cả các chi phí vận hành của công ty, không chỉ chi phí theo chuyến.
 
+*   **User Stories:**
+    *   `[ ]` **Xem tổng hợp chi phí theo nhiều tiêu chí:** Hiển thị tổng chi phí theo từng hạng mục, theo từng biển số xe, và theo từng tháng. Các chi phí đã nhập trong phần Lịch vận chuyển sẽ được tự động cộng dồn vào các nhóm tương ứng (ví dụ: tổng chi phí dầu, tổng chi phí đi đường của một xe trong tháng).
+    *   `[ ]` **Lọc và xem chi phí tùy chỉnh:**
+        *   Sử dụng thanh điều khiển ở đầu trang để chọn xem chi phí cho một Biển số xe cụ thể hoặc cho tất cả các xe.
+        *   Chọn Tháng báo cáo để giới hạn phạm vi dữ liệu.
+    *   `[ ]` **Xem biểu đồ chi phí trực quan:** Dưới thanh điều khiển, một biểu đồ cột ngang sẽ hiển thị, với mỗi dòng là một loại chi phí và chiều dài cột thể hiện giá trị của chi phí đó. Tổng chi phí của lựa chọn hiện tại cũng sẽ được hiển thị.
+    *   `[ ]` **Thêm các chi phí hoạt động chung (không theo chuyến cụ thể):** Kế toán có thể nhập các chi phí khác không nằm trong một kế hoạch vận chuyển cụ thể. Danh sách các chi phí có thể thêm bao gồm:
+        *   `[ ]` Phí gửi xe (hàng tháng hoặc phát sinh).
+        *   `[ ]` Chi phí sửa chữa / bảo dưỡng xe (các hạng mục không phải là thay lốp đã được Quản lý theo dõi riêng).
+        *   `[ ]` Lương lái xe.
+        *   `[ ]` Tiền bảo hiểm Trách nhiệm Dân sự (TNDS).
+        *   `[ ]` Tiền bảo hiểm vật chất xe.
+        *   `[ ]` Phí đường bộ (thu theo năm hoặc kỳ).
+        *   `[ ]` Chi phí thay thế lốp xe (ghi nhận về mặt chi phí, còn việc quản lý vòng đời lốp, ngày thay, nhà cung cấp... do Quản lý thực hiện trong mục Phương tiện). *Khi tra cứu thông tin lốp xe theo biển số, hệ thống có thể cho biết lốp đã thay ngày nào và tuổi thọ lốp tính đến hiện tại là bao nhiêu ngày (thông tin này có thể liên kết từ mục quản lý phương tiện).*
 
-### Phương tiện
+### 3. Epic: Quản lý Công nợ
 
-Đối với quản lý, mục này sẽ được sử dụng để
-- Thêm, sửa, xóa biển số xe
-- Thêm, sửa, xóa loại container
-- Thêm, sửa, xóa định mức dầu
-- Thêm, sửa, xóa bảo dưỡng
+*   **Mục tiêu:** Theo dõi chính xác các khoản phải thu từ khách hàng và các khoản phải trả cho nhà cung cấp/đối tác.
 
-Đối với biển số xe
-- Hiện bảng danh sách biển số xe.
-- Với mỗi dòng bấm vào dòng để sửa, bấm vào icon thùng rác cuối dòng để xóa
-- Dưới dòng cuối cùng có lựa chọn để thêm
+*   **User Stories:**
+    *   `[ ]` **Xem bảng tổng hợp công nợ:** Hiển thị các khoản phải thu và phải trả, được nhóm theo Tên đơn vị (khách hàng hoặc đối tác).
+    *   `[ ]` **Lọc báo cáo công nợ theo tháng:** Chọn tháng cụ thể để xem tình hình công nợ trong khoảng thời gian đó.
+    *   `[ ]` **Xuất báo cáo công nợ ra Excel:** Tải về file Excel chứa dữ liệu công nợ để lưu trữ hoặc sử dụng cho các mục đích khác. Nút "Xuất Excel" thường nằm ở vị trí dễ thấy.
 
-Đối với loại container
-- Hiện bảng danh sách loại container.
-- Với mỗi dòng bấm vào dòng để sửa, bấm vào icon thùng rác cuối dòng để xóa
-- Dưới dòng cuối cùng có lựa chọn để thêm
+---
 
-Đối với định mức dầu
-- Hiện bảng định mức dầu.
-- Với mỗi dòng bấm vào dòng để sửa, bấm vào icon thùng rác cuối dòng để xóa
-- Dưới dòng cuối cùng có lựa chọn để thêm
+## III. Vai trò: Giao nhận (Dispatcher/Forwarder)
 
-Đối với bảo dưỡng
-- Hiện tại thì chỉ quản lý bảng thay lốp xe.
-- Bảng gồm các cột:
-  * Biển số xe
-  * Ngày thay lốp
-  * Thời hạn bảo hành
-  * Số lượng
-  * Đơn giá
-  * Tổng tiền
-  * Ghi chú
-- Có thể lọc theo biển số xe
+Nhân viên giao nhận đóng vai trò quan trọng trong việc điều phối và theo dõi sát sao các chuyến hàng, đảm bảo hàng hóa được vận chuyển đúng lịch trình, an toàn và hiệu quả. Họ là cầu nối thông tin giữa quản lý, tài xế và khách hàng.
 
-## Trang kế toán
+*(Lưu ý: Các chức năng dưới đây được xây dựng dựa trên các nhiệm vụ thông thường của Nhân viên Giao nhận và các tính năng hiện có của hệ thống NePO. Một số chức năng có thể được đề xuất để tối ưu hóa quy trình làm việc và sẽ được ghi chú rõ.)*
 
-### Tổng quan
-- Sidebar trái:
-  - Lịch vận chuyển
-  - Chi phí
-  - Công nợ
+### 1. Epic: Điều phối và Theo dõi Sát sao Lịch vận chuyển
 
-### Lịch vận chuyển
+*   **Mục tiêu:** Đảm bảo các chuyến hàng được thực hiện một cách thông suốt, đúng tiến độ và giải quyết nhanh các vấn đề phát sinh.
 
-Cấu trúc bảng dữ liệu gồm các cột:
-- Ngày tháng
-- Biển số xe
-- Đối tác (nếu không có, hiển thị “–”)
-- Diễn giải
-- Tuyến đường vận chuyển (tạo bởi điểm đi và các điểm đến)
-- Trạng thái
-- Số km chuyển hàng
-- Số km chuyển vỏ rỗng
-- Chi phí dầu (lít)
-- Đơn giá dầu
-- Chi phí dầu (Đồng)
-- Định mức đi đường
-- Chi phí khác
+*   **User Stories:**
+    *   `[ ]` **Xem toàn bộ lịch vận chuyển:**
+        *   Truy cập và xem danh sách chi tiết tất cả các kế hoạch vận chuyển, bao gồm thông tin: Ngày tháng, Biển số xe được phân công, Tài xế lái xe (nếu thông tin này được liên kết), Đối tác vận tải (nếu có), Diễn giải (mô tả, yêu cầu đặc biệt của chuyến đi), Tuyến đường chi tiết, Trạng thái hiện tại của chuyến hàng (Nháp, Lên lịch, Đang chạy, Hoàn thành), Thông tin container (số cont, số seal).
+    *   `[ ]` **(Đề xuất) Tạo yêu cầu/kế hoạch vận chuyển nháp:**
+        *   Khi có yêu cầu vận chuyển mới từ khách hàng hoặc bộ phận kinh doanh, Giao nhận có thể tạo một kế hoạch vận chuyển ở trạng thái "Nháp" với các thông tin ban đầu. Kế hoạch này sau đó có thể được Quản lý xem xét và chuyển thành "Lên lịch".
+    *   `[ ]` **(Đề xuất) Cập nhật trạng thái vận hành của chuyến hàng:**
+        *   Dựa trên thông tin cập nhật từ tài xế hoặc các nguồn khác (ví dụ: định vị GPS nếu có), Giao nhận cập nhật trạng thái thực tế của chuyến hàng trong hệ thống. Ví dụ:
+            *   Xác nhận xe đã đến điểm lấy hàng.
+            *   Xác nhận xe đã bắt đầu di chuyển.
+            *   Ghi nhận xe đã đến điểm trả hàng.
+            *   Cập nhật khi có sự cố hoặc chậm trễ.
+    *   `[ ]` **(Đề xuất) Ghi nhận các sự cố hoặc ghi chú quan trọng:**
+        *   Ghi chú lại các thông tin quan trọng hoặc sự cố phát sinh trong quá trình vận chuyển (ví dụ: thay đổi thời gian giao hàng do thời tiết, vấn đề về chứng từ, hư hỏng nhỏ cần báo cáo) vào phần ghi chú của chuyến đi.
+    *   `[ ]` **Phối hợp phân công vận chuyển:**
+        *   Xem các kế hoạch vận chuyển chưa được Quản lý phân công xe hoặc tài xế.
+        *   (Đề xuất) Đề xuất hoặc trực tiếp thực hiện việc ghép xe/tài xế phù hợp cho các chuyến đi (quyền hạn này cần được Quản lý xác định).
+    *   `[ ]` **Truy cập nhanh thông tin liên hệ hỗ trợ:**
+        *   Dễ dàng xem thông tin liên hệ của Khách hàng, Đối tác (nhà xe phụ), và Tài xế liên quan trực tiếp đến một chuyến hàng cụ thể để tiện liên lạc và điều phối.
+    *   `[ ]` **(Đề xuất) Theo dõi vị trí xe (nếu hệ thống tích hợp GPS):**
+        *   Nếu có tích hợp, xem vị trí hiện tại của xe trên bản đồ để chủ động hơn trong việc theo dõi và thông báo cho các bên liên quan.
 
-Định nghĩa trạng thái
-- Nháp: trạng thái mặc định nếu kế toán tạo
-- Lên lịch: trạng thái mặc định nếu quản lý tạo
-- Đang chạy:
-- Hoàn thành: đã nhập ngày hạ hàng
+### 2. Epic: Hỗ trợ Quản lý Chứng từ và Hoàn tất Chuyến đi
 
-Cơ chế tính toán tự động
-- Chi phí dầu (Đồng) = Chi phí dầu (lít) × Đơn giá dầu
-- Định mức đi đường: tự động điền dựa trên bảng định mức
+*   **Mục tiêu:** Đảm bảo các chứng từ liên quan đến chuyến đi được chuẩn bị và kiểm tra (ở mức độ cơ bản), hỗ trợ Kế toán hoàn tất các thủ tục.
 
-Tương tác của kế toán
-- Nhấp vào từng ô để chỉnh sửa dữ liệu
-- Chọn ô “Chi phí khác” sẽ mở modal form, hiển thị chi tiết các khoản như: tiền vé cầu đường, phí nâng hạ container
-- Trong modal form có: nút (+) để thêm khoản chi phí mới, nút (×) để xóa khoản không cần thiết, nút Lưu (biểu tượng save) để xác nhận thay đổi
-- Có nút thêm ở trên bảng dữ liệu để kế toán thêm kế hoạch vận chuyển mới
+*   **User Stories:**
+    *   `[ ]` **(Đề xuất) Kiểm tra thông tin cơ bản trước chuyến đi:**
+        *   Đối chiếu thông tin trên lệnh vận chuyển với thông tin trên hệ thống (ví dụ: số xe, số container, tên khách hàng, địa điểm).
+    *   `[ ]` **(Đề xuất) Nhận và chuyển thông tin/chứng từ đơn giản:**
+        *   Tiếp nhận các thông tin hoặc hình ảnh chứng từ đơn giản từ tài xế (ví dụ: ảnh phiếu cân, biên bản giao nhận có chữ ký) và chuyển cho bộ phận Kế toán hoặc Quản lý khi cần.
+    *   `[ ]` **Thông báo cho Kế toán khi chuyến đi hoàn tất:**
+        *   Sau khi xác nhận từ tài xế hoặc các nguồn tin cậy rằng chuyến đi đã hoàn thành (hàng đã hạ, container đã trả nếu có), thông báo hoặc cập nhật trạng thái (nếu được phép) để Kế toán có thể tiến hành các bước tiếp theo.
 
-### Chi phí
+---
 
-Trang này hiển thị tổng chi phí theo từng mục, theo từng xe, theo từng tháng. Những chi phí điền ở kế hoạch vận chuyển sẽ được cộng tổng theo nhóm (ví dụ chi phí dầu, chi phí đi đường). Kế toán cũng có thể thêm chi phí khác mà không nằm ở trong kế hoạch vận chuyển (ví dụ lương lái xe, chi phí sửa chữa / bảo dưỡng xe)
+## IV. Vai trò: Lái xe (Driver)
 
-Đầu trang là thanh điều khiển mà người dùng có thể chọn biển số xe, tháng báo cáo. Dưới thanh điều khiển là barchart nằm ngang với mỗi dòng là một chi phí. Trên barchart sẽ hiện tổng chi phí.
+Tài xế là người trực tiếp thực hiện các chuyến vận chuyển, đảm bảo hàng hóa được giao nhận an toàn và đúng hẹn. Giao diện cho tài xế thường được thiết kế đơn giản, dễ sử dụng, tập trung vào thông tin chuyến đi và cập nhật trạng thái.
 
-Danh sách những chi phí có thể thêm
-- Phí gửi xe
-- Chi phí sửa chữa / bảo dưỡng xe
-- Lương lái xe
-- Tiền bảo hiểm TNDS
-- Tiền bảo hiểm vật chất
-- Phí đường bộ
-- Thay thế lốp xe (ngày thay, nhãn hiệu, số series lốp, cỡ lốp, số lượng, đơn giá, thành tiền, nhà cung cấp). Khi tra cứu lốp xe theo biển số xe thì có thể biết được lốp đã thay ngày nào và tuổi thọ tính tới thời điểm tra cứu là bao nhiêu ngày?
+*(Lưu ý: Các chức năng dưới đây được đề xuất dựa trên nhu cầu thông thường của Tài xế trong một hệ thống quản lý vận tải hiện đại và có thể yêu cầu phát triển giao diện riêng (ví dụ: ứng dụng di động hoặc trang web tối ưu cho di động). Cần xác nhận lại với kế hoạch phát triển tính năng của hệ thống NePO.)*
 
-### Công nợ
+### 1. Epic: Quản lý Chuyến đi và Cập nhật Tiến độ
 
+*   **Mục tiêu:** Giúp tài xế nắm rõ thông tin về các chuyến đi được phân công và dễ dàng cập nhật tiến độ công việc cho bộ phận điều hành.
 
+*   **User Stories:**
+    *   `[ ]` **(Đề xuất) Đăng nhập vào hệ thống bằng tài khoản được cấp:**
+        *   Truy cập vào giao diện dành cho tài xế bằng tên đăng nhập và mật khẩu.
+    *   `[ ]` **(Đề xuất) Xem danh sách các chuyến đi được phân công:**
+        *   Hiển thị danh sách các chuyến đi được giao cho tài xế, sắp xếp theo ngày hoặc mức độ ưu tiên.
+        *   Thông tin tóm tắt cho mỗi chuyến: mã chuyến, ngày, điểm đi, điểm đến chính, trạng thái.
+    *   `[ ]` **(Đề xuất) Xem thông tin chi tiết của một chuyến đi:**
+        *   Khi chọn một chuyến đi, hiển thị đầy đủ thông tin:
+            *   Địa chỉ cụ thể của điểm đi và các điểm đến (có thể tích hợp chỉ đường trên bản đồ).
+            *   Thời gian dự kiến cho mỗi điểm.
+            *   Thông tin hàng hóa: tên hàng, số lượng (nếu có), yêu cầu đặc biệt (nếu có).
+            *   Thông tin container: số container, số seal.
+            *   Thông tin liên hệ của người phụ trách ở điểm đi/đến (nếu có).
+            *   Các ghi chú hoặc hướng dẫn khác từ điều độ viên.
+    *   `[ ]` **(Đề xuất) Cập nhật trạng thái thực tế của chuyến đi:**
+        *   Cung cấp các nút hoặc lựa chọn đơn giản để tài xế cập nhật nhanh trạng thái, ví dụ:
+            *   "Đã nhận lệnh / Sẵn sàng": Xác nhận đã nhận thông tin chuyến đi.
+            *   "Đến điểm lấy hàng": Thông báo đã tới vị trí bốc hàng.
+            *   "Đang xếp hàng": Thông báo đang trong quá trình xếp hàng.
+            *   "Đã lấy hàng / Bắt đầu vận chuyển": Thông báo đã nhận hàng và xe bắt đầu di chuyển.
+            *   "Đến điểm trả hàng": Thông báo đã tới vị trí giao hàng.
+            *   "Đang dỡ hàng": Thông báo đang trong quá trình dỡ hàng.
+            *   "Hoàn thành chuyến đi": Xác nhận đã giao hàng xong và kết thúc chuyến.
+            *   "Gặp sự cố": Báo cáo sự cố (ví dụ: xe hỏng, tai nạn, tắc đường nghiêm trọng).
+    *   `[ ]` **(Đề xuất) Xác nhận thông tin container và seal:**
+        *   Có trường để nhập hoặc xác nhận lại số container và số seal khi nhận hàng và giao hàng, đảm bảo tính chính xác.
+    *   `[ ]` **(Đề xuất) Nhận thông báo và chỉ dẫn từ Điều độ/Giao nhận:**
+        *   Hiển thị các thông báo mới hoặc thay đổi về lịch trình, yêu cầu từ bộ phận điều hành.
+
+### 2. Epic: Ghi nhận Chi phí Phát sinh và Thông tin Liên quan (Đề xuất)
+
+*   **Mục tiêu:** Cho phép tài xế ghi nhận một số chi phí phát sinh trên đường hoặc các thông tin cần thiết khác một cách thuận tiện.
+
+*   **User Stories:**
+    *   `[ ]` **(Đề xuất) Giao diện nhập chi phí đơn giản:**
+        *   Cho phép nhập các khoản chi phí nhỏ phát sinh trên đường mà tài xế đã chi trả bằng tiền mặt (ví dụ: tiền xăng dầu lẻ tự đổ, phí cầu đường không qua Epass, phí vá vỏ, tiền bồi dưỡng bốc xếp nếu có).
+        *   Các trường thông tin có thể bao gồm: loại chi phí, số tiền, ghi chú ngắn.
+    *   `[ ]` **(Đề xuất) Chụp ảnh hóa đơn/biên lai:**
+        *   Cho phép tài xế chụp ảnh hóa đơn, biên lai của các chi phí đã nhập và đính kèm vào ghi nhận chi phí đó.
+    *   `[ ]` **(Đề xuất) Ghi nhận số km khi bắt đầu/kết thúc chuyến (nếu cần):**
+        *   Nếu quy trình yêu cầu, tài xế có thể nhập số km công tơ mét của xe khi bắt đầu và kết thúc một chuyến đi hoặc một ngày làm việc.
+    *   `[ ]` **(Đề xuất) Báo cáo các vấn đề về phương tiện:**
+        *   Nếu phát hiện các vấn đề kỹ thuật hoặc hư hỏng nhẹ của xe trong quá trình vận hành, có thể gửi báo cáo nhanh cho bộ phận quản lý xe/sửa chữa.
+
+---
