@@ -137,7 +137,6 @@ const QuanLyPhuongTien = () => {
                 ref={tabsRef}
                 value={activeTab}
                 onChange={handleTabChange}
-                variant="scrollable"
                 scrollButtons="auto"
                 centered={!isMobile}
                 aria-label="Quản lý phương tiện tabs"
