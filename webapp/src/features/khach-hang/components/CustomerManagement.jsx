@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Box, Paper, Typography, Alert, Snackbar } from '@mui/material';
-import { AddButton } from '@shared/components/ActionButtons';
+import { Box, Paper, Typography, Alert, Snackbar, Fab, Zoom } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import ConfirmationModal from '@shared/components/ConfirmationDialog';
 import CustomerForm from '@features/khach-hang/components/CustomerForm';
-import CustomerList from '@features/khach-hang/components/CustomerList';
+import CustomerListResponsive from '@features/khach-hang/components/CustomerListResponsive';
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
 
 const CustomerManagement = () => {
@@ -98,7 +98,7 @@ const CustomerManagement = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
       <Typography
         variant="h5"
         component="h1"
@@ -113,22 +113,32 @@ const CustomerManagement = () => {
         </Alert>
       )}
 
-      <Paper elevation={0} sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" component="h2">
-            Danh sách khách hàng
-          </Typography>
-          <AddButton onClick={handleOpenFormForAdd} label="Thêm khách hàng" size="small" />
-        </Box>
-
-        <CustomerList
+      <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
+        <CustomerListResponsive
           customers={customers}
           loading={loading}
+          error={error}
           onEdit={handleOpenFormForEdit}
           onDelete={handleDeleteClick}
-          error={error}
+          emptyMessage="Chưa có khách hàng nào"
         />
       </Paper>
+      
+      {/* Floating Action Button */}
+      <Zoom in={!loading}>
+        <Fab
+          color="primary"
+          aria-label="Thêm khách hàng"
+          onClick={handleOpenFormForAdd}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 24, sm: 32 },
+            right: { xs: 24, sm: 32 },
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Zoom>
 
       {/* Add/Edit Form */}
       <CustomerForm

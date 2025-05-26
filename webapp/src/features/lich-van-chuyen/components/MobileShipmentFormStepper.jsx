@@ -950,9 +950,9 @@ const MobileShipmentFormStepper = ({
           >
             <CardContent sx={{ pt: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                {steps[activeStep].icon}
+                {steps[activeStep] && steps[activeStep].icon}
                 <Typography variant="h6" sx={{ ml: 1, fontWeight: 600, color: '#374151' }}>
-                  {steps[activeStep].label}
+                  {steps[activeStep] ? steps[activeStep].label : 'Loading...'}
                 </Typography>
               </Box>
               {renderStepContent(activeStep)}

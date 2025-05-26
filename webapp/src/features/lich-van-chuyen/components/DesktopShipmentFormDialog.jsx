@@ -259,7 +259,7 @@ const DesktopShipmentFormDialog = ({
                     variant="outlined"
                     size="small"
                   >
-                    <MenuItem value="">
+                    <MenuItem key="empty-partner" value="">
                       <em>Chọn đối tác</em>
                     </MenuItem>
                     {selectOptions.partners.map(p => (
@@ -359,10 +359,10 @@ const DesktopShipmentFormDialog = ({
                     variant="outlined"
                     size="small"
                   >
-                    <MenuItem value="Lên lịch">Lên lịch</MenuItem>
-                    <MenuItem value="Đang vận chuyển">Đang vận chuyển</MenuItem>
-                    <MenuItem value="Hoàn thành">Hoàn thành</MenuItem>
-                    <MenuItem value="Hủy">Hủy</MenuItem>
+                    <MenuItem key="len-lich" value="Lên lịch">Lên lịch</MenuItem>
+                    <MenuItem key="dang-van-chuyen" value="Đang vận chuyển">Đang vận chuyển</MenuItem>
+                    <MenuItem key="hoan-thanh" value="Hoàn thành">Hoàn thành</MenuItem>
+                    <MenuItem key="huy" value="Hủy">Hủy</MenuItem>
                   </TextField>
                 </Grid>
               </Grid>

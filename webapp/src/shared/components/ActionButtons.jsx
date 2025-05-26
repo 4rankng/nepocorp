@@ -16,7 +16,7 @@ const theme = {
   },
 };
 
-export const EditButton = ({
+export const EditButton = forwardRef(({
   onClick,
   size = 'small',
   disabled = false,
@@ -24,12 +24,13 @@ export const EditButton = ({
   // Extract and omit the jsx prop to prevent it from being passed to DOM
   jsx: _jsx,
   ...props
-}) => {
+}, ref) => {
   // Filter out the jsx prop before spreading the rest
   const { jsx: _, ...filteredProps } = props || {};
 
   return (
     <IconButton
+      ref={ref}
       size={size}
       onClick={onClick}
       disabled={disabled}
@@ -53,9 +54,11 @@ export const EditButton = ({
       <PencilIcon />
     </IconButton>
   );
-};
+});
 
-export const DeleteButton = ({
+EditButton.displayName = 'EditButton';
+
+export const DeleteButton = forwardRef(({
   onClick,
   size = 'small',
   disabled = false,
@@ -63,12 +66,13 @@ export const DeleteButton = ({
   // Extract and omit the jsx prop to prevent it from being passed to DOM
   jsx: _jsx,
   ...props
-}) => {
+}, ref) => {
   // Filter out the jsx prop before spreading the rest
   const { jsx: _, ...filteredProps } = props || {};
 
   return (
     <IconButton
+      ref={ref}
       size={size}
       onClick={onClick}
       disabled={disabled}
@@ -92,7 +96,9 @@ export const DeleteButton = ({
       <TrashIcon />
     </IconButton>
   );
-};
+});
+
+DeleteButton.displayName = 'DeleteButton';
 
 export const AddButton = forwardRef(
   (

@@ -2,10 +2,6 @@
 
 ## Giới thiệu
 
-Chào mừng quý khách đến với Hệ thống Quản lý Vận tải NePO! Tài liệu này là cẩm nang hướng dẫn quý khách sử dụng các tính năng của hệ thống một cách hiệu quả, tập trung vào quy trình nghiệp vụ và trải nghiệm người dùng.
-
-Mỗi vai trò trong hệ thống sẽ có những chức năng và quy trình làm việc riêng. Vui lòng tham khảo mục tương ứng với vai trò của bạn.
-
 **Cách theo dõi tiến độ:** Mỗi chức năng (user story) sẽ có trạng thái:
 *   `[ ]` Chưa hoàn thành / Đang phát triển
 *   `[x]` Đã hoàn thành
@@ -13,8 +9,6 @@ Mỗi vai trò trong hệ thống sẽ có những chức năng và quy trình l
 ---
 
 ## I. Vai trò: Quản lý (Manager)
-
-Người quản lý có quyền truy cập và điều hành toàn bộ các khía cạnh của hệ thống.
 
 ### 1. Epic: Quản lý Báo cáo và Phân tích Kinh doanh
 

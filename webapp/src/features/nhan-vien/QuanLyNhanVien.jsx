@@ -27,7 +27,10 @@ import {
   Select,
   MenuItem,
   IconButton,
+  Fab,
 } from '@mui/material';
+import EmployeeCard from './EmployeeCard';
+import { useTheme, useMediaQuery } from '@mui/material';
 
 const initialFormState = {
   tenNhanVien: '',
@@ -44,6 +47,9 @@ const QuanLyNhanVien = () => {
   const [formData, setFormData] = useState(initialFormState);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [search, setSearch] = useState('');
 
   const fetchEmployeesData = async () => {
     setIsLoading(true);
@@ -202,6 +208,16 @@ const QuanLyNhanVien = () => {
     },
   ];
 
+  // Filter employees by search
+  const filteredEmployees = employees.filter(emp => {
+    const q = search.toLowerCase();
+    return (
+      emp.tenNhanVien.toLowerCase().includes(q) ||
+      emp.tenDangNhap.toLowerCase().includes(q) ||
+      emp.email.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography
@@ -212,6 +228,18 @@ const QuanLyNhanVien = () => {
         Quản lý nhân viên
       </Typography>
 
+      {/* Search bar */}
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <TextField
+          variant="outlined"
+          size="small"
+          placeholder="Tìm kiếm nhân viên..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          sx={{ flex: 1, maxWidth: 300 }}
+        />
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -219,14 +247,50 @@ const QuanLyNhanVien = () => {
       )}
 
       <Paper elevation={0} sx={{ p: 2 }}>
-        <StandardTable
-          columns={columns}
-          data={employees}
-          loading={isLoading}
-          emptyMessage="Không có dữ liệu nhân viên"
-          headerAction={<AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} />}
-        />
+        {isMobile ? (
+          <Box>
+            {isLoading ? (
+              <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>
+            ) : filteredEmployees.length === 0 ? (
+              <Typography align="center" color="text.secondary" py={4}>Không có dữ liệu nhân viên</Typography>
+            ) : (
+              filteredEmployees.map(emp => (
+                <EmployeeCard
+                  key={emp.id}
+                  employee={emp}
+                  onEdit={handleOpenModalForEdit}
+                  onDelete={handleDeleteClick}
+                  loading={isLoading}
+                />
+              ))
+            )}
+          </Box>
+        ) : (
+          <StandardTable
+            columns={columns}
+            data={filteredEmployees}
+            loading={isLoading}
+            emptyMessage="Không có dữ liệu nhân viên"
+            // Remove headerAction, since AddButton is now above
+          />
+        )}
       </Paper>
+
+      {/* Floating Add FAB */}
+      <Fab
+        color="primary"
+        aria-label="add"
+        onClick={handleOpenModalForAdd}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 24, md: 32 },
+          right: { xs: 24, md: 32 },
+          zIndex: 1201,
+          boxShadow: 6,
+        }}
+      >
+        <PlusIcon />
+      </Fab>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity">

@@ -11,3 +11,38 @@ img {
   max-width: 100%;
   height: auto;
 }
+
+/* Prevent mobile zoom on inputs */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea,
+  .MuiOutlinedInput-input,
+  .MuiSelect-select,
+  .MuiInputBase-input {
+    font-size: 16px !important;
+    transform-origin: left top;
+    zoom: 1;
+  }
+  
+  /* Prevent zoom on focus */
+  input:focus,
+  select:focus,
+  textarea:focus,
+  .MuiOutlinedInput-input:focus,
+  .MuiSelect-select:focus,
+  .MuiInputBase-input:focus {
+    font-size: 16px !important;
+    transform: scale(1);
+  }
+}
+
+/* Smooth transitions for better UX */
+input,
+select,
+textarea,
+.MuiOutlinedInput-input,
+.MuiSelect-select,
+.MuiInputBase-input {
+  transition: all 0.15s ease-in-out;
+}

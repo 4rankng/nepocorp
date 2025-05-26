@@ -1,8 +1,23 @@
-// Shipment plans management mock data and functions
+// Shipment plans management mock data
+export const initialShipmentPlans = [{
+    id: 'sp1',
+    ngayThang: '02/01/2024',
+    bienSoXeId: 'v1',
+    bienSoXe: '51C-12345',
+    doiTacId: 'p1',
+    tenDoiTac: 'Đối tác Vận Tải An Phát',
+    dienGiai: 'Chở hàng Tết đợt 1',
+    tuyenDuong: { diemDi: 'Kho A', diemDen: ['Kho B', 'Kho C'] },
+    trangThai: 'Hoàn thành',
+    khachHangId: 'c1'
+}];
 
 // Mock data for schedules and costs (backward compatibility)
 export const mockSchedules = [];
 export const mockCosts = [];
+
+// Initialize shipmentPlansData from the initial data
+let shipmentPlansData = [...initialShipmentPlans];
 
 // Utility function to recalculate shipment costs
 const recalculateShipmentCosts = plan => {
@@ -28,7 +43,8 @@ const recalculateShipmentCosts = plan => {
   return plan;
 };
 
-let shipmentPlansData = [
+// Add more mock data to shipmentPlansData
+shipmentPlansData = [
   recalculateShipmentCosts({
     id: 'sp1',
     ngayThang: '01/01/2024',
