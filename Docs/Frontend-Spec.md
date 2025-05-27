@@ -171,7 +171,7 @@ Kế toán viên chịu trách nhiệm về các vấn đề tài chính, chi ph
 
 ## III. Vai trò: Giao nhận (Dispatcher/Forwarder)
 
-Nhân viên giao nhận đóng vai trò quan trọng trong việc điều phối và theo dõi sát sao các chuyến hàng, đảm bảo hàng hóa được vận chuyển đúng lịch trình, an toàn và hiệu quả. Họ là cầu nối thông tin giữa quản lý, tài xế và khách hàng.
+Nhân viên giao nhận đóng vai trò quan trọng trong việc điều phối và theo dõi sát sao các chuyến hàng, đảm bảo hàng hóa được vận chuyển đúng lịch trình, an toàn và hiệu quả. Họ là cầu nối thông tin giữa quản lý, lái xe và khách hàng.
 
 *(Lưu ý: Các chức năng dưới đây được xây dựng dựa trên các nhiệm vụ thông thường của Nhân viên Giao nhận và các tính năng hiện có của hệ thống NePO. Một số chức năng có thể được đề xuất để tối ưu hóa quy trình làm việc và sẽ được ghi chú rõ.)*
 
@@ -181,11 +181,11 @@ Nhân viên giao nhận đóng vai trò quan trọng trong việc điều phối
 
 *   **User Stories:**
     *   `[ ]` **Xem toàn bộ lịch vận chuyển:**
-        *   Truy cập và xem danh sách chi tiết tất cả các kế hoạch vận chuyển, bao gồm thông tin: Ngày tháng, Biển số xe được phân công, Tài xế lái xe (nếu thông tin này được liên kết), Đối tác vận tải (nếu có), Diễn giải (mô tả, yêu cầu đặc biệt của chuyến đi), Tuyến đường chi tiết, Trạng thái hiện tại của chuyến hàng (Nháp, Lên lịch, Đang chạy, Hoàn thành), Thông tin container (số cont, số seal).
+        *   Truy cập và xem danh sách chi tiết tất cả các kế hoạch vận chuyển, bao gồm thông tin: Ngày tháng, Biển số xe được phân công, Lái xe lái xe (nếu thông tin này được liên kết), Đối tác vận tải (nếu có), Diễn giải (mô tả, yêu cầu đặc biệt của chuyến đi), Tuyến đường chi tiết, Trạng thái hiện tại của chuyến hàng (Nháp, Lên lịch, Đang chạy, Hoàn thành), Thông tin container (số cont, số seal).
     *   `[ ]` **(Đề xuất) Tạo yêu cầu/kế hoạch vận chuyển nháp:**
         *   Khi có yêu cầu vận chuyển mới từ khách hàng hoặc bộ phận kinh doanh, Giao nhận có thể tạo một kế hoạch vận chuyển ở trạng thái "Nháp" với các thông tin ban đầu. Kế hoạch này sau đó có thể được Quản lý xem xét và chuyển thành "Lên lịch".
     *   `[ ]` **(Đề xuất) Cập nhật trạng thái vận hành của chuyến hàng:**
-        *   Dựa trên thông tin cập nhật từ tài xế hoặc các nguồn khác (ví dụ: định vị GPS nếu có), Giao nhận cập nhật trạng thái thực tế của chuyến hàng trong hệ thống. Ví dụ:
+        *   Dựa trên thông tin cập nhật từ lái xe hoặc các nguồn khác (ví dụ: định vị GPS nếu có), Giao nhận cập nhật trạng thái thực tế của chuyến hàng trong hệ thống. Ví dụ:
             *   Xác nhận xe đã đến điểm lấy hàng.
             *   Xác nhận xe đã bắt đầu di chuyển.
             *   Ghi nhận xe đã đến điểm trả hàng.
@@ -193,10 +193,10 @@ Nhân viên giao nhận đóng vai trò quan trọng trong việc điều phối
     *   `[ ]` **(Đề xuất) Ghi nhận các sự cố hoặc ghi chú quan trọng:**
         *   Ghi chú lại các thông tin quan trọng hoặc sự cố phát sinh trong quá trình vận chuyển (ví dụ: thay đổi thời gian giao hàng do thời tiết, vấn đề về chứng từ, hư hỏng nhỏ cần báo cáo) vào phần ghi chú của chuyến đi.
     *   `[ ]` **Phối hợp phân công vận chuyển:**
-        *   Xem các kế hoạch vận chuyển chưa được Quản lý phân công xe hoặc tài xế.
-        *   (Đề xuất) Đề xuất hoặc trực tiếp thực hiện việc ghép xe/tài xế phù hợp cho các chuyến đi (quyền hạn này cần được Quản lý xác định).
+        *   Xem các kế hoạch vận chuyển chưa được Quản lý phân công xe hoặc lái xe.
+        *   (Đề xuất) Đề xuất hoặc trực tiếp thực hiện việc ghép xe/lái xe phù hợp cho các chuyến đi (quyền hạn này cần được Quản lý xác định).
     *   `[ ]` **Truy cập nhanh thông tin liên hệ hỗ trợ:**
-        *   Dễ dàng xem thông tin liên hệ của Khách hàng, Đối tác (nhà xe phụ), và Tài xế liên quan trực tiếp đến một chuyến hàng cụ thể để tiện liên lạc và điều phối.
+        *   Dễ dàng xem thông tin liên hệ của Khách hàng, Đối tác (nhà xe phụ), và Lái xe liên quan trực tiếp đến một chuyến hàng cụ thể để tiện liên lạc và điều phối.
     *   `[ ]` **(Đề xuất) Theo dõi vị trí xe (nếu hệ thống tích hợp GPS):**
         *   Nếu có tích hợp, xem vị trí hiện tại của xe trên bản đồ để chủ động hơn trong việc theo dõi và thông báo cho các bên liên quan.
 
@@ -208,27 +208,27 @@ Nhân viên giao nhận đóng vai trò quan trọng trong việc điều phối
     *   `[ ]` **(Đề xuất) Kiểm tra thông tin cơ bản trước chuyến đi:**
         *   Đối chiếu thông tin trên lệnh vận chuyển với thông tin trên hệ thống (ví dụ: số xe, số container, tên khách hàng, địa điểm).
     *   `[ ]` **(Đề xuất) Nhận và chuyển thông tin/chứng từ đơn giản:**
-        *   Tiếp nhận các thông tin hoặc hình ảnh chứng từ đơn giản từ tài xế (ví dụ: ảnh phiếu cân, biên bản giao nhận có chữ ký) và chuyển cho bộ phận Kế toán hoặc Quản lý khi cần.
+        *   Tiếp nhận các thông tin hoặc hình ảnh chứng từ đơn giản từ lái xe (ví dụ: ảnh phiếu cân, biên bản giao nhận có chữ ký) và chuyển cho bộ phận Kế toán hoặc Quản lý khi cần.
     *   `[ ]` **Thông báo cho Kế toán khi chuyến đi hoàn tất:**
-        *   Sau khi xác nhận từ tài xế hoặc các nguồn tin cậy rằng chuyến đi đã hoàn thành (hàng đã hạ, container đã trả nếu có), thông báo hoặc cập nhật trạng thái (nếu được phép) để Kế toán có thể tiến hành các bước tiếp theo.
+        *   Sau khi xác nhận từ lái xe hoặc các nguồn tin cậy rằng chuyến đi đã hoàn thành (hàng đã hạ, container đã trả nếu có), thông báo hoặc cập nhật trạng thái (nếu được phép) để Kế toán có thể tiến hành các bước tiếp theo.
 
 ---
 
 ## IV. Vai trò: Lái xe (Driver)
 
-Tài xế là người trực tiếp thực hiện các chuyến vận chuyển, đảm bảo hàng hóa được giao nhận an toàn và đúng hẹn. Giao diện cho tài xế thường được thiết kế đơn giản, dễ sử dụng, tập trung vào thông tin chuyến đi và cập nhật trạng thái.
+Lái xe là người trực tiếp thực hiện các chuyến vận chuyển, đảm bảo hàng hóa được giao nhận an toàn và đúng hẹn. Giao diện cho lái xe thường được thiết kế đơn giản, dễ sử dụng, tập trung vào thông tin chuyến đi và cập nhật trạng thái.
 
-*(Lưu ý: Các chức năng dưới đây được đề xuất dựa trên nhu cầu thông thường của Tài xế trong một hệ thống quản lý vận tải hiện đại và có thể yêu cầu phát triển giao diện riêng (ví dụ: ứng dụng di động hoặc trang web tối ưu cho di động). Cần xác nhận lại với kế hoạch phát triển tính năng của hệ thống NePO.)*
+*(Lưu ý: Các chức năng dưới đây được đề xuất dựa trên nhu cầu thông thường của Lái xe trong một hệ thống quản lý vận tải hiện đại và có thể yêu cầu phát triển giao diện riêng (ví dụ: ứng dụng di động hoặc trang web tối ưu cho di động). Cần xác nhận lại với kế hoạch phát triển tính năng của hệ thống NePO.)*
 
 ### 1. Epic: Quản lý Chuyến đi và Cập nhật Tiến độ
 
-*   **Mục tiêu:** Giúp tài xế nắm rõ thông tin về các chuyến đi được phân công và dễ dàng cập nhật tiến độ công việc cho bộ phận điều hành.
+*   **Mục tiêu:** Giúp lái xe nắm rõ thông tin về các chuyến đi được phân công và dễ dàng cập nhật tiến độ công việc cho bộ phận điều hành.
 
 *   **User Stories:**
     *   `[ ]` **(Đề xuất) Đăng nhập vào hệ thống bằng tài khoản được cấp:**
-        *   Truy cập vào giao diện dành cho tài xế bằng tên đăng nhập và mật khẩu.
+        *   Truy cập vào giao diện dành cho lái xe bằng tên đăng nhập và mật khẩu.
     *   `[ ]` **(Đề xuất) Xem danh sách các chuyến đi được phân công:**
-        *   Hiển thị danh sách các chuyến đi được giao cho tài xế, sắp xếp theo ngày hoặc mức độ ưu tiên.
+        *   Hiển thị danh sách các chuyến đi được giao cho lái xe, sắp xếp theo ngày hoặc mức độ ưu tiên.
         *   Thông tin tóm tắt cho mỗi chuyến: mã chuyến, ngày, điểm đi, điểm đến chính, trạng thái.
     *   `[ ]` **(Đề xuất) Xem thông tin chi tiết của một chuyến đi:**
         *   Khi chọn một chuyến đi, hiển thị đầy đủ thông tin:
@@ -239,7 +239,7 @@ Tài xế là người trực tiếp thực hiện các chuyến vận chuyển,
             *   Thông tin liên hệ của người phụ trách ở điểm đi/đến (nếu có).
             *   Các ghi chú hoặc hướng dẫn khác từ điều độ viên.
     *   `[ ]` **(Đề xuất) Cập nhật trạng thái thực tế của chuyến đi:**
-        *   Cung cấp các nút hoặc lựa chọn đơn giản để tài xế cập nhật nhanh trạng thái, ví dụ:
+        *   Cung cấp các nút hoặc lựa chọn đơn giản để lái xe cập nhật nhanh trạng thái, ví dụ:
             *   "Đã nhận lệnh / Sẵn sàng": Xác nhận đã nhận thông tin chuyến đi.
             *   "Đến điểm lấy hàng": Thông báo đã tới vị trí bốc hàng.
             *   "Đang xếp hàng": Thông báo đang trong quá trình xếp hàng.
@@ -255,16 +255,16 @@ Tài xế là người trực tiếp thực hiện các chuyến vận chuyển,
 
 ### 2. Epic: Ghi nhận Chi phí Phát sinh và Thông tin Liên quan (Đề xuất)
 
-*   **Mục tiêu:** Cho phép tài xế ghi nhận một số chi phí phát sinh trên đường hoặc các thông tin cần thiết khác một cách thuận tiện.
+*   **Mục tiêu:** Cho phép lái xe ghi nhận một số chi phí phát sinh trên đường hoặc các thông tin cần thiết khác một cách thuận tiện.
 
 *   **User Stories:**
     *   `[ ]` **(Đề xuất) Giao diện nhập chi phí đơn giản:**
-        *   Cho phép nhập các khoản chi phí nhỏ phát sinh trên đường mà tài xế đã chi trả bằng tiền mặt (ví dụ: tiền xăng dầu lẻ tự đổ, phí cầu đường không qua Epass, phí vá vỏ, tiền bồi dưỡng bốc xếp nếu có).
+        *   Cho phép nhập các khoản chi phí nhỏ phát sinh trên đường mà lái xe đã chi trả bằng tiền mặt (ví dụ: tiền xăng dầu lẻ tự đổ, phí cầu đường không qua Epass, phí vá vỏ, tiền bồi dưỡng bốc xếp nếu có).
         *   Các trường thông tin có thể bao gồm: loại chi phí, số tiền, ghi chú ngắn.
     *   `[ ]` **(Đề xuất) Chụp ảnh hóa đơn/biên lai:**
-        *   Cho phép tài xế chụp ảnh hóa đơn, biên lai của các chi phí đã nhập và đính kèm vào ghi nhận chi phí đó.
+        *   Cho phép lái xe chụp ảnh hóa đơn, biên lai của các chi phí đã nhập và đính kèm vào ghi nhận chi phí đó.
     *   `[ ]` **(Đề xuất) Ghi nhận số km khi bắt đầu/kết thúc chuyến (nếu cần):**
-        *   Nếu quy trình yêu cầu, tài xế có thể nhập số km công tơ mét của xe khi bắt đầu và kết thúc một chuyến đi hoặc một ngày làm việc.
+        *   Nếu quy trình yêu cầu, lái xe có thể nhập số km công tơ mét của xe khi bắt đầu và kết thúc một chuyến đi hoặc một ngày làm việc.
     *   `[ ]` **(Đề xuất) Báo cáo các vấn đề về phương tiện:**
         *   Nếu phát hiện các vấn đề kỹ thuật hoặc hư hỏng nhẹ của xe trong quá trình vận hành, có thể gửi báo cáo nhanh cho bộ phận quản lý xe/sửa chữa.
 

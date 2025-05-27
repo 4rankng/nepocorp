@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
-import { Box, Paper, Typography, Alert, Snackbar, Fab, Zoom } from '@mui/material';
+import React, { useState, useCallback } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  Alert,
+  Snackbar,
+  Fab,
+  Zoom,
+  CircularProgress,
+} from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import ConfirmationModal from '@/components/ConfirmationDialog';
 import CustomerForm from '@features/khach-hang/components/CustomerForm';
@@ -7,8 +16,19 @@ import CustomerListResponsive from '@features/khach-hang/components/CustomerList
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
 
 const CustomerManagement = () => {
-  const { customers, loading, error, addCustomer, updateCustomer, deleteCustomer, clearError } =
-    useCustomerManagement();
+  const {
+    customers,
+    loading,
+    error,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    clearError,
+    isCustomerCodeAvailable,
+    getInitialFormData,
+  } = useCustomerManagement();
+
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
 
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -53,23 +73,52 @@ const CustomerManagement = () => {
     setFormError('');
   };
 
-  const handleSaveCustomer = async formData => {
-    setFormError('');
+  const handleSaveCustomer = useCallback(
+    async formData => {
+      setFormError('');
 
-    let result;
-    if (selectedCustomer) {
-      result = await updateCustomer(selectedCustomer.id, formData);
-    } else {
-      result = await addCustomer(formData);
-    }
+      // If this is an edit, we need to validate the code if it was changed
+      if (selectedCustomer && formData.code && formData.code !== selectedCustomer.code) {
+        setIsValidatingCode(true);
+        try {
+          const isAvailable = await isCustomerCodeAvailable(formData.code, selectedCustomer.id);
+          if (!isAvailable) {
+            setFormError('Mã khách hàng đã được sử dụng. Vui lòng chọn mã khác.');
+            setIsValidatingCode(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Error validating customer code:', err);
+          setFormError('Có lỗi xảy ra khi kiểm tra mã khách hàng. Vui lòng thử lại.');
+          setIsValidatingCode(false);
+          return;
+        }
+        setIsValidatingCode(false);
+      }
 
-    if (result.success) {
-      handleCloseForm();
-      showSnackbar(selectedCustomer ? 'Sửa khách hàng thành công' : 'Thêm khách hàng thành công');
-    } else {
-      setFormError(result.error);
-    }
-  };
+      let result;
+      try {
+        if (selectedCustomer) {
+          result = await updateCustomer(selectedCustomer.id, formData);
+        } else {
+          result = await addCustomer(formData);
+        }
+
+        if (result.success) {
+          handleCloseForm();
+          showSnackbar(
+            selectedCustomer ? 'Sửa khách hàng thành công' : 'Thêm khách hàng thành công'
+          );
+        } else {
+          setFormError(result.error || 'Có lỗi xảy ra. Vui lòng thử lại.');
+        }
+      } catch (err) {
+        console.error('Error saving customer:', err);
+        setFormError('Có lỗi xảy ra khi lưu thông tin khách hàng.');
+      }
+    },
+    [selectedCustomer, addCustomer, updateCustomer, isCustomerCodeAvailable]
+  );
 
   // Delete handlers
   const handleDeleteClick = customer => {
@@ -123,7 +172,7 @@ const CustomerManagement = () => {
           emptyMessage="Chưa có khách hàng nào"
         />
       </Paper>
-      
+
       {/* Floating Action Button */}
       <Zoom in={!loading}>
         <Fab
@@ -140,15 +189,34 @@ const CustomerManagement = () => {
         </Fab>
       </Zoom>
 
-      {/* Add/Edit Form */}
+      {/* Customer Form */}
       <CustomerForm
         open={isFormOpen}
         onClose={handleCloseForm}
         onSave={handleSaveCustomer}
         customer={selectedCustomer}
-        isLoading={loading}
+        getInitialFormData={getInitialFormData}
+        isLoading={loading || isValidatingCode}
         error={formError}
       />
+      {isValidatingCode && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1400,
+          }}
+        >
+          <CircularProgress color="primary" />
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal

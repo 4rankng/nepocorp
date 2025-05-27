@@ -9,14 +9,10 @@
 export const setupMobileInputHandlers = () => {
   if (typeof window === 'undefined') return;
 
-  const handleFocus = (e) => {
+  const handleFocus = e => {
     // Prevent zooming on input focus
     const target = e.target;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.isContentEditable
-    ) {
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
       // Ensure the input is at least 16px to prevent iOS zoom
       const computedFontSize = window.getComputedStyle(target).fontSize;
       if (parseInt(computedFontSize, 10) < 16) {
@@ -26,7 +22,7 @@ export const setupMobileInputHandlers = () => {
     }
   };
 
-  const handleBlur = (e) => {
+  const handleBlur = e => {
     // Restore original font size if it was changed
     const target = e.target;
     if (target.dataset.originalFontSize) {

@@ -209,7 +209,7 @@ export const customerApi = {
       const customers = await getCustomers();
       const customer = customers.find(c => c.id === id);
       if (!customer) {
-        return apiError('Customer not found', 404);
+        return apiError('Không tìm thấy khách hàng', 404);
       }
       return apiResponse(customer);
     } catch (error) {
@@ -218,10 +218,26 @@ export const customerApi = {
   },
   create: async data => {
     try {
-      const newCustomer = await addCustomer(data);
+      // If code is not provided, it will be auto-generated in the mock data
+      const newCustomer = await addCustomer({
+        ...data,
+        code: data.code || undefined, // Let the mock data handle auto-generation if code is empty
+      });
       return apiResponse(newCustomer, 201);
     } catch (error) {
       return apiError(error.message, 400);
+    }
+  },
+  getByCode: async code => {
+    try {
+      const customers = await getCustomers();
+      const customer = customers.find(c => c.code && c.code.toLowerCase() === code.toLowerCase());
+      if (!customer) {
+        return apiError('Không tìm thấy khách hàng với mã này', 404);
+      }
+      return apiResponse(customer);
+    } catch (error) {
+      return apiError(error.message, 500);
     }
   },
   update: async (id, data) => {

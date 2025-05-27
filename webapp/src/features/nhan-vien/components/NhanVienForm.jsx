@@ -1,5 +1,4 @@
 import React from 'react';
-// import { employeeRoles } from '@services/mockData/employees'; // No longer imported here
 
 const NhanVienForm = ({
   open,
@@ -10,7 +9,8 @@ const NhanVienForm = ({
   onSave,
   isLoading,
   error,
-  employeeRoles, // Now passed as a prop
+  employeeRoles,
+  vehicles = [], // List of available vehicles
 }) => {
   if (!open) {
     return null;
@@ -27,8 +27,26 @@ const NhanVienForm = ({
 
         <div className="space-y-4">
           <div>
+            <label htmlFor="maNhanVien" className="block text-sm font-medium text-gray-700">
+              Mã nhân viên *
+            </label>
+            <input
+              type="text"
+              name="maNhanVien"
+              id="maNhanVien"
+              value={formData.maNhanVien || ''}
+              onChange={onFormChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+              disabled={!!editingEmployee}
+              placeholder="VD: NV001"
+              pattern="[Nn][Vv]\d{3,}"
+              title="Mã nhân viên phải bắt đầu bằng NV hoặc nv và ít nhất 3 chữ số"
+            />
+          </div>
+          <div>
             <label htmlFor="tenNhanVien" className="block text-sm font-medium text-gray-700">
-              Tên nhân viên
+              Tên nhân viên *
             </label>
             <input
               type="text"
@@ -81,7 +99,7 @@ const NhanVienForm = ({
           </div>
           <div>
             <label htmlFor="chucVu" className="block text-sm font-medium text-gray-700">
-              Chức vụ
+              Chức vụ *
             </label>
             <select
               name="chucVu"
@@ -97,6 +115,28 @@ const NhanVienForm = ({
               ))}
             </select>
           </div>
+
+          {formData.chucVu === 'Lái xe' && (
+            <div>
+              <label htmlFor="bienSoXe" className="block text-sm font-medium text-gray-700">
+                Biển số xe đầu kéo
+              </label>
+              <select
+                name="bienSoXe"
+                id="bienSoXe"
+                value={formData.bienSoXe || ''}
+                onChange={onFormChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              >
+                <option value="">Chọn biển số xe</option>
+                {vehicles.map(vehicle => (
+                  <option key={vehicle.id} value={vehicle.licensePlate}>
+                    {vehicle.licensePlate}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex justify-end space-x-3">

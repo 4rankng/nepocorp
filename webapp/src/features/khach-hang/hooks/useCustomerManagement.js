@@ -1,5 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { customerApi } from '@services/mockApi';
+
+const initialFormState = {
+  code: '',
+  name: '',
+  phone: '',
+  email: '',
+  address: '',
+  taxCode: '',
+  note: '',
+};
+
+// Helper function to generate the next customer code
+const generateNextCustomerCode = existingCustomers => {
+  if (!existingCustomers || existingCustomers.length === 0) return 'KH001';
+
+  // Find the highest code number
+  const maxCode = existingCustomers.reduce((max, customer) => {
+    if (!customer.code) return max;
+    const codeMatch = customer.code.match(/^KH(\d+)$/i);
+    if (!codeMatch) return max;
+    const num = parseInt(codeMatch[1], 10);
+    return !isNaN(num) ? Math.max(max, num) : max;
+  }, 0);
+
+  // Generate new code with leading zeros
+  return `KH${String(maxCode + 1).padStart(3, '0')}`;
+};
 
 const useCustomerManagement = () => {
   const [customers, setCustomers] = useState([]);
@@ -7,7 +34,7 @@ const useCustomerManagement = () => {
   const [error, setError] = useState('');
 
   // Fetch all customers
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -20,26 +47,45 @@ const useCustomerManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Add new customer
-  const addCustomer = async customerData => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await customerApi.create(customerData);
-      // Refresh the customer list
-      await fetchCustomers();
-      return { success: true, data: response.data };
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Lỗi khi thêm khách hàng';
-      setError(errorMessage);
-      console.error('Error adding customer:', err);
-      return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
-  };
+  const addCustomer = useCallback(
+    async customerData => {
+      setLoading(true);
+      setError('');
+      try {
+        // Always generate a new code for new customers
+        const nextCode = generateNextCustomerCode(customers);
+        const processedData = {
+          ...customerData,
+          code: nextCode,
+        };
+
+        const response = await customerApi.create(processedData);
+        // Refresh the customer list
+        await fetchCustomers();
+        return { success: true, data: response.data };
+      } catch (err) {
+        const errorMessage = err.response?.data?.error || 'Lỗi khi thêm khách hàng';
+        setError(errorMessage);
+        console.error('Error adding customer:', err);
+        return { success: false, error: errorMessage };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [customers, fetchCustomers]
+  );
+
+  // Get initial form data with generated code
+  const getInitialFormData = useCallback(() => {
+    const nextCode = generateNextCustomerCode(customers);
+    return {
+      ...initialFormState,
+      code: nextCode,
+    };
+  }, [customers]);
 
   // Update existing customer
   const updateCustomer = async (id, customerData) => {
@@ -82,7 +128,7 @@ const useCustomerManagement = () => {
   };
 
   // Get customer by ID
-  const getCustomerById = async id => {
+  const getCustomerById = useCallback(async id => {
     try {
       const response = await customerApi.getById(id);
       return { success: true, data: response.data };
@@ -91,7 +137,38 @@ const useCustomerManagement = () => {
       console.error('Error getting customer by ID:', err);
       return { success: false, error: errorMessage };
     }
-  };
+  }, []);
+
+  // Get customer by code
+  const getCustomerByCode = useCallback(async code => {
+    try {
+      const response = await customerApi.getByCode(code);
+      return { success: true, data: response.data };
+    } catch (err) {
+      // Not found is an expected case, don't log as error
+      if (err.response?.status !== 404) {
+        console.error('Error getting customer by code:', err);
+      }
+      return { success: false, error: err.response?.data?.error };
+    }
+  }, []);
+
+  // Check if a customer code is available
+  const isCustomerCodeAvailable = useCallback(async (code, excludeId = null) => {
+    if (!code || code.trim() === '') return true;
+
+    try {
+      const response = await customerApi.getByCode(code);
+      // If we're excluding an ID (for updates), it's okay if it's the same customer
+      if (excludeId && response.data && response.data.id === excludeId) {
+        return true;
+      }
+      return false;
+    } catch (err) {
+      // 404 means code is available
+      return err.response?.status === 404;
+    }
+  }, []);
 
   // Clear error
   const clearError = () => setError('');
@@ -99,7 +176,7 @@ const useCustomerManagement = () => {
   // Initial fetch on mount
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [fetchCustomers]);
 
   return {
     // State
@@ -113,6 +190,9 @@ const useCustomerManagement = () => {
     updateCustomer,
     deleteCustomer,
     getCustomerById,
+    getCustomerByCode,
+    isCustomerCodeAvailable,
+    getInitialFormData,
     clearError,
   };
 };

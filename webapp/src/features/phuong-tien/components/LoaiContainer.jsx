@@ -54,9 +54,10 @@ const LoaiContainer = () => {
   const filteredContainerTypes = React.useMemo(() => {
     if (!searchTerm.trim()) return containerTypes;
     const search = searchTerm.toLowerCase();
-    return containerTypes.filter(item =>
-      (item.type && item.type.toLowerCase().includes(search)) ||
-      (item.description && item.description.toLowerCase().includes(search))
+    return containerTypes.filter(
+      item =>
+        (item.type && item.type.toLowerCase().includes(search)) ||
+        (item.description && item.description.toLowerCase().includes(search))
     );
   }, [containerTypes, searchTerm]);
 
@@ -272,9 +273,7 @@ const LoaiContainer = () => {
         </Box>
       )}
       {/* Content */}
-      {!loading && !error && (
-        <>{isMobile ? renderMobileView() : renderDesktopView()}</>
-      )}
+      {!loading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
       {/* FAB for add at bottom right (always visible) */}
       <Fab
         color="primary"

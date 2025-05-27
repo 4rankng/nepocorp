@@ -77,7 +77,10 @@ export default [
     rules: {
       'react/prop-types': 'off', // Disable prop-types as per original config
       // Example: "no-unused-vars": "warn", // To make unused vars a warning
-      "no-unused-vars": ["error", { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }]
+      'no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^_', argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
     },
   },
 

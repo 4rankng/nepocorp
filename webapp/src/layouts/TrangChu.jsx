@@ -4,6 +4,7 @@ import { useAuth } from '@contexts/AuthContext';
 import { ROLES, getRoleLabel } from '@/config/roles';
 import ThanhTieuDe from '@/components/ThanhTieuDe';
 import ThanhBen from '@/components/ThanhBen';
+import ChangelogDialog from '@/components/ChangelogDialog';
 import packageJson from '../../package.json';
 
 const ROLE_CARDS = [
@@ -43,6 +44,7 @@ const ROLE_CARDS = [
 
 const TrangChu = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
   const { login, logout, currentUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -104,15 +106,25 @@ const TrangChu = () => {
 
   // Version badge component
   const VersionBadge = () => (
-    <div className="fixed bottom-4 left-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm text-gray-500 border border-gray-200 shadow-sm z-50">
+    <button
+      onClick={() => setChangelogOpen(true)}
+      className="fixed bottom-4 left-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm text-gray-500 border border-gray-200 shadow-sm z-50 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-300 transition-all"
+    >
       Bản Demo v{packageJson.version}
-    </div>
+    </button>
   );
 
   return (
     <div className="min-h-screen w-full bg-white overflow-x-hidden">
       {/* Version badge - always visible */}
       <VersionBadge />
+
+      {/* Changelog Dialog */}
+      <ChangelogDialog
+        open={changelogOpen}
+        onClose={() => setChangelogOpen(false)}
+        version={packageJson.version}
+      />
 
       {/* Banner/Header always visible */}
       <div className="fixed top-0 left-0 right-0 z-50 w-full" style={{ minWidth: 0 }}>

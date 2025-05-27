@@ -16,7 +16,7 @@ import QuanLyPhuongTien from '@features/phuong-tien/QuanLyPhuongTien';
 const routerConfig = {
   future: {
     v7_startTransition: true,
-  }
+  },
 };
 
 // Wrap the app with AuthProvider

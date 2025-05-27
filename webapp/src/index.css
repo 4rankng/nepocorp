@@ -24,7 +24,7 @@ img {
     transform-origin: left top;
     zoom: 1;
   }
-  
+
   /* Prevent zoom on focus */
   input:focus,
   select:focus,

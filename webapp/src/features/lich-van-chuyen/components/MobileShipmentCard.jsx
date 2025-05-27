@@ -21,7 +21,14 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
 
-const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete, canEditDelete }) => {
+const MobileShipmentCard = ({
+  plan,
+  isExpanded,
+  onCardExpand,
+  onEdit,
+  onDelete,
+  canEditDelete,
+}) => {
   const statusColor = getStatusColor(plan.trangThai);
 
   return (
@@ -97,13 +104,13 @@ const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete, 
               <IconButton
                 size="small"
                 onClick={() => onEdit(plan)}
-              sx={{
-                color: '#6b7280',
-                '&:hover': {
-                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                  color: '#1976d2',
-                },
-              }}
+                sx={{
+                  color: '#6b7280',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    color: '#1976d2',
+                  },
+                }}
               >
                 <EditIcon fontSize="small" />
               </IconButton>
@@ -112,13 +119,13 @@ const MobileShipmentCard = ({ plan, isExpanded, onCardExpand, onEdit, onDelete, 
               <IconButton
                 size="small"
                 onClick={() => onDelete(plan)}
-              sx={{
-                color: '#6b7280',
-                '&:hover': {
-                  backgroundColor: 'rgba(211, 47, 47, 0.04)',
-                  color: '#d32f2f',
-                },
-              }}
+                sx={{
+                  color: '#6b7280',
+                  '&:hover': {
+                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                    color: '#d32f2f',
+                  },
+                }}
               >
                 <DeleteIcon fontSize="small" />
               </IconButton>

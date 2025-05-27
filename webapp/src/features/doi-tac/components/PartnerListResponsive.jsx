@@ -36,31 +36,37 @@ const PartnerListResponsive = ({
   // Filter partners based on search term
   const filteredPartners = useMemo(() => {
     if (!searchTerm.trim()) return partners;
-    
+
     const term = searchTerm.toLowerCase();
-    return partners.filter(partner => 
-      (partner.name && partner.name.toLowerCase().includes(term)) ||
-      (partner.address && partner.address.toLowerCase().includes(term)) ||
-      (partner.taxCode && partner.taxCode.toLowerCase().includes(term))
+    return partners.filter(
+      partner =>
+        (partner.name && partner.name.toLowerCase().includes(term)) ||
+        (partner.address && partner.address.toLowerCase().includes(term)) ||
+        (partner.taxCode && partner.taxCode.toLowerCase().includes(term))
     );
   }, [partners, searchTerm]);
 
   // Handle search input change
-  const handleSearchChange = (event) => {
+  const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
 
   // Render mobile card view
   const renderMobileView = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-      {filteredPartners.map((partner) => (
+      {filteredPartners.map(partner => (
         <Card key={partner.id} elevation={2}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
               <Box>
-                <Typography variant="h6" component="div">
-                  {partner.name}
-                </Typography>
+                <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                  <Typography variant="body2" color="primary" fontWeight="medium">
+                    {partner.code || '--'}
+                  </Typography>
+                  <Typography variant="h6" component="div">
+                    {partner.name}
+                  </Typography>
+                </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                   <strong>Địa chỉ:</strong> {partner.address || 'Chưa cập nhật'}
                 </Typography>
@@ -70,11 +76,7 @@ const PartnerListResponsive = ({
               </Box>
               <Box>
                 <EditButton onClick={() => onEdit(partner)} size="small" />
-                <DeleteButton 
-                  onClick={() => onDelete(partner)} 
-                  size="small" 
-                  sx={{ ml: 1 }} 
-                />
+                <DeleteButton onClick={() => onDelete(partner)} size="small" sx={{ ml: 1 }} />
               </Box>
             </Box>
           </CardContent>
@@ -94,25 +96,33 @@ const PartnerListResponsive = ({
       <Table sx={{ minWidth: 650 }} aria-label="danh sách đối tác">
         <TableHead>
           <TableRow>
-            <TableCell><strong>Tên đối tác</strong></TableCell>
-            <TableCell><strong>Địa chỉ</strong></TableCell>
-            <TableCell><strong>Mã số thuế</strong></TableCell>
-            <TableCell align="right"><strong>Thao tác</strong></TableCell>
+            <TableCell>
+              <strong>Mã đối tác</strong>
+            </TableCell>
+            <TableCell>
+              <strong>Tên đối tác</strong>
+            </TableCell>
+            <TableCell>
+              <strong>Địa chỉ</strong>
+            </TableCell>
+            <TableCell>
+              <strong>Mã số thuế</strong>
+            </TableCell>
+            <TableCell align="right">
+              <strong>Thao tác</strong>
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredPartners.map((partner) => (
+          {filteredPartners.map(partner => (
             <TableRow key={partner.id} hover>
+              <TableCell sx={{ fontWeight: 'medium' }}>{partner.code || '--'}</TableCell>
               <TableCell>{partner.name}</TableCell>
-              <TableCell>{partner.address || 'Chưa cập nhật'}</TableCell>
-              <TableCell>{partner.taxCode || 'Chưa cập nhật'}</TableCell>
+              <TableCell>{partner.address || '--'}</TableCell>
+              <TableCell>{partner.taxCode || '--'}</TableCell>
               <TableCell align="right">
                 <EditButton onClick={() => onEdit(partner)} size="small" />
-                <DeleteButton 
-                  onClick={() => onDelete(partner)} 
-                  size="small" 
-                  sx={{ ml: 1 }} 
-                />
+                <DeleteButton onClick={() => onDelete(partner)} size="small" sx={{ ml: 1 }} />
               </TableCell>
             </TableRow>
           ))}
@@ -165,11 +175,7 @@ const PartnerListResponsive = ({
       )}
 
       {/* Content */}
-      {!loading && !error && (
-        <>
-          {isMobile ? renderMobileView() : renderDesktopView()}
-        </>
-      )}
+      {!loading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
     </Box>
   );
 };

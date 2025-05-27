@@ -1,6 +1,6 @@
 {
   "name": "nepocorp-demo",
-  "version": "0.12",
+  "version": "0.13",
   "private": true,
   "type": "module",
   "scripts": {
@@ -38,8 +38,10 @@
     "react": "^18.2.0",
     "react-datepicker": "^8.3.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.22.3",
     "recharts": "^2.12.2",
+    "remark-gfm": "^4.0.1",
     "zustand": "^4.4.7"
   },
   "devDependencies": {

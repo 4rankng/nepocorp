@@ -67,38 +67,40 @@ Use these credentials to test different roles in the application:
 The frontend is organized using a **feature-first approach**.
 
 - **`src/features/`**: This is the primary location for business domain logic. Each subdirectory within `src/features/` (e.g., `lich-van-chuyen`, `khach-hang`) represents a distinct feature.
-    - Each feature directory is intended to be self-contained and may include its own:
-        - `components/`: UI components specific to this feature.
-        - `hooks/`: React hooks specific to this feature's logic.
-        - `pages/` or view components: Main components representing feature pages or views (e.g., `QuanLyLichVanChuyen.jsx`).
-        - `utils/`: Utility functions specific to this feature.
-        - `services/`: Functions for interacting with APIs related to this feature (if applicable).
-        - `index.js`: Often used to export the main component(s) of the feature.
+
+  - Each feature directory is intended to be self-contained and may include its own:
+    - `components/`: UI components specific to this feature.
+    - `hooks/`: React hooks specific to this feature's logic.
+    - `pages/` or view components: Main components representing feature pages or views (e.g., `QuanLyLichVanChuyen.jsx`).
+    - `utils/`: Utility functions specific to this feature.
+    - `services/`: Functions for interacting with APIs related to this feature (if applicable).
+    - `index.js`: Often used to export the main component(s) of the feature.
 
 - **Shared Code**:
-    - **`src/components/`**: Globally shared, reusable UI components (e.g., `StandardTable.jsx`, `ConfirmationModal.jsx`).
-    - **`src/hooks/`**: Globally shared React hooks (e.g., `useTheme.js`).
-    - **`src/utils/`**: Globally shared utility functions (e.g., `format.js`).
-    - **`src/contexts/`**: Globally shared application contexts, such as `AuthContext.jsx` for authentication and user information.
-    - **`src/shared/`**: Used for specific shared configurations, primarily `src/shared/config/roles.js`. It is generally not used for shared components, hooks, or utils, which have their dedicated top-level directories.
-    - **`src/assets/`**: Static assets like images, icons, and global styles.
-    - **`src/layouts/`**: Components that define the overall page structure (e.g., `TrangChu.jsx` which might include a top bar and sidebar).
-    - **`src/routes/`**: Application routing configuration.
-    - **`src/services/`**: Mock API implementations and potentially base API client configurations.
+
+  - **`src/components/`**: Globally shared, reusable UI components (e.g., `StandardTable.jsx`, `ConfirmationModal.jsx`).
+  - **`src/hooks/`**: Globally shared React hooks (e.g., `useTheme.js`).
+  - **`src/utils/`**: Globally shared utility functions (e.g., `format.js`).
+  - **`src/contexts/`**: Globally shared application contexts, such as `AuthContext.jsx` for authentication and user information.
+  - **`src/shared/`**: Used for specific shared configurations, primarily `src/shared/config/roles.js`. It is generally not used for shared components, hooks, or utils, which have their dedicated top-level directories.
+  - **`src/assets/`**: Static assets like images, icons, and global styles.
+  - **`src/layouts/`**: Components that define the overall page structure (e.g., `TrangChu.jsx` which might include a top bar and sidebar).
+  - **`src/routes/`**: Application routing configuration.
+  - **`src/services/`**: Mock API implementations and potentially base API client configurations.
 
 - **`src/pages/`**: While many page-level components are within their respective features, this directory might exist for very top-level pages or pages not fitting a specific business feature (e.g., a generic Not Found page). The primary approach is for features to contain their own main view components.
 
 ## Role-Based Access Control (RBAC)
 
-- **Approach**: RBAC is primarily handled *within each feature component* rather than by duplicating entire features for different roles.
+- **Approach**: RBAC is primarily handled _within each feature component_ rather than by duplicating entire features for different roles.
 - **Mechanism**:
-    - The `AuthContext` (located in `src/contexts/AuthContext.jsx`) is the central piece for managing user authentication and role information. Components access this context via the `useAuth()` hook.
-    - `useAuth()` provides the `currentUser` object (which includes `currentUser.role`) and helper functions like `hasRole(role)` or `hasAnyRole(rolesArray)`.
-    - Roles are defined in `src/shared/config/roles.js`.
+  - The `AuthContext` (located in `src/contexts/AuthContext.jsx`) is the central piece for managing user authentication and role information. Components access this context via the `useAuth()` hook.
+  - `useAuth()` provides the `currentUser` object (which includes `currentUser.role`) and helper functions like `hasRole(role)` or `hasAnyRole(rolesArray)`.
+  - Roles are defined in `src/shared/config/roles.js`.
 - **Implementation**:
-    - Feature components use the role information from `useAuth()` to conditionally render UI elements (e.g., show/hide buttons, form fields).
-    - Actions (e.g., saving data, deleting items) are also conditionally enabled or disabled based on the user's permissions derived from their role.
-    - This strategy allows a single feature component to adapt its presentation and functionality to the currently logged-in user, promoting code reuse and maintainability.
+  - Feature components use the role information from `useAuth()` to conditionally render UI elements (e.g., show/hide buttons, form fields).
+  - Actions (e.g., saving data, deleting items) are also conditionally enabled or disabled based on the user's permissions derived from their role.
+  - This strategy allows a single feature component to adapt its presentation and functionality to the currently logged-in user, promoting code reuse and maintainability.
 
 ## Technologies
 

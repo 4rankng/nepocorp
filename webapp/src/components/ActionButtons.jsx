@@ -16,87 +16,97 @@ const theme = {
   },
 };
 
-export const EditButton = forwardRef(({
-  onClick,
-  size = 'small',
-  disabled = false,
-  tooltip = 'Chỉnh sửa',
-  // Extract and omit the jsx prop to prevent it from being passed to DOM
-  jsx: _jsx,
-  ...props
-}, ref) => {
-  // Filter out the jsx prop before spreading the rest
-  const { jsx: _, ...filteredProps } = props || {};
+export const EditButton = forwardRef(
+  (
+    {
+      onClick,
+      size = 'small',
+      disabled = false,
+      tooltip = 'Chỉnh sửa',
+      // Extract and omit the jsx prop to prevent it from being passed to DOM
+      jsx: _jsx,
+      ...props
+    },
+    ref
+  ) => {
+    // Filter out the jsx prop before spreading the rest
+    const { jsx: _, ...filteredProps } = props || {};
 
-  return (
-    <IconButton
-      ref={ref}
-      size={size}
-      onClick={onClick}
-      disabled={disabled}
-      title={tooltip}
-      sx={{
-        color: theme.palette.text.secondary,
-        '&:hover': {
-          color: theme.palette.primary.main,
-          backgroundColor: alpha(theme.palette.primary.main, 0.08),
-        },
-        p: 0.5,
-        '& .MuiSvgIcon-root': {
-          fontSize: '1.125rem',
-        },
-        '&.Mui-disabled': {
-          color: 'rgba(0, 0, 0, 0.26)',
-        },
-      }}
-      {...filteredProps}
-    >
-      <PencilIcon />
-    </IconButton>
-  );
-});
+    return (
+      <IconButton
+        ref={ref}
+        size={size}
+        onClick={onClick}
+        disabled={disabled}
+        title={tooltip}
+        sx={{
+          color: theme.palette.text.secondary,
+          '&:hover': {
+            color: theme.palette.primary.main,
+            backgroundColor: alpha(theme.palette.primary.main, 0.08),
+          },
+          p: 0.5,
+          '& .MuiSvgIcon-root': {
+            fontSize: '1.125rem',
+          },
+          '&.Mui-disabled': {
+            color: 'rgba(0, 0, 0, 0.26)',
+          },
+        }}
+        {...filteredProps}
+      >
+        <PencilIcon />
+      </IconButton>
+    );
+  }
+);
 
 EditButton.displayName = 'EditButton';
 
-export const DeleteButton = forwardRef(({
-  onClick,
-  size = 'small',
-  disabled = false,
-  tooltip = 'Xóa',
-  // Extract and omit the jsx prop to prevent it from being passed to DOM
-  jsx: _jsx,
-  ...props
-}, ref) => {
-  // Filter out the jsx prop before spreading the rest
-  const { jsx: _, ...filteredProps } = props || {};
+export const DeleteButton = forwardRef(
+  (
+    {
+      onClick,
+      size = 'small',
+      disabled = false,
+      tooltip = 'Xóa',
+      // Extract and omit the jsx prop to prevent it from being passed to DOM
+      jsx: _jsx,
+      ...props
+    },
+    ref
+  ) => {
+    // Filter out the jsx prop before spreading the rest
+    const { jsx: _, ...filteredProps } = props || {};
 
-  return (
-    <IconButton
-      ref={ref}
-      size={size}
-      onClick={onClick}
-      disabled={disabled}
-      title={tooltip}
-      sx={{
-        color: theme.palette.text.secondary,
-        '&:hover': {
-          color: theme.palette.error.main,
-          backgroundColor: alpha(theme.palette.error.main, 0.08),
-        },
-        p: 0.5,
-        '& .MuiSvgIcon-root': {
-          fontSize: '1.125rem',
-        },
-        '&.Mui-disabled': {
-          color: 'rgba(0, 0, 0, 0.26)',
-        },
-      }}
-      {...filteredProps}
-    >
-      <TrashIcon />
-    </IconButton>
-  );
-});
+    return (
+      <IconButton
+        ref={ref}
+        size={size}
+        onClick={onClick}
+        disabled={disabled}
+        title={tooltip}
+        sx={{
+          color: theme.palette.text.secondary,
+          '&:hover': {
+            color: theme.palette.error.main,
+            backgroundColor: alpha(theme.palette.error.main, 0.08),
+          },
+          p: 0.5,
+          '& .MuiSvgIcon-root': {
+            fontSize: '1.125rem',
+          },
+          '&.Mui-disabled': {
+            color: 'rgba(0, 0, 0, 0.26)',
+          },
+        }}
+        {...filteredProps}
+      >
+        <TrashIcon />
+      </IconButton>
+    );
+  }
+);
 
 DeleteButton.displayName = 'DeleteButton';
 

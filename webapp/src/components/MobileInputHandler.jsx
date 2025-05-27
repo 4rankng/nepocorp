@@ -9,7 +9,7 @@ const MobileInputHandler = () => {
   useEffect(() => {
     // Setup mobile input handlers when component mounts
     const cleanup = setupMobileInputHandlers();
-    
+
     // Cleanup on unmount
     return () => {
       if (cleanup) cleanup();

@@ -210,8 +210,27 @@ paths:
   /api/vehicles:
     get:
       summary: List all vehicles
-      description: Retrieves a list of all vehicles.
+      description: Retrieves a list of all vehicles with optional filtering.
       tags: [Vehicles]
+      parameters:
+        - name: type
+          in: query
+          description: Filter vehicles by type
+          schema:
+            type: string
+            enum: [DAU_KEO, ROMOOC, XE_TAI]
+        - name: status
+          in: query
+          description: Filter vehicles by status
+          schema:
+            type: string
+            enum: [ACTIVE, MAINTENANCE, INACTIVE]
+        - name: includeDiver
+          in: query
+          description: Include driver information for vehicles (especially DAU_KEO)
+          schema:
+            type: boolean
+            default: true
       responses:
         '200':
           description: A list of vehicles
@@ -294,7 +313,7 @@ paths:
           description: Filter by status
           schema:
             type: string
-            enum: [Chờ xác nhận, Đang vận chuyển, Hoàn thành, Đã hủy]
+            enum: [Lên lịch, Đang vận chuyển, Hoàn thành, Hủy]
         - name: fromDate
           in: query
           description: Filter by start date (YYYY-MM-DD)
@@ -307,15 +326,66 @@ paths:
           schema:
             type: string
             format: date
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          schema:
+            type: string
+        - name: vehicleId
+          in: query
+          description: Filter by vehicle ID
+          schema:
+            type: string
+        - name: loaiXe
+          in: query
+          description: Filter by vehicle type (company vs partner)
+          schema:
+            type: string
+            enum: [xe-cong-ty, xe-doi-tac]
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
       responses:
         '200':
-          description: A list of shipment plans
+          description: A paginated list of shipment plans
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ShipmentPlan'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShipmentPlan'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        description: Current page number
+                      limit:
+                        type: integer
+                        description: Items per page
+                      total:
+                        type: integer
+                        description: Total number of items
+                      totalPages:
+                        type: integer
+                        description: Total number of pages
+                    required: [page, limit, total, totalPages]
+                required: [data, pagination]
     post:
       summary: Create a new shipment plan
       description: Creates a new shipment plan.
@@ -376,6 +446,33 @@ paths:
       responses:
         '204':
           description: Shipment plan deleted successfully
+
+  # --- Select Options for Frontend ---
+  /api/select-options:
+    get:
+      summary: Get select options for frontend dropdowns
+      description: Retrieves all the necessary options for frontend form dropdowns including customers, vehicles, container types, partners, and employees.
+      tags: [Select Options]
+      parameters:
+        - name: include
+          in: query
+          description: Comma-separated list of option types to include (customers,vehicles,containerTypes,partners,employees)
+          schema:
+            type: string
+            example: "customers,vehicles,containerTypes"
+        - name: vehicleType
+          in: query
+          description: Filter vehicles by type when including vehicles
+          schema:
+            type: string
+            enum: [DAU_KEO, ROMOOC, XE_TAI]
+      responses:
+        '200':
+          description: Select options for frontend
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelectOptionsResponse'
 
   # --- Maintenance Management ---
   /api/maintenance-records:
@@ -1082,8 +1179,36 @@ components:
           description: Name of the vehicle
         type:
           type: string
-          description: Type of the vehicle
-      required: [id, licensePlate]
+          enum: [DAU_KEO, ROMOOC, XE_TAI]
+          description: Type of the vehicle (DAU_KEO for tractor units, ROMOOC for trailers, XE_TAI for trucks)
+        driverId:
+          type: string
+          description: Employee ID of the assigned driver (for DAU_KEO vehicles)
+        driverName:
+          type: string
+          description: Name of the assigned driver (for DAU_KEO vehicles)
+        status:
+          type: string
+          enum: [ACTIVE, MAINTENANCE, INACTIVE]
+          description: Current status of the vehicle
+        fuelCapacity:
+          type: number
+          description: Fuel tank capacity in liters
+        model:
+          type: string
+          description: Vehicle model
+        year:
+          type: integer
+          description: Manufacturing year
+        lastMaintenanceDate:
+          type: string
+          format: date
+          description: Date of last maintenance
+        nextMaintenanceDate:
+          type: string
+          format: date
+          description: Scheduled next maintenance date
+      required: [id, licensePlate, type]
 
     VehicleCreateRequest:
       type: object
@@ -1096,8 +1221,21 @@ components:
           description: Name of the vehicle
         type:
           type: string
+          enum: [DAU_KEO, ROMOOC, XE_TAI]
           description: Type of the vehicle
-      required: [licensePlate]
+        driverId:
+          type: string
+          description: Employee ID of the assigned driver (required for DAU_KEO)
+        fuelCapacity:
+          type: number
+          description: Fuel tank capacity in liters
+        model:
+          type: string
+          description: Vehicle model
+        year:
+          type: integer
+          description: Manufacturing year
+      required: [licensePlate, type]
 
     VehicleUpdateRequest:
       type: object
@@ -1110,7 +1248,24 @@ components:
           description: New name for the vehicle
         type:
           type: string
+          enum: [DAU_KEO, ROMOOC, XE_TAI]
           description: New type for the vehicle
+        driverId:
+          type: string
+          description: New assigned driver employee ID
+        status:
+          type: string
+          enum: [ACTIVE, MAINTENANCE, INACTIVE]
+          description: New status of the vehicle
+        fuelCapacity:
+          type: number
+          description: New fuel tank capacity in liters
+        model:
+          type: string
+          description: New vehicle model
+        year:
+          type: integer
+          description: New manufacturing year
 
     # --- Shipment Plans ---
     ShipmentPlan:
@@ -1123,51 +1278,68 @@ components:
           type: string
           format: date
           description: Date of the shipment
-        bienSoXeId:
-          type: string
-          description: ID of the vehicle
-        bienSoXe:
-          type: string
-          description: License plate number of the vehicle
-        doiTacId:
-          type: string
-          description: ID of the partner (if any)
-        tenDoiTac:
-          type: string
-          description: Name of the partner
         dienGiai:
           type: string
-          description: Description of the shipment
-        tuyenDuong:
-          type: object
-          properties:
-            diemDi:
-              type: string
-              description: Starting point
-            diemDen:
-              type: array
-              items:
-                type: string
-              description: List of destinations
-        trangThai:
-          type: string
-          enum: [Chờ xác nhận, Đang vận chuyển, Hoàn thành, Đã hủy]
-          description: Status of the shipment
+          description: Description of the shipment plan
         khachHangId:
           type: string
           description: ID of the customer
         tenKhachHang:
           type: string
           description: Name of the customer
+        tuyenDuongDi:
+          type: string
+          description: Origin/departure point
+        tuyenDuongDen:
+          type: string
+          description: Destination points (comma-separated for multiple)
         loaiContainerId:
           type: string
           description: ID of the container type
         tenLoaiContainer:
           type: string
           description: Name of the container type
+        soLuongContainer:
+          type: integer
+          description: Number of containers
+          minimum: 1
+        loaiXe:
+          type: string
+          enum: [xe-cong-ty, xe-doi-tac]
+          description: Vehicle type - company vehicle or partner vehicle
+        bienSoXeId:
+          type: string
+          description: ID of the company vehicle (required if loaiXe is xe-cong-ty)
+        bienSoXe:
+          type: string
+          description: License plate number of the vehicle
+        maNhanVienLaiXe:
+          type: string
+          description: Employee ID of the driver (auto-filled for company vehicles)
+        tenLaiXe:
+          type: string
+          description: Name of the driver (auto-filled for company vehicles)
+        doiTacVanChuyen:
+          type: string
+          description: Partner vehicle and driver information (required if loaiXe is xe-doi-tac)
+        doiTacId:
+          type: string
+          description: ID of the partner company (optional if loaiXe is xe-doi-tac)
+        tenDoiTac:
+          type: string
+          description: Name of the partner company
         cuocVanChuyen:
           type: number
-          description: Shipping fee
+          description: Freight charge collected from customer
+          minimum: 0
+        cuocThueVanChuyen:
+          type: number
+          description: Cost paid to partner for transportation (only for xe-doi-tac)
+          minimum: 0
+        ngayHaHang:
+          type: string
+          format: date
+          description: Expected cargo unloading date
         thongTinContainer:
           type: array
           items:
@@ -1179,16 +1351,14 @@ components:
               soSeal:
                 type: string
                 description: Seal number
-        ngayHaHang:
+            required: [soContainer]
+          description: Container details
+        trangThai:
           type: string
-          format: date
-          description: Date of cargo unloading
-        soLuongContainer:
-          type: integer
-          description: Number of containers
-        cuocThueVanChuyen:
-          type: number
-          description: Shipping rental fee
+          enum: [Lên lịch, Đang vận chuyển, Hoàn thành, Hủy]
+          description: Status of the shipment plan
+          default: Lên lịch
+        # Additional operational fields
         dauLit:
           type: number
           description: Fuel consumption in liters
@@ -1197,7 +1367,35 @@ components:
           description: Fuel price per liter
         phiDiDuong:
           type: number
-          description: Road toll fee
+          description: Road toll fees
+        chiPhiKhac:
+          type: array
+          items:
+            type: object
+            properties:
+              moTa:
+                type: string
+                description: Description of the cost
+              soTien:
+                type: number
+                description: Amount
+            required: [moTa, soTien]
+          description: Other miscellaneous costs
+        soKm:
+          type: number
+          description: Total kilometers traveled
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        createdBy:
+          type: string
+          description: ID of the user who created the plan
+      required: [ngayThang, khachHangId, tuyenDuongDi, tuyenDuongDen, loaiContainerId, soLuongContainer, loaiXe, cuocVanChuyen]
         costTolls:
           type: number
           description: Total toll fees
@@ -1235,35 +1433,56 @@ components:
           type: string
           format: date
           description: Date of the shipment
-        bienSoXeId:
-          type: string
-          description: ID of the vehicle
-        doiTacId:
-          type: string
-          description: ID of the partner (if any)
         dienGiai:
           type: string
-          description: Description of the shipment
-        tuyenDuong:
-          type: object
-          properties:
-            diemDi:
-              type: string
-              description: Starting point
-            diemDen:
-              type: array
-              items:
-                type: string
-              description: List of destinations
+          description: Description of the shipment plan
         khachHangId:
           type: string
           description: ID of the customer
+        tuyenDuongDi:
+          type: string
+          description: Origin/departure point
+        tuyenDuongDen:
+          type: string
+          description: Destination points (comma-separated for multiple)
         loaiContainerId:
           type: string
           description: ID of the container type
+        soLuongContainer:
+          type: integer
+          description: Number of containers
+          minimum: 1
+        loaiXe:
+          type: string
+          enum: [xe-cong-ty, xe-doi-tac]
+          description: Vehicle type - company vehicle or partner vehicle
+        bienSoXeId:
+          type: string
+          description: ID of the company vehicle (required if loaiXe is xe-cong-ty)
+        maNhanVienLaiXe:
+          type: string
+          description: Employee ID of the driver (auto-filled for company vehicles)
+        tenLaiXe:
+          type: string
+          description: Name of the driver (auto-filled for company vehicles)
+        doiTacVanChuyen:
+          type: string
+          description: Partner vehicle and driver information (required if loaiXe is xe-doi-tac)
+        doiTacId:
+          type: string
+          description: ID of the partner company (optional if loaiXe is xe-doi-tac)
         cuocVanChuyen:
           type: number
-          description: Shipping fee
+          description: Freight charge collected from customer
+          minimum: 0
+        cuocThueVanChuyen:
+          type: number
+          description: Cost paid to partner for transportation (only for xe-doi-tac)
+          minimum: 0
+        ngayHaHang:
+          type: string
+          format: date
+          description: Expected cargo unloading date
         thongTinContainer:
           type: array
           items:
@@ -1275,14 +1494,14 @@ components:
               soSeal:
                 type: string
                 description: Seal number
-        ngayHaHang:
+            required: [soContainer]
+          description: Container details
+        trangThai:
           type: string
-          format: date
-          description: Date of cargo unloading
-        soLuongContainer:
-          type: integer
-          description: Number of containers
-      required: [ngayThang, bienSoXeId, khachHangId, loaiContainerId]
+          enum: [Lên lịch, Đang vận chuyển, Hoàn thành, Hủy]
+          description: Status of the shipment plan
+          default: Lên lịch
+      required: [ngayThang, khachHangId, tuyenDuongDi, tuyenDuongDen, loaiContainerId, soLuongContainer, loaiXe, cuocVanChuyen]
 
     ShipmentPlanUpdateRequest:
       type: object
@@ -1291,35 +1510,56 @@ components:
           type: string
           format: date
           description: New date of the shipment
-        bienSoXeId:
-          type: string
-          description: New ID of the vehicle
-        doiTacId:
-          type: string
-          description: New ID of the partner (if any)
         dienGiai:
           type: string
-          description: New description of the shipment
-        tuyenDuong:
-          type: object
-          properties:
-            diemDi:
-              type: string
-              description: New starting point
-            diemDen:
-              type: array
-              items:
-                type: string
-              description: New list of destinations
+          description: New description of the shipment plan
         khachHangId:
           type: string
           description: New ID of the customer
+        tuyenDuongDi:
+          type: string
+          description: New origin/departure point
+        tuyenDuongDen:
+          type: string
+          description: New destination points (comma-separated for multiple)
         loaiContainerId:
           type: string
           description: New ID of the container type
+        soLuongContainer:
+          type: integer
+          description: New number of containers
+          minimum: 1
+        loaiXe:
+          type: string
+          enum: [xe-cong-ty, xe-doi-tac]
+          description: New vehicle type - company vehicle or partner vehicle
+        bienSoXeId:
+          type: string
+          description: New ID of the company vehicle (required if loaiXe is xe-cong-ty)
+        maNhanVienLaiXe:
+          type: string
+          description: New employee ID of the driver (auto-filled for company vehicles)
+        tenLaiXe:
+          type: string
+          description: New name of the driver (auto-filled for company vehicles)
+        doiTacVanChuyen:
+          type: string
+          description: New partner vehicle and driver information (required if loaiXe is xe-doi-tac)
+        doiTacId:
+          type: string
+          description: New ID of the partner company (optional if loaiXe is xe-doi-tac)
         cuocVanChuyen:
           type: number
-          description: New shipping fee
+          description: New freight charge collected from customer
+          minimum: 0
+        cuocThueVanChuyen:
+          type: number
+          description: New cost paid to partner for transportation (only for xe-doi-tac)
+          minimum: 0
+        ngayHaHang:
+          type: string
+          format: date
+          description: New expected cargo unloading date
         thongTinContainer:
           type: array
           items:
@@ -1327,17 +1567,130 @@ components:
             properties:
               soContainer:
                 type: string
-                description: New container number
+                description: Container number
               soSeal:
                 type: string
-                description: New seal number
-        ngayHaHang:
+                description: Seal number
+            required: [soContainer]
+          description: New container details
+        trangThai:
           type: string
-          format: date
-          description: New date of cargo unloading
-        soLuongContainer:
-          type: integer
-          description: New number of containers
+          enum: [Lên lịch, Đang vận chuyển, Hoàn thành, Hủy]
+          description: New status of the shipment plan
+        # Additional operational fields
+        dauLit:
+          type: number
+          description: New fuel consumption in liters
+        donGiaDau:
+          type: number
+          description: New fuel price per liter
+        phiDiDuong:
+          type: number
+          description: New road toll fees
+        chiPhiKhac:
+          type: array
+          items:
+            type: object
+            properties:
+              moTa:
+                type: string
+                description: Description of the cost
+              soTien:
+                type: number
+                description: Amount
+            required: [moTa, soTien]
+          description: New other miscellaneous costs
+        soKm:
+          type: number
+          description: New total kilometers traveled
+
+    # --- Select Options Response ---
+    SelectOptionsResponse:
+      type: object
+      properties:
+        customers:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                description: Customer ID
+              label:
+                type: string
+                description: Customer name
+            required: [value, label]
+          description: List of customers for dropdown
+        vehicles:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                description: Vehicle ID
+              label:
+                type: string
+                description: Vehicle license plate or name
+              type:
+                type: string
+                enum: [DAU_KEO, ROMOOC, XE_TAI]
+                description: Vehicle type
+              driverId:
+                type: string
+                description: Driver employee ID (for DAU_KEO vehicles)
+              driverName:
+                type: string
+                description: Driver name (for DAU_KEO vehicles)
+              status:
+                type: string
+                enum: [ACTIVE, MAINTENANCE, INACTIVE]
+                description: Vehicle status
+            required: [value, label, type]
+          description: List of vehicles for dropdown
+        containerTypes:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                description: Container type ID
+              label:
+                type: string
+                description: Container type name
+            required: [value, label]
+          description: List of container types for dropdown
+        partners:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                description: Partner ID
+              label:
+                type: string
+                description: Partner company name
+            required: [value, label]
+          description: List of partners for dropdown
+        employees:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                description: Employee ID
+              label:
+                type: string
+                description: Employee name
+              role:
+                type: string
+                enum: ["Quản lý", "Kế toán", "Giao nhận", "Lái xe"]
+                description: Employee role
+            required: [value, label, role]
+          description: List of employees for dropdown
 
     # --- Maintenance Records ---
     MaintenanceRecord:

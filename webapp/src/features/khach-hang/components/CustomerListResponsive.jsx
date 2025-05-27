@@ -36,24 +36,25 @@ const CustomerListResponsive = ({
   // Filter customers based on search term
   const filteredCustomers = useMemo(() => {
     if (!searchTerm.trim()) return customers;
-    
+
     const term = searchTerm.toLowerCase();
-    return customers.filter(customer => 
-      (customer.name && customer.name.toLowerCase().includes(term)) ||
-      (customer.address && customer.address.toLowerCase().includes(term)) ||
-      (customer.taxCode && customer.taxCode.toLowerCase().includes(term))
+    return customers.filter(
+      customer =>
+        (customer.name && customer.name.toLowerCase().includes(term)) ||
+        (customer.address && customer.address.toLowerCase().includes(term)) ||
+        (customer.taxCode && customer.taxCode.toLowerCase().includes(term))
     );
   }, [customers, searchTerm]);
 
   // Handle search input change
-  const handleSearchChange = (event) => {
+  const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
 
   // Render mobile card view
   const renderMobileView = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-      {filteredCustomers.map((customer) => (
+      {filteredCustomers.map(customer => (
         <Card key={customer.id} elevation={2}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
@@ -70,11 +71,7 @@ const CustomerListResponsive = ({
               </Box>
               <Box>
                 <EditButton onClick={() => onEdit(customer)} size="small" />
-                <DeleteButton 
-                  onClick={() => onDelete(customer)} 
-                  size="small" 
-                  sx={{ ml: 1 }} 
-                />
+                <DeleteButton onClick={() => onDelete(customer)} size="small" sx={{ ml: 1 }} />
               </Box>
             </Box>
           </CardContent>
@@ -94,25 +91,29 @@ const CustomerListResponsive = ({
       <Table sx={{ minWidth: 650 }} aria-label="danh sách khách hàng">
         <TableHead>
           <TableRow>
-            <TableCell><strong>Tên khách hàng</strong></TableCell>
-            <TableCell><strong>Địa chỉ</strong></TableCell>
-            <TableCell><strong>Mã số thuế</strong></TableCell>
-            <TableCell align="right"><strong>Thao tác</strong></TableCell>
+            <TableCell>
+              <strong>Tên khách hàng</strong>
+            </TableCell>
+            <TableCell>
+              <strong>Địa chỉ</strong>
+            </TableCell>
+            <TableCell>
+              <strong>Mã số thuế</strong>
+            </TableCell>
+            <TableCell align="right">
+              <strong>Thao tác</strong>
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredCustomers.map((customer) => (
+          {filteredCustomers.map(customer => (
             <TableRow key={customer.id} hover>
               <TableCell>{customer.name}</TableCell>
               <TableCell>{customer.address || 'Chưa cập nhật'}</TableCell>
               <TableCell>{customer.taxCode || 'Chưa cập nhật'}</TableCell>
               <TableCell align="right">
                 <EditButton onClick={() => onEdit(customer)} size="small" />
-                <DeleteButton 
-                  onClick={() => onDelete(customer)} 
-                  size="small" 
-                  sx={{ ml: 1 }} 
-                />
+                <DeleteButton onClick={() => onDelete(customer)} size="small" sx={{ ml: 1 }} />
               </TableCell>
             </TableRow>
           ))}
@@ -165,11 +166,7 @@ const CustomerListResponsive = ({
       )}
 
       {/* Content */}
-      {!loading && !error && (
-        <>
-          {isMobile ? renderMobileView() : renderDesktopView()}
-        </>
-      )}
+      {!loading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
     </Box>
   );
 };

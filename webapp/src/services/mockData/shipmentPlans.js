@@ -1,5 +1,6 @@
 // Shipment plans management mock data
-export const initialShipmentPlans = [{
+export const initialShipmentPlans = [
+  {
     id: 'sp1',
     ngayThang: '02/01/2024',
     bienSoXeId: 'v1',
@@ -9,8 +10,9 @@ export const initialShipmentPlans = [{
     dienGiai: 'Chở hàng Tết đợt 1',
     tuyenDuong: { diemDi: 'Kho A', diemDen: ['Kho B', 'Kho C'] },
     trangThai: 'Hoàn thành',
-    khachHangId: 'c1'
-}];
+    khachHangId: 'c1',
+  },
+];
 
 // Mock data for schedules and costs (backward compatibility)
 export const mockSchedules = [];

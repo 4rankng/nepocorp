@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 
 const initialFormState = {
+  code: '',
   name: '',
   address: '',
   taxCode: '',
@@ -21,6 +22,7 @@ const CustomerForm = ({
   onClose,
   onSave,
   customer = null,
+  getInitialFormData = () => ({}),
   isLoading = false,
   error = '',
 }) => {
@@ -32,16 +34,22 @@ const CustomerForm = ({
     if (open) {
       if (customer) {
         setFormData({
+          code: customer.code || '',
           name: customer.name || '',
           address: customer.address || '',
           taxCode: customer.taxCode || '',
         });
       } else {
-        setFormData(initialFormState);
+        // Get initial form data with generated code
+        const initialData = {
+          ...initialFormState,
+          ...getInitialFormData(),
+        };
+        setFormData(initialData);
       }
       setLocalError('');
     }
-  }, [open, customer]);
+  }, [open, customer, getInitialFormData]);
 
   const handleInputChange = e => {
     const { name, value } = e.target;
@@ -52,11 +60,27 @@ const CustomerForm = ({
 
   const handleSubmit = e => {
     e.preventDefault();
-    setLocalError('');
 
-    // Validation
-    if (!formData.name.trim()) {
-      setLocalError('Tên khách hàng không được để trống.');
+    // Basic validation
+    if (!formData.name || formData.name.trim() === '') {
+      setLocalError('Vui lòng nhập tên khách hàng');
+      return;
+    }
+
+    // Validate customer code format
+    if (!formData.code || formData.code.trim() === '') {
+      setLocalError('Vui lòng nhập mã khách hàng');
+      return;
+    }
+
+    const codeRegex = /^KH\d{3,}$/i;
+    if (!codeRegex.test(formData.code.trim())) {
+      setLocalError('Mã khách hàng phải có định dạng KH001, KH002, ...');
+      return;
+    }
+
+    // If we have a code validation error, don't submit
+    if (localError) {
       return;
     }
 
@@ -89,6 +113,23 @@ const CustomerForm = ({
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="Mã khách hàng"
+              name="code"
+              value={formData.code}
+              onChange={handleInputChange}
+              placeholder="VD: KH001"
+              fullWidth
+              size="small"
+              margin="normal"
+              disabled={!!customer} // Disable editing code for existing customers
+              required
+              inputProps={{
+                pattern: '^KH\\d{3,}$',
+                title: 'Mã khách hàng phải bắt đầu bằng KH và ít nhất 3 chữ số',
+              }}
+              helperText="Nhập mã khách hàng (VD: KH001)"
+            />
             <TextField
               label="Tên khách hàng"
               name="name"

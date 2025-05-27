@@ -2,16 +2,14 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Tabs, Tab, Box, useTheme, useMediaQuery } from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
 import { useNavigate, useParams } from 'react-router-dom';
-import XeVanChuyen from '@features/phuong-tien/components/XeVanChuyen';
-import LoaiContainer from '@features/phuong-tien/components/LoaiContainer';
-import DinhMucDau from '@features/phuong-tien/components/DinhMucDau';
+import PhuongTien from '@features/phuong-tien/components/PhuongTien';
+import DinhMuc from '@features/phuong-tien/components/DinhMuc';
 import BaoDuong from '@features/phuong-tien/components/BaoDuong';
 
 // Define valid tabs and their labels
 const TABS = [
-  { value: 'xe-van-chuyen', label: 'Xe Vận Chuyển' },
-  { value: 'loai-container', label: 'Loại Container' },
-  { value: 'dinh-muc-dau', label: 'Định Mức Dầu' },
+  { value: 'phuong-tien', label: 'Phương Tiện' },
+  { value: 'dinh-muc', label: 'Định Mức' },
   { value: 'bao-duong', label: 'Bảo Dưỡng' },
 ];
 
@@ -21,29 +19,32 @@ const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight }) => {
   const touchStartY = useRef(0);
   const containerRef = useRef(null);
 
-  const handleTouchStart = useCallback((e) => {
+  const handleTouchStart = useCallback(e => {
     const touch = e.touches[0];
     touchStartX.current = touch.clientX;
     touchStartY.current = touch.clientY;
   }, []);
 
-  const handleTouchEnd = useCallback((e) => {
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStartX.current;
-    const deltaY = touch.clientY - touchStartY.current;
+  const handleTouchEnd = useCallback(
+    e => {
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStartX.current;
+      const deltaY = touch.clientY - touchStartY.current;
 
-    // Only process horizontal swipes (ignore vertical scrolling)
-    if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+      // Only process horizontal swipes (ignore vertical scrolling)
+      if (Math.abs(deltaY) > Math.abs(deltaX)) return;
 
-    const minDistance = 50;
-    if (Math.abs(deltaX) > minDistance) {
-      if (deltaX > 0) {
-        onSwipeRight?.();
-      } else {
-        onSwipeLeft?.();
+      const minDistance = 50;
+      if (Math.abs(deltaX) > minDistance) {
+        if (deltaX > 0) {
+          onSwipeRight?.();
+        } else {
+          onSwipeLeft?.();
+        }
       }
-    }
-  }, [onSwipeLeft, onSwipeRight]);
+    },
+    [onSwipeLeft, onSwipeRight]
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -73,20 +74,20 @@ const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight }) => {
 };
 
 const QuanLyPhuongTien = () => {
-  const { tab: tabFromUrl = 'xe-van-chuyen' } = useParams();
+  const { tab: tabFromUrl = 'phuong-tien' } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const tabsRef = useRef(null);
 
   // Set the active tab based on URL parameter
-  const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'xe-van-chuyen';
+  const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'phuong-tien';
   const currentTabIndex = TABS.findIndex(tab => tab.value === activeTab);
 
   // Redirect to the first tab if the current tab is invalid
   useEffect(() => {
     if (!TABS.some(tab => tab.value === tabFromUrl)) {
-      navigate(`/phuong-tien/xe-van-chuyen`, { replace: true });
+      navigate(`/phuong-tien/phuong-tien`, { replace: true });
     }
   }, [tabFromUrl, navigate]);
 
@@ -98,7 +99,7 @@ const QuanLyPhuongTien = () => {
         tabElement.scrollIntoView({
           behavior: 'smooth',
           block: 'nearest',
-          inline: 'center'
+          inline: 'center',
         });
       }
     }
@@ -138,7 +139,6 @@ const QuanLyPhuongTien = () => {
                 value={activeTab}
                 onChange={handleTabChange}
                 scrollButtons="auto"
-                centered={!isMobile}
                 aria-label="Quản lý phương tiện tabs"
                 sx={{
                   '& .MuiTabs-scrollButtons': {
@@ -148,25 +148,28 @@ const QuanLyPhuongTien = () => {
                   '& .MuiTabs-indicator': {
                     transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
                   },
-                  '& .MuiTabs-scroller': {
-                    '& .MuiTabs-flexContainer': {
-                      justifyContent: isMobile ? 'flex-start' : 'center',
-                    },
+                  '& .MuiTabs-flexContainer': {
+                    justifyContent: 'flex-start',
                   },
                 }}
                 TabIndicatorProps={{
-                  children: (
-                    <span className="MuiTabs-indicatorSpan" />
-                  ),
+                  children: <span className="MuiTabs-indicatorSpan" />,
                 }}
               >
                 {TABS.map(tab => (
-                  <Tab 
-                    key={tab.value} 
-                    label={tab.label} 
+                  <Tab
+                    key={tab.value}
+                    label={tab.label}
                     value={tab.value}
                     disableRipple
                     sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                       transition: 'color 0.3s ease-in-out',
                       '&.Mui-selected': {
                         color: 'primary.main',
@@ -186,14 +189,11 @@ const QuanLyPhuongTien = () => {
                 overflow: 'hidden',
               }}
             >
-              <TabPanel value="xe-van-chuyen" sx={{ p: 0, mt: 2 }}>
-                <XeVanChuyen />
+              <TabPanel value="phuong-tien" sx={{ p: 0, mt: 2 }}>
+                <PhuongTien />
               </TabPanel>
-              <TabPanel value="loai-container" sx={{ p: 0, mt: 2 }}>
-                <LoaiContainer />
-              </TabPanel>
-              <TabPanel value="dinh-muc-dau" sx={{ p: 0, mt: 2 }}>
-                <DinhMucDau />
+              <TabPanel value="dinh-muc" sx={{ p: 0, mt: 2 }}>
+                <DinhMuc />
               </TabPanel>
               <TabPanel value="bao-duong" sx={{ p: 0, mt: 2 }}>
                 <BaoDuong />

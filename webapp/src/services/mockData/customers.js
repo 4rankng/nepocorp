@@ -3,29 +3,48 @@
 let customersData = [
   {
     id: 'c1',
+    code: 'KH001',
     name: 'Công ty Cổ phần Chè Đắk Lắk',
     address: '123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh',
     taxCode: '5500157123',
   },
   {
     id: 'c2',
+    code: 'KH002',
     name: 'Công ty Cổ phần Sữa Việt Nam',
     address: '10 Tôn Đản, Quận 4, TP. Hồ Chí Minh',
     taxCode: '0300584870',
   },
   {
     id: 'c3',
+    code: 'KH003',
     name: 'Công ty Cổ phần Tập đoàn THP',
     address: '25 Nguyễn Thị Minh Khai, Quận 1, TP. Hồ Chí Minh',
     taxCode: '0300584871',
   },
   {
     id: 'c4',
+    code: 'KH004',
     name: 'Công ty Cổ phần Đường Quảng Ngãi',
     address: '15 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
     taxCode: '0300584872',
   },
 ];
+
+// Generate next customer code (e.g., KH001, KH002, ...)
+const generateNextCustomerCode = () => {
+  if (customersData.length === 0) return 'KH001';
+
+  // Find the highest code number
+  const maxCode = customersData.reduce((max, customer) => {
+    if (!customer.code) return max;
+    const num = parseInt(customer.code.replace(/^KH0*/i, ''), 10);
+    return !isNaN(num) ? Math.max(max, num) : max;
+  }, 0);
+
+  // Generate new code with leading zeros
+  return `KH${String(maxCode + 1).padStart(3, '0')}`;
+};
 
 // Customer functions
 export const getCustomers = () => new Promise(res => setTimeout(() => res([...customersData]), 50));
@@ -38,6 +57,24 @@ export const getCustomersForSelect = () =>
 const validateCustomerData = (customerData, id = null) => {
   if (!customerData.name || customerData.name.trim() === '')
     return 'Tên khách hàng không được để trống.';
+
+  // Validate customer code if provided
+  if (customerData.code && customerData.code.trim() !== '') {
+    const codeRegex = /^KH\d{3,}$/i;
+    if (!codeRegex.test(customerData.code.trim())) {
+      return 'Mã khách hàng phải có định dạng KH001, KH002, ...';
+    }
+
+    // Check for duplicate code
+    if (
+      customersData.some(
+        c =>
+          c.code && c.code.toLowerCase() === customerData.code.trim().toLowerCase() && c.id !== id
+      )
+    ) {
+      return 'Mã khách hàng đã tồn tại.';
+    }
+  }
 
   // Check for duplicate tax code only if provided
   if (customerData.taxCode && customerData.taxCode.trim() !== '') {
@@ -56,6 +93,7 @@ export const addCustomer = customerData =>
       else {
         const newCustomer = {
           id: String(Date.now()),
+          code: customerData.code ? customerData.code.trim() : generateNextCustomerCode(),
           name: customerData.name.trim(),
           address: customerData.address ? customerData.address.trim() : '',
           taxCode: customerData.taxCode ? customerData.taxCode.trim() : '',
@@ -77,9 +115,12 @@ export const updateCustomer = (id, updatedCustomerData) =>
           c.id === id
             ? (updatedCustomer = {
                 ...c,
+                code: updatedCustomerData.code ? updatedCustomerData.code.trim() : c.code,
                 name: updatedCustomerData.name.trim(),
                 address: updatedCustomerData.address ? updatedCustomerData.address.trim() : '',
-                taxCode: updatedCustomerData.taxCode ? updatedCustomerData.taxCode.trim() : '',
+                taxCode: updatedCustomerData.taxCode
+                  ? updatedCustomerData.taxCode.trim()
+                  : c.taxCode,
               })
             : c
         );

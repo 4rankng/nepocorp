@@ -215,7 +215,7 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>
               <EditButton
                 size="small"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   onEdit(record);
                 }}
@@ -223,7 +223,7 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
               />
               <DeleteButton
                 size="small"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   onDelete(record);
                 }}
@@ -452,9 +452,10 @@ const BaoDuong = () => {
   const filteredRecords = React.useMemo(() => {
     if (!searchTerm.trim()) return maintenanceRecords;
     const search = searchTerm.toLowerCase();
-    return maintenanceRecords.filter(record =>
-      (record.licensePlate && record.licensePlate.toLowerCase().includes(search)) ||
-      (record.note && record.note.toLowerCase().includes(search))
+    return maintenanceRecords.filter(
+      record =>
+        (record.licensePlate && record.licensePlate.toLowerCase().includes(search)) ||
+        (record.note && record.note.toLowerCase().includes(search))
     );
   }, [maintenanceRecords, searchTerm]);
 
@@ -525,13 +526,13 @@ const BaoDuong = () => {
 
   // Render mobile card view following DinhMucDau.jsx pattern
   const renderMobileView = () => (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
         gap: 1, // Reduced gap to match DinhMucDau pattern
         mt: 2,
-        pb: 2
+        pb: 2,
       }}
     >
       {filteredRecords.map(record => (
@@ -553,10 +554,7 @@ const BaoDuong = () => {
 
   // Render desktop table view
   const renderDesktopView = () => (
-    <Paper
-      elevation={0}
-      sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'background.paper' }}
-    >
+    <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'background.paper' }}>
       <StandardTable
         columns={columns}
         data={filteredRecords}
@@ -604,9 +602,7 @@ const BaoDuong = () => {
         </Box>
       )}
       {/* Content */}
-      {!isLoading && !error && (
-        <>{isMobile ? renderMobileView() : renderDesktopView()}</>
-      )}
+      {!isLoading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
       {/* FAB for add at bottom right (always visible) */}
       <Fab
         color="primary"

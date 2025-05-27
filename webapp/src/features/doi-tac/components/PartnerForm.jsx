@@ -11,12 +11,21 @@ import {
 } from '@mui/material';
 
 const initialFormState = {
+  code: '',
   name: '',
   address: '',
   taxCode: '',
 };
 
-const PartnerForm = ({ open, onClose, onSave, partner = null, isLoading = false, error = '' }) => {
+const PartnerForm = ({
+  open,
+  onClose,
+  onSave,
+  partner = null,
+  onGetInitialData = null,
+  isLoading = false,
+  error = '',
+}) => {
   const [formData, setFormData] = useState(initialFormState);
   const [localError, setLocalError] = useState('');
 
@@ -25,16 +34,20 @@ const PartnerForm = ({ open, onClose, onSave, partner = null, isLoading = false,
     if (open) {
       if (partner) {
         setFormData({
+          code: partner.code || '',
           name: partner.name || '',
           address: partner.address || '',
           taxCode: partner.taxCode || '',
         });
       } else {
-        setFormData(initialFormState);
+        // If onGetInitialData is provided, use it to get initial data
+        // Otherwise, use the default initial form state
+        const initialData = onGetInitialData ? onGetInitialData() : initialFormState;
+        setFormData(initialData);
       }
       setLocalError('');
     }
-  }, [open, partner]);
+  }, [open, partner, onGetInitialData]);
 
   const handleInputChange = e => {
     const { name, value } = e.target;
@@ -53,8 +66,23 @@ const PartnerForm = ({ open, onClose, onSave, partner = null, isLoading = false,
       return;
     }
 
+    // Validate partner code format
+    if (!formData.code || formData.code.trim() === '') {
+      setLocalError('Vui lòng nhập mã đối tác.');
+      return;
+    }
+
+    const codeRegex = /^DT\d{3,}$/i;
+    if (!codeRegex.test(formData.code.trim())) {
+      setLocalError('Mã đối tác phải có định dạng DT001, DT002, ...');
+      return;
+    }
+
     // Call the onSave function with form data
-    onSave(formData);
+    onSave({
+      ...formData,
+      code: formData.code.trim().toUpperCase(),
+    });
   };
 
   const handleClose = () => {
@@ -82,6 +110,23 @@ const PartnerForm = ({ open, onClose, onSave, partner = null, isLoading = false,
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="Mã đối tác"
+              name="code"
+              value={formData.code}
+              onChange={handleInputChange}
+              placeholder="VD: DT001"
+              fullWidth
+              size="small"
+              margin="normal"
+              disabled={!!partner} // Disable editing code for existing partners
+              required
+              inputProps={{
+                pattern: '^DT\\d{3,}$',
+                title: 'Mã đối tác phải bắt đầu bằng DT và ít nhất 3 chữ số',
+              }}
+              helperText="Nhập mã đối tác (VD: DT001)"
+            />
             <TextField
               label="Tên đối tác"
               name="name"

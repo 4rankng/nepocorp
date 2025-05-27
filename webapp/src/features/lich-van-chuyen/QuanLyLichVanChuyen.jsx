@@ -16,14 +16,8 @@ import ConfirmationModal from '@components/ConfirmationModal';
 import {
   Box,
   Typography,
-  Paper,
   Alert,
   CircularProgress,
-  IconButton,
-  Button,
-  Card,
-  CardContent,
-  Chip,
   useMediaQuery,
   useTheme,
   Dialog,
@@ -37,45 +31,20 @@ import {
   StepLabel,
   StepContent,
   Collapse,
-  Fab,
-  LinearProgress,
-  InputAdornment,
-  Tooltip,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Snackbar,
-  FormControl,
-  InputLabel,
-  Select,
   Slide,
   Fade,
-  Avatar,
+  Tooltip,
+  Chip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import BusinessIcon from '@mui/icons-material/Business';
-import ContainerIcon from '@mui/icons-material/Inventory2';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import SearchIcon from '@mui/icons-material/Search';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import SortIcon from '@mui/icons-material/Sort';
-import StandardTable from '@/components/StandardTable';
-import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
-import MobileShipmentCard from '@features/lich-van-chuyen/components/MobileShipmentCard'; // Added import
-import MobileSearchHeader from '@features/lich-van-chuyen/components/MobileSearchHeader'; // Added import
-import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog'; // Added import
-import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper'; // Added import
-import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils'; // Added import
+
+import { EditButton, DeleteButton } from '@/components/ActionButtons';
+import MobileView from '@features/lich-van-chuyen/components/MobileView';
+import DesktopView from '@features/lich-van-chuyen/components/DesktopView';
+import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog';
+import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper';
+import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
 
 const initialFormState = {
   ngayThang: '', // YYYY-MM-DD for input type="date"
@@ -573,92 +542,31 @@ const QuanLyLichVanChuyen = () => {
 
       {/* Mobile Layout */}
       {isMobile ? (
-        <Box>
-          {/* Mobile Search Header */}
-          <MobileSearchHeader
-            searchTerm={searchTerm}
-            onSearchTermChange={e => setSearchTerm(e.target.value)}
-            filterStatus={filterStatus}
-            onFilterStatusChange={e => setFilterStatus(e.target.value)}
-            resultCount={filteredPlans.length}
-          />
-
-          {/* Loading State */}
-          {isLoading && (
-            <Box sx={{ mb: 2 }}>
-              <LinearProgress sx={{ borderRadius: 1 }} />
-            </Box>
-          )}
-
-          {/* Mobile Cards List */}
-          <Box sx={{ mb: 2 }}>
-            {filteredPlans.length === 0 ? (
-              <Paper
-                sx={{ textAlign: 'center', py: 6, border: '1px dashed', borderColor: 'divider' }}
-              >
-                <LocalShippingIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                  {searchTerm || filterStatus
-                    ? 'Không tìm thấy kết quả'
-                    : 'Chưa có lịch vận chuyển nào'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {searchTerm || filterStatus
-                    ? 'Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc'
-                    : 'Nhấn nút "Thêm" để tạo lịch vận chuyển mới'}
-                </Typography>
-              </Paper>
-            ) : (
-              <Box>
-                {filteredPlans.map(plan => (
-                  <MobileShipmentCard
-                    key={plan.id}
-                    plan={plan}
-                    isExpanded={expandedCard === plan.id}
-                    onCardExpand={handleCardExpand}
-                    onEdit={handleOpenModalForEditMobile}
-                    onDelete={handleDeleteClick}
-                    canEditDelete={canAddPlan} // Pass permission to card
-                  />
-                ))}
-              </Box>
-            )}
-          </Box>
-
-          {/* Floating Action Button for Add */}
-          {canAddPlan && (
-            <Fab
-              color="primary"
-              aria-label="add"
-              onClick={handleOpenModalForAddMobile}
-            sx={{
-              position: 'fixed',
-              bottom: 24,
-              right: 24,
-              zIndex: 1000,
-              boxShadow: 3, // Use theme shadow value instead of custom
-              '&:hover': {
-                boxShadow: 6, // Use theme shadow value instead of custom
-                transform: 'scale(1.05)',
-              },
-              transition: 'all 0.2s ease-in-out',
-            }}
-          >
-              <AddIcon />
-            </Fab>
-          )}
-        </Box>
+        <MobileView
+          searchTerm={searchTerm}
+          onSearchTermChange={e => setSearchTerm(e.target.value)}
+          filterStatus={filterStatus}
+          onFilterStatusChange={e => setFilterStatus(e.target.value)}
+          filteredPlans={filteredPlans}
+          isLoading={isLoading}
+          expandedCard={expandedCard}
+          onCardExpand={handleCardExpand}
+          onEdit={handleOpenModalForEditMobile}
+          onDelete={handleDeleteClick}
+          onAdd={handleOpenModalForAddMobile}
+          canAddPlan={canAddPlan}
+        />
       ) : (
         /* Desktop Layout */
-        <Paper elevation={0} sx={{ p: 2 }}>
-          <StandardTable
-            columns={columns}
-            data={shipmentPlans}
-            loading={isLoading}
-            emptyMessage="Chưa có lịch vận chuyển nào"
-            headerAction={canAddPlan ? <AddButton onClick={handleOpenModalForAdd} size="small" sx={{ ml: 2 }} /> : null}
-          />
-        </Paper>
+        <DesktopView
+          searchTerm={searchTerm}
+          onSearchTermChange={e => setSearchTerm(e.target.value)}
+          columns={columns}
+          shipmentPlans={shipmentPlans}
+          isLoading={isLoading}
+          onAdd={handleOpenModalForAdd}
+          canAddPlan={canAddPlan}
+        />
       )}
 
       {/* Mobile Modal with Full Screen Dialog */}

@@ -19,7 +19,7 @@ export const ROLE_DESCRIPTIONS = {
   [ROLES.QUAN_LY]: 'Toàn quyền truy cập hệ thống',
   [ROLES.KE_TOAN]: 'Quản lý tài chính và kế toán',
   [ROLES.GIAO_NHAN]: 'Quản lý đơn hàng và giao nhận',
-  [ROLES.LAI_XE]: 'Tài xế vận chuyển',
+  [ROLES.LAI_XE]: 'Lái xe vận chuyển',
 };
 
 // Role-based menu items configuration

@@ -1,33 +1,27 @@
-import React, { useState, useEffect } from 'react'; // useEffect might not be needed if all async logic is in hook
+import React, { useState } from 'react';
 import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
-// Employee service imports are now in the hook
 import StandardTable from '@/components/StandardTable';
 import { PlusIcon } from '@assets/icons/index.jsx';
-import useNhanVienManagement from './hooks/useNhanVienManagement'; // Import the hook
+import useNhanVienManagement from './hooks/useNhanVienManagement';
 import {
   Box,
   Paper,
   Typography,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   CircularProgress,
   Alert,
-  Snackbar,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-  InputAdornment,
   Fab,
+  InputAdornment,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import EmployeeCard from './components/EmployeeCard'; // Adjusted path
-import NhanVienForm from './components/NhanVienForm'; // Import the new form
+import EmployeeCard from './components/EmployeeCard';
+import NhanVienForm from './components/NhanVienForm';
 import { useTheme, useMediaQuery } from '@mui/material';
 
 // initialFormState is now handled by the hook
@@ -39,21 +33,23 @@ const QuanLyNhanVien = () => {
     editingEmployee,
     formData,
     isLoading,
-    error, // This error from the hook will be used for the form
-    // fetchEmployeesData, // Not needed directly by component if hook handles initial fetch
+    error,
     handleInputChange,
     handleOpenModalForAdd,
     handleOpenModalForEdit,
     handleCloseModal,
     handleSaveEmployee,
-    handleDeleteEmployee: deleteEmployeeById, // Renamed to avoid conflict with a potential local var
-    employeeRoles, // Get this from the hook for the form
+    handleDeleteEmployee,
+    employeeRoles,
+    vehicles,
   } = useNhanVienManagement();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [search, setSearch] = useState(''); // Search remains component-local state
   const [pageError, setPageError] = useState(''); // For errors not directly related to form save
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
 
   // useEffect for initial data fetch is in the hook.
   // useEffect for ESC key is in the hook.
@@ -63,17 +59,35 @@ const QuanLyNhanVien = () => {
   // For simplicity, we can use the 'error' from the hook for the main Alert,
   // and NhanVienForm will also display it.
 
-  const handleDeleteClick = async record => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
-      await deleteEmployeeById(record.id);
+  const handleDeleteClick = record => {
+    setEmployeeToDelete(record);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (employeeToDelete) {
+      await handleDeleteEmployee(employeeToDelete.id);
+      setDeleteDialogOpen(false);
+      setEmployeeToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setEmployeeToDelete(null);
   };
 
   // Define table columns. This is display logic, so it stays.
   const columns = [
     {
+      key: 'maNhanVien',
+      label: 'Mã NV',
+      width: '100px',
+    },
+    {
       key: 'tenNhanVien',
-      label: 'Tên nhân viên',
+      label: 'Họ tên',
+      minWidth: '150px',
     },
     {
       key: 'tenDangNhap',
@@ -86,7 +100,14 @@ const QuanLyNhanVien = () => {
     {
       key: 'chucVu',
       label: 'Chức vụ',
-      render: value => value || 'Chưa xác định',
+      render: (value, record) => (
+        <Box>
+          <div>{value || 'Chưa xác định'}</div>
+          {value === 'Lái xe' && record.bienSoXe && (
+            <div className="text-xs text-gray-500">Xe: {record.bienSoXe}</div>
+          )}
+        </Box>
+      ),
     },
     {
       key: 'actions',
@@ -103,11 +124,14 @@ const QuanLyNhanVien = () => {
 
   // Filter employees by search
   const filteredEmployees = employees.filter(emp => {
+    if (!emp) return false;
     const q = search.toLowerCase();
     return (
-      emp.tenNhanVien.toLowerCase().includes(q) ||
-      emp.tenDangNhap.toLowerCase().includes(q) ||
-      emp.email.toLowerCase().includes(q)
+      (emp.maNhanVien && emp.maNhanVien.toLowerCase().includes(q)) ||
+      (emp.tenNhanVien && emp.tenNhanVien.toLowerCase().includes(q)) ||
+      (emp.tenDangNhap && emp.tenDangNhap.toLowerCase().includes(q)) ||
+      (emp.email && emp.email.toLowerCase().includes(q)) ||
+      (emp.bienSoXe && emp.bienSoXe.toLowerCase().includes(q))
     );
   });
 
@@ -149,9 +173,13 @@ const QuanLyNhanVien = () => {
         {isMobile ? (
           <Box>
             {isLoading ? (
-              <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>
+              <Box display="flex" justifyContent="center" py={4}>
+                <CircularProgress />
+              </Box>
             ) : filteredEmployees.length === 0 ? (
-              <Typography align="center" color="text.secondary" py={4}>Không có dữ liệu nhân viên</Typography>
+              <Typography align="center" color="text.secondary" py={4}>
+                Không có dữ liệu nhân viên
+              </Typography>
             ) : (
               filteredEmployees.map(emp => (
                 <EmployeeCard
@@ -191,107 +219,42 @@ const QuanLyNhanVien = () => {
         <PlusIcon />
       </Fab>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-              {editingEmployee ? 'Chỉnh Sửa Thông Tin Nhân Viên' : 'Thêm Nhân Viên Mới'}
-            </h2>
+      <NhanVienForm
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        editingEmployee={editingEmployee}
+        formData={formData}
+        onFormChange={handleInputChange}
+        onSave={handleSaveEmployee}
+        isLoading={isLoading}
+        error={error}
+        employeeRoles={employeeRoles}
+        vehicles={vehicles}
+      />
 
-            {error && <p className="text-red-500 text-sm mb-3 bg-red-100 p-2 rounded">{error}</p>}
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="tenNhanVien" className="block text-sm font-medium text-gray-700">
-                  Tên nhân viên
-                </label>
-                <input
-                  type="text"
-                  name="tenNhanVien"
-                  id="tenNhanVien"
-                  value={formData.tenNhanVien}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="tenDangNhap" className="block text-sm font-medium text-gray-700">
-                  Tên đăng nhập
-                </label>
-                <input
-                  type="text"
-                  name="tenDangNhap"
-                  id="tenDangNhap"
-                  value={formData.tenDangNhap}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="matKhau" className="block text-sm font-medium text-gray-700">
-                  Mật khẩu
-                </label>
-                <input
-                  type="password"
-                  name="matKhau"
-                  id="matKhau"
-                  value={formData.matKhau}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder={editingEmployee ? 'Để trống nếu không muốn thay đổi' : ''}
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  id="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="chucVu" className="block text-sm font-medium text-gray-700">
-                  Chức vụ
-                </label>
-                <select
-                  name="chucVu"
-                  id="chucVu"
-                  value={formData.chucVu}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  {employeeRoles.map(role => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={handleCloseModal}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSaveEmployee}
-                disabled={isLoading}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${isLoading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
-              >
-                {isLoading ? (editingEmployee ? 'Đang sửa...' : 'Đang lưu...') : 'Lưu'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCancelDelete}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Xác nhận xóa nhân viên</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Bạn có chắc chắn muốn xóa nhân viên "{employeeToDelete?.tenNhanVien}" (Mã:{' '}
+            {employeeToDelete?.maNhanVien})? Hành động này không thể hoàn tác.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="primary">
+            Hủy
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" autoFocus>
+            Xác nhận xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

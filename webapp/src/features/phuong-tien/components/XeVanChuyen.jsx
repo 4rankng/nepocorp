@@ -99,9 +99,7 @@ const XeVanChuyen = () => {
     return vehicles.filter(vehicle => {
       const licensePlate = (vehicle.licensePlate || vehicle.bienSo || '').toLowerCase();
       const vehicleTypeLabel =
-        vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label ||
-        vehicle.vehicleType ||
-        '';
+        vehicleTypes.find(t => t.value === vehicle.vehicleType)?.label || vehicle.vehicleType || '';
       const note = (vehicle.note || '').toLowerCase();
       return (
         licensePlate.includes(search) ||
@@ -419,7 +417,9 @@ const XeVanChuyen = () => {
       ]}
       data={filteredVehicles}
       loading={isLoading}
-      emptyMessage={searchTerm ? 'Không tìm thấy phương tiện phù hợp' : 'Không có dữ liệu phương tiện'}
+      emptyMessage={
+        searchTerm ? 'Không tìm thấy phương tiện phù hợp' : 'Không có dữ liệu phương tiện'
+      }
       renderActions={row => (
         <>
           <EditButton
@@ -794,9 +794,7 @@ const XeVanChuyen = () => {
         </Box>
       )}
       {/* Content */}
-      {!isLoading && !error && (
-        <>{isMobile ? renderMobileView() : renderDesktopView()}</>
-      )}
+      {!isLoading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
       {/* FAB for add at bottom right (always visible) */}
       <Fab
         color="primary"

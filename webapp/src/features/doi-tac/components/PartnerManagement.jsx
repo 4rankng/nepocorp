@@ -7,8 +7,19 @@ import PartnerListResponsive from '@features/doi-tac/components/PartnerListRespo
 import usePartnerManagement from '@features/doi-tac/hooks/usePartnerManagement';
 
 const PartnerManagement = () => {
-  const { partners, loading, error, addPartner, updatePartner, deletePartner, clearError } =
-    usePartnerManagement();
+  const {
+    partners,
+    loading,
+    error,
+    addPartner,
+    updatePartner,
+    deletePartner,
+    clearError,
+    getInitialFormData,
+    isPartnerCodeAvailable,
+  } = usePartnerManagement();
+
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
 
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -56,18 +67,42 @@ const PartnerManagement = () => {
   const handleSavePartner = async formData => {
     setFormError('');
 
-    let result;
-    if (selectedPartner) {
-      result = await updatePartner(selectedPartner.id, formData);
-    } else {
-      result = await addPartner(formData);
+    // If this is an edit, we need to validate the code if it was changed
+    if (selectedPartner && formData.code && formData.code !== selectedPartner.code) {
+      setIsValidatingCode(true);
+      try {
+        const isAvailable = await isPartnerCodeAvailable(formData.code, selectedPartner.id);
+        if (!isAvailable) {
+          setFormError('Mã đối tác đã được sử dụng. Vui lòng chọn mã khác.');
+          setIsValidatingCode(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Error validating partner code:', err);
+        setFormError('Có lỗi xảy ra khi kiểm tra mã đối tác. Vui lòng thử lại.');
+        setIsValidatingCode(false);
+        return;
+      }
+      setIsValidatingCode(false);
     }
 
-    if (result.success) {
-      handleCloseForm();
-      showSnackbar(selectedPartner ? 'Sửa đối tác thành công' : 'Thêm đối tác thành công');
-    } else {
-      setFormError(result.error);
+    try {
+      let result;
+      if (selectedPartner) {
+        result = await updatePartner(selectedPartner.id, formData);
+      } else {
+        result = await addPartner(formData);
+      }
+
+      if (result.success) {
+        handleCloseForm();
+        showSnackbar(selectedPartner ? 'Sửa đối tác thành công' : 'Thêm đối tác thành công');
+      } else {
+        setFormError(result.error || 'Có lỗi xảy ra. Vui lòng thử lại.');
+      }
+    } catch (err) {
+      console.error('Error saving partner:', err);
+      setFormError('Có lỗi xảy ra khi lưu thông tin đối tác.');
     }
   };
 
@@ -146,9 +181,28 @@ const PartnerManagement = () => {
         onClose={handleCloseForm}
         onSave={handleSavePartner}
         partner={selectedPartner}
-        isLoading={loading}
+        onGetInitialData={getInitialFormData}
+        isLoading={loading || isValidatingCode}
         error={formError}
       />
+      {isValidatingCode && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1400,
+          }}
+        >
+          <CircularProgress color="primary" />
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
