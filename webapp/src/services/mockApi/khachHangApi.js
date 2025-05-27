@@ -21,7 +21,7 @@ export const fetchAllKhachHang = () => {
   console.log('[Mock API] Fetching all KhachHang...');
   return simulateApiCall(async () => {
     const allCustomers = await khachHangDataService.getAllKhachHang();
-    return { data: allCustomers };
+    return allCustomers; // Ensure this line is changed
   });
 };
 
