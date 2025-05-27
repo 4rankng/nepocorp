@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import {
   Table,
   TableBody,
@@ -62,8 +63,28 @@ const StandardTable = ({
   headerAction = null,
   ...tableProps
 }) => {
+  // Validate data and columns
+  if (!Array.isArray(data)) {
+    console.error('StandardTable: data prop must be an array');
+    return (
+      <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
+        Lỗi: Dữ liệu không hợp lệ
+      </Alert>
+    );
+  }
+
+  if (!Array.isArray(columns)) {
+    console.error('StandardTable: columns prop must be an array');
+    return (
+      <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
+        Lỗi: Cấu hình cột không hợp lệ
+      </Alert>
+    );
+  }
+
   // Extract and omit non-DOM props to prevent them from being passed to the DOM
   const { jsx: _jsx, component: _component, ...filteredTableProps } = tableProps || {};
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
@@ -260,6 +281,25 @@ const StandardTable = ({
       )}
     </Paper>
   );
+};
+
+StandardTable.propTypes = {
+  columns: PropTypes.array.isRequired,
+  data: PropTypes.array.isRequired,
+  renderActions: PropTypes.func,
+  loading: PropTypes.bool,
+  error: PropTypes.string,
+  emptyMessage: PropTypes.string,
+  pagination: PropTypes.bool,
+  page: PropTypes.number,
+  rowsPerPage: PropTypes.number,
+  totalCount: PropTypes.number,
+  onPageChange: PropTypes.func,
+  onRowsPerPageChange: PropTypes.func,
+  searchTerm: PropTypes.string,
+  onSearchChange: PropTypes.func,
+  searchPlaceholder: PropTypes.string,
+  headerAction: PropTypes.node,
 };
 
 export default StandardTable;

@@ -1,10 +1,23 @@
 // Mock database for DinhMuc (Fuel Standards)
-// Fields: id (string), bienSoXe, phan_loai ('km_hang' | 'km_vo'), tuKm, denKm, l_km, ghiChu, createdAt, updatedAt
+// Fields: id (number), bienSoXe, phan_loai ('km_hang' | 'km_vo'), tuKm, denKm, l_km, ghiChu, createdAt, updatedAt
 
-let dinhMucData = [
+// Helper function to ensure unique numeric IDs
+const ensureUniqueIds = (data) => {
+  const usedIds = new Set();
+  let nextId = 1;
+  
+  return data.map(item => {
+    while (usedIds.has(nextId)) {
+      nextId++;
+    }
+    usedIds.add(nextId);
+    return { ...item, id: nextId++ };
+  });
+};
+
+let dinhMucData = ensureUniqueIds([
   // 51C-001.01 - Hino Series 500
   {
-    id: 'dm001',
     bienSoXe: '51C-001.01',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -15,7 +28,6 @@ let dinhMucData = [
     updatedAt: '2024-05-01T08:00:00Z',
   },
   {
-    id: 'dm002',
     bienSoXe: '51C-001.01',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -27,7 +39,6 @@ let dinhMucData = [
   },
   // 29H-111.22 - Hyundai Xcient
   {
-    id: 'dm003',
     bienSoXe: '29H-111.22',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -38,7 +49,6 @@ let dinhMucData = [
     updatedAt: '2024-04-15T09:00:00Z',
   },
   {
-    id: 'dm004',
     bienSoXe: '29H-111.22',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -50,7 +60,6 @@ let dinhMucData = [
   },
   // 60A-222.33 - Fuso Tractor FV
   {
-    id: 'dm005',
     bienSoXe: '60A-222.33',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -61,7 +70,6 @@ let dinhMucData = [
     updatedAt: '2024-05-10T10:00:00Z',
   },
   {
-    id: 'dm006',
     bienSoXe: '60A-222.33',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -73,7 +81,6 @@ let dinhMucData = [
   },
   // 51C-333.44 - Isuzu Giga
   {
-    id: 'dm007',
     bienSoXe: '51C-333.44',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -84,7 +91,6 @@ let dinhMucData = [
     updatedAt: '2024-05-12T11:00:00Z',
   },
   {
-    id: 'dm008',
     bienSoXe: '51C-333.44',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -96,7 +102,6 @@ let dinhMucData = [
   },
   // 29H-444.55 - Daewoo Novus
   {
-    id: 'dm009',
     bienSoXe: '29H-444.55',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -107,7 +112,6 @@ let dinhMucData = [
     updatedAt: '2024-05-20T14:00:00Z',
   },
   {
-    id: 'dm010',
     bienSoXe: '29H-444.55',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -119,7 +123,6 @@ let dinhMucData = [
   },
   // 60A-555.66 - Chenglong H7
   {
-    id: 'dm011',
     bienSoXe: '60A-555.66',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -130,7 +133,6 @@ let dinhMucData = [
     updatedAt: '2024-05-01T08:30:00Z',
   },
   {
-    id: 'dm012',
     bienSoXe: '60A-555.66',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -142,7 +144,6 @@ let dinhMucData = [
   },
   // 51C-666.77 - Howo A7
   {
-    id: 'dm013',
     bienSoXe: '51C-666.77',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -153,7 +154,6 @@ let dinhMucData = [
     updatedAt: '2024-04-15T09:30:00Z',
   },
   {
-    id: 'dm014',
     bienSoXe: '51C-666.77',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -165,7 +165,6 @@ let dinhMucData = [
   },
   // 29H-777.88 - Shacman X3000
   {
-    id: 'dm015',
     bienSoXe: '29H-777.88',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -176,7 +175,6 @@ let dinhMucData = [
     updatedAt: '2024-05-10T10:30:00Z',
   },
   {
-    id: 'dm016',
     bienSoXe: '29H-777.88',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -188,7 +186,6 @@ let dinhMucData = [
   },
   // 60A-888.99 - Dongfeng Hoàng Huy
   {
-    id: 'dm017',
     bienSoXe: '60A-888.99',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -199,7 +196,6 @@ let dinhMucData = [
     updatedAt: '2024-05-12T11:30:00Z',
   },
   {
-    id: 'dm018',
     bienSoXe: '60A-888.99',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -211,7 +207,6 @@ let dinhMucData = [
   },
   // 51C-999.00 - JAC A5
   {
-    id: 'dm019',
     bienSoXe: '51C-999.00',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -222,7 +217,6 @@ let dinhMucData = [
     updatedAt: '2024-05-15T08:00:00Z',
   },
   {
-    id: 'dm020',
     bienSoXe: '51C-999.00',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -234,7 +228,6 @@ let dinhMucData = [
   },
   // 29H-001.12 - Volvo FH16
   {
-    id: 'dm021',
     bienSoXe: '29H-001.12',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -245,7 +238,6 @@ let dinhMucData = [
     updatedAt: '2024-05-16T09:00:00Z',
   },
   {
-    id: 'dm022',
     bienSoXe: '29H-001.12',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -257,7 +249,6 @@ let dinhMucData = [
   },
   // 60A-112.23 - Scania R-series
   {
-    id: 'dm023',
     bienSoXe: '60A-112.23',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -268,7 +259,6 @@ let dinhMucData = [
     updatedAt: '2024-05-17T10:00:00Z',
   },
   {
-    id: 'dm024',
     bienSoXe: '60A-112.23',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -280,7 +270,6 @@ let dinhMucData = [
   },
   // 51C-223.34 - MAN TGX
   {
-    id: 'dm025',
     bienSoXe: '51C-223.34',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -291,7 +280,6 @@ let dinhMucData = [
     updatedAt: '2024-05-18T11:00:00Z',
   },
   {
-    id: 'dm026',
     bienSoXe: '51C-223.34',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -303,7 +291,6 @@ let dinhMucData = [
   },
   // 29H-334.45 - Iveco Stralis
   {
-    id: 'dm027',
     bienSoXe: '29H-334.45',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -314,7 +301,6 @@ let dinhMucData = [
     updatedAt: '2024-05-19T12:00:00Z',
   },
   {
-    id: 'dm028',
     bienSoXe: '29H-334.45',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -326,7 +312,6 @@ let dinhMucData = [
   },
   // 60A-445.56 - Kenworth W900
   {
-    id: 'dm029',
     bienSoXe: '60A-445.56',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -337,7 +322,6 @@ let dinhMucData = [
     updatedAt: '2024-05-20T13:00:00Z',
   },
   {
-    id: 'dm030',
     bienSoXe: '60A-445.56',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -348,7 +332,6 @@ let dinhMucData = [
     updatedAt: '2024-05-20T13:05:00Z',
   },
   {
-    id: 'dm002',
     bienSoXe: '51C-001.01',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -359,7 +342,6 @@ let dinhMucData = [
     updatedAt: '2024-05-01T08:05:00Z',
   },
   {
-    id: 'dm003',
     bienSoXe: '29H-111.22',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -370,7 +352,6 @@ let dinhMucData = [
     updatedAt: '2024-04-15T09:00:00Z',
   },
   {
-    id: 'dm004',
     bienSoXe: '29H-111.22',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -381,7 +362,6 @@ let dinhMucData = [
     updatedAt: '2024-04-15T09:05:00Z',
   },
   {
-    id: 'dm005',
     bienSoXe: '60A-222.33',
     phan_loai: 'km_hang',
     tuKm: 50000,
@@ -392,7 +372,6 @@ let dinhMucData = [
     updatedAt: '2024-05-10T10:00:00Z',
   },
   {
-    id: 'dm006',
     bienSoXe: '60A-222.33',
     phan_loai: 'km_vo',
     tuKm: 50000,
@@ -403,7 +382,6 @@ let dinhMucData = [
     updatedAt: '2024-05-10T10:05:00Z',
   },
   {
-    id: 'dm007',
     bienSoXe: '51C-333.44',
     phan_loai: 'km_hang',
     tuKm: 0,
@@ -414,7 +392,6 @@ let dinhMucData = [
     updatedAt: '2024-05-12T11:00:00Z',
   },
   {
-    id: 'dm008',
     bienSoXe: '51C-333.44',
     phan_loai: 'km_vo',
     tuKm: 0,
@@ -425,7 +402,6 @@ let dinhMucData = [
     updatedAt: '2024-05-12T11:05:00Z',
   },
   {
-    id: 'dm009',
     bienSoXe: '29H-444.55',
     phan_loai: 'km_hang',
     tuKm: 10000,
@@ -436,7 +412,6 @@ let dinhMucData = [
     updatedAt: '2024-05-20T14:00:00Z',
   },
   {
-    id: 'dm010',
     bienSoXe: '29H-444.55',
     phan_loai: 'km_vo',
     tuKm: 10000,
@@ -447,7 +422,6 @@ let dinhMucData = [
     updatedAt: '2024-05-20T14:05:00Z',
   },
   {
-    id: 'dm011',
     bienSoXe: '60A-555.66',
     phan_loai: 'km_hang',
     tuKm: 100001,
@@ -458,7 +432,6 @@ let dinhMucData = [
     updatedAt: '2024-05-01T08:30:00Z',
   },
   {
-    id: 'dm012',
     bienSoXe: '60A-555.66',
     phan_loai: 'km_vo',
     tuKm: 100001,
@@ -469,7 +442,6 @@ let dinhMucData = [
     updatedAt: '2024-05-01T08:35:00Z',
   },
   {
-    id: 'dm013',
     bienSoXe: '51C-666.77',
     phan_loai: 'km_hang',
     tuKm: 150001,
@@ -480,7 +452,6 @@ let dinhMucData = [
     updatedAt: '2024-04-15T09:30:00Z',
   },
   {
-    id: 'dm014',
     bienSoXe: '29H-777.88',
     phan_loai: 'km_hang',
     tuKm: 200001,
@@ -491,7 +462,6 @@ let dinhMucData = [
     updatedAt: '2024-05-10T10:30:00Z',
   },
   {
-    id: 'dm015',
     bienSoXe: '60A-888.99',
     phan_loai: 'km_vo',
     tuKm: 80001,
@@ -501,9 +471,9 @@ let dinhMucData = [
     createdAt: '2023-09-01T11:00:00Z',
     updatedAt: '2024-05-12T11:30:00Z',
   },
-];
+]);
 
-let nextDinhMucIndex = 16; // For generating new string IDs like 'dm016'
+let nextDinhMucIndex = Math.max(...dinhMucData.map(dm => dm.id)) + 1;
 
 const PHAN_LOAI_TYPES = ['km_hang', 'km_vo'];
 
@@ -512,7 +482,7 @@ export const getAllDinhMuc = async () => {
 };
 
 export const getDinhMucById = async id => {
-  const dinhMuc = dinhMucData.find(dm => dm.id === id);
+  const dinhMuc = dinhMucData.find(dm => dm.id === Number(id));
   return dinhMuc || null;
 };
 
@@ -524,7 +494,7 @@ export const getDinhMucByBienSoAndType = async (bienSoXe, phanLoai) => {
   }
 
   const filteredData = dinhMucData.filter(dm => 
-    dm.bienSoXe === bienSoXe && dm.phan_loai === `km_${phanLoai}`
+    dm.bienSoXe === bienSoXe && dm.phan_loai === phanLoai
   );
   
   return filteredData;
@@ -542,7 +512,7 @@ export const createDinhMuc = async data => {
   }
 
   const newDinhMuc = {
-    id: `dm${String(nextDinhMucIndex++).padStart(3, '0')}`,
+    id: nextDinhMucIndex++,
     bienSoXe,
     phan_loai,
     tuKm: Number(tuKm),
@@ -557,7 +527,7 @@ export const createDinhMuc = async data => {
 };
 
 export const updateDinhMuc = async (id, updates) => {
-  const index = dinhMucData.findIndex(dm => dm.id === id);
+  const index = dinhMucData.findIndex(dm => dm.id === Number(id));
   if (index === -1) return null;
 
   const { id: _, createdAt: __, ...validUpdates } = updates;
@@ -582,29 +552,13 @@ export const updateDinhMuc = async (id, updates) => {
 };
 
 export const deleteDinhMuc = async id => {
-  const index = dinhMucData.findIndex(dm => dm.id === id);
+  const index = dinhMucData.findIndex(dm => dm.id === Number(id));
   if (index === -1) return false;
   dinhMucData.splice(index, 1);
   return true;
 };
 
 export const _resetDinhMuc = (data = []) => {
-  dinhMucData = data.map((item, index) => ({
-    ...item,
-    id: item.id || `dm${String(index + 1).padStart(3, '0')}`,
-  }));
-  nextDinhMucIndex =
-    dinhMucData.length > 0
-      ? Math.max(...dinhMucData.map(dm => parseInt(dm.id.replace('dm', ''), 10))) + 1
-      : 1;
-  if (isNaN(nextDinhMucIndex)) nextDinhMucIndex = dinhMucData.length + 1;
+  dinhMucData = ensureUniqueIds(data.map(({ id, ...rest }) => rest));
+  nextDinhMucIndex = Math.max(...dinhMucData.map(dm => dm.id)) + 1;
 };
-
-if (dinhMucData.length > 0) {
-  const maxIdNum = Math.max(
-    ...dinhMucData.map(dm => parseInt(dm.id.replace('dm', ''), 10)).filter(num => !isNaN(num))
-  );
-  nextDinhMucIndex = isFinite(maxIdNum) ? maxIdNum + 1 : dinhMucData.length + 1;
-} else {
-  nextDinhMucIndex = 1;
-}

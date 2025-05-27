@@ -110,6 +110,7 @@ const DinhMucDau = () => {
   });
   const [orderBy, setOrderBy] = useState('fromKm');
   const [order, setOrder] = useState('asc');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Create a combined array of all license plates with their standards
   const allLicensePlatesWithStandards = useMemo(() => {
@@ -316,6 +317,14 @@ const DinhMucDau = () => {
     );
   };
 
+  // Filter license plates by search query
+  const filteredLicensePlatesWithStandards = useMemo(() => {
+    if (!searchQuery.trim()) return allLicensePlatesWithStandards;
+    return allLicensePlatesWithStandards.filter(({ licensePlate }) =>
+      licensePlate.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    );
+  }, [allLicensePlatesWithStandards, searchQuery]);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -351,8 +360,26 @@ const DinhMucDau = () => {
           dinhMucApi.getByBienSoAndType(plate.licensePlate, 'km_vo'),
         ]);
 
-        plateStandards[plate.licensePlate] = hangRes.data || [];
-        plateVoStandards[plate.licensePlate] = voRes.data || [];
+        // Map API fields to frontend fields for hang
+        plateStandards[plate.licensePlate] = (hangRes.data || []).map(item => ({
+          id: item.id,
+          fromKm: item.tuKm,
+          toKm: item.denKm,
+          standard: item.l_km,
+          note: item.ghiChu,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }));
+        // Map API fields to frontend fields for vo
+        plateVoStandards[plate.licensePlate] = (voRes.data || []).map(item => ({
+          id: item.id,
+          fromKm: item.tuKm,
+          toKm: item.denKm,
+          standard: item.l_km,
+          note: item.ghiChu,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }));
       }
 
       // Update state with fetched data
@@ -989,6 +1016,81 @@ const DinhMucDau = () => {
 
   return (
     <Box sx={{ p: isMobile ? 1 : 2 }}>
+      {/* 1. Add Tabs for mobile at the top, and supplementary standard at the top for desktop */}
+      <Box sx={{ mb: isMobile ? 1 : 2 }}>
+        {isMobile ? (
+          <Tabs
+            value={mobileTab}
+            onChange={(e, v) => setMobileTab(v)}
+            variant="fullWidth"
+            indicatorColor="primary"
+            textColor="primary"
+            sx={{ mb: 1 }}
+          >
+            <Tab label="Bổ sung" value="supplementary" />
+            <Tab label="Định mức hàng" value="cargo" />
+            <Tab label="Định mức vỏ" value="container" />
+          </Tabs>
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Định mức bổ sung:
+            </Typography>
+            <Typography variant="body1" sx={{ fontWeight: 500, color: 'primary.main', fontFamily: 'monospace' }}>
+              {supplementaryStandard} lít/chuyến
+            </Typography>
+            <EditButton
+              onClick={() => {
+                setNewSupplementaryValue(supplementaryStandard);
+                setEditSupplementaryDialog(true);
+              }}
+              size="small"
+              sx={{ ml: 1 }}
+            />
+          </Box>
+        )}
+      </Box>
+
+      {/* 2. Search Bar (conditional for mobile, always for desktop) */}
+      {(isMobile && (mobileTab === 'cargo' || mobileTab === 'container')) || (!isMobile) && (
+        <Box sx={{ mb: isMobile ? 1 : 2, maxWidth: 360 }}>
+          <TextField
+            fullWidth
+            size="small"
+            variant="outlined"
+            placeholder="Tìm kiếm biển số xe..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <span role="img" aria-label="search">🔍</span>
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: '6px',
+                height: isMobile ? 36 : 36, // reduce height for both
+                minHeight: isMobile ? 36 : 36,
+                fontSize: '0.95rem',
+              },
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '6px',
+                height: isMobile ? 36 : 36,
+                minHeight: isMobile ? 36 : 36,
+                fontSize: '0.95rem',
+              },
+              '& .MuiInputBase-input': {
+                py: 0.5,
+                fontSize: '0.95rem',
+              },
+            }}
+          />
+        </Box>
+      )}
+
+      {/* Main Content */}
       <Box sx={{ mt: isMobile ? 1 : 2 }}>
         {isLoading ? (
           <Box display="flex" justifyContent="center" my={4}>
@@ -998,183 +1100,125 @@ const DinhMucDau = () => {
           <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
             {error}
           </Alert>
-        ) : allLicensePlatesWithStandards.length === 0 ? (
+        ) : filteredLicensePlatesWithStandards.length === 0 ? (
           <Alert severity="info" sx={{ fontSize: '0.875rem' }}>
-            Chưa có dữ liệu biển số xe. Vui lòng thêm biển số xe trước.
+            {searchQuery.trim()
+              ? 'Không tìm thấy biển số xe phù hợp.'
+              : 'Chưa có dữ liệu biển số xe. Vui lòng thêm biển số xe trước.'}
           </Alert>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 1 : 2 }}>
-            {allLicensePlatesWithStandards.map(({ licensePlate, standards }) => (
-              <Paper
-                key={licensePlate}
-                elevation={0}
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: isMobile ? 2 : 1,
-                  overflow: 'hidden',
-                  boxShadow: isMobile ? 1 : 'none',
-                }}
-              >
-                <Box
-                  onClick={() => toggleExpand(licensePlate)}
-                  sx={{
-                    p: isMobile ? spacing(2) : spacing(1.5),
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    backgroundColor: 'background.paper',
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    transition: 'background-color 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                      '& .MuiTypography-root': {
-                        color: theme.palette.primary.main,
-                      },
-                    },
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        gap: 1,
-                        flexGrow: 1,
-                        flexDirection: isMobile ? 'column' : 'row',
-                        alignItems: isMobile ? 'flex-start' : 'center',
+          <>
+            {/* MOBILE: Tab content switch */}
+            {isMobile ? (
+              mobileTab === 'supplementary' ? (
+                <Box sx={{ textAlign: 'center', mt: 3 }}>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                    <Typography variant="h5" sx={{ fontFamily: 'monospace', color: 'primary.main' }}>
+                      {supplementaryStandard} lít/chuyến
+                    </Typography>
+                    <EditButton
+                      onClick={() => {
+                        setNewSupplementaryValue(supplementaryStandard);
+                        setEditSupplementaryDialog(true);
                       }}
-                    >
-                      <Typography
-                        variant={isMobile ? 'h6' : 'subtitle2'}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: isMobile ? '1.1rem' : '0.875rem',
-                        }}
-                      >
-                        {licensePlate}
-                      </Typography>
-                      {standards.length >= 0 && (
-                        <Chip
-                          label={standards.length}
-                          size="small"
-                          sx={{
-                            backgroundColor: theme => theme.palette.grey[200],
-                            color: theme => theme.palette.text.primary,
-                            fontWeight: 500,
-                            fontSize: isMobile ? '0.8rem' : '0.75rem',
-                            ml: isMobile ? 0 : 1,
-                          }}
-                        />
-                      )}
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AddButton
-                        size={isMobile ? 'medium' : 'small'}
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleOpenAddDialog(licensePlate);
-                        }}
-                        sx={{
-                          minWidth: isMobile ? '36px' : '28px',
-                          height: isMobile ? '36px' : 'auto',
-                        }}
-                      />
-                      {expandedPlates[licensePlate] === true ? (
-                        <ChevronUpIcon className={isMobile ? 'w-6 h-6' : 'w-5 h-5'} />
-                      ) : (
-                        <ChevronDownIcon className={isMobile ? 'w-6 h-6' : 'w-5 h-5'} />
-                      )}
-                    </Box>
+                      size="small"
+                    />
                   </Box>
                 </Box>
-
-                <Collapse in={expandedPlates[licensePlate] === true} timeout="auto" unmountOnExit>
-                  <Box sx={{ p: isMobile ? spacing(1) : spacing(1.5) }}>
-                    {isMobile ? (
-                      // Mobile Card Layout
-                      standards.length === 0 ? (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ textAlign: 'center', py: 3 }}
-                        >
-                          Chưa có dữ liệu định mức dầu
+              ) : (
+                // Định mức hàng/vo cards
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {filteredLicensePlatesWithStandards.map(({ licensePlate }) => {
+                    const standards = mobileTab === 'cargo' ? (dinhMucHang[licensePlate] || []) : (dinhMucVo[licensePlate] || []);
+                    return (
+                      <Paper
+                        key={licensePlate}
+                        elevation={1}
+                        sx={{ borderRadius: 2, p: 1, mb: 1 }}
+                      >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                          {licensePlate}
                         </Typography>
-                      ) : (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                          {standards
-                            .sort((a, b) => a.fromKm - b.fromKm)
-                            .map(standard => (
-                              <MobileFuelStandardCard
-                                key={standard.id}
-                                standard={standard}
-                                licensePlate={licensePlate}
-                              />
+                        {standards.length === 0 ? (
+                          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                            Chưa có dữ liệu định mức
+                          </Typography>
+                        ) : (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {standards.sort((a, b) => a.fromKm - b.fromKm).map(standard => (
+                              <Card key={standard.id} sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2, boxShadow: 'none' }}>
+                                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    {standard.fromKm} - {standard.toKm} km {standard.standard} lít/km
+                                  </Typography>
+                                </CardContent>
+                              </Card>
                             ))}
-                        </Box>
-                      )
-                    ) : (
-                      // Desktop Table Layout
-                      <StandardTable
-                        columns={[
-                          {
-                            key: 'fromKm',
-                            label: 'TỪ (KM)',
-                            numeric: true,
-                            render: value => value.toLocaleString(),
-                          },
-                          {
-                            key: 'toKm',
-                            label: 'ĐẾN (KM)',
-                            numeric: true,
-                            render: value => value.toLocaleString(),
-                          },
-                          {
-                            key: 'standard',
-                            label: 'ĐỊNH MỨC (L/KM)',
-                            numeric: true,
-                            render: value => value.toFixed(2),
-                            getColor: value =>
-                              value > 0.4
-                                ? theme.palette.error.main
-                                : value > 0.3
-                                  ? theme.palette.warning.main
-                                  : theme.palette.success.main,
-                            fontWeight: 500,
-                          },
-                          {
-                            key: 'note',
-                            label: 'MÔ TẢ',
-                            render: value => value || '',
-                          },
-                        ]}
-                        data={standards.sort((a, b) => a.fromKm - b.fromKm)}
-                        renderActions={row => (
-                          <>
-                            <EditButton
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleOpenEditDialog(row);
-                              }}
-                            />
-                            <DeleteButton
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleDeleteClick(row.id);
-                              }}
-                            />
-                          </>
+                          </Box>
                         )}
-                        emptyMessage="Chưa có dữ liệu định mức dầu"
-                      />
-                    )}
+                      </Paper>
+                    );
+                  })}
+                </Box>
+              )
+            ) : (
+              // DESKTOP: For each vehicle, show two tables: hàng and vỏ
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {filteredLicensePlatesWithStandards.map(({ licensePlate }) => (
+                  <Box key={licensePlate} sx={{ mb: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                      {licensePlate}
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                          Định mức hàng
+                        </Typography>
+                        <StandardTable
+                          columns={[
+                            { key: 'fromKm', label: 'TỪ (KM)', numeric: true, render: value => value !== undefined && value !== null ? value.toLocaleString() : '-' },
+                            { key: 'toKm', label: 'ĐẾN (KM)', numeric: true, render: value => value !== undefined && value !== null ? value.toLocaleString() : '-' },
+                            { key: 'standard', label: 'ĐỊNH MỨC (L/KM)', numeric: true, render: value => value !== undefined && value !== null ? Number(value).toFixed(2) : '-' },
+                            { key: 'note', label: 'MÔ TẢ', render: value => value || '' },
+                          ]}
+                          data={(dinhMucHang[licensePlate] || []).sort((a, b) => a.fromKm - b.fromKm)}
+                          renderActions={row => (
+                            <>
+                              <EditButton onClick={e => { e.stopPropagation(); handleOpenEditDialog(row); }} />
+                              <DeleteButton onClick={e => { e.stopPropagation(); handleDeleteClick(row.id); }} />
+                            </>
+                          )}
+                          emptyMessage="Chưa có dữ liệu định mức hàng"
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                          Định mức vỏ
+                        </Typography>
+                        <StandardTable
+                          columns={[
+                            { key: 'fromKm', label: 'TỪ (KM)', numeric: true, render: value => value !== undefined && value !== null ? value.toLocaleString() : '-' },
+                            { key: 'toKm', label: 'ĐẾN (KM)', numeric: true, render: value => value !== undefined && value !== null ? value.toLocaleString() : '-' },
+                            { key: 'standard', label: 'ĐỊNH MỨC (L/KM)', numeric: true, render: value => value !== undefined && value !== null ? Number(value).toFixed(2) : '-' },
+                            { key: 'note', label: 'MÔ TẢ', render: value => value || '' },
+                          ]}
+                          data={(dinhMucVo[licensePlate] || []).sort((a, b) => a.fromKm - b.fromKm)}
+                          renderActions={row => (
+                            <>
+                              <EditButton onClick={e => { e.stopPropagation(); handleOpenEditDialog(row); }} />
+                              <DeleteButton onClick={e => { e.stopPropagation(); handleDeleteClick(row.id); }} />
+                            </>
+                          )}
+                          emptyMessage="Chưa có dữ liệu định mức vỏ"
+                        />
+                      </Grid>
+                    </Grid>
                   </Box>
-                </Collapse>
-              </Paper>
-            ))}
-          </Box>
+                ))}
+              </Box>
+            )}
+          </>
         )}
       </Box>
 
