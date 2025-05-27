@@ -2,13 +2,13 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Tabs, Tab, Box, useTheme, useMediaQuery } from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
 import { useNavigate, useParams } from 'react-router-dom';
-import PhuongTien from '@/features/phuong-tien/PhuongTien';
+import VanChuyen from '@/features/phuong-tien/VanChuyen';
 import DinhMuc from '@/features/phuong-tien/DinhMuc';
 import BaoDuong from '@/features/phuong-tien/BaoDuong';
 
 // Define valid tabs and their labels
 const TABS = [
-  { value: 'phuong-tien', label: 'Phương Tiện' },
+  { value: 'van-chuyen', label: 'Vận Chuyển' },
   { value: 'dinh-muc', label: 'Định Mức' },
   { value: 'bao-duong', label: 'Bảo Dưỡng' },
 ];
@@ -74,20 +74,20 @@ const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight }) => {
 };
 
 const QuanLyPhuongTien = () => {
-  const { tab: tabFromUrl = 'phuong-tien' } = useParams();
+  const { tab: tabFromUrl = 'van-chuyen' } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const tabsRef = useRef(null);
 
   // Set the active tab based on URL parameter
-  const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'phuong-tien';
+  const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'van-chuyen';
   const currentTabIndex = TABS.findIndex(tab => tab.value === activeTab);
 
   // Redirect to the first tab if the current tab is invalid
   useEffect(() => {
     if (!TABS.some(tab => tab.value === tabFromUrl)) {
-      navigate(`/phuong-tien/phuong-tien`, { replace: true });
+      navigate(`/phuong-tien/van-chuyen`, { replace: true });
     }
   }, [tabFromUrl, navigate]);
 
@@ -189,8 +189,8 @@ const QuanLyPhuongTien = () => {
                 overflow: 'hidden',
               }}
             >
-              <TabPanel value="phuong-tien" sx={{ p: 0, mt: 2 }}>
-                <PhuongTien />
+              <TabPanel value="van-chuyen" sx={{ p: 0, mt: 2 }}>
+                <VanChuyen />
               </TabPanel>
               <TabPanel value="dinh-muc" sx={{ p: 0, mt: 2 }}>
                 <DinhMuc />

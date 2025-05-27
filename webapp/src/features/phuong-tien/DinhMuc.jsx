@@ -39,6 +39,12 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 
 // Theme variables
 const theme = {
@@ -1032,22 +1038,36 @@ const DinhMucDau = () => {
             <Tab label="Định mức vỏ" value="container" />
           </Tabs>
         ) : (
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              Định mức bổ sung:
-            </Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500, color: 'primary.main', fontFamily: 'monospace' }}>
-              {supplementaryStandard} lít/chuyến
-            </Typography>
+          <Paper
+            elevation={0}
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              p: 1.5,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1,
+              gap: 2
+            }}
+          >
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                Định mức bổ sung
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}>
+                {supplementaryStandard} lít/chuyến
+              </Typography>
+            </Box>
             <EditButton
               onClick={() => {
                 setNewSupplementaryValue(supplementaryStandard);
                 setEditSupplementaryDialog(true);
               }}
               size="small"
-              sx={{ ml: 1 }}
+              sx={{ alignSelf: 'flex-start' }}
             />
-          </Box>
+          </Paper>
         )}
       </Box>
 
@@ -1111,51 +1131,133 @@ const DinhMucDau = () => {
             {/* MOBILE: Tab content switch */}
             {isMobile ? (
               mobileTab === 'supplementary' ? (
-                <Box sx={{ textAlign: 'center', mt: 3 }}>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                    <Typography variant="h5" sx={{ fontFamily: 'monospace', color: 'primary.main' }}>
-                      {supplementaryStandard} lít/chuyến
-                    </Typography>
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      p: 1.5,
+                      bgcolor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      gap: 2
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}>
+                        {supplementaryStandard} lít/chuyến
+                      </Typography>
+                    </Box>
                     <EditButton
                       onClick={() => {
                         setNewSupplementaryValue(supplementaryStandard);
                         setEditSupplementaryDialog(true);
                       }}
                       size="small"
+                      sx={{ alignSelf: 'flex-start' }}
                     />
-                  </Box>
+                  </Paper>
                 </Box>
               ) : (
-                // Định mức hàng/vo cards
+                // Định mức hàng/vo cards with search
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* Search Bar */}
+                  <Box sx={{ mb: 1, px: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      variant="outlined"
+                      placeholder={`Tìm kiếm biển số xe...`}
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <span role="img" aria-label="search">🔍</span>
+                          </InputAdornment>
+                        ),
+                        sx: {
+                          borderRadius: '6px',
+                          height: 36,
+                          minHeight: 36,
+                          fontSize: '0.95rem',
+                        },
+                      }}
+                    />
+                  </Box>
+
                   {filteredLicensePlatesWithStandards.map(({ licensePlate }) => {
                     const standards = mobileTab === 'cargo' ? (dinhMucHang[licensePlate] || []) : (dinhMucVo[licensePlate] || []);
                     return (
                       <Paper
                         key={licensePlate}
                         elevation={1}
-                        sx={{ borderRadius: 2, p: 1, mb: 1 }}
+                        sx={{ borderRadius: 2, p: 1.5, mb: 1 }}
                       >
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                          {licensePlate}
-                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            {licensePlate}
+                          </Typography>
+                          <AddButton
+                            size="small"
+                            onClick={() => handleOpenAddDialog(licensePlate)}
+                            sx={{ minWidth: 32, height: 32 }}
+                          />
+                        </Box>
+
                         {standards.length === 0 ? (
                           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
                             Chưa có dữ liệu định mức
                           </Typography>
                         ) : (
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {standards.sort((a, b) => a.fromKm - b.fromKm).map(standard => (
-                              <Card key={standard.id} sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2, boxShadow: 'none' }}>
-                                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                    {standard.fromKm} - {standard.toKm} km {standard.standard} lít/km
-                                  </Typography>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </Box>
+                          <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                            <Table size="small">
+                              <TableHead>
+                                <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                                  <TableCell sx={{ fontWeight: 600, py: 1, pl: 2, pr: 1 }}>TỪ (KM)</TableCell>
+                                  <TableCell sx={{ fontWeight: 600, py: 1, px: 1 }}>ĐẾN (KM)</TableCell>
+                                  <TableCell sx={{ fontWeight: 600, py: 1, px: 1 }}>ĐỊNH MỨC (L/KM)</TableCell>
+                                  <TableCell sx={{ width: 80, py: 1, pr: 1 }}></TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {standards.sort((a, b) => a.fromKm - b.fromKm).map((standard) => (
+                                  <TableRow
+                                    key={standard.id}
+                                    hover
+                                    sx={{
+                                      '&:last-child td, &:last-child th': { border: 0 },
+                                      '&:hover': { backgroundColor: 'action.hover' }
+                                    }}
+                                  >
+                                    <TableCell sx={{ py: 1, pl: 2, pr: 1 }}>{standard.fromKm}</TableCell>
+                                    <TableCell sx={{ py: 1, px: 1 }}>{standard.toKm}</TableCell>
+                                    <TableCell sx={{ py: 1, px: 1 }}>{standard.standard}</TableCell>
+                                    <TableCell sx={{ py: 1, pr: 1, textAlign: 'right' }}>
+                                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                                        <EditButton
+                                          size="small"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenEditDialog(standard);
+                                          }}
+                                        />
+                                        <DeleteButton
+                                          size="small"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteClick(standard.id);
+                                          }}
+                                        />
+                                      </Box>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
                         )}
                       </Paper>
                     );

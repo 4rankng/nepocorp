@@ -24,7 +24,7 @@ import {
   CardContent,
   Chip,
   Collapse,
-  Fab,
+
   useMediaQuery,
   useTheme,
   Divider,
@@ -43,7 +43,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
-import { dauKeoApi as maintenanceApi, roMoocApi as vehicleApi } from '@services/mockApi';
+import { lopXeApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 
 const formatCurrency = value => {
@@ -334,14 +334,12 @@ const BaoDuong = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [records, vehicles] = await Promise.all([maintenanceApi.getAll(), vehicleApi.getAll()]);
-      setMaintenanceRecords(records.data || []);
-      // Extract license plates from vehicles for dropdown
-      const licensePlateOptions =
-        vehicles.data?.map(v => ({
-          id: v.id,
-          licensePlate: v.licensePlate,
-        })) || [];
+      const recordsRes = await lopXeApi.getAll();
+      setMaintenanceRecords(recordsRes.data || []);
+      // Extract unique license plates from records
+      const licensePlateOptions = Array.from(
+        new Set((recordsRes.data || []).map(r => r.licensePlate))
+      ).map(plate => ({ id: plate, licensePlate: plate }));
       setLicensePlates(licensePlateOptions);
       setError('');
     } catch (err) {
@@ -449,10 +447,10 @@ const BaoDuong = () => {
       };
 
       if (isEdit) {
-        await maintenanceApi.update(formData.id, data);
+        await lopXeApi.update(formData.id, data);
         showSnackbar('Sửa thông tin bảo dưỡng thành công');
       } else {
-        await maintenanceApi.create(data);
+        await lopXeApi.create(data);
         showSnackbar('Thêm thông tin bảo dưỡng mới thành công');
       }
       await fetchData();
@@ -492,7 +490,7 @@ const BaoDuong = () => {
 
     setIsLoading(true);
     try {
-      await maintenanceApi.delete(deleteDialog.recordId);
+      await lopXeApi.delete(deleteDialog.recordId);
       showSnackbar('Xóa thông tin bảo dưỡng thành công');
       await fetchData();
       handleDeleteClose();
@@ -688,22 +686,6 @@ const BaoDuong = () => {
           </Section>
         </Box>
       )}
-      {/* FAB for add at bottom right (always visible) */}
-      <Fab
-        color="primary"
-        aria-label="add"
-        onClick={() => handleAddNew('tire')}
-        disabled={isLoading}
-        sx={{
-          position: 'fixed',
-          bottom: { xs: 24, md: 32 },
-          right: { xs: 24, md: 32 },
-          zIndex: 1201,
-          boxShadow: 6,
-        }}
-      >
-        <AddIcon />
-      </Fab>
 
       {/* Add/Edit Dialog */}
       <Dialog

@@ -133,7 +133,7 @@ const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
   </Paper>
 );
 
-const PhuongTien = () => {
+const VanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -506,11 +506,141 @@ const PhuongTien = () => {
         </Alert>
       </Snackbar>
 
-      {/* TODO: Add form dialogs for CRUD operations */}
-      {/* Form dialogs would be implemented here following the DinhMuc pattern */}
-      {/* - TractorFormDialog */}
-      {/* - TrailerFormDialog */}
-      {/* - ContainerTypeFormDialog */}
+      {/* --- Tractor Dialog --- */}
+      <Dialog
+        open={tractorDialog.open}
+        onClose={() => setTractorDialog({ open: false, edit: false, data: null })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogContent>
+          <TextField
+            label="Biển số"
+            value={tractorDialog.data?.bien_so || ''}
+            onChange={e =>
+              setTractorDialog(d => ({
+                ...d,
+                data: { ...d.data, bien_so: e.target.value }
+              }))
+            }
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Mô tả"
+            value={tractorDialog.data?.mo_ta || ''}
+            onChange={e =>
+              setTractorDialog(d => ({
+                ...d,
+                data: { ...d.data, mo_ta: e.target.value }
+              }))
+            }
+            fullWidth
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTractorDialog({ open: false, edit: false, data: null })}>Hủy</Button>
+          <Button
+            onClick={() => handleTractorSave(tractorDialog.data)}
+            variant="contained"
+            color="primary"
+          >
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* --- Trailer Dialog --- */}
+      <Dialog
+        open={trailerDialog.open}
+        onClose={() => setTrailerDialog({ open: false, edit: false, data: null })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogContent>
+          <TextField
+            label="Biển số"
+            value={trailerDialog.data?.bien_so || ''}
+            onChange={e =>
+              setTrailerDialog(d => ({
+                ...d,
+                data: { ...d.data, bien_so: e.target.value }
+              }))
+            }
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Mô tả"
+            value={trailerDialog.data?.mo_ta || ''}
+            onChange={e =>
+              setTrailerDialog(d => ({
+                ...d,
+                data: { ...d.data, mo_ta: e.target.value }
+              }))
+            }
+            fullWidth
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTrailerDialog({ open: false, edit: false, data: null })}>Hủy</Button>
+          <Button
+            onClick={() => handleTrailerSave(trailerDialog.data)}
+            variant="contained"
+            color="primary"
+          >
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* --- Container Dialog --- */}
+      <Dialog
+        open={containerTypeDialog.open}
+        onClose={() => setContainerTypeDialog({ open: false, edit: false, data: null })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogContent>
+          <TextField
+            label="Số container"
+            value={containerTypeDialog.data?.id || ''}
+            onChange={e =>
+              setContainerTypeDialog(d => ({
+                ...d,
+                data: { ...d.data, id: e.target.value }
+              }))
+            }
+            fullWidth
+            margin="normal"
+            disabled={containerTypeDialog.edit}
+          />
+          <TextField
+            label="Loại container"
+            value={containerTypeDialog.data?.phan_loai || ''}
+            onChange={e =>
+              setContainerTypeDialog(d => ({
+                ...d,
+                data: { ...d.data, phan_loai: e.target.value }
+              }))
+            }
+            fullWidth
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setContainerTypeDialog({ open: false, edit: false, data: null })}>Hủy</Button>
+          <Button
+            onClick={() => handleContainerTypeSave(containerTypeDialog.data)}
+            variant="contained"
+            color="primary"
+          >
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* TODO: Add confirmation dialogs for delete operations */}
       {/* - ConfirmationDialog for tractors */}
@@ -523,4 +653,4 @@ const PhuongTien = () => {
   );
 };
 
-export default PhuongTien;
+export default VanChuyen;

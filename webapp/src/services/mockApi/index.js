@@ -9,4 +9,5 @@ export * from '@services/mockApi/nhanVienApi';
 export * from '@services/mockApi/lichVanChuyenApi';
 export * from '@services/mockApi/doiTacApi';
 export * from '@services/mockApi/reportApi';
+export * from '@services/mockApi/lopXeApi';
 // Add other exports here as new mock APIs are created
