@@ -6,15 +6,13 @@ import {
   addLichVanChuyen,
   editLichVanChuyen,
   removeLichVanChuyen,
-  // fetchLichVanChuyenById, // Placeholder if needed later
   fetchAllNhanVien, // Updated to use API function
   fetchAllContainer, // Updated to use API function
   fetchAllKhachHang, // Added for customer API
-  addKhachHang, // Added for customer creation
   fetchAllDauKeo, // Added for vehicles
   fetchAllRoMooc, // Added for vehicles
 } from '@services/mockApi/index.js';
-import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
+// import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx'; // Not used directly in this component
 import ConfirmationModal from '@components/ConfirmationModal';
 import {
   Box,
@@ -24,23 +22,23 @@ import {
   useMediaQuery,
   useTheme,
   Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  Collapse,
-  Slide,
-  Fade,
+  // DialogTitle, // Used in child components
+  // DialogContent, // Used in child components
+  // DialogActions, // Used in child components
+  // TextField, // Used in child components
+  // MenuItem, // Used in child components
+  // Stepper, // Used in child components
+  // Step, // Used in child components
+  // StepLabel, // Used in child components
+  // StepContent, // Used in child components
+  // Collapse, // Not used
+  Slide, // Used for Dialog transition
+  // Fade, // Not used
   Tooltip,
   Chip,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+// import CloseIcon from '@mui/icons-material/Close'; // Used in child components
+// import ExpandMoreIcon from '@mui/icons-material/ExpandMore'; // Used in child components
 
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import MobileView from '@features/lich-van-chuyen/components/MobileView';
@@ -48,6 +46,14 @@ import DesktopView from '@features/lich-van-chuyen/components/DesktopView';
 import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog';
 import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper';
 import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
+import {
+  formatDateForDisplay,
+  formatVehiclesForSelect,
+  formatCustomersForSelect,
+  formatEmployeesForSelect,
+  formatContainersForSelect,
+  addQuickCustomer,
+} from './utils/lichVanChuyenUtils';
 
 const initialFormState = {
   ma_chuyen: '',
@@ -65,95 +71,12 @@ const initialFormState = {
   // UI forms will need significant updates to match these fields.
 };
 
-// Helper to format date from YYYY-MM-DD to DD/MM/YYYY for display
-const formatDateForDisplay = dateStr_YYYYMMDD => {
-  if (!dateStr_YYYYMMDD) return '-';
-  const [year, month, day] = dateStr_YYYYMMDD.split('-');
-  return `${day}/${month}/${year}`;
-};
-
-// Helper to format date from DD/MM/YYYY to YYYY-MM-DD for date input
-const formatDateForInput = dateStr_DDMMYYYY => {
-  if (!dateStr_DDMMYYYY) return '';
-  const parts = dateStr_DDMMYYYY.split('/');
-  if (parts.length === 3) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-  }
-  return ''; // Invalid format
-};
-
-// Helper to format vehicles data for select options
-const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
-  const vehicles = [];
-
-  // Add tractors (đầu kéo)
-  dauKeoList.forEach(item => {
-    vehicles.push({
-      value: item.id,
-      label: `${item.bien_so} (${item.mo_ta})`,
-      type: 'dau_keo',
-    });
-  });
-
-  // Add trailers (rơ moóc)
-  roMoocList.forEach(item => {
-    vehicles.push({
-      value: item.id,
-      label: `${item.bien_so} (${item.mo_ta})`,
-      type: 'ro_mooc',
-    });
-  });
-
-  return vehicles;
-};
-
-// Helper to format customers data for select options
-const formatCustomersForSelect = customersList => {
-  return customersList.map(customer => ({
-    value: customer.id,
-    label: customer.ten,
-    ma_dinh_danh: customer.ma_dinh_danh,
-  }));
-};
-
-// Helper to format employees data for select options
-const formatEmployeesForSelect = employeesList => {
-  return employeesList.map(employee => ({
-    value: employee.id,
-    label: `${employee.ho_ten} (${employee.ma_so})`,
-    chuc_vu: employee.chuc_vu,
-  }));
-};
-
-// Helper to format containers data for select options
-const formatContainersForSelect = containersList => {
-  return containersList.map(container => ({
-    value: container.id,
-    label: container.id,
-  }));
-};
-
-// Helper function to add a new customer quickly
-const addQuickCustomer = async customerName => {
-  if (!customerName || customerName.trim() === '') {
-    throw new Error('Tên khách hàng không được để trống');
-  }
-
-  const newCustomerData = {
-    ma_dinh_danh: `MDD${Date.now()}`, // Generate unique identifier
-    ten: customerName.trim(),
-    dia_chi: '', // Default empty address
-    ma_so_thue: '', // Default empty tax code
-  };
-
-  const newCustomer = await addKhachHang(newCustomerData);
-  return newCustomer;
-};
+// Helper functions moved to ./utils/lichVanChuyenUtils.js
 
 const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+  // const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg')); // Unused variable
 
   const { hasAnyRole } = useAuth(); // Get role checker
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]); // Example: Manager and Dispatcher can add
@@ -177,7 +100,7 @@ const QuanLyLichVanChuyen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [expandedCard, setExpandedCard] = useState(null);
-  const [isFormExpanded, setIsFormExpanded] = useState(!isMobile);
+  // const [isFormExpanded, setIsFormExpanded] = useState(!isMobile); // Unused variable
 
   const mapLichVanChuyenToFormData = item => {
     if (!item) return initialFormState;
@@ -235,7 +158,7 @@ const QuanLyLichVanChuyen = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []); // Removed setLichVanChuyenItems from dependency array as fetchAllLichVanChuyen is stable
+  }, []); // fetchAllLichVanChuyen is stable, setLichVanChuyenItems is part of this component's state setters
 
   useEffect(() => {
     fetchPageData();
@@ -561,7 +484,7 @@ const QuanLyLichVanChuyen = () => {
           searchTerm={searchTerm}
           onSearchTermChange={e => setSearchTerm(e.target.value)}
           columns={columns} // columns is defined above
-          items={filteredLichVanChuyenItems}
+          shipmentPlans={filteredLichVanChuyenItems}
           isLoading={isLoading}
           onAdd={handleOpenModalForAdd}
           canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
