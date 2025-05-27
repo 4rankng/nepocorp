@@ -210,7 +210,7 @@ const DesktopShipmentFormDialog = ({
                     <FormControl fullWidth size="small" required>
                       <InputLabel>Biển số xe</InputLabel>
                       <Select name="bien_so_xe_id" value={currentFormData.bien_so_xe_id} onChange={onFormChange} label="Biển số xe" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}>
-                        <MenuItem value=""><em>Chọn biển số xe</em></MenuItem>
+                        <MenuItem value=""><em>Chọn xe</em></MenuItem>
                         {selectOptions?.vehicles?.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
                       </Select>
                     </FormControl>
@@ -220,7 +220,7 @@ const DesktopShipmentFormDialog = ({
                       <InputLabel>Container</InputLabel>
                       <Select name="container_id" value={currentFormData.container_id} onChange={onFormChange} label="Container" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}>
                         <MenuItem value=""><em>Chọn container</em></MenuItem>
-                        {selectOptions?.containerTypes?.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
+                        {selectOptions?.containers?.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
                       </Select>
                     </FormControl>
                   </Grid>
@@ -496,28 +496,14 @@ DesktopShipmentFormDialog.propTypes = {
   onContainerFormChange: PropTypes.func.isRequired,
   onAddContainerField: PropTypes.func.isRequired,
   onRemoveContainerField: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
   isLoading: PropTypes.bool.isRequired,
   error: PropTypes.string,
   selectOptions: PropTypes.shape({
-    customers: PropTypes.arrayOf(
-      PropTypes.shape({ value: PropTypes.string, label: PropTypes.string })
-    ).isRequired,
-    containerTypes: PropTypes.arrayOf(
-      PropTypes.shape({ value: PropTypes.string, label: PropTypes.string })
-    ).isRequired,
-    vehicles: PropTypes.arrayOf(
-      PropTypes.shape({
-        value: PropTypes.string.isRequired, // Vehicle ID
-        label: PropTypes.string.isRequired, // License plate or name
-        type: PropTypes.string, // e.g., 'DAU_KEO', 'ROMOOC' - important for filtering
-        driverId: PropTypes.string, // Employee ID of the driver
-        driverName: PropTypes.string, // Name of the driver
-      })
-    ).isRequired,
-    partners: PropTypes.arrayOf(
-      PropTypes.shape({ value: PropTypes.string, label: PropTypes.string })
-    ).isRequired,
+    customers: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.any.isRequired, label: PropTypes.string.isRequired })),
+    vehicles: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.any.isRequired, label: PropTypes.string.isRequired, type: PropTypes.string, default_nhan_vien_lai_xe_id: PropTypes.any })),
+    employees: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.any.isRequired, label: PropTypes.string.isRequired, chuc_vu: PropTypes.string })),
+    containers: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.any.isRequired, label: PropTypes.string.isRequired })),
   }).isRequired,
 };
 

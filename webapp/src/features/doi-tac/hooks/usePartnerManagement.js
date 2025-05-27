@@ -71,7 +71,7 @@ const usePartnerManagement = () => {
         p => p.ma_dinh_danh === ma_dinh_danh && (!excludeId || p.id !== excludeId)
       );
       return !found;
-    } catch (err) {
+    } catch (_err) {
       return true;
     }
   }, []);

@@ -56,7 +56,6 @@ const MobileShipmentFormStepper = ({
   selectOptions, // Now directly using prop data
   onAddNewCustomer, // Callback to parent for adding new customers
   onClose, // To allow stepper to request dialog close (though not directly used in this version)
-  onAddNewCustomer, // Function to add new customer from parent
   onAddNewPartner, // Function to add new partner from parent
 }) => {
   const [activeStep, setActiveStep] = useState(0);
@@ -67,74 +66,18 @@ const MobileShipmentFormStepper = ({
     partner: null,
   });
 
-  // Internal state for select options
-  const [selectOptions, setSelectOptions] = useState({
-    vehicles: [],
-    partners: [],
-    customers: [],
-    containerTypes: [],
-  });
-  const [isLoadingData, setIsLoadingData] = useState(false);
-  const [dataError, setDataError] = useState('');
-
-  // Function to fetch all required data from mock APIs
-  const fetchSelectOptionsData = async () => {
-    setIsLoadingData(true);
-    setDataError('');
-
-    try {
-      console.log('MobileShipmentFormStepper - Fetching select options data...');
-
-      const [vehicles, partners, customers, containerTypes] = await Promise.all([
-        getVehiclesForSelect(),
-        getPartnersForSelect(),
-        getCustomersForSelect(),
-        getContainerTypesForSelect(),
-      ]);
-
-      // Transform data to match the expected format (with value and label properties)
-      const transformedData = {
-        vehicles: vehicles.map(v => ({ value: v.id, label: v.name || v.licensePlate })),
-        partners: partners.map(p => ({ value: p.id, label: p.name })),
-        customers: customers.map(c => ({ value: c.id, label: c.name })),
-        containerTypes: containerTypes.map(ct => ({ value: ct.id, label: ct.name })),
-      };
-
-      setSelectOptions(transformedData);
-
-      console.log('MobileShipmentFormStepper - Successfully fetched select options:', {
-        vehicleCount: transformedData.vehicles.length,
-        partnerCount: transformedData.partners.length,
-        customerCount: transformedData.customers.length,
-        containerTypeCount: transformedData.containerTypes.length,
-        sampleData: {
-          vehicles: transformedData.vehicles.slice(0, 2),
-          customers: transformedData.customers.slice(0, 2),
-        },
-      });
-    } catch (err) {
-      console.error('MobileShipmentFormStepper - Error fetching select options:', err);
-      setDataError('Không thể tải dữ liệu danh sách. Vui lòng thử lại.');
-    } finally {
-      setIsLoadingData(false);
-    }
-  };
-
   // Reset activeStep and validation attempts when editingPlan changes
-  // Also fetch select options data when component mounts
   useEffect(() => {
     setActiveStep(0);
     setValidationAttempted({});
-
-    // Fetch select options data when component loads
-    fetchSelectOptionsData();
 
     // Log the received props for debugging
     console.log('MobileShipmentFormStepper - Component mounted/updated:', {
       formData,
       editingPlan,
+      selectOptions,
     });
-  }, [editingPlan]); // Only depend on editingPlan to avoid unnecessary re-fetches
+  }, [editingPlan, selectOptions]);
 
   const getFieldOptions = field => {
     // Handle different field types and their options
@@ -142,7 +85,7 @@ const MobileShipmentFormStepper = ({
       case 'khachHangId':
         return Array.isArray(selectOptions?.customers) ? selectOptions.customers : [];
       case 'loaiContainerId':
-        return Array.isArray(selectOptions?.containerTypes) ? selectOptions.containerTypes : [];
+        return Array.isArray(selectOptions?.containers) ? selectOptions.containers : [];
       case 'bienSoXeId':
         return Array.isArray(selectOptions?.vehicles) ? selectOptions.vehicles : [];
       case 'doiTacId': // Fixed field name to match formData
@@ -326,17 +269,13 @@ const MobileShipmentFormStepper = ({
   const handleCustomerSave = async customerData => {
     // Add customer and refresh customer list
     try {
-      // Call the parent function if provided, otherwise use our own API call
+      // Call the parent function if provided
       if (onAddNewCustomer) {
         const newCustomerId = await onAddNewCustomer(customerData.name);
         // Select the new customer if we got an ID back
         if (newCustomerId) {
           onFormChange({ target: { name: 'khachHangId', value: newCustomerId } });
         }
-      } else {
-        // Fallback: call API directly and refresh our select options
-        await addQuickCustomer(customerData.name);
-        await fetchSelectOptionsData(); // Refresh the options
       }
 
       // Close the dialog
@@ -360,25 +299,10 @@ const MobileShipmentFormStepper = ({
   };
 
   const handleSavePartner = async partnerData => {
-    try {
-      // Add the new partner
-      const newPartner = await addPartner(partnerData);
-
-      // Update the form field with the new partner's name
-      onFormChange({ target: { name: 'doiTacVanChuyen', value: newPartner.name } });
-
-      // Refresh our select options to include the new partner
-      await fetchSelectOptionsData();
-
-      // Close the dialog
-      handleClosePartnerDialog();
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error adding partner:', error);
-      setDataError('Lỗi khi thêm đối tác mới.');
-      return { success: false, error: 'Không thể thêm đối tác' };
-    }
+    // Partner functionality not implemented yet
+    console.log('Partner save not implemented:', partnerData);
+    handleClosePartnerDialog();
+    return { success: false, error: 'Chức năng đối tác chưa được triển khai' };
   };
 
   const steps = getFormSteps();

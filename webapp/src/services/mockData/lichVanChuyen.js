@@ -2,7 +2,7 @@
 // Fields: id, ma_chuyen, ngay_van_chuyen, trang_thai, khach_hang_id, diem_xuat_phat, diem_tra_hang, 
 //         bien_so_xe_id, container_id, nhan_vien_giao_nhan_id, nhan_vien_lai_xe_id, ghi_chu, createdAt, updatedAt
 
-import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
+import { v4 as _uuidv4 } from 'uuid'; // For generating unique IDs (unused currently)
 
 const TRANG_THAI_LICH_VAN_CHUYEN = {
   CHUA_THUC_HIEN: 'chua_thuc_hien',

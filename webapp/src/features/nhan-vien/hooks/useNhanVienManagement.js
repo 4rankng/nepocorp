@@ -1,19 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  getEmployees,
-  addEmployee,
-  updateEmployee,
-  deleteEmployee,
-  employeeRoles,
-} from '@services/mockData/employees';
-import { getVehicles } from '@services/mockData/vehicles';
-import {
   fetchAllNhanVien,
-  fetchNhanVienById,
   addNhanVien,
   editNhanVien,
   removeNhanVien,
-} from '@services/mockApi/nhanVienApi';
+  fetchAllDauKeo,
+  fetchAllRoMooc,
+} from '@services/mockApi';
+
+// Define employee roles constant
+const employeeRoles = [
+  { value: 'giao_nhan', label: 'Giao Nhận' },
+  { value: 'lai_xe', label: 'Lái Xe' },
+  { value: 'quan_ly', label: 'Quản Lý' },
+  { value: 'admin', label: 'Admin' },
+];
 
 // Define initialFormState inside the hook or make it exportable if needed elsewhere
 const getInitialFormState = () => ({
@@ -38,7 +39,7 @@ const useNhanVienManagement = () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await getEmployees();
+      const data = await fetchAllNhanVien();
       setEmployees(data);
     } catch (err) {
       setError('Không thể tải danh sách nhân viên.');
@@ -51,8 +52,18 @@ const useNhanVienManagement = () => {
   // Fetch vehicles for driver assignment
   const fetchVehicles = useCallback(async () => {
     try {
-      const data = await getVehicles();
-      setVehicles(data);
+      const [dauKeoData, roMoocData] = await Promise.all([
+        fetchAllDauKeo(),
+        fetchAllRoMooc(),
+      ]);
+      
+      // Combine vehicles into a single array with type information
+      const allVehicles = [
+        ...dauKeoData.map(item => ({ ...item, type: 'dau_keo' })),
+        ...roMoocData.map(item => ({ ...item, type: 'ro_mooc' })),
+      ];
+      
+      setVehicles(allVehicles);
     } catch (err) {
       console.error('Error fetching vehicles:', err);
     }

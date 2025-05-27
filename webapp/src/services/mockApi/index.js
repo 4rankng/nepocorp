@@ -7,4 +7,5 @@ export * from './containerApi';
 export * from './nhanVienApi';
 export * from './lichVanChuyenApi';
 export * from './doiTacApi';
+export * from './reportApi';
 // Add other exports here as new mock APIs are created

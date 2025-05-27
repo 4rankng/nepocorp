@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getDetailedCostReport } from '@services/mockData/reports';
+import { fetchDetailedCostReport } from '@services/mockApi';
 import DateRangeFilter from '@components/DateRangeFilter';
 import StandardTable from '@/components/StandardTable';
 import { format } from 'date-fns';
@@ -76,7 +76,7 @@ const BaoCaoChiTietChiPhi = () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await getDetailedCostReport();
+      const data = await fetchDetailedCostReport();
       setOriginalData(data);
       setFilteredData(data);
     } catch (err) {

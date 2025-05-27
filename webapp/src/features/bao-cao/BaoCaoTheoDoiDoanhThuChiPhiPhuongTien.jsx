@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  getVehicleMonthlyDetailsReport,
-  getAvailableMonthsForReport,
-} from '@services/mockData/reports';
-import { getVehiclesForSelect } from '@services/mockData/vehicles';
+  fetchVehicleMonthlyDetailsReport,
+  fetchAvailableMonthsForReport,
+} from '@services/mockApi';
+import { fetchAllDauKeo, fetchAllRoMooc } from '@services/mockApi';
 
 // SVG Icon for Download
 const ArrowDownTrayIcon = ({ className = 'w-6 h-6' }) => (
@@ -29,6 +29,33 @@ const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
 
+// Helper to format vehicles for select dropdown
+const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
+  const allVehicles = [];
+  
+  dauKeoList.forEach(dauKeo => {
+    allVehicles.push({
+      id: `dauKeo-${dauKeo.id}`,
+      value: `dauKeo-${dauKeo.id}`,
+      label: `${dauKeo.bienSoXe} (Đầu kéo)`,
+      bienSoXe: dauKeo.bienSoXe,
+      type: 'dauKeo',
+    });
+  });
+  
+  roMoocList.forEach(roMooc => {
+    allVehicles.push({
+      id: `roMooc-${roMooc.id}`,
+      value: `roMooc-${roMooc.id}`,
+      label: `${roMooc.bienSoXe} (Rơ moóc)`,
+      bienSoXe: roMooc.bienSoXe,
+      type: 'roMooc',
+    });
+  });
+  
+  return allVehicles;
+};
+
 const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [selectedMonthYear, setSelectedMonthYear] = useState('');
@@ -45,10 +72,13 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
   const fetchDropdownData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [vehicles, months] = await Promise.all([
-        getVehiclesForSelect(),
-        getAvailableMonthsForReport(),
+      const [dauKeoList, roMoocList, months] = await Promise.all([
+        fetchAllDauKeo(),
+        fetchAllRoMooc(),
+        fetchAvailableMonthsForReport(),
       ]);
+      
+      const vehicles = formatVehiclesForSelect(dauKeoList, roMoocList);
       setVehiclesForSelect(vehicles);
       setMonthsForSelect(months);
       if (vehicles.length > 0) setSelectedVehicleId(vehicles[0].id); // Default select first vehicle
@@ -74,46 +104,41 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     setError('');
     setMessage('');
     try {
-      const data = await getVehicleMonthlyDetailsReport(selectedVehicleId, selectedMonthYear);
+      const data = await fetchVehicleMonthlyDetailsReport(selectedVehicleId, selectedMonthYear);
+
+      if (!data) {
+        setMessage(`Không có dữ liệu cho xe và tháng đã chọn.`);
+        setReportDetails(null);
+        return;
+      }
 
       // Transform the data into the expected format
       const transformedData = {
         overview: {
-          totalRevenue: data.reduce((sum, item) => sum + item.revenue, 0),
-          grandTotalCosts: data.reduce(
-            (sum, item) => sum + item.fuelCost + item.maintenanceCost + item.otherCost,
-            0
-          ),
-          grandTotalProfit: data.reduce(
-            (sum, item) =>
-              sum + (item.revenue - item.fuelCost - item.maintenanceCost - item.otherCost),
-            0
-          ),
+          totalRevenue: data.revenue,
+          grandTotalCosts: data.totalCosts,
+          grandTotalProfit: data.profit,
         },
-        shipmentDetails: data.map(item => ({
-          id: item.tripId,
-          ngayThang: item.date,
-          dienGiai: item.route,
+        shipmentDetails: data.trips.map(trip => ({
+          id: trip.tripId,
+          ngayThang: trip.date,
+          dienGiai: trip.route,
           tuyenDuong: {
-            diemDi: item.route.split(' - ')[0] || '',
-            diemDen: item.route.split(' - ')[1] || '',
+            diemDi: trip.route.split(' - ')[0] || '',
+            diemDen: trip.route.split(' - ')[1] || '',
           },
-          dauLit: item.fuelLiters,
-          dauDong: item.fuelCost,
-          phiDiDuong: item.roadCost,
-          tongChiPhiPhuongTien: item.fuelCost + item.maintenanceCost + item.otherCost,
-          cuocVanChuyen: item.revenue,
-          loiNhuanPhuongTien:
-            item.revenue - (item.fuelCost + item.maintenanceCost + item.otherCost),
-          thongTinContainer: item.containers,
+          dauLit: Math.floor(trip.distance / 10), // Rough estimate
+          dauDong: trip.revenue * 0.3, // Rough estimate 30% fuel cost
+          phiDiDuong: trip.revenue * 0.1, // Rough estimate 10% road cost
+          tongChiPhiPhuongTien: trip.revenue * 0.6, // Rough estimate 60% total cost
+          cuocVanChuyen: trip.revenue,
+          loiNhuanPhuongTien: trip.revenue * 0.4, // Rough estimate 40% profit
+          thongTinContainer: `Container - ${trip.customer}`,
         })),
-        otherCosts: [], // Not available in the new data structure
+        otherCosts: data.costBreakdown || [],
       };
 
       setReportDetails(transformedData);
-      if (!data || data.length === 0) {
-        setMessage(`Không có dữ liệu cho xe và tháng đã chọn.`);
-      }
     } catch (err) {
       setError(`Lỗi khi tải báo cáo: ${err.message}`);
       setReportDetails(null);
