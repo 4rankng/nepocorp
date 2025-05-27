@@ -29,6 +29,10 @@ import {
   Divider,
   useMediaQuery,
   useTheme,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -99,7 +103,7 @@ const DinhMucDau = () => {
   const [expandedCards, setExpandedCards] = useState({});
   const [formData, setFormData] = useState({
     bienSoXe: '',
-    loaiDinhMuc: 'hang',
+    loaiDinhMuc: 'km_hang',
     tuKm: '',
     denKm: '',
     dinhMuc: '',
@@ -117,6 +121,7 @@ const DinhMucDau = () => {
   const [orderBy, setOrderBy] = useState('fromKm');
   const [order, setOrder] = useState('asc');
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingId, setEditingId] = useState(null);
 
   // Create a combined array of all license plates with their standards
   const allLicensePlatesWithStandards = useMemo(() => {
@@ -220,7 +225,7 @@ const DinhMucDau = () => {
                 size="small"
                 onClick={e => {
                   e.stopPropagation();
-                  handleEditClick(standard);
+                  handleEditClick(standard, licensePlate, mobileTab === 'cargo' ? 'km_hang' : 'km_vo');
                 }}
               />
               <DeleteButton
@@ -410,10 +415,10 @@ const DinhMucDau = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleOpenAddDialog = licensePlate => {
+  const handleOpenAddDialog = (licensePlate, type = 'km_hang') => {
     setFormData({
       bienSoXe: licensePlate,
-      loaiDinhMuc: 'hang',
+      loaiDinhMuc: type,
       tuKm: '',
       denKm: '',
       dinhMuc: '',
@@ -423,14 +428,15 @@ const DinhMucDau = () => {
     setOpenAddDialog(true);
   };
 
-  const handleEditClick = standard => {
+  const handleEditClick = (standard, licensePlate, type) => {
     setFormData({
-      bienSoXe: standard.bienSoXe,
-      loaiDinhMuc: standard.loaiDinhMuc,
-      tuKm: standard.tuKm,
-      denKm: standard.denKm,
-      dinhMuc: standard.dinhMuc,
-      ghiChu: standard.ghiChu || '',
+      id: standard.id,
+      bienSoXe: licensePlate,
+      loaiDinhMuc: type || 'km_hang',
+      tuKm: standard.fromKm || '',
+      denKm: standard.toKm || '',
+      dinhMuc: standard.standard || '',
+      ghiChu: standard.note || '',
     });
     setEditingId(standard.id);
     setOpenEditDialog(true);
@@ -491,9 +497,12 @@ const DinhMucDau = () => {
     setIsLoading(true);
     try {
       // Check for overlapping ranges
-      const from = parseFloat(formData.fromKm);
-      const to = parseFloat(formData.toKm);
-      const currentStandards = dinhMucHang[formData.licensePlate] || [];
+      const from = parseFloat(formData.tuKm);
+      const to = parseFloat(formData.denKm);
+      const currentStandards = formData.loaiDinhMuc === 'km_hang'
+        ? dinhMucHang[formData.bienSoXe] || []
+        : dinhMucVo[formData.bienSoXe] || [];
+
       const overlapping = currentStandards.some(item => {
         return (
           (from >= item.fromKm && from < item.toKm) ||
@@ -505,13 +514,23 @@ const DinhMucDau = () => {
       if (overlapping) {
         setErrors(prev => ({
           ...prev,
-          toKm: 'Khoảng km này đã được định nghĩa cho biển số xe này',
+          denKm: 'Khoảng km này đã được định nghĩa cho biển số xe này',
         }));
         return;
       }
 
-      await dinhMucApi.create(formData);
-      showSnackbar('Thêm định mức dầu thành công');
+      // Map form data to API format
+      const apiData = {
+        bienSoXe: formData.bienSoXe,
+        loaiDinhMuc: formData.loaiDinhMuc,
+        tuKm: formData.tuKm,
+        denKm: formData.denKm,
+        dinhMuc: formData.dinhMuc,
+        ghiChu: formData.ghiChu,
+      };
+
+      await dinhMucApi.create(apiData);
+      showSnackbar(`Thêm định mức ${formData.loaiDinhMuc === 'km_hang' ? 'hàng' : 'vỏ'} thành công`);
       await fetchData();
       setOpenAddDialog(false);
     } catch (err) {
@@ -528,9 +547,12 @@ const DinhMucDau = () => {
     setIsLoading(true);
     try {
       // Check for overlapping ranges, excluding current item
-      const from = parseFloat(formData.fromKm);
-      const to = parseFloat(formData.toKm);
-      const currentStandards = dinhMucHang[formData.licensePlate] || [];
+      const from = parseFloat(formData.tuKm);
+      const to = parseFloat(formData.denKm);
+      const currentStandards = formData.loaiDinhMuc === 'km_hang'
+        ? dinhMucHang[formData.bienSoXe] || []
+        : dinhMucVo[formData.bienSoXe] || [];
+
       const overlapping = currentStandards.some(item => {
         if (item.id === formData.id) return false; // Skip current item
         return (
@@ -543,13 +565,24 @@ const DinhMucDau = () => {
       if (overlapping) {
         setErrors(prev => ({
           ...prev,
-          toKm: 'Khoảng km này đã được định nghĩa cho biển số xe này',
+          denKm: 'Khoảng km này đã được định nghĩa cho biển số xe này',
         }));
         return;
       }
 
-      await dinhMucApi.update(formData.id, formData);
-      showSnackbar('Sửa định mức dầu thành công');
+      // Map form data to API format
+      const apiData = {
+        id: formData.id,
+        bienSoXe: formData.bienSoXe,
+        loaiDinhMuc: formData.loaiDinhMuc,
+        tuKm: formData.tuKm,
+        denKm: formData.denKm,
+        dinhMuc: formData.dinhMuc,
+        ghiChu: formData.ghiChu,
+      };
+
+      await dinhMucApi.update(formData.id, apiData);
+      showSnackbar(`Sửa định mức ${formData.loaiDinhMuc === 'km_hang' ? 'hàng' : 'vỏ'} thành công`);
       await fetchData();
       setOpenEditDialog(false);
     } catch (err) {
@@ -561,10 +594,16 @@ const DinhMucDau = () => {
   };
 
   const handleDeleteClick = id => {
-    // Find the item to delete from all standards
-    const allStandards = Object.entries(dinhMucHang).flatMap(([licensePlate, standards]) =>
-      standards.map(standard => ({ ...standard, licensePlate }))
-    );
+    // Find the item to delete from all standards (both hàng and vỏ)
+    const allStandards = [
+      ...Object.entries(dinhMucHang).flatMap(([licensePlate, standards]) =>
+        standards.map(standard => ({ ...standard, licensePlate, type: 'km_hang' }))
+      ),
+      ...Object.entries(dinhMucVo).flatMap(([licensePlate, standards]) =>
+        standards.map(standard => ({ ...standard, licensePlate, type: 'km_vo' }))
+      )
+    ];
+
     const itemToDelete = allStandards.find(item => item.id === id);
     if (!itemToDelete) return;
 
@@ -573,6 +612,7 @@ const DinhMucDau = () => {
       id,
       details: {
         'Biển số xe': itemToDelete.licensePlate,
+        'Loại định mức': itemToDelete.type === 'km_hang' ? 'Định mức hàng' : 'Định mức vỏ',
         'Từ km': itemToDelete.fromKm.toLocaleString(),
         'Đến km': itemToDelete.toKm.toLocaleString(),
         'Định mức (l/km)': itemToDelete.standard,
@@ -669,14 +709,17 @@ const DinhMucDau = () => {
                 mb: 1,
               }}
             >
-              {isEdit ? 'Sửa định mức dầu' : 'Thêm định mức dầu'}
+              {isEdit
+                ? `Sửa Định Mức ${formData.loaiDinhMuc === 'km_hang' ? 'Hàng' : 'Vỏ'}`
+                : 'Thêm Định Mức'
+              }
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="body2" color="text.secondary">
                 Biển số xe:
               </Typography>
               <Chip
-                label={formData.licensePlate}
+                label={formData.bienSoXe}
                 size="small"
                 variant="outlined"
                 sx={{
@@ -688,21 +731,75 @@ const DinhMucDau = () => {
             </Box>
           </Box>
 
-          <DialogContentText
-            sx={{
-              mb: '20px',
-              color: 'text.secondary',
-              fontSize: isMobile ? '0.9rem' : '0.875rem',
-              lineHeight: 1.5,
-            }}
-          >
-            {isEdit
-              ? 'Sửa thông tin định mức dầu cho phương tiện.'
-              : 'Nhập thông tin định mức dầu mới cho phương tiện.'}
-          </DialogContentText>
-
           <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
             <Grid container spacing={isMobile ? 3 : 2}>
+              {!isEdit && (
+                <Grid item xs={12}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      mb: 1,
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      fontSize: isMobile ? '0.9rem' : '0.8rem',
+                    }}
+                  >
+                    Loại định mức
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
+                  <Box
+                    onClick={() => handleInputChange({ target: { name: 'loaiDinhMuc', value: 'km_hang' } })}
+                    sx={{
+                      flex: 1,
+                      p: 2,
+                      border: formData.loaiDinhMuc === 'km_hang' ? '2px solid' : '1px solid',
+                      borderColor: formData.loaiDinhMuc === 'km_hang' ? 'primary.main' : 'divider',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        bgcolor: 'action.hover',
+                      },
+                      bgcolor: formData.loaiDinhMuc === 'km_hang' ? 'action.selected' : 'background.paper',
+                    }}
+                  >
+                    <Typography variant="subtitle1" align="center">
+                      Định Mức Hàng
+                    </Typography>
+                  </Box>
+                  <Box
+                    onClick={() => handleInputChange({ target: { name: 'loaiDinhMuc', value: 'km_vo' } })}
+                    sx={{
+                      flex: 1,
+                      p: 2,
+                      border: formData.loaiDinhMuc === 'km_vo' ? '2px solid' : '1px solid',
+                      borderColor: formData.loaiDinhMuc === 'km_vo' ? 'primary.main' : 'divider',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        bgcolor: 'action.hover',
+                      },
+                      bgcolor: formData.loaiDinhMuc === 'km_vo' ? 'action.selected' : 'background.paper',
+                    }}
+                  >
+                    <Typography variant="subtitle1" align="center">
+                      Định Mức Vỏ
+                    </Typography>
+                  </Box>
+                </Box>
+                </Grid>
+              )}
               <Grid item xs={12}>
                 <Typography
                   variant="subtitle2"
@@ -1021,7 +1118,7 @@ const DinhMucDau = () => {
   };
 
   return (
-    <Box sx={{ p: isMobile ? 1 : 2 }}>
+    <Box sx={{ p: isMobile ? 1 : 2, width: '100%' }}>
       {/* 1. Add Tabs for mobile at the top, and supplementary standard at the top for desktop */}
       <Box sx={{ mb: isMobile ? 1 : 2 }}>
         {isMobile ? (
@@ -1111,7 +1208,7 @@ const DinhMucDau = () => {
       )}
 
       {/* Main Content */}
-      <Box sx={{ mt: isMobile ? 1 : 2 }}>
+      <Box sx={{ mt: isMobile ? 1 : 2, width: '100%' }}>
         {isLoading ? (
           <Box display="flex" justifyContent="center" my={4}>
             <CircularProgress size={24} />
@@ -1194,7 +1291,7 @@ const DinhMucDau = () => {
                       <Paper
                         key={licensePlate}
                         elevation={1}
-                        sx={{ borderRadius: 2, p: 1.5, mb: 1 }}
+                        sx={{ borderRadius: 2, p: 1.5, mb: 1, width: '100%' }}
                       >
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -1212,7 +1309,7 @@ const DinhMucDau = () => {
                             Chưa có dữ liệu định mức
                           </Typography>
                         ) : (
-                          <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                          <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, width: '100%' }}>
                             <Table size="small">
                               <TableHead>
                                 <TableRow sx={{ backgroundColor: 'action.hover' }}>
@@ -1241,7 +1338,7 @@ const DinhMucDau = () => {
                                           size="small"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            handleOpenEditDialog(standard);
+                                            handleEditClick(standard, licensePlate, mobileTab === 'cargo' ? 'km_hang' : 'km_vo');
                                           }}
                                         />
                                         <DeleteButton
@@ -1268,11 +1365,19 @@ const DinhMucDau = () => {
               // DESKTOP: For each vehicle, show two tables: hàng and vỏ
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {filteredLicensePlatesWithStandards.map(({ licensePlate }) => (
-                  <Box key={licensePlate} sx={{ mb: 3 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                      {licensePlate}
-                    </Typography>
-                    <Grid container spacing={2}>
+                  <Box key={licensePlate} sx={{ mb: 3, width: '100%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, mr: 1 }}>
+                        {licensePlate}
+                      </Typography>
+                      <AddButton
+                        size="small"
+                        onClick={() => handleOpenAddDialog(licensePlate)}
+                        sx={{ minWidth: 32, height: 32 }}
+                        title="Thêm định mức mới"
+                      />
+                    </Box>
+                    <Grid container spacing={2} sx={{ width: '100%' }}>
                       <Grid item xs={12} md={6}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
                           Định mức hàng
@@ -1287,11 +1392,12 @@ const DinhMucDau = () => {
                           data={(dinhMucHang[licensePlate] || []).sort((a, b) => a.fromKm - b.fromKm)}
                           renderActions={row => (
                             <>
-                              <EditButton onClick={e => { e.stopPropagation(); handleOpenEditDialog(row); }} />
+                              <EditButton onClick={e => { e.stopPropagation(); handleEditClick(row, licensePlate, 'km_hang'); }} />
                               <DeleteButton onClick={e => { e.stopPropagation(); handleDeleteClick(row.id); }} />
                             </>
                           )}
                           emptyMessage="Chưa có dữ liệu định mức hàng"
+                          sx={{ width: '100%' }}
                         />
                       </Grid>
                       <Grid item xs={12} md={6}>
@@ -1308,11 +1414,12 @@ const DinhMucDau = () => {
                           data={(dinhMucVo[licensePlate] || []).sort((a, b) => a.fromKm - b.fromKm)}
                           renderActions={row => (
                             <>
-                              <EditButton onClick={e => { e.stopPropagation(); handleOpenEditDialog(row); }} />
+                              <EditButton onClick={e => { e.stopPropagation(); handleEditClick(row, licensePlate, 'km_vo'); }} />
                               <DeleteButton onClick={e => { e.stopPropagation(); handleDeleteClick(row.id); }} />
                             </>
                           )}
                           emptyMessage="Chưa có dữ liệu định mức vỏ"
+                          sx={{ width: '100%' }}
                         />
                       </Grid>
                     </Grid>

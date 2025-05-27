@@ -23,7 +23,7 @@ export const fetchAllKhachHang = () => {
 };
 
 export const fetchKhachHangById = id => {
-  console.log(`[Mock API] Fetching KhachHang by ID: ${id}`);
+
   return simulateApiCall(() => khachHangDataService.getKhachHangById(id));
 };
 
@@ -33,12 +33,12 @@ export const addKhachHang = data => {
 };
 
 export const editKhachHang = (id, data) => {
-  console.log(`[Mock API] Updating KhachHang ID: ${id} with data:`, data);
+
   return simulateApiCall(() => khachHangDataService.updateKhachHang(id, data));
 };
 
 export const removeKhachHang = id => {
-  console.log(`[Mock API] Deleting KhachHang ID: ${id}`);
+
   return simulateApiCall(() => khachHangDataService.deleteKhachHang(id));
 };
 

@@ -23,7 +23,7 @@ export const fetchAllContainer = () => {
 };
 
 export const fetchContainerById = id => {
-  console.log(`[Mock API] Fetching Container by ID: ${id}`);
+
   return simulateApiCall(() => containerDataService.getContainerById(id));
 };
 
@@ -33,12 +33,12 @@ export const addContainer = data => {
 };
 
 export const editContainer = (id, data) => {
-  console.log(`[Mock API] Updating Container ID: ${id} with data:`, data);
+
   return simulateApiCall(() => containerDataService.updateContainer(id, data));
 };
 
 export const removeContainer = id => {
-  console.log(`[Mock API] Deleting Container ID: ${id}`);
+
   return simulateApiCall(() => containerDataService.deleteContainer(id));
 };
 

@@ -18,27 +18,27 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllRoMooc = () => {
-  console.log('[Mock API] Fetching all RoMooc...');
+
   return simulateApiCall(roMoocDataService.getAllRoMooc);
 };
 
 export const fetchRoMoocById = id => {
-  console.log(`[Mock API] Fetching RoMooc by ID: ${id}`);
+
   return simulateApiCall(() => roMoocDataService.getRoMoocById(id));
 };
 
 export const addRoMooc = data => {
-  console.log('[Mock API] Creating RoMooc:', data);
+
   return simulateApiCall(() => roMoocDataService.createRoMooc(data));
 };
 
 export const editRoMooc = (id, data) => {
-  console.log(`[Mock API] Updating RoMooc ID: ${id} with data:`, data);
+
   return simulateApiCall(() => roMoocDataService.updateRoMooc(id, data));
 };
 
 export const removeRoMooc = id => {
-  console.log(`[Mock API] Deleting RoMooc ID: ${id}`);
+
   return simulateApiCall(() => roMoocDataService.deleteRoMooc(id));
 };
 

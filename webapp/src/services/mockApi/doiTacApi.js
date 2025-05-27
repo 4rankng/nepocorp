@@ -23,7 +23,7 @@ export const fetchAllDoiTac = () => {
 };
 
 export const fetchDoiTacById = id => {
-  console.log(`[Mock API] Fetching DoiTac by ID: ${id}`);
+
   return simulateApiCall(() => doiTacDataService.getDoiTacById(id));
 };
 
@@ -33,12 +33,12 @@ export const addDoiTac = data => {
 };
 
 export const editDoiTac = (id, data) => {
-  console.log(`[Mock API] Updating DoiTac ID: ${id} with data:`, data);
+
   return simulateApiCall(() => doiTacDataService.updateDoiTac(id, data));
 };
 
 export const removeDoiTac = id => {
-  console.log(`[Mock API] Deleting DoiTac ID: ${id}`);
+
   return simulateApiCall(() => doiTacDataService.deleteDoiTac(id));
 };
 

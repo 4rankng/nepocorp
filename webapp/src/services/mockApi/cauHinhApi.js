@@ -24,12 +24,12 @@ export const fetchAllCauHinh = () => {
 };
 
 export const fetchCauHinhById = id => {
-  console.log(`[Mock API] Fetching CauHinh by ID: ${id}`);
+
   return simulateApiCall(() => cauHinhDataService.getCauHinhById(id));
 };
 
 export const fetchCauHinhByKey = key => {
-  console.log(`[Mock API] Fetching CauHinh by key: ${key}`);
+
   return simulateApiCall(() => cauHinhDataService.getCauHinhByKey(key));
 };
 
@@ -39,23 +39,23 @@ export const addCauHinh = data => {
 };
 
 export const editCauHinh = (id, data) => {
-  console.log(`[Mock API] Updating CauHinh ID: ${id} with data:`, data);
+
   return simulateApiCall(() => cauHinhDataService.updateCauHinh(id, data));
 };
 
 export const editCauHinhByKey = (key, value) => {
-  console.log(`[Mock API] Updating CauHinh key: ${key} with value:`, value);
+
   return simulateApiCall(() => cauHinhDataService.updateCauHinhByKey(key, value));
 };
 
 export const removeCauHinh = id => {
-  console.log(`[Mock API] Deleting CauHinh ID: ${id}`);
+
   return simulateApiCall(() => cauHinhDataService.deleteCauHinh(id));
 };
 
 // Specific method for getting dinh muc bo sung
 export const getDinhMucBoSung = () => {
-  console.log('[Mock API] Fetching Dinh Muc Bo Sung...');
+
   return simulateApiCall(async () => {
     const config = await cauHinhDataService.getCauHinhByKey('dinh_muc_bo_sung');
     return config ? { value: parseFloat(config.value) } : { value: 0 };
@@ -64,7 +64,7 @@ export const getDinhMucBoSung = () => {
 
 // Specific method for updating dinh muc bo sung
 export const updateDinhMucBoSung = value => {
-  console.log(`[Mock API] Updating Dinh Muc Bo Sung to: ${value}`);
+
   return simulateApiCall(async () => {
     const updated = await cauHinhDataService.updateCauHinhByKey('dinh_muc_bo_sung', value.toString());
     return { value: parseFloat(updated.value) };

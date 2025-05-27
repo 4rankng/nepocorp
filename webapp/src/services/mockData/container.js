@@ -1,98 +1,28 @@
 // Mock database for Container
 // Fields: id (string, container number), phan_loai (string), createdAt (ISO String), updatedAt (ISO String)
 
-let containerData = [
+const containerData = [
   {
-    id: 'CSNU6879155',
+    id: 1,
     phan_loai: '20ft DC',
-    createdAt: '2023-01-01T08:00:00Z',
-    updatedAt: '2024-05-01T08:00:00Z',
-  },
-  {
-    id: 'MSKU1234560',
-    phan_loai: '40ft HC',
     createdAt: '2023-01-15T09:30:00Z',
-    updatedAt: '2024-05-02T09:30:00Z',
+    updatedAt: '2024-05-10T14:20:00Z',
   },
   {
-    id: 'CMAU7890123',
-    phan_loai: '20ft RF (Reefer)',
-    createdAt: '2023-02-01T10:00:00Z',
-    updatedAt: '2024-04-20T10:00:00Z',
+    id: 2,
+    phan_loai: '40ft HC',
+    createdAt: '2023-02-20T10:00:00Z',
+    updatedAt: '2024-05-11T11:00:00Z',
   },
   {
-    id: 'GESU2345671',
-    phan_loai: '40ft OT (Open Top)',
-    createdAt: '2023-02-15T11:30:00Z',
-    updatedAt: '2024-05-10T11:30:00Z',
-  },
-  {
-    id: 'APZU3456782',
-    phan_loai: '20ft FR (Flat Rack)',
-    createdAt: '2023-03-01T12:00:00Z',
-    updatedAt: '2024-04-25T12:00:00Z',
-  },
-  {
-    id: 'TCKU4567893',
-    phan_loai: '45ft HC PW (Pallet Wide)',
-    createdAt: '2023-03-15T13:30:00Z',
-    updatedAt: '2024-05-15T13:30:00Z',
-  },
-  {
-    id: 'SEGU5678904',
-    phan_loai: '20ft ISO Tank',
-    createdAt: '2023-04-01T14:00:00Z',
-    updatedAt: '2024-05-05T14:00:00Z',
-  },
-  {
-    id: 'UACU6789015',
-    phan_loai: '40ft Double Door',
-    createdAt: '2023-04-15T15:30:00Z',
-    updatedAt: '2024-05-20T15:30:00Z',
-  },
-  {
-    id: 'OOLU7890126',
-    phan_loai: '20ft Hard Top',
-    createdAt: '2023-05-01T16:00:00Z',
-    updatedAt: '2024-05-01T16:00:00Z',
-  },
-  {
-    id: 'SUDU8901237',
-    phan_loai: '40ft Reefer HC',
-    createdAt: '2023-05-15T17:30:00Z',
-    updatedAt: '2024-05-15T17:30:00Z',
-  },
-  {
-    id: 'HLXU9012348',
-    phan_loai: '20ft Ventilated',
-    createdAt: '2023-06-01T08:45:00Z',
-    updatedAt: '2024-05-08T08:45:00Z',
-  },
-  {
-    id: 'TRLU0123459',
-    phan_loai: '40ft Flat Rack Collapsible',
-    createdAt: '2023-06-15T09:15:00Z',
-    updatedAt: '2024-04-28T09:15:00Z',
-  },
-  {
-    id: 'FCIU1234500',
-    phan_loai: '20ft Bulk',
-    createdAt: '2023-07-01T10:45:00Z',
-    updatedAt: '2024-05-12T10:45:00Z',
-  },
-  {
-    id: 'BEAU2345011',
-    phan_loai: '40ft Platform',
-    createdAt: '2023-07-15T11:15:00Z',
-    updatedAt: '2024-04-22T11:15:00Z',
-  },
-  {
-    id: 'CAIU3450122',
-    phan_loai: '10ft GP',
-    createdAt: '2023-08-01T12:45:00Z',
-    updatedAt: '2024-05-18T12:45:00Z',
+    id: 3,
+    phan_loai: '45ft HC',
+    createdAt: '2023-03-10T08:15:00Z',
+    updatedAt: '2024-05-12T09:45:00Z',
   },
 ];
+
+export default containerData;
 
 export const getAllContainer = async () => {
   return [...containerData];

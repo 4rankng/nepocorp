@@ -25,12 +25,12 @@ export const fetchAllDinhMuc = () => {
 };
 
 export const fetchDinhMucById = id => {
-  console.log(`[Mock API] Fetching Dinh Muc by ID: ${id}`);
+
   return simulateApiCall(() => dinhMucDataService.getDinhMucById(id));
 };
 
 export const getByBienSoAndType = (bienSoXe, type) => {
-  console.log(`[Mock API] Fetching Dinh Muc by bien so: ${bienSoXe} and type: ${type}`);
+
   return simulateApiCall(async () => {
     const data = await dinhMucDataService.getDinhMucByBienSoAndType(bienSoXe, type);
     return { data };
@@ -45,13 +45,13 @@ export const addDinhMuc = data => {
 
 export const editDinhMuc = (id, data) => {
   // Renamed from updateDinhMuc to follow convention
-  console.log(`[Mock API] Updating Dinh Muc ID: ${id} with data:`, data);
+
   return simulateApiCall(() => dinhMucDataService.updateDinhMuc(id, data));
 };
 
 export const removeDinhMuc = id => {
   // Renamed from deleteDinhMuc to follow convention
-  console.log(`[Mock API] Deleting Dinh Muc ID: ${id}`);
+
   return simulateApiCall(() => dinhMucDataService.deleteDinhMuc(id));
 };
 
@@ -72,7 +72,7 @@ export const getBoSung = () => {
 };
 
 export const updateBoSung = value => {
-  console.log(`[Mock API] Updating Bo Sung (Supplementary) to: ${value}`);
+
   return cauHinhApi.updateDinhMucBoSung(value);
 };
 

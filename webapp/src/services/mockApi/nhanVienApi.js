@@ -23,7 +23,7 @@ export const fetchAllNhanVien = () => {
 };
 
 export const fetchNhanVienById = id => {
-  console.log(`[Mock API] Fetching NhanVien by ID: ${id}`);
+
   return simulateApiCall(() => nhanVienDataService.getNhanVienById(id));
 };
 
@@ -33,12 +33,12 @@ export const addNhanVien = data => {
 };
 
 export const editNhanVien = (id, data) => {
-  console.log(`[Mock API] Updating NhanVien ID: ${id} with data:`, data);
+
   return simulateApiCall(() => nhanVienDataService.updateNhanVien(id, data));
 };
 
 export const removeNhanVien = id => {
-  console.log(`[Mock API] Deleting NhanVien ID: ${id}`);
+
   return simulateApiCall(() => nhanVienDataService.deleteNhanVien(id));
 };
 

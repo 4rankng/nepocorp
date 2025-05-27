@@ -25,7 +25,7 @@ export const fetchAllDauKeo = () => {
 };
 
 export const fetchDauKeoById = id => {
-  console.log(`[Mock API] Fetching DauKeo by ID: ${id}`);
+
   return simulateApiCall(() => dauKeoDataService.getDauKeoById(id));
 };
 
@@ -35,12 +35,12 @@ export const addDauKeo = data => {
 };
 
 export const editDauKeo = (id, data) => {
-  console.log(`[Mock API] Updating DauKeo ID: ${id} with data:`, data);
+
   return simulateApiCall(() => dauKeoDataService.updateDauKeo(id, data));
 };
 
 export const removeDauKeo = id => {
-  console.log(`[Mock API] Deleting DauKeo ID: ${id}`);
+
   return simulateApiCall(() => dauKeoDataService.deleteDauKeo(id));
 };
 

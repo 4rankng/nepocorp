@@ -58,6 +58,17 @@ const formatCurrency = value => {
 const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
 
+  // Calculate expiration date if not present
+  const getExpirationDate = (record) => {
+    if (record.ngayHetHan) return new Date(record.ngayHetHan);
+    if (record.replacementDate && record.warrantyPeriod) {
+      const date = new Date(record.replacementDate);
+      date.setMonth(date.getMonth() + Number(record.warrantyPeriod));
+      return date;
+    }
+    return null;
+  };
+
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
@@ -196,6 +207,18 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
                   {formatCurrency(record.total)}
                 </Typography>
               </Box>
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mb: 0.5 }}
+                >
+                  Ngày hết hạn
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {getExpirationDate(record)?.toLocaleDateString('vi-VN') || '-'}
+                </Typography>
+              </Box>
               {record.note && (
                 <Box sx={{ gridColumn: '1 / -1' }}>
                   <Typography
@@ -310,10 +333,18 @@ const BaoDuong = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Helper to add months to a date
+  function addMonths(date, months) {
+    const d = new Date(date);
+    d.setMonth(d.getMonth() + Number(months));
+    return d;
+  }
+
   const [formData, setFormData] = useState({
     licensePlate: '',
     replacementDate: new Date(),
     warrantyPeriod: 6,
+    ngayHetHan: addMonths(new Date(), 6),
     quantity: 1,
     unitPrice: 0,
     total: 0,
@@ -322,14 +353,14 @@ const BaoDuong = () => {
 
   const [errors, setErrors] = useState({});
 
-  // Calculate total whenever quantity or unitPrice changes
+  // Auto-calculate ngayHetHan when replacementDate or warrantyPeriod changes
   useEffect(() => {
-    const total = (formData.quantity || 0) * (formData.unitPrice || 0);
     setFormData(prev => ({
       ...prev,
-      total: total,
+      ngayHetHan: addMonths(prev.replacementDate, prev.warrantyPeriod),
     }));
-  }, [formData.quantity, formData.unitPrice]);
+    // eslint-disable-next-line
+  }, [formData.replacementDate, formData.warrantyPeriod]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -361,10 +392,13 @@ const BaoDuong = () => {
 
   const handleOpenAddDialog = () => {
     setIsEdit(false);
+    const replacementDate = new Date();
+    const warrantyPeriod = 6;
     setFormData({
       licensePlate: '',
-      replacementDate: new Date(),
-      warrantyPeriod: 6,
+      replacementDate,
+      warrantyPeriod,
+      ngayHetHan: addMonths(replacementDate, warrantyPeriod),
       quantity: 1,
       unitPrice: 0,
       total: 0,
@@ -375,11 +409,14 @@ const BaoDuong = () => {
   };
 
   const handleOpenEditDialog = record => {
+    const replacementDate = new Date(record.replacementDate);
+    const warrantyPeriod = record.warrantyPeriod;
     setIsEdit(true);
     setFormData({
       licensePlate: record.licensePlate,
-      replacementDate: new Date(record.replacementDate),
-      warrantyPeriod: record.warrantyPeriod,
+      replacementDate,
+      warrantyPeriod,
+      ngayHetHan: addMonths(replacementDate, warrantyPeriod),
       quantity: record.quantity,
       unitPrice: record.unitPrice,
       total: record.total,
@@ -437,9 +474,15 @@ const BaoDuong = () => {
 
     setIsLoading(true);
     try {
+      // Ensure ngayHetHan is always calculated if missing
+      let ngayHetHan = formData.ngayHetHan;
+      if (!ngayHetHan) {
+        ngayHetHan = addMonths(formData.replacementDate, formData.warrantyPeriod);
+      }
       const data = {
         ...formData,
         replacementDate: formData.replacementDate.toISOString().split('T')[0],
+        ngayHetHan: ngayHetHan ? ngayHetHan.toISOString().split('T')[0] : null,
         warrantyPeriod: Number(formData.warrantyPeriod),
         quantity: Number(formData.quantity),
         unitPrice: Number(formData.unitPrice),
@@ -528,6 +571,19 @@ const BaoDuong = () => {
       minWidth: 120,
     },
     {
+      key: 'ngayHetHan',
+      label: 'Ngày hết hạn',
+      render: (value, record) => {
+        let date = value;
+        if (!date && record.replacementDate && record.warrantyPeriod) {
+          date = addMonths(record.replacementDate, record.warrantyPeriod);
+        }
+        return date ? new Date(date).toLocaleDateString('vi-VN') : '-';
+      },
+      sortable: false,
+      minWidth: 120,
+    },
+    {
       key: 'warrantyPeriod',
       label: 'Thời hạn bảo hành',
       render: value => `${value} tháng`,
@@ -587,10 +643,13 @@ const BaoDuong = () => {
 
   const handleAddNew = (type = 'tire') => {
     setIsEdit(false);
+    const replacementDate = new Date();
+    const warrantyPeriod = 6;
     setFormData({
       licensePlate: '',
-      replacementDate: new Date(),
-      warrantyPeriod: 6,
+      replacementDate,
+      warrantyPeriod,
+      ngayHetHan: addMonths(replacementDate, warrantyPeriod),
       quantity: 1,
       unitPrice: 0,
       total: 0,
@@ -750,9 +809,10 @@ const BaoDuong = () => {
                   label="Ngày thay lốp *"
                   value={formData.replacementDate}
                   onChange={date => {
+                    const newDate = date || new Date();
                     setFormData(prev => ({
                       ...prev,
-                      replacementDate: date,
+                      replacementDate: newDate,
                     }));
                     if (errors.replacementDate) {
                       setErrors(prev => ({ ...prev, replacementDate: '' }));
@@ -891,41 +951,90 @@ const BaoDuong = () => {
                 </Box>
               </Box>
 
-              <TextField
-                fullWidth
-                size="small"
-                label="Bảo hành (tháng)"
-                name="warrantyPeriod"
-                type="number"
-                value={formData.warrantyPeriod}
-                onChange={e => {
-                  const value = Math.max(0, parseInt(e.target.value) || 0);
-                  setFormData(prev => ({
-                    ...prev,
-                    warrantyPeriod: value,
-                  }));
-                }}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                inputProps={{
-                  min: 0,
-                  style: {
-                    height: '40px',
-                    padding: '8px 12px',
-                    boxSizing: 'border-box',
-                    fontSize: '0.875rem',
-                  },
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '6px',
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'text.secondary',
-                    },
-                  },
-                }}
-              />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ width: '50%' }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Bảo hành (tháng)"
+                    name="warrantyPeriod"
+                    type="number"
+                    value={formData.warrantyPeriod}
+                    onChange={e => {
+                      const value = Math.max(0, parseInt(e.target.value) || 0);
+                      setFormData(prev => ({
+                        ...prev,
+                        warrantyPeriod: value,
+                      }));
+                    }}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    inputProps={{
+                      min: 0,
+                      style: {
+                        height: '40px',
+                        padding: '8px 12px',
+                        boxSizing: 'border-box',
+                        fontSize: '0.875rem',
+                      },
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '6px',
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'text.secondary',
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+                <Box sx={{ width: '50%' }}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+                    <DatePicker
+                      label="Ngày hết hạn"
+                      value={formData.ngayHetHan}
+                      readOnly
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                          inputProps={{
+                            ...params.inputProps,
+                            style: {
+                              height: '40px',
+                              padding: '8px 12px',
+                              boxSizing: 'border-box',
+                              fontSize: '0.875rem',
+                              backgroundColor: 'action.hover',
+                            },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '6px',
+                              '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'text.secondary',
+                              },
+                              '&.Mui-disabled': {
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: 'divider',
+                                },
+                              },
+                            },
+                          }}
+                        />
+                      )}
+                      components={{
+                        OpenPickerIcon: CalendarMonthIcon,
+                      }}
+                    />
+                  </LocalizationProvider>
+                </Box>
+              </Box>
 
               <TextField
                 fullWidth

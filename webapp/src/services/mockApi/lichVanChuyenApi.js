@@ -23,12 +23,12 @@ export const fetchAllLichVanChuyen = () => {
 };
 
 export const fetchLichVanChuyenById = id => {
-  console.log(`[Mock API] Fetching LichVanChuyen by ID: ${id}`);
+
   return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenById(id));
 };
 
 export const fetchLichVanChuyenByMaChuyen = maChuyen => {
-  console.log(`[Mock API] Fetching LichVanChuyen by MaChuyen: ${maChuyen}`);
+
   return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenByMaChuyen(maChuyen));
 };
 
@@ -38,12 +38,12 @@ export const addLichVanChuyen = data => {
 };
 
 export const editLichVanChuyen = (id, data) => {
-  console.log(`[Mock API] Updating LichVanChuyen ID: ${id} with data:`, data);
+
   return simulateApiCall(() => lichVanChuyenDataService.updateLichVanChuyen(id, data));
 };
 
 export const removeLichVanChuyen = id => {
-  console.log(`[Mock API] Deleting LichVanChuyen ID: ${id}`);
+
   return simulateApiCall(() => lichVanChuyenDataService.deleteLichVanChuyen(id));
 };
 
