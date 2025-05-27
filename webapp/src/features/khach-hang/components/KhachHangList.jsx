@@ -16,11 +16,11 @@ import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 // NOTE: This is a legacy/demo component. Please use the new useCustomerManagement hook and CustomerManagement component for all real usage.
-import { 
-  fetchAllKhachHang, 
-  addKhachHang, 
-  editKhachHang, 
-  removeKhachHang 
+import {
+  fetchAllKhachHang,
+  addKhachHang,
+  editKhachHang,
+  removeKhachHang,
 } from '@services/mockApi/khachHangApi';
 
 // Create an API object that matches the expected interface
@@ -28,7 +28,7 @@ const customerApi = {
   getAll: fetchAllKhachHang,
   create: addKhachHang,
   update: editKhachHang,
-  delete: removeKhachHang
+  delete: removeKhachHang,
 };
 
 // Enhanced theme configuration based on DinhMucDau.jsx

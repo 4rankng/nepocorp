@@ -25,7 +25,6 @@ export const fetchAllDauKeo = () => {
 };
 
 export const fetchDauKeoById = id => {
-
   return simulateApiCall(() => dauKeoDataService.getDauKeoById(id));
 };
 
@@ -35,12 +34,10 @@ export const addDauKeo = data => {
 };
 
 export const editDauKeo = (id, data) => {
-
   return simulateApiCall(() => dauKeoDataService.updateDauKeo(id, data));
 };
 
 export const removeDauKeo = id => {
-
   return simulateApiCall(() => dauKeoDataService.deleteDauKeo(id));
 };
 

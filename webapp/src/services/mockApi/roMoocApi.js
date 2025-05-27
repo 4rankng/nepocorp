@@ -18,27 +18,22 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllRoMooc = () => {
-
   return simulateApiCall(roMoocDataService.getAllRoMooc);
 };
 
 export const fetchRoMoocById = id => {
-
   return simulateApiCall(() => roMoocDataService.getRoMoocById(id));
 };
 
 export const addRoMooc = data => {
-
   return simulateApiCall(() => roMoocDataService.createRoMooc(data));
 };
 
 export const editRoMooc = (id, data) => {
-
   return simulateApiCall(() => roMoocDataService.updateRoMooc(id, data));
 };
 
 export const removeRoMooc = id => {
-
   return simulateApiCall(() => roMoocDataService.deleteRoMooc(id));
 };
 

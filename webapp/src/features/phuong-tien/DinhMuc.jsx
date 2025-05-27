@@ -105,13 +105,16 @@ const DinhMucDau = () => {
     snackbar,
     closeSnackbar,
     fetchData,
-    formData, setFormData, // Kept for form input
+    formData,
+    setFormData, // Kept for form input
     errors, // Kept for form validation display
     currentStandard, // Kept for context in dialogs
-    openAddDialog, setOpenAddDialog, // For controlling add dialog visibility
+    openAddDialog,
+    setOpenAddDialog, // For controlling add dialog visibility
     openAddNewDinhMucDialog,
     handleFormInputChange,
-    openEditDialog, setOpenEditDialog, // For controlling edit dialog visibility
+    openEditDialog,
+    setOpenEditDialog, // For controlling edit dialog visibility
     openEditDinhMucDialog,
     validateForm,
     handleSaveAdd,
@@ -230,7 +233,11 @@ const DinhMucDau = () => {
                 size="small"
                 onClick={e => {
                   e.stopPropagation();
-                  handleEditClick(standard, licensePlate, mobileTab === 'cargo' ? 'km_hang' : 'km_vo');
+                  handleEditClick(
+                    standard,
+                    licensePlate,
+                    mobileTab === 'cargo' ? 'km_hang' : 'km_vo'
+                  );
                 }}
               />
               <DeleteButton
@@ -382,14 +389,21 @@ const DinhMucDau = () => {
                 border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: 1,
-                gap: 2
+                gap: 2,
               }}
             >
               <Box>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.2, mb: 0.5 }}
+                >
                   Định mức bổ sung
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}
+                >
                   {supplementaryStandard} lít/chuyến
                 </Typography>
               </Box>
@@ -403,44 +417,47 @@ const DinhMucDau = () => {
         )}
       </Box>
 
-      {(isMobile && (mobileTab === 'cargo' || mobileTab === 'container')) || (!isMobile) && (
-        <Box sx={{ mb: isMobile ? 1 : 2, maxWidth: '100%' }}>
-          <TextField
-            fullWidth
-            size="small"
-            variant="outlined"
-            placeholder="Tìm kiếm biển số xe..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <span role="img" aria-label="search">🔍</span>
-                </InputAdornment>
-              ),
-              sx: {
-                borderRadius: '6px',
-                height: isMobile ? 36 : 36,
-                minHeight: isMobile ? 36 : 36,
-                fontSize: '0.95rem',
-              },
-            }}
-            sx={{
-              width: '100%',
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '6px',
-                height: isMobile ? 36 : 36,
-                minHeight: isMobile ? 36 : 36,
-                fontSize: '0.95rem',
-              },
-              '& .MuiInputBase-input': {
-                py: 0.5,
-                fontSize: '0.95rem',
-              },
-            }}
-          />
-        </Box>
-      )}
+      {(isMobile && (mobileTab === 'cargo' || mobileTab === 'container')) ||
+        (!isMobile && (
+          <Box sx={{ mb: isMobile ? 1 : 2, maxWidth: '100%' }}>
+            <TextField
+              fullWidth
+              size="small"
+              variant="outlined"
+              placeholder="Tìm kiếm biển số xe..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <span role="img" aria-label="search">
+                      🔍
+                    </span>
+                  </InputAdornment>
+                ),
+                sx: {
+                  borderRadius: '6px',
+                  height: isMobile ? 36 : 36,
+                  minHeight: isMobile ? 36 : 36,
+                  fontSize: '0.95rem',
+                },
+              }}
+              sx={{
+                width: '100%',
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '6px',
+                  height: isMobile ? 36 : 36,
+                  minHeight: isMobile ? 36 : 36,
+                  fontSize: '0.95rem',
+                },
+                '& .MuiInputBase-input': {
+                  py: 0.5,
+                  fontSize: '0.95rem',
+                },
+              }}
+            />
+          </Box>
+        ))}
 
       <Box sx={{ mt: isMobile ? 1 : 2, width: '100%' }}>
         {isLoading ? (
@@ -472,11 +489,14 @@ const DinhMucDau = () => {
                       border: '1px solid',
                       borderColor: 'divider',
                       borderRadius: 1,
-                      gap: 2
+                      gap: 2,
                     }}
                   >
                     <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}
+                      >
                         {supplementaryStandard} lít/chuyến
                       </Typography>
                     </Box>
@@ -500,7 +520,9 @@ const DinhMucDau = () => {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <span role="img" aria-label="search">🔍</span>
+                            <span role="img" aria-label="search">
+                              🔍
+                            </span>
                           </InputAdornment>
                         ),
                         sx: {
@@ -521,9 +543,22 @@ const DinhMucDau = () => {
                       voNorms={dinhMucVo[licensePlate] || []}
                       isMobile={isMobile}
                       mobileTab={mobileTab}
-                      onOpenAddDialog={() => openAddNewDinhMucDialog({ licensePlate: null, loaiDinhMuc: mobileTab === 'cargo' ? 'km_hang' : 'km_vo' })}
-                      onEditClick={(item, lp, type) => openEditDinhMucDialog({ standard: item, licensePlate: lp, loaiDinhMuc: type })}
-                      onDeleteClick={(id, type, item) => handleTriggerDeleteDialog(id, type, item, plate.licensePlate)}
+                      onOpenAddDialog={() =>
+                        openAddNewDinhMucDialog({
+                          licensePlate: null,
+                          loaiDinhMuc: mobileTab === 'cargo' ? 'km_hang' : 'km_vo',
+                        })
+                      }
+                      onEditClick={(item, lp, type) =>
+                        openEditDinhMucDialog({
+                          standard: item,
+                          licensePlate: lp,
+                          loaiDinhMuc: type,
+                        })
+                      }
+                      onDeleteClick={(id, type, item) =>
+                        handleTriggerDeleteDialog(id, type, item, plate.licensePlate)
+                      }
                     />
                   ))}
                 </Box>
@@ -538,9 +573,18 @@ const DinhMucDau = () => {
                     voNorms={dinhMucVo[licensePlate] || []}
                     isMobile={isMobile} // Will be false here
                     // mobileTab is not relevant for desktop view
-                    onOpenAddDialog={() => openAddNewDinhMucDialog({ licensePlate: licensePlate, loaiDinhMuc: 'km_hang' })} // Pass current licensePlate
-                    onEditClick={(item, lp, type) => openEditDinhMucDialog({ standard: item, licensePlate: lp, loaiDinhMuc: type })}
-                    onDeleteClick={(id, type, item) => handleTriggerDeleteDialog(id, type, item, licensePlate)}
+                    onOpenAddDialog={() =>
+                      openAddNewDinhMucDialog({
+                        licensePlate: licensePlate,
+                        loaiDinhMuc: 'km_hang',
+                      })
+                    } // Pass current licensePlate
+                    onEditClick={(item, lp, type) =>
+                      openEditDinhMucDialog({ standard: item, licensePlate: lp, loaiDinhMuc: type })
+                    }
+                    onDeleteClick={(id, type, item) =>
+                      handleTriggerDeleteDialog(id, type, item, licensePlate)
+                    }
                   />
                 ))}
               </Box>
@@ -550,8 +594,28 @@ const DinhMucDau = () => {
       </Box>
 
       {/* Render dialogs */}
-      <DinhMucDialog open={openAddDialog} isEdit={false} isMobile={isMobile} formData={formData} errors={errors} onClose={() => setOpenAddDialog(false)} onSave={handleSaveAdd} onInputChange={handleFormInputChange} onValidateForm={validateForm} />
-      <DinhMucDialog open={openEditDialog} isEdit={true} isMobile={isMobile} formData={formData} errors={errors} onClose={() => setOpenEditDialog(false)} onSave={handleSaveEdit} onInputChange={handleFormInputChange} onValidateForm={validateForm} />
+      <DinhMucDialog
+        open={openAddDialog}
+        isEdit={false}
+        isMobile={isMobile}
+        formData={formData}
+        errors={errors}
+        onClose={() => setOpenAddDialog(false)}
+        onSave={handleSaveAdd}
+        onInputChange={handleFormInputChange}
+        onValidateForm={validateForm}
+      />
+      <DinhMucDialog
+        open={openEditDialog}
+        isEdit={true}
+        isMobile={isMobile}
+        formData={formData}
+        errors={errors}
+        onClose={() => setOpenEditDialog(false)}
+        onSave={handleSaveEdit}
+        onInputChange={handleFormInputChange}
+        onValidateForm={validateForm}
+      />
 
       {/* Supplementary Standard Dialog */}
       <EditSupplementaryStandardDialog
@@ -572,11 +636,7 @@ const DinhMucDau = () => {
         }}
         sx={isMobile ? { bottom: 90 } : {}}
       >
-        <Alert
-          onClose={closeSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

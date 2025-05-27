@@ -27,7 +27,7 @@ export const useDinhMucManagement = () => {
         dinhMucApi.getAll(), // Fetch all dinh muc records
         dinhMucApi.getBoSung(), // Use direct function name
         dauKeoApi.getAll(), // Fetching all tractors
-        roMoocApi.getAll(),   // Fetching all trailers
+        roMoocApi.getAll(), // Fetching all trailers
       ]);
 
       const hangDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_hang');
@@ -47,12 +47,12 @@ export const useDinhMucManagement = () => {
           // Keep original fields for other operations like editing
           bien_so_xe: plateKey,
           phan_loai: item.phan_loai,
-          tuKm: item.tuKm, 
+          tuKm: item.tuKm,
           denKm: item.denKm,
           l_km: item.l_km,
           ghiChu: item.ghiChu,
           createdAt: item.createdAt,
-          updatedAt: item.updatedAt
+          updatedAt: item.updatedAt,
         });
         return acc;
       }, {});
@@ -70,12 +70,12 @@ export const useDinhMucManagement = () => {
           // Keep original fields for other operations like editing
           bien_so_xe: plateKey,
           phan_loai: item.phan_loai,
-          tuKm: item.tuKm, 
+          tuKm: item.tuKm,
           denKm: item.denKm,
           l_km: item.l_km,
           ghiChu: item.ghiChu,
           createdAt: item.createdAt,
-          updatedAt: item.updatedAt
+          updatedAt: item.updatedAt,
         });
         return acc;
       }, {});
@@ -87,7 +87,6 @@ export const useDinhMucManagement = () => {
       const tractorPlates = dauKeoData.map(dk => ({ licensePlate: dk.bien_so, type: 'dau_keo' }));
       const trailerPlates = roMoocData.map(rm => ({ licensePlate: rm.bien_so, type: 'ro_mooc' }));
       setAllAvailableLicensePlates([...tractorPlates, ...trailerPlates]);
-
     } catch (err) {
       console.error('Failed to fetch Dinh Muc data:', err);
       setError('Không thể tải dữ liệu định mức. Vui lòng thử lại.');
@@ -116,9 +115,14 @@ export const useDinhMucManagement = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [editSupplementaryDialog, setEditSupplementaryDialog] = useState(false);
   // deleteState and the first set of delete functions were here, now removed.
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, type: null, details: '' }); // Ensuring the correct state variable is defined
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    id: null,
+    type: null,
+    details: '',
+  }); // Ensuring the correct state variable is defined
 
-  // --- Supplementary Standard Dialog --- 
+  // --- Supplementary Standard Dialog ---
   const openEditSupplementaryDialog = useCallback(() => {
     // The supplementaryStandard state already holds the value to be edited
     setEditSupplementaryDialog(true);
@@ -128,32 +132,32 @@ export const useDinhMucManagement = () => {
     setEditSupplementaryDialog(false);
   }, [setEditSupplementaryDialog]);
 
-  const handleSaveSupplementary = useCallback(async (newValue) => {
-    setIsLoading(true);
-    try {
-      // Assuming dinhMucApi.updateSupplementaryStandard exists and takes the new value directly
-      await dinhMucApi.updateBoSung(supplementaryStandard.id, { value: newValue }); // Update local state
-      setSupplementaryStandard(newValue); // Update local state
-      showSnackbar('Cập nhật định mức bổ sung thành công');
-      closeEditSupplementaryDialog();
-      // Optionally, call fetchData() if other parts of the app need to react to this global change
-      // await fetchData(); 
-    } catch (err) {
-      console.error('Error saving supplementary standard:', err);
-      showSnackbar('Lỗi khi cập nhật định mức bổ sung', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setIsLoading, setSupplementaryStandard, showSnackbar, closeEditSupplementaryDialog, dinhMucApi]);
+  const handleSaveSupplementary = useCallback(
+    async newValue => {
+      setIsLoading(true);
+      try {
+        // Assuming dinhMucApi.updateSupplementaryStandard exists and takes the new value directly
+        await dinhMucApi.updateBoSung(supplementaryStandard.id, { value: newValue }); // Update local state
+        setSupplementaryStandard(newValue); // Update local state
+        showSnackbar('Cập nhật định mức bổ sung thành công');
+        closeEditSupplementaryDialog();
+        // Optionally, call fetchData() if other parts of the app need to react to this global change
+        // await fetchData();
+      } catch (err) {
+        console.error('Error saving supplementary standard:', err);
+        showSnackbar('Lỗi khi cập nhật định mức bổ sung', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setIsLoading, setSupplementaryStandard, showSnackbar, closeEditSupplementaryDialog, supplementaryStandard.id]
+  );
 
   // Derived state for license plates that have norms or are in the list of all plates
   const activeLicensePlatesWithStandards = useMemo(() => {
-    const platesWithNorms = new Set([
-      ...Object.keys(dinhMucHang),
-      ...Object.keys(dinhMucVo),
-    ]);
+    const platesWithNorms = new Set([...Object.keys(dinhMucHang), ...Object.keys(dinhMucVo)]);
     allAvailableLicensePlates.forEach(p => platesWithNorms.add(p.licensePlate));
-    
+
     return Array.from(platesWithNorms).map(plate => ({
       licensePlate: plate,
       // standardsHang: dinhMucHang[plate] || [], // Will be used by LicensePlateNormsCard
@@ -161,51 +165,63 @@ export const useDinhMucManagement = () => {
     }));
   }, [dinhMucHang, dinhMucVo, allAvailableLicensePlates]);
 
+  const openAddNewDinhMucDialog = useCallback(
+    ({ licensePlate, loaiDinhMuc }) => {
+      setFormData({
+        bienSoXe: licensePlate || '',
+        loaiDinhMuc: loaiDinhMuc || 'km_hang',
+        fromKm: '0',
+        toKm: '0',
+        standard: '',
+        note: '',
+        id: null, // Ensure id is null for new entries
+      });
+      setErrors({});
+      setCurrentStandard(null); // Explicitly set to null for 'add' mode
+      setOpenAddDialog(true);
+    },
+    [setFormData, setErrors, setCurrentStandard, setOpenAddDialog]
+  );
 
-  const openAddNewDinhMucDialog = useCallback(({ licensePlate, loaiDinhMuc }) => {
-    setFormData({
-      bienSoXe: licensePlate || '',
-      loaiDinhMuc: loaiDinhMuc || 'km_hang',
-      fromKm: '0',
-      toKm: '0',
-      standard: '',
-      note: '',
-      id: null, // Ensure id is null for new entries
-    });
-    setErrors({});
-    setCurrentStandard(null); // Explicitly set to null for 'add' mode
-    setOpenAddDialog(true);
-  }, [setFormData, setErrors, setCurrentStandard, setOpenAddDialog]);
+  const handleFormInputChange = useCallback(
+    event => {
+      const { name, value } = event.target;
+      setFormData(prev => ({ ...prev, [name]: value }));
+      // Clear error for the field being changed
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+    },
+    [errors, setFormData, setErrors]
+  ); // errors is a dependency here
 
-  const handleFormInputChange = useCallback((event) => {
-    const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error for the field being changed
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  }, [errors, setFormData, setErrors]); // errors is a dependency here
-
-  const openEditDinhMucDialog = useCallback(({ standard, licensePlate, loaiDinhMuc }) => {
-    setFormData({
-      id: standard.id,
-      bienSoXe: standard.bien_so_xe || licensePlate, // Prefer standard.bien_so_xe, fallback to licensePlate
-      loaiDinhMuc: loaiDinhMuc || 'km_hang',
-      fromKm: standard.fromKm !== null && standard.fromKm !== undefined ? String(standard.fromKm) : '0',
-      toKm: standard.toKm !== null && standard.toKm !== undefined ? String(standard.toKm) : '0',
-      standard: standard.standard !== null && standard.standard !== undefined ? String(standard.standard) : '', 
-      note: standard.note || '',
-    });
-    setErrors({}); // Clear previous errors
-    setCurrentStandard(standard); // Set the standard being edited
-    setOpenEditDialog(true);
-  }, [setFormData, setErrors, setCurrentStandard, setOpenEditDialog]);
+  const openEditDinhMucDialog = useCallback(
+    ({ standard, licensePlate, loaiDinhMuc }) => {
+      setFormData({
+        id: standard.id,
+        bienSoXe: standard.bien_so_xe || licensePlate, // Prefer standard.bien_so_xe, fallback to licensePlate
+        loaiDinhMuc: loaiDinhMuc || 'km_hang',
+        fromKm:
+          standard.fromKm !== null && standard.fromKm !== undefined ? String(standard.fromKm) : '0',
+        toKm: standard.toKm !== null && standard.toKm !== undefined ? String(standard.toKm) : '0',
+        standard:
+          standard.standard !== null && standard.standard !== undefined
+            ? String(standard.standard)
+            : '',
+        note: standard.note || '',
+      });
+      setErrors({}); // Clear previous errors
+      setCurrentStandard(standard); // Set the standard being edited
+      setOpenEditDialog(true);
+    },
+    [setFormData, setErrors, setCurrentStandard, setOpenEditDialog]
+  );
 
   const validateForm = useCallback(() => {
     const newErrors = {};
     if (!formData.bienSoXe) newErrors.bienSoXe = 'Vui lòng chọn biển số xe';
     if (!formData.fromKm) newErrors.fromKm = 'Vui lòng nhập km bắt đầu'; // Hook uses fromKm
-    if (!formData.toKm) newErrors.toKm = 'Vui lòng nhập km kết thúc';     // Hook uses toKm
+    if (!formData.toKm) newErrors.toKm = 'Vui lòng nhập km kết thúc'; // Hook uses toKm
     if (parseFloat(formData.fromKm) >= parseFloat(formData.toKm)) {
       newErrors.toKm = 'Km kết thúc phải lớn hơn km bắt đầu';
     }
@@ -256,7 +272,9 @@ export const useDinhMucManagement = () => {
       };
 
       await dinhMucApi.create(apiData);
-      showSnackbar(`Thêm định mức ${formData.loaiDinhMuc === 'km_hang' ? 'hàng' : 'vỏ'} thành công`);
+      showSnackbar(
+        `Thêm định mức ${formData.loaiDinhMuc === 'km_hang' ? 'hàng' : 'vỏ'} thành công`
+      );
       await fetchData(); // Refresh data
       setOpenAddDialog(false); // Close dialog
     } catch (err) {
@@ -265,7 +283,17 @@ export const useDinhMucManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [validateForm, setIsLoading, formData, dinhMucHang, dinhMucVo, setErrors, showSnackbar, fetchData, setOpenAddDialog]);
+  }, [
+    validateForm,
+    setIsLoading,
+    formData,
+    dinhMucHang,
+    dinhMucVo,
+    setErrors,
+    showSnackbar,
+    fetchData,
+    setOpenAddDialog,
+  ]);
 
   const handleSaveEdit = useCallback(async () => {
     if (!validateForm()) return;
@@ -317,11 +345,24 @@ export const useDinhMucManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [validateForm, setIsLoading, formData, dinhMucHang, dinhMucVo, setErrors, showSnackbar, fetchData, setOpenEditDialog, dinhMucApi]);
+  }, [
+    validateForm,
+    setIsLoading,
+    formData,
+    dinhMucHang,
+    dinhMucVo,
+    setErrors,
+    showSnackbar,
+    fetchData,
+    setOpenEditDialog,
+  ]);
 
-  const openDeleteDialog = useCallback((id, type, details) => {
-    setDeleteDialog({ open: true, id, type, details });
-  }, [setDeleteDialog]);
+  const openDeleteDialog = useCallback(
+    (id, type, details) => {
+      setDeleteDialog({ open: true, id, type, details });
+    },
+    [setDeleteDialog]
+  );
 
   const closeDeleteDialog = useCallback(() => {
     setDeleteDialog({ open: false, id: null, type: null, details: '' });
@@ -332,7 +373,9 @@ export const useDinhMucManagement = () => {
     setIsLoading(true);
     try {
       await dinhMucApi.delete(deleteDialog.id);
-      showSnackbar(`Xóa định mức ${deleteDialog.type === 'supplementary' ? 'bổ sung' : (deleteDialog.type === 'km_hang' ? 'hàng' : 'vỏ')} thành công`);
+      showSnackbar(
+        `Xóa định mức ${deleteDialog.type === 'supplementary' ? 'bổ sung' : deleteDialog.type === 'km_hang' ? 'hàng' : 'vỏ'} thành công`
+      );
       await fetchData(); // Refresh data
       closeDeleteDialog(); // Close dialog
     } catch (error) {
@@ -341,14 +384,17 @@ export const useDinhMucManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [deleteDialog, setIsLoading, dinhMucApi, showSnackbar, fetchData, closeDeleteDialog]);
+  }, [deleteDialog, setIsLoading, fetchData, showSnackbar, closeDeleteDialog]);
 
   // TODO: Move other handlers (delete, form validation, etc.) here
 
   return {
-    dinhMucHang, setDinhMucHang, // Expose setter
-    dinhMucVo, setDinhMucVo,     // Expose setter
-    supplementaryStandard, setSupplementaryStandard, // Already exposed
+    dinhMucHang,
+    setDinhMucHang, // Expose setter
+    dinhMucVo,
+    setDinhMucVo, // Expose setter
+    supplementaryStandard,
+    setSupplementaryStandard, // Already exposed
     allAvailableLicensePlates, // raw list of all plates
     activeLicensePlatesWithStandards, // list of plates with standards for UI iteration
     isLoading,
@@ -357,13 +403,18 @@ export const useDinhMucManagement = () => {
     showSnackbar,
     closeSnackbar, // Export closeSnackbar
     fetchData, // Keep this
-    formData, setFormData,
-    errors, setErrors, // Keep these
-    currentStandard, setCurrentStandard, // Keep these
-    openAddDialog, setOpenAddDialog,
+    formData,
+    setFormData,
+    errors,
+    setErrors, // Keep these
+    currentStandard,
+    setCurrentStandard, // Keep these
+    openAddDialog,
+    setOpenAddDialog,
     openAddNewDinhMucDialog,
     handleFormInputChange,
-    openEditDialog, setOpenEditDialog,
+    openEditDialog,
+    setOpenEditDialog,
     openEditDinhMucDialog,
     validateForm,
     handleSaveAdd,
@@ -377,5 +428,4 @@ export const useDinhMucManagement = () => {
     closeEditSupplementaryDialog, // Keep this
     handleSaveSupplementary, // Keep this
   };
-
 };

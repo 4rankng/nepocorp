@@ -2,10 +2,10 @@
 // Fields: id (number), bienSoXe, phan_loai ('km_hang' | 'km_vo'), tuKm, denKm, l_km, ghiChu, createdAt, updatedAt
 
 // Helper function to ensure unique numeric IDs
-const ensureUniqueIds = (data) => {
+const ensureUniqueIds = data => {
   const usedIds = new Set();
   let nextId = 1;
-  
+
   return data.map(item => {
     while (usedIds.has(nextId)) {
       nextId++;
@@ -32,7 +32,7 @@ let dinhMucData = ensureUniqueIds([
     phan_loai: 'km_vo',
     tuKm: 0,
     denKm: 100000,
-    l_km: 0.30,
+    l_km: 0.3,
     ghiChu: 'Hino Series 500 - Mới (không hàng)',
     createdAt: '2023-01-01T08:00:00Z',
     updatedAt: '2024-05-01T08:00:00Z',
@@ -232,7 +232,7 @@ let dinhMucData = ensureUniqueIds([
     phan_loai: 'km_hang',
     tuKm: 0,
     denKm: 150000,
-    l_km: 0.40,
+    l_km: 0.4,
     ghiChu: 'Volvo FH16 - Mới (có hàng)',
     createdAt: '2023-11-01T09:00:00Z',
     updatedAt: '2024-05-16T09:00:00Z',
@@ -493,10 +493,10 @@ export const getDinhMucByBienSoAndType = async (bienSoXe, phanLoai) => {
     return [];
   }
 
-  const filteredData = dinhMucData.filter(dm => 
-    dm.bienSoXe === bienSoXe && dm.phan_loai === phanLoai
+  const filteredData = dinhMucData.filter(
+    dm => dm.bienSoXe === bienSoXe && dm.phan_loai === phanLoai
   );
-  
+
   return filteredData;
 };
 
@@ -559,6 +559,6 @@ export const deleteDinhMuc = async id => {
 };
 
 export const _resetDinhMuc = (data = []) => {
-  dinhMucData = ensureUniqueIds(data.map(({ id, ...rest }) => rest));
+  dinhMucData = ensureUniqueIds(data.map(({ id: _id, ...rest }) => rest));
   nextDinhMucIndex = Math.max(...dinhMucData.map(dm => dm.id)) + 1;
 };

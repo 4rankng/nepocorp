@@ -25,12 +25,10 @@ export const fetchAllDinhMuc = () => {
 };
 
 export const fetchDinhMucById = id => {
-
   return simulateApiCall(() => dinhMucDataService.getDinhMucById(id));
 };
 
 export const getByBienSoAndType = (bienSoXe, type) => {
-
   return simulateApiCall(async () => {
     const data = await dinhMucDataService.getDinhMucByBienSoAndType(bienSoXe, type);
     return { data };
@@ -72,7 +70,6 @@ export const getBoSung = () => {
 };
 
 export const updateBoSung = value => {
-
   return cauHinhApi.updateDinhMucBoSung(value);
 };
 
@@ -87,7 +84,7 @@ export const dinhMucApi = {
   getBoSung: getBoSung,
   updateBoSung: updateBoSung,
   // Aliases for useDinhMucManagement hook
-  getSupplementaryStandard: getBoSung, 
+  getSupplementaryStandard: getBoSung,
   updateSupplementaryStandard: updateBoSung,
   _reset: _resetDinhMucApiData,
 };

@@ -44,7 +44,9 @@ const VehicleDialog = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={isLoading}>{cancelLabel}</Button>
+        <Button onClick={onClose} disabled={isLoading}>
+          {cancelLabel}
+        </Button>
         <Button
           onClick={onSave}
           variant="contained"

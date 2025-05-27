@@ -9,13 +9,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-const EditSupplementaryStandardDialog = ({
-  open,
-  onClose,
-  initialValue,
-  onSave,
-  isLoading,
-}) => {
+const EditSupplementaryStandardDialog = ({ open, onClose, initialValue, onSave, isLoading }) => {
   const [currentValue, setCurrentValue] = useState(initialValue);
 
   useEffect(() => {

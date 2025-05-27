@@ -24,7 +24,6 @@ import {
   CardContent,
   Chip,
   Collapse,
-
   useMediaQuery,
   useTheme,
   Divider,
@@ -107,7 +106,11 @@ const BaoDuong = () => {
       handleCloseDialog();
     },
     onError: err => {
-      setSnackbar({ open: true, message: 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng',
+        severity: 'error',
+      });
       console.error(err);
     },
   });
@@ -175,12 +178,20 @@ const BaoDuong = () => {
     setFormLoading(true);
     try {
       await lopXeApi.delete(deleteDialog.recordId);
-      setSnackbar({ open: true, message: 'Xóa thông tin bảo dưỡng thành công', severity: 'success' });
+      setSnackbar({
+        open: true,
+        message: 'Xóa thông tin bảo dưỡng thành công',
+        severity: 'success',
+      });
       fetchData();
       refetchCount();
       handleDeleteClose();
     } catch (err) {
-      setSnackbar({ open: true, message: 'Đã xảy ra lỗi khi xóa thông tin bảo dưỡng', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Đã xảy ra lỗi khi xóa thông tin bảo dưỡng',
+        severity: 'error',
+      });
       console.error(err);
     } finally {
       setFormLoading(false);
@@ -275,7 +286,7 @@ const BaoDuong = () => {
               height: 36,
               minHeight: 36,
               fontSize: '0.95rem',
-            }
+            },
           }}
         />
       </Box>
@@ -306,8 +317,14 @@ const BaoDuong = () => {
             onAdd={() => handleAddNew('tire')}
           >
             {isLoading && !loadedSections.tire ? (
-              <Box textAlign="center" py={4}><CircularProgress /></Box>
-            ) : isMobile ? renderMobileView() : renderDesktopView()}
+              <Box textAlign="center" py={4}>
+                <CircularProgress />
+              </Box>
+            ) : isMobile ? (
+              renderMobileView()
+            ) : (
+              renderDesktopView()
+            )}
           </BaoDuongSection>
         </Box>
       )}

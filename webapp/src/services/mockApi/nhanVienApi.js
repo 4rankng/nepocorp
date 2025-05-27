@@ -23,7 +23,6 @@ export const fetchAllNhanVien = () => {
 };
 
 export const fetchNhanVienById = id => {
-
   return simulateApiCall(() => nhanVienDataService.getNhanVienById(id));
 };
 
@@ -33,12 +32,10 @@ export const addNhanVien = data => {
 };
 
 export const editNhanVien = (id, data) => {
-
   return simulateApiCall(() => nhanVienDataService.updateNhanVien(id, data));
 };
 
 export const removeNhanVien = id => {
-
   return simulateApiCall(() => nhanVienDataService.deleteNhanVien(id));
 };
 

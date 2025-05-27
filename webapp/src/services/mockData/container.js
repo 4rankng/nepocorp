@@ -103,20 +103,19 @@ export const deleteContainer = async id => {
 };
 
 export const _resetContainer = (data = []) => {
-  containerData = data
-    .map(item => {
-      if (!item.id || typeof item.id !== 'string' || item.id.trim() === '' || !item.phan_loai) {
-        console.warn('Skipping invalid item during _resetContainer:', item);
-        return null;
-      }
-      return {
-        id: item.id,
-        phan_loai: item.phan_loai,
-        createdAt: item.createdAt || new Date().toISOString(),
-        updatedAt: item.updatedAt || new Date().toISOString(),
-      };
-    })
-    .filter(item => item !== null);
+  containerData.length = 0;
+  data.forEach(item => {
+    if (!item.id || typeof item.id !== 'string' || item.id.trim() === '' || !item.phan_loai) {
+      console.warn('Skipping invalid item during _resetContainer:', item);
+      return;
+    }
+    containerData.push({
+      id: item.id,
+      phan_loai: item.phan_loai,
+      createdAt: item.createdAt || new Date().toISOString(),
+      updatedAt: item.updatedAt || new Date().toISOString(),
+    });
+  });
 
   // Post-reset check for duplicates
   const currentIds = containerData.map(c => c.id);

@@ -3,7 +3,6 @@ import { addMonths } from '../utils/maintenanceUtils';
 
 export default function useMaintenanceForm({
   initialFormData,
-  onSubmit,
   onSuccess,
   onError,
   fetchData,
@@ -43,7 +42,8 @@ export default function useMaintenanceForm({
     const newErrors = {};
     if (!formData.licensePlate) newErrors.licensePlate = 'Vui lòng chọn biển số xe';
     if (!formData.replacementDate) newErrors.replacementDate = 'Vui lòng chọn ngày thay lốp';
-    if (!formData.quantity || formData.quantity <= 0) newErrors.quantity = 'Số lượng phải lớn hơn 0';
+    if (!formData.quantity || formData.quantity <= 0)
+      newErrors.quantity = 'Số lượng phải lớn hơn 0';
     if (!formData.unitPrice || formData.unitPrice < 0) newErrors.unitPrice = 'Đơn giá không hợp lệ';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

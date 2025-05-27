@@ -4,25 +4,25 @@
 let cauHinhData = [
   {
     id: 1,
-    key: "dinh_muc_bo_sung",
-    value: "5",
-    createdAt: "2023-12-05T11:00:00Z",
-    updatedAt: "2024-05-15T09:00:00Z"  
+    key: 'dinh_muc_bo_sung',
+    value: '5',
+    createdAt: '2023-12-05T11:00:00Z',
+    updatedAt: '2024-05-15T09:00:00Z',
   },
   {
     id: 2,
-    key: "company_name",
-    value: "Công ty TNHH Vận tải NepoCorp",
-    createdAt: "2023-12-05T11:00:00Z",
-    updatedAt: "2024-05-15T09:00:00Z"  
+    key: 'company_name',
+    value: 'Công ty TNHH Vận tải NepoCorp',
+    createdAt: '2023-12-05T11:00:00Z',
+    updatedAt: '2024-05-15T09:00:00Z',
   },
   {
     id: 3,
-    key: "max_fuel_consumption_alert",
-    value: "0.45",
-    createdAt: "2023-12-05T11:00:00Z",
-    updatedAt: "2024-05-15T09:00:00Z"  
-  }
+    key: 'max_fuel_consumption_alert',
+    value: '0.45',
+    createdAt: '2023-12-05T11:00:00Z',
+    updatedAt: '2024-05-15T09:00:00Z',
+  },
 ];
 
 let nextCauHinhId = 4;
@@ -33,21 +33,21 @@ export const getAllCauHinh = async () => {
 };
 
 // Get configuration by ID
-export const getCauHinhById = async (id) => {
+export const getCauHinhById = async id => {
   const config = cauHinhData.find(ch => ch.id === parseInt(id));
   return config || null;
 };
 
 // Get configuration by key
-export const getCauHinhByKey = async (key) => {
+export const getCauHinhByKey = async key => {
   const config = cauHinhData.find(ch => ch.key === key);
   return config || null;
 };
 
 // Create new configuration
-export const createCauHinh = async (data) => {
+export const createCauHinh = async data => {
   const { key, value } = data;
-  
+
   if (!key || value === undefined) {
     throw new Error('Key and value are required');
   }
@@ -65,7 +65,7 @@ export const createCauHinh = async (data) => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  
+
   cauHinhData.push(newCauHinh);
   return newCauHinh;
 };
@@ -103,7 +103,7 @@ export const updateCauHinhByKey = async (key, value) => {
 };
 
 // Delete configuration
-export const deleteCauHinh = async (id) => {
+export const deleteCauHinh = async id => {
   const index = cauHinhData.findIndex(ch => ch.id === parseInt(id));
   if (index === -1) return false;
   cauHinhData.splice(index, 1);
@@ -114,11 +114,9 @@ export const deleteCauHinh = async (id) => {
 export const _resetCauHinh = (data = []) => {
   cauHinhData = data.map((item, index) => ({
     ...item,
-    id: item.id || (index + 1),
+    id: item.id || index + 1,
   }));
-  nextCauHinhId = cauHinhData.length > 0 
-    ? Math.max(...cauHinhData.map(ch => ch.id)) + 1 
-    : 1;
+  nextCauHinhId = cauHinhData.length > 0 ? Math.max(...cauHinhData.map(ch => ch.id)) + 1 : 1;
 };
 
 // Initialize nextCauHinhId based on existing data

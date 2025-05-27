@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchVehicleMonthlyDetailsReport, fetchAvailableMonthsForReport } from '@services/mockApi/index.js';
+import {
+  fetchVehicleMonthlyDetailsReport,
+  fetchAvailableMonthsForReport,
+} from '@services/mockApi/index.js';
 import { fetchAllDauKeo, fetchAllRoMooc } from '@services/mockApi/index.js';
 
 // SVG Icon for Download

@@ -23,7 +23,6 @@ export const fetchAllDoiTac = () => {
 };
 
 export const fetchDoiTacById = id => {
-
   return simulateApiCall(() => doiTacDataService.getDoiTacById(id));
 };
 
@@ -33,12 +32,10 @@ export const addDoiTac = data => {
 };
 
 export const editDoiTac = (id, data) => {
-
   return simulateApiCall(() => doiTacDataService.updateDoiTac(id, data));
 };
 
 export const removeDoiTac = id => {
-
   return simulateApiCall(() => doiTacDataService.deleteDoiTac(id));
 };
 

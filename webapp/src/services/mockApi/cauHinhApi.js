@@ -24,12 +24,10 @@ export const fetchAllCauHinh = () => {
 };
 
 export const fetchCauHinhById = id => {
-
   return simulateApiCall(() => cauHinhDataService.getCauHinhById(id));
 };
 
 export const fetchCauHinhByKey = key => {
-
   return simulateApiCall(() => cauHinhDataService.getCauHinhByKey(key));
 };
 
@@ -39,23 +37,19 @@ export const addCauHinh = data => {
 };
 
 export const editCauHinh = (id, data) => {
-
   return simulateApiCall(() => cauHinhDataService.updateCauHinh(id, data));
 };
 
 export const editCauHinhByKey = (key, value) => {
-
   return simulateApiCall(() => cauHinhDataService.updateCauHinhByKey(key, value));
 };
 
 export const removeCauHinh = id => {
-
   return simulateApiCall(() => cauHinhDataService.deleteCauHinh(id));
 };
 
 // Specific method for getting dinh muc bo sung
 export const getDinhMucBoSung = () => {
-
   return simulateApiCall(async () => {
     const config = await cauHinhDataService.getCauHinhByKey('dinh_muc_bo_sung');
     return config ? { value: parseFloat(config.value) } : { value: 0 };
@@ -64,9 +58,11 @@ export const getDinhMucBoSung = () => {
 
 // Specific method for updating dinh muc bo sung
 export const updateDinhMucBoSung = value => {
-
   return simulateApiCall(async () => {
-    const updated = await cauHinhDataService.updateCauHinhByKey('dinh_muc_bo_sung', value.toString());
+    const updated = await cauHinhDataService.updateCauHinhByKey(
+      'dinh_muc_bo_sung',
+      value.toString()
+    );
     return { value: parseFloat(updated.value) };
   });
 };

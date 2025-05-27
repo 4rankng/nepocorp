@@ -37,7 +37,9 @@ const MaintenanceDialog = ({
 }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEdit ? 'Chỉnh sửa thông tin bảo dưỡng' : 'Thêm thông tin bảo dưỡng'}</DialogTitle>
+      <DialogTitle>
+        {isEdit ? 'Chỉnh sửa thông tin bảo dưỡng' : 'Thêm thông tin bảo dưỡng'}
+      </DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <TextField
@@ -96,7 +98,10 @@ const MaintenanceDialog = ({
                 error={!!errors.warrantyPeriod}
                 helperText={errors.warrantyPeriod}
                 InputLabelProps={{ shrink: true }}
-                inputProps={{ min: 1, style: { height: '40px', padding: '8px 12px', fontSize: '0.875rem' } }}
+                inputProps={{
+                  min: 1,
+                  style: { height: '40px', padding: '8px 12px', fontSize: '0.875rem' },
+                }}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
               />
             </Box>
@@ -114,7 +119,10 @@ const MaintenanceDialog = ({
                 error={!!errors.quantity}
                 helperText={errors.quantity}
                 InputLabelProps={{ shrink: true }}
-                inputProps={{ min: 1, style: { height: '40px', padding: '8px 12px', fontSize: '0.875rem' } }}
+                inputProps={{
+                  min: 1,
+                  style: { height: '40px', padding: '8px 12px', fontSize: '0.875rem' },
+                }}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
               />
             </Box>
@@ -130,11 +138,16 @@ const MaintenanceDialog = ({
                 error={!!errors.unitPrice}
                 helperText={errors.unitPrice}
                 InputLabelProps={{ shrink: true }}
-                inputProps={{ min: 0, style: { height: '40px', padding: '8px 12px', fontSize: '0.875rem' } }}
+                inputProps={{
+                  min: 0,
+                  style: { height: '40px', padding: '8px 12px', fontSize: '0.875rem' },
+                }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <Typography variant="body2" color="text.secondary">VND</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        VND
+                      </Typography>
                     </InputAdornment>
                   ),
                 }}
@@ -183,7 +196,9 @@ const MaintenanceDialog = ({
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <Typography variant="body2" color="text.secondary">VND</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    VND
+                  </Typography>
                 </InputAdornment>
               ),
             }}
@@ -218,7 +233,11 @@ const MaintenanceDialog = ({
           onClick={onClose}
           variant="outlined"
           disabled={isLoading}
-          sx={{ minWidth: '100px', textTransform: 'none', '&:hover': { backgroundColor: 'action.hover' } }}
+          sx={{
+            minWidth: '100px',
+            textTransform: 'none',
+            '&:hover': { backgroundColor: 'action.hover' },
+          }}
         >
           Hủy
         </Button>
@@ -228,7 +247,14 @@ const MaintenanceDialog = ({
           onClick={onSave}
           disabled={isLoading || !formData.licensePlate || !formData.replacementDate}
           startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
-          sx={{ minWidth: '100px', textTransform: 'none', '&.Mui-disabled': { backgroundColor: 'action.disabledBackground', color: 'action.disabled' } }}
+          sx={{
+            minWidth: '100px',
+            textTransform: 'none',
+            '&.Mui-disabled': {
+              backgroundColor: 'action.disabledBackground',
+              color: 'action.disabled',
+            },
+          }}
         >
           {isLoading ? 'Đang lưu...' : 'Lưu'}
         </Button>

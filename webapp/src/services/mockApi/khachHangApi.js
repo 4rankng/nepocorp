@@ -23,7 +23,6 @@ export const fetchAllKhachHang = () => {
 };
 
 export const fetchKhachHangById = id => {
-
   return simulateApiCall(() => khachHangDataService.getKhachHangById(id));
 };
 
@@ -33,12 +32,10 @@ export const addKhachHang = data => {
 };
 
 export const editKhachHang = (id, data) => {
-
   return simulateApiCall(() => khachHangDataService.updateKhachHang(id, data));
 };
 
 export const removeKhachHang = id => {
-
   return simulateApiCall(() => khachHangDataService.deleteKhachHang(id));
 };
 

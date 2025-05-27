@@ -23,7 +23,6 @@ export const fetchAllContainer = () => {
 };
 
 export const fetchContainerById = id => {
-
   return simulateApiCall(() => containerDataService.getContainerById(id));
 };
 
@@ -33,12 +32,10 @@ export const addContainer = data => {
 };
 
 export const editContainer = (id, data) => {
-
   return simulateApiCall(() => containerDataService.updateContainer(id, data));
 };
 
 export const removeContainer = id => {
-
   return simulateApiCall(() => containerDataService.deleteContainer(id));
 };
 

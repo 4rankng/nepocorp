@@ -146,7 +146,11 @@ const VanChuyen = () => {
 
   // Collapsible state
   const [expanded, setExpanded] = useState({ tractors: false, trailers: false, containers: false });
-  const [loadedSections, setLoadedSections] = useState({ tractors: false, trailers: false, containers: false });
+  const [loadedSections, setLoadedSections] = useState({
+    tractors: false,
+    trailers: false,
+    containers: false,
+  });
 
   // Tractors
   const [tractors, setTractors] = useState([]);
@@ -187,7 +191,7 @@ const VanChuyen = () => {
   }, []);
 
   // Helper to refetch count for a section
-  const refetchCount = useCallback((key) => {
+  const refetchCount = useCallback(key => {
     if (key === 'tractors') {
       tractorApi.getAll().then(data => setCounts(c => ({ ...c, tractors: data.length })));
     }
@@ -420,7 +424,9 @@ const VanChuyen = () => {
           onAdd={() => cfg.setDialog({ open: true, edit: false, data: null })}
         >
           {cfg.loading && !loadedSections[cfg.key] ? (
-            <Box display="flex" justifyContent="center" my={4}><CircularProgress size={24} /></Box>
+            <Box display="flex" justifyContent="center" my={4}>
+              <CircularProgress size={24} />
+            </Box>
           ) : cfg.error ? (
             <Alert severity="error" sx={{ mb: 2 }}>
               {cfg.error}
@@ -484,14 +490,16 @@ const VanChuyen = () => {
             label: 'Biển số',
             name: 'bien_so',
             value: tractorDialog.data?.bien_so || '',
-            onChange: e => setTractorDialog(d => ({ ...d, data: { ...d.data, bien_so: e.target.value } })),
+            onChange: e =>
+              setTractorDialog(d => ({ ...d, data: { ...d.data, bien_so: e.target.value } })),
             autoFocus: true,
           },
           {
             label: 'Mô tả',
             name: 'mo_ta',
             value: tractorDialog.data?.mo_ta || '',
-            onChange: e => setTractorDialog(d => ({ ...d, data: { ...d.data, mo_ta: e.target.value } })),
+            onChange: e =>
+              setTractorDialog(d => ({ ...d, data: { ...d.data, mo_ta: e.target.value } })),
           },
         ]}
       />
@@ -508,14 +516,16 @@ const VanChuyen = () => {
             label: 'Biển số',
             name: 'bien_so',
             value: trailerDialog.data?.bien_so || '',
-            onChange: e => setTrailerDialog(d => ({ ...d, data: { ...d.data, bien_so: e.target.value } })),
+            onChange: e =>
+              setTrailerDialog(d => ({ ...d, data: { ...d.data, bien_so: e.target.value } })),
             autoFocus: true,
           },
           {
             label: 'Mô tả',
             name: 'mo_ta',
             value: trailerDialog.data?.mo_ta || '',
-            onChange: e => setTrailerDialog(d => ({ ...d, data: { ...d.data, mo_ta: e.target.value } })),
+            onChange: e =>
+              setTrailerDialog(d => ({ ...d, data: { ...d.data, mo_ta: e.target.value } })),
           },
         ]}
       />
@@ -532,7 +542,11 @@ const VanChuyen = () => {
             label: 'Loại container',
             name: 'phan_loai',
             value: containerTypeDialog.data?.phan_loai || '',
-            onChange: e => setContainerTypeDialog(d => ({ ...d, data: { ...d.data, phan_loai: e.target.value } })),
+            onChange: e =>
+              setContainerTypeDialog(d => ({
+                ...d,
+                data: { ...d.data, phan_loai: e.target.value },
+              })),
             autoFocus: true,
           },
         ]}
@@ -542,21 +556,25 @@ const VanChuyen = () => {
       <Dialog
         open={tractorDelete.open}
         onClose={() => setTractorDelete({ open: false, data: null })}
-        onKeyDown={(e) => e.key === 'Escape' && setTractorDelete({ open: false, data: null })}
+        onKeyDown={e => e.key === 'Escape' && setTractorDelete({ open: false, data: null })}
         aria-labelledby="delete-tractor-dialog"
       >
         <DialogTitle id="delete-tractor-dialog">Xác nhận xóa</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Bạn có chắc chắn muốn xóa đầu kéo sau đây?
-          </DialogContentText>
+          <DialogContentText>Bạn có chắc chắn muốn xóa đầu kéo sau đây?</DialogContentText>
           <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>Thông tin đầu kéo:</Typography>
+            <Typography variant="subtitle2" gutterBottom>
+              Thông tin đầu kéo:
+            </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1 }}>
               <Typography variant="body2">Biển số:</Typography>
-              <Typography variant="body2" fontWeight="medium">{tractorDelete.data?.bien_so || '-'}</Typography>
+              <Typography variant="body2" fontWeight="medium">
+                {tractorDelete.data?.bien_so || '-'}
+              </Typography>
               <Typography variant="body2">Mô tả:</Typography>
-              <Typography variant="body2" fontWeight="medium">{tractorDelete.data?.mo_ta || 'Không có'}</Typography>
+              <Typography variant="body2" fontWeight="medium">
+                {tractorDelete.data?.mo_ta || 'Không có'}
+              </Typography>
             </Box>
           </Box>
         </DialogContent>
@@ -573,21 +591,25 @@ const VanChuyen = () => {
       <Dialog
         open={trailerDelete.open}
         onClose={() => setTrailerDelete({ open: false, data: null })}
-        onKeyDown={(e) => e.key === 'Escape' && setTrailerDelete({ open: false, data: null })}
+        onKeyDown={e => e.key === 'Escape' && setTrailerDelete({ open: false, data: null })}
         aria-labelledby="delete-trailer-dialog"
       >
         <DialogTitle id="delete-trailer-dialog">Xác nhận xóa</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Bạn có chắc chắn muốn xóa rơ-mooc sau đây?
-          </DialogContentText>
+          <DialogContentText>Bạn có chắc chắn muốn xóa rơ-mooc sau đây?</DialogContentText>
           <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>Thông tin rơ-mooc:</Typography>
+            <Typography variant="subtitle2" gutterBottom>
+              Thông tin rơ-mooc:
+            </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1 }}>
               <Typography variant="body2">Biển số:</Typography>
-              <Typography variant="body2" fontWeight="medium">{trailerDelete.data?.bien_so || '-'}</Typography>
+              <Typography variant="body2" fontWeight="medium">
+                {trailerDelete.data?.bien_so || '-'}
+              </Typography>
               <Typography variant="body2">Mô tả:</Typography>
-              <Typography variant="body2" fontWeight="medium">{trailerDelete.data?.mo_ta || 'Không có'}</Typography>
+              <Typography variant="body2" fontWeight="medium">
+                {trailerDelete.data?.mo_ta || 'Không có'}
+              </Typography>
             </Box>
           </Box>
         </DialogContent>
@@ -604,7 +626,7 @@ const VanChuyen = () => {
       <Dialog
         open={containerTypeDelete.open}
         onClose={() => setContainerTypeDelete({ open: false, data: null })}
-        onKeyDown={(e) => e.key === 'Escape' && setContainerTypeDelete({ open: false, data: null })}
+        onKeyDown={e => e.key === 'Escape' && setContainerTypeDelete({ open: false, data: null })}
         aria-labelledby="delete-container-dialog"
       >
         <DialogTitle id="delete-container-dialog">Xác nhận xóa</DialogTitle>
@@ -614,7 +636,10 @@ const VanChuyen = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setContainerTypeDelete({ open: false, data: null })} color="primary">
+          <Button
+            onClick={() => setContainerTypeDelete({ open: false, data: null })}
+            color="primary"
+          >
             Hủy
           </Button>
           <Button onClick={handleContainerTypeDelete} color="error" variant="contained" autoFocus>

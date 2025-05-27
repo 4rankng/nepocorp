@@ -13,23 +13,13 @@ const getDescription = (type, data) => {
 };
 
 const VehicleCard = ({ data, type, onEdit, onDelete, isLoading }) => (
-  <Card
-    sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
-  >
+  <Card sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
     <CardContent>
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
         <Typography fontWeight={600}>{getTitle(type, data)}</Typography>
         <Box display="flex" gap={1}>
-          <EditButton
-            size="small"
-            onClick={() => onEdit(data)}
-            disabled={isLoading}
-          />
-          <DeleteButton
-            size="small"
-            onClick={() => onDelete(data)}
-            disabled={isLoading}
-          />
+          <EditButton size="small" onClick={() => onEdit(data)} disabled={isLoading} />
+          <DeleteButton size="small" onClick={() => onDelete(data)} disabled={isLoading} />
         </Box>
       </Box>
       {getDescription(type, data) && (

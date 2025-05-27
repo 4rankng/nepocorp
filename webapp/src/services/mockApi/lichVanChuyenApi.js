@@ -23,12 +23,10 @@ export const fetchAllLichVanChuyen = () => {
 };
 
 export const fetchLichVanChuyenById = id => {
-
   return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenById(id));
 };
 
 export const fetchLichVanChuyenByMaChuyen = maChuyen => {
-
   return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenByMaChuyen(maChuyen));
 };
 
@@ -38,12 +36,10 @@ export const addLichVanChuyen = data => {
 };
 
 export const editLichVanChuyen = (id, data) => {
-
   return simulateApiCall(() => lichVanChuyenDataService.updateLichVanChuyen(id, data));
 };
 
 export const removeLichVanChuyen = id => {
-
   return simulateApiCall(() => lichVanChuyenDataService.deleteLichVanChuyen(id));
 };
 

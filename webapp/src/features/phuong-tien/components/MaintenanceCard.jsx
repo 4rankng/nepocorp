@@ -16,7 +16,7 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
 
   // Calculate expiration date if not present
-  const getExpirationDate = (record) => {
+  const getExpirationDate = record => {
     if (record.ngayHetHan) return new Date(record.ngayHetHan);
     if (record.replacementDate && record.warrantyPeriod) {
       const date = new Date(record.replacementDate);
