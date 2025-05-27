@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
-import { fuelStandardApi, vehicleApi } from '@services/mockApi';
+import { dinhMucApi, dauKeoApi } from '@services/mockApi';
 
 import {
   Box,

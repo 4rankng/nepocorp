@@ -53,4 +53,14 @@ export const _resetDinhMucApiData = data => {
   return simulateApiCall(() => dinhMucDataService._resetDinhMuc(data));
 };
 
+// Export object for backward compatibility
+export const dinhMucApi = {
+  getAll: fetchAllDinhMuc,
+  getById: fetchDinhMucById,
+  create: addDinhMuc,
+  update: editDinhMuc,
+  delete: removeDinhMuc,
+  _reset: _resetDinhMucApiData,
+};
+
 console.log('Dinh Muc Mock API service loaded and configured.');

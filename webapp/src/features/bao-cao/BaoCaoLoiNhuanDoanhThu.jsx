@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchMonthlyProfitAndRevenueReport } from '@services/mockApi';
+import { fetchMonthlyProfitAndRevenueReport } from '@services/mockApi/index.js';
 import DateRangeFilter from '@components/DateRangeFilter';
 import StandardTable from '@/components/StandardTable';
 import { format } from 'date-fns';

@@ -49,4 +49,14 @@ export const _resetDauKeoMockData = data => {
   return simulateApiCall(() => dauKeoDataService._resetDauKeo(data));
 };
 
-console.log('DauKeo Mock API service loaded and configured (no delay).');
+// Export object for backward compatibility
+export const dauKeoApi = {
+  getAll: fetchAllDauKeo,
+  getById: fetchDauKeoById,
+  create: addDauKeo,
+  update: editDauKeo,
+  delete: removeDauKeo,
+  _reset: _resetDauKeoMockData,
+};
+
+console.log('DauKeo Mock API service loaded and configured.');

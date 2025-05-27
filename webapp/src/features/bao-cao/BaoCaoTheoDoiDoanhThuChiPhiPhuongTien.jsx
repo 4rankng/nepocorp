@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchVehicleMonthlyDetailsReport, fetchAvailableMonthsForReport } from '@services/mockApi';
-import { fetchAllDauKeo, fetchAllRoMooc } from '@services/mockApi';
+import { fetchVehicleMonthlyDetailsReport, fetchAvailableMonthsForReport } from '@services/mockApi/index.js';
+import { fetchAllDauKeo, fetchAllRoMooc } from '@services/mockApi/index.js';
 
 // SVG Icon for Download
 const ArrowDownTrayIcon = ({ className = 'w-6 h-6' }) => (

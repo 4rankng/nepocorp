@@ -6,7 +6,7 @@ import {
   removeNhanVien,
   fetchAllDauKeo,
   fetchAllRoMooc,
-} from '@services/mockApi';
+} from '@services/mockApi/index.js';
 
 // Define employee roles constant
 const employeeRoles = [

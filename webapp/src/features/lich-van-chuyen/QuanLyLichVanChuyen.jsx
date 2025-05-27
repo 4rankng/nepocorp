@@ -13,7 +13,7 @@ import {
   addKhachHang, // Added for customer creation
   fetchAllDauKeo, // Added for vehicles
   fetchAllRoMooc, // Added for vehicles
-} from '@services/mockApi';
+} from '@services/mockApi/index.js';
 import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
 import ConfirmationModal from '@components/ConfirmationModal';
 import {

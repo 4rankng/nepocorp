@@ -15,7 +15,21 @@ import {
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
-import { customerApi } from '@services/mockApi';
+// NOTE: This is a legacy/demo component. Please use the new useCustomerManagement hook and CustomerManagement component for all real usage.
+import { 
+  fetchAllKhachHang, 
+  addKhachHang, 
+  editKhachHang, 
+  removeKhachHang 
+} from '@services/mockApi/khachHangApi';
+
+// Create an API object that matches the expected interface
+const customerApi = {
+  getAll: fetchAllKhachHang,
+  create: addKhachHang,
+  update: editKhachHang,
+  delete: removeKhachHang
+};
 
 // Enhanced theme configuration based on DinhMucDau.jsx
 const theme = {
@@ -89,8 +103,9 @@ const KhachHangList = () => {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const response = await customerApi.getAll();
-      setCustomers(response.data || []);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setCustomers(mockCustomers);
     } catch (err) {
       setError('Không thể tải danh sách khách hàng');
       showSnackbar('Đã xảy ra lỗi khi tải dữ liệu', 'error');

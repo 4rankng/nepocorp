@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchDebtReport } from '@services/mockApi';
+import { fetchDebtReport } from '@services/mockApi/index.js';
 import DateRangeFilter from '@components/DateRangeFilter';
 import StandardTable from '@/components/StandardTable';
 import { format } from 'date-fns';
