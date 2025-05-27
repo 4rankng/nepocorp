@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
-import { ROLES, getRoleLabel } from '@shared/config/roles';
-import ThanhTieuDe from '@shared/components/ThanhTieuDe';
-import ThanhBen from '@shared/components/ThanhBen';
+import { ROLES, getRoleLabel } from '@/config/roles';
+import ThanhTieuDe from '@/components/ThanhTieuDe';
+import ThanhBen from '@/components/ThanhBen';
 import packageJson from '../../package.json';
 
 const ROLE_CARDS = [

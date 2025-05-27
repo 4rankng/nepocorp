@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Box, Paper, Typography, Alert, Snackbar } from '@mui/material';
-import { AddButton } from '@shared/components/ActionButtons';
-import ConfirmationModal from '@shared/components/ConfirmationDialog';
+import { Box, Paper, Typography, Alert, Snackbar, Fab, Zoom } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import ConfirmationModal from '@/components/ConfirmationDialog';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
-import PartnerList from '@features/doi-tac/components/PartnerList';
+import PartnerListResponsive from '@features/doi-tac/components/PartnerListResponsive';
 import usePartnerManagement from '@features/doi-tac/hooks/usePartnerManagement';
 
 const PartnerManagement = () => {

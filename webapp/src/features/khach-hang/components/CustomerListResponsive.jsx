@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { EditButton, DeleteButton } from '@shared/components/ActionButtons';
+import { EditButton, DeleteButton } from '@/components/ActionButtons';
 
 const CustomerListResponsive = ({
   customers = [],

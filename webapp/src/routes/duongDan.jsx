@@ -12,6 +12,13 @@ import QuanLyKhachHang from '@features/khach-hang/QuanLyKhachHang';
 import QuanLyDoiTac from '@features/doi-tac/QuanLyDoiTac';
 import QuanLyPhuongTien from '@features/phuong-tien/QuanLyPhuongTien';
 
+// Future flags for React Router v7
+const routerConfig = {
+  future: {
+    v7_startTransition: true,
+  }
+};
+
 // Wrap the app with AuthProvider
 const AppWithAuth = ({ children }) => <AuthProvider>{children}</AuthProvider>;
 
@@ -115,11 +122,7 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  {
-    future: {
-      v7_startTransition: true,
-    },
-  }
+  routerConfig
 );
 
 export default router;

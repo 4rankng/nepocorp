@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Paper, Typography, Alert, Snackbar, Fab, Zoom } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import ConfirmationModal from '@shared/components/ConfirmationDialog';
+import ConfirmationModal from '@/components/ConfirmationDialog';
 import CustomerForm from '@features/khach-hang/components/CustomerForm';
 import CustomerListResponsive from '@features/khach-hang/components/CustomerListResponsive';
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';

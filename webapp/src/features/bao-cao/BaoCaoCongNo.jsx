@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getDebtReport } from '@services/mockData/reports';
 import DateRangeFilter from '@components/DateRangeFilter';
-import StandardTable from '@shared/components/StandardTable';
+import StandardTable from '@/components/StandardTable';
 import { format } from 'date-fns';
 
 // SVG Icon for Download

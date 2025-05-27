@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import ConfirmationDialog from '@shared/components/ConfirmationDialog';
-import StandardTable from '@shared/components/StandardTable';
-import { EditButton, DeleteButton, AddButton } from '@shared/components/ActionButtons';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
+import StandardTable from '@/components/StandardTable';
+import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import { fuelStandardApi, vehicleApi } from '@services/mockApi';
 
 import {
