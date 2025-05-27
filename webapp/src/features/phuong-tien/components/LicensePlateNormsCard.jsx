@@ -111,8 +111,8 @@ const LicensePlateNormsCard = ({
           title="Thêm định mức mới"
         />
       </Box>
-      <Grid container spacing={2} sx={{ width: '100%' }}>
-        <Grid item xs={12} md={6}>
+      <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ width: '100%' }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
             Định mức hàng
           </Typography>
@@ -133,8 +133,8 @@ const LicensePlateNormsCard = ({
             emptyMessage="Chưa có dữ liệu định mức hàng"
             sx={{ width: '100%' }}
           />
-        </Grid>
-        <Grid item xs={12} md={6}>
+        </Box>
+        <Box sx={{ width: '100%' }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
             Định mức vỏ
           </Typography>
@@ -155,8 +155,8 @@ const LicensePlateNormsCard = ({
             emptyMessage="Chưa có dữ liệu định mức vỏ"
             sx={{ width: '100%' }}
           />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };

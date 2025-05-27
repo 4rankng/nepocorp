@@ -371,38 +371,40 @@ const DinhMucDau = () => {
             <Tab label="Định mức vỏ" value="container" />
           </Tabs>
         ) : (
-          <Paper
-            elevation={0}
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              p: 1.5,
-              bgcolor: 'background.paper',
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 1,
-              gap: 2
-            }}
-          >
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ lineHeight: 1.2, mb: 0.5 }}>
-                Định mức bổ sung
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}>
-                {supplementaryStandard} lít/chuyến
-              </Typography>
-            </Box>
-            <EditButton
-              onClick={openEditSupplementaryDialog}
-              size="small"
-              sx={{ alignSelf: 'flex-start' }}
-            />
-          </Paper>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: isMobile ? 1 : 2 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                p: 1.5,
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                gap: 2
+              }}
+            >
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                  Định mức bổ sung
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}>
+                  {supplementaryStandard} lít/chuyến
+                </Typography>
+              </Box>
+              <EditButton
+                onClick={openEditSupplementaryDialog}
+                size="small"
+                sx={{ alignSelf: 'flex-start' }}
+              />
+            </Paper>
+          </Box>
         )}
       </Box>
 
       {(isMobile && (mobileTab === 'cargo' || mobileTab === 'container')) || (!isMobile) && (
-        <Box sx={{ mb: isMobile ? 1 : 2, maxWidth: 360 }}>
+        <Box sx={{ mb: isMobile ? 1 : 2, maxWidth: '100%' }}>
           <TextField
             fullWidth
             size="small"
@@ -424,6 +426,7 @@ const DinhMucDau = () => {
               },
             }}
             sx={{
+              width: '100%',
               '& .MuiOutlinedInput-root': {
                 borderRadius: '6px',
                 height: isMobile ? 36 : 36,
