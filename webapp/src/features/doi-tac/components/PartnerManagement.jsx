@@ -227,18 +227,18 @@ const PartnerManagement = () => {
                 <Typography variant="body2" color="text.secondary">
                   Tên đối tác:
                 </Typography>
-                <Typography variant="body2">{partnerToDelete?.name}</Typography>
+                <Typography variant="body2">{partnerToDelete?.ten}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Địa chỉ:
                 </Typography>
                 <Typography variant="body2">
-                  {partnerToDelete?.address || 'Chưa cập nhật'}
+                  {partnerToDelete?.dia_chi || 'Chưa cập nhật'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Mã số thuế:
                 </Typography>
                 <Typography variant="body2">
-                  {partnerToDelete?.taxCode || 'Chưa cập nhật'}
+                  {partnerToDelete?.ma_so_thue || 'Chưa cập nhật'}
                 </Typography>
               </Box>
             </Box>

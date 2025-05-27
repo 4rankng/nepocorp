@@ -86,7 +86,7 @@ const useCustomerManagement = () => {
     const nextCode = generateNextCustomerCode(customers);
     return {
       ...initialFormState,
-      code: nextCode,
+      ma_dinh_danh: nextCode,
     };
   }, [customers]);
 

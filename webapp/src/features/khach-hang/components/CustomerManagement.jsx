@@ -241,18 +241,18 @@ const CustomerManagement = () => {
                 <Typography variant="body2" color="text.secondary">
                   Tên khách hàng:
                 </Typography>
-                <Typography variant="body2">{customerToDelete?.name}</Typography>
+                <Typography variant="body2">{customerToDelete?.ten}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Địa chỉ:
                 </Typography>
                 <Typography variant="body2">
-                  {customerToDelete?.address || 'Chưa cập nhật'}
+                  {customerToDelete?.dia_chi || 'Chưa cập nhật'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Mã số thuế:
                 </Typography>
                 <Typography variant="body2">
-                  {customerToDelete?.taxCode || 'Chưa cập nhật'}
+                  {customerToDelete?.ma_so_thue || 'Chưa cập nhật'}
                 </Typography>
               </Box>
             </Box>

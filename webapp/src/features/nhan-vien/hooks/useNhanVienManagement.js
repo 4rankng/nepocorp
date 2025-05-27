@@ -10,9 +10,9 @@ import {
 
 // Define employee roles constant
 const employeeRoles = [
-  { value: 'giao_nhan', label: 'Giao Nhận' },
-  { value: 'lai_xe', label: 'Lái Xe' },
-  { value: 'quan_ly', label: 'Quản Lý' },
+  { value: 'giao-nhan', label: 'Giao Nhận' },
+  { value: 'lai-xe', label: 'Lái Xe' },
+  { value: 'quan-ly', label: 'Quản Lý' },
   { value: 'admin', label: 'Admin' },
 ];
 
@@ -40,7 +40,17 @@ const useNhanVienManagement = () => {
     setError('');
     try {
       const data = await fetchAllNhanVien();
-      setEmployees(data);
+      // Map backend fields to UI fields
+      const mapped = (Array.isArray(data) ? data : []).map(emp => ({
+        ...emp,
+        maNhanVien: emp.ma_so,
+        tenNhanVien: emp.ho_ten,
+        tenDangNhap: emp.ten_dang_nhap,
+        chucVu: mapChucVu(emp.chuc_vu),
+        // Optionally map bienSoXe if you have vehicle assignment logic
+        // bienSoXe: emp.bien_so_xe || '',
+      }));
+      setEmployees(mapped);
     } catch (err) {
       setError('Không thể tải danh sách nhân viên.');
       console.error(err);
@@ -56,8 +66,8 @@ const useNhanVienManagement = () => {
 
       // Combine vehicles into a single array with type information
       const allVehicles = [
-        ...dauKeoData.map(item => ({ ...item, type: 'dau_keo' })),
-        ...roMoocData.map(item => ({ ...item, type: 'ro_mooc' })),
+        ...dauKeoData.map(item => ({ ...item, id: `dk-${item.id}`, originalId: item.id, type: 'dau_keo' })),
+        ...roMoocData.map(item => ({ ...item, id: `rm-${item.id}`, originalId: item.id, type: 'ro_mooc' })),
       ];
 
       setVehicles(allVehicles);
@@ -210,5 +220,16 @@ const useNhanVienManagement = () => {
     vehicles, // Expose vehicles for the form
   };
 };
+
+// Helper to map chuc_vu code to display string
+function mapChucVu(code) {
+  switch (code) {
+    case 'quan-ly': return 'Quản lý';
+    case 'ke-toan': return 'Kế toán';
+    case 'giao-nhan': return 'Giao nhận';
+    case 'lai-xe': return 'Lái xe';
+    default: return code || 'Chưa xác định';
+  }
+}
 
 export default useNhanVienManagement;

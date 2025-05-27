@@ -19,7 +19,10 @@ const simulateApiCall = fn => {
 
 export const fetchAllKhachHang = () => {
   console.log('[Mock API] Fetching all KhachHang...');
-  return simulateApiCall(khachHangDataService.getAllKhachHang);
+  return simulateApiCall(async () => {
+    const allCustomers = await khachHangDataService.getAllKhachHang();
+    return { data: allCustomers };
+  });
 };
 
 export const fetchKhachHangById = id => {

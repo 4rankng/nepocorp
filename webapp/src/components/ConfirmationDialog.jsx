@@ -38,7 +38,7 @@ const ConfirmationDialog = ({
       fullWidth
     >
       <DialogContent>
-        <DialogContentText id="alert-dialog-description" sx={{ mb: 2 }}>
+        <DialogContentText component="div" id="alert-dialog-description" sx={{ mb: 2 }}>
           {message}
         </DialogContentText>
 

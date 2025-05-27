@@ -112,24 +112,36 @@ const CustomerForm = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label="Mã khách hàng"
-              name="ma_dinh_danh"
-              value={formData.ma_dinh_danh}
-              onChange={handleInputChange}
-              placeholder="VD: KH001"
-              fullWidth
-              size="small"
-              margin="normal"
-              disabled={!!customer} // Disable editing code for existing customers
-              required
-              inputProps={{
-                pattern: '^KH\\d{3,}$',
-                title: 'Mã khách hàng phải bắt đầu bằng KH và ít nhất 3 chữ số',
-              }}
-              helperText="Nhập mã khách hàng (VD: KH001)"
-            />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}> {/* Reduced gap for tighter packing */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Mã khách hàng"
+                name="ma_dinh_danh"
+                value={formData.ma_dinh_danh}
+                onChange={handleInputChange}
+                placeholder="VD: KH001"
+                fullWidth
+                size="small"
+                margin="dense" // Changed to dense
+                disabled={!!customer} // Disable editing code for existing customers
+                required
+                inputProps={{
+                  pattern: '^KH\\d{3,}$',
+                  title: 'Mã khách hàng phải bắt đầu bằng KH và ít nhất 3 chữ số',
+                }}
+                helperText="VD: KH001"
+              />
+              <TextField
+                label="Mã số thuế"
+                name="ma_so_thue"
+                value={formData.ma_so_thue}
+                onChange={handleInputChange}
+                placeholder="VD: 5500157123"
+                fullWidth
+                size="small"
+                margin="dense" // Changed to dense
+              />
+            </Box>
             <TextField
               label="Tên khách hàng"
               name="ten"
@@ -139,7 +151,7 @@ const CustomerForm = ({
               fullWidth
               size="small"
               required
-              margin="normal"
+              margin="dense" // Changed to dense
               error={localError.includes('Tên khách hàng')}
             />
             <TextField
@@ -150,19 +162,9 @@ const CustomerForm = ({
               placeholder="Ví dụ: 123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh"
               fullWidth
               size="small"
-              margin="normal"
+              margin="dense" // Changed to dense
               multiline
               rows={2}
-            />
-            <TextField
-              label="Mã số thuế"
-              name="ma_so_thue"
-              value={formData.ma_so_thue}
-              onChange={handleInputChange}
-              placeholder="Ví dụ: 5500157123"
-              fullWidth
-              size="small"
-              margin="normal"
             />
             {(error || localError) && (
               <Alert severity="error" sx={{ mt: 1 }}>

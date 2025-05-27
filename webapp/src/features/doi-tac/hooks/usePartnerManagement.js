@@ -59,8 +59,23 @@ const usePartnerManagement = () => {
 
   // Get initial form data
   const getInitialFormData = useCallback(() => {
-    return { ...initialFormState };
-  }, []);
+    let maxCode = 0;
+    partners.forEach(partner => {
+      if (partner.ma_dinh_danh && partner.ma_dinh_danh.startsWith('DT')) {
+        const numPart = parseInt(partner.ma_dinh_danh.substring(2), 10);
+        if (!isNaN(numPart) && numPart > maxCode) {
+          maxCode = numPart;
+        }
+      }
+    });
+    const nextCodeNum = maxCode + 1;
+    const nextMaDinhDanh = `DT${nextCodeNum.toString().padStart(3, '0')}`;
+
+    return {
+      ...initialFormState,
+      ma_dinh_danh: nextMaDinhDanh,
+    };
+  }, [partners]);
 
   // Check if a partner code is available
   const isPartnerCodeAvailable = useCallback(async (ma_dinh_danh, excludeId = null) => {
