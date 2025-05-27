@@ -1,5 +1,5 @@
 // Mock reports data for testing and development
-import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 // Helper function to generate random data
 const generateRandomAmount = (min = 1000000, max = 50000000) => {
@@ -48,14 +48,14 @@ const generateLastNMonths = (n = 12) => {
 };
 
 // Monthly Profit and Revenue Report
-export const getMonthlyProfitAndRevenueReport = (startDate, endDate) => {
+export const getMonthlyProfitAndRevenueReport = (_startDate, _endDate) => {
   const months = generateLastNMonths(12);
-  
+
   return months.map(monthYear => {
     const revenue = generateRandomAmount(20000000, 80000000);
     const costs = generateRandomAmount(15000000, 60000000);
     const profit = revenue - costs;
-    
+
     return {
       monthYear,
       revenue,
@@ -67,10 +67,10 @@ export const getMonthlyProfitAndRevenueReport = (startDate, endDate) => {
 };
 
 // Detailed Cost Report
-export const getDetailedCostReport = (startDate, endDate) => {
+export const getDetailedCostReport = (_startDate, _endDate) => {
   const months = generateLastNMonths(6);
   const data = [];
-  
+
   months.forEach(monthYear => {
     sampleVehicles.forEach(vehicle => {
       costCategories.forEach(category => {
@@ -87,16 +87,16 @@ export const getDetailedCostReport = (startDate, endDate) => {
       });
     });
   });
-  
+
   return data;
 };
 
 // Debt Report
-export const getDebtReport = (startDate, endDate) => {
+export const getDebtReport = (_startDate, _endDate) => {
   return sampleEntities.map(entity => {
     const totalDebt = generateRandomAmount(1000000, 20000000);
     const overdueDebt = Math.random() > 0.5 ? generateRandomAmount(0, totalDebt * 0.6) : 0;
-    
+
     return {
       entityId: entity.id,
       entityName: entity.name,
@@ -104,7 +104,10 @@ export const getDebtReport = (startDate, endDate) => {
       totalDebt,
       overdueDebt,
       currentDebt: totalDebt - overdueDebt,
-      lastPaymentDate: format(generateRandomDate(subMonths(new Date(), 3), new Date()), 'dd/MM/yyyy'),
+      lastPaymentDate: format(
+        generateRandomDate(subMonths(new Date(), 3), new Date()),
+        'dd/MM/yyyy'
+      ),
       daysOverdue: overdueDebt > 0 ? Math.floor(Math.random() * 90) + 1 : 0,
     };
   });
@@ -115,34 +118,37 @@ export const getVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
   if (!vehicleId || !monthYear) {
     return null;
   }
-  
+
   const vehicle = sampleVehicles.find(v => v.id === parseInt(vehicleId));
   if (!vehicle) {
     return null;
   }
-  
+
   const revenue = generateRandomAmount(15000000, 40000000);
   const totalCosts = generateRandomAmount(8000000, 25000000);
-  
+
   // Generate cost breakdown
   const costBreakdown = costCategories.map(category => ({
     category,
     amount: generateRandomAmount(200000, 4000000),
   }));
-  
+
   // Generate trip details
   const trips = Array.from({ length: Math.floor(Math.random() * 15) + 5 }, (_, index) => ({
     tripId: `T${monthYear.replace('/', '')}-${vehicle.bienSoXe}-${String(index + 1).padStart(3, '0')}`,
-    date: format(generateRandomDate(
-      startOfMonth(new Date(`${monthYear.split('/')[1]}-${monthYear.split('/')[0]}-01`)),
-      endOfMonth(new Date(`${monthYear.split('/')[1]}-${monthYear.split('/')[0]}-01`))
-    ), 'dd/MM/yyyy'),
+    date: format(
+      generateRandomDate(
+        startOfMonth(new Date(`${monthYear.split('/')[1]}-${monthYear.split('/')[0]}-01`)),
+        endOfMonth(new Date(`${monthYear.split('/')[1]}-${monthYear.split('/')[0]}-01`))
+      ),
+      'dd/MM/yyyy'
+    ),
     customer: sampleEntities[Math.floor(Math.random() * sampleEntities.length)].name,
     route: `Hà Nội - TP.HCM`,
     revenue: generateRandomAmount(1000000, 5000000),
     distance: Math.floor(Math.random() * 1000) + 200,
   }));
-  
+
   return {
     vehicleId: vehicle.id,
     bienSoXe: vehicle.bienSoXe,
@@ -172,7 +178,7 @@ export const getDailyRevenueReport = (startDate, endDate) => {
   const days = [];
   const start = new Date(startDate);
   const end = new Date(endDate);
-  
+
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     days.push({
       date: format(new Date(d), 'dd/MM/yyyy'),
@@ -180,47 +186,49 @@ export const getDailyRevenueReport = (startDate, endDate) => {
       trips: Math.floor(Math.random() * 10) + 1,
     });
   }
-  
+
   return days;
 };
 
 // Customer Revenue Report
-export const getCustomerRevenueReport = (customerId, startDate, endDate) => {
+export const getCustomerRevenueReport = (customerId, _startDate, _endDate) => {
   const customer = sampleEntities.find(e => e.id === parseInt(customerId) && e.type === 'customer');
   if (!customer) {
     return [];
   }
-  
+
   const months = generateLastNMonths(6);
-  
-  return months.map(monthYear => ({
-    customerId: customer.id,
-    customerName: customer.name,
-    monthYear,
-    revenue: generateRandomAmount(2000000, 15000000),
-    trips: Math.floor(Math.random() * 20) + 5,
-    avgRevenuePerTrip: 0, // Will be calculated
-  })).map(item => ({
-    ...item,
-    avgRevenuePerTrip: (item.revenue / item.trips).toFixed(0),
-  }));
+
+  return months
+    .map(monthYear => ({
+      customerId: customer.id,
+      customerName: customer.name,
+      monthYear,
+      revenue: generateRandomAmount(2000000, 15000000),
+      trips: Math.floor(Math.random() * 20) + 5,
+      avgRevenuePerTrip: 0, // Will be calculated
+    }))
+    .map(item => ({
+      ...item,
+      avgRevenuePerTrip: (item.revenue / item.trips).toFixed(0),
+    }));
 };
 
 // Vehicle Performance Report
-export const getVehiclePerformanceReport = (vehicleId, startDate, endDate) => {
+export const getVehiclePerformanceReport = (vehicleId, _startDate, _endDate) => {
   const vehicle = sampleVehicles.find(v => v.id === parseInt(vehicleId));
   if (!vehicle) {
     return [];
   }
-  
+
   const months = generateLastNMonths(6);
-  
+
   return months.map(monthYear => {
     const trips = Math.floor(Math.random() * 20) + 5;
     const distance = Math.floor(Math.random() * 10000) + 2000;
     const revenue = generateRandomAmount(5000000, 25000000);
     const costs = generateRandomAmount(3000000, 18000000);
-    
+
     return {
       vehicleId: vehicle.id,
       bienSoXe: vehicle.bienSoXe,
@@ -230,32 +238,34 @@ export const getVehiclePerformanceReport = (vehicleId, startDate, endDate) => {
       revenue,
       costs,
       profit: revenue - costs,
-      fuelEfficiency: (distance / (costs * 0.3 / 25000)).toFixed(2), // Rough calculation
-      utilizationRate: (trips / 30 * 100).toFixed(1), // Trips per month
+      fuelEfficiency: (distance / ((costs * 0.3) / 25000)).toFixed(2), // Rough calculation
+      utilizationRate: ((trips / 30) * 100).toFixed(1), // Trips per month
     };
   });
 };
 
 // Partner Report
-export const getPartnerReport = (partnerId, startDate, endDate) => {
+export const getPartnerReport = (partnerId, _startDate, _endDate) => {
   const partner = sampleEntities.find(e => e.id === parseInt(partnerId) && e.type === 'partner');
   if (!partner) {
     return [];
   }
-  
+
   const months = generateLastNMonths(6);
-  
-  return months.map(monthYear => ({
-    partnerId: partner.id,
-    partnerName: partner.name,
-    monthYear,
-    totalPaid: generateRandomAmount(5000000, 30000000),
-    trips: Math.floor(Math.random() * 15) + 3,
-    avgPaymentPerTrip: 0, // Will be calculated
-  })).map(item => ({
-    ...item,
-    avgPaymentPerTrip: (item.totalPaid / item.trips).toFixed(0),
-  }));
+
+  return months
+    .map(monthYear => ({
+      partnerId: partner.id,
+      partnerName: partner.name,
+      monthYear,
+      totalPaid: generateRandomAmount(5000000, 30000000),
+      trips: Math.floor(Math.random() * 15) + 3,
+      avgPaymentPerTrip: 0, // Will be calculated
+    }))
+    .map(item => ({
+      ...item,
+      avgPaymentPerTrip: (item.totalPaid / item.trips).toFixed(0),
+    }));
 };
 
 // Export functions (mock implementations)

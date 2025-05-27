@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  fetchVehicleMonthlyDetailsReport,
-  fetchAvailableMonthsForReport,
-} from '@services/mockApi';
+import { fetchVehicleMonthlyDetailsReport, fetchAvailableMonthsForReport } from '@services/mockApi';
 import { fetchAllDauKeo, fetchAllRoMooc } from '@services/mockApi';
 
 // SVG Icon for Download
@@ -32,7 +29,7 @@ const formatCurrency = value => {
 // Helper to format vehicles for select dropdown
 const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
   const allVehicles = [];
-  
+
   dauKeoList.forEach(dauKeo => {
     allVehicles.push({
       id: `dauKeo-${dauKeo.id}`,
@@ -42,7 +39,7 @@ const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
       type: 'dauKeo',
     });
   });
-  
+
   roMoocList.forEach(roMooc => {
     allVehicles.push({
       id: `roMooc-${roMooc.id}`,
@@ -52,7 +49,7 @@ const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
       type: 'roMooc',
     });
   });
-  
+
   return allVehicles;
 };
 
@@ -77,7 +74,7 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
         fetchAllRoMooc(),
         fetchAvailableMonthsForReport(),
       ]);
-      
+
       const vehicles = formatVehiclesForSelect(dauKeoList, roMoocList);
       setVehiclesForSelect(vehicles);
       setMonthsForSelect(months);

@@ -1,13 +1,13 @@
 // Mock API services for DauKeo (Tractor Units)
-import * as dauKeoDataService from '../mockData/dauKeo';
+import * as dauKeoDataService from '@services/mockData/dauKeo';
 
 const SIMULATED_DELAY = 0; // ms - No delay
 
-const simulateApiCall = (fn) => {
+const simulateApiCall = fn => {
   return new Promise((resolve, reject) => {
-    // If delay is 0, execute immediately. 
+    // If delay is 0, execute immediately.
     // Still using setTimeout to maintain async structure if delay is re-introduced.
-    setTimeout(async () => { 
+    setTimeout(async () => {
       try {
         const result = await fn();
         resolve(result);
@@ -24,12 +24,12 @@ export const fetchAllDauKeo = () => {
   return simulateApiCall(dauKeoDataService.getAllDauKeo);
 };
 
-export const fetchDauKeoById = (id) => {
+export const fetchDauKeoById = id => {
   console.log(`[Mock API] Fetching DauKeo by ID: ${id}`);
   return simulateApiCall(() => dauKeoDataService.getDauKeoById(id));
 };
 
-export const addDauKeo = (data) => {
+export const addDauKeo = data => {
   console.log('[Mock API] Creating DauKeo:', data);
   return simulateApiCall(() => dauKeoDataService.createDauKeo(data));
 };
@@ -39,12 +39,12 @@ export const editDauKeo = (id, data) => {
   return simulateApiCall(() => dauKeoDataService.updateDauKeo(id, data));
 };
 
-export const removeDauKeo = (id) => {
+export const removeDauKeo = id => {
   console.log(`[Mock API] Deleting DauKeo ID: ${id}`);
   return simulateApiCall(() => dauKeoDataService.deleteDauKeo(id));
 };
 
-export const _resetDauKeoMockData = (data) => {
+export const _resetDauKeoMockData = data => {
   console.log('[Mock API] Resetting DauKeo Data (via API layer)...');
   return simulateApiCall(() => dauKeoDataService._resetDauKeo(data));
 };

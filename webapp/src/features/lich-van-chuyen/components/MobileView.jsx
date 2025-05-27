@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import { Box, Typography, Paper, LinearProgress, Fab } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import AddIcon from '@mui/icons-material/Add';
-import MobileShipmentCard from './MobileShipmentCard';
-import MobileSearchHeader from './MobileSearchHeader';
+import MobileShipmentCard from '@features/lich-van-chuyen/components/MobileShipmentCard';
+import MobileSearchHeader from '@features/lich-van-chuyen/components/MobileSearchHeader';
 
 const MobileView = ({
   searchTerm,

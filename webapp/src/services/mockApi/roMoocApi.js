@@ -1,11 +1,11 @@
 // Mock API services for RoMooc (Trailers)
-import * as roMoocDataService from '../mockData/roMooc';
+import * as roMoocDataService from '@services/mockData/roMooc';
 
 const SIMULATED_DELAY = 0; // ms - No delay
 
-const simulateApiCall = (fn) => {
+const simulateApiCall = fn => {
   return new Promise((resolve, reject) => {
-    setTimeout(async () => { 
+    setTimeout(async () => {
       try {
         const result = await fn();
         resolve(result);
@@ -22,12 +22,12 @@ export const fetchAllRoMooc = () => {
   return simulateApiCall(roMoocDataService.getAllRoMooc);
 };
 
-export const fetchRoMoocById = (id) => {
+export const fetchRoMoocById = id => {
   console.log(`[Mock API] Fetching RoMooc by ID: ${id}`);
   return simulateApiCall(() => roMoocDataService.getRoMoocById(id));
 };
 
-export const addRoMooc = (data) => {
+export const addRoMooc = data => {
   console.log('[Mock API] Creating RoMooc:', data);
   return simulateApiCall(() => roMoocDataService.createRoMooc(data));
 };
@@ -37,12 +37,12 @@ export const editRoMooc = (id, data) => {
   return simulateApiCall(() => roMoocDataService.updateRoMooc(id, data));
 };
 
-export const removeRoMooc = (id) => {
+export const removeRoMooc = id => {
   console.log(`[Mock API] Deleting RoMooc ID: ${id}`);
   return simulateApiCall(() => roMoocDataService.deleteRoMooc(id));
 };
 
-export const _resetRoMoocMockData = (data) => {
+export const _resetRoMoocMockData = data => {
   console.log('[Mock API] Resetting RoMooc Data (via API layer)...');
   return simulateApiCall(() => roMoocDataService._resetRoMooc(data));
 };

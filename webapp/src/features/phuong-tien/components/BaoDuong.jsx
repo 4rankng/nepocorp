@@ -265,11 +265,11 @@ const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
           label={count}
           size="small"
           sx={{
-            backgroundColor: (theme) => alpha(theme.palette.text.secondary, 0.1),
+            backgroundColor: theme => alpha(theme.palette.text.secondary, 0.1),
             color: 'text.secondary',
             fontWeight: 500,
             fontSize: '0.75rem',
-            mr: 2
+            mr: 2,
           }}
         />
       )}
@@ -580,10 +580,10 @@ const BaoDuong = () => {
     },
   ];
 
-  const toggleSection = (section) => {
+  const toggleSection = section => {
     setExpandedSections(prev => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -597,7 +597,7 @@ const BaoDuong = () => {
       unitPrice: 0,
       total: 0,
       note: '',
-      type: type
+      type: type,
     });
     setErrors({});
     setOpenDialog(true);
@@ -658,21 +658,21 @@ const BaoDuong = () => {
           }}
         />
       </Box>
-      
+
       {/* Loading state */}
       {isLoading && (
         <Box textAlign="center" py={4}>
           <Typography>Đang tải dữ liệu...</Typography>
         </Box>
       )}
-      
+
       {/* Error state */}
       {error && (
         <Box color="error.main" py={2}>
           <Typography>{error}</Typography>
         </Box>
       )}
-      
+
       {/* Content */}
       {!isLoading && !error && (
         <Box>

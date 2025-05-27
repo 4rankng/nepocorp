@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
 import StandardTable from '@/components/StandardTable';
 import { PlusIcon } from '@assets/icons/index.jsx';
-import useNhanVienManagement from './hooks/useNhanVienManagement';
+import useNhanVienManagement from '@features/nhan-vien/hooks/useNhanVienManagement';
 import {
   Box,
   Paper,
@@ -20,8 +20,8 @@ import {
   Button,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import EmployeeCard from './components/EmployeeCard';
-import NhanVienForm from './components/NhanVienForm';
+import EmployeeCard from '@features/nhan-vien/components/EmployeeCard';
+import NhanVienForm from '@features/nhan-vien/components/NhanVienForm';
 import { useTheme, useMediaQuery } from '@mui/material';
 
 // initialFormState is now handled by the hook

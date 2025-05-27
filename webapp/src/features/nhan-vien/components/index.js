@@ -1,2 +1,2 @@
-export { default as NhanVienForm } from './NhanVienForm';
-export { default as EmployeeCard } from './EmployeeCard';
+export { default as NhanVienForm } from '@features/nhan-vien/components/NhanVienForm';
+export { default as EmployeeCard } from '@features/nhan-vien/components/EmployeeCard';

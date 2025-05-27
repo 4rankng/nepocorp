@@ -1,1 +1,1 @@
-export * from '@services/mockApi';
+export * from './mockApi/index.js';

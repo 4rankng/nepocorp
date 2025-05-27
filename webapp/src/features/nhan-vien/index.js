@@ -1,1 +1,1 @@
-export { default } from './QuanLyNhanVien';
+export { default } from '@features/nhan-vien/QuanLyNhanVien';

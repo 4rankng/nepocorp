@@ -72,6 +72,7 @@ const BaoCaoLoiNhuanDoanhThu = () => {
     setError('');
     try {
       const data = await fetchMonthlyProfitAndRevenueReport();
+      console.log('Fetched report data:', data);
       setOriginalData(data);
       setFilteredData(data);
     } catch (err) {

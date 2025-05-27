@@ -1,9 +1,9 @@
 // Mock API services for KhachHang (Customers)
-import * as khachHangDataService from '../mockData/khachHang';
+import * as khachHangDataService from '@services/mockData/khachHang';
 
 const SIMULATED_DELAY = 0; // ms
 
-const simulateApiCall = (fn) => {
+const simulateApiCall = fn => {
   return new Promise((resolve, reject) => {
     setTimeout(async () => {
       try {
@@ -22,12 +22,12 @@ export const fetchAllKhachHang = () => {
   return simulateApiCall(khachHangDataService.getAllKhachHang);
 };
 
-export const fetchKhachHangById = (id) => {
+export const fetchKhachHangById = id => {
   console.log(`[Mock API] Fetching KhachHang by ID: ${id}`);
   return simulateApiCall(() => khachHangDataService.getKhachHangById(id));
 };
 
-export const addKhachHang = (data) => {
+export const addKhachHang = data => {
   console.log('[Mock API] Creating KhachHang:', data);
   return simulateApiCall(() => khachHangDataService.createKhachHang(data));
 };
@@ -37,12 +37,12 @@ export const editKhachHang = (id, data) => {
   return simulateApiCall(() => khachHangDataService.updateKhachHang(id, data));
 };
 
-export const removeKhachHang = (id) => {
+export const removeKhachHang = id => {
   console.log(`[Mock API] Deleting KhachHang ID: ${id}`);
   return simulateApiCall(() => khachHangDataService.deleteKhachHang(id));
 };
 
-export const _resetKhachHangMockData = (data) => {
+export const _resetKhachHangMockData = data => {
   console.log('[Mock API] Resetting KhachHang Data (via API layer)...');
   return simulateApiCall(() => khachHangDataService._resetKhachHang(data));
 };

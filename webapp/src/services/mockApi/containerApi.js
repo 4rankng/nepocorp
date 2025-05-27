@@ -1,11 +1,11 @@
 // Mock API services for Container
-import * as containerDataService from '../mockData/container';
+import * as containerDataService from '@services/mockData/container';
 
 const SIMULATED_DELAY = 0; // ms - No delay
 
-const simulateApiCall = (fn) => {
+const simulateApiCall = fn => {
   return new Promise((resolve, reject) => {
-    setTimeout(async () => { 
+    setTimeout(async () => {
       try {
         const result = await fn();
         resolve(result);
@@ -22,12 +22,12 @@ export const fetchAllContainer = () => {
   return simulateApiCall(containerDataService.getAllContainer);
 };
 
-export const fetchContainerById = (id) => {
+export const fetchContainerById = id => {
   console.log(`[Mock API] Fetching Container by ID: ${id}`);
   return simulateApiCall(() => containerDataService.getContainerById(id));
 };
 
-export const addContainer = (data) => {
+export const addContainer = data => {
   console.log('[Mock API] Creating Container:', data);
   return simulateApiCall(() => containerDataService.createContainer(data));
 };
@@ -37,12 +37,12 @@ export const editContainer = (id, data) => {
   return simulateApiCall(() => containerDataService.updateContainer(id, data));
 };
 
-export const removeContainer = (id) => {
+export const removeContainer = id => {
   console.log(`[Mock API] Deleting Container ID: ${id}`);
   return simulateApiCall(() => containerDataService.deleteContainer(id));
 };
 
-export const _resetContainerMockData = (data) => {
+export const _resetContainerMockData = data => {
   console.log('[Mock API] Resetting Container Data (via API layer)...');
   return simulateApiCall(() => containerDataService._resetContainer(data));
 };

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
-import { dinhMucApi } from '@/services/api';
-import { vehicleApi } from '@services/mockApi'; // TODO: Update this to use the new API structure later
+import { dinhMucApi } from '@services/mockApi';
+import { dauKeoApi, roMoocApi } from '@services/mockApi';
 
 import {
   Box,
@@ -80,7 +80,7 @@ const DinhMucDau = () => {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [dinhMucHang, setDinhMucHang] = useState({}); // Format: { '51C-12345': [...] }
-  const [dinhMucVo, setDinhMucVo] = useState({});     // Format: { '51C-12345': [...] }
+  const [dinhMucVo, setDinhMucVo] = useState({}); // Format: { '51C-12345': [...] }
   const [licensePlates, setLicensePlates] = useState([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -196,7 +196,7 @@ const DinhMucDau = () => {
                 label={getStatusLabel(standard.standard)}
                 size="small"
                 sx={{
-                  backgroundColor: (theme) => alpha(theme.palette.text.secondary, 0.1),
+                  backgroundColor: theme => alpha(theme.palette.text.secondary, 0.1),
                   color: 'text.secondary',
                   fontWeight: 500,
                   fontSize: '0.75rem',
@@ -315,17 +315,18 @@ const DinhMucDau = () => {
     setIsLoading(true);
     try {
       // Fetch all required data in parallel
-      const [
-        vehiclesResponse,
-        supplementaryResponse
-      ] = await Promise.all([
-        vehicleApi.getAll(),
-        dinhMucApi.getBoSung()
+      const [dauKeoResponse, roMoocResponse, supplementaryResponse] = await Promise.all([
+        dauKeoApi.getAll(),
+        roMoocApi.getAll(),
+        dinhMucApi.getBoSung(),
       ]);
 
-      // Extract data from responses
-      const vehicles = vehiclesResponse.data || [];
-      const supplementary = supplementaryResponse.data || { value: 0 };
+      // Combine dau keo and ro mooc into a single vehicles array
+      const vehiclesResponse = [...dauKeoResponse, ...roMoocResponse];
+
+      // Extract data from responses - mock API returns data directly
+      const vehicles = Array.isArray(vehiclesResponse) ? vehiclesResponse : [];
+      const supplementary = supplementaryResponse || { value: 0 };
 
       // Extract license plates from vehicles
       const plates = vehicles.map(vehicle => ({
@@ -336,13 +337,13 @@ const DinhMucDau = () => {
       // Fetch fuel standards for each license plate
       const plateStandards = {};
       const plateVoStandards = {};
-      
+
       for (const plate of plates) {
         const [hangRes, voRes] = await Promise.all([
           dinhMucApi.getByBienSoAndType(plate.licensePlate, 'hang'),
-          dinhMucApi.getByBienSoAndType(plate.licensePlate, 'vo')
+          dinhMucApi.getByBienSoAndType(plate.licensePlate, 'vo'),
         ]);
-        
+
         plateStandards[plate.licensePlate] = hangRes.data || [];
         plateVoStandards[plate.licensePlate] = voRes.data || [];
       }
@@ -415,10 +416,10 @@ const DinhMucDau = () => {
       setIsLoading(true);
       // Call API to update the supplementary standard
       const response = await dinhMucApi.updateBoSung(parseFloat(newSupplementaryValue));
-      
-      if (response.data) {
-        // Update local state with the response data
-        setSupplementaryStandard(response.data.value);
+
+      if (response) {
+        // Update local state with the response data - mock API returns the updated value directly
+        setSupplementaryStandard(response.value || parseFloat(newSupplementaryValue));
         setEditSupplementaryDialog(false);
         showSnackbar('Cập nhật định mức bổ sung thành công', 'success');
       }
@@ -1171,10 +1172,10 @@ const DinhMucDau = () => {
       {/* Render dialogs */}
       {renderDialog()}
       {renderDialog(true)}
-      
+
       {/* Supplementary Standard Dialog */}
-      <Dialog 
-        open={editSupplementaryDialog} 
+      <Dialog
+        open={editSupplementaryDialog}
         onClose={() => setEditSupplementaryDialog(false)}
         maxWidth="sm"
         fullWidth
@@ -1189,18 +1190,18 @@ const DinhMucDau = () => {
             fullWidth
             variant="outlined"
             value={newSupplementaryValue}
-            onChange={(e) => setNewSupplementaryValue(parseFloat(e.target.value) || 0)}
+            onChange={e => setNewSupplementaryValue(parseFloat(e.target.value) || 0)}
             inputProps={{
               step: 0.1,
-              min: 0
+              min: 0,
             }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditSupplementaryDialog(false)}>Hủy</Button>
-          <Button 
-            onClick={handleUpdateSupplementary} 
-            variant="contained" 
+          <Button
+            onClick={handleUpdateSupplementary}
+            variant="contained"
             color="primary"
             disabled={isLoading}
           >
@@ -1208,7 +1209,7 @@ const DinhMucDau = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

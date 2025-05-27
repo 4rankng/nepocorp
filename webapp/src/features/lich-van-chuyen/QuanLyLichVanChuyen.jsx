@@ -85,56 +85,56 @@ const formatDateForInput = dateStr_DDMMYYYY => {
 // Helper to format vehicles data for select options
 const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
   const vehicles = [];
-  
+
   // Add tractors (đầu kéo)
   dauKeoList.forEach(item => {
     vehicles.push({
       value: item.id,
       label: `${item.bien_so} (${item.mo_ta})`,
-      type: 'dau_keo'
+      type: 'dau_keo',
     });
   });
-  
+
   // Add trailers (rơ moóc)
   roMoocList.forEach(item => {
     vehicles.push({
       value: item.id,
       label: `${item.bien_so} (${item.mo_ta})`,
-      type: 'ro_mooc'
+      type: 'ro_mooc',
     });
   });
-  
+
   return vehicles;
 };
 
 // Helper to format customers data for select options
-const formatCustomersForSelect = (customersList) => {
+const formatCustomersForSelect = customersList => {
   return customersList.map(customer => ({
     value: customer.id,
     label: customer.ten,
-    ma_dinh_danh: customer.ma_dinh_danh
+    ma_dinh_danh: customer.ma_dinh_danh,
   }));
 };
 
 // Helper to format employees data for select options
-const formatEmployeesForSelect = (employeesList) => {
+const formatEmployeesForSelect = employeesList => {
   return employeesList.map(employee => ({
     value: employee.id,
     label: `${employee.ho_ten} (${employee.ma_so})`,
-    chuc_vu: employee.chuc_vu
+    chuc_vu: employee.chuc_vu,
   }));
 };
 
 // Helper to format containers data for select options
-const formatContainersForSelect = (containersList) => {
+const formatContainersForSelect = containersList => {
   return containersList.map(container => ({
     value: container.id,
-    label: container.id
+    label: container.id,
   }));
 };
 
 // Helper function to add a new customer quickly
-const addQuickCustomer = async (customerName) => {
+const addQuickCustomer = async customerName => {
   if (!customerName || customerName.trim() === '') {
     throw new Error('Tên khách hàng không được để trống');
   }
@@ -179,7 +179,7 @@ const QuanLyLichVanChuyen = () => {
   const [expandedCard, setExpandedCard] = useState(null);
   const [isFormExpanded, setIsFormExpanded] = useState(!isMobile);
 
-  const mapLichVanChuyenToFormData = (item) => {
+  const mapLichVanChuyenToFormData = item => {
     if (!item) return initialFormState;
     return {
       id: item.id || '', // Keep id for editing
@@ -202,12 +202,12 @@ const QuanLyLichVanChuyen = () => {
     setError('');
     try {
       const [
-        lichVanChuyenList, 
-        dauKeoList, 
-        roMoocList, 
-        customersList, 
-        employeesList, 
-        containersList
+        lichVanChuyenList,
+        dauKeoList,
+        roMoocList,
+        customersList,
+        employeesList,
+        containersList,
       ] = await Promise.all([
         fetchAllLichVanChuyen(),
         fetchAllDauKeo(),
@@ -291,7 +291,12 @@ const QuanLyLichVanChuyen = () => {
     setError('');
     try {
       // Basic validation for new structure (example)
-      if (!formData.ma_chuyen || !formData.ngay_van_chuyen || !formData.khach_hang_id || !formData.trang_thai) {
+      if (
+        !formData.ma_chuyen ||
+        !formData.ngay_van_chuyen ||
+        !formData.khach_hang_id ||
+        !formData.trang_thai
+      ) {
         setError('Mã chuyến, Ngày vận chuyển, Khách hàng, và Trạng thái là bắt buộc.');
         setIsLoading(false);
         return;
@@ -303,7 +308,7 @@ const QuanLyLichVanChuyen = () => {
       // However, UI forms (DesktopShipmentFormDialog, MobileShipmentFormStepper) will need significant updates.
 
       if (editingItem) {
-        await editLichVanChuyen(editingItem.id, formData); 
+        await editLichVanChuyen(editingItem.id, formData);
       } else {
         await addLichVanChuyen(formData);
       }
@@ -313,7 +318,7 @@ const QuanLyLichVanChuyen = () => {
       setFormData(initialFormState); // Reset form
     } catch (err) {
       setError(`Lỗi khi lưu lịch vận chuyển: ${err.message}`);
-      console.error('Error saving LichVanChuyen:',err);
+      console.error('Error saving LichVanChuyen:', err);
     } finally {
       setIsLoading(false);
     }
@@ -335,7 +340,7 @@ const QuanLyLichVanChuyen = () => {
         setItemToDelete(null);
       } catch (err) {
         setError(`Lỗi khi xóa lịch vận chuyển: ${err.message}`);
-        console.error('Error deleting LichVanChuyen:',err);
+        console.error('Error deleting LichVanChuyen:', err);
       } finally {
         setIsLoading(false);
       }
@@ -481,7 +486,6 @@ const QuanLyLichVanChuyen = () => {
     }
   };
 
-
   // Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
   const handleOpenModalForAddMobile = () => {
     handleOpenModalForAdd();
@@ -499,9 +503,9 @@ const QuanLyLichVanChuyen = () => {
     <Box
       sx={{
         p: isMobile ? 2 : 3,
-        pt: isMobile ? 2 : 3, 
-        backgroundColor: theme.palette.background.default, 
-        minHeight: 'calc(100vh - 64px)', 
+        pt: isMobile ? 2 : 3,
+        backgroundColor: theme.palette.background.default,
+        minHeight: 'calc(100vh - 64px)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -510,8 +514,8 @@ const QuanLyLichVanChuyen = () => {
         variant={isMobile ? 'h5' : 'h4'}
         gutterBottom
         sx={{
-          fontWeight: 600, 
-          color: theme.palette.primary.main, 
+          fontWeight: 600,
+          color: theme.palette.primary.main,
           mb: isMobile ? 2 : 3,
         }}
       >
@@ -529,8 +533,8 @@ const QuanLyLichVanChuyen = () => {
           severity="error"
           sx={{
             mb: 2,
-            borderRadius: 2, 
-            boxShadow: theme.shadows[2], 
+            borderRadius: 2,
+            boxShadow: theme.shadows[2],
           }}
         >
           {error}
@@ -543,7 +547,7 @@ const QuanLyLichVanChuyen = () => {
           onSearchTermChange={e => setSearchTerm(e.target.value)}
           filterStatus={filterStatus}
           onFilterStatusChange={e => setFilterStatus(e.target.value)}
-          items={filteredLichVanChuyenItems} 
+          items={filteredLichVanChuyenItems}
           isLoading={isLoading}
           expandedCard={expandedCard}
           onCardExpand={handleCardExpand}
@@ -561,12 +565,12 @@ const QuanLyLichVanChuyen = () => {
           isLoading={isLoading}
           onAdd={handleOpenModalForAdd}
           canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
-          onEditItem={handleOpenModalForEdit} 
+          onEditItem={handleOpenModalForEdit}
           onDeleteItem={handleDelete}
         />
       )}
 
-      {/* Modal for Add/Edit */} 
+      {/* Modal for Add/Edit */}
       {isMobile ? (
         <Dialog
           fullScreen
@@ -576,7 +580,16 @@ const QuanLyLichVanChuyen = () => {
           TransitionProps={{ direction: 'up' }}
           sx={{ '& .MuiDialog-paper': { background: '#ffffff' } }}
         >
-          <DialogContent sx={{ p: 2, pb: 0, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <DialogContent
+            sx={{
+              p: 2,
+              pb: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              overflow: 'hidden',
+            }}
+          >
             <Box sx={{ flex: 1, overflow: 'auto', pr: 1, mr: -1, pb: 2 }}>
               {error && (
                 <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
@@ -589,11 +602,12 @@ const QuanLyLichVanChuyen = () => {
                 onFormChange={handleInputChange}
                 onSave={handleSubmit}
                 isLoading={isLoading}
-                error={error} 
+                error={error}
                 selectOptions={selectOptions}
-                onClose={handleCloseModalMobile} 
+                onClose={handleCloseModalMobile}
                 onAddNewCustomer={handleAddNewCustomer}
-                resetForm={resetForm}/>
+                resetForm={resetForm}
+              />
             </Box>
           </DialogContent>
         </Dialog>
@@ -611,7 +625,7 @@ const QuanLyLichVanChuyen = () => {
         />
       )}
 
-      {/* Confirmation Modal for delete */} 
+      {/* Confirmation Modal for delete */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={handleDeleteCancel}

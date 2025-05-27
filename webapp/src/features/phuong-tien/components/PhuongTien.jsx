@@ -1,17 +1,17 @@
 /**
  * PhuongTien Component - Vehicle Management
- * 
+ *
  * This component has been integrated with the new mock API paradigm.
- * 
+ *
  * Integration changes:
  * - Replaced inline mock APIs with calls to @services/mockApi
  * - Updated field mappings to match mock data structure:
  *   - DauKeo (Tractors): bien_so, mo_ta
- *   - RoMooc (Trailers): bien_so, mo_ta  
+ *   - RoMooc (Trailers): bien_so, mo_ta
  *   - Container: id (container number), phan_loai (type)
  * - Added CRUD handlers for all three entity types
  * - Updated mobile card renders and table columns
- * 
+ *
  * TODO: Implement form dialogs for CRUD operations following DinhMuc pattern
  */
 
@@ -109,11 +109,11 @@ const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
         label={count}
         size="small"
         sx={{
-          backgroundColor: (theme) => alpha(theme.palette.text.secondary, 0.1),
+          backgroundColor: theme => alpha(theme.palette.text.secondary, 0.1),
           color: 'text.secondary',
           fontWeight: 500,
           fontSize: '0.75rem',
-          mr: 2
+          mr: 2,
         }}
       />
       <AddButton
@@ -176,14 +176,14 @@ const PhuongTien = () => {
       .then(data => setTractors(data))
       .catch(() => setTractorError('Không thể tải danh sách đầu kéo'))
       .finally(() => setTractorLoading(false));
-    
+
     setTrailerLoading(true);
     trailerApi
       .getAll()
       .then(data => setTrailers(data))
       .catch(() => setTrailerError('Không thể tải danh sách rơ-mooc'))
       .finally(() => setTrailerLoading(false));
-    
+
     setContainerTypeLoading(true);
     containerTypeApi
       .getAll()
@@ -284,13 +284,13 @@ const PhuongTien = () => {
   );
 
   // CRUD handlers for tractors
-  const handleTractorSave = async (formData) => {
+  const handleTractorSave = async formData => {
     try {
       if (tractorDialog.edit) {
         await tractorApi.update(tractorDialog.data.id, formData);
-        setTractors(prev => prev.map(item => 
-          item.id === tractorDialog.data.id ? { ...item, ...formData } : item
-        ));
+        setTractors(prev =>
+          prev.map(item => (item.id === tractorDialog.data.id ? { ...item, ...formData } : item))
+        );
         setSnackbar({ open: true, message: 'Cập nhật đầu kéo thành công!', severity: 'success' });
       } else {
         const newTractor = await tractorApi.create(formData);
@@ -315,13 +315,13 @@ const PhuongTien = () => {
   };
 
   // CRUD handlers for trailers
-  const handleTrailerSave = async (formData) => {
+  const handleTrailerSave = async formData => {
     try {
       if (trailerDialog.edit) {
         await trailerApi.update(trailerDialog.data.id, formData);
-        setTrailers(prev => prev.map(item => 
-          item.id === trailerDialog.data.id ? { ...item, ...formData } : item
-        ));
+        setTrailers(prev =>
+          prev.map(item => (item.id === trailerDialog.data.id ? { ...item, ...formData } : item))
+        );
         setSnackbar({ open: true, message: 'Cập nhật rơ-mooc thành công!', severity: 'success' });
       } else {
         const newTrailer = await trailerApi.create(formData);
@@ -346,13 +346,15 @@ const PhuongTien = () => {
   };
 
   // CRUD handlers for container types
-  const handleContainerTypeSave = async (formData) => {
+  const handleContainerTypeSave = async formData => {
     try {
       if (containerTypeDialog.edit) {
         await containerTypeApi.update(containerTypeDialog.data.id, formData);
-        setContainerTypes(prev => prev.map(item => 
-          item.id === containerTypeDialog.data.id ? { ...item, ...formData } : item
-        ));
+        setContainerTypes(prev =>
+          prev.map(item =>
+            item.id === containerTypeDialog.data.id ? { ...item, ...formData } : item
+          )
+        );
         setSnackbar({ open: true, message: 'Cập nhật container thành công!', severity: 'success' });
       } else {
         const newContainer = await containerTypeApi.create(formData);
@@ -489,29 +491,32 @@ const PhuongTien = () => {
           />
         )}
       </Section>
-      
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
-      
+
       {/* TODO: Add form dialogs for CRUD operations */}
       {/* Form dialogs would be implemented here following the DinhMuc pattern */}
       {/* - TractorFormDialog */}
       {/* - TrailerFormDialog */}
       {/* - ContainerTypeFormDialog */}
-      
+
       {/* TODO: Add confirmation dialogs for delete operations */}
       {/* - ConfirmationDialog for tractors */}
       {/* - ConfirmationDialog for trailers */}
       {/* - ConfirmationDialog for containers */}
-      
+
       {/* Dialogs and snackbars for add/edit/delete for each section would go here, following DinhMuc pattern */}
       {/* ... */}
     </Box>

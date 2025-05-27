@@ -52,17 +52,14 @@ const useNhanVienManagement = () => {
   // Fetch vehicles for driver assignment
   const fetchVehicles = useCallback(async () => {
     try {
-      const [dauKeoData, roMoocData] = await Promise.all([
-        fetchAllDauKeo(),
-        fetchAllRoMooc(),
-      ]);
-      
+      const [dauKeoData, roMoocData] = await Promise.all([fetchAllDauKeo(), fetchAllRoMooc()]);
+
       // Combine vehicles into a single array with type information
       const allVehicles = [
         ...dauKeoData.map(item => ({ ...item, type: 'dau_keo' })),
         ...roMoocData.map(item => ({ ...item, type: 'ro_mooc' })),
       ];
-      
+
       setVehicles(allVehicles);
     } catch (err) {
       console.error('Error fetching vehicles:', err);

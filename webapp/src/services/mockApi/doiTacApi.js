@@ -1,9 +1,9 @@
 // Mock API services for DoiTac (Partners)
-import * as doiTacDataService from '../mockData/doiTac';
+import * as doiTacDataService from '@services/mockData/doiTac';
 
 const SIMULATED_DELAY = 0; // ms
 
-const simulateApiCall = (fn) => {
+const simulateApiCall = fn => {
   return new Promise((resolve, reject) => {
     setTimeout(async () => {
       try {
@@ -22,12 +22,12 @@ export const fetchAllDoiTac = () => {
   return simulateApiCall(doiTacDataService.getAllDoiTac);
 };
 
-export const fetchDoiTacById = (id) => {
+export const fetchDoiTacById = id => {
   console.log(`[Mock API] Fetching DoiTac by ID: ${id}`);
   return simulateApiCall(() => doiTacDataService.getDoiTacById(id));
 };
 
-export const addDoiTac = (data) => {
+export const addDoiTac = data => {
   console.log('[Mock API] Creating DoiTac:', data);
   return simulateApiCall(() => doiTacDataService.createDoiTac(data));
 };
@@ -37,12 +37,12 @@ export const editDoiTac = (id, data) => {
   return simulateApiCall(() => doiTacDataService.updateDoiTac(id, data));
 };
 
-export const removeDoiTac = (id) => {
+export const removeDoiTac = id => {
   console.log(`[Mock API] Deleting DoiTac ID: ${id}`);
   return simulateApiCall(() => doiTacDataService.deleteDoiTac(id));
 };
 
-export const _resetDoiTacMockData = (data) => {
+export const _resetDoiTacMockData = data => {
   console.log('[Mock API] Resetting DoiTac Data (via API layer)...');
   return simulateApiCall(() => doiTacDataService._resetDoiTac(data));
 };

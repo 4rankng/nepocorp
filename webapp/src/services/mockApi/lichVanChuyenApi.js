@@ -1,9 +1,9 @@
 // Mock API services for LichVanChuyen (Transport Schedules)
-import * as lichVanChuyenDataService from '../mockData/lichVanChuyen';
+import * as lichVanChuyenDataService from '@services/mockData/lichVanChuyen';
 
 const SIMULATED_DELAY = 0; // ms - No delay, can be adjusted
 
-const simulateApiCall = (fn) => {
+const simulateApiCall = fn => {
   return new Promise((resolve, reject) => {
     setTimeout(async () => {
       try {
@@ -22,17 +22,17 @@ export const fetchAllLichVanChuyen = () => {
   return simulateApiCall(lichVanChuyenDataService.getAllLichVanChuyen);
 };
 
-export const fetchLichVanChuyenById = (id) => {
+export const fetchLichVanChuyenById = id => {
   console.log(`[Mock API] Fetching LichVanChuyen by ID: ${id}`);
   return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenById(id));
 };
 
-export const fetchLichVanChuyenByMaChuyen = (maChuyen) => {
+export const fetchLichVanChuyenByMaChuyen = maChuyen => {
   console.log(`[Mock API] Fetching LichVanChuyen by MaChuyen: ${maChuyen}`);
   return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenByMaChuyen(maChuyen));
 };
 
-export const addLichVanChuyen = (data) => {
+export const addLichVanChuyen = data => {
   console.log('[Mock API] Creating LichVanChuyen:', data);
   return simulateApiCall(() => lichVanChuyenDataService.createLichVanChuyen(data));
 };
@@ -42,12 +42,12 @@ export const editLichVanChuyen = (id, data) => {
   return simulateApiCall(() => lichVanChuyenDataService.updateLichVanChuyen(id, data));
 };
 
-export const removeLichVanChuyen = (id) => {
+export const removeLichVanChuyen = id => {
   console.log(`[Mock API] Deleting LichVanChuyen ID: ${id}`);
   return simulateApiCall(() => lichVanChuyenDataService.deleteLichVanChuyen(id));
 };
 
-export const _resetLichVanChuyenMockData = (data) => {
+export const _resetLichVanChuyenMockData = data => {
   console.log('[Mock API] Resetting LichVanChuyen Data (via API layer)...');
   return simulateApiCall(() => lichVanChuyenDataService._resetLichVanChuyen(data));
 };
