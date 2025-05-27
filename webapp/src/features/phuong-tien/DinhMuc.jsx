@@ -415,10 +415,15 @@ const DinhMucDau = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleOpenAddDialog = (licensePlate, type = 'km_hang') => {
+  const handleOpenAddDialog = (licensePlate, type) => {
+    let loaiDinhMuc = type;
+    // On mobile, set loaiDinhMuc based on mobileTab if not provided
+    if (isMobile && !loaiDinhMuc) {
+      loaiDinhMuc = mobileTab === 'cargo' ? 'km_hang' : 'km_vo';
+    }
     setFormData({
       bienSoXe: licensePlate,
-      loaiDinhMuc: type,
+      loaiDinhMuc: loaiDinhMuc || 'km_hang',
       tuKm: '',
       denKm: '',
       dinhMuc: '',
@@ -711,8 +716,9 @@ const DinhMucDau = () => {
             >
               {isEdit
                 ? `Sửa Định Mức ${formData.loaiDinhMuc === 'km_hang' ? 'Hàng' : 'Vỏ'}`
-                : 'Thêm Định Mức'
-              }
+                : isMobile
+                  ? `Thêm Định Mức ${formData.loaiDinhMuc === 'km_hang' ? 'Hàng' : 'Vỏ'}`
+                  : 'Thêm Định Mức'}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="body2" color="text.secondary">
@@ -733,7 +739,8 @@ const DinhMucDau = () => {
 
           <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
             <Grid container spacing={isMobile ? 3 : 2}>
-              {!isEdit && (
+              {/* Hide Loại định mức selection on mobile for add modal */}
+              {!isEdit && !isMobile && (
                 <Grid item xs={12}>
                   <Typography
                     variant="subtitle2"
@@ -746,58 +753,52 @@ const DinhMucDau = () => {
                   >
                     Loại định mức
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
-                  <Box
-                    onClick={() => handleInputChange({ target: { name: 'loaiDinhMuc', value: 'km_hang' } })}
-                    sx={{
-                      flex: 1,
-                      p: 2,
-                      border: formData.loaiDinhMuc === 'km_hang' ? '2px solid' : '1px solid',
-                      borderColor: formData.loaiDinhMuc === 'km_hang' ? 'primary.main' : 'divider',
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        bgcolor: 'action.hover',
-                      },
-                      bgcolor: formData.loaiDinhMuc === 'km_hang' ? 'action.selected' : 'background.paper',
-                    }}
-                  >
-                    <Typography variant="subtitle1" align="center">
-                      Định Mức Hàng
-                    </Typography>
+                  <Box component="div" sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
+                    <Box
+                      component="div"
+                      onClick={() => handleInputChange({ target: { name: 'loaiDinhMuc', value: 'km_hang' } })}
+                      sx={{
+                        flex: 1,
+                        py: 1,
+                        px: 2.5,
+                        height: '40px',
+                        minWidth: '160px',
+                        border: formData.loaiDinhMuc === 'km_hang' ? '2px solid' : '1px solid',
+                        borderColor: formData.loaiDinhMuc === 'km_hang' ? 'primary.main' : 'divider',
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Typography variant="body2" align="center" sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        Định Mức Hàng
+                      </Typography>
+                    </Box>
+                    <Box
+                      component="div"
+                      onClick={() => handleInputChange({ target: { name: 'loaiDinhMuc', value: 'km_vo' } })}
+                      sx={{
+                        flex: 1,
+                        py: 1,
+                        px: 2.5,
+                        height: '40px',
+                        minWidth: '160px',
+                        border: formData.loaiDinhMuc === 'km_vo' ? '2px solid' : '1px solid',
+                        borderColor: formData.loaiDinhMuc === 'km_vo' ? 'primary.main' : 'divider',
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Typography variant="body2" align="center" sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        Định Mức Vỏ
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Box
-                    onClick={() => handleInputChange({ target: { name: 'loaiDinhMuc', value: 'km_vo' } })}
-                    sx={{
-                      flex: 1,
-                      p: 2,
-                      border: formData.loaiDinhMuc === 'km_vo' ? '2px solid' : '1px solid',
-                      borderColor: formData.loaiDinhMuc === 'km_vo' ? 'primary.main' : 'divider',
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        bgcolor: 'action.hover',
-                      },
-                      bgcolor: formData.loaiDinhMuc === 'km_vo' ? 'action.selected' : 'background.paper',
-                    }}
-                  >
-                    <Typography variant="subtitle1" align="center">
-                      Định Mức Vỏ
-                    </Typography>
-                  </Box>
-                </Box>
                 </Grid>
               )}
               <Grid item xs={12}>
@@ -1118,9 +1119,9 @@ const DinhMucDau = () => {
   };
 
   return (
-    <Box sx={{ p: isMobile ? 1 : 2, width: '100%' }}>
+    <Box component="div" sx={{ p: isMobile ? 1 : 2, width: '100%' }}>
       {/* 1. Add Tabs for mobile at the top, and supplementary standard at the top for desktop */}
-      <Box sx={{ mb: isMobile ? 1 : 2 }}>
+      <Box component="div" sx={{ mb: isMobile ? 1 : 2 }}>
         {isMobile ? (
           <Tabs
             value={mobileTab}
