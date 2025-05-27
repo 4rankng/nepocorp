@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@contexts/AuthContext'; // Import useAuth
 import { ROLES } from '@/config/roles'; // Import ROLES
 import {
-  getShipmentPlans,
-  addShipmentPlan,
-  updateShipmentPlan,
-  deleteShipmentPlan,
-} from '@services/mockData/shipmentPlans';
+  fetchAllLichVanChuyen,
+  addLichVanChuyen,
+  editLichVanChuyen,
+  removeLichVanChuyen,
+  // fetchLichVanChuyenById, // Placeholder if needed later
+} from '@services/mockApi';
 import { getVehiclesForSelect } from '@services/mockData/vehicles';
 import { getPartnersForSelect, addPartner } from '@services/mockData/partners';
 import { getCustomersForSelect, addQuickCustomer } from '@services/mockData/customers';
@@ -47,21 +48,19 @@ import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/Mobi
 import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
 
 const initialFormState = {
-  ngayThang: '', // YYYY-MM-DD for input type="date"
-  dienGiai: '',
-  khachHangId: '',
-  soLuongContainer: 1, // Default to 1
-  loaiContainerId: '',
-  tuyenDuongDi: '',
-  tuyenDuongDen: '',
-  cuocVanChuyen: 0,
-  bienSoXeId: '',
-  cuocThueVanChuyen: 0,
-  doiTacId: '',
-  thongTinContainer: [{ soContainer: '', soSeal: '' }], // Start with one container
-  ngayHaHang: '', // YYYY-MM-DD for input type="date"
-  trangThai: 'Lên lịch',
-  // Fields not directly on form but part of data model, defaults applied in mockData
+  ma_chuyen: '',
+  ngay_van_chuyen: new Date().toISOString().split('T')[0],
+  trang_thai: 'chua_thuc_hien',
+  khach_hang_id: '',
+  diem_xuat_phat: '',
+  diem_tra_hang: '',
+  bien_so_xe_id: '',
+  container_id: '',
+  nhan_vien_giao_nhan_id: '',
+  nhan_vien_lai_xe_id: '',
+  ghi_chu: '',
+  // Note: This structure is based on the lichVanChuyenApi.
+  // UI forms will need significant updates to match these fields.
 };
 
 // Helper to format date from YYYY-MM-DD to DD/MM/YYYY for display
@@ -89,9 +88,9 @@ const QuanLyLichVanChuyen = () => {
   const { hasAnyRole } = useAuth(); // Get role checker
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]); // Example: Manager and Dispatcher can add
 
-  const [shipmentPlans, setShipmentPlans] = useState([]);
+  const [lichVanChuyenItems, setLichVanChuyenItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
   const [selectOptions, setSelectOptions] = useState({
     vehicles: [],
@@ -102,7 +101,7 @@ const QuanLyLichVanChuyen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [planToDelete, setPlanToDelete] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // Mobile-specific state
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,30 +110,21 @@ const QuanLyLichVanChuyen = () => {
   // const [activeStep, setActiveStep] = useState(0); // No longer needed here
   const [isFormExpanded, setIsFormExpanded] = useState(!isMobile);
 
-  const mapPlanToFormData = plan => {
-    if (!plan) return initialFormState;
+  const mapLichVanChuyenToFormData = (item) => {
+    if (!item) return initialFormState;
     return {
-      ngayThang: formatDateForInput(plan.ngayThang) || '',
-      dienGiai: plan.dienGiai || '',
-      khachHangId: plan.khachHangId || '',
-      soLuongContainer: plan.soLuongContainer || 1,
-      loaiContainerId: plan.loaiContainerId || '',
-      tuyenDuongDi: plan.tuyenDuong?.diemDi || '',
-      tuyenDuongDen: plan.tuyenDuong?.diemDen
-        ? Array.isArray(plan.tuyenDuong.diemDen)
-          ? plan.tuyenDuong.diemDen.join(', ')
-          : plan.tuyenDuong.diemDen
-        : '',
-      cuocVanChuyen: plan.cuocVanChuyen || 0,
-      bienSoXeId: plan.bienSoXeId || '',
-      cuocThueVanChuyen: plan.cuocThueVanChuyen || 0,
-      doiTacId: plan.doiTacId || '',
-      thongTinContainer:
-        plan.thongTinContainer && plan.thongTinContainer.length > 0
-          ? plan.thongTinContainer
-          : [{ soContainer: '', soSeal: '' }],
-      ngayHaHang: formatDateForInput(plan.ngayHaHang) || '',
-      trangThai: plan.trangThai || 'Lên lịch',
+      id: item.id || '', // Keep id for editing
+      ma_chuyen: item.ma_chuyen || '',
+      ngay_van_chuyen: item.ngay_van_chuyen || '', // Already YYYY-MM-DD from API
+      trang_thai: item.trang_thai || 'chua_thuc_hien',
+      khach_hang_id: item.khach_hang_id || '',
+      diem_xuat_phat: item.diem_xuat_phat || '',
+      diem_tra_hang: item.diem_tra_hang || '',
+      bien_so_xe_id: item.bien_so_xe_id || '',
+      container_id: item.container_id || '',
+      nhan_vien_giao_nhan_id: item.nhan_vien_giao_nhan_id || '',
+      nhan_vien_lai_xe_id: item.nhan_vien_lai_xe_id || '',
+      ghi_chu: item.ghi_chu || '',
     };
   };
 
@@ -142,22 +132,22 @@ const QuanLyLichVanChuyen = () => {
     setIsLoading(true);
     setError('');
     try {
-      const [plans, vehicles, partners, customers, containerTypes] = await Promise.all([
-        getShipmentPlans(),
-        getVehiclesForSelect(),
-        getPartnersForSelect(),
-        getCustomersForSelect(),
-        getContainerTypesForSelect(),
+      const [lichVanChuyenList, vehicles, partners, customers, containerTypes] = await Promise.all([
+        fetchAllLichVanChuyen(),
+        getVehiclesForSelect(), // Assuming these are still valid or will be updated
+        getPartnersForSelect(),   // Assuming these are still valid or will be updated
+        getCustomersForSelect(),  // Assuming these are still valid or will be updated
+        getContainerTypesForSelect(), // Assuming these are still valid or will be updated
       ]);
-      setShipmentPlans(plans);
+      setLichVanChuyenItems(lichVanChuyenList);
       setSelectOptions({ vehicles, partners, customers, containerTypes });
     } catch (err) {
-      setError('Không thể tải dữ liệu cần thiết cho trang.');
-      console.error(err);
+      setError('Không thể tải dữ liệu Lịch Vận Chuyển.');
+      console.error('Error fetching page data:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, []); // Removed setLichVanChuyenItems from dependency array as fetchAllLichVanChuyen is stable
 
   useEffect(() => {
     fetchPageData();

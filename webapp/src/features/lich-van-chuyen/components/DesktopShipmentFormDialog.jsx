@@ -100,38 +100,32 @@ const DesktopShipmentFormDialog = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md" // Adjusted from lg for potentially less content width needed than previous design
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          boxShadow: 24,
-          maxHeight: '90vh', // Ensure dialog doesn't exceed viewport height
+          borderRadius: '8px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          maxHeight: '90vh',
         },
       }}
     >
-      <DialogTitle sx={{ p: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-            {editingPlan ? 'Chỉnh sửa Kế hoạch vận chuyển' : 'Tạo mới Kế hoạch vận chuyển'}
-          </Typography>
-          <IconButton onClick={onClose} size="small" sx={{ color: 'grey.700' }}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent
-          sx={{
-            p: 2,
-            '&::-webkit-scrollbar': { display: 'none' },
-            msOverflowStyle: 'none',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {' '}
-          {/* Hide scrollbar */}
+        <DialogContent sx={{ p: '24px' }}>
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 3,
+              color: 'text.primary',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+            }}
+          >
+            {editingPlan
+              ? 'Chỉnh sửa thông tin kế hoạch vận chuyển.'
+              : 'Nhập thông tin kế hoạch vận chuyển mới.'}
+          </Typography>
           {error && (
             <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
               {error}
@@ -165,6 +159,22 @@ const DesktopShipmentFormDialog = ({
                       variant="outlined"
                       size="small"
                       required
+                      inputProps={{
+                        style: {
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={8}>
@@ -175,6 +185,17 @@ const DesktopShipmentFormDialog = ({
                         value={currentFormData.khachHangId}
                         onChange={onFormChange}
                         label="Khách hàng"
+                        sx={{
+                          '& .MuiSelect-select': {
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            fontSize: '0.875rem',
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '6px',
+                          },
+                        }}
                       >
                         <MenuItem value="">
                           <em>Chọn khách hàng</em>
@@ -198,7 +219,22 @@ const DesktopShipmentFormDialog = ({
                       onChange={onFormChange}
                       variant="outlined"
                       size="small"
-                      placeholder="Mô tả chi tiết về kế hoạch vận chuyển..."
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{
+                        style: {
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                 </Grid>
@@ -228,6 +264,23 @@ const DesktopShipmentFormDialog = ({
                       size="small"
                       required
                       placeholder="Nhập điểm xuất phát"
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{
+                        style: {
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -240,8 +293,25 @@ const DesktopShipmentFormDialog = ({
                       variant="outlined"
                       size="small"
                       required
-                      placeholder="Nhập các điểm đến, cách nhau bởi dấu phẩy"
-                      helperText="Nhiều điểm đến cách nhau bằng dấu phẩy (,)"
+                      placeholder="VD: Xuân Mai, Chương Mỹ, Hà Nội; Thanh Sơn, Kim Bảng, Hà Nam"
+                      helperText="Nhiều điểm đến cách nhau bằng dấu chấm phẩy (;)"
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{
+                        style: {
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                 </Grid>
@@ -268,6 +338,17 @@ const DesktopShipmentFormDialog = ({
                         value={currentFormData.loaiXe}
                         onChange={onFormChange}
                         label="Loại xe"
+                        sx={{
+                          '& .MuiSelect-select': {
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            fontSize: '0.875rem',
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '6px',
+                          },
+                        }}
                       >
                         <MenuItem value="xe-cong-ty">Xe công ty</MenuItem>
                         <MenuItem value="xe-doi-tac">Xe đối tác</MenuItem>
@@ -285,6 +366,17 @@ const DesktopShipmentFormDialog = ({
                             value={currentFormData.bienSoXeId}
                             onChange={onFormChange} // Triggers useEffect for driver info
                             label="Biển số xe (Đầu kéo)"
+                            sx={{
+                              '& .MuiSelect-select': {
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                fontSize: '0.875rem',
+                              },
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: '6px',
+                              },
+                            }}
                           >
                             <MenuItem value="">
                               <em>Chọn đầu kéo</em>
@@ -308,6 +400,26 @@ const DesktopShipmentFormDialog = ({
                           InputProps={{ readOnly: true }}
                           variant="outlined"
                           size="small"
+                          InputLabelProps={{ shrink: true }}
+                          inputProps={{
+                            style: {
+                              height: '40px',
+                              padding: '8px 12px',
+                              boxSizing: 'border-box',
+                              fontSize: '0.875rem',
+                            },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '6px',
+                              backgroundColor: 'action.hover',
+                              '&.Mui-readOnly': {
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: 'divider',
+                                },
+                              },
+                            },
+                          }}
                         />
                       </Grid>
                       <Grid item xs={12} sm={4}>
@@ -319,6 +431,26 @@ const DesktopShipmentFormDialog = ({
                           InputProps={{ readOnly: true }}
                           variant="outlined"
                           size="small"
+                          InputLabelProps={{ shrink: true }}
+                          inputProps={{
+                            style: {
+                              height: '40px',
+                              padding: '8px 12px',
+                              boxSizing: 'border-box',
+                              fontSize: '0.875rem',
+                            },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '6px',
+                              backgroundColor: 'action.hover',
+                              '&.Mui-readOnly': {
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: 'divider',
+                                },
+                              },
+                            },
+                          }}
                         />
                       </Grid>
                     </>
@@ -336,6 +468,23 @@ const DesktopShipmentFormDialog = ({
                           size="small"
                           placeholder="Biển số xe, Tên tài xế, SĐT (nếu có)"
                           required
+                          InputLabelProps={{ shrink: true }}
+                          inputProps={{
+                            style: {
+                              height: '40px',
+                              padding: '8px 12px',
+                              boxSizing: 'border-box',
+                              fontSize: '0.875rem',
+                            },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '6px',
+                              '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'text.secondary',
+                              },
+                            },
+                          }}
                         />
                       </Grid>
                       <Grid item xs={12} sm={4}>
@@ -346,6 +495,17 @@ const DesktopShipmentFormDialog = ({
                             value={currentFormData.doiTacId}
                             onChange={onFormChange}
                             label="Đối tác vận chuyển (Công ty)"
+                            sx={{
+                              '& .MuiSelect-select': {
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                fontSize: '0.875rem',
+                              },
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: '6px',
+                              },
+                            }}
                           >
                             <MenuItem value="">
                               <em>Chọn đối tác</em>
@@ -369,6 +529,17 @@ const DesktopShipmentFormDialog = ({
                         value={currentFormData.loaiContainerId}
                         onChange={onFormChange}
                         label="Loại container"
+                        sx={{
+                          '& .MuiSelect-select': {
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            fontSize: '0.875rem',
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '6px',
+                          },
+                        }}
                       >
                         <MenuItem value="">
                           <em>Chọn loại container</em>
@@ -393,6 +564,24 @@ const DesktopShipmentFormDialog = ({
                       variant="outlined"
                       size="small"
                       required
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{
+                        min: 1,
+                        style: {
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
@@ -406,6 +595,22 @@ const DesktopShipmentFormDialog = ({
                       InputLabelProps={{ shrink: true }}
                       variant="outlined"
                       size="small"
+                      inputProps={{
+                        style: {
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                 </Grid>
@@ -454,6 +659,23 @@ const DesktopShipmentFormDialog = ({
                           variant="outlined"
                           size="small"
                           placeholder="CONT123456"
+                          InputLabelProps={{ shrink: true }}
+                          inputProps={{
+                            style: {
+                              height: '40px',
+                              padding: '8px 12px',
+                              boxSizing: 'border-box',
+                              fontSize: '0.875rem',
+                            },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '6px',
+                              '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'text.secondary',
+                              },
+                            },
+                          }}
                         />
                       </Grid>
                       <Grid item xs={12} sm={5.5}>
@@ -466,6 +688,23 @@ const DesktopShipmentFormDialog = ({
                           variant="outlined"
                           size="small"
                           placeholder="SEAL789012"
+                          InputLabelProps={{ shrink: true }}
+                          inputProps={{
+                            style: {
+                              height: '40px',
+                              padding: '8px 12px',
+                              boxSizing: 'border-box',
+                              fontSize: '0.875rem',
+                            },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '6px',
+                              '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'text.secondary',
+                              },
+                            },
+                          }}
                         />
                       </Grid>
                       <Grid item xs={12} sm={1} sx={{ textAlign: 'right' }}>
@@ -514,6 +753,26 @@ const DesktopShipmentFormDialog = ({
                       }}
                       variant="outlined"
                       size="small"
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{
+                        min: 0,
+                        step: 1000,
+                        style: {
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                          textAlign: 'right',
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -536,6 +795,32 @@ const DesktopShipmentFormDialog = ({
                           : ''
                       }
                       disabled={currentFormData.loaiXe === 'xe-cong-ty'}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{
+                        min: 0,
+                        step: 1000,
+                        style: {
+                          height: '40px',
+                          padding: '8px 12px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem',
+                          textAlign: 'right',
+                        },
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '6px',
+                          backgroundColor: currentFormData.loaiXe === 'xe-cong-ty' ? 'action.hover' : 'background.paper',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'text.secondary',
+                          },
+                          '&.Mui-disabled': {
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'divider',
+                            },
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                 </Grid>
@@ -563,6 +848,17 @@ const DesktopShipmentFormDialog = ({
                           value={currentFormData.trangThai}
                           onChange={onFormChange}
                           label="Trạng thái kế hoạch"
+                          sx={{
+                            '& .MuiSelect-select': {
+                              height: '40px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              fontSize: '0.875rem',
+                            },
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '6px',
+                            },
+                          }}
                         >
                           <MenuItem value="Lên lịch">Lên lịch</MenuItem>
                           <MenuItem value="Đang vận chuyển">Đang vận chuyển</MenuItem>
@@ -578,23 +874,34 @@ const DesktopShipmentFormDialog = ({
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', gap: 1.5 }}>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
           <Button
-            variant="outlined"
-            color="inherit"
             onClick={onClose}
+            variant="outlined"
             disabled={isLoading}
-            sx={{ textTransform: 'none', color: 'grey.700' }}
+            sx={{
+              minWidth: '100px',
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
+            }}
           >
             Hủy
           </Button>
           <Button
             type="submit"
             variant="contained"
-            color="primary"
             disabled={isLoading}
             startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
-            sx={{ textTransform: 'none' }}
+            sx={{
+              minWidth: '100px',
+              textTransform: 'none',
+              '&.Mui-disabled': {
+                backgroundColor: 'action.disabledBackground',
+                color: 'action.disabled',
+              },
+            }}
           >
             {isLoading
               ? editingPlan

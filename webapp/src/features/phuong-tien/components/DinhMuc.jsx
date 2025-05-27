@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
-import { fuelStandardApi, vehicleApi } from '@services/mockApi';
+import { dinhMucApi } from '@/services/api';
+import { vehicleApi } from '@services/mockApi'; // TODO: Update this to use the new API structure later
 
 import {
   Box,
@@ -34,6 +35,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { ChevronDownIcon, ChevronUpIcon } from '@assets/icons';
 import { alpha } from '@mui/material/styles';
+import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
 
 // Theme variables
 const theme = {
@@ -74,20 +79,25 @@ const groupByLicensePlate = standards => {
 const DinhMucDau = () => {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
-  const [fuelStandards, setFuelStandards] = useState([]);
+  const [dinhMucHang, setDinhMucHang] = useState({}); // Format: { '51C-12345': [...] }
+  const [dinhMucVo, setDinhMucVo] = useState({});     // Format: { '51C-12345': [...] }
   const [licensePlates, setLicensePlates] = useState([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [currentStandard, setCurrentStandard] = useState(null);
-  // Initialize with the first license plate expanded by default on mobile
+  const [supplementaryStandard, setSupplementaryStandard] = useState(0);
+  const [editSupplementaryDialog, setEditSupplementaryDialog] = useState(false);
+  const [newSupplementaryValue, setNewSupplementaryValue] = useState(0);
+  const [mobileTab, setMobileTab] = useState('supplementary'); // 'supplementary', 'cargo', 'container'
 
   const [expandedCards, setExpandedCards] = useState({});
   const [formData, setFormData] = useState({
-    licensePlate: '',
-    fromKm: '',
-    toKm: '',
-    standard: '',
-    note: '',
+    bienSoXe: '',
+    loaiDinhMuc: 'hang',
+    tuKm: '',
+    denKm: '',
+    dinhMuc: '',
+    ghiChu: '',
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -198,7 +208,7 @@ const DinhMucDau = () => {
                 size="small"
                 onClick={e => {
                   e.stopPropagation();
-                  handleOpenEditDialog(standard);
+                  handleEditClick(standard);
                 }}
               />
               <DeleteButton
@@ -304,13 +314,18 @@ const DinhMucDau = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [standardsResponse, vehiclesResponse] = await Promise.all([
-        fuelStandardApi.getAll(),
+      // Fetch all required data in parallel
+      const [
+        vehiclesResponse,
+        supplementaryResponse
+      ] = await Promise.all([
         vehicleApi.getAll(),
+        dinhMucApi.getBoSung()
       ]);
 
-      const standards = standardsResponse.data || [];
+      // Extract data from responses
       const vehicles = vehiclesResponse.data || [];
+      const supplementary = supplementaryResponse.data || { value: 0 };
 
       // Extract license plates from vehicles
       const plates = vehicles.map(vehicle => ({
@@ -318,8 +333,25 @@ const DinhMucDau = () => {
         licensePlate: vehicle.licensePlate || vehicle.bienSoXe,
       }));
 
-      setFuelStandards(standards);
+      // Fetch fuel standards for each license plate
+      const plateStandards = {};
+      const plateVoStandards = {};
+      
+      for (const plate of plates) {
+        const [hangRes, voRes] = await Promise.all([
+          dinhMucApi.getByBienSoAndType(plate.licensePlate, 'hang'),
+          dinhMucApi.getByBienSoAndType(plate.licensePlate, 'vo')
+        ]);
+        
+        plateStandards[plate.licensePlate] = hangRes.data || [];
+        plateVoStandards[plate.licensePlate] = voRes.data || [];
+      }
+
+      // Update state with fetched data
+      setDinhMucHang(plateStandards);
+      setDinhMucVo(plateVoStandards);
       setLicensePlates(plates);
+      setSupplementaryStandard(supplementary.value);
     } catch (err) {
       setError('Không thể tải dữ liệu định mức dầu');
       showSnackbar('Đã xảy ra lỗi khi tải dữ liệu', 'error');
@@ -339,26 +371,27 @@ const DinhMucDau = () => {
 
   const handleOpenAddDialog = licensePlate => {
     setFormData({
-      fromKm: '',
-      toKm: '',
-      standard: '',
-      note: '',
-      licensePlate,
+      bienSoXe: licensePlate,
+      loaiDinhMuc: 'hang',
+      tuKm: '',
+      denKm: '',
+      dinhMuc: '',
+      ghiChu: '',
     });
     setErrors({});
     setOpenAddDialog(true);
   };
 
-  const handleOpenEditDialog = standard => {
+  const handleEditClick = standard => {
     setFormData({
-      fromKm: standard.fromKm,
-      toKm: standard.toKm,
-      standard: standard.standard,
-      note: standard.note || '',
-      id: standard.id,
-      licensePlate: standard.licensePlate,
+      bienSoXe: standard.bienSoXe,
+      loaiDinhMuc: standard.loaiDinhMuc,
+      tuKm: standard.tuKm,
+      denKm: standard.denKm,
+      dinhMuc: standard.dinhMuc,
+      ghiChu: standard.ghiChu || '',
     });
-    setErrors({});
+    setEditingId(standard.id);
     setOpenEditDialog(true);
   };
 
@@ -377,14 +410,35 @@ const DinhMucDau = () => {
     }
   };
 
+  const handleUpdateSupplementary = async () => {
+    try {
+      setIsLoading(true);
+      // Call API to update the supplementary standard
+      const response = await dinhMucApi.updateBoSung(parseFloat(newSupplementaryValue));
+      
+      if (response.data) {
+        // Update local state with the response data
+        setSupplementaryStandard(response.data.value);
+        setEditSupplementaryDialog(false);
+        showSnackbar('Cập nhật định mức bổ sung thành công', 'success');
+      }
+    } catch (error) {
+      console.error('Error updating supplementary standard:', error);
+      showSnackbar('Có lỗi xảy ra khi cập nhật định mức bổ sung', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.fromKm) newErrors.fromKm = 'Vui lòng nhập km bắt đầu';
-    if (!formData.toKm) newErrors.toKm = 'Vui lòng nhập km kết thúc';
-    if (parseFloat(formData.fromKm) >= parseFloat(formData.toKm)) {
-      newErrors.toKm = 'Km kết thúc phải lớn hơn km bắt đầu';
+    if (!formData.bienSoXe) newErrors.bienSoXe = 'Vui lòng chọn biển số xe';
+    if (!formData.tuKm) newErrors.tuKm = 'Vui lòng nhập km bắt đầu';
+    if (!formData.denKm) newErrors.denKm = 'Vui lòng nhập km kết thúc';
+    if (parseFloat(formData.tuKm) >= parseFloat(formData.denKm)) {
+      newErrors.denKm = 'Km kết thúc phải lớn hơn km bắt đầu';
     }
-    if (!formData.standard) newErrors.standard = 'Vui lòng nhập định mức';
+    if (!formData.dinhMuc) newErrors.dinhMuc = 'Vui lòng nhập định mức';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -1117,7 +1171,44 @@ const DinhMucDau = () => {
       {/* Render dialogs */}
       {renderDialog()}
       {renderDialog(true)}
-
+      
+      {/* Supplementary Standard Dialog */}
+      <Dialog 
+        open={editSupplementaryDialog} 
+        onClose={() => setEditSupplementaryDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Cập nhật định mức bổ sung</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Định mức bổ sung (L/chuyến)"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={newSupplementaryValue}
+            onChange={(e) => setNewSupplementaryValue(parseFloat(e.target.value) || 0)}
+            inputProps={{
+              step: 0.1,
+              min: 0
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditSupplementaryDialog(false)}>Hủy</Button>
+          <Button 
+            onClick={handleUpdateSupplementary} 
+            variant="contained" 
+            color="primary"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Đang lưu...' : 'Lưu'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
