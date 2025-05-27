@@ -55,4 +55,5 @@ export const lopXeApi = {
     data = lopXeData.slice();
     persist();
   },
+  getCount: async () => data.length,
 };

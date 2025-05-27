@@ -47,4 +47,16 @@ export const _resetContainerMockData = data => {
   return simulateApiCall(() => containerDataService._resetContainer(data));
 };
 
+export const getContainerCount = () => simulateApiCall(containerDataService.getContainerCount);
+
+export const containerApi = {
+  getAll: fetchAllContainer,
+  getById: fetchContainerById,
+  create: addContainer,
+  update: editContainer,
+  delete: removeContainer,
+  _reset: _resetContainerMockData,
+  getCount: getContainerCount,
+};
+
 console.log('Container Mock API service loaded and configured (no delay).');

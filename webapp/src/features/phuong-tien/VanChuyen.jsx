@@ -15,7 +15,7 @@
  * TODO: Implement form dialogs for CRUD operations following DinhMuc pattern
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { alpha } from '@mui/material/styles';
 import {
   Box,
@@ -63,6 +63,10 @@ import {
   removeContainer,
 } from '@services/mockApi';
 import VehicleDialog from './components/VehicleDialog';
+import TractorDeleteDialog from './components/TractorDeleteDialog';
+import TrailerDeleteDialog from './components/TrailerDeleteDialog';
+import ContainerDeleteDialog from './components/ContainerDeleteDialog';
+import VehicleCard from './components/VehicleCard';
 
 // API services using new mock API paradigm
 const tractorApi = {
@@ -141,7 +145,8 @@ const VanChuyen = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Collapsible state
-  const [expanded, setExpanded] = useState({ tractors: true, trailers: false, containers: false });
+  const [expanded, setExpanded] = useState({ tractors: false, trailers: false, containers: false });
+  const [loadedSections, setLoadedSections] = useState({ tractors: false, trailers: false, containers: false });
 
   // Tractors
   const [tractors, setTractors] = useState([]);
@@ -171,29 +176,37 @@ const VanChuyen = () => {
   // Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Fetch data
+  // Counts
+  const [counts, setCounts] = useState({ tractors: 0, trailers: 0, containers: 0 });
+
+  // Fetch counts for all sections on mount
   useEffect(() => {
-    setTractorLoading(true);
-    tractorApi
-      .getAll()
-      .then(data => setTractors(data))
-      .catch(() => setTractorError('Không thể tải danh sách đầu kéo'))
-      .finally(() => setTractorLoading(false));
-
-    setTrailerLoading(true);
-    trailerApi
-      .getAll()
-      .then(data => setTrailers(data))
-      .catch(() => setTrailerError('Không thể tải danh sách rơ-mooc'))
-      .finally(() => setTrailerLoading(false));
-
-    setContainerTypeLoading(true);
-    containerTypeApi
-      .getAll()
-      .then(data => setContainerTypes(data))
-      .catch(() => setContainerTypeError('Không thể tải danh sách loại container'))
-      .finally(() => setContainerTypeLoading(false));
+    tractorApi.getAll().then(data => setCounts(c => ({ ...c, tractors: data.length })));
+    trailerApi.getAll().then(data => setCounts(c => ({ ...c, trailers: data.length })));
+    containerTypeApi.getAll().then(data => setCounts(c => ({ ...c, containers: data.length })));
   }, []);
+
+  // Helper to refetch count for a section
+  const refetchCount = useCallback((key) => {
+    if (key === 'tractors') {
+      tractorApi.getAll().then(data => setCounts(c => ({ ...c, tractors: data.length })));
+    }
+    if (key === 'trailers') {
+      trailerApi.getAll().then(data => setCounts(c => ({ ...c, trailers: data.length })));
+    }
+    if (key === 'containers') {
+      containerTypeApi.getAll().then(data => setCounts(c => ({ ...c, containers: data.length })));
+    }
+  }, []);
+
+  // Lazy loading: fetch only when section is expanded for the first time
+  const handleToggleSection = (key, fetchFn) => {
+    setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
+    if (!loadedSections[key] && !expanded[key]) {
+      fetchFn();
+      setLoadedSections(prev => ({ ...prev, [key]: true }));
+    }
+  };
 
   // Columns - updated to match mock data structure
   const tractorColumns = [
@@ -208,80 +221,6 @@ const VanChuyen = () => {
     { key: 'id', label: 'SỐ CONTAINER', render: v => v },
     { key: 'phan_loai', label: 'LOẠI CONTAINER', render: v => v || '' },
   ];
-
-  // Render mobile card for each section
-  const renderTractorCard = tractor => (
-    <Card
-      key={tractor.id}
-      sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
-    >
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography fontWeight={600}>{tractor.bien_so}</Typography>
-          <Box display="flex" gap={1}>
-            <EditButton
-              size="small"
-              onClick={() => setTractorDialog({ open: true, edit: true, data: tractor })}
-            />
-            <DeleteButton
-              size="small"
-              onClick={() => setTractorDelete({ open: true, data: tractor })}
-            />
-          </Box>
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          {tractor.mo_ta}
-        </Typography>
-      </CardContent>
-    </Card>
-  );
-  const renderTrailerCard = trailer => (
-    <Card
-      key={trailer.id}
-      sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
-    >
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography fontWeight={600}>{trailer.bien_so}</Typography>
-          <Box display="flex" gap={1}>
-            <EditButton
-              size="small"
-              onClick={() => setTrailerDialog({ open: true, edit: true, data: trailer })}
-            />
-            <DeleteButton
-              size="small"
-              onClick={() => setTrailerDelete({ open: true, data: trailer })}
-            />
-          </Box>
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          {trailer.mo_ta}
-        </Typography>
-      </CardContent>
-    </Card>
-  );
-  const renderContainerTypeCard = container => (
-    <Card
-      key={container.id}
-      sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
-    >
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography fontWeight={600}>{container.phan_loai}</Typography>
-          <Box display="flex" gap={1}>
-            <EditButton
-              size="small"
-              onClick={() => setContainerTypeDialog({ open: true, edit: true, data: container })}
-            />
-            <DeleteButton
-              size="small"
-              onClick={() => setContainerTypeDelete({ open: true, data: container })}
-            />
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
 
   // CRUD handlers for tractors
   const handleTractorSave = async formData => {
@@ -298,6 +237,7 @@ const VanChuyen = () => {
         setSnackbar({ open: true, message: 'Thêm đầu kéo thành công!', severity: 'success' });
       }
       setTractorDialog({ open: false, edit: false, data: null });
+      refetchCount('tractors');
     } catch (error) {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
@@ -309,6 +249,7 @@ const VanChuyen = () => {
       setTractors(prev => prev.filter(item => item.id !== tractorDelete.data.id));
       setSnackbar({ open: true, message: 'Xóa đầu kéo thành công!', severity: 'success' });
       setTractorDelete({ open: false, data: null });
+      refetchCount('tractors');
     } catch (error) {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
@@ -329,6 +270,7 @@ const VanChuyen = () => {
         setSnackbar({ open: true, message: 'Thêm rơ-mooc thành công!', severity: 'success' });
       }
       setTrailerDialog({ open: false, edit: false, data: null });
+      refetchCount('trailers');
     } catch (error) {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
@@ -340,6 +282,7 @@ const VanChuyen = () => {
       setTrailers(prev => prev.filter(item => item.id !== trailerDelete.data.id));
       setSnackbar({ open: true, message: 'Xóa rơ-mooc thành công!', severity: 'success' });
       setTrailerDelete({ open: false, data: null });
+      refetchCount('trailers');
     } catch (error) {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
@@ -362,6 +305,7 @@ const VanChuyen = () => {
         setSnackbar({ open: true, message: 'Thêm container thành công!', severity: 'success' });
       }
       setContainerTypeDialog({ open: false, edit: false, data: null });
+      refetchCount('containers');
     } catch (error) {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
@@ -373,124 +317,146 @@ const VanChuyen = () => {
       setContainerTypes(prev => prev.filter(item => item.id !== containerTypeDelete.data.id));
       setSnackbar({ open: true, message: 'Xóa container thành công!', severity: 'success' });
       setContainerTypeDelete({ open: false, data: null });
+      refetchCount('containers');
     } catch (error) {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
   };
 
+  // Refactor vehicleConfigs to include fetchFn for each section
+  const vehicleConfigs = [
+    {
+      key: 'tractors',
+      title: 'Đầu Kéo',
+      type: 'tractor',
+      data: tractors,
+      loading: tractorLoading,
+      error: tractorError,
+      dialog: tractorDialog,
+      setDialog: setTractorDialog,
+      deleteDialog: tractorDelete,
+      setDeleteDialog: setTractorDelete,
+      onSave: handleTractorSave,
+      onDelete: handleTractorDelete,
+      columns: tractorColumns,
+      isMobile,
+      fetchFn: () => {
+        setTractorLoading(true);
+        tractorApi
+          .getAll()
+          .then(data => {
+            setTractors(data);
+            setCounts(c => ({ ...c, tractors: data.length }));
+          })
+          .catch(() => setTractorError('Không thể tải danh sách đầu kéo'))
+          .finally(() => setTractorLoading(false));
+      },
+    },
+    {
+      key: 'trailers',
+      title: 'Rơ-Mooc',
+      type: 'trailer',
+      data: trailers,
+      loading: trailerLoading,
+      error: trailerError,
+      dialog: trailerDialog,
+      setDialog: setTrailerDialog,
+      deleteDialog: trailerDelete,
+      setDeleteDialog: setTrailerDelete,
+      onSave: handleTrailerSave,
+      onDelete: handleTrailerDelete,
+      columns: trailerColumns,
+      isMobile,
+      fetchFn: () => {
+        setTrailerLoading(true);
+        trailerApi
+          .getAll()
+          .then(data => {
+            setTrailers(data);
+            setCounts(c => ({ ...c, trailers: data.length }));
+          })
+          .catch(() => setTrailerError('Không thể tải danh sách rơ-mooc'))
+          .finally(() => setTrailerLoading(false));
+      },
+    },
+    {
+      key: 'containers',
+      title: 'Loại Container',
+      type: 'container',
+      data: containerTypes,
+      loading: containerTypeLoading,
+      error: containerTypeError,
+      dialog: containerTypeDialog,
+      setDialog: setContainerTypeDialog,
+      deleteDialog: containerTypeDelete,
+      setDeleteDialog: setContainerTypeDelete,
+      onSave: handleContainerTypeSave,
+      onDelete: handleContainerTypeDelete,
+      columns: containerTypeColumns,
+      isMobile,
+      fetchFn: () => {
+        setContainerTypeLoading(true);
+        containerTypeApi
+          .getAll()
+          .then(data => {
+            setContainerTypes(data);
+            setCounts(c => ({ ...c, containers: data.length }));
+          })
+          .catch(() => setContainerTypeError('Không thể tải danh sách loại container'))
+          .finally(() => setContainerTypeLoading(false));
+      },
+    },
+  ];
+
   return (
     <Box sx={{ position: 'relative', pb: 8 }}>
-      <Section
-        title="Đầu Kéo"
-        count={tractors.length}
-        expanded={expanded.tractors}
-        onToggle={() => setExpanded(prev => ({ ...prev, tractors: !prev.tractors }))}
-        onAdd={() => setTractorDialog({ open: true, edit: false, data: null })}
-      >
-        {tractorLoading ? (
-          <Box display="flex" justifyContent="center" my={4}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : tractorError ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {tractorError}
-          </Alert>
-        ) : isMobile ? (
-          tractors.length === 0 ? (
-            <Alert severity="info">Chưa có dữ liệu đầu kéo</Alert>
-          ) : (
-            tractors.map(renderTractorCard)
-          )
-        ) : (
-          <StandardTable
-            columns={tractorColumns}
-            data={tractors}
-            emptyMessage="Chưa có dữ liệu đầu kéo"
-            renderActions={row => (
-              <>
-                <EditButton
-                  onClick={() => setTractorDialog({ open: true, edit: true, data: row })}
+      {vehicleConfigs.map(cfg => (
+        <Section
+          key={cfg.key}
+          title={cfg.title}
+          count={counts[cfg.key]}
+          expanded={expanded[cfg.key]}
+          onToggle={() => handleToggleSection(cfg.key, cfg.fetchFn)}
+          onAdd={() => cfg.setDialog({ open: true, edit: false, data: null })}
+        >
+          {cfg.loading && !loadedSections[cfg.key] ? (
+            <Box display="flex" justifyContent="center" my={4}><CircularProgress size={24} /></Box>
+          ) : cfg.error ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {cfg.error}
+            </Alert>
+          ) : cfg.isMobile ? (
+            cfg.data.length === 0 ? (
+              <Alert severity="info">Chưa có dữ liệu {cfg.title.toLowerCase()}</Alert>
+            ) : (
+              cfg.data.map(item => (
+                <VehicleCard
+                  key={item.id}
+                  data={item}
+                  type={cfg.type}
+                  onEdit={data => cfg.setDialog({ open: true, edit: true, data })}
+                  onDelete={data => cfg.setDeleteDialog({ open: true, data })}
+                  isLoading={cfg.loading}
                 />
-                <DeleteButton onClick={() => setTractorDelete({ open: true, data: row })} />
-              </>
-            )}
-          />
-        )}
-      </Section>
-      <Section
-        title="Rơ-Mooc"
-        count={trailers.length}
-        expanded={expanded.trailers}
-        onToggle={() => setExpanded(prev => ({ ...prev, trailers: !prev.trailers }))}
-        onAdd={() => setTrailerDialog({ open: true, edit: false, data: null })}
-      >
-        {trailerLoading ? (
-          <Box display="flex" justifyContent="center" my={4}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : trailerError ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {trailerError}
-          </Alert>
-        ) : isMobile ? (
-          trailers.length === 0 ? (
-            <Alert severity="info">Chưa có dữ liệu rơ-mooc</Alert>
+              ))
+            )
           ) : (
-            trailers.map(renderTrailerCard)
-          )
-        ) : (
-          <StandardTable
-            columns={trailerColumns}
-            data={trailers}
-            emptyMessage="Chưa có dữ liệu rơ-mooc"
-            renderActions={row => (
-              <>
-                <EditButton
-                  onClick={() => setTrailerDialog({ open: true, edit: true, data: row })}
-                />
-                <DeleteButton onClick={() => setTrailerDelete({ open: true, data: row })} />
-              </>
-            )}
-          />
-        )}
-      </Section>
-      <Section
-        title="Loại Container"
-        count={containerTypes.length}
-        expanded={expanded.containers}
-        onToggle={() => setExpanded(prev => ({ ...prev, containers: !prev.containers }))}
-        onAdd={() => setContainerTypeDialog({ open: true, edit: false, data: null })}
-      >
-        {containerTypeLoading ? (
-          <Box display="flex" justifyContent="center" my={4}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : containerTypeError ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {containerTypeError}
-          </Alert>
-        ) : isMobile ? (
-          containerTypes.length === 0 ? (
-            <Alert severity="info">Chưa có dữ liệu loại container</Alert>
-          ) : (
-            containerTypes.map(renderContainerTypeCard)
-          )
-        ) : (
-          <StandardTable
-            columns={containerTypeColumns}
-            data={containerTypes}
-            emptyMessage="Chưa có dữ liệu loại container"
-            renderActions={row => (
-              <>
-                <EditButton
-                  onClick={() => setContainerTypeDialog({ open: true, edit: true, data: row })}
-                />
-                <DeleteButton onClick={() => setContainerTypeDelete({ open: true, data: row })} />
-              </>
-            )}
-          />
-        )}
-      </Section>
+            <StandardTable
+              columns={cfg.columns}
+              data={cfg.data}
+              emptyMessage={`Chưa có dữ liệu ${cfg.title.toLowerCase()}`}
+              renderActions={row => (
+                <>
+                  <EditButton
+                    onClick={() => cfg.setDialog({ open: true, edit: true, data: row })}
+                  />
+                  <DeleteButton onClick={() => cfg.setDeleteDialog({ open: true, data: row })} />
+                </>
+              )}
+            />
+          )}
+        </Section>
+      ))}
 
       {/* Snackbar for notifications */}
       <Snackbar

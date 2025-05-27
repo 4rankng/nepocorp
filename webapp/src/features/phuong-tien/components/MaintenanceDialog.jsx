@@ -60,31 +60,27 @@ const MaintenanceDialog = ({
                   label="Ngày thay thế"
                   value={formData.replacementDate}
                   onChange={date => onChange({ target: { name: 'replacementDate', value: date } })}
-                  slots={{
-                    textField: (params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        size="small"
-                        InputLabelProps={{ shrink: true }}
-                        error={!!errors.replacementDate}
-                        helperText={errors.replacementDate}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
-                      />
-                    ),
-                    openPickerIcon: CalendarMonthIcon,
-                  }}
-                  slotProps={{
-                    textField: {
-                      inputProps: {
+                  renderInput={params => (
+                    <TextField
+                      {...params}
+                      fullWidth
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                      error={!!errors.replacementDate}
+                      helperText={errors.replacementDate}
+                      inputProps={{
+                        ...params.inputProps,
                         style: {
                           height: '40px',
                           padding: '8px 12px',
                           fontSize: '0.875rem',
                         },
-                      },
-                    },
-                  }}
+                      }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                    />
+                  )}
+                  components={{ OpenPickerIcon: CalendarMonthIcon }}
+                  enableAccessibleFieldDOMStructure={false}
                 />
               </LocalizationProvider>
             </Box>
@@ -153,30 +149,26 @@ const MaintenanceDialog = ({
                   label="Ngày hết hạn"
                   value={formData.ngayHetHan}
                   readOnly
-                  slots={{
-                    textField: (params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        size="small"
-                        InputLabelProps={{ shrink: true }}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
-                      />
-                    ),
-                    openPickerIcon: CalendarMonthIcon,
-                  }}
-                  slotProps={{
-                    textField: {
-                      inputProps: {
+                  renderInput={params => (
+                    <TextField
+                      {...params}
+                      fullWidth
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{
+                        ...params.inputProps,
                         style: {
                           height: '40px',
                           padding: '8px 12px',
                           fontSize: '0.875rem',
                           backgroundColor: 'action.hover',
                         },
-                      },
-                    },
-                  }}
+                      }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                    />
+                  )}
+                  components={{ OpenPickerIcon: CalendarMonthIcon }}
+                  enableAccessibleFieldDOMStructure={false}
                 />
               </LocalizationProvider>
             </Box>

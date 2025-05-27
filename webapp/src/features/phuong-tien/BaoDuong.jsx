@@ -47,171 +47,95 @@ import { lopXeApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import MaintenanceCard from './components/MaintenanceCard';
 import MaintenanceDialog from './components/MaintenanceDialog';
+import BaoDuongSection from './components/BaoDuongSection';
+import { maintenanceTableColumns } from './constants/maintenanceTableColumns';
+import useMaintenanceForm from './hooks/useMaintenanceForm';
+import useMaintenanceRecords from './hooks/useMaintenanceRecords';
 
-const formatCurrency = value => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0,
-  }).format(value);
+const initialFormData = {
+  licensePlate: '',
+  replacementDate: new Date(),
+  warrantyPeriod: 6,
+  ngayHetHan: null,
+  quantity: 1,
+  unitPrice: 0,
+  total: 0,
+  note: '',
 };
-
-const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
-  <Paper
-    elevation={0}
-    sx={{ mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}
-  >
-    <Box
-      onClick={onToggle}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        cursor: 'pointer',
-        px: 2,
-        py: 2,
-        bgcolor: expanded ? 'grey.100' : 'background.paper',
-        borderBottom: expanded ? '1px solid' : 'none',
-        borderColor: 'divider',
-        transition: 'background 0.2s',
-      }}
-    >
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
-        {title}
-      </Typography>
-      {count > 0 && (
-        <Chip
-          label={count}
-          size="small"
-          sx={{
-            backgroundColor: theme => alpha(theme.palette.text.secondary, 0.1),
-            color: 'text.secondary',
-            fontWeight: 500,
-            fontSize: '0.75rem',
-            mr: 2,
-          }}
-        />
-      )}
-      <AddButton
-        size="small"
-        onClick={e => {
-          e.stopPropagation();
-          onAdd();
-        }}
-      />
-      <IconButton size="small" sx={{ ml: 1 }}>
-        {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-      </IconButton>
-    </Box>
-    <Collapse in={expanded} timeout="auto" unmountOnExit>
-      <Box sx={{ p: { xs: 1, md: 2 } }}>{children}</Box>
-    </Collapse>
-  </Paper>
-);
 
 const BaoDuong = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [expandedSections, setExpandedSections] = useState({
-    tire: true, // Expanded by default
-  });
-  const [maintenanceRecords, setMaintenanceRecords] = useState([]);
-  const [licensePlates, setLicensePlates] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({ tire: false });
+  const [loadedSections, setLoadedSections] = useState({ tire: false });
   const [isEdit, setIsEdit] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [deleteDialog, setDeleteDialog] = useState({
-    open: false,
-    recordId: null,
-    details: null,
-  });
+  const [openDialog, setOpenDialog] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: null });
   const [searchTerm, setSearchTerm] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [counts, setCounts] = useState({ tire: 0 });
 
-  // Helper to add months to a date
-  function addMonths(date, months) {
-    const d = new Date(date);
-    d.setMonth(d.getMonth() + Number(months));
-    return d;
-  }
+  // Data fetching
+  const {
+    maintenanceRecords,
+    setMaintenanceRecords,
+    licensePlates,
+    setLicensePlates,
+    isLoading,
+    error,
+    fetchData,
+  } = useMaintenanceRecords(lopXeApi);
 
-  const [formData, setFormData] = useState({
-    licensePlate: '',
-    replacementDate: new Date(),
-    warrantyPeriod: 6,
-    ngayHetHan: addMonths(new Date(), 6),
-    quantity: 1,
-    unitPrice: 0,
-    total: 0,
-    note: '',
+  // Form state/handlers
+  const {
+    formData,
+    setFormData,
+    errors,
+    setErrors,
+    isLoading: isFormLoading,
+    setIsLoading: setFormLoading,
+    handleInputChange,
+    validateForm,
+    handleSave,
+  } = useMaintenanceForm({
+    initialFormData,
+    isEdit,
+    api: lopXeApi,
+    fetchData,
+    onSuccess: msg => {
+      setSnackbar({ open: true, message: msg, severity: 'success' });
+      handleCloseDialog();
+    },
+    onError: err => {
+      setSnackbar({ open: true, message: 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng', severity: 'error' });
+      console.error(err);
+    },
   });
 
-  const [errors, setErrors] = useState({});
-
-  // Auto-calculate ngayHetHan when replacementDate or warrantyPeriod changes
+  // Fetch count on mount
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      ngayHetHan: addMonths(prev.replacementDate, prev.warrantyPeriod),
-    }));
-    // eslint-disable-next-line
-  }, [formData.replacementDate, formData.warrantyPeriod]);
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const recordsRes = await lopXeApi.getAll();
-      setMaintenanceRecords(recordsRes.data || []);
-      // Extract unique license plates from records
-      const licensePlateOptions = Array.from(
-        new Set((recordsRes.data || []).map(r => r.licensePlate))
-      ).map(plate => ({ id: plate, licensePlate: plate }));
-      setLicensePlates(licensePlateOptions);
-      setError('');
-    } catch (err) {
-      setError('Không thể tải dữ liệu bảo dưỡng');
-      showSnackbar('Đã xảy ra lỗi khi tải dữ liệu', 'error');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
+    lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
   }, []);
 
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  };
+  // Helper to refetch count
+  const refetchCount = useCallback(() => {
+    lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
+  }, []);
 
   const handleOpenAddDialog = () => {
     setIsEdit(false);
-    const replacementDate = new Date();
-    const warrantyPeriod = 6;
-    setFormData({
-      licensePlate: '',
-      replacementDate,
-      warrantyPeriod,
-      ngayHetHan: addMonths(replacementDate, warrantyPeriod),
-      quantity: 1,
-      unitPrice: 0,
-      total: 0,
-      note: '',
-    });
+    setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null });
     setErrors({});
     setOpenDialog(true);
   };
 
   const handleOpenEditDialog = record => {
-    const replacementDate = new Date(record.replacementDate);
-    const warrantyPeriod = record.warrantyPeriod;
     setIsEdit(true);
     setFormData({
       licensePlate: record.licensePlate,
-      replacementDate,
-      warrantyPeriod,
-      ngayHetHan: addMonths(replacementDate, warrantyPeriod),
+      replacementDate: new Date(record.replacementDate),
+      warrantyPeriod: record.warrantyPeriod,
+      ngayHetHan: record.ngayHetHan ? new Date(record.ngayHetHan) : null,
       quantity: record.quantity,
       unitPrice: record.unitPrice,
       total: record.total,
@@ -227,83 +151,6 @@ const BaoDuong = () => {
     setErrors({});
   }, []);
 
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.licensePlate) {
-      newErrors.licensePlate = 'Vui lòng chọn biển số xe';
-    }
-    if (!formData.replacementDate) {
-      newErrors.replacementDate = 'Vui lòng chọn ngày thay lốp';
-    }
-    if (!formData.quantity || formData.quantity <= 0) {
-      newErrors.quantity = 'Số lượng phải lớn hơn 0';
-    }
-    if (!formData.unitPrice || formData.unitPrice < 0) {
-      newErrors.unitPrice = 'Đơn giá không hợp lệ';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSave = async e => {
-    e?.preventDefault();
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-    try {
-      // Ensure ngayHetHan is always calculated if missing
-      let ngayHetHan = formData.ngayHetHan;
-      if (!ngayHetHan) {
-        ngayHetHan = addMonths(formData.replacementDate, formData.warrantyPeriod);
-      }
-      const data = {
-        ...formData,
-        replacementDate: formData.replacementDate.toISOString().split('T')[0],
-        ngayHetHan: ngayHetHan ? ngayHetHan.toISOString().split('T')[0] : null,
-        warrantyPeriod: Number(formData.warrantyPeriod),
-        quantity: Number(formData.quantity),
-        unitPrice: Number(formData.unitPrice),
-        total: Number(formData.quantity) * Number(formData.unitPrice),
-      };
-
-      if (isEdit) {
-        await lopXeApi.update(formData.id, data);
-        showSnackbar('Sửa thông tin bảo dưỡng thành công');
-      } else {
-        await lopXeApi.create(data);
-        showSnackbar('Thêm thông tin bảo dưỡng mới thành công');
-      }
-      await fetchData();
-      handleCloseDialog();
-    } catch (err) {
-      const errorMessage = isEdit
-        ? 'Đã xảy ra lỗi khi sửa thông tin bảo dưỡng'
-        : 'Đã xảy ra lỗi khi thêm thông tin bảo dưỡng mới';
-      showSnackbar(errorMessage, 'error');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleDeleteClick = record => {
     setDeleteDialog({
       open: true,
@@ -312,8 +159,8 @@ const BaoDuong = () => {
         'Biển số xe': record.licensePlate,
         'Ngày thay lốp': new Date(record.replacementDate).toLocaleDateString('vi-VN'),
         'Số lượng': record.quantity,
-        'Đơn giá': formatCurrency(record.unitPrice),
-        'Thành tiền': formatCurrency(record.total),
+        'Đơn giá': record.unitPrice,
+        'Thành tiền': record.total,
         'Ghi chú': record.note || 'Không có',
       },
     });
@@ -325,18 +172,18 @@ const BaoDuong = () => {
 
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.recordId) return;
-
-    setIsLoading(true);
+    setFormLoading(true);
     try {
       await lopXeApi.delete(deleteDialog.recordId);
-      showSnackbar('Xóa thông tin bảo dưỡng thành công');
-      await fetchData();
+      setSnackbar({ open: true, message: 'Xóa thông tin bảo dưỡng thành công', severity: 'success' });
+      fetchData();
+      refetchCount();
       handleDeleteClose();
     } catch (err) {
-      showSnackbar('Đã xảy ra lỗi khi xóa thông tin bảo dưỡng', 'error');
+      setSnackbar({ open: true, message: 'Đã xảy ra lỗi khi xóa thông tin bảo dưỡng', severity: 'error' });
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -351,111 +198,26 @@ const BaoDuong = () => {
     );
   }, [maintenanceRecords, searchTerm]);
 
-  const columns = [
-    {
-      key: 'licensePlate',
-      label: 'Biển số xe',
-      sortable: true,
-      minWidth: 120,
-    },
-    {
-      key: 'replacementDate',
-      label: 'Ngày thay lốp',
-      render: value => new Date(value).toLocaleDateString('vi-VN'),
-      sortable: true,
-      minWidth: 120,
-    },
-    {
-      key: 'ngayHetHan',
-      label: 'Ngày hết hạn',
-      render: (value, record) => {
-        let date = value;
-        if (!date && record.replacementDate && record.warrantyPeriod) {
-          date = addMonths(record.replacementDate, record.warrantyPeriod);
-        }
-        return date ? new Date(date).toLocaleDateString('vi-VN') : '-';
-      },
-      sortable: false,
-      minWidth: 120,
-    },
-    {
-      key: 'warrantyPeriod',
-      label: 'Thời hạn bảo hành',
-      render: value => `${value} tháng`,
-      align: 'center',
-      sortable: true,
-      minWidth: 140,
-    },
-    {
-      key: 'quantity',
-      label: 'Số lượng',
-      align: 'right',
-      sortable: true,
-      minWidth: 100,
-    },
-    {
-      key: 'unitPrice',
-      label: 'Đơn giá',
-      render: formatCurrency,
-      align: 'right',
-      sortable: true,
-      minWidth: 120,
-    },
-    {
-      key: 'total',
-      label: 'Thành tiền',
-      render: formatCurrency,
-      align: 'right',
-      sortable: true,
-      minWidth: 140,
-    },
-    {
-      key: 'note',
-      label: 'Ghi chú',
-      render: value => value || 'Không có',
-      minWidth: 200,
-      noWrap: true,
-    },
-    {
-      key: 'actions',
-      label: 'Thao tác',
-      align: 'right',
-      render: (_, record) => (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-          <EditButton onClick={() => handleOpenEditDialog(record)} disabled={isLoading} />
-          <DeleteButton onClick={() => handleDeleteClick(record)} disabled={isLoading} />
-        </Box>
-      ),
-    },
-  ];
-
   const toggleSection = section => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section],
     }));
+    // Lazy load: only fetch if not loaded yet and expanding
+    if (!loadedSections[section] && !expandedSections[section]) {
+      fetchData();
+      setLoadedSections(prev => ({ ...prev, [section]: true }));
+    }
   };
 
   const handleAddNew = (type = 'tire') => {
     setIsEdit(false);
-    const replacementDate = new Date();
-    const warrantyPeriod = 6;
-    setFormData({
-      licensePlate: '',
-      replacementDate,
-      warrantyPeriod,
-      ngayHetHan: addMonths(replacementDate, warrantyPeriod),
-      quantity: 1,
-      unitPrice: 0,
-      total: 0,
-      note: '',
-      type: type,
-    });
+    setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null, type });
     setErrors({});
     setOpenDialog(true);
   };
 
-  // Render mobile card view following DinhMucDau.jsx pattern
+  // Render mobile card view
   const renderMobileView = () => (
     <Box>
       {filteredRecords.map(record => (
@@ -478,7 +240,7 @@ const BaoDuong = () => {
   // Render desktop table view
   const renderDesktopView = () => (
     <StandardTable
-      columns={columns}
+      columns={maintenanceTableColumns}
       data={filteredRecords}
       loading={isLoading}
       error={error}
@@ -488,6 +250,7 @@ const BaoDuong = () => {
           backgroundColor: 'action.hover',
         },
       }}
+      // Actions column is handled in columns definition if needed
     />
   );
 
@@ -529,15 +292,17 @@ const BaoDuong = () => {
       {!isLoading && !error && (
         <Box>
           {/* Lốp Xe Section */}
-          <Section
+          <BaoDuongSection
             title="Lốp Xe"
-            count={filteredRecords.length}
+            count={counts.tire}
             expanded={expandedSections.tire}
             onToggle={() => toggleSection('tire')}
             onAdd={() => handleAddNew('tire')}
           >
-            {isMobile ? renderMobileView() : renderDesktopView()}
-          </Section>
+            {isLoading && !loadedSections.tire ? (
+              <Box textAlign="center" py={4}><CircularProgress /></Box>
+            ) : isMobile ? renderMobileView() : renderDesktopView()}
+          </BaoDuongSection>
         </Box>
       )}
 
@@ -545,10 +310,10 @@ const BaoDuong = () => {
       <MaintenanceDialog
         open={openDialog}
         isEdit={isEdit}
-        isLoading={isLoading}
+        isLoading={isFormLoading}
         formData={formData}
         errors={errors}
-        onClose={() => setOpenDialog(false)}
+        onClose={handleCloseDialog}
         onChange={handleInputChange}
         onSave={handleSave}
       />
@@ -564,7 +329,7 @@ const BaoDuong = () => {
         confirmText="Xóa"
         cancelText="Hủy"
         confirmColor="error"
-        loading={isLoading}
+        loading={isFormLoading}
       />
 
       {/* Snackbar for notifications */}

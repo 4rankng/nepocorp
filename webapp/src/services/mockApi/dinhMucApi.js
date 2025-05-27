@@ -86,6 +86,9 @@ export const dinhMucApi = {
   delete: removeDinhMuc,
   getBoSung: getBoSung,
   updateBoSung: updateBoSung,
+  // Aliases for useDinhMucManagement hook
+  getSupplementaryStandard: getBoSung, 
+  updateSupplementaryStandard: updateBoSung,
   _reset: _resetDinhMucApiData,
 };
 

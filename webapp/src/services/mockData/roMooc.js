@@ -168,3 +168,5 @@ if (roMoocData.length > 0) {
 } else {
   nextRoMoocId = 1;
 }
+
+export const getRoMoocCount = async () => roMoocData.length;

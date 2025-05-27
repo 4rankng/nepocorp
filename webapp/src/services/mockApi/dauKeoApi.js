@@ -49,6 +49,8 @@ export const _resetDauKeoMockData = data => {
   return simulateApiCall(() => dauKeoDataService._resetDauKeo(data));
 };
 
+export const getDauKeoCount = () => simulateApiCall(dauKeoDataService.getDauKeoCount);
+
 // Export object for backward compatibility
 export const dauKeoApi = {
   getAll: fetchAllDauKeo,
@@ -57,6 +59,7 @@ export const dauKeoApi = {
   update: editDauKeo,
   delete: removeDauKeo,
   _reset: _resetDauKeoMockData,
+  getCount: getDauKeoCount,
 };
 
 console.log('DauKeo Mock API service loaded and configured.');

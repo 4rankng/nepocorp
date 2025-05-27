@@ -204,9 +204,9 @@ const DinhMucDialog = ({
                 Định mức (lít/100km)
               </Typography>
               <TextField
-                fullWidth size={isMobile ? 'medium' : 'small'} label="Định mức" name="value" type="number"
-                value={formData.value} onChange={onInputChange} onBlur={onValidateForm}
-                error={!!errors.value} helperText={errors.value || ''}
+                fullWidth size={isMobile ? 'medium' : 'small'} label="Định mức" name="standard" type="number"
+                value={formData.standard} onChange={onInputChange} onBlur={onValidateForm}
+                error={!!errors.standard} helperText={errors.standard || ''}
                 variant="outlined" margin="none" InputLabelProps={{ shrink: true }}
                 inputProps={{ min: 0, step: 0.01, style: { textAlign: 'right', height: isMobile ? '48px' : '40px', padding: isMobile ? '12px 14px' : '8px 12px', boxSizing: 'border-box', fontSize: '0.875rem' } }}
                 InputProps={{ endAdornment: (<InputAdornment position="end" sx={{ color: 'text.secondary' }}>lít/100km</InputAdornment>), sx: { borderRadius: '6px', backgroundColor: 'background.paper', fontSize: '0.875rem' } }}
@@ -221,7 +221,7 @@ const DinhMucDialog = ({
               </Typography>
               <TextField
                 fullWidth multiline rows={isMobile ? 3 : 2} size={isMobile ? 'medium' : 'small'}
-                label="Ghi chú" name="ghiChu" value={formData.ghiChu} onChange={onInputChange}
+                label="Ghi chú" name="note" value={formData.note} onChange={onInputChange}
                 variant="outlined" margin="none" InputLabelProps={{ shrink: true }}
                 inputProps={{ style: { fontSize: '0.875rem', lineHeight: 1.5 } }}
                 sx={{ borderRadius: '6px', backgroundColor: 'background.paper', '& .MuiOutlinedInput-root': { borderRadius: '6px', padding: isMobile ? '12px 14px' : '8px 12px' } }}

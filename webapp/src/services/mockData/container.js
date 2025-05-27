@@ -135,3 +135,5 @@ const duplicateIds = initialIds.filter((item, index) => initialIds.indexOf(item)
 if (duplicateIds.length > 0) {
   console.error('CRITICAL: Duplicate IDs found in initial containerData:', duplicateIds);
 }
+
+export const getContainerCount = async () => containerData.length;

@@ -179,6 +179,8 @@ export const _resetDauKeo = (data = []) => {
   nextDauKeoId = dauKeoData.length > 0 ? Math.max(...dauKeoData.map(dk => dk.id)) + 1 : 1;
 };
 
+export const getDauKeoCount = async () => dauKeoData.length;
+
 if (dauKeoData.length > 0) {
   nextDauKeoId = Math.max(...dauKeoData.map(dk => dk.id)) + 1;
 } else {

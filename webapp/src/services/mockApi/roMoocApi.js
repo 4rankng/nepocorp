@@ -47,6 +47,8 @@ export const _resetRoMoocMockData = data => {
   return simulateApiCall(() => roMoocDataService._resetRoMooc(data));
 };
 
+export const getRoMoocCount = () => simulateApiCall(roMoocDataService.getRoMoocCount);
+
 // Export object for backward compatibility
 export const roMoocApi = {
   getAll: fetchAllRoMooc,
@@ -55,6 +57,7 @@ export const roMoocApi = {
   update: editRoMooc,
   delete: removeRoMooc,
   _reset: _resetRoMoocMockData,
+  getCount: getRoMoocCount,
 };
 
 console.log('RoMooc Mock API service loaded and configured (no delay).');
