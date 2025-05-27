@@ -29,7 +29,7 @@ export const fetchDinhMucById = id => {
   return simulateApiCall(() => dinhMucDataService.getDinhMucById(id));
 };
 
-export const fetchDinhMucByBienSoAndType = (bienSoXe, type) => {
+export const getByBienSoAndType = (bienSoXe, type) => {
   console.log(`[Mock API] Fetching Dinh Muc by bien so: ${bienSoXe} and type: ${type}`);
   return simulateApiCall(async () => {
     const data = await dinhMucDataService.getDinhMucByBienSoAndType(bienSoXe, type);
@@ -65,7 +65,10 @@ export const _resetDinhMucApiData = data => {
 // Bo Sung (Supplementary) related methods - delegate to cauHinhApi
 export const getBoSung = () => {
   console.log('[Mock API] Fetching Bo Sung (Supplementary) from CauHinh...');
-  return cauHinhApi.getDinhMucBoSung();
+  return simulateApiCall(async () => {
+    const response = await cauHinhApi.getDinhMucBoSung();
+    return response;
+  });
 };
 
 export const updateBoSung = value => {
@@ -77,7 +80,7 @@ export const updateBoSung = value => {
 export const dinhMucApi = {
   getAll: fetchAllDinhMuc,
   getById: fetchDinhMucById,
-  getByBienSoAndType: fetchDinhMucByBienSoAndType,
+  getByBienSoAndType: getByBienSoAndType,
   create: addDinhMuc,
   update: editDinhMuc,
   delete: removeDinhMuc,

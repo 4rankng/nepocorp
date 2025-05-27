@@ -117,7 +117,7 @@ const DinhMucDau = () => {
     const allStandards = Object.entries(dinhMucHang).flatMap(([licensePlate, standards]) =>
       standards.map(standard => ({ ...standard, licensePlate }))
     );
-    
+
     // Create a map of license plates to their standards
     const standardsByLicensePlate = allStandards.reduce((acc, standard) => {
       if (!acc[standard.licensePlate]) {
@@ -336,7 +336,7 @@ const DinhMucDau = () => {
       // Extract license plates from vehicles
       const plates = vehicles.map(vehicle => ({
         id: vehicle.id,
-        licensePlate: vehicle.licensePlate || vehicle.bienSoXe,
+        licensePlate: vehicle.bien_so, // Using bien_so from dauKeo.js
       }));
 
       // Fetch fuel standards for each license plate
@@ -344,9 +344,11 @@ const DinhMucDau = () => {
       const plateVoStandards = {};
 
       for (const plate of plates) {
+        if (!plate.licensePlate) continue; // Skip if no license plate
+
         const [hangRes, voRes] = await Promise.all([
-          dinhMucApi.getByBienSoAndType(plate.licensePlate, 'hang'),
-          dinhMucApi.getByBienSoAndType(plate.licensePlate, 'vo'),
+          dinhMucApi.getByBienSoAndType(plate.licensePlate, 'km_hang'),
+          dinhMucApi.getByBienSoAndType(plate.licensePlate, 'km_vo'),
         ]);
 
         plateStandards[plate.licensePlate] = hangRes.data || [];
@@ -1053,20 +1055,18 @@ const DinhMucDau = () => {
                       >
                         {licensePlate}
                       </Typography>
-                      {standards.length > 0 && (
-                        <Box
+                      {standards.length >= 0 && (
+                        <Chip
+                          label={standards.length}
+                          size="small"
                           sx={{
-                            bgcolor: '#6B7280',
-                            color: 'primary.contrastText',
-                            borderRadius: '12px',
-                            px: isMobile ? 1.5 : 1,
-                            py: isMobile ? 0.5 : 0.25,
-                            fontSize: isMobile ? '0.8rem' : '0.75rem',
+                            backgroundColor: theme => theme.palette.grey[200],
+                            color: theme => theme.palette.text.primary,
                             fontWeight: 500,
+                            fontSize: isMobile ? '0.8rem' : '0.75rem',
+                            ml: isMobile ? 0 : 1,
                           }}
-                        >
-                          {standards.length}
-                        </Box>
+                        />
                       )}
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

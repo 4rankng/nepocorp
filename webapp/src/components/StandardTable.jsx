@@ -211,7 +211,7 @@ const StandardTable = ({
                 <TableRow key={row.id || index} hover>
                   {columns.map(column => (
                     <TableCell
-                      key={column.key}
+                      key={`${row.id || index}-${column.key}`}
                       align={column.align || (column.numeric ? 'right' : 'left')}
                       sx={{
                         fontFamily: column.numeric ? 'monospace' : 'inherit',
