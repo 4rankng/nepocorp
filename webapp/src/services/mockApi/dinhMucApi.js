@@ -1,6 +1,7 @@
 // Mock API services for Dinh Muc (Fuel Standards)
 // This will interact with mockData/dinhMuc.js
 import * as dinhMucDataService from '@services/mockData/dinhMuc';
+import { cauHinhApi } from '@services/mockApi/cauHinhApi';
 
 const SIMULATED_DELAY = 0; // ms
 
@@ -28,6 +29,14 @@ export const fetchDinhMucById = id => {
   return simulateApiCall(() => dinhMucDataService.getDinhMucById(id));
 };
 
+export const fetchDinhMucByBienSoAndType = (bienSoXe, type) => {
+  console.log(`[Mock API] Fetching Dinh Muc by bien so: ${bienSoXe} and type: ${type}`);
+  return simulateApiCall(async () => {
+    const data = await dinhMucDataService.getDinhMucByBienSoAndType(bienSoXe, type);
+    return { data };
+  });
+};
+
 export const addDinhMuc = data => {
   // Renamed from createDinhMuc to follow convention like addKhachHang
   console.log('[Mock API] Creating Dinh Muc:', data);
@@ -53,13 +62,27 @@ export const _resetDinhMucApiData = data => {
   return simulateApiCall(() => dinhMucDataService._resetDinhMuc(data));
 };
 
+// Bo Sung (Supplementary) related methods - delegate to cauHinhApi
+export const getBoSung = () => {
+  console.log('[Mock API] Fetching Bo Sung (Supplementary) from CauHinh...');
+  return cauHinhApi.getDinhMucBoSung();
+};
+
+export const updateBoSung = value => {
+  console.log(`[Mock API] Updating Bo Sung (Supplementary) to: ${value}`);
+  return cauHinhApi.updateDinhMucBoSung(value);
+};
+
 // Export object for backward compatibility
 export const dinhMucApi = {
   getAll: fetchAllDinhMuc,
   getById: fetchDinhMucById,
+  getByBienSoAndType: fetchDinhMucByBienSoAndType,
   create: addDinhMuc,
   update: editDinhMuc,
   delete: removeDinhMuc,
+  getBoSung: getBoSung,
+  updateBoSung: updateBoSung,
   _reset: _resetDinhMucApiData,
 };
 

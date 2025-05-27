@@ -1,5 +1,6 @@
 // Export all services from individual mock API files
 export * from '@services/mockApi/dinhMucApi';
+export * from '@services/mockApi/cauHinhApi';
 export * from '@services/mockApi/khachHangApi';
 export * from '@services/mockApi/dauKeoApi';
 export * from '@services/mockApi/roMoocApi';

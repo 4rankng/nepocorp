@@ -1,4 +1,4 @@
-export { default as BaoDuong } from '@features/phuong-tien/components/BaoDuong';
+export { default as BaoDuong } from '@/features/phuong-tien/BaoDuong';
 export { default as ContainerTypeForm } from '@features/phuong-tien/components/ContainerTypeForm';
 export { default as ContainerTypeList } from '@features/phuong-tien/components/ContainerTypeList';
 export { default as DinhMucDau } from '@features/phuong-tien/components/DinhMucDau';

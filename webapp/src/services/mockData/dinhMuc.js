@@ -178,7 +178,22 @@ export const getAllDinhMuc = async () => {
 };
 
 export const getDinhMucById = async id => {
-  return dinhMucData.find(dm => dm.id === id) || null;
+  const dinhMuc = dinhMucData.find(dm => dm.id === id);
+  return dinhMuc || null;
+};
+
+// Get dinh muc by bien so and type (phan_loai)
+export const getDinhMucByBienSoAndType = async (bienSoXe, phanLoai) => {
+  if (!PHAN_LOAI_TYPES.includes(phanLoai)) {
+    console.error('Invalid phan_loai for DinhMuc query:', phanLoai);
+    return [];
+  }
+
+  const filteredData = dinhMucData.filter(dm => 
+    dm.bienSoXe === bienSoXe && dm.phan_loai === `km_${phanLoai}`
+  );
+  
+  return filteredData;
 };
 
 export const createDinhMuc = async data => {

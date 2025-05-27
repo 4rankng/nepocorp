@@ -113,8 +113,13 @@ const DinhMucDau = () => {
 
   // Create a combined array of all license plates with their standards
   const allLicensePlatesWithStandards = useMemo(() => {
+    // Flatten all standards from all license plates
+    const allStandards = Object.entries(dinhMucHang).flatMap(([licensePlate, standards]) =>
+      standards.map(standard => ({ ...standard, licensePlate }))
+    );
+    
     // Create a map of license plates to their standards
-    const standardsByLicensePlate = fuelStandards.reduce((acc, standard) => {
+    const standardsByLicensePlate = allStandards.reduce((acc, standard) => {
       if (!acc[standard.licensePlate]) {
         acc[standard.licensePlate] = [];
       }
@@ -127,7 +132,7 @@ const DinhMucDau = () => {
       licensePlate: plate.licensePlate,
       standards: standardsByLicensePlate[plate.licensePlate] || [],
     }));
-  }, [fuelStandards, licensePlates]);
+  }, [dinhMucHang, licensePlates]);
 
   // Initialize all cards as collapsed by default
   const [expandedPlates, setExpandedPlates] = useState({});
@@ -453,8 +458,8 @@ const DinhMucDau = () => {
       // Check for overlapping ranges
       const from = parseFloat(formData.fromKm);
       const to = parseFloat(formData.toKm);
-      const overlapping = fuelStandards.some(item => {
-        if (item.licensePlate !== formData.licensePlate) return false;
+      const currentStandards = dinhMucHang[formData.licensePlate] || [];
+      const overlapping = currentStandards.some(item => {
         return (
           (from >= item.fromKm && from < item.toKm) ||
           (to > item.fromKm && to <= item.toKm) ||
@@ -470,7 +475,7 @@ const DinhMucDau = () => {
         return;
       }
 
-      await fuelStandardApi.create(formData);
+      await dinhMucApi.create(formData);
       showSnackbar('Thêm định mức dầu thành công');
       await fetchData();
       setOpenAddDialog(false);
@@ -490,9 +495,9 @@ const DinhMucDau = () => {
       // Check for overlapping ranges, excluding current item
       const from = parseFloat(formData.fromKm);
       const to = parseFloat(formData.toKm);
-      const overlapping = fuelStandards.some(item => {
+      const currentStandards = dinhMucHang[formData.licensePlate] || [];
+      const overlapping = currentStandards.some(item => {
         if (item.id === formData.id) return false; // Skip current item
-        if (item.licensePlate !== formData.licensePlate) return false;
         return (
           (from >= item.fromKm && from < item.toKm) ||
           (to > item.fromKm && to <= item.toKm) ||
@@ -508,7 +513,7 @@ const DinhMucDau = () => {
         return;
       }
 
-      await fuelStandardApi.update(formData.id, formData);
+      await dinhMucApi.update(formData.id, formData);
       showSnackbar('Sửa định mức dầu thành công');
       await fetchData();
       setOpenEditDialog(false);
@@ -521,7 +526,11 @@ const DinhMucDau = () => {
   };
 
   const handleDeleteClick = id => {
-    const itemToDelete = fuelStandards.find(item => item.id === id);
+    // Find the item to delete from all standards
+    const allStandards = Object.entries(dinhMucHang).flatMap(([licensePlate, standards]) =>
+      standards.map(standard => ({ ...standard, licensePlate }))
+    );
+    const itemToDelete = allStandards.find(item => item.id === id);
     if (!itemToDelete) return;
 
     setDeleteDialog({
@@ -543,7 +552,7 @@ const DinhMucDau = () => {
 
     setIsLoading(true);
     try {
-      await fuelStandardApi.delete(deleteDialog.id);
+      await dinhMucApi.delete(deleteDialog.id);
       showSnackbar('Xóa định mức dầu thành công');
       await fetchData();
     } catch (err) {

@@ -2,9 +2,9 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Tabs, Tab, Box, useTheme, useMediaQuery } from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
 import { useNavigate, useParams } from 'react-router-dom';
-import PhuongTien from '@features/phuong-tien/components/PhuongTien';
-import DinhMuc from '@features/phuong-tien/components/DinhMuc';
-import BaoDuong from '@features/phuong-tien/components/BaoDuong';
+import PhuongTien from '@/features/phuong-tien/PhuongTien';
+import DinhMuc from '@/features/phuong-tien/DinhMuc';
+import BaoDuong from '@/features/phuong-tien/BaoDuong';
 
 // Define valid tabs and their labels
 const TABS = [
