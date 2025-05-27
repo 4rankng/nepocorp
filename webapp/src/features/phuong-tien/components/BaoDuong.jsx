@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { alpha } from '@mui/material/styles';
 import {
   Box,
   Button,
@@ -237,9 +238,64 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
   );
 };
 
+const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
+  <Paper
+    elevation={0}
+    sx={{ mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}
+  >
+    <Box
+      onClick={onToggle}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        cursor: 'pointer',
+        px: 2,
+        py: 2,
+        bgcolor: expanded ? 'grey.100' : 'background.paper',
+        borderBottom: expanded ? '1px solid' : 'none',
+        borderColor: 'divider',
+        transition: 'background 0.2s',
+      }}
+    >
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
+        {title}
+      </Typography>
+      {count > 0 && (
+        <Chip
+          label={count}
+          size="small"
+          sx={{
+            backgroundColor: (theme) => alpha(theme.palette.text.secondary, 0.1),
+            color: 'text.secondary',
+            fontWeight: 500,
+            fontSize: '0.75rem',
+            mr: 2
+          }}
+        />
+      )}
+      <AddButton
+        size="small"
+        onClick={e => {
+          e.stopPropagation();
+          onAdd();
+        }}
+      />
+      <IconButton size="small" sx={{ ml: 1 }}>
+        {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+      </IconButton>
+    </Box>
+    <Collapse in={expanded} timeout="auto" unmountOnExit>
+      <Box sx={{ p: { xs: 1, md: 2 } }}>{children}</Box>
+    </Collapse>
+  </Paper>
+);
+
 const BaoDuong = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [expandedSections, setExpandedSections] = useState({
+    tire: true, // Expanded by default
+  });
   const [maintenanceRecords, setMaintenanceRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -524,17 +580,32 @@ const BaoDuong = () => {
     },
   ];
 
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const handleAddNew = (type = 'tire') => {
+    setIsEdit(false);
+    setFormData({
+      licensePlate: '',
+      replacementDate: new Date(),
+      warrantyPeriod: 6,
+      quantity: 1,
+      unitPrice: 0,
+      total: 0,
+      note: '',
+      type: type
+    });
+    setErrors({});
+    setOpenDialog(true);
+  };
+
   // Render mobile card view following DinhMucDau.jsx pattern
   const renderMobileView = () => (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1, // Reduced gap to match DinhMucDau pattern
-        mt: 2,
-        pb: 2,
-      }}
-    >
+    <Box>
       {filteredRecords.map(record => (
         <MaintenanceCard
           key={record.id}
@@ -554,20 +625,18 @@ const BaoDuong = () => {
 
   // Render desktop table view
   const renderDesktopView = () => (
-    <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'background.paper' }}>
-      <StandardTable
-        columns={columns}
-        data={filteredRecords}
-        loading={isLoading}
-        error={error}
-        emptyMessage="Không có dữ liệu bảo dưỡng nào"
-        sx={{
-          '& .MuiTableRow-hover:hover': {
-            backgroundColor: 'action.hover',
-          },
-        }}
-      />
-    </Paper>
+    <StandardTable
+      columns={columns}
+      data={filteredRecords}
+      loading={isLoading}
+      error={error}
+      emptyMessage="Không có dữ liệu bảo dưỡng nào"
+      sx={{
+        '& .MuiTableRow-hover:hover': {
+          backgroundColor: 'action.hover',
+        },
+      }}
+    />
   );
 
   return (
@@ -589,25 +658,41 @@ const BaoDuong = () => {
           }}
         />
       </Box>
+      
       {/* Loading state */}
       {isLoading && (
         <Box textAlign="center" py={4}>
           <Typography>Đang tải dữ liệu...</Typography>
         </Box>
       )}
+      
       {/* Error state */}
       {error && (
         <Box color="error.main" py={2}>
           <Typography>{error}</Typography>
         </Box>
       )}
+      
       {/* Content */}
-      {!isLoading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
+      {!isLoading && !error && (
+        <Box>
+          {/* Lốp Xe Section */}
+          <Section
+            title="Lốp Xe"
+            count={filteredRecords.length}
+            expanded={expandedSections.tire}
+            onToggle={() => toggleSection('tire')}
+            onAdd={() => handleAddNew('tire')}
+          >
+            {isMobile ? renderMobileView() : renderDesktopView()}
+          </Section>
+        </Box>
+      )}
       {/* FAB for add at bottom right (always visible) */}
       <Fab
         color="primary"
         aria-label="add"
-        onClick={handleOpenAddDialog}
+        onClick={() => handleAddNew('tire')}
         disabled={isLoading}
         sx={{
           position: 'fixed',
