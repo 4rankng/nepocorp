@@ -62,6 +62,7 @@ import {
   editContainer,
   removeContainer,
 } from '@services/mockApi';
+import VehicleDialog from './components/VehicleDialog';
 
 // API services using new mock API paradigm
 const tractorApi = {
@@ -506,127 +507,70 @@ const VanChuyen = () => {
       </Snackbar>
 
       {/* --- Tractor Dialog --- */}
-      <Dialog
+      <VehicleDialog
         open={tractorDialog.open}
+        title={tractorDialog.edit ? 'Chỉnh sửa đầu kéo' : 'Thêm đầu kéo'}
+        isLoading={tractorLoading}
         onClose={() => setTractorDialog({ open: false, edit: false, data: null })}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogContent>
-          <TextField
-            label="Biển số"
-            value={tractorDialog.data?.bien_so || ''}
-            onChange={e =>
-              setTractorDialog(d => ({
-                ...d,
-                data: { ...d.data, bien_so: e.target.value }
-              }))
-            }
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Mô tả"
-            value={tractorDialog.data?.mo_ta || ''}
-            onChange={e =>
-              setTractorDialog(d => ({
-                ...d,
-                data: { ...d.data, mo_ta: e.target.value }
-              }))
-            }
-            fullWidth
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTractorDialog({ open: false, edit: false, data: null })}>Hủy</Button>
-          <Button
-            onClick={() => handleTractorSave(tractorDialog.data)}
-            variant="contained"
-            color="primary"
-          >
-            Lưu
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSave={() => handleTractorSave(tractorDialog.data)}
+        fields={[
+          {
+            label: 'Biển số',
+            name: 'bien_so',
+            value: tractorDialog.data?.bien_so || '',
+            onChange: e => setTractorDialog(d => ({ ...d, data: { ...d.data, bien_so: e.target.value } })),
+            autoFocus: true,
+          },
+          {
+            label: 'Mô tả',
+            name: 'mo_ta',
+            value: tractorDialog.data?.mo_ta || '',
+            onChange: e => setTractorDialog(d => ({ ...d, data: { ...d.data, mo_ta: e.target.value } })),
+          },
+        ]}
+      />
 
       {/* --- Trailer Dialog --- */}
-      <Dialog
+      <VehicleDialog
         open={trailerDialog.open}
+        title={trailerDialog.edit ? 'Chỉnh sửa rơ-mooc' : 'Thêm rơ-mooc'}
+        isLoading={trailerLoading}
         onClose={() => setTrailerDialog({ open: false, edit: false, data: null })}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogContent>
-          <TextField
-            label="Biển số"
-            value={trailerDialog.data?.bien_so || ''}
-            onChange={e =>
-              setTrailerDialog(d => ({
-                ...d,
-                data: { ...d.data, bien_so: e.target.value }
-              }))
-            }
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Mô tả"
-            value={trailerDialog.data?.mo_ta || ''}
-            onChange={e =>
-              setTrailerDialog(d => ({
-                ...d,
-                data: { ...d.data, mo_ta: e.target.value }
-              }))
-            }
-            fullWidth
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTrailerDialog({ open: false, edit: false, data: null })}>Hủy</Button>
-          <Button
-            onClick={() => handleTrailerSave(trailerDialog.data)}
-            variant="contained"
-            color="primary"
-          >
-            Lưu
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSave={() => handleTrailerSave(trailerDialog.data)}
+        fields={[
+          {
+            label: 'Biển số',
+            name: 'bien_so',
+            value: trailerDialog.data?.bien_so || '',
+            onChange: e => setTrailerDialog(d => ({ ...d, data: { ...d.data, bien_so: e.target.value } })),
+            autoFocus: true,
+          },
+          {
+            label: 'Mô tả',
+            name: 'mo_ta',
+            value: trailerDialog.data?.mo_ta || '',
+            onChange: e => setTrailerDialog(d => ({ ...d, data: { ...d.data, mo_ta: e.target.value } })),
+          },
+        ]}
+      />
 
       {/* --- Container Dialog --- */}
-      <Dialog
+      <VehicleDialog
         open={containerTypeDialog.open}
+        title={containerTypeDialog.edit ? 'Chỉnh sửa loại container' : 'Thêm loại container'}
+        isLoading={containerTypeLoading}
         onClose={() => setContainerTypeDialog({ open: false, edit: false, data: null })}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogContent>
-          <TextField
-            label="Loại container"
-            value={containerTypeDialog.data?.phan_loai || ''}
-            onChange={e =>
-              setContainerTypeDialog(d => ({
-                ...d,
-                data: { ...d.data, phan_loai: e.target.value }
-              }))
-            }
-            fullWidth
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setContainerTypeDialog({ open: false, edit: false, data: null })}>Hủy</Button>
-          <Button
-            onClick={() => handleContainerTypeSave(containerTypeDialog.data)}
-            variant="contained"
-            color="primary"
-          >
-            Lưu
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSave={() => handleContainerTypeSave(containerTypeDialog.data)}
+        fields={[
+          {
+            label: 'Loại container',
+            name: 'phan_loai',
+            value: containerTypeDialog.data?.phan_loai || '',
+            onChange: e => setContainerTypeDialog(d => ({ ...d, data: { ...d.data, phan_loai: e.target.value } })),
+            autoFocus: true,
+          },
+        ]}
+      />
 
       {/* Delete Confirmation Dialogs */}
       <Dialog
