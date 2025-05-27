@@ -7,11 +7,13 @@ import {
   editLichVanChuyen,
   removeLichVanChuyen,
   // fetchLichVanChuyenById, // Placeholder if needed later
+  fetchAllNhanVien, // Updated to use API function
+  fetchAllContainer, // Updated to use API function
+  fetchAllKhachHang, // Added for customer API
+  addKhachHang, // Added for customer creation
+  fetchAllDauKeo, // Added for vehicles
+  fetchAllRoMooc, // Added for vehicles
 } from '@services/mockApi';
-import { getVehiclesForSelect } from '@services/mockData/vehicles';
-import { getPartnersForSelect, addPartner } from '@services/mockData/partners';
-import { getCustomersForSelect, addQuickCustomer } from '@services/mockData/customers';
-import { getContainerTypesForSelect } from '@services/mockData/containers';
 import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx';
 import ConfirmationModal from '@components/ConfirmationModal';
 import {
@@ -80,6 +82,74 @@ const formatDateForInput = dateStr_DDMMYYYY => {
   return ''; // Invalid format
 };
 
+// Helper to format vehicles data for select options
+const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
+  const vehicles = [];
+  
+  // Add tractors (đầu kéo)
+  dauKeoList.forEach(item => {
+    vehicles.push({
+      value: item.id,
+      label: `${item.bien_so} (${item.mo_ta})`,
+      type: 'dau_keo'
+    });
+  });
+  
+  // Add trailers (rơ moóc)
+  roMoocList.forEach(item => {
+    vehicles.push({
+      value: item.id,
+      label: `${item.bien_so} (${item.mo_ta})`,
+      type: 'ro_mooc'
+    });
+  });
+  
+  return vehicles;
+};
+
+// Helper to format customers data for select options
+const formatCustomersForSelect = (customersList) => {
+  return customersList.map(customer => ({
+    value: customer.id,
+    label: customer.ten,
+    ma_dinh_danh: customer.ma_dinh_danh
+  }));
+};
+
+// Helper to format employees data for select options
+const formatEmployeesForSelect = (employeesList) => {
+  return employeesList.map(employee => ({
+    value: employee.id,
+    label: `${employee.ho_ten} (${employee.ma_so})`,
+    chuc_vu: employee.chuc_vu
+  }));
+};
+
+// Helper to format containers data for select options
+const formatContainersForSelect = (containersList) => {
+  return containersList.map(container => ({
+    value: container.id,
+    label: container.id
+  }));
+};
+
+// Helper function to add a new customer quickly
+const addQuickCustomer = async (customerName) => {
+  if (!customerName || customerName.trim() === '') {
+    throw new Error('Tên khách hàng không được để trống');
+  }
+
+  const newCustomerData = {
+    ma_dinh_danh: `MDD${Date.now()}`, // Generate unique identifier
+    ten: customerName.trim(),
+    dia_chi: '', // Default empty address
+    ma_so_thue: '', // Default empty tax code
+  };
+
+  const newCustomer = await addKhachHang(newCustomerData);
+  return newCustomer;
+};
+
 const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -94,9 +164,9 @@ const QuanLyLichVanChuyen = () => {
   const [formData, setFormData] = useState(initialFormState);
   const [selectOptions, setSelectOptions] = useState({
     vehicles: [],
-    partners: [],
     customers: [],
-    containerTypes: [],
+    employees: [], // Added for employee dropdown
+    containers: [], // Changed from containerTypes to containers
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -107,7 +177,6 @@ const QuanLyLichVanChuyen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [expandedCard, setExpandedCard] = useState(null);
-  // const [activeStep, setActiveStep] = useState(0); // No longer needed here
   const [isFormExpanded, setIsFormExpanded] = useState(!isMobile);
 
   const mapLichVanChuyenToFormData = (item) => {
@@ -132,15 +201,34 @@ const QuanLyLichVanChuyen = () => {
     setIsLoading(true);
     setError('');
     try {
-      const [lichVanChuyenList, vehicles, partners, customers, containerTypes] = await Promise.all([
+      const [
+        lichVanChuyenList, 
+        dauKeoList, 
+        roMoocList, 
+        customersList, 
+        employeesList, 
+        containersList
+      ] = await Promise.all([
         fetchAllLichVanChuyen(),
-        getVehiclesForSelect(), // Assuming these are still valid or will be updated
-        getPartnersForSelect(),   // Assuming these are still valid or will be updated
-        getCustomersForSelect(),  // Assuming these are still valid or will be updated
-        getContainerTypesForSelect(), // Assuming these are still valid or will be updated
+        fetchAllDauKeo(),
+        fetchAllRoMooc(),
+        fetchAllKhachHang(),
+        fetchAllNhanVien(),
+        fetchAllContainer(),
       ]);
+
+      const vehiclesData = formatVehiclesForSelect(dauKeoList, roMoocList);
+      const customersData = formatCustomersForSelect(customersList);
+      const employeesData = formatEmployeesForSelect(employeesList);
+      const containersData = formatContainersForSelect(containersList);
+
       setLichVanChuyenItems(lichVanChuyenList);
-      setSelectOptions({ vehicles, partners, customers, containerTypes });
+      setSelectOptions({
+        vehicles: vehiclesData,
+        customers: customersData,
+        employees: employeesData,
+        containers: containersData,
+      });
     } catch (err) {
       setError('Không thể tải dữ liệu Lịch Vận Chuyển.');
       console.error('Error fetching page data:', err);
@@ -158,54 +246,24 @@ const QuanLyLichVanChuyen = () => {
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleContainerInfoChange = (index, e) => {
-    const { name, value } = e.target;
-    const updatedContainers = formData.thongTinContainer.map((item, i) =>
-      i === index ? { ...item, [name]: value } : item
-    );
-    setFormData(prev => ({ ...prev, thongTinContainer: updatedContainers }));
-  };
-
-  const addContainerField = () => {
-    setFormData(prev => ({
-      ...prev,
-      thongTinContainer: [...prev.thongTinContainer, { soContainer: '', soSeal: '' }],
-    }));
-  };
-
-  const removeContainerField = index => {
-    if (formData.thongTinContainer.length > 1) {
-      // Keep at least one
-      setFormData(prev => ({
-        ...prev,
-        thongTinContainer: prev.thongTinContainer.filter((_, i) => i !== index),
-      }));
-    }
-  };
-
   const handleOpenModalForAdd = () => {
-    setEditingPlan(null);
+    setEditingItem(null);
     setFormData({
       ...initialFormState,
-      ngayThang: new Date().toISOString().split('T')[0], // Default to today
-      thongTinContainer: [{ soContainer: '', soSeal: '' }], // Ensure it's reset
+      ngay_van_chuyen: new Date().toISOString().split('T')[0], // Default to today, already in initialFormState
     });
-    setError('');
     setIsModalOpen(true);
-    // MobileShipmentFormStepper will reset its own activeStep due to editingPlan changing
   };
 
-  const handleOpenModalForEdit = plan => {
-    setEditingPlan(plan);
-    setFormData(mapPlanToFormData(plan));
-    setError('');
+  const handleOpenModalForEdit = item => {
+    setEditingItem(item);
+    setFormData(mapLichVanChuyenToFormData(item));
     setIsModalOpen(true);
-    // MobileShipmentFormStepper will reset its own activeStep due to editingPlan changing
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditingPlan(null);
+    setEditingItem(null);
     setFormData(initialFormState);
     setError('');
   };
@@ -228,95 +286,65 @@ const QuanLyLichVanChuyen = () => {
     };
   }, [isModalOpen, isDeleteModalOpen]);
 
-  const handleSavePlan = async () => {
-    setError('');
-    // Basic validation for required fields
-    if (
-      !formData.ngayThang ||
-      !formData.dienGiai.trim() ||
-      !formData.khachHangId ||
-      !formData.loaiContainerId ||
-      !formData.bienSoXeId ||
-      !formData.tuyenDuongDi.trim() ||
-      !formData.tuyenDuongDen.trim()
-    ) {
-      setError(
-        'Vui lòng điền đầy đủ các trường bắt buộc: Ngày, Diễn giải, Khách hàng, Loại cont, Biển số xe, Tuyến đường.'
-      );
-      return;
-    }
-
+  const handleSave = async () => {
     setIsLoading(true);
-    const planData = {
-      ...formData,
-      ngayThang: formatDateForDisplay(formData.ngayThang), // Convert to DD/MM/YYYY for mock
-      ngayHaHang: formData.ngayHaHang ? formatDateForDisplay(formData.ngayHaHang) : '-', // Convert to DD/MM/YYYY for mock
-      tuyenDuong: {
-        diemDi: formData.tuyenDuongDi.trim() || '-',
-        diemDen: formData.tuyenDuongDen
-          .split(',')
-          .map(s => s.trim())
-          .filter(s => s) || ['-'],
-      },
-      soLuongContainer: parseInt(formData.soLuongContainer, 10) || 0,
-      cuocVanChuyen: parseFloat(formData.cuocVanChuyen) || 0,
-      cuocThueVanChuyen: parseFloat(formData.cuocThueVanChuyen) || 0,
-      // Ensure default for optional fields if empty
-      doiTacId: formData.doiTacId || '-',
-      thongTinContainer: formData.thongTinContainer
-        .map(c => ({
-          soContainer: c.soContainer.trim() || '-',
-          soSeal: c.soSeal.trim() || '-',
-        }))
-        .filter(c => c.soContainer !== '-' || c.soSeal !== '-'), // Filter out empty entries
-    };
-
-    // Remove temporary form fields not in the main data model
-    delete planData.tuyenDuongDi;
-    delete planData.tuyenDuongDen;
-
+    setError('');
     try {
-      if (editingPlan) {
-        await updateShipmentPlan(editingPlan.id, planData);
-      } else {
-        await addShipmentPlan(planData);
+      // Basic validation for new structure (example)
+      if (!formData.ma_chuyen || !formData.ngay_van_chuyen || !formData.khach_hang_id || !formData.trang_thai) {
+        setError('Mã chuyến, Ngày vận chuyển, Khách hàng, và Trạng thái là bắt buộc.');
+        setIsLoading(false);
+        return;
       }
-      await fetchPageData(); // Refresh list and select options
-      handleCloseModal();
+
+      // formData should already be in the correct structure for lichVanChuyenApi
+      // as initialFormState and mapLichVanChuyenToFormData are aligned.
+      // No complex transformation needed here if UI forms directly map to formData fields.
+      // However, UI forms (DesktopShipmentFormDialog, MobileShipmentFormStepper) will need significant updates.
+
+      if (editingItem) {
+        await editLichVanChuyen(editingItem.id, formData); 
+      } else {
+        await addLichVanChuyen(formData);
+      }
+      fetchPageData(); // Refresh data
+      setIsModalOpen(false);
+      setEditingItem(null); // Clear editing item
+      setFormData(initialFormState); // Reset form
     } catch (err) {
-      setError(err.message || `Lỗi khi ${editingPlan ? 'sửa' : 'thêm'} lịch vận chuyển.`);
-      console.error(err);
+      setError(`Lỗi khi lưu lịch vận chuyển: ${err.message}`);
+      console.error('Error saving LichVanChuyen:',err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeletePlan = async plan => {
-    setPlanToDelete(plan);
+  const handleDelete = item => {
+    setItemToDelete(item);
     setIsDeleteModalOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!planToDelete) return;
-
-    setIsLoading(true);
-    setError('');
-    try {
-      await deleteShipmentPlan(planToDelete.id);
-      await fetchPageData(); // Refresh list
-      setIsDeleteModalOpen(false);
-      setPlanToDelete(null);
-    } catch (err) {
-      setError('Lỗi khi xóa lịch vận chuyển.');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+    if (itemToDelete) {
+      setIsLoading(true);
+      setError('');
+      try {
+        await removeLichVanChuyen(itemToDelete.id);
+        fetchPageData(); // Refresh data
+        setIsDeleteModalOpen(false);
+        setItemToDelete(null);
+      } catch (err) {
+        setError(`Lỗi khi xóa lịch vận chuyển: ${err.message}`);
+        console.error('Error deleting LichVanChuyen:',err);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
-    setPlanToDelete(null);
+    setItemToDelete(null);
   };
 
   const getEntityNameById = (id, list, keyField = 'id', nameField = 'name') => {
@@ -329,76 +357,74 @@ const QuanLyLichVanChuyen = () => {
     setExpandedCard(expandedCard === planId ? null : planId);
   };
 
-  // handleNextStep, handlePrevStep, handleStepClick are no longer needed here
-  // as MobileShipmentFormStepper will manage its own activeStep.
-
   // Filter functions for mobile search
-  const filteredPlans = shipmentPlans.filter(plan => {
+  const filteredLichVanChuyenItems = lichVanChuyenItems.filter(item => {
     const matchesSearch =
       !searchTerm ||
-      plan.dienGiai?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.khachHang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.bienSoXe?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.doiTac?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.ma_chuyen.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesStatus = !filterStatus || plan.trangThai === filterStatus;
+    const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
 
     return matchesSearch && matchesStatus;
   });
 
-  // getFormSteps, getCurrentStepFields, isStepComplete, getStepValidationErrors, getFieldLabel
-  // are all moved to MobileShipmentFormStepper.jsx
+  // Handle form submission for mobile stepper
+  // This handleSubmit is called by MobileShipmentFormStepper via onSave prop
+  const handleSubmit = () => {
+    handleSave();
+  };
 
-  // Define table columns
+  // Define table columns for DesktopView
   const columns = [
     {
-      key: 'ngayThang',
-      label: 'Ngày Tháng',
+      key: 'ngay_van_chuyen',
+      label: 'Ngày Vận Chuyển',
+      render: value => formatDateForDisplay(value) || '-',
+    },
+    {
+      key: 'ma_chuyen',
+      label: 'Mã Chuyến',
       render: value => value || '-',
     },
     {
-      key: 'bienSoXe',
+      key: 'khach_hang_id',
+      label: 'Khách Hàng',
+      render: value => getEntityNameById(value, selectOptions.customers, 'value', 'label') || '-',
+    },
+    {
+      key: 'bien_so_xe_id',
       label: 'Biển Số Xe',
+      render: value => getEntityNameById(value, selectOptions.vehicles, 'value', 'label') || '-',
+    },
+    {
+      key: 'container_id',
+      label: 'Số Container',
+      render: value => getEntityNameById(value, selectOptions.containers, 'value', 'label') || '-',
+    },
+    {
+      key: 'diem_xuat_phat',
+      label: 'Điểm Xuất Phát',
       render: value => value || '-',
     },
     {
-      key: 'tenDoiTac',
-      label: 'Đối Tác',
+      key: 'diem_tra_hang',
+      label: 'Điểm Trả Hàng',
       render: value => value || '-',
     },
     {
-      key: 'dienGiai',
-      label: 'Diễn Giải',
-      render: value => value || '-',
-      noWrap: true,
-      maxWidth: 300,
-    },
-    {
-      key: 'tuyenDuong',
-      label: 'Tuyến Đường',
-      render: value => {
-        if (!value) return '-';
-        if (typeof value === 'object') {
-          return `${value.diemDi} - ${Array.isArray(value.diemDen) ? value.diemDen.join(', ') : value.diemDen}`;
-        }
-        return value;
-      },
-      noWrap: true,
-      maxWidth: 300,
-    },
-    {
-      key: 'trangThai',
+      key: 'trang_thai',
       label: 'Trạng Thái',
       render: value => {
         const status = value || '-';
         return (
           <Chip
-            label={status}
+            label={status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} // Format status display
             size="small"
             sx={{
               backgroundColor: getStatusColor(status),
               color: 'white',
-              fontWeight: 500, // Guideline: Use icons alongside text for better visual communication - color helps
+              fontWeight: 500,
             }}
           />
         );
@@ -410,13 +436,13 @@ const QuanLyLichVanChuyen = () => {
       align: 'right',
       render: (_, record) => (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-          {canAddPlan && ( // Use the same permission for edit/delete for this example
+          {canAddPlan && (
             <>
               <Tooltip title="Chỉnh sửa">
                 <EditButton onClick={() => handleOpenModalForEdit(record)} disabled={isLoading} />
               </Tooltip>
               <Tooltip title="Xóa">
-                <DeleteButton onClick={() => handleDeletePlan(record)} disabled={isLoading} />
+                <DeleteButton onClick={() => handleDelete(record)} disabled={isLoading} />
               </Tooltip>
             </>
           )}
@@ -425,19 +451,9 @@ const QuanLyLichVanChuyen = () => {
     },
   ];
 
-  // MobileFormStepper and its related functions (renderStepContent, getFormSteps, etc.)
-  // are now moved to MobileShipmentFormStepper.jsx
-
-  // Handle form submission for mobile stepper
-  // This handleSubmit is called by MobileShipmentFormStepper via onSave prop
-  const handleSubmit = () => {
-    // This name is a bit generic, but it's what MobileFormStepper used.
-    handleSavePlan();
-  };
-
   // Handle delete confirmation for mobile
   const handleDeleteClick = plan => {
-    handleDeletePlan(plan);
+    handleDelete(plan);
   };
 
   // Reset form and stepper for mobile
@@ -452,10 +468,11 @@ const QuanLyLichVanChuyen = () => {
       const newCustomer = await addQuickCustomer(customerName);
 
       // Refresh customer list
-      const updatedCustomers = await getCustomersForSelect();
+      const updatedCustomers = await fetchAllKhachHang();
+      const formattedCustomers = formatCustomersForSelect(updatedCustomers);
       setSelectOptions(prev => ({
         ...prev,
-        customers: updatedCustomers.map(c => ({ value: c.id, label: c.name })),
+        customers: formattedCustomers,
       }));
 
       return newCustomer.id; // Return new customer ID to select it
@@ -464,161 +481,119 @@ const QuanLyLichVanChuyen = () => {
     }
   };
 
-  // Handle adding new partner from stepper
-  const handleAddNewPartner = async partnerName => {
-    try {
-      // Create partner data for quick add
-      const partnerData = {
-        code:
-          partnerName
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase())
-            .join('')
-            .slice(0, 10) || 'DT',
-        name: partnerName.trim(),
-        address: 'Chưa cập nhật',
-        taxCode: 'Chưa cập nhật',
-      };
-
-      const newPartner = await addPartner(partnerData);
-
-      // Refresh partner list
-      const updatedPartners = await getPartnersForSelect();
-      setSelectOptions(prev => ({
-        ...prev,
-        partners: updatedPartners.map(p => ({ value: p.id, label: p.name })),
-      }));
-
-      return newPartner.id; // Return new partner ID to select it
-    } catch (error) {
-      throw error; // Let child component handle the error
-    }
-  };
 
   // Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
   const handleOpenModalForAddMobile = () => {
-    // This is effectively the same as handleOpenModalForAdd now.
-    // If MobileShipmentFormStepper needs specific logic for reset, that's internal to it.
     handleOpenModalForAdd();
   };
 
   const handleOpenModalForEditMobile = plan => {
-    // This is effectively the same as handleOpenModalForEdit now.
     handleOpenModalForEdit(plan);
   };
 
   const handleCloseModalMobile = () => {
-    // This is effectively the same as handleCloseModal now.
     handleCloseModal();
   };
 
   return (
-    <Box sx={{ p: isMobile ? 2 : 3 }}>
-      {/* Page Title */}
+    <Box
+      sx={{
+        p: isMobile ? 2 : 3,
+        pt: isMobile ? 2 : 3, 
+        backgroundColor: theme.palette.background.default, 
+        minHeight: 'calc(100vh - 64px)', 
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Typography
-        variant="h5"
-        component="h1"
-        sx={{ mb: 3, fontWeight: 600, color: 'text.primary' }}
+        variant={isMobile ? 'h5' : 'h4'}
+        gutterBottom
+        sx={{
+          fontWeight: 600, 
+          color: theme.palette.primary.main, 
+          mb: isMobile ? 2 : 3,
+        }}
       >
-        Quản lý lịch vận chuyển
+        Quản Lý Lịch Vận Chuyển
       </Typography>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+      {isLoading && !isModalOpen && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {error && !isModalOpen && (
+        <Alert
+          severity="error"
+          sx={{
+            mb: 2,
+            borderRadius: 2, 
+            boxShadow: theme.shadows[2], 
+          }}
+        >
           {error}
         </Alert>
       )}
 
-      {/* Mobile Layout */}
       {isMobile ? (
         <MobileView
           searchTerm={searchTerm}
           onSearchTermChange={e => setSearchTerm(e.target.value)}
           filterStatus={filterStatus}
           onFilterStatusChange={e => setFilterStatus(e.target.value)}
-          filteredPlans={filteredPlans}
+          items={filteredLichVanChuyenItems} 
           isLoading={isLoading}
           expandedCard={expandedCard}
           onCardExpand={handleCardExpand}
-          onEdit={handleOpenModalForEditMobile}
-          onDelete={handleDeleteClick}
+          onEditItem={handleOpenModalForEditMobile}
+          onDeleteItem={handleDeleteClick}
           onAdd={handleOpenModalForAddMobile}
-          canAddPlan={canAddPlan}
+          canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
         />
       ) : (
-        /* Desktop Layout */
         <DesktopView
           searchTerm={searchTerm}
           onSearchTermChange={e => setSearchTerm(e.target.value)}
-          columns={columns}
-          shipmentPlans={shipmentPlans}
+          columns={columns} // columns is defined above
+          items={filteredLichVanChuyenItems}
           isLoading={isLoading}
           onAdd={handleOpenModalForAdd}
-          canAddPlan={canAddPlan}
+          canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
+          onEditItem={handleOpenModalForEdit} 
+          onDeleteItem={handleDelete}
         />
       )}
 
-      {/* Mobile Modal with Full Screen Dialog */}
+      {/* Modal for Add/Edit */} 
       {isMobile ? (
         <Dialog
           fullScreen
-          open={isModalOpen && canAddPlan} // Also check permission to open modal for add/edit
+          open={isModalOpen} // Removed && canAddPlan, let form decide if it shows content based on permissions if needed
           onClose={handleCloseModalMobile}
           TransitionComponent={Slide}
           TransitionProps={{ direction: 'up' }}
-          sx={{
-            '& .MuiDialog-paper': {
-              background: '#ffffff',
-            },
-          }}
+          sx={{ '& .MuiDialog-paper': { background: '#ffffff' } }}
         >
-          <DialogContent
-            sx={{
-              p: 2,
-              pb: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-              overflow: 'hidden',
-            }}
-          >
-            <Box
-              sx={{
-                flex: 1,
-                overflow: 'auto',
-                pr: 1,
-                mr: -1,
-                pb: 2,
-              }}
-            >
+          <DialogContent sx={{ p: 2, pb: 0, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, overflow: 'auto', pr: 1, mr: -1, pb: 2 }}>
               {error && (
-                <Alert
-                  severity="error"
-                  sx={{
-                    mb: 2,
-                    borderRadius: 2,
-                  }}
-                >
+                <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
                   {error}
                 </Alert>
               )}
-
               <MobileShipmentFormStepper
-                editingPlan={editingPlan}
+                editing={!!editingItem}
                 formData={formData}
                 onFormChange={handleInputChange}
-                onContainerFormChange={handleContainerInfoChange}
-                onAddContainerField={addContainerField}
-                onRemoveContainerField={removeContainerField}
-                onSave={handleSubmit} // Renamed from handleSavePlan for clarity if needed, or use handleSavePlan directly
+                onSave={handleSubmit}
                 isLoading={isLoading}
-                error={error} // Pass the global error state
+                error={error} 
                 selectOptions={selectOptions}
-                onClose={handleCloseModalMobile} // Pass close handler
-                onAddNewCustomer={handleAddNewCustomer} // Pass the new customer handler
-                onAddNewPartner={handleAddNewPartner} // Pass the new partner handler
-              />
+                onClose={handleCloseModalMobile} 
+                onAddNewCustomer={handleAddNewCustomer}
+                resetForm={resetForm}/>
             </Box>
           </DialogContent>
         </Dialog>
@@ -626,20 +601,17 @@ const QuanLyLichVanChuyen = () => {
         <DesktopShipmentFormDialog
           open={isModalOpen}
           onClose={handleCloseModal}
-          editingPlan={editingPlan}
+          editing={!!editingItem}
           formData={formData}
           onFormChange={handleInputChange}
-          onContainerFormChange={handleContainerInfoChange}
-          onAddContainerField={addContainerField}
-          onRemoveContainerField={removeContainerField}
-          onSave={handleSavePlan}
+          onSubmit={handleSave}
           isLoading={isLoading}
           error={error}
           selectOptions={selectOptions}
         />
       )}
 
-      {/* Confirmation Modal for both mobile and desktop */}
+      {/* Confirmation Modal for delete */} 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={handleDeleteCancel}
@@ -650,17 +622,11 @@ const QuanLyLichVanChuyen = () => {
             <Typography variant="body1" sx={{ mb: 2 }}>
               Bạn có chắc chắn muốn xóa lịch vận chuyển này?
             </Typography>
-            <Box sx={{ backgroundColor: 'grey.100', p: 2, borderRadius: 1 }}>
-              <Typography variant="body2">
-                <strong>Ngày:</strong> {planToDelete?.ngayThang}
+            {itemToDelete && (
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Mã chuyến: {itemToDelete.ma_chuyen}
               </Typography>
-              <Typography variant="body2">
-                <strong>Biển số xe:</strong> {planToDelete?.bienSoXe}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Đối tác:</strong> {planToDelete?.tenDoiTac || '-'}
-              </Typography>
-            </Box>
+            )}
           </Box>
         }
       />

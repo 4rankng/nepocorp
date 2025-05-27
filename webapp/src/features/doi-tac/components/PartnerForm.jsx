@@ -11,10 +11,10 @@ import {
 } from '@mui/material';
 
 const initialFormState = {
-  code: '',
-  name: '',
-  address: '',
-  taxCode: '',
+  ma_dinh_danh: '',
+  ten: '',
+  dia_chi: '',
+  ma_so_thue: '',
 };
 
 const PartnerForm = ({
@@ -34,10 +34,10 @@ const PartnerForm = ({
     if (open) {
       if (partner) {
         setFormData({
-          code: partner.code || '',
-          name: partner.name || '',
-          address: partner.address || '',
-          taxCode: partner.taxCode || '',
+          ma_dinh_danh: partner.ma_dinh_danh || '',
+          ten: partner.ten || '',
+          dia_chi: partner.dia_chi || '',
+          ma_so_thue: partner.ma_so_thue || '',
         });
       } else {
         // If onGetInitialData is provided, use it to get initial data
@@ -61,19 +61,19 @@ const PartnerForm = ({
     setLocalError('');
 
     // Validation
-    if (!formData.name.trim()) {
+    if (!formData.ten.trim()) {
       setLocalError('Tên đối tác không được để trống.');
       return;
     }
 
     // Validate partner code format
-    if (!formData.code || formData.code.trim() === '') {
+    if (!formData.ma_dinh_danh || formData.ma_dinh_danh.trim() === '') {
       setLocalError('Vui lòng nhập mã đối tác.');
       return;
     }
 
     const codeRegex = /^DT\d{3,}$/i;
-    if (!codeRegex.test(formData.code.trim())) {
+    if (!codeRegex.test(formData.ma_dinh_danh.trim())) {
       setLocalError('Mã đối tác phải có định dạng DT001, DT002, ...');
       return;
     }
@@ -81,7 +81,7 @@ const PartnerForm = ({
     // Call the onSave function with form data
     onSave({
       ...formData,
-      code: formData.code.trim().toUpperCase(),
+      ma_dinh_danh: formData.ma_dinh_danh.trim().toUpperCase(),
     });
   };
 
@@ -112,8 +112,8 @@ const PartnerForm = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField
               label="Mã đối tác"
-              name="code"
-              value={formData.code}
+              name="ma_dinh_danh"
+              value={formData.ma_dinh_danh}
               onChange={handleInputChange}
               placeholder="VD: DT001"
               fullWidth
@@ -129,8 +129,8 @@ const PartnerForm = ({
             />
             <TextField
               label="Tên đối tác"
-              name="name"
-              value={formData.name}
+              name="ten"
+              value={formData.ten}
               onChange={handleInputChange}
               placeholder="Ví dụ: Công ty Cổ phần Vận tải ABC"
               fullWidth
@@ -141,8 +141,8 @@ const PartnerForm = ({
             />
             <TextField
               label="Địa chỉ"
-              name="address"
-              value={formData.address}
+              name="dia_chi"
+              value={formData.dia_chi}
               onChange={handleInputChange}
               placeholder="Ví dụ: 123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh"
               fullWidth
@@ -153,8 +153,8 @@ const PartnerForm = ({
             />
             <TextField
               label="Mã số thuế"
-              name="taxCode"
-              value={formData.taxCode}
+              name="ma_so_thue"
+              value={formData.ma_so_thue}
               onChange={handleInputChange}
               placeholder="Ví dụ: 0300584870"
               fullWidth
@@ -175,7 +175,7 @@ const PartnerForm = ({
           <Button
             type="submit"
             variant="contained"
-            disabled={isLoading || !formData.name.trim()}
+            disabled={isLoading || !formData.ten.trim()}
             startIcon={isLoading ? <CircularProgress size={20} /> : null}
           >
             {partner ? 'Lưu' : 'Thêm'}

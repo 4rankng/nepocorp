@@ -14,17 +14,21 @@ const CustomerList = ({
   // Define table columns
   const columns = [
     {
-      key: 'name',
+      key: 'ma_dinh_danh',
+      label: 'Mã khách hàng',
+    },
+    {
+      key: 'ten',
       label: 'Tên khách hàng',
     },
     {
-      key: 'address',
+      key: 'dia_chi',
       label: 'Địa chỉ',
       render: value => value || 'Chưa cập nhật',
       maxWidth: 300,
     },
     {
-      key: 'taxCode',
+      key: 'ma_so_thue',
       label: 'Mã số thuế',
       render: value => value || 'Chưa cập nhật',
     },

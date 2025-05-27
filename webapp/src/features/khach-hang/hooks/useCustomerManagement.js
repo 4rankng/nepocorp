@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { customerApi } from '@services/mockApi';
+import {
+  fetchAllKhachHang,
+  fetchKhachHangById,
+  addKhachHang,
+  editKhachHang,
+  removeKhachHang,
+} from '@services/mockApi/khachHangApi';
 
 const initialFormState = {
-  code: '',
-  name: '',
-  phone: '',
-  email: '',
-  address: '',
-  taxCode: '',
-  note: '',
+  ma_dinh_danh: '',
+  ten: '',
+  dia_chi: '',
+  ma_so_thue: '',
 };
 
 // Helper function to generate the next customer code
@@ -38,7 +41,7 @@ const useCustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await customerApi.getAll();
+      const response = await fetchAllKhachHang();
       setCustomers(response.data || []);
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không thể tải danh sách khách hàng';
@@ -62,7 +65,7 @@ const useCustomerManagement = () => {
           code: nextCode,
         };
 
-        const response = await customerApi.create(processedData);
+        const response = await addKhachHang(processedData);
         // Refresh the customer list
         await fetchCustomers();
         return { success: true, data: response.data };
@@ -92,7 +95,7 @@ const useCustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await customerApi.update(id, customerData);
+      const response = await editKhachHang(id, customerData);
       // Refresh the customer list
       await fetchCustomers();
       return { success: true, data: response.data };
@@ -111,7 +114,7 @@ const useCustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      await customerApi.delete(id);
+      await removeKhachHang(id);
       // Remove from local state immediately for better UX
       setCustomers(prev => prev.filter(c => c.id !== id));
       return { success: true };
@@ -130,7 +133,7 @@ const useCustomerManagement = () => {
   // Get customer by ID
   const getCustomerById = useCallback(async id => {
     try {
-      const response = await customerApi.getById(id);
+      const response = await fetchKhachHangById(id);
       return { success: true, data: response.data };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không tìm thấy khách hàng';
@@ -142,7 +145,7 @@ const useCustomerManagement = () => {
   // Get customer by code
   const getCustomerByCode = useCallback(async code => {
     try {
-      const response = await customerApi.getByCode(code);
+      const response = await fetchKhachHangById(code);
       return { success: true, data: response.data };
     } catch (err) {
       // Not found is an expected case, don't log as error
@@ -158,7 +161,7 @@ const useCustomerManagement = () => {
     if (!code || code.trim() === '') return true;
 
     try {
-      const response = await customerApi.getByCode(code);
+      const response = await fetchKhachHangById(code);
       // If we're excluding an ID (for updates), it's okay if it's the same customer
       if (excludeId && response.data && response.data.id === excludeId) {
         return true;

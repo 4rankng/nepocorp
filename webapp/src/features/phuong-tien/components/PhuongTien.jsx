@@ -1,3 +1,20 @@
+/**
+ * PhuongTien Component - Vehicle Management
+ * 
+ * This component has been integrated with the new mock API paradigm.
+ * 
+ * Integration changes:
+ * - Replaced inline mock APIs with calls to @services/mockApi
+ * - Updated field mappings to match mock data structure:
+ *   - DauKeo (Tractors): bien_so, mo_ta
+ *   - RoMooc (Trailers): bien_so, mo_ta  
+ *   - Container: id (container number), phan_loai (type)
+ * - Added CRUD handlers for all three entity types
+ * - Updated mobile card renders and table columns
+ * 
+ * TODO: Implement form dialogs for CRUD operations following DinhMuc pattern
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { alpha } from '@mui/material/styles';
 import {
@@ -28,74 +45,42 @@ import StandardTable from '@/components/StandardTable';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import CloseIcon from '@mui/icons-material/Close';
+// Import new mock API paradigm
+import {
+  fetchAllDauKeo,
+  addDauKeo,
+  editDauKeo,
+  removeDauKeo,
+  fetchAllRoMooc,
+  addRoMooc,
+  editRoMooc,
+  removeRoMooc,
+  fetchAllContainer,
+  addContainer,
+  editContainer,
+  removeContainer,
+} from '@services/mockApi';
 
-// Mock APIs (replace with real API calls)
-const mockDelay = ms => new Promise(res => setTimeout(res, ms));
-const mockApi =
-  (data, error = null) =>
-  async () => {
-    await mockDelay(500);
-    if (error) throw new Error(error);
-    return { data };
-  };
-
-const initialTractors = [
-  { id: 1, licensePlate: '51C-12345', description: 'Đầu kéo Hino' },
-  { id: 2, licensePlate: '51C-67890', description: 'Đầu kéo Hyundai' },
-];
-const initialTrailers = [
-  { id: 1, licensePlate: '51R-11111', trailerType: "40'", description: 'Rơ-mooc 40 feet' },
-  { id: 2, licensePlate: '51R-22222', trailerType: "20'", description: 'Rơ-mooc 20 feet' },
-];
-const initialContainerTypes = [
-  { id: 1, type: "20'DC", description: 'Container 20 feet Dry' },
-  { id: 2, type: "40'HC", description: 'Container 40 feet High Cube' },
-];
-
+// API services using new mock API paradigm
 const tractorApi = {
-  getAll: mockApi(initialTractors),
-  create: async data => {
-    await mockDelay(300);
-    return { data: { ...data, id: Date.now() } };
-  },
-  update: async (id, data) => {
-    await mockDelay(300);
-    return { data: { ...data, id } };
-  },
-  delete: async id => {
-    await mockDelay(300);
-    return { data: id };
-  },
+  getAll: fetchAllDauKeo,
+  create: addDauKeo,
+  update: editDauKeo,
+  delete: removeDauKeo,
 };
+
 const trailerApi = {
-  getAll: mockApi(initialTrailers),
-  create: async data => {
-    await mockDelay(300);
-    return { data: { ...data, id: Date.now() } };
-  },
-  update: async (id, data) => {
-    await mockDelay(300);
-    return { data: { ...data, id } };
-  },
-  delete: async id => {
-    await mockDelay(300);
-    return { data: id };
-  },
+  getAll: fetchAllRoMooc,
+  create: addRoMooc,
+  update: editRoMooc,
+  delete: removeRoMooc,
 };
+
 const containerTypeApi = {
-  getAll: mockApi(initialContainerTypes),
-  create: async data => {
-    await mockDelay(300);
-    return { data: { ...data, id: Date.now() } };
-  },
-  update: async (id, data) => {
-    await mockDelay(300);
-    return { data: { ...data, id } };
-  },
-  delete: async id => {
-    await mockDelay(300);
-    return { data: id };
-  },
+  getAll: fetchAllContainer,
+  create: addContainer,
+  update: editContainer,
+  delete: removeContainer,
 };
 
 const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
@@ -188,36 +173,37 @@ const PhuongTien = () => {
     setTractorLoading(true);
     tractorApi
       .getAll()
-      .then(res => setTractors(res.data))
+      .then(data => setTractors(data))
       .catch(() => setTractorError('Không thể tải danh sách đầu kéo'))
       .finally(() => setTractorLoading(false));
+    
     setTrailerLoading(true);
     trailerApi
       .getAll()
-      .then(res => setTrailers(res.data))
+      .then(data => setTrailers(data))
       .catch(() => setTrailerError('Không thể tải danh sách rơ-mooc'))
       .finally(() => setTrailerLoading(false));
+    
     setContainerTypeLoading(true);
     containerTypeApi
       .getAll()
-      .then(res => setContainerTypes(res.data))
+      .then(data => setContainerTypes(data))
       .catch(() => setContainerTypeError('Không thể tải danh sách loại container'))
       .finally(() => setContainerTypeLoading(false));
   }, []);
 
-  // Columns
+  // Columns - updated to match mock data structure
   const tractorColumns = [
-    { key: 'licensePlate', label: 'BIỂN SỐ', render: v => v },
-    { key: 'description', label: 'MÔ TẢ', render: v => v || '' },
+    { key: 'bien_so', label: 'BIỂN SỐ', render: v => v },
+    { key: 'mo_ta', label: 'MÔ TẢ', render: v => v || '' },
   ];
   const trailerColumns = [
-    { key: 'licensePlate', label: 'BIỂN SỐ', render: v => v },
-    { key: 'trailerType', label: 'LOẠI RƠ-MOOC', render: v => v },
-    { key: 'description', label: 'MÔ TẢ', render: v => v || '' },
+    { key: 'bien_so', label: 'BIỂN SỐ', render: v => v },
+    { key: 'mo_ta', label: 'MÔ TẢ', render: v => v || '' },
   ];
   const containerTypeColumns = [
-    { key: 'type', label: 'LOẠI CONTAINER', render: v => v },
-    { key: 'description', label: 'MÔ TẢ', render: v => v || '' },
+    { key: 'id', label: 'SỐ CONTAINER', render: v => v },
+    { key: 'phan_loai', label: 'LOẠI CONTAINER', render: v => v || '' },
   ];
 
   // Render mobile card for each section
@@ -228,7 +214,7 @@ const PhuongTien = () => {
     >
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography fontWeight={600}>{tractor.licensePlate}</Typography>
+          <Typography fontWeight={600}>{tractor.bien_so}</Typography>
           <Box display="flex" gap={1}>
             <EditButton
               size="small"
@@ -241,7 +227,7 @@ const PhuongTien = () => {
           </Box>
         </Box>
         <Typography variant="body2" color="text.secondary">
-          {tractor.description}
+          {tractor.mo_ta}
         </Typography>
       </CardContent>
     </Card>
@@ -253,7 +239,7 @@ const PhuongTien = () => {
     >
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography fontWeight={600}>{trailer.licensePlate}</Typography>
+          <Typography fontWeight={600}>{trailer.bien_so}</Typography>
           <Box display="flex" gap={1}>
             <EditButton
               size="small"
@@ -266,10 +252,7 @@ const PhuongTien = () => {
           </Box>
         </Box>
         <Typography variant="body2" color="text.secondary">
-          Loại: {trailer.trailerType}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {trailer.description}
+          {trailer.mo_ta}
         </Typography>
       </CardContent>
     </Card>
@@ -281,7 +264,7 @@ const PhuongTien = () => {
     >
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography fontWeight={600}>{container.type}</Typography>
+          <Typography fontWeight={600}>{container.id}</Typography>
           <Box display="flex" gap={1}>
             <EditButton
               size="small"
@@ -294,11 +277,104 @@ const PhuongTien = () => {
           </Box>
         </Box>
         <Typography variant="body2" color="text.secondary">
-          {container.description}
+          {container.phan_loai}
         </Typography>
       </CardContent>
     </Card>
   );
+
+  // CRUD handlers for tractors
+  const handleTractorSave = async (formData) => {
+    try {
+      if (tractorDialog.edit) {
+        await tractorApi.update(tractorDialog.data.id, formData);
+        setTractors(prev => prev.map(item => 
+          item.id === tractorDialog.data.id ? { ...item, ...formData } : item
+        ));
+        setSnackbar({ open: true, message: 'Cập nhật đầu kéo thành công!', severity: 'success' });
+      } else {
+        const newTractor = await tractorApi.create(formData);
+        setTractors(prev => [...prev, newTractor]);
+        setSnackbar({ open: true, message: 'Thêm đầu kéo thành công!', severity: 'success' });
+      }
+      setTractorDialog({ open: false, edit: false, data: null });
+    } catch (error) {
+      setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
+    }
+  };
+
+  const handleTractorDelete = async () => {
+    try {
+      await tractorApi.delete(tractorDelete.data.id);
+      setTractors(prev => prev.filter(item => item.id !== tractorDelete.data.id));
+      setSnackbar({ open: true, message: 'Xóa đầu kéo thành công!', severity: 'success' });
+      setTractorDelete({ open: false, data: null });
+    } catch (error) {
+      setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
+    }
+  };
+
+  // CRUD handlers for trailers
+  const handleTrailerSave = async (formData) => {
+    try {
+      if (trailerDialog.edit) {
+        await trailerApi.update(trailerDialog.data.id, formData);
+        setTrailers(prev => prev.map(item => 
+          item.id === trailerDialog.data.id ? { ...item, ...formData } : item
+        ));
+        setSnackbar({ open: true, message: 'Cập nhật rơ-mooc thành công!', severity: 'success' });
+      } else {
+        const newTrailer = await trailerApi.create(formData);
+        setTrailers(prev => [...prev, newTrailer]);
+        setSnackbar({ open: true, message: 'Thêm rơ-mooc thành công!', severity: 'success' });
+      }
+      setTrailerDialog({ open: false, edit: false, data: null });
+    } catch (error) {
+      setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
+    }
+  };
+
+  const handleTrailerDelete = async () => {
+    try {
+      await trailerApi.delete(trailerDelete.data.id);
+      setTrailers(prev => prev.filter(item => item.id !== trailerDelete.data.id));
+      setSnackbar({ open: true, message: 'Xóa rơ-mooc thành công!', severity: 'success' });
+      setTrailerDelete({ open: false, data: null });
+    } catch (error) {
+      setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
+    }
+  };
+
+  // CRUD handlers for container types
+  const handleContainerTypeSave = async (formData) => {
+    try {
+      if (containerTypeDialog.edit) {
+        await containerTypeApi.update(containerTypeDialog.data.id, formData);
+        setContainerTypes(prev => prev.map(item => 
+          item.id === containerTypeDialog.data.id ? { ...item, ...formData } : item
+        ));
+        setSnackbar({ open: true, message: 'Cập nhật container thành công!', severity: 'success' });
+      } else {
+        const newContainer = await containerTypeApi.create(formData);
+        setContainerTypes(prev => [...prev, newContainer]);
+        setSnackbar({ open: true, message: 'Thêm container thành công!', severity: 'success' });
+      }
+      setContainerTypeDialog({ open: false, edit: false, data: null });
+    } catch (error) {
+      setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
+    }
+  };
+
+  const handleContainerTypeDelete = async () => {
+    try {
+      await containerTypeApi.delete(containerTypeDelete.data.id);
+      setContainerTypes(prev => prev.filter(item => item.id !== containerTypeDelete.data.id));
+      setSnackbar({ open: true, message: 'Xóa container thành công!', severity: 'success' });
+      setContainerTypeDelete({ open: false, data: null });
+    } catch (error) {
+      setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
+    }
+  };
 
   return (
     <Box sx={{ position: 'relative', pb: 8 }}>
@@ -413,6 +489,29 @@ const PhuongTien = () => {
           />
         )}
       </Section>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+      
+      {/* TODO: Add form dialogs for CRUD operations */}
+      {/* Form dialogs would be implemented here following the DinhMuc pattern */}
+      {/* - TractorFormDialog */}
+      {/* - TrailerFormDialog */}
+      {/* - ContainerTypeFormDialog */}
+      
+      {/* TODO: Add confirmation dialogs for delete operations */}
+      {/* - ConfirmationDialog for tractors */}
+      {/* - ConfirmationDialog for trailers */}
+      {/* - ConfirmationDialog for containers */}
+      
       {/* Dialogs and snackbars for add/edit/delete for each section would go here, following DinhMuc pattern */}
       {/* ... */}
     </Box>

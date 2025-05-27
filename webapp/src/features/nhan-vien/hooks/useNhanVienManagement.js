@@ -7,16 +7,22 @@ import {
   employeeRoles,
 } from '@services/mockData/employees';
 import { getVehicles } from '@services/mockData/vehicles';
+import {
+  fetchAllNhanVien,
+  fetchNhanVienById,
+  addNhanVien,
+  editNhanVien,
+  removeNhanVien,
+} from '@services/mockApi/nhanVienApi';
 
 // Define initialFormState inside the hook or make it exportable if needed elsewhere
 const getInitialFormState = () => ({
-  maNhanVien: '',
-  tenNhanVien: '',
-  tenDangNhap: '',
-  matKhau: '',
+  ma_so: '',
+  ho_ten: '',
+  ten_dang_nhap: '',
+  mat_khau: '',
+  chuc_vu: '',
   email: '',
-  chucVu: employeeRoles[0] || '', // Default to the first role
-  bienSoXe: '',
 });
 
 const useNhanVienManagement = () => {
@@ -80,7 +86,7 @@ const useNhanVienManagement = () => {
     const newCode = generateEmployeeCode(employees);
     setFormData({
       ...getInitialFormState(),
-      maNhanVien: newCode,
+      ma_so: newCode,
     });
     setError('');
     setIsModalOpen(true);
@@ -89,13 +95,12 @@ const useNhanVienManagement = () => {
   const handleOpenModalForEdit = useCallback(employee => {
     setEditingEmployee(employee);
     setFormData({
-      maNhanVien: employee.maNhanVien || '',
-      tenNhanVien: employee.tenNhanVien,
-      tenDangNhap: employee.tenDangNhap,
-      matKhau: '', // Password field is cleared for edit
+      ma_so: employee.maNhanVien || '',
+      ho_ten: employee.tenNhanVien,
+      ten_dang_nhap: employee.tenDangNhap,
+      mat_khau: '', // Password field is cleared for edit
+      chuc_vu: employee.chucVu,
       email: employee.email,
-      chucVu: employee.chucVu,
-      bienSoXe: employee.bienSoXe || '',
     });
     setError('');
     setIsModalOpen(true);
@@ -124,15 +129,15 @@ const useNhanVienManagement = () => {
   const handleSaveEmployee = useCallback(async () => {
     setError('');
     if (
-      !formData.tenNhanVien.trim() ||
-      !formData.tenDangNhap.trim() ||
+      !formData.ho_ten.trim() ||
+      !formData.ten_dang_nhap.trim() ||
       !formData.email.trim() ||
-      !formData.chucVu.trim()
+      !formData.chuc_vu.trim()
     ) {
       setError('Vui lòng điền đầy đủ các trường: Tên nhân viên, Tên đăng nhập, Email, Chức vụ.');
       return;
     }
-    if (!editingEmployee && !formData.matKhau.trim()) {
+    if (!editingEmployee && !formData.mat_khau.trim()) {
       setError('Mật khẩu là bắt buộc khi thêm nhân viên mới.');
       return;
     }
@@ -141,12 +146,12 @@ const useNhanVienManagement = () => {
     try {
       if (editingEmployee) {
         const dataToUpdate = { ...formData };
-        if (!formData.matKhau.trim()) {
-          delete dataToUpdate.matKhau;
+        if (!formData.mat_khau.trim()) {
+          delete dataToUpdate.mat_khau;
         }
-        await updateEmployee(editingEmployee.id, dataToUpdate);
+        await editNhanVien(editingEmployee.id, dataToUpdate);
       } else {
-        await addEmployee(formData);
+        await addNhanVien(formData);
       }
       await fetchEmployeesData(); // Refresh data
       handleCloseModal(); // Close modal on success
@@ -167,7 +172,7 @@ const useNhanVienManagement = () => {
       setIsLoading(true);
       setError('');
       try {
-        await deleteEmployee(id);
+        await removeNhanVien(id);
         await fetchEmployeesData(); // Refresh data
       } catch (err) {
         setError('Lỗi khi xóa nhân viên.');

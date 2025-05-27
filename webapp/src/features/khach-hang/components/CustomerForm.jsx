@@ -11,10 +11,10 @@ import {
 } from '@mui/material';
 
 const initialFormState = {
-  code: '',
-  name: '',
-  address: '',
-  taxCode: '',
+  ma_dinh_danh: '',
+  ten: '',
+  dia_chi: '',
+  ma_so_thue: '',
 };
 
 const CustomerForm = ({
@@ -34,10 +34,10 @@ const CustomerForm = ({
     if (open) {
       if (customer) {
         setFormData({
-          code: customer.code || '',
-          name: customer.name || '',
-          address: customer.address || '',
-          taxCode: customer.taxCode || '',
+          ma_dinh_danh: customer.ma_dinh_danh || '',
+          ten: customer.ten || '',
+          dia_chi: customer.dia_chi || '',
+          ma_so_thue: customer.ma_so_thue || '',
         });
       } else {
         // Get initial form data with generated code
@@ -62,19 +62,19 @@ const CustomerForm = ({
     e.preventDefault();
 
     // Basic validation
-    if (!formData.name || formData.name.trim() === '') {
+    if (!formData.ten || formData.ten.trim() === '') {
       setLocalError('Vui lòng nhập tên khách hàng');
       return;
     }
 
     // Validate customer code format
-    if (!formData.code || formData.code.trim() === '') {
+    if (!formData.ma_dinh_danh || formData.ma_dinh_danh.trim() === '') {
       setLocalError('Vui lòng nhập mã khách hàng');
       return;
     }
 
     const codeRegex = /^KH\d{3,}$/i;
-    if (!codeRegex.test(formData.code.trim())) {
+    if (!codeRegex.test(formData.ma_dinh_danh.trim())) {
       setLocalError('Mã khách hàng phải có định dạng KH001, KH002, ...');
       return;
     }
@@ -115,8 +115,8 @@ const CustomerForm = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField
               label="Mã khách hàng"
-              name="code"
-              value={formData.code}
+              name="ma_dinh_danh"
+              value={formData.ma_dinh_danh}
               onChange={handleInputChange}
               placeholder="VD: KH001"
               fullWidth
@@ -132,8 +132,8 @@ const CustomerForm = ({
             />
             <TextField
               label="Tên khách hàng"
-              name="name"
-              value={formData.name}
+              name="ten"
+              value={formData.ten}
               onChange={handleInputChange}
               placeholder="Ví dụ: Công ty Cổ phần ABC"
               fullWidth
@@ -144,8 +144,8 @@ const CustomerForm = ({
             />
             <TextField
               label="Địa chỉ"
-              name="address"
-              value={formData.address}
+              name="dia_chi"
+              value={formData.dia_chi}
               onChange={handleInputChange}
               placeholder="Ví dụ: 123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh"
               fullWidth
@@ -156,8 +156,8 @@ const CustomerForm = ({
             />
             <TextField
               label="Mã số thuế"
-              name="taxCode"
-              value={formData.taxCode}
+              name="ma_so_thue"
+              value={formData.ma_so_thue}
               onChange={handleInputChange}
               placeholder="Ví dụ: 5500157123"
               fullWidth
@@ -178,7 +178,7 @@ const CustomerForm = ({
           <Button
             type="submit"
             variant="contained"
-            disabled={isLoading || !formData.name.trim()}
+            disabled={isLoading || !formData.ten.trim()}
             startIcon={isLoading ? <CircularProgress size={20} /> : null}
           >
             {customer ? 'Lưu' : 'Thêm'}

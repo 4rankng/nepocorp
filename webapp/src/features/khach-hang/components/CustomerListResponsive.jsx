@@ -40,9 +40,10 @@ const CustomerListResponsive = ({
     const term = searchTerm.toLowerCase();
     return customers.filter(
       customer =>
-        (customer.name && customer.name.toLowerCase().includes(term)) ||
-        (customer.address && customer.address.toLowerCase().includes(term)) ||
-        (customer.taxCode && customer.taxCode.toLowerCase().includes(term))
+        (customer.ten && customer.ten.toLowerCase().includes(term)) ||
+        (customer.dia_chi && customer.dia_chi.toLowerCase().includes(term)) ||
+        (customer.ma_so_thue && customer.ma_so_thue.toLowerCase().includes(term)) ||
+        (customer.ma_dinh_danh && customer.ma_dinh_danh.toLowerCase().includes(term))
     );
   }, [customers, searchTerm]);
 
@@ -60,13 +61,13 @@ const CustomerListResponsive = ({
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
               <Box>
                 <Typography variant="h6" component="div">
-                  {customer.name}
+                  {customer.ten}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Địa chỉ:</strong> {customer.address || 'Chưa cập nhật'}
+                  <strong>Địa chỉ:</strong> {customer.dia_chi || 'Chưa cập nhật'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Mã số thuế:</strong> {customer.taxCode || 'Chưa cập nhật'}
+                  <strong>Mã số thuế:</strong> {customer.ma_so_thue || 'Chưa cập nhật'}
                 </Typography>
               </Box>
               <Box>
@@ -108,9 +109,9 @@ const CustomerListResponsive = ({
         <TableBody>
           {filteredCustomers.map(customer => (
             <TableRow key={customer.id} hover>
-              <TableCell>{customer.name}</TableCell>
-              <TableCell>{customer.address || 'Chưa cập nhật'}</TableCell>
-              <TableCell>{customer.taxCode || 'Chưa cập nhật'}</TableCell>
+              <TableCell>{customer.ten}</TableCell>
+              <TableCell>{customer.dia_chi || 'Chưa cập nhật'}</TableCell>
+              <TableCell>{customer.ma_so_thue || 'Chưa cập nhật'}</TableCell>
               <TableCell align="right">
                 <EditButton onClick={() => onEdit(customer)} size="small" />
                 <DeleteButton onClick={() => onDelete(customer)} size="small" sx={{ ml: 1 }} />

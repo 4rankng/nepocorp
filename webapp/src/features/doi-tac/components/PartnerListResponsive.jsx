@@ -40,9 +40,10 @@ const PartnerListResponsive = ({
     const term = searchTerm.toLowerCase();
     return partners.filter(
       partner =>
-        (partner.name && partner.name.toLowerCase().includes(term)) ||
-        (partner.address && partner.address.toLowerCase().includes(term)) ||
-        (partner.taxCode && partner.taxCode.toLowerCase().includes(term))
+        (partner.ten && partner.ten.toLowerCase().includes(term)) ||
+        (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
+        (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
+        (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
     );
   }, [partners, searchTerm]);
 
@@ -61,17 +62,17 @@ const PartnerListResponsive = ({
               <Box>
                 <Box display="flex" alignItems="center" gap={1} mb={0.5}>
                   <Typography variant="body2" color="primary" fontWeight="medium">
-                    {partner.code || '--'}
+                    {partner.ma_dinh_danh || '--'}
                   </Typography>
                   <Typography variant="h6" component="div">
-                    {partner.name}
+                    {partner.ten}
                   </Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Địa chỉ:</strong> {partner.address || 'Chưa cập nhật'}
+                  <strong>Địa chỉ:</strong> {partner.dia_chi || 'Chưa cập nhật'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Mã số thuế:</strong> {partner.taxCode || 'Chưa cập nhật'}
+                  <strong>Mã số thuế:</strong> {partner.ma_so_thue || 'Chưa cập nhật'}
                 </Typography>
               </Box>
               <Box>
@@ -116,10 +117,10 @@ const PartnerListResponsive = ({
         <TableBody>
           {filteredPartners.map(partner => (
             <TableRow key={partner.id} hover>
-              <TableCell sx={{ fontWeight: 'medium' }}>{partner.code || '--'}</TableCell>
-              <TableCell>{partner.name}</TableCell>
-              <TableCell>{partner.address || '--'}</TableCell>
-              <TableCell>{partner.taxCode || '--'}</TableCell>
+              <TableCell sx={{ fontWeight: 'medium' }}>{partner.ma_dinh_danh || '--'}</TableCell>
+              <TableCell>{partner.ten}</TableCell>
+              <TableCell>{partner.dia_chi || '--'}</TableCell>
+              <TableCell>{partner.ma_so_thue || '--'}</TableCell>
               <TableCell align="right">
                 <EditButton onClick={() => onEdit(partner)} size="small" />
                 <DeleteButton onClick={() => onDelete(partner)} size="small" sx={{ ml: 1 }} />

@@ -37,11 +37,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import { CustomerForm } from '@features/khach-hang';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
 
-// Import mock API services
-import { getVehiclesForSelect } from '@services/mockData/vehicles';
-import { getPartnersForSelect, addPartner } from '@services/mockData/partners';
-import { getCustomersForSelect, addQuickCustomer } from '@services/mockData/customers';
-import { getContainerTypesForSelect } from '@services/mockData/containers';
+// The selectOptions are now passed from the parent component
+// No need to import mock data services directly
 
 // Props: editingPlan, initialFormData, onFormChange, onContainerFormChange, onAddContainerField, onRemoveContainerField,
 // onSave, isLoading, error, selectOptions, initialActiveStep = 0
@@ -56,7 +53,8 @@ const MobileShipmentFormStepper = ({
   onSave, // Parent's handleSavePlan
   isLoading,
   error, // Error string from parent
-  selectOptions: initialSelectOptions, // Renamed to avoid confusion with internal state
+  selectOptions, // Now directly using prop data
+  onAddNewCustomer, // Callback to parent for adding new customers
   onClose, // To allow stepper to request dialog close (though not directly used in this version)
   onAddNewCustomer, // Function to add new customer from parent
   onAddNewPartner, // Function to add new partner from parent

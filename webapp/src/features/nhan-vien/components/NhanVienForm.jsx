@@ -27,14 +27,14 @@ const NhanVienForm = ({
 
         <div className="space-y-4">
           <div>
-            <label htmlFor="maNhanVien" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="ma_so" className="block text-sm font-medium text-gray-700">
               Mã nhân viên *
             </label>
             <input
               type="text"
-              name="maNhanVien"
-              id="maNhanVien"
-              value={formData.maNhanVien || ''}
+              name="ma_so"
+              id="ma_so"
+              value={formData.ma_so || ''}
               onChange={onFormChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               required
@@ -45,40 +45,40 @@ const NhanVienForm = ({
             />
           </div>
           <div>
-            <label htmlFor="tenNhanVien" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="ho_ten" className="block text-sm font-medium text-gray-700">
               Tên nhân viên *
             </label>
             <input
               type="text"
-              name="tenNhanVien"
-              id="tenNhanVien"
-              value={formData.tenNhanVien}
+              name="ho_ten"
+              id="ho_ten"
+              value={formData.ho_ten}
               onChange={onFormChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
           <div>
-            <label htmlFor="tenDangNhap" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="ten_dang_nhap" className="block text-sm font-medium text-gray-700">
               Tên đăng nhập
             </label>
             <input
               type="text"
-              name="tenDangNhap"
-              id="tenDangNhap"
-              value={formData.tenDangNhap}
+              name="ten_dang_nhap"
+              id="ten_dang_nhap"
+              value={formData.ten_dang_nhap}
               onChange={onFormChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
           <div>
-            <label htmlFor="matKhau" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="mat_khau" className="block text-sm font-medium text-gray-700">
               Mật khẩu
             </label>
             <input
               type="password"
-              name="matKhau"
-              id="matKhau"
-              value={formData.matKhau}
+              name="mat_khau"
+              id="mat_khau"
+              value={formData.mat_khau}
               onChange={onFormChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               placeholder={editingEmployee ? 'Để trống nếu không muốn thay đổi' : ''}
@@ -98,13 +98,13 @@ const NhanVienForm = ({
             />
           </div>
           <div>
-            <label htmlFor="chucVu" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="chuc_vu" className="block text-sm font-medium text-gray-700">
               Chức vụ *
             </label>
             <select
-              name="chucVu"
-              id="chucVu"
-              value={formData.chucVu}
+              name="chuc_vu"
+              id="chuc_vu"
+              value={formData.chuc_vu}
               onChange={onFormChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
@@ -116,7 +116,7 @@ const NhanVienForm = ({
             </select>
           </div>
 
-          {formData.chucVu === 'Lái xe' && (
+          {formData.chuc_vu === 'Lái xe' && (
             <div>
               <label htmlFor="bienSoXe" className="block text-sm font-medium text-gray-700">
                 Biển số xe đầu kéo

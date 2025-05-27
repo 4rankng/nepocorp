@@ -35,66 +35,59 @@ import {
 const DesktopShipmentFormDialog = ({
   open,
   onClose,
-  editingPlan,
+  editing, // Renamed from editingPlan
   formData,
   onFormChange,
-  onContainerFormChange,
-  onAddContainerField,
-  onRemoveContainerField,
-  onSave,
+  onSubmit, // Changed from onSave to match parent prop
   isLoading,
   error,
   selectOptions,
 }) => {
   const handleSubmit = e => {
     e.preventDefault();
-    onSave();
+    onSubmit(); // Use onSubmit prop
   };
 
-  // Auto-fill driver information when vehicle (bienSoXeId) changes
+  // Auto-fill nhan_vien_lai_xe_id when bien_so_xe_id changes
   useEffect(() => {
-    if (formData.bienSoXeId && selectOptions?.vehicles) {
-      const selectedVehicle = selectOptions.vehicles.find(v => v.value === formData.bienSoXeId);
-      if (selectedVehicle && selectedVehicle.driverId && selectedVehicle.driverName) {
-        // Create a synthetic event object for onFormChange
-        const driverIdEvent = {
-          target: { name: 'maNhanVienLaiXe', value: selectedVehicle.driverId },
-        };
-        const driverNameEvent = { target: { name: 'tenLaiXe', value: selectedVehicle.driverName } };
-        onFormChange(driverIdEvent);
-        onFormChange(driverNameEvent);
+    if (formData.bien_so_xe_id && selectOptions?.vehicles) {
+      const selectedVehicle = selectOptions.vehicles.find(v => v.value === formData.bien_so_xe_id);
+      if (selectedVehicle && selectedVehicle.default_nhan_vien_lai_xe_id) {
+        onFormChange({
+          target: { name: 'nhan_vien_lai_xe_id', value: selectedVehicle.default_nhan_vien_lai_xe_id },
+        });
       } else {
-        // Clear driver fields if vehicle doesn't have driver info or is unselected
-        const clearDriverIdEvent = { target: { name: 'maNhanVienLaiXe', value: '' } };
-        const clearDriverNameEvent = { target: { name: 'tenLaiXe', value: '' } };
-        onFormChange(clearDriverIdEvent);
-        onFormChange(clearDriverNameEvent);
+        // Optionally clear if no default driver or vehicle unselected
+        // onFormChange({ target: { name: 'nhan_vien_lai_xe_id', value: '' } });
       }
     }
-  }, [formData.bienSoXeId, selectOptions?.vehicles, onFormChange]);
+    // Do not clear if formData.bien_so_xe_id is empty, allow manual selection
+  }, [formData.bien_so_xe_id, selectOptions?.vehicles, onFormChange]);
 
-  // Default values for formData to prevent uncontrolled component warnings
   const currentFormData = {
-    ngayThang: '',
-    dienGiai: '',
-    khachHangId: '',
-    tuyenDuongDi: '',
-    tuyenDuongDen: '',
-    loaiContainerId: '',
-    soLuongContainer: 1,
-    loaiXe: 'xe-cong-ty', // Default to 'xe-cong-ty'
-    bienSoXeId: '',
-    maNhanVienLaiXe: '', // For auto-fill
-    tenLaiXe: '', // For auto-fill
-    doiTacVanChuyen: '', // For partner's vehicle info if loaiXe is 'xe-doi-tac'
-    doiTacId: '', // Partner company ID if loaiXe is 'xe-doi-tac'
-    cuocVanChuyen: 0,
-    cuocThueVanChuyen: 0, // If applicable for xe-doi-tac
-    ngayHaHang: '',
-    thongTinContainer: [{ soContainer: '', soSeal: '' }],
-    trangThai: 'Lên lịch', // Default for new, or from editingPlan
+    ngay_van_chuyen: new Date().toISOString().split('T')[0],
+    ma_chuyen: '',
+    khach_hang_id: '',
+    diem_xuat_phat: '',
+    diem_tra_hang: '',
+    bien_so_xe_id: '',
+    container_id: '',
+    nhan_vien_giao_nhan_id: '',
+    nhan_vien_lai_xe_id: '',
+    trang_thai: 'chua_thuc_hien', // Default status
+    ghi_chu: '',
     ...formData, // Spread the passed formData to override defaults
   };
+
+  const trangThaiOptions = [
+    { value: 'chua_thuc_hien', label: 'Chưa thực hiện' },
+    { value: 'dang_thuc_hien', label: 'Đang thực hiện' },
+    { value: 'hoan_thanh', label: 'Hoàn thành' },
+    { value: 'huy_bo', label: 'Hủy bỏ' },
+  ];
+
+  const nhanVienLaiXeOptions = selectOptions?.employees?.filter(emp => emp.chuc_vu === 'lai-xe') || [];
+  const nhanVienGiaoNhanOptions = selectOptions?.employees?.filter(emp => emp.chuc_vu === 'giao-nhan') || [];
 
   return (
     <Dialog
@@ -110,6 +103,25 @@ const DesktopShipmentFormDialog = ({
         },
       }}
     >
+      <DialogTitle
+        sx={{
+          pb: 2, // Nepocorp Design Guide: 16px vertical padding
+          pt: 2,
+          px: 3, // Nepocorp Design Guide: 24px horizontal padding
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.125rem' }}> {/* Nepocorp Design Guide */}
+          {editing ? 'Chỉnh sửa Lịch Vận Chuyển' : 'Tạo Lịch Vận Chuyển Mới'}
+        </Typography>
+        <IconButton onClick={onClose} size="medium" sx={{ color: 'text.secondary' }}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
 
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ p: '24px' }}>
@@ -117,14 +129,14 @@ const DesktopShipmentFormDialog = ({
             variant="body2"
             sx={{
               mb: 3,
-              color: 'text.primary',
+              color: 'text.secondary', // Per design guide
               fontSize: '0.875rem',
               lineHeight: 1.5,
             }}
           >
-            {editingPlan
-              ? 'Chỉnh sửa thông tin kế hoạch vận chuyển.'
-              : 'Nhập thông tin kế hoạch vận chuyển mới.'}
+            {editing
+              ? 'Chỉnh sửa thông tin lịch vận chuyển.'
+              : 'Nhập thông tin lịch vận chuyển mới.'}
           </Typography>
           {error && (
             <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
@@ -132,598 +144,131 @@ const DesktopShipmentFormDialog = ({
             </Alert>
           )}
           <Grid container spacing={2.5}>
-            {' '}
-            {/* Main container for all sections */}
+            <Grid container spacing={3}> {/* Main container for all sections */}
             {/* Section 1: Thông tin cơ bản */}
             <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
-              >
+              <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <CalendarIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Thông tin cơ bản
-                  </Typography>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Thông tin cơ bản</Typography>
                 </Box>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      type="date"
-                      name="ngayThang"
-                      label="Ngày vận chuyển"
-                      value={currentFormData.ngayThang}
-                      onChange={onFormChange}
-                      InputLabelProps={{ shrink: true }}
-                      variant="outlined"
-                      size="small"
-                      required
-                      inputProps={{
-                        style: {
-                          height: '40px',
-                          padding: '8px 12px',
-                          boxSizing: 'border-box',
-                          fontSize: '0.875rem',
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '6px',
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'text.secondary',
-                          },
-                        },
-                      }}
-                    />
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField fullWidth type="date" name="ngay_van_chuyen" label="Ngày vận chuyển" value={currentFormData.ngay_van_chuyen} onChange={onFormChange} InputLabelProps={{ shrink: true }} variant="outlined" size="small" required sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
                   </Grid>
-                  <Grid item xs={12} sm={8}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField fullWidth name="ma_chuyen" label="Mã chuyến" value={currentFormData.ma_chuyen} onChange={onFormChange} variant="outlined" size="small" required sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
                     <FormControl fullWidth size="small" required>
                       <InputLabel>Khách hàng</InputLabel>
-                      <Select
-                        name="khachHangId"
-                        value={currentFormData.khachHangId}
-                        onChange={onFormChange}
-                        label="Khách hàng"
-                        sx={{
-                          '& .MuiSelect-select': {
-                            height: '40px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            fontSize: '0.875rem',
-                          },
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '6px',
-                          },
-                        }}
-                      >
-                        <MenuItem value="">
-                          <em>Chọn khách hàng</em>
-                        </MenuItem>
-                        {selectOptions?.customers?.map(customer => (
-                          <MenuItem key={customer.value} value={customer.value}>
-                            {customer.label}
-                          </MenuItem>
-                        ))}
+                      <Select name="khach_hang_id" value={currentFormData.khach_hang_id} onChange={onFormChange} label="Khách hàng" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}>
+                        <MenuItem value=""><em>Chọn khách hàng</em></MenuItem>
+                        {selectOptions?.customers?.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
                       </Select>
                     </FormControl>
                   </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth size="small" required>
+                      <InputLabel>Trạng thái</InputLabel>
+                      <Select name="trang_thai" value={currentFormData.trang_thai} onChange={onFormChange} label="Trạng thái" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}>
+                        {trangThaiOptions.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Section 2: Thông tin Tuyến đường */}
+            <Grid item xs={12}>
+              <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <LocationIcon sx={{ mr: 1.5, color: 'primary.main' }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Thông tin Tuyến đường</Typography>
+                </Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth name="diem_xuat_phat" label="Điểm xuất phát" value={currentFormData.diem_xuat_phat} onChange={onFormChange} variant="outlined" size="small" required sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth name="diem_tra_hang" label="Điểm trả hàng" value={currentFormData.diem_tra_hang} onChange={onFormChange} variant="outlined" size="small" required sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Section 3: Phương tiện & Nhân sự */}
+            <Grid item xs={12}>
+              <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <ShippingIcon sx={{ mr: 1.5, color: 'primary.main' }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Phương tiện & Nhân sự</Typography>
+                </Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth size="small" required>
+                      <InputLabel>Biển số xe</InputLabel>
+                      <Select name="bien_so_xe_id" value={currentFormData.bien_so_xe_id} onChange={onFormChange} label="Biển số xe" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}>
+                        <MenuItem value=""><em>Chọn biển số xe</em></MenuItem>
+                        {selectOptions?.vehicles?.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth size="small" required>
+                      <InputLabel>Container</InputLabel>
+                      <Select name="container_id" value={currentFormData.container_id} onChange={onFormChange} label="Container" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}>
+                        <MenuItem value=""><em>Chọn container</em></MenuItem>
+                        {selectOptions?.containerTypes?.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth size="small" required>
+                      <InputLabel>Nhân viên lái xe</InputLabel>
+                      <Select name="nhan_vien_lai_xe_id" value={currentFormData.nhan_vien_lai_xe_id} onChange={onFormChange} label="Nhân viên lái xe" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}>
+                        <MenuItem value=""><em>Chọn lái xe</em></MenuItem>
+                        {nhanVienLaiXeOptions.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth size="small" required>
+                      <InputLabel>Nhân viên giao nhận</InputLabel>
+                      <Select name="nhan_vien_giao_nhan_id" value={currentFormData.nhan_vien_giao_nhan_id} onChange={onFormChange} label="Nhân viên giao nhận" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}>
+                        <MenuItem value=""><em>Chọn nhân viên giao nhận</em></MenuItem>
+                        {nhanVienGiaoNhanOptions.map(option => (<MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Section 4: Ghi chú */}
+            <Grid item xs={12}>
+              <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <InfoIcon sx={{ mr: 1.5, color: 'primary.main' }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Ghi chú</Typography>
+                </Box>
+                <Grid container spacing={2}>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
+                      name="ghi_chu"
+                      label="Ghi chú"
+                      value={currentFormData.ghi_chu}
+                      onChange={onFormChange}
+                      variant="outlined"
+                      size="small"
                       multiline
-                      rows={2}
-                      name="dienGiai"
-                      label="Diễn giải"
-                      value={currentFormData.dienGiai}
-                      onChange={onFormChange}
-                      variant="outlined"
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{
-                        style: {
-                          padding: '8px 12px',
-                          boxSizing: 'border-box',
-                          fontSize: '0.875rem',
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '6px',
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'text.secondary',
-                          },
-                        },
-                      }}
+                      rows={3}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
                     />
                   </Grid>
                 </Grid>
-              </Paper>
-            </Grid>
-            {/* Section 2: Tuyến đường */}
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <LocationIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Tuyến đường
-                  </Typography>
-                </Box>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      name="tuyenDuongDi"
-                      label="Điểm đi"
-                      value={currentFormData.tuyenDuongDi}
-                      onChange={onFormChange}
-                      variant="outlined"
-                      size="small"
-                      required
-                      placeholder="Nhập điểm xuất phát"
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{
-                        style: {
-                          height: '40px',
-                          padding: '8px 12px',
-                          boxSizing: 'border-box',
-                          fontSize: '0.875rem',
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '6px',
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'text.secondary',
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      name="tuyenDuongDen"
-                      label="Điểm đến"
-                      value={currentFormData.tuyenDuongDen}
-                      onChange={onFormChange}
-                      variant="outlined"
-                      size="small"
-                      required
-                      placeholder="VD: Xuân Mai, Chương Mỹ, Hà Nội; Thanh Sơn, Kim Bảng, Hà Nam"
-                      helperText="Nhiều điểm đến cách nhau bằng dấu chấm phẩy (;)"
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{
-                        style: {
-                          height: '40px',
-                          padding: '8px 12px',
-                          boxSizing: 'border-box',
-                          fontSize: '0.875rem',
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '6px',
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'text.secondary',
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
-            {/* Section 3: Phương tiện & Đối tác */}
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <ShippingIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Phương tiện & Đối tác
-                  </Typography>
-                </Box>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth size="small" required>
-                      <InputLabel>Loại xe</InputLabel>
-                      <Select
-                        name="loaiXe"
-                        value={currentFormData.loaiXe}
-                        onChange={onFormChange}
-                        label="Loại xe"
-                        sx={{
-                          '& .MuiSelect-select': {
-                            height: '40px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            fontSize: '0.875rem',
-                          },
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '6px',
-                          },
-                        }}
-                      >
-                        <MenuItem value="xe-cong-ty">Xe công ty</MenuItem>
-                        <MenuItem value="xe-doi-tac">Xe đối tác</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-
-                  {currentFormData.loaiXe === 'xe-cong-ty' ? (
-                    <>
-                      <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small" required>
-                          <InputLabel>Biển số xe (Đầu kéo)</InputLabel>
-                          <Select
-                            name="bienSoXeId"
-                            value={currentFormData.bienSoXeId}
-                            onChange={onFormChange} // Triggers useEffect for driver info
-                            label="Biển số xe (Đầu kéo)"
-                            sx={{
-                              '& .MuiSelect-select': {
-                                height: '40px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                fontSize: '0.875rem',
-                              },
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: '6px',
-                              },
-                            }}
-                          >
-                            <MenuItem value="">
-                              <em>Chọn đầu kéo</em>
-                            </MenuItem>
-                            {selectOptions?.vehicles
-                              ?.filter(v => v.type === 'DAU_KEO')
-                              .map(vehicle => (
-                                <MenuItem key={vehicle.value} value={vehicle.value}>
-                                  {vehicle.label}
-                                </MenuItem>
-                              ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <TextField
-                          fullWidth
-                          name="maNhanVienLaiXe"
-                          label="Mã nhân viên lái xe"
-                          value={currentFormData.maNhanVienLaiXe}
-                          InputProps={{ readOnly: true }}
-                          variant="outlined"
-                          size="small"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            style: {
-                              height: '40px',
-                              padding: '8px 12px',
-                              boxSizing: 'border-box',
-                              fontSize: '0.875rem',
-                            },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: '6px',
-                              backgroundColor: 'action.hover',
-                              '&.Mui-readOnly': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: 'divider',
-                                },
-                              },
-                            },
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <TextField
-                          fullWidth
-                          name="tenLaiXe"
-                          label="Tên lái xe"
-                          value={currentFormData.tenLaiXe}
-                          InputProps={{ readOnly: true }}
-                          variant="outlined"
-                          size="small"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            style: {
-                              height: '40px',
-                              padding: '8px 12px',
-                              boxSizing: 'border-box',
-                              fontSize: '0.875rem',
-                            },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: '6px',
-                              backgroundColor: 'action.hover',
-                              '&.Mui-readOnly': {
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: 'divider',
-                                },
-                              },
-                            },
-                          }}
-                        />
-                      </Grid>
-                    </>
-                  ) : (
-                    // loaiXe === 'xe-doi-tac'
-                    <>
-                      <Grid item xs={12} sm={8}>
-                        <TextField
-                          fullWidth
-                          name="doiTacVanChuyen"
-                          label="Thông tin xe đối tác & tài xế"
-                          value={currentFormData.doiTacVanChuyen}
-                          onChange={onFormChange}
-                          variant="outlined"
-                          size="small"
-                          placeholder="Biển số xe, Tên tài xế, SĐT (nếu có)"
-                          required
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            style: {
-                              height: '40px',
-                              padding: '8px 12px',
-                              boxSizing: 'border-box',
-                              fontSize: '0.875rem',
-                            },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: '6px',
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: 'text.secondary',
-                              },
-                            },
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Đối tác vận chuyển (Công ty)</InputLabel>
-                          <Select
-                            name="doiTacId"
-                            value={currentFormData.doiTacId}
-                            onChange={onFormChange}
-                            label="Đối tác vận chuyển (Công ty)"
-                            sx={{
-                              '& .MuiSelect-select': {
-                                height: '40px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                fontSize: '0.875rem',
-                              },
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: '6px',
-                              },
-                            }}
-                          >
-                            <MenuItem value="">
-                              <em>Chọn đối tác</em>
-                            </MenuItem>
-                            {selectOptions?.partners?.map(partner => (
-                              <MenuItem key={partner.value} value={partner.value}>
-                                {partner.label}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    </>
-                  )}
-                  {/* Common fields for vehicle section */}
-                  <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth size="small" required>
-                      <InputLabel>Loại container</InputLabel>
-                      <Select
-                        name="loaiContainerId"
-                        value={currentFormData.loaiContainerId}
-                        onChange={onFormChange}
-                        label="Loại container"
-                        sx={{
-                          '& .MuiSelect-select': {
-                            height: '40px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            fontSize: '0.875rem',
-                          },
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '6px',
-                          },
-                        }}
-                      >
-                        <MenuItem value="">
-                          <em>Chọn loại container</em>
-                        </MenuItem>
-                        {selectOptions?.containerTypes?.map(type => (
-                          <MenuItem key={type.value} value={type.value}>
-                            {type.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      name="soLuongContainer"
-                      label="Số lượng container"
-                      value={currentFormData.soLuongContainer}
-                      onChange={onFormChange}
-                      InputProps={{ inputProps: { min: 1 } }}
-                      variant="outlined"
-                      size="small"
-                      required
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{
-                        min: 1,
-                        style: {
-                          height: '40px',
-                          padding: '8px 12px',
-                          boxSizing: 'border-box',
-                          fontSize: '0.875rem',
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '6px',
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'text.secondary',
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      type="date"
-                      name="ngayHaHang"
-                      label="Ngày hạ hàng (dự kiến)"
-                      value={currentFormData.ngayHaHang}
-                      onChange={onFormChange}
-                      InputLabelProps={{ shrink: true }}
-                      variant="outlined"
-                      size="small"
-                      inputProps={{
-                        style: {
-                          height: '40px',
-                          padding: '8px 12px',
-                          boxSizing: 'border-box',
-                          fontSize: '0.875rem',
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '6px',
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'text.secondary',
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
-            {/* Section 4: Thông tin Container (Multiple) */}
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    mb: 2,
-                  }}
-                >
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Thông tin Container chi tiết
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={onAddContainerField}
-                    size="small"
-                    sx={{ textTransform: 'none' }}
-                  >
-                    Thêm container
-                  </Button>
-                </Box>
-                {currentFormData.thongTinContainer?.map((container, index) => (
-                  <Box
-                    key={index}
-                    sx={{ mb: index < currentFormData.thongTinContainer.length - 1 ? 2 : 0 }}
-                  >
-                    <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={12} sm={5.5}>
-                        <TextField
-                          fullWidth
-                          name="soContainer"
-                          value={container.soContainer}
-                          onChange={e => onContainerFormChange(index, e)}
-                          label={`Số container ${index + 1}`}
-                          variant="outlined"
-                          size="small"
-                          placeholder="CONT123456"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            style: {
-                              height: '40px',
-                              padding: '8px 12px',
-                              boxSizing: 'border-box',
-                              fontSize: '0.875rem',
-                            },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: '6px',
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: 'text.secondary',
-                              },
-                            },
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={5.5}>
-                        <TextField
-                          fullWidth
-                          name="soSeal"
-                          value={container.soSeal}
-                          onChange={e => onContainerFormChange(index, e)}
-                          label={`Số seal ${index + 1}`}
-                          variant="outlined"
-                          size="small"
-                          placeholder="SEAL789012"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            style: {
-                              height: '40px',
-                              padding: '8px 12px',
-                              boxSizing: 'border-box',
-                              fontSize: '0.875rem',
-                            },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: '6px',
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: 'text.secondary',
-                              },
-                            },
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={1} sx={{ textAlign: 'right' }}>
-                        {currentFormData.thongTinContainer.length > 1 && (
-                          <IconButton
-                            onClick={() => onRemoveContainerField(index)}
-                            color="error"
-                            size="small"
-                          >
-                            <RemoveIcon />
-                          </IconButton>
-                        )}
-                      </Grid>
-                    </Grid>
-                    {index < currentFormData.thongTinContainer.length - 1 && (
-                      <Divider sx={{ mt: 2 }} />
-                    )}
-                  </Box>
-                ))}
               </Paper>
             </Grid>
             {/* Section 5: Chi phí & Thanh toán */}
@@ -827,7 +372,7 @@ const DesktopShipmentFormDialog = ({
               </Paper>
             </Grid>
             {/* Section 6: Trạng thái - chỉ hiển thị khi edit */}
-            {editingPlan && (
+            {editing && (
               <Grid item xs={12}>
                 <Paper
                   elevation={0}
@@ -871,6 +416,7 @@ const DesktopShipmentFormDialog = ({
                 </Paper>
               </Grid>
             )}
+            </Grid> {/* Closes Grid container spacing={3} from line 146 */}
           </Grid>
         </DialogContent>
 
@@ -904,10 +450,10 @@ const DesktopShipmentFormDialog = ({
             }}
           >
             {isLoading
-              ? editingPlan
+              ? editing
                 ? 'Đang cập nhật...'
                 : 'Đang tạo...'
-              : editingPlan
+              : editing
                 ? 'Cập nhật kế hoạch'
                 : 'Tạo kế hoạch'}
           </Button>
@@ -920,7 +466,7 @@ const DesktopShipmentFormDialog = ({
 DesktopShipmentFormDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  editingPlan: PropTypes.object, // null if creating new
+  editing: PropTypes.bool, // True if editing, false/undefined if creating new
   formData: PropTypes.shape({
     ngayThang: PropTypes.string,
     dienGiai: PropTypes.string,
