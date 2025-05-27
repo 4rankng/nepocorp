@@ -112,7 +112,9 @@ const CustomerForm = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}> {/* Reduced gap for tighter packing */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}>
+            {' '}
+            {/* Reduced gap for tighter packing */}
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 label="Mã khách hàng"

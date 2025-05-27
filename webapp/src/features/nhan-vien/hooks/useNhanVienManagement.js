@@ -66,8 +66,18 @@ const useNhanVienManagement = () => {
 
       // Combine vehicles into a single array with type information
       const allVehicles = [
-        ...dauKeoData.map(item => ({ ...item, id: `dk-${item.id}`, originalId: item.id, type: 'dau_keo' })),
-        ...roMoocData.map(item => ({ ...item, id: `rm-${item.id}`, originalId: item.id, type: 'ro_mooc' })),
+        ...dauKeoData.map(item => ({
+          ...item,
+          id: `dk-${item.id}`,
+          originalId: item.id,
+          type: 'dau_keo',
+        })),
+        ...roMoocData.map(item => ({
+          ...item,
+          id: `rm-${item.id}`,
+          originalId: item.id,
+          type: 'ro_mooc',
+        })),
       ];
 
       setVehicles(allVehicles);
@@ -224,11 +234,16 @@ const useNhanVienManagement = () => {
 // Helper to map chuc_vu code to display string
 function mapChucVu(code) {
   switch (code) {
-    case 'quan-ly': return 'Quản lý';
-    case 'ke-toan': return 'Kế toán';
-    case 'giao-nhan': return 'Giao nhận';
-    case 'lai-xe': return 'Lái xe';
-    default: return code || 'Chưa xác định';
+    case 'quan-ly':
+      return 'Quản lý';
+    case 'ke-toan':
+      return 'Kế toán';
+    case 'giao-nhan':
+      return 'Giao nhận';
+    case 'lai-xe':
+      return 'Lái xe';
+    default:
+      return code || 'Chưa xác định';
   }
 }
 

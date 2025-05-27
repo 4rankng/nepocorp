@@ -1,7 +1,11 @@
 import lopXeData from '@services/mockData/lopXe';
 
 let data;
-if (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem('lopXeData')) {
+if (
+  typeof window !== 'undefined' &&
+  window.localStorage &&
+  window.localStorage.getItem('lopXeData')
+) {
   data = JSON.parse(window.localStorage.getItem('lopXeData'));
 } else {
   data = lopXeData.slice();

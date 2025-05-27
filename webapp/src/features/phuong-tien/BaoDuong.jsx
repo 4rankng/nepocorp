@@ -261,7 +261,12 @@ const BaoDuong = () => {
           backgroundColor: 'action.hover',
         },
       }}
-      // Actions column is handled in columns definition if needed
+      renderActions={record => (
+        <>
+          <EditButton onClick={() => handleOpenEditDialog(record)} tooltip="Chỉnh sửa" />
+          <DeleteButton onClick={() => handleDeleteClick(record)} tooltip="Xóa" />
+        </>
+      )}
     />
   );
 

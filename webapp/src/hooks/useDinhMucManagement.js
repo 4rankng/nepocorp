@@ -150,7 +150,13 @@ export const useDinhMucManagement = () => {
         setIsLoading(false);
       }
     },
-    [setIsLoading, setSupplementaryStandard, showSnackbar, closeEditSupplementaryDialog, supplementaryStandard.id]
+    [
+      setIsLoading,
+      setSupplementaryStandard,
+      showSnackbar,
+      closeEditSupplementaryDialog,
+      supplementaryStandard.id,
+    ]
   );
 
   // Derived state for license plates that have norms or are in the list of all plates
