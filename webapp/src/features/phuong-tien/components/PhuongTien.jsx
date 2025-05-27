@@ -297,7 +297,7 @@ const PhuongTien = () => {
   return (
     <Box sx={{ position: 'relative', pb: 8 }}>
       <Section
-        title="Danh sách đầu kéo"
+        title="Đầu Kéo"
         count={tractors.length}
         expanded={expanded.tractors}
         onToggle={() => setExpanded(prev => ({ ...prev, tractors: !prev.tractors }))}
@@ -334,7 +334,7 @@ const PhuongTien = () => {
         )}
       </Section>
       <Section
-        title="Danh sách rơ-mooc"
+        title="Rơ-Mooc"
         count={trailers.length}
         expanded={expanded.trailers}
         onToggle={() => setExpanded(prev => ({ ...prev, trailers: !prev.trailers }))}
@@ -371,7 +371,7 @@ const PhuongTien = () => {
         )}
       </Section>
       <Section
-        title="Danh sách loại container"
+        title="Loại Container"
         count={containerTypes.length}
         expanded={expanded.containers}
         onToggle={() => setExpanded(prev => ({ ...prev, containers: !prev.containers }))}
