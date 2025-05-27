@@ -186,8 +186,8 @@ const DinhMucDau = () => {
                 label={getStatusLabel(standard.standard)}
                 size="small"
                 sx={{
-                  backgroundColor: alpha(getStatusColor(standard.standard), 0.1),
-                  color: getStatusColor(standard.standard),
+                  backgroundColor: (theme) => alpha(theme.palette.text.secondary, 0.1),
+                  color: 'text.secondary',
                   fontWeight: 500,
                   fontSize: '0.75rem',
                 }}

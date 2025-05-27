@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { alpha } from '@mui/material/styles';
 import {
   Box,
   Typography,
@@ -122,8 +123,13 @@ const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
       <Chip
         label={count}
         size="small"
-        variant="outlined"
-        sx={{ fontWeight: 500, borderColor: 'primary.main', color: 'primary.main', mr: 2 }}
+        sx={{
+          backgroundColor: (theme) => alpha(theme.palette.text.secondary, 0.1),
+          color: 'text.secondary',
+          fontWeight: 500,
+          fontSize: '0.75rem',
+          mr: 2
+        }}
       />
       <AddButton
         size="small"
