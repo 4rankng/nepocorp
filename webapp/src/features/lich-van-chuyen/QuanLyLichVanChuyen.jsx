@@ -381,20 +381,41 @@ const QuanLyLichVanChuyen = () => {
 
 // Define columns for DesktopView StandardTable
 const columns = [
-  { id: 'ngayDi', header: 'Ngày Đi', accessorKey: 'ngayDi', width: '10%' },
-  { id: 'ngayHaHangDisplay', header: 'Ngày Hạ Hàng', accessorKey: 'ngayHaHangDisplay', width: '10%' },
-  { id: 'dienGiai', header: 'Diễn Giải', accessorKey: 'dienGiai', width: '18%' },
-  { id: 'tuyenDuongDisplay', header: 'Tuyến Đường', accessorKey: 'tuyenDuongDisplay', width: '17%' },
-  { id: 'tongChiPhiDisplay', header: 'Tổng Chi Phí', accessorKey: 'tongChiPhiDisplay', align: 'right', width: '10%' },
-  { id: 'cuocVanChuyenDisplay', header: 'Cước Vận Chuyển', accessorKey: 'cuocVanChuyenDisplay', align: 'right', width: '10%' },
-  { id: 'loiNhuanGopDisplay', header: 'Lợi Nhuận Gộp', accessorKey: 'loiNhuanGopDisplay', align: 'right', width: '10%' },
+  { id: 'ngayDi', header: 'Ngày Đi', width: '7%' },
+  { id: 'ngayHaHangDisplay', header: 'Ngày Hạ Hàng', width: '7%' },
+  { id: 'dienGiai', header: 'Diễn Giải', width: '20%' },
+  { id: 'tuyenDuongDisplay', header: 'Tuyến Đường', width: '20%' },
+  { id: 'tongChiPhiDisplay', header: 'Tổng Chi Phí', align: 'right', width: '12%' },
+  { id: 'cuocVanChuyenDisplay', header: 'Cước Vận Chuyển', align: 'right', width: '12%' },
+  { id: 'loiNhuanGopDisplay', header: 'Lợi Nhuận Gộp', align: 'right', width: '12%' },
+  { 
+    id: 'trang_thai', 
+    header: 'Trạng Thái', 
+    width: '8%',
+    render: (value) => (
+      <Chip 
+        label={getDisplayTrangThai(value)} 
+        size="small" 
+        sx={{ 
+          backgroundColor: `${getStatusColor(value)}20`, 
+          color: getStatusColor(value),
+          fontWeight: 500,
+          width: '90px',
+          maxWidth: '90px',
+          minWidth: '90px !important',
+          borderRadius: '4px',
+          justifyContent: 'center'
+        }} 
+      />
+    )
+  },
   {
     id: 'actions',
     header: 'Thao Tác',
     align: 'center',
-    width: '10%',
-    renderCell: ({ row }) => { // Destructure row from props
-      const originalItem = lichVanChuyenItems.find(item => item.id === row.original.id) || row.original;
+    width: '7%',
+    render: (_, row) => {
+      const originalItem = lichVanChuyenItems.find(item => item.id === row.id) || row;
       return (
         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
           <EditButton size="small" onClick={() => handleOpenModalForEdit(originalItem)} />
