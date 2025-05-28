@@ -97,8 +97,8 @@ function getComparator(order, orderBy, columns) {
   return order === 'desc'
     ? (a, b) => {
         const column = columns?.find(col => col.id === orderBy);
-        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : a[orderBy] ?? '';
-        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : b[orderBy] ?? '';
+        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : (a[orderBy] ?? '');
+        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : (b[orderBy] ?? '');
 
         if (bValue < aValue) return -1;
         if (bValue > aValue) return 1;
@@ -106,8 +106,8 @@ function getComparator(order, orderBy, columns) {
       }
     : (a, b) => {
         const column = columns?.find(col => col.id === orderBy);
-        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : a[orderBy] ?? '';
-        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : b[orderBy] ?? '';
+        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : (a[orderBy] ?? '');
+        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : (b[orderBy] ?? '');
 
         if (aValue < bValue) return -1;
         if (aValue > bValue) return 1;
@@ -249,6 +249,10 @@ const QuanLyLichVanChuyen = () => {
         if (!vehicle) {
           vehicle = roMoocList.find(v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo);
         }
+        // Ensure we have a valid vehicle object with bien_so
+        const vehicleBienSo = vehicle
+          ? vehicle.bien_so || vehicle.bienSo || bien_so_dau_keo
+          : bien_so_dau_keo;
         const container = containersList.find(
           cont => cont.id === ma_so_cont || cont.ma_so === ma_so_cont
         );
@@ -288,7 +292,7 @@ const QuanLyLichVanChuyen = () => {
           // Computed fields for display
           ngayDi: formatDateForDisplay(ngay_di),
           ngayHaHangDisplay: formatDateForDisplay(ngay_ha_hang),
-          bienSoXe: vehicle ? vehicle.bien_so : 'N/A',
+          bienSoXe: vehicleBienSo || 'N/A',
           dienGiai: ghi_chu || ma_chuyen || 'N/A',
           tuyenDuongDisplay: `${diem_di || 'N/A'} → ${diem_den || 'N/A'}`,
           tongChiPhiDisplay: formatCurrencyVND(vnd_dau),
@@ -671,9 +675,24 @@ const QuanLyLichVanChuyen = () => {
       render: (_, row) => {
         const originalItem = lichVanChuyenItems.find(item => item.id === row.id) || row;
         return (
-          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-            <EditButton size="small" onClick={() => handleOpenModalForEdit(originalItem)} />
-            <DeleteButton size="small" onClick={() => handleDeleteConfirmation(originalItem)} />
+          <Box
+            sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}
+            onClick={e => e.stopPropagation()} // Stop event propagation here
+          >
+            <EditButton
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                handleOpenModalForEdit(originalItem);
+              }}
+            />
+            <DeleteButton
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                handleDeleteConfirmation(originalItem);
+              }}
+            />
           </Box>
         );
       },
@@ -782,7 +801,10 @@ const QuanLyLichVanChuyen = () => {
           searchTerm={searchTerm}
           onSearchTermChange={e => setSearchTerm(e.target.value)}
           columns={columns}
-          shipmentPlans={stableSort(filteredLichVanChuyenItems, getComparator(order, orderBy, columns))}
+          shipmentPlans={stableSort(
+            filteredLichVanChuyenItems,
+            getComparator(order, orderBy, columns)
+          )}
           isLoading={isLoading}
           onAdd={handleOpenModalForAdd}
           canAddPlan={canAddPlan}
