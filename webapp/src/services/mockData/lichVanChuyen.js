@@ -20,7 +20,13 @@ const generateSampleLichVanChuyen = (count = 15) => {
 
   for (let i = 1; i <= count; i++) {
     const ngayVanChuyen = new Date(baseDate);
-    ngayVanChuyen.setDate(baseDate.getDate() + i - 1); // Increment day for variety
+    ngayVanChuyen.setDate(baseDate.getDate() + i - 1);
+
+    const ngayHaHang = new Date(ngayVanChuyen);
+    ngayHaHang.setDate(ngayVanChuyen.getDate() + (i % 3) + 1); // 1-3 days after van chuyen
+
+    const cuoc_van_chuyen = 5000000 + (i % 10) * 250000; // Example: 5,000,000 to 7,250,000
+    const tong_chi_phi = cuoc_van_chuyen * (0.6 + (i % 5) * 0.05); // Example: 60% to 80% of cuoc_van_chuyen
 
     const trangThaiValues = Object.values(TRANG_THAI_LICH_VAN_CHUYEN);
     const trang_thai = trangThaiValues[i % trangThaiValues.length];
@@ -30,9 +36,12 @@ const generateSampleLichVanChuyen = (count = 15) => {
       ma_chuyen: `CH${String(i).padStart(5, '0')}`, // e.g., CH00001
       ngay_van_chuyen: ngayVanChuyen.toISOString().split('T')[0], // YYYY-MM-DD
       trang_thai,
+      ngay_ha_hang: ngayHaHang.toISOString().split('T')[0],
+      tong_chi_phi: Math.round(tong_chi_phi / 1000) * 1000, // Round to nearest 1000
+      cuoc_van_chuyen: Math.round(cuoc_van_chuyen / 1000) * 1000, // Round to nearest 1000
       khach_hang_id: (i % 5) + 1, // Numeric IDs 1 to 5, matching khachHang.js
-      diem_xuat_phat: `Cảng Cát Lái Khu A${(i % 3) + 1}`,
-      diem_tra_hang: `KCN Sóng Thần ${(i % 4) + 1}, Bình Dương`,
+      diem_xuat_phat: `Cảng Hải Phòng Khu ${(i % 3) + 1}`,
+      diem_tra_hang: `KCN Mỹ Lai ${(i % 4) + 1}, Bình Dương; Quận ${i}, Tp HCM`,
       bien_so_xe_id: (i % 15) + 1, // Numeric IDs 1 to 15, matching dauKeo.js (assuming 15 records)
       container_id: (i % 3) + 1, // Numeric IDs 1 to 3, matching container.js (assuming 3 records)
       nhan_vien_giao_nhan_id: `NVGN${String((i % 2) + 1).padStart(3, '0')}`, // NVGN001, NVGN002
@@ -79,6 +88,9 @@ export const createLichVanChuyen = async data => {
     container_id,
     nhan_vien_giao_nhan_id,
     nhan_vien_lai_xe_id,
+    ngay_ha_hang, // Added
+    tong_chi_phi, // Added
+    cuoc_van_chuyen, // Added
   } = data;
 
   if (
@@ -91,7 +103,10 @@ export const createLichVanChuyen = async data => {
     !bien_so_xe_id ||
     !container_id ||
     !nhan_vien_giao_nhan_id ||
-    !nhan_vien_lai_xe_id
+    !nhan_vien_lai_xe_id ||
+    !ngay_ha_hang || // Added
+    typeof tong_chi_phi !== 'number' || // Added
+    typeof cuoc_van_chuyen !== 'number' // Added
   ) {
     console.error('Missing required fields for new LichVanChuyen:', data);
     throw new Error('Missing required fields. All fields except ghi_chu are mandatory.');

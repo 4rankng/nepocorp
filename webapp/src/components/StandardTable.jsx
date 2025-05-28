@@ -191,7 +191,8 @@ const StandardTable = ({
                 borderBottom: 'none',
               },
               '& tr:hover': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                backgroundColor: alpha(theme.palette.primary.main, 0.04), // Slightly darker hover
+                cursor: tableProps.onRowClick ? 'pointer' : 'default',
               },
             },
             ...(filteredTableProps.sx || {}), // Merge any additional sx props

@@ -46,9 +46,11 @@ import DesktopView from '@features/lich-van-chuyen/components/DesktopView';
 import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog';
 import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper';
 import { getStatusColor } from './utils/styleUtils';
+import InfoIcon from '@mui/icons-material/Info'; // For guidance message
 import {
   getDisplayTrangThai,
   formatDateForDisplay,
+  formatCurrencyVND, // Import currency formatter
   formatVehiclesForSelect,
   formatCustomersForSelect,
   formatEmployeesForSelect,
@@ -57,6 +59,7 @@ import {
 } from './utils/lichVanChuyenUtils';
 
 const initialFormState = {
+  id: null, // Add id for consistency, will be populated on edit
   ma_chuyen: '',
   ngay_van_chuyen: new Date().toISOString().split('T')[0],
   trang_thai: 'chua_thuc_hien',
@@ -68,6 +71,9 @@ const initialFormState = {
   nhan_vien_giao_nhan_id: '',
   nhan_vien_lai_xe_id: '',
   ghi_chu: '',
+  ngay_ha_hang: new Date().toISOString().split('T')[0],
+  tong_chi_phi: 0,
+  cuoc_van_chuyen: 0,
   // Note: This structure is based on the lichVanChuyenApi.
   // UI forms will need significant updates to match these fields.
 };
@@ -118,6 +124,9 @@ const QuanLyLichVanChuyen = () => {
       nhan_vien_giao_nhan_id: item.nhan_vien_giao_nhan_id || '',
       nhan_vien_lai_xe_id: item.nhan_vien_lai_xe_id || '',
       ghi_chu: item.ghi_chu || '',
+      ngay_ha_hang: item.ngay_ha_hang || '',
+      tong_chi_phi: item.tong_chi_phi || 0,
+      cuoc_van_chuyen: item.cuoc_van_chuyen || 0,
     };
   };
 
@@ -158,22 +167,30 @@ const QuanLyLichVanChuyen = () => {
         const giaoNhan = employeesList.find(emp => emp.id === item.nhan_vien_giao_nhan_id);
         const laiXe = employeesList.find(emp => emp.id === item.nhan_vien_lai_xe_id);
 
+        const loi_nhuan_gop = (item.cuoc_van_chuyen || 0) - (item.tong_chi_phi || 0);
         return {
             ...item, // Spread original item to keep all its data for editing/deleting
-            dienGiai: item.ghi_chu || item.ma_chuyen || undefined, // Let card handle final fallback
-            ngayThang: formatDateForDisplay(item.ngay_van_chuyen),
-            khachHang: customer ? customer.ten : 'N/A',
-            bienSoXe: vehicle ? vehicle.bien_so : 'N/A',
-            tuyenDuong: {
+            // Fields for table display
+            ngayDi: formatDateForDisplay(item.ngay_van_chuyen),
+            ngayHaHangDisplay: formatDateForDisplay(item.ngay_ha_hang),
+            dienGiai: item.ghi_chu || item.ma_chuyen || 'N/A',
+            tuyenDuongDisplay: `${item.diem_xuat_phat || 'N/A'} → ${item.diem_tra_hang || 'N/A'}`,
+            tongChiPhiDisplay: formatCurrencyVND(item.tong_chi_phi),
+            cuocVanChuyenDisplay: formatCurrencyVND(item.cuoc_van_chuyen),
+            loiNhuanGopDisplay: formatCurrencyVND(loi_nhuan_gop),
+
+            // Fields for mobile view / general use
+            ngayThang: formatDateForDisplay(item.ngay_van_chuyen), // Used by MobileView
+            khachHang: customer ? customer.ten : 'N/A', // Used by MobileView
+            bienSoXe: vehicle ? vehicle.bien_so : 'N/A', // Used by MobileView
+            tuyenDuong: { // Used by MobileView (potentially)
                 diemDi: item.diem_xuat_phat || 'N/A',
                 diemDen: item.diem_tra_hang || 'N/A',
             },
-            soLuongContainer: item.container_id ? 1 : 0, // Simplified for now
-            // Fields for expanded view in MobileShipmentCard
-            loaiContainer: container ? `${container.id} (${container.phan_loai || 'Chưa rõ'})` : 'N/A',
-            nhanVienGiaoNhan: giaoNhan ? giaoNhan.ho_ten : 'N/A',
-            nhanVienLaiXe: laiXe ? laiXe.ho_ten : 'N/A',
-            // ghiChu is already available via ...item as item.ghi_chu. MobileShipmentCard uses plan.ghiChu || 'N/A'.
+            soLuongContainer: item.container_id ? 1 : 0, // Used by MobileView
+            loaiContainer: container ? `${container.id} (${container.phan_loai || 'Chưa rõ'})` : 'N/A', // Used by MobileView
+            nhanVienGiaoNhan: giaoNhan ? giaoNhan.ho_ten : 'N/A', // Used by MobileView
+            nhanVienLaiXe: laiXe ? laiXe.ho_ten : 'N/A', // Used by MobileView
         };
     });
 
@@ -279,28 +296,49 @@ const QuanLyLichVanChuyen = () => {
     }
   };
 
-  const handleDelete = item => {
+  const handleDeleteConfirmation = item => {
     setItemToDelete(item);
     setIsDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (itemToDelete) {
-      setIsLoading(true);
-      setError('');
-      try {
-        await removeLichVanChuyen(itemToDelete.id);
-        fetchPageData(); // Refresh data
-        setIsDeleteModalOpen(false);
-        setItemToDelete(null);
-      } catch (err) {
-        setError(`Lỗi khi xóa lịch vận chuyển: ${err.message}`);
-        console.error('Error deleting LichVanChuyen:', err);
-      } finally {
-        setIsLoading(false);
-      }
+  const handleDeleteConfirmed = async () => {
+    if (!itemToDelete) return;
+    setIsLoading(true);
+    setError('');
+    try {
+      await removeLichVanChuyen(itemToDelete.id);
+      // Optimistically update UI or refetch
+      setLichVanChuyenItems(prevItems => prevItems.filter(i => i.id !== itemToDelete.id));
+      // fetchPageData(); // Alternatively, refetch all data
+      showSnackbar('Xóa lịch vận chuyển thành công!', 'success');
+    } catch (err) {
+      setError(`Lỗi khi xóa lịch vận chuyển: ${err.message}`);
+      showSnackbar(`Lỗi khi xóa: ${err.message}`, 'error'); // Assuming showSnackbar exists
+      console.error('Error deleting LichVanChuyen:', err);
     }
+    setIsLoading(false);
+    setIsDeleteModalOpen(false);
+    setItemToDelete(null);
   };
+
+  // This function is redundant if handleDeleteConfirmed is used by the modal
+  // const handleDeleteConfirm = async () => {
+  //   if (itemToDelete) {
+  //     setIsLoading(true);
+  //     setError('');
+  //     try {
+  //       await removeLichVanChuyen(itemToDelete.id);
+  //       fetchPageData(); // Refresh data
+  //       setIsDeleteModalOpen(false);
+  //       setItemToDelete(null);
+  //     } catch (err) {
+  //       setError(`Lỗi khi xóa lịch vận chuyển: ${err.message}`);
+  //       console.error('Error deleting LichVanChuyen:', err);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   }
+  // };
 
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
@@ -336,221 +374,180 @@ const QuanLyLichVanChuyen = () => {
   };
 
   // Define table columns for DesktopView
-  const columns = [
-    {
-      key: 'ngay_van_chuyen',
-      label: 'Ngày Vận Chuyển',
-      render: value => formatDateForDisplay(value) || '-',
-    },
-    {
-      key: 'ma_chuyen',
-      label: 'Mã Chuyến',
-      render: value => value || '-',
-    },
-    {
-      key: 'khach_hang_id',
-      label: 'Khách Hàng',
-      render: value => getEntityNameById(value, selectOptions.customers, 'value', 'label') || '-',
-    },
-    {
-      key: 'bien_so_xe_id',
-      label: 'Biển Số Xe',
-      render: value => getEntityNameById(value, selectOptions.vehicles, 'value', 'label') || '-',
-    },
-    {
-      key: 'container_id',
-      label: 'Số Container',
-      render: value => getEntityNameById(value, selectOptions.containers, 'value', 'label') || '-',
-    },
-    {
-      key: 'diem_xuat_phat',
-      label: 'Điểm Xuất Phát',
-      render: value => value || '-',
-    },
-    {
-      key: 'diem_tra_hang',
-      label: 'Điểm Trả Hàng',
-      render: value => value || '-',
-    },
-    {
-      key: 'trang_thai',
-      label: 'Trạng Thái',
-      render: value => {
-        const status = value || '-';
-        return (
-          <Chip
-            label={getDisplayTrangThai(status)} // Use consistent display function
-            size="small"
-            sx={{
-              backgroundColor: getStatusColor(status),
-              color: 'white',
-              fontWeight: 500,
-              borderRadius: '5px', // For rectangle with rounded corners
-              minWidth: '100px', // Ensure consistent width for all status chips
-              textAlign: 'center', // Center the text within the chip
-            }}
-          />
-        );
-      },
-    },
-    {
-      key: 'actions',
-      label: 'Thao tác',
-      align: 'right',
-      render: (_, record) => (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-          {canAddPlan && (
-            <>
-              <Tooltip title="Chỉnh sửa">
-                <EditButton onClick={() => handleOpenModalForEdit(record)} disabled={isLoading} />
-              </Tooltip>
-              <Tooltip title="Xóa">
-                <DeleteButton onClick={() => handleDelete(record)} disabled={isLoading} />
-              </Tooltip>
-            </>
-          )}
+  // This 'columns' definition was from an older version or a merge artifact.
+  // The correct one is defined later and used by DesktopView.
+  // Removing this older definition to avoid confusion.
+  // The old block has been removed.
+
+// Define columns for DesktopView StandardTable
+const columns = [
+  { id: 'ngayDi', header: 'Ngày Đi', accessorKey: 'ngayDi', width: '10%' },
+  { id: 'ngayHaHangDisplay', header: 'Ngày Hạ Hàng', accessorKey: 'ngayHaHangDisplay', width: '10%' },
+  { id: 'dienGiai', header: 'Diễn Giải', accessorKey: 'dienGiai', width: '18%' },
+  { id: 'tuyenDuongDisplay', header: 'Tuyến Đường', accessorKey: 'tuyenDuongDisplay', width: '17%' },
+  { id: 'tongChiPhiDisplay', header: 'Tổng Chi Phí', accessorKey: 'tongChiPhiDisplay', align: 'right', width: '10%' },
+  { id: 'cuocVanChuyenDisplay', header: 'Cước Vận Chuyển', accessorKey: 'cuocVanChuyenDisplay', align: 'right', width: '10%' },
+  { id: 'loiNhuanGopDisplay', header: 'Lợi Nhuận Gộp', accessorKey: 'loiNhuanGopDisplay', align: 'right', width: '10%' },
+  {
+    id: 'actions',
+    header: 'Thao Tác',
+    align: 'center',
+    width: '10%',
+    renderCell: ({ row }) => { // Destructure row from props
+      const originalItem = lichVanChuyenItems.find(item => item.id === row.original.id) || row.original;
+      return (
+        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+          <EditButton size="small" onClick={() => handleOpenModalForEdit(originalItem)} />
+          <DeleteButton size="small" onClick={() => handleDeleteConfirmation(originalItem)} />
         </Box>
-      ),
-    },
-  ];
-
-  // Handle delete confirmation for mobile
-  const handleDeleteClick = plan => {
-    handleDelete(plan);
-  };
-
-  // Reset form and stepper for mobile
-  const resetForm = () => {
-    setFormData(initialFormState);
-    setError('');
-  };
-
-  // Handle adding new customer from stepper
-  const handleAddNewCustomer = async customerName => {
-    try {
-      const newCustomer = await addQuickCustomer(customerName);
-
-      // Refresh customer list
-      const updatedCustomers = await fetchAllKhachHang();
-      const formattedCustomers = formatCustomersForSelect(updatedCustomers);
-      setSelectOptions(prev => ({
-        ...prev,
-        customers: formattedCustomers,
-      }));
-
-      return newCustomer.id; // Return new customer ID to select it
-    } catch (error) {
-      throw error; // Let child component handle the error
+      );
     }
-  };
+  },
+];
 
-  // Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
-  const handleOpenModalForAddMobile = () => {
-    handleOpenModalForAdd();
-  };
+// Reset form and stepper for mobile
+const resetForm = () => {
+  setFormData(initialFormState);
+  setError('');
+};
 
-  const handleOpenModalForEditMobile = plan => {
-    handleOpenModalForEdit(plan);
-  };
+// Handle adding new customer from stepper
+const handleAddNewCustomer = async customerName => {
+  try {
+    const newCustomer = await addQuickCustomer(customerName);
 
-  const handleCloseModalMobile = () => {
-    handleCloseModal();
-  };
+    // Refresh customer list
+    const updatedCustomers = await fetchAllKhachHang();
+    const formattedCustomers = formatCustomersForSelect(updatedCustomers);
+    setSelectOptions(prev => ({
+      ...prev,
+      customers: formattedCustomers,
+    }));
 
-  return (
-    <Box
+    return newCustomer.id; // Return new customer ID to select it
+  } catch (error) {
+    throw error; // Let child component handle the error
+  }
+};
+
+// Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
+const handleOpenModalForAddMobile = () => {
+  handleOpenModalForAdd();
+};
+
+const handleOpenModalForEditMobile = plan => {
+  handleOpenModalForEdit(plan);
+};
+
+const handleCloseModalMobile = () => {
+  handleCloseModal();
+};
+
+return (
+  <Box
+    sx={{
+      px: isMobile ? 2 : 3, // Horizontal padding
+      pt: 0, // No top padding
+      pb: isMobile ? 1 : 2, // Keep bottom padding
+      backgroundColor: theme.palette.background.paper, // Change to white
+      minHeight: 'calc(100vh - 64px)',
+      display: 'flex',
+      flexDirection: 'column',
+    }}
+  >
+    <Typography
+      variant={isMobile ? 'h6' : 'h5'}
+      component="h1"
+      gutterBottom
       sx={{
-        px: isMobile ? 2 : 3, // Horizontal padding
-        pt: 0, // No top padding
-        pb: isMobile ? 1 : 2, // Keep bottom padding
-        backgroundColor: theme.palette.background.paper, // Change to white
-        minHeight: 'calc(100vh - 64px)',
-        display: 'flex',
-        flexDirection: 'column',
+        fontWeight: 'bold',
+        color: theme.palette.primary.main,
+        fontFamily: "'Montserrat', 'Roboto', sans-serif", // Apply Montserrat font
+        mb: isMobile ? 2 : 3,
       }}
     >
-      <Typography
-        variant={isMobile ? 'h5' : 'h4'}
-        gutterBottom
+      Quản Lý Lịch Vận Chuyển
+    </Typography>
+
+    {/* Guidance Message */}
+    <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3, p: 0.5, backgroundColor: theme.palette.action.hover, borderRadius: 1 }}>
+      <InfoIcon sx={{ mr: 1, color: theme.palette.info.main }} />
+      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+      Bấm vào hàng trong bảng để xem chi tiết
+      </Typography>
+    </Box>
+
+    {isLoading && (
+      <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+        <CircularProgress />
+      </Box>
+    )}
+
+    {error && !isModalOpen && (
+      <Alert
+        severity="error"
         sx={{
-          fontWeight: 600,
-          color: theme.palette.primary.main,
-          mb: isMobile ? 2 : 3,
+          mb: 2,
+          borderRadius: 2,
+          boxShadow: theme.shadows[2],
         }}
       >
-        Quản Lý Lịch Vận Chuyển
-      </Typography>
+        {error}
+      </Alert>
+    )}
 
-      {isLoading && !isModalOpen && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-          <CircularProgress />
-        </Box>
-      )}
+    {isMobile ? (
+      <MobileView
+        searchTerm={searchTerm}
+        onSearchTermChange={e => setSearchTerm(e.target.value)}
+        filterStatus={filterStatus}
+        onFilterStatusChange={e => setFilterStatus(e.target.value)}
+        filteredPlans={filteredLichVanChuyenItems}
+        isLoading={isLoading}
+        expandedCard={expandedCard}
+        onCardExpand={handleCardExpand}
+        onEdit={handleOpenModalForEditMobile}
+        onDelete={handleDeleteConfirmation} // Use confirmation flow for mobile delete
+        onAdd={handleOpenModalForAddMobile}
+        canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
+      />
+    ) : (
+      <DesktopView
+        columns={columns} // Pass columns to DesktopView
+        searchTerm={searchTerm}
+        onSearchTermChange={e => setSearchTerm(e.target.value)}
+        shipmentPlans={filteredLichVanChuyenItems}
+        isLoading={isLoading}
+        onAdd={handleOpenModalForAdd}
+        canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
+        onEditItem={handleOpenModalForEdit}
+        onDeleteItem={handleDeleteConfirmation} // Align DesktopView delete to use confirmation flow
+      />
+    )}
 
-      {error && !isModalOpen && (
-        <Alert
-          severity="error"
+    {/* Modal for Add/Edit */}
+    {isMobile ? (
+      <Dialog
+        fullScreen
+        open={isModalOpen} // Removed && canAddPlan, let form decide if it shows content based on permissions if needed
+        onClose={handleCloseModalMobile}
+        TransitionComponent={Slide}
+        TransitionProps={{ direction: 'up' }}
+        sx={{ '& .MuiDialog-paper': { background: '#ffffff' } }}
+      >
+        <DialogContent
           sx={{
-            mb: 2,
-            borderRadius: 2,
-            boxShadow: theme.shadows[2],
+            p: 2,
+            pb: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            overflow: 'hidden',
           }}
         >
-          {error}
-        </Alert>
-      )}
-
-      {isMobile ? (
-        <MobileView
-          searchTerm={searchTerm}
-          onSearchTermChange={e => setSearchTerm(e.target.value)}
-          filterStatus={filterStatus}
-          onFilterStatusChange={e => setFilterStatus(e.target.value)}
-          filteredPlans={filteredLichVanChuyenItems}
-          isLoading={isLoading}
-          expandedCard={expandedCard}
-          onCardExpand={handleCardExpand}
-          onEdit={handleOpenModalForEditMobile}
-          onDelete={handleDeleteClick}
-          onAdd={handleOpenModalForAddMobile}
-          canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
-        />
-      ) : (
-        <DesktopView
-          searchTerm={searchTerm}
-          onSearchTermChange={e => setSearchTerm(e.target.value)}
-          columns={columns} // columns is defined above
-          shipmentPlans={filteredLichVanChuyenItems}
-          isLoading={isLoading}
-          onAdd={handleOpenModalForAdd}
-          canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
-          onEditItem={handleOpenModalForEdit}
-          onDeleteItem={handleDelete}
-        />
-      )}
-
-      {/* Modal for Add/Edit */}
-      {isMobile ? (
-        <Dialog
-          fullScreen
-          open={isModalOpen} // Removed && canAddPlan, let form decide if it shows content based on permissions if needed
-          onClose={handleCloseModalMobile}
-          TransitionComponent={Slide}
-          TransitionProps={{ direction: 'up' }}
-          sx={{ '& .MuiDialog-paper': { background: '#ffffff' } }}
-        >
-          <DialogContent
-            sx={{
-              p: 2,
-              pb: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-              overflow: 'hidden',
-            }}
-          >
-            <Box sx={{ flex: 1, overflow: 'auto', pr: 1, mr: -1, pb: 2 }}>
-              {error && (
+          <Box sx={{ flex: 1, overflow: 'auto', pr: 1, mr: -1, pb: 2 }}>
+              {/* Error display for the form itself */}
+              {error && !isDeleteModalOpen && (
                 <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
                   {error}
                 </Alert>
@@ -558,10 +555,10 @@ const QuanLyLichVanChuyen = () => {
               <MobileShipmentFormStepper
                 editing={!!editingItem}
                 formData={formData}
-                onFormChange={handleInputChange}
-                onSave={handleSubmit}
+                onFormChange={handleInputChange} // Assuming handleInputChange exists
+                onSave={handleSubmit} // handleSubmit calls handleSave
                 isLoading={isLoading}
-                error={error}
+                error={error} // Pass error for form-specific display if needed
                 selectOptions={selectOptions}
                 onClose={handleCloseModalMobile}
                 onAddNewCustomer={handleAddNewCustomer}
@@ -576,7 +573,7 @@ const QuanLyLichVanChuyen = () => {
           onClose={handleCloseModal}
           editing={!!editingItem}
           formData={formData}
-          onFormChange={handleInputChange}
+          onFormChange={handleInputChange} // Assuming handleInputChange exists
           onSubmit={handleSave}
           isLoading={isLoading}
           error={error}
@@ -584,11 +581,11 @@ const QuanLyLichVanChuyen = () => {
         />
       )}
 
-      {/* Confirmation Modal for delete */}
+      {/* Confirmation Modal for delete - This should be outside the main mobile/desktop view ternary */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={handleDeleteConfirmed}
         title="Xác nhận xóa"
         message={
           <Box>
@@ -597,7 +594,9 @@ const QuanLyLichVanChuyen = () => {
             </Typography>
             {itemToDelete && (
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Mã chuyến: {itemToDelete.ma_chuyen}
+                Mã chuyến: {itemToDelete.ma_chuyen}<br />
+                Khách hàng: {getEntityNameById(itemToDelete.khach_hang_id, selectOptions.customers, 'id', 'ten')}<br />
+                Ngày đi: {formatDateForDisplay(itemToDelete.ngay_van_chuyen)}
               </Typography>
             )}
           </Box>
