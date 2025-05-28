@@ -30,11 +30,11 @@ const generateSampleLichVanChuyen = (count = 15) => {
       ma_chuyen: `CH${String(i).padStart(5, '0')}`, // e.g., CH00001
       ngay_van_chuyen: ngayVanChuyen.toISOString().split('T')[0], // YYYY-MM-DD
       trang_thai,
-      khach_hang_id: `KH${String((i % 5) + 1).padStart(3, '0')}`, // KH001 to KH005
+      khach_hang_id: (i % 5) + 1, // Numeric IDs 1 to 5, matching khachHang.js
       diem_xuat_phat: `Cảng Cát Lái Khu A${(i % 3) + 1}`,
       diem_tra_hang: `KCN Sóng Thần ${(i % 4) + 1}, Bình Dương`,
-      bien_so_xe_id: `51C-123${String(i % 10)}${String((i + 1) % 10)}`, // Example, ensure these exist if validating
-      container_id: `CSNU68791${String(i % 10)}${String((i + 1) % 10)}${String((i + 2) % 10)}`, // Example, ensure these exist if validating
+      bien_so_xe_id: (i % 15) + 1, // Numeric IDs 1 to 15, matching dauKeo.js (assuming 15 records)
+      container_id: (i % 3) + 1, // Numeric IDs 1 to 3, matching container.js (assuming 3 records)
       nhan_vien_giao_nhan_id: `NVGN${String((i % 2) + 1).padStart(3, '0')}`, // NVGN001, NVGN002
       nhan_vien_lai_xe_id: `NVLX${String((i % 3) + 1).padStart(3, '0')}`, // NVLX001, NVLX002, NVLX003
       ghi_chu:

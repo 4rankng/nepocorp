@@ -148,7 +148,7 @@ const QuanLyLichVanChuyen = () => {
 
       const processedLichVanChuyenList = lichVanChuyenList.map(item => {
         const customer = customersList.find(c => c.id === item.khach_hang_id);
-        
+
         let vehicle = dauKeoList.find(v => v.id === item.bien_so_xe_id);
         if (!vehicle) {
             vehicle = roMoocList.find(v => v.id === item.bien_so_xe_id);
@@ -385,6 +385,9 @@ const QuanLyLichVanChuyen = () => {
               backgroundColor: getStatusColor(status),
               color: 'white',
               fontWeight: 500,
+              borderRadius: '5px', // For rectangle with rounded corners
+              minWidth: '100px', // Ensure consistent width for all status chips
+              textAlign: 'center', // Center the text within the chip
             }}
           />
         );
