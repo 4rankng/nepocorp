@@ -22,21 +22,26 @@ const generateSampleLichVanChuyen = (count = 15) => {
     const ngayVanChuyen = new Date(baseDate);
     ngayVanChuyen.setDate(baseDate.getDate() + i - 1);
 
-    const ngayHaHang = new Date(ngayVanChuyen);
-    ngayHaHang.setDate(ngayVanChuyen.getDate() + (i % 3) + 1); // 1-3 days after van chuyen
-
     const cuoc_van_chuyen = 5000000 + (i % 10) * 250000; // Example: 5,000,000 to 7,250,000
     const tong_chi_phi = cuoc_van_chuyen * (0.6 + (i % 5) * 0.05); // Example: 60% to 80% of cuoc_van_chuyen
 
     const trangThaiValues = Object.values(TRANG_THAI_LICH_VAN_CHUYEN);
     const trang_thai = trangThaiValues[i % trangThaiValues.length];
+    
+    // Only set ngay_ha_hang if status is 'hoan_thanh'
+    let ngay_ha_hang = '';
+    if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
+      const ngayHaHang = new Date(ngayVanChuyen);
+      ngayHaHang.setDate(ngayVanChuyen.getDate() + (i % 3) + 1); // 1-3 days after van chuyen
+      ngay_ha_hang = ngayHaHang.toISOString().split('T')[0];
+    }
 
     const newRecord = {
       id: `LVC${String(i).padStart(5, '0')}`, // e.g., LVC00001
       ma_chuyen: `CH${String(i).padStart(5, '0')}`, // e.g., CH00001
       ngay_van_chuyen: ngayVanChuyen.toISOString().split('T')[0], // YYYY-MM-DD
       trang_thai,
-      ngay_ha_hang: ngayHaHang.toISOString().split('T')[0],
+      ngay_ha_hang,
       tong_chi_phi: Math.round(tong_chi_phi / 1000) * 1000, // Round to nearest 1000
       cuoc_van_chuyen: Math.round(cuoc_van_chuyen / 1000) * 1000, // Round to nearest 1000
       khach_hang_id: (i % 5) + 1, // Numeric IDs 1 to 5, matching khachHang.js

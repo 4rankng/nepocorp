@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
   // TextField, // Used in child components
   // MenuItem, // Used in child components
   // Stepper, // Used in child components
@@ -102,6 +103,9 @@ const QuanLyLichVanChuyen = () => {
   const [error, setError] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [selectedShipment, setSelectedShipment] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
 
   // Mobile-specific state
   const [searchTerm, setSearchTerm] = useState('');
@@ -384,11 +388,65 @@ const columns = [
   { id: 'ngayDi', header: 'Ngày Đi', width: '7%' },
   { id: 'ngayHaHangDisplay', header: 'Ngày Hạ Hàng', width: '7%' },
   { id: 'dienGiai', header: 'Diễn Giải', width: '20%' },
-  { id: 'tuyenDuongDisplay', header: 'Tuyến Đường', width: '20%' },
+  {
+    id: 'tuyenDuongDisplay',
+    header: 'Tuyến Đường',
+    width: '20%',
+    render: (value) => {
+      // Handle both old string format and new object format for backward compatibility
+      const diemDi = value?.diemDi || (typeof value === 'string' ? value.split(' → ')[0] : 'N/A');
+      const diemDen = value?.diemDen || (typeof value === 'string' ? value.split(' → ')[1] : 'N/A');
+      
+      return (
+        <Box component="span" sx={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}>
+          <Box 
+            component="span"
+            sx={{ 
+              color: 'primary.main', 
+              fontWeight: 500,
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+              display: 'inline'
+            }}
+          >
+            {diemDi}
+          </Box>
+          <Box 
+            component="span"
+            sx={{ 
+              color: 'text.secondary',
+              mx: 0.5,
+              lineHeight: 1.5,
+              display: 'inline-flex',
+              alignItems: 'center'
+            }}
+          >
+            →
+          </Box>
+          <Box 
+            component="span"
+            sx={{ 
+              color: 'secondary.main',
+              fontWeight: 500,
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+              display: 'inline'
+            }}
+          >
+            {diemDen}
+          </Box>
+        </Box>
+      );
+    },
+  },
   { id: 'tongChiPhiDisplay', header: 'Tổng Chi Phí', align: 'right', width: '12%' },
   { id: 'cuocVanChuyenDisplay', header: 'Cước Vận Chuyển', align: 'right', width: '12%' },
   { id: 'loiNhuanGopDisplay', header: 'Lợi Nhuận Gộp', align: 'right', width: '12%' },
-  { 
+  {
     id: 'trang_thai', 
     header: 'Trạng Thái', 
     width: '8%',
@@ -527,15 +585,19 @@ return (
       />
     ) : (
       <DesktopView
-        columns={columns} // Pass columns to DesktopView
+        columns={columns}
         searchTerm={searchTerm}
         onSearchTermChange={e => setSearchTerm(e.target.value)}
         shipmentPlans={filteredLichVanChuyenItems}
         isLoading={isLoading}
         onAdd={handleOpenModalForAdd}
-        canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
+        canAddPlan={canAddPlan}
         onEditItem={handleOpenModalForEdit}
-        onDeleteItem={handleDeleteConfirmation} // Align DesktopView delete to use confirmation flow
+        onDeleteItem={handleDeleteConfirmation}
+        onItemClick={(row) => {
+          setSelectedShipment(row.original);
+          setIsDetailModalOpen(true);
+        }}
       />
     )}
 
@@ -596,6 +658,49 @@ return (
       )}
 
       {/* Confirmation Modal for delete - This should be outside the main mobile/desktop view ternary */}
+      {/* Shipment Detail Modal */}
+      <Dialog
+        open={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Chi Tiết Chuyến Hàng</DialogTitle>
+        <DialogContent>
+          {selectedShipment && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                <strong>Mã chuyến:</strong> {selectedShipment.ma_chuyen}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                <strong>Ngày đi:</strong> {selectedShipment.ngayDi}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                <strong>Ngày hạ hàng:</strong> {selectedShipment.ngayHaHangDisplay || 'Chưa cập nhật'}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                <strong>Khách hàng:</strong> {selectedShipment.khachHang}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                <strong>Biển số xe:</strong> {selectedShipment.bienSoXe}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                <strong>Tuyến đường:</strong> {selectedShipment.tuyenDuongDisplay}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                <strong>Trạng thái:</strong> {getDisplayTrangThai(selectedShipment.trang_thai)}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                <strong>Ghi chú:</strong> {selectedShipment.ghi_chu || 'Không có ghi chú'}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDetailModalOpen(false)}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
+
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={handleDeleteCancel}
