@@ -460,9 +460,10 @@ const QuanLyLichVanChuyen = () => {
   return (
     <Box
       sx={{
-        p: isMobile ? 2 : 3,
-        pt: isMobile ? 2 : 3,
-        backgroundColor: theme.palette.background.default,
+        px: isMobile ? 2 : 3, // Horizontal padding
+        pt: 0, // No top padding
+        pb: isMobile ? 1 : 2, // Keep bottom padding
+        backgroundColor: theme.palette.background.paper, // Change to white
         minHeight: 'calc(100vh - 64px)',
         display: 'flex',
         flexDirection: 'column',

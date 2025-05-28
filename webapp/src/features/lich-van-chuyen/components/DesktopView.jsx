@@ -47,7 +47,7 @@ const DesktopView = ({
         />
       </Box>
 
-      <Paper elevation={0} sx={{ p: 2 }}>
+      <Paper elevation={0} sx={{ p: 0 }}>
         <StandardTable
           columns={columns}
           data={filteredPlans}
