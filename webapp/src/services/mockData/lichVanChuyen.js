@@ -43,15 +43,22 @@ const generateSampleLichVanChuyen = (count = 15) => {
       ghi_chu = 'Chuyến tạm thời, chờ xác nhận';
     }
 
+    const cuoc_van_chuyen_vnd = Math.floor(Math.random() * 10000000) + 1000000;
+    const cuoc_thue_van_chuyen_vnd = i % 3 === 0 ? 0 : Math.floor(Math.random() * 900000) + 100000; // Some with 0 for own vehicle
+    const vnd_dau = Math.floor(Math.random() * 1000000) + 5000000;
+    const vnd_di_duong = Math.floor(Math.random() * 2000000) + 1000000;
+    
     samples.push({
       id: i,
       ma_chuyen: `MC${String(i).padStart(3, '0')}`,
       ngay_di: ngayDi.toISOString().split('T')[0],
-      ngay_ha_hang,
+      ngay_ha_hang: trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH ? ngay_ha_hang : '',
       trang_thai,
       ma_khach_hang: `KH${String((i % 5) + 1).padStart(3, '0')}`,
       diem_di: 'Kho Nepocorp, Hà Nội',
-      diem_den: 'Cảng Hải Phòng',
+      diem_den: i % 2 === 0 ? 'Cảng Hải Phòng; Cảng Quảng Ninh' : 'Cảng Đà Nẵng',
+      cuoc_van_chuyen_vnd: cuoc_van_chuyen_vnd,
+      cuoc_thue_van_chuyen_vnd: cuoc_thue_van_chuyen_vnd,
       bien_so_dau_keo: `15C-${String(10000 + i).substring(1)}`,
       ma_so_cont: (i % 2 === 0) ? '20DC' : '40HC',
       ma_nv_giao_nhan: `NV${String(3 + (i % 3)).padStart(3, '0')}`,
@@ -60,8 +67,9 @@ const generateSampleLichVanChuyen = (count = 15) => {
       km_hang: parseFloat((Math.random() * 100).toFixed(2)),
       km_vo: parseFloat((Math.random() * 50).toFixed(2)),
       l_dau: parseFloat((Math.random() * 5).toFixed(2)),
-      vnd_dau: Math.floor(Math.random() * 1000000) + 5000000,
-      vnd_di_duong: Math.floor(Math.random() * 2000000) + 1000000,
+      vnd_dau: vnd_dau,
+      vnd_di_duong: vnd_di_duong,
+      vnd_chi_phi: vnd_dau + vnd_di_duong, // Calculate total cost
       createdAt: now.toISOString(),
       updatedAt: now.toISOString()
     });

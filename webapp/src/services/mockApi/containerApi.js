@@ -18,7 +18,7 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllContainer = () => {
-  console.log('[Mock API] Fetching all Container...');
+
   return simulateApiCall(containerDataService.getAllContainer);
 };
 
@@ -27,7 +27,7 @@ export const fetchContainerById = id => {
 };
 
 export const addContainer = data => {
-  console.log('[Mock API] Creating Container:', data);
+
   return simulateApiCall(() => containerDataService.createContainer(data));
 };
 
@@ -40,7 +40,7 @@ export const removeContainer = id => {
 };
 
 export const _resetContainerMockData = data => {
-  console.log('[Mock API] Resetting Container Data (via API layer)...');
+
   return simulateApiCall(() => containerDataService._resetContainer(data));
 };
 

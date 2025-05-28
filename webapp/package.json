@@ -21,7 +21,8 @@
     "migrate:restore": "node scripts/backup-tool.js restore",
     "migrate:test": "node scripts/test-migration.js analyze",
     "migrate:validate": "node scripts/test-migration.js full",
-    "migrate": "node scripts/migrate-workflow.js"
+    "migrate": "node scripts/migrate-workflow.js",
+    "noconsole": "node scripts/remove-console-logs.cjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

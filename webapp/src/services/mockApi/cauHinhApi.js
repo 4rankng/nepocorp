@@ -19,7 +19,7 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllCauHinh = () => {
-  console.log('[Mock API] Fetching all CauHinh...');
+
   return simulateApiCall(cauHinhDataService.getAllCauHinh);
 };
 
@@ -32,7 +32,7 @@ export const fetchCauHinhByKey = key => {
 };
 
 export const addCauHinh = data => {
-  console.log('[Mock API] Creating CauHinh:', data);
+
   return simulateApiCall(() => cauHinhDataService.createCauHinh(data));
 };
 
@@ -69,7 +69,7 @@ export const updateDinhMucBoSung = value => {
 
 // For testing purposes
 export const _resetCauHinhApiData = data => {
-  console.log('[Mock API] Resetting CauHinh Data (via API layer)...');
+
   return simulateApiCall(() => cauHinhDataService._resetCauHinh(data));
 };
 

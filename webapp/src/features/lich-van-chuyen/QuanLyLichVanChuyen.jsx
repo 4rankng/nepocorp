@@ -118,19 +118,22 @@ const QuanLyLichVanChuyen = () => {
     return {
       id: item.id || '', // Keep id for editing
       ma_chuyen: item.ma_chuyen || '',
-      ngay_van_chuyen: item.ngay_van_chuyen || '', // Already YYYY-MM-DD from API
-      trang_thai: item.trang_thai || 'chua_thuc_hien',
-      khach_hang_id: item.khach_hang_id || '',
-      diem_xuat_phat: item.diem_xuat_phat || '',
-      diem_tra_hang: item.diem_tra_hang || '',
-      bien_so_xe_id: item.bien_so_xe_id || '',
-      container_id: item.container_id || '',
-      nhan_vien_giao_nhan_id: item.nhan_vien_giao_nhan_id || '',
-      nhan_vien_lai_xe_id: item.nhan_vien_lai_xe_id || '',
+      ngay_van_chuyen: item.ngay_di || item.ngay_van_chuyen || '', // Map ngay_di to ngay_van_chuyen
+      trang_thai: item.trang_thai || 'tam_thoi',
+      khach_hang_id: item.ma_khach_hang || item.khach_hang_id || '',
+      diem_xuat_phat: item.diem_di || item.diem_xuat_phat || '',
+      diem_tra_hang: item.diem_den || item.diem_tra_hang || '',
+      bien_so_xe_id: item.bien_so_dau_keo || item.bien_so_xe_id || '',
+      container_id: item.ma_so_cont || item.container_id || '',
+      nhan_vien_giao_nhan_id: item.ma_nv_giao_nhan || item.nhan_vien_giao_nhan_id || '',
+      nhan_vien_lai_xe_id: item.ma_nv_lai_xe || item.nhan_vien_lai_xe_id || '',
       ghi_chu: item.ghi_chu || '',
       ngay_ha_hang: item.ngay_ha_hang || '',
-      tong_chi_phi: item.tong_chi_phi || 0,
-      cuoc_van_chuyen: item.cuoc_van_chuyen || 0,
+      tong_chi_phi: item.vnd_dau || item.tong_chi_phi || 0,
+      cuoc_van_chuyen: item.vnd_di_duong || item.cuoc_van_chuyen || 0,
+      km_hang: item.km_hang || 0,
+      km_vo: item.km_vo || 0,
+      l_dau: item.l_dau || 0,
     };
   };
 
@@ -138,6 +141,7 @@ const QuanLyLichVanChuyen = () => {
     setIsLoading(true);
     setError('');
     try {
+      console.log('Fetching data from APIs...');
       const [
         lichVanChuyenList,
         dauKeoList,
@@ -154,50 +158,106 @@ const QuanLyLichVanChuyen = () => {
         fetchAllContainer(),
       ]);
 
+      console.log('Raw data from APIs:', {
+        lichVanChuyenList: lichVanChuyenList?.length || 0,
+        dauKeoList: dauKeoList?.length || 0,
+        roMoocList: roMoocList?.length || 0,
+        customersList: customersList?.length || 0,
+        employeesList: employeesList?.length || 0,
+        containersList: containersList?.length || 0,
+      });
+
       const vehiclesData = formatVehiclesForSelect(dauKeoList, roMoocList);
       const customersData = formatCustomersForSelect(customersList);
       const employeesData = formatEmployeesForSelect(employeesList);
       const containersData = formatContainersForSelect(containersList);
 
-      const processedLichVanChuyenList = lichVanChuyenList.map(item => {
-        const customer = customersList.find(c => c.id === item.khach_hang_id);
+      console.log('Processing lichVanChuyenList items. Count:', lichVanChuyenList.length);
+      const processedLichVanChuyenList = lichVanChuyenList.map((item, index) => {
+        console.log(`Processing item ${index + 1}/${lichVanChuyenList.length}:`, item);
+        // Map fields from both old and new field names
+        const ma_chuyen = item.ma_chuyen || '';
+        const ngay_di = item.ngay_di || item.ngay_van_chuyen || '';
+        const diem_di = item.diem_di || item.diem_xuat_phat || '';
+        const diem_den = item.diem_den || item.diem_tra_hang || '';
+        const ma_khach_hang = item.ma_khach_hang || item.khach_hang_id || '';
+        const bien_so_dau_keo = item.bien_so_dau_keo || item.bien_so_xe_id || '';
+        const ma_so_cont = item.ma_so_cont || item.container_id || '';
+        const trang_thai = item.trang_thai || 'tam_thoi';
+        const ghi_chu = item.ghi_chu || '';
+        const ngay_ha_hang = item.ngay_ha_hang || '';
+        const ma_nv_giao_nhan = item.ma_nv_giao_nhan || item.nhan_vien_giao_nhan_id || '';
+        const ma_nv_lai_xe = item.ma_nv_lai_xe || item.nhan_vien_lai_xe_id || '';
+        const vnd_dau = item.vnd_dau || item.tong_chi_phi || 0;
+        const vnd_di_duong = item.vnd_di_duong || item.cuoc_van_chuyen || 0;
+        const km_hang = item.km_hang || 0;
+        const km_vo = item.km_vo || 0;
+        const l_dau = item.l_dau || 0;
 
-        let vehicle = dauKeoList.find(v => v.id === item.bien_so_xe_id);
+        // Find related entities
+        const customer = customersList.find(c => c.id === ma_khach_hang || c.ma_khach_hang === ma_khach_hang);
+        let vehicle = dauKeoList.find(v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo);
         if (!vehicle) {
-            vehicle = roMoocList.find(v => v.id === item.bien_so_xe_id);
+            vehicle = roMoocList.find(v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo);
         }
+        const container = containersList.find(cont => cont.id === ma_so_cont || cont.ma_so === ma_so_cont);
+        const giaoNhan = employeesList.find(emp => emp.id === ma_nv_giao_nhan || emp.ma_nhan_vien === ma_nv_giao_nhan);
+        const laiXe = employeesList.find(emp => emp.id === ma_nv_lai_xe || emp.ma_nhan_vien === ma_nv_lai_xe);
 
-        const container = containersList.find(cont => cont.id === item.container_id);
-        const giaoNhan = employeesList.find(emp => emp.id === item.nhan_vien_giao_nhan_id);
-        const laiXe = employeesList.find(emp => emp.id === item.nhan_vien_lai_xe_id);
-
-        const loi_nhuan_gop = (item.cuoc_van_chuyen || 0) - (item.tong_chi_phi || 0);
+        const loi_nhuan_gop = vnd_di_duong - vnd_dau;
+        
         return {
-            ...item, // Spread original item to keep all its data for editing/deleting
-            // Fields for table display
-            ngayDi: formatDateForDisplay(item.ngay_van_chuyen),
-            ngayHaHangDisplay: formatDateForDisplay(item.ngay_ha_hang),
-            dienGiai: item.ghi_chu || item.ma_chuyen || 'N/A',
-            tuyenDuongDisplay: `${item.diem_xuat_phat || 'N/A'} → ${item.diem_tra_hang || 'N/A'}`,
-            tongChiPhiDisplay: formatCurrencyVND(item.tong_chi_phi),
-            cuocVanChuyenDisplay: formatCurrencyVND(item.cuoc_van_chuyen),
+            // Original fields
+            ...item,
+            
+            // Mapped fields (support both old and new field names)
+            id: item.id,
+            ma_chuyen,
+            ngay_di,
+            diem_di,
+            diem_den,
+            ma_khach_hang,
+            bien_so_dau_keo,
+            ma_so_cont,
+            trang_thai,
+            ghi_chu,
+            ngay_ha_hang,
+            ma_nv_giao_nhan,
+            ma_nv_lai_xe,
+            vnd_dau,
+            vnd_di_duong,
+            km_hang,
+            km_vo,
+            l_dau,
+            
+            // Computed fields for display
+            ngayDi: formatDateForDisplay(ngay_di),
+            ngayHaHangDisplay: formatDateForDisplay(ngay_ha_hang),
+            bienSoXe: vehicle ? vehicle.bien_so : 'N/A',
+            dienGiai: ghi_chu || ma_chuyen || 'N/A',
+            tuyenDuongDisplay: `${diem_di || 'N/A'} → ${diem_den || 'N/A'}`,
+            tongChiPhiDisplay: formatCurrencyVND(vnd_dau),
+            cuocVanChuyenDisplay: formatCurrencyVND(vnd_di_duong),
             loiNhuanGopDisplay: formatCurrencyVND(loi_nhuan_gop),
-
-            // Fields for mobile view / general use
-            ngayThang: formatDateForDisplay(item.ngay_van_chuyen), // Used by MobileView
-            khachHang: customer ? customer.ten : 'N/A', // Used by MobileView
-            bienSoXe: vehicle ? vehicle.bien_so : 'N/A', // Used by MobileView
-            tuyenDuong: { // Used by MobileView (potentially)
-                diemDi: item.diem_xuat_phat || 'N/A',
-                diemDen: item.diem_tra_hang || 'N/A',
+            
+            // Mobile view fields
+            ngayThang: formatDateForDisplay(ngay_di),
+            khachHang: customer ? customer.ten || customer.ho_ten : 'N/A',
+            tuyenDuong: {
+                diemDi: diem_di || 'N/A',
+                diemDen: diem_den || 'N/A',
             },
-            soLuongContainer: item.container_id ? 1 : 0, // Used by MobileView
-            loaiContainer: container ? `${container.id} (${container.phan_loai || 'Chưa rõ'})` : 'N/A', // Used by MobileView
-            nhanVienGiaoNhan: giaoNhan ? giaoNhan.ho_ten : 'N/A', // Used by MobileView
-            nhanVienLaiXe: laiXe ? laiXe.ho_ten : 'N/A', // Used by MobileView
+            soLuongContainer: ma_so_cont ? 1 : 0,
+            loaiContainer: container ? `${container.ma_so || container.id} (${container.loai || container.phan_loai || 'Chưa rõ'})` : 'N/A',
+            nhanVienGiaoNhan: giaoNhan ? giaoNhan.ho_ten : 'N/A',
+            nhanVienLaiXe: laiXe ? laiXe.ho_ten : 'N/A',
         };
-    });
+      });
+      
+      console.log('Processed lichVanChuyenList:', processedLichVanChuyenList);
+      console.log('Sample processed item (first item):', processedLichVanChuyenList[0]);
 
+      console.log('Setting lichVanChuyenItems with count:', processedLichVanChuyenList.length);
       setLichVanChuyenItems(processedLichVanChuyenList);
       setSelectOptions({
         vehicles: vehiclesData,
@@ -360,16 +420,35 @@ const QuanLyLichVanChuyen = () => {
   };
 
   // Filter functions for mobile search
-  const filteredLichVanChuyenItems = lichVanChuyenItems.filter(item => {
-    const matchesSearch =
-      !searchTerm ||
-      item.ma_chuyen.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredLichVanChuyenItems = React.useMemo(() => {
+    console.log('Filtering items. searchTerm:', searchTerm, 'filterStatus:', filterStatus);
+    console.log('lichVanChuyenItems count:', lichVanChuyenItems.length);
+    
+    const filtered = lichVanChuyenItems.filter(item => {
+      try {
+        if (!item) return false;
+        
+        const matchesSearch =
+          !searchTerm ||
+          (item.ma_chuyen && item.ma_chuyen.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
-
-    return matchesSearch && matchesStatus;
-  });
+        const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
+        
+        return matchesSearch && matchesStatus;
+      } catch (error) {
+        console.error('Error filtering item:', error, 'Item:', item);
+        return false;
+      }
+    });
+    
+    console.log('Filtered items count:', filtered.length);
+    if (filtered.length > 0) {
+      console.log('First filtered item:', filtered[0]);
+    }
+    
+    return filtered;
+  }, [lichVanChuyenItems, searchTerm, filterStatus]);
 
   // Handle form submission for mobile stepper
   // This handleSubmit is called by MobileShipmentFormStepper via onSave prop
@@ -387,7 +466,17 @@ const QuanLyLichVanChuyen = () => {
 const columns = [
   { id: 'ngayDi', header: 'Ngày Đi', width: '7%' },
   { id: 'ngayHaHangDisplay', header: 'Ngày Hạ Hàng', width: '7%' },
-  { id: 'dienGiai', header: 'Diễn Giải', width: '20%' },
+  { 
+    id: 'bienSoXe', 
+    header: 'Xe Vận Chuyển', 
+    width: '10%',
+    render: (value) => (
+      <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
+        {value || 'N/A'}
+      </Box>
+    )
+  },
+  { id: 'dienGiai', header: 'Diễn Giải', width: '15%' },
   {
     id: 'tuyenDuongDisplay',
     header: 'Tuyến Đường',

@@ -20,6 +20,17 @@ const DesktopView = ({
   const theme = useTheme(); // Initialize theme
   // Filter plans by search term for desktop
   const filteredPlans = shipmentPlans.filter(plan => {
+    if (!plan) return false; // Skip null/undefined plans
+    
+    // Debug log for each plan being filtered
+    console.log('Filtering plan:', {
+      id: plan.id,
+      dienGiai: plan.dienGiai,
+      khachHang: plan.khachHang,
+      bienSoXe: plan.bienSoXe,
+      doiTac: plan.doiTac,
+      tenDoiTac: plan.tenDoiTac
+    });
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase();
@@ -58,13 +69,20 @@ const DesktopView = ({
       </Typography>
     </Box>
       <Paper elevation={0} sx={{ p: 0 }}>
+        {console.log('Rendering StandardTable with columns:', columns)}
         <StandardTable
           columns={columns}
           data={filteredPlans}
-          onRowClick={onItemClick} // Pass onItemClick to StandardTable
+          onRowClick={onItemClick}
           loading={isLoading}
-          emptyMessage="Chưa có lịch vận chuyển nào"
-          // Remove headerAction - now using FAB
+          emptyMessage={
+            isLoading 
+              ? 'Đang tải dữ liệu...' 
+              : 'Chưa có lịch vận chuyển nào. Vui lòng thêm mới hoặc kiểm tra bộ lọc.'
+          }
+          // Debug props
+          debug={true}
+          onError={(error) => console.error('StandardTable error:', error)}
         />
       </Paper>
 

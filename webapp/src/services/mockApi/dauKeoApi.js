@@ -20,7 +20,7 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllDauKeo = () => {
-  console.log('[Mock API] Fetching all DauKeo...');
+
   return simulateApiCall(dauKeoDataService.getAllDauKeo);
 };
 
@@ -29,7 +29,7 @@ export const fetchDauKeoById = id => {
 };
 
 export const addDauKeo = data => {
-  console.log('[Mock API] Creating DauKeo:', data);
+
   return simulateApiCall(() => dauKeoDataService.createDauKeo(data));
 };
 
