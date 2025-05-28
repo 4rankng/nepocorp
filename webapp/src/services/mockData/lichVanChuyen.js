@@ -1,218 +1,212 @@
 // Mock database for LichVanChuyen (Transport Schedules)
-// Fields: id, ma_chuyen, ngay_van_chuyen, trang_thai, khach_hang_id, diem_xuat_phat, diem_tra_hang,
-//         bien_so_xe_id, container_id, nhan_vien_giao_nhan_id, nhan_vien_lai_xe_id, ghi_chu, createdAt, updatedAt
-
-import { v4 as _uuidv4 } from 'uuid'; // For generating unique IDs (unused currently)
+// Fields: id, ma_chuyen, ngay_di, ngay_ha_hang, trang_thai, ma_khach_hang, diem_di, diem_den,
+//         bien_so_dau_keo, ma_so_cont, ma_nv_giao_nhan, ma_nv_lai_xe, ghi_chu, createdAt, updatedAt
 
 const TRANG_THAI_LICH_VAN_CHUYEN = {
   TAM_THOI: 'tam_thoi',        // Temporary
   LEN_LICH: 'len_lich',        // Scheduled
-  DANG_CHAY: 'dang_chay',       // In transit / Running
+  DANG_CHAY: 'dang_chay',      // In transit / Running
   HOAN_THANH: 'hoan_thanh',    // Completed
-  HUY_BO: 'huy_bo',           // Cancelled
+  HUY_BO: 'huy_bo'            // Cancelled
 };
 
 let lichVanChuyenData = [];
 
+/**
+ * Generate sample transport schedule data
+ * @param {number} count - Number of sample records to generate
+ * @returns {Array} Array of sample transport schedule records
+ */
 const generateSampleLichVanChuyen = (count = 15) => {
   const samples = [];
-  const baseDate = new Date(2024, 4, 20); // May 20, 2024
+  const baseDate = new Date(2024, 4, 20);
+  const now = new Date();
 
   for (let i = 1; i <= count; i++) {
-    const ngayVanChuyen = new Date(baseDate);
-    ngayVanChuyen.setDate(baseDate.getDate() + i - 1);
-
-    const cuoc_van_chuyen = 5000000 + (i % 10) * 250000; // Example: 5,000,000 to 7,250,000
-    const tong_chi_phi = cuoc_van_chuyen * (0.6 + (i % 5) * 0.05); // Example: 60% to 80% of cuoc_van_chuyen
+    const ngayDi = new Date(baseDate);
+    ngayDi.setDate(baseDate.getDate() + i - 1);
 
     const trangThaiValues = Object.values(TRANG_THAI_LICH_VAN_CHUYEN);
     const trang_thai = trangThaiValues[i % trangThaiValues.length];
     
-    // Only set ngay_ha_hang if status is 'hoan_thanh'
     let ngay_ha_hang = '';
     if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
-      const ngayHaHang = new Date(ngayVanChuyen);
-      ngayHaHang.setDate(ngayVanChuyen.getDate() + (i % 3) + 1); // 1-3 days after van chuyen
+      const ngayHaHang = new Date(ngayDi);
+      ngayHaHang.setDate(ngayDi.getDate() + (i % 3) + 1);
       ngay_ha_hang = ngayHaHang.toISOString().split('T')[0];
     }
 
-    const newRecord = {
-      id: `LVC${String(i).padStart(5, '0')}`, // e.g., LVC00001
-      ma_chuyen: `CH${String(i).padStart(5, '0')}`, // e.g., CH00001
-      ngay_van_chuyen: ngayVanChuyen.toISOString().split('T')[0], // YYYY-MM-DD
-      trang_thai,
+    let ghi_chu = `Hàng dễ vỡ, xin nhẹ tay. Chuyến số ${i}`;
+    if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HUY_BO) {
+      ghi_chu = 'Lý do hủy: Yêu cầu từ khách hàng';
+    } else if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.TAM_THOI) {
+      ghi_chu = 'Chuyến tạm thời, chờ xác nhận';
+    }
+
+    samples.push({
+      id: i,
+      ma_chuyen: `MC${String(i).padStart(3, '0')}`,
+      ngay_di: ngayDi.toISOString().split('T')[0],
       ngay_ha_hang,
-      tong_chi_phi: Math.round(tong_chi_phi / 1000) * 1000, // Round to nearest 1000
-      cuoc_van_chuyen: Math.round(cuoc_van_chuyen / 1000) * 1000, // Round to nearest 1000
-      khach_hang_id: (i % 5) + 1, // Numeric IDs 1 to 5, matching khachHang.js
-      diem_xuat_phat: `Cảng Hải Phòng Khu ${(i % 3) + 1}`,
-      diem_tra_hang: `KCN Mỹ Lai ${(i % 4) + 1}, Bình Dương; Quận ${i}, Tp HCM`,
-      bien_so_xe_id: (i % 15) + 1, // Numeric IDs 1 to 15, matching dauKeo.js (assuming 15 records)
-      container_id: (i % 3) + 1, // Numeric IDs 1 to 3, matching container.js (assuming 3 records)
-      nhan_vien_giao_nhan_id: `NVGN${String((i % 2) + 1).padStart(3, '0')}`, // NVGN001, NVGN002
-      nhan_vien_lai_xe_id: `NVLX${String((i % 3) + 1).padStart(3, '0')}`, // NVLX001, NVLX002, NVLX003
-      ghi_chu:
-        trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HUY_BO
-          ? 'Lý do hủy: Yêu cầu từ khách hàng'
-          : trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.TAM_THOI
-            ? 'Chờ xác nhận thông tin container'
-            : i % 4 === 0
-              ? 'Hàng giá trị cao, yêu cầu bảo hiểm'
-              : '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    samples.push(newRecord);
+      trang_thai,
+      ma_khach_hang: `KH${String((i % 5) + 1).padStart(3, '0')}`,
+      diem_di: 'Kho Nepocorp, Hà Nội',
+      diem_den: 'Cảng Hải Phòng',
+      bien_so_dau_keo: `15C-${String(10000 + i).substring(1)}`,
+      ma_so_cont: (i % 2 === 0) ? '20DC' : '40HC',
+      ma_nv_giao_nhan: `NV${String(3 + (i % 3)).padStart(3, '0')}`,
+      ma_nv_lai_xe: `NV${String(4 + (i % 3)).padStart(3, '0')}`,
+      ghi_chu,
+      km_hang: parseFloat((Math.random() * 100).toFixed(2)),
+      km_vo: parseFloat((Math.random() * 50).toFixed(2)),
+      l_dau: parseFloat((Math.random() * 5).toFixed(2)),
+      vnd_dau: Math.floor(Math.random() * 1000000) + 5000000,
+      vnd_di_duong: Math.floor(Math.random() * 2000000) + 1000000,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString()
+    });
   }
+
   return samples;
 };
 
+// Initialize data
 lichVanChuyenData = generateSampleLichVanChuyen(15);
 
+/**
+ * Get all transport schedules
+ * @returns {Promise<Array>} Array of all transport schedules
+ */
 export const getAllLichVanChuyen = async () => {
   return [...lichVanChuyenData];
 };
 
-export const getLichVanChuyenById = async id => {
+/**
+ * Get a transport schedule by ID
+ * @param {number} id - The ID of the transport schedule
+ * @returns {Promise<Object|null>} The transport schedule or null if not found
+ */
+export const getLichVanChuyenById = async (id) => {
   return lichVanChuyenData.find(item => item.id === id) || null;
 };
 
-export const getLichVanChuyenByMaChuyen = async maChuyen => {
+/**
+ * Get a transport schedule by ma_chuyen
+ * @param {string} maChuyen - The ma_chuyen of the transport schedule
+ * @returns {Promise<Object|null>} The transport schedule or null if not found
+ */
+export const getLichVanChuyenByMaChuyen = async (maChuyen) => {
   return lichVanChuyenData.find(item => item.ma_chuyen === maChuyen) || null;
 };
 
-export const createLichVanChuyen = async data => {
-  const {
-    ma_chuyen,
-    ngay_van_chuyen,
-    trang_thai,
-    khach_hang_id,
-    diem_xuat_phat,
-    diem_tra_hang,
-    bien_so_xe_id,
-    container_id,
-    nhan_vien_giao_nhan_id,
-    nhan_vien_lai_xe_id,
-    ngay_ha_hang, // Added
-    tong_chi_phi, // Added
-    cuoc_van_chuyen, // Added
-  } = data;
-
-  if (
-    !ma_chuyen ||
-    !ngay_van_chuyen ||
-    !trang_thai ||
-    !khach_hang_id ||
-    !diem_xuat_phat ||
-    !diem_tra_hang ||
-    !bien_so_xe_id ||
-    !container_id ||
-    !nhan_vien_giao_nhan_id ||
-    !nhan_vien_lai_xe_id ||
-    !ngay_ha_hang || // Added
-    typeof tong_chi_phi !== 'number' || // Added
-    typeof cuoc_van_chuyen !== 'number' // Added
-  ) {
-    console.error('Missing required fields for new LichVanChuyen:', data);
-    throw new Error('Missing required fields. All fields except ghi_chu are mandatory.');
+/**
+ * Create a new transport schedule
+ * @param {Object} data - The transport schedule data
+ * @returns {Promise<Object>} The created transport schedule
+ */
+export const createLichVanChuyen = async (data) => {
+  if (!data.ma_chuyen) {
+    throw new Error('Mã chuyến là bắt buộc');
   }
 
-  if (!Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(trang_thai)) {
-    console.error('Invalid trang_thai value:', trang_thai);
-    throw new Error(
-      `Invalid trang_thai value. Must be one of: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`
-    );
+  if (lichVanChuyenData.some(item => item.ma_chuyen === data.ma_chuyen)) {
+    throw new Error('Mã chuyến đã tồn tại');
   }
 
-  if (lichVanChuyenData.some(item => item.ma_chuyen === ma_chuyen)) {
-    console.error('LichVanChuyen with this ma_chuyen already exists:', ma_chuyen);
-    throw new Error('Mã chuyến đã tồn tại.');
+  if (data.trang_thai && !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(data.trang_thai)) {
+    throw new Error(`Trạng thái không hợp lệ. Phải là một trong: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`);
   }
 
-  const newLichVanChuyen = {
-    id: `LVC${String(lichVanChuyenData.length + 1).padStart(5, '0')}`, // Simple incrementing ID for mock
-    ...data,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+  const newId = lichVanChuyenData.length > 0 
+    ? Math.max(...lichVanChuyenData.map(item => item.id)) + 1 
+    : 1;
+  
+  const now = new Date().toISOString();
+  const newRecord = {
+    id: newId,
+    ma_chuyen: data.ma_chuyen,
+    ngay_di: data.ngay_di || new Date().toISOString().split('T')[0],
+    ngay_ha_hang: data.ngay_ha_hang || '',
+    trang_thai: data.trang_thai || TRANG_THAI_LICH_VAN_CHUYEN.TAM_THOI,
+    ma_khach_hang: data.ma_khach_hang || '',
+    diem_di: data.diem_di || '',
+    diem_den: data.diem_den || '',
+    bien_so_dau_keo: data.bien_so_dau_keo || '',
+    ma_so_cont: data.ma_so_cont || '',
+    ma_nv_giao_nhan: data.ma_nv_giao_nhan || '',
+    ma_nv_lai_xe: data.ma_nv_lai_xe || '',
+    ghi_chu: data.ghi_chu || '',
+    km_hang: data.km_hang || 0,
+    km_vo: data.km_vo || 0,
+    l_dau: data.l_dau || 0,
+    vnd_dau: data.vnd_dau || 0,
+    vnd_di_duong: data.vnd_di_duong || 0,
+    createdAt: now,
+    updatedAt: now
   };
-  lichVanChuyenData.push(newLichVanChuyen);
-  return newLichVanChuyen;
+  
+  lichVanChuyenData.push(newRecord);
+  return newRecord;
 };
 
+/**
+ * Update an existing transport schedule
+ * @param {number} id - The ID of the transport schedule to update
+ * @param {Object} updates - The fields to update
+ * @returns {Promise<Object|null>} The updated transport schedule or null if not found
+ */
 export const updateLichVanChuyen = async (id, updates) => {
   const index = lichVanChuyenData.findIndex(item => item.id === id);
   if (index === -1) return null;
 
-  const { id: _, ma_chuyen: new_ma_chuyen, createdAt: __, ...validUpdates } = updates;
-
-  if (new_ma_chuyen && new_ma_chuyen !== lichVanChuyenData[index].ma_chuyen) {
-    if (lichVanChuyenData.some(item => item.ma_chuyen === new_ma_chuyen && item.id !== id)) {
-      console.error('Another LichVanChuyen with this ma_chuyen already exists:', new_ma_chuyen);
-      throw new Error('Mã chuyến đã tồn tại ở một lịch vận chuyển khác.');
-    }
+  const { ma_chuyen: newMaChuyen } = updates;
+  if (newMaChuyen && lichVanChuyenData.some(item => item.ma_chuyen === newMaChuyen && item.id !== id)) {
+    throw new Error('Mã chuyến đã tồn tại');
   }
 
-  if (
-    validUpdates.trang_thai &&
-    !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(validUpdates.trang_thai)
-  ) {
-    console.error('Invalid trang_thai value for update:', validUpdates.trang_thai);
-    throw new Error(
-      `Invalid trang_thai value. Must be one of: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`
-    );
+  if (updates.trang_thai && !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(updates.trang_thai)) {
+    throw new Error(`Trạng thái không hợp lệ. Phải là một trong: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`);
   }
 
-  lichVanChuyenData[index] = {
+  const updatedRecord = {
     ...lichVanChuyenData[index],
-    ...validUpdates,
-    ma_chuyen: new_ma_chuyen || lichVanChuyenData[index].ma_chuyen, // Update ma_chuyen if provided and valid
-    updatedAt: new Date().toISOString(),
+    ...updates,
+    updatedAt: new Date().toISOString()
   };
-  return lichVanChuyenData[index];
+  
+  lichVanChuyenData[index] = updatedRecord;
+  return updatedRecord;
 };
 
-export const deleteLichVanChuyen = async id => {
+/**
+ * Delete a transport schedule
+ * @param {number} id - The ID of the transport schedule to delete
+ * @returns {Promise<boolean>} True if deleted, false if not found
+ */
+export const deleteLichVanChuyen = async (id) => {
   const index = lichVanChuyenData.findIndex(item => item.id === id);
   if (index === -1) return false;
+  
   lichVanChuyenData.splice(index, 1);
   return true;
 };
 
+/**
+ * Reset the transport schedule data (for testing)
+ * @param {Array} [data=[]] - Optional data to reset with
+ * @returns {Array} The current transport schedule data
+ */
 export const _resetLichVanChuyen = (data = []) => {
-  if (data.length > 0) {
-    lichVanChuyenData = data.map((item, idx) => ({
-      ...item,
-      id: item.id || `LVC${String(idx + 1).padStart(5, '0')}`,
-      ma_chuyen: item.ma_chuyen || `CH${String(idx + 1).padStart(5, '0')}`,
-      createdAt: item.createdAt || new Date().toISOString(),
-      updatedAt: item.updatedAt || new Date().toISOString(),
-    }));
-  } else {
-    lichVanChuyenData = generateSampleLichVanChuyen(15);
-  }
-  // Add duplicate ma_chuyen check after reset if necessary
-  const currentMaChuyen = lichVanChuyenData.map(c => c.ma_chuyen);
-  const postResetDuplicateMaChuyen = currentMaChuyen.filter(
-    (item, index) => currentMaChuyen.indexOf(item) !== index
-  );
-  if (postResetDuplicateMaChuyen.length > 0) {
-    console.error(
-      'CRITICAL: Duplicate ma_chuyen found after _resetLichVanChuyen:',
-      postResetDuplicateMaChuyen
-    );
-  }
+  lichVanChuyenData = [...data];
+  return lichVanChuyenData;
 };
 
-// Initial check for duplicate ma_chuyen in the seed data
+// Check for duplicate ma_chuyen in seed data
 const initialMaChuyen = lichVanChuyenData.map(c => c.ma_chuyen);
 const duplicateMaChuyen = initialMaChuyen.filter(
   (item, index) => initialMaChuyen.indexOf(item) !== index
 );
-if (duplicateMaChuyen.length > 0) {
-  console.error(
-    'CRITICAL: Duplicate ma_chuyen found in initial lichVanChuyenData:',
-    duplicateMaChuyen
-  );
-}
 
-console.log('LichVanChuyen Mock Data Service Initialized with sample data.');
+if (duplicateMaChuyen.length > 0) {
+  console.warn('Duplicate ma_chuyen values found in lichVanChuyen data:', duplicateMaChuyen);
+}
