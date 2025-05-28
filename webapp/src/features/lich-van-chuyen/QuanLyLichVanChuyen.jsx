@@ -396,13 +396,13 @@ const columns = [
       // Handle both old string format and new object format for backward compatibility
       const diemDi = value?.diemDi || (typeof value === 'string' ? value.split(' → ')[0] : 'N/A');
       const diemDen = value?.diemDen || (typeof value === 'string' ? value.split(' → ')[1] : 'N/A');
-      
+
       return (
         <Box component="span" sx={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}>
-          <Box 
+          <Box
             component="span"
-            sx={{ 
-              color: 'primary.main', 
+            sx={{
+              color: 'primary.main',
               fontWeight: 500,
               whiteSpace: 'normal',
               wordBreak: 'break-word',
@@ -413,9 +413,9 @@ const columns = [
           >
             {diemDi}
           </Box>
-          <Box 
+          <Box
             component="span"
-            sx={{ 
+            sx={{
               color: 'text.secondary',
               mx: 0.5,
               lineHeight: 1.5,
@@ -425,9 +425,9 @@ const columns = [
           >
             →
           </Box>
-          <Box 
+          <Box
             component="span"
-            sx={{ 
+            sx={{
               color: 'secondary.main',
               fontWeight: 500,
               whiteSpace: 'normal',
@@ -447,23 +447,21 @@ const columns = [
   { id: 'cuocVanChuyenDisplay', header: 'Cước Vận Chuyển', align: 'right', width: '12%' },
   { id: 'loiNhuanGopDisplay', header: 'Lợi Nhuận Gộp', align: 'right', width: '12%' },
   {
-    id: 'trang_thai', 
-    header: 'Trạng Thái', 
+    id: 'trang_thai',
+    header: 'Trạng Thái',
     width: '8%',
     render: (value) => (
-      <Chip 
-        label={getDisplayTrangThai(value)} 
-        size="small" 
-        sx={{ 
-          backgroundColor: `${getStatusColor(value)}20`, 
+      <Chip
+        label={getDisplayTrangThai(value)}
+        size="small"
+        sx={{
+          backgroundColor: `${getStatusColor(value)}20`,
           color: getStatusColor(value),
           fontWeight: 500,
-          width: '90px',
-          maxWidth: '90px',
           minWidth: '90px !important',
           borderRadius: '4px',
           justifyContent: 'center'
-        }} 
+        }}
       />
     )
   },

@@ -191,9 +191,21 @@ const StandardTable = ({
               '& tr:last-child td': {
                 borderBottom: 'none',
               },
-              '& tr:hover': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.04), // Slightly darker hover
-                cursor: tableProps.onRowClick ? 'pointer' : 'default',
+              '& tr': {
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.06),
+                  cursor: onRowClick ? 'pointer' : 'default',
+                  transform: onRowClick ? 'translateY(-1px)' : 'none',
+                  boxShadow: onRowClick ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none',
+                },
+                '&:active': onRowClick ? {
+                  transform: 'translateY(0)',
+                  boxShadow: 'none',
+                } : {},
+              },
+              '& tr.Mui-selected, & tr.Mui-selected:hover': {
+                backgroundColor: alpha(theme.palette.primary.main, 0.08),
               },
             },
             ...(filteredTableProps.sx || {}), // Merge any additional sx props
@@ -233,7 +245,20 @@ const StandardTable = ({
               data.map((row, index) => {
                 const handleRowClick = onRowClick ? () => onRowClick(row) : undefined;
                 return (
-                <TableRow key={row.id || index} hover onClick={handleRowClick} sx={onRowClick ? { cursor: 'pointer' } : {}}>
+                <TableRow 
+                  key={row.id || index} 
+                  hover 
+                  onClick={handleRowClick}
+                  sx={{
+                    cursor: onRowClick ? 'pointer' : 'default',
+                    '&.Mui-selected': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                      },
+                    },
+                  }}
+                >
                   {columns.map(column => (
                     <TableCell
                       key={`${row.id || index}-${column.id}`}
