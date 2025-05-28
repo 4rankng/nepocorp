@@ -60,16 +60,39 @@ export const formatEmployeesForSelect = employeesList => {
 
 // Helper to format containers data for select options
 export const formatContainersForSelect = containersList => {
-  return containersList.map(container => ({
-    value: container.id,
-    label: container.id,
-  }));
+  return containersList.map(container => {
+    const label = container.phan_loai
+      ? `${String(container.id)} (${String(container.phan_loai)})`
+      : String(container.id);
+    return {
+      value: container.id,
+      label: label,
+    };
+  });
 };
 
 // Import addKhachHang for addQuickCustomer
 import { addKhachHang } from '@services/mockApi/index.js';
 
 // Helper function to add a new customer quickly
+// Helper to get human-readable status display string
+export const getDisplayTrangThai = rawTrangThai => {
+  switch (rawTrangThai) {
+    case 'tam_thoi':
+      return 'Tạm thời';
+    case 'len_lich':
+      return 'Lên lịch';
+    case 'dang_chay':
+      return 'Đang chạy';
+    case 'hoan_thanh':
+      return 'Hoàn thành';
+    case 'huy_bo':
+      return 'Hủy bỏ';
+    default:
+      return rawTrangThai || 'Không xác định'; // Fallback to raw or 'Unknown'
+  }
+};
+
 export const addQuickCustomer = async customerName => {
   if (!customerName || customerName.trim() === '') {
     throw new Error('Tên khách hàng không được để trống');

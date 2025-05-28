@@ -20,6 +20,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
+import { getDisplayTrangThai } from '@features/lich-van-chuyen/utils/lichVanChuyenUtils'; // Added import
 
 const MobileShipmentCard = ({
   plan,
@@ -69,11 +70,11 @@ const MobileShipmentCard = ({
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Chip
-                label={plan.trangThai}
+                label={getDisplayTrangThai(plan.trangThai)}
                 size="small"
                 sx={{
-                  backgroundColor: '#e5e7eb',
-                  color: '#374151',
+                  backgroundColor: statusColor,
+                  color: '#fff',
                   fontWeight: 500,
                   fontSize: '12px',
                 }}

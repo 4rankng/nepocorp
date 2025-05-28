@@ -22,9 +22,9 @@ import {
   useMediaQuery,
   useTheme,
   Dialog,
-  // DialogTitle, // Used in child components
-  // DialogContent, // Used in child components
-  // DialogActions, // Used in child components
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   // TextField, // Used in child components
   // MenuItem, // Used in child components
   // Stepper, // Used in child components
@@ -45,8 +45,9 @@ import MobileView from '@features/lich-van-chuyen/components/MobileView';
 import DesktopView from '@features/lich-van-chuyen/components/DesktopView';
 import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog';
 import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper';
-import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
+import { getStatusColor } from './utils/styleUtils';
 import {
+  getDisplayTrangThai,
   formatDateForDisplay,
   formatVehiclesForSelect,
   formatCustomersForSelect,
@@ -145,7 +146,38 @@ const QuanLyLichVanChuyen = () => {
       const employeesData = formatEmployeesForSelect(employeesList);
       const containersData = formatContainersForSelect(containersList);
 
-      setLichVanChuyenItems(lichVanChuyenList);
+      const processedLichVanChuyenList = lichVanChuyenList.map(item => {
+        const customer = customersList.find(c => c.id === item.khach_hang_id);
+        
+        let vehicle = dauKeoList.find(v => v.id === item.bien_so_xe_id);
+        if (!vehicle) {
+            vehicle = roMoocList.find(v => v.id === item.bien_so_xe_id);
+        }
+
+        const container = containersList.find(cont => cont.id === item.container_id);
+        const giaoNhan = employeesList.find(emp => emp.id === item.nhan_vien_giao_nhan_id);
+        const laiXe = employeesList.find(emp => emp.id === item.nhan_vien_lai_xe_id);
+
+        return {
+            ...item, // Spread original item to keep all its data for editing/deleting
+            dienGiai: item.ghi_chu || item.ma_chuyen || undefined, // Let card handle final fallback
+            ngayThang: formatDateForDisplay(item.ngay_van_chuyen),
+            khachHang: customer ? customer.ten : 'N/A',
+            bienSoXe: vehicle ? vehicle.bien_so : 'N/A',
+            tuyenDuong: {
+                diemDi: item.diem_xuat_phat || 'N/A',
+                diemDen: item.diem_tra_hang || 'N/A',
+            },
+            soLuongContainer: item.container_id ? 1 : 0, // Simplified for now
+            // Fields for expanded view in MobileShipmentCard
+            loaiContainer: container ? `${container.id} (${container.phan_loai || 'Chưa rõ'})` : 'N/A',
+            nhanVienGiaoNhan: giaoNhan ? giaoNhan.ho_ten : 'N/A',
+            nhanVienLaiXe: laiXe ? laiXe.ho_ten : 'N/A',
+            // ghiChu is already available via ...item as item.ghi_chu. MobileShipmentCard uses plan.ghiChu || 'N/A'.
+        };
+    });
+
+      setLichVanChuyenItems(processedLichVanChuyenList);
       setSelectOptions({
         vehicles: vehiclesData,
         customers: customersData,
@@ -347,7 +379,7 @@ const QuanLyLichVanChuyen = () => {
         const status = value || '-';
         return (
           <Chip
-            label={status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} // Format status display
+            label={getDisplayTrangThai(status)} // Use consistent display function
             size="small"
             sx={{
               backgroundColor: getStatusColor(status),
@@ -470,12 +502,12 @@ const QuanLyLichVanChuyen = () => {
           onSearchTermChange={e => setSearchTerm(e.target.value)}
           filterStatus={filterStatus}
           onFilterStatusChange={e => setFilterStatus(e.target.value)}
-          items={filteredLichVanChuyenItems}
+          filteredPlans={filteredLichVanChuyenItems}
           isLoading={isLoading}
           expandedCard={expandedCard}
           onCardExpand={handleCardExpand}
-          onEditItem={handleOpenModalForEditMobile}
-          onDeleteItem={handleDeleteClick}
+          onEdit={handleOpenModalForEditMobile}
+          onDelete={handleDeleteClick}
           onAdd={handleOpenModalForAddMobile}
           canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
         />

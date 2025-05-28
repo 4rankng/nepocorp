@@ -5,10 +5,11 @@
 import { v4 as _uuidv4 } from 'uuid'; // For generating unique IDs (unused currently)
 
 const TRANG_THAI_LICH_VAN_CHUYEN = {
-  CHUA_THUC_HIEN: 'chua_thuc_hien',
-  DANG_THUC_HIEN: 'dang_thuc_hien',
-  HOAN_THANH: 'hoan_thanh',
-  HUY_BO: 'huy_bo',
+  TAM_THOI: 'tam_thoi',        // Temporary
+  LEN_LICH: 'len_lich',        // Scheduled
+  DANG_CHAY: 'dang_chay',       // In transit / Running
+  HOAN_THANH: 'hoan_thanh',    // Completed
+  HUY_BO: 'huy_bo',           // Cancelled
 };
 
 let lichVanChuyenData = [];
@@ -38,10 +39,12 @@ const generateSampleLichVanChuyen = (count = 15) => {
       nhan_vien_lai_xe_id: `NVLX${String((i % 3) + 1).padStart(3, '0')}`, // NVLX001, NVLX002, NVLX003
       ghi_chu:
         trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HUY_BO
-          ? 'Lý do hủy: Thời tiết xấu'
-          : i % 4 === 0
-            ? 'Hàng dễ vỡ, xin nhẹ tay'
-            : '',
+          ? 'Lý do hủy: Yêu cầu từ khách hàng'
+          : trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.TAM_THOI
+            ? 'Chờ xác nhận thông tin container'
+            : i % 4 === 0
+              ? 'Hàng giá trị cao, yêu cầu bảo hiểm'
+              : '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
