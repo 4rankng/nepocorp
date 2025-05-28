@@ -18,7 +18,6 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllDoiTac = () => {
-  console.log('[Mock API] Fetching all DoiTac...');
   return simulateApiCall(doiTacDataService.getAllDoiTac);
 };
 
@@ -27,7 +26,6 @@ export const fetchDoiTacById = id => {
 };
 
 export const addDoiTac = data => {
-  console.log('[Mock API] Creating DoiTac:', data);
   return simulateApiCall(() => doiTacDataService.createDoiTac(data));
 };
 
@@ -40,8 +38,5 @@ export const removeDoiTac = id => {
 };
 
 export const _resetDoiTacMockData = data => {
-  console.log('[Mock API] Resetting DoiTac Data (via API layer)...');
   return simulateApiCall(() => doiTacDataService._resetDoiTac(data));
 };
-
-console.log('DoiTac Mock API service loaded and configured.');

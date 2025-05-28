@@ -1,10 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const TARGET_DIRS = [
-  path.join(__dirname, '../src'),
-  path.join(__dirname)
-];
+const TARGET_DIR = path.join(__dirname, '../src');
 
 function removeConsoleLogsFromFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
@@ -27,4 +24,4 @@ function walkAndClean(dir) {
   });
 }
 
-TARGET_DIRS.forEach(walkAndClean);
+walkAndClean(TARGET_DIR);

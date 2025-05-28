@@ -270,7 +270,6 @@ export const getPartnerReport = (partnerId, _startDate, _endDate) => {
 
 // Export functions (mock implementations)
 export const exportReportToExcel = async (reportType, reportData, filename) => {
-  console.log(`[Mock] Exporting ${reportType} to Excel: ${filename}`);
   // In a real implementation, this would generate and download an Excel file
   return Promise.resolve({
     success: true,
@@ -280,7 +279,6 @@ export const exportReportToExcel = async (reportType, reportData, filename) => {
 };
 
 export const exportReportToPDF = async (reportType, reportData, filename) => {
-  console.log(`[Mock] Exporting ${reportType} to PDF: ${filename}`);
   // In a real implementation, this would generate and download a PDF file
   return Promise.resolve({
     success: true,
@@ -288,5 +286,3 @@ export const exportReportToPDF = async (reportType, reportData, filename) => {
     url: `mock-export/${filename}.pdf`,
   });
 };
-
-console.log('Reports mock data service loaded and configured.');

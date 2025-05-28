@@ -18,7 +18,6 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllContainer = () => {
-
   return simulateApiCall(containerDataService.getAllContainer);
 };
 
@@ -27,7 +26,6 @@ export const fetchContainerById = id => {
 };
 
 export const addContainer = data => {
-
   return simulateApiCall(() => containerDataService.createContainer(data));
 };
 
@@ -40,7 +38,6 @@ export const removeContainer = id => {
 };
 
 export const _resetContainerMockData = data => {
-
   return simulateApiCall(() => containerDataService._resetContainer(data));
 };
 
@@ -55,5 +52,3 @@ export const containerApi = {
   _reset: _resetContainerMockData,
   getCount: getContainerCount,
 };
-
-console.log('Container Mock API service loaded and configured (no delay).');

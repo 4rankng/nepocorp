@@ -104,7 +104,6 @@ const BaoCaoCongNo = () => {
   };
 
   const handleExportExcel = () => {
-    console.log('Export Debt Report to Excel clicked for month:', filteredData);
     alert('Chức năng Xuất Excel chưa được triển khai trong bản demo này.');
   };
 

@@ -199,7 +199,6 @@ export const deleteKhachHang = async id => {
 export const _resetKhachHang = (data = []) => {
   khachHangData = data.map((item, index) => ({ ...item, id: index + 1 })); // Ensure numeric IDs if resetting
   nextKhachHangId = khachHangData.length > 0 ? Math.max(...khachHangData.map(kh => kh.id)) + 1 : 1;
-  console.log('KhachHang data reset. Next ID:', nextKhachHangId);
 };
 
 // Initialize nextId based on current data, in case of manual changes to initial data
@@ -208,4 +207,3 @@ if (khachHangData.length > 0) {
 } else {
   nextKhachHangId = 1;
 }
-console.log('Initial nextKhachHangId:', nextKhachHangId);

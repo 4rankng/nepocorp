@@ -82,7 +82,12 @@ export const formatCurrencyVND = (value, fallback = '-') => {
     return fallback;
   }
   // Remove decimals for VND as it typically doesn't use them
-  return Number(value).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  return Number(value).toLocaleString('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 };
 
 export const getDisplayTrangThai = rawTrangThai => {

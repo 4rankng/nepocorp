@@ -20,7 +20,6 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllDinhMuc = () => {
-  console.log('[Mock API] Fetching all Dinh Muc...');
   return simulateApiCall(dinhMucDataService.getAllDinhMuc);
 };
 
@@ -37,7 +36,6 @@ export const getByBienSoAndType = (bienSoXe, type) => {
 
 export const addDinhMuc = data => {
   // Renamed from createDinhMuc to follow convention like addKhachHang
-  console.log('[Mock API] Creating Dinh Muc:', data);
   return simulateApiCall(() => dinhMucDataService.createDinhMuc(data));
 };
 
@@ -56,13 +54,11 @@ export const removeDinhMuc = id => {
 // For testing purposes, if needed by the API layer
 export const _resetDinhMucApiData = data => {
   // Renamed for clarity
-  console.log('[Mock API] Resetting Dinh Muc Data (via API layer)...');
   return simulateApiCall(() => dinhMucDataService._resetDinhMuc(data));
 };
 
 // Bo Sung (Supplementary) related methods - delegate to cauHinhApi
 export const getBoSung = () => {
-  console.log('[Mock API] Fetching Bo Sung (Supplementary) from CauHinh...');
   return simulateApiCall(async () => {
     const response = await cauHinhApi.getDinhMucBoSung();
     return response;
@@ -88,5 +84,3 @@ export const dinhMucApi = {
   updateSupplementaryStandard: updateBoSung,
   _reset: _resetDinhMucApiData,
 };
-
-console.log('Dinh Muc Mock API service loaded and configured.');

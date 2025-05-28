@@ -21,7 +21,6 @@ const BasicCustomerUsage = () => {
     if (result.success) {
       setIsFormOpen(false);
       setSelectedCustomer(null);
-      console.log('Customer saved successfully');
     }
   };
 
@@ -34,7 +33,6 @@ const BasicCustomerUsage = () => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa khách hàng ${customer.name}?`)) {
       const result = await deleteCustomer(customer.id);
       if (result.success) {
-        console.log('Customer deleted successfully');
       }
     }
   };
@@ -86,7 +84,6 @@ export const CustomerFormExample = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSave = formData => {
-    console.log('Form data:', formData);
     // Here you would typically call your API
     setIsOpen(false);
   };

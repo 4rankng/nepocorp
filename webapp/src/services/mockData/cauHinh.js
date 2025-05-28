@@ -124,5 +124,3 @@ if (cauHinhData.length > 0) {
   const maxId = Math.max(...cauHinhData.map(ch => ch.id));
   nextCauHinhId = maxId + 1;
 }
-
-console.log('CauHinh Mock Data Service loaded and configured.');

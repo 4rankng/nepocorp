@@ -19,38 +19,32 @@ const simulateApiCall = fn => {
 
 // Financial reports
 export const fetchMonthlyProfitAndRevenueReport = (_startDate, endDate) => {
-  console.log('[Mock API] Fetching monthly profit and revenue report...', { _startDate, endDate });
   return simulateApiCall(() =>
     reportDataService.getMonthlyProfitAndRevenueReport(_startDate, endDate)
   );
 };
 
 export const fetchDetailedCostReport = (_startDate, endDate) => {
-  console.log('[Mock API] Fetching detailed cost report...', { _startDate, endDate });
   return simulateApiCall(() => reportDataService.getDetailedCostReport(_startDate, endDate));
 };
 
 export const fetchDebtReport = (_startDate, endDate) => {
-  console.log('[Mock API] Fetching debt report...', { _startDate, endDate });
   return simulateApiCall(() => reportDataService.getDebtReport(_startDate, endDate));
 };
 
 // Vehicle tracking reports
 export const fetchVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
-  console.log('[Mock API] Fetching vehicle monthly details report...', { vehicleId, monthYear });
   return simulateApiCall(() =>
     reportDataService.getVehicleMonthlyDetailsReport(vehicleId, monthYear)
   );
 };
 
 export const fetchAvailableMonthsForReport = () => {
-  console.log('[Mock API] Fetching available months for reports...');
   return simulateApiCall(() => reportDataService.getAvailableMonthsForReport());
 };
 
 // Additional report types
 export const fetchDailyRevenueReport = (_startDate, endDate) => {
-  console.log('[Mock API] Fetching daily revenue report...', { _startDate, endDate });
   return simulateApiCall(() => reportDataService.getDailyRevenueReport(_startDate, endDate));
 };
 
@@ -77,23 +71,18 @@ export const fetchVehiclePerformanceReport = (vehicleId, _startDate, endDate) =>
 };
 
 export const fetchPartnerReport = (partnerId, _startDate, endDate) => {
-  console.log('[Mock API] Fetching partner report...', { partnerId, _startDate, endDate });
   return simulateApiCall(() => reportDataService.getPartnerReport(partnerId, _startDate, endDate));
 };
 
 // Export report functionality
 export const exportReportToExcel = (reportType, reportData, filename) => {
-  console.log('[Mock API] Exporting report to Excel...', { reportType, filename });
   return simulateApiCall(() =>
     reportDataService.exportReportToExcel(reportType, reportData, filename)
   );
 };
 
 export const exportReportToPDF = (reportType, reportData, filename) => {
-  console.log('[Mock API] Exporting report to PDF...', { reportType, filename });
   return simulateApiCall(() =>
     reportDataService.exportReportToPDF(reportType, reportData, filename)
   );
 };
-
-console.log('Report Mock API service loaded and configured.');

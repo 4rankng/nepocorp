@@ -20,7 +20,6 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllDauKeo = () => {
-
   return simulateApiCall(dauKeoDataService.getAllDauKeo);
 };
 
@@ -29,7 +28,6 @@ export const fetchDauKeoById = id => {
 };
 
 export const addDauKeo = data => {
-
   return simulateApiCall(() => dauKeoDataService.createDauKeo(data));
 };
 
@@ -42,7 +40,6 @@ export const removeDauKeo = id => {
 };
 
 export const _resetDauKeoMockData = data => {
-  console.log('[Mock API] Resetting DauKeo Data (via API layer)...');
   return simulateApiCall(() => dauKeoDataService._resetDauKeo(data));
 };
 
@@ -58,5 +55,3 @@ export const dauKeoApi = {
   _reset: _resetDauKeoMockData,
   getCount: getDauKeoCount,
 };
-
-console.log('DauKeo Mock API service loaded and configured.');

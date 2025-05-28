@@ -18,7 +18,6 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllNhanVien = () => {
-  console.log('[Mock API] Fetching all NhanVien...');
   return simulateApiCall(nhanVienDataService.getAllNhanVien);
 };
 
@@ -27,7 +26,6 @@ export const fetchNhanVienById = id => {
 };
 
 export const addNhanVien = data => {
-  console.log('[Mock API] Creating NhanVien:', data);
   return simulateApiCall(() => nhanVienDataService.createNhanVien(data));
 };
 
@@ -40,8 +38,5 @@ export const removeNhanVien = id => {
 };
 
 export const _resetNhanVienMockData = data => {
-  console.log('[Mock API] Resetting NhanVien Data (via API layer)...');
   return simulateApiCall(() => nhanVienDataService._resetNhanVien(data));
 };
-
-console.log('NhanVien Mock API service loaded and configured (no delay).');

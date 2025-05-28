@@ -14,7 +14,6 @@ const DangNhap = () => {
     setError('');
 
     if (canLogin) {
-      console.log('Login attempt with:', { username, password });
       // TODO: Implement actual authentication
       // For now, simulating a successful login attempt message
       // navigate('/quan-ly'); // Example navigation, commented out for now
@@ -77,7 +76,6 @@ const DangNhap = () => {
               className="font-medium text-indigo-600 hover:text-indigo-500"
               onClick={e => {
                 e.preventDefault();
-                console.log('Forgot password clicked');
               }}
             >
               Quên mật khẩu?

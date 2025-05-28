@@ -199,10 +199,12 @@ const StandardTable = ({
                   transform: onRowClick ? 'translateY(-1px)' : 'none',
                   boxShadow: onRowClick ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none',
                 },
-                '&:active': onRowClick ? {
-                  transform: 'translateY(0)',
-                  boxShadow: 'none',
-                } : {},
+                '&:active': onRowClick
+                  ? {
+                      transform: 'translateY(0)',
+                      boxShadow: 'none',
+                    }
+                  : {},
               },
               '& tr.Mui-selected, & tr.Mui-selected:hover': {
                 backgroundColor: alpha(theme.palette.primary.main, 0.08),
@@ -245,48 +247,47 @@ const StandardTable = ({
               data.map((row, index) => {
                 const handleRowClick = onRowClick ? () => onRowClick(row) : undefined;
                 return (
-                <TableRow 
-                  key={row.id || index} 
-                  hover 
-                  onClick={handleRowClick}
-                  sx={{
-                    cursor: onRowClick ? 'pointer' : 'default',
-                    '&.Mui-selected': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                      '&:hover': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  <TableRow
+                    key={row.id || index}
+                    hover
+                    onClick={handleRowClick}
+                    sx={{
+                      cursor: onRowClick ? 'pointer' : 'default',
+                      '&.Mui-selected': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                        '&:hover': {
+                          backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                        },
                       },
-                    },
-                  }}
-                >
-                  {columns.map(column => (
-                    <TableCell
-                      key={`${row.id || index}-${column.id}`}
-                      align={column.align || (column.numeric ? 'right' : 'left')}
-                      sx={{
-                        fontFamily: column.numeric ? 'monospace' : 'inherit',
-                        color: column.getColor ? column.getColor(row[column.id], row) : 'inherit',
-                        fontWeight: column.fontWeight || 'inherit',
-                        maxWidth: column.maxWidth,
-                        whiteSpace: column.noWrap ? 'nowrap' : 'normal',
-                        overflow: column.maxWidth ? 'hidden' : 'visible',
-                        textOverflow: column.maxWidth ? 'ellipsis' : 'clip',
-                      }}
-                    >
-                      {column.render ? column.render(row[column.id], row) : row[column.id]}
-                    </TableCell>
-                  ))}
-                  {renderActions && (
-                    <TableCell align="right" sx={{ py: 0.5 }}>
-                      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                        {renderActions(row)}
-                      </Box>
-                    </TableCell>
-                  )}
-                </TableRow>
-              );
-            })
-
+                    }}
+                  >
+                    {columns.map(column => (
+                      <TableCell
+                        key={`${row.id || index}-${column.id}`}
+                        align={column.align || (column.numeric ? 'right' : 'left')}
+                        sx={{
+                          fontFamily: column.numeric ? 'monospace' : 'inherit',
+                          color: column.getColor ? column.getColor(row[column.id], row) : 'inherit',
+                          fontWeight: column.fontWeight || 'inherit',
+                          maxWidth: column.maxWidth,
+                          whiteSpace: column.noWrap ? 'nowrap' : 'normal',
+                          overflow: column.maxWidth ? 'hidden' : 'visible',
+                          textOverflow: column.maxWidth ? 'ellipsis' : 'clip',
+                        }}
+                      >
+                        {column.render ? column.render(row[column.id], row) : row[column.id]}
+                      </TableCell>
+                    ))}
+                    {renderActions && (
+                      <TableCell align="right" sx={{ py: 0.5 }}>
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                          {renderActions(row)}
+                        </Box>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

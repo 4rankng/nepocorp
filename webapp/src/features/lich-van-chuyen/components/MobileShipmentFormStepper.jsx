@@ -300,7 +300,6 @@ const MobileShipmentFormStepper = ({
 
   const handleSavePartner = async partnerData => {
     // Partner functionality not implemented yet
-    console.log('Partner save not implemented:', partnerData);
     handleClosePartnerDialog();
     return { success: false, error: 'Chức năng đối tác chưa được triển khai' };
   };

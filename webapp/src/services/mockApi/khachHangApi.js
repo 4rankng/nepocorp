@@ -18,7 +18,6 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllKhachHang = () => {
-  console.log('[Mock API] Fetching all KhachHang...');
   return simulateApiCall(async () => {
     const allCustomers = await khachHangDataService.getAllKhachHang();
     return allCustomers; // Ensure this line is changed
@@ -30,7 +29,6 @@ export const fetchKhachHangById = id => {
 };
 
 export const addKhachHang = data => {
-  console.log('[Mock API] Creating KhachHang:', data);
   return simulateApiCall(() => khachHangDataService.createKhachHang(data));
 };
 
@@ -43,8 +41,5 @@ export const removeKhachHang = id => {
 };
 
 export const _resetKhachHangMockData = data => {
-  console.log('[Mock API] Resetting KhachHang Data (via API layer)...');
   return simulateApiCall(() => khachHangDataService._resetKhachHang(data));
 };
-
-console.log('KhachHang Mock API service loaded and configured.');

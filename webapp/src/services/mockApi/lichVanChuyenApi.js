@@ -18,7 +18,6 @@ const simulateApiCall = fn => {
 };
 
 export const fetchAllLichVanChuyen = () => {
-  console.log('[Mock API] Fetching all LichVanChuyen...');
   return simulateApiCall(lichVanChuyenDataService.getAllLichVanChuyen);
 };
 
@@ -31,7 +30,6 @@ export const fetchLichVanChuyenByMaChuyen = maChuyen => {
 };
 
 export const addLichVanChuyen = data => {
-  console.log('[Mock API] Creating LichVanChuyen:', data);
   return simulateApiCall(() => lichVanChuyenDataService.createLichVanChuyen(data));
 };
 
@@ -44,8 +42,5 @@ export const removeLichVanChuyen = id => {
 };
 
 export const _resetLichVanChuyenMockData = data => {
-  console.log('[Mock API] Resetting LichVanChuyen Data (via API layer)...');
   return simulateApiCall(() => lichVanChuyenDataService._resetLichVanChuyen(data));
 };
-
-console.log('LichVanChuyen Mock API service loaded and configured.');

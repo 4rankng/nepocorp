@@ -3,11 +3,11 @@
 //         bien_so_dau_keo, ma_so_cont, ma_nv_giao_nhan, ma_nv_lai_xe, ghi_chu, createdAt, updatedAt
 
 const TRANG_THAI_LICH_VAN_CHUYEN = {
-  TAM_THOI: 'tam_thoi',        // Temporary
-  LEN_LICH: 'len_lich',        // Scheduled
-  DANG_CHAY: 'dang_chay',      // In transit / Running
-  HOAN_THANH: 'hoan_thanh',    // Completed
-  HUY_BO: 'huy_bo'            // Cancelled
+  TAM_THOI: 'tam_thoi', // Temporary
+  LEN_LICH: 'len_lich', // Scheduled
+  DANG_CHAY: 'dang_chay', // In transit / Running
+  HOAN_THANH: 'hoan_thanh', // Completed
+  HUY_BO: 'huy_bo', // Cancelled
 };
 
 let lichVanChuyenData = [];
@@ -28,7 +28,7 @@ const generateSampleLichVanChuyen = (count = 15) => {
 
     const trangThaiValues = Object.values(TRANG_THAI_LICH_VAN_CHUYEN);
     const trang_thai = trangThaiValues[i % trangThaiValues.length];
-    
+
     let ngay_ha_hang = '';
     if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
       const ngayHaHang = new Date(ngayDi);
@@ -47,7 +47,7 @@ const generateSampleLichVanChuyen = (count = 15) => {
     const cuoc_thue_van_chuyen_vnd = i % 3 === 0 ? 0 : Math.floor(Math.random() * 900000) + 100000; // Some with 0 for own vehicle
     const vnd_dau = Math.floor(Math.random() * 1000000) + 5000000;
     const vnd_di_duong = Math.floor(Math.random() * 2000000) + 1000000;
-    
+
     samples.push({
       id: i,
       ma_chuyen: `MC${String(i).padStart(3, '0')}`,
@@ -60,7 +60,7 @@ const generateSampleLichVanChuyen = (count = 15) => {
       cuoc_van_chuyen_vnd: cuoc_van_chuyen_vnd,
       cuoc_thue_van_chuyen_vnd: cuoc_thue_van_chuyen_vnd,
       bien_so_dau_keo: `15C-${String(10000 + i).substring(1)}`,
-      ma_so_cont: (i % 2 === 0) ? '20DC' : '40HC',
+      ma_so_cont: i % 2 === 0 ? '20DC' : '40HC',
       ma_nv_giao_nhan: `NV${String(3 + (i % 3)).padStart(3, '0')}`,
       ma_nv_lai_xe: `NV${String(4 + (i % 3)).padStart(3, '0')}`,
       ghi_chu,
@@ -71,7 +71,7 @@ const generateSampleLichVanChuyen = (count = 15) => {
       vnd_di_duong: vnd_di_duong,
       vnd_chi_phi: vnd_dau + vnd_di_duong, // Calculate total cost
       createdAt: now.toISOString(),
-      updatedAt: now.toISOString()
+      updatedAt: now.toISOString(),
     });
   }
 
@@ -94,7 +94,7 @@ export const getAllLichVanChuyen = async () => {
  * @param {number} id - The ID of the transport schedule
  * @returns {Promise<Object|null>} The transport schedule or null if not found
  */
-export const getLichVanChuyenById = async (id) => {
+export const getLichVanChuyenById = async id => {
   return lichVanChuyenData.find(item => item.id === id) || null;
 };
 
@@ -103,7 +103,7 @@ export const getLichVanChuyenById = async (id) => {
  * @param {string} maChuyen - The ma_chuyen of the transport schedule
  * @returns {Promise<Object|null>} The transport schedule or null if not found
  */
-export const getLichVanChuyenByMaChuyen = async (maChuyen) => {
+export const getLichVanChuyenByMaChuyen = async maChuyen => {
   return lichVanChuyenData.find(item => item.ma_chuyen === maChuyen) || null;
 };
 
@@ -112,7 +112,7 @@ export const getLichVanChuyenByMaChuyen = async (maChuyen) => {
  * @param {Object} data - The transport schedule data
  * @returns {Promise<Object>} The created transport schedule
  */
-export const createLichVanChuyen = async (data) => {
+export const createLichVanChuyen = async data => {
   if (!data.ma_chuyen) {
     throw new Error('Mã chuyến là bắt buộc');
   }
@@ -122,13 +122,14 @@ export const createLichVanChuyen = async (data) => {
   }
 
   if (data.trang_thai && !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(data.trang_thai)) {
-    throw new Error(`Trạng thái không hợp lệ. Phải là một trong: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`);
+    throw new Error(
+      `Trạng thái không hợp lệ. Phải là một trong: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`
+    );
   }
 
-  const newId = lichVanChuyenData.length > 0 
-    ? Math.max(...lichVanChuyenData.map(item => item.id)) + 1 
-    : 1;
-  
+  const newId =
+    lichVanChuyenData.length > 0 ? Math.max(...lichVanChuyenData.map(item => item.id)) + 1 : 1;
+
   const now = new Date().toISOString();
   const newRecord = {
     id: newId,
@@ -150,9 +151,9 @@ export const createLichVanChuyen = async (data) => {
     vnd_dau: data.vnd_dau || 0,
     vnd_di_duong: data.vnd_di_duong || 0,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
   };
-  
+
   lichVanChuyenData.push(newRecord);
   return newRecord;
 };
@@ -168,20 +169,28 @@ export const updateLichVanChuyen = async (id, updates) => {
   if (index === -1) return null;
 
   const { ma_chuyen: newMaChuyen } = updates;
-  if (newMaChuyen && lichVanChuyenData.some(item => item.ma_chuyen === newMaChuyen && item.id !== id)) {
+  if (
+    newMaChuyen &&
+    lichVanChuyenData.some(item => item.ma_chuyen === newMaChuyen && item.id !== id)
+  ) {
     throw new Error('Mã chuyến đã tồn tại');
   }
 
-  if (updates.trang_thai && !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(updates.trang_thai)) {
-    throw new Error(`Trạng thái không hợp lệ. Phải là một trong: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`);
+  if (
+    updates.trang_thai &&
+    !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(updates.trang_thai)
+  ) {
+    throw new Error(
+      `Trạng thái không hợp lệ. Phải là một trong: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`
+    );
   }
 
   const updatedRecord = {
     ...lichVanChuyenData[index],
     ...updates,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
-  
+
   lichVanChuyenData[index] = updatedRecord;
   return updatedRecord;
 };
@@ -191,10 +200,10 @@ export const updateLichVanChuyen = async (id, updates) => {
  * @param {number} id - The ID of the transport schedule to delete
  * @returns {Promise<boolean>} True if deleted, false if not found
  */
-export const deleteLichVanChuyen = async (id) => {
+export const deleteLichVanChuyen = async id => {
   const index = lichVanChuyenData.findIndex(item => item.id === id);
   if (index === -1) return false;
-  
+
   lichVanChuyenData.splice(index, 1);
   return true;
 };

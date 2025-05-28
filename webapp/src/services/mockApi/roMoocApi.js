@@ -38,7 +38,6 @@ export const removeRoMooc = id => {
 };
 
 export const _resetRoMoocMockData = data => {
-  console.log('[Mock API] Resetting RoMooc Data (via API layer)...');
   return simulateApiCall(() => roMoocDataService._resetRoMooc(data));
 };
 
@@ -54,5 +53,3 @@ export const roMoocApi = {
   _reset: _resetRoMoocMockData,
   getCount: getRoMoocCount,
 };
-
-console.log('RoMooc Mock API service loaded and configured (no delay).');

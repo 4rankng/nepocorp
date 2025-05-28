@@ -81,10 +81,59 @@ const initialFormState = {
 
 // Helper functions moved to ./utils/lichVanChuyenUtils.js
 
+// Function to handle descending comparator
+function descendingComparator(a, b, orderBy) {
+  if (b[orderBy] < a[orderBy]) {
+    return -1;
+  }
+  if (b[orderBy] > a[orderBy]) {
+    return 1;
+  }
+  return 0;
+}
+
+// Function to get comparator for sorting
+function getComparator(order, orderBy, columns) {
+  return order === 'desc'
+    ? (a, b) => {
+        const column = columns?.find(col => col.id === orderBy);
+        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : a[orderBy] ?? '';
+        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : b[orderBy] ?? '';
+
+        if (bValue < aValue) return -1;
+        if (bValue > aValue) return 1;
+        return 0;
+      }
+    : (a, b) => {
+        const column = columns?.find(col => col.id === orderBy);
+        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : a[orderBy] ?? '';
+        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : b[orderBy] ?? '';
+
+        if (aValue < bValue) return -1;
+        if (aValue > bValue) return 1;
+        return 0;
+      };
+}
+
+// Function to stable sort array
+function stableSort(array, comparator) {
+  const stabilizedThis = array.map((el, index) => [el, index]);
+  stabilizedThis.sort((a, b) => {
+    const order = comparator(a[0], b[0]);
+    if (order !== 0) return order;
+    return a[1] - b[1];
+  });
+  return stabilizedThis.map(el => el[0]);
+}
+
 const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   // const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg')); // Unused variable
+
+  // Sorting state
+  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('ngayDi');
 
   const { hasAnyRole } = useAuth(); // Get role checker
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]); // Example: Manager and Dispatcher can add
@@ -118,15 +167,15 @@ const QuanLyLichVanChuyen = () => {
     return {
       id: item.id || '', // Keep id for editing
       ma_chuyen: item.ma_chuyen || '',
-      ngay_van_chuyen: item.ngay_di || item.ngay_van_chuyen || '', // Map ngay_di to ngay_van_chuyen
+      ngay_van_chuyen: item.ngay_di || '', // Use ngay_di as the source of truth
       trang_thai: item.trang_thai || 'tam_thoi',
-      khach_hang_id: item.ma_khach_hang || item.khach_hang_id || '',
-      diem_xuat_phat: item.diem_di || item.diem_xuat_phat || '',
-      diem_tra_hang: item.diem_den || item.diem_tra_hang || '',
-      bien_so_xe_id: item.bien_so_dau_keo || item.bien_so_xe_id || '',
-      container_id: item.ma_so_cont || item.container_id || '',
-      nhan_vien_giao_nhan_id: item.ma_nv_giao_nhan || item.nhan_vien_giao_nhan_id || '',
-      nhan_vien_lai_xe_id: item.ma_nv_lai_xe || item.nhan_vien_lai_xe_id || '',
+      khach_hang_id: item.ma_khach_hang || '',
+      diem_xuat_phat: item.diem_di || '',
+      diem_tra_hang: item.diem_den || '',
+      bien_so_xe_id: item.bien_so_dau_keo || '',
+      container_id: item.ma_so_cont || '',
+      nhan_vien_giao_nhan_id: item.ma_nv_giao_nhan || '',
+      nhan_vien_lai_xe_id: item.ma_nv_lai_xe || '',
       ghi_chu: item.ghi_chu || '',
       ngay_ha_hang: item.ngay_ha_hang || '',
       tong_chi_phi: item.vnd_dau || item.tong_chi_phi || 0,
@@ -141,7 +190,6 @@ const QuanLyLichVanChuyen = () => {
     setIsLoading(true);
     setError('');
     try {
-      console.log('Fetching data from APIs...');
       const [
         lichVanChuyenList,
         dauKeoList,
@@ -171,10 +219,7 @@ const QuanLyLichVanChuyen = () => {
       const customersData = formatCustomersForSelect(customersList);
       const employeesData = formatEmployeesForSelect(employeesList);
       const containersData = formatContainersForSelect(containersList);
-
-      console.log('Processing lichVanChuyenList items. Count:', lichVanChuyenList.length);
       const processedLichVanChuyenList = lichVanChuyenList.map((item, index) => {
-        console.log(`Processing item ${index + 1}/${lichVanChuyenList.length}:`, item);
         // Map fields from both old and new field names
         const ma_chuyen = item.ma_chuyen || '';
         const ngay_di = item.ngay_di || item.ngay_van_chuyen || '';
@@ -195,69 +240,76 @@ const QuanLyLichVanChuyen = () => {
         const l_dau = item.l_dau || 0;
 
         // Find related entities
-        const customer = customersList.find(c => c.id === ma_khach_hang || c.ma_khach_hang === ma_khach_hang);
-        let vehicle = dauKeoList.find(v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo);
+        const customer = customersList.find(
+          c => c.id === ma_khach_hang || c.ma_khach_hang === ma_khach_hang
+        );
+        let vehicle = dauKeoList.find(
+          v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo
+        );
         if (!vehicle) {
-            vehicle = roMoocList.find(v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo);
+          vehicle = roMoocList.find(v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo);
         }
-        const container = containersList.find(cont => cont.id === ma_so_cont || cont.ma_so === ma_so_cont);
-        const giaoNhan = employeesList.find(emp => emp.id === ma_nv_giao_nhan || emp.ma_nhan_vien === ma_nv_giao_nhan);
-        const laiXe = employeesList.find(emp => emp.id === ma_nv_lai_xe || emp.ma_nhan_vien === ma_nv_lai_xe);
+        const container = containersList.find(
+          cont => cont.id === ma_so_cont || cont.ma_so === ma_so_cont
+        );
+        const giaoNhan = employeesList.find(
+          emp => emp.id === ma_nv_giao_nhan || emp.ma_nhan_vien === ma_nv_giao_nhan
+        );
+        const laiXe = employeesList.find(
+          emp => emp.id === ma_nv_lai_xe || emp.ma_nhan_vien === ma_nv_lai_xe
+        );
 
         const loi_nhuan_gop = vnd_di_duong - vnd_dau;
-        
+
         return {
-            // Original fields
-            ...item,
-            
-            // Mapped fields (support both old and new field names)
-            id: item.id,
-            ma_chuyen,
-            ngay_di,
-            diem_di,
-            diem_den,
-            ma_khach_hang,
-            bien_so_dau_keo,
-            ma_so_cont,
-            trang_thai,
-            ghi_chu,
-            ngay_ha_hang,
-            ma_nv_giao_nhan,
-            ma_nv_lai_xe,
-            vnd_dau,
-            vnd_di_duong,
-            km_hang,
-            km_vo,
-            l_dau,
-            
-            // Computed fields for display
-            ngayDi: formatDateForDisplay(ngay_di),
-            ngayHaHangDisplay: formatDateForDisplay(ngay_ha_hang),
-            bienSoXe: vehicle ? vehicle.bien_so : 'N/A',
-            dienGiai: ghi_chu || ma_chuyen || 'N/A',
-            tuyenDuongDisplay: `${diem_di || 'N/A'} → ${diem_den || 'N/A'}`,
-            tongChiPhiDisplay: formatCurrencyVND(vnd_dau),
-            cuocVanChuyenDisplay: formatCurrencyVND(vnd_di_duong),
-            loiNhuanGopDisplay: formatCurrencyVND(loi_nhuan_gop),
-            
-            // Mobile view fields
-            ngayThang: formatDateForDisplay(ngay_di),
-            khachHang: customer ? customer.ten || customer.ho_ten : 'N/A',
-            tuyenDuong: {
-                diemDi: diem_di || 'N/A',
-                diemDen: diem_den || 'N/A',
-            },
-            soLuongContainer: ma_so_cont ? 1 : 0,
-            loaiContainer: container ? `${container.ma_so || container.id} (${container.loai || container.phan_loai || 'Chưa rõ'})` : 'N/A',
-            nhanVienGiaoNhan: giaoNhan ? giaoNhan.ho_ten : 'N/A',
-            nhanVienLaiXe: laiXe ? laiXe.ho_ten : 'N/A',
+          // Original fields
+          ...item,
+
+          // Mapped fields (support both old and new field names)
+          id: item.id,
+          ma_chuyen,
+          ngay_di,
+          diem_di,
+          diem_den,
+          ma_khach_hang,
+          bien_so_dau_keo,
+          ma_so_cont,
+          trang_thai,
+          ghi_chu,
+          ngay_ha_hang,
+          ma_nv_giao_nhan,
+          ma_nv_lai_xe,
+          vnd_dau,
+          vnd_di_duong,
+          km_hang,
+          km_vo,
+          l_dau,
+
+          // Computed fields for display
+          ngayDi: formatDateForDisplay(ngay_di),
+          ngayHaHangDisplay: formatDateForDisplay(ngay_ha_hang),
+          bienSoXe: vehicle ? vehicle.bien_so : 'N/A',
+          dienGiai: ghi_chu || ma_chuyen || 'N/A',
+          tuyenDuongDisplay: `${diem_di || 'N/A'} → ${diem_den || 'N/A'}`,
+          tongChiPhiDisplay: formatCurrencyVND(vnd_dau),
+          cuocVanChuyenDisplay: formatCurrencyVND(vnd_di_duong),
+          loiNhuanGopDisplay: formatCurrencyVND(loi_nhuan_gop),
+
+          // Mobile view fields
+          ngayThang: formatDateForDisplay(ngay_di),
+          khachHang: customer ? customer.ten || customer.ho_ten : 'N/A',
+          tuyenDuong: {
+            diemDi: diem_di || 'N/A',
+            diemDen: diem_den || 'N/A',
+          },
+          soLuongContainer: ma_so_cont ? 1 : 0,
+          loaiContainer: container
+            ? `${container.ma_so || container.id} (${container.loai || container.phan_loai || 'Chưa rõ'})`
+            : 'N/A',
+          nhanVienGiaoNhan: giaoNhan ? giaoNhan.ho_ten : 'N/A',
+          nhanVienLaiXe: laiXe ? laiXe.ho_ten : 'N/A',
         };
       });
-      
-      console.log('Processed lichVanChuyenList:', processedLichVanChuyenList);
-      console.log('Sample processed item (first item):', processedLichVanChuyenList[0]);
-
-      console.log('Setting lichVanChuyenItems with count:', processedLichVanChuyenList.length);
       setLichVanChuyenItems(processedLichVanChuyenList);
       setSelectOptions({
         vehicles: vehiclesData,
@@ -421,32 +473,26 @@ const QuanLyLichVanChuyen = () => {
 
   // Filter functions for mobile search
   const filteredLichVanChuyenItems = React.useMemo(() => {
-    console.log('Filtering items. searchTerm:', searchTerm, 'filterStatus:', filterStatus);
-    console.log('lichVanChuyenItems count:', lichVanChuyenItems.length);
-    
     const filtered = lichVanChuyenItems.filter(item => {
       try {
         if (!item) return false;
-        
+
         const matchesSearch =
           !searchTerm ||
           (item.ma_chuyen && item.ma_chuyen.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
 
         const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
-        
+
         return matchesSearch && matchesStatus;
       } catch (error) {
         console.error('Error filtering item:', error, 'Item:', item);
         return false;
       }
     });
-    
-    console.log('Filtered items count:', filtered.length);
     if (filtered.length > 0) {
-      console.log('First filtered item:', filtered[0]);
     }
-    
+
     return filtered;
   }, [lichVanChuyenItems, searchTerm, filterStatus]);
 
@@ -462,253 +508,319 @@ const QuanLyLichVanChuyen = () => {
   // Removing this older definition to avoid confusion.
   // The old block has been removed.
 
-// Define columns for DesktopView StandardTable
-const columns = [
-  { id: 'ngayDi', header: 'Ngày Đi', width: '7%' },
-  { id: 'ngayHaHangDisplay', header: 'Ngày Hạ Hàng', width: '7%' },
-  { 
-    id: 'bienSoXe', 
-    header: 'Xe Vận Chuyển', 
-    width: '10%',
-    render: (value) => (
-      <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
-        {value || 'N/A'}
-      </Box>
-    )
-  },
-  { id: 'dienGiai', header: 'Diễn Giải', width: '15%' },
-  {
-    id: 'tuyenDuongDisplay',
-    header: 'Tuyến Đường',
-    width: '20%',
-    render: (value) => {
-      // Handle both old string format and new object format for backward compatibility
-      const diemDi = value?.diemDi || (typeof value === 'string' ? value.split(' → ')[0] : 'N/A');
-      const diemDen = value?.diemDen || (typeof value === 'string' ? value.split(' → ')[1] : 'N/A');
-
-      return (
-        <Box component="span" sx={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}>
-          <Box
-            component="span"
-            sx={{
-              color: 'primary.main',
-              fontWeight: 500,
-              whiteSpace: 'normal',
-              wordBreak: 'break-word',
-              fontSize: '0.875rem',
-              lineHeight: 1.5,
-              display: 'inline'
-            }}
-          >
-            {diemDi}
-          </Box>
-          <Box
-            component="span"
-            sx={{
-              color: 'text.secondary',
-              mx: 0.5,
-              lineHeight: 1.5,
-              display: 'inline-flex',
-              alignItems: 'center'
-            }}
-          >
-            →
-          </Box>
-          <Box
-            component="span"
-            sx={{
-              color: 'secondary.main',
-              fontWeight: 500,
-              whiteSpace: 'normal',
-              wordBreak: 'break-word',
-              fontSize: '0.875rem',
-              lineHeight: 1.5,
-              display: 'inline'
-            }}
-          >
-            {diemDen}
-          </Box>
-        </Box>
-      );
+  // Define columns for DesktopView StandardTable
+  const columns = [
+    {
+      id: 'ngayDi',
+      header: 'Ngày Đi',
+      width: '7%',
+      sortable: true,
+      sortValue: value => value || '',
     },
-  },
-  { id: 'tongChiPhiDisplay', header: 'Tổng Chi Phí', align: 'right', width: '12%' },
-  { id: 'cuocVanChuyenDisplay', header: 'Cước Vận Chuyển', align: 'right', width: '12%' },
-  { id: 'loiNhuanGopDisplay', header: 'Lợi Nhuận Gộp', align: 'right', width: '12%' },
-  {
-    id: 'trang_thai',
-    header: 'Trạng Thái',
-    width: '8%',
-    render: (value) => (
-      <Chip
-        label={getDisplayTrangThai(value)}
-        size="small"
-        sx={{
-          backgroundColor: `${getStatusColor(value)}20`,
-          color: getStatusColor(value),
-          fontWeight: 500,
-          minWidth: '90px !important',
-          borderRadius: '4px',
-          justifyContent: 'center'
-        }}
-      />
-    )
-  },
-  {
-    id: 'actions',
-    header: 'Thao Tác',
-    align: 'center',
-    width: '7%',
-    render: (_, row) => {
-      const originalItem = lichVanChuyenItems.find(item => item.id === row.id) || row;
-      return (
-        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-          <EditButton size="small" onClick={() => handleOpenModalForEdit(originalItem)} />
-          <DeleteButton size="small" onClick={() => handleDeleteConfirmation(originalItem)} />
+    {
+      id: 'ngayHaHangDisplay',
+      header: 'Ngày Hạ Hàng',
+      width: '7%',
+      sortable: true,
+      sortValue: value => value || '',
+    },
+    {
+      id: 'bienSoXe',
+      header: 'Xe Vận Chuyển',
+      width: '10%',
+      sortable: true,
+      sortValue: value => value || '',
+      render: value => (
+        <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
+          {value || 'N/A'}
         </Box>
-      );
+      ),
+    },
+    {
+      id: 'dienGiai',
+      header: 'Diễn Giải',
+      width: '15%',
+      sortable: true,
+      sortValue: value => value || '',
+    },
+    {
+      id: 'tuyenDuongDisplay',
+      header: 'Tuyến Đường',
+      width: '20%',
+      sortable: true,
+      sortValue: value => {
+        if (!value) return '';
+        if (typeof value === 'string') return value;
+        return `${value.diemDi || ''} ${value.diemDen || ''}`.trim();
+      },
+      render: value => {
+        // Handle both old string format and new object format for backward compatibility
+        const diemDi = value?.diemDi || (typeof value === 'string' ? value.split(' → ')[0] : 'N/A');
+        const diemDen =
+          value?.diemDen || (typeof value === 'string' ? value.split(' → ')[1] : 'N/A');
+
+        return (
+          <Box
+            component="span"
+            sx={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}
+          >
+            <Box
+              component="span"
+              sx={{
+                color: 'primary.main',
+                fontWeight: 500,
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                fontSize: '0.875rem',
+                lineHeight: 1.5,
+                display: 'inline',
+              }}
+            >
+              {diemDi}
+            </Box>
+            <Box
+              component="span"
+              sx={{
+                color: 'text.secondary',
+                mx: 0.5,
+                lineHeight: 1.5,
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+            >
+              →
+            </Box>
+            <Box
+              component="span"
+              sx={{
+                color: 'secondary.main',
+                fontWeight: 500,
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                fontSize: '0.875rem',
+                lineHeight: 1.5,
+                display: 'inline',
+              }}
+            >
+              {diemDen}
+            </Box>
+          </Box>
+        );
+      },
+    },
+    {
+      id: 'tongChiPhiDisplay',
+      header: 'Tổng Chi Phí',
+      align: 'right',
+      width: '12%',
+      sortable: true,
+      sortValue: value => {
+        // Extract numeric value from formatted currency
+        return value ? parseFloat(value.replace(/[^0-9.-]+/g, '')) || 0 : 0;
+      },
+    },
+    {
+      id: 'cuocVanChuyenDisplay',
+      header: 'Cước Vận Chuyển',
+      align: 'right',
+      width: '12%',
+      sortable: true,
+      sortValue: value => {
+        // Extract numeric value from formatted currency
+        return value ? parseFloat(value.replace(/[^0-9.-]+/g, '')) || 0 : 0;
+      },
+    },
+    {
+      id: 'loiNhuanGopDisplay',
+      header: 'Lợi Nhuận Gộp',
+      align: 'right',
+      width: '12%',
+      sortable: true,
+      sortValue: value => {
+        // Extract numeric value from formatted currency
+        return value ? parseFloat(value.replace(/[^0-9.-]+/g, '')) || 0 : 0;
+      },
+    },
+    {
+      id: 'trang_thai',
+      header: 'Trạng Thái',
+      width: '8%',
+      sortable: true,
+      sortValue: value => getDisplayTrangThai(value),
+      render: value => (
+        <Chip
+          label={getDisplayTrangThai(value)}
+          size="small"
+          sx={{
+            backgroundColor: `${getStatusColor(value)}20`,
+            color: getStatusColor(value),
+            fontWeight: 500,
+            minWidth: '90px !important',
+            borderRadius: '4px',
+            justifyContent: 'center',
+          }}
+        />
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Thao Tác',
+      align: 'center',
+      width: '7%',
+      sortable: false,
+      render: (_, row) => {
+        const originalItem = lichVanChuyenItems.find(item => item.id === row.id) || row;
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+            <EditButton size="small" onClick={() => handleOpenModalForEdit(originalItem)} />
+            <DeleteButton size="small" onClick={() => handleDeleteConfirmation(originalItem)} />
+          </Box>
+        );
+      },
+    },
+  ];
+
+  // Reset form and stepper for mobile
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setError('');
+  };
+
+  // Handle adding new customer from stepper
+  const handleAddNewCustomer = async customerName => {
+    try {
+      const newCustomer = await addQuickCustomer(customerName);
+
+      // Refresh customer list
+      const updatedCustomers = await fetchAllKhachHang();
+      const formattedCustomers = formatCustomersForSelect(updatedCustomers);
+      setSelectOptions(prev => ({
+        ...prev,
+        customers: formattedCustomers,
+      }));
+
+      return newCustomer.id; // Return new customer ID to select it
+    } catch (error) {
+      throw error; // Let child component handle the error
     }
-  },
-];
+  };
 
-// Reset form and stepper for mobile
-const resetForm = () => {
-  setFormData(initialFormState);
-  setError('');
-};
+  // Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
+  const handleOpenModalForAddMobile = () => {
+    handleOpenModalForAdd();
+  };
 
-// Handle adding new customer from stepper
-const handleAddNewCustomer = async customerName => {
-  try {
-    const newCustomer = await addQuickCustomer(customerName);
+  const handleOpenModalForEditMobile = plan => {
+    handleOpenModalForEdit(plan);
+  };
 
-    // Refresh customer list
-    const updatedCustomers = await fetchAllKhachHang();
-    const formattedCustomers = formatCustomersForSelect(updatedCustomers);
-    setSelectOptions(prev => ({
-      ...prev,
-      customers: formattedCustomers,
-    }));
+  const handleCloseModalMobile = () => {
+    handleCloseModal();
+  };
 
-    return newCustomer.id; // Return new customer ID to select it
-  } catch (error) {
-    throw error; // Let child component handle the error
-  }
-};
-
-// Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
-const handleOpenModalForAddMobile = () => {
-  handleOpenModalForAdd();
-};
-
-const handleOpenModalForEditMobile = plan => {
-  handleOpenModalForEdit(plan);
-};
-
-const handleCloseModalMobile = () => {
-  handleCloseModal();
-};
-
-return (
-  <Box
-    sx={{
-      px: isMobile ? 2 : 3, // Horizontal padding
-      pt: 0, // No top padding
-      pb: isMobile ? 1 : 2, // Keep bottom padding
-      backgroundColor: theme.palette.background.paper, // Change to white
-      minHeight: 'calc(100vh - 64px)',
-      display: 'flex',
-      flexDirection: 'column',
-    }}
-  >
-    <Typography
-      variant={isMobile ? 'h6' : 'h5'}
-      component="h1"
-      gutterBottom
+  return (
+    <Box
       sx={{
-        fontWeight: 'bold',
-        fontFamily: "Inter, sans-serif",
-        mb: isMobile ? 2 : 3,
+        px: isMobile ? 2 : 3, // Horizontal padding
+        pt: 0, // No top padding
+        pb: isMobile ? 1 : 2, // Keep bottom padding
+        backgroundColor: theme.palette.background.paper, // Change to white
+        minHeight: 'calc(100vh - 64px)',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      Quản Lý Lịch Vận Chuyển
-    </Typography>
-
-
-
-    {isLoading && (
-      <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-        <CircularProgress />
-      </Box>
-    )}
-
-    {error && !isModalOpen && (
-      <Alert
-        severity="error"
+      <Typography
+        variant={isMobile ? 'h6' : 'h5'}
+        component="h1"
+        gutterBottom
         sx={{
-          mb: 2,
-          borderRadius: 2,
-          boxShadow: theme.shadows[2],
+          fontWeight: 'bold',
+          fontFamily: 'Inter, sans-serif',
+          mb: isMobile ? 2 : 3,
         }}
       >
-        {error}
-      </Alert>
-    )}
+        Quản Lý Lịch Vận Chuyển
+      </Typography>
 
-    {isMobile ? (
-      <MobileView
-        searchTerm={searchTerm}
-        onSearchTermChange={e => setSearchTerm(e.target.value)}
-        filterStatus={filterStatus}
-        onFilterStatusChange={e => setFilterStatus(e.target.value)}
-        filteredPlans={filteredLichVanChuyenItems}
-        isLoading={isLoading}
-        expandedCard={expandedCard}
-        onCardExpand={handleCardExpand}
-        onEdit={handleOpenModalForEditMobile}
-        onDelete={handleDeleteConfirmation} // Use confirmation flow for mobile delete
-        onAdd={handleOpenModalForAddMobile}
-        canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
-      />
-    ) : (
-      <DesktopView
-        columns={columns}
-        searchTerm={searchTerm}
-        onSearchTermChange={e => setSearchTerm(e.target.value)}
-        shipmentPlans={filteredLichVanChuyenItems}
-        isLoading={isLoading}
-        onAdd={handleOpenModalForAdd}
-        canAddPlan={canAddPlan}
-        onEditItem={handleOpenModalForEdit}
-        onDeleteItem={handleDeleteConfirmation}
-        onItemClick={(row) => {
-          setSelectedShipment(row.original);
-          setIsDetailModalOpen(true);
-        }}
-      />
-    )}
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+        </Box>
+      )}
 
-    {/* Modal for Add/Edit */}
-    {isMobile ? (
-      <Dialog
-        fullScreen
-        open={isModalOpen} // Removed && canAddPlan, let form decide if it shows content based on permissions if needed
-        onClose={handleCloseModalMobile}
-        TransitionComponent={Slide}
-        TransitionProps={{ direction: 'up' }}
-        sx={{ '& .MuiDialog-paper': { background: '#ffffff' } }}
-      >
-        <DialogContent
+      {error && !isModalOpen && (
+        <Alert
+          severity="error"
           sx={{
-            p: 2,
-            pb: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            overflow: 'hidden',
+            mb: 2,
+            borderRadius: 2,
+            boxShadow: theme.shadows[2],
           }}
         >
-          <Box sx={{ flex: 1, overflow: 'auto', pr: 1, mr: -1, pb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {isMobile ? (
+        <MobileView
+          searchTerm={searchTerm}
+          onSearchTermChange={e => setSearchTerm(e.target.value)}
+          filterStatus={filterStatus}
+          onFilterStatusChange={e => setFilterStatus(e.target.value)}
+          filteredPlans={filteredLichVanChuyenItems}
+          isLoading={isLoading}
+          expandedCard={expandedCard}
+          onCardExpand={handleCardExpand}
+          onEdit={handleOpenModalForEditMobile}
+          onDelete={handleDeleteConfirmation} // Use confirmation flow for mobile delete
+          onAdd={handleOpenModalForAddMobile}
+          canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
+        />
+      ) : (
+        <DesktopView
+          searchTerm={searchTerm}
+          onSearchTermChange={e => setSearchTerm(e.target.value)}
+          columns={columns}
+          shipmentPlans={stableSort(filteredLichVanChuyenItems, getComparator(order, orderBy, columns))}
+          isLoading={isLoading}
+          onAdd={handleOpenModalForAdd}
+          canAddPlan={canAddPlan}
+          onItemClick={row => {
+            setSelectedShipment(row.original);
+            setIsDetailModalOpen(true);
+          }}
+          order={order}
+          orderBy={orderBy}
+          onRequestSort={(event, property) => {
+            const isAsc = orderBy === property && order === 'asc';
+            setOrder(isAsc ? 'desc' : 'asc');
+            setOrderBy(property);
+          }}
+        />
+      )}
+
+      {/* Modal for Add/Edit */}
+      {isMobile ? (
+        <Dialog
+          fullScreen
+          open={isModalOpen} // Removed && canAddPlan, let form decide if it shows content based on permissions if needed
+          onClose={handleCloseModalMobile}
+          TransitionComponent={Slide}
+          TransitionProps={{ direction: 'up' }}
+          sx={{ '& .MuiDialog-paper': { background: '#ffffff' } }}
+        >
+          <DialogContent
+            sx={{
+              p: 2,
+              pb: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              overflow: 'hidden',
+            }}
+          >
+            <Box sx={{ flex: 1, overflow: 'auto', pr: 1, mr: -1, pb: 2 }}>
               {/* Error display for the form itself */}
               {error && !isDeleteModalOpen && (
                 <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
@@ -763,7 +875,8 @@ return (
                 <strong>Ngày đi:</strong> {selectedShipment.ngayDi}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
-                <strong>Ngày hạ hàng:</strong> {selectedShipment.ngayHaHangDisplay || 'Chưa cập nhật'}
+                <strong>Ngày hạ hàng:</strong>{' '}
+                {selectedShipment.ngayHaHangDisplay || 'Chưa cập nhật'}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
                 <strong>Khách hàng:</strong> {selectedShipment.khachHang}
@@ -800,8 +913,16 @@ return (
             </Typography>
             {itemToDelete && (
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Mã chuyến: {itemToDelete.ma_chuyen}<br />
-                Khách hàng: {getEntityNameById(itemToDelete.khach_hang_id, selectOptions.customers, 'id', 'ten')}<br />
+                Mã chuyến: {itemToDelete.ma_chuyen}
+                <br />
+                Khách hàng:{' '}
+                {getEntityNameById(
+                  itemToDelete.khach_hang_id,
+                  selectOptions.customers,
+                  'id',
+                  'ten'
+                )}
+                <br />
                 Ngày đi: {formatDateForDisplay(itemToDelete.ngay_van_chuyen)}
               </Typography>
             )}
