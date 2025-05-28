@@ -111,7 +111,7 @@ export const paperStyles = theme => ({
  */
 export const modalStyles = theme => ({
   '& .MuiDialog-paper': {
-    borderRadius: theme.shape.borderRadius * 2,
+    borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(4),
     width: '100%',
     maxWidth: theme.breakpoints.values.sm,

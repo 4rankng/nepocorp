@@ -76,6 +76,15 @@ import { addKhachHang } from '@services/mockApi/index.js';
 
 // Helper function to add a new customer quickly
 // Helper to get human-readable status display string
+
+export const formatCurrencyVND = (value, fallback = '-') => {
+  if (value === null || value === undefined || isNaN(Number(value))) {
+    return fallback;
+  }
+  // Remove decimals for VND as it typically doesn't use them
+  return Number(value).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+};
+
 export const getDisplayTrangThai = rawTrangThai => {
   switch (rawTrangThai) {
     case 'tam_thoi':

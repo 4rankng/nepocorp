@@ -5,7 +5,7 @@ const themeConfig = {
   spacing: 8,
   typography: {
     fontFamily:
-      '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      '"Roboto", "Open Sans", "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
     fontSize: 16,
     htmlFontSize: 16,
     fontWeightLight: 300,
