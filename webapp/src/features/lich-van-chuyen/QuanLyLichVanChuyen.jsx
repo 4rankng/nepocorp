@@ -461,21 +461,14 @@ return (
       gutterBottom
       sx={{
         fontWeight: 'bold',
-        color: theme.palette.primary.main,
-        fontFamily: "'Montserrat', 'Roboto', sans-serif", // Apply Montserrat font
+        fontFamily: "Inter, sans-serif",
         mb: isMobile ? 2 : 3,
       }}
     >
       Quản Lý Lịch Vận Chuyển
     </Typography>
 
-    {/* Guidance Message */}
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3, p: 0.5, backgroundColor: theme.palette.action.hover, borderRadius: 1 }}>
-      <InfoIcon sx={{ mr: 1, color: theme.palette.info.main }} />
-      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-      Bấm vào hàng trong bảng để xem chi tiết
-      </Typography>
-    </Box>
+
 
     {isLoading && (
       <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>

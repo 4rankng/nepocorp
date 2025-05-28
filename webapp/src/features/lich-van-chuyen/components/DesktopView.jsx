@@ -1,11 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Box, Paper, TextField, InputAdornment, Fab } from '@mui/material';
+import { Box, Paper, TextField, InputAdornment, Fab, Typography, useTheme } from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info'; // Added for Guidance Message
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import StandardTable from '@/components/StandardTable';
 
 const DesktopView = ({
+
   searchTerm,
   onSearchTermChange,
   columns,
@@ -13,7 +15,9 @@ const DesktopView = ({
   isLoading,
   onAdd,
   canAddPlan,
+  onItemClick, // Added prop
 }) => {
+  const theme = useTheme(); // Initialize theme
   // Filter plans by search term for desktop
   const filteredPlans = shipmentPlans.filter(plan => {
     if (!searchTerm) return true;
@@ -46,11 +50,18 @@ const DesktopView = ({
           }}
         />
       </Box>
-
+    {/* Guidance Message */}
+    <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3, p: 0.5, backgroundColor: theme.palette.action.hover, borderRadius: 1 }}>
+      <InfoIcon sx={{ mr: 1, color: theme.palette.info.main }} />
+      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+      Bấm vào hàng trong bảng để xem chi tiết
+      </Typography>
+    </Box>
       <Paper elevation={0} sx={{ p: 0 }}>
         <StandardTable
           columns={columns}
           data={filteredPlans}
+          onRowClick={onItemClick} // Pass onItemClick to StandardTable
           loading={isLoading}
           emptyMessage="Chưa có lịch vận chuyển nào"
           // Remove headerAction - now using FAB
@@ -90,6 +101,7 @@ DesktopView.propTypes = {
   isLoading: PropTypes.bool.isRequired,
   onAdd: PropTypes.func.isRequired,
   canAddPlan: PropTypes.bool.isRequired,
+  onItemClick: PropTypes.func, // Added prop type (can be .isRequired if always passed)
 };
 
 export default DesktopView;

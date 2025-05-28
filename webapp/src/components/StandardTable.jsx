@@ -61,6 +61,7 @@ const StandardTable = ({
   onSearchChange,
   searchPlaceholder = 'Tìm kiếm...',
   headerAction = null,
+  onRowClick = null, // Added onRowClick prop
   ...tableProps
 }) => {
   // Validate data and columns
@@ -203,11 +204,11 @@ const StandardTable = ({
             <TableRow>
               {columns.map(column => (
                 <TableCell
-                  key={column.key}
+                  key={column.id}
                   align={column.align || (column.numeric ? 'right' : 'left')}
                   sx={{ width: column.width }}
                 >
-                  {column.label}
+                  {column.header}
                 </TableCell>
               ))}
               {renderActions && (
@@ -229,15 +230,17 @@ const StandardTable = ({
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((row, index) => (
-                <TableRow key={row.id || index} hover>
+              data.map((row, index) => {
+                const handleRowClick = onRowClick ? () => onRowClick(row) : undefined;
+                return (
+                <TableRow key={row.id || index} hover onClick={handleRowClick} sx={onRowClick ? { cursor: 'pointer' } : {}}>
                   {columns.map(column => (
                     <TableCell
-                      key={`${row.id || index}-${column.key}`}
+                      key={`${row.id || index}-${column.id}`}
                       align={column.align || (column.numeric ? 'right' : 'left')}
                       sx={{
                         fontFamily: column.numeric ? 'monospace' : 'inherit',
-                        color: column.getColor ? column.getColor(row[column.key], row) : 'inherit',
+                        color: column.getColor ? column.getColor(row[column.id], row) : 'inherit',
                         fontWeight: column.fontWeight || 'inherit',
                         maxWidth: column.maxWidth,
                         whiteSpace: column.noWrap ? 'nowrap' : 'normal',
@@ -245,7 +248,7 @@ const StandardTable = ({
                         textOverflow: column.maxWidth ? 'ellipsis' : 'clip',
                       }}
                     >
-                      {column.render ? column.render(row[column.key], row) : row[column.key]}
+                      {column.render ? column.render(row[column.id], row) : row[column.id]}
                     </TableCell>
                   ))}
                   {renderActions && (
@@ -256,7 +259,9 @@ const StandardTable = ({
                     </TableCell>
                   )}
                 </TableRow>
-              ))
+              );
+            })
+
             )}
           </TableBody>
         </Table>
@@ -301,6 +306,7 @@ StandardTable.propTypes = {
   onSearchChange: PropTypes.func,
   searchPlaceholder: PropTypes.string,
   headerAction: PropTypes.node,
+  onRowClick: PropTypes.func, // Added propType for onRowClick
 };
 
 export default StandardTable;
