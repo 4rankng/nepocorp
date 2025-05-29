@@ -72,10 +72,10 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     total: 0,
     totalPages: 0,
   });
-  
+
   const cacheRef = useRef({
     employees: { data: [], timestamp: 0, total: 0 },
-    vehicles: { data: [], timestamp: 0 }
+    vehicles: { data: [], timestamp: 0 },
   });
   const errorBoundaryRef = useRef();
 
@@ -84,81 +84,87 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     setError('');
   }, []);
 
-  const fetchEmployeesData = useCallback(async (page = pagination.page, size = pagination.pageSize) => {
-    setIsLoading(true);
-    setError('');
-    const cacheKey = `page-${page}-size-${size}`;
-    
-    try {
-      const now = Date.now();
-      const cachedData = cacheRef.current.employees;
-      
-      // Return cached data if valid
-      if (cachedData.timestamp && (now - cachedData.timestamp) < CACHE_TTL) {
-        setEmployees(cachedData.data);
+  const fetchEmployeesData = useCallback(
+    async (page = pagination.page, size = pagination.pageSize) => {
+      setIsLoading(true);
+      setError('');
+      const cacheKey = `page-${page}-size-${size}`;
+
+      try {
+        const now = Date.now();
+        const cachedData = cacheRef.current.employees;
+
+        // Return cached data if valid
+        if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
+          setEmployees(cachedData.data);
+          setPagination(prev => ({
+            ...prev,
+            total: cachedData.total || 0,
+            totalPages: Math.ceil((cachedData.total || 0) / size),
+          }));
+          return;
+        }
+
+        // Fetch with retry logic
+        const data = await withRetry(() => fetchAllNhanVien(page, size));
+
+        // Map backend fields to UI fields
+        const mapped = (Array.isArray(data?.items || data) ? data.items || data : []).map(emp => ({
+          ...emp,
+          maNhanVien: emp.ma_so,
+          tenNhanVien: emp.ho_ten,
+          tenDangNhap: emp.ten_dang_nhap,
+          chucVu: mapChucVu(emp.chuc_vu),
+        }));
+
+        // Update cache
+        cacheRef.current.employees = {
+          data: mapped,
+          total: data.total || mapped.length,
+          timestamp: now,
+        };
+
+        // Update state
+        setEmployees(mapped);
         setPagination(prev => ({
           ...prev,
-          total: cachedData.total || 0,
-          totalPages: Math.ceil((cachedData.total || 0) / size),
+          page,
+          pageSize: size,
+          total: data.total || mapped.length,
+          totalPages: Math.ceil((data.total || mapped.length) / size),
         }));
-        return;
+      } catch (err) {
+        const errorMsg = err?.message || 'Không thể tải danh sách nhân viên.';
+        setError(errorMsg);
+        throw new Error(errorMsg);
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [pagination.page, pagination.pageSize]
+  );
 
-      // Fetch with retry logic
-      const data = await withRetry(() => fetchAllNhanVien(page, size));
-      
-      // Map backend fields to UI fields
-      const mapped = (Array.isArray(data?.items || data) ? (data.items || data) : []).map(emp => ({
-        ...emp,
-        maNhanVien: emp.ma_so,
-        tenNhanVien: emp.ho_ten,
-        tenDangNhap: emp.ten_dang_nhap,
-        chucVu: mapChucVu(emp.chuc_vu),
-      }));
-
-      // Update cache
-      cacheRef.current.employees = {
-        data: mapped,
-        total: data.total || mapped.length,
-        timestamp: now,
-      };
-
-      // Update state
-      setEmployees(mapped);
-      setPagination(prev => ({
-        ...prev,
-        page,
-        pageSize: size,
-        total: data.total || mapped.length,
-        totalPages: Math.ceil((data.total || mapped.length) / size),
-      }));
-    } catch (err) {
-      const errorMsg = err?.message || 'Không thể tải danh sách nhân viên.';
-      setError(errorMsg);
-      throw new Error(errorMsg);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [pagination.page, pagination.pageSize]);
-  
   // Handle page change
-  const handlePageChange = useCallback((newPage, newPageSize) => {
-    return fetchEmployeesData(newPage, newPageSize);
-  }, [fetchEmployeesData]);
+  const handlePageChange = useCallback(
+    (newPage, newPageSize) => {
+      return fetchEmployeesData(newPage, newPageSize);
+    },
+    [fetchEmployeesData]
+  );
 
   // Fetch vehicles for driver assignment with caching and retry
   const fetchVehicles = useCallback(async () => {
     try {
       const now = Date.now();
       const cachedData = cacheRef.current.vehicles;
-      
+
       // Return cached data if valid
-      if (cachedData.timestamp && (now - cachedData.timestamp) < CACHE_TTL) {
+      if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
         setVehicles(cachedData.data);
         return;
       }
 
-      const [dauKeoData, roMoocData] = await withRetry(() => 
+      const [dauKeoData, roMoocData] = await withRetry(() =>
         Promise.all([fetchAllDauKeo(), fetchAllRoMooc()])
       );
 
@@ -317,12 +323,8 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
   );
 
   // Wrap component with error boundary
-  const withErrorBoundary = (children) => (
-    <ErrorBoundary
-      ref={errorBoundaryRef}
-      FallbackComponent={ErrorFallback}
-      onReset={clearError}
-    >
+  const withErrorBoundary = children => (
+    <ErrorBoundary ref={errorBoundaryRef} FallbackComponent={ErrorFallback} onReset={clearError}>
       {children}
     </ErrorBoundary>
   );

@@ -90,17 +90,7 @@ function resolveImportPath(importPath, currentFile) {
   let resolvedPath = path.resolve(dir, importPath);
 
   // Try different extensions if file doesn't exist
-  const extensions = [
-    '',
-    '.js',
-    '.jsx',
-    '.ts',
-    '.tsx',
-    '/index.js',
-    '/index.jsx',
-    '/index.ts',
-    '/index.tsx',
-  ];
+  const extensions = ['', '.js', '.jsx', '/index.js', '/index.jsx'];
 
   for (const ext of extensions) {
     const testPath = resolvedPath + ext;

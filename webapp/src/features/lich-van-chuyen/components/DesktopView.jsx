@@ -28,29 +28,11 @@ const DesktopView = ({
   orderBy = '',
   onRequestSort = () => {},
 }) => {
-  console.log('DesktopView shipmentPlans:', shipmentPlans);
   const createSortHandler = property => event => {
     onRequestSort(event, property);
   };
   const theme = useTheme(); // Initialize theme
-  // Filter plans by search term for desktop
-  // const filteredPlans = shipmentPlans.filter(plan => {
-  //   if (!plan) return false;
-  //   if (!searchTerm) return true;
-
-  //   const searchLower = searchTerm.toLowerCase();
-  //   return (
-  //     plan.maChuyen?.toLowerCase().includes(searchLower) ||
-  //     plan.khachHang?.toLowerCase().includes(searchLower) ||
-  //     plan.bienSoDauKeo?.toLowerCase().includes(searchLower) ||
-  //     plan.diemDi?.toLowerCase().includes(searchLower) ||
-  //     plan.diemDen?.toLowerCase().includes(searchLower) ||
-  //     plan.giaoNhan?.toLowerCase().includes(searchLower) ||
-  //     plan.laiXe?.toLowerCase().includes(searchLower) ||
-  //     plan.ghi_chu?.toLowerCase().includes(searchLower)
-  //   );
-  // });
-  const filteredPlans = shipmentPlans;
+  // We'll use shipmentPlans directly as they're already filtered in QuanLyLichVanChuyen
   return (
     <Box>
       {/* Search bar */}
@@ -103,7 +85,7 @@ const DesktopView = ({
               column.header
             ),
           }))}
-          data={filteredPlans}
+          data={shipmentPlans}
           onRowClick={onItemClick}
           loading={isLoading}
           emptyMessage={

@@ -13,7 +13,7 @@ let lichVanChuyenData = [
     id: 1,
     ma_chuyen: 'MC001',
     ngay_di: '2024-05-28',
-    ngay_ha_hang: '2024-05-28',
+    ngay_ha_hang: null, // Status is 'len_lich', not completed
     trang_thai: 'len_lich',
     ma_khach_hang: 'KH001',
     diem_di: 'Kho Nepocorp, Hà Nội',
@@ -38,7 +38,7 @@ let lichVanChuyenData = [
     id: 2,
     ma_chuyen: 'MC002',
     ngay_di: '2024-05-29',
-    ngay_ha_hang: '2024-05-29',
+    ngay_ha_hang: '2024-05-29', // Status is 'hoan_thanh', completed
     trang_thai: 'hoan_thanh',
     ma_khach_hang: 'KH002',
     diem_di: 'Kho Nepocorp, Hải Phòng',
@@ -63,7 +63,7 @@ let lichVanChuyenData = [
     id: 3,
     ma_chuyen: 'MC003',
     ngay_di: '2024-05-30',
-    ngay_ha_hang: '2024-05-31',
+    ngay_ha_hang: null, // Status is 'huy_bo', cancelled
     trang_thai: 'huy_bo',
     ma_khach_hang: 'KH003',
     diem_di: 'Kho Nepocorp, Đà Nẵng',
@@ -117,8 +117,15 @@ export const getLichVanChuyenByMaChuyenXe = async maChuyenXe => {
  */
 export const createLichVanChuyen = async data => {
   const now = new Date().toISOString();
+
+  // Ensure ngay_ha_hang is only set when trang_thai is 'hoan_thanh'
+  const processedData = { ...data };
+  if (processedData.trang_thai !== TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
+    processedData.ngay_ha_hang = null;
+  }
+
   const newRecord = {
-    ...data,
+    ...processedData,
     id: nextLichVanChuyenId++,
     createdAt: now,
     updatedAt: now,
@@ -136,9 +143,19 @@ export const updateLichVanChuyen = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = lichVanChuyenData.findIndex(item => item.id === numericId);
   if (index === -1) return null;
+
+  // Ensure ngay_ha_hang is only set when trang_thai is 'hoan_thanh'
+  const processedUpdates = { ...updates };
+  const currentRecord = lichVanChuyenData[index];
+  const finalTrangThai = processedUpdates.trang_thai || currentRecord.trang_thai;
+
+  if (finalTrangThai !== TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
+    processedUpdates.ngay_ha_hang = null;
+  }
+
   lichVanChuyenData[index] = {
     ...lichVanChuyenData[index],
-    ...updates,
+    ...processedUpdates,
     updatedAt: new Date().toISOString(),
   };
   return lichVanChuyenData[index];
@@ -166,34 +183,11 @@ export const _resetLichVanChuyen = async (data = []) => {
     nextLichVanChuyenId = 1;
     return [];
   }
-  const requiredFields = [
-    'ma_chuyen',
-    'ngay_di',
-    'ngay_ha_hang',
-    'trang_thai',
-    'ma_khach_hang',
-    'diem_di',
-    'diem_den',
-    'cuoc_van_chuyen_vnd',
-    'cuoc_thue_van_chuyen_vnd',
-    'bien_so_dau_keo',
-    'ma_so_cont',
-    'ma_nv_giao_nhan',
-    'ma_nv_lai_xe',
-    'ghi_chu',
-    'km_hang',
-    'km_vo',
-    'l_dau',
-    'vnd_dau',
-    'vnd_di_duong',
-    'vnd_chi_phi',
-    'createdAt',
-    'updatedAt',
-  ];
+
   const defaultValues = {
     ma_chuyen: '',
     ngay_di: '',
-    ngay_ha_hang: '',
+    ngay_ha_hang: null,
     trang_thai: '',
     ma_khach_hang: '',
     diem_di: '',
@@ -214,8 +208,15 @@ export const _resetLichVanChuyen = async (data = []) => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+
   lichVanChuyenData = data.map((item, idx) => {
     const filled = { ...defaultValues, ...item, id: idx + 1 };
+
+    // Ensure ngay_ha_hang is only set when trang_thai is 'hoan_thanh'
+    if (filled.trang_thai !== TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
+      filled.ngay_ha_hang = null;
+    }
+
     return filled;
   });
   nextLichVanChuyenId = lichVanChuyenData.length + 1;

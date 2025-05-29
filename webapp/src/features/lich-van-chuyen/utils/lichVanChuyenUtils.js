@@ -17,27 +17,20 @@ export const formatDateForInput = dateStr_DDMMYYYY => {
 
 // Helper to format vehicles data for select options
 export const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
-  const vehicles = [];
+  const dauKeoOptions = (dauKeoList || []).map(item => ({
+    value: item.id,
+    label: `${item.bien_so} (${item.mo_ta || item.loai_xe || 'N/A'})`,
+  }));
 
-  // Add tractors (đầu kéo)
-  dauKeoList.forEach(item => {
-    vehicles.push({
-      value: item.id,
-      label: `${item.bien_so} (${item.mo_ta})`,
-      type: 'dau_keo',
-    });
-  });
+  const roMoocOptions = (roMoocList || []).map(item => ({
+    value: item.id,
+    label: `${item.bien_so} (${item.mo_ta || item.loai_ro_mooc || 'N/A'})`,
+  }));
 
-  // Add trailers (rơ moóc)
-  roMoocList.forEach(item => {
-    vehicles.push({
-      value: item.id,
-      label: `${item.bien_so} (${item.mo_ta})`,
-      type: 'ro_mooc',
-    });
-  });
-
-  return vehicles;
+  return {
+    dauKeo: dauKeoOptions,
+    roMooc: roMoocOptions,
+  };
 };
 
 // Helper to format customers data for select options

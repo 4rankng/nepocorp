@@ -36,11 +36,15 @@ const EmployeeCard = ({ employee, onEdit, onDelete, loading }) => {
                 label={employee.chucVu || 'Chưa xác định'}
                 size="small"
                 color={
-                  employee.chucVu === 'Quản lý' ? 'primary' :
-                  employee.chucVu === 'Lái xe' ? 'secondary' :
-                  employee.chucVu === 'Kế toán' ? 'success' :
-                  employee.chucVu === 'Giao nhận' ? 'warning' :
-                  'default'
+                  employee.chucVu === 'Quản lý'
+                    ? 'primary'
+                    : employee.chucVu === 'Lái xe'
+                      ? 'secondary'
+                      : employee.chucVu === 'Kế toán'
+                        ? 'success'
+                        : employee.chucVu === 'Giao nhận'
+                          ? 'warning'
+                          : 'default'
                 }
                 variant="outlined"
               />
