@@ -62,6 +62,8 @@ const StandardTable = ({
   searchPlaceholder = 'Tìm kiếm...',
   headerAction = null,
   onRowClick = null, // Added onRowClick prop
+  rowKeyField, // Destructure rowKeyField
+  minHeight, // Destructure minHeight
   ...tableProps
 }) => {
   // Validate data and columns
@@ -107,6 +109,8 @@ const StandardTable = ({
     searchTerm: _searchTerm,
     onSearchChange: _onSearchChange,
     searchPlaceholder: _searchPlaceholder,
+    rowKeyField: _rowKeyField, // Ensure rowKeyField is not in cleanTableProps
+    minHeight: _minHeight, // Ensure minHeight is not in cleanTableProps
     jsx: _jsxProp,
     component: _componentProp,
     ...cleanTableProps
@@ -164,7 +168,7 @@ const StandardTable = ({
           {headerAction && <Box sx={{ ml: 'auto' }}>{headerAction}</Box>}
         </Box>
       )}
-      <TableContainer {...cleanTableProps} component="div">
+      <TableContainer {...cleanTableProps} component="div" sx={{ minHeight: minHeight || 'auto' }}>
         <Table
           size="small"
           sx={{
@@ -218,11 +222,11 @@ const StandardTable = ({
             <TableRow>
               {columns.map(column => (
                 <TableCell
-                  key={column.id}
+                  key={column.key || column.id}
                   align={column.align || (column.numeric ? 'right' : 'left')}
                   sx={{ width: column.width }}
                 >
-                  {column.header}
+                  {column.label || column.header}
                 </TableCell>
               ))}
               {renderActions && (
@@ -261,13 +265,13 @@ const StandardTable = ({
                       },
                     }}
                   >
-                    {columns.map(column => (
+                    {columns.map((column, columnIndex) => (
                       <TableCell
-                        key={`${row.id || index}-${column.id}`}
+                        key={`${row.id || index}-${column.key || column.id || columnIndex}`}
                         align={column.align || (column.numeric ? 'right' : 'left')}
                         sx={{
                           fontFamily: column.numeric ? 'monospace' : 'inherit',
-                          color: column.getColor ? column.getColor(row[column.id], row) : 'inherit',
+                          color: column.getColor ? column.getColor(row[column.key], row) : 'inherit',
                           fontWeight: column.fontWeight || 'inherit',
                           maxWidth: column.maxWidth,
                           whiteSpace: column.noWrap ? 'nowrap' : 'normal',
@@ -275,7 +279,7 @@ const StandardTable = ({
                           textOverflow: column.maxWidth ? 'ellipsis' : 'clip',
                         }}
                       >
-                        {column.render ? column.render(row[column.id], row) : row[column.id]}
+                        {column.render ? column.render(row[column.key], row) : row[column.key]}
                       </TableCell>
                     ))}
                     {renderActions && (
