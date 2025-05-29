@@ -1,24 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import {
   Box,
-  TextField,
-  InputAdornment,
   useMediaQuery,
   useTheme,
   Card,
   CardContent,
   Typography,
-  IconButton,
-  Divider,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
+import SearchIcon from '@mui/icons-material/Search';
+import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 
 const CustomerListResponsive = ({
@@ -48,11 +40,54 @@ const CustomerListResponsive = ({
   }, [customers, searchTerm]);
 
   // Handle search input change
-  const handleSearchChange = event => {
+  const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
-  // Render mobile card view
+  // Define columns for StandardTable
+  const columns = [
+    {
+      key: 'ten',
+      label: 'Tên khách hàng',
+      align: 'left',
+      sortable: true,
+    },
+    {
+      key: 'dia_chi',
+      label: 'Địa chỉ',
+      align: 'left',
+      sortable: true,
+      render: (value) => value || 'Chưa cập nhật',
+    },
+    {
+      key: 'ma_so_thue',
+      label: 'Mã số thuế',
+      align: 'left',
+      sortable: true,
+      render: (value) => value || 'Chưa cập nhật',
+    },
+  ];
+
+  // Render action buttons for each row
+  const renderActions = (customer) => (
+    <>
+      <EditButton onClick={() => onEdit(customer)} size="small" />
+      <DeleteButton 
+        onClick={() => onDelete(customer)} 
+        size="small" 
+        sx={{ ml: 1 }} 
+      />
+    </>
+  );
+
+  // Handle row click for better UX
+  const handleRowClick = (customer) => {
+    // Optional: you can implement row click functionality here
+    // For now, we'll just use the action buttons
+    console.log('Customer row clicked:', customer);
+  };
+
+  // Render mobile card view for better responsive experience
   const renderMobileView = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
       {filteredCustomers.map(customer => (
@@ -86,55 +121,42 @@ const CustomerListResponsive = ({
     </Box>
   );
 
-  // Render desktop table view
-  const renderDesktopView = () => (
-    <TableContainer component={Paper} elevation={2}>
-      <Table sx={{ minWidth: 650 }} aria-label="danh sách khách hàng">
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              <strong>Tên khách hàng</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Địa chỉ</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Mã số thuế</strong>
-            </TableCell>
-            <TableCell align="right">
-              <strong>Thao tác</strong>
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredCustomers.map(customer => (
-            <TableRow key={customer.id} hover>
-              <TableCell>{customer.ten}</TableCell>
-              <TableCell>{customer.dia_chi || 'Chưa cập nhật'}</TableCell>
-              <TableCell>{customer.ma_so_thue || 'Chưa cập nhật'}</TableCell>
-              <TableCell align="right">
-                <EditButton onClick={() => onEdit(customer)} size="small" />
-                <DeleteButton onClick={() => onDelete(customer)} size="small" sx={{ ml: 1 }} />
-              </TableCell>
-            </TableRow>
-          ))}
-          {!loading && filteredCustomers.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                <Typography variant="body1" color="text.secondary">
-                  {searchTerm ? 'Không tìm thấy khách hàng phù hợp' : emptyMessage}
-                </Typography>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+  // Show mobile view on small screens, StandardTable on larger screens
+  if (isMobile) {
+    return (
+      <Box>
+        {/* Search bar */}
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: '6px',
+                height: 36,
+                minHeight: 36,
+                fontSize: '0.95rem',
+              },
+            }}
+          />
+        </Box>
+        {!loading && !error && renderMobileView()}
+      </Box>
+    );
+  }
 
+  // Desktop view using StandardTable
   return (
     <Box>
-      {/* Search Bar */}
+      {/* Search bar */}
       <Box sx={{ mb: 3 }}>
         <TextField
           fullWidth
@@ -148,26 +170,26 @@ const CustomerListResponsive = ({
                 <SearchIcon />
               </InputAdornment>
             ),
+            sx: {
+              borderRadius: '6px',
+              height: 36,
+              minHeight: 36,
+              fontSize: '0.95rem',
+            },
           }}
         />
       </Box>
-
-      {/* Loading state */}
-      {loading && (
-        <Box textAlign="center" py={4}>
-          <Typography>Đang tải dữ liệu...</Typography>
-        </Box>
-      )}
-
-      {/* Error state */}
-      {error && (
-        <Box color="error.main" py={2}>
-          <Typography>{error}</Typography>
-        </Box>
-      )}
-
-      {/* Content */}
-      {!loading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
+      <StandardTable
+        columns={columns}
+        data={filteredCustomers}
+        renderActions={renderActions}
+        loading={loading}
+        error={error}
+        onRowClick={handleRowClick}
+        emptyMessage={searchTerm ? 'Không tìm thấy khách hàng phù hợp' : emptyMessage}
+        sortable={true}
+        defaultSort={{ key: 'ten', direction: 'asc' }}
+      />
     </Box>
   );
 };

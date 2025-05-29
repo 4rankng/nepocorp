@@ -1,5 +1,21 @@
-import React, { useState, useMemo } from 'react';
-import { Box, Paper, Typography, Alert, Snackbar, Fab, Zoom, TextField, InputAdornment, CircularProgress } from '@mui/material';
+import React, { useState } from 'react';
+import { CircularProgress } from '@mui/material';
+
+interface Partner {
+  id: string;
+  code: string;
+  ten: string;
+  dia_chi: string;
+  ma_so_thue: string;
+  ma_dinh_danh: string;
+}
+
+interface SnackbarState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'info' | 'warning';
+}
+import { Box, Paper, Typography, Alert, Snackbar, Fab, Zoom, TextField, InputAdornment } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import ConfirmationModal from '@/components/ConfirmationDialog';
@@ -32,7 +48,7 @@ const PartnerManagement = () => {
   const [partnerToDelete, setPartnerToDelete] = useState(null);
 
   // Snackbar state
-  const [snackbar, setSnackbar] = useState({
+  const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
     severity: 'success',
@@ -41,23 +57,23 @@ const PartnerManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Filter partners based on search term
-  const filteredPartners = useMemo(() => {
-    if (!searchTerm.trim()) return partners;
+  const filteredPartners = partners.filter((partner: Partner) => {
+    if (!searchTerm.trim()) return true;
     
     const term = searchTerm.toLowerCase();
-    return partners.filter(partner => (
+    return (
       (partner.ten && partner.ten.toLowerCase().includes(term)) ||
       (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
       (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
       (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
-    ));
-  }, [partners, searchTerm]);
+    );
+  });
   
-  const handleSearchChange = (event) => {
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  const showSnackbar = (message, severity = 'success') => {
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning' = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
 
@@ -72,7 +88,7 @@ const PartnerManagement = () => {
     setIsFormOpen(true);
   };
 
-  const handleOpenFormForEdit = (partner) => {
+  const handleOpenFormForEdit = (partner: Partner) => {
     setSelectedPartner(partner);
     setFormError('');
     setIsFormOpen(true);
@@ -84,7 +100,7 @@ const PartnerManagement = () => {
     setFormError('');
   };
 
-  const handleSavePartner = async (formData) => {
+  const handleSavePartner = async (formData: Omit<Partner, 'id'>) => {
     setFormError('');
 
     // If this is an edit, we need to validate the code if it was changed
@@ -127,7 +143,7 @@ const PartnerManagement = () => {
   };
 
   // Delete handlers
-  const handleDeleteClick = (partner) => {
+  const handleDeleteClick = (partner: Partner) => {
     setPartnerToDelete(partner);
     setIsDeleteModalOpen(true);
   };
