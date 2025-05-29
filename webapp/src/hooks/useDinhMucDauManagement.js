@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
 import * as dauKeoApi from '@services/mockApi/dauKeoApi';
 import * as roMoocApi from '@services/mockApi/roMoocApi';
+import * as cauHinhApi from '@services/mockApi/cauHinhApi';
 
 export const useDinhMucDauManagement = () => {
   const [dinhMucHang, setDinhMucHang] = useState({}); // Format: { '51C-12345': [...] }
@@ -21,19 +22,22 @@ export const useDinhMucDauManagement = () => {
     setIsLoading(true);
     setError('');
     try {
-      const [dinhMucResponse, dauKeoResponse, roMoocResponse] = await Promise.all([
+      const [dinhMucResponse, dauKeoResponse, roMoocResponse, supResponse] = await Promise.all([
         dinhMucDauApi.getAllDinhMucDau(),
-        dauKeoApi.getAll(),
-        roMoocApi.getAll(),
+        dauKeoApi.fetchAllDauKeo(),
+        roMoocApi.fetchAllRoMooc(),
+        cauHinhApi.getDinhMucBoSung(),
       ]);
 
       if (dinhMucResponse.error) throw new Error(dinhMucResponse.error);
       if (dauKeoResponse.error) throw new Error(dauKeoResponse.error);
       if (roMoocResponse.error) throw new Error(roMoocResponse.error);
+      if (supResponse.error) throw new Error(supResponse.error);
 
       const allDinhMucData = dinhMucResponse.data || [];
       const dauKeoData = dauKeoResponse.data || [];
       const roMoocData = roMoocResponse.data || [];
+      const supData = supResponse.data || { value: 0 };
 
       const hangDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_hang');
       const voDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_vo');
