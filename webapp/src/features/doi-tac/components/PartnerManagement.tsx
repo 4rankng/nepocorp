@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
-import { CircularProgress } from '@mui/material';
+import { useState } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  Alert,
+  Snackbar,
+  Fab,
+  Zoom,
+  CircularProgress,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 
 interface Partner {
   id: string;
@@ -15,22 +25,9 @@ interface SnackbarState {
   message: string;
   severity: 'success' | 'error' | 'info' | 'warning';
 }
-import {
-  Box,
-  Paper,
-  Typography,
-  Alert,
-  Snackbar,
-  Fab,
-  Zoom,
-  TextField,
-  InputAdornment,
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import SearchIcon from '@mui/icons-material/Search';
 import ConfirmationModal from '@/components/ConfirmationDialog';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
-import PartnerList from '@features/doi-tac/components/PartnerList';
+import PartnerListResponsive from '@features/doi-tac/components/PartnerListResponsive';
 import usePartnerManagement from '@features/doi-tac/hooks/usePartnerManagement';
 
 const PartnerManagement = () => {
@@ -50,12 +47,12 @@ const PartnerManagement = () => {
 
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedPartner, setSelectedPartner] = useState(null);
+  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [formError, setFormError] = useState('');
 
   // Delete confirmation state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [partnerToDelete, setPartnerToDelete] = useState(null);
+  const [partnerToDelete, setPartnerToDelete] = useState<Partner | null>(null);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState<SnackbarState>({
@@ -64,24 +61,7 @@ const PartnerManagement = () => {
     severity: 'success',
   });
 
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Filter partners based on search term
-  const filteredPartners = partners.filter((partner: Partner) => {
-    if (!searchTerm.trim()) return true;
-
-    const term = searchTerm.toLowerCase();
-    return (
-      (partner.ten && partner.ten.toLowerCase().includes(term)) ||
-      (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
-      (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
-      (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
-    );
-  });
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
+  // Search and filtering is now handled in PartnerListResponsive
 
   const showSnackbar = (
     message: string,
@@ -198,35 +178,13 @@ const PartnerManagement = () => {
       )}
 
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              sx: {
-                borderRadius: '6px',
-                height: 36,
-                minHeight: 36,
-                fontSize: '0.95rem',
-              },
-            }}
-          />
-        </Box>
-        <PartnerList
-          partners={filteredPartners}
+        <PartnerListResponsive
+          partners={partners}
           loading={loading}
           onEdit={handleOpenFormForEdit}
           onDelete={handleDeleteClick}
           error={error}
-          emptyMessage={searchTerm ? 'Không tìm thấy đối tác phù hợp' : 'Chưa có đối tác nào'}
+          emptyMessage='Chưa có đối tác nào'
         />
       </Paper>
 
@@ -247,7 +205,7 @@ const PartnerManagement = () => {
       </Zoom>
 
       {/* Add/Edit Form */}
-      <PartnerForm
+<PartnerForm
         open={isFormOpen}
         onClose={handleCloseForm}
         onSave={handleSavePartner}
@@ -282,7 +240,7 @@ const PartnerManagement = () => {
         onConfirm={handleDeleteConfirm}
         title="Xác nhận xóa đối tác"
         message={
-          <Box sx={{ mt: 2 }}>
+          <Box component="div" sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Bạn có chắc chắn muốn xóa đối tác này?
             </Typography>

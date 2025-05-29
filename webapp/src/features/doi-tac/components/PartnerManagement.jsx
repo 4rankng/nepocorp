@@ -7,15 +7,12 @@ import {
   Snackbar,
   Fab,
   Zoom,
-  TextField,
-  InputAdornment,
   CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import SearchIcon from '@mui/icons-material/Search';
 import ConfirmationModal from '@/components/ConfirmationDialog';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
-import PartnerList from '@features/doi-tac/components/PartnerList';
+import PartnerListResponsive from '@features/doi-tac/components/PartnerListResponsive';
 import usePartnerManagement from '@features/doi-tac/hooks/usePartnerManagement';
 
 const PartnerManagement = () => {
@@ -49,25 +46,7 @@ const PartnerManagement = () => {
     severity: 'success',
   });
 
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Filter partners based on search term
-  const filteredPartners = useMemo(() => {
-    if (!searchTerm.trim()) return partners;
-
-    const term = searchTerm.toLowerCase();
-    return partners.filter(
-      partner =>
-        (partner.ten && partner.ten.toLowerCase().includes(term)) ||
-        (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
-        (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
-        (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
-    );
-  }, [partners, searchTerm]);
-
-  const handleSearchChange = event => {
-    setSearchTerm(event.target.value);
-  };
+  // Search and filtering is now handled in PartnerListResponsive
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -181,35 +160,13 @@ const PartnerManagement = () => {
       )}
 
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              sx: {
-                borderRadius: '6px',
-                height: 36,
-                minHeight: 36,
-                fontSize: '0.95rem',
-              },
-            }}
-          />
-        </Box>
-        <PartnerList
-          partners={filteredPartners}
+        <PartnerListResponsive
+          partners={partners}
           loading={loading}
           onEdit={handleOpenFormForEdit}
           onDelete={handleDeleteClick}
           error={error}
-          emptyMessage={searchTerm ? 'Không tìm thấy đối tác phù hợp' : 'Chưa có đối tác nào'}
+          emptyMessage="Chưa có đối tác nào"
         />
       </Paper>
 
