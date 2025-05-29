@@ -64,6 +64,5 @@ export const maintenanceTableColumns = [
     noWrap: true,
   },
 ];
-
 // Helper renderers and utils should be imported from utils
 import { formatCurrency, addMonths } from '../utils/maintenanceUtils';

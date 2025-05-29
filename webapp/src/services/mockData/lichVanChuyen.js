@@ -1,13 +1,11 @@
 // Mock database for LichVanChuyen (Transport Schedules)
 // Schema based on USER's new definition
-
 export const TRANG_THAI_LICH_VAN_CHUYEN = {
   CHUA_BAT_DAU: 'chua_bat_dau',
   DANG_THUC_HIEN: 'dang_thuc_hien',
   HOAN_THANH: 'hoan_thanh',
   HUY_BO: 'huy_bo',
 };
-
 let lichVanChuyenData = [
   {
     id: 1,
@@ -461,17 +459,14 @@ let lichVanChuyenData = [
   },
 ];
 let nextLichVanChuyenId = 19;
-
 // Import khachHangData for ma_dinh_danh values
 import { khachHangData } from './khachHang.js';
-
 /**
  * @returns {Promise<Array<any>>}
  */
 export const getAllLichVanChuyen = async () => {
   return [...lichVanChuyenData];
 };
-
 /**
  * @param {number|string} id
  * @returns {Promise<any|null>}
@@ -480,7 +475,6 @@ export const getLichVanChuyenById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return lichVanChuyenData.find(item => item.id === numericId) || null;
 };
-
 /**
  * @param {string} maChuyenXe
  * @returns {Promise<any|null>}
@@ -488,20 +482,17 @@ export const getLichVanChuyenById = async id => {
 export const getLichVanChuyenByMaChuyenXe = async maChuyenXe => {
   return lichVanChuyenData.find(item => item.ma_chuyen === maChuyenXe) || null;
 };
-
 /**
  * @param {object} data
  * @returns {Promise<any>}
  */
 export const createLichVanChuyen = async data => {
   const now = new Date().toISOString();
-
   // Ensure ngay_ha_hang is only set when trang_thai is 'hoan_thanh'
   const processedData = { ...data };
   if (processedData.trang_thai !== TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
     processedData.ngay_ha_hang = null;
   }
-
   const newRecord = {
     ...processedData,
     id: nextLichVanChuyenId++,
@@ -511,7 +502,6 @@ export const createLichVanChuyen = async data => {
   lichVanChuyenData.push(newRecord);
   return newRecord;
 };
-
 /**
  * @param {number|string} id
  * @param {object} updates
@@ -521,16 +511,13 @@ export const updateLichVanChuyen = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = lichVanChuyenData.findIndex(item => item.id === numericId);
   if (index === -1) return null;
-
   // Ensure ngay_ha_hang is only set when trang_thai is 'hoan_thanh'
   const processedUpdates = { ...updates };
   const currentRecord = lichVanChuyenData[index];
   const finalTrangThai = processedUpdates.trang_thai || currentRecord.trang_thai;
-
   if (finalTrangThai !== TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
     processedUpdates.ngay_ha_hang = null;
   }
-
   lichVanChuyenData[index] = {
     ...lichVanChuyenData[index],
     ...processedUpdates,
@@ -538,7 +525,6 @@ export const updateLichVanChuyen = async (id, updates) => {
   };
   return lichVanChuyenData[index];
 };
-
 /**
  * @param {number|string} id
  * @returns {Promise<boolean>}
@@ -550,7 +536,6 @@ export const deleteLichVanChuyen = async id => {
   lichVanChuyenData.splice(index, 1);
   return true;
 };
-
 /**
  * @param {Array<any>} data
  * @returns {Promise<Array<any>>}
@@ -561,7 +546,6 @@ export const _resetLichVanChuyen = async (data = []) => {
     nextLichVanChuyenId = 1;
     return [];
   }
-
   const defaultValues = {
     ma_chuyen: '',
     ngay_di: '',
@@ -586,27 +570,21 @@ export const _resetLichVanChuyen = async (data = []) => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-
   // Get all ma_dinh_danh values from khachHangData
   const maDinhDanhList = khachHangData.map(kh => kh.ma_dinh_danh);
-
   lichVanChuyenData = data.map((item, idx) => {
     const filled = { ...defaultValues, ...item, id: idx + 1 };
-
     // Ensure ngay_ha_hang is only set when trang_thai is 'hoan_thanh'
     if (filled.trang_thai !== TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
       filled.ngay_ha_hang = null;
     }
-
     // Always assign a valid ma_khach_hang from maDinhDanhList
     filled.ma_khach_hang = maDinhDanhList[idx % maDinhDanhList.length];
-
     return filled;
   });
   nextLichVanChuyenId = lichVanChuyenData.length + 1;
   return [...lichVanChuyenData];
 };
-
 // Initial check for duplicate ma_chuyen_xe in seed data
 const initialMaChuyenXe = lichVanChuyenData.map(c => c.ma_chuyen);
 const duplicateMaChuyenXe = initialMaChuyenXe.filter(
@@ -618,14 +596,12 @@ if (duplicateMaChuyenXe.length > 0) {
     duplicateMaChuyenXe
   );
 }
-
 // Initial check for duplicate IDs in seed data
 const initialIds = lichVanChuyenData.map(c => c.id);
 const duplicateIds = initialIds.filter((item, index) => initialIds.indexOf(item) !== index);
 if (duplicateIds.length > 0) {
   console.error('CRITICAL: Duplicate IDs found in initial lichVanChuyenData:', duplicateIds);
 }
-
 // Ensure cuoc_van_chuyen_vnd > vnd_chi_phi * 1.2 for all records
 lichVanChuyenData = lichVanChuyenData.map(record => {
   if (!(record.cuoc_van_chuyen_vnd > record.vnd_chi_phi * 1.2)) {

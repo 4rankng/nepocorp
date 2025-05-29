@@ -2,7 +2,6 @@ import React from 'react';
 import { Box } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const PartnerList = ({
   partners = [],
   loading = false,
@@ -48,7 +47,6 @@ const PartnerList = ({
       ),
     },
   ];
-
   return (
     <StandardTable
       columns={columns}
@@ -59,5 +57,4 @@ const PartnerList = ({
     />
   );
 };
-
 export default PartnerList;

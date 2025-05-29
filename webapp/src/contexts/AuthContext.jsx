@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { ROLES } from '@/config/roles';
-
 // Mock user data - in a real app, this would come from your authentication service
 const MOCK_USERS = {
   [ROLES.QUAN_LY]: { id: 1, name: 'Nguyễn Văn Phú', role: ROLES.QUAN_LY },
@@ -8,16 +7,13 @@ const MOCK_USERS = {
   [ROLES.GIAO_NHAN]: { id: 3, name: 'Lưu Đức Cường', role: ROLES.GIAO_NHAN },
   [ROLES.LAI_XE]: { id: 4, name: 'Ngô Tử Đức', role: ROLES.LAI_XE },
 };
-
 const AuthContext = createContext();
-
 // Helper function to get stored auth data
 const getStoredAuthData = () => {
   if (typeof window === 'undefined') return null;
   const storedData = localStorage.getItem('auth');
   return storedData ? JSON.parse(storedData) : null;
 };
-
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(() => {
     const storedData = getStoredAuthData();
@@ -27,7 +23,6 @@ export const AuthProvider = ({ children }) => {
     const storedData = getStoredAuthData();
     return storedData?.isAuthenticated || false;
   });
-
   // Login function - in a real app, this would call your auth API
   const login = useCallback(role => {
     const user = MOCK_USERS[role];
@@ -44,7 +39,6 @@ export const AuthProvider = ({ children }) => {
     }
     return false;
   }, []);
-
   useEffect(() => {
     const storedData = getStoredAuthData();
     if (storedData) {
@@ -53,13 +47,11 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(storedData.isAuthenticated);
     }
   }, []);
-
   const logout = useCallback(() => {
     setCurrentUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('auth');
   }, []);
-
   // Check if current user has a specific role
   const hasRole = useCallback(
     role => {
@@ -67,7 +59,6 @@ export const AuthProvider = ({ children }) => {
     },
     [currentUser]
   );
-
   // Check if current user has any of the specified roles
   const hasAnyRole = useCallback(
     (roles = []) => {
@@ -75,7 +66,6 @@ export const AuthProvider = ({ children }) => {
     },
     [currentUser]
   );
-
   const value = {
     currentUser,
     isAuthenticated,
@@ -84,10 +74,8 @@ export const AuthProvider = ({ children }) => {
     hasRole,
     hasAnyRole,
   };
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
 // Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -96,5 +84,4 @@ export const useAuth = () => {
   }
   return context;
 };
-
 export default AuthContext;

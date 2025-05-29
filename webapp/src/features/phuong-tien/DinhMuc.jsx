@@ -8,7 +8,6 @@ import LicensePlateNormsCard from './components/LicensePlateNormsCard';
 import { dauKeoApi, roMoocApi } from '@services/mockApi';
 import DinhMucDialog from './components/DinhMucDialog';
 import { useDinhMucManagement } from '../../hooks/useDinhMucManagement';
-
 import {
   Box,
   Button,
@@ -53,7 +52,6 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-
 // Theme variables
 const theme = {
   spacing: 8,
@@ -76,10 +74,8 @@ const theme = {
   shape: { borderRadius: 6 },
   shadows: ['none', '0px 2px 8px rgba(0, 0, 0, 0.08)', '0px 4px 12px rgba(0, 0, 0, 0.1)'],
 };
-
 // Helper functions
 const spacing = value => `${value * theme.spacing}px`;
-
 // Function to group fuel standards by license plate
 const groupByLicensePlate = standards => {
   const plates = new Set();
@@ -89,11 +85,9 @@ const groupByLicensePlate = standards => {
     standards: standards.filter(item => item.licensePlate === plate),
   }));
 };
-
 const DinhMucDau = () => {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
-
   const {
     dinhMucHang,
     dinhMucVo,
@@ -127,34 +121,28 @@ const DinhMucDau = () => {
     closeEditSupplementaryDialog,
     handleSaveSupplementary,
   } = useDinhMucManagement();
-
   // States for inline editing of supplementary standard
   const [isEditingSupplementary, setIsEditingSupplementary] = useState(false);
   const [supplementaryEditValue, setSupplementaryEditValue] = useState(supplementaryStandard);
   const [isSavingSupplementary, setIsSavingSupplementary] = useState(false);
-
   // Update edit value when supplementaryStandard changes
   useEffect(() => {
     setSupplementaryEditValue(supplementaryStandard);
   }, [supplementaryStandard]);
-
   // Functions for inline editing of supplementary standard
   const handleEditSupplementary = () => {
     setIsEditingSupplementary(true);
     setSupplementaryEditValue(supplementaryStandard);
   };
-
   const handleCancelSupplementaryEdit = () => {
     setIsEditingSupplementary(false);
     setSupplementaryEditValue(supplementaryStandard);
   };
-
   const handleSaveSupplementaryInline = async () => {
     if (supplementaryEditValue === supplementaryStandard) {
       setIsEditingSupplementary(false);
       return;
     }
-
     setIsSavingSupplementary(true);
     try {
       await handleSaveSupplementary(supplementaryEditValue);
@@ -165,7 +153,6 @@ const DinhMucDau = () => {
       setIsSavingSupplementary(false);
     }
   };
-
   const handleSupplementaryKeyPress = event => {
     if (event.key === 'Enter') {
       handleSaveSupplementaryInline();
@@ -173,19 +160,14 @@ const DinhMucDau = () => {
       handleCancelSupplementaryEdit();
     }
   };
-
   const [mobileTab, setMobileTab] = useState('supplementary');
-
   const [expandedCards, setExpandedCards] = useState({});
-
   const [orderBy, setOrderBy] = useState('fromKm');
   const [order, setOrder] = useState('asc');
   const [searchQuery, setSearchQuery] = useState('');
-
   const handleTriggerDeleteDialog = (id, type, item, licensePlate) => {
     let detailsText = '';
     const plateIdText = licensePlate ? `cho BSX ${licensePlate}` : '';
-
     if (type === 'km_hang') {
       detailsText = `định mức hàng (Từ ${item.fromKm}km đến ${item.toKm}km) ${plateIdText}`;
     } else if (type === 'km_vo') {
@@ -197,9 +179,7 @@ const DinhMucDau = () => {
     }
     openDeleteDialog(id, type, detailsText);
   };
-
   const [expandedPlates, setExpandedPlates] = useState({});
-
   const filteredLicensePlatesWithStandards = useMemo(() => {
     if (!searchQuery) {
       return platesFromHook;
@@ -208,37 +188,31 @@ const DinhMucDau = () => {
       item.licensePlate.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [platesFromHook, searchQuery]);
-
   const toggleExpand = licensePlate => {
     setExpandedPlates(prev => ({
       ...prev,
       [licensePlate]: !prev[licensePlate],
     }));
   };
-
   const toggleCardExpand = cardId => {
     setExpandedCards(prev => ({
       ...prev,
       [cardId]: !prev[cardId],
     }));
   };
-
   const MobileFuelStandardCard = ({ standard, licensePlate }) => {
     const cardId = `${licensePlate}-${standard.id}`;
     const isExpanded = expandedCards[cardId];
-
     const getStatusColor = value => {
       if (value > 0.4) return theme.palette.error.main;
       if (value > 0.3) return theme.palette.warning.main;
       return theme.palette.success.main;
     };
-
     const getStatusLabel = value => {
       if (value > 0.4) return 'Cao';
       if (value > 0.3) return 'Trung bình';
       return 'Tốt';
     };
-
     return (
       <Card
         sx={{
@@ -299,7 +273,6 @@ const DinhMucDau = () => {
               </IconButton>
             </Box>
           </Box>
-
           <Box
             sx={{
               display: 'flex',
@@ -315,7 +288,6 @@ const DinhMucDau = () => {
               {standard.standard.toFixed(2)} l/km
             </Typography>
           </Box>
-
           <Collapse in={isExpanded}>
             <Divider sx={{ my: 1 }} />
             <Box sx={{ pt: 1 }}>
@@ -384,16 +356,13 @@ const DinhMucDau = () => {
       </Card>
     );
   };
-
   const handleEditClick = (standard, licensePlate, type) => {
     openEditDinhMucDialog({ standard, licensePlate, loaiDinhMuc: type });
   };
-
   const handleUpdateSupplementary = async () => {
     try {
       setIsLoading(true);
       const response = await dinhMucApi.updateBoSung(parseFloat(newSupplementaryValue));
-
       if (response) {
         setSupplementaryStandard(response.value || parseFloat(newSupplementaryValue));
         setEditSupplementaryDialog(false);
@@ -406,7 +375,6 @@ const DinhMucDau = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <Box component="div" sx={{ p: isMobile ? 1 : 2, width: '100%' }}>
       <Box component="div" sx={{ mb: isMobile ? 1 : 2 }}>
@@ -524,7 +492,6 @@ const DinhMucDau = () => {
           </Box>
         )}
       </Box>
-
       {(isMobile && (mobileTab === 'cargo' || mobileTab === 'container')) ||
         (!isMobile && (
           <Box sx={{ mb: isMobile ? 1 : 2, maxWidth: '100%' }}>
@@ -566,7 +533,6 @@ const DinhMucDau = () => {
             />
           </Box>
         ))}
-
       <Box sx={{ mt: isMobile ? 1 : 2, width: '100%' }}>
         {isLoading ? (
           <Box display="flex" justifyContent="center" my={4}>
@@ -723,7 +689,6 @@ const DinhMucDau = () => {
                       }}
                     />
                   </Box>
-
                   {filteredLicensePlatesWithStandards.map(({ licensePlate }) => (
                     <LicensePlateNormsCard
                       key={licensePlate}
@@ -781,7 +746,6 @@ const DinhMucDau = () => {
           </>
         )}
       </Box>
-
       {/* Render dialogs */}
       <DinhMucDialog
         open={openAddDialog}
@@ -805,7 +769,6 @@ const DinhMucDau = () => {
         onInputChange={handleFormInputChange}
         onValidateForm={validateForm}
       />
-
       {/* Supplementary Standard Dialog */}
       <EditSupplementaryStandardDialog
         open={editSupplementaryDialog} // From hook
@@ -814,7 +777,6 @@ const DinhMucDau = () => {
         onSave={handleSaveSupplementary} // From hook
         isLoading={isLoading} // From hook (already was)
       />
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -829,7 +791,6 @@ const DinhMucDau = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       <ConfirmationDialog
         open={deleteDialog.open} // From hook
         onCancel={closeDeleteDialog} // Pass closeDeleteDialog to onCancel prop
@@ -843,5 +804,4 @@ const DinhMucDau = () => {
     </Box>
   );
 };
-
 export default DinhMucDau;

@@ -13,7 +13,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
-
 const ConfirmationDialog = ({
   open,
   title = 'Xác nhận xóa',
@@ -27,7 +26,6 @@ const ConfirmationDialog = ({
 }) => {
   const isLoading = false; // This can be passed as a prop if needed
   const loading = false; // For the delete operation
-
   return (
     <Dialog
       open={open}
@@ -41,7 +39,6 @@ const ConfirmationDialog = ({
         <DialogContentText component="div" id="alert-dialog-description" sx={{ mb: 2 }}>
           {message}
         </DialogContentText>
-
         {details && (
           <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
             <Box display="flex" alignItems="center" mb={1}>
@@ -84,5 +81,4 @@ const ConfirmationDialog = ({
     </Dialog>
   );
 };
-
 export default ConfirmationDialog;

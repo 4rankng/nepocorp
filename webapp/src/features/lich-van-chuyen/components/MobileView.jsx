@@ -5,7 +5,6 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import AddIcon from '@mui/icons-material/Add';
 import MobileShipmentCard from '@features/lich-van-chuyen/components/MobileShipmentCard';
 import MobileSearchHeader from '@features/lich-van-chuyen/components/MobileSearchHeader';
-
 const MobileView = ({
   searchTerm,
   onSearchTermChange,
@@ -30,14 +29,12 @@ const MobileView = ({
         onFilterStatusChange={onFilterStatusChange}
         resultCount={filteredPlans.length}
       />
-
       {/* Loading State */}
       {isLoading && (
         <Box sx={{ mb: 2 }}>
           <LinearProgress sx={{ borderRadius: 1 }} />
         </Box>
       )}
-
       {/* Mobile Cards List */}
       <Box sx={{ mb: 2 }}>
         {filteredPlans.length === 0 ? (
@@ -70,7 +67,6 @@ const MobileView = ({
           </Box>
         )}
       </Box>
-
       {/* Floating Action Button for Add */}
       {canAddPlan && (
         <Fab
@@ -95,7 +91,6 @@ const MobileView = ({
     </Box>
   );
 };
-
 MobileView.propTypes = {
   searchTerm: PropTypes.string.isRequired,
   onSearchTermChange: PropTypes.func.isRequired,
@@ -110,5 +105,4 @@ MobileView.propTypes = {
   onAdd: PropTypes.func.isRequired,
   canAddPlan: PropTypes.bool.isRequired,
 };
-
 export default MobileView;

@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Dialog, DialogContent, IconButton, Typography, useTheme } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-
 const HelpDialog = ({ helpContent, markdownPath }) => {
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const theme = useTheme();
-
   // Simple markdown parser for basic formatting
   const parseMarkdown = text => {
     if (!text) return '';
-
     return (
       text
         // Headers
@@ -26,7 +23,6 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
         .replace(/\n/gim, '<br/>')
     );
   };
-
   const loadMarkdownContent = async path => {
     try {
       setLoading(true);
@@ -43,7 +39,6 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     if (markdownPath) {
       loadMarkdownContent(markdownPath);
@@ -51,15 +46,12 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
       setContent(helpContent);
     }
   }, [markdownPath, helpContent]);
-
   const handleOpen = () => {
     setOpen(true);
   };
-
   const handleClose = () => {
     setOpen(false);
   };
-
   const renderContent = () => {
     if (loading) {
       return (
@@ -75,7 +67,6 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
         </Typography>
       );
     }
-
     if (markdownPath) {
       // Render parsed markdown
       return (
@@ -113,7 +104,6 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
       );
     }
   };
-
   return (
     <>
       {/* Help Button */}
@@ -129,7 +119,6 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
       >
         <HelpOutlineIcon />
       </IconButton>
-
       {/* Help Dialog */}
       <Dialog
         open={open}
@@ -148,5 +137,4 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
     </>
   );
 };
-
 export default HelpDialog;

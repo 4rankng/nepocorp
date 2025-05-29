@@ -15,7 +15,6 @@ import {
   TableSortLabel,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-
 // Enhanced theme configuration based on DinhMucDau.jsx
 const theme = {
   spacing: 8,
@@ -38,42 +37,34 @@ const theme = {
   shape: { borderRadius: 6 },
   shadows: ['none', '0px 2px 8px rgba(0, 0, 0, 0.08)', '0px 4px 12px rgba(0, 0, 0, 0.1)'],
 };
-
 // Utility function for sorting data
 const sortData = (data, sortConfig) => {
   if (!sortConfig || !sortConfig.key) return data;
-
   return [...data].sort((a, b) => {
     const aValue = a[sortConfig.key];
     const bValue = b[sortConfig.key];
-
     // Handle null/undefined values
     if (aValue == null && bValue == null) return 0;
     if (aValue == null) return sortConfig.direction === 'asc' ? -1 : 1;
     if (bValue == null) return sortConfig.direction === 'asc' ? 1 : -1;
-
     // Handle numeric values
     if (typeof aValue === 'number' && typeof bValue === 'number') {
       return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
     }
-
     // Handle date values
     if (aValue instanceof Date && bValue instanceof Date) {
       return sortConfig.direction === 'asc'
         ? aValue.getTime() - bValue.getTime()
         : bValue.getTime() - aValue.getTime();
     }
-
     // Handle string values (case-insensitive)
     const aStr = String(aValue).toLowerCase();
     const bStr = String(bValue).toLowerCase();
-
     if (aStr < bStr) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aStr > bStr) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
   });
 };
-
 const StandardTable = ({
   columns = [],
   data = [],
@@ -98,28 +89,22 @@ const StandardTable = ({
 }) => {
   // Internal sort state
   const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
-
   // Handle sort request
   const handleSort = columnKey => {
     if (!sortable) return;
-
     const column = columns.find(col => (col.key || col.id) === columnKey);
     if (column && column.sortable === false) return;
-
     let direction = 'asc';
     if (sortConfig && sortConfig.key === columnKey && sortConfig.direction === 'asc') {
       direction = 'desc';
     }
-
     const newSortConfig = { key: columnKey, direction };
     setSortConfig(newSortConfig);
-
     // Call external sort handler if provided
     if (onSortChange) {
       onSortChange(newSortConfig);
     }
   };
-
   // Sort data if not handled externally
   const sortedData = useMemo(() => {
     if (onSortChange) {
@@ -138,7 +123,6 @@ const StandardTable = ({
       </Alert>
     );
   }
-
   if (!Array.isArray(columns)) {
     console.error('StandardTable: columns prop must be an array');
     return (
@@ -147,10 +131,8 @@ const StandardTable = ({
       </Alert>
     );
   }
-
   // Extract and omit non-DOM props to prevent them from being passed to the DOM
   const { jsx: _jsx, component: _component, ...filteredTableProps } = tableProps || {};
-
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
@@ -158,7 +140,6 @@ const StandardTable = ({
       </Box>
     );
   }
-
   if (error) {
     return (
       <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
@@ -166,7 +147,6 @@ const StandardTable = ({
       </Alert>
     );
   }
-
   // Extract and omit non-DOM props to prevent them from being passed to DOM
   const {
     rowKeyField: _rowKeyField,
@@ -178,7 +158,6 @@ const StandardTable = ({
     onSortChange: _onSortChange,
     ...cleanTableProps
   } = tableProps || {};
-
   return (
     <Paper
       elevation={0}
@@ -275,7 +254,6 @@ const StandardTable = ({
                     ? 'desc'
                     : 'asc'
                   : 'asc';
-
                 return (
                   <TableCell
                     key={columnKey}
@@ -397,7 +375,6 @@ const StandardTable = ({
           </TableBody>
         </Table>
       </TableContainer>
-
       {pagination && (
         <TablePagination
           component="div"
@@ -419,7 +396,6 @@ const StandardTable = ({
     </Paper>
   );
 };
-
 StandardTable.propTypes = {
   columns: PropTypes.array.isRequired,
   data: PropTypes.array.isRequired,
@@ -444,5 +420,4 @@ StandardTable.propTypes = {
   }),
   onSortChange: PropTypes.func,
 };
-
 export default StandardTable;

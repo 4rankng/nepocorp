@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const PartnerListResponsive = ({
   partners = [],
   loading = false,
@@ -32,11 +31,9 @@ const PartnerListResponsive = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
-
   // Filter partners based on search term
   const filteredPartners = useMemo(() => {
     if (!searchTerm.trim()) return partners;
-
     const term = searchTerm.toLowerCase();
     return partners.filter(
       partner =>
@@ -46,12 +43,10 @@ const PartnerListResponsive = ({
         (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
     );
   }, [partners, searchTerm]);
-
   // Handle search input change
   const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
-
   // Render mobile card view
   const renderMobileView = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
@@ -90,7 +85,6 @@ const PartnerListResponsive = ({
       )}
     </Box>
   );
-
   // Render desktop table view
   const renderDesktopView = () => (
     <TableContainer component={Paper} elevation={2}>
@@ -140,7 +134,6 @@ const PartnerListResponsive = ({
       </Table>
     </TableContainer>
   );
-
   return (
     <Box>
       {/* Search Bar */}
@@ -160,25 +153,21 @@ const PartnerListResponsive = ({
           }}
         />
       </Box>
-
       {/* Loading state */}
       {loading && (
         <Box textAlign="center" py={4}>
           <Typography>Đang tải dữ liệu...</Typography>
         </Box>
       )}
-
       {/* Error state */}
       {error && (
         <Box color="error.main" py={2}>
           <Typography>{error}</Typography>
         </Box>
       )}
-
       {/* Content */}
       {!loading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
     </Box>
   );
 };
-
 export default PartnerListResponsive;

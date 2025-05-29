@@ -16,7 +16,6 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -24,7 +23,6 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-
 const MaintenanceDialog = ({
   open,
   isEdit,
@@ -262,5 +260,4 @@ const MaintenanceDialog = ({
     </Dialog>
   );
 };
-
 export default MaintenanceDialog;

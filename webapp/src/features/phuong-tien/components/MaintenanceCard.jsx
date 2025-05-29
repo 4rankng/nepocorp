@@ -3,7 +3,6 @@ import { Card, CardContent, Box, Typography, Chip, Collapse, Divider } from '@mu
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -11,10 +10,8 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-
 const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
-
   // Calculate expiration date if not present
   const getExpirationDate = record => {
     if (record.ngayHetHan) return new Date(record.ngayHetHan);
@@ -25,11 +22,9 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
     }
     return null;
   };
-
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
-
   return (
     <Card
       onClick={handleExpandClick}
@@ -86,7 +81,6 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
             </Box>
           </Box>
         </Box>
-
         {/* Secondary Information - Collapsed by default */}
         <Box
           sx={{
@@ -103,7 +97,6 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
             {formatCurrency(record.total)}
           </Typography>
         </Box>
-
         {/* Expandable Section - Detailed Information */}
         <Collapse in={expanded}>
           <Divider sx={{ my: 1 }} />
@@ -187,7 +180,6 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
                 </Box>
               )}
             </Box>
-
             {/* Action Buttons - Only visible in expanded mode at bottom */}
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>
               <EditButton
@@ -213,5 +205,4 @@ const MaintenanceCard = ({ record, onEdit, onDelete, isLoading }) => {
     </Card>
   );
 };
-
 export default MaintenanceCard;

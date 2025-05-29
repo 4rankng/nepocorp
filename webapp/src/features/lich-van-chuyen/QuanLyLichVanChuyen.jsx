@@ -40,7 +40,6 @@ import {
 } from '@mui/material';
 // import CloseIcon from '@mui/icons-material/Close'; // Used in child components
 // import ExpandMoreIcon from '@mui/icons-material/ExpandMore'; // Used in child components
-
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import MobileView from '@features/lich-van-chuyen/components/MobileView';
 import DesktopView from '@features/lich-van-chuyen/components/DesktopView';
@@ -56,7 +55,6 @@ import {
   formatContainersForSelect,
   addQuickCustomer,
 } from './utils/lichVanChuyenUtils';
-
 const initialFormState = {
   id: null,
   ma_chuyen: '',
@@ -75,7 +73,6 @@ const initialFormState = {
   d_ro_mooc: 0,
   l_dau: 0,
 };
-
 /**
  * Comparator for descending sort.
  * @param {object} a - First item.
@@ -92,7 +89,6 @@ function descendingComparator(a, b, orderBy) {
   }
   return 0;
 }
-
 /**
  * Get a comparator function for sorting.
  * @param {'asc' | 'desc'} order - Sort order.
@@ -110,7 +106,6 @@ function getComparator(order, orderBy, columns) {
         const bValue = column?.sortValue
           ? column.sortValue(b[orderBy] ?? '', b)
           : (b[orderBy] ?? '');
-
         if (bValue < aValue) return -1;
         if (bValue > aValue) return 1;
         return 0;
@@ -123,13 +118,11 @@ function getComparator(order, orderBy, columns) {
         const bValue = column?.sortValue
           ? column.sortValue(b[orderBy] ?? '', b)
           : (b[orderBy] ?? '');
-
         if (aValue < bValue) return -1;
         if (aValue > bValue) return 1;
         return 0;
       };
 }
-
 /**
  * Stable sort an array.
  * @param {Array<object>} array - Array to sort.
@@ -145,18 +138,14 @@ function stableSort(array, comparator) {
   });
   return stabilizedThis.map(el => el[0]);
 }
-
 // Map status codes to display text
 const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   const { hasAnyRole } = useAuth();
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]);
-
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('ngayDi');
-
   const [lichVanChuyenItems, setLichVanChuyenItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -178,7 +167,6 @@ const QuanLyLichVanChuyen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState(null);
-
   const mapLichVanChuyenToFormData = item => {
     if (!item) return initialFormState;
     return {
@@ -200,7 +188,6 @@ const QuanLyLichVanChuyen = () => {
       l_dau: item.l_dau || 0,
     };
   };
-
   const fetchPageData = useCallback(async () => {
     setIsLoading(true);
     setError('');
@@ -220,10 +207,8 @@ const QuanLyLichVanChuyen = () => {
         fetchAllDauKeo(),
         fetchAllRoMooc(),
       ]);
-
       // Extract the actual customer list from the response object
       const actualKhachHangList = khachHangList?.data || [];
-
       console.log('Raw data from APIs:', {
         lichVanChuyenList: lichVanChuyenList?.length || 0,
         nhanVienList: nhanVienList?.length || 0,
@@ -232,18 +217,14 @@ const QuanLyLichVanChuyen = () => {
         dauKeoList: dauKeoList?.length || 0,
         roMoocList: roMoocList?.length || 0,
       });
-
       // Log the first item to see its exact structure
       if (lichVanChuyenList && lichVanChuyenList.length > 0) {
       }
-
       setLichVanChuyenItems(lichVanChuyenList);
-
       const vehiclesData = formatVehiclesForSelect(dauKeoList, roMoocList);
       const customersData = formatCustomersForSelect(actualKhachHangList); // Use the extracted list
       const employeesData = formatEmployeesForSelect(nhanVienList);
       const containersData = formatContainersForSelect(containerList);
-
       setSelectOptions({
         dauKeo: vehiclesData.dauKeo || [],
         roMooc: vehiclesData.roMooc || [],
@@ -258,16 +239,13 @@ const QuanLyLichVanChuyen = () => {
       setIsLoading(false);
     }
   }, [setIsLoading, setError, setLichVanChuyenItems, setSelectOptions]);
-
   useEffect(() => {
     fetchPageData();
   }, [fetchPageData]);
-
   const handleInputChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
-
   const handleOpenModalForAdd = () => {
     setEditingItem(null);
     setFormData({
@@ -276,20 +254,17 @@ const QuanLyLichVanChuyen = () => {
     });
     setIsModalOpen(true);
   };
-
   const handleOpenModalForEdit = item => {
     setEditingItem(item);
     setFormData(mapLichVanChuyenToFormData(item));
     setIsModalOpen(true);
   };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
     setFormData(initialFormState);
     setError('');
   };
-
   // Handle ESC key press to close modals
   useEffect(() => {
     const handleKeyDown = e => {
@@ -301,18 +276,15 @@ const QuanLyLichVanChuyen = () => {
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isModalOpen, isDeleteModalOpen]);
-
   const handleSave = async event => {
     if (event) event.preventDefault(); // Prevent default form submission if called from an event
     setIsLoading(true);
     setError('');
-
     if (
       !formData.ma_chuyen ||
       !formData.ngay_di ||
@@ -334,7 +306,6 @@ const QuanLyLichVanChuyen = () => {
       setIsLoading(false);
       return;
     }
-
     try {
       if (editingItem) {
         await editLichVanChuyen(editingItem.id, formData);
@@ -362,17 +333,14 @@ const QuanLyLichVanChuyen = () => {
       setIsLoading(false);
     }
   };
-
   const handleDeleteConfirmation = item => {
     setItemToDelete(item);
     setIsDeleteModalOpen(true);
   };
-
   const handleDeleteCancel = () => {
     setItemToDelete(null);
     setIsDeleteModalOpen(false);
   };
-
   const handleDeleteConfirmed = async () => {
     if (!itemToDelete) return;
     setIsLoading(true);
@@ -391,31 +359,25 @@ const QuanLyLichVanChuyen = () => {
       setIsLoading(false);
     }
   };
-
   const getEntityNameById = (id, list, keyField = 'id', nameField = 'name') => {
     if (!list || !Array.isArray(list)) return '-';
     const entity = list.find(item => item[keyField] === id);
     return entity ? entity[nameField] : '-';
   };
-
   // Mobile-specific handlers
   const handleCardExpand = planId => {
     setExpandedCard(expandedCard === planId ? null : planId);
   };
-
   // Filter functions for mobile search
   const filteredLichVanChuyenItems = React.useMemo(() => {
     const filtered = lichVanChuyenItems.filter(item => {
       try {
         if (!item) return false;
-
         const matchesSearch =
           !searchTerm ||
           (item.ma_chuyen && item.ma_chuyen.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
-
         const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
-
         return matchesSearch && matchesStatus;
       } catch (error) {
         console.error('Error filtering item:', error, 'Item:', item);
@@ -424,22 +386,18 @@ const QuanLyLichVanChuyen = () => {
     });
     if (filtered.length > 0) {
     }
-
     return filtered;
   }, [lichVanChuyenItems, searchTerm, filterStatus]);
-
   // Handle form submission for mobile stepper
   // This handleSubmit is called by MobileShipmentFormStepper via onSave prop
   const handleSubmit = () => {
     handleSave();
   };
-
   // Define table columns for DesktopView
   // This 'columns' definition was from an older version or a merge artifact.
   // The correct one is defined later and used by DesktopView.
   // Removing this older definition to avoid confusion.
   // The old block has been removed.
-
   // Define columns for DesktopView StandardTable
   const columns = React.useMemo(
     () => createLichVanChuyenColumns(selectOptions, theme),
@@ -450,12 +408,10 @@ const QuanLyLichVanChuyen = () => {
     setFormData(initialFormState);
     setError('');
   };
-
   // Handle adding new customer from stepper
   const handleAddNewCustomer = async customerName => {
     try {
       const newCustomer = await addQuickCustomer(customerName);
-
       // Refresh customer list
       const updatedCustomers = await fetchAllKhachHang();
       const formattedCustomers = formatCustomersForSelect(updatedCustomers);
@@ -463,26 +419,21 @@ const QuanLyLichVanChuyen = () => {
         ...prev,
         customers: formattedCustomers,
       }));
-
       return newCustomer.id; // Return new customer ID to select it
     } catch (error) {
       throw error; // Let child component handle the error
     }
   };
-
   // Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
   const handleOpenModalForAddMobile = () => {
     handleOpenModalForAdd();
   };
-
   const handleOpenModalForEditMobile = plan => {
     handleOpenModalForEdit(plan);
   };
-
   const handleCloseModalMobile = () => {
     handleCloseModal();
   };
-
   return (
     <Box
       sx={{
@@ -507,13 +458,11 @@ const QuanLyLichVanChuyen = () => {
       >
         Quản Lý Lịch Vận Chuyển
       </Typography>
-
       {isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
           <CircularProgress />
         </Box>
       )}
-
       {error && !isModalOpen && (
         <Alert
           severity="error"
@@ -526,7 +475,6 @@ const QuanLyLichVanChuyen = () => {
           {error}
         </Alert>
       )}
-
       {isMobile ? (
         <MobileView
           searchTerm={searchTerm}
@@ -587,7 +535,6 @@ const QuanLyLichVanChuyen = () => {
           )}
         />
       )}
-
       {/* Modal for Add/Edit */}
       {isMobile ? (
         <Dialog
@@ -643,7 +590,6 @@ const QuanLyLichVanChuyen = () => {
           selectOptions={selectOptions}
         />
       )}
-
       {/* Confirmation Modal for delete - This should be outside the main mobile/desktop view ternary */}
       {/* Shipment Detail Modal */}
       <Dialog
@@ -688,7 +634,6 @@ const QuanLyLichVanChuyen = () => {
           <Button onClick={() => setIsDetailModalOpen(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
-
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={handleDeleteCancel}
@@ -720,5 +665,4 @@ const QuanLyLichVanChuyen = () => {
     </Box>
   );
 };
-
 export default QuanLyLichVanChuyen;

@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Kept for future use, though not used in this version
-
 const DangNhap = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   // const navigate = useNavigate(); // Kept for future use
-
   const canLogin = username.trim() !== '' && password.trim() !== '';
-
   const handleSubmit = e => {
     e.preventDefault(); // Prevent form submission
     setError('');
-
     if (canLogin) {
       // TODO: Implement actual authentication
       // For now, simulating a successful login attempt message
@@ -22,7 +18,6 @@ const DangNhap = () => {
       setError('Vui lòng nhập tên đăng nhập và mật khẩu.');
     }
   };
-
   return (
     <>
       <h2 className="text-center text-3xl font-extrabold text-gray-900 mb-6">Đăng nhập</h2>
@@ -45,7 +40,6 @@ const DangNhap = () => {
             />
           </div>
         </div>
-
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700">
             Mật khẩu
@@ -64,9 +58,7 @@ const DangNhap = () => {
             />
           </div>
         </div>
-
         {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-
         <div className="flex items-center justify-end">
           {' '}
           {/* Changed to justify-end for only forgot password link */}
@@ -82,7 +74,6 @@ const DangNhap = () => {
             </a>
           </div>
         </div>
-
         <div>
           <button
             type="submit"
@@ -100,5 +91,4 @@ const DangNhap = () => {
     </>
   );
 };
-
 export default DangNhap;

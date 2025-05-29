@@ -9,7 +9,6 @@ import {
   Typography,
   Box,
 } from '@mui/material';
-
 const TractorDeleteDialog = ({ open, data, onClose, onDelete, isLoading }) => (
   <Dialog
     open={open}
@@ -46,5 +45,4 @@ const TractorDeleteDialog = ({ open, data, onClose, onDelete, isLoading }) => (
     </DialogActions>
   </Dialog>
 );
-
 export default TractorDeleteDialog;

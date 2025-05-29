@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-
 const useConfirmation = () => {
   const [confirmationState, setConfirmationState] = useState({
     isOpen: false,
@@ -11,7 +10,6 @@ const useConfirmation = () => {
     cancelText: 'Hủy',
     confirmColor: 'primary',
   });
-
   const confirm = useCallback(
     ({
       title = 'Xác nhận',
@@ -41,11 +39,9 @@ const useConfirmation = () => {
     },
     []
   );
-
   const ConfirmationDialog = useCallback(() => {
     const { isOpen, title, message, onConfirm, onCancel, confirmText, cancelText, confirmColor } =
       confirmationState;
-
     return (
       <ConfirmationDialog
         open={isOpen}
@@ -59,8 +55,6 @@ const useConfirmation = () => {
       />
     );
   }, [confirmationState]);
-
   return { confirm, ConfirmationDialog };
 };
-
 export default useConfirmation;

@@ -1,7 +1,6 @@
 // Mock database for RoMooc (Trailers)
 // Static data, 15 records. Numeric auto-incrementing ID.
 // Fields: id, bien_so, mo_ta, createdAt, updatedAt
-
 let roMoocData = [
   {
     id: 1,
@@ -109,18 +108,14 @@ let roMoocData = [
     updatedAt: '2024-05-19T13:30:00Z',
   },
 ];
-
 let nextRoMoocId = 16;
-
 export const getAllRoMooc = async () => {
   return [...roMoocData];
 };
-
 export const getRoMoocById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return roMoocData.find(rm => rm.id === numericId) || null;
 };
-
 export const createRoMooc = async data => {
   const newRoMooc = {
     ...data, // Expects bien_so, mo_ta
@@ -135,12 +130,10 @@ export const createRoMooc = async data => {
   roMoocData.push(newRoMooc);
   return newRoMooc;
 };
-
 export const updateRoMooc = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = roMoocData.findIndex(rm => rm.id === numericId);
   if (index === -1) return null;
-
   const { id: _, ...validUpdates } = updates;
   roMoocData[index] = {
     ...roMoocData[index],
@@ -149,7 +142,6 @@ export const updateRoMooc = async (id, updates) => {
   };
   return roMoocData[index];
 };
-
 export const deleteRoMooc = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = roMoocData.findIndex(rm => rm.id === numericId);
@@ -157,16 +149,13 @@ export const deleteRoMooc = async id => {
   roMoocData.splice(index, 1);
   return true;
 };
-
 export const _resetRoMooc = (data = []) => {
   roMoocData = data.map((item, index) => ({ ...item, id: index + 1 }));
   nextRoMoocId = roMoocData.length > 0 ? Math.max(...roMoocData.map(rm => rm.id)) + 1 : 1;
 };
-
 if (roMoocData.length > 0) {
   nextRoMoocId = Math.max(...roMoocData.map(rm => rm.id)) + 1;
 } else {
   nextRoMoocId = 1;
 }
-
 export const getRoMoocCount = async () => roMoocData.length;

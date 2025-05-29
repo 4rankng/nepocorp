@@ -4,7 +4,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-
 // SVG Icons for navigation
 const ChevronLeftIcon = ({ className = 'w-5 h-5' }) => (
   <svg
@@ -18,7 +17,6 @@ const ChevronLeftIcon = ({ className = 'w-5 h-5' }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
   </svg>
 );
-
 const ChevronRightIcon = ({ className = 'w-5 h-5' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -31,7 +29,6 @@ const ChevronRightIcon = ({ className = 'w-5 h-5' }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
   </svg>
 );
-
 const ReportDateFilter = ({ onFilterChange }) => {
   // Get current month's first and last day
   const today = dayjs();
@@ -40,7 +37,6 @@ const ReportDateFilter = ({ onFilterChange }) => {
     from: today.startOf('month'),
     to: today.endOf('month'),
   });
-
   // Handle month navigation
   const handlePrevMonth = () => {
     const newMonth = selectedMonth.subtract(1, 'month');
@@ -50,7 +46,6 @@ const ReportDateFilter = ({ onFilterChange }) => {
       value: newMonth.format('YYYY-MM'),
     });
   };
-
   const handleNextMonth = () => {
     const newMonth = selectedMonth.add(1, 'month');
     setSelectedMonth(newMonth);
@@ -59,7 +54,6 @@ const ReportDateFilter = ({ onFilterChange }) => {
       value: newMonth.format('YYYY-MM'),
     });
   };
-
   // Handle date range changes
   const handleDateRangeChange = (type, newValue) => {
     const newRange = { ...dateRange, [type]: newValue };
@@ -72,7 +66,6 @@ const ReportDateFilter = ({ onFilterChange }) => {
       },
     });
   };
-
   // Initial filter notification
   useEffect(() => {
     onFilterChange({
@@ -80,7 +73,6 @@ const ReportDateFilter = ({ onFilterChange }) => {
       value: selectedMonth.format('YYYY-MM'),
     });
   }, []);
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
       <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -103,7 +95,6 @@ const ReportDateFilter = ({ onFilterChange }) => {
               <ChevronRightIcon />
             </button>
           </div>
-
           {/* Date Range Selector */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -142,5 +133,4 @@ const ReportDateFilter = ({ onFilterChange }) => {
     </LocalizationProvider>
   );
 };
-
 export default ReportDateFilter;

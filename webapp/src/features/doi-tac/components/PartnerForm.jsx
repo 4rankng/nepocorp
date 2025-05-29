@@ -9,14 +9,12 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-
 const initialFormState = {
   ma_dinh_danh: '',
   ten: '',
   dia_chi: '',
   ma_so_thue: '',
 };
-
 const PartnerForm = ({
   open,
   onClose,
@@ -28,7 +26,6 @@ const PartnerForm = ({
 }) => {
   const [formData, setFormData] = useState(initialFormState);
   const [localError, setLocalError] = useState('');
-
   // Reset form when dialog opens/closes or partner changes
   useEffect(() => {
     if (open) {
@@ -48,49 +45,41 @@ const PartnerForm = ({
       setLocalError('');
     }
   }, [open, partner, onGetInitialData]);
-
   const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     // Clear local error when user starts typing
     if (localError) setLocalError('');
   };
-
   const handleSubmit = e => {
     e.preventDefault();
     setLocalError('');
-
     // Validation
     if (!formData.ten.trim()) {
       setLocalError('Tên đối tác không được để trống.');
       return;
     }
-
     // Validate partner code format
     if (!formData.ma_dinh_danh || formData.ma_dinh_danh.trim() === '') {
       setLocalError('Vui lòng nhập mã đối tác.');
       return;
     }
-
     const codeRegex = /^DT\d{3,}$/i;
     if (!codeRegex.test(formData.ma_dinh_danh.trim())) {
       setLocalError('Mã đối tác phải có định dạng DT001, DT002, ...');
       return;
     }
-
     // Call the onSave function with form data
     onSave({
       ...formData,
       ma_dinh_danh: formData.ma_dinh_danh.trim().toUpperCase(),
     });
   };
-
   const handleClose = () => {
     setFormData(initialFormState);
     setLocalError('');
     onClose();
   };
-
   // Handle ESC key press
   useEffect(() => {
     const handleKeyDown = e => {
@@ -98,13 +87,11 @@ const PartnerForm = ({
         handleClose();
       }
     };
-
     if (open) {
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
   }, [open]);
-
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
@@ -185,5 +172,4 @@ const PartnerForm = ({
     </Dialog>
   );
 };
-
 export default PartnerForm;

@@ -1,6 +1,5 @@
 // Common Icons used across the application
 import { forwardRef } from 'react';
-
 // Plus Icon
 export const PlusIcon = forwardRef(({ className = 'w-6 h-6', ...props }, ref) => (
   <svg
@@ -17,7 +16,6 @@ export const PlusIcon = forwardRef(({ className = 'w-6 h-6', ...props }, ref) =>
   </svg>
 ));
 PlusIcon.displayName = 'PlusIcon';
-
 // Pencil (Edit) Icon
 export const PencilIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -38,7 +36,6 @@ export const PencilIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) 
   </svg>
 ));
 PencilIcon.displayName = 'PencilIcon';
-
 // Trash (Delete) Icon
 export const TrashIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -59,7 +56,6 @@ export const TrashIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) =
   </svg>
 ));
 TrashIcon.displayName = 'TrashIcon';
-
 // Chevron Down Icon
 export const ChevronDownIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -76,7 +72,6 @@ export const ChevronDownIcon = forwardRef(({ className = 'w-5 h-5', ...props }, 
   </svg>
 ));
 ChevronDownIcon.displayName = 'ChevronDownIcon';
-
 // Chevron Up Icon
 export const ChevronUpIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -93,7 +88,6 @@ export const ChevronUpIcon = forwardRef(({ className = 'w-5 h-5', ...props }, re
   </svg>
 ));
 ChevronUpIcon.displayName = 'ChevronUpIcon';
-
 // Search Icon
 export const SearchIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -114,7 +108,6 @@ export const SearchIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) 
   </svg>
 ));
 SearchIcon.displayName = 'SearchIcon';
-
 // Calendar Icon
 export const CalendarIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -135,7 +128,6 @@ export const CalendarIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref
   </svg>
 ));
 CalendarIcon.displayName = 'CalendarIcon';
-
 // Arrow Left Icon
 export const ArrowLeftIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -152,7 +144,6 @@ export const ArrowLeftIcon = forwardRef(({ className = 'w-5 h-5', ...props }, re
   </svg>
 ));
 ArrowLeftIcon.displayName = 'ArrowLeftIcon';
-
 // Arrow Right Icon
 export const ArrowRightIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -169,7 +160,6 @@ export const ArrowRightIcon = forwardRef(({ className = 'w-5 h-5', ...props }, r
   </svg>
 ));
 ArrowRightIcon.displayName = 'ArrowRightIcon';
-
 // Customer Icon
 export const CustomerIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -190,7 +180,6 @@ export const CustomerIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref
   </svg>
 ));
 CustomerIcon.displayName = 'CustomerIcon';
-
 // Partner Icon
 export const PartnerIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref) => (
   <svg
@@ -211,7 +200,6 @@ export const PartnerIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref)
   </svg>
 ));
 PartnerIcon.displayName = 'PartnerIcon';
-
 // Export all icons as a single object for easier imports
 export const Icons = {
   PlusIcon,
@@ -224,5 +212,4 @@ export const Icons = {
   CustomerIcon,
   PartnerIcon,
 };
-
 export default Icons;

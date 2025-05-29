@@ -1,20 +1,16 @@
 import React, { Component } from 'react';
 import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
-
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
   }
-
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
-
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
-
   render() {
     if (this.state.hasError) {
       return (
@@ -39,25 +35,20 @@ class ErrorBoundary extends Component {
         </div>
       );
     }
-
     return this.props.children;
   }
 }
-
 // A component that uses the useRouteError hook
 function ErrorPage() {
   const error = useRouteError();
   console.error(error);
-
   let errorMessage = 'Đã xảy ra lỗi không xác định';
-
   if (isRouteErrorResponse(error)) {
     // Error from the router
     errorMessage = error.statusText || error.data?.message || `Lỗi ${error.status}`;
   } else if (error instanceof Error) {
     errorMessage = error.message;
   }
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
@@ -81,5 +72,4 @@ function ErrorPage() {
     </div>
   );
 }
-
 export { ErrorBoundary, ErrorPage };

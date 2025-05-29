@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable'; // Assuming StandardTable is in this path
 import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons'; // Assuming ActionButtons are here
-
 const LicensePlateNormsCard = ({
   licensePlate,
   hangNorms = [],
@@ -27,7 +26,6 @@ const LicensePlateNormsCard = ({
   if (isMobile) {
     const standards = mobileTab === 'cargo' ? hangNorms : voNorms;
     const standardType = mobileTab === 'cargo' ? 'km_hang' : 'km_vo';
-
     return (
       <Paper elevation={1} sx={{ borderRadius: 2, p: 1.5, mb: 1, width: '100%' }}>
         <Box
@@ -42,7 +40,6 @@ const LicensePlateNormsCard = ({
             sx={{ minWidth: 32, height: 32 }}
           />
         </Box>
-
         {standards.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
             Chưa có dữ liệu định mức
@@ -104,7 +101,6 @@ const LicensePlateNormsCard = ({
       </Paper>
     );
   }
-
   // Desktop View
   return (
     <Box sx={{ mb: 3, width: '100%' }}>
@@ -224,5 +220,4 @@ const LicensePlateNormsCard = ({
     </Box>
   );
 };
-
 export default LicensePlateNormsCard;

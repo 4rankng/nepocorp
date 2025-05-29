@@ -1,5 +1,4 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
-
 // Enhanced theme configuration based on DinhMucDau.jsx
 const themeConfig = {
   spacing: 8,
@@ -240,10 +239,8 @@ const themeConfig = {
     },
   },
 };
-
 // Helper function for spacing
 export const spacing = value => `${value * themeConfig.spacing}px`;
-
 // Helper function for alpha colors
 export const alpha = (color, opacity) => {
   if (color.startsWith('#')) {
@@ -255,7 +252,6 @@ export const alpha = (color, opacity) => {
   }
   return color;
 };
-
 // Create Material-UI theme with enhanced configuration
 let theme = createTheme({
   spacing: themeConfig.spacing,
@@ -384,11 +380,8 @@ let theme = createTheme({
     },
   },
 });
-
 // Add responsive font sizes
 theme = responsiveFontSizes(theme);
-
 // Export the theme
 export { theme };
-
 export default theme;

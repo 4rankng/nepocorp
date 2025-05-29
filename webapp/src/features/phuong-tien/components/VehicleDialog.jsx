@@ -9,7 +9,6 @@ import {
   CircularProgress,
   Box,
 } from '@mui/material';
-
 const VehicleDialog = ({
   open,
   title,
@@ -60,5 +59,4 @@ const VehicleDialog = ({
     </Dialog>
   );
 };
-
 export default VehicleDialog;

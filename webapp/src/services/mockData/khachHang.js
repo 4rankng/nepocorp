@@ -1,7 +1,6 @@
 // Mock database for KhachHang (Customers)
 // Static data, 15 records. Numeric auto-incrementing ID.
 // Fields: id (numeric), ma_dinh_danh, ten, dia_chi, ma_so_thue, createdAt, updatedAt
-
 // Export the data array so it can be imported by other modules
 export let khachHangData = [
   {
@@ -142,19 +141,15 @@ export let khachHangData = [
     updatedAt: '2024-05-15T09:00:00Z',
   },
 ];
-
 let nextKhachHangId = 16; // Start next ID after the initial 15 records
-
 export const getAllKhachHang = async () => {
   return [...khachHangData];
 };
-
 export const getKhachHangById = async id => {
   // Ensure ID is treated as a number for comparison if it comes as a string
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return khachHangData.find(kh => kh.id === numericId) || null;
 };
-
 export const createKhachHang = async data => {
   const newKhachHang = {
     ...data, // Expects ma_dinh_danh, ten, dia_chi, ma_so_thue
@@ -171,15 +166,12 @@ export const createKhachHang = async data => {
   khachHangData.push(newKhachHang);
   return newKhachHang;
 };
-
 export const updateKhachHang = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = khachHangData.findIndex(kh => kh.id === numericId);
   if (index === -1) return null;
-
   // Ensure ID is not changed by updates
   const { id: _, ...validUpdates } = updates;
-
   khachHangData[index] = {
     ...khachHangData[index],
     ...validUpdates, // Apply only valid updates
@@ -187,7 +179,6 @@ export const updateKhachHang = async (id, updates) => {
   };
   return khachHangData[index];
 };
-
 export const deleteKhachHang = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = khachHangData.findIndex(kh => kh.id === numericId);
@@ -195,13 +186,11 @@ export const deleteKhachHang = async id => {
   khachHangData.splice(index, 1);
   return true;
 };
-
 // For testing
 export const _resetKhachHang = (data = []) => {
   khachHangData = data.map((item, index) => ({ ...item, id: index + 1 })); // Ensure numeric IDs if resetting
   nextKhachHangId = khachHangData.length > 0 ? Math.max(...khachHangData.map(kh => kh.id)) + 1 : 1;
 };
-
 // Initialize nextId based on current data, in case of manual changes to initial data
 if (khachHangData.length > 0) {
   nextKhachHangId = Math.max(...khachHangData.map(kh => kh.id)) + 1;

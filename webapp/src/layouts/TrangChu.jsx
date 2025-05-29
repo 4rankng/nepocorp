@@ -6,7 +6,6 @@ import ThanhTieuDe from '@/components/ThanhTieuDe';
 import ThanhBen from '@/components/ThanhBen';
 import ChangelogDialog from '@/components/ChangelogDialog';
 import packageJson from '../../package.json';
-
 const ROLE_CARDS = [
   {
     key: ROLES.QUAN_LY,
@@ -41,14 +40,12 @@ const ROLE_CARDS = [
     enabled: false,
   },
 ];
-
 const TrangChu = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const { login, logout, currentUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
   // Auto-navigate authenticated users from root path to their default page
   useEffect(() => {
     if (isAuthenticated && currentUser && location.pathname === '/') {
@@ -72,10 +69,8 @@ const TrangChu = () => {
       }
     }
   }, [isAuthenticated, currentUser, location.pathname, navigate]);
-
   const handleSidebarToggle = () => setSidebarOpen(open => !open);
   const handleSidebarClose = () => setSidebarOpen(false);
-
   const handleRoleSelect = async roleKey => {
     const success = login(roleKey);
     if (success) {
@@ -98,12 +93,10 @@ const TrangChu = () => {
       }
     }
   };
-
   const handleLogout = () => {
     logout();
     setSidebarOpen(false);
   };
-
   // Version badge component
   const VersionBadge = () => (
     <button
@@ -113,24 +106,20 @@ const TrangChu = () => {
       Bản Demo v{packageJson.version}
     </button>
   );
-
   return (
     <div className="min-h-screen w-full bg-white overflow-x-hidden">
       {/* Version badge - always visible */}
       <VersionBadge />
-
       {/* Changelog Dialog */}
       <ChangelogDialog
         open={changelogOpen}
         onClose={() => setChangelogOpen(false)}
         version={packageJson.version}
       />
-
       {/* Banner/Header always visible */}
       <div className="fixed top-0 left-0 right-0 z-50 w-full" style={{ minWidth: 0 }}>
         <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
       </div>
-
       {/* If no role, show role selection cards centered on white, no sidebar, no overlay */}
       {!currentUser && (
         <div className="flex flex-col items-center justify-center min-h-screen pt-24 bg-white">
@@ -159,7 +148,6 @@ const TrangChu = () => {
           </div>
         </div>
       )}
-
       {/* Main Layout Container, only show if role is picked */}
       {currentUser && (
         <div className="flex pt-12 w-full">
@@ -201,5 +189,4 @@ const TrangChu = () => {
     </div>
   );
 };
-
 export default TrangChu;

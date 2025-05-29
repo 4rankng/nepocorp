@@ -8,13 +8,11 @@ import {
   fetchAllDauKeo,
   fetchAllRoMooc,
 } from '@services/mockApi/index.js';
-
 // Configuration
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY = 1000; // 1 second
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 // Error boundary fallback component
 const ErrorFallback = ({ error, resetErrorBoundary }) => (
   <div role="alert" className="p-4 bg-red-50 rounded-lg">
@@ -28,7 +26,6 @@ const ErrorFallback = ({ error, resetErrorBoundary }) => (
     </button>
   </div>
 );
-
 // Retry utility function
 const withRetry = async (fn, retries = MAX_RETRY_ATTEMPTS, delay = RETRY_DELAY) => {
   try {
@@ -39,7 +36,6 @@ const withRetry = async (fn, retries = MAX_RETRY_ATTEMPTS, delay = RETRY_DELAY) 
     return withRetry(fn, retries - 1, delay * 2); // Exponential backoff
   }
 };
-
 // Define employee roles constant
 const employeeRoles = [
   { value: 'giao-nhan', label: 'Giao Nhận' },
@@ -47,7 +43,6 @@ const employeeRoles = [
   { value: 'quan-ly', label: 'Quản Lý' },
   { value: 'admin', label: 'Admin' },
 ];
-
 const getInitialFormState = () => ({
   ma_so: '',
   ho_ten: '',
@@ -56,7 +51,6 @@ const getInitialFormState = () => ({
   chuc_vu: '',
   email: '',
 });
-
 const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   // State management
   const [employees, setEmployees] = useState([]);
@@ -72,28 +66,23 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     total: 0,
     totalPages: 0,
   });
-
   const cacheRef = useRef({
     employees: { data: [], timestamp: 0, total: 0 },
     vehicles: { data: [], timestamp: 0 },
   });
   const errorBoundaryRef = useRef();
-
   // Clear error function
   const clearError = useCallback(() => {
     setError('');
   }, []);
-
   const fetchEmployeesData = useCallback(
     async (page = pagination.page, size = pagination.pageSize) => {
       setIsLoading(true);
       setError('');
       const cacheKey = `page-${page}-size-${size}`;
-
       try {
         const now = Date.now();
         const cachedData = cacheRef.current.employees;
-
         // Return cached data if valid
         if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
           setEmployees(cachedData.data);
@@ -104,10 +93,8 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
           }));
           return;
         }
-
         // Fetch with retry logic
         const data = await withRetry(() => fetchAllNhanVien(page, size));
-
         // Map backend fields to UI fields
         const mapped = (Array.isArray(data?.items || data) ? data.items || data : []).map(emp => ({
           ...emp,
@@ -116,14 +103,12 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
           tenDangNhap: emp.ten_dang_nhap,
           chucVu: mapChucVu(emp.chuc_vu),
         }));
-
         // Update cache
         cacheRef.current.employees = {
           data: mapped,
           total: data.total || mapped.length,
           timestamp: now,
         };
-
         // Update state
         setEmployees(mapped);
         setPagination(prev => ({
@@ -143,7 +128,6 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     },
     [pagination.page, pagination.pageSize]
   );
-
   // Handle page change
   const handlePageChange = useCallback(
     (newPage, newPageSize) => {
@@ -151,23 +135,19 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     },
     [fetchEmployeesData]
   );
-
   // Fetch vehicles for driver assignment with caching and retry
   const fetchVehicles = useCallback(async () => {
     try {
       const now = Date.now();
       const cachedData = cacheRef.current.vehicles;
-
       // Return cached data if valid
       if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
         setVehicles(cachedData.data);
         return;
       }
-
       const [dauKeoData, roMoocData] = await withRetry(() =>
         Promise.all([fetchAllDauKeo(), fetchAllRoMooc()])
       );
-
       const allVehicles = [
         ...(dauKeoData || []).map(item => ({
           ...item,
@@ -182,30 +162,25 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
           type: 'ro_mooc',
         })),
       ];
-
       // Update cache
       cacheRef.current.vehicles = {
         data: allVehicles,
         timestamp: now,
       };
-
       setVehicles(allVehicles);
     } catch (err) {
       console.error('Error fetching vehicles:', err);
       // Don't block the UI if vehicles fail to load
     }
   }, []);
-
   useEffect(() => {
     fetchEmployeesData();
     fetchVehicles();
   }, [fetchEmployeesData, fetchVehicles]);
-
   const handleInputChange = useCallback(e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
-
   const generateEmployeeCode = useCallback(employees => {
     // Find the highest employee code
     const maxCode = employees.reduce((max, emp) => {
@@ -213,11 +188,9 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
       const num = parseInt(emp.maNhanVien.replace(/^NV0*/i, ''), 10);
       return !isNaN(num) ? Math.max(max, num) : max;
     }, 0);
-
     // Generate new code with leading zeros (e.g., NV001, NV002, ...)
     return `NV${String(maxCode + 1).padStart(3, '0')}`;
   }, []);
-
   const handleOpenModalForAdd = useCallback(() => {
     setEditingEmployee(null);
     // Generate new employee code based on existing employees
@@ -229,7 +202,6 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     setError('');
     setIsModalOpen(true);
   }, [employees, generateEmployeeCode]);
-
   const handleOpenModalForEdit = useCallback(employee => {
     setEditingEmployee(employee);
     setFormData({
@@ -243,14 +215,12 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     setError('');
     setIsModalOpen(true);
   }, []);
-
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setEditingEmployee(null);
     setFormData(getInitialFormState());
     setError('');
   }, []);
-
   // Effect for ESC key to close modal
   useEffect(() => {
     const handleKeyDown = e => {
@@ -263,7 +233,6 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isModalOpen, handleCloseModal]);
-
   const handleSaveEmployee = useCallback(async () => {
     setError('');
     if (
@@ -279,7 +248,6 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
       setError('Mật khẩu là bắt buộc khi thêm nhân viên mới.');
       return;
     }
-
     setIsLoading(true);
     try {
       if (editingEmployee) {
@@ -301,7 +269,6 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
       setIsLoading(false);
     }
   }, [formData, editingEmployee, fetchEmployeesData, handleCloseModal]);
-
   const handleDeleteEmployee = useCallback(
     async id => {
       // Renamed to avoid conflict if used directly
@@ -321,14 +288,12 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     },
     [fetchEmployeesData]
   );
-
   // Wrap component with error boundary
   const withErrorBoundary = children => (
     <ErrorBoundary ref={errorBoundaryRef} FallbackComponent={ErrorFallback} onReset={clearError}>
       {children}
     </ErrorBoundary>
   );
-
   return {
     employees,
     isModalOpen,
@@ -352,7 +317,6 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     clearError,
   };
 };
-
 // Helper to map chuc_vu code to display string
 function mapChucVu(code) {
   switch (code) {
@@ -368,5 +332,4 @@ function mapChucVu(code) {
       return code || 'Chưa xác định';
   }
 }
-
 export default useNhanVienManagement;

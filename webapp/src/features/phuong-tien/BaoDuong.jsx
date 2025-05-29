@@ -50,7 +50,6 @@ import BaoDuongSection from './components/BaoDuongSection';
 import { maintenanceTableColumns } from './constants/maintenanceTableColumns';
 import useMaintenanceForm from './hooks/useMaintenanceForm';
 import useMaintenanceRecords from './hooks/useMaintenanceRecords';
-
 const initialFormData = {
   licensePlate: '',
   replacementDate: new Date(),
@@ -61,7 +60,6 @@ const initialFormData = {
   total: 0,
   note: '',
 };
-
 const BaoDuong = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -73,7 +71,6 @@ const BaoDuong = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [counts, setCounts] = useState({ tire: 0 });
-
   // Data fetching
   const {
     maintenanceRecords,
@@ -84,7 +81,6 @@ const BaoDuong = () => {
     error,
     fetchData,
   } = useMaintenanceRecords(lopXeApi);
-
   // Form state/handlers
   const {
     formData,
@@ -114,24 +110,20 @@ const BaoDuong = () => {
       console.error(err);
     },
   });
-
   // Fetch count on mount
   useEffect(() => {
     lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
   }, []);
-
   // Helper to refetch count
   const refetchCount = useCallback(() => {
     lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
   }, []);
-
   const handleOpenAddDialog = () => {
     setIsEdit(false);
     setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null });
     setErrors({});
     setOpenDialog(true);
   };
-
   const handleOpenEditDialog = record => {
     setIsEdit(true);
     setFormData({
@@ -148,12 +140,10 @@ const BaoDuong = () => {
     setErrors({});
     setOpenDialog(true);
   };
-
   const handleCloseDialog = useCallback(() => {
     setOpenDialog(false);
     setErrors({});
   }, []);
-
   const handleDeleteClick = record => {
     setDeleteDialog({
       open: true,
@@ -168,11 +158,9 @@ const BaoDuong = () => {
       },
     });
   };
-
   const handleDeleteClose = () => {
     setDeleteDialog(prev => ({ ...prev, open: false }));
   };
-
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.recordId) return;
     setFormLoading(true);
@@ -197,7 +185,6 @@ const BaoDuong = () => {
       setFormLoading(false);
     }
   };
-
   // Filter maintenance records based on search term
   const filteredRecords = React.useMemo(() => {
     if (!searchTerm.trim()) return maintenanceRecords;
@@ -208,7 +195,6 @@ const BaoDuong = () => {
         (record.note && record.note.toLowerCase().includes(search))
     );
   }, [maintenanceRecords, searchTerm]);
-
   const toggleSection = section => {
     setExpandedSections(prev => ({
       ...prev,
@@ -220,14 +206,12 @@ const BaoDuong = () => {
       setLoadedSections(prev => ({ ...prev, [section]: true }));
     }
   };
-
   const handleAddNew = (type = 'tire') => {
     setIsEdit(false);
     setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null, type });
     setErrors({});
     setOpenDialog(true);
   };
-
   // Render mobile card view
   const renderMobileView = () => (
     <Box>
@@ -247,7 +231,6 @@ const BaoDuong = () => {
       )}
     </Box>
   );
-
   // Render desktop table view
   const renderDesktopView = () => (
     <StandardTable
@@ -269,7 +252,6 @@ const BaoDuong = () => {
       )}
     />
   );
-
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
       {/* Search Bar */}
@@ -295,21 +277,18 @@ const BaoDuong = () => {
           }}
         />
       </Box>
-
       {/* Loading state */}
       {isLoading && (
         <Box textAlign="center" py={4}>
           <Typography>Đang tải dữ liệu...</Typography>
         </Box>
       )}
-
       {/* Error state */}
       {error && (
         <Box color="error.main" py={2}>
           <Typography>{error}</Typography>
         </Box>
       )}
-
       {/* Content */}
       {!isLoading && !error && (
         <Box>
@@ -333,7 +312,6 @@ const BaoDuong = () => {
           </BaoDuongSection>
         </Box>
       )}
-
       {/* Add/Edit Dialog */}
       <MaintenanceDialog
         open={openDialog}
@@ -345,7 +323,6 @@ const BaoDuong = () => {
         onChange={handleInputChange}
         onSave={handleSave}
       />
-
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={deleteDialog.open}
@@ -359,7 +336,6 @@ const BaoDuong = () => {
         confirmColor="error"
         loading={isFormLoading}
       />
-
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
@@ -379,5 +355,4 @@ const BaoDuong = () => {
     </Box>
   );
 };
-
 export default BaoDuong;

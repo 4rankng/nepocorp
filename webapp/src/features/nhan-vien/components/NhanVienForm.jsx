@@ -1,5 +1,4 @@
 import React from 'react';
-
 const NhanVienForm = ({
   open,
   onClose,
@@ -15,16 +14,13 @@ const NhanVienForm = ({
   if (!open) {
     return null;
   }
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">
           {editingEmployee ? 'Chỉnh Sửa Thông Tin Nhân Viên' : 'Thêm Nhân Viên Mới'}
         </h2>
-
         {error && <p className="text-red-500 text-sm mb-3 bg-red-100 p-2 rounded">{error}</p>}
-
         <div className="space-y-4">
           <div>
             <label htmlFor="ma_so" className="block text-sm font-medium text-gray-700">
@@ -115,7 +111,6 @@ const NhanVienForm = ({
               ))}
             </select>
           </div>
-
           {formData.chuc_vu === 'Lái xe' && (
             <div>
               <label htmlFor="bienSoXe" className="block text-sm font-medium text-gray-700">
@@ -138,7 +133,6 @@ const NhanVienForm = ({
             </div>
           )}
         </div>
-
         <div className="mt-6 flex justify-end space-x-3">
           <button
             onClick={onClose}
@@ -158,5 +152,4 @@ const NhanVienForm = ({
     </div>
   );
 };
-
 export default NhanVienForm;

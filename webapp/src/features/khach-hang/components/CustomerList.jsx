@@ -2,7 +2,6 @@ import React from 'react';
 import { Box } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const CustomerList = ({
   customers = [],
   loading = false,
@@ -37,7 +36,6 @@ const CustomerList = ({
       render: value => value || 'Chưa cập nhật',
     },
   ];
-
   // Render action buttons for each row
   const renderActions = record => (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
@@ -49,7 +47,6 @@ const CustomerList = ({
       <DeleteButton onClick={() => onDelete(record)} disabled={loading} tooltip="Xóa khách hàng" />
     </Box>
   );
-
   return (
     <StandardTable
       columns={columns}
@@ -63,5 +60,4 @@ const CustomerList = ({
     />
   );
 };
-
 export default CustomerList;

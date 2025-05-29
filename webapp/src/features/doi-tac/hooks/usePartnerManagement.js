@@ -6,7 +6,6 @@ import {
   editDoiTac,
   removeDoiTac,
 } from '@services/mockApi/doiTacApi';
-
 // Initial form state
 const initialFormState = {
   ma_dinh_danh: '',
@@ -14,12 +13,10 @@ const initialFormState = {
   dia_chi: '',
   ma_so_thue: '',
 };
-
 const usePartnerManagement = () => {
   const [partners, setPartners] = useState(/** @type {any[]} */ ([]));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   // Fetch all partners
   const fetchPartners = useCallback(async () => {
     setLoading(true);
@@ -36,7 +33,6 @@ const usePartnerManagement = () => {
       setLoading(false);
     }
   }, []);
-
   // Add new partner
   const addNewPartner = useCallback(
     /**
@@ -61,7 +57,6 @@ const usePartnerManagement = () => {
     },
     [fetchPartners]
   );
-
   // Get initial form data
   const getInitialFormData = useCallback(() => {
     let maxCode = 0;
@@ -75,13 +70,11 @@ const usePartnerManagement = () => {
     });
     const nextCodeNum = maxCode + 1;
     const nextMaDinhDanh = `DT${nextCodeNum.toString().padStart(3, '0')}`;
-
     return {
       ...initialFormState,
       ma_dinh_danh: nextMaDinhDanh,
     };
   }, [partners]);
-
   // Check if a partner code is available
   const isPartnerCodeAvailable = useCallback(
     /**
@@ -103,7 +96,6 @@ const usePartnerManagement = () => {
     },
     []
   );
-
   // Update existing partner
   /**
    * @param {string|number} id - Partner ID
@@ -126,7 +118,6 @@ const usePartnerManagement = () => {
       setLoading(false);
     }
   };
-
   // Delete partner
   /**
    * @param {string|number} id - Partner ID
@@ -149,7 +140,6 @@ const usePartnerManagement = () => {
       setLoading(false);
     }
   };
-
   // Get partner by ID
   /**
    * @param {string|number} id - Partner ID
@@ -169,21 +159,17 @@ const usePartnerManagement = () => {
       return { success: false, error: errorMessage };
     }
   };
-
   // Clear error
   const clearError = () => setError('');
-
   // Initial fetch on mount
   useEffect(() => {
     fetchPartners();
   }, [fetchPartners]);
-
   return {
     // State
     partners,
     loading,
     error,
-
     // Actions
     fetchPartners,
     addPartner: addNewPartner,
@@ -195,5 +181,4 @@ const usePartnerManagement = () => {
     clearError,
   };
 };
-
 export default usePartnerManagement;

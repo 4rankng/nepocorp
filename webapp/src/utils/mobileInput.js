@@ -1,14 +1,12 @@
 /**
  * Utility functions to improve mobile input experience
  */
-
 /**
  * Prevents zoom on input focus and ensures proper viewport behavior
  * Call this function in a useEffect hook in your root component
  */
 export const setupMobileInputHandlers = () => {
   if (typeof window === 'undefined') return;
-
   const handleFocus = e => {
     // Prevent zooming on input focus
     const target = e.target;
@@ -21,7 +19,6 @@ export const setupMobileInputHandlers = () => {
       }
     }
   };
-
   const handleBlur = e => {
     // Restore original font size if it was changed
     const target = e.target;
@@ -30,18 +27,15 @@ export const setupMobileInputHandlers = () => {
       delete target.dataset.originalFontSize;
     }
   };
-
   // Add event listeners
   document.addEventListener('focusin', handleFocus);
   document.addEventListener('focusout', handleBlur);
-
   // Cleanup function
   return () => {
     document.removeEventListener('focusin', handleFocus);
     document.removeEventListener('focusout', handleBlur);
   };
 };
-
 /**
  * CSS to be added to your global styles to improve mobile input experience
  */
@@ -67,7 +61,6 @@ export const mobileInputStyles = `
       font-size: 16px !important;
     }
   }
-  
   /* Ensure inputs are large enough for touch targets */
   input, textarea, select, button {
     min-height: 44px;

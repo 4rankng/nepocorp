@@ -14,7 +14,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-
 const DinhMucDialog = ({
   open,
   isEdit,
@@ -27,7 +26,6 @@ const DinhMucDialog = ({
   onValidateForm,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const handleInternalSave = async () => {
     if (onValidateForm && !onValidateForm()) {
       return; // Validation failed
@@ -41,7 +39,6 @@ const DinhMucDialog = ({
       setIsSubmitting(false);
     }
   };
-
   return (
     <Dialog
       open={open}
@@ -90,7 +87,6 @@ const DinhMucDialog = ({
         >
           <CloseIcon fontSize={isMobile ? 'medium' : 'small'} />
         </IconButton>
-
         <Box sx={{ mb: 3, pr: 5 }}>
           <Typography
             variant="h6"
@@ -123,7 +119,6 @@ const DinhMucDialog = ({
             />
           </Box>
         </Box>
-
         <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
           <Grid container spacing={isMobile ? 3 : 2}>
             {!isEdit && !isMobile && (
@@ -433,5 +428,4 @@ const DinhMucDialog = ({
     </Dialog>
   );
 };
-
 export default DinhMucDialog;

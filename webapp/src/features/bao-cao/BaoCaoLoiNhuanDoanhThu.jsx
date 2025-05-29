@@ -13,22 +13,18 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
-
 const formatMillion = value => {
   if (typeof value !== 'number') return 'N/A';
   return (value / 1_000_000).toFixed(2);
 };
-
 const BaoCaoLoiNhuanDoanhThu = () => {
   const [originalData, setOriginalData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
   // Table columns configuration
   const columns = [
     {
@@ -66,7 +62,6 @@ const BaoCaoLoiNhuanDoanhThu = () => {
       render: (value, row) => ((row.profit / row.revenue) * 100).toFixed(2) + '%',
     },
   ];
-
   const fetchReportData = async () => {
     setIsLoading(true);
     setError('');
@@ -81,11 +76,9 @@ const BaoCaoLoiNhuanDoanhThu = () => {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchReportData();
   }, []);
-
   const handleFilterChange = filterData => {
     if (filterData.type === 'month') {
       const monthStr = format(filterData.date, 'MM/yyyy');
@@ -100,20 +93,14 @@ const BaoCaoLoiNhuanDoanhThu = () => {
       setFilteredData(filtered);
     }
   };
-
   // Sort data from earliest to latest
   const sortedData = [...filteredData].sort((a, b) => a.monthYear.localeCompare(b.monthYear));
-
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold mb-4">Báo Cáo Lợi Nhuận và Doanh Thu</h1>
-
       <DateRangeFilter onFilterChange={handleFilterChange} />
-
       {isLoading && <div className="text-center py-4">Đang tải dữ liệu...</div>}
-
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
-
       {!isLoading && !error && filteredData.length > 0 && (
         <div className="bg-white rounded-lg shadow p-4">
           <div className="h-[400px]">
@@ -185,7 +172,6 @@ const BaoCaoLoiNhuanDoanhThu = () => {
             </ResponsiveContainer>
           </div>
           <div className="text-xs text-gray-500 mt-2">Đơn vị: triệu đồng</div>
-
           <div className="mt-8">
             <h2 className="text-lg font-semibold mb-4">Chi tiết theo tháng</h2>
             <StandardTable
@@ -199,7 +185,6 @@ const BaoCaoLoiNhuanDoanhThu = () => {
           </div>
         </div>
       )}
-
       {!isLoading && !error && filteredData.length === 0 && (
         <div className="text-center text-gray-500 bg-white p-8 rounded-lg shadow">
           Không có dữ liệu cho khoảng thời gian đã chọn
@@ -208,5 +193,4 @@ const BaoCaoLoiNhuanDoanhThu = () => {
     </div>
   );
 };
-
 export default BaoCaoLoiNhuanDoanhThu;

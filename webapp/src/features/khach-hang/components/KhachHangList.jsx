@@ -22,7 +22,6 @@ import {
   editKhachHang,
   removeKhachHang,
 } from '@services/mockApi/khachHangApi';
-
 // Create an API object that matches the expected interface
 const customerApi = {
   getAll: fetchAllKhachHang,
@@ -30,7 +29,6 @@ const customerApi = {
   update: editKhachHang,
   delete: removeKhachHang,
 };
-
 // Enhanced theme configuration based on DinhMucDau.jsx
 const theme = {
   spacing: 8,
@@ -45,9 +43,7 @@ const theme = {
   },
   shape: { borderRadius: 6 },
 };
-
 const spacing = value => `${value * theme.spacing}px`;
-
 // Mock data for demonstration (will be replaced with API calls)
 const mockCustomers = [
   {
@@ -75,7 +71,6 @@ const mockCustomers = [
     status: 'inactive',
   },
 ];
-
 const KhachHangList = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -94,12 +89,10 @@ const KhachHangList = () => {
     id: null,
     details: null,
   });
-
   // Fetch customers on mount
   useEffect(() => {
     fetchCustomers();
   }, []);
-
   const fetchCustomers = async () => {
     setLoading(true);
     try {
@@ -113,17 +106,14 @@ const KhachHangList = () => {
       setLoading(false);
     }
   };
-
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
-
   const handleAdd = () => {
     setEditingCustomer(null);
     setFormData({ name: '', phone: '', email: '', address: '' });
     setOpenDialog(true);
   };
-
   const handleEdit = customer => {
     setEditingCustomer(customer);
     setFormData({
@@ -134,11 +124,9 @@ const KhachHangList = () => {
     });
     setOpenDialog(true);
   };
-
   const handleDelete = id => {
     const customer = customers.find(c => c.id === id);
     if (!customer) return;
-
     setDeleteDialog({
       open: true,
       id,
@@ -150,10 +138,8 @@ const KhachHangList = () => {
       },
     });
   };
-
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.id) return;
-
     setLoading(true);
     try {
       // Simulate API call
@@ -167,13 +153,11 @@ const KhachHangList = () => {
       setDeleteDialog({ open: false, id: null, details: null });
     }
   };
-
   const handleSave = async () => {
     setLoading(true);
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
-
       if (editingCustomer) {
         // Update existing customer
         setCustomers(prev =>
@@ -190,7 +174,6 @@ const KhachHangList = () => {
         setCustomers(prev => [...prev, newCustomer]);
         showSnackbar('Thêm khách hàng thành công');
       }
-
       setOpenDialog(false);
     } catch (err) {
       showSnackbar('Đã xảy ra lỗi khi lưu thông tin', 'error');
@@ -198,12 +181,10 @@ const KhachHangList = () => {
       setLoading(false);
     }
   };
-
   const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-
   // Table columns configuration
   const columns = [
     { key: 'name', label: 'Tên khách hàng' },
@@ -223,7 +204,6 @@ const KhachHangList = () => {
         value === 'active' ? theme.palette.primary.main : theme.palette.text.secondary,
     },
   ];
-
   return (
     <Box sx={{ p: spacing(2) }}>
       <Box
@@ -239,7 +219,6 @@ const KhachHangList = () => {
         </Typography>
         <AddButton onClick={handleAdd} label="Thêm khách hàng" />
       </Box>
-
       <StandardTable
         columns={columns}
         data={customers}
@@ -253,7 +232,6 @@ const KhachHangList = () => {
           </>
         )}
       />
-
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogContent sx={{ pt: 2 }}>
@@ -306,7 +284,6 @@ const KhachHangList = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
@@ -322,7 +299,6 @@ const KhachHangList = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={deleteDialog.open}
@@ -338,5 +314,4 @@ const KhachHangList = () => {
     </Box>
   );
 };
-
 export default KhachHangList;

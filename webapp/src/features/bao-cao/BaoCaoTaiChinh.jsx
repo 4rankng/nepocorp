@@ -4,23 +4,19 @@ import BaoCaoChiTietChiPhi from '@features/bao-cao/BaoCaoChiTietChiPhi';
 import BaoCaoTheoDoiDoanhThuChiPhiPhuongTien from '@features/bao-cao/BaoCaoTheoDoiDoanhThuChiPhiPhuongTien';
 import BaoCaoCongNo from '@features/bao-cao/BaoCaoCongNo';
 import { useLocation } from 'react-router-dom';
-
 const tabs = [
   { id: 'loi-nhuan-doanh-thu', label: 'Lợi nhuận & Doanh thu' },
   { id: 'chi-tiet-chi-phi', label: 'Chi tiết chi phí' },
   { id: 'phuong-tien-van-chuyen', label: 'Theo dõi Doanh thu/Chi phí' },
   { id: 'bao-cao-cong-no', label: 'Báo cáo Công nợ' },
 ];
-
 const BaoCaoTaiChinh = () => {
   const [activeTab, setActiveTab] = useState('loi-nhuan-doanh-thu');
   const location = useLocation();
-
   // Set default tab when component mounts
   useEffect(() => {
     setActiveTab('loi-nhuan-doanh-thu');
   }, []);
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'loi-nhuan-doanh-thu':
@@ -35,7 +31,6 @@ const BaoCaoTaiChinh = () => {
         return null;
     }
   };
-
   return (
     <div className="bg-white min-h-screen">
       <div className="border-b border-gray-200 bg-white">
@@ -59,5 +54,4 @@ const BaoCaoTaiChinh = () => {
     </div>
   );
 };
-
 export default BaoCaoTaiChinh;

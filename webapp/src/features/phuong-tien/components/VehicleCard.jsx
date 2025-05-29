@@ -1,17 +1,14 @@
 import React from 'react';
 import { Card, CardContent, Box, Typography } from '@mui/material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const getTitle = (type, data) => {
   if (type === 'container') return data.phan_loai;
   return data.bien_so;
 };
-
 const getDescription = (type, data) => {
   if (type === 'container') return '';
   return data.mo_ta || '';
 };
-
 const VehicleCard = ({ data, type, onEdit, onDelete, isLoading }) => (
   <Card sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
     <CardContent>
@@ -30,5 +27,4 @@ const VehicleCard = ({ data, type, onEdit, onDelete, isLoading }) => (
     </CardContent>
   </Card>
 );
-
 export default VehicleCard;

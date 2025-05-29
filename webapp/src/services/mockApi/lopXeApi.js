@@ -1,5 +1,4 @@
 import lopXeData from '@services/mockData/lopXe';
-
 let data;
 if (
   typeof window !== 'undefined' &&
@@ -10,13 +9,11 @@ if (
 } else {
   data = lopXeData.slice();
 }
-
 const persist = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
     window.localStorage.setItem('lopXeData', JSON.stringify(data));
   }
 };
-
 const toUI = item => ({
   id: item.id,
   licensePlate: item.bien_so,
@@ -28,7 +25,6 @@ const toUI = item => ({
   note: item.ghi_chu,
   currency: item.currency,
 });
-
 const fromUI = item => ({
   id: item.id,
   bien_so: item.licensePlate,
@@ -40,7 +36,6 @@ const fromUI = item => ({
   ghi_chu: item.note,
   currency: item.currency || 'VND',
 });
-
 export const lopXeApi = {
   getAll: async () => ({ data: data.map(toUI) }),
   create: async record => {

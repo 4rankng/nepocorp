@@ -3,7 +3,6 @@ import { fetchDebtReport } from '@services/mockApi/index.js';
 import DateRangeFilter from '@components/DateRangeFilter';
 import StandardTable from '@/components/StandardTable';
 import { format } from 'date-fns';
-
 // SVG Icon for Download
 const ArrowDownTrayIcon = ({ className = 'w-6 h-6' }) => (
   <svg
@@ -21,19 +20,16 @@ const ArrowDownTrayIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 // Helper to format currency
 const formatCurrency = value => {
   if (typeof value !== 'number') return 'N/A';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
-
 const BaoCaoCongNo = () => {
   const [reportData, setReportData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [filteredData, setFilteredData] = useState([]);
-
   // Table columns configuration
   const columns = [
     {
@@ -67,7 +63,6 @@ const BaoCaoCongNo = () => {
       align: 'left',
     },
   ];
-
   const fetchReportData = async monthYear => {
     setIsLoading(true);
     setError('');
@@ -82,13 +77,11 @@ const BaoCaoCongNo = () => {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     const currentDate = new Date();
     const currentMonthYear = format(currentDate, 'MM/yyyy');
     fetchReportData(currentMonthYear);
   }, []);
-
   const handleFilterChange = filterData => {
     if (filterData.type === 'month') {
       const monthStr = format(filterData.date, 'MM/yyyy');
@@ -102,21 +95,15 @@ const BaoCaoCongNo = () => {
       setFilteredData(filtered);
     }
   };
-
   const handleExportExcel = () => {
     alert('Chức năng Xuất Excel chưa được triển khai trong bản demo này.');
   };
-
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold mb-4">Báo Cáo Công Nợ</h1>
-
       <DateRangeFilter onFilterChange={handleFilterChange} />
-
       {isLoading && <div className="text-center py-4">Đang tải dữ liệu...</div>}
-
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
-
       <StandardTable
         columns={columns}
         data={filteredData}
@@ -124,7 +111,6 @@ const BaoCaoCongNo = () => {
         error={error}
         emptyMessage="Không có dữ liệu công nợ cho khoảng thời gian đã chọn"
       />
-
       {/* Summary totals */}
       {!isLoading && !error && filteredData.length > 0 && (
         <div className="bg-gray-50 px-6 py-4 border border-gray-200 rounded-b-lg -mt-2">
@@ -140,7 +126,6 @@ const BaoCaoCongNo = () => {
           </div>
         </div>
       )}
-
       {/* Export Excel Button */}
       <button
         onClick={handleExportExcel}
@@ -153,5 +138,4 @@ const BaoCaoCongNo = () => {
     </div>
   );
 };
-
 export default BaoCaoCongNo;

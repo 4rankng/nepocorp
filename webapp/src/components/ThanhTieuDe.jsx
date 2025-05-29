@@ -2,16 +2,13 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import logo from '@/assets/logo.svg';
-
 const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
   const { currentUser, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
   };
-
   return (
     <header className="bg-white shadow-sm h-12">
       <div className="flex items-center h-full justify-between px-4 sm:px-6 lg:px-8">
@@ -55,7 +52,6 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
             <span className="ml-2 text-xl font-semibold">NePO Transport</span>
           </Link>
         </div>
-
         {currentUser && (
           <div className="flex items-center">
             <div className="relative">
@@ -78,7 +74,6 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
                   {currentUser.name}
                 </span>
               </button>
-
               {/* Dropdown menu */}
               {isMenuOpen && (
                 <div
@@ -104,5 +99,4 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
     </header>
   );
 };
-
 export default ThanhTieuDe;

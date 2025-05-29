@@ -31,7 +31,6 @@ import {
   AttachMoney as MoneyIcon,
   InfoOutlined as InfoIcon,
 } from '@mui/icons-material';
-
 const DesktopShipmentFormDialog = ({
   open,
   onClose,
@@ -47,7 +46,6 @@ const DesktopShipmentFormDialog = ({
     e.preventDefault();
     onSubmit(); // Use onSubmit prop
   };
-
   // Auto-fill nhan_vien_lai_xe_id when bien_so_xe_id changes
   useEffect(() => {
     if (formData.bien_so_xe_id && selectOptions?.vehicles) {
@@ -66,7 +64,6 @@ const DesktopShipmentFormDialog = ({
     }
     // Do not clear if formData.bien_so_xe_id is empty, allow manual selection
   }, [formData.bien_so_xe_id, selectOptions?.vehicles, onFormChange]);
-
   const currentFormData = {
     ngay_van_chuyen: new Date().toISOString().split('T')[0],
     ma_chuyen: '',
@@ -81,19 +78,16 @@ const DesktopShipmentFormDialog = ({
     ghi_chu: '',
     ...formData, // Spread the passed formData to override defaults
   };
-
   const trangThaiOptions = [
     { value: 'chua_thuc_hien', label: 'Chưa thực hiện' },
     { value: 'dang_thuc_hien', label: 'Đang thực hiện' },
     { value: 'hoan_thanh', label: 'Hoàn thành' },
     { value: 'huy_bo', label: 'Hủy bỏ' },
   ];
-
   const nhanVienLaiXeOptions =
     selectOptions?.employees?.filter(emp => emp.chuc_vu === 'lai-xe') || [];
   const nhanVienGiaoNhanOptions =
     selectOptions?.employees?.filter(emp => emp.chuc_vu === 'giao-nhan') || [];
-
   return (
     <Dialog
       open={open}
@@ -129,7 +123,6 @@ const DesktopShipmentFormDialog = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ p: '24px' }}>
           <Typography
@@ -561,7 +554,6 @@ const DesktopShipmentFormDialog = ({
             {/* Closes Grid container spacing={3} from line 146 */}
           </Grid>
         </DialogContent>
-
         <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
           <Button
             onClick={onClose}
@@ -604,7 +596,6 @@ const DesktopShipmentFormDialog = ({
     </Dialog>
   );
 };
-
 DesktopShipmentFormDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
@@ -662,5 +653,4 @@ DesktopShipmentFormDialog.propTypes = {
     ),
   }).isRequired,
 };
-
 export default DesktopShipmentFormDialog;

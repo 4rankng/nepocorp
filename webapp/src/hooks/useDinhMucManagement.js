@@ -1,24 +1,19 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { dinhMucApi, dauKeoApi, roMoocApi } from '@services/mockApi'; // dinhMucApi is already imported // Assuming mockApi is the correct path
-
 export const useDinhMucManagement = () => {
   const [dinhMucHang, setDinhMucHang] = useState({}); // Format: { '51C-12345': [...] }
   const [dinhMucVo, setDinhMucVo] = useState({}); // Format: { '51C-12345': [...] }
   const [allAvailableLicensePlates, setAllAvailableLicensePlates] = useState([]); // All tractor + trailer plates
   const [supplementaryStandard, setSupplementaryStandard] = useState(0);
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-
   const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   }, []);
-
   const closeSnackbar = useCallback(() => {
     setSnackbar(prev => ({ ...prev, open: false }));
   }, []);
-
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError('');
@@ -29,10 +24,8 @@ export const useDinhMucManagement = () => {
         dauKeoApi.getAll(), // Fetching all tractors
         roMoocApi.getAll(), // Fetching all trailers
       ]);
-
       const hangDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_hang');
       const voDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_vo');
-
       const hangGrouped = hangDataItems.reduce((acc, item) => {
         // Ensure item.bien_so_xe is used, matching mock data structure if it's bienSoXe, adjust here.
         // Assuming the API returns bien_so_xe as per previous understanding for grouping.
@@ -57,7 +50,6 @@ export const useDinhMucManagement = () => {
         return acc;
       }, {});
       setDinhMucHang(hangGrouped);
-
       const voGrouped = voDataItems.reduce((acc, item) => {
         const plateKey = item.bien_so_xe || item.bienSoXe;
         if (!acc[plateKey]) acc[plateKey] = [];
@@ -80,9 +72,7 @@ export const useDinhMucManagement = () => {
         return acc;
       }, {});
       setDinhMucVo(voGrouped);
-
       setSupplementaryStandard(supData.value || 0);
-
       // Combine tractor and trailer license plates
       const tractorPlates = dauKeoData.map(dk => ({ licensePlate: dk.bien_so, type: 'dau_keo' }));
       const trailerPlates = roMoocData.map(rm => ({ licensePlate: rm.bien_so, type: 'ro_mooc' }));
@@ -95,11 +85,9 @@ export const useDinhMucManagement = () => {
       setIsLoading(false);
     }
   }, [showSnackbar]);
-
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
   // Placeholder for other states and functions that will be moved later
   const [formData, setFormData] = useState({
     bienSoXe: '',
@@ -121,17 +109,14 @@ export const useDinhMucManagement = () => {
     type: null,
     details: '',
   }); // Ensuring the correct state variable is defined
-
   // --- Supplementary Standard Dialog ---
   const openEditSupplementaryDialog = useCallback(() => {
     // The supplementaryStandard state already holds the value to be edited
     setEditSupplementaryDialog(true);
   }, [setEditSupplementaryDialog]);
-
   const closeEditSupplementaryDialog = useCallback(() => {
     setEditSupplementaryDialog(false);
   }, [setEditSupplementaryDialog]);
-
   const handleSaveSupplementary = useCallback(
     async newValue => {
       setIsLoading(true);
@@ -152,19 +137,16 @@ export const useDinhMucManagement = () => {
     },
     [setIsLoading, setSupplementaryStandard, showSnackbar, closeEditSupplementaryDialog]
   );
-
   // Derived state for license plates that have norms or are in the list of all plates
   const activeLicensePlatesWithStandards = useMemo(() => {
     const platesWithNorms = new Set([...Object.keys(dinhMucHang), ...Object.keys(dinhMucVo)]);
     allAvailableLicensePlates.forEach(p => platesWithNorms.add(p.licensePlate));
-
     return Array.from(platesWithNorms).map(plate => ({
       licensePlate: plate,
       // standardsHang: dinhMucHang[plate] || [], // Will be used by LicensePlateNormsCard
       // standardsVo: dinhMucVo[plate] || [],   // Will be used by LicensePlateNormsCard
     }));
   }, [dinhMucHang, dinhMucVo, allAvailableLicensePlates]);
-
   const openAddNewDinhMucDialog = useCallback(
     ({ licensePlate, loaiDinhMuc }) => {
       setFormData({
@@ -182,7 +164,6 @@ export const useDinhMucManagement = () => {
     },
     [setFormData, setErrors, setCurrentStandard, setOpenAddDialog]
   );
-
   const handleFormInputChange = useCallback(
     event => {
       const { name, value } = event.target;
@@ -194,7 +175,6 @@ export const useDinhMucManagement = () => {
     },
     [errors, setFormData, setErrors]
   ); // errors is a dependency here
-
   const openEditDinhMucDialog = useCallback(
     ({ standard, licensePlate, loaiDinhMuc }) => {
       setFormData({
@@ -216,7 +196,6 @@ export const useDinhMucManagement = () => {
     },
     [setFormData, setErrors, setCurrentStandard, setOpenEditDialog]
   );
-
   const validateForm = useCallback(() => {
     const newErrors = {};
     if (!formData.bienSoXe) newErrors.bienSoXe = 'Vui lòng chọn biển số xe';
@@ -226,14 +205,11 @@ export const useDinhMucManagement = () => {
       newErrors.toKm = 'Km kết thúc phải lớn hơn km bắt đầu';
     }
     if (!formData.standard) newErrors.standard = 'Vui lòng nhập định mức'; // Hook uses standard
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData, setErrors]);
-
   const handleSaveAdd = useCallback(async () => {
     if (!validateForm()) return;
-
     setIsLoading(true);
     try {
       // Check for overlapping ranges
@@ -241,7 +217,6 @@ export const useDinhMucManagement = () => {
       const to = parseFloat(formData.toKm);
       const currentDinhMuc = formData.loaiDinhMuc === 'km_hang' ? dinhMucHang : dinhMucVo;
       const standardsForPlate = currentDinhMuc[formData.bienSoXe] || [];
-
       const overlapping = standardsForPlate.some(item => {
         // Ensure item.fromKm and item.toKm are numbers for comparison
         const itemFromKm = parseFloat(item.fromKm);
@@ -252,7 +227,6 @@ export const useDinhMucManagement = () => {
           (from <= itemFromKm && to >= itemToKm)
         );
       });
-
       if (overlapping) {
         setErrors(prev => ({
           ...prev,
@@ -261,7 +235,6 @@ export const useDinhMucManagement = () => {
         setIsLoading(false); // Stop loading if there's an overlap error
         return;
       }
-
       const apiData = {
         bienSoXe: formData.bienSoXe,
         phan_loai: formData.loaiDinhMuc, // API expects phan_loai
@@ -270,7 +243,6 @@ export const useDinhMucManagement = () => {
         l_km: parseFloat(formData.standard), // API expects l_km
         ghiChu: formData.note,
       };
-
       await dinhMucApi.create(apiData);
       showSnackbar(
         `Thêm định mức ${formData.loaiDinhMuc === 'km_hang' ? 'hàng' : 'vỏ'} thành công`
@@ -294,17 +266,14 @@ export const useDinhMucManagement = () => {
     fetchData,
     setOpenAddDialog,
   ]);
-
   const handleSaveEdit = useCallback(async () => {
     if (!validateForm()) return;
-
     setIsLoading(true);
     try {
       const from = parseFloat(formData.fromKm);
       const to = parseFloat(formData.toKm);
       const currentDinhMuc = formData.loaiDinhMuc === 'km_hang' ? dinhMucHang : dinhMucVo;
       const standardsForPlate = currentDinhMuc[formData.bienSoXe] || [];
-
       const overlapping = standardsForPlate.some(item => {
         if (item.id === formData.id) return false; // Exclude the item being edited
         const itemFromKm = parseFloat(item.fromKm);
@@ -315,7 +284,6 @@ export const useDinhMucManagement = () => {
           (from <= itemFromKm && to >= itemToKm)
         );
       });
-
       if (overlapping) {
         setErrors(prev => ({
           ...prev,
@@ -324,7 +292,6 @@ export const useDinhMucManagement = () => {
         setIsLoading(false); // Stop loading if there's an overlap error
         return;
       }
-
       const apiData = {
         id: formData.id,
         bienSoXe: formData.bienSoXe,
@@ -334,7 +301,6 @@ export const useDinhMucManagement = () => {
         l_km: parseFloat(formData.standard), // API expects l_km
         ghiChu: formData.note,
       };
-
       await dinhMucApi.update(formData.id, apiData);
       showSnackbar(`Sửa định mức ${formData.loaiDinhMuc === 'km_hang' ? 'hàng' : 'vỏ'} thành công`);
       await fetchData(); // Refresh data
@@ -356,18 +322,15 @@ export const useDinhMucManagement = () => {
     fetchData,
     setOpenEditDialog,
   ]);
-
   const openDeleteDialog = useCallback(
     (id, type, details) => {
       setDeleteDialog({ open: true, id, type, details });
     },
     [setDeleteDialog]
   );
-
   const closeDeleteDialog = useCallback(() => {
     setDeleteDialog({ open: false, id: null, type: null, details: '' });
   }, [setDeleteDialog]);
-
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteDialog.id) return;
     setIsLoading(true);
@@ -385,9 +348,7 @@ export const useDinhMucManagement = () => {
       setIsLoading(false);
     }
   }, [deleteDialog, setIsLoading, fetchData, showSnackbar, closeDeleteDialog]);
-
   // TODO: Move other handlers (delete, form validation, etc.) here
-
   return {
     dinhMucHang,
     setDinhMucHang, // Expose setter

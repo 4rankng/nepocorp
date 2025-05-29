@@ -23,9 +23,7 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import EmployeeCard from '@features/nhan-vien/components/EmployeeCard';
 import NhanVienForm from '@features/nhan-vien/components/NhanVienForm';
 import { useTheme, useMediaQuery } from '@mui/material';
-
 // initialFormState is now handled by the hook
-
 const QuanLyNhanVien = () => {
   const {
     employees,
@@ -43,27 +41,22 @@ const QuanLyNhanVien = () => {
     employeeRoles,
     vehicles,
   } = useNhanVienManagement();
-
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [search, setSearch] = useState(''); // Search remains component-local state
   const [pageError, setPageError] = useState(''); // For errors not directly related to form save
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
-
   // useEffect for initial data fetch is in the hook.
   // useEffect for ESC key is in the hook.
-
   // If there's an error from the hook (e.g. save error), it will be passed to NhanVienForm.
   // If there's a page-level error (e.g., initial load error), it could be set via setPageError.
   // For simplicity, we can use the 'error' from the hook for the main Alert,
   // and NhanVienForm will also display it.
-
   const handleDeleteClick = record => {
     setEmployeeToDelete(record);
     setDeleteDialogOpen(true);
   };
-
   const handleConfirmDelete = async () => {
     if (employeeToDelete) {
       await handleDeleteEmployee(employeeToDelete.id);
@@ -71,12 +64,10 @@ const QuanLyNhanVien = () => {
       setEmployeeToDelete(null);
     }
   };
-
   const handleCancelDelete = () => {
     setDeleteDialogOpen(false);
     setEmployeeToDelete(null);
   };
-
   // Define table columns. This is display logic, so it stays.
   const columns = [
     {
@@ -121,7 +112,6 @@ const QuanLyNhanVien = () => {
       ),
     },
   ];
-
   // Filter employees by search
   const filteredEmployees = employees.filter(emp => {
     if (!emp) return false;
@@ -134,7 +124,6 @@ const QuanLyNhanVien = () => {
       (emp.bienSoXe && emp.bienSoXe.toLowerCase().includes(q))
     );
   });
-
   return (
     <Box sx={{ p: 3 }}>
       <Typography
@@ -144,7 +133,6 @@ const QuanLyNhanVien = () => {
       >
         Quản lý nhân viên
       </Typography>
-
       {/* Search bar */}
       <Box sx={{ mb: 3 }}>
         <TextField
@@ -168,13 +156,11 @@ const QuanLyNhanVien = () => {
           }}
         />
       </Box>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
-
       <Paper elevation={0} sx={{ p: 2 }}>
         {isMobile ? (
           <Box>
@@ -208,7 +194,6 @@ const QuanLyNhanVien = () => {
           />
         )}
       </Paper>
-
       {/* Floating Add FAB */}
       <Fab
         color="primary"
@@ -224,7 +209,6 @@ const QuanLyNhanVien = () => {
       >
         <PlusIcon />
       </Fab>
-
       <NhanVienForm
         open={isModalOpen}
         onClose={handleCloseModal}
@@ -237,7 +221,6 @@ const QuanLyNhanVien = () => {
         employeeRoles={employeeRoles}
         vehicles={vehicles}
       />
-
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
@@ -264,5 +247,4 @@ const QuanLyNhanVien = () => {
     </Box>
   );
 };
-
 export default QuanLyNhanVien;

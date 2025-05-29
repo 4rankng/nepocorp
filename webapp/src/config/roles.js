@@ -5,7 +5,6 @@ export const ROLES = {
   GIAO_NHAN: 'giao-nhan',
   LAI_XE: 'lai-xe',
 };
-
 // Role labels for display
 export const ROLE_LABELS = {
   [ROLES.QUAN_LY]: 'Quản lý',
@@ -13,7 +12,6 @@ export const ROLE_LABELS = {
   [ROLES.GIAO_NHAN]: 'Giao nhận',
   [ROLES.LAI_XE]: 'Lái xe',
 };
-
 // Role descriptions
 export const ROLE_DESCRIPTIONS = {
   [ROLES.QUAN_LY]: 'Toàn quyền truy cập hệ thống',
@@ -21,7 +19,6 @@ export const ROLE_DESCRIPTIONS = {
   [ROLES.GIAO_NHAN]: 'Quản lý đơn hàng và giao nhận',
   [ROLES.LAI_XE]: 'Lái xe vận chuyển',
 };
-
 // Role-based menu items configuration
 export const MENU_ITEMS = {
   [ROLES.QUAN_LY]: [
@@ -46,7 +43,6 @@ export const MENU_ITEMS = {
     { path: '/tai-lieu', label: 'Tài liệu', icon: 'DocumentText' },
   ],
 };
-
 // Role-based permissions
 export const PERMISSIONS = {
   [ROLES.QUAN_LY]: [
@@ -61,13 +57,11 @@ export const PERMISSIONS = {
   [ROLES.GIAO_NHAN]: ['view_orders', 'update_order_status', 'view_schedule'],
   [ROLES.LAI_XE]: ['view_schedule', 'update_delivery_status', 'view_documents'],
 };
-
 // Helper functions
 export const getRoleLabel = role => ROLE_LABELS[role] || role;
 export const getRoleDescription = role => ROLE_DESCRIPTIONS[role] || '';
 export const getMenuItems = role => MENU_ITEMS[role] || [];
 export const hasPermission = (role, permission) => PERMISSIONS[role]?.includes(permission) || false;
-
 export default {
   ROLES,
   ROLE_LABELS,

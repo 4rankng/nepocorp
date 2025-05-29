@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { addMonths } from '../utils/maintenanceUtils';
-
 export default function useMaintenanceForm({
   initialFormData,
   onSuccess,
@@ -12,7 +11,6 @@ export default function useMaintenanceForm({
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-
   // Auto-calculate ngayHetHan when replacementDate or warrantyPeriod changes
   const updateNgayHetHan = useCallback((replacementDate, warrantyPeriod) => {
     setFormData(prev => ({
@@ -20,7 +18,6 @@ export default function useMaintenanceForm({
       ngayHetHan: addMonths(replacementDate, warrantyPeriod),
     }));
   }, []);
-
   const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -37,7 +34,6 @@ export default function useMaintenanceForm({
       );
     }
   };
-
   const validateForm = () => {
     const newErrors = {};
     if (!formData.licensePlate) newErrors.licensePlate = 'Vui lòng chọn biển số xe';
@@ -48,7 +44,6 @@ export default function useMaintenanceForm({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSave = async e => {
     e?.preventDefault();
     if (!validateForm()) return;
@@ -81,7 +76,6 @@ export default function useMaintenanceForm({
       setIsLoading(false);
     }
   };
-
   return {
     formData,
     setFormData,

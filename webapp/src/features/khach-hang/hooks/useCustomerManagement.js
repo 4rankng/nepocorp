@@ -6,18 +6,15 @@ import {
   editKhachHang,
   removeKhachHang,
 } from '@services/mockApi/khachHangApi';
-
 const initialFormState = {
   ma_dinh_danh: '',
   ten: '',
   dia_chi: '',
   ma_so_thue: '',
 };
-
 // Helper function to generate the next customer code
 const generateNextCustomerCode = existingCustomers => {
   if (!existingCustomers || existingCustomers.length === 0) return 'KH001';
-
   // Find the highest code number
   const maxCode = existingCustomers.reduce((max, customer) => {
     if (!customer.code) return max;
@@ -26,16 +23,13 @@ const generateNextCustomerCode = existingCustomers => {
     const num = parseInt(codeMatch[1], 10);
     return !isNaN(num) ? Math.max(max, num) : max;
   }, 0);
-
   // Generate new code with leading zeros
   return `KH${String(maxCode + 1).padStart(3, '0')}`;
 };
-
 const useCustomerManagement = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   // Fetch all customers
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -51,7 +45,6 @@ const useCustomerManagement = () => {
       setLoading(false);
     }
   }, []);
-
   // Add new customer
   const addCustomer = useCallback(
     async customerData => {
@@ -64,7 +57,6 @@ const useCustomerManagement = () => {
           ...customerData,
           code: nextCode,
         };
-
         const response = await addKhachHang(processedData);
         // Refresh the customer list
         await fetchCustomers();
@@ -80,7 +72,6 @@ const useCustomerManagement = () => {
     },
     [customers, fetchCustomers]
   );
-
   // Get initial form data with generated code
   const getInitialFormData = useCallback(() => {
     const nextCode = generateNextCustomerCode(customers);
@@ -89,7 +80,6 @@ const useCustomerManagement = () => {
       ma_dinh_danh: nextCode,
     };
   }, [customers]);
-
   // Update existing customer
   const updateCustomer = async (id, customerData) => {
     setLoading(true);
@@ -108,7 +98,6 @@ const useCustomerManagement = () => {
       setLoading(false);
     }
   };
-
   // Delete customer
   const deleteCustomer = async id => {
     setLoading(true);
@@ -129,7 +118,6 @@ const useCustomerManagement = () => {
       setLoading(false);
     }
   };
-
   // Get customer by ID
   const getCustomerById = useCallback(async id => {
     try {
@@ -141,7 +129,6 @@ const useCustomerManagement = () => {
       return { success: false, error: errorMessage };
     }
   }, []);
-
   // Get customer by code
   const getCustomerByCode = useCallback(async code => {
     try {
@@ -155,11 +142,9 @@ const useCustomerManagement = () => {
       return { success: false, error: err.response?.data?.error };
     }
   }, []);
-
   // Check if a customer code is available
   const isCustomerCodeAvailable = useCallback(async (code, excludeId = null) => {
     if (!code || code.trim() === '') return true;
-
     try {
       const response = await fetchKhachHangById(code);
       // If we're excluding an ID (for updates), it's okay if it's the same customer
@@ -172,21 +157,17 @@ const useCustomerManagement = () => {
       return err.response?.status === 404;
     }
   }, []);
-
   // Clear error
   const clearError = () => setError('');
-
   // Initial fetch on mount
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
-
   return {
     // State
     customers,
     loading,
     error,
-
     // Actions
     fetchCustomers,
     addCustomer,
@@ -199,5 +180,4 @@ const useCustomerManagement = () => {
     clearError,
   };
 };
-
 export default useCustomerManagement;

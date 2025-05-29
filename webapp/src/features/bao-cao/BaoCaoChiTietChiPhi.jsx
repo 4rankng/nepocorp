@@ -3,31 +3,26 @@ import { fetchDetailedCostReport } from '@services/mockApi/index.js';
 import DateRangeFilter from '@components/DateRangeFilter';
 import StandardTable from '@/components/StandardTable';
 import { format } from 'date-fns';
-
 // Helper to format currency
 const formatCurrency = value => {
   if (typeof value !== 'number' || isNaN(value)) return 'N/A'; // Handle NaN or non-number inputs
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
-
 // Helper to format month (YYYY-MM to MM/YYYY)
 const formatMonthForDisplay = monthYear => {
   if (!monthYear || !monthYear.includes('-')) return monthYear;
   const [year, month] = monthYear.split('-');
   return `${month}/${year}`;
 };
-
 const formatMillion = value => {
   if (typeof value !== 'number' || isNaN(value)) return 'N/A';
   return (value / 1_000_000).toFixed(2);
 };
-
 const BaoCaoChiTietChiPhi = () => {
   const [originalData, setOriginalData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
   // Table columns configuration
   const columns = [
     {
@@ -58,7 +53,6 @@ const BaoCaoChiTietChiPhi = () => {
       render: value => formatMillion(value),
     },
   ];
-
   // Define a color palette for chart segments
   const segmentColors = [
     'bg-sky-500',
@@ -71,7 +65,6 @@ const BaoCaoChiTietChiPhi = () => {
     'bg-lime-500',
     'bg-orange-500',
   ];
-
   const fetchReportData = async () => {
     setIsLoading(true);
     setError('');
@@ -86,11 +79,9 @@ const BaoCaoChiTietChiPhi = () => {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchReportData();
   }, []);
-
   const handleFilterChange = filterData => {
     if (filterData.type === 'month') {
       const monthStr = format(filterData.date, 'MM/yyyy');
@@ -105,13 +96,10 @@ const BaoCaoChiTietChiPhi = () => {
       setFilteredData(filtered);
     }
   };
-
   const groupedDataForMobile = useMemo(() => {
     if (!filteredData) return {};
-
     return filteredData.reduce((acc, item) => {
       const { bienSoXe, monthYear, category, amount } = item;
-
       if (!acc[bienSoXe]) {
         acc[bienSoXe] = {};
       }
@@ -124,20 +112,14 @@ const BaoCaoChiTietChiPhi = () => {
       return acc;
     }, {});
   }, [filteredData]);
-
   // Sort data from earliest to latest
   const sortedData = [...filteredData].sort((a, b) => a.monthYear.localeCompare(b.monthYear));
-
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold mb-4">Báo Cáo Chi Tiết Chi Phí</h1>
-
       <DateRangeFilter onFilterChange={handleFilterChange} />
-
       {isLoading && <div className="text-center py-4">Đang tải dữ liệu...</div>}
-
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
-
       <StandardTable
         columns={columns}
         data={sortedData}
@@ -145,11 +127,9 @@ const BaoCaoChiTietChiPhi = () => {
         error={error}
         emptyMessage="Không có dữ liệu cho khoảng thời gian đã chọn"
       />
-
       {!isLoading && !error && sortedData.length > 0 && (
         <div className="text-xs text-gray-500 mt-2 px-2">Đơn vị: triệu đồng</div>
       )}
-
       {/* Mobile Card View with Stacked Bar Chart Simulation */}
       {!isLoading && !error && Object.keys(groupedDataForMobile || {}).length > 0 && (
         <div className="block md:hidden space-y-4">
@@ -222,5 +202,4 @@ const BaoCaoChiTietChiPhi = () => {
     </div>
   );
 };
-
 export default BaoCaoChiTietChiPhi;

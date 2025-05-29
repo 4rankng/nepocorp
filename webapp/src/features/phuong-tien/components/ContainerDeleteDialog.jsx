@@ -7,7 +7,6 @@ import {
   DialogActions,
   Button,
 } from '@mui/material';
-
 const ContainerDeleteDialog = ({ open, data, onClose, onDelete, isLoading }) => (
   <Dialog
     open={open}
@@ -31,5 +30,4 @@ const ContainerDeleteDialog = ({ open, data, onClose, onDelete, isLoading }) => 
     </DialogActions>
   </Dialog>
 );
-
 export default ContainerDeleteDialog;

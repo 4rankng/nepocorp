@@ -12,7 +12,6 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const CustomerListResponsive = ({
   customers = [],
   loading = false,
@@ -24,11 +23,9 @@ const CustomerListResponsive = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
-
   // Filter customers based on search term
   const filteredCustomers = useMemo(() => {
     if (!searchTerm.trim()) return customers;
-
     const term = searchTerm.toLowerCase();
     return customers.filter(
       customer =>
@@ -38,12 +35,10 @@ const CustomerListResponsive = ({
         (customer.ma_dinh_danh && customer.ma_dinh_danh.toLowerCase().includes(term))
     );
   }, [customers, searchTerm]);
-
   // Handle search input change
   const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
-
   // Define columns for StandardTable
   const columns = [
     {
@@ -67,7 +62,6 @@ const CustomerListResponsive = ({
       render: value => value || 'Chưa cập nhật',
     },
   ];
-
   // Render action buttons for each row
   const renderActions = customer => (
     <>
@@ -75,13 +69,11 @@ const CustomerListResponsive = ({
       <DeleteButton onClick={() => onDelete(customer)} size="small" sx={{ ml: 1 }} />
     </>
   );
-
   // Handle row click for better UX
   const handleRowClick = customer => {
     // Optional: you can implement row click functionality here
     // For now, we'll just use the action buttons
   };
-
   // Render mobile card view for better responsive experience
   const renderMobileView = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
@@ -115,7 +107,6 @@ const CustomerListResponsive = ({
       )}
     </Box>
   );
-
   // Show mobile view on small screens, StandardTable on larger screens
   if (isMobile) {
     return (
@@ -147,7 +138,6 @@ const CustomerListResponsive = ({
       </Box>
     );
   }
-
   // Desktop view using StandardTable
   return (
     <Box>
@@ -188,5 +178,4 @@ const CustomerListResponsive = ({
     </Box>
   );
 };
-
 export default CustomerListResponsive;

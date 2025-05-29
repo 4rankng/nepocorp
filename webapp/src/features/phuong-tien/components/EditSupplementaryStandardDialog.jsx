@@ -8,22 +8,18 @@ import {
   Button,
   CircularProgress,
 } from '@mui/material';
-
 const EditSupplementaryStandardDialog = ({ open, onClose, initialValue, onSave, isLoading }) => {
   const [currentValue, setCurrentValue] = useState(initialValue);
-
   useEffect(() => {
     if (open) {
       setCurrentValue(initialValue);
     }
   }, [open, initialValue]);
-
   const handleSaveClick = () => {
     if (onSave) {
       onSave(currentValue);
     }
   };
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Cập nhật định mức bổ sung</DialogTitle>
@@ -61,5 +57,4 @@ const EditSupplementaryStandardDialog = ({ open, onClose, initialValue, onSave, 
     </Dialog>
   );
 };
-
 export default EditSupplementaryStandardDialog;

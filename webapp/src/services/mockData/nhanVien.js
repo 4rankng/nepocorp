@@ -1,7 +1,6 @@
 // Mock database for NhanVien (Employees)
 // Static data. Numeric auto-incrementing ID.
 // Fields: id, ma_so, ho_ten, ten_dang_nhap, mat_khau, chuc_vu, email, createdAt, updatedAt
-
 let nhanVienData = [
   {
     id: 1,
@@ -169,20 +168,15 @@ let nhanVienData = [
     updatedAt: '2024-05-18T13:30:00Z',
   },
 ];
-
 let nextNhanVienId = 16;
-
 const CHUC_VU_TYPES = ['quan-ly', 'ke-toan', 'giao-nhan', 'lai-xe'];
-
 export const getAllNhanVien = async () => {
   return [...nhanVienData];
 };
-
 export const getNhanVienById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return nhanVienData.find(nv => nv.id === numericId) || null;
 };
-
 export const createNhanVien = async data => {
   const { ma_so, ho_ten, ten_dang_nhap, mat_khau, chuc_vu, email } = data;
   if (!ma_so || !ho_ten || !ten_dang_nhap || !mat_khau || !chuc_vu) {
@@ -193,7 +187,6 @@ export const createNhanVien = async data => {
     console.error('Invalid chuc_vu for new NhanVien:', chuc_vu);
     return null;
   }
-
   const newNhanVien = {
     id: nextNhanVienId++,
     ma_so,
@@ -208,19 +201,15 @@ export const createNhanVien = async data => {
   nhanVienData.push(newNhanVien);
   return newNhanVien;
 };
-
 export const updateNhanVien = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = nhanVienData.findIndex(nv => nv.id === numericId);
   if (index === -1) return null;
-
   const { id: _, createdAt: __, ...validUpdates } = updates;
-
   if (validUpdates.chuc_vu && !CHUC_VU_TYPES.includes(validUpdates.chuc_vu)) {
     console.error('Invalid chuc_vu for NhanVien update:', validUpdates.chuc_vu);
     return null; // Or handle error appropriately
   }
-
   nhanVienData[index] = {
     ...nhanVienData[index],
     ...validUpdates,
@@ -229,7 +218,6 @@ export const updateNhanVien = async (id, updates) => {
   };
   return nhanVienData[index];
 };
-
 export const deleteNhanVien = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = nhanVienData.findIndex(nv => nv.id === numericId);
@@ -237,7 +225,6 @@ export const deleteNhanVien = async id => {
   nhanVienData.splice(index, 1);
   return true;
 };
-
 export const _resetNhanVien = (data = []) => {
   nhanVienData = data.map((item, index) => ({
     ...item,
@@ -246,7 +233,6 @@ export const _resetNhanVien = (data = []) => {
   }));
   nextNhanVienId = nhanVienData.length > 0 ? Math.max(...nhanVienData.map(nv => nv.id)) + 1 : 1;
 };
-
 if (nhanVienData.length > 0) {
   nextNhanVienId = Math.max(...nhanVienData.map(nv => nv.id)) + 1;
 } else {

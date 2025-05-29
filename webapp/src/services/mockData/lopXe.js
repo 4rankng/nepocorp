@@ -176,5 +176,4 @@ const lopXeData = [
     ghi_chu: 'Thay lốp lần 2',
   },
 ];
-
 export default lopXeData;

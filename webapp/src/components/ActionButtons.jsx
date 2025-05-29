@@ -6,7 +6,6 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import { useTheme } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { forwardRef } from 'react';
-
 // Enhanced theme configuration based on DinhMucDau.jsx
 const theme = {
   palette: {
@@ -15,7 +14,6 @@ const theme = {
     error: { main: '#d32f2f' },
   },
 };
-
 export const EditButton = forwardRef(
   (
     {
@@ -31,7 +29,6 @@ export const EditButton = forwardRef(
   ) => {
     // Filter out the jsx prop before spreading the rest
     const { jsx: _, ...filteredProps } = props || {};
-
     return (
       <IconButton
         ref={ref}
@@ -60,9 +57,7 @@ export const EditButton = forwardRef(
     );
   }
 );
-
 EditButton.displayName = 'EditButton';
-
 export const DeleteButton = forwardRef(
   (
     {
@@ -78,7 +73,6 @@ export const DeleteButton = forwardRef(
   ) => {
     // Filter out the jsx prop before spreading the rest
     const { jsx: _, ...filteredProps } = props || {};
-
     return (
       <IconButton
         ref={ref}
@@ -107,9 +101,7 @@ export const DeleteButton = forwardRef(
     );
   }
 );
-
 DeleteButton.displayName = 'DeleteButton';
-
 export const AddButton = forwardRef(
   (
     {
@@ -132,7 +124,6 @@ export const AddButton = forwardRef(
   ) => {
     const theme = useTheme();
     const isIconOnly = iconOnly || !children || children === '';
-
     // Size configurations
     const sizeConfig = {
       small: {
@@ -160,9 +151,7 @@ export const AddButton = forwardRef(
         iconSize: isIconOnly ? 24 : 20,
       },
     };
-
     const currentSize = sizeConfig[size];
-
     return (
       <Button
         ref={ref}
@@ -184,14 +173,12 @@ export const AddButton = forwardRef(
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
           overflow: 'hidden',
-
           // Size-specific styles
           height: currentSize.height,
           width: fullWidth ? '100%' : currentSize.width,
           minWidth: fullWidth ? '100%' : currentSize.minWidth,
           padding: currentSize.padding,
           fontSize: currentSize.fontSize,
-
           // Variant-specific styles
           ...(variant === 'contained' && {
             backgroundColor: theme.palette.primary.main,
@@ -207,7 +194,6 @@ export const AddButton = forwardRef(
               boxShadow: theme.shadows[2],
             },
           }),
-
           ...(variant === 'outlined' && {
             borderColor: theme.palette.primary.main,
             color: theme.palette.primary.main,
@@ -219,7 +205,6 @@ export const AddButton = forwardRef(
               boxShadow: theme.shadows[2],
             },
           }),
-
           ...(variant === 'text' && {
             color: theme.palette.primary.main,
             backgroundColor: 'transparent',
@@ -228,7 +213,6 @@ export const AddButton = forwardRef(
               transform: 'translateY(-1px)',
             },
           }),
-
           // Disabled state styles
           '&.Mui-disabled': {
             backgroundColor:
@@ -237,7 +221,6 @@ export const AddButton = forwardRef(
             boxShadow: 'none',
             transform: 'none',
           },
-
           // Loading state styles
           ...(loading && {
             color: 'transparent',
@@ -256,19 +239,16 @@ export const AddButton = forwardRef(
               animation: 'spin 0.8s linear infinite',
             },
           }),
-
           // Icon-only button styles
           ...(isIconOnly && {
             width: 44,
             height: 44,
             minWidth: 44,
           }),
-
           // Ripple effect enhancement
           '& .MuiTouchRipple-root': {
             color: theme.palette.primary.main,
           },
-
           // Custom styles override
           ...sxProp,
         }}
@@ -282,7 +262,6 @@ export const AddButton = forwardRef(
         ) : (
           children
         )}
-
         {/* Add keyframes for loading animation */}
         <style jsx="true">{`
           @keyframes spin {
@@ -298,5 +277,4 @@ export const AddButton = forwardRef(
     );
   }
 );
-
 AddButton.displayName = 'AddButton';

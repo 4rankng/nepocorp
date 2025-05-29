@@ -13,12 +13,10 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CloseIcon from '@mui/icons-material/Close';
-
 const ChangelogDialog = ({ open, onClose, version }) => {
   const [changelog, setChangelog] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   useEffect(() => {
     if (open && version) {
       setLoading(true);
@@ -41,7 +39,6 @@ const ChangelogDialog = ({ open, onClose, version }) => {
         });
     }
   }, [open, version]);
-
   return (
     <Dialog
       open={open}
@@ -82,7 +79,6 @@ const ChangelogDialog = ({ open, onClose, version }) => {
           <CloseIcon />
         </Button>
       </Box>
-
       <DialogContent sx={{ py: 3 }}>
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" py={4}>
@@ -267,7 +263,6 @@ const ChangelogDialog = ({ open, onClose, version }) => {
           </Box>
         )}
       </DialogContent>
-
       <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', px: 3, py: 2 }}>
         <Button onClick={onClose} variant="contained" color="primary">
           Đóng
@@ -276,11 +271,9 @@ const ChangelogDialog = ({ open, onClose, version }) => {
     </Dialog>
   );
 };
-
 ChangelogDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   version: PropTypes.string,
 };
-
 export default ChangelogDialog;

@@ -1,6 +1,5 @@
 // Mock database for Container
 // Fields: id (number, primary key), ma_so (string, container code), phan_loai (string), createdAt (ISO String), updatedAt (ISO String)
-
 let containerData = [
   {
     id: 1,
@@ -38,22 +37,17 @@ let containerData = [
     updatedAt: '2024-05-14T12:00:00Z',
   },
 ];
-
 let nextContainerId = containerData.length > 0 ? Math.max(...containerData.map(c => c.id)) + 1 : 1;
-
 export const getAllContainer = async () => {
   return [...containerData];
 };
-
 export const getContainerById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return containerData.find(c => c.id === numericId) || null;
 };
-
 export const getContainerByMaSo = async ma_so => {
   return containerData.find(c => c.ma_so === ma_so) || null;
 };
-
 export const createContainer = async data => {
   const { ma_so, phan_loai } = data;
   if (!ma_so || !phan_loai) {
@@ -68,7 +62,6 @@ export const createContainer = async data => {
     console.error('Container with this ma_so already exists:', ma_so);
     return null;
   }
-
   const newContainer = {
     id: nextContainerId++,
     ma_so,
@@ -79,16 +72,13 @@ export const createContainer = async data => {
   containerData.push(newContainer);
   return newContainer;
 };
-
 export const updateContainer = async (id, updates) => {
   // id here is the numeric primary key
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = containerData.findIndex(c => c.id === numericId);
   if (index === -1) return null;
-
   const existingContainer = containerData[index];
   const { ma_so: new_ma_so, phan_loai: new_phan_loai } = updates;
-
   // Check if ma_so is being changed and if the new one already exists (excluding current item)
   if (
     new_ma_so &&
@@ -102,18 +92,15 @@ export const updateContainer = async (id, updates) => {
     );
     return null; // Or throw an error
   }
-
   const updatedContainer = {
     ...existingContainer,
     ma_so: new_ma_so !== undefined ? new_ma_so : existingContainer.ma_so,
     phan_loai: new_phan_loai !== undefined ? new_phan_loai : existingContainer.phan_loai,
     updatedAt: new Date().toISOString(),
   };
-
   containerData[index] = updatedContainer;
   return updatedContainer;
 };
-
 export const deleteContainer = async id => {
   // id here is the numeric primary key
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
@@ -122,12 +109,10 @@ export const deleteContainer = async id => {
   containerData.splice(index, 1);
   return true;
 };
-
 export const _resetContainer = (newData = []) => {
   const validatedData = [];
   const maSoSet = new Set();
   let maxId = 0;
-
   for (const item of newData) {
     if (
       !item.ma_so ||
@@ -146,7 +131,6 @@ export const _resetContainer = (newData = []) => {
       continue;
     }
     maSoSet.add(item.ma_so);
-
     // Use provided id if valid and unique, otherwise generate ensuring it's highest
     let currentId = item.id && typeof item.id === 'number' ? item.id : maxId + 1;
     // Ensure generated ID is truly unique if item.id was not provided or was conflicting
@@ -156,9 +140,7 @@ export const _resetContainer = (newData = []) => {
     if (validatedData.some(d => d.id === currentId) && !(item.id && typeof item.id === 'number')) {
       currentId = maxId + 1;
     }
-
     if (currentId > maxId) maxId = currentId;
-
     validatedData.push({
       id: currentId,
       ma_so: item.ma_so,
@@ -169,7 +151,6 @@ export const _resetContainer = (newData = []) => {
   }
   containerData = validatedData.sort((a, b) => a.id - b.id); // Sort by ID after regeneration
   nextContainerId = containerData.length > 0 ? Math.max(...containerData.map(c => c.id)) + 1 : 1;
-
   // Post-reset check for duplicate numeric IDs
   const currentNumericIds = containerData.map(c => c.id);
   const postResetDuplicateNumericIds = currentNumericIds.filter(
@@ -181,7 +162,6 @@ export const _resetContainer = (newData = []) => {
       postResetDuplicateNumericIds
     );
   }
-
   // Post-reset check for duplicate ma_so (should be caught by maSoSet earlier)
   const currentMaSos = containerData.map(c => c.ma_so);
   const postResetDuplicateMaSos = currentMaSos.filter(
@@ -194,7 +174,6 @@ export const _resetContainer = (newData = []) => {
     );
   }
 };
-
 // Initial check for duplicate ma_so in the seed data
 const initialMaSos = containerData.map(c => c.ma_so);
 const duplicateMaSos = initialMaSos.filter((item, index) => initialMaSos.indexOf(item) !== index);
@@ -212,5 +191,4 @@ if (duplicateNumericIds.length > 0) {
     duplicateNumericIds
   );
 }
-
 export const getContainerCount = async () => containerData.length;

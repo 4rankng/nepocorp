@@ -3,7 +3,6 @@ import { Card, CardContent, Typography, Box, IconButton, Chip } from '@mui/mater
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-
 const EmployeeCard = ({ employee, onEdit, onDelete, loading }) => {
   return (
     <Card className="mb-4 shadow-md" sx={{ borderRadius: 2 }}>
@@ -21,7 +20,6 @@ const EmployeeCard = ({ employee, onEdit, onDelete, loading }) => {
                 variant="outlined"
               />
             </Box>
-
             <Box display="flex" flexWrap="wrap" gap={1} mb={1}>
               <Typography variant="body2" color="text.secondary">
                 <span className="font-medium">Tài khoản:</span> {employee.tenDangNhap}
@@ -30,7 +28,6 @@ const EmployeeCard = ({ employee, onEdit, onDelete, loading }) => {
                 <span className="font-medium">•</span> {employee.email}
               </Typography>
             </Box>
-
             <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
               <Chip
                 label={employee.chucVu || 'Chưa xác định'}
@@ -48,7 +45,6 @@ const EmployeeCard = ({ employee, onEdit, onDelete, loading }) => {
                 }
                 variant="outlined"
               />
-
               {employee.chucVu === 'Lái xe' && employee.bienSoXe && (
                 <Chip
                   icon={<LocalShippingIcon fontSize="small" />}
@@ -84,5 +80,4 @@ const EmployeeCard = ({ employee, onEdit, onDelete, loading }) => {
     </Card>
   );
 };
-
 export default EmployeeCard;

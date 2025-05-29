@@ -1,7 +1,6 @@
 // Mock database for DauKeo (Tractor Units)
 // Static data, 15 records. Numeric auto-incrementing ID.
 // Fields: id, bien_so, mo_ta, createdAt, updatedAt
-
 let dauKeoData = [
   {
     id: 1,
@@ -124,18 +123,14 @@ let dauKeoData = [
     updatedAt: '2024-05-18T13:30:00Z',
   },
 ];
-
 let nextDauKeoId = 16;
-
 export const getAllDauKeo = async () => {
   return [...dauKeoData];
 };
-
 export const getDauKeoById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return dauKeoData.find(dk => dk.id === numericId) || null;
 };
-
 export const createDauKeo = async data => {
   const newDauKeo = {
     ...data, // Expects bien_so, mo_ta, and optionally lai_xe
@@ -151,12 +146,10 @@ export const createDauKeo = async data => {
   dauKeoData.push(newDauKeo);
   return newDauKeo;
 };
-
 export const updateDauKeo = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = dauKeoData.findIndex(dk => dk.id === numericId);
   if (index === -1) return null;
-
   const { id: _, ...validUpdates } = updates;
   dauKeoData[index] = {
     ...dauKeoData[index],
@@ -165,7 +158,6 @@ export const updateDauKeo = async (id, updates) => {
   };
   return dauKeoData[index];
 };
-
 export const deleteDauKeo = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = dauKeoData.findIndex(dk => dk.id === numericId);
@@ -173,14 +165,11 @@ export const deleteDauKeo = async id => {
   dauKeoData.splice(index, 1);
   return true;
 };
-
 export const _resetDauKeo = (data = []) => {
   dauKeoData = data.map((item, index) => ({ ...item, id: index + 1 }));
   nextDauKeoId = dauKeoData.length > 0 ? Math.max(...dauKeoData.map(dk => dk.id)) + 1 : 1;
 };
-
 export const getDauKeoCount = async () => dauKeoData.length;
-
 if (dauKeoData.length > 0) {
   nextDauKeoId = Math.max(...dauKeoData.map(dk => dk.id)) + 1;
 } else {

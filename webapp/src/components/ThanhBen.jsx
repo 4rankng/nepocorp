@@ -1,6 +1,5 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-
 // SVG Icon Components (Heroicons)
 // Existing Icons
 const ChartBarIcon = ({ className = 'w-6 h-6' }) => (
@@ -19,7 +18,6 @@ const ChartBarIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 const CalendarIcon = ({ className = 'w-6 h-6' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -36,7 +34,6 @@ const CalendarIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 const UsersIcon = ({ className = 'w-6 h-6' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -53,7 +50,6 @@ const UsersIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 const UserIcon = ({ className = 'w-6 h-6' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -70,7 +66,6 @@ const UserIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 const TruckIcon = ({ className = 'w-6 h-6' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -87,7 +82,6 @@ const TruckIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 // New SVG Icons
 const UserGroupIcon = ({ className = 'w-6 h-6' }) => (
   <svg
@@ -105,7 +99,6 @@ const UserGroupIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 const ArchiveBoxIcon = ({ className = 'w-6 h-6' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -122,7 +115,6 @@ const ArchiveBoxIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 const Cog8ToothIcon = ({ className = 'w-6 h-6' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -140,7 +132,6 @@ const Cog8ToothIcon = ({ className = 'w-6 h-6' }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
 );
-
 const CurrencyDollarIcon = ({ className = 'w-6 h-6' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -157,7 +148,6 @@ const CurrencyDollarIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 const DocumentTextIcon = ({ className = 'w-6 h-6' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -174,10 +164,8 @@ const DocumentTextIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 import { useAuth } from '@contexts/AuthContext';
 import { getMenuItems } from '@/config/roles';
-
 // Icon mapping
 const iconComponents = {
   ChartBar: ChartBarIcon,
@@ -189,18 +177,14 @@ const iconComponents = {
   CurrencyDollar: CurrencyDollarIcon,
   DocumentText: DocumentTextIcon,
 };
-
 const ThanhBen = ({ onNavItemClick }) => {
   const { currentUser } = useAuth();
-
   if (!currentUser) return null;
-
   const menuItems = getMenuItems(currentUser.role).map(item => ({
     ...item,
     icon: iconComponents[item.icon] || null,
   }));
   // Add more roles here if needed
-
   return (
     <aside className="w-64 bg-white h-full overflow-y-auto">
       <nav className="mt-5 px-2">
@@ -231,5 +215,4 @@ const ThanhBen = ({ onNavItemClick }) => {
     </aside>
   );
 };
-
 export default ThanhBen;

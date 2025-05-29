@@ -1,6 +1,5 @@
 // Mock database for DoiTac (Partners)
 // Fields: id (numeric), ma_dinh_danh, ten, dia_chi, ma_so_thue, createdAt, updatedAt
-
 let doiTacData = [
   {
     id: 1,
@@ -93,18 +92,14 @@ let doiTacData = [
     updatedAt: '2024-05-20T17:00:00Z',
   },
 ];
-
 let nextDoiTacId = 11;
-
 export const getAllDoiTac = async () => {
   return [...doiTacData];
 };
-
 export const getDoiTacById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return doiTacData.find(dt => dt.id === numericId) || null;
 };
-
 export const createDoiTac = async data => {
   const newDoiTac = {
     ...data,
@@ -119,7 +114,6 @@ export const createDoiTac = async data => {
   doiTacData.push(newDoiTac);
   return newDoiTac;
 };
-
 export const updateDoiTac = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = doiTacData.findIndex(dt => dt.id === numericId);
@@ -132,7 +126,6 @@ export const updateDoiTac = async (id, updates) => {
   };
   return doiTacData[index];
 };
-
 export const deleteDoiTac = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = doiTacData.findIndex(dt => dt.id === numericId);
@@ -140,12 +133,10 @@ export const deleteDoiTac = async id => {
   doiTacData.splice(index, 1);
   return true;
 };
-
 export const _resetDoiTac = (data = []) => {
   doiTacData = data.map((item, index) => ({ ...item, id: index + 1 }));
   nextDoiTacId = doiTacData.length > 0 ? Math.max(...doiTacData.map(dt => dt.id)) + 1 : 1;
 };
-
 if (doiTacData.length > 0) {
   nextDoiTacId = Math.max(...doiTacData.map(dt => dt.id)) + 1;
 } else {

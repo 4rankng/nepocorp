@@ -14,7 +14,6 @@ import ConfirmationModal from '@/components/ConfirmationDialog';
 import CustomerForm from '@features/khach-hang/components/CustomerForm';
 import CustomerListResponsive from '@features/khach-hang/components/CustomerListResponsive';
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
-
 const CustomerManagement = () => {
   const {
     customers,
@@ -27,56 +26,45 @@ const CustomerManagement = () => {
     isCustomerCodeAvailable,
     getInitialFormData,
   } = useCustomerManagement();
-
   const [isValidatingCode, setIsValidatingCode] = useState(false);
-
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [formError, setFormError] = useState('');
-
   // Delete confirmation state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
-
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
-
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
-
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
-
   // Form handlers
   const handleOpenFormForAdd = () => {
     setSelectedCustomer(null);
     setFormError('');
     setIsFormOpen(true);
   };
-
   const handleOpenFormForEdit = customer => {
     setSelectedCustomer(customer);
     setFormError('');
     setIsFormOpen(true);
   };
-
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setSelectedCustomer(null);
     setFormError('');
   };
-
   const handleSaveCustomer = useCallback(
     async formData => {
       setFormError('');
-
       // If this is an edit, we need to validate the code if it was changed
       if (selectedCustomer && formData.code && formData.code !== selectedCustomer.code) {
         setIsValidatingCode(true);
@@ -95,7 +83,6 @@ const CustomerManagement = () => {
         }
         setIsValidatingCode(false);
       }
-
       let result;
       try {
         if (selectedCustomer) {
@@ -103,7 +90,6 @@ const CustomerManagement = () => {
         } else {
           result = await addCustomer(formData);
         }
-
         if (result.success) {
           handleCloseForm();
           showSnackbar(
@@ -119,33 +105,27 @@ const CustomerManagement = () => {
     },
     [selectedCustomer, addCustomer, updateCustomer, isCustomerCodeAvailable]
   );
-
   // Delete handlers
   const handleDeleteClick = customer => {
     setCustomerToDelete(customer);
     setIsDeleteModalOpen(true);
   };
-
   const handleDeleteConfirm = async () => {
     if (customerToDelete) {
       const result = await deleteCustomer(customerToDelete.id);
-
       if (result.success) {
         showSnackbar('Xóa khách hàng thành công');
       } else {
         showSnackbar(result.error, 'error');
       }
     }
-
     setIsDeleteModalOpen(false);
     setCustomerToDelete(null);
   };
-
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
     setCustomerToDelete(null);
   };
-
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
       <Typography
@@ -155,13 +135,11 @@ const CustomerManagement = () => {
       >
         Quản lý khách hàng
       </Typography>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
           {error}
         </Alert>
       )}
-
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
         <CustomerListResponsive
           customers={customers}
@@ -172,7 +150,6 @@ const CustomerManagement = () => {
           emptyMessage="Chưa có khách hàng nào"
         />
       </Paper>
-
       {/* Floating Action Button */}
       <Zoom in={!loading}>
         <Fab
@@ -188,7 +165,6 @@ const CustomerManagement = () => {
           <AddIcon />
         </Fab>
       </Zoom>
-
       {/* Customer Form */}
       <CustomerForm
         open={isFormOpen}
@@ -217,7 +193,6 @@ const CustomerManagement = () => {
           <CircularProgress color="primary" />
         </div>
       )}
-
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         open={isDeleteModalOpen}
@@ -262,7 +237,6 @@ const CustomerManagement = () => {
         cancelText="Hủy"
         confirmColor="error"
       />
-
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
@@ -277,5 +251,4 @@ const CustomerManagement = () => {
     </Box>
   );
 };
-
 export default CustomerManagement;

@@ -18,7 +18,6 @@ export const cardStyles = theme => ({
     overflow: 'hidden',
   },
 });
-
 /**
  * Creates a set of styles for a button
  * @param {Object} theme - The theme object
@@ -41,7 +40,6 @@ export const buttonStyles = theme => ({
     },
   },
 });
-
 /**
  * Creates a set of styles for form inputs
  * @param {Object} theme - The theme object
@@ -64,7 +62,6 @@ export const inputStyles = theme => ({
     },
   },
 });
-
 /**
  * Creates a set of styles for a table
  * @param {Object} theme - The theme object
@@ -88,7 +85,6 @@ export const tableStyles = theme => ({
     },
   },
 });
-
 /**
  * Creates a set of styles for a paper component
  * @param {Object} theme - The theme object
@@ -103,7 +99,6 @@ export const paperStyles = theme => ({
     border: `1px solid ${theme.palette.divider}`,
   },
 });
-
 /**
  * Creates a set of styles for a modal/dialog
  * @param {Object} theme - The theme object

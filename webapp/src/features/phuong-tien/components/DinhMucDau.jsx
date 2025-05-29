@@ -3,7 +3,6 @@ import ConfirmationDialog from '@/components/ConfirmationDialog';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import { dinhMucApi, dauKeoApi } from '@services/mockApi';
-
 import {
   Box,
   Button,
@@ -34,7 +33,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { ChevronDownIcon, ChevronUpIcon } from '@assets/icons';
 import { alpha } from '@mui/material/styles';
-
 // Theme variables
 const theme = {
   spacing: 8,
@@ -57,10 +55,8 @@ const theme = {
   shape: { borderRadius: 6 },
   shadows: ['none', '0px 2px 8px rgba(0, 0, 0, 0.08)', '0px 4px 12px rgba(0, 0, 0, 0.1)'],
 };
-
 // Helper functions
 const spacing = value => `${value * theme.spacing}px`;
-
 // Function to group fuel standards by license plate
 const groupByLicensePlate = standards => {
   const plates = new Set();
@@ -70,7 +66,6 @@ const groupByLicensePlate = standards => {
     standards: standards.filter(item => item.licensePlate === plate),
   }));
 };
-
 const DinhMucDau = () => {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
@@ -80,7 +75,6 @@ const DinhMucDau = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [currentStandard, setCurrentStandard] = useState(null);
   // Initialize with the first license plate expanded by default on mobile
-
   const [expandedCards, setExpandedCards] = useState({});
   const [formData, setFormData] = useState({
     licensePlate: '',
@@ -100,7 +94,6 @@ const DinhMucDau = () => {
   });
   const [orderBy, setOrderBy] = useState('fromKm');
   const [order, setOrder] = useState('asc');
-
   // Create a combined array of all license plates with their standards
   const allLicensePlatesWithStandards = useMemo(() => {
     // Create a map of license plates to their standards
@@ -111,17 +104,14 @@ const DinhMucDau = () => {
       acc[standard.licensePlate].push(standard);
       return acc;
     }, {});
-
     // Combine with license plates that don't have standards yet
     return licensePlates.map(plate => ({
       licensePlate: plate.licensePlate,
       standards: standardsByLicensePlate[plate.licensePlate] || [],
     }));
   }, [fuelStandards, licensePlates]);
-
   // Initialize all cards as collapsed by default
   const [expandedPlates, setExpandedPlates] = useState({});
-
   // Toggle expand/collapse for a license plate
   const toggleExpand = licensePlate => {
     setExpandedPlates(prev => {
@@ -131,7 +121,6 @@ const DinhMucDau = () => {
       };
     });
   };
-
   // Toggle expand/collapse for individual cards on mobile
   const toggleCardExpand = cardId => {
     setExpandedCards(prev => ({
@@ -139,24 +128,20 @@ const DinhMucDau = () => {
       [cardId]: !prev[cardId],
     }));
   };
-
   // Mobile Card Component for individual fuel standards
   const MobileFuelStandardCard = ({ standard, licensePlate }) => {
     const cardId = `${licensePlate}-${standard.id}`;
     const isExpanded = expandedCards[cardId];
-
     const getStatusColor = value => {
       if (value > 0.4) return theme.palette.error.main;
       if (value > 0.3) return theme.palette.warning.main;
       return theme.palette.success.main;
     };
-
     const getStatusLabel = value => {
       if (value > 0.4) return 'Cao';
       if (value > 0.3) return 'Trung bình';
       return 'Tốt';
     };
-
     return (
       <Card
         sx={{
@@ -213,7 +198,6 @@ const DinhMucDau = () => {
               </IconButton>
             </Box>
           </Box>
-
           {/* Secondary Information - Collapsed by default */}
           <Box
             sx={{
@@ -230,7 +214,6 @@ const DinhMucDau = () => {
               {standard.standard.toFixed(2)} l/km
             </Typography>
           </Box>
-
           {/* Expandable Section - Detailed Information */}
           <Collapse in={isExpanded}>
             <Divider sx={{ my: 1 }} />
@@ -300,7 +283,6 @@ const DinhMucDau = () => {
       </Card>
     );
   };
-
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -308,16 +290,13 @@ const DinhMucDau = () => {
         fuelStandardApi.getAll(),
         vehicleApi.getAll(),
       ]);
-
       const standards = standardsResponse.data || [];
       const vehicles = vehiclesResponse.data || [];
-
       // Extract license plates from vehicles
       const plates = vehicles.map(vehicle => ({
         id: vehicle.id,
         licensePlate: vehicle.licensePlate || vehicle.bienSoXe,
       }));
-
       setFuelStandards(standards);
       setLicensePlates(plates);
     } catch (err) {
@@ -328,15 +307,12 @@ const DinhMucDau = () => {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchData();
   }, []);
-
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
-
   const handleOpenAddDialog = licensePlate => {
     setFormData({
       fromKm: '',
@@ -348,7 +324,6 @@ const DinhMucDau = () => {
     setErrors({});
     setOpenAddDialog(true);
   };
-
   const handleOpenEditDialog = standard => {
     setFormData({
       fromKm: standard.fromKm,
@@ -361,7 +336,6 @@ const DinhMucDau = () => {
     setErrors({});
     setOpenEditDialog(true);
   };
-
   const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -376,7 +350,6 @@ const DinhMucDau = () => {
       }));
     }
   };
-
   const validateForm = () => {
     const newErrors = {};
     if (!formData.fromKm) newErrors.fromKm = 'Vui lòng nhập km bắt đầu';
@@ -385,14 +358,11 @@ const DinhMucDau = () => {
       newErrors.toKm = 'Km kết thúc phải lớn hơn km bắt đầu';
     }
     if (!formData.standard) newErrors.standard = 'Vui lòng nhập định mức';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSaveAdd = async () => {
     if (!validateForm()) return;
-
     setIsLoading(true);
     try {
       // Check for overlapping ranges
@@ -406,7 +376,6 @@ const DinhMucDau = () => {
           (from <= item.fromKm && to >= item.toKm)
         );
       });
-
       if (overlapping) {
         setErrors(prev => ({
           ...prev,
@@ -414,7 +383,6 @@ const DinhMucDau = () => {
         }));
         return;
       }
-
       await fuelStandardApi.create(formData);
       showSnackbar('Thêm định mức dầu thành công');
       await fetchData();
@@ -426,10 +394,8 @@ const DinhMucDau = () => {
       setIsLoading(false);
     }
   };
-
   const handleSaveEdit = async () => {
     if (!validateForm()) return;
-
     setIsLoading(true);
     try {
       // Check for overlapping ranges, excluding current item
@@ -444,7 +410,6 @@ const DinhMucDau = () => {
           (from <= item.fromKm && to >= item.toKm)
         );
       });
-
       if (overlapping) {
         setErrors(prev => ({
           ...prev,
@@ -452,7 +417,6 @@ const DinhMucDau = () => {
         }));
         return;
       }
-
       await fuelStandardApi.update(formData.id, formData);
       showSnackbar('Sửa định mức dầu thành công');
       await fetchData();
@@ -464,11 +428,9 @@ const DinhMucDau = () => {
       setIsLoading(false);
     }
   };
-
   const handleDeleteClick = id => {
     const itemToDelete = fuelStandards.find(item => item.id === id);
     if (!itemToDelete) return;
-
     setDeleteDialog({
       open: true,
       id,
@@ -481,11 +443,9 @@ const DinhMucDau = () => {
       },
     });
   };
-
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.id) return;
     setDeleteDialog(prev => ({ ...prev, isDeleting: true }));
-
     setIsLoading(true);
     try {
       await fuelStandardApi.delete(deleteDialog.id);
@@ -499,16 +459,13 @@ const DinhMucDau = () => {
       setDeleteDialog({ open: false, id: null });
     }
   };
-
   const handleDeleteClose = useCallback(() => {
     setDeleteDialog(prev => ({ ...prev, open: false }));
   }, []);
-
   const renderDialog = (isEdit = false) => {
     const open = isEdit ? openEditDialog : openAddDialog;
     const handleClose = isEdit ? () => setOpenEditDialog(false) : () => setOpenAddDialog(false);
     const handleSave = isEdit ? handleSaveEdit : handleSaveAdd;
-
     return (
       <Dialog
         open={open}
@@ -558,7 +515,6 @@ const DinhMucDau = () => {
           >
             <CloseIcon fontSize={isMobile ? 'medium' : 'small'} />
           </IconButton>
-
           {/* License Plate Display */}
           <Box sx={{ mb: 3, pr: 5 }}>
             <Typography
@@ -588,7 +544,6 @@ const DinhMucDau = () => {
               />
             </Box>
           </Box>
-
           <DialogContentText
             sx={{
               mb: '20px',
@@ -601,7 +556,6 @@ const DinhMucDau = () => {
               ? 'Sửa thông tin định mức dầu cho phương tiện.'
               : 'Nhập thông tin định mức dầu mới cho phương tiện.'}
           </DialogContentText>
-
           <Box component="form" noValidate autoComplete="off" sx={{ '& > :not(style)': { mb: 2 } }}>
             <Grid container spacing={isMobile ? 3 : 2}>
               <Grid item xs={12}>
@@ -725,7 +679,6 @@ const DinhMucDau = () => {
                   </Grid>
                 </Grid>
               </Grid>
-
               <Grid item xs={12}>
                 <Typography
                   variant="subtitle2"
@@ -790,7 +743,6 @@ const DinhMucDau = () => {
                   }}
                 />
               </Grid>
-
               <Grid item xs={12} sx={{ width: '100%' }}>
                 <Typography
                   variant="subtitle2"
@@ -843,7 +795,6 @@ const DinhMucDau = () => {
             </Grid>
           </Box>
         </DialogContent>
-
         <DialogActions
           sx={{
             p: isMobile ? '16px 24px 24px' : '16px 24px',
@@ -920,7 +871,6 @@ const DinhMucDau = () => {
       </Dialog>
     );
   };
-
   return (
     <Box sx={{ p: isMobile ? 1 : 2 }}>
       <Box sx={{ mt: isMobile ? 1 : 2 }}>
@@ -1025,7 +975,6 @@ const DinhMucDau = () => {
                     </Box>
                   </Box>
                 </Box>
-
                 <Collapse in={expandedPlates[licensePlate] === true} timeout="auto" unmountOnExit>
                   <Box sx={{ p: isMobile ? spacing(1) : spacing(1.5) }}>
                     {isMobile ? (
@@ -1113,11 +1062,9 @@ const DinhMucDau = () => {
           </Box>
         )}
       </Box>
-
       {/* Render dialogs */}
       {renderDialog()}
       {renderDialog(true)}
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -1136,7 +1083,6 @@ const DinhMucDau = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       <ConfirmationDialog
         open={deleteDialog.open}
         onCancel={handleDeleteClose}
@@ -1151,5 +1097,4 @@ const DinhMucDau = () => {
     </Box>
   );
 };
-
 export default DinhMucDau;

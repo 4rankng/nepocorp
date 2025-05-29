@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Chip } from '@mui/material';
 import { formatDateForDisplay, formatCurrencyVND } from '../utils/lichVanChuyenUtils';
-
 // Status mapping for display
 export const trangThaiMap = {
   len_lich: 'Lên lịch',
@@ -10,7 +9,6 @@ export const trangThaiMap = {
   hoan_thanh: 'Hoàn thành',
   huy_bo: 'Hủy bỏ',
 };
-
 /**
  * Generate table columns configuration for Lich Van Chuyen (Transport Schedule)
  * @param {Object} selectOptions - Options for select fields (khachHang, nhanVien)
@@ -63,7 +61,6 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
         }
         // Look up the customer by ma_dinh_danh instead of ID
         const khachHang = selectOptions.khachHang.find(kh => kh.ma_dinh_danh === row.ma_khach_hang);
-
         // Display the customer name (label) if found, otherwise show the ID
         return (
           <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
@@ -129,7 +126,6 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
       const totalCost = row.vnd_chi_phi || 0;
       const revenue = row.cuoc_van_chuyen_vnd || 0;
       const grossProfit = revenue - totalCost;
-
       return (
         <Box
           component="span"
@@ -204,7 +200,6 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
     sortValue: (_, row) => row.trang_thai || '',
   },
 ];
-
 /**
  * Calculate total cost for a transport record
  * @param {Object} row - Transport record data
@@ -218,7 +213,6 @@ export const calculateTotalCost = row => {
     (row.cuoc_thue_van_chuyen_vnd || 0)
   );
 };
-
 /**
  * Get status color configuration
  * @param {string} status - Status value
@@ -231,6 +225,5 @@ export const getStatusColor = status => {
     dang_di: { bg: 'info.light', color: 'common.white' },
     default: { bg: 'grey.200', color: 'text.primary' },
   };
-
   return colorMap[status] || colorMap.default;
 };

@@ -9,14 +9,12 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-
 const initialFormState = {
   ma_dinh_danh: '',
   ten: '',
   dia_chi: '',
   ma_so_thue: '',
 };
-
 const CustomerForm = ({
   open,
   onClose,
@@ -28,7 +26,6 @@ const CustomerForm = ({
 }) => {
   const [formData, setFormData] = useState(initialFormState);
   const [localError, setLocalError] = useState('');
-
   // Reset form when dialog opens/closes or customer changes
   useEffect(() => {
     if (open) {
@@ -50,50 +47,41 @@ const CustomerForm = ({
       setLocalError('');
     }
   }, [open, customer, getInitialFormData]);
-
   const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     // Clear local error when user starts typing
     if (localError) setLocalError('');
   };
-
   const handleSubmit = e => {
     e.preventDefault();
-
     // Basic validation
     if (!formData.ten || formData.ten.trim() === '') {
       setLocalError('Vui lòng nhập tên khách hàng');
       return;
     }
-
     // Validate customer code format
     if (!formData.ma_dinh_danh || formData.ma_dinh_danh.trim() === '') {
       setLocalError('Vui lòng nhập mã khách hàng');
       return;
     }
-
     const codeRegex = /^KH\d{3,}$/i;
     if (!codeRegex.test(formData.ma_dinh_danh.trim())) {
       setLocalError('Mã khách hàng phải có định dạng KH001, KH002, ...');
       return;
     }
-
     // If we have a code validation error, don't submit
     if (localError) {
       return;
     }
-
     // Call the onSave function with form data
     onSave(formData);
   };
-
   const handleClose = () => {
     setFormData(initialFormState);
     setLocalError('');
     onClose();
   };
-
   // Handle ESC key press
   useEffect(() => {
     const handleKeyDown = e => {
@@ -101,13 +89,11 @@ const CustomerForm = ({
         handleClose();
       }
     };
-
     if (open) {
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
   }, [open]);
-
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
@@ -192,5 +178,4 @@ const CustomerForm = ({
     </Dialog>
   );
 };
-
 export default CustomerForm;

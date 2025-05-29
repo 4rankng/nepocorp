@@ -1,11 +1,9 @@
 // Mock database for DinhMuc (Fuel Standards)
 // Fields: id (number), bienSoXe, phan_loai ('km_hang' | 'km_vo'), tuKm, denKm, l_km, ghiChu, createdAt, updatedAt
-
 // Helper function to ensure unique numeric IDs
 const ensureUniqueIds = data => {
   const usedIds = new Set();
   let nextId = 1;
-
   return data.map(item => {
     while (usedIds.has(nextId)) {
       nextId++;
@@ -14,7 +12,6 @@ const ensureUniqueIds = data => {
     return { ...item, id: nextId++ };
   });
 };
-
 let dinhMucData = ensureUniqueIds([
   // 51C-001.01 - Hino Series 500
   {
@@ -472,34 +469,26 @@ let dinhMucData = ensureUniqueIds([
     updatedAt: '2024-05-12T11:30:00Z',
   },
 ]);
-
 let nextDinhMucIndex = Math.max(...dinhMucData.map(dm => dm.id)) + 1;
-
 const PHAN_LOAI_TYPES = ['km_hang', 'km_vo'];
-
 export const getAllDinhMuc = async () => {
   return [...dinhMucData];
 };
-
 export const getDinhMucById = async id => {
   const dinhMuc = dinhMucData.find(dm => dm.id === Number(id));
   return dinhMuc || null;
 };
-
 // Get dinh muc by bien so and type (phan_loai)
 export const getDinhMucByBienSoAndType = async (bienSoXe, phanLoai) => {
   if (!PHAN_LOAI_TYPES.includes(phanLoai)) {
     console.error('Invalid phan_loai for DinhMuc query:', phanLoai);
     return [];
   }
-
   const filteredData = dinhMucData.filter(
     dm => dm.bienSoXe === bienSoXe && dm.phan_loai === phanLoai
   );
-
   return filteredData;
 };
-
 export const createDinhMuc = async data => {
   const { bienSoXe, phan_loai, tuKm, denKm, l_km, ghiChu } = data;
   if (!bienSoXe || !phan_loai || tuKm === undefined || denKm === undefined || l_km === undefined) {
@@ -510,7 +499,6 @@ export const createDinhMuc = async data => {
     console.error('Invalid phan_loai for new DinhMuc:', phan_loai);
     return null;
   }
-
   const newDinhMuc = {
     id: nextDinhMucIndex++,
     bienSoXe,
@@ -525,39 +513,31 @@ export const createDinhMuc = async data => {
   dinhMucData.push(newDinhMuc);
   return newDinhMuc;
 };
-
 export const updateDinhMuc = async (id, updates) => {
   const index = dinhMucData.findIndex(dm => dm.id === Number(id));
   if (index === -1) return null;
-
   const { id: _, createdAt: __, ...validUpdates } = updates;
-
   if (validUpdates.phan_loai && !PHAN_LOAI_TYPES.includes(validUpdates.phan_loai)) {
     console.error('Invalid phan_loai for DinhMuc update:', validUpdates.phan_loai);
     return null;
   }
-
   const updatedDinhMuc = { ...dinhMucData[index] };
-
   if (validUpdates.bienSoXe !== undefined) updatedDinhMuc.bienSoXe = validUpdates.bienSoXe;
   if (validUpdates.phan_loai !== undefined) updatedDinhMuc.phan_loai = validUpdates.phan_loai;
   if (validUpdates.tuKm !== undefined) updatedDinhMuc.tuKm = Number(validUpdates.tuKm);
   if (validUpdates.denKm !== undefined) updatedDinhMuc.denKm = Number(validUpdates.denKm);
   if (validUpdates.l_km !== undefined) updatedDinhMuc.l_km = Number(validUpdates.l_km);
   if (validUpdates.ghiChu !== undefined) updatedDinhMuc.ghiChu = validUpdates.ghiChu;
-
   updatedDinhMuc.updatedAt = new Date().toISOString();
   dinhMucData[index] = updatedDinhMuc;
   return dinhMucData[index];
 };
-
 export const deleteDinhMuc = async id => {
   const index = dinhMucData.findIndex(dm => dm.id === Number(id));
   if (index === -1) return false;
   dinhMucData.splice(index, 1);
   return true;
 };
-
 export const _resetDinhMuc = (data = []) => {
   dinhMucData = ensureUniqueIds(data.map(({ id: _id, ...rest }) => rest));
   nextDinhMucIndex = Math.max(...dinhMucData.map(dm => dm.id)) + 1;

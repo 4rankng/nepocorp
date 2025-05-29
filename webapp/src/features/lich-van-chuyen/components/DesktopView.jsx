@@ -14,7 +14,6 @@ import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import StandardTable from '@/components/StandardTable';
-
 const DesktopView = ({
   searchTerm,
   onSearchTermChange,
@@ -70,7 +69,6 @@ const DesktopView = ({
         </Typography>
       </Box>
       <Paper elevation={0} sx={{ p: 0 }}>
-        {console.log('Rendering StandardTable with columns:', columns)}
         <StandardTable
           columns={columns.map(column => ({
             ...column,
@@ -91,7 +89,6 @@ const DesktopView = ({
           }
         />
       </Paper>
-
       {/* Floating Action Button for Add */}
       {canAddPlan && (
         <Fab
@@ -116,7 +113,6 @@ const DesktopView = ({
     </Box>
   );
 };
-
 DesktopView.propTypes = {
   searchTerm: PropTypes.string.isRequired,
   onSearchTermChange: PropTypes.func.isRequired,
@@ -140,11 +136,9 @@ DesktopView.propTypes = {
   onRequestSort: PropTypes.func,
   renderActions: PropTypes.func,
 };
-
 DesktopView.defaultProps = {
   order: 'asc',
   orderBy: '',
   onRequestSort: () => {},
 };
-
 export default DesktopView;

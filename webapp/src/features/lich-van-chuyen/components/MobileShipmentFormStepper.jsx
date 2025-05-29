@@ -36,13 +36,10 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import CloseIcon from '@mui/icons-material/Close';
 import { CustomerForm } from '@features/khach-hang';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
-
 // The selectOptions are now passed from the parent component
 // No need to import mock data services directly
-
 // Props: editingPlan, initialFormData, onFormChange, onContainerFormChange, onAddContainerField, onRemoveContainerField,
 // onSave, isLoading, error, selectOptions, initialActiveStep = 0
-
 const MobileShipmentFormStepper = ({
   editingPlan,
   formData, // This is the formData from the parent (QuanLyLichVanChuyen)
@@ -65,12 +62,10 @@ const MobileShipmentFormStepper = ({
     open: false,
     partner: null,
   });
-
   // Reset activeStep and validation attempts when editingPlan changes
   useEffect(() => {
     setActiveStep(0);
     setValidationAttempted({});
-
     // Log the received props for debugging
     console.log('MobileShipmentFormStepper - Component mounted/updated:', {
       formData,
@@ -78,7 +73,6 @@ const MobileShipmentFormStepper = ({
       selectOptions,
     });
   }, [editingPlan, selectOptions]);
-
   const getFieldOptions = field => {
     // Handle different field types and their options
     switch (field) {
@@ -94,7 +88,6 @@ const MobileShipmentFormStepper = ({
         return [];
     }
   };
-
   const getFormSteps = () => {
     const steps = [
       {
@@ -120,7 +113,6 @@ const MobileShipmentFormStepper = ({
         icon: <LocalShippingIcon />,
       },
     ];
-
     // Thêm step cho thông tin bổ sung khi chỉnh sửa
     if (editingPlan) {
       steps.push({
@@ -129,10 +121,8 @@ const MobileShipmentFormStepper = ({
         icon: <AttachMoneyIcon />,
       });
     }
-
     return steps;
   };
-
   const getFieldLabel = field => {
     const labels = {
       ngayThang: 'Ngày tháng',
@@ -153,14 +143,11 @@ const MobileShipmentFormStepper = ({
     };
     return labels[field] || field;
   };
-
   const isStepComplete = stepIndex => {
     return getStepValidationErrors(stepIndex).length === 0;
   };
-
   const getStepValidationErrors = stepIndex => {
     const currentErrors = [];
-
     switch (stepIndex) {
       case 0: // Thông tin cơ bản
         if (!formData.ngayThang || !formData.ngayThang.trim()) {
@@ -173,7 +160,6 @@ const MobileShipmentFormStepper = ({
           currentErrors.push('Khách hàng không được trống');
         }
         break;
-
       case 1: // Tuyến đường
         if (!formData.tuyenDuongDi || !formData.tuyenDuongDi.trim()) {
           currentErrors.push('Điểm đi không được trống');
@@ -182,7 +168,6 @@ const MobileShipmentFormStepper = ({
           currentErrors.push('Điểm đến không được trống');
         }
         break;
-
       case 2: // Phương tiện
         if (!formData.loaiContainerId) {
           currentErrors.push('Loại container không được trống');
@@ -204,7 +189,6 @@ const MobileShipmentFormStepper = ({
           currentErrors.push('Cước vận chuyển không được để trống');
         }
         break;
-
       case 3: // Thông tin bổ sung (chỉ khi chỉnh sửa)
         if (editingPlan) {
           if (!formData.trangThai) {
@@ -213,59 +197,47 @@ const MobileShipmentFormStepper = ({
           // Thông tin container và ngày hạ hàng không bắt buộc
         }
         break;
-
       default:
         break;
     }
-
     return currentErrors;
   };
-
   const handleNextStep = () => {
     // Mark validation as attempted for current step
     setValidationAttempted(prev => ({ ...prev, [activeStep]: true }));
-
     // Check if current step is valid
     const currentStepErrors = getStepValidationErrors(activeStep);
     if (currentStepErrors.length > 0) {
       // Don't proceed if there are validation errors
       return;
     }
-
     // Proceed to next step and reset validation attempt for next step
     const nextStep = Math.min(activeStep + 1, getFormSteps().length - 1);
     setActiveStep(nextStep);
   };
-
   const handlePrevStep = () => {
     const prevStep = Math.max(activeStep - 1, 0);
     setActiveStep(prevStep);
     // Don't reset validation attempts when going back - user might want to see previous errors
   };
-
   const handleSubmit = () => {
     // Mark validation as attempted for final step
     setValidationAttempted(prev => ({ ...prev, [activeStep]: true }));
-
     // Check if final step is valid
     const currentStepErrors = getStepValidationErrors(activeStep);
     if (currentStepErrors.length > 0) {
       // Don't submit if there are validation errors
       return;
     }
-
     // Proceed with submission
     onSave();
   };
-
   const handleOpenCustomerDialog = () => {
     setCustomerDialog({ open: true });
   };
-
   const handleCloseCustomerDialog = () => {
     setCustomerDialog({ open: false });
   };
-
   const handleCustomerSave = async customerData => {
     // Add customer and refresh customer list
     try {
@@ -277,7 +249,6 @@ const MobileShipmentFormStepper = ({
           onFormChange({ target: { name: 'khachHangId', value: newCustomerId } });
         }
       }
-
       // Close the dialog
       handleCloseCustomerDialog();
     } catch (error) {
@@ -286,32 +257,26 @@ const MobileShipmentFormStepper = ({
       // Keep dialog open on error so user can see the error
     }
   };
-
   const handleOpenPartnerDialog = () => {
     setPartnerDialog({
       open: true,
       partner: null, // New partner
     });
   };
-
   const handleClosePartnerDialog = () => {
     setPartnerDialog({ open: false });
   };
-
   const handleSavePartner = async partnerData => {
     // Partner functionality not implemented yet
     handleClosePartnerDialog();
     return { success: false, error: 'Chức năng đối tác chưa được triển khai' };
   };
-
   const steps = getFormSteps();
   const currentStepErrors = getStepValidationErrors(activeStep);
   const shouldShowErrors = validationAttempted[activeStep] && currentStepErrors.length > 0;
-
   // This function was originally part of QuanLyLichVanChuyen, now self-contained for the stepper's rendering logic
   const renderStepContent = stepIndex => {
     const stepFields = steps[stepIndex].fields;
-
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {/* Custom rendering based on step */}
@@ -397,7 +362,6 @@ const MobileShipmentFormStepper = ({
             </Box>
           </>
         )}
-
         {stepIndex === 1 && (
           <>
             {/* Tuyến đường - Direct Route Input */}
@@ -436,7 +400,6 @@ const MobileShipmentFormStepper = ({
                     },
                   }}
                 />
-
                 {/* Điểm đến */}
                 {(() => {
                   // Parse destinations and ensure we always have at least one empty field for new input
@@ -444,7 +407,6 @@ const MobileShipmentFormStepper = ({
                   const destinations = destinationsStr
                     ? destinationsStr.split(',').map(d => d.trim())
                     : [''];
-
                   return destinations.map((destination, index) => (
                     <Box key={index}>
                       {/* Mũi tên */}
@@ -459,7 +421,6 @@ const MobileShipmentFormStepper = ({
                           }}
                         />
                       </Box>
-
                       {/* Ô nhập điểm đến */}
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <TextField
@@ -498,7 +459,6 @@ const MobileShipmentFormStepper = ({
                             },
                           }}
                         />
-
                         {/* Nút xóa điểm đến (chỉ hiện khi có > 1 điểm đến) */}
                         {destinations.length > 1 && (
                           <IconButton
@@ -518,7 +478,6 @@ const MobileShipmentFormStepper = ({
                     </Box>
                   ));
                 })()}
-
                 {/* Nút thêm điểm đến */}
                 <Button
                   variant="outlined"
@@ -550,7 +509,6 @@ const MobileShipmentFormStepper = ({
             </Box>
           </>
         )}
-
         {stepIndex === 2 && (
           <>
             {/* Phương tiện */}
@@ -583,7 +541,6 @@ const MobileShipmentFormStepper = ({
                 size="small"
               />
             </Box>
-
             <FormControl fullWidth size="small">
               <InputLabel>Loại xe</InputLabel>
               <Select
@@ -596,7 +553,6 @@ const MobileShipmentFormStepper = ({
                 <MenuItem value="xe-doi-tac">Xe đối tác</MenuItem>
               </Select>
             </FormControl>
-
             {(formData.loaiXe || 'xe-cong-ty') === 'xe-cong-ty' ? (
               <FormControl fullWidth size="small">
                 <InputLabel>Biển số xe</InputLabel>
@@ -651,7 +607,6 @@ const MobileShipmentFormStepper = ({
                 </IconButton>
               </Box>
             )}
-
             <TextField
               fullWidth
               type="number"
@@ -667,7 +622,6 @@ const MobileShipmentFormStepper = ({
             />
           </>
         )}
-
         {stepIndex === 3 && editingPlan && (
           <>
             {/* Thông tin bổ sung - chỉ khi chỉnh sửa */}
@@ -685,7 +639,6 @@ const MobileShipmentFormStepper = ({
                 <MenuItem value="Hủy">Hủy</MenuItem>
               </Select>
             </FormControl>
-
             <TextField
               fullWidth
               type="date"
@@ -696,7 +649,6 @@ const MobileShipmentFormStepper = ({
               InputLabelProps={{ shrink: true }}
               size="small"
             />
-
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
                 Thông tin container
@@ -722,7 +674,6 @@ const MobileShipmentFormStepper = ({
                       </IconButton>
                     )}
                   </Box>
-
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <TextField
                       fullWidth
@@ -745,7 +696,6 @@ const MobileShipmentFormStepper = ({
                   </Box>
                 </Card>
               ))}
-
               <Button
                 variant="outlined"
                 startIcon={<AddIcon />}
@@ -765,7 +715,6 @@ const MobileShipmentFormStepper = ({
       </Box>
     );
   };
-
   return (
     <Box
       sx={{
@@ -837,7 +786,6 @@ const MobileShipmentFormStepper = ({
             }}
           />
         </Box>
-
         {/* Error display for the current step, or global form error passed from parent, or data loading error */}
         {(error || dataError) &&
           !shouldShowErrors && ( // Show global error if no step validation errors being shown
@@ -845,7 +793,6 @@ const MobileShipmentFormStepper = ({
               {dataError || error}
             </Alert>
           )}
-
         {/* Loading indicator for data fetching */}
         {isLoadingData && (
           <Alert
@@ -856,7 +803,6 @@ const MobileShipmentFormStepper = ({
             Đang tải dữ liệu danh sách...
           </Alert>
         )}
-
         {/* Current Step Content */}
         <Fade in={true} key={activeStep} timeout={300}>
           <Card
@@ -907,7 +853,6 @@ const MobileShipmentFormStepper = ({
           </Card>
         </Fade>
       </Box>
-
       {/* Fixed Navigation Buttons */}
       <Box
         sx={{
@@ -939,7 +884,6 @@ const MobileShipmentFormStepper = ({
         >
           Trước
         </Button>
-
         <Button
           variant="outlined"
           color="error"
@@ -963,7 +907,6 @@ const MobileShipmentFormStepper = ({
         >
           Hủy
         </Button>
-
         {activeStep === steps.length - 1 ? (
           <Button
             variant="contained"
@@ -1009,7 +952,6 @@ const MobileShipmentFormStepper = ({
           </Button>
         )}
       </Box>
-
       {/* Customer Form Dialog */}
       <CustomerForm
         open={customerDialog.open}
@@ -1017,7 +959,6 @@ const MobileShipmentFormStepper = ({
         onSave={handleCustomerSave}
         isLoading={false}
       />
-
       {/* Partner Form Dialog */}
       <PartnerForm
         open={partnerDialog.open}
@@ -1029,7 +970,6 @@ const MobileShipmentFormStepper = ({
     </Box>
   );
 };
-
 MobileShipmentFormStepper.propTypes = {
   editingPlan: PropTypes.object,
   formData: PropTypes.object.isRequired,
@@ -1050,5 +990,4 @@ MobileShipmentFormStepper.propTypes = {
   onAddNewCustomer: PropTypes.func, // Function to add new customer (optional)
   onAddNewPartner: PropTypes.func, // Function to add new partner (optional)
 };
-
 export default MobileShipmentFormStepper;

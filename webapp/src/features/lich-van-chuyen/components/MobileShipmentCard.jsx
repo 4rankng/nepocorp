@@ -21,7 +21,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { getStatusColor } from '@features/lich-van-chuyen/utils/styleUtils';
 import { getDisplayTrangThai } from '@features/lich-van-chuyen/utils/lichVanChuyenUtils'; // Added import
-
 const MobileShipmentCard = ({
   plan,
   isExpanded,
@@ -31,7 +30,6 @@ const MobileShipmentCard = ({
   canEditDelete,
 }) => {
   const statusColor = getStatusColor(plan.trangThai);
-
   return (
     <Card
       sx={{
@@ -67,7 +65,6 @@ const MobileShipmentCard = ({
             >
               {plan.dienGiai || 'Không có diễn giải'}
             </Typography>
-
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Chip
                 label={getDisplayTrangThai(plan.trangThai)}
@@ -83,7 +80,6 @@ const MobileShipmentCard = ({
                 {plan.ngayThang}
               </Typography>
             </Box>
-
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <BusinessIcon sx={{ fontSize: 14, mr: 0.5, color: '#6b7280' }} />
@@ -99,7 +95,6 @@ const MobileShipmentCard = ({
               </Box>
             </Box>
           </Box>
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {canEditDelete && (
               <IconButton
@@ -144,7 +139,6 @@ const MobileShipmentCard = ({
             </IconButton>
           </Box>
         </Box>
-
         {/* Route Info */}
         <Box
           sx={{
@@ -168,11 +162,9 @@ const MobileShipmentCard = ({
             </strong>
           </Typography>
         </Box>
-
         {/* Expandable Content */}
         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
           <Divider sx={{ mb: 2, borderColor: '#e5e7eb' }} />
-
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box
               sx={{
@@ -193,7 +185,6 @@ const MobileShipmentCard = ({
                 {plan.soLuongContainer || 0}
               </Typography>
             </Box>
-
             <Box
               sx={{
                 display: 'flex',
@@ -213,7 +204,6 @@ const MobileShipmentCard = ({
                 {plan.loaiContainer || 'N/A'}
               </Typography>
             </Box>
-
             <Box
               sx={{
                 display: 'flex',
@@ -233,7 +223,6 @@ const MobileShipmentCard = ({
                 {plan.cuocVanChuyen?.toLocaleString('vi-VN') || 0} VNĐ
               </Typography>
             </Box>
-
             <Box
               sx={{
                 display: 'flex',
@@ -253,7 +242,6 @@ const MobileShipmentCard = ({
                 {plan.cuocThueVanChuyen?.toLocaleString('vi-VN') || 0} VNĐ
               </Typography>
             </Box>
-
             {plan.doiTac && (
               <Box
                 sx={{
@@ -275,7 +263,6 @@ const MobileShipmentCard = ({
                 </Typography>
               </Box>
             )}
-
             {plan.ngayHaHang && (
               <Box
                 sx={{
@@ -298,7 +285,6 @@ const MobileShipmentCard = ({
               </Box>
             )}
           </Box>
-
           {plan.thongTinContainer && plan.thongTinContainer.length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', mb: 1 }}>
@@ -332,7 +318,6 @@ const MobileShipmentCard = ({
     </Card>
   );
 };
-
 MobileShipmentCard.propTypes = {
   plan: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
@@ -364,9 +349,7 @@ MobileShipmentCard.propTypes = {
   onDelete: PropTypes.func.isRequired,
   canEditDelete: PropTypes.bool, // Added prop type
 };
-
 MobileShipmentCard.defaultProps = {
   canEditDelete: false, // Default to false if not provided
 };
-
 export default MobileShipmentCard;

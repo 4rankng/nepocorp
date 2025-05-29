@@ -5,12 +5,10 @@ import {
   updateContainerType,
   deleteContainerType,
 } from '@services/mockData/containers';
-
 const useContainerTypeManagement = () => {
   const [containerTypes, setContainerTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   // Fetch all container types
   const fetchContainerTypes = async () => {
     setLoading(true);
@@ -26,7 +24,6 @@ const useContainerTypeManagement = () => {
       setLoading(false);
     }
   };
-
   // Add new container type
   const addNewContainerType = async containerTypeData => {
     setLoading(true);
@@ -45,7 +42,6 @@ const useContainerTypeManagement = () => {
       setLoading(false);
     }
   };
-
   // Update existing container type
   const updateExistingContainerType = async (id, containerTypeData) => {
     setLoading(true);
@@ -64,7 +60,6 @@ const useContainerTypeManagement = () => {
       setLoading(false);
     }
   };
-
   // Delete container type
   const deleteExistingContainerType = async id => {
     setLoading(true);
@@ -85,7 +80,6 @@ const useContainerTypeManagement = () => {
       setLoading(false);
     }
   };
-
   // Get container type by ID
   const getContainerTypeById = async id => {
     try {
@@ -101,21 +95,17 @@ const useContainerTypeManagement = () => {
       return { success: false, error: errorMessage };
     }
   };
-
   // Clear error
   const clearError = () => setError('');
-
   // Initial fetch on mount
   useEffect(() => {
     fetchContainerTypes();
   }, []);
-
   return {
     // State
     containerTypes,
     loading,
     error,
-
     // Actions
     fetchContainerTypes,
     addContainerType: addNewContainerType,
@@ -125,5 +115,4 @@ const useContainerTypeManagement = () => {
     clearError,
   };
 };
-
 export default useContainerTypeManagement;

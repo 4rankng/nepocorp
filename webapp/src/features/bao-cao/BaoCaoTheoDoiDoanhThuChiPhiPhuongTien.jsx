@@ -4,7 +4,6 @@ import {
   fetchAvailableMonthsForReport,
 } from '@services/mockApi/index.js';
 import { fetchAllDauKeo, fetchAllRoMooc } from '@services/mockApi/index.js';
-
 // SVG Icon for Download
 const ArrowDownTrayIcon = ({ className = 'w-6 h-6' }) => (
   <svg
@@ -22,17 +21,14 @@ const ArrowDownTrayIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-
 // Helper to format currency
 const formatCurrency = value => {
   if (typeof value !== 'number') return 'N/A';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
-
 // Helper to format vehicles for select dropdown
 const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
   const allVehicles = [];
-
   dauKeoList.forEach(dauKeo => {
     allVehicles.push({
       id: `dauKeo-${dauKeo.id}`,
@@ -42,7 +38,6 @@ const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
       type: 'dauKeo',
     });
   });
-
   roMoocList.forEach(roMooc => {
     allVehicles.push({
       id: `roMooc-${roMooc.id}`,
@@ -52,23 +47,17 @@ const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
       type: 'roMooc',
     });
   });
-
   return allVehicles;
 };
-
 const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [selectedMonthYear, setSelectedMonthYear] = useState('');
-
   const [reportDetails, setReportDetails] = useState(null);
-
   const [vehiclesForSelect, setVehiclesForSelect] = useState([]);
   const [monthsForSelect, setMonthsForSelect] = useState([]);
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('Vui lòng chọn xe và tháng để xem báo cáo.');
-
   const fetchDropdownData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -77,7 +66,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
         fetchAllRoMooc(),
         fetchAvailableMonthsForReport(),
       ]);
-
       const vehicles = formatVehiclesForSelect(dauKeoList, roMoocList);
       setVehiclesForSelect(vehicles);
       setMonthsForSelect(months);
@@ -89,11 +77,9 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     }
     setIsLoading(false);
   }, []);
-
   useEffect(() => {
     fetchDropdownData();
   }, [fetchDropdownData]);
-
   const handleViewReport = async () => {
     if (!selectedVehicleId || !selectedMonthYear) {
       setMessage('Vui lòng chọn đầy đủ xe và tháng.');
@@ -105,13 +91,11 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     setMessage('');
     try {
       const data = await fetchVehicleMonthlyDetailsReport(selectedVehicleId, selectedMonthYear);
-
       if (!data) {
         setMessage(`Không có dữ liệu cho xe và tháng đã chọn.`);
         setReportDetails(null);
         return;
       }
-
       // Transform the data into the expected format
       const transformedData = {
         overview: {
@@ -137,7 +121,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
         })),
         otherCosts: data.costBreakdown || [],
       };
-
       setReportDetails(transformedData);
     } catch (err) {
       setError(`Lỗi khi tải báo cáo: ${err.message}`);
@@ -147,7 +130,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
       setIsLoading(false);
     }
   };
-
   const handleExportExcel = () => {
     // This is a UI placeholder as per requirements
     console.log(
@@ -158,13 +140,11 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     );
     alert('Chức năng Xuất Excel chưa được triển khai trong bản demo này.');
   };
-
   return (
     <div className="p-4 md:p-6 bg-white min-h-screen">
       <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800 text-center">
         Theo Dõi Doanh Thu/Chi Phí Theo Phương Tiện
       </h1>
-
       {/* Selection Controls */}
       <div className="mb-6 p-4 bg-white shadow-md rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -215,7 +195,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
           </button>
         </div>
       </div>
-
       {/* Report Display Area */}
       {isLoading && <div className="text-center py-4">Đang tải báo cáo...</div>}
       {!isLoading && error && (
@@ -224,7 +203,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
       {!isLoading && !error && !reportDetails && (
         <div className="text-center py-4 text-gray-600">{message}</div>
       )}
-
       {reportDetails && (
         <div className="space-y-6">
           {/* Overview Section */}
@@ -251,7 +229,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
               </div>
             </div>
           </div>
-
           {/* Shipment Details Section */}
           {reportDetails.shipmentDetails.length > 0 && (
             <div className="bg-white p-4 shadow rounded-lg">
@@ -325,7 +302,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
               </div>
             </div>
           )}
-
           {/* Other Costs Section */}
           {reportDetails.otherCosts.length > 0 && (
             <div className="bg-white p-4 shadow rounded-lg">
@@ -342,7 +318,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
           )}
         </div>
       )}
-
       {/* Export Excel Button */}
       <button
         onClick={handleExportExcel}
@@ -355,5 +330,4 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     </div>
   );
 };
-
 export default BaoCaoTheoDoiDoanhThuChiPhiPhuongTien;

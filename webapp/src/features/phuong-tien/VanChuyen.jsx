@@ -14,7 +14,6 @@
  *
  * TODO: Implement form dialogs for CRUD operations following DinhMuc pattern
  */
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { alpha } from '@mui/material/styles';
 import {
@@ -67,7 +66,6 @@ import TractorDeleteDialog from './components/TractorDeleteDialog';
 import TrailerDeleteDialog from './components/TrailerDeleteDialog';
 import ContainerDeleteDialog from './components/ContainerDeleteDialog';
 import VehicleCard from './components/VehicleCard';
-
 // API services using new mock API paradigm
 const tractorApi = {
   getAll: fetchAllDauKeo,
@@ -75,21 +73,18 @@ const tractorApi = {
   update: editDauKeo,
   delete: removeDauKeo,
 };
-
 const trailerApi = {
   getAll: fetchAllRoMooc,
   create: addRoMooc,
   update: editRoMooc,
   delete: removeRoMooc,
 };
-
 const containerTypeApi = {
   getAll: fetchAllContainer,
   create: addContainer,
   update: editContainer,
   delete: removeContainer,
 };
-
 const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
   <Paper
     elevation={0}
@@ -139,11 +134,9 @@ const Section = ({ title, count, expanded, onToggle, onAdd, children }) => (
     </Collapse>
   </Paper>
 );
-
 const VanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   // Collapsible state
   const [expanded, setExpanded] = useState({ tractors: false, trailers: false, containers: false });
   const [loadedSections, setLoadedSections] = useState({
@@ -151,21 +144,18 @@ const VanChuyen = () => {
     trailers: false,
     containers: false,
   });
-
   // Tractors
   const [tractors, setTractors] = useState([]);
   const [tractorLoading, setTractorLoading] = useState(false);
   const [tractorError, setTractorError] = useState('');
   const [tractorDialog, setTractorDialog] = useState({ open: false, edit: false, data: null });
   const [tractorDelete, setTractorDelete] = useState({ open: false, data: null });
-
   // Trailers
   const [trailers, setTrailers] = useState([]);
   const [trailerLoading, setTrailerLoading] = useState(false);
   const [trailerError, setTrailerError] = useState('');
   const [trailerDialog, setTrailerDialog] = useState({ open: false, edit: false, data: null });
   const [trailerDelete, setTrailerDelete] = useState({ open: false, data: null });
-
   // Container Types
   const [containerTypes, setContainerTypes] = useState([]);
   const [containerTypeLoading, setContainerTypeLoading] = useState(false);
@@ -176,20 +166,16 @@ const VanChuyen = () => {
     data: null,
   });
   const [containerTypeDelete, setContainerTypeDelete] = useState({ open: false, data: null });
-
   // Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-
   // Counts
   const [counts, setCounts] = useState({ tractors: 0, trailers: 0, containers: 0 });
-
   // Fetch counts for all sections on mount
   useEffect(() => {
     tractorApi.getAll().then(data => setCounts(c => ({ ...c, tractors: data.length })));
     trailerApi.getAll().then(data => setCounts(c => ({ ...c, trailers: data.length })));
     containerTypeApi.getAll().then(data => setCounts(c => ({ ...c, containers: data.length })));
   }, []);
-
   // Helper to refetch count for a section
   const refetchCount = useCallback(key => {
     if (key === 'tractors') {
@@ -202,7 +188,6 @@ const VanChuyen = () => {
       containerTypeApi.getAll().then(data => setCounts(c => ({ ...c, containers: data.length })));
     }
   }, []);
-
   // Lazy loading: fetch only when section is expanded for the first time
   const handleToggleSection = (key, fetchFn) => {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
@@ -211,7 +196,6 @@ const VanChuyen = () => {
       setLoadedSections(prev => ({ ...prev, [key]: true }));
     }
   };
-
   // Columns - updated to match mock data structure
   const tractorColumns = [
     { key: 'bien_so', label: 'BIỂN SỐ', render: v => v },
@@ -224,7 +208,6 @@ const VanChuyen = () => {
   const containerTypeColumns = [
     { key: 'phan_loai', label: 'LOẠI CONTAINER', render: v => v || '' },
   ];
-
   // CRUD handlers for tractors
   const handleTractorSave = async formData => {
     try {
@@ -245,7 +228,6 @@ const VanChuyen = () => {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
   };
-
   const handleTractorDelete = async () => {
     try {
       await tractorApi.delete(tractorDelete.data.id);
@@ -257,7 +239,6 @@ const VanChuyen = () => {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
   };
-
   // CRUD handlers for trailers
   const handleTrailerSave = async formData => {
     try {
@@ -278,7 +259,6 @@ const VanChuyen = () => {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
   };
-
   const handleTrailerDelete = async () => {
     try {
       await trailerApi.delete(trailerDelete.data.id);
@@ -290,7 +270,6 @@ const VanChuyen = () => {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
   };
-
   // CRUD handlers for container types
   const handleContainerTypeSave = async formData => {
     try {
@@ -313,7 +292,6 @@ const VanChuyen = () => {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
   };
-
   const handleContainerTypeDelete = async () => {
     try {
       await containerTypeApi.delete(containerTypeDelete.data.id);
@@ -325,7 +303,6 @@ const VanChuyen = () => {
       setSnackbar({ open: true, message: `Lỗi: ${error.message}`, severity: 'error' });
     }
   };
-
   // Refactor vehicleConfigs to include fetchFn for each section
   const vehicleConfigs = [
     {
@@ -410,7 +387,6 @@ const VanChuyen = () => {
       },
     },
   ];
-
   return (
     <Box sx={{ position: 'relative', pb: 8 }}>
       {vehicleConfigs.map(cfg => (
@@ -462,7 +438,6 @@ const VanChuyen = () => {
           )}
         </Section>
       ))}
-
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
@@ -476,7 +451,6 @@ const VanChuyen = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       {/* --- Tractor Dialog --- */}
       <VehicleDialog
         open={tractorDialog.open}
@@ -502,7 +476,6 @@ const VanChuyen = () => {
           },
         ]}
       />
-
       {/* --- Trailer Dialog --- */}
       <VehicleDialog
         open={trailerDialog.open}
@@ -528,7 +501,6 @@ const VanChuyen = () => {
           },
         ]}
       />
-
       {/* --- Container Dialog --- */}
       <VehicleDialog
         open={containerTypeDialog.open}
@@ -550,7 +522,6 @@ const VanChuyen = () => {
           },
         ]}
       />
-
       {/* Delete Confirmation Dialogs */}
       <Dialog
         open={tractorDelete.open}
@@ -586,7 +557,6 @@ const VanChuyen = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={trailerDelete.open}
         onClose={() => setTrailerDelete({ open: false, data: null })}
@@ -621,7 +591,6 @@ const VanChuyen = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={containerTypeDelete.open}
         onClose={() => setContainerTypeDelete({ open: false, data: null })}
@@ -649,5 +618,4 @@ const VanChuyen = () => {
     </Box>
   );
 };
-
 export default VanChuyen;

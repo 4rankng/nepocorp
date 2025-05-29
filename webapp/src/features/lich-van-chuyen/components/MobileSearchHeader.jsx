@@ -11,7 +11,6 @@ import {
   InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-
 const MobileSearchHeader = ({
   searchTerm,
   onSearchTermChange,
@@ -64,7 +63,6 @@ const MobileSearchHeader = ({
           },
         }}
       />
-
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
         <FormControl size="small" sx={{ minWidth: 140, flexGrow: 1 }}>
           <InputLabel
@@ -128,7 +126,6 @@ const MobileSearchHeader = ({
             </MenuItem>
           </Select>
         </FormControl>
-
         <Chip
           label={`${resultCount} kết quả`}
           size="small"
@@ -144,7 +141,6 @@ const MobileSearchHeader = ({
     </Box>
   );
 };
-
 MobileSearchHeader.propTypes = {
   searchTerm: PropTypes.string.isRequired,
   onSearchTermChange: PropTypes.func.isRequired,
@@ -152,5 +148,4 @@ MobileSearchHeader.propTypes = {
   onFilterStatusChange: PropTypes.func.isRequired,
   resultCount: PropTypes.number.isRequired,
 };
-
 export default MobileSearchHeader;
