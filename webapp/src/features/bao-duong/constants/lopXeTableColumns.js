@@ -1,4 +1,6 @@
-export const maintenanceTableColumns = [
+import { formatCurrency, addMonths } from '../utils/lopXeUtils';
+
+export const lopXeTableColumns = [
   {
     key: 'licensePlate',
     label: 'Biển số xe',
@@ -54,15 +56,13 @@ export const maintenanceTableColumns = [
     render: formatCurrency,
     align: 'right',
     sortable: true,
-    minWidth: 140,
+    minWidth: 120,
   },
   {
     key: 'note',
     label: 'Ghi chú',
-    render: value => value || 'Không có',
+    sortable: false,
     minWidth: 200,
-    noWrap: true,
+    maxWidth: 300,
   },
 ];
-// Helper renderers and utils should be imported from utils
-import { formatCurrency, addMonths } from '../utils/maintenanceUtils';

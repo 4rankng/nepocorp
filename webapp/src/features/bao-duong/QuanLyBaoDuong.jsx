@@ -44,12 +44,13 @@ import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons'
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { lopXeApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
-import MaintenanceCard from './components/MaintenanceCard';
-import MaintenanceDialog from './components/MaintenanceDialog';
-import BaoDuongSection from './components/BaoDuongSection';
-import { maintenanceTableColumns } from './constants/maintenanceTableColumns';
-import useMaintenanceForm from './hooks/useMaintenanceForm';
-import useMaintenanceRecords from './hooks/useMaintenanceRecords';
+import LopXeCard from './components/LopXeCard';
+import LopXeDialog from './components/LopXeDialog';
+import LopXeSection from './components/LopXeSection';
+import { lopXeTableColumns } from './constants/lopXeTableColumns';
+import useLopXeForm from './hooks/useLopXeForm';
+import useLopXeRecords from './hooks/useLopXeRecords';
+
 const initialFormData = {
   licensePlate: '',
   replacementDate: new Date(),
@@ -60,7 +61,8 @@ const initialFormData = {
   total: 0,
   note: '',
 };
-const BaoDuong = () => {
+
+const QuanLyBaoDuong = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [expandedSections, setExpandedSections] = useState({ tire: false });
@@ -71,16 +73,18 @@ const BaoDuong = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [counts, setCounts] = useState({ tire: 0 });
+
   // Data fetching
   const {
-    maintenanceRecords,
-    setMaintenanceRecords,
+    lopXeRecords: maintenanceRecords,
+    setLopXeRecords: setMaintenanceRecords,
     licensePlates,
     setLicensePlates,
     isLoading,
     error,
     fetchData,
-  } = useMaintenanceRecords(lopXeApi);
+  } = useLopXeRecords(lopXeApi);
+
   // Form state/handlers
   const {
     formData,
@@ -92,7 +96,7 @@ const BaoDuong = () => {
     handleInputChange,
     validateForm,
     handleSave,
-  } = useMaintenanceForm({
+  } = useLopXeForm({
     initialFormData,
     isEdit,
     api: lopXeApi,
@@ -110,20 +114,24 @@ const BaoDuong = () => {
       console.error(err);
     },
   });
+
   // Fetch count on mount
   useEffect(() => {
     lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
   }, []);
+
   // Helper to refetch count
   const refetchCount = useCallback(() => {
     lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
   }, []);
+
   const handleOpenAddDialog = () => {
     setIsEdit(false);
     setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null });
     setErrors({});
     setOpenDialog(true);
   };
+
   const handleOpenEditDialog = record => {
     setIsEdit(true);
     setFormData({
@@ -140,10 +148,12 @@ const BaoDuong = () => {
     setErrors({});
     setOpenDialog(true);
   };
+
   const handleCloseDialog = useCallback(() => {
     setOpenDialog(false);
     setErrors({});
   }, []);
+
   const handleDeleteClick = record => {
     setDeleteDialog({
       open: true,
@@ -158,9 +168,11 @@ const BaoDuong = () => {
       },
     });
   };
+
   const handleDeleteClose = () => {
     setDeleteDialog(prev => ({ ...prev, open: false }));
   };
+
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.recordId) return;
     setFormLoading(true);
@@ -185,6 +197,7 @@ const BaoDuong = () => {
       setFormLoading(false);
     }
   };
+
   // Filter maintenance records based on search term
   const filteredRecords = React.useMemo(() => {
     if (!searchTerm.trim()) return maintenanceRecords;
@@ -195,6 +208,7 @@ const BaoDuong = () => {
         (record.note && record.note.toLowerCase().includes(search))
     );
   }, [maintenanceRecords, searchTerm]);
+
   const toggleSection = section => {
     setExpandedSections(prev => ({
       ...prev,
@@ -206,17 +220,19 @@ const BaoDuong = () => {
       setLoadedSections(prev => ({ ...prev, [section]: true }));
     }
   };
+
   const handleAddNew = (type = 'tire') => {
     setIsEdit(false);
     setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null, type });
     setErrors({});
     setOpenDialog(true);
   };
+
   // Render mobile card view
   const renderMobileView = () => (
     <Box>
       {filteredRecords.map(record => (
-        <MaintenanceCard
+        <LopXeCard
           key={record.id}
           record={record}
           onEdit={handleOpenEditDialog}
@@ -231,10 +247,11 @@ const BaoDuong = () => {
       )}
     </Box>
   );
+
   // Render desktop table view
   const renderDesktopView = () => (
     <StandardTable
-      columns={maintenanceTableColumns}
+      columns={lopXeTableColumns}
       data={filteredRecords}
       loading={isLoading}
       error={error}
@@ -252,6 +269,7 @@ const BaoDuong = () => {
       )}
     />
   );
+
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
       {/* Search Bar */}
@@ -293,7 +311,7 @@ const BaoDuong = () => {
       {!isLoading && !error && (
         <Box>
           {/* Lốp Xe Section */}
-          <BaoDuongSection
+          <LopXeSection
             title="Lốp Xe"
             count={counts.tire}
             expanded={expandedSections.tire}
@@ -309,11 +327,11 @@ const BaoDuong = () => {
             ) : (
               renderDesktopView()
             )}
-          </BaoDuongSection>
+          </LopXeSection>
         </Box>
       )}
       {/* Add/Edit Dialog */}
-      <MaintenanceDialog
+      <LopXeDialog
         open={openDialog}
         isEdit={isEdit}
         isLoading={isFormLoading}
@@ -355,4 +373,5 @@ const BaoDuong = () => {
     </Box>
   );
 };
-export default BaoDuong;
+
+export default QuanLyBaoDuong;

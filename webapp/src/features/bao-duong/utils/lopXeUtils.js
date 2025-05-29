@@ -5,6 +5,7 @@ export function formatCurrency(value) {
     minimumFractionDigits: 0,
   }).format(value);
 }
+
 export function addMonths(date, months) {
   const d = new Date(date);
   d.setMonth(d.getMonth() + Number(months));

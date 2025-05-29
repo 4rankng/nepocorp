@@ -29,6 +29,7 @@ export const MENU_ITEMS = {
     { path: '/doi-tac', label: 'Đối tác', icon: 'UserGroup' },
     { path: '/phuong-tien', label: 'Phương tiện', icon: 'Truck' },
     { path: '/dinh-muc', label: 'Định Mức', icon: 'CurrencyDollar' },
+    { path: '/bao-duong', label: 'Bảo Dưỡng', icon: 'Wrench' },
   ],
   [ROLES.KE_TOAN]: [
     { path: '/lich-van-chuyen', label: 'Lịch vận chuyển', icon: 'Calendar' },

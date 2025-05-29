@@ -3,7 +3,8 @@ import { Paper, Box, Typography, Chip, IconButton, Collapse } from '@mui/materia
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { AddButton } from '@/components/ActionButtons';
-const BaoDuongSection = ({ title, count, expanded, onToggle, onAdd, children }) => (
+
+const LopXeSection = ({ title, count, expanded, onToggle, onAdd, children }) => (
   <Paper
     elevation={0}
     sx={{ mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}
@@ -50,8 +51,9 @@ const BaoDuongSection = ({ title, count, expanded, onToggle, onAdd, children }) 
       </IconButton>
     </Box>
     <Collapse in={expanded} timeout="auto" unmountOnExit>
-      <Box sx={{ p: { xs: 1, md: 2 } }}>{children}</Box>
+      <Box sx={{ p: 2 }}>{children}</Box>
     </Collapse>
   </Paper>
 );
-export default BaoDuongSection;
+
+export default LopXeSection;

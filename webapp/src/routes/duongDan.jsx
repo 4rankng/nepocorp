@@ -12,6 +12,7 @@ import QuanLyKhachHang from '@features/khach-hang/QuanLyKhachHang';
 import QuanLyDoiTac from '@features/doi-tac/QuanLyDoiTac';
 import QuanLyPhuongTien from '@features/phuong-tien/QuanLyPhuongTien';
 import QuanLyDinhMuc from '@features/dinh-muc/QuanLyDinhMuc';
+import QuanLyBaoDuong from '@features/bao-duong/QuanLyBaoDuong';
 // Future flags for React Router v7
 const routerConfig = {
   future: {
@@ -117,6 +118,12 @@ const router = createBrowserRouter(
               element: <Navigate to="bo-sung" replace />,
             },
           ],
+        },
+        // BaoDuong route
+        {
+          path: 'bao-duong',
+          element: withErrorBoundary(QuanLyBaoDuong),
+          errorElement: <ErrorPage />,
         },
         // Keep old route for backward compatibility
         {

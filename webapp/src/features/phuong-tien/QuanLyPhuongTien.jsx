@@ -1,13 +1,66 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Tabs, Tab, Box, useTheme, useMediaQuery } from '@mui/material';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { alpha } from '@mui/material/styles';
+import {
+  Box,
+  Tab,
+  useTheme,
+  useMediaQuery,
+  Typography,
+  Paper,
+  Chip,
+  Collapse,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  IconButton,
+  Card,
+  CardContent,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  Grid,
+  TextField,
+} from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
 import { useNavigate, useParams, useLocation, Routes, Route, Navigate } from 'react-router-dom';
-import VanChuyen from '@/features/phuong-tien/VanChuyen';
-import BaoDuong from '@/features/phuong-tien/BaoDuong';
+import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
+import StandardTable from '@/components/StandardTable';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import CloseIcon from '@mui/icons-material/Close';
+// Import new mock API paradigm
+import {
+  fetchAllDauKeo,
+  addDauKeo,
+  editDauKeo,
+  removeDauKeo,
+  fetchAllRoMooc,
+  addRoMooc,
+  editRoMooc,
+  removeRoMooc,
+  fetchAllContainer,
+  addContainer,
+  editContainer,
+  removeContainer,
+} from '@services/mockApi';
+// Import specific component files
+import DauKeoCard from './components/DauKeoCard';
+import DauKeoDialog from './components/DauKeoDialog';
+import RoMoocCard from './components/RoMoocCard';
+import RoMoocDialog from './components/RoMoocDialog';
+import ContainerCard from './components/ContainerCard';
+import ContainerDialog from './components/ContainerDialog';
+import TractorDeleteDialog from './components/TractorDeleteDialog';
+import TrailerDeleteDialog from './components/TrailerDeleteDialog';
+import ContainerDeleteDialog from './components/ContainerDeleteDialog';
 // Define valid tabs and their labels
 const TABS = [
   { value: 'van-chuyen', label: 'Vận Chuyển' },
-  { value: 'bao-duong', label: 'Bảo Dưỡng' },
 ];
 // SwipeDetector component for handling touch events
 const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight }) => {
@@ -175,9 +228,6 @@ const QuanLyPhuongTien = () => {
             >
               <TabPanel value="van-chuyen" sx={{ p: 0, mt: 2 }}>
                 <VanChuyen />
-              </TabPanel>
-              <TabPanel value="bao-duong" sx={{ p: 0, mt: 2 }}>
-                <BaoDuong />
               </TabPanel>
             </Box>
           </TabContext>
