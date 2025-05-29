@@ -124,11 +124,11 @@ const useNhanVienManagement = () => {
     setEditingEmployee(employee);
     setFormData({
       ma_so: employee.maNhanVien || '',
-      ho_ten: employee.tenNhanVien,
-      ten_dang_nhap: employee.tenDangNhap,
+      ho_ten: employee.tenNhanVien || '',
+      ten_dang_nhap: employee.tenDangNhap || '',
       mat_khau: '', // Password field is cleared for edit
-      chuc_vu: employee.chucVu,
-      email: employee.email,
+      chuc_vu: employee.chucVu || '',
+      email: employee.email || '',
     });
     setError('');
     setIsModalOpen(true);

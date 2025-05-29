@@ -222,7 +222,6 @@ const VanChuyen = () => {
     { key: 'mo_ta', label: 'MÔ TẢ', render: v => v || '' },
   ];
   const containerTypeColumns = [
-    { key: 'id', label: 'SỐ CONTAINER', render: v => v },
     { key: 'phan_loai', label: 'LOẠI CONTAINER', render: v => v || '' },
   ];
 
