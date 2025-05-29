@@ -83,7 +83,7 @@ const router = createBrowserRouter(
             },
             {
               path: '',
-              element: <Navigate to="xe-van-chuyen" replace />,
+              element: <Navigate to="dau-keo" replace />,
             },
           ],
         },
@@ -125,14 +125,14 @@ const router = createBrowserRouter(
           element: withErrorBoundary(QuanLyBaoDuong),
           errorElement: <ErrorPage />,
         },
-        // Keep old route for backward compatibility
+        // Keep old routes for backward compatibility
         {
-          path: 'phuong-tien',
-          element: <Navigate to="/phuong-tien/xe-van-chuyen" replace />,
+          path: 'xe-van-chuyen',
+          element: <Navigate to="/phuong-tien/dau-keo" replace />,
         },
         {
-          path: 'container',
-          element: <Navigate to="/phuong-tien/loai-container" replace />,
+          path: 'loai-container',
+          element: <Navigate to="/phuong-tien/container" replace />,
         },
         // {
         //   path: 'chi-phi',

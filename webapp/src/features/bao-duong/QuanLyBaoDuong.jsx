@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { alpha } from '@mui/material/styles';
 import {
   Box,
@@ -27,6 +27,8 @@ import {
   useMediaQuery,
   useTheme,
   Divider,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -62,7 +64,7 @@ const initialFormData = {
   note: '',
 };
 
-const QuanLyBaoDuong = () => {
+const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [expandedSections, setExpandedSections] = useState({ tire: false });
@@ -73,6 +75,7 @@ const QuanLyBaoDuong = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [counts, setCounts] = useState({ tire: 0 });
+  const [tabIndex, setTabIndex] = useState(0);
 
   // Data fetching
   const {
@@ -270,66 +273,95 @@ const QuanLyBaoDuong = () => {
     />
   );
 
+  const handleTabChange = (event, newValue) => {
+    setTabIndex(newValue);
+  };
+
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
-      {/* Search Bar */}
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            sx: {
-              borderRadius: '6px',
-              height: 36,
-              minHeight: 36,
-              fontSize: '0.95rem',
-            },
-          }}
-        />
-      </Box>
-      {/* Loading state */}
-      {isLoading && (
-        <Box textAlign="center" py={4}>
-          <Typography>Đang tải dữ liệu...</Typography>
-        </Box>
-      )}
-      {/* Error state */}
-      {error && (
-        <Box color="error.main" py={2}>
-          <Typography>{error}</Typography>
-        </Box>
-      )}
-      {/* Content */}
-      {!isLoading && !error && (
-        <Box>
-          {/* Lốp Xe Section */}
-          <LopXeSection
-            title="Lốp Xe"
-            count={counts.tire}
-            expanded={expandedSections.tire}
-            onToggle={() => toggleSection('tire')}
-            onAdd={() => handleAddNew('tire')}
-          >
-            {isLoading && !loadedSections.tire ? (
+      {/* Tabs System */}
+      <Tabs
+        value={tabIndex}
+        onChange={handleTabChange}
+        aria-label="Tabs for maintenance categories"
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab label="Lốp Xe" id="tab-tire" aria-controls="tabpanel-tire" />
+        {/* Future tabs can be added here */}
+      </Tabs>
+      {/* Tab Panels */}
+      <Box
+        role="tabpanel"
+        hidden={tabIndex !== 0}
+        id="tabpanel-tire"
+        aria-labelledby="tab-tire"
+        sx={{ p: 0 }}
+      >
+        {tabIndex === 0 && (
+          <React.Fragment>
+            {/* Search Bar */}
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: '6px',
+                    height: 36,
+                    minHeight: 36,
+                    fontSize: '0.95rem',
+                  },
+                }}
+              />
+            </Box>
+            {/* Loading state */}
+            {isLoading && (
               <Box textAlign="center" py={4}>
-                <CircularProgress />
+                <Typography>Đang tải dữ liệu...</Typography>
               </Box>
-            ) : isMobile ? (
-              renderMobileView()
-            ) : (
-              renderDesktopView()
             )}
-          </LopXeSection>
-        </Box>
-      )}
+            {/* Error state */}
+            {error && (
+              <Box color="error.main" py={2}>
+                <Typography>{error}</Typography>
+              </Box>
+            )}
+            {/* Content */}
+            {!isLoading && !error && (
+              <Box>
+                {/* Lốp Xe Section */}
+                <LopXeSection
+                  title="Lốp Xe"
+                  count={counts.tire}
+                  expanded={expandedSections.tire}
+                  onToggle={() => toggleSection('tire')}
+                  onAdd={() => handleAddNew('tire')}
+                >
+                  {isLoading && !loadedSections.tire ? (
+                    <Box textAlign="center" py={4}>
+                      <CircularProgress />
+                    </Box>
+                  ) : isMobile ? (
+                    renderMobileView()
+                  ) : (
+                    renderDesktopView()
+                  )}
+                </LopXeSection>
+              </Box>
+            )}
+          </React.Fragment>
+        )}
+      </Box>
       {/* Add/Edit Dialog */}
       <LopXeDialog
         open={openDialog}
@@ -372,6 +404,6 @@ const QuanLyBaoDuong = () => {
       </Snackbar>
     </Box>
   );
-};
+});
 
 export default QuanLyBaoDuong;

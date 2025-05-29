@@ -39,10 +39,8 @@ const QuanLyDinhMuc = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', p: 2 }}>
-      <Typography variant="h4" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>
-        Định Mức
-      </Typography>
+    <Box sx={{ width: '100%', p: 0 }}>
+
 
       <Paper sx={{ width: '100%', mb: 3 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
