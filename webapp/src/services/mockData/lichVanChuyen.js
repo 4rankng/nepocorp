@@ -14,7 +14,7 @@ let lichVanChuyenData = [
     ma_chuyen: 'MC001',
     ngay_di: '2024-05-28',
     ngay_ha_hang: null, // Status is 'len_lich', not completed
-    trang_thai: 'len_lich',
+    trang_thai: 'tam_thoi',
     ma_khach_hang: 'MDD001',
     diem_di: 'Kho Nepocorp, Hà Nội',
     diem_den: 'Cảng Hải Phòng; Cảng Quảng Ninh',

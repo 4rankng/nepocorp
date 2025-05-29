@@ -5,7 +5,7 @@ import { formatDateForDisplay, formatCurrencyVND } from '../utils/lichVanChuyenU
 // Status mapping for display
 export const trangThaiMap = {
   len_lich: 'Lên lịch',
-  tam_thoi: 'Chờ xác nhận',
+  tam_thoi: 'Tạm thời',
   dang_chay: 'Đang chạy',
   hoan_thanh: 'Hoàn thành',
   huy_bo: 'Hủy bỏ',
@@ -21,20 +21,20 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
   {
     id: 'ma_chuyen',
     header: 'Mã',
-    width: '1%', 
+    width: '1%',
     maxWidth: '60px',
     padding: '0px',
     sortable: true,
     render: (_, row) => (
-      <Box 
-        component="span" 
-        sx={{ 
+      <Box
+        component="span"
+        sx={{
           fontSize: '0.75rem',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           display: 'block',
-          maxWidth: '60px'
+          maxWidth: '60px',
         }}
       >
         {row.ma_chuyen || '-'}
@@ -129,13 +129,13 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
       const totalCost = row.vnd_chi_phi || 0;
       const revenue = row.cuoc_van_chuyen_vnd || 0;
       const grossProfit = revenue - totalCost;
-      
+
       return (
-        <Box 
-          component="span" 
-          sx={{ 
+        <Box
+          component="span"
+          sx={{
             color: grossProfit >= 0 ? 'success.main' : 'error.main',
-            fontWeight: 500
+            fontWeight: 500,
           }}
         >
           {formatCurrencyVND(grossProfit)}
@@ -166,20 +166,38 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
           '& .MuiChip-label': {
             padding: '0 6px',
           },
-          backgroundColor: theme =>
-            row.trang_thai === 'hoan_thanh'
-              ? theme.palette.success.light
-              : row.trang_thai === 'huy_bo'
-                ? theme.palette.error.light
-                : row.trang_thai === 'dang_chay'
-                  ? theme.palette.info.light
-                  : theme.palette.grey[200],
-          color: theme =>
-            row.trang_thai === 'hoan_thanh' ||
-            row.trang_thai === 'huy_bo' ||
-            row.trang_thai === 'dang_chay'
-              ? theme.palette.common.white
-              : theme.palette.text.primary,
+          backgroundColor: theme => {
+            switch (row.trang_thai) {
+              case 'hoan_thanh':
+                return 'rgba(76, 175, 80, 0.15)'; // Muted green
+              case 'huy_bo':
+                return 'rgba(211, 47, 47, 0.7)'; // More opaque red
+              case 'dang_chay':
+                return 'rgba(25, 118, 210, 0.15)'; // Muted blue
+              case 'len_lich':
+                return 'rgba(0, 150, 136, 0.7)'; // More opaque teal
+              case 'tam_thoi':
+                return 'rgba(97, 97, 97, 0.12)'; // Muted gray
+              default:
+                return theme.palette.grey[100];
+            }
+          },
+          color: theme => {
+            switch (row.trang_thai) {
+              case 'hoan_thanh':
+                return 'rgb(46, 125, 50)'; // Dark green
+              case 'huy_bo':
+                return theme.palette.common.white; // White text
+              case 'dang_chay':
+                return 'rgb(21, 101, 192)'; // Dark blue
+              case 'len_lich':
+                return theme.palette.common.white; // White text
+              case 'tam_thoi':
+                return 'rgb(97, 97, 97)'; // Dark gray
+              default:
+                return theme.palette.text.secondary;
+            }
+          },
         }}
       />
     ),
@@ -192,7 +210,7 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
  * @param {Object} row - Transport record data
  * @returns {number} Total cost
  */
-export const calculateTotalCost = (row) => {
+export const calculateTotalCost = row => {
   return (
     (row.vnd_dau || 0) +
     (row.vnd_di_duong || 0) +
@@ -206,7 +224,7 @@ export const calculateTotalCost = (row) => {
  * @param {string} status - Status value
  * @returns {Object} Color configuration for the status
  */
-export const getStatusColor = (status) => {
+export const getStatusColor = status => {
   const colorMap = {
     hoan_thanh: { bg: 'success.light', color: 'common.white' },
     huy_bo: { bg: 'error.light', color: 'common.white' },

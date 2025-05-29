@@ -61,7 +61,7 @@ const initialFormState = {
   id: null,
   ma_chuyen: '',
   ngay_di: new Date().toISOString().split('T')[0], // Default to today
-  trang_thai: 'Chờ xác nhận',
+  trang_thai: 'Tạm thời',
   ma_khach_hang: '',
   diem_di: '',
   diem_den: '',
@@ -104,8 +104,12 @@ function getComparator(order, orderBy, columns) {
   return order === 'desc'
     ? (a, b) => {
         const column = columns?.find(col => col.id === orderBy);
-        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '', a) : (a[orderBy] ?? '');
-        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '', b) : (b[orderBy] ?? '');
+        const aValue = column?.sortValue
+          ? column.sortValue(a[orderBy] ?? '', a)
+          : (a[orderBy] ?? '');
+        const bValue = column?.sortValue
+          ? column.sortValue(b[orderBy] ?? '', b)
+          : (b[orderBy] ?? '');
 
         if (bValue < aValue) return -1;
         if (bValue > aValue) return 1;
@@ -113,8 +117,12 @@ function getComparator(order, orderBy, columns) {
       }
     : (a, b) => {
         const column = columns?.find(col => col.id === orderBy);
-        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '', a) : (a[orderBy] ?? '');
-        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '', b) : (b[orderBy] ?? '');
+        const aValue = column?.sortValue
+          ? column.sortValue(a[orderBy] ?? '', a)
+          : (a[orderBy] ?? '');
+        const bValue = column?.sortValue
+          ? column.sortValue(b[orderBy] ?? '', b)
+          : (b[orderBy] ?? '');
 
         if (aValue < bValue) return -1;
         if (aValue > bValue) return 1;
@@ -177,7 +185,7 @@ const QuanLyLichVanChuyen = () => {
       id: item.id,
       ma_chuyen: item.ma_chuyen || '',
       ngay_di: item.ngay_di ? item.ngay_di.split('T')[0] : new Date().toISOString().split('T')[0],
-      trang_thai: item.trang_thai || 'Chờ xác nhận',
+      trang_thai: item.trang_thai || 'Tạm thời',
       ma_khach_hang: item.ma_khach_hang || '',
       diem_di: item.diem_di || '',
       diem_den: item.diem_den || '',
@@ -385,6 +393,7 @@ const QuanLyLichVanChuyen = () => {
   };
 
   const getEntityNameById = (id, list, keyField = 'id', nameField = 'name') => {
+    if (!list || !Array.isArray(list)) return '-';
     const entity = list.find(item => item[keyField] === id);
     return entity ? entity[nameField] : '-';
   };
@@ -697,7 +706,7 @@ const QuanLyLichVanChuyen = () => {
                 Khách hàng:{' '}
                 {getEntityNameById(
                   itemToDelete.khach_hang_id,
-                  selectOptions.customers,
+                  selectOptions.khachHang,
                   'id',
                   'ten'
                 )}

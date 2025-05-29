@@ -76,7 +76,7 @@ const DesktopView = ({
             ...column,
             header: column.header,
             sortable: column.sortable,
-            onSort: column.sortable ? createSortHandler(column.id) : undefined
+            onSort: column.sortable ? createSortHandler(column.id) : undefined,
           }))}
           sortable={true}
           defaultSort={{ key: orderBy, direction: order }}

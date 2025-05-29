@@ -9,6 +9,7 @@ import router from '@routes/duongDan';
 import { mobileInputStyles } from '@/utils/mobileInput';
 import MobileInputHandler from '@/components/MobileInputHandler';
 import '@/index.css';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -16,7 +17,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <CssBaseline />
       <Global styles={mobileInputStyles} />
       <MobileInputHandler />
-      <RouterProvider router={router} future={{ v7_startTransition: true }} />
+      <ErrorBoundary>
+        <RouterProvider router={router} future={{ v7_startTransition: true }} />
+      </ErrorBoundary>
     </ThemeProvider>
   </React.StrictMode>
 );
