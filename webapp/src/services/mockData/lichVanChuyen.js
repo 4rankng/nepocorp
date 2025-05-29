@@ -1,124 +1,119 @@
 // Mock database for LichVanChuyen (Transport Schedules)
-// Fields: id, ma_chuyen, ngay_di, ngay_ha_hang, trang_thai, ma_khach_hang, diem_di, diem_den,
-//         bien_so_dau_keo, ma_so_cont, ma_nv_giao_nhan, ma_nv_lai_xe, ghi_chu, createdAt, updatedAt
+// Schema based on USER's new definition
 
-const TRANG_THAI_LICH_VAN_CHUYEN = {
-  TAM_THOI: 'tam_thoi', // Temporary
-  LEN_LICH: 'len_lich', // Scheduled
-  DANG_CHAY: 'dang_chay', // In transit / Running
-  HOAN_THANH: 'hoan_thanh', // Completed
-  HUY_BO: 'huy_bo', // Cancelled
+export const TRANG_THAI_LICH_VAN_CHUYEN = {
+  CHUA_BAT_DAU: 'chua_bat_dau',
+  DANG_THUC_HIEN: 'dang_thuc_hien',
+  HOAN_THANH: 'hoan_thanh',
+  HUY_BO: 'huy_bo',
 };
 
 let lichVanChuyenData = [];
+let nextLichVanChuyenId = 1;
 
 /**
- * Generate sample transport schedule data
- * @param {number} count - Number of sample records to generate
- * @returns {Array} Array of sample transport schedule records
+ * Generate sample transport schedule data based on the new schema.
+ * @param {number} count - Number of sample records to generate.
+ * @param {Array} phuongTienIds - Array of available PhuongTien IDs.
+ * @param {Array} taiXeIds - Array of available TaiXe (NhanVien) IDs.
+ * @param {Array} containerIds - Array of available Container IDs.
+ * @returns {Array} Array of sample transport schedule records.
  */
-const generateSampleLichVanChuyen = (count = 15) => {
+const generateSampleLichVanChuyen = (
+  count = 10,
+  phuongTienIds = [1, 2],
+  taiXeIds = [4, 5],
+  containerIds = [1, 2, 3, 4, 5]
+) => {
   const samples = [];
-  const baseDate = new Date(2024, 4, 20);
-  const now = new Date();
+  const baseDateTime = new Date('2024-06-01T00:00:00Z');
+  const now = new Date().toISOString();
 
   for (let i = 1; i <= count; i++) {
-    const ngayDi = new Date(baseDate);
-    ngayDi.setDate(baseDate.getDate() + i - 1);
+    const startOffsetHours = i * 2;
+    const thoi_gian_bat_dau_ke_hoach_dt = new Date(
+      baseDateTime.getTime() + startOffsetHours * 60 * 60 * 1000
+    );
+    const thoi_gian_ket_thuc_ke_hoach_dt = new Date(
+      thoi_gian_bat_dau_ke_hoach_dt.getTime() + (8 + (i % 4)) * 60 * 60 * 1000
+    );
 
     const trangThaiValues = Object.values(TRANG_THAI_LICH_VAN_CHUYEN);
     const trang_thai = trangThaiValues[i % trangThaiValues.length];
 
-    let ngay_ha_hang = '';
+    let thoi_gian_bat_dau_thuc_te = null;
+    let thoi_gian_ket_thuc_thuc_te = null;
+
+    if (
+      trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.DANG_THUC_HIEN ||
+      trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH
+    ) {
+      thoi_gian_bat_dau_thuc_te = new Date(
+        thoi_gian_bat_dau_ke_hoach_dt.getTime() - (i % 30) * 60 * 1000
+      ).toISOString(); // Start a bit early/late
+    }
     if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
-      const ngayHaHang = new Date(ngayDi);
-      ngayHaHang.setDate(ngayDi.getDate() + (i % 3) + 1);
-      ngay_ha_hang = ngayHaHang.toISOString().split('T')[0];
+      thoi_gian_ket_thuc_thuc_te = new Date(
+        thoi_gian_ket_thuc_ke_hoach_dt.getTime() + (i % 60) * 60 * 1000
+      ).toISOString(); // End a bit early/late
     }
-
-    let ghi_chu = `Hàng dễ vỡ, xin nhẹ tay. Chuyến số ${i}`;
-    if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HUY_BO) {
-      ghi_chu = 'Lý do hủy: Yêu cầu từ khách hàng';
-    } else if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.TAM_THOI) {
-      ghi_chu = 'Chuyến tạm thời, chờ xác nhận';
-    }
-
-    const cuoc_van_chuyen_vnd = Math.floor(Math.random() * 10000000) + 1000000;
-    const cuoc_thue_van_chuyen_vnd = i % 3 === 0 ? 0 : Math.floor(Math.random() * 900000) + 100000; // Some with 0 for own vehicle
-    const vnd_dau = Math.floor(Math.random() * 1000000) + 5000000;
-    const vnd_di_duong = Math.floor(Math.random() * 2000000) + 1000000;
 
     samples.push({
-      id: i,
-      ma_chuyen: `MC${String(i).padStart(3, '0')}`,
-      ngay_di: ngayDi.toISOString().split('T')[0],
-      ngay_ha_hang: trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH ? ngay_ha_hang : '',
+      id: nextLichVanChuyenId++,
+      ma_chuyen_xe: `CX${String(i).padStart(3, '0')}`,
+      thoi_gian_bat_dau_ke_hoach: thoi_gian_bat_dau_ke_hoach_dt.toISOString(),
+      thoi_gian_ket_thuc_ke_hoach: thoi_gian_ket_thuc_ke_hoach_dt.toISOString(),
+      thoi_gian_bat_dau_thuc_te,
+      thoi_gian_ket_thuc_thuc_te,
       trang_thai,
-      ma_khach_hang: `KH${String((i % 5) + 1).padStart(3, '0')}`,
-      diem_di: 'Kho Nepocorp, Hà Nội',
-      diem_den: i % 2 === 0 ? 'Cảng Hải Phòng; Cảng Quảng Ninh' : 'Cảng Đà Nẵng',
-      cuoc_van_chuyen_vnd: cuoc_van_chuyen_vnd,
-      cuoc_thue_van_chuyen_vnd: cuoc_thue_van_chuyen_vnd,
-      bien_so_dau_keo: `15C-${String(10000 + i).substring(1)}`,
-      ma_so_cont: i % 2 === 0 ? '20DC' : '40HC',
-      ma_nv_giao_nhan: `NV${String(3 + (i % 3)).padStart(3, '0')}`,
-      ma_nv_lai_xe: `NV${String(4 + (i % 3)).padStart(3, '0')}`,
-      ghi_chu,
-      km_hang: parseFloat((Math.random() * 100).toFixed(2)),
-      km_vo: parseFloat((Math.random() * 50).toFixed(2)),
-      l_dau: parseFloat((Math.random() * 5).toFixed(2)),
-      vnd_dau: vnd_dau,
-      vnd_di_duong: vnd_di_duong,
-      vnd_chi_phi: vnd_dau + vnd_di_duong, // Calculate total cost
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
+      diem_xuat_phat: i % 2 === 0 ? 'Kho A, TP.HCM' : 'Kho B, Bình Dương',
+      diem_den: i % 2 === 0 ? 'Cảng Cát Lái, TP.HCM' : 'KCN Sóng Thần, Bình Dương',
+      ghi_chu:
+        trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HUY_BO
+          ? 'Hủy do thay đổi kế hoạch.'
+          : `Chuyến vận chuyển ${i}.`,
+      id_phuong_tien: phuongTienIds[i % phuongTienIds.length],
+      id_tai_xe_chinh: taiXeIds[i % taiXeIds.length],
+      id_tai_xe_phu:
+        i % 3 === 0 && taiXeIds.length > 1 ? taiXeIds[(i + 1) % taiXeIds.length] : null, // Assign co-driver sometimes if available
+      id_container_1:
+        i % 2 !== 0 && containerIds.length > 0 ? containerIds[i % containerIds.length] : null,
+      id_container_2:
+        i % 4 === 0 && containerIds.length > 1 ? containerIds[(i + 1) % containerIds.length] : null,
+      createdAt: now,
+      updatedAt: now,
     });
   }
-
   return samples;
 };
 
-// Initialize data
-lichVanChuyenData = generateSampleLichVanChuyen(15);
+// Initialize data (assuming some IDs from other mock data for FKs)
+// These IDs should ideally be fetched or coordinated from dauKeo.js, nhanVien.js, container.js
+lichVanChuyenData = generateSampleLichVanChuyen(15, [1, 2, 3], [4, 5, 8], [1, 2, 3, 4, 5]);
 
-/**
- * Get all transport schedules
- * @returns {Promise<Array>} Array of all transport schedules
- */
 export const getAllLichVanChuyen = async () => {
   return [...lichVanChuyenData];
 };
 
-/**
- * Get a transport schedule by ID
- * @param {number} id - The ID of the transport schedule
- * @returns {Promise<Object|null>} The transport schedule or null if not found
- */
 export const getLichVanChuyenById = async id => {
-  return lichVanChuyenData.find(item => item.id === id) || null;
+  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+  return lichVanChuyenData.find(item => item.id === numericId) || null;
 };
 
-/**
- * Get a transport schedule by ma_chuyen
- * @param {string} maChuyen - The ma_chuyen of the transport schedule
- * @returns {Promise<Object|null>} The transport schedule or null if not found
- */
-export const getLichVanChuyenByMaChuyen = async maChuyen => {
-  return lichVanChuyenData.find(item => item.ma_chuyen === maChuyen) || null;
+export const getLichVanChuyenByMaChuyenXe = async maChuyenXe => {
+  return lichVanChuyenData.find(item => item.ma_chuyen_xe === maChuyenXe) || null;
 };
 
-/**
- * Create a new transport schedule
- * @param {Object} data - The transport schedule data
- * @returns {Promise<Object>} The created transport schedule
- */
 export const createLichVanChuyen = async data => {
-  if (!data.ma_chuyen) {
-    throw new Error('Mã chuyến là bắt buộc');
+  const { ma_chuyen_xe, thoi_gian_bat_dau_ke_hoach, id_phuong_tien, id_tai_xe_chinh } = data;
+  if (!ma_chuyen_xe || !thoi_gian_bat_dau_ke_hoach || !id_phuong_tien || !id_tai_xe_chinh) {
+    throw new Error(
+      'Mã chuyến xe, thời gian bắt đầu kế hoạch, ID phương tiện, ID tài xế chính là bắt buộc.'
+    );
   }
 
-  if (lichVanChuyenData.some(item => item.ma_chuyen === data.ma_chuyen)) {
-    throw new Error('Mã chuyến đã tồn tại');
+  if (lichVanChuyenData.some(item => item.ma_chuyen_xe === ma_chuyen_xe)) {
+    throw new Error('Mã chuyến xe đã tồn tại.');
   }
 
   if (data.trang_thai && !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(data.trang_thai)) {
@@ -127,29 +122,23 @@ export const createLichVanChuyen = async data => {
     );
   }
 
-  const newId =
-    lichVanChuyenData.length > 0 ? Math.max(...lichVanChuyenData.map(item => item.id)) + 1 : 1;
-
   const now = new Date().toISOString();
   const newRecord = {
-    id: newId,
-    ma_chuyen: data.ma_chuyen,
-    ngay_di: data.ngay_di || new Date().toISOString().split('T')[0],
-    ngay_ha_hang: data.ngay_ha_hang || '',
-    trang_thai: data.trang_thai || TRANG_THAI_LICH_VAN_CHUYEN.TAM_THOI,
-    ma_khach_hang: data.ma_khach_hang || '',
-    diem_di: data.diem_di || '',
+    id: nextLichVanChuyenId++,
+    ma_chuyen_xe,
+    thoi_gian_bat_dau_ke_hoach,
+    thoi_gian_ket_thuc_ke_hoach: data.thoi_gian_ket_thuc_ke_hoach || null,
+    thoi_gian_bat_dau_thuc_te: data.thoi_gian_bat_dau_thuc_te || null,
+    thoi_gian_ket_thuc_thuc_te: data.thoi_gian_ket_thuc_thuc_te || null,
+    trang_thai: data.trang_thai || TRANG_THAI_LICH_VAN_CHUYEN.CHUA_BAT_DAU,
+    diem_xuat_phat: data.diem_xuat_phat || '',
     diem_den: data.diem_den || '',
-    bien_so_dau_keo: data.bien_so_dau_keo || '',
-    ma_so_cont: data.ma_so_cont || '',
-    ma_nv_giao_nhan: data.ma_nv_giao_nhan || '',
-    ma_nv_lai_xe: data.ma_nv_lai_xe || '',
     ghi_chu: data.ghi_chu || '',
-    km_hang: data.km_hang || 0,
-    km_vo: data.km_vo || 0,
-    l_dau: data.l_dau || 0,
-    vnd_dau: data.vnd_dau || 0,
-    vnd_di_duong: data.vnd_di_duong || 0,
+    id_phuong_tien,
+    id_tai_xe_chinh,
+    id_tai_xe_phu: data.id_tai_xe_phu || null,
+    id_container_1: data.id_container_1 || null,
+    id_container_2: data.id_container_2 || null,
     createdAt: now,
     updatedAt: now,
   };
@@ -158,22 +147,17 @@ export const createLichVanChuyen = async data => {
   return newRecord;
 };
 
-/**
- * Update an existing transport schedule
- * @param {number} id - The ID of the transport schedule to update
- * @param {Object} updates - The fields to update
- * @returns {Promise<Object|null>} The updated transport schedule or null if not found
- */
 export const updateLichVanChuyen = async (id, updates) => {
-  const index = lichVanChuyenData.findIndex(item => item.id === id);
+  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+  const index = lichVanChuyenData.findIndex(item => item.id === numericId);
   if (index === -1) return null;
 
-  const { ma_chuyen: newMaChuyen } = updates;
+  const { ma_chuyen_xe: newMaChuyenXe } = updates;
   if (
-    newMaChuyen &&
-    lichVanChuyenData.some(item => item.ma_chuyen === newMaChuyen && item.id !== id)
+    newMaChuyenXe &&
+    lichVanChuyenData.some(item => item.ma_chuyen_xe === newMaChuyenXe && item.id !== numericId)
   ) {
-    throw new Error('Mã chuyến đã tồn tại');
+    throw new Error('Mã chuyến xe đã tồn tại cho một lịch khác.');
   }
 
   if (
@@ -195,35 +179,61 @@ export const updateLichVanChuyen = async (id, updates) => {
   return updatedRecord;
 };
 
-/**
- * Delete a transport schedule
- * @param {number} id - The ID of the transport schedule to delete
- * @returns {Promise<boolean>} True if deleted, false if not found
- */
 export const deleteLichVanChuyen = async id => {
-  const index = lichVanChuyenData.findIndex(item => item.id === id);
+  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+  const index = lichVanChuyenData.findIndex(item => item.id === numericId);
   if (index === -1) return false;
-
   lichVanChuyenData.splice(index, 1);
   return true;
 };
 
-/**
- * Reset the transport schedule data (for testing)
- * @param {Array} [data=[]] - Optional data to reset with
- * @returns {Array} The current transport schedule data
- */
-export const _resetLichVanChuyen = (data = []) => {
-  lichVanChuyenData = [...data];
-  return lichVanChuyenData;
+export const _resetLichVanChuyen = (
+  data = [],
+  phuongTienIds = [1, 2, 3],
+  taiXeIds = [4, 5, 8],
+  containerIds = [1, 2, 3, 4, 5]
+) => {
+  lichVanChuyenData = [];
+  nextLichVanChuyenId = 1;
+  if (data && data.length > 0) {
+    // If specific data is provided, use it directly, ensuring IDs are managed
+    data.forEach(item => {
+      const newItem = { ...item };
+      if (!newItem.id || lichVanChuyenData.some(lvc => lvc.id === newItem.id)) {
+        newItem.id = nextLichVanChuyenId++;
+      } else {
+        if (newItem.id >= nextLichVanChuyenId) nextLichVanChuyenId = newItem.id + 1;
+      }
+      lichVanChuyenData.push(newItem);
+    });
+  } else {
+    // Otherwise, generate sample data
+    lichVanChuyenData = generateSampleLichVanChuyen(15, phuongTienIds, taiXeIds, containerIds);
+  }
+  // Ensure nextId is correctly set after any manual data load
+  if (lichVanChuyenData.length > 0) {
+    nextLichVanChuyenId = Math.max(...lichVanChuyenData.map(item => item.id)) + 1;
+  } else {
+    nextLichVanChuyenId = 1;
+  }
+  return [...lichVanChuyenData];
 };
 
-// Check for duplicate ma_chuyen in seed data
-const initialMaChuyen = lichVanChuyenData.map(c => c.ma_chuyen);
-const duplicateMaChuyen = initialMaChuyen.filter(
-  (item, index) => initialMaChuyen.indexOf(item) !== index
+// Initial check for duplicate ma_chuyen_xe in seed data
+const initialMaChuyenXe = lichVanChuyenData.map(c => c.ma_chuyen_xe);
+const duplicateMaChuyenXe = initialMaChuyenXe.filter(
+  (item, index) => initialMaChuyenXe.indexOf(item) !== index
 );
+if (duplicateMaChuyenXe.length > 0) {
+  console.error(
+    'CRITICAL: Duplicate ma_chuyen_xe found in initial lichVanChuyenData:',
+    duplicateMaChuyenXe
+  );
+}
 
-if (duplicateMaChuyen.length > 0) {
-  console.warn('Duplicate ma_chuyen values found in lichVanChuyen data:', duplicateMaChuyen);
+// Initial check for duplicate IDs in seed data
+const initialIds = lichVanChuyenData.map(c => c.id);
+const duplicateIds = initialIds.filter((item, index) => initialIds.indexOf(item) !== index);
+if (duplicateIds.length > 0) {
+  console.error('CRITICAL: Duplicate IDs found in initial lichVanChuyenData:', duplicateIds);
 }

@@ -271,7 +271,9 @@ const StandardTable = ({
                         align={column.align || (column.numeric ? 'right' : 'left')}
                         sx={{
                           fontFamily: column.numeric ? 'monospace' : 'inherit',
-                          color: column.getColor ? column.getColor(row[column.key], row) : 'inherit',
+                          color: column.getColor
+                            ? column.getColor(row[column.key], row)
+                            : 'inherit',
                           fontWeight: column.fontWeight || 'inherit',
                           maxWidth: column.maxWidth,
                           whiteSpace: column.noWrap ? 'nowrap' : 'normal',

@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Dialog,
-  DialogContent,
-  IconButton,
-  Typography,
-  useTheme
-} from '@mui/material';
+import { Box, Dialog, DialogContent, IconButton, Typography, useTheme } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 const HelpDialog = ({ helpContent, markdownPath }) => {
@@ -16,23 +9,25 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
   const theme = useTheme();
 
   // Simple markdown parser for basic formatting
-  const parseMarkdown = (text) => {
+  const parseMarkdown = text => {
     if (!text) return '';
-    
-    return text
-      // Headers
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      // Bold
-      .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-      // Italic
-      .replace(/\*(.*)\*/gim, '<em>$1</em>')
-      // Line breaks
-      .replace(/\n/gim, '<br/>');
+
+    return (
+      text
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        // Bold
+        .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+        // Italic
+        .replace(/\*(.*)\*/gim, '<em>$1</em>')
+        // Line breaks
+        .replace(/\n/gim, '<br/>')
+    );
   };
 
-  const loadMarkdownContent = async (path) => {
+  const loadMarkdownContent = async path => {
     try {
       setLoading(true);
       const response = await fetch(path);
@@ -68,9 +63,9 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
   const renderContent = () => {
     if (loading) {
       return (
-        <Typography 
-          variant="body1" 
-          sx={{ 
+        <Typography
+          variant="body1"
+          sx={{
             color: theme.palette.text.secondary,
             textAlign: 'center',
             fontStyle: 'italic',
@@ -84,9 +79,9 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
     if (markdownPath) {
       // Render parsed markdown
       return (
-        <Typography 
-          variant="body1" 
-          sx={{ 
+        <Typography
+          variant="body1"
+          sx={{
             color: theme.palette.text.primary,
             lineHeight: 1.6,
             '& h1, & h2, & h3': {
@@ -105,9 +100,9 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
     } else {
       // Render plain text
       return (
-        <Typography 
-          variant="body1" 
-          sx={{ 
+        <Typography
+          variant="body1"
+          sx={{
             color: theme.palette.text.primary,
             textAlign: 'center',
             lineHeight: 1.6,
@@ -148,9 +143,7 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
           },
         }}
       >
-        <DialogContent sx={{ p: 3 }}>
-          {renderContent()}
-        </DialogContent>
+        <DialogContent sx={{ p: 3 }}>{renderContent()}</DialogContent>
       </Dialog>
     </>
   );

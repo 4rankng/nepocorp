@@ -25,8 +25,8 @@ export const fetchLichVanChuyenById = id => {
   return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenById(id));
 };
 
-export const fetchLichVanChuyenByMaChuyen = maChuyen => {
-  return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenByMaChuyen(maChuyen));
+export const fetchLichVanChuyenByMaChuyenXe = maChuyenXe => {
+  return simulateApiCall(() => lichVanChuyenDataService.getLichVanChuyenByMaChuyenXe(maChuyenXe));
 };
 
 export const addLichVanChuyen = data => {

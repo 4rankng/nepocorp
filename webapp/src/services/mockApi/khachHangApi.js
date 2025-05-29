@@ -20,7 +20,7 @@ const simulateApiCall = fn => {
 export const fetchAllKhachHang = () => {
   return simulateApiCall(async () => {
     const allCustomers = await khachHangDataService.getAllKhachHang();
-    return allCustomers; // Ensure this line is changed
+    return { data: allCustomers };
   });
 };
 
