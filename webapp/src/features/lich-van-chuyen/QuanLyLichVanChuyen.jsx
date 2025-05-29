@@ -146,6 +146,13 @@ const QuanLyLichVanChuyen = () => {
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]);
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('ngayDi');
+  
+  // Handle request to sort a column
+  const handleRequestSort = (event, property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
   const [lichVanChuyenItems, setLichVanChuyenItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -165,8 +172,12 @@ const QuanLyLichVanChuyen = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [expandedCard, setExpandedCard] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedShipment, setSelectedShipment] = useState(null);
+  
+  // Handle search input changes
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
   const mapLichVanChuyenToFormData = item => {
     if (!item) return initialFormState;
     return {
@@ -209,14 +220,6 @@ const QuanLyLichVanChuyen = () => {
       ]);
       // Extract the actual customer list from the response object
       const actualKhachHangList = khachHangList?.data || [];
-      console.log('Raw data from APIs:', {
-        lichVanChuyenList: lichVanChuyenList?.length || 0,
-        nhanVienList: nhanVienList?.length || 0,
-        containerList: containerList?.length || 0,
-        khachHangList: actualKhachHangList?.length || 0,
-        dauKeoList: dauKeoList?.length || 0,
-        roMoocList: roMoocList?.length || 0,
-      });
       // Log the first item to see its exact structure
       if (lichVanChuyenList && lichVanChuyenList.length > 0) {
       }
@@ -403,6 +406,15 @@ const QuanLyLichVanChuyen = () => {
     () => createLichVanChuyenColumns(selectOptions, theme),
     [selectOptions.khachHang, selectOptions.nhanVien, theme]
   );
+
+  // Sort the filtered shipment plans
+  const sortedShipmentPlans = React.useMemo(() => {
+    return stableSort(
+      filteredLichVanChuyenItems,
+      getComparator(order, orderBy, columns)
+    );
+  }, [filteredLichVanChuyenItems, order, orderBy, columns]);
+
   // Reset form and stepper for mobile
   const resetForm = () => {
     setFormData(initialFormState);
@@ -493,26 +505,15 @@ const QuanLyLichVanChuyen = () => {
       ) : (
         <DesktopView
           searchTerm={searchTerm}
-          onSearchTermChange={e => setSearchTerm(e.target.value)}
+          onSearchTermChange={handleSearchChange}
           columns={columns}
-          shipmentPlans={stableSort(
-            filteredLichVanChuyenItems,
-            getComparator(order, orderBy, columns)
-          )}
+          shipmentPlans={sortedShipmentPlans}
           isLoading={isLoading}
           onAdd={handleOpenModalForAdd}
           canAddPlan={canAddPlan}
-          onItemClick={row => {
-            setSelectedShipment(row.original);
-            setIsDetailModalOpen(true);
-          }}
           order={order}
           orderBy={orderBy}
-          onRequestSort={(event, property) => {
-            const isAsc = orderBy === property && order === 'asc';
-            setOrder(isAsc ? 'desc' : 'asc');
-            setOrderBy(property);
-          }}
+          onRequestSort={handleRequestSort}
           renderActions={row => (
             <>
               <EditButton
@@ -583,57 +584,13 @@ const QuanLyLichVanChuyen = () => {
           onClose={handleCloseModal}
           editing={!!editingItem}
           formData={formData}
-          onFormChange={handleInputChange} // Assuming handleInputChange exists
+          onFormChange={handleInputChange}
           onSubmit={handleSave}
           isLoading={isLoading}
           error={error}
           selectOptions={selectOptions}
         />
       )}
-      {/* Confirmation Modal for delete - This should be outside the main mobile/desktop view ternary */}
-      {/* Shipment Detail Modal */}
-      <Dialog
-        open={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Chi Tiết Chuyến Hàng</DialogTitle>
-        <DialogContent>
-          {selectedShipment && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Mã chuyến:</strong> {selectedShipment.ma_chuyen}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Ngày đi:</strong> {selectedShipment.ngayDi}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Ngày hạ hàng:</strong>{' '}
-                {selectedShipment.ngayHaHangDisplay || 'Chưa cập nhật'}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Khách hàng:</strong> {selectedShipment.khachHang}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Biển số xe:</strong> {selectedShipment.bienSoXe}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Tuyến đường:</strong> {selectedShipment.tuyenDuongDisplay}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Trạng thái:</strong> {getDisplayTrangThai(selectedShipment.trang_thai)}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Ghi chú:</strong> {selectedShipment.ghi_chu || 'Không có ghi chú'}
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsDetailModalOpen(false)}>Đóng</Button>
-        </DialogActions>
-      </Dialog>
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={handleDeleteCancel}
