@@ -57,33 +57,39 @@ import {
 import useLichVanChuyen from '@features/lich-van-chuyen/hooks/useLichVanChuyen';
 
 const initialFormState = {
-  id: null, // Add id for consistency, will be populated on edit
+  id: null,
   ma_chuyen: '',
-  ngay_van_chuyen: new Date().toISOString().split('T')[0],
-  trang_thai: 'chua_thuc_hien',
-  khach_hang_id: '',
-  diem_xuat_phat: '',
-  diem_tra_hang: '',
-  bien_so_xe_id: '',
-  container_id: '',
-  nhan_vien_giao_nhan_id: '',
-  nhan_vien_lai_xe_id: '',
-  ghi_chu: '',
+  ngay_di: new Date().toISOString().split('T')[0],
   ngay_ha_hang: new Date().toISOString().split('T')[0],
-  tong_chi_phi: 0,
-  cuoc_van_chuyen: 0,
-  // Note: This structure is based on the lichVanChuyenApi.
-  // UI forms will need significant updates to match these fields.
+  trang_thai: 'len_lich',
+  ma_khach_hang: '',
+  diem_di: '',
+  diem_den: '',
+  cuoc_van_chuyen_vnd: 0,
+  cuoc_thue_van_chuyen_vnd: 0,
+  bien_so_dau_keo: '',
+  ma_so_cont: '',
+  ma_nv_giao_nhan: '',
+  ma_nv_lai_xe: '',
+  ghi_chu: '',
+  km_hang: 0,
+  km_vo: 0,
+  l_dau: 0,
+  vnd_dau: 0,
+  vnd_di_duong: 0,
+  vnd_chi_phi: 0,
+  createdAt: '',
+  updatedAt: '',
 };
 
 // Helper functions moved to ./utils/lichVanChuyenUtils.js
 
-// Function to handle descending comparator
-function descendingComparator(
-  /** @type {any} */ a,
-  /** @type {any} */ b,
-  /** @type {any} */ orderBy
-) {
+/**
+ * @param {any} a
+ * @param {any} b
+ * @param {any} orderBy
+ */
+function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -93,38 +99,42 @@ function descendingComparator(
   return 0;
 }
 
-// Function to get comparator for sorting
-function getComparator(
-  /** @type {any} */ order,
-  /** @type {any} */ orderBy,
-  /** @type {any} */ columns
-) {
+/**
+ * @param {any} order
+ * @param {any} orderBy
+ * @param {any} columns
+ */
+function getComparator(order, orderBy, columns) {
   return order === 'desc'
-    ? (a, b) => {
-        /** @type {any} */ const column = columns?.find(col => col.id === orderBy);
+    ? (
+        /** @type {any} */ a,
+        /** @type {any} */ b
+      ) => {
+        /** @type {any} */ const column = columns?.find(
+          /** @type {any} */ col => col.id === orderBy
+        );
         /** @type {any} */ const aValue = column?.sortValue
           ? column.sortValue(a[orderBy] ?? '')
-          : (a[orderBy] ?? '');
+          : a[orderBy];
         /** @type {any} */ const bValue = column?.sortValue
           ? column.sortValue(b[orderBy] ?? '')
-          : (b[orderBy] ?? '');
-
-        if (bValue < aValue) return -1;
-        if (bValue > aValue) return 1;
-        return 0;
+          : b[orderBy];
+        return descendingComparator(aValue, bValue, orderBy);
       }
-    : (a, b) => {
-        /** @type {any} */ const column = columns?.find(col => col.id === orderBy);
+    : (
+        /** @type {any} */ a,
+        /** @type {any} */ b
+      ) => {
+        /** @type {any} */ const column = columns?.find(
+          /** @type {any} */ col => col.id === orderBy
+        );
         /** @type {any} */ const aValue = column?.sortValue
           ? column.sortValue(a[orderBy] ?? '')
-          : (a[orderBy] ?? '');
+          : a[orderBy];
         /** @type {any} */ const bValue = column?.sortValue
           ? column.sortValue(b[orderBy] ?? '')
-          : (b[orderBy] ?? '');
-
-        if (aValue < bValue) return -1;
-        if (aValue > bValue) return 1;
-        return 0;
+          : b[orderBy];
+        return -descendingComparator(aValue, bValue, orderBy);
       };
 }
 
@@ -138,6 +148,8 @@ function stableSort(/** @type {any[]} */ array, /** @type {any} */ comparator) {
   });
   return stabilizedThis.map(el => el[0]);
 }
+
+// --- Remove mapping function for table rows ---
 
 const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
@@ -188,27 +200,33 @@ const QuanLyLichVanChuyen = () => {
   const [expandedCard, setExpandedCard] = useState(null);
   // const [isFormExpanded, setIsFormExpanded] = useState(!isMobile); // Unused variable
 
+  // eslint-disable-next-line
   const mapLichVanChuyenToFormData = item => {
     if (!item) return initialFormState;
     return {
-      id: item.id || '', // Keep id for editing
+      id: item.id || '',
       ma_chuyen: item.ma_chuyen || '',
-      ngay_van_chuyen: item.ngay_di || '', // Use ngay_di as the source of truth
-      trang_thai: item.trang_thai || 'tam_thoi',
-      khach_hang_id: item.ma_khach_hang || '',
-      diem_xuat_phat: item.diem_di || '',
-      diem_tra_hang: item.diem_den || '',
-      bien_so_xe_id: item.bien_so_dau_keo || '',
-      container_id: item.ma_so_cont || '',
-      nhan_vien_giao_nhan_id: item.ma_nv_giao_nhan || '',
-      nhan_vien_lai_xe_id: item.ma_nv_lai_xe || '',
-      ghi_chu: item.ghi_chu || '',
+      ngay_di: item.ngay_di || '',
       ngay_ha_hang: item.ngay_ha_hang || '',
-      tong_chi_phi: item.vnd_dau || item.tong_chi_phi || 0,
-      cuoc_van_chuyen: item.vnd_di_duong || item.cuoc_van_chuyen || 0,
+      trang_thai: item.trang_thai || 'len_lich',
+      ma_khach_hang: item.ma_khach_hang || '',
+      diem_di: item.diem_di || '',
+      diem_den: item.diem_den || '',
+      cuoc_van_chuyen_vnd: item.cuoc_van_chuyen_vnd || 0,
+      cuoc_thue_van_chuyen_vnd: item.cuoc_thue_van_chuyen_vnd || 0,
+      bien_so_dau_keo: item.bien_so_dau_keo || '',
+      ma_so_cont: item.ma_so_cont || '',
+      ma_nv_giao_nhan: item.ma_nv_giao_nhan || '',
+      ma_nv_lai_xe: item.ma_nv_lai_xe || '',
+      ghi_chu: item.ghi_chu || '',
       km_hang: item.km_hang || 0,
       km_vo: item.km_vo || 0,
       l_dau: item.l_dau || 0,
+      vnd_dau: item.vnd_dau || 0,
+      vnd_di_duong: item.vnd_di_duong || 0,
+      vnd_chi_phi: item.vnd_chi_phi || 0,
+      createdAt: item.createdAt || '',
+      updatedAt: item.updatedAt || '',
     };
   };
 
@@ -217,7 +235,7 @@ const QuanLyLichVanChuyen = () => {
     setIsLoading(true);
     setError('');
     try {
-      const [dauKeoList, roMoocList, customersList, employeesList, containersList] =
+      const [dauKeoList, roMoocList, customersResult, employeesResult, containersResult] =
         await Promise.all([
           fetchAllDauKeo(),
           fetchAllRoMooc(),
@@ -225,7 +243,21 @@ const QuanLyLichVanChuyen = () => {
           fetchAllNhanVien(),
           fetchAllContainer(),
         ]);
+      const customersList = customersResult.data || [];
+      const employeesList = employeesResult.data || [];
+      const containersList = containersResult.data || [];
+      console.log('Fetched dauKeoList:', dauKeoList);
+      console.log('Fetched roMoocList:', roMoocList);
+      console.log('Fetched customersList:', customersList);
+      console.log('Fetched employeesList:', employeesList);
+      console.log('Fetched containersList:', containersList);
       setSelectOptions({
+        vehicles: formatVehiclesForSelect(dauKeoList, roMoocList),
+        customers: formatCustomersForSelect(customersList),
+        employees: formatEmployeesForSelect(employeesList),
+        containers: formatContainersForSelect(containersList),
+      });
+      console.log('Set selectOptions:', {
         vehicles: formatVehiclesForSelect(dauKeoList, roMoocList),
         customers: formatCustomersForSelect(customersList),
         employees: formatEmployeesForSelect(employeesList),
@@ -243,7 +275,7 @@ const QuanLyLichVanChuyen = () => {
     fetchSelectOptions();
   }, [fetchSelectOptions]);
 
-  const handleInputChange = (/** @type {any} */ e) => {
+  const handleInputChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
@@ -252,16 +284,17 @@ const QuanLyLichVanChuyen = () => {
     setEditingItem(null);
     setFormData({
       ...initialFormState,
-      ngay_van_chuyen: new Date().toISOString().split('T')[0],
+      ngay_di: new Date().toISOString().split('T')[0],
+      ngay_ha_hang: new Date().toISOString().split('T')[0],
     });
     setIsModalOpen(true);
     clearLichVanChuyenError();
     setError('');
   };
 
-  const handleOpenModalForEdit = (/** @type {any} */ item) => {
+  const handleOpenModalForEdit = item => {
     setEditingItem(item);
-    setFormData({ ...item });
+    setFormData(mapLichVanChuyenToFormData(item));
     setIsModalOpen(true);
     clearLichVanChuyenError();
     setError('');
@@ -300,8 +333,8 @@ const QuanLyLichVanChuyen = () => {
     try {
       if (
         !formData.ma_chuyen ||
-        !formData.ngay_van_chuyen ||
-        !formData.khach_hang_id ||
+        !formData.ngay_di ||
+        !formData.ma_khach_hang ||
         !formData.trang_thai
       ) {
         setError('Mã chuyến, Ngày vận chuyển, Khách hàng, và Trạng thái là bắt buộc.');
@@ -327,7 +360,7 @@ const QuanLyLichVanChuyen = () => {
     }
   };
 
-  const handleDeleteConfirmation = (/** @type {any} */ item) => {
+  const handleDeleteConfirmation = item => {
     setItemToDelete(item);
     setIsDeleteModalOpen(true);
     clearLichVanChuyenError();
@@ -391,22 +424,23 @@ const QuanLyLichVanChuyen = () => {
   };
 
   // Filter functions for mobile search
-  const filteredLichVanChuyenItems = React.useMemo(() => {
-    return lichVanChuyenItems.filter((/** @type {any} */ item) => {
-      try {
-        if (!item) return false;
-        const matchesSearch =
-          !searchTerm ||
-          (item.ma_chuyen && item.ma_chuyen.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
-        return matchesSearch && matchesStatus;
-      } catch (error) {
-        console.error('Error filtering item:', error, 'Item:', item);
-        return false;
-      }
-    });
-  }, [lichVanChuyenItems, searchTerm, filterStatus]);
+  // const filteredLichVanChuyenItems = React.useMemo(() => {
+  //   return lichVanChuyenItems.filter((/** @type {any} */ item) => {
+  //     try {
+  //       if (!item) return false;
+  //       const matchesSearch =
+  //         !searchTerm ||
+  //         (item.ma_chuyen && item.ma_chuyen.toLowerCase().includes(searchTerm.toLowerCase())) ||
+  //         (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
+  //       const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
+  //       return matchesSearch && matchesStatus;
+  //     } catch (error) {
+  //       console.error('Error filtering item:', error, 'Item:', item);
+  //       return false;
+  //     }
+  //   });
+  // }, [lichVanChuyenItems, searchTerm, filterStatus]);
+  const filteredLichVanChuyenItems = lichVanChuyenItems;
 
   // Handle form submission for mobile stepper
   // This handleSubmit is called by MobileShipmentFormStepper via onSave prop
@@ -414,197 +448,41 @@ const QuanLyLichVanChuyen = () => {
     handleSave();
   };
 
-  // Define table columns for DesktopView
-  // This 'columns' definition was from an older version or a merge artifact.
-  // The correct one is defined later and used by DesktopView.
-  // Removing this older definition to avoid confusion.
-  // The old block has been removed.
-
   // Define columns for DesktopView StandardTable
   const columns = [
-    {
-      id: 'ngayDi',
-      header: 'Ngày Đi',
-      width: '7%',
-      sortable: true,
-      sortValue: value => value || '',
-    },
+    { id: 'maChuyen', header: 'Mã chuyến', align: 'left', width: '8%', sortable: true },
+    { id: 'ngayDi', header: 'Ngày đi', align: 'center', width: '8%', sortable: true },
     {
       id: 'ngayHaHangDisplay',
-      header: 'Ngày Hạ Hàng',
-      width: '7%',
-      sortable: true,
-      sortValue: value => value || '',
-    },
-    {
-      id: 'bienSoXe',
-      header: 'Xe Vận Chuyển',
-      width: '10%',
-      sortable: true,
-      sortValue: value => value || '',
-      render: value => (
-        <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
-          {value || 'N/A'}
-        </Box>
-      ),
-    },
-    {
-      id: 'dienGiai',
-      header: 'Diễn Giải',
-      width: '15%',
-      sortable: true,
-      sortValue: value => value || '',
-    },
-    {
-      id: 'tuyenDuongDisplay',
-      header: 'Tuyến Đường',
-      width: '20%',
-      sortable: true,
-      sortValue: value => {
-        if (!value) return '';
-        if (typeof value === 'string') return value;
-        return `${value.diemDi || ''} ${value.diemDen || ''}`.trim();
-      },
-      render: value => {
-        // Handle both old string format and new object format for backward compatibility
-        const diemDi = value?.diemDi || (typeof value === 'string' ? value.split(' → ')[0] : 'N/A');
-        const diemDen =
-          value?.diemDen || (typeof value === 'string' ? value.split(' → ')[1] : 'N/A');
-
-        return (
-          <Box
-            component="span"
-            sx={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}
-          >
-            <Box
-              component="span"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 500,
-                whiteSpace: 'normal',
-                wordBreak: 'break-word',
-                fontSize: '0.875rem',
-                lineHeight: 1.5,
-                display: 'inline',
-              }}
-            >
-              {diemDi}
-            </Box>
-            <Box
-              component="span"
-              sx={{
-                color: 'text.secondary',
-                mx: 0.5,
-                lineHeight: 1.5,
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
-            >
-              →
-            </Box>
-            <Box
-              component="span"
-              sx={{
-                color: 'secondary.main',
-                fontWeight: 500,
-                whiteSpace: 'normal',
-                wordBreak: 'break-word',
-                fontSize: '0.875rem',
-                lineHeight: 1.5,
-                display: 'inline',
-              }}
-            >
-              {diemDen}
-            </Box>
-          </Box>
-        );
-      },
-    },
-    {
-      id: 'tongChiPhiDisplay',
-      header: 'Tổng Chi Phí',
-      align: 'right',
-      width: '12%',
-      sortable: true,
-      sortValue: value => {
-        // Extract numeric value from formatted currency
-        return value ? parseFloat(value.replace(/[^0-9.-]+/g, '')) || 0 : 0;
-      },
-    },
-    {
-      id: 'cuocVanChuyenDisplay',
-      header: 'Cước Vận Chuyển',
-      align: 'right',
-      width: '12%',
-      sortable: true,
-      sortValue: value => {
-        // Extract numeric value from formatted currency
-        return value ? parseFloat(value.replace(/[^0-9.-]+/g, '')) || 0 : 0;
-      },
-    },
-    {
-      id: 'loiNhuanGopDisplay',
-      header: 'Lợi Nhuận Gộp',
-      align: 'right',
-      width: '12%',
-      sortable: true,
-      sortValue: value => {
-        // Extract numeric value from formatted currency
-        return value ? parseFloat(value.replace(/[^0-9.-]+/g, '')) || 0 : 0;
-      },
-    },
-    {
-      id: 'trang_thai',
-      header: 'Trạng Thái',
+      header: 'Ngày hạ hàng',
+      align: 'center',
       width: '8%',
       sortable: true,
-      sortValue: value => getDisplayTrangThai(value),
-      render: value => (
-        <Chip
-          label={getDisplayTrangThai(value)}
-          size="small"
-          sx={{
-            backgroundColor: `${getStatusColor(value)}20`,
-            color: getStatusColor(value),
-            fontWeight: 500,
-            minWidth: '90px !important',
-            borderRadius: '4px',
-            justifyContent: 'center',
-          }}
-        />
-      ),
+    },
+    { id: 'trang_thai', header: 'Trạng thái', align: 'center', width: '8%', sortable: true },
+    { id: 'khachHang', header: 'Khách hàng', align: 'left', width: '10%', sortable: true },
+    { id: 'diemDi', header: 'Điểm đi', align: 'left', width: '10%', sortable: true },
+    { id: 'diemDen', header: 'Điểm đến', align: 'left', width: '10%', sortable: true },
+    {
+      id: 'cuocVanChuyenDisplay',
+      header: 'Cước vận chuyển',
+      align: 'right',
+      width: '10%',
+      sortable: true,
     },
     {
-      id: 'actions',
-      header: 'Thao Tác',
-      align: 'center',
-      width: '7%',
-      sortable: false,
-      render: (_, row) => {
-        const originalItem = lichVanChuyenItems.find(item => item.id === row.id) || row;
-        return (
-          <Box
-            sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}
-            onClick={e => e.stopPropagation()} // Stop event propagation here
-          >
-            <EditButton
-              size="small"
-              onClick={e => {
-                e.stopPropagation();
-                handleOpenModalForEdit(originalItem);
-              }}
-            />
-            <DeleteButton
-              size="small"
-              onClick={e => {
-                e.stopPropagation();
-                handleDeleteConfirmation(originalItem);
-              }}
-            />
-          </Box>
-        );
-      },
+      id: 'cuocThueVanChuyenDisplay',
+      header: 'Cước thuê VC',
+      align: 'right',
+      width: '10%',
+      sortable: true,
     },
+    { id: 'bienSoDauKeo', header: 'Biển số đầu kéo', align: 'center', width: '8%', sortable: true },
+    { id: 'maSoCont', header: 'Mã số Cont', align: 'center', width: '8%', sortable: true },
+    { id: 'giaoNhan', header: 'Giao nhận', align: 'left', width: '10%', sortable: true },
+    { id: 'laiXe', header: 'Lái xe', align: 'left', width: '10%', sortable: true },
+    { id: 'ghi_chu', header: 'Ghi chú', align: 'left', width: '12%', sortable: false },
+    { id: 'vndChiPhi', header: 'Tổng Chi Phí', align: 'right', width: '10%', sortable: true },
   ];
 
   // Reset form and stepper for mobile
@@ -644,6 +522,12 @@ const QuanLyLichVanChuyen = () => {
   const handleCloseModalMobile = () => {
     handleCloseModal();
   };
+
+  // In DesktopView, use lichVanChuyenItems directly for shipmentPlans
+  const mappedTableData = stableSort(
+    filteredLichVanChuyenItems,
+    getComparator(order, orderBy, columns)
+  );
 
   return (
     <Box
@@ -709,10 +593,7 @@ const QuanLyLichVanChuyen = () => {
           searchTerm={searchTerm}
           onSearchTermChange={e => setSearchTerm(e.target.value)}
           columns={columns}
-          shipmentPlans={stableSort(
-            filteredLichVanChuyenItems,
-            getComparator(order, orderBy, columns)
-          )}
+          shipmentPlans={mappedTableData}
           isLoading={isLoading}
           onAdd={handleOpenModalForAdd}
           canAddPlan={canAddPlan}
@@ -799,7 +680,7 @@ const QuanLyLichVanChuyen = () => {
           {selectedShipment && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                <strong>Mã chuyến:</strong> {selectedShipment.ma_chuyen}
+                <strong>Mã chuyến:</strong> {selectedShipment.maChuyen}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
                 <strong>Ngày đi:</strong> {selectedShipment.ngayDi}
@@ -809,13 +690,15 @@ const QuanLyLichVanChuyen = () => {
                 {selectedShipment.ngayHaHangDisplay || 'Chưa cập nhật'}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
-                <strong>Khách hàng:</strong> {selectedShipment.khachHang}
+                <strong>Khách hàng:</strong>{' '}
+                {selectOptions.customers.find(c => c.value === selectedShipment.khachHang)?.label ||
+                  selectedShipment.khachHang}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
-                <strong>Biển số xe:</strong> {selectedShipment.bienSoXe}
+                <strong>Biển số xe:</strong> {selectedShipment.bienSoDauKeo}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
-                <strong>Tuyến đường:</strong> {selectedShipment.tuyenDuongDisplay}
+                <strong>Tuyến đường:</strong> {selectedShipment.diemDi} - {selectedShipment.diemDen}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
                 <strong>Trạng thái:</strong> {getDisplayTrangThai(selectedShipment.trang_thai)}

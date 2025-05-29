@@ -8,177 +8,146 @@ export const TRANG_THAI_LICH_VAN_CHUYEN = {
   HUY_BO: 'huy_bo',
 };
 
-let lichVanChuyenData = [];
-let nextLichVanChuyenId = 1;
+let lichVanChuyenData = [
+  {
+    id: 1,
+    ma_chuyen: 'MC001',
+    ngay_di: '2024-05-28',
+    ngay_ha_hang: '2024-05-28',
+    trang_thai: 'len_lich',
+    ma_khach_hang: 'KH001',
+    diem_di: 'Kho Nepocorp, Hà Nội',
+    diem_den: 'Cảng Hải Phòng; Cảng Quảng Ninh',
+    cuoc_van_chuyen_vnd: 1222333,
+    cuoc_thue_van_chuyen_vnd: 1000333,
+    bien_so_dau_keo: '15C-11223',
+    ma_so_cont: '20DC',
+    ma_nv_giao_nhan: 'NV003',
+    ma_nv_lai_xe: 'NV004',
+    ghi_chu: 'Hàng dễ vỡ, xin nhẹ tay.',
+    km_hang: 50.12,
+    km_vo: 23.34,
+    l_dau: 2.96,
+    vnd_dau: 5123001,
+    vnd_di_duong: 1222333,
+    vnd_chi_phi: 6345334,
+    createdAt: '2024-05-27T10:00:00Z',
+    updatedAt: '2024-05-27T10:00:00Z',
+  },
+  {
+    id: 2,
+    ma_chuyen: 'MC002',
+    ngay_di: '2024-05-29',
+    ngay_ha_hang: '2024-05-29',
+    trang_thai: 'hoan_thanh',
+    ma_khach_hang: 'KH002',
+    diem_di: 'Kho Nepocorp, Hải Phòng',
+    diem_den: 'Cảng Đà Nẵng',
+    cuoc_van_chuyen_vnd: 2000000,
+    cuoc_thue_van_chuyen_vnd: 1500000,
+    bien_so_dau_keo: '16C-22334',
+    ma_so_cont: '40HC',
+    ma_nv_giao_nhan: 'NV005',
+    ma_nv_lai_xe: 'NV006',
+    ghi_chu: 'Giao hàng trước 12h.',
+    km_hang: 120.5,
+    km_vo: 60.0,
+    l_dau: 5.5,
+    vnd_dau: 800000,
+    vnd_di_duong: 2000000,
+    vnd_chi_phi: 2800000,
+    createdAt: '2024-05-28T09:00:00Z',
+    updatedAt: '2024-05-28T09:00:00Z',
+  },
+  {
+    id: 3,
+    ma_chuyen: 'MC003',
+    ngay_di: '2024-05-30',
+    ngay_ha_hang: '2024-05-31',
+    trang_thai: 'huy_bo',
+    ma_khach_hang: 'KH003',
+    diem_di: 'Kho Nepocorp, Đà Nẵng',
+    diem_den: 'Cảng Sài Gòn',
+    cuoc_van_chuyen_vnd: 3000000,
+    cuoc_thue_van_chuyen_vnd: 2500000,
+    bien_so_dau_keo: '17C-33445',
+    ma_so_cont: '45RF',
+    ma_nv_giao_nhan: 'NV007',
+    ma_nv_lai_xe: 'NV008',
+    ghi_chu: 'Khách hủy chuyến.',
+    km_hang: 200.0,
+    km_vo: 100.0,
+    l_dau: 10.0,
+    vnd_dau: 1200000,
+    vnd_di_duong: 3000000,
+    vnd_chi_phi: 4200000,
+    createdAt: '2024-05-29T08:00:00Z',
+    updatedAt: '2024-05-29T08:00:00Z',
+  },
+];
+let nextLichVanChuyenId = 4;
 
 /**
- * Generate sample transport schedule data based on the new schema.
- * @param {number} count - Number of sample records to generate.
- * @param {Array} phuongTienIds - Array of available PhuongTien IDs.
- * @param {Array} taiXeIds - Array of available TaiXe (NhanVien) IDs.
- * @param {Array} containerIds - Array of available Container IDs.
- * @returns {Array} Array of sample transport schedule records.
+ * @returns {Promise<Array<any>>}
  */
-const generateSampleLichVanChuyen = (
-  count = 10,
-  phuongTienIds = [1, 2],
-  taiXeIds = [4, 5],
-  containerIds = [1, 2, 3, 4, 5]
-) => {
-  const samples = [];
-  const baseDateTime = new Date('2024-06-01T00:00:00Z');
-  const now = new Date().toISOString();
-
-  for (let i = 1; i <= count; i++) {
-    const startOffsetHours = i * 2;
-    const thoi_gian_bat_dau_ke_hoach_dt = new Date(
-      baseDateTime.getTime() + startOffsetHours * 60 * 60 * 1000
-    );
-    const thoi_gian_ket_thuc_ke_hoach_dt = new Date(
-      thoi_gian_bat_dau_ke_hoach_dt.getTime() + (8 + (i % 4)) * 60 * 60 * 1000
-    );
-
-    const trangThaiValues = Object.values(TRANG_THAI_LICH_VAN_CHUYEN);
-    const trang_thai = trangThaiValues[i % trangThaiValues.length];
-
-    let thoi_gian_bat_dau_thuc_te = null;
-    let thoi_gian_ket_thuc_thuc_te = null;
-
-    if (
-      trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.DANG_THUC_HIEN ||
-      trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH
-    ) {
-      thoi_gian_bat_dau_thuc_te = new Date(
-        thoi_gian_bat_dau_ke_hoach_dt.getTime() - (i % 30) * 60 * 1000
-      ).toISOString(); // Start a bit early/late
-    }
-    if (trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HOAN_THANH) {
-      thoi_gian_ket_thuc_thuc_te = new Date(
-        thoi_gian_ket_thuc_ke_hoach_dt.getTime() + (i % 60) * 60 * 1000
-      ).toISOString(); // End a bit early/late
-    }
-
-    samples.push({
-      id: nextLichVanChuyenId++,
-      ma_chuyen_xe: `CX${String(i).padStart(3, '0')}`,
-      thoi_gian_bat_dau_ke_hoach: thoi_gian_bat_dau_ke_hoach_dt.toISOString(),
-      thoi_gian_ket_thuc_ke_hoach: thoi_gian_ket_thuc_ke_hoach_dt.toISOString(),
-      thoi_gian_bat_dau_thuc_te,
-      thoi_gian_ket_thuc_thuc_te,
-      trang_thai,
-      diem_xuat_phat: i % 2 === 0 ? 'Kho A, TP.HCM' : 'Kho B, Bình Dương',
-      diem_den: i % 2 === 0 ? 'Cảng Cát Lái, TP.HCM' : 'KCN Sóng Thần, Bình Dương',
-      ghi_chu:
-        trang_thai === TRANG_THAI_LICH_VAN_CHUYEN.HUY_BO
-          ? 'Hủy do thay đổi kế hoạch.'
-          : `Chuyến vận chuyển ${i}.`,
-      id_phuong_tien: phuongTienIds[i % phuongTienIds.length],
-      id_tai_xe_chinh: taiXeIds[i % taiXeIds.length],
-      id_tai_xe_phu:
-        i % 3 === 0 && taiXeIds.length > 1 ? taiXeIds[(i + 1) % taiXeIds.length] : null, // Assign co-driver sometimes if available
-      id_container_1:
-        i % 2 !== 0 && containerIds.length > 0 ? containerIds[i % containerIds.length] : null,
-      id_container_2:
-        i % 4 === 0 && containerIds.length > 1 ? containerIds[(i + 1) % containerIds.length] : null,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
-  return samples;
-};
-
-// Initialize data (assuming some IDs from other mock data for FKs)
-// These IDs should ideally be fetched or coordinated from dauKeo.js, nhanVien.js, container.js
-lichVanChuyenData = generateSampleLichVanChuyen(15, [1, 2, 3], [4, 5, 8], [1, 2, 3, 4, 5]);
-
 export const getAllLichVanChuyen = async () => {
   return [...lichVanChuyenData];
 };
 
+/**
+ * @param {number|string} id
+ * @returns {Promise<any|null>}
+ */
 export const getLichVanChuyenById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return lichVanChuyenData.find(item => item.id === numericId) || null;
 };
 
+/**
+ * @param {string} maChuyenXe
+ * @returns {Promise<any|null>}
+ */
 export const getLichVanChuyenByMaChuyenXe = async maChuyenXe => {
-  return lichVanChuyenData.find(item => item.ma_chuyen_xe === maChuyenXe) || null;
+  return lichVanChuyenData.find(item => item.ma_chuyen === maChuyenXe) || null;
 };
 
+/**
+ * @param {object} data
+ * @returns {Promise<any>}
+ */
 export const createLichVanChuyen = async data => {
-  const { ma_chuyen_xe, thoi_gian_bat_dau_ke_hoach, id_phuong_tien, id_tai_xe_chinh } = data;
-  if (!ma_chuyen_xe || !thoi_gian_bat_dau_ke_hoach || !id_phuong_tien || !id_tai_xe_chinh) {
-    throw new Error(
-      'Mã chuyến xe, thời gian bắt đầu kế hoạch, ID phương tiện, ID tài xế chính là bắt buộc.'
-    );
-  }
-
-  if (lichVanChuyenData.some(item => item.ma_chuyen_xe === ma_chuyen_xe)) {
-    throw new Error('Mã chuyến xe đã tồn tại.');
-  }
-
-  if (data.trang_thai && !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(data.trang_thai)) {
-    throw new Error(
-      `Trạng thái không hợp lệ. Phải là một trong: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`
-    );
-  }
-
   const now = new Date().toISOString();
   const newRecord = {
+    ...data,
     id: nextLichVanChuyenId++,
-    ma_chuyen_xe,
-    thoi_gian_bat_dau_ke_hoach,
-    thoi_gian_ket_thuc_ke_hoach: data.thoi_gian_ket_thuc_ke_hoach || null,
-    thoi_gian_bat_dau_thuc_te: data.thoi_gian_bat_dau_thuc_te || null,
-    thoi_gian_ket_thuc_thuc_te: data.thoi_gian_ket_thuc_thuc_te || null,
-    trang_thai: data.trang_thai || TRANG_THAI_LICH_VAN_CHUYEN.CHUA_BAT_DAU,
-    diem_xuat_phat: data.diem_xuat_phat || '',
-    diem_den: data.diem_den || '',
-    ghi_chu: data.ghi_chu || '',
-    id_phuong_tien,
-    id_tai_xe_chinh,
-    id_tai_xe_phu: data.id_tai_xe_phu || null,
-    id_container_1: data.id_container_1 || null,
-    id_container_2: data.id_container_2 || null,
     createdAt: now,
     updatedAt: now,
   };
-
   lichVanChuyenData.push(newRecord);
   return newRecord;
 };
 
+/**
+ * @param {number|string} id
+ * @param {object} updates
+ * @returns {Promise<any|null>}
+ */
 export const updateLichVanChuyen = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = lichVanChuyenData.findIndex(item => item.id === numericId);
   if (index === -1) return null;
-
-  const { ma_chuyen_xe: newMaChuyenXe } = updates;
-  if (
-    newMaChuyenXe &&
-    lichVanChuyenData.some(item => item.ma_chuyen_xe === newMaChuyenXe && item.id !== numericId)
-  ) {
-    throw new Error('Mã chuyến xe đã tồn tại cho một lịch khác.');
-  }
-
-  if (
-    updates.trang_thai &&
-    !Object.values(TRANG_THAI_LICH_VAN_CHUYEN).includes(updates.trang_thai)
-  ) {
-    throw new Error(
-      `Trạng thái không hợp lệ. Phải là một trong: ${Object.values(TRANG_THAI_LICH_VAN_CHUYEN).join(', ')}`
-    );
-  }
-
-  const updatedRecord = {
+  lichVanChuyenData[index] = {
     ...lichVanChuyenData[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-
-  lichVanChuyenData[index] = updatedRecord;
-  return updatedRecord;
+  return lichVanChuyenData[index];
 };
 
+/**
+ * @param {number|string} id
+ * @returns {Promise<boolean>}
+ */
 export const deleteLichVanChuyen = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = lichVanChuyenData.findIndex(item => item.id === numericId);
@@ -187,40 +156,74 @@ export const deleteLichVanChuyen = async id => {
   return true;
 };
 
-export const _resetLichVanChuyen = (
-  data = [],
-  phuongTienIds = [1, 2, 3],
-  taiXeIds = [4, 5, 8],
-  containerIds = [1, 2, 3, 4, 5]
-) => {
-  lichVanChuyenData = [];
-  nextLichVanChuyenId = 1;
-  if (data && data.length > 0) {
-    // If specific data is provided, use it directly, ensuring IDs are managed
-    data.forEach(item => {
-      const newItem = { ...item };
-      if (!newItem.id || lichVanChuyenData.some(lvc => lvc.id === newItem.id)) {
-        newItem.id = nextLichVanChuyenId++;
-      } else {
-        if (newItem.id >= nextLichVanChuyenId) nextLichVanChuyenId = newItem.id + 1;
-      }
-      lichVanChuyenData.push(newItem);
-    });
-  } else {
-    // Otherwise, generate sample data
-    lichVanChuyenData = generateSampleLichVanChuyen(15, phuongTienIds, taiXeIds, containerIds);
-  }
-  // Ensure nextId is correctly set after any manual data load
-  if (lichVanChuyenData.length > 0) {
-    nextLichVanChuyenId = Math.max(...lichVanChuyenData.map(item => item.id)) + 1;
-  } else {
+/**
+ * @param {Array<any>} data
+ * @returns {Promise<Array<any>>}
+ */
+export const _resetLichVanChuyen = async (data = []) => {
+  if (!data || data.length === 0) {
+    lichVanChuyenData = [];
     nextLichVanChuyenId = 1;
+    return [];
   }
+  const requiredFields = [
+    'ma_chuyen',
+    'ngay_di',
+    'ngay_ha_hang',
+    'trang_thai',
+    'ma_khach_hang',
+    'diem_di',
+    'diem_den',
+    'cuoc_van_chuyen_vnd',
+    'cuoc_thue_van_chuyen_vnd',
+    'bien_so_dau_keo',
+    'ma_so_cont',
+    'ma_nv_giao_nhan',
+    'ma_nv_lai_xe',
+    'ghi_chu',
+    'km_hang',
+    'km_vo',
+    'l_dau',
+    'vnd_dau',
+    'vnd_di_duong',
+    'vnd_chi_phi',
+    'createdAt',
+    'updatedAt',
+  ];
+  const defaultValues = {
+    ma_chuyen: '',
+    ngay_di: '',
+    ngay_ha_hang: '',
+    trang_thai: '',
+    ma_khach_hang: '',
+    diem_di: '',
+    diem_den: '',
+    cuoc_van_chuyen_vnd: 0,
+    cuoc_thue_van_chuyen_vnd: 0,
+    bien_so_dau_keo: '',
+    ma_so_cont: '',
+    ma_nv_giao_nhan: '',
+    ma_nv_lai_xe: '',
+    ghi_chu: '',
+    km_hang: 0,
+    km_vo: 0,
+    l_dau: 0,
+    vnd_dau: 0,
+    vnd_di_duong: 0,
+    vnd_chi_phi: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  lichVanChuyenData = data.map((item, idx) => {
+    const filled = { ...defaultValues, ...item, id: idx + 1 };
+    return filled;
+  });
+  nextLichVanChuyenId = lichVanChuyenData.length + 1;
   return [...lichVanChuyenData];
 };
 
 // Initial check for duplicate ma_chuyen_xe in seed data
-const initialMaChuyenXe = lichVanChuyenData.map(c => c.ma_chuyen_xe);
+const initialMaChuyenXe = lichVanChuyenData.map(c => c.ma_chuyen);
 const duplicateMaChuyenXe = initialMaChuyenXe.filter(
   (item, index) => initialMaChuyenXe.indexOf(item) !== index
 );

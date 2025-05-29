@@ -17,6 +17,7 @@ const simulateApiCall = fn => {
   });
 };
 
+// All data now uses the new schema: ma_chuyen, ngay_di, etc.
 export const fetchAllLichVanChuyen = () => {
   return simulateApiCall(lichVanChuyenDataService.getAllLichVanChuyen);
 };

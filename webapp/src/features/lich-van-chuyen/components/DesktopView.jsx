@@ -28,34 +28,29 @@ const DesktopView = ({
   orderBy = '',
   onRequestSort = () => {},
 }) => {
+  console.log('DesktopView shipmentPlans:', shipmentPlans);
   const createSortHandler = property => event => {
     onRequestSort(event, property);
   };
   const theme = useTheme(); // Initialize theme
   // Filter plans by search term for desktop
-  const filteredPlans = shipmentPlans.filter(plan => {
-    if (!plan) return false; // Skip null/undefined plans
+  // const filteredPlans = shipmentPlans.filter(plan => {
+  //   if (!plan) return false;
+  //   if (!searchTerm) return true;
 
-    // Debug log for each plan being filtered
-    console.log('Filtering plan:', {
-      id: plan.id,
-      dienGiai: plan.dienGiai,
-      khachHang: plan.khachHang,
-      bienSoXe: plan.bienSoXe,
-      doiTac: plan.doiTac,
-      tenDoiTac: plan.tenDoiTac,
-    });
-    if (!searchTerm) return true;
-
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      plan.dienGiai?.toLowerCase().includes(searchLower) ||
-      plan.khachHang?.toLowerCase().includes(searchLower) ||
-      plan.bienSoXe?.toLowerCase().includes(searchLower) ||
-      plan.doiTac?.toLowerCase().includes(searchLower) ||
-      plan.tenDoiTac?.toLowerCase().includes(searchLower)
-    );
-  });
+  //   const searchLower = searchTerm.toLowerCase();
+  //   return (
+  //     plan.maChuyen?.toLowerCase().includes(searchLower) ||
+  //     plan.khachHang?.toLowerCase().includes(searchLower) ||
+  //     plan.bienSoDauKeo?.toLowerCase().includes(searchLower) ||
+  //     plan.diemDi?.toLowerCase().includes(searchLower) ||
+  //     plan.diemDen?.toLowerCase().includes(searchLower) ||
+  //     plan.giaoNhan?.toLowerCase().includes(searchLower) ||
+  //     plan.laiXe?.toLowerCase().includes(searchLower) ||
+  //     plan.ghi_chu?.toLowerCase().includes(searchLower)
+  //   );
+  // });
+  const filteredPlans = shipmentPlans;
   return (
     <Box>
       {/* Search bar */}

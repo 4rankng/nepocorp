@@ -80,7 +80,6 @@ const CustomerListResponsive = ({
   const handleRowClick = customer => {
     // Optional: you can implement row click functionality here
     // For now, we'll just use the action buttons
-    console.log('Customer row clicked:', customer);
   };
 
   // Render mobile card view for better responsive experience

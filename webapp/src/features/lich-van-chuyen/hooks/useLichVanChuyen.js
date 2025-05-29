@@ -9,6 +9,7 @@ import {
 import {
   getDisplayTrangThai,
   formatDateForDisplay,
+  formatCurrencyVND,
 } from '@features/lich-van-chuyen/utils/lichVanChuyenUtils';
 
 // Simple in-memory cache (per session)
@@ -27,15 +28,28 @@ const CACHE_TTL = 60 * 1000; // 1 minute
 const transformLichVanChuyen = item => {
   if (!item) return null;
   return {
-    ...item,
-    trangThaiDisplay: getDisplayTrangThai(item.trang_thai || item.trangThai),
-    ngayBatDauDisplay: formatDateForDisplay(
-      (item.thoi_gian_bat_dau_ke_hoach || item.ngayBatDau)?.split('T')[0]
-    ),
-    ngayKetThucDisplay: formatDateForDisplay(
-      (item.thoi_gian_ket_thuc_ke_hoach || item.ngayKetThuc)?.split('T')[0]
-    ),
-    // Add more transformations as needed
+    id: item.id,
+    maChuyen: item.ma_chuyen,
+    ngayDi: item.ngay_di ? formatDateForDisplay(item.ngay_di) : '',
+    ngayHaHangDisplay: item.ngay_ha_hang ? formatDateForDisplay(item.ngay_ha_hang) : '',
+    trang_thai: item.trang_thai,
+    khachHang: item.ma_khach_hang, // Will be resolved to label in QuanLyLichVanChuyen.jsx
+    diemDi: item.diem_di || '',
+    diemDen: item.diem_den || '',
+    cuocVanChuyenDisplay: item.cuoc_van_chuyen_vnd
+      ? formatCurrencyVND(item.cuoc_van_chuyen_vnd)
+      : '',
+    cuocThueVanChuyenDisplay: item.cuoc_thue_van_chuyen_vnd
+      ? formatCurrencyVND(item.cuoc_thue_van_chuyen_vnd)
+      : '',
+    bienSoDauKeo: item.bien_so_dau_keo || '',
+    maSoCont: item.ma_so_cont || '',
+    giaoNhan: item.ma_nv_giao_nhan, // Will be resolved to label in QuanLyLichVanChuyen.jsx
+    laiXe: item.ma_nv_lai_xe, // Will be resolved to label in QuanLyLichVanChuyen.jsx
+    ghi_chu: item.ghi_chu || '',
+    vndChiPhi: item.vnd_chi_phi ? formatCurrencyVND(item.vnd_chi_phi) : '',
+    // Keep raw fields for edit/detail modals if needed
+    raw: item,
   };
 };
 
@@ -65,9 +79,11 @@ const useLichVanChuyen = () => {
         return;
       }
       const result = await fetchAllLichVanChuyen();
+      console.log('fetchAllLichVanChuyen raw result:', result);
       const transformed = Array.isArray(result)
         ? result.map(transformLichVanChuyen).filter(Boolean)
         : [];
+      console.log('Transformed LichVanChuyen:', transformed);
       setData(/** @type {any[]} */ (transformed));
       cacheRef.current.all = transformed;
       cacheRef.current.timestamp = now;
