@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
+import { SwipeTabs } from '@/components';
 import {
   Box,
   Button,
@@ -27,8 +29,6 @@ import {
   useMediaQuery,
   useTheme,
   Divider,
-  Tabs,
-  Tab,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -66,16 +66,33 @@ const initialFormData = {
 
 const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [expandedSections, setExpandedSections] = useState({ tire: false });
-  const [loadedSections, setLoadedSections] = useState({ tire: false });
+  const [expandedSections, setExpandedSections] = useState({ tire: true });
+  const [loadedSections, setLoadedSections] = useState({ tire: true });
   const [isEdit, setIsEdit] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [counts, setCounts] = useState({ tire: 0 });
-  const [tabIndex, setTabIndex] = useState(0);
+
+  // Get current tab from URL
+  const getCurrentTab = () => {
+    const pathParts = location.pathname.split('/');
+    const tabFromUrl = pathParts[pathParts.length - 1];
+    return tabFromUrl === 'bao-duong' ? 'lop-xe' : tabFromUrl;
+  };
+
+  const currentTab = getCurrentTab();
+
+  // Redirect to default tab if on base route
+  useEffect(() => {
+    if (location.pathname === '/bao-duong') {
+      navigate('/bao-duong/lop-xe', { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   // Data fetching
   const {
@@ -118,10 +135,12 @@ const QuanLyBaoDuong = memo(() => {
     },
   });
 
-  // Fetch count on mount
+  // Fetch count and data on mount
   useEffect(() => {
     lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
-  }, []);
+    // Also fetch initial data
+    fetchData();
+  }, []); // Empty dependency array for mount only
 
   // Helper to refetch count
   const refetchCount = useCallback(() => {
@@ -273,33 +292,20 @@ const QuanLyBaoDuong = memo(() => {
     />
   );
 
-  const handleTabChange = (event, newValue) => {
-    setTabIndex(newValue);
+  const handleTabChange = (newTab) => {
+    navigate(`/bao-duong/${newTab}`, { replace: true });
   };
 
-  return (
-    <Box sx={{ width: '100%', position: 'relative' }}>
-      {/* Tabs System */}
-      <Tabs
-        value={tabIndex}
-        onChange={handleTabChange}
-        aria-label="Tabs for maintenance categories"
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
-      >
-        <Tab label="Lốp Xe" id="tab-tire" aria-controls="tabpanel-tire" />
-        {/* Future tabs can be added here */}
-      </Tabs>
-      {/* Tab Panels */}
-      <Box
-        role="tabpanel"
-        hidden={tabIndex !== 0}
-        id="tabpanel-tire"
-        aria-labelledby="tab-tire"
-        sx={{ p: 0 }}
-      >
-        {tabIndex === 0 && (
+  // Define tabs configuration
+  const tabs = [
+    { value: 'lop-xe', label: 'Lốp Xe' },
+  ];
+
+  // Render tab content based on active tab
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 'lop-xe':
+        return (
           <React.Fragment>
             {/* Search Bar */}
             <Box sx={{ mb: 3 }}>
@@ -360,8 +366,33 @@ const QuanLyBaoDuong = memo(() => {
               </Box>
             )}
           </React.Fragment>
-        )}
-      </Box>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Box sx={{ width: '100%', position: 'relative' }}>
+      {/* SwipeTabs System */}
+      <SwipeTabs
+        tabs={tabs}
+        activeTab={currentTab}
+        basePath="/bao-duong"
+        onTabChange={handleTabChange}
+        ariaLabel="Tabs for maintenance categories"
+      >
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflowY: 'auto',
+            p: isMobile ? 1 : 2,
+          }}
+        >
+          {renderTabContent()}
+        </Box>
+      </SwipeTabs>
+
       {/* Add/Edit Dialog */}
       <LopXeDialog
         open={openDialog}

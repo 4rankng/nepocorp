@@ -104,11 +104,18 @@ const router = createBrowserRouter(
             },
           ],
         },
-        // BaoDuong route
+        // BaoDuong route with tab support
         {
           path: 'bao-duong',
           element: withErrorBoundary(QuanLyBaoDuong),
           errorElement: <ErrorPage />,
+          children: [
+            {
+              path: ':tab',
+              element: withErrorBoundary(QuanLyBaoDuong),
+              errorElement: <ErrorPage />,
+            },
+          ],
         },
         // Keep old routes for backward compatibility
         {

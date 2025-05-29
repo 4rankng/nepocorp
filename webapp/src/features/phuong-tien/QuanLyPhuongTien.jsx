@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import SwipeDetector from '../../components/SwipeDetector';
+import { SwipeTabs } from '@/components';
 import { alpha } from '@mui/material/styles';
 import {
   Box,
-  Tab,
-  Tabs,
   useTheme,
   useMediaQuery,
   Typography,
@@ -26,7 +24,6 @@ import {
   Grid,
   TextField,
 } from '@mui/material';
-import { TabContext, TabPanel } from '@mui/lab';
 import { useNavigate, useParams, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
@@ -422,11 +419,9 @@ const QuanLyPhuongTien = () => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const tabsRef = useRef(null);
 
   // Set the active tab based on URL parameter
   const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'dau-keo';
-  const currentTabIndex = TABS.findIndex(tab => tab.value === activeTab);
 
   // Redirect to the first tab if the current tab is invalid
   useEffect(() => {
@@ -434,110 +429,36 @@ const QuanLyPhuongTien = () => {
       navigate(`/phuong-tien/dau-keo`, { replace: true });
     }
   }, [tabFromUrl, navigate]);
-  // Center the active tab when it changes
-  useEffect(() => {
-    if (tabsRef.current && currentTabIndex !== -1) {
-      const tabElement = tabsRef.current.querySelector(`[data-value="${activeTab}"]`);
-      if (tabElement) {
-        tabElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center',
-        });
-      }
-    }
-  }, [activeTab, currentTabIndex]);
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = useCallback((newValue) => {
     navigate(`/phuong-tien/${newValue}`);
-  };
-  // Handle swipe gestures - navigate to next/previous tab
-  const handleSwipeLeft = useCallback(() => {
-    // Swipe left = go to next tab (if not on last tab)
-    if (currentTabIndex < TABS.length - 1) {
-      const nextTab = TABS[currentTabIndex + 1].value;
-      navigate(`/phuong-tien/${nextTab}`);
-    }
-  }, [currentTabIndex, navigate]);
+  }, [navigate]);
 
-  const handleSwipeRight = useCallback(() => {
-    // Swipe right = go to previous tab (if not on first tab)
-    if (currentTabIndex > 0) {
-      const prevTab = TABS[currentTabIndex - 1].value;
-      navigate(`/phuong-tien/${prevTab}`);
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'dau-keo':
+        return <DauKeoContent />;
+      case 'ro-mooc':
+        return <RoMoocContent />;
+      case 'container':
+        return <ContainerContent />;
+      default:
+        return <DauKeoContent />;
     }
-  }, [currentTabIndex, navigate]);
+  };
+
   return (
-    <SwipeDetector onSwipeLeft={handleSwipeLeft} onSwipeRight={handleSwipeRight}>
-      <Box sx={{ width: '100%', typography: 'body1' }}>
-        <TabContext value={activeTab}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs
-              ref={tabsRef}
-              value={activeTab}
-              onChange={handleTabChange}
-              scrollButtons="auto"
-              aria-label="Quản lý phương tiện tabs"
-              sx={{
-                '& .MuiTabs-scrollButtons': {
-                  opacity: 1,
-                  '&.Mui-disabled': { opacity: 0.3 },
-                },
-                '& .MuiTabs-indicator': {
-                  transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
-                },
-                '& .MuiTabs-flexContainer': {
-                  justifyContent: 'flex-start',
-                },
-              }}
-              TabIndicatorProps={{
-                children: <span className="MuiTabs-indicatorSpan" />,
-              }}
-            >
-              {TABS.map(tab => (
-                <Tab
-                  key={tab.value}
-                  label={tab.label}
-                  value={tab.value}
-                  disableRipple
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    textTransform: 'none',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    transition: 'color 0.3s ease-in-out',
-                    '&.Mui-selected': {
-                      color: 'primary.main',
-                      fontWeight: 600,
-                    },
-                  }}
-                />
-              ))}
-            </Tabs>
-          </Box>
-          {/* Tab content with swipe support */}
-          <Box
-            sx={{
-              position: 'relative',
-              minHeight: '60vh',
-              overflow: 'hidden',
-            }}
-          >
-            <TabPanel value="dau-keo" sx={{ p: 0, mt: 2 }}>
-              <DauKeoContent />
-            </TabPanel>
-            <TabPanel value="ro-mooc" sx={{ p: 0, mt: 2 }}>
-              <RoMoocContent />
-            </TabPanel>
-            <TabPanel value="container" sx={{ p: 0, mt: 2 }}>
-              <ContainerContent />
-            </TabPanel>
-          </Box>
-        </TabContext>
-      </Box>
-    </SwipeDetector>
+    <Box sx={{ width: '100%', typography: 'body1' }}>
+      <SwipeTabs
+        tabs={TABS}
+        activeTab={activeTab}
+        basePath="/phuong-tien"
+        onTabChange={handleTabChange}
+      >
+        <Box sx={{ p: 2, minHeight: '60vh' }}>
+          {renderTabContent()}
+        </Box>
+      </SwipeTabs>
+    </Box>
   );
 };
 export default QuanLyPhuongTien;
