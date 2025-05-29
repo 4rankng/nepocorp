@@ -135,5 +135,9 @@ DesktopView.propTypes = {
   onRequestSort: PropTypes.func,
   renderActions: PropTypes.func,
 };
-
+DesktopView.defaultProps = {
+  order: 'asc',
+  orderBy: '',
+  onRequestSort: () => {},
+};
 export default DesktopView;
