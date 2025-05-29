@@ -57,7 +57,7 @@ const TABS = [
 const DauKeoContent = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const dauKeoHook = useDauKeo();
   const [dialog, setDialog] = useState({ open: false, edit: false, data: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
@@ -176,7 +176,7 @@ const DauKeoContent = () => {
 const RoMoocContent = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const roMoocHook = useRoMooc();
   const [dialog, setDialog] = useState({ open: false, edit: false, data: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
@@ -295,7 +295,7 @@ const RoMoocContent = () => {
 const ContainerContent = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const containerHook = useContainer();
   const [dialog, setDialog] = useState({ open: false, edit: false, data: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
@@ -305,9 +305,7 @@ const ContainerContent = () => {
     containerHook.fetchAll();
   }, []);
 
-  const columns = [
-    { key: 'phan_loai', label: 'LOẠI CONTAINER', render: v => v || '' },
-  ];
+  const columns = [{ key: 'phan_loai', label: 'LOẠI CONTAINER', render: v => v || '' }];
 
   const handleSave = async formData => {
     try {
@@ -320,7 +318,11 @@ const ContainerContent = () => {
       }
       setDialog({ open: false, edit: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: containerHook.error || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: containerHook.error || 'Có lỗi xảy ra',
+        severity: 'error',
+      });
     }
   };
 
@@ -330,7 +332,11 @@ const ContainerContent = () => {
       setSnackbar({ open: true, message: 'Xóa container thành công!', severity: 'success' });
       setDeleteDialog({ open: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: containerHook.error || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: containerHook.error || 'Có lỗi xảy ra',
+        severity: 'error',
+      });
     }
   };
 
@@ -462,75 +468,75 @@ const QuanLyPhuongTien = () => {
   }, [currentTabIndex, navigate]);
   return (
     <SwipeDetector onSwipeLeft={handleSwipeLeft} onSwipeRight={handleSwipeRight}>
-        <Box sx={{ width: '100%', typography: 'body1' }}>
-          <TabContext value={activeTab}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs
-                ref={tabsRef}
-                value={activeTab}
-                onChange={handleTabChange}
-                scrollButtons="auto"
-                aria-label="Quản lý phương tiện tabs"
-                sx={{
-                  '& .MuiTabs-scrollButtons': {
-                    opacity: 1,
-                    '&.Mui-disabled': { opacity: 0.3 },
-                  },
-                  '& .MuiTabs-indicator': {
-                    transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
-                  },
-                  '& .MuiTabs-flexContainer': {
-                    justifyContent: 'flex-start',
-                  },
-                }}
-                TabIndicatorProps={{
-                  children: <span className="MuiTabs-indicatorSpan" />,
-                }}
-              >
-                {TABS.map(tab => (
-                  <Tab
-                    key={tab.value}
-                    label={tab.label}
-                    value={tab.value}
-                    disableRipple
-                    sx={{
-                      flex: 1,
-                      minWidth: 0,
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      textTransform: 'none',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      transition: 'color 0.3s ease-in-out',
-                      '&.Mui-selected': {
-                        color: 'primary.main',
-                        fontWeight: 600,
-                      },
-                    }}
-                  />
-                ))}
-              </Tabs>
-            </Box>
-            {/* Tab content with swipe support */}
-            <Box
+      <Box sx={{ width: '100%', typography: 'body1' }}>
+        <TabContext value={activeTab}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              ref={tabsRef}
+              value={activeTab}
+              onChange={handleTabChange}
+              scrollButtons="auto"
+              aria-label="Quản lý phương tiện tabs"
               sx={{
-                position: 'relative',
-                minHeight: '60vh',
-                overflow: 'hidden',
+                '& .MuiTabs-scrollButtons': {
+                  opacity: 1,
+                  '&.Mui-disabled': { opacity: 0.3 },
+                },
+                '& .MuiTabs-indicator': {
+                  transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+                },
+                '& .MuiTabs-flexContainer': {
+                  justifyContent: 'flex-start',
+                },
+              }}
+              TabIndicatorProps={{
+                children: <span className="MuiTabs-indicatorSpan" />,
               }}
             >
-              <TabPanel value="dau-keo" sx={{ p: 0, mt: 2 }}>
-                <DauKeoContent />
-              </TabPanel>
-              <TabPanel value="ro-mooc" sx={{ p: 0, mt: 2 }}>
-                <RoMoocContent />
-              </TabPanel>
-              <TabPanel value="container" sx={{ p: 0, mt: 2 }}>
-                <ContainerContent />
-              </TabPanel>
-            </Box>
-          </TabContext>
-        </Box>
+              {TABS.map(tab => (
+                <Tab
+                  key={tab.value}
+                  label={tab.label}
+                  value={tab.value}
+                  disableRipple
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    textTransform: 'none',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    transition: 'color 0.3s ease-in-out',
+                    '&.Mui-selected': {
+                      color: 'primary.main',
+                      fontWeight: 600,
+                    },
+                  }}
+                />
+              ))}
+            </Tabs>
+          </Box>
+          {/* Tab content with swipe support */}
+          <Box
+            sx={{
+              position: 'relative',
+              minHeight: '60vh',
+              overflow: 'hidden',
+            }}
+          >
+            <TabPanel value="dau-keo" sx={{ p: 0, mt: 2 }}>
+              <DauKeoContent />
+            </TabPanel>
+            <TabPanel value="ro-mooc" sx={{ p: 0, mt: 2 }}>
+              <RoMoocContent />
+            </TabPanel>
+            <TabPanel value="container" sx={{ p: 0, mt: 2 }}>
+              <ContainerContent />
+            </TabPanel>
+          </Box>
+        </TabContext>
+      </Box>
     </SwipeDetector>
   );
 };

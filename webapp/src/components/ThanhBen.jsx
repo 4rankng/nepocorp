@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getMenuItems } from '@/config/roles';
 // SVG Icon Components (Heroicons)
@@ -182,6 +182,8 @@ const iconComponents = {
 };
 const ThanhBen = ({ onNavItemClick }) => {
   const { currentUser } = useAuth();
+  const location = useLocation();
+  
   if (!currentUser) return null;
   const menuItems = getMenuItems(currentUser.role).map(item => ({
     ...item,
@@ -191,16 +193,16 @@ const ThanhBen = ({ onNavItemClick }) => {
   return (
     <aside className="w-64 bg-white h-full overflow-y-auto">
       <nav className="mt-5 px-2">
-        <div className="space-y-1">
+        <div className="space-y-2">
           {menuItems.map(item => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `group flex items-center px-2 py-2 text-base font-medium rounded-md transition-colors duration-150 ease-in-out ${
+                `group flex items-center px-4 py-3 text-base font-medium rounded-lg transition-all duration-300 ease-in-out transform relative overflow-hidden ${
                   isActive
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-slate-100 text-slate-800 shadow-sm border-l-4 border-slate-400'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800 hover:shadow-sm hover:translate-x-1'
                 }`
               }
               onClick={() => {
@@ -209,8 +211,20 @@ const ThanhBen = ({ onNavItemClick }) => {
                 }
               }}
             >
-              <span className="mr-3">{item.icon && <item.icon className="w-5 h-5" />}</span>
-              {item.label}
+              {/* Icon with enhanced styling */}
+              <span className={`mr-4 transition-all duration-300 ${
+                'group-hover:scale-105'
+              }`}>
+                {item.icon && <item.icon className="w-5 h-5" />}
+              </span>
+              
+              {/* Label with subtle letter spacing */}
+              <span className="relative z-10 tracking-wide">{item.label}</span>
+              
+              {/* Active indicator dot */}
+              <div className={`absolute right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-slate-400 rounded-full transition-all duration-300 ${
+                location.pathname.startsWith(item.path) ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+              }`}></div>
             </NavLink>
           ))}
         </div>

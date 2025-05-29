@@ -94,22 +94,7 @@ const router = createBrowserRouter(
           errorElement: <ErrorPage />,
           children: [
             {
-              path: 'bo-sung',
-              element: withErrorBoundary(QuanLyDinhMuc),
-              errorElement: <ErrorPage />,
-            },
-            {
-              path: 'cho-hang',
-              element: withErrorBoundary(QuanLyDinhMuc),
-              errorElement: <ErrorPage />,
-            },
-            {
-              path: 'vo-rong',
-              element: withErrorBoundary(QuanLyDinhMuc),
-              errorElement: <ErrorPage />,
-            },
-            {
-              path: 'di-duong',
+              path: ':tab',
               element: withErrorBoundary(QuanLyDinhMuc),
               errorElement: <ErrorPage />,
             },
