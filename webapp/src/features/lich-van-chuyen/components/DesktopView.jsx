@@ -14,6 +14,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import StandardTable from '@/components/StandardTable';
+
 const DesktopView = ({
   searchTerm,
   onSearchTermChange,
@@ -28,11 +29,12 @@ const DesktopView = ({
   onRequestSort = () => {},
   renderActions,
 }) => {
-  const createSortHandler = property => event => {
+  const theme = useTheme();
+
+  const createSortHandler = (property) => (event) => {
     onRequestSort(event, property);
   };
-  const theme = useTheme(); // Initialize theme
-  // We'll use shipmentPlans directly as they're already filtered in QuanLyLichVanChuyen
+
   return (
     <Box>
       {/* Search bar */}
@@ -52,22 +54,7 @@ const DesktopView = ({
           }}
         />
       </Box>
-      {/* Guidance Message */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          mb: 0.3,
-          p: 0.5,
-          backgroundColor: theme.palette.action.hover,
-          borderRadius: 1,
-        }}
-      >
-        <InfoIcon sx={{ mr: 1, color: theme.palette.info.main }} />
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-          Bấm vào hàng trong bảng để xem chi tiết
-        </Typography>
-      </Box>
+
       <Paper elevation={0} sx={{ p: 0 }}>
         <StandardTable
           columns={columns.map(column => ({
@@ -113,6 +100,7 @@ const DesktopView = ({
     </Box>
   );
 };
+
 DesktopView.propTypes = {
   searchTerm: PropTypes.string.isRequired,
   onSearchTermChange: PropTypes.func.isRequired,
@@ -130,14 +118,11 @@ DesktopView.propTypes = {
   isLoading: PropTypes.bool,
   onAdd: PropTypes.func.isRequired,
   canAddPlan: PropTypes.bool.isRequired,
+  onItemClick: PropTypes.func.isRequired,
   order: PropTypes.oneOf(['asc', 'desc']),
   orderBy: PropTypes.string,
   onRequestSort: PropTypes.func,
   renderActions: PropTypes.func,
 };
-DesktopView.defaultProps = {
-  order: 'asc',
-  orderBy: '',
-  onRequestSort: () => {},
-};
+
 export default DesktopView;

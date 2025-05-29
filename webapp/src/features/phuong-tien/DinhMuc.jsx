@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
-import { dinhMucApi } from '@services/mockApi';
+import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
 import EditSupplementaryStandardDialog from './components/EditSupplementaryStandardDialog';
 import LicensePlateNormsCard from './components/LicensePlateNormsCard';
-import { dauKeoApi, roMoocApi } from '@services/mockApi';
+import * as dauKeoApi from '@services/mockApi/dauKeoApi';
+import * as roMoocApi from '@services/mockApi/roMoocApi';
 import DinhMucDialog from './components/DinhMucDialog';
-import { useDinhMucManagement } from '../../hooks/useDinhMucManagement';
+import { useDinhMucDauManagement } from '../../hooks/useDinhMucDauManagement';
 import {
   Box,
   Button,
@@ -120,7 +121,7 @@ const DinhMucDau = () => {
     editSupplementaryDialog, // For supplementary dialog visibility
     closeEditSupplementaryDialog,
     handleSaveSupplementary,
-  } = useDinhMucManagement();
+  } = useDinhMucDauManagement();
   // States for inline editing of supplementary standard
   const [isEditingSupplementary, setIsEditingSupplementary] = useState(false);
   const [supplementaryEditValue, setSupplementaryEditValue] = useState(supplementaryStandard);
@@ -362,7 +363,7 @@ const DinhMucDau = () => {
   const handleUpdateSupplementary = async () => {
     try {
       setIsLoading(true);
-      const response = await dinhMucApi.updateBoSung(parseFloat(newSupplementaryValue));
+      const response = await dinhMucDauApi.updateBoSung({ value: parseFloat(newSupplementaryValue) });
       if (response) {
         setSupplementaryStandard(response.value || parseFloat(newSupplementaryValue));
         setEditSupplementaryDialog(false);

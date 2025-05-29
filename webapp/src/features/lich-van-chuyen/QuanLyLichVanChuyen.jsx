@@ -511,6 +511,7 @@ const QuanLyLichVanChuyen = () => {
           isLoading={isLoading}
           onAdd={handleOpenModalForAdd}
           canAddPlan={canAddPlan}
+          onItemClick={handleOpenModalForEdit}
           order={order}
           orderBy={orderBy}
           onRequestSort={handleRequestSort}

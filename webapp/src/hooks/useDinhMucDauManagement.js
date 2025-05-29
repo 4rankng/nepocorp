@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { dinhMucApi, dauKeoApi, roMoocApi } from '@services/mockApi'; // dinhMucApi is already imported // Assuming mockApi is the correct path
-export const useDinhMucManagement = () => {
+import { useState, useEffect, useCallback } from 'react';
+import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
+import * as dauKeoApi from '@services/mockApi/dauKeoApi';
+import * as roMoocApi from '@services/mockApi/roMoocApi';
+
+export const useDinhMucDauManagement = () => {
   const [dinhMucHang, setDinhMucHang] = useState({}); // Format: { '51C-12345': [...] }
   const [dinhMucVo, setDinhMucVo] = useState({}); // Format: { '51C-12345': [...] }
   const [allAvailableLicensePlates, setAllAvailableLicensePlates] = useState([]); // All tractor + trailer plates
@@ -18,14 +21,23 @@ export const useDinhMucManagement = () => {
     setIsLoading(true);
     setError('');
     try {
-      const [allDinhMucData, supData, dauKeoData, roMoocData] = await Promise.all([
-        dinhMucApi.getAll(), // Fetch all dinh muc records
-        dinhMucApi.getBoSung(), // Use direct function name
-        dauKeoApi.getAll(), // Fetching all tractors
-        roMoocApi.getAll(), // Fetching all trailers
+      const [dinhMucResponse, dauKeoResponse, roMoocResponse] = await Promise.all([
+        dinhMucDauApi.getAllDinhMucDau(),
+        dauKeoApi.getAll(),
+        roMoocApi.getAll(),
       ]);
+
+      if (dinhMucResponse.error) throw new Error(dinhMucResponse.error);
+      if (dauKeoResponse.error) throw new Error(dauKeoResponse.error);
+      if (roMoocResponse.error) throw new Error(roMoocResponse.error);
+
+      const allDinhMucData = dinhMucResponse.data || [];
+      const dauKeoData = dauKeoResponse.data || [];
+      const roMoocData = roMoocResponse.data || [];
+
       const hangDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_hang');
       const voDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_vo');
+      
       const hangGrouped = hangDataItems.reduce((acc, item) => {
         // Ensure item.bien_so_xe is used, matching mock data structure if it's bienSoXe, adjust here.
         // Assuming the API returns bien_so_xe as per previous understanding for grouping.
@@ -335,7 +347,8 @@ export const useDinhMucManagement = () => {
     if (!deleteDialog.id) return;
     setIsLoading(true);
     try {
-      await dinhMucApi.delete(deleteDialog.id);
+      const response = await dinhMucDauApi.deleteDinhMucDau(deleteDialog.id);
+      if (response.error) throw new Error(response.error);
       showSnackbar(
         `Xóa định mức ${deleteDialog.type === 'supplementary' ? 'bổ sung' : deleteDialog.type === 'km_hang' ? 'hàng' : 'vỏ'} thành công`
       );
