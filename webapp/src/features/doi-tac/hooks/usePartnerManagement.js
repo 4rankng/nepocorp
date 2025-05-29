@@ -16,7 +16,7 @@ const initialFormState = {
 };
 
 const usePartnerManagement = () => {
-  const [partners, setPartners] = useState([]);
+  const [partners, setPartners] = useState(/** @type {any[]} */ ([]));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,7 +28,7 @@ const usePartnerManagement = () => {
       const data = await fetchAllDoiTac();
       setPartners(data || []);
     } catch (err) {
-      const errorMessage = err.message || 'Không thể tải danh sách đối tác';
+      const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Không thể tải danh sách đối tác';
       setError(errorMessage);
       console.error('Error fetching partners:', err);
     } finally {
@@ -38,7 +38,10 @@ const usePartnerManagement = () => {
 
   // Add new partner
   const addNewPartner = useCallback(
-    async partnerData => {
+    /**
+     * @param {Object} partnerData - Partner data object
+     */
+    async (partnerData) => {
       setLoading(true);
       setError('');
       try {
@@ -46,7 +49,7 @@ const usePartnerManagement = () => {
         await fetchPartners();
         return { success: true, data: newPartner };
       } catch (err) {
-        const errorMessage = err.message || 'Lỗi khi thêm đối tác';
+        const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Lỗi khi thêm đối tác';
         setError(errorMessage);
         console.error('Error adding partner:', err);
         return { success: false, error: errorMessage };
@@ -60,8 +63,8 @@ const usePartnerManagement = () => {
   // Get initial form data
   const getInitialFormData = useCallback(() => {
     let maxCode = 0;
-    partners.forEach(partner => {
-      if (partner.ma_dinh_danh && partner.ma_dinh_danh.startsWith('DT')) {
+    partners.forEach((partner) => {
+      if (partner?.ma_dinh_danh && partner.ma_dinh_danh.startsWith('DT')) {
         const numPart = parseInt(partner.ma_dinh_danh.substring(2), 10);
         if (!isNaN(numPart) && numPart > maxCode) {
           maxCode = numPart;
@@ -78,20 +81,30 @@ const usePartnerManagement = () => {
   }, [partners]);
 
   // Check if a partner code is available
-  const isPartnerCodeAvailable = useCallback(async (ma_dinh_danh, excludeId = null) => {
-    if (!ma_dinh_danh || ma_dinh_danh.trim() === '') return false;
-    try {
-      const all = await fetchAllDoiTac();
-      const found = all.find(
-        p => p.ma_dinh_danh === ma_dinh_danh && (!excludeId || p.id !== excludeId)
-      );
-      return !found;
-    } catch (_err) {
-      return true;
-    }
-  }, []);
+  const isPartnerCodeAvailable = useCallback(
+    /**
+     * @param {string} ma_dinh_danh - Partner code to check
+     * @param {string|null} excludeId - ID to exclude from check
+     */
+    async (ma_dinh_danh, excludeId = null) => {
+      if (!ma_dinh_danh || ma_dinh_danh.trim() === '') return false;
+      try {
+        const all = await fetchAllDoiTac();
+        const found = all.find(
+          /** @param {any} p */
+          (p) => p?.ma_dinh_danh === ma_dinh_danh && (!excludeId || p?.id !== excludeId)
+        );
+        return !found;
+      } catch (_err) {
+        return true;
+      }
+    }, []);
 
   // Update existing partner
+  /**
+   * @param {string|number} id - Partner ID
+   * @param {Object} partnerData - Partner data object
+   */
   const updateExistingPartner = async (id, partnerData) => {
     setLoading(true);
     setError('');
@@ -100,7 +113,7 @@ const usePartnerManagement = () => {
       await fetchPartners();
       return { success: true, data: updatedPartner };
     } catch (err) {
-      const errorMessage = err.message || 'Lỗi khi sửa đối tác';
+      const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Lỗi khi sửa đối tác';
       setError(errorMessage);
       console.error('Error updating partner:', err);
       return { success: false, error: errorMessage };
@@ -110,7 +123,10 @@ const usePartnerManagement = () => {
   };
 
   // Delete partner
-  const deleteExistingPartner = async id => {
+  /**
+   * @param {string|number} id - Partner ID
+   */
+  const deleteExistingPartner = async (id) => {
     setLoading(true);
     setError('');
     try {
@@ -118,7 +134,7 @@ const usePartnerManagement = () => {
       await fetchPartners();
       return { success: true };
     } catch (err) {
-      const errorMessage = err.message || 'Lỗi khi xóa đối tác';
+      const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Lỗi khi xóa đối tác';
       setError(errorMessage);
       console.error('Error deleting partner:', err);
       await fetchPartners();
@@ -129,7 +145,10 @@ const usePartnerManagement = () => {
   };
 
   // Get partner by ID
-  const getPartnerById = async id => {
+  /**
+   * @param {string|number} id - Partner ID
+   */
+  const getPartnerById = async (id) => {
     try {
       const partner = await fetchDoiTacById(id);
       if (partner) {
@@ -138,7 +157,7 @@ const usePartnerManagement = () => {
         return { success: false, error: 'Không tìm thấy đối tác' };
       }
     } catch (err) {
-      const errorMessage = err.message || 'Không tìm thấy đối tác';
+      const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Không tìm thấy đối tác';
       console.error('Error getting partner by ID:', err);
       return { success: false, error: errorMessage };
     }

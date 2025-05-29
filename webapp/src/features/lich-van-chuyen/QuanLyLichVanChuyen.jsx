@@ -2,10 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@contexts/AuthContext'; // Import useAuth
 import { ROLES } from '@/config/roles'; // Import ROLES
 import {
-  fetchAllLichVanChuyen,
-  addLichVanChuyen,
-  editLichVanChuyen,
-  removeLichVanChuyen,
   fetchAllNhanVien, // Updated to use API function
   fetchAllContainer, // Updated to use API function
   fetchAllKhachHang, // Added for customer API
@@ -58,6 +54,7 @@ import {
   formatContainersForSelect,
   addQuickCustomer,
 } from './utils/lichVanChuyenUtils';
+import useLichVanChuyen from '@features/lich-van-chuyen/hooks/useLichVanChuyen';
 
 const initialFormState = {
   id: null, // Add id for consistency, will be populated on edit
@@ -82,7 +79,11 @@ const initialFormState = {
 // Helper functions moved to ./utils/lichVanChuyenUtils.js
 
 // Function to handle descending comparator
-function descendingComparator(a, b, orderBy) {
+function descendingComparator(
+  /** @type {any} */ a,
+  /** @type {any} */ b,
+  /** @type {any} */ orderBy
+) {
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -93,21 +94,33 @@ function descendingComparator(a, b, orderBy) {
 }
 
 // Function to get comparator for sorting
-function getComparator(order, orderBy, columns) {
+function getComparator(
+  /** @type {any} */ order,
+  /** @type {any} */ orderBy,
+  /** @type {any} */ columns
+) {
   return order === 'desc'
     ? (a, b) => {
-        const column = columns?.find(col => col.id === orderBy);
-        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : (a[orderBy] ?? '');
-        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : (b[orderBy] ?? '');
+        /** @type {any} */ const column = columns?.find(col => col.id === orderBy);
+        /** @type {any} */ const aValue = column?.sortValue
+          ? column.sortValue(a[orderBy] ?? '')
+          : (a[orderBy] ?? '');
+        /** @type {any} */ const bValue = column?.sortValue
+          ? column.sortValue(b[orderBy] ?? '')
+          : (b[orderBy] ?? '');
 
         if (bValue < aValue) return -1;
         if (bValue > aValue) return 1;
         return 0;
       }
     : (a, b) => {
-        const column = columns?.find(col => col.id === orderBy);
-        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : (a[orderBy] ?? '');
-        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : (b[orderBy] ?? '');
+        /** @type {any} */ const column = columns?.find(col => col.id === orderBy);
+        /** @type {any} */ const aValue = column?.sortValue
+          ? column.sortValue(a[orderBy] ?? '')
+          : (a[orderBy] ?? '');
+        /** @type {any} */ const bValue = column?.sortValue
+          ? column.sortValue(b[orderBy] ?? '')
+          : (b[orderBy] ?? '');
 
         if (aValue < bValue) return -1;
         if (aValue > bValue) return 1;
@@ -116,9 +129,9 @@ function getComparator(order, orderBy, columns) {
 }
 
 // Function to stable sort array
-function stableSort(array, comparator) {
+function stableSort(/** @type {any[]} */ array, /** @type {any} */ comparator) {
   const stabilizedThis = array.map((el, index) => [el, index]);
-  stabilizedThis.sort((a, b) => {
+  stabilizedThis.sort((/** @type {any} */ a, /** @type {any} */ b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
@@ -138,16 +151,29 @@ const QuanLyLichVanChuyen = () => {
   const { hasAnyRole } = useAuth(); // Get role checker
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]); // Example: Manager and Dispatcher can add
 
-  const [lichVanChuyenItems, setLichVanChuyenItems] = useState([]);
+  // Integrate the custom hook
+  const {
+    data: lichVanChuyenItems,
+    loading: lichVanChuyenLoading,
+    error: lichVanChuyenError,
+    add: addLichVanChuyen,
+    edit: editLichVanChuyen,
+    remove: removeLichVanChuyen,
+    fetchAll: refetchLichVanChuyen,
+    clearError: clearLichVanChuyenError,
+  } = useLichVanChuyen();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
-  const [selectOptions, setSelectOptions] = useState({
-    vehicles: [],
-    customers: [],
-    employees: [], // Added for employee dropdown
-    containers: [], // Changed from containerTypes to containers
-  });
+  const [selectOptions, setSelectOptions] = useState(
+    /** @type {any} */ ({
+      vehicles: [],
+      customers: [],
+      employees: [], // Added for employee dropdown
+      containers: [], // Changed from containerTypes to containers
+    })
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -186,154 +212,38 @@ const QuanLyLichVanChuyen = () => {
     };
   };
 
-  const fetchPageData = useCallback(async () => {
+  // Fetch selectOptions only (vehicles, customers, employees, containers)
+  const fetchSelectOptions = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
-      const [
-        lichVanChuyenList,
-        dauKeoList,
-        roMoocList,
-        customersList,
-        employeesList,
-        containersList,
-      ] = await Promise.all([
-        fetchAllLichVanChuyen(),
-        fetchAllDauKeo(),
-        fetchAllRoMooc(),
-        fetchAllKhachHang(),
-        fetchAllNhanVien(),
-        fetchAllContainer(),
-      ]);
-
-      console.log('Raw data from APIs:', {
-        lichVanChuyenList: lichVanChuyenList?.length || 0,
-        dauKeoList: dauKeoList?.length || 0,
-        roMoocList: roMoocList?.length || 0,
-        customersList: customersList?.length || 0,
-        employeesList: employeesList?.length || 0,
-        containersList: containersList?.length || 0,
-      });
-
-      const vehiclesData = formatVehiclesForSelect(dauKeoList, roMoocList);
-      const customersData = formatCustomersForSelect(customersList);
-      const employeesData = formatEmployeesForSelect(employeesList);
-      const containersData = formatContainersForSelect(containersList);
-      const processedLichVanChuyenList = lichVanChuyenList.map((item, index) => {
-        // Map fields from both old and new field names
-        const ma_chuyen = item.ma_chuyen || '';
-        const ngay_di = item.ngay_di || item.ngay_van_chuyen || '';
-        const diem_di = item.diem_di || item.diem_xuat_phat || '';
-        const diem_den = item.diem_den || item.diem_tra_hang || '';
-        const ma_khach_hang = item.ma_khach_hang || item.khach_hang_id || '';
-        const bien_so_dau_keo = item.bien_so_dau_keo || item.bien_so_xe_id || '';
-        const ma_so_cont = item.ma_so_cont || item.container_id || '';
-        const trang_thai = item.trang_thai || 'tam_thoi';
-        const ghi_chu = item.ghi_chu || '';
-        const ngay_ha_hang = item.ngay_ha_hang || '';
-        const ma_nv_giao_nhan = item.ma_nv_giao_nhan || item.nhan_vien_giao_nhan_id || '';
-        const ma_nv_lai_xe = item.ma_nv_lai_xe || item.nhan_vien_lai_xe_id || '';
-        const vnd_dau = item.vnd_dau || item.tong_chi_phi || 0;
-        const vnd_di_duong = item.vnd_di_duong || item.cuoc_van_chuyen || 0;
-        const km_hang = item.km_hang || 0;
-        const km_vo = item.km_vo || 0;
-        const l_dau = item.l_dau || 0;
-
-        // Find related entities
-        const customer = customersList.find(
-          c => c.id === ma_khach_hang || c.ma_khach_hang === ma_khach_hang
-        );
-        let vehicle = dauKeoList.find(
-          v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo
-        );
-        if (!vehicle) {
-          vehicle = roMoocList.find(v => v.id === bien_so_dau_keo || v.bien_so === bien_so_dau_keo);
-        }
-        // Ensure we have a valid vehicle object with bien_so
-        const vehicleBienSo = vehicle
-          ? vehicle.bien_so || vehicle.bienSo || bien_so_dau_keo
-          : bien_so_dau_keo;
-        const container = containersList.find(
-          cont => cont.id === ma_so_cont || cont.ma_so === ma_so_cont
-        );
-        const giaoNhan = employeesList.find(
-          emp => emp.id === ma_nv_giao_nhan || emp.ma_nhan_vien === ma_nv_giao_nhan
-        );
-        const laiXe = employeesList.find(
-          emp => emp.id === ma_nv_lai_xe || emp.ma_nhan_vien === ma_nv_lai_xe
-        );
-
-        const loi_nhuan_gop = vnd_di_duong - vnd_dau;
-
-        return {
-          // Original fields
-          ...item,
-
-          // Mapped fields (support both old and new field names)
-          id: item.id,
-          ma_chuyen,
-          ngay_di,
-          diem_di,
-          diem_den,
-          ma_khach_hang,
-          bien_so_dau_keo,
-          ma_so_cont,
-          trang_thai,
-          ghi_chu,
-          ngay_ha_hang,
-          ma_nv_giao_nhan,
-          ma_nv_lai_xe,
-          vnd_dau,
-          vnd_di_duong,
-          km_hang,
-          km_vo,
-          l_dau,
-
-          // Computed fields for display
-          ngayDi: formatDateForDisplay(ngay_di),
-          ngayHaHangDisplay: formatDateForDisplay(ngay_ha_hang),
-          bienSoXe: vehicleBienSo || 'N/A',
-          dienGiai: ghi_chu || ma_chuyen || 'N/A',
-          tuyenDuongDisplay: `${diem_di || 'N/A'} → ${diem_den || 'N/A'}`,
-          tongChiPhiDisplay: formatCurrencyVND(vnd_dau),
-          cuocVanChuyenDisplay: formatCurrencyVND(vnd_di_duong),
-          loiNhuanGopDisplay: formatCurrencyVND(loi_nhuan_gop),
-
-          // Mobile view fields
-          ngayThang: formatDateForDisplay(ngay_di),
-          khachHang: customer ? customer.ten || customer.ho_ten : 'N/A',
-          tuyenDuong: {
-            diemDi: diem_di || 'N/A',
-            diemDen: diem_den || 'N/A',
-          },
-          soLuongContainer: ma_so_cont ? 1 : 0,
-          loaiContainer: container
-            ? `${container.ma_so || container.id} (${container.loai || container.phan_loai || 'Chưa rõ'})`
-            : 'N/A',
-          nhanVienGiaoNhan: giaoNhan ? giaoNhan.ho_ten : 'N/A',
-          nhanVienLaiXe: laiXe ? laiXe.ho_ten : 'N/A',
-        };
-      });
-      setLichVanChuyenItems(processedLichVanChuyenList);
+      const [dauKeoList, roMoocList, customersList, employeesList, containersList] =
+        await Promise.all([
+          fetchAllDauKeo(),
+          fetchAllRoMooc(),
+          fetchAllKhachHang(),
+          fetchAllNhanVien(),
+          fetchAllContainer(),
+        ]);
       setSelectOptions({
-        vehicles: vehiclesData,
-        customers: customersData,
-        employees: employeesData,
-        containers: containersData,
+        vehicles: formatVehiclesForSelect(dauKeoList, roMoocList),
+        customers: formatCustomersForSelect(customersList),
+        employees: formatEmployeesForSelect(employeesList),
+        containers: formatContainersForSelect(containersList),
       });
     } catch (err) {
-      setError('Không thể tải dữ liệu Lịch Vận Chuyển.');
-      console.error('Error fetching page data:', err);
+      setError('Không thể tải dữ liệu chọn lọc.');
+      console.error('Error fetching select options:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []); // fetchAllLichVanChuyen is stable, setLichVanChuyenItems is part of this component's state setters
+  }, []);
 
   useEffect(() => {
-    fetchPageData();
-  }, [fetchPageData]);
+    fetchSelectOptions();
+  }, [fetchSelectOptions]);
 
-  const handleInputChange = e => {
+  const handleInputChange = (/** @type {any} */ e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
@@ -342,15 +252,19 @@ const QuanLyLichVanChuyen = () => {
     setEditingItem(null);
     setFormData({
       ...initialFormState,
-      ngay_van_chuyen: new Date().toISOString().split('T')[0], // Default to today, already in initialFormState
+      ngay_van_chuyen: new Date().toISOString().split('T')[0],
     });
     setIsModalOpen(true);
+    clearLichVanChuyenError();
+    setError('');
   };
 
-  const handleOpenModalForEdit = item => {
+  const handleOpenModalForEdit = (/** @type {any} */ item) => {
     setEditingItem(item);
-    setFormData(mapLichVanChuyenToFormData(item));
+    setFormData({ ...item });
     setIsModalOpen(true);
+    clearLichVanChuyenError();
+    setError('');
   };
 
   const handleCloseModal = () => {
@@ -358,6 +272,7 @@ const QuanLyLichVanChuyen = () => {
     setEditingItem(null);
     setFormData(initialFormState);
     setError('');
+    clearLichVanChuyenError();
   };
 
   // Handle ESC key press to close modals
@@ -381,8 +296,8 @@ const QuanLyLichVanChuyen = () => {
   const handleSave = async () => {
     setIsLoading(true);
     setError('');
+    clearLichVanChuyenError();
     try {
-      // Basic validation for new structure (example)
       if (
         !formData.ma_chuyen ||
         !formData.ngay_van_chuyen ||
@@ -393,47 +308,45 @@ const QuanLyLichVanChuyen = () => {
         setIsLoading(false);
         return;
       }
-
-      // formData should already be in the correct structure for lichVanChuyenApi
-      // as initialFormState and mapLichVanChuyenToFormData are aligned.
-      // No complex transformation needed here if UI forms directly map to formData fields.
-      // However, UI forms (DesktopShipmentFormDialog, MobileShipmentFormStepper) will need significant updates.
-
       if (editingItem) {
-        await editLichVanChuyen(editingItem.id, formData);
+        const result = await editLichVanChuyen(editingItem.id, formData);
+        if (!result.success) throw new Error(result.error);
       } else {
-        await addLichVanChuyen(formData);
+        const result = await addLichVanChuyen(formData);
+        if (!result.success) throw new Error(result.error);
       }
-      fetchPageData(); // Refresh data
+      refetchLichVanChuyen(true);
       setIsModalOpen(false);
-      setEditingItem(null); // Clear editing item
-      setFormData(initialFormState); // Reset form
+      setEditingItem(null);
+      setFormData(initialFormState);
     } catch (err) {
-      setError(`Lỗi khi lưu lịch vận chuyển: ${err.message}`);
+      setError('Lỗi khi lưu lịch vận chuyển: ' + (err && err.message ? err.message : err));
       console.error('Error saving LichVanChuyen:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteConfirmation = item => {
+  const handleDeleteConfirmation = (/** @type {any} */ item) => {
     setItemToDelete(item);
     setIsDeleteModalOpen(true);
+    clearLichVanChuyenError();
+    setError('');
   };
 
   const handleDeleteConfirmed = async () => {
     if (!itemToDelete) return;
     setIsLoading(true);
     setError('');
+    clearLichVanChuyenError();
     try {
-      await removeLichVanChuyen(itemToDelete.id);
-      // Optimistically update UI or refetch
-      setLichVanChuyenItems(prevItems => prevItems.filter(i => i.id !== itemToDelete.id));
-      // fetchPageData(); // Alternatively, refetch all data
-      showSnackbar('Xóa lịch vận chuyển thành công!', 'success');
+      const result = await removeLichVanChuyen(itemToDelete.id);
+      if (!result.success) throw new Error(result.error);
+      refetchLichVanChuyen(true);
+      // Optionally show a snackbar here
     } catch (err) {
-      setError(`Lỗi khi xóa lịch vận chuyển: ${err.message}`);
-      showSnackbar(`Lỗi khi xóa: ${err.message}`, 'error'); // Assuming showSnackbar exists
+      setError('Lỗi khi xóa lịch vận chuyển: ' + (err && err.message ? err.message : err));
+      // Optionally show a snackbar here
       console.error('Error deleting LichVanChuyen:', err);
     }
     setIsLoading(false);
@@ -463,6 +376,8 @@ const QuanLyLichVanChuyen = () => {
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
     setItemToDelete(null);
+    clearLichVanChuyenError();
+    setError('');
   };
 
   const getEntityNameById = (id, list, keyField = 'id', nameField = 'name') => {
@@ -471,33 +386,26 @@ const QuanLyLichVanChuyen = () => {
   };
 
   // Mobile-specific handlers
-  const handleCardExpand = planId => {
+  const handleCardExpand = (/** @type {any} */ planId) => {
     setExpandedCard(expandedCard === planId ? null : planId);
   };
 
   // Filter functions for mobile search
   const filteredLichVanChuyenItems = React.useMemo(() => {
-    const filtered = lichVanChuyenItems.filter(item => {
+    return lichVanChuyenItems.filter((/** @type {any} */ item) => {
       try {
         if (!item) return false;
-
         const matchesSearch =
           !searchTerm ||
           (item.ma_chuyen && item.ma_chuyen.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
-
         const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
-
         return matchesSearch && matchesStatus;
       } catch (error) {
         console.error('Error filtering item:', error, 'Item:', item);
         return false;
       }
     });
-    if (filtered.length > 0) {
-    }
-
-    return filtered;
   }, [lichVanChuyenItems, searchTerm, filterStatus]);
 
   // Handle form submission for mobile stepper
