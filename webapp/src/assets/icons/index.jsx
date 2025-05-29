@@ -200,6 +200,59 @@ export const PartnerIcon = forwardRef(({ className = 'w-5 h-5', ...props }, ref)
   </svg>
 ));
 PartnerIcon.displayName = 'PartnerIcon';
+// Oil (Dầu) Icon - filled black with larger white shiny dot near edge
+export const OilIcon = forwardRef(({ className = 'w-6 h-6', ...props }, ref) => (
+  <svg
+    ref={ref}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="black"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    className={className}
+    {...props}
+  >
+    <path
+      d="M12 3v2.25M12 21c-3.866 0-7-3.134-7-7 0-2.485 2.5-6.5 7-11 4.5 4.5 7 8.515 7 11 0 3.866-3.134 7-7 7z"
+      fill="black"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+    <ellipse
+      cx="15.2"
+      cy="8.5"
+      rx="2.1"
+      ry="1.1"
+      fill="white"
+      opacity="0.8"
+      transform="rotate(-18 15.2 8.5)"
+    />
+  </svg>
+));
+OilIcon.displayName = 'OilIcon';
+// Tire (Lốp) Icon
+export const TireIcon = forwardRef(({ className = 'w-6 h-6', ...props }, ref) => (
+  <svg
+    ref={ref}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className={className}
+    {...props}
+  >
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.5" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 3v2m0 14v2m9-7h-2M5 12H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l-1.414-1.414M6.05 6.05L4.636 4.636"
+    />
+  </svg>
+));
+TireIcon.displayName = 'TireIcon';
 // Export all icons as a single object for easier imports
 export const Icons = {
   PlusIcon,
@@ -211,5 +264,7 @@ export const Icons = {
   ArrowRightIcon,
   CustomerIcon,
   PartnerIcon,
+  OilIcon,
+  TireIcon,
 };
 export default Icons;

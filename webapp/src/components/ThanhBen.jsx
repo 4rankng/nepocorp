@@ -1,5 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { getMenuItems } from '@/config/roles';
 // SVG Icon Components (Heroicons)
 // Existing Icons
 const ChartBarIcon = ({ className = 'w-6 h-6' }) => (
@@ -164,8 +166,7 @@ const DocumentTextIcon = ({ className = 'w-6 h-6' }) => (
     />
   </svg>
 );
-import { useAuth } from '@contexts/AuthContext';
-import { getMenuItems } from '@/config/roles';
+import { OilIcon, TireIcon } from '@assets/icons';
 // Icon mapping
 const iconComponents = {
   ChartBar: ChartBarIcon,
@@ -176,6 +177,8 @@ const iconComponents = {
   Truck: TruckIcon,
   CurrencyDollar: CurrencyDollarIcon,
   DocumentText: DocumentTextIcon,
+  Oil: OilIcon,
+  Tire: TireIcon,
 };
 const ThanhBen = ({ onNavItemClick }) => {
   const { currentUser } = useAuth();

@@ -9,25 +9,22 @@ import {
   Typography,
   Box,
 } from '@mui/material';
-import InventoryIcon from '@mui/icons-material/Inventory2';
+import TrailerIcon from '@mui/icons-material/RvHookup';
 
-const ContainerDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) => (
+const RoMoocDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) => (
   <Dialog
     open={open}
     onClose={onClose}
     onKeyDown={e => e.key === 'Escape' && onClose()}
-    aria-labelledby="delete-container-dialog"
+    aria-labelledby="delete-romooc-dialog"
   >
-    <DialogTitle
-      id="delete-container-dialog"
-      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-    >
-      <InventoryIcon color="error" />
-      Xác nhận xóa container
+    <DialogTitle id="delete-romooc-dialog" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <TrailerIcon color="error" />
+      Xác nhận xóa rơ-mooc
     </DialogTitle>
     <DialogContent>
       <DialogContentText>
-        Bạn có chắc chắn muốn xóa loại container sau đây? Hành động này không thể hoàn tác.
+        Bạn có chắc chắn muốn xóa rơ-mooc sau đây? Hành động này không thể hoàn tác.
       </DialogContentText>
       <Box
         sx={{
@@ -40,20 +37,20 @@ const ContainerDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) =>
         }}
       >
         <Typography variant="subtitle2" gutterBottom color="error.main">
-          Thông tin container:
+          Thông tin rơ-mooc:
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1 }}>
           <Typography variant="body2" fontWeight="500">
-            Phân loại:
+            Biển số:
           </Typography>
           <Typography variant="body2" fontWeight="medium">
-            {data?.phan_loai || '-'}
+            {data?.bien_so || '-'}
           </Typography>
           <Typography variant="body2" fontWeight="500">
-            ID:
+            Mô tả:
           </Typography>
           <Typography variant="body2" fontWeight="medium">
-            {data?.id || 'Không có'}
+            {data?.mo_ta || 'Không có'}
           </Typography>
         </Box>
       </Box>
@@ -69,4 +66,4 @@ const ContainerDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) =>
   </Dialog>
 );
 
-export default ContainerDeleteDialog;
+export default RoMoocDeleteDialog;

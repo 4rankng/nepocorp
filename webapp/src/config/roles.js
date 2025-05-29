@@ -28,8 +28,8 @@ export const MENU_ITEMS = {
     { path: '/khach-hang', label: 'Khách hàng', icon: 'User' },
     { path: '/doi-tac', label: 'Đối tác', icon: 'UserGroup' },
     { path: '/phuong-tien', label: 'Phương tiện', icon: 'Truck' },
-    { path: '/dinh-muc', label: 'Định Mức', icon: 'CurrencyDollar' },
-    { path: '/bao-duong', label: 'Bảo Dưỡng', icon: 'Wrench' },
+    { path: '/dinh-muc', label: 'Định Mức', icon: 'Oil' },
+    { path: '/bao-duong', label: 'Bảo Dưỡng', icon: 'Tire' },
   ],
   [ROLES.KE_TOAN]: [
     { path: '/lich-van-chuyen', label: 'Lịch vận chuyển', icon: 'Calendar' },
