@@ -57,9 +57,20 @@ export const getDinhMucBoSung = () => {
 // Specific method for updating dinh muc bo sung
 export const updateDinhMucBoSung = value => {
   return simulateApiCall(async () => {
+    // Validate the value parameter
+    if (value === undefined || value === null) {
+      throw new Error('Value is required for updating dinh muc bo sung');
+    }
+
+    // Ensure value is a number
+    const numericValue = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(numericValue)) {
+      throw new Error('Value must be a valid number');
+    }
+
     const updated = await cauHinhDataService.updateCauHinhByKey(
       'dinh_muc_bo_sung',
-      value.toString()
+      numericValue.toString()
     );
     return { value: parseFloat(updated.value) };
   });

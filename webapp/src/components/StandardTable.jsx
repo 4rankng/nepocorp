@@ -39,7 +39,6 @@ const theme = {
   shadows: ['none', '0px 2px 8px rgba(0, 0, 0, 0.08)', '0px 4px 12px rgba(0, 0, 0, 0.1)'],
 };
 
-
 // Utility function for sorting data
 const sortData = (data, sortConfig) => {
   if (!sortConfig || !sortConfig.key) return data;
@@ -60,15 +59,15 @@ const sortData = (data, sortConfig) => {
 
     // Handle date values
     if (aValue instanceof Date && bValue instanceof Date) {
-      return sortConfig.direction === 'asc' 
-        ? aValue.getTime() - bValue.getTime() 
+      return sortConfig.direction === 'asc'
+        ? aValue.getTime() - bValue.getTime()
         : bValue.getTime() - aValue.getTime();
     }
 
     // Handle string values (case-insensitive)
     const aStr = String(aValue).toLowerCase();
     const bStr = String(bValue).toLowerCase();
-    
+
     if (aStr < bStr) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aStr > bStr) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
@@ -101,7 +100,7 @@ const StandardTable = ({
   const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
 
   // Handle sort request
-  const handleSort = (columnKey) => {
+  const handleSort = columnKey => {
     if (!sortable) return;
 
     const column = columns.find(col => (col.key || col.id) === columnKey);
@@ -271,13 +270,17 @@ const StandardTable = ({
                 const columnKey = column.key || column.id;
                 const isSortable = sortable && column.sortable !== false;
                 const isSorted = sortConfig && sortConfig.key === columnKey;
-                const sortDirection = isSorted ? (sortConfig.direction === 'desc' ? 'desc' : 'asc') : 'asc';
+                const sortDirection = isSorted
+                  ? sortConfig.direction === 'desc'
+                    ? 'desc'
+                    : 'asc'
+                  : 'asc';
 
                 return (
                   <TableCell
                     key={columnKey}
                     align={column.align || (column.numeric ? 'right' : 'left')}
-                    sx={{ 
+                    sx={{
                       width: column.width,
                       cursor: isSortable ? 'pointer' : 'default',
                     }}
@@ -370,17 +373,19 @@ const StandardTable = ({
                     ))}
                     {renderActions && (
                       <TableCell align="right" sx={{ py: 0.5 }}>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          gap: 0.5, 
-                          justifyContent: 'flex-end',
-                          '& button, & [role="button"]': {
-                            cursor: 'pointer',
-                          },
-                          '& .MuiIconButton-root:hover': {
-                            cursor: 'pointer',
-                          },
-                        }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            gap: 0.5,
+                            justifyContent: 'flex-end',
+                            '& button, & [role="button"]': {
+                              cursor: 'pointer',
+                            },
+                            '& .MuiIconButton-root:hover': {
+                              cursor: 'pointer',
+                            },
+                          }}
+                        >
                           {renderActions(row)}
                         </Box>
                       </TableCell>

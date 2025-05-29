@@ -124,10 +124,56 @@ const DinhMucDau = () => {
     closeDeleteDialog,
     handleConfirmDelete,
     editSupplementaryDialog, // For supplementary dialog visibility
-    openEditSupplementaryDialog,
     closeEditSupplementaryDialog,
     handleSaveSupplementary,
   } = useDinhMucManagement();
+
+  // States for inline editing of supplementary standard
+  const [isEditingSupplementary, setIsEditingSupplementary] = useState(false);
+  const [supplementaryEditValue, setSupplementaryEditValue] = useState(supplementaryStandard);
+  const [isSavingSupplementary, setIsSavingSupplementary] = useState(false);
+
+  // Update edit value when supplementaryStandard changes
+  useEffect(() => {
+    setSupplementaryEditValue(supplementaryStandard);
+  }, [supplementaryStandard]);
+
+  // Functions for inline editing of supplementary standard
+  const handleEditSupplementary = () => {
+    setIsEditingSupplementary(true);
+    setSupplementaryEditValue(supplementaryStandard);
+  };
+
+  const handleCancelSupplementaryEdit = () => {
+    setIsEditingSupplementary(false);
+    setSupplementaryEditValue(supplementaryStandard);
+  };
+
+  const handleSaveSupplementaryInline = async () => {
+    if (supplementaryEditValue === supplementaryStandard) {
+      setIsEditingSupplementary(false);
+      return;
+    }
+
+    setIsSavingSupplementary(true);
+    try {
+      await handleSaveSupplementary(supplementaryEditValue);
+      setIsEditingSupplementary(false);
+    } catch (error) {
+      console.error('Error saving supplementary standard:', error);
+    } finally {
+      setIsSavingSupplementary(false);
+    }
+  };
+
+  const handleSupplementaryKeyPress = event => {
+    if (event.key === 'Enter') {
+      handleSaveSupplementaryInline();
+    } else if (event.key === 'Escape') {
+      handleCancelSupplementaryEdit();
+    }
+  };
+
   const [mobileTab, setMobileTab] = useState('supplementary');
 
   const [expandedCards, setExpandedCards] = useState({});
@@ -400,18 +446,80 @@ const DinhMucDau = () => {
                 >
                   Định mức bổ sung
                 </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}
-                >
-                  {supplementaryStandard} lít/chuyến
-                </Typography>
+                {isEditingSupplementary ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                      size="small"
+                      type="number"
+                      value={supplementaryEditValue}
+                      onChange={e => setSupplementaryEditValue(parseFloat(e.target.value) || 0)}
+                      onKeyDown={handleSupplementaryKeyPress}
+                      inputProps={{
+                        step: 0.1,
+                        min: 0,
+                        style: {
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                          fontFamily: 'monospace',
+                          textAlign: 'center',
+                          padding: '4px 8px',
+                        },
+                      }}
+                      sx={{
+                        width: '120px',
+                        '& .MuiOutlinedInput-root': {
+                          height: 'auto',
+                        },
+                      }}
+                      autoFocus
+                      disabled={isSavingSupplementary}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      lít/chuyến
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}
+                  >
+                    {supplementaryStandard} lít/chuyến
+                  </Typography>
+                )}
               </Box>
-              <EditButton
-                onClick={openEditSupplementaryDialog}
-                size="small"
-                sx={{ alignSelf: 'flex-start' }}
-              />
+              {isEditingSupplementary ? (
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSaveSupplementaryInline}
+                    disabled={isSavingSupplementary}
+                    startIcon={
+                      isSavingSupplementary ? <CircularProgress size={16} color="inherit" /> : null
+                    }
+                    sx={{ minWidth: 'auto', px: 1 }}
+                  >
+                    {isSavingSupplementary ? 'Đang lưu...' : 'Lưu'}
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="inherit"
+                    onClick={handleCancelSupplementaryEdit}
+                    disabled={isSavingSupplementary}
+                    sx={{ minWidth: 'auto', px: 1 }}
+                  >
+                    Hủy
+                  </Button>
+                </Box>
+              ) : (
+                <EditButton
+                  onClick={handleEditSupplementary}
+                  size="small"
+                  sx={{ alignSelf: 'flex-start' }}
+                />
+              )}
             </Paper>
           </Box>
         )}
@@ -494,17 +602,98 @@ const DinhMucDau = () => {
                   >
                     <Box>
                       <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ lineHeight: 1.2, mb: 0.5 }}
                       >
-                        {supplementaryStandard} lít/chuyến
+                        Định mức bổ sung
                       </Typography>
+                      {isEditingSupplementary ? (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            flexDirection: 'column',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={supplementaryEditValue}
+                              onChange={e =>
+                                setSupplementaryEditValue(parseFloat(e.target.value) || 0)
+                              }
+                              onKeyDown={handleSupplementaryKeyPress}
+                              inputProps={{
+                                step: 0.1,
+                                min: 0,
+                                style: {
+                                  fontSize: '1rem',
+                                  fontWeight: 600,
+                                  fontFamily: 'monospace',
+                                  textAlign: 'center',
+                                  padding: '6px 8px',
+                                },
+                              }}
+                              sx={{
+                                width: '100px',
+                                '& .MuiOutlinedInput-root': {
+                                  height: 'auto',
+                                },
+                              }}
+                              autoFocus
+                              disabled={isSavingSupplementary}
+                            />
+                            <Typography variant="body2" color="text.secondary">
+                              lít/chuyến
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="primary"
+                              onClick={handleSaveSupplementaryInline}
+                              disabled={isSavingSupplementary}
+                              startIcon={
+                                isSavingSupplementary ? (
+                                  <CircularProgress size={16} color="inherit" />
+                                ) : null
+                              }
+                              sx={{ minWidth: 'auto', px: 1.5 }}
+                            >
+                              {isSavingSupplementary ? 'Đang lưu...' : 'Lưu'}
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="inherit"
+                              onClick={handleCancelSupplementaryEdit}
+                              disabled={isSavingSupplementary}
+                              sx={{ minWidth: 'auto', px: 1.5 }}
+                            >
+                              Hủy
+                            </Button>
+                          </Box>
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="h6"
+                          sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}
+                        >
+                          {supplementaryStandard} lít/chuyến
+                        </Typography>
+                      )}
                     </Box>
-                    <EditButton
-                      onClick={openEditSupplementaryDialog}
-                      size="small"
-                      sx={{ alignSelf: 'flex-start' }}
-                    />
+                    {!isEditingSupplementary && (
+                      <EditButton
+                        onClick={handleEditSupplementary}
+                        size="small"
+                        sx={{ alignSelf: 'flex-start' }}
+                      />
+                    )}
                   </Paper>
                 </Box>
               ) : (
@@ -557,7 +746,7 @@ const DinhMucDau = () => {
                         })
                       }
                       onDeleteClick={(id, type, item) =>
-                        handleTriggerDeleteDialog(id, type, item, plate.licensePlate)
+                        handleTriggerDeleteDialog(id, type, item, licensePlate)
                       }
                     />
                   ))}
@@ -572,7 +761,7 @@ const DinhMucDau = () => {
                     hangNorms={dinhMucHang[licensePlate] || []}
                     voNorms={dinhMucVo[licensePlate] || []}
                     isMobile={isMobile} // Will be false here
-                    // mobileTab is not relevant for desktop view
+                    mobileTab="" // Not relevant for desktop view
                     onOpenAddDialog={() =>
                       openAddNewDinhMucDialog({
                         licensePlate: licensePlate,

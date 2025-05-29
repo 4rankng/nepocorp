@@ -40,7 +40,7 @@ const CustomerListResponsive = ({
   }, [customers, searchTerm]);
 
   // Handle search input change
-  const handleSearchChange = (event) => {
+  const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
 
@@ -57,31 +57,27 @@ const CustomerListResponsive = ({
       label: 'Địa chỉ',
       align: 'left',
       sortable: true,
-      render: (value) => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa cập nhật',
     },
     {
       key: 'ma_so_thue',
       label: 'Mã số thuế',
       align: 'left',
       sortable: true,
-      render: (value) => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa cập nhật',
     },
   ];
 
   // Render action buttons for each row
-  const renderActions = (customer) => (
+  const renderActions = customer => (
     <>
       <EditButton onClick={() => onEdit(customer)} size="small" />
-      <DeleteButton 
-        onClick={() => onDelete(customer)} 
-        size="small" 
-        sx={{ ml: 1 }} 
-      />
+      <DeleteButton onClick={() => onDelete(customer)} size="small" sx={{ ml: 1 }} />
     </>
   );
 
   // Handle row click for better UX
-  const handleRowClick = (customer) => {
+  const handleRowClick = customer => {
     // Optional: you can implement row click functionality here
     // For now, we'll just use the action buttons
     console.log('Customer row clicked:', customer);

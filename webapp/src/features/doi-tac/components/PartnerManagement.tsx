@@ -15,7 +15,17 @@ interface SnackbarState {
   message: string;
   severity: 'success' | 'error' | 'info' | 'warning';
 }
-import { Box, Paper, Typography, Alert, Snackbar, Fab, Zoom, TextField, InputAdornment } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Typography,
+  Alert,
+  Snackbar,
+  Fab,
+  Zoom,
+  TextField,
+  InputAdornment,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import ConfirmationModal from '@/components/ConfirmationDialog';
@@ -53,13 +63,13 @@ const PartnerManagement = () => {
     message: '',
     severity: 'success',
   });
-  
+
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Filter partners based on search term
   const filteredPartners = partners.filter((partner: Partner) => {
     if (!searchTerm.trim()) return true;
-    
+
     const term = searchTerm.toLowerCase();
     return (
       (partner.ten && partner.ten.toLowerCase().includes(term)) ||
@@ -68,12 +78,15 @@ const PartnerManagement = () => {
       (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
     );
   });
-  
+
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning' = 'success') => {
+  const showSnackbar = (
+    message: string,
+    severity: 'success' | 'error' | 'info' | 'warning' = 'success'
+  ) => {
     setSnackbar({ open: true, message, severity });
   };
 

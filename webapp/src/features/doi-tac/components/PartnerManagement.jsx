@@ -1,5 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Paper, Typography, Alert, Snackbar, Fab, Zoom, TextField, InputAdornment, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Typography,
+  Alert,
+  Snackbar,
+  Fab,
+  Zoom,
+  TextField,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import ConfirmationModal from '@/components/ConfirmationDialog';
@@ -37,23 +48,24 @@ const PartnerManagement = () => {
     message: '',
     severity: 'success',
   });
-  
+
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Filter partners based on search term
   const filteredPartners = useMemo(() => {
     if (!searchTerm.trim()) return partners;
-    
+
     const term = searchTerm.toLowerCase();
-    return partners.filter(partner => (
-      (partner.ten && partner.ten.toLowerCase().includes(term)) ||
-      (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
-      (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
-      (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
-    ));
+    return partners.filter(
+      partner =>
+        (partner.ten && partner.ten.toLowerCase().includes(term)) ||
+        (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
+        (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
+        (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
+    );
   }, [partners, searchTerm]);
-  
-  const handleSearchChange = (event) => {
+
+  const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
 
@@ -72,7 +84,7 @@ const PartnerManagement = () => {
     setIsFormOpen(true);
   };
 
-  const handleOpenFormForEdit = (partner) => {
+  const handleOpenFormForEdit = partner => {
     setSelectedPartner(partner);
     setFormError('');
     setIsFormOpen(true);
@@ -84,7 +96,7 @@ const PartnerManagement = () => {
     setFormError('');
   };
 
-  const handleSavePartner = async (formData) => {
+  const handleSavePartner = async formData => {
     setFormError('');
 
     // If this is an edit, we need to validate the code if it was changed
@@ -127,7 +139,7 @@ const PartnerManagement = () => {
   };
 
   // Delete handlers
-  const handleDeleteClick = (partner) => {
+  const handleDeleteClick = partner => {
     setPartnerToDelete(partner);
     setIsDeleteModalOpen(true);
   };

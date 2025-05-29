@@ -39,18 +39,14 @@ const CustomerList = ({
   ];
 
   // Render action buttons for each row
-  const renderActions = (record) => (
+  const renderActions = record => (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
       <EditButton
         onClick={() => onEdit(record)}
         disabled={loading}
         tooltip="Chỉnh sửa khách hàng"
       />
-      <DeleteButton
-        onClick={() => onDelete(record)}
-        disabled={loading}
-        tooltip="Xóa khách hàng"
-      />
+      <DeleteButton onClick={() => onDelete(record)} disabled={loading} tooltip="Xóa khách hàng" />
     </Box>
   );
 

@@ -136,8 +136,8 @@ export const useDinhMucManagement = () => {
     async newValue => {
       setIsLoading(true);
       try {
-        // Assuming dinhMucApi.updateSupplementaryStandard exists and takes the new value directly
-        await dinhMucApi.updateBoSung(supplementaryStandard.id, { value: newValue }); // Update local state
+        // Call the API with just the new value
+        await dinhMucApi.updateBoSung(newValue);
         setSupplementaryStandard(newValue); // Update local state
         showSnackbar('Cập nhật định mức bổ sung thành công');
         closeEditSupplementaryDialog();
@@ -150,13 +150,7 @@ export const useDinhMucManagement = () => {
         setIsLoading(false);
       }
     },
-    [
-      setIsLoading,
-      setSupplementaryStandard,
-      showSnackbar,
-      closeEditSupplementaryDialog,
-      supplementaryStandard.id,
-    ]
+    [setIsLoading, setSupplementaryStandard, showSnackbar, closeEditSupplementaryDialog]
   );
 
   // Derived state for license plates that have norms or are in the list of all plates
