@@ -1,0 +1,171 @@
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogActions,
+  Box,
+  Button,
+  TextField,
+  Grid,
+  Typography,
+  IconButton,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+
+const DinhMucChoHangDialog = ({
+  open,
+  isEdit,
+  isMobile,
+  formData,
+  errors,
+  onClose,
+  onSave,
+  onInputChange,
+  onValidateForm,
+  licensePlate,
+}) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleInternalSave = async () => {
+    if (onValidateForm && !onValidateForm()) {
+      return; // Validation failed
+    }
+    setIsSubmitting(true);
+    try {
+      await onSave();
+    } catch (error) {
+      console.error('Error saving Dinh Muc Cho Hang:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={isMobile}
+      sx={{
+        '& .MuiPaper-root': {
+          width: '100%',
+          maxWidth: { xs: '100%', sm: '600px' },
+          borderRadius: { xs: 0, sm: 2 },
+        },
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          px: 3,
+          py: 2,
+        }}
+      >
+        <Typography variant="h6" component="h2">
+          {isEdit ? 'Chỉnh sửa định mức chở hàng' : 'Thêm định mức chở hàng'}
+          {licensePlate && ` - ${licensePlate}`}
+        </Typography>
+        <IconButton edge="end" color="inherit" onClick={onClose} aria-label="close">
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 3 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              label="Từ (Km)"
+              name="fromKm"
+              type="number"
+              value={formData.fromKm}
+              onChange={onInputChange}
+              error={!!errors.fromKm}
+              helperText={errors.fromKm}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">km</InputAdornment>,
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              label="Đến (Km)"
+              name="toKm"
+              type="number"
+              value={formData.toKm}
+              onChange={onInputChange}
+              error={!!errors.toKm}
+              helperText={errors.toKm}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">km</InputAdornment>,
+              }}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              required
+              label="Định mức tiêu thụ"
+              name="standard"
+              type="number"
+              value={formData.standard}
+              onChange={onInputChange}
+              error={!!errors.standard}
+              helperText={errors.standard}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">l/100km</InputAdornment>,
+              }}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Ghi chú"
+              name="note"
+              multiline
+              rows={3}
+              value={formData.note || ''}
+              onChange={onInputChange}
+              placeholder="Nhập ghi chú về định mức (nếu có)"
+            />
+          </Grid>
+        </Grid>
+      </DialogContent>
+
+      <DialogActions
+        sx={{
+          px: 3,
+          py: 2,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
+          Hủy
+        </Button>
+        <Button
+          onClick={handleInternalSave}
+          variant="contained"
+          color="primary"
+          disabled={isSubmitting}
+          startIcon={isSubmitting && <CircularProgress size={20} color="inherit" />}
+        >
+          {isSubmitting ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default DinhMucChoHangDialog;

@@ -11,6 +11,7 @@ import QuanLyNhanVien from '@features/nhan-vien/QuanLyNhanVien';
 import QuanLyKhachHang from '@features/khach-hang/QuanLyKhachHang';
 import QuanLyDoiTac from '@features/doi-tac/QuanLyDoiTac';
 import QuanLyPhuongTien from '@features/phuong-tien/QuanLyPhuongTien';
+import QuanLyDinhMuc from '@features/dinh-muc/QuanLyDinhMuc';
 // Future flags for React Router v7
 const routerConfig = {
   future: {
@@ -82,6 +83,38 @@ const router = createBrowserRouter(
             {
               path: '',
               element: <Navigate to="xe-van-chuyen" replace />,
+            },
+          ],
+        },
+        // DinhMuc nested routes
+        {
+          path: 'dinh-muc',
+          element: withErrorBoundary(QuanLyDinhMuc),
+          errorElement: <ErrorPage />,
+          children: [
+            {
+              path: 'bo-sung',
+              element: withErrorBoundary(QuanLyDinhMuc),
+              errorElement: <ErrorPage />,
+            },
+            {
+              path: 'cho-hang',
+              element: withErrorBoundary(QuanLyDinhMuc),
+              errorElement: <ErrorPage />,
+            },
+            {
+              path: 'vo-rong',
+              element: withErrorBoundary(QuanLyDinhMuc),
+              errorElement: <ErrorPage />,
+            },
+            {
+              path: 'di-duong',
+              element: withErrorBoundary(QuanLyDinhMuc),
+              errorElement: <ErrorPage />,
+            },
+            {
+              path: '',
+              element: <Navigate to="bo-sung" replace />,
             },
           ],
         },

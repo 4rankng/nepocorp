@@ -4,7 +4,9 @@ import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
 import EditSupplementaryStandardDialog from './components/EditSupplementaryStandardDialog';
-import LicensePlateNormsCard from './components/LicensePlateNormsCard';
+import DinhMucBoSung from './components/DinhMucBoSung';
+import DinhMucTheoBienSoXeSection from './components/DinhMucTheoBienSoXeSection';
+import DinhMucDiDuong from './components/DinhMucDiDuong';
 import * as dauKeoApi from '@services/mockApi/dauKeoApi';
 import * as roMoocApi from '@services/mockApi/roMoocApi';
 import DinhMucDialog from './components/DinhMucDialog';
@@ -122,47 +124,9 @@ const DinhMucDau = () => {
     closeEditSupplementaryDialog,
     handleSaveSupplementary,
   } = useDinhMucDauManagement();
-  // States for inline editing of supplementary standard
-  const [isEditingSupplementary, setIsEditingSupplementary] = useState(false);
-  const [supplementaryEditValue, setSupplementaryEditValue] = useState(supplementaryStandard);
-  const [isSavingSupplementary, setIsSavingSupplementary] = useState(false);
-  // Update edit value when supplementaryStandard changes
-  useEffect(() => {
-    setSupplementaryEditValue(supplementaryStandard);
-  }, [supplementaryStandard]);
-  // Functions for inline editing of supplementary standard
-  const handleEditSupplementary = () => {
-    setIsEditingSupplementary(true);
-    setSupplementaryEditValue(supplementaryStandard);
-  };
-  const handleCancelSupplementaryEdit = () => {
-    setIsEditingSupplementary(false);
-    setSupplementaryEditValue(supplementaryStandard);
-  };
-  const handleSaveSupplementaryInline = async () => {
-    if (supplementaryEditValue === supplementaryStandard) {
-      setIsEditingSupplementary(false);
-      return;
-    }
-    setIsSavingSupplementary(true);
-    try {
-      await handleSaveSupplementary(supplementaryEditValue);
-      setIsEditingSupplementary(false);
-    } catch (error) {
-      console.error('Error saving supplementary standard:', error);
-    } finally {
-      setIsSavingSupplementary(false);
-    }
-  };
-  const handleSupplementaryKeyPress = event => {
-    if (event.key === 'Enter') {
-      handleSaveSupplementaryInline();
-    } else if (event.key === 'Escape') {
-      handleCancelSupplementaryEdit();
-    }
-  };
   const [mobileTab, setMobileTab] = useState('supplementary');
-  const [expandedCards, setExpandedCards] = useState({});
+  const [desktopTab, setDesktopTab] = useState('desktop_bo_sung'); // New state for desktop tabs
+  // expandedCards state removed as it was for the old MobileFuelStandardCard
   const [orderBy, setOrderBy] = useState('fromKm');
   const [order, setOrder] = useState('asc');
   const [searchQuery, setSearchQuery] = useState('');
@@ -180,571 +144,205 @@ const DinhMucDau = () => {
     }
     openDeleteDialog(id, type, detailsText);
   };
-  const [expandedPlates, setExpandedPlates] = useState({});
-  const filteredLicensePlatesWithStandards = useMemo(() => {
-    if (!searchQuery) {
-      return platesFromHook;
-    }
-    return platesFromHook.filter(item =>
-      item.licensePlate.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [platesFromHook, searchQuery]);
-  const toggleExpand = licensePlate => {
-    setExpandedPlates(prev => ({
-      ...prev,
-      [licensePlate]: !prev[licensePlate],
-    }));
-  };
-  const toggleCardExpand = cardId => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [cardId]: !prev[cardId],
-    }));
-  };
-  const MobileFuelStandardCard = ({ standard, licensePlate }) => {
-    const cardId = `${licensePlate}-${standard.id}`;
-    const isExpanded = expandedCards[cardId];
-    const getStatusColor = value => {
-      if (value > 0.4) return theme.palette.error.main;
-      if (value > 0.3) return theme.palette.warning.main;
-      return theme.palette.success.main;
-    };
-    const getStatusLabel = value => {
-      if (value > 0.4) return 'Cao';
-      if (value > 0.3) return 'Trung bình';
-      return 'Tốt';
-    };
-    return (
-      <Card
-        sx={{
-          mb: 1,
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 2,
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: 1,
-            borderColor: 'primary.main',
-          },
-        }}
-      >
-        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              mb: 1,
-            }}
-          >
-            <Box sx={{ flex: 1 }}>
-              <Chip
-                label={getStatusLabel(standard.standard)}
-                size="small"
-                sx={{
-                  backgroundColor: theme => alpha(theme.palette.text.secondary, 0.1),
-                  color: 'text.secondary',
-                  fontWeight: 500,
-                  fontSize: '0.75rem',
-                }}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <EditButton
-                size="small"
-                onClick={e => {
-                  e.stopPropagation();
-                  handleEditClick(
-                    standard,
-                    licensePlate,
-                    mobileTab === 'cargo' ? 'km_hang' : 'km_vo'
-                  );
-                }}
-              />
-              <DeleteButton
-                size="small"
-                onClick={() => {
-                  const type = standard.loaiDinhMuc;
-                  const details = `${type === 'km_hang' ? 'hàng' : 'vỏ'} từ ${standard.fromKm}km đến ${standard.toKm}km`;
-                  openDeleteDialog(standard.id, type, details);
-                }}
-              />
-              <IconButton size="small" onClick={() => toggleCardExpand(cardId)} sx={{ ml: 1 }}>
-                {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
-            </Box>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: isExpanded ? 1 : 0,
-            }}
-          >
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-              {standard.fromKm.toLocaleString()} - {standard.toKm.toLocaleString()} km
-            </Typography>
-            <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
-              {standard.standard.toFixed(2)} l/km
-            </Typography>
-          </Box>
-          <Collapse in={isExpanded}>
-            <Divider sx={{ my: 1 }} />
-            <Box sx={{ pt: 1 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: 'block', mb: 0.5 }}
-                  >
-                    Từ KM
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {standard.fromKm.toLocaleString()}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: 'block', mb: 0.5 }}
-                  >
-                    Đến KM
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {standard.toKm.toLocaleString()}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: 'block', mb: 0.5 }}
-                  >
-                    Định mức tiêu thụ
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: getStatusColor(standard.standard),
-                      fontFamily: 'monospace',
-                    }}
-                  >
-                    {standard.standard.toFixed(2)} lít/km
-                  </Typography>
-                </Grid>
-                {standard.note && (
-                  <Grid item xs={12}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: 'block', mb: 0.5 }}
-                    >
-                      Ghi chú
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                      {standard.note}
-                    </Typography>
-                  </Grid>
-                )}
-              </Grid>
-            </Box>
-          </Collapse>
-        </CardContent>
-      </Card>
-    );
-  };
-  const handleEditClick = (standard, licensePlate, type) => {
-    openEditDinhMucDialog({ standard, licensePlate, loaiDinhMuc: type });
-  };
-  const handleUpdateSupplementary = async () => {
-    try {
-      setIsLoading(true);
-      const response = await dinhMucDauApi.updateBoSung({ value: parseFloat(newSupplementaryValue) });
-      if (response) {
-        setSupplementaryStandard(response.value || parseFloat(newSupplementaryValue));
-        setEditSupplementaryDialog(false);
-        showSnackbar('Cập nhật định mức bổ sung thành công', 'success');
-      }
-    } catch (error) {
-      console.error('Error updating supplementary standard:', error);
-      showSnackbar('Có lỗi xảy ra khi cập nhật định mức bổ sung', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // toggleCardExpand handler removed as it was for the old MobileFuelStandardCard
   return (
     <Box component="div" sx={{ p: isMobile ? 1 : 2, width: '100%' }}>
-      <Box component="div" sx={{ mb: isMobile ? 1 : 2 }}>
-        {isMobile ? (
-          <Tabs
-            value={mobileTab}
-            onChange={(e, v) => setMobileTab(v)}
-            variant="fullWidth"
-            indicatorColor="primary"
-            textColor="primary"
-            sx={{ mb: 1 }}
-          >
-            <Tab label="Bổ sung" value="supplementary" />
-            <Tab label="Định mức hàng" value="cargo" />
-            <Tab label="Định mức vỏ" value="container" />
-          </Tabs>
-        ) : (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: isMobile ? 1 : 2 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                p: 1.5,
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
-                gap: 2,
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="subtitle2"
-                  color="text.secondary"
-                  sx={{ lineHeight: 1.2, mb: 0.5 }}
-                >
-                  Định mức bổ sung
-                </Typography>
-                {isEditingSupplementary ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TextField
-                      size="small"
-                      type="number"
-                      value={supplementaryEditValue}
-                      onChange={e => setSupplementaryEditValue(parseFloat(e.target.value) || 0)}
-                      onKeyDown={handleSupplementaryKeyPress}
-                      inputProps={{
-                        step: 0.1,
-                        min: 0,
-                        style: {
-                          fontSize: '1rem',
-                          fontWeight: 600,
-                          fontFamily: 'monospace',
-                          textAlign: 'center',
-                          padding: '4px 8px',
-                        },
-                      }}
-                      sx={{
-                        width: '120px',
-                        '& .MuiOutlinedInput-root': {
-                          height: 'auto',
-                        },
-                      }}
-                      autoFocus
-                      disabled={isSavingSupplementary}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      lít/chuyến
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}
-                  >
-                    {supplementaryStandard} lít/chuyến
-                  </Typography>
-                )}
-              </Box>
-              {isEditingSupplementary ? (
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSaveSupplementaryInline}
-                    disabled={isSavingSupplementary}
-                    startIcon={
-                      isSavingSupplementary ? <CircularProgress size={16} color="inherit" /> : null
-                    }
-                    sx={{ minWidth: 'auto', px: 1 }}
-                  >
-                    {isSavingSupplementary ? 'Đang lưu...' : 'Lưu'}
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="inherit"
-                    onClick={handleCancelSupplementaryEdit}
-                    disabled={isSavingSupplementary}
-                    sx={{ minWidth: 'auto', px: 1 }}
-                  >
-                    Hủy
-                  </Button>
-                </Box>
-              ) : (
-                <EditButton
-                  onClick={handleEditSupplementary}
-                  size="small"
-                  sx={{ alignSelf: 'flex-start' }}
-                />
-              )}
-            </Paper>
-          </Box>
-        )}
-      </Box>
-      {(isMobile && (mobileTab === 'cargo' || mobileTab === 'container')) ||
-        (!isMobile && (
-          <Box sx={{ mb: isMobile ? 1 : 2, maxWidth: '100%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              variant="outlined"
-              placeholder="Tìm kiếm biển số xe..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <span role="img" aria-label="search">
-                      🔍
-                    </span>
-                  </InputAdornment>
-                ),
-                sx: {
-                  borderRadius: '6px',
-                  height: isMobile ? 36 : 36,
-                  minHeight: isMobile ? 36 : 36,
-                  fontSize: '0.95rem',
-                },
-              }}
-              sx={{
-                width: '100%',
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '6px',
-                  height: isMobile ? 36 : 36,
-                  minHeight: isMobile ? 36 : 36,
-                  fontSize: '0.95rem',
-                },
-                '& .MuiInputBase-input': {
-                  py: 0.5,
-                  fontSize: '0.95rem',
-                },
-              }}
-            />
-          </Box>
-        ))}
       <Box sx={{ mt: isMobile ? 1 : 2, width: '100%' }}>
         {isLoading ? (
-          <Box display="flex" justifyContent="center" my={4}>
-            <CircularProgress size={24} />
+          <Box sx={{ flexGrow: 1, overflowY: 'auto', p: { xs: 0, md: 2 } }}>
+            <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />
           </Box>
         ) : error ? (
-          <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
-            {error}
+          <Alert severity="error" sx={{ m: 2 }}>
+            {error.message || error.toString()}
           </Alert>
-        ) : filteredLicensePlatesWithStandards.length === 0 ? (
-          <Alert severity="info" sx={{ fontSize: '0.875rem' }}>
-            {searchQuery.trim()
-              ? 'Không tìm thấy biển số xe phù hợp.'
-              : 'Chưa có dữ liệu biển số xe. Vui lòng thêm biển số xe trước.'}
-          </Alert>
-        ) : (
-          <>
-            {isMobile ? (
-              mobileTab === 'supplementary' ? (
-                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      p: 1.5,
-                      bgcolor: 'background.paper',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      gap: 2,
+        ) : !isMobile ? (
+          // Desktop View with Tabs
+          <Box>
+            <Tabs
+              value={desktopTab}
+              onChange={(event, newValue) => setDesktopTab(newValue)}
+              aria-label="desktop fuel standard tabs"
+              sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+            >
+              <Tab label="Bổ Sung" value="desktop_bo_sung" />
+              <Tab label="Chở hàng" value="desktop_dm_hang" />
+              <Tab label="Vỏ rỗng" value="desktop_dm_vo" />
+              <Tab label="Đi đường" value="desktop_di_duong" />
+            </Tabs>
+
+            {desktopTab === 'desktop_bo_sung' && (
+              <DinhMucBoSung
+                supplementaryStandard={supplementaryStandard}
+                onSaveSupplementary={handleSaveSupplementary}
+              />
+            )}
+
+            {(desktopTab === 'desktop_dm_hang' || desktopTab === 'desktop_dm_vo') && (
+              <Box>
+                <Box
+                  sx={{
+                    mb: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <TextField
+                    size="small"
+                    variant="outlined"
+                    placeholder="Tìm kiếm biển số xe..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <span role="img" aria-label="search">
+                            🔍
+                          </span>
+                        </InputAdornment>
+                      ),
+                      sx: { borderRadius: '6px', height: 36, fontSize: '0.95rem' },
                     }}
+                    sx={{
+                      maxWidth: 400,
+                      flexGrow: 1,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '6px',
+                        height: 36,
+                        fontSize: '0.95rem',
+                      },
+                      '& .MuiInputBase-input': { py: 0.5, fontSize: '0.95rem' },
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    onClick={() =>
+                      openAddNewDinhMucDialog({
+                        licensePlate: null,
+                        loaiDinhMuc: desktopTab === 'desktop_dm_hang' ? 'km_hang' : 'km_vo',
+                      })
+                    }
+                    sx={{ height: 36, ml: 2, whiteSpace: 'nowrap' }}
                   >
-                    <Box>
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ lineHeight: 1.2, mb: 0.5 }}
-                      >
-                        Định mức bổ sung
-                      </Typography>
-                      {isEditingSupplementary ? (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            flexDirection: 'column',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <TextField
-                              size="small"
-                              type="number"
-                              value={supplementaryEditValue}
-                              onChange={e =>
-                                setSupplementaryEditValue(parseFloat(e.target.value) || 0)
-                              }
-                              onKeyDown={handleSupplementaryKeyPress}
-                              inputProps={{
-                                step: 0.1,
-                                min: 0,
-                                style: {
-                                  fontSize: '1rem',
-                                  fontWeight: 600,
-                                  fontFamily: 'monospace',
-                                  textAlign: 'center',
-                                  padding: '6px 8px',
-                                },
-                              }}
-                              sx={{
-                                width: '100px',
-                                '& .MuiOutlinedInput-root': {
-                                  height: 'auto',
-                                },
-                              }}
-                              autoFocus
-                              disabled={isSavingSupplementary}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                              lít/chuyến
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="primary"
-                              onClick={handleSaveSupplementaryInline}
-                              disabled={isSavingSupplementary}
-                              startIcon={
-                                isSavingSupplementary ? (
-                                  <CircularProgress size={16} color="inherit" />
-                                ) : null
-                              }
-                              sx={{ minWidth: 'auto', px: 1.5 }}
-                            >
-                              {isSavingSupplementary ? 'Đang lưu...' : 'Lưu'}
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="inherit"
-                              onClick={handleCancelSupplementaryEdit}
-                              disabled={isSavingSupplementary}
-                              sx={{ minWidth: 'auto', px: 1.5 }}
-                            >
-                              Hủy
-                            </Button>
-                          </Box>
-                        </Box>
-                      ) : (
-                        <Typography
-                          variant="h6"
-                          sx={{ fontWeight: 600, color: 'primary.main', fontFamily: 'monospace' }}
-                        >
-                          {supplementaryStandard} lít/chuyến
-                        </Typography>
-                      )}
-                    </Box>
-                    {!isEditingSupplementary && (
-                      <EditButton
-                        onClick={handleEditSupplementary}
-                        size="small"
-                        sx={{ alignSelf: 'flex-start' }}
-                      />
-                    )}
-                  </Paper>
+                    Thêm mới
+                  </Button>
                 </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ mb: 1, px: 1 }}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      variant="outlined"
-                      placeholder={`Tìm kiếm biển số xe...`}
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span role="img" aria-label="search">
-                              🔍
-                            </span>
-                          </InputAdornment>
-                        ),
-                        sx: {
-                          borderRadius: '6px',
-                          height: 36,
-                          minHeight: 36,
-                          fontSize: '0.95rem',
-                        },
-                      }}
-                    />
-                  </Box>
-                  {filteredLicensePlatesWithStandards.map(({ licensePlate }) => (
-                    <LicensePlateNormsCard
-                      key={licensePlate}
-                      licensePlate={licensePlate}
-                      hangNorms={dinhMucHang[licensePlate] || []}
-                      voNorms={dinhMucVo[licensePlate] || []}
-                      isMobile={isMobile}
-                      mobileTab={mobileTab}
-                      onOpenAddDialog={() =>
-                        openAddNewDinhMucDialog({
-                          licensePlate: null,
-                          loaiDinhMuc: mobileTab === 'cargo' ? 'km_hang' : 'km_vo',
-                        })
+                <DinhMucTheoBienSoXeSection
+                  dinhMucHang={dinhMucHang}
+                  dinhMucVo={dinhMucVo}
+                  activeLicensePlatesWithStandards={platesFromHook}
+                  isLoading={isLoading}
+                  error={error ? error.message || 'Lỗi không xác định' : null}
+                  searchQuery={searchQuery} // Pass search query down if DinhMucTheoBienSoXeSection handles filtering
+                  // onSearchQueryChange is handled above
+                  onOpenAddNewDialog={openAddNewDinhMucDialog} // This might be redundant if Add button is above
+                  onOpenEditDialog={openEditDinhMucDialog}
+                  onOpenDeleteDialog={handleTriggerDeleteDialog}
+                  // Consider passing a filter prop if 'Định mức hàng' and 'Định mức vỏ' should show different things
+                  // e.g., normTypeFilter={desktopTab === 'desktop_dm_hang' ? 'km_hang' : 'km_vo'}
+                />
+              </Box>
+            )}
+            {desktopTab === 'desktop_di_duong' && <DinhMucDiDuong />}
+          </Box>
+        ) : (
+          // Mobile View
+          <Box> {/* Outer Box for mobile view */}
+            <Tabs
+              value={mobileTab}
+              onChange={(event, newValue) => setMobileTab(newValue)}
+              aria-label="mobile fuel standard tabs"
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+              sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+            >
+              <Tab label="Bổ Sung" value="supplementary" />
+              <Tab label="Chở hàng" value="mobile_dm_hang" />
+              <Tab label="Vỏ rỗng" value="mobile_dm_vo" />
+              <Tab label="Đi đường" value="mobile_di_duong" />
+            </Tabs>
+
+            {/* Tab Content Area with consistent padding */}
+            {mobileTab === 'supplementary' && (
+              <Box sx={{ pt: 2 }}>
+                <DinhMucBoSung
+                  supplementaryStandard={supplementaryStandard}
+                  onSaveSupplementary={handleSaveSupplementary}
+                />
+              </Box>
+            )}
+
+            {(mobileTab === 'mobile_dm_hang' || mobileTab === 'mobile_dm_vo') && (
+              <Box sx={{ pt: 2 }}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <TextField
+                    size="small"
+                    variant="outlined"
+                    placeholder="Tìm kiếm biển số xe..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <span role="img" aria-label="search">
+                            🔍
+                          </span>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ maxWidth: '300px', flexGrow: 1, mr: 1 }}
+                  />
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => openAddNewDinhMucDialog({ loaiDinhMuc: mobileTab === 'mobile_dm_hang' ? 'km_hang' : 'km_vo' })}
+                    size="small"
+                  >
+                    Thêm mới
+                  </Button>
+                </Box>
+                {platesFromHook
+                  .filter(plate =>
+                    plate.licensePlate.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map(plate => (
+                    <DinhMucTheoBienSoXeSection
+                      key={`${plate.licensePlate}-${mobileTab}`}
+                      licensePlate={plate.licensePlate}
+                      standardsHang={mobileTab === 'mobile_dm_hang' ? (dinhMucHang[plate.licensePlate] || []) : []}
+                      standardsVo={mobileTab === 'mobile_dm_vo' ? (dinhMucVo[plate.licensePlate] || []) : []}
+                      displayType={mobileTab === 'mobile_dm_hang' ? 'km_hang' : 'km_vo'}
+                      onEdit={(standard, loaiDinhMuc) =>
+                        openEditDinhMucDialog({ standard, licensePlate: plate.licensePlate, loaiDinhMuc })
                       }
-                      onEditClick={(item, lp, type) =>
-                        openEditDinhMucDialog({
-                          standard: item,
-                          licensePlate: lp,
-                          loaiDinhMuc: type,
-                        })
+                      onDelete={(id, type, item) =>
+                        handleTriggerDeleteDialog(id, type, item, plate.licensePlate)
                       }
-                      onDeleteClick={(id, type, item) =>
-                        handleTriggerDeleteDialog(id, type, item, licensePlate)
+                      onAdd={loaiDinhMuc =>
+                        openAddNewDinhMucDialog({ licensePlate: plate.licensePlate, loaiDinhMuc })
                       }
                     />
                   ))}
-                </Box>
-              )
-            ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {filteredLicensePlatesWithStandards.map(({ licensePlate }) => (
-                  <LicensePlateNormsCard
-                    key={licensePlate}
-                    licensePlate={licensePlate}
-                    hangNorms={dinhMucHang[licensePlate] || []}
-                    voNorms={dinhMucVo[licensePlate] || []}
-                    isMobile={isMobile} // Will be false here
-                    mobileTab="" // Not relevant for desktop view
-                    onOpenAddDialog={() =>
-                      openAddNewDinhMucDialog({
-                        licensePlate: licensePlate,
-                        loaiDinhMuc: 'km_hang',
-                      })
-                    } // Pass current licensePlate
-                    onEditClick={(item, lp, type) =>
-                      openEditDinhMucDialog({ standard: item, licensePlate: lp, loaiDinhMuc: type })
-                    }
-                    onDeleteClick={(id, type, item) =>
-                      handleTriggerDeleteDialog(id, type, item, licensePlate)
-                    }
-                  />
-                ))}
               </Box>
             )}
-          </>
+
+            {mobileTab === 'mobile_di_duong' && (
+              <Box sx={{ pt: 2 }}>
+                <DinhMucDiDuong />
+              </Box>
+            )}
+          </Box>
         )}
       </Box>
       {/* Render dialogs */}
@@ -793,11 +391,11 @@ const DinhMucDau = () => {
         </Alert>
       </Snackbar>
       <ConfirmationDialog
-        open={deleteDialog.open} // From hook
-        onCancel={closeDeleteDialog} // Pass closeDeleteDialog to onCancel prop
-        onConfirm={handleConfirmDelete} // From hook
+        open={deleteDialog.open}
+        onCancel={closeDeleteDialog}
+        onConfirm={handleConfirmDelete}
         title="Xác nhận xóa"
-        message={`Bạn có chắc chắn muốn xóa ${deleteDialog.details}?`} // deleteDialog.details from hook
+        message={`Bạn có chắc chắn muốn xóa ${deleteDialog.details}?`}
         confirmText="Xóa"
         cancelText="Hủy"
         confirmColor="error"
@@ -805,4 +403,5 @@ const DinhMucDau = () => {
     </Box>
   );
 };
+
 export default DinhMucDau;

@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Tabs, Tab, Box, useTheme, useMediaQuery } from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import VanChuyen from '@/features/phuong-tien/VanChuyen';
 import DinhMuc from '@/features/phuong-tien/DinhMuc';
 import BaoDuong from '@/features/phuong-tien/BaoDuong';
+import DinhMucRouter from '@/features/phuong-tien/DinhMucRouter';
 // Define valid tabs and their labels
 const TABS = [
   { value: 'van-chuyen', label: 'Vận Chuyển' },
@@ -65,18 +66,24 @@ const SwipeDetector = ({ children, onSwipeLeft, onSwipeRight }) => {
 const QuanLyPhuongTien = () => {
   const { tab: tabFromUrl = 'van-chuyen' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const tabsRef = useRef(null);
-  // Set the active tab based on URL parameter
-  const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'van-chuyen';
+  // Determine if we're in a DinhMuc nested route
+  const isDinhMucRoute = location.pathname.includes('/phuong-tien/dinh-muc/');
+  
+  // Set the active tab based on URL parameter or path
+  const activeTab = isDinhMucRoute ? 'dinh-muc' : 
+                   (TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'van-chuyen');
   const currentTabIndex = TABS.findIndex(tab => tab.value === activeTab);
+
   // Redirect to the first tab if the current tab is invalid
   useEffect(() => {
-    if (!TABS.some(tab => tab.value === tabFromUrl)) {
+    if (!TABS.some(tab => tab.value === tabFromUrl) && !isDinhMucRoute) {
       navigate(`/phuong-tien/van-chuyen`, { replace: true });
     }
-  }, [tabFromUrl, navigate]);
+  }, [tabFromUrl, navigate, isDinhMucRoute]);
   // Center the active tab when it changes
   useEffect(() => {
     if (tabsRef.current && currentTabIndex !== -1) {
@@ -91,21 +98,35 @@ const QuanLyPhuongTien = () => {
     }
   }, [activeTab, currentTabIndex]);
   const handleTabChange = (event, newValue) => {
-    navigate(`/phuong-tien/${newValue}`);
+    if (newValue === 'dinh-muc') {
+      // Navigate to the DinhMucRouter with the default tab
+      navigate(`/phuong-tien/dinh-muc/bo-sung`);
+    } else {
+      navigate(`/phuong-tien/${newValue}`);
+    }
   };
   // Handle swipe gestures - navigate to next/previous tab
   const handleSwipeLeft = useCallback(() => {
     // Swipe left = go to next tab (if not on last tab)
     if (currentTabIndex < TABS.length - 1) {
       const nextTab = TABS[currentTabIndex + 1].value;
-      navigate(`/phuong-tien/${nextTab}`);
+      if (nextTab === 'dinh-muc') {
+        navigate(`/phuong-tien/dinh-muc/bo-sung`);
+      } else {
+        navigate(`/phuong-tien/${nextTab}`);
+      }
     }
   }, [currentTabIndex, navigate]);
+
   const handleSwipeRight = useCallback(() => {
     // Swipe right = go to previous tab (if not on first tab)
     if (currentTabIndex > 0) {
       const prevTab = TABS[currentTabIndex - 1].value;
-      navigate(`/phuong-tien/${prevTab}`);
+      if (prevTab === 'dinh-muc') {
+        navigate(`/phuong-tien/dinh-muc/bo-sung`);
+      } else {
+        navigate(`/phuong-tien/${prevTab}`);
+      }
     }
   }, [currentTabIndex, navigate]);
   return (
@@ -173,7 +194,17 @@ const QuanLyPhuongTien = () => {
                 <VanChuyen />
               </TabPanel>
               <TabPanel value="dinh-muc" sx={{ p: 0, mt: 2 }}>
-                <DinhMuc />
+                {isDinhMucRoute ? (
+                  <Routes>
+                    <Route path="bo-sung/*" element={<DinhMucRouter />} />
+                    <Route path="cho-hang/*" element={<DinhMucRouter />} />
+                    <Route path="vo-rong/*" element={<DinhMucRouter />} />
+                    <Route path="di-duong/*" element={<DinhMucRouter />} />
+                    <Route path="*" element={<Navigate to="bo-sung" replace />} />
+                  </Routes>
+                ) : (
+                  <DinhMuc />
+                )}
               </TabPanel>
               <TabPanel value="bao-duong" sx={{ p: 0, mt: 2 }}>
                 <BaoDuong />

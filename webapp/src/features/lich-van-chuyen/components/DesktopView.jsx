@@ -31,7 +31,7 @@ const DesktopView = ({
 }) => {
   const theme = useTheme();
 
-  const createSortHandler = (property) => (event) => {
+  const createSortHandler = property => event => {
     onRequestSort(event, property);
   };
 

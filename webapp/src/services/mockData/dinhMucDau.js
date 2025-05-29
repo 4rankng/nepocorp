@@ -30,11 +30,11 @@ export const getAllDinhMucDau = async () => {
   return [...dinhMucDauData];
 };
 
-export const getDinhMucDauById = async (id) => {
+export const getDinhMucDauById = async id => {
   return dinhMucDauData.find(item => item.id === id) || null;
 };
 
-export const createDinhMucDau = async (dinhMucDau) => {
+export const createDinhMucDau = async dinhMucDau => {
   const newDinhMucDau = {
     ...dinhMucDau,
     id: Date.now().toString(),
@@ -48,21 +48,21 @@ export const createDinhMucDau = async (dinhMucDau) => {
 export const updateDinhMucDau = async (id, updates) => {
   const index = dinhMucDauData.findIndex(item => item.id === id);
   if (index === -1) return null;
-  
+
   const updatedDinhMucDau = {
     ...dinhMucDauData[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  
+
   dinhMucDauData[index] = updatedDinhMucDau;
   return updatedDinhMucDau;
 };
 
-export const deleteDinhMucDau = async (id) => {
+export const deleteDinhMucDau = async id => {
   const index = dinhMucDauData.findIndex(item => item.id === id);
   if (index === -1) return false;
-  
+
   dinhMucDauData = dinhMucDauData.filter(item => item.id !== id);
   return true;
 };

@@ -41,7 +41,7 @@ export const useDinhMucDauManagement = () => {
 
       const hangDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_hang');
       const voDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_vo');
-      
+
       const hangGrouped = hangDataItems.reduce((acc, item) => {
         // Ensure item.bien_so_xe is used, matching mock data structure if it's bienSoXe, adjust here.
         // Assuming the API returns bien_so_xe as per previous understanding for grouping.
@@ -138,7 +138,7 @@ export const useDinhMucDauManagement = () => {
       setIsLoading(true);
       try {
         // Call the API with just the new value
-        await dinhMucApi.updateBoSung(newValue);
+        await cauHinhApi.updateDinhMucBoSung(newValue); // Corrected API call
         setSupplementaryStandard(newValue); // Update local state
         showSnackbar('Cập nhật định mức bổ sung thành công');
         closeEditSupplementaryDialog();
@@ -259,7 +259,7 @@ export const useDinhMucDauManagement = () => {
         l_km: parseFloat(formData.standard), // API expects l_km
         ghiChu: formData.note,
       };
-      await dinhMucApi.create(apiData);
+      await dinhMucDauApi.create(apiData);
       showSnackbar(
         `Thêm định mức ${formData.loaiDinhMuc === 'km_hang' ? 'hàng' : 'vỏ'} thành công`
       );
@@ -317,7 +317,7 @@ export const useDinhMucDauManagement = () => {
         l_km: parseFloat(formData.standard), // API expects l_km
         ghiChu: formData.note,
       };
-      await dinhMucApi.update(formData.id, apiData);
+      await dinhMucDauApi.update(formData.id, apiData);
       showSnackbar(`Sửa định mức ${formData.loaiDinhMuc === 'km_hang' ? 'hàng' : 'vỏ'} thành công`);
       await fetchData(); // Refresh data
       setOpenEditDialog(false);

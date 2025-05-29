@@ -146,7 +146,7 @@ const QuanLyLichVanChuyen = () => {
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]);
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('ngayDi');
-  
+
   // Handle request to sort a column
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -172,9 +172,9 @@ const QuanLyLichVanChuyen = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [expandedCard, setExpandedCard] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Handle search input changes
-  const handleSearchChange = (e) => {
+  const handleSearchChange = e => {
     setSearchTerm(e.target.value);
   };
 
@@ -409,10 +409,7 @@ const QuanLyLichVanChuyen = () => {
 
   // Sort the filtered shipment plans
   const sortedShipmentPlans = React.useMemo(() => {
-    return stableSort(
-      filteredLichVanChuyenItems,
-      getComparator(order, orderBy, columns)
-    );
+    return stableSort(filteredLichVanChuyenItems, getComparator(order, orderBy, columns));
   }, [filteredLichVanChuyenItems, order, orderBy, columns]);
 
   // Reset form and stepper for mobile

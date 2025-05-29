@@ -24,16 +24,16 @@ export const getAllTuyenDuong = async () => {
   return [...tuyenDuongData];
 };
 
-export const getTuyenDuongById = async (id) => {
+export const getTuyenDuongById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   return tuyenDuongData.find(item => item.id === numericId) || null;
 };
 
-export const getTuyenDuongByMaSo = async (ma_so) => {
+export const getTuyenDuongByMaSo = async ma_so => {
   return tuyenDuongData.find(item => item.ma_so === ma_so) || null;
 };
 
-export const createTuyenDuong = async (tuyenDuong) => {
+export const createTuyenDuong = async tuyenDuong => {
   const newTuyenDuong = {
     ...tuyenDuong,
     id: Date.now(),
@@ -48,22 +48,22 @@ export const updateTuyenDuong = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = tuyenDuongData.findIndex(item => item.id === numericId);
   if (index === -1) return null;
-  
+
   const updatedTuyenDuong = {
     ...tuyenDuongData[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  
+
   tuyenDuongData[index] = updatedTuyenDuong;
   return updatedTuyenDuong;
 };
 
-export const deleteTuyenDuong = async (id) => {
+export const deleteTuyenDuong = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = tuyenDuongData.findIndex(item => item.id === numericId);
   if (index === -1) return false;
-  
+
   tuyenDuongData = tuyenDuongData.filter(item => item.id !== numericId);
   return true;
 };

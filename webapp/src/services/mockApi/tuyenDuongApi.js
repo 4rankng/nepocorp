@@ -10,7 +10,7 @@ export const getAllTuyenDuong = async () => {
   }
 };
 
-export const getTuyenDuongById = async (id) => {
+export const getTuyenDuongById = async id => {
   try {
     const data = await tuyenDuongDataService.getTuyenDuongById(id);
     if (!data) {
@@ -23,7 +23,7 @@ export const getTuyenDuongById = async (id) => {
   }
 };
 
-export const getTuyenDuongByMaSo = async (ma_so) => {
+export const getTuyenDuongByMaSo = async ma_so => {
   try {
     const data = await tuyenDuongDataService.getTuyenDuongByMaSo(ma_so);
     if (!data) {
@@ -36,7 +36,7 @@ export const getTuyenDuongByMaSo = async (ma_so) => {
   }
 };
 
-export const createTuyenDuong = async (tuyenDuong) => {
+export const createTuyenDuong = async tuyenDuong => {
   try {
     const data = await tuyenDuongDataService.createTuyenDuong(tuyenDuong);
     return { data, error: null };
@@ -59,7 +59,7 @@ export const updateTuyenDuong = async (id, updates) => {
   }
 };
 
-export const deleteTuyenDuong = async (id) => {
+export const deleteTuyenDuong = async id => {
   try {
     const success = await tuyenDuongDataService.deleteTuyenDuong(id);
     if (!success) {

@@ -10,7 +10,7 @@ export const getAllDinhMucDau = async () => {
   }
 };
 
-export const getDinhMucDauById = async (id) => {
+export const getDinhMucDauById = async id => {
   try {
     const data = await dinhMucDauDataService.getDinhMucDauById(id);
     if (!data) {
@@ -23,7 +23,7 @@ export const getDinhMucDauById = async (id) => {
   }
 };
 
-export const createDinhMucDau = async (dinhMucDau) => {
+export const createDinhMucDau = async dinhMucDau => {
   try {
     const data = await dinhMucDauDataService.createDinhMucDau(dinhMucDau);
     return { data, error: null };
@@ -46,7 +46,7 @@ export const updateDinhMucDau = async (id, updates) => {
   }
 };
 
-export const deleteDinhMucDau = async (id) => {
+export const deleteDinhMucDau = async id => {
   try {
     const success = await dinhMucDauDataService.deleteDinhMucDau(id);
     if (!success) {
