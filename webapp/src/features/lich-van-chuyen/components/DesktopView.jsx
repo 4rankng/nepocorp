@@ -27,6 +27,7 @@ const DesktopView = ({
   order = 'asc',
   orderBy = '',
   onRequestSort = () => {},
+  renderActions,
 }) => {
   const createSortHandler = property => event => {
     onRequestSort(event, property);
@@ -73,21 +74,16 @@ const DesktopView = ({
         <StandardTable
           columns={columns.map(column => ({
             ...column,
-            header: column.sortable ? (
-              <TableSortLabel
-                active={orderBy === column.id}
-                direction={orderBy === column.id ? order : 'asc'}
-                onClick={createSortHandler(column.id)}
-              >
-                {column.header}
-              </TableSortLabel>
-            ) : (
-              column.header
-            ),
+            header: column.header,
+            sortable: column.sortable,
+            onSort: column.sortable ? createSortHandler(column.id) : undefined
           }))}
+          sortable={true}
+          defaultSort={{ key: orderBy, direction: order }}
           data={shipmentPlans}
           onRowClick={onItemClick}
           loading={isLoading}
+          renderActions={renderActions}
           emptyMessage={
             isLoading
               ? 'Đang tải dữ liệu...'
@@ -128,21 +124,21 @@ DesktopView.propTypes = {
     PropTypes.shape({
       id: PropTypes.string.isRequired,
       header: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
-      sortable: PropTypes.bool,
-      sortValue: PropTypes.func,
-      render: PropTypes.func,
-      width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      width: PropTypes.string,
       align: PropTypes.string,
+      render: PropTypes.func,
+      sortable: PropTypes.bool,
     })
   ).isRequired,
   shipmentPlans: PropTypes.array.isRequired,
-  isLoading: PropTypes.bool.isRequired,
+  isLoading: PropTypes.bool,
   onAdd: PropTypes.func.isRequired,
   canAddPlan: PropTypes.bool.isRequired,
-  onItemClick: PropTypes.func.isRequired,
+  onItemClick: PropTypes.func,
   order: PropTypes.oneOf(['asc', 'desc']),
   orderBy: PropTypes.string,
   onRequestSort: PropTypes.func,
+  renderActions: PropTypes.func,
 };
 
 DesktopView.defaultProps = {

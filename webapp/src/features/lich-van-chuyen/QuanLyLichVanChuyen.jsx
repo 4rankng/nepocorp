@@ -14,6 +14,7 @@ import { fetchAllDauKeo } from '@services/mockApi/dauKeoApi';
 import { fetchAllRoMooc } from '@services/mockApi/roMoocApi';
 // import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx'; // Not used directly in this component
 import ConfirmationModal from '@components/ConfirmationModal';
+import { createLichVanChuyenColumns, trangThaiMap } from './config/tableColumns.jsx';
 import {
   Box,
   Typography,
@@ -45,12 +46,10 @@ import MobileView from '@features/lich-van-chuyen/components/MobileView';
 import DesktopView from '@features/lich-van-chuyen/components/DesktopView';
 import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog';
 import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper';
-import { getStatusColor } from './utils/styleUtils';
 // import InfoIcon from '@mui/icons-material/Info'; // For guidance message - Linter flags as unused
 import {
   getDisplayTrangThai,
   formatDateForDisplay,
-  formatCurrencyVND, // Import currency formatter
   formatVehiclesForSelect,
   formatCustomersForSelect,
   formatEmployeesForSelect,
@@ -105,8 +104,8 @@ function getComparator(order, orderBy, columns) {
   return order === 'desc'
     ? (a, b) => {
         const column = columns?.find(col => col.id === orderBy);
-        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : (a[orderBy] ?? '');
-        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : (b[orderBy] ?? '');
+        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '', a) : (a[orderBy] ?? '');
+        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '', b) : (b[orderBy] ?? '');
 
         if (bValue < aValue) return -1;
         if (bValue > aValue) return 1;
@@ -114,8 +113,8 @@ function getComparator(order, orderBy, columns) {
       }
     : (a, b) => {
         const column = columns?.find(col => col.id === orderBy);
-        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '') : (a[orderBy] ?? '');
-        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '') : (b[orderBy] ?? '');
+        const aValue = column?.sortValue ? column.sortValue(a[orderBy] ?? '', a) : (a[orderBy] ?? '');
+        const bValue = column?.sortValue ? column.sortValue(b[orderBy] ?? '', b) : (b[orderBy] ?? '');
 
         if (aValue < bValue) return -1;
         if (aValue > bValue) return 1;
@@ -140,14 +139,6 @@ function stableSort(array, comparator) {
 }
 
 // Map status codes to display text
-const trangThaiMap = {
-  len_lich: 'Lên lịch',
-  tam_thoi: 'Chờ xác nhận',
-  dang_chay: 'Đang chạy',
-  hoan_thanh: 'Hoàn thành',
-  huy_bo: 'Hủy bỏ',
-};
-
 const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -442,208 +433,7 @@ const QuanLyLichVanChuyen = () => {
 
   // Define columns for DesktopView StandardTable
   const columns = React.useMemo(
-    () => [
-      {
-        id: 'ma_chuyen',
-        header: 'Mã Chuyến',
-        width: '7%',
-        sortable: true,
-        render: (value, row) => row.ma_chuyen || 'N/A',
-        sortValue: value => value || '',
-      },
-      {
-        id: 'ngay_di',
-        header: 'Ngày Đi',
-        width: '7%',
-        sortable: true,
-        render: (value, row) => (row.ngay_di ? formatDateForDisplay(row.ngay_di) : 'N/A'),
-        sortValue: value => value || '',
-      },
-      {
-        id: 'ngay_ha_hang',
-        header: 'Ngày Hạ Hàng',
-        width: '7%',
-        sortable: true,
-        render: (value, row) => (row.ngay_ha_hang ? formatDateForDisplay(row.ngay_ha_hang) : 'N/A'),
-        sortValue: value => value || '',
-      },
-      {
-        id: 'ma_khach_hang',
-        header: 'Khách Hàng',
-        width: '15%',
-        sortable: true,
-        render: (value, row) => {
-          try {
-            if (!selectOptions.khachHang || selectOptions.khachHang.length === 0) {
-              console.warn('khachHang options not loaded yet');
-              return row.ma_khach_hang || 'N/A';
-            }
-            const khachHang = selectOptions.khachHang.find(kh => kh.value === row.ma_khach_hang);
-            return khachHang ? khachHang.label : row.ma_khach_hang || 'N/A';
-          } catch (error) {
-            console.error('Error rendering ma_khach_hang:', error);
-            return value || 'N/A';
-          }
-        },
-        sortValue: (value, row) => {
-          const khachHang = selectOptions.khachHang.find(kh => kh.value === row.ma_khach_hang);
-          return khachHang ? khachHang.label : row.ma_khach_hang || '';
-        },
-      },
-      {
-        id: 'bien_so_dau_keo',
-        header: 'Xe Vận Chuyển',
-        width: '10%',
-        sortable: true,
-        render: (value, row) => (
-          <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
-            {row.bien_so_dau_keo || 'N/A'}
-          </Box>
-        ),
-        sortValue: (value, row) => row.bien_so_dau_keo || '',
-      },
-      {
-        id: 'ghi_chu',
-        header: 'Diễn Giải',
-        width: '15%',
-        sortable: true,
-        render: (value, row) => row.ghi_chu || 'N/A',
-        sortValue: (value, row) => row.ghi_chu || '',
-      },
-      {
-        id: 'diem_di',
-        header: 'Tuyến Đường',
-        width: '20%',
-        sortable: true,
-        render: (value, row) => {
-          const diemDi = row.diem_di || 'N/A';
-          const diemDen = row.diem_den || 'N/A';
-          return (
-            <Box
-              component="span"
-              sx={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}
-            >
-              <Box
-                component="span"
-                sx={{
-                  color: 'primary.main',
-                  fontWeight: 500,
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                  fontSize: '0.875rem',
-                  lineHeight: 1.5,
-                  display: 'inline',
-                }}
-              >
-                {diemDi}
-              </Box>
-              <Box
-                component="span"
-                sx={{
-                  color: 'text.secondary',
-                  mx: 0.5,
-                  lineHeight: 1.5,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                }}
-              >
-                →
-              </Box>
-              <Box
-                component="span"
-                sx={{
-                  color: 'secondary.main',
-                  fontWeight: 500,
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                  fontSize: '0.875rem',
-                  lineHeight: 1.5,
-                  display: 'inline',
-                }}
-              >
-                {diemDen}
-              </Box>
-            </Box>
-          );
-        },
-        sortValue: (value, row) => `${row.diem_di || ''} ${row.diem_den || ''}`.trim(),
-      },
-      {
-        id: 'cuoc_van_chuyen_vnd',
-        header: 'Cước Vận Chuyển',
-        align: 'right',
-        width: '12%',
-        sortable: true,
-        render: (value, row) => row.cuoc_van_chuyen_vnd ? formatCurrencyVND(row.cuoc_van_chuyen_vnd) : 'N/A',
-        sortValue: (value, row) => row.cuoc_van_chuyen_vnd || 0,
-      },
-      {
-        id: 'vnd_chi_phi',
-        header: 'Tổng Chi Phí',
-        align: 'right',
-        width: '12%',
-        sortable: true,
-        render: (value, row) => {
-          const total =
-            (row.vnd_dau || 0) +
-            (row.vnd_di_duong || 0) +
-            (row.cuoc_van_chuyen_vnd || 0) +
-            (row.cuoc_thue_van_chuyen_vnd || 0);
-          return formatCurrencyVND(total);
-        },
-        sortValue: (value, row) =>
-          (row.vnd_dau || 0) +
-          (row.vnd_di_duong || 0) +
-          (row.cuoc_van_chuyen_vnd || 0) +
-          (row.cuoc_thue_van_chuyen_vnd || 0),
-      },
-      {
-        id: 'trang_thai',
-        header: 'Trạng Thái',
-        width: '10%',
-        sortable: true,
-        render: (value, row) => (
-          <Chip
-            label={trangThaiMap[row.trang_thai] || row.trang_thai}
-            size="small"
-            sx={{
-              borderRadius: 0.5,
-              minWidth: 100,
-              backgroundColor: theme =>
-                row.trang_thai === 'hoan_thanh'
-                  ? theme.palette.success.light
-                  : row.trang_thai === 'huy_bo'
-                    ? theme.palette.error.light
-                    : row.trang_thai === 'dang_di'
-                      ? theme.palette.info.light
-                      : theme.palette.grey[200],
-              color: theme =>
-                row.trang_thai === 'hoan_thanh' ||
-                row.trang_thai === 'huy_bo' ||
-                row.trang_thai === 'dang_di'
-                  ? theme.palette.common.white
-                  : theme.palette.text.primary,
-              fontWeight: 500,
-            }}
-          />
-        ),
-        sortValue: value => trangThaiMap[value] || value,
-      },
-      {
-        id: 'ma_nv_lai_xe',
-        header: 'Lái Xe',
-        width: '10%',
-        sortable: true,
-        render: (value, row) => {
-          const nhanVien = selectOptions.nhanVien.find(nv => nv.value === row.ma_nv_lai_xe);
-          return nhanVien ? nhanVien.label : row.ma_nv_lai_xe || 'N/A';
-        },
-        sortValue: (value, row) => {
-          const nhanVien = selectOptions.nhanVien.find(nv => nv.value === row.ma_nv_lai_xe);
-          return nhanVien ? nhanVien.label : value || '';
-        },
-      },
-    ],
+    () => createLichVanChuyenColumns(selectOptions, theme),
     [selectOptions.khachHang, selectOptions.nhanVien, theme]
   );
   // Reset form and stepper for mobile
@@ -766,6 +556,26 @@ const QuanLyLichVanChuyen = () => {
             setOrder(isAsc ? 'desc' : 'asc');
             setOrderBy(property);
           }}
+          renderActions={row => (
+            <>
+              <EditButton
+                onClick={e => {
+                  e.stopPropagation(); // Prevent row click event
+                  handleOpenModalForEdit(row);
+                }}
+                size="small"
+                tooltip="Chỉnh sửa"
+              />
+              <DeleteButton
+                onClick={e => {
+                  e.stopPropagation(); // Prevent row click event
+                  handleDeleteConfirmation(row);
+                }}
+                size="small"
+                tooltip="Xóa"
+              />
+            </>
+          )}
         />
       )}
 

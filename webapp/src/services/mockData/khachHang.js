@@ -2,7 +2,8 @@
 // Static data, 15 records. Numeric auto-incrementing ID.
 // Fields: id (numeric), ma_dinh_danh, ten, dia_chi, ma_so_thue, createdAt, updatedAt
 
-let khachHangData = [
+// Export the data array so it can be imported by other modules
+export let khachHangData = [
   {
     id: 1,
     ma_dinh_danh: 'MDD001',
