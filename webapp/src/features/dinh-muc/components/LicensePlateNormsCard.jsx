@@ -40,9 +40,6 @@ const LicensePlateNormsCard = ({
       <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {(!normTypeFilter || normTypeFilter === 'km_hang') && (
           <Box sx={{ width: '100%' }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Định mức hàng
-            </Typography>
             <StandardTable
               columns={[
                 {
@@ -92,9 +89,6 @@ const LicensePlateNormsCard = ({
         )}
         {(!normTypeFilter || normTypeFilter === 'km_vo') && (
           <Box sx={{ width: '100%' }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Định mức vỏ
-            </Typography>
             <StandardTable
               columns={[
                 {

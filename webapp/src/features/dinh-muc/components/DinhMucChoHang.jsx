@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Button,
   CircularProgress,
   Paper,
   Alert,
   useTheme,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import { SearchBar } from '@components';
 import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
 import { useChoHang } from '../hooks';

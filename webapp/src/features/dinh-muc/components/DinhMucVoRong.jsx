@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Button,
   CircularProgress,
   Paper,
   Alert,
   useTheme,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import { SearchBar } from '@components';
 import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
 import { useVoRong } from '../hooks';
@@ -71,14 +69,6 @@ const DinhMucVoRong = () => {
         boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
       }}
     >
-      <Typography
-        variant="h6"
-        component="h2"
-        sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1rem', md: '1.25rem' } }}
-      >
-        Định mức vỏ rỗng
-      </Typography>
-
       {isLoading ? (
         <Box
           sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 150 }}
@@ -95,19 +85,12 @@ const DinhMucVoRong = () => {
           <Box
             sx={{
               mb: 2,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: 2,
             }}
           >
             <SearchBar
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Tìm kiếm biển số xe..."
-              sx={{
-                flexGrow: 1,
-              }}
             />
           </Box>
           <DinhMucTheoBienSoXeSection
