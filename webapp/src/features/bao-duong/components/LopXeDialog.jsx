@@ -51,7 +51,6 @@ const LopXeDialog = ({
         },
       }}
     >
-      <DialogTitle>{isEdit ? 'Chỉnh sửa thông tin lốp xe' : 'Thêm thông tin lốp xe'}</DialogTitle>
       <DialogContent sx={{ p: 3 }}>
         {isDesktop ? (
           // Desktop layout - Two columns
@@ -65,7 +64,7 @@ const LopXeDialog = ({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,
-                backgroundColor: theme.palette.grey[50],
+                backgroundColor: theme.palette.background.paper,
               }}
             >
               <Typography variant="h6" sx={{ mb: 1, color: theme.palette.primary.main }}>
@@ -154,7 +153,7 @@ const LopXeDialog = ({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,
-                backgroundColor: theme.palette.grey[50],
+                backgroundColor: theme.palette.background.paper,
               }}
             >
               <Typography variant="h6" sx={{ mb: 1, color: theme.palette.primary.main }}>
@@ -345,7 +344,7 @@ const LopXeDialog = ({
           disabled={isLoading}
           startIcon={isLoading ? <CircularProgress size={20} /> : null}
         >
-          {isLoading ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
+          {isLoading ? 'Đang lưu...' : isEdit ? 'Sửa' : 'Thêm'}
         </Button>
       </DialogActions>
     </Dialog>

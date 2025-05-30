@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
     ) {
       navigate('/lich-van-chuyen', { replace: true });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, currentUser, navigate]); // Location removed from deps, navigate is stable
   const logout = useCallback(() => {
     setCurrentUser(null);

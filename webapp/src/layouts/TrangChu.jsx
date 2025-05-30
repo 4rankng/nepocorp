@@ -88,7 +88,7 @@ const TrangChu = () => {
           // For QUAN_LY, AuthContext.login already navigated.
           // For other roles not listed or if default needed.
           if (roleKey !== ROLES.QUAN_LY) {
-             navigate('/');
+            navigate('/');
           }
           break;
       }
