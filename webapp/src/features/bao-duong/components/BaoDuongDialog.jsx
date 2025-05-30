@@ -126,6 +126,13 @@ const BaoDuongDialog = ({
       }
     });
   };
+
+  // Convert string date to Date object for DatePicker
+  const parseDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  };
   return (
     <Dialog
       open={open}
@@ -207,7 +214,7 @@ const BaoDuongDialog = ({
               <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
                 <DatePicker
                   label="Ngày thay thế"
-                  value={formData.ngay_thay || null}
+                  value={parseDate(formData.ngay_thay)}
                   onChange={date => {
                     onChange({
                       target: {
@@ -252,7 +259,7 @@ const BaoDuongDialog = ({
               <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
                 <DatePicker
                   label="Ngày hết hạn (tự động tính)"
-                  value={formData.ngay_het_han}
+                  value={parseDate(formData.ngay_het_han)}
                   disabled
                   slotProps={{
                     textField: {
@@ -382,7 +389,7 @@ const BaoDuongDialog = ({
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
               <DatePicker
                 label="Ngày thay thế"
-                value={formData.ngay_thay || null}
+                value={parseDate(formData.ngay_thay)}
                 onChange={date => {
                   onChange({
                     target: {
@@ -429,7 +436,7 @@ const BaoDuongDialog = ({
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
               <DatePicker
                 label="Ngày hết hạn (tự động tính)"
-                value={formData.ngayHetHan}
+                value={parseDate(formData.ngay_het_han)}
                 disabled
                 slotProps={{
                   textField: {
