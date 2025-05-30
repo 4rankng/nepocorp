@@ -11,7 +11,7 @@ import {
 
 export const getAllDinhMucDau = async (page = 1, limit = 10) => {
   return mockApiCall(
-    () => withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), { page, limit }),
+    withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), { page, limit }),
     'DinhMucDau'
   );
 };

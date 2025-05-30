@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   TextField,
-  Grid,
   Typography,
   IconButton,
   InputAdornment,
@@ -77,40 +76,48 @@ const DinhMucChoHangDialog = ({
       </Box>
 
       <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 3 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              required
-              label="Từ (Km)"
-              name="fromKm"
-              type="number"
-              value={formData.fromKm}
-              onChange={onInputChange}
-              error={!!errors.fromKm}
-              helperText={errors.fromKm}
-              InputProps={{
-                endAdornment: <InputAdornment position="end">km</InputAdornment>,
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              required
-              label="Đến (Km)"
-              name="toKm"
-              type="number"
-              value={formData.toKm}
-              onChange={onInputChange}
-              error={!!errors.toKm}
-              helperText={errors.toKm}
-              InputProps={{
-                endAdornment: <InputAdornment position="end">km</InputAdornment>,
-              }}
-            />
-          </Grid>
-          <Grid item xs={12}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' }, 
+              gap: 2 
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                fullWidth
+                required
+                label="Từ (Km)"
+                name="fromKm"
+                type="number"
+                value={formData.fromKm}
+                onChange={onInputChange}
+                error={!!errors.fromKm}
+                helperText={errors.fromKm}
+                InputProps={{
+                  endAdornment: <InputAdornment position="end">km</InputAdornment>,
+                }}
+              />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                fullWidth
+                required
+                label="Đến (Km)"
+                name="toKm"
+                type="number"
+                value={formData.toKm}
+                onChange={onInputChange}
+                error={!!errors.toKm}
+                helperText={errors.toKm}
+                InputProps={{
+                  endAdornment: <InputAdornment position="end">km</InputAdornment>,
+                }}
+              />
+            </Box>
+          </Box>
+          <Box>
             <TextField
               fullWidth
               required
@@ -125,8 +132,8 @@ const DinhMucChoHangDialog = ({
                 endAdornment: <InputAdornment position="end">l/100km</InputAdornment>,
               }}
             />
-          </Grid>
-          <Grid item xs={12}>
+          </Box>
+          <Box>
             <TextField
               fullWidth
               label="Ghi chú"
@@ -137,8 +144,8 @@ const DinhMucChoHangDialog = ({
               onChange={onInputChange}
               placeholder="Nhập ghi chú về định mức (nếu có)"
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </DialogContent>
 
       <DialogActions

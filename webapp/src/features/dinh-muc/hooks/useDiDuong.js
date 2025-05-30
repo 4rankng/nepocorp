@@ -42,9 +42,10 @@ export const useDiDuong = () => {
         throw new Error(containerRes.error?.message || 'Lỗi khi tải danh sách loại container. Vui lòng thử lại sau.');
       }
 
-      const allDinhMuc = dinhMucRes.data?.items || dinhMucRes.data || [];
-      const allTuyenDuong = tuyenDuongRes.data?.items || tuyenDuongRes.data || [];
-      const allContainerTypes = containerRes.data?.items || containerRes.data || [];
+      // Handle different response structures from mock API
+      const allDinhMuc = Array.isArray(dinhMucRes.data) ? dinhMucRes.data : [];
+      const allTuyenDuong = Array.isArray(tuyenDuongRes.data) ? tuyenDuongRes.data : [];
+      const allContainerTypes = Array.isArray(containerRes.data) ? containerRes.data : [];
 
       // Process container types
       const validContainerTypes = allContainerTypes.filter(

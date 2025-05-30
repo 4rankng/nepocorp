@@ -87,7 +87,7 @@ export const useChoHang = () => {
       return { choHangGrouped, tractorPlates, trailerPlates };
     } catch (err) {
       console.error('Failed to fetch loaded fuel standards:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Không thể tải dữ liệu định mức đi đường. Vui lòng thử lại.';
+      const errorMessage = err.response?.data?.message || err.message || 'Không thể tải dữ liệu định mức chở hàng. Vui lòng thử lại.';
       setError(errorMessage);
       // Return empty data to prevent UI from breaking
       setDinhMucChoHang({});
