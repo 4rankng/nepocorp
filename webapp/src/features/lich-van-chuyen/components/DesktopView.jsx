@@ -3,17 +3,15 @@ import PropTypes from 'prop-types';
 import {
   Box,
   Paper,
-  TextField,
-  InputAdornment,
   Fab,
   Typography,
   useTheme,
   TableSortLabel,
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
-import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import StandardTable from '@/components/StandardTable';
+import { SearchBar } from '@/components';
 
 const DesktopView = ({
   searchTerm,
@@ -39,25 +37,10 @@ const DesktopView = ({
     <Box sx={{ pb: { xs: 10, md: 11 } }}>
       {/* Search bar */}
       <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Tìm kiếm theo biển số xe, đối tác, khách hàng..."
+        <SearchBar
           value={searchTerm}
           onChange={onSearchTermChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            sx: {
-              borderRadius: '6px',
-              height: 36,
-              minHeight: 36,
-              fontSize: '0.95rem',
-            },
-          }}
+          placeholder="Tìm kiếm theo biển số xe, đối tác, khách hàng..."
         />
       </Box>
 

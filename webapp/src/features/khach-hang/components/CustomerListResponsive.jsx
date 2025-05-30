@@ -6,12 +6,9 @@ import {
   Card,
   CardContent,
   Typography,
-  TextField,
-  InputAdornment,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
 import StandardTable from '@/components/StandardTable';
-import { EditButton, DeleteButton } from '@/components/ActionButtons';
+import { EditButton, DeleteButton, SearchBar } from '@/components';
 const CustomerListResponsive = ({
   customers = [],
   loading = false,
@@ -119,25 +116,10 @@ const CustomerListResponsive = ({
       <Box>
         {/* Search bar */}
         <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
+          <SearchBar
             value={searchTerm}
             onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              sx: {
-                borderRadius: '6px',
-                height: 36,
-                minHeight: 36,
-                fontSize: '0.95rem',
-              },
-            }}
+            placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
           />
         </Box>
         {!loading && !error && renderMobileView()}
@@ -149,25 +131,10 @@ const CustomerListResponsive = ({
     <Box>
       {/* Search bar */}
       <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
+        <SearchBar
           value={searchTerm}
           onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            sx: {
-              borderRadius: '6px',
-              height: 36,
-              minHeight: 36,
-              fontSize: '0.95rem',
-            },
-          }}
+          placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
         />
       </Box>
       <StandardTable

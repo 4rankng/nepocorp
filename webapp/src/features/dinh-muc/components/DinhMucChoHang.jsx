@@ -3,14 +3,13 @@ import {
   Box,
   Typography,
   Button,
-  TextField,
-  InputAdornment,
   CircularProgress,
   Paper,
   Alert,
   useTheme,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { SearchBar } from '@components';
 import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
 import { useChoHang } from '../hooks';
 
@@ -89,44 +88,13 @@ const DinhMucChoHang = () => {
           <Box
             sx={{
               mb: 2,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
             }}
           >
-            <TextField
-              size="small"
-              variant="outlined"
-              placeholder="Tìm kiếm biển số xe..."
+            <SearchBar
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <span role="img" aria-label="search">
-                      🔍
-                    </span>
-                  </InputAdornment>
-                ),
-                sx: {
-                  borderRadius: '6px',
-                  height: 36,
-                  minHeight: 36,
-                  fontSize: '0.95rem',
-                },
-              }}
-              sx={{
-                maxWidth: 400,
-                flexGrow: 1,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '6px',
-                  height: 36,
-                  fontSize: '0.95rem',
-                },
-                '& .MuiInputBase-input': { py: 0.5, fontSize: '0.95rem' },
-              }}
+              placeholder="Tìm kiếm biển số xe..."
             />
-
           </Box>
           <DinhMucTheoBienSoXeSection
             dinhMucHang={dinhMucChoHang}

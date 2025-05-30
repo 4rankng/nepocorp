@@ -3,14 +3,13 @@ import {
   Box,
   Typography,
   Button,
-  TextField,
-  InputAdornment,
   CircularProgress,
   Paper,
   Alert,
   useTheme,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { SearchBar } from '@components';
 import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
 import { useVoRong } from '../hooks';
 
@@ -99,54 +98,17 @@ const DinhMucVoRong = () => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              gap: 2,
             }}
           >
-            <TextField
-              size="small"
-              variant="outlined"
-              placeholder="Tìm kiếm biển số xe..."
+            <SearchBar
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <span role="img" aria-label="search">
-                      🔍
-                    </span>
-                  </InputAdornment>
-                ),
-                sx: {
-                  borderRadius: '6px',
-                  height: 36,
-                  minHeight: 36,
-                  fontSize: '0.95rem',
-                },
-              }}
+              placeholder="Tìm kiếm biển số xe..."
               sx={{
-                maxWidth: '100%',
                 flexGrow: 1,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '6px',
-                  height: 36,
-                  fontSize: '0.95rem',
-                },
-                '& .MuiInputBase-input': { py: 0.5, fontSize: '0.95rem' },
               }}
             />
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() =>
-                openAddNewDinhMucDialog({
-                  licensePlate: null,
-                  loaiDinhMuc: 'km_vo',
-                })
-              }
-              sx={{ height: 36, ml: 2, whiteSpace: 'nowrap' }}
-            >
-              Thêm mới
-            </Button>
           </Box>
           <DinhMucTheoBienSoXeSection
             dinhMucHang={[]} // Empty array since we're only showing km_vo
