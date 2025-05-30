@@ -36,7 +36,7 @@ const DesktopView = ({
   };
 
   return (
-    <Box>
+    <Box sx={{ pb: { xs: 10, md: 11 } }}>
       {/* Search bar */}
       <Box sx={{ mb: 3 }}>
         <TextField

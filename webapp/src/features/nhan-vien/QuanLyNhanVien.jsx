@@ -125,7 +125,7 @@ const QuanLyNhanVien = () => {
     );
   });
   return (
-    <Box sx={{ p: 0 }}>
+    <Box sx={{ p: 0, pb: { xs: 10, md: 11 } }}>
       {/* Search bar */}
       <Box sx={{ mb: 3 }}>
         <TextField

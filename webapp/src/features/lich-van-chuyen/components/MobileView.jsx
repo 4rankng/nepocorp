@@ -20,7 +20,7 @@ const MobileView = ({
   canAddPlan,
 }) => {
   return (
-    <Box>
+    <Box sx={{ pb: { xs: 10, md: 11 } }}>
       {/* Mobile Search Header */}
       <MobileSearchHeader
         searchTerm={searchTerm}

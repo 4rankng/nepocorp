@@ -127,7 +127,7 @@ const CustomerManagement = () => {
     setCustomerToDelete(null);
   };
   return (
-    <Box sx={{ p: 0 }}>
+    <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
         <CustomerListResponsive
           customers={customers}
