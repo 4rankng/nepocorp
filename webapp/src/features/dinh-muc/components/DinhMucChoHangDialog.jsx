@@ -69,8 +69,7 @@ const DinhMucChoHangDialog = ({
         }}
       >
         <Typography variant="h6" component="h2">
-          {isEdit ? 'Chỉnh sửa định mức chở hàng' : 'Thêm định mức chở hàng'}
-          {licensePlate && ` - ${licensePlate}`}
+          {isEdit ? 'Sửa định mức cho' : 'Thêm định mức cho'}{licensePlate && ` ${licensePlate}`}
         </Typography>
         <IconButton edge="end" color="inherit" onClick={onClose} aria-label="close">
           <CloseIcon />
@@ -161,7 +160,7 @@ const DinhMucChoHangDialog = ({
           disabled={isSubmitting}
           startIcon={isSubmitting && <CircularProgress size={20} color="inherit" />}
         >
-          {isSubmitting ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Thêm mới'}
+          {isSubmitting ? 'Đang lưu...' : isEdit ? 'Sửa' : 'Thêm'}
         </Button>
       </DialogActions>
     </Dialog>

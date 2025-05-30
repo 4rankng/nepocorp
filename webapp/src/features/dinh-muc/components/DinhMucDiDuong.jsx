@@ -1,18 +1,6 @@
-import React from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  useTheme,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
+import React, { useMemo } from 'react';
+import { Box, Typography, Paper, useTheme, CircularProgress, Alert } from '@mui/material';
+import { StandardTable } from '@components';
 import { useDiDuong } from '../hooks';
 
 const DinhMucDiDuong = () => {
@@ -29,6 +17,42 @@ const DinhMucDiDuong = () => {
     });
   }, [containerTypes]);
 
+  // Prepare columns for StandardTable
+  const columns = useMemo(() => [
+    {
+      key: 'routeName',
+      label: 'Tuyến đường',
+      width: '25%',
+      sortable: true,
+      render: (value) => (
+        <Typography variant="body2" fontWeight={500}>
+          {value}
+        </Typography>
+      )
+    },
+    ...sortedContainerTypes.map(ct => ({
+      key: `norms.${ct.ma_loai_container}`,
+      label: ct.ten_loai_container,
+      align: 'right',
+      sortable: true,
+      render: (_, row) => (
+        <Typography variant="body2">
+          {row.norms[ct.ma_loai_container] 
+            ? row.norms[ct.ma_loai_container].toLocaleString('vi-VN') 
+            : '-'}
+        </Typography>
+      )
+    }))
+  ], [sortedContainerTypes]);
+
+  // Transform data for StandardTable
+  const tableData = useMemo(() => {
+    return roadNorms.map(row => ({
+      ...row,
+      id: row.routeId // Required for rowKeyField
+    }));
+  }, [roadNorms]);
+
   return (
     <Paper
       sx={{
@@ -37,18 +61,8 @@ const DinhMucDiDuong = () => {
         boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
       }}
     >
-      <Typography
-        variant="h6"
-        component="h2"
-        sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1rem', md: '1.25rem' } }}
-      >
-        Định mức đi đường (VNĐ/chuyến)
-      </Typography>
-
       {isLoading && (
-        <Box
-          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 150 }}
-        >
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
           <CircularProgress />
           <Typography sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
         </Box>
@@ -61,64 +75,25 @@ const DinhMucDiDuong = () => {
       )}
 
       {!isLoading && !error && (
-        <TableContainer
-          component={Paper}
-          elevation={0}
-          sx={{ border: `1px solid ${muiTheme.palette.divider}` }}
-        >
-          <Table sx={{ minWidth: 650 }} aria-label="road norms table">
-            <TableHead sx={{ backgroundColor: muiTheme.palette.grey[100] }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Tuyến đường</TableCell>
-                {sortedContainerTypes.map(ct => (
-                  <TableCell
-                    key={ct.ma_loai_container}
-                    align="right"
-                    sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}
-                  >
-                    {ct.ten_loai_container}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {roadNorms.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={1 + sortedContainerTypes.length} align="center">
-                    Chưa có dữ liệu định mức đi đường.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                roadNorms.map(row => (
-                  <TableRow
-                    key={row.routeId}
-                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      {row.routeName}
-                    </TableCell>
-                    {sortedContainerTypes.map(ct => (
-                      <TableCell key={`${row.routeId}-${ct.ma_loai_container}`} align="right">
-                        {row.norms[ct.ma_loai_container]
-                          ? row.norms[ct.ma_loai_container].toLocaleString('vi-VN')
-                          : '-'}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-
-      {!isLoading && !error && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="caption" color="textSecondary">
-            * Bảng hiển thị định mức chi phí cho mỗi chuyến vận chuyển theo tuyến đường và loại
-            container.
-          </Typography>
-        </Box>
+        <StandardTable
+          columns={columns}
+          data={tableData}
+          loading={false} // We handle loading state separately
+          emptyMessage="Chưa có dữ liệu định mức đi đường"
+          rowKeyField="id"
+          sx={{
+            '& .MuiTableCell-root': {
+              py: 1.5,
+              px: 2
+            },
+            '& .MuiTableHead-root': {
+              backgroundColor: muiTheme.palette.grey[100]
+            },
+            '& .MuiTableRow-hover:hover': {
+              backgroundColor: muiTheme.palette.action.hover
+            }
+          }}
+        />
       )}
     </Paper>
   );

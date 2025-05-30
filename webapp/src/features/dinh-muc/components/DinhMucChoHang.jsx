@@ -9,6 +9,8 @@ import {
 } from '@mui/material';
 import { SearchBar } from '@components';
 import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
+import DinhMucChoHangDialog from './DinhMucChoHangDialog';
+import { ConfirmationDialog } from '@components';
 import { useChoHang } from '../hooks';
 
 const DinhMucChoHang = () => {
@@ -21,6 +23,17 @@ const DinhMucChoHang = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [currentStandard, setCurrentStandard] = useState(null);
   const [deleteDetails, setDeleteDetails] = useState({ id: null, type: null, details: '' });
+
+  // Form states
+  const [formData, setFormData] = useState({
+    bienSoXe: '',
+    fromKm: '',
+    toKm: '',
+    standard: '',
+    note: '',
+  });
+  const [errors, setErrors] = useState({});
+  const [selectedLicensePlate, setSelectedLicensePlate] = useState('');
 
   const {
     dinhMucChoHang,
@@ -37,11 +50,30 @@ const DinhMucChoHang = () => {
 
   const openAddNewDinhMucDialog = (params) => {
     setCurrentStandard(null);
+    setSelectedLicensePlate(params?.licensePlate || '');
+    setFormData({
+      bienSoXe: params?.licensePlate || '',
+      fromKm: '',
+      toKm: '',
+      standard: '',
+      note: '',
+    });
+    setErrors({});
     setAddDialogOpen(true);
   };
 
-  const openEditDinhMucDialog = (standard) => {
+  const openEditDinhMucDialog = (params) => {
+    const { standard, licensePlate } = params;
     setCurrentStandard(standard);
+    setSelectedLicensePlate(licensePlate);
+    setFormData({
+      bienSoXe: licensePlate,
+      fromKm: standard.fromKm?.toString() || '',
+      toKm: standard.toKm?.toString() || '',
+      standard: standard.standard?.toString() || '',
+      note: standard.note || '',
+    });
+    setErrors({});
     setEditDialogOpen(true);
   };
 
@@ -59,6 +91,81 @@ const DinhMucChoHang = () => {
       detailsText = 'định mức đã chọn'; // Fallback
     }
     openDeleteDialog(id, type, detailsText);
+  };
+
+  // Form handlers
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.bienSoXe) newErrors.bienSoXe = 'Biển số xe không được để trống';
+    if (!formData.fromKm) newErrors.fromKm = 'Số km bắt đầu không được để trống';
+    if (!formData.toKm) newErrors.toKm = 'Số km kết thúc không được để trống';
+    if (!formData.standard) newErrors.standard = 'Định mức không được để trống';
+    
+    if (formData.fromKm && formData.toKm) {
+      const fromKm = parseFloat(formData.fromKm);
+      const toKm = parseFloat(formData.toKm);
+      if (fromKm >= toKm) {
+        newErrors.toKm = 'Số km kết thúc phải lớn hơn số km bắt đầu';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) return;
+
+    try {
+      if (currentStandard) {
+        await updateChoHangStandard(currentStandard.id, formData);
+        setEditDialogOpen(false);
+      } else {
+        await createChoHangStandard(formData);
+        setAddDialogOpen(false);
+      }
+      // Reset form
+      setFormData({
+        bienSoXe: '',
+        fromKm: '',
+        toKm: '',
+        standard: '',
+        note: '',
+      });
+    } catch (err) {
+      console.error('Error saving định mức:', err);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteChoHangStandard(deleteDetails.id);
+      setDeleteDialogOpen(false);
+    } catch (err) {
+      console.error('Error deleting định mức:', err);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setAddDialogOpen(false);
+    setEditDialogOpen(false);
+    setFormData({
+      bienSoXe: '',
+      fromKm: '',
+      toKm: '',
+      standard: '',
+      note: '',
+    });
+    setErrors({});
   };
 
   return (
@@ -108,6 +215,28 @@ const DinhMucChoHang = () => {
           />
         </Box>
       )}
+
+      {/* Add/Edit Dialog */}
+      <DinhMucChoHangDialog
+        open={addDialogOpen || editDialogOpen}
+        isEdit={!!currentStandard}
+        formData={formData}
+        errors={errors}
+        licensePlate={selectedLicensePlate}
+        onClose={handleCloseDialog}
+        onSave={handleSave}
+        onInputChange={handleInputChange}
+        onValidateForm={validateForm}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        title="Xác nhận xóa"
+        message={`Bạn có chắc chắn muốn xóa ${deleteDetails.details}?`}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
     </Paper>
   );
 };

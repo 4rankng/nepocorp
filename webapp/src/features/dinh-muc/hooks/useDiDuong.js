@@ -24,15 +24,22 @@ export const useDiDuong = () => {
         containerApi.getAll(),
       ]);
 
-      // Handle new standardized API response format
+      // Handle API response errors with more specific messages
+      if (!dinhMucRes || !tuyenDuongRes || !containerRes) {
+        throw new Error('Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.');
+      }
+
       if (!dinhMucRes.success) {
-        throw new Error(dinhMucRes.error?.message || 'Failed to fetch road norms');
+        console.error('DinhMucDiDuong API Error:', dinhMucRes.error);
+        throw new Error(dinhMucRes.error?.message || 'Lỗi khi tải dữ liệu định mức đi đường. Vui lòng thử lại sau.');
       }
       if (!tuyenDuongRes.success) {
-        throw new Error(tuyenDuongRes.error?.message || 'Failed to fetch routes');
+        console.error('TuyenDuong API Error:', tuyenDuongRes.error);
+        throw new Error(tuyenDuongRes.error?.message || 'Lỗi khi tải danh sách tuyến đường. Vui lòng thử lại sau.');
       }
       if (!containerRes.success) {
-        throw new Error(containerRes.error?.message || 'Failed to fetch container types');
+        console.error('Container API Error:', containerRes.error);
+        throw new Error(containerRes.error?.message || 'Lỗi khi tải danh sách loại container. Vui lòng thử lại sau.');
       }
 
       const allDinhMuc = dinhMucRes.data?.items || dinhMucRes.data || [];
@@ -62,8 +69,36 @@ export const useDiDuong = () => {
       return { roadNorms: allDinhMuc, routes: allTuyenDuong, containerTypes: uniqueContainerTypes };
     } catch (err) {
       console.error('Failed to fetch road travel data:', err);
-      setError('Không thể tải dữ liệu định mức đi đường. Vui lòng thử lại.');
-      throw err;
+      
+      // Handle different error object structures
+      let errorMessage = 'Không thể tải dữ liệu định mức đi đường. Vui lòng thử lại.';
+      
+      if (err.error && typeof err.error === 'object') {
+        // Handle API error response object
+        errorMessage = err.error.message || errorMessage;
+      } else if (err.message) {
+        // Handle standard Error objects
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        // Handle string errors
+        errorMessage = err;
+      }
+      
+      console.error('Error details:', { 
+        error: err, 
+        errorMessage,
+        errorType: typeof err,
+        hasErrorProperty: !!err.error,
+        errorKeys: err ? Object.keys(err) : []
+      });
+      
+      setError(errorMessage);
+      // Return empty data to prevent UI from breaking
+      setRoadNorms([]);
+      setRoutes([]);
+      setContainerTypes([]);
+      // Don't re-throw the error to prevent uncaught promise rejection
+      // The error is already handled by the error state and message
     } finally {
       setIsLoading(false);
     }

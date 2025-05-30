@@ -23,15 +23,22 @@ export const useChoHang = () => {
         roMoocApi.fetchAllRoMooc(),
       ]);
 
-      // Handle new standardized API response format
+      // Handle API response errors with more specific messages
+      if (!dinhMucResponse || !dauKeoResponse || !roMoocResponse) {
+        throw new Error('Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.');
+      }
+
       if (!dinhMucResponse.success) {
-        throw new Error(dinhMucResponse.error?.message || 'Failed to fetch định mức dầu');
+        console.error('DinhMucDau API Error:', dinhMucResponse.error);
+        throw new Error(dinhMucResponse.error?.message || 'Lỗi khi tải dữ liệu định mức dầu. Vui lòng thử lại sau.');
       }
       if (!dauKeoResponse.success) {
-        throw new Error(dauKeoResponse.error?.message || 'Failed to fetch đầu kéo');
+        console.error('DauKeo API Error:', dauKeoResponse.error);
+        throw new Error(dauKeoResponse.error?.message || 'Lỗi khi tải danh sách đầu kéo. Vui lòng thử lại sau.');
       }
       if (!roMoocResponse.success) {
-        throw new Error(roMoocResponse.error?.message || 'Failed to fetch rơ mooc');
+        console.error('RoMooc API Error:', roMoocResponse.error);
+        throw new Error(roMoocResponse.error?.message || 'Lỗi khi tải danh sách rơ mooc. Vui lòng thử lại sau.');
       }
 
       const allDinhMucData = dinhMucResponse.data?.items || dinhMucResponse.data || [];
@@ -80,8 +87,12 @@ export const useChoHang = () => {
       return { choHangGrouped, tractorPlates, trailerPlates };
     } catch (err) {
       console.error('Failed to fetch loaded fuel standards:', err);
-      setError('Không thể tải dữ liệu định mức cho hàng. Vui lòng thử lại.');
-      throw err;
+      const errorMessage = err.response?.data?.message || err.message || 'Không thể tải dữ liệu định mức đi đường. Vui lòng thử lại.';
+      setError(errorMessage);
+      // Return empty data to prevent UI from breaking
+      setDinhMucChoHang({});
+      setAvailableLicensePlates([]);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
