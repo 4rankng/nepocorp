@@ -125,14 +125,7 @@ const QuanLyNhanVien = () => {
     );
   });
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography
-        variant="h5"
-        component="h1"
-        sx={{ mb: 3, fontWeight: 600, color: 'text.primary' }}
-      >
-        Quản lý nhân viên
-      </Typography>
+    <Box sx={{ p: 0 }}>
       {/* Search bar */}
       <Box sx={{ mb: 3 }}>
         <TextField

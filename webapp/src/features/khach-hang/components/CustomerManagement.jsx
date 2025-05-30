@@ -127,19 +127,7 @@ const CustomerManagement = () => {
     setCustomerToDelete(null);
   };
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 }, position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
-      <Typography
-        variant="h5"
-        component="h1"
-        sx={{ mb: 3, fontWeight: 600, color: 'text.primary' }}
-      >
-        Quản lý khách hàng
-      </Typography>
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
-          {error}
-        </Alert>
-      )}
+    <Box sx={{ p: 0 }}>
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
         <CustomerListResponsive
           customers={customers}
