@@ -38,6 +38,7 @@ export function createApiResponse(data, options = {}) {
       limit,
       page,
       totalPages,
+      total: totalItems, // Add total items to meta
     },
     ...(message && { message }),
     success: true,

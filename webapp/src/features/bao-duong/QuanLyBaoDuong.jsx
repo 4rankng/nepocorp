@@ -303,27 +303,43 @@ const QuanLyBaoDuong = memo(() => {
   );
   // Render desktop table view
   const renderDesktopView = () => {
-    const tableColumns = getBaoDuongTableColumns(pagination.page, pagination.pageSize);
+    const tableColumns = getBaoDuongTableColumns();
+    
+    const tableProps = {
+      columns: tableColumns,
+      data: maintenanceRecords,
+      loading: isLoading,
+      error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
+      emptyMessage: "Không có dữ liệu bảo dưỡng",
+      onRowClick: handleOpenEditDialog,
+      pagination: true,
+      page: pagination.page,
+      rowsPerPage: pagination.pageSize,
+      totalCount: pagination.total,
+      rowKeyField: "id"
+    };
+    
+    console.log('🎯 QuanLyBaoDuong - Pagination data to StandardTable:', {
+      page: pagination.page,
+      rowsPerPage: pagination.pageSize,
+      totalCount: pagination.total,
+      dataLength: maintenanceRecords.length,
+      fullPagination: pagination,
+      maintenanceRecords: maintenanceRecords.slice(0, 3) // Show first 3 records
+    });
+    
     return (
       <StandardTable
-        columns={tableColumns}
-        data={maintenanceRecords}
-        loading={isLoading}
-        error={error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null)}
-        emptyMessage="Không có dữ liệu bảo dưỡng"
-        onRowClick={handleOpenEditDialog}
-        pagination={true}
-        page={pagination.page}
-        rowsPerPage={pagination.pageSize}
-        totalCount={pagination.total}
+        {...tableProps}
         onPageChange={(_, newPage) => {
+          console.log('📄 QuanLyBaoDuong - Page change requested:', { newPage, currentPage: pagination.page });
           fetchData(newPage, pagination.pageSize);
         }}
         onRowsPerPageChange={(event) => {
           const newPageSize = parseInt(event.target.value, 10);
+          console.log('📏 QuanLyBaoDuong - Page size change requested:', { newPageSize, currentPageSize: pagination.pageSize });
           fetchData(0, newPageSize);
         }}
-        rowKeyField="id"
       />
     );
   };

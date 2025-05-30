@@ -354,17 +354,42 @@ const StandardTable = ({
                           textOverflow: column.maxWidth ? 'ellipsis' : 'clip',
                         }}
                       >
-                        {column.Cell ? (
-                          <column.Cell
-                            row={row}
-                            value={row[column.key || column.id]}
-                            column={column}
-                          />
-                        ) : column.render ? (
-                          column.render(row[column.key || column.id], row)
-                        ) : (
-                          row[column.key || column.id]
-                        )}
+                        {(() => {
+                          let cellContent;
+                          const cellValue = row[column.key || column.id];
+                          
+                          if (column.Cell) {
+                            cellContent = (
+                              <column.Cell
+                                row={row}
+                                value={cellValue}
+                                column={column}
+                              />
+                            );
+                          } else if (column.render) {
+                            cellContent = column.render(cellValue, row);
+                          } else {
+                            cellContent = cellValue;
+                          }
+                          
+                          // Handle NaN values and other invalid content
+                          if (typeof cellContent === 'number' && isNaN(cellContent)) {
+                            console.warn('StandardTable: NaN value detected in cell:', {
+                              columnKey: column.key || column.id,
+                              rowId: row.id || index,
+                              cellValue,
+                              cellContent
+                            });
+                            return '-';
+                          }
+                          
+                          // Handle null/undefined
+                          if (cellContent == null) {
+                            return '-';
+                          }
+                          
+                          return cellContent;
+                        })()}
                       </TableCell>
                     ))}
                     {renderActions && (

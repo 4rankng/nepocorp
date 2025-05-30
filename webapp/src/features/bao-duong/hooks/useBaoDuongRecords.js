@@ -29,17 +29,33 @@ export default function useBaoDuongRecords(api) {
       setIsLoading(true);
       try {
         // Note: API is 1-indexed for page number
+        console.log('🔍 BaoDuong Hook - Requesting data:', { page, pageSize, apiPage: page + 1 });
         const recordsRes = await api.getAll(page + 1, pageSize);
+        
+        console.log('📦 BaoDuong Hook - API Response:', {
+          data: recordsRes.data?.length || 0,
+          meta: recordsRes.meta,
+          fullResponse: recordsRes
+        });
         
         setBaoDuongRecords(recordsRes.data || []);
         
         // Update pagination state from API response
-        setPagination(prev => ({
-          ...prev,
+        const newPagination = {
           page,
           pageSize,
           total: recordsRes.meta?.total || 0,
           totalPages: recordsRes.meta?.totalPages || 1,
+        };
+        
+        console.log('📊 BaoDuong Hook - Setting pagination:', {
+          ...newPagination,
+          receivedMeta: recordsRes.meta
+        });
+        
+        setPagination(prev => ({
+          ...prev,
+          ...newPagination,
         }));
         
         // Only fetch license plates once on initial load
