@@ -2,11 +2,9 @@ import React, { useMemo } from 'react';
 import { Box, Typography, Paper, useTheme, CircularProgress, Alert, Skeleton } from '@mui/material';
 import { StandardTable } from '@components';
 import { useDiDuong } from '../hooks';
-
 const DinhMucDiDuong = () => {
   const muiTheme = useTheme();
   const { roadNorms, containerTypes, routes, isLoading, error } = useDiDuong();
-
   // Sort container types by name (e.g., "20'", "40'") for consistent column order
   const sortedContainerTypes = useMemo(() => {
     return [...containerTypes].sort((a, b) => {
@@ -16,7 +14,6 @@ const DinhMucDiDuong = () => {
       return numA - numB;
     });
   }, [containerTypes]);
-
   // Prepare columns for StandardTable
   const columns = useMemo(
     () => [
@@ -59,7 +56,6 @@ const DinhMucDiDuong = () => {
     ],
     [sortedContainerTypes]
   );
-
   // Transform data for StandardTable - group by routes and container types
   const tableData = useMemo(() => {
     // Create a map of routes
@@ -73,23 +69,19 @@ const DinhMucDiDuong = () => {
       };
       return acc;
     }, {});
-
     // Fill in the norm values for each route and container type
     roadNorms.forEach(norm => {
       const routeKey = norm.ma_tuyen;
       const containerKey = norm.ma_loai_container;
-
       // If the route exists in our map
       if (routeMap[routeKey]) {
         // Add the norm value for this container type
         routeMap[routeKey].containerNorms[containerKey] = norm.dinh_muc;
       }
     });
-
     // Convert the map to an array for the table
     return Object.values(routeMap);
   }, [routes, roadNorms]);
-
   return (
     <Paper
       sx={{
@@ -110,13 +102,11 @@ const DinhMucDiDuong = () => {
           </Box>
         </Box>
       )}
-
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Không thể tải dữ liệu định mức đi đường: {error}
         </Alert>
       )}
-
       {!isLoading && !error && (
         <StandardTable
           columns={columns}
@@ -141,5 +131,4 @@ const DinhMucDiDuong = () => {
     </Paper>
   );
 };
-
 export default DinhMucDiDuong;

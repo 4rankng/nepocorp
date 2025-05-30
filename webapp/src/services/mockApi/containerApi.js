@@ -9,25 +9,21 @@ import {
   createApiSingleResponse,
   mockApiCall,
 } from './apiWrapper.js';
-
 export const fetchAllContainer = (page = 1, limit = 50) => {
   return mockApiCall(() =>
     withPagination(() => containerDataService.getAllContainer(), { page, limit })
   );
 };
-
 export const fetchContainerById = id => {
   return mockApiCall(() =>
     withSingleItem(() => containerDataService.getContainerById(id), 'Container not found')
   );
 };
-
 export const addContainer = data => {
   return mockApiCall(() =>
     withCreate(() => containerDataService.createContainer(data), 'Container created successfully')
   );
 };
-
 export const editContainer = (id, data) => {
   return mockApiCall(() =>
     withUpdate(
@@ -37,7 +33,6 @@ export const editContainer = (id, data) => {
     )
   );
 };
-
 export const removeContainer = id => {
   return mockApiCall(() =>
     withDelete(
@@ -47,7 +42,6 @@ export const removeContainer = id => {
     )
   );
 };
-
 export const _resetContainerMockData = data => {
   return mockApiCall(() =>
     createApiSingleResponse(
@@ -56,14 +50,12 @@ export const _resetContainerMockData = data => {
     )
   );
 };
-
 export const getContainerCount = async () => {
   return mockApiCall(async () => {
     const count = await containerDataService.getContainerCount();
     return createApiSingleResponse({ count }, 'Container count retrieved');
   });
 };
-
 export const containerApi = {
   getAll: fetchAllContainer,
   getById: fetchContainerById,

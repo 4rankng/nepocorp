@@ -9,23 +9,19 @@ import {
   createApiSingleResponse,
   mockApiCall,
 } from './apiWrapper.js';
-
 export const fetchAllDauKeo = (page = 1, limit = 50) => {
   return mockApiCall(() => withPagination(() => dauKeoDataService.getAllDauKeo(), { page, limit }));
 };
-
 export const fetchDauKeoById = id => {
   return mockApiCall(() =>
     withSingleItem(() => dauKeoDataService.getDauKeoById(id), 'Dau keo not found')
   );
 };
-
 export const addDauKeo = data => {
   return mockApiCall(() =>
     withCreate(() => dauKeoDataService.createDauKeo(data), 'Dau keo created successfully')
   );
 };
-
 export const editDauKeo = (id, data) => {
   return mockApiCall(() =>
     withUpdate(
@@ -35,7 +31,6 @@ export const editDauKeo = (id, data) => {
     )
   );
 };
-
 export const removeDauKeo = id => {
   return mockApiCall(() =>
     withDelete(
@@ -45,20 +40,17 @@ export const removeDauKeo = id => {
     )
   );
 };
-
 export const _resetDauKeoMockData = data => {
   return mockApiCall(() =>
     createApiSingleResponse(dauKeoDataService._resetDauKeo(data), 'Dau keo data reset successfully')
   );
 };
-
 export const getDauKeoCount = async () => {
   return mockApiCall(async () => {
     const count = await dauKeoDataService.getDauKeoCount();
     return createApiSingleResponse({ count }, 'Dau keo count retrieved');
   });
 };
-
 // Export object for backward compatibility
 export const dauKeoApi = {
   getAll: fetchAllDauKeo,

@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import InventoryIcon from '@mui/icons-material/Inventory2';
-
 const CONTAINER_TYPES = [
   '20ft Container',
   '40ft Container',
@@ -24,19 +23,16 @@ const CONTAINER_TYPES = [
   'Flat Rack Container',
   'Refrigerated Container',
 ];
-
 const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = false }) => {
   const handleSave = () => {
     onSave(data);
   };
-
   const handleFieldChange = (field, value) => {
     setData({
       ...data,
       [field]: value,
     });
   };
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -73,7 +69,6 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
               </MenuItem>
             ))}
           </TextField>
-
           <TextField
             label="Hoặc nhập loại khác"
             value={
@@ -102,5 +97,4 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
     </Dialog>
   );
 };
-
 export default ContainerDialog;

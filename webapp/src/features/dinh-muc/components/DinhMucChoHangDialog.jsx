@@ -12,7 +12,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-
 const DinhMucChoHangDialog = ({
   open,
   isEdit,
@@ -26,7 +25,6 @@ const DinhMucChoHangDialog = ({
   licensePlate,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const handleInternalSave = async () => {
     if (onValidateForm && !onValidateForm()) {
       return; // Validation failed
@@ -40,7 +38,6 @@ const DinhMucChoHangDialog = ({
       setIsSubmitting(false);
     }
   };
-
   return (
     <Dialog
       open={open}
@@ -75,7 +72,6 @@ const DinhMucChoHangDialog = ({
           <CloseIcon />
         </IconButton>
       </Box>
-
       <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Box
@@ -148,7 +144,6 @@ const DinhMucChoHangDialog = ({
           </Box>
         </Box>
       </DialogContent>
-
       <DialogActions
         sx={{
           px: 3,
@@ -174,5 +169,4 @@ const DinhMucChoHangDialog = ({
     </Dialog>
   );
 };
-
 export default DinhMucChoHangDialog;

@@ -9,23 +9,19 @@ import {
   createApiSingleResponse,
   mockApiCall,
 } from './apiWrapper.js';
-
 export const fetchAllRoMooc = (page = 1, limit = 50) => {
   return mockApiCall(() => withPagination(() => roMoocDataService.getAllRoMooc(), { page, limit }));
 };
-
 export const fetchRoMoocById = id => {
   return mockApiCall(() =>
     withSingleItem(() => roMoocDataService.getRoMoocById(id), 'Ro mooc not found')
   );
 };
-
 export const addRoMooc = data => {
   return mockApiCall(() =>
     withCreate(() => roMoocDataService.createRoMooc(data), 'Ro mooc created successfully')
   );
 };
-
 export const editRoMooc = (id, data) => {
   return mockApiCall(() =>
     withUpdate(
@@ -35,7 +31,6 @@ export const editRoMooc = (id, data) => {
     )
   );
 };
-
 export const removeRoMooc = id => {
   return mockApiCall(() =>
     withDelete(
@@ -45,20 +40,17 @@ export const removeRoMooc = id => {
     )
   );
 };
-
 export const _resetRoMoocMockData = data => {
   return mockApiCall(() =>
     createApiSingleResponse(roMoocDataService._resetRoMooc(data), 'Ro mooc data reset successfully')
   );
 };
-
 export const getRoMoocCount = async () => {
   return mockApiCall(async () => {
     const count = await roMoocDataService.getRoMoocCount();
     return createApiSingleResponse({ count }, 'Ro mooc count retrieved');
   });
 };
-
 // Export object for backward compatibility
 export const roMoocApi = {
   getAll: fetchAllRoMooc,

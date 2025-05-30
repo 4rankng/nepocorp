@@ -146,7 +146,6 @@ const QuanLyLichVanChuyen = () => {
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]);
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('ngayDi');
-
   // Handle request to sort a column
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -172,12 +171,10 @@ const QuanLyLichVanChuyen = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [expandedCard, setExpandedCard] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
   // Handle search input changes
   const handleSearchChange = e => {
     setSearchTerm(e.target.value);
   };
-
   const mapLichVanChuyenToFormData = item => {
     if (!item) return initialFormState;
     return {
@@ -218,7 +215,6 @@ const QuanLyLichVanChuyen = () => {
         fetchAllDauKeo({ limit: 1000 }), // Increase limit to get all items
         fetchAllRoMooc({ limit: 1000 }), // Increase limit to get all items
       ]);
-
       // Extract data from API responses
       const lichVanChuyenList = Array.isArray(lichVanChuyenResponse?.data)
         ? lichVanChuyenResponse.data
@@ -228,9 +224,7 @@ const QuanLyLichVanChuyen = () => {
       const khachHangList = Array.isArray(khachHangResponse?.data) ? khachHangResponse.data : [];
       const dauKeoList = Array.isArray(dauKeoResponse?.data) ? dauKeoResponse.data : [];
       const roMoocList = Array.isArray(roMoocResponse?.data) ? roMoocResponse.data : [];
-
       setLichVanChuyenItems(lichVanChuyenList);
-
       // Format data for select inputs
       const vehiclesData = formatVehiclesForSelect(dauKeoList, roMoocList);
       const customersData = formatCustomersForSelect(khachHangList);
@@ -415,12 +409,10 @@ const QuanLyLichVanChuyen = () => {
     () => createLichVanChuyenColumns(selectOptions, theme),
     [selectOptions.khachHang, selectOptions.nhanVien, theme]
   );
-
   // Sort the filtered shipment plans
   const sortedShipmentPlans = React.useMemo(() => {
     return stableSort(filteredLichVanChuyenItems, getComparator(order, orderBy, columns));
   }, [filteredLichVanChuyenItems, order, orderBy, columns]);
-
   // Reset form and stepper for mobile
   const resetForm = () => {
     setFormData(initialFormState);

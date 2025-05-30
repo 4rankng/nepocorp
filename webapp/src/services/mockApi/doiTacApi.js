@@ -12,7 +12,6 @@ import {
 export const fetchAllDoiTac = (page = 1, limit = 10) => {
   return mockApiCall(() => withPagination(() => doiTacDataService.getAllDoiTac(), { page, limit }));
 };
-
 export const fetchDoiTacById = id => {
   return mockApiCall(() =>
     withSingleItem(
@@ -22,11 +21,9 @@ export const fetchDoiTacById = id => {
     )
   );
 };
-
 export const addDoiTac = data => {
   return mockApiCall(() => withCreate(() => doiTacDataService.createDoiTac(data)));
 };
-
 export const editDoiTac = (id, data) => {
   return mockApiCall(() =>
     withUpdate(
@@ -36,7 +33,6 @@ export const editDoiTac = (id, data) => {
     )
   );
 };
-
 export const removeDoiTac = id => {
   return mockApiCall(() =>
     withDelete(
@@ -46,7 +42,6 @@ export const removeDoiTac = id => {
     )
   );
 };
-
 export const _resetDoiTacMockData = data => {
   return mockApiCall(() => doiTacDataService._resetDoiTac(data));
 };

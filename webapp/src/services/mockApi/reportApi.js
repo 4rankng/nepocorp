@@ -12,7 +12,6 @@ export const fetchMonthlyProfitAndRevenueReport = (_startDate, endDate) => {
     'Reports'
   );
 };
-
 export const fetchDetailedCostReport = (_startDate, endDate) => {
   return mockApiCall(
     withSingleItem(
@@ -23,7 +22,6 @@ export const fetchDetailedCostReport = (_startDate, endDate) => {
     'Reports'
   );
 };
-
 export const fetchDebtReport = (_startDate, endDate) => {
   return mockApiCall(
     withSingleItem(
@@ -34,7 +32,6 @@ export const fetchDebtReport = (_startDate, endDate) => {
     'Reports'
   );
 };
-
 // Vehicle tracking reports
 export const fetchVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
   return mockApiCall(
@@ -46,7 +43,6 @@ export const fetchVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
     'Reports'
   );
 };
-
 export const fetchAvailableMonthsForReport = () => {
   return mockApiCall(
     withSingleItem(
@@ -57,7 +53,6 @@ export const fetchAvailableMonthsForReport = () => {
     'Reports'
   );
 };
-
 // Additional report types
 export const fetchDailyRevenueReport = (_startDate, endDate) => {
   return mockApiCall(
@@ -69,7 +64,6 @@ export const fetchDailyRevenueReport = (_startDate, endDate) => {
     'Reports'
   );
 };
-
 export const fetchCustomerRevenueReport = (customerId, _startDate, endDate) => {
   console.log('[Mock API] Fetching customer revenue report...', {
     customerId,
@@ -85,7 +79,6 @@ export const fetchCustomerRevenueReport = (customerId, _startDate, endDate) => {
     'Reports'
   );
 };
-
 export const fetchVehiclePerformanceReport = (vehicleId, _startDate, endDate) => {
   console.log('[Mock API] Fetching vehicle performance report...', {
     vehicleId,
@@ -101,7 +94,6 @@ export const fetchVehiclePerformanceReport = (vehicleId, _startDate, endDate) =>
     'Reports'
   );
 };
-
 export const fetchPartnerReport = (partnerId, _startDate, endDate) => {
   return mockApiCall(
     withSingleItem(
@@ -112,7 +104,6 @@ export const fetchPartnerReport = (partnerId, _startDate, endDate) => {
     'Reports'
   );
 };
-
 // Export report functionality
 export const exportReportToExcel = (reportType, reportData, filename) => {
   return mockApiCall(
@@ -124,7 +115,6 @@ export const exportReportToExcel = (reportType, reportData, filename) => {
     'Reports'
   );
 };
-
 export const exportReportToPDF = (reportType, reportData, filename) => {
   return mockApiCall(
     withSingleItem(

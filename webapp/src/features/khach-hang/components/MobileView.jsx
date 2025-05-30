@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 import ProfileCard from '@/components/ProfileCard';
-
 const MobileView = ({
   customers = [],
   loading = false,
@@ -21,7 +20,6 @@ const MobileView = ({
   error = '',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-
   // Filter customers based on search term
   const filteredCustomers = useMemo(() => {
     if (!searchTerm.trim()) return customers;
@@ -34,12 +32,10 @@ const MobileView = ({
         (customer.ma_dinh_danh && customer.ma_dinh_danh.toLowerCase().includes(term))
     );
   }, [customers, searchTerm]);
-
   // Handle search input change
   const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
-
   return (
     <Box sx={{ pb: { xs: 10, sm: 11 } }}>
       {/* Search Bar */}
@@ -65,7 +61,6 @@ const MobileView = ({
           }}
         />
       </Box>
-
       {/* Loading state */}
       {loading && (
         <Box display="flex" justifyContent="center" alignItems="center" py={4}>
@@ -73,14 +68,12 @@ const MobileView = ({
           <Typography sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
         </Box>
       )}
-
       {/* Error state */}
       {error && (
         <Box color="error.main" py={2}>
           <Typography>{error}</Typography>
         </Box>
       )}
-
       {/* Content */}
       {!loading && !error && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -105,7 +98,6 @@ const MobileView = ({
               loading={loading}
             />
           ))}
-
           {filteredCustomers.length === 0 && (
             <Box textAlign="center" py={6}>
               <Typography variant="body1" color="text.secondary">
@@ -115,7 +107,6 @@ const MobileView = ({
           )}
         </Box>
       )}
-
       {/* Floating Action Button */}
       <Zoom in={!loading}>
         <Fab
@@ -143,5 +134,4 @@ const MobileView = ({
     </Box>
   );
 };
-
 export default MobileView;

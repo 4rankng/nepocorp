@@ -10,7 +10,6 @@ import {
   Box,
 } from '@mui/material';
 import TrailerIcon from '@mui/icons-material/RvHookup';
-
 const RoMoocDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) => (
   <Dialog
     open={open}
@@ -65,5 +64,4 @@ const RoMoocDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) => (
     </DialogActions>
   </Dialog>
 );
-
 export default RoMoocDeleteDialog;

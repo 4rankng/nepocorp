@@ -11,7 +11,6 @@ import {
 import { Search as SearchIcon } from '@mui/icons-material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import ProfileCard from '@/components/ProfileCard';
-
 const MobileView = ({
   employees,
   isLoading,
@@ -59,7 +58,6 @@ const MobileView = ({
       </Box>
     );
   }
-
   if (error) {
     return (
       <Alert severity="error" sx={{ m: 2 }}>
@@ -67,7 +65,6 @@ const MobileView = ({
       </Alert>
     );
   }
-
   return (
     <Box sx={{ p: { xs: 1, sm: 2 }, pb: { xs: 10, sm: 11 } }}>
       {' '}
@@ -121,5 +118,4 @@ const MobileView = ({
     </Box>
   );
 };
-
 export default MobileView;

@@ -13,7 +13,6 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import LicensePlateNormsCard from './LicensePlateNormsCard';
-
 const DinhMucTheoBienSoXeSection = ({
   dinhMucHang,
   dinhMucVo,
@@ -28,7 +27,6 @@ const DinhMucTheoBienSoXeSection = ({
   normTypeFilter, // 'km_hang' or 'km_vo' to filter by norm type
 }) => {
   const muiTheme = useTheme();
-
   // Filter plates based on search query
   const filteredPlates = React.useMemo(() => {
     if (!searchQuery) {
@@ -38,7 +36,6 @@ const DinhMucTheoBienSoXeSection = ({
       item.licensePlate.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [activeLicensePlatesWithStandards, searchQuery]);
-
   return (
     <Box>
       {isLoading && (
@@ -85,5 +82,4 @@ const DinhMucTheoBienSoXeSection = ({
     </Box>
   );
 };
-
 export default DinhMucTheoBienSoXeSection;

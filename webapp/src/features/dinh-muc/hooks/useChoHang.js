@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
 import * as dauKeoApi from '@services/mockApi/dauKeoApi';
 import * as roMoocApi from '@services/mockApi/roMoocApi';
-
 /**
  * Hook for managing loaded fuel standards (định mức cho hàng/km có hàng)
  */
@@ -11,7 +10,6 @@ export const useChoHang = () => {
   const [availableLicensePlates, setAvailableLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
   // Fetch all loaded fuel standards
   const fetchChoHangData = useCallback(async () => {
     setIsLoading(true);
@@ -22,12 +20,10 @@ export const useChoHang = () => {
         dauKeoApi.fetchAllDauKeo(),
         roMoocApi.fetchAllRoMooc(),
       ]);
-
       // Handle API response errors with more specific messages
       if (!dinhMucResponse || !dauKeoResponse || !roMoocResponse) {
         throw new Error('Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.');
       }
-
       if (!dinhMucResponse.success) {
         console.error('DinhMucDau API Error:', dinhMucResponse.error);
         throw new Error(
@@ -47,14 +43,11 @@ export const useChoHang = () => {
           roMoocResponse.error?.message || 'Lỗi khi tải danh sách rơ mooc. Vui lòng thử lại sau.'
         );
       }
-
       const allDinhMucData = dinhMucResponse.data?.items || dinhMucResponse.data || [];
       const dauKeoData = dauKeoResponse.data?.items || dauKeoResponse.data || [];
       const roMoocData = roMoocResponse.data?.items || roMoocResponse.data || [];
-
       // Filter for loaded standards (km_hang)
       const choHangDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_hang');
-
       // Group by license plate
       const choHangGrouped = choHangDataItems.reduce((acc, item) => {
         const plateKey = item.bien_so_xe || item.bienSoXe;
@@ -77,9 +70,7 @@ export const useChoHang = () => {
         });
         return acc;
       }, {});
-
       setDinhMucChoHang(choHangGrouped);
-
       // Combine tractor and trailer license plates
       const tractorPlates = dauKeoData.map(dk => ({
         licensePlate: dk.bien_so,
@@ -90,7 +81,6 @@ export const useChoHang = () => {
         type: 'ro_mooc',
       }));
       setAvailableLicensePlates([...tractorPlates, ...trailerPlates]);
-
       return { choHangGrouped, tractorPlates, trailerPlates };
     } catch (err) {
       console.error('Failed to fetch loaded fuel standards:', err);
@@ -107,7 +97,6 @@ export const useChoHang = () => {
       setIsLoading(false);
     }
   }, []);
-
   // Create cho hang standard
   const createChoHangStandard = useCallback(
     async formData => {
@@ -122,13 +111,10 @@ export const useChoHang = () => {
           l_km: parseFloat(formData.standard),
           ghiChu: formData.note,
         };
-
         const response = await dinhMucDauApi.create(apiData);
-
         if (!response.success) {
           throw new Error(response.error?.message || 'Failed to create cho hang standard');
         }
-
         // Refresh data to get updated grouping
         await fetchChoHangData();
         return response.data;
@@ -142,7 +128,6 @@ export const useChoHang = () => {
     },
     [fetchChoHangData]
   );
-
   // Update cho hang standard
   const updateChoHangStandard = useCallback(
     async (id, formData) => {
@@ -157,13 +142,10 @@ export const useChoHang = () => {
           l_km: parseFloat(formData.standard),
           ghiChu: formData.note,
         };
-
         const response = await dinhMucDauApi.update(id, apiData);
-
         if (!response.success) {
           throw new Error(response.error?.message || 'Failed to update cho hang standard');
         }
-
         // Refresh data to get updated grouping
         await fetchChoHangData();
         return response.data;
@@ -177,7 +159,6 @@ export const useChoHang = () => {
     },
     [fetchChoHangData]
   );
-
   // Delete cho hang standard
   const deleteChoHangStandard = useCallback(
     async id => {
@@ -185,11 +166,9 @@ export const useChoHang = () => {
       setError('');
       try {
         const response = await dinhMucDauApi.delete(id);
-
         if (!response.success) {
           throw new Error(response.error?.message || 'Failed to delete cho hang standard');
         }
-
         // Refresh data to get updated grouping
         await fetchChoHangData();
         return true;
@@ -203,7 +182,6 @@ export const useChoHang = () => {
     },
     [fetchChoHangData]
   );
-
   // Load data on mount
   useEffect(() => {
     fetchChoHangData().catch(err => {
@@ -211,7 +189,6 @@ export const useChoHang = () => {
       console.warn('Error caught in useChoHang useEffect:', err.message);
     });
   }, [fetchChoHangData]);
-
   return {
     dinhMucChoHang,
     availableLicensePlates,

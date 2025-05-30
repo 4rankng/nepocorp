@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
 import * as dauKeoApi from '@services/mockApi/dauKeoApi';
 import * as roMoocApi from '@services/mockApi/roMoocApi';
-
 /**
  * Hook for managing empty fuel standards (định mức vỏ rỗng/km không hàng)
  */
@@ -11,7 +10,6 @@ export const useVoRong = () => {
   const [availableLicensePlates, setAvailableLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
   // Fetch all empty fuel standards
   const fetchVoRongData = useCallback(async () => {
     setIsLoading(true);
@@ -22,12 +20,10 @@ export const useVoRong = () => {
         dauKeoApi.fetchAllDauKeo(),
         roMoocApi.fetchAllRoMooc(),
       ]);
-
       // Handle API response errors with more specific messages
       if (!dinhMucResponse || !dauKeoResponse || !roMoocResponse) {
         throw new Error('Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.');
       }
-
       if (!dinhMucResponse.success) {
         console.error('DinhMucDau API Error:', dinhMucResponse.error);
         throw new Error(
@@ -47,14 +43,11 @@ export const useVoRong = () => {
           roMoocResponse.error?.message || 'Lỗi khi tải danh sách rơ mooc. Vui lòng thử lại sau.'
         );
       }
-
       const allDinhMucData = dinhMucResponse.data?.items || dinhMucResponse.data || [];
       const dauKeoData = dauKeoResponse.data?.items || dauKeoResponse.data || [];
       const roMoocData = roMoocResponse.data?.items || roMoocResponse.data || [];
-
       // Filter for empty standards (km_vo)
       const voRongDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_vo');
-
       // Group by license plate
       const voRongGrouped = voRongDataItems.reduce((acc, item) => {
         const plateKey = item.bien_so_xe || item.bienSoXe;
@@ -77,9 +70,7 @@ export const useVoRong = () => {
         });
         return acc;
       }, {});
-
       setDinhMucVoRong(voRongGrouped);
-
       // Combine tractor and trailer license plates
       const tractorPlates = dauKeoData.map(dk => ({
         licensePlate: dk.bien_so,
@@ -90,7 +81,6 @@ export const useVoRong = () => {
         type: 'ro_mooc',
       }));
       setAvailableLicensePlates([...tractorPlates, ...trailerPlates]);
-
       return { voRongGrouped, tractorPlates, trailerPlates };
     } catch (err) {
       console.error('Failed to fetch empty fuel standards:', err);
@@ -107,7 +97,6 @@ export const useVoRong = () => {
       setIsLoading(false);
     }
   }, []);
-
   // Create vo rong standard
   const createVoRongStandard = useCallback(
     async formData => {
@@ -122,13 +111,10 @@ export const useVoRong = () => {
           l_km: parseFloat(formData.standard),
           ghiChu: formData.note,
         };
-
         const response = await dinhMucDauApi.create(apiData);
-
         if (!response.success) {
           throw new Error(response.error?.message || 'Failed to create vo rong standard');
         }
-
         // Refresh data to get updated grouping
         await fetchVoRongData();
         return response.data;
@@ -142,7 +128,6 @@ export const useVoRong = () => {
     },
     [fetchVoRongData]
   );
-
   // Update vo rong standard
   const updateVoRongStandard = useCallback(
     async (id, formData) => {
@@ -157,13 +142,10 @@ export const useVoRong = () => {
           l_km: parseFloat(formData.standard),
           ghiChu: formData.note,
         };
-
         const response = await dinhMucDauApi.update(id, apiData);
-
         if (!response.success) {
           throw new Error(response.error?.message || 'Failed to update vo rong standard');
         }
-
         // Refresh data to get updated grouping
         await fetchVoRongData();
         return response.data;
@@ -177,7 +159,6 @@ export const useVoRong = () => {
     },
     [fetchVoRongData]
   );
-
   // Delete vo rong standard
   const deleteVoRongStandard = useCallback(
     async id => {
@@ -185,11 +166,9 @@ export const useVoRong = () => {
       setError('');
       try {
         const response = await dinhMucDauApi.delete(id);
-
         if (!response.success) {
           throw new Error(response.error?.message || 'Failed to delete vo rong standard');
         }
-
         // Refresh data to get updated grouping
         await fetchVoRongData();
         return true;
@@ -203,12 +182,10 @@ export const useVoRong = () => {
     },
     [fetchVoRongData]
   );
-
   // Load data on mount
   useEffect(() => {
     fetchVoRongData();
   }, [fetchVoRongData]);
-
   return {
     dinhMucVoRong,
     availableLicensePlates,

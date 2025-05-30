@@ -49,26 +49,21 @@ const TABS = [
   { value: 'ro-mooc', label: 'Rơ-Mooc' },
   { value: 'container', label: 'Container' },
 ];
-
 // Individual tab content components
 const DauKeoContent = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   const dauKeoHook = useDauKeo();
   const [dialog, setDialog] = useState({ open: false, edit: false, data: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-
   useEffect(() => {
     dauKeoHook.fetchAll();
   }, []);
-
   const columns = [
     { key: 'bien_so', label: 'BIỂN SỐ', render: v => v },
     { key: 'mo_ta', label: 'MÔ TẢ', render: v => v || '' },
   ];
-
   const handleSave = async formData => {
     try {
       if (dialog.edit) {
@@ -83,7 +78,6 @@ const DauKeoContent = () => {
       setSnackbar({ open: true, message: dauKeoHook.error || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
-
   const handleDelete = async () => {
     try {
       await dauKeoHook.remove(deleteDialog.data.id);
@@ -93,7 +87,6 @@ const DauKeoContent = () => {
       setSnackbar({ open: true, message: dauKeoHook.error || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
-
   return (
     <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
       {dauKeoHook.loading ? (
@@ -181,25 +174,20 @@ const DauKeoContent = () => {
     </Box>
   );
 };
-
 const RoMoocContent = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   const roMoocHook = useRoMooc();
   const [dialog, setDialog] = useState({ open: false, edit: false, data: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-
   useEffect(() => {
     roMoocHook.fetchAll();
   }, []);
-
   const columns = [
     { key: 'bien_so', label: 'BIỂN SỐ', render: v => v },
     { key: 'mo_ta', label: 'MÔ TẢ', render: v => v || '' },
   ];
-
   const handleSave = async formData => {
     try {
       if (dialog.edit) {
@@ -214,7 +202,6 @@ const RoMoocContent = () => {
       setSnackbar({ open: true, message: roMoocHook.error || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
-
   const handleDelete = async () => {
     try {
       await roMoocHook.remove(deleteDialog.data.id);
@@ -224,11 +211,9 @@ const RoMoocContent = () => {
       setSnackbar({ open: true, message: roMoocHook.error || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
-
   return (
     <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
       {/* Old AddButton block removed, FAB is already at the end of the component */}
-
       {roMoocHook.loading ? (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress size={24} />
@@ -264,7 +249,6 @@ const RoMoocContent = () => {
           )}
         />
       )}
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -277,7 +261,6 @@ const RoMoocContent = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       <RoMoocDialog
         open={dialog.open}
         edit={dialog.edit}
@@ -285,7 +268,6 @@ const RoMoocContent = () => {
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
-
       <RoMoocDeleteDialog
         open={deleteDialog.open}
         data={deleteDialog.data}
@@ -317,22 +299,17 @@ const RoMoocContent = () => {
     </Box>
   );
 };
-
 const ContainerContent = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   const containerHook = useContainer();
   const [dialog, setDialog] = useState({ open: false, edit: false, data: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-
   useEffect(() => {
     containerHook.fetchAll();
   }, []);
-
   const columns = [{ key: 'phan_loai', label: 'LOẠI CONTAINER', render: v => v || '' }];
-
   const handleSave = async formData => {
     try {
       if (dialog.edit) {
@@ -351,7 +328,6 @@ const ContainerContent = () => {
       });
     }
   };
-
   const handleDelete = async () => {
     try {
       await containerHook.remove(deleteDialog.data.id);
@@ -365,11 +341,9 @@ const ContainerContent = () => {
       });
     }
   };
-
   return (
     <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
       {/* Old AddButton block removed, FAB is already at the end of the component */}
-
       {containerHook.loading ? (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress size={24} />
@@ -405,7 +379,6 @@ const ContainerContent = () => {
           )}
         />
       )}
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -418,7 +391,6 @@ const ContainerContent = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       <ContainerDialog
         open={dialog.open}
         edit={dialog.edit}
@@ -426,7 +398,6 @@ const ContainerContent = () => {
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
-
       <ContainerDeleteDialog
         open={deleteDialog.open}
         data={deleteDialog.data}
@@ -458,17 +429,14 @@ const ContainerContent = () => {
     </Box>
   );
 };
-
 const QuanLyPhuongTien = () => {
   const { tab: tabFromUrl = 'dau-keo' } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   // Set the active tab based on URL parameter
   const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : 'dau-keo';
-
   // Redirect to the first tab if the current tab is invalid
   useEffect(() => {
     if (!TABS.some(tab => tab.value === tabFromUrl)) {
@@ -481,7 +449,6 @@ const QuanLyPhuongTien = () => {
     },
     [navigate]
   );
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dau-keo':
@@ -494,7 +461,6 @@ const QuanLyPhuongTien = () => {
         return <DauKeoContent />;
     }
   };
-
   return (
     <div className="w-full">
       <SwipeTabs

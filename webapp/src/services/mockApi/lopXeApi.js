@@ -49,7 +49,6 @@ export const lopXeApi = {
   getAll: async (page = 1, limit = 10) => {
     return mockApiCall(() => withPagination(() => data.map(toUI), { page, limit }));
   },
-
   create: async record => {
     return mockApiCall(
       withCreate(() => {
@@ -61,7 +60,6 @@ export const lopXeApi = {
       })
     );
   },
-
   update: async (id, record) => {
     return mockApiCall(
       withUpdate(
@@ -80,7 +78,6 @@ export const lopXeApi = {
       'LopXe'
     );
   },
-
   delete: async id => {
     return mockApiCall(
       withDelete(
@@ -96,7 +93,6 @@ export const lopXeApi = {
       'LopXe'
     );
   },
-
   reset: () => {
     return mockApiCall(() => {
       data = lopXeData.slice();
@@ -104,7 +100,6 @@ export const lopXeApi = {
       return true;
     }, 'LopXe');
   },
-
   getCount: async () => {
     return mockApiCall(
       withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe'),

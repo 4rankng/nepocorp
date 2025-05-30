@@ -5,7 +5,6 @@ import InfoIcon from '@mui/icons-material/Info';
 import AddIcon from '@mui/icons-material/Add';
 import StandardTable from '@/components/StandardTable';
 import { SearchBar } from '@/components';
-
 const DesktopView = ({
   searchTerm,
   onSearchTermChange,
@@ -21,11 +20,9 @@ const DesktopView = ({
   renderActions,
 }) => {
   const theme = useTheme();
-
   const createSortHandler = property => event => {
     onRequestSort(event, property);
   };
-
   return (
     <Box sx={{ pb: { xs: 10, md: 11 } }}>
       {/* Search bar */}
@@ -36,7 +33,6 @@ const DesktopView = ({
           placeholder="Tìm kiếm theo biển số xe, đối tác, khách hàng..."
         />
       </Box>
-
       <Paper elevation={0} sx={{ p: 0 }}>
         <StandardTable
           columns={columns.map(column => ({
@@ -82,7 +78,6 @@ const DesktopView = ({
     </Box>
   );
 };
-
 DesktopView.propTypes = {
   searchTerm: PropTypes.string.isRequired,
   onSearchTermChange: PropTypes.func.isRequired,
@@ -106,5 +101,4 @@ DesktopView.propTypes = {
   onRequestSort: PropTypes.func,
   renderActions: PropTypes.func,
 };
-
 export default DesktopView;

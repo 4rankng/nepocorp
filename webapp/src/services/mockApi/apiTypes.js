@@ -2,7 +2,6 @@
  * API Response Type Definitions
  * Standardized response formats for all API endpoints
  */
-
 /**
  * @template T
  * @typedef {Object} ApiResponse
@@ -16,7 +15,6 @@
  * @property {string} [message] - Optional message
  * @property {boolean} success - Success status
  */
-
 /**
  * @template T
  * @typedef {Object} ApiSingleResponse
@@ -24,7 +22,6 @@
  * @property {string} [message] - Optional message
  * @property {boolean} success - Success status
  */
-
 /**
  * @typedef {Object} ApiErrorResponse
  * @property {Object} error - Error details
@@ -34,6 +31,5 @@
  * @property {false} success - Always false for errors
  * @property {string} timestamp - Error timestamp (ISO format)
  */
-
 // Export types for JSDoc usage
 export const ApiResponseTypes = {};

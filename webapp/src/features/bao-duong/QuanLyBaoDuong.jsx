@@ -54,7 +54,6 @@ import LopXeSection from './components/LopXeSection';
 import { lopXeTableColumns } from './constants/lopXeTableColumns';
 import useLopXeForm from './hooks/useLopXeForm';
 import useLopXeRecords from './hooks/useLopXeRecords';
-
 const initialFormData = {
   licensePlate: '',
   replacementDate: new Date(),
@@ -65,7 +64,6 @@ const initialFormData = {
   total: 0,
   note: '',
 };
-
 const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -79,23 +77,19 @@ const QuanLyBaoDuong = memo(() => {
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [counts, setCounts] = useState({ tire: 0 });
-
   // Get current tab from URL
   const getCurrentTab = () => {
     const pathParts = location.pathname.split('/');
     const tabFromUrl = pathParts[pathParts.length - 1];
     return tabFromUrl === 'bao-duong' ? 'lop-xe' : tabFromUrl;
   };
-
   const currentTab = getCurrentTab();
-
   // Redirect to default tab if on base route
   useEffect(() => {
     if (location.pathname === '/bao-duong') {
       navigate('/bao-duong/lop-xe', { replace: true });
     }
   }, [location.pathname, navigate]);
-
   // Data fetching
   const {
     lopXeRecords: maintenanceRecords,
@@ -106,7 +100,6 @@ const QuanLyBaoDuong = memo(() => {
     error,
     fetchData,
   } = useLopXeRecords(lopXeApi);
-
   // Form state/handlers
   const {
     formData,
@@ -136,26 +129,22 @@ const QuanLyBaoDuong = memo(() => {
       console.error(err);
     },
   });
-
   // Fetch count and data on mount
   useEffect(() => {
     lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
     // Also fetch initial data
     fetchData();
   }, []); // Empty dependency array for mount only
-
   // Helper to refetch count
   const refetchCount = useCallback(() => {
     lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
   }, []);
-
   const handleOpenAddDialog = () => {
     setIsEdit(false);
     setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null });
     setErrors({});
     setOpenDialog(true);
   };
-
   const handleOpenEditDialog = record => {
     setIsEdit(true);
     setFormData({
@@ -172,12 +161,10 @@ const QuanLyBaoDuong = memo(() => {
     setErrors({});
     setOpenDialog(true);
   };
-
   const handleCloseDialog = useCallback(() => {
     setOpenDialog(false);
     setErrors({});
   }, []);
-
   const handleDeleteClick = record => {
     setDeleteDialog({
       open: true,
@@ -192,11 +179,9 @@ const QuanLyBaoDuong = memo(() => {
       },
     });
   };
-
   const handleDeleteClose = () => {
     setDeleteDialog(prev => ({ ...prev, open: false }));
   };
-
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.recordId) return;
     setFormLoading(true);
@@ -221,7 +206,6 @@ const QuanLyBaoDuong = memo(() => {
       setFormLoading(false);
     }
   };
-
   // Filter maintenance records based on search term
   const filteredRecords = React.useMemo(() => {
     if (!searchTerm.trim()) return maintenanceRecords;
@@ -232,7 +216,6 @@ const QuanLyBaoDuong = memo(() => {
         (record.note && record.note.toLowerCase().includes(search))
     );
   }, [maintenanceRecords, searchTerm]);
-
   const toggleSection = section => {
     setExpandedSections(prev => ({
       ...prev,
@@ -244,14 +227,12 @@ const QuanLyBaoDuong = memo(() => {
       setLoadedSections(prev => ({ ...prev, [section]: true }));
     }
   };
-
   const handleAddNew = (type = 'tire') => {
     setIsEdit(false);
     setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null, type });
     setErrors({});
     setOpenDialog(true);
   };
-
   // Render mobile card view
   const renderMobileView = () => (
     <Box>
@@ -271,7 +252,6 @@ const QuanLyBaoDuong = memo(() => {
       )}
     </Box>
   );
-
   // Render desktop table view
   const renderDesktopView = () => (
     <StandardTable
@@ -293,14 +273,11 @@ const QuanLyBaoDuong = memo(() => {
       )}
     />
   );
-
   const handleTabChange = newTab => {
     navigate(`/bao-duong/${newTab}`, { replace: true });
   };
-
   // Define tabs configuration
   const tabs = [{ value: 'lop-xe', label: 'Lốp Xe' }];
-
   // Render tab content based on active tab
   const renderTabContent = () => {
     switch (currentTab) {
@@ -369,7 +346,6 @@ const QuanLyBaoDuong = memo(() => {
         return null;
     }
   };
-
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
       {/* SwipeTabs System */}
@@ -391,7 +367,6 @@ const QuanLyBaoDuong = memo(() => {
           {renderTabContent()}
         </Box>
       </SwipeTabs>
-
       {/* Add/Edit Dialog */}
       <LopXeDialog
         open={openDialog}
@@ -435,5 +410,4 @@ const QuanLyBaoDuong = memo(() => {
     </Box>
   );
 });
-
 export default QuanLyBaoDuong;

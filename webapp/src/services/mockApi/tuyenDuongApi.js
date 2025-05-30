@@ -8,13 +8,11 @@ import {
   withDelete,
   ErrorCodes,
 } from './apiWrapper.js';
-
 export const getAllTuyenDuong = async (page = 1, limit = 10) => {
   return mockApiCall(() =>
     withPagination(() => tuyenDuongDataService.getAllTuyenDuong(), { page, limit })
   );
 };
-
 export const getTuyenDuongById = async id => {
   return mockApiCall(() =>
     withSingleItem(
@@ -24,7 +22,6 @@ export const getTuyenDuongById = async id => {
     )
   );
 };
-
 export const getTuyenDuongByMaSo = async ma_so => {
   return mockApiCall(() =>
     withSingleItem(
@@ -34,11 +31,9 @@ export const getTuyenDuongByMaSo = async ma_so => {
     )
   );
 };
-
 export const createTuyenDuong = async tuyenDuong => {
   return mockApiCall(() => withCreate(() => tuyenDuongDataService.createTuyenDuong(tuyenDuong)));
 };
-
 export const updateTuyenDuong = async (id, updates) => {
   return mockApiCall(() =>
     withUpdate(
@@ -48,7 +43,6 @@ export const updateTuyenDuong = async (id, updates) => {
     )
   );
 };
-
 export const deleteTuyenDuong = async id => {
   return mockApiCall(() =>
     withDelete(
@@ -58,12 +52,10 @@ export const deleteTuyenDuong = async id => {
     )
   );
 };
-
 // For testing and resetting
 export const _resetTuyenDuong = async (newData = []) => {
   return mockApiCall(() => tuyenDuongDataService._resetTuyenDuong(newData));
 };
-
 export const getTuyenDuongCount = async () => {
   return mockApiCall(() =>
     withSingleItem(

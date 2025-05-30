@@ -8,13 +8,11 @@ import {
   withDelete,
   ErrorCodes,
 } from './apiWrapper.js';
-
 export const getAllDinhMucDiDuong = async (page = 1, limit = 10) => {
   return mockApiCall(() =>
     withPagination(() => dinhMucDiDuongDataService.getAllDinhMucDiDuong(), { page, limit })
   );
 };
-
 export const getDinhMucDiDuongById = async id => {
   return mockApiCall(() =>
     withSingleItem(
@@ -24,7 +22,6 @@ export const getDinhMucDiDuongById = async id => {
     )
   );
 };
-
 export const getDinhMucByContainerAndTuyen = async (ma_cont, ma_tuyen) => {
   return mockApiCall(() =>
     withSingleItem(
@@ -34,13 +31,11 @@ export const getDinhMucByContainerAndTuyen = async (ma_cont, ma_tuyen) => {
     )
   );
 };
-
 export const createDinhMucDiDuong = async dinhMuc => {
   return mockApiCall(() =>
     withCreate(() => dinhMucDiDuongDataService.createDinhMucDiDuong(dinhMuc))
   );
 };
-
 export const updateDinhMucDiDuong = async (id, updates) => {
   return mockApiCall(() =>
     withUpdate(
@@ -50,7 +45,6 @@ export const updateDinhMucDiDuong = async (id, updates) => {
     )
   );
 };
-
 export const deleteDinhMucDiDuong = async id => {
   return mockApiCall(() =>
     withDelete(
@@ -60,12 +54,10 @@ export const deleteDinhMucDiDuong = async id => {
     )
   );
 };
-
 // For testing and resetting
 export const _resetDinhMucDiDuong = async (newData = []) => {
   return mockApiCall(() => dinhMucDiDuongDataService._resetDinhMucDiDuong(newData));
 };
-
 export const getDinhMucDiDuongCount = async () => {
   return mockApiCall(() =>
     withSingleItem(

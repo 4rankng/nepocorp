@@ -13,19 +13,16 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-
 const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = false }) => {
   const handleSave = () => {
     onSave(data);
   };
-
   const handleFieldChange = (field, value) => {
     setData({
       ...data,
       [field]: value,
     });
   };
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -83,5 +80,4 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
     </Dialog>
   );
 };
-
 export default DauKeoDialog;

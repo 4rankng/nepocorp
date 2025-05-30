@@ -1,5 +1,4 @@
 import { formatCurrency, addMonths } from '../utils/lopXeUtils';
-
 export const lopXeTableColumns = [
   {
     key: 'licensePlate',

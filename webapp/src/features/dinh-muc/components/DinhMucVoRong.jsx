@@ -5,18 +5,15 @@ import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
 import DinhMucVoRongDialog from './DinhMucVoRongDialog';
 import { ConfirmationDialog } from '@components';
 import { useVoRong } from '../hooks';
-
 const DinhMucVoRong = () => {
   const muiTheme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
-
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [currentStandard, setCurrentStandard] = useState(null);
   const [deleteDetails, setDeleteDetails] = useState({ id: null, type: null, details: '' });
-
   // Form states
   const [formData, setFormData] = useState({
     bienSoXe: '',
@@ -27,7 +24,6 @@ const DinhMucVoRong = () => {
   });
   const [errors, setErrors] = useState({});
   const [selectedLicensePlate, setSelectedLicensePlate] = useState('');
-
   const {
     dinhMucVoRong,
     availableLicensePlates,
@@ -37,10 +33,8 @@ const DinhMucVoRong = () => {
     updateVoRongStandard,
     deleteVoRongStandard,
   } = useVoRong();
-
   // Convert the license plates data to match the expected format
   const activeLicensePlatesWithStandards = availableLicensePlates;
-
   const openAddNewDinhMucDialog = params => {
     setCurrentStandard(null);
     setSelectedLicensePlate(params?.licensePlate || '');
@@ -54,7 +48,6 @@ const DinhMucVoRong = () => {
     setErrors({});
     setAddDialogOpen(true);
   };
-
   const openEditDinhMucDialog = params => {
     const { standard, licensePlate } = params;
     setCurrentStandard(standard);
@@ -69,12 +62,10 @@ const DinhMucVoRong = () => {
     setErrors({});
     setEditDialogOpen(true);
   };
-
   const openDeleteDialog = (id, type, details) => {
     setDeleteDetails({ id, type, details });
     setDeleteDialogOpen(true);
   };
-
   const handleTriggerDeleteDialog = (id, type, item, licensePlate) => {
     let detailsText = '';
     const plateIdText = licensePlate ? `cho BSX ${licensePlate}` : '';
@@ -85,7 +76,6 @@ const DinhMucVoRong = () => {
     }
     openDeleteDialog(id, type, detailsText);
   };
-
   // Form handlers
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -94,15 +84,12 @@ const DinhMucVoRong = () => {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
-
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.bienSoXe) newErrors.bienSoXe = 'Biển số xe không được để trống';
     if (!formData.fromKm) newErrors.fromKm = 'Số km bắt đầu không được để trống';
     if (!formData.toKm) newErrors.toKm = 'Số km kết thúc không được để trống';
     if (!formData.standard) newErrors.standard = 'Định mức không được để trống';
-
     if (formData.fromKm && formData.toKm) {
       const fromKm = parseFloat(formData.fromKm);
       const toKm = parseFloat(formData.toKm);
@@ -110,14 +97,11 @@ const DinhMucVoRong = () => {
         newErrors.toKm = 'Số km kết thúc phải lớn hơn số km bắt đầu';
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSave = async () => {
     if (!validateForm()) return;
-
     try {
       if (currentStandard) {
         await updateVoRongStandard(currentStandard.id, formData);
@@ -138,7 +122,6 @@ const DinhMucVoRong = () => {
       console.error('Error saving định mức:', err);
     }
   };
-
   const handleDelete = async () => {
     try {
       await deleteVoRongStandard(deleteDetails.id);
@@ -147,7 +130,6 @@ const DinhMucVoRong = () => {
       console.error('Error deleting định mức:', err);
     }
   };
-
   const handleCloseDialog = () => {
     setAddDialogOpen(false);
     setEditDialogOpen(false);
@@ -160,7 +142,6 @@ const DinhMucVoRong = () => {
     });
     setErrors({});
   };
-
   return (
     <Paper
       sx={{
@@ -207,7 +188,6 @@ const DinhMucVoRong = () => {
           />
         </Box>
       )}
-
       {/* Add/Edit Dialog */}
       <DinhMucVoRongDialog
         open={addDialogOpen || editDialogOpen}
@@ -220,7 +200,6 @@ const DinhMucVoRong = () => {
         onInputChange={handleInputChange}
         onValidateForm={validateForm}
       />
-
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={deleteDialogOpen}
@@ -232,5 +211,4 @@ const DinhMucVoRong = () => {
     </Paper>
   );
 };
-
 export default DinhMucVoRong;

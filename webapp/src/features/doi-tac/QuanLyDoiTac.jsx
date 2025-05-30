@@ -13,11 +13,9 @@ import PartnerForm from '@features/doi-tac/components/PartnerForm';
 import MobileView from '@features/doi-tac/components/MobileView';
 import DesktopView from '@features/doi-tac/components/DesktopView';
 import useDoiTac from '@features/doi-tac/hooks/useDoiTac';
-
 const QuanLyDoiTac = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   const {
     partners,
     loading,
@@ -29,56 +27,45 @@ const QuanLyDoiTac = () => {
     getInitialFormData,
     isPartnerCodeAvailable,
   } = useDoiTac();
-
   const [isValidatingCode, setIsValidatingCode] = useState(false);
-
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [formError, setFormError] = useState('');
-
   // Delete confirmation state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [partnerToDelete, setPartnerToDelete] = useState(null);
-
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
-
   // Snackbar handlers
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
-
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
-
   // Form handlers
   const handleOpenFormForAdd = () => {
     setSelectedPartner(null);
     setFormError('');
     setIsFormOpen(true);
   };
-
   const handleOpenFormForEdit = partner => {
     setSelectedPartner(partner);
     setFormError('');
     setIsFormOpen(true);
   };
-
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setSelectedPartner(null);
     setFormError('');
   };
-
   const handleSavePartner = async formData => {
     setFormError('');
-
     // If this is an edit, we need to validate the code if it was changed
     if (selectedPartner && formData.code && formData.code !== selectedPartner.code) {
       setIsValidatingCode(true);
@@ -97,7 +84,6 @@ const QuanLyDoiTac = () => {
       }
       setIsValidatingCode(false);
     }
-
     try {
       let result;
       if (selectedPartner) {
@@ -105,7 +91,6 @@ const QuanLyDoiTac = () => {
       } else {
         result = await addPartner(formData);
       }
-
       if (result.success) {
         handleCloseForm();
         showSnackbar(selectedPartner ? 'Sửa đối tác thành công' : 'Thêm đối tác thành công');
@@ -117,13 +102,11 @@ const QuanLyDoiTac = () => {
       setFormError('Có lỗi xảy ra khi lưu thông tin đối tác.');
     }
   };
-
   // Delete handlers
   const handleDeleteClick = partner => {
     setPartnerToDelete(partner);
     setIsDeleteModalOpen(true);
   };
-
   const handleDeleteConfirm = async () => {
     if (partnerToDelete) {
       const result = await deletePartner(partnerToDelete.id);
@@ -136,12 +119,10 @@ const QuanLyDoiTac = () => {
     setIsDeleteModalOpen(false);
     setPartnerToDelete(null);
   };
-
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
     setPartnerToDelete(null);
   };
-
   const commonProps = {
     partners,
     loading,
@@ -150,12 +131,10 @@ const QuanLyDoiTac = () => {
     onDelete: handleDeleteClick,
     onAdd: handleOpenFormForAdd, // Fixed: changed from onAddPartner to onAdd
   };
-
   return (
     <Box>
       {/* Render appropriate view based on screen size */}
       {isMobile ? <MobileView {...commonProps} /> : <DesktopView {...commonProps} />}
-
       {/* Add/Edit Form */}
       <PartnerForm
         open={isFormOpen}
@@ -166,7 +145,6 @@ const QuanLyDoiTac = () => {
         isLoading={loading || isValidatingCode}
         error={formError}
       />
-
       {/* Loading overlay for code validation */}
       {isValidatingCode && (
         <div
@@ -186,7 +164,6 @@ const QuanLyDoiTac = () => {
           <CircularProgress color="primary" />
         </div>
       )}
-
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         open={isDeleteModalOpen}
@@ -231,7 +208,6 @@ const QuanLyDoiTac = () => {
         cancelText="Hủy"
         confirmColor="error"
       />
-
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
@@ -246,5 +222,4 @@ const QuanLyDoiTac = () => {
     </Box>
   );
 };
-
 export default QuanLyDoiTac;

@@ -10,7 +10,6 @@ import {
   Box,
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-
 const DauKeoDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) => (
   <Dialog
     open={open}
@@ -65,5 +64,4 @@ const DauKeoDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) => (
     </DialogActions>
   </Dialog>
 );
-
 export default DauKeoDeleteDialog;

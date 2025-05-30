@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import * as dinhMucDiDuongApi from '@services/mockApi/dinhMucDiDuongApi';
 import * as tuyenDuongApi from '@services/mockApi/tuyenDuongApi';
 import { containerApi } from '@services/mockApi/containerApi';
-
 /**
  * Hook for managing road travel fuel standards (định mức đi đường)
  */
@@ -12,19 +11,16 @@ export const useDiDuong = () => {
   const [routes, setRoutes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
   // Fetch all road travel data
   const fetchAllData = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
-      console.log('Fetching all data concurrently...');
       const [dinhMucRes, tuyenDuongRes, containerRes] = await Promise.all([
         dinhMucDiDuongApi.getAllDinhMucDiDuong(),
         tuyenDuongApi.getAllTuyenDuong(),
         containerApi.getAll(),
       ]);
-
       // Validate responses
       if (!dinhMucRes || !dinhMucRes.success) {
         console.error('DinhMucDiDuong API Error:', dinhMucRes?.error);
@@ -38,12 +34,10 @@ export const useDiDuong = () => {
         console.error('Container API Error:', containerRes?.error);
         throw new Error(containerRes?.error?.message || 'Lỗi khi tải danh sách loại container.');
       }
-
       // Handle different response structures from mock API
       const allDinhMuc = Array.isArray(dinhMucRes.data) ? dinhMucRes.data : [];
       const allTuyenDuong = Array.isArray(tuyenDuongRes.data) ? tuyenDuongRes.data : [];
       const allContainerTypes = Array.isArray(containerRes.data) ? containerRes.data : [];
-
       // Process container types from allContainerTypes (which has 'id', 'ma_so', and 'phan_loai')
       // Each item in allContainerTypes is an object like: { id: 1, ma_so: '...', phan_loai: '20ft DC', ... }
       const processedContainerTypes = allContainerTypes
@@ -52,7 +46,6 @@ export const useDiDuong = () => {
           ma_loai_container: String(ct.phan_loai), // Use phan_loai as the unique ID for the type
           ten_loai_container: String(ct.phan_loai), // Use phan_loai as the display name for the type
         }));
-
       // Ensure uniqueness for container types based on ma_loai_container (which is derived from phan_loai)
       const uniqueContainerTypes = Array.from(
         new Map(
@@ -65,7 +58,6 @@ export const useDiDuong = () => {
       // uniqueContainerTypes will now be an array of objects like:
       // { ma_loai_container: "20ft DC", ten_loai_container: "20ft DC" },
       // { ma_loai_container: "40ft HC", ten_loai_container: "40ft HC" }, etc.
-
       // Create a map from container ma_so (e.g., 'CONU1234567') to phan_loai (e.g., '20ft DC')
       // This uses allContainerTypes which is the raw data from containerApi, where ma_so is the container code.
       const maSoToPhanLoaiMap = allContainerTypes.reduce((map, ct) => {
@@ -74,7 +66,6 @@ export const useDiDuong = () => {
         }
         return map;
       }, {});
-
       // Transform roadNorms (allDinhMuc) to include ma_loai_container based on the phan_loai
       // Each norm in allDinhMuc has ma_cont which corresponds to ma_so in allContainerTypes.
       const transformedRoadNorms = allDinhMuc
@@ -88,11 +79,9 @@ export const useDiDuong = () => {
           };
         })
         .filter(norm => norm.ma_loai_container !== null); // Optionally filter out norms that couldn't be mapped
-
       setContainerTypes(uniqueContainerTypes);
       setRoutes(allTuyenDuong);
       setRoadNorms(transformedRoadNorms);
-
       return {
         roadNorms: transformedRoadNorms,
         routes: allTuyenDuong,
@@ -100,10 +89,8 @@ export const useDiDuong = () => {
       };
     } catch (err) {
       console.error('useDiDuong.js error: ', err);
-
       // Handle different error object structures
       let errorMessage = 'Không thể tải dữ liệu định mức đi đường. Vui lòng thử lại.';
-
       if (err.error && typeof err.error === 'object') {
         // Handle API error response object
         errorMessage = err.error.message || errorMessage;
@@ -114,7 +101,6 @@ export const useDiDuong = () => {
         // Handle string errors
         errorMessage = err;
       }
-
       console.error('Error details:', {
         error: err,
         errorMessage,
@@ -122,7 +108,6 @@ export const useDiDuong = () => {
         hasErrorProperty: !!err.error,
         errorKeys: err ? Object.keys(err) : [],
       });
-
       setError(errorMessage);
       // Return empty data to prevent UI from breaking
       setRoadNorms([]);
@@ -134,18 +119,15 @@ export const useDiDuong = () => {
       setIsLoading(false);
     }
   }, []);
-
   // Create road norm
   const createRoadNorm = useCallback(async formData => {
     setIsLoading(true);
     setError('');
     try {
       const response = await dinhMucDiDuongApi.createDinhMucDiDuong(formData);
-
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to create road norm');
       }
-
       const newNorm = response.data;
       setRoadNorms(prev => [...prev, newNorm]);
       return newNorm;
@@ -157,18 +139,15 @@ export const useDiDuong = () => {
       setIsLoading(false);
     }
   }, []);
-
   // Update road norm
   const updateRoadNorm = useCallback(async (id, formData) => {
     setIsLoading(true);
     setError('');
     try {
       const response = await dinhMucDiDuongApi.updateDinhMucDiDuong(id, formData);
-
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to update road norm');
       }
-
       const updatedNorm = response.data;
       setRoadNorms(prev => prev.map(item => (item.id === id ? updatedNorm : item)));
       return updatedNorm;
@@ -180,18 +159,15 @@ export const useDiDuong = () => {
       setIsLoading(false);
     }
   }, []);
-
   // Delete road norm
   const deleteRoadNorm = useCallback(async id => {
     setIsLoading(true);
     setError('');
     try {
       const response = await dinhMucDiDuongApi.deleteDinhMucDiDuong(id);
-
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to delete road norm');
       }
-
       setRoadNorms(prev => prev.filter(item => item.id !== id));
       return true;
     } catch (err) {
@@ -202,12 +178,10 @@ export const useDiDuong = () => {
       setIsLoading(false);
     }
   }, []);
-
   // Load data on mount
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
-
   return {
     roadNorms,
     containerTypes,

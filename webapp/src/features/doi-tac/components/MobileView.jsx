@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 import ProfileCard from '@/components/ProfileCard';
-
 const MobileView = ({
   partners = [],
   loading = false,
@@ -21,12 +20,10 @@ const MobileView = ({
   error = '',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-
   // Filter partners based on search term
   const filteredPartners = useMemo(() => {
     // Ensure partners is always an array
     const partnersArray = Array.isArray(partners) ? partners : [];
-
     if (!searchTerm.trim()) return partnersArray;
     const term = searchTerm.toLowerCase();
     return partnersArray.filter(
@@ -37,12 +34,10 @@ const MobileView = ({
         (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
     );
   }, [partners, searchTerm]);
-
   // Handle search input change
   const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
-
   return (
     <Box sx={{ pb: { xs: 10, sm: 11 } }}>
       {/* Search Bar */}
@@ -68,7 +63,6 @@ const MobileView = ({
           }}
         />
       </Box>
-
       {/* Loading state */}
       {loading && (
         <Box display="flex" justifyContent="center" alignItems="center" py={4}>
@@ -76,14 +70,12 @@ const MobileView = ({
           <Typography sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
         </Box>
       )}
-
       {/* Error state */}
       {error && (
         <Box color="error.main" py={2}>
           <Typography>{error}</Typography>
         </Box>
       )}
-
       {/* Content */}
       {!loading && !error && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -108,7 +100,6 @@ const MobileView = ({
               loading={loading}
             />
           ))}
-
           {filteredPartners.length === 0 && (
             <Box textAlign="center" py={6}>
               <Typography variant="body1" color="text.secondary">
@@ -118,7 +109,6 @@ const MobileView = ({
           )}
         </Box>
       )}
-
       {/* Floating Action Button */}
       <Zoom in={!loading}>
         <Fab
@@ -146,5 +136,4 @@ const MobileView = ({
     </Box>
   );
 };
-
 export default MobileView;

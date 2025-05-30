@@ -1,7 +1,6 @@
 import React from 'react';
 import { TextField, InputAdornment, Box } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-
 /**
  * Reusable SearchBar component with consistent styling
  * @param {Object} props
@@ -34,7 +33,6 @@ const SearchBar = ({
       <SearchIcon />
     </InputAdornment>
   );
-
   const defaultInputProps = {
     startAdornment: defaultStartAdornment,
     sx: {
@@ -46,7 +44,6 @@ const SearchBar = ({
     },
     ...InputProps,
   };
-
   const defaultSx = {
     '& .MuiOutlinedInput-root': {
       borderRadius: '6px',
@@ -58,7 +55,6 @@ const SearchBar = ({
     },
     ...sx,
   };
-
   return (
     <Box sx={containerSx}>
       <TextField
@@ -75,5 +71,4 @@ const SearchBar = ({
     </Box>
   );
 };
-
 export default SearchBar;

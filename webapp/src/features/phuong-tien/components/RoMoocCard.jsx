@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, CardContent, Box, Typography, Chip } from '@mui/material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import TrailerIcon from '@mui/icons-material/RvHookup';
-
 const RoMoocCard = ({ data, onEdit, onDelete, isLoading }) => (
   <Card
     sx={{
@@ -47,5 +46,4 @@ const RoMoocCard = ({ data, onEdit, onDelete, isLoading }) => (
     </CardContent>
   </Card>
 );
-
 export default RoMoocCard;

@@ -2,7 +2,6 @@
  * Mock API Response Wrapper
  * Provides standardized response formats for all mock API endpoints
  */
-
 /**
  * Error codes used throughout the application
  */
@@ -15,7 +14,6 @@ export const ErrorCodes = {
   INVALID_PARAMETER: 'INVALID_PARAMETER',
   MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
 };
-
 /**
  * Creates a standardized paginated API response
  * @template T
@@ -29,11 +27,9 @@ export const ErrorCodes = {
  */
 export function createApiResponse(data, options = {}) {
   const { page = 1, limit = 10, totalItems = data.length, message } = options;
-
   const count = data.length;
   const offset = (page - 1) * limit;
   const totalPages = Math.ceil(totalItems / limit);
-
   return {
     data,
     meta: {
@@ -47,7 +43,6 @@ export function createApiResponse(data, options = {}) {
     success: true,
   };
 }
-
 /**
  * Creates a standardized single item API response
  * @template T
@@ -62,7 +57,6 @@ export function createApiSingleResponse(data, message) {
     success: true,
   };
 }
-
 /**
  * Creates a standardized error response
  * @param {string} code - Error code from ErrorCodes
@@ -81,7 +75,6 @@ export function createApiErrorResponse(code, message, details) {
     timestamp: new Date().toISOString(),
   };
 }
-
 /**
  * Wraps a function to handle pagination automatically
  * @template T
@@ -95,7 +88,6 @@ export function createApiErrorResponse(code, message, details) {
 export async function withPagination(dataFetcher, options = {}) {
   try {
     const { page = 1, limit = 10, message } = options;
-
     let allData;
     try {
       allData = await dataFetcher();
@@ -107,7 +99,6 @@ export async function withPagination(dataFetcher, options = {}) {
         fetchError.message
       );
     }
-
     if (!allData || !Array.isArray(allData)) {
       console.warn('Invalid data returned for pagination:', allData);
       return createApiErrorResponse(
@@ -115,12 +106,10 @@ export async function withPagination(dataFetcher, options = {}) {
         'Invalid data format for pagination'
       );
     }
-
     const totalItems = allData.length;
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedData = allData.slice(startIndex, endIndex);
-
     return createApiResponse(paginatedData, {
       page,
       limit,
@@ -136,7 +125,6 @@ export async function withPagination(dataFetcher, options = {}) {
     );
   }
 }
-
 /**
  * Wraps a function to handle single item responses
  * @template T
@@ -162,11 +150,9 @@ export async function withSingleItem(
         fetchError.message
       );
     }
-
     if (!data) {
       return createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
     }
-
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
     console.error('Single item wrapper error:', error);
@@ -181,7 +167,6 @@ export async function withSingleItem(
     );
   }
 }
-
 /**
  * Wraps a function to handle creation operations
  * @template T
@@ -202,14 +187,12 @@ export async function withCreate(creator, successMessage = 'Item created success
         createError.message
       );
     }
-
     if (!data) {
       return createApiErrorResponse(
         ErrorCodes.VALIDATION_ERROR,
         'Failed to create item - invalid data provided'
       );
     }
-
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
     console.error('Create wrapper error:', error);
@@ -223,7 +206,6 @@ export async function withCreate(creator, successMessage = 'Item created success
     );
   }
 }
-
 /**
  * Wraps a function to handle update operations
  * @template T
@@ -249,11 +231,9 @@ export async function withUpdate(
         updateError.message
       );
     }
-
     if (!data) {
       return createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
     }
-
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
     console.error('Update wrapper error:', error);
@@ -267,7 +247,6 @@ export async function withUpdate(
     );
   }
 }
-
 /**
  * Wraps a function to handle delete operations
  * @template T
@@ -293,13 +272,11 @@ export async function withDelete(
         deleteError.message
       );
     }
-
     // Some delete operations might return the deleted item, others true/false
     // In case false is returned, treat as not found
     if (result === false) {
       return createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
     }
-
     // For delete operations that return the deleted item
     const data = result === true ? { deleted: true } : result;
     return createApiSingleResponse(data, successMessage);
@@ -315,7 +292,6 @@ export async function withDelete(
     );
   }
 }
-
 /**
  * Simulates API delay for development/testing
  * @param {number} delay - Delay in milliseconds
@@ -324,7 +300,6 @@ export async function withDelete(
 export function simulateDelay(delay = 100) {
   return new Promise(resolve => setTimeout(resolve, delay));
 }
-
 /**
  * Generic API call wrapper that handles errors and provides consistent response format
  * @template T
@@ -335,12 +310,10 @@ export function simulateDelay(delay = 100) {
  */
 export async function mockApiCall(apiCall, options = {}) {
   const { delay = 0 } = options;
-
   try {
     if (delay > 0) {
       await simulateDelay(delay);
     }
-
     // Safely execute the API call and capture any errors
     let result;
     try {
@@ -355,13 +328,11 @@ export async function mockApiCall(apiCall, options = {}) {
             callError.message
           );
     }
-
     // Check if result is valid
     if (!result) {
       console.warn('API call returned empty result');
       return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API returned empty result');
     }
-
     return result;
   } catch (error) {
     // This catches any other errors in the wrapper itself
@@ -370,7 +341,6 @@ export async function mockApiCall(apiCall, options = {}) {
       error.success === false
         ? error
         : createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API call failed', error.message);
-
     return errorResponse;
   }
 }

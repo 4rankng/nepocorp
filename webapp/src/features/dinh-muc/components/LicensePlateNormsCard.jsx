@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const LicensePlateNormsCard = ({
   licensePlate,
   standardsHang = [],
@@ -140,5 +139,4 @@ const LicensePlateNormsCard = ({
     </Box>
   );
 };
-
 export default LicensePlateNormsCard;

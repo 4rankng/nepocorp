@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, CardContent, Box, Typography, Chip } from '@mui/material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import InventoryIcon from '@mui/icons-material/Inventory2';
-
 const ContainerCard = ({ data, onEdit, onDelete, isLoading }) => (
   <Card
     sx={{
@@ -47,5 +46,4 @@ const ContainerCard = ({ data, onEdit, onDelete, isLoading }) => (
     </CardContent>
   </Card>
 );
-
 export default ContainerCard;

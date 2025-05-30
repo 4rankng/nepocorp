@@ -9,25 +9,21 @@ import {
   createApiSingleResponse,
   mockApiCall,
 } from './apiWrapper.js';
-
 export const fetchAllKhachHang = (page = 1, limit = 50) => {
   return mockApiCall(() =>
     withPagination(() => khachHangDataService.getAllKhachHang(), { page, limit })
   );
 };
-
 export const fetchKhachHangById = id => {
   return mockApiCall(() =>
     withSingleItem(() => khachHangDataService.getKhachHangById(id), 'Khach hang not found')
   );
 };
-
 export const addKhachHang = data => {
   return mockApiCall(() =>
     withCreate(() => khachHangDataService.createKhachHang(data), 'Khach hang created successfully')
   );
 };
-
 export const editKhachHang = (id, data) => {
   return mockApiCall(() =>
     withUpdate(
@@ -37,7 +33,6 @@ export const editKhachHang = (id, data) => {
     )
   );
 };
-
 export const removeKhachHang = id => {
   return mockApiCall(() =>
     withDelete(
@@ -47,7 +42,6 @@ export const removeKhachHang = id => {
     )
   );
 };
-
 export const _resetKhachHangMockData = data => {
   return mockApiCall(() =>
     createApiSingleResponse(

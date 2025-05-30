@@ -11,7 +11,6 @@ import {
 import { Search as SearchIcon } from '@mui/icons-material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const DesktopView = ({
   employees,
   isLoading,
@@ -53,7 +52,6 @@ const DesktopView = ({
     ],
     [handleOpenModalForEdit, handleDeleteRequest, canEditDelete]
   );
-
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" sx={{ p: 3, height: '50vh' }}>
@@ -61,7 +59,6 @@ const DesktopView = ({
       </Box>
     );
   }
-
   if (error) {
     return (
       <Alert severity="error" sx={{ m: 2 }}>
@@ -69,7 +66,6 @@ const DesktopView = ({
       </Alert>
     );
   }
-
   return (
     <Box sx={{ pt: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 }, pb: { xs: 10, sm: 11 } }}>
       {' '}
@@ -113,5 +109,4 @@ const DesktopView = ({
     </Box>
   );
 };
-
 export default DesktopView;

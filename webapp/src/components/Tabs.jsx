@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
-
 /**
  * Tabs - A reusable tab component with consistent styling
  * @param {Array} tabs - Array of tab objects with { value, label }
@@ -22,18 +21,14 @@ const Tabs = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-
   const handleTabClick = tabValue => {
     const newPath = `${basePath}/${tabValue}`;
     navigate(newPath);
-
     if (onTabChange) {
       onTabChange(tabValue);
     }
   };
-
   const currentTabIndex = tabs.findIndex(tab => tab.value === activeTab);
-
   const handleSwipeLeftInternal = () => {
     if (currentTabIndex < tabs.length - 1) {
       const nextTab = tabs[currentTabIndex + 1].value;
@@ -43,7 +38,6 @@ const Tabs = ({
       onSwipeLeft();
     }
   };
-
   const handleSwipeRightInternal = () => {
     if (currentTabIndex > 0) {
       const prevTab = tabs[currentTabIndex - 1].value;
@@ -53,7 +47,6 @@ const Tabs = ({
       onSwipeRight();
     }
   };
-
   return (
     <div className={`w-full bg-white border-b border-gray-200 ${className}`}>
       <div className="flex overflow-x-auto scrollbar-hide">
@@ -72,7 +65,6 @@ const Tabs = ({
               >
                 {/* Label */}
                 <span className="relative z-10 tracking-wide">{tab.label}</span>
-
                 {/* Active indicator dot */}
                 <div
                   className={`absolute top-2 right-2 w-2 h-2 bg-slate-400 rounded-full transition-all duration-300 ${
@@ -84,7 +76,6 @@ const Tabs = ({
           })}
         </div>
       </div>
-
       {/* Swipe indicators for mobile (optional) */}
       <div className="flex justify-center space-x-1 py-2 md:hidden">
         {tabs.map((tab, index) => (
@@ -99,7 +90,6 @@ const Tabs = ({
     </div>
   );
 };
-
 Tabs.propTypes = {
   tabs: PropTypes.arrayOf(
     PropTypes.shape({
@@ -114,5 +104,4 @@ Tabs.propTypes = {
   onSwipeRight: PropTypes.func,
   className: PropTypes.string,
 };
-
 export default Tabs;

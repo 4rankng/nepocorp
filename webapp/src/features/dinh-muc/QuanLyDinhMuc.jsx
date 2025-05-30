@@ -7,36 +7,29 @@ import DinhMucChoHang from './components/DinhMucChoHang';
 import DinhMucVoRong from './components/DinhMucVoRong';
 import DinhMucDiDuong from './components/DinhMucDiDuong';
 import { useBoSung } from './hooks';
-
 const TABS = [
   { value: 'bo-sung', label: 'Bổ Sung' },
   { value: 'cho-hang', label: 'Chở hàng' },
   { value: 'vo-rong', label: 'Vỏ rỗng' },
   { value: 'di-duong', label: 'Đi đường' },
 ];
-
 const QuanLyDinhMuc = () => {
   const { tab: tabFromUrl = TABS[0].value } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   const { supplementaryStandard, updateSupplementaryStandard } = useBoSung();
-
   const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : TABS[0].value;
-
   // Redirect to the default tab if the current tab from URL is invalid
   useEffect(() => {
     if (!TABS.some(tab => tab.value === tabFromUrl)) {
       navigate(`/dinh-muc/${TABS[0].value}`, { replace: true });
     }
   }, [tabFromUrl, navigate]);
-
   const handleTabChange = newValue => {
     navigate(`/dinh-muc/${newValue}`);
   };
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'bo-sung':
@@ -56,7 +49,6 @@ const QuanLyDinhMuc = () => {
         return null;
     }
   };
-
   return (
     <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <SwipeTabs
@@ -78,5 +70,4 @@ const QuanLyDinhMuc = () => {
     </Box>
   );
 };
-
 export default QuanLyDinhMuc;

@@ -1,7 +1,6 @@
 // Mock database for NhanVien (Employees)
 // Static data. Numeric auto-incrementing ID.
 // Fields: id, ma_so, ho_ten, ten_dang_nhap, mat_khau, chuc_vu, email, createdAt, updatedAt
-
 const originalNhanVienData = [
   {
     id: 1,
@@ -169,7 +168,6 @@ const originalNhanVienData = [
     updatedAt: '2024-05-18T13:30:00Z',
   },
 ];
-
 let nhanVienData = [...originalNhanVienData];
 let nextNhanVienId =
   originalNhanVienData.length > 0 ? Math.max(...originalNhanVienData.map(nv => nv.id)) + 1 : 1;
@@ -235,7 +233,6 @@ export const _resetNhanVien = data => {
   } else {
     nhanVienData = [...originalNhanVienData]; // Reset to a fresh copy of original data, preserving original IDs
   }
-
   if (nhanVienData.length > 0) {
     // Recalculate nextNhanVienId based on the current state of nhanVienData
     nextNhanVienId = Math.max(...nhanVienData.map(nv => nv.id)) + 1;

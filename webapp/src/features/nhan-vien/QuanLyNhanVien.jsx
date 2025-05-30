@@ -18,7 +18,6 @@ import { useTheme, useMediaQuery } from '@mui/material';
 import NhanVienForm from '@features/nhan-vien/components/NhanVienForm';
 import DesktopView from './components/DesktopView';
 import MobileView from './components/MobileView';
-
 const QuanLyNhanVien = () => {
   const {
     employees,
@@ -64,7 +63,6 @@ const QuanLyNhanVien = () => {
     setDeleteDialogOpen(false);
     setEmployeeToDelete(null);
   };
-
   // Filter employees by search
   const filteredEmployees = employees.filter(emp => {
     if (!emp) return false;
@@ -78,11 +76,9 @@ const QuanLyNhanVien = () => {
       (emp.chucVu && emp.chucVu.toLowerCase().includes(q)) // Mapped field from hook
     );
   });
-
   const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
-
   // Placeholder for canEditDelete logic, adapt as needed from your original context
   // This might depend on user roles or specific employee properties
   const canEditDelete = employeeRecord => {

@@ -3,7 +3,6 @@ import { Card, CardContent, Box, Typography, Chip, Collapse, Divider } from '@mu
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -11,10 +10,8 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-
 const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
-
   // Calculate expiration date if not present
   const getExpirationDate = record => {
     if (record.ngayHetHan) return new Date(record.ngayHetHan);
@@ -25,11 +22,9 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
     }
     return null;
   };
-
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
-
   return (
     <Card
       onClick={handleExpandClick}
@@ -81,7 +76,6 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
             />
           </Box>
         </Box>
-
         {/* Secondary Information - Visible on Expand */}
         <Collapse in={expanded} timeout="auto" unmountOnExit>
           <Divider sx={{ my: 1 }} />
@@ -162,7 +156,6 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
             )}
           </Box>
         </Collapse>
-
         {/* Expand/Collapse Indicator */}
         <Box
           sx={{
@@ -178,5 +171,4 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
     </Card>
   );
 };
-
 export default LopXeCard;

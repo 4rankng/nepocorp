@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box } from '@mui/material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 const ProfileCard = ({
   item,
   identifier,
@@ -98,5 +97,4 @@ const ProfileCard = ({
     </Card>
   );
 };
-
 export default ProfileCard;

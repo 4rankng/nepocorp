@@ -12,31 +12,26 @@ import {
   ErrorCodes,
   createApiErrorResponse,
 } from './apiWrapper.js';
-
 export const fetchAllCauHinh = (page = 1, limit = 50) => {
   return mockApiCall(() =>
     withPagination(() => cauHinhDataService.getAllCauHinh(), { page, limit })
   );
 };
-
 export const fetchCauHinhById = id => {
   return mockApiCall(() =>
     withSingleItem(() => cauHinhDataService.getCauHinhById(id), 'Cau hinh not found')
   );
 };
-
 export const fetchCauHinhByKey = key => {
   return mockApiCall(() =>
     withSingleItem(() => cauHinhDataService.getCauHinhByKey(key), 'Cau hinh not found')
   );
 };
-
 export const addCauHinh = data => {
   return mockApiCall(() =>
     withCreate(() => cauHinhDataService.createCauHinh(data), 'Cau hinh created successfully')
   );
 };
-
 export const editCauHinh = (id, data) => {
   return mockApiCall(() =>
     withUpdate(
@@ -46,7 +41,6 @@ export const editCauHinh = (id, data) => {
     )
   );
 };
-
 export const editCauHinhByKey = (key, value) => {
   return mockApiCall(() =>
     withUpdate(
@@ -56,7 +50,6 @@ export const editCauHinhByKey = (key, value) => {
     )
   );
 };
-
 export const removeCauHinh = id => {
   return mockApiCall(() =>
     withDelete(
@@ -66,7 +59,6 @@ export const removeCauHinh = id => {
     )
   );
 };
-
 // Specific method for getting dinh muc bo sung
 export const getDinhMucBoSung = () => {
   return mockApiCall(async () => {
@@ -75,7 +67,6 @@ export const getDinhMucBoSung = () => {
     return createApiSingleResponse(result, 'Dinh muc bo sung retrieved successfully');
   });
 };
-
 // Specific method for updating dinh muc bo sung
 export const updateDinhMucBoSung = value => {
   return mockApiCall(async () => {
@@ -101,7 +92,6 @@ export const updateDinhMucBoSung = value => {
     );
   });
 };
-
 // For testing purposes
 export const _resetCauHinhApiData = data => {
   return mockApiCall(() =>
@@ -111,7 +101,6 @@ export const _resetCauHinhApiData = data => {
     )
   );
 };
-
 // Export object for backward compatibility
 export const cauHinhApi = {
   getAll: fetchAllCauHinh,

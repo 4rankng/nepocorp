@@ -183,7 +183,6 @@ const iconComponents = {
 const ThanhBen = ({ onNavItemClick }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-
   if (!currentUser) return null;
   const menuItems = getMenuItems(currentUser.role).map(item => ({
     ...item,
@@ -215,10 +214,8 @@ const ThanhBen = ({ onNavItemClick }) => {
               <span className={`mr-4 transition-all duration-300 ${'group-hover:scale-105'}`}>
                 {item.icon && <item.icon className="w-5 h-5" />}
               </span>
-
               {/* Label with subtle letter spacing */}
               <span className="relative z-10 tracking-wide">{item.label}</span>
-
               {/* Active indicator dot */}
               <div
                 className={`absolute right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-slate-400 rounded-full transition-all duration-300 ${

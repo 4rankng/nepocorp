@@ -9,7 +9,6 @@ import {
   createApiSingleResponse,
   mockApiCall,
 } from './apiWrapper.js';
-
 // All data now uses the new schema: ma_chuyen, ngay_di, etc.
 export const fetchAllLichVanChuyen = (options = {}) => {
   const { page = 1, limit = 50 } = typeof options === 'object' ? options : {};
@@ -17,7 +16,6 @@ export const fetchAllLichVanChuyen = (options = {}) => {
     withPagination(() => lichVanChuyenDataService.getAllLichVanChuyen(), { page, limit })
   );
 };
-
 export const fetchLichVanChuyenById = id => {
   return mockApiCall(() =>
     withSingleItem(
@@ -26,7 +24,6 @@ export const fetchLichVanChuyenById = id => {
     )
   );
 };
-
 export const fetchLichVanChuyenByMaChuyenXe = maChuyenXe => {
   return mockApiCall(() =>
     withSingleItem(
@@ -35,7 +32,6 @@ export const fetchLichVanChuyenByMaChuyenXe = maChuyenXe => {
     )
   );
 };
-
 export const addLichVanChuyen = data => {
   return mockApiCall(() =>
     withCreate(
@@ -44,7 +40,6 @@ export const addLichVanChuyen = data => {
     )
   );
 };
-
 export const editLichVanChuyen = (id, data) => {
   return mockApiCall(() =>
     withUpdate(
@@ -54,7 +49,6 @@ export const editLichVanChuyen = (id, data) => {
     )
   );
 };
-
 export const removeLichVanChuyen = id => {
   return mockApiCall(() =>
     withDelete(
@@ -64,7 +58,6 @@ export const removeLichVanChuyen = id => {
     )
   );
 };
-
 export const _resetLichVanChuyenMockData = data => {
   return mockApiCall(() =>
     createApiSingleResponse(

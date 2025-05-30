@@ -13,11 +13,9 @@ import CustomerForm from '@features/khach-hang/components/CustomerForm';
 import MobileView from '@features/khach-hang/components/MobileView';
 import DesktopView from '@features/khach-hang/components/DesktopView';
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
-
 const QuanLyKhachHang = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
   const {
     customers,
     loading,
@@ -29,52 +27,42 @@ const QuanLyKhachHang = () => {
     isCustomerCodeAvailable,
     getInitialFormData,
   } = useCustomerManagement();
-
   const [isValidatingCode, setIsValidatingCode] = useState(false);
-
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [formError, setFormError] = useState('');
-
   // Delete confirmation state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
-
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
-
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
-
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
-
   // Form handlers
   const handleOpenFormForAdd = () => {
     setSelectedCustomer(null);
     setFormError('');
     setIsFormOpen(true);
   };
-
   const handleOpenFormForEdit = customer => {
     setSelectedCustomer(customer);
     setFormError('');
     setIsFormOpen(true);
   };
-
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setSelectedCustomer(null);
     setFormError('');
   };
-
   const handleSaveCustomer = useCallback(
     async formData => {
       setFormError('');
@@ -96,7 +84,6 @@ const QuanLyKhachHang = () => {
         }
         setIsValidatingCode(false);
       }
-
       let result;
       try {
         if (selectedCustomer) {
@@ -104,7 +91,6 @@ const QuanLyKhachHang = () => {
         } else {
           result = await addCustomer(formData);
         }
-
         if (result.success) {
           handleCloseForm();
           showSnackbar(
@@ -120,13 +106,11 @@ const QuanLyKhachHang = () => {
     },
     [selectedCustomer, addCustomer, updateCustomer, isCustomerCodeAvailable]
   );
-
   // Delete handlers
   const handleDeleteClick = customer => {
     setCustomerToDelete(customer);
     setIsDeleteModalOpen(true);
   };
-
   const handleDeleteConfirm = async () => {
     if (customerToDelete) {
       const result = await deleteCustomer(customerToDelete.id);
@@ -139,12 +123,10 @@ const QuanLyKhachHang = () => {
     setIsDeleteModalOpen(false);
     setCustomerToDelete(null);
   };
-
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
     setCustomerToDelete(null);
   };
-
   // Common props for both mobile and desktop views
   const commonProps = {
     customers,
@@ -154,12 +136,10 @@ const QuanLyKhachHang = () => {
     onDelete: handleDeleteClick,
     onAdd: handleOpenFormForAdd,
   };
-
   return (
     <Box>
       {/* Render appropriate view based on screen size */}
       {isMobile ? <MobileView {...commonProps} /> : <DesktopView {...commonProps} />}
-
       {/* Add/Edit Form */}
       <CustomerForm
         open={isFormOpen}
@@ -170,7 +150,6 @@ const QuanLyKhachHang = () => {
         isLoading={loading || isValidatingCode}
         error={formError}
       />
-
       {/* Loading overlay for code validation */}
       {isValidatingCode && (
         <div
@@ -190,7 +169,6 @@ const QuanLyKhachHang = () => {
           <CircularProgress color="primary" />
         </div>
       )}
-
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         open={isDeleteModalOpen}
@@ -235,7 +213,6 @@ const QuanLyKhachHang = () => {
         cancelText="Hủy"
         confirmColor="error"
       />
-
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
@@ -250,5 +227,4 @@ const QuanLyKhachHang = () => {
     </Box>
   );
 };
-
 export default QuanLyKhachHang;

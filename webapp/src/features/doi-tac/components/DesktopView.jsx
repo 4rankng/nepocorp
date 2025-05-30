@@ -2,7 +2,6 @@ import React from 'react';
 import { Box, Paper, Typography, Fab, Zoom } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PartnerListResponsive from '@features/doi-tac/components/PartnerListResponsive';
-
 const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
   return (
     <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
@@ -16,7 +15,6 @@ const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
           emptyMessage="Chưa có đối tác nào"
         />
       </Paper>
-
       {/* Floating Action Button */}
       <Zoom in={!loading}>
         <Fab
@@ -45,5 +43,4 @@ const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
     </Box>
   );
 };
-
 export default DesktopView;

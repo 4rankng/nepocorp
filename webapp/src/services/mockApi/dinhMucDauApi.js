@@ -8,13 +8,11 @@ import {
   withDelete,
   ErrorCodes,
 } from './apiWrapper.js';
-
 export const getAllDinhMucDau = async (page = 1, limit = 10) => {
   return mockApiCall(() =>
     withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), { page, limit })
   );
 };
-
 export const getDinhMucDauById = async id => {
   return mockApiCall(() =>
     withSingleItem(
@@ -24,11 +22,9 @@ export const getDinhMucDauById = async id => {
     )
   );
 };
-
 export const createDinhMucDau = async dinhMucDau => {
   return mockApiCall(() => withCreate(() => dinhMucDauDataService.createDinhMucDau(dinhMucDau)));
 };
-
 export const updateDinhMucDau = async (id, updates) => {
   return mockApiCall(() =>
     withUpdate(
@@ -38,7 +34,6 @@ export const updateDinhMucDau = async (id, updates) => {
     )
   );
 };
-
 export const deleteDinhMucDau = async id => {
   return mockApiCall(() =>
     withDelete(
@@ -48,12 +43,10 @@ export const deleteDinhMucDau = async id => {
     )
   );
 };
-
 // For testing and resetting
 export const _resetDinhMucDau = async (newData = []) => {
   return mockApiCall(() => dinhMucDauDataService._resetDinhMucDau(newData));
 };
-
 export const getDinhMucDauCount = async () => {
   return mockApiCall(() =>
     withSingleItem(
@@ -63,7 +56,6 @@ export const getDinhMucDauCount = async () => {
     )
   );
 };
-
 // Alias exports for simplified naming
 export const create = createDinhMucDau;
 export const update = updateDinhMucDau;

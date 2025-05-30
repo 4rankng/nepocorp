@@ -9,7 +9,6 @@ import {
   createApiResponse,
   mockApiCall,
 } from './apiWrapper.js';
-
 export const fetchAllNhanVien = (page = 1, pageSize = 10) => {
   return mockApiCall(async () => {
     // Reset to original data before fetching to ensure consistency for this diagnostic step
@@ -19,7 +18,6 @@ export const fetchAllNhanVien = (page = 1, pageSize = 10) => {
     const start = (page - 1) * pageSize;
     const end = page * pageSize;
     const items = allNhanVien.slice(start, end);
-
     return createApiResponse(items, {
       page,
       limit: pageSize,
@@ -27,19 +25,16 @@ export const fetchAllNhanVien = (page = 1, pageSize = 10) => {
     });
   });
 };
-
 export const fetchNhanVienById = id => {
   return mockApiCall(() =>
     withSingleItem(() => nhanVienDataService.getNhanVienById(id), 'Nhan vien not found')
   );
 };
-
 export const addNhanVien = data => {
   return mockApiCall(() =>
     withCreate(() => nhanVienDataService.createNhanVien(data), 'Nhan vien created successfully')
   );
 };
-
 export const editNhanVien = (id, data) => {
   return mockApiCall(() =>
     withUpdate(
@@ -49,7 +44,6 @@ export const editNhanVien = (id, data) => {
     )
   );
 };
-
 export const removeNhanVien = id => {
   return mockApiCall(() =>
     withDelete(
@@ -59,7 +53,6 @@ export const removeNhanVien = id => {
     )
   );
 };
-
 export const _resetNhanVienMockData = data => {
   return mockApiCall(() =>
     createApiSingleResponse(

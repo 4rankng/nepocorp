@@ -10,7 +10,6 @@ import {
   Box,
 } from '@mui/material';
 import InventoryIcon from '@mui/icons-material/Inventory2';
-
 const ContainerDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) => (
   <Dialog
     open={open}
@@ -68,5 +67,4 @@ const ContainerDeleteDialog = ({ open, data, onClose, onConfirm, isLoading }) =>
     </DialogActions>
   </Dialog>
 );
-
 export default ContainerDeleteDialog;
