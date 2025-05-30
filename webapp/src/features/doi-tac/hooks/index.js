@@ -1,2 +1,2 @@
 // Partner Management Hooks
-export { default as usePartnerManagement } from '@features/doi-tac/hooks/usePartnerManagement';
+export { default as useDoiTac } from '@features/doi-tac/hooks/useDoiTac';

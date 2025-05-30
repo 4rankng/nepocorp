@@ -11,51 +11,46 @@ import {
 } from './apiWrapper.js';
 export const fetchAllDoiTac = (page = 1, limit = 10) => {
   return mockApiCall(
-    withPagination(() => doiTacDataService.getAllDoiTac(), page, limit),
-    'DoiTac'
+    () => withPagination(() => doiTacDataService.getAllDoiTac(), { page, limit })
   );
 };
 
 export const fetchDoiTacById = id => {
   return mockApiCall(
-    withSingleItem(
+    () => withSingleItem(
       () => doiTacDataService.getDoiTacById(id),
       ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'
-    ),
-    'DoiTac'
+    )
   );
 };
 
 export const addDoiTac = data => {
   return mockApiCall(
-    withCreate(() => doiTacDataService.createDoiTac(data)),
-    'DoiTac'
+    () => withCreate(() => doiTacDataService.createDoiTac(data))
   );
 };
 
 export const editDoiTac = (id, data) => {
   return mockApiCall(
-    withUpdate(
+    () => withUpdate(
       () => doiTacDataService.updateDoiTac(id, data),
       ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'
-    ),
-    'DoiTac'
+    )
   );
 };
 
 export const removeDoiTac = id => {
   return mockApiCall(
-    withDelete(
+    () => withDelete(
       () => doiTacDataService.deleteDoiTac(id),
       ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'
-    ),
-    'DoiTac'
+    )
   );
 };
 
 export const _resetDoiTacMockData = data => {
-  return mockApiCall(() => doiTacDataService._resetDoiTac(data), 'DoiTac');
+  return mockApiCall(() => doiTacDataService._resetDoiTac(data));
 };

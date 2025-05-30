@@ -24,9 +24,12 @@ const MobileView = ({
 
   // Filter partners based on search term
   const filteredPartners = useMemo(() => {
-    if (!searchTerm.trim()) return partners;
+    // Ensure partners is always an array
+    const partnersArray = Array.isArray(partners) ? partners : [];
+    
+    if (!searchTerm.trim()) return partnersArray;
     const term = searchTerm.toLowerCase();
-    return partners.filter(
+    return partnersArray.filter(
       partner =>
         (partner.ten && partner.ten.toLowerCase().includes(term)) ||
         (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||

@@ -9,7 +9,9 @@ const NhanVienForm = ({
   isLoading,
   error,
   employeeRoles,
-  vehicles = [], // List of available vehicles
+  dauKeoList = [], // List of available dau keo for drivers
+  isDauKeoLoading = false,
+  onLoadDauKeo,
 }) => {
   if (!open) {
     return null;
@@ -111,7 +113,7 @@ const NhanVienForm = ({
               ))}
             </select>
           </div>
-          {formData.chuc_vu === 'Lái xe' && (
+          {formData.chuc_vu === 'lai-xe' && (
             <div>
               <label htmlFor="bienSoXe" className="block text-sm font-medium text-gray-700">
                 Biển số xe đầu kéo
@@ -121,12 +123,21 @@ const NhanVienForm = ({
                 id="bienSoXe"
                 value={formData.bienSoXe || ''}
                 onChange={onFormChange}
+                onFocus={() => {
+                  // Lazy load dau keo list when dropdown is focused
+                  if (dauKeoList.length === 0 && !isDauKeoLoading && onLoadDauKeo) {
+                    onLoadDauKeo();
+                  }
+                }}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                disabled={isDauKeoLoading}
               >
-                <option value="">Chọn biển số xe</option>
-                {vehicles.map(vehicle => (
-                  <option key={vehicle.id} value={vehicle.licensePlate}>
-                    {vehicle.licensePlate}
+                <option value="">
+                  {isDauKeoLoading ? 'Đang tải...' : 'Chọn biển số xe đầu kéo'}
+                </option>
+                {dauKeoList.map(dauKeo => (
+                  <option key={dauKeo.id} value={dauKeo.bien_so}>
+                    {dauKeo.label || `${dauKeo.bien_so} - ${dauKeo.loai_xe || 'Đầu kéo'}`}
                   </option>
                 ))}
               </select>

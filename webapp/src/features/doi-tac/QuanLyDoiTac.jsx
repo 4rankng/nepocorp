@@ -12,7 +12,7 @@ import ConfirmationModal from '@/components/ConfirmationDialog';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
 import MobileView from '@features/doi-tac/components/MobileView';
 import DesktopView from '@features/doi-tac/components/DesktopView';
-import usePartnerManagement from '@features/doi-tac/hooks/usePartnerManagement';
+import useDoiTac from '@features/doi-tac/hooks/useDoiTac';
 
 const QuanLyDoiTac = () => {
   const theme = useTheme();
@@ -28,7 +28,7 @@ const QuanLyDoiTac = () => {
     clearError,
     getInitialFormData,
     isPartnerCodeAvailable,
-  } = usePartnerManagement();
+  } = useDoiTac();
 
   const [isValidatingCode, setIsValidatingCode] = useState(false);
 

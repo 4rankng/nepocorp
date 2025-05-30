@@ -6,7 +6,6 @@ import {
   editNhanVien,
   removeNhanVien,
   fetchAllDauKeo,
-  fetchAllRoMooc,
 } from '@services/mockApi/index.js';
 // Configuration
 const DEFAULT_PAGE_SIZE = 10;
@@ -51,7 +50,7 @@ const getInitialFormState = () => ({
   chuc_vu: '',
   email: '',
 });
-const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
+const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   // State management
   const [employees, setEmployees] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,7 +58,8 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
   const [formData, setFormData] = useState(getInitialFormState());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [vehicles, setVehicles] = useState([]);
+  const [dauKeoList, setDauKeoList] = useState([]);
+  const [isDauKeoLoading, setIsDauKeoLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: initialPage,
     pageSize,
@@ -68,7 +68,7 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
   });
   const cacheRef = useRef({
     employees: { data: [], timestamp: 0, total: 0 },
-    vehicles: { data: [], timestamp: 0 },
+    dauKeo: { data: [], timestamp: 0 },
   });
   const errorBoundaryRef = useRef();
   // Clear error function
@@ -94,29 +94,36 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
           return;
         }
         // Fetch with retry logic
-        const data = await withRetry(() => fetchAllNhanVien(page, size));
+        const response = await withRetry(() => fetchAllNhanVien(page, size));
+        
+        // Extract data from API response
+        const items = response?.data || [];
+        const total = response?.meta?.totalItems || 0;
+        
         // Map backend fields to UI fields
-        const mapped = (Array.isArray(data?.items || data) ? data.items || data : []).map(emp => ({
+        const mapped = items.map(emp => ({
           ...emp,
           maNhanVien: emp.ma_so,
           tenNhanVien: emp.ho_ten,
           tenDangNhap: emp.ten_dang_nhap,
           chucVu: mapChucVu(emp.chuc_vu),
         }));
+        
         // Update cache
         cacheRef.current.employees = {
           data: mapped,
-          total: data.total || mapped.length,
+          total: total,
           timestamp: now,
         };
+        
         // Update state
         setEmployees(mapped);
         setPagination(prev => ({
           ...prev,
           page,
           pageSize: size,
-          total: data.total || mapped.length,
-          totalPages: Math.ceil((data.total || mapped.length) / size),
+          total: total,
+          totalPages: Math.ceil(total / size),
         }));
       } catch (err) {
         const errorMsg = err?.message || 'Không thể tải danh sách nhân viên.';
@@ -135,48 +142,47 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     },
     [fetchEmployeesData]
   );
-  // Fetch vehicles for driver assignment with caching and retry
-  const fetchVehicles = useCallback(async () => {
+  // Lazy load dau keo list for driver assignment
+  const loadDauKeoList = useCallback(async () => {
+    if (isDauKeoLoading) return; // Prevent multiple simultaneous calls
+    
+    setIsDauKeoLoading(true);
     try {
       const now = Date.now();
-      const cachedData = cacheRef.current.vehicles;
+      const cachedData = cacheRef.current.dauKeo;
+      
       // Return cached data if valid
       if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
-        setVehicles(cachedData.data);
+        setDauKeoList(cachedData.data);
         return;
       }
-      const [dauKeoData, roMoocData] = await withRetry(() =>
-        Promise.all([fetchAllDauKeo(), fetchAllRoMooc()])
-      );
-      const allVehicles = [
-        ...(dauKeoData || []).map(item => ({
-          ...item,
-          id: `dk-${item.id}`,
-          originalId: item.id,
-          type: 'dau_keo',
-        })),
-        ...(roMoocData || []).map(item => ({
-          ...item,
-          id: `rm-${item.id}`,
-          originalId: item.id,
-          type: 'ro_mooc',
-        })),
-      ];
+      
+      const response = await withRetry(() => fetchAllDauKeo());
+      const dauKeoData = response?.data || [];
+      
+      const mappedDauKeo = dauKeoData.map(item => ({
+        ...item,
+        label: `${item.bien_so} - ${item.loai_xe || 'Đầu kéo'}`,
+        value: item.id,
+      }));
+      
       // Update cache
-      cacheRef.current.vehicles = {
-        data: allVehicles,
+      cacheRef.current.dauKeo = {
+        data: mappedDauKeo,
         timestamp: now,
       };
-      setVehicles(allVehicles);
+      
+      setDauKeoList(mappedDauKeo);
     } catch (err) {
-      console.error('Error fetching vehicles:', err);
-      // Don't block the UI if vehicles fail to load
+      console.error('Error loading dau keo list:', err);
+      setDauKeoList([]);
+    } finally {
+      setIsDauKeoLoading(false);
     }
-  }, []);
+  }, [isDauKeoLoading]);
   useEffect(() => {
     fetchEmployeesData();
-    fetchVehicles();
-  }, [fetchEmployeesData, fetchVehicles]);
+  }, [fetchEmployeesData]);
   const handleInputChange = useCallback(e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -301,11 +307,12 @@ const useNhanVienManagement = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) =>
     formData,
     isLoading,
     error,
-    vehicles,
+    dauKeoList,
+    isDauKeoLoading,
     pagination,
     employeeRoles,
     fetchEmployeesData,
-    fetchVehicles,
+    loadDauKeoList,
     handleInputChange,
     handleOpenModalForAdd,
     handleOpenModalForEdit,
@@ -332,4 +339,4 @@ function mapChucVu(code) {
       return code || 'Chưa xác định';
   }
 }
-export default useNhanVienManagement;
+export default useNhanVien;

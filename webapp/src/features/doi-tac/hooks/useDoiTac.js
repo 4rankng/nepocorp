@@ -22,8 +22,8 @@ const useDoiTac = () => {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchAllDoiTac();
-      setPartners(data || []);
+      const response = await fetchAllDoiTac();
+      setPartners(response?.data || []);
     } catch (err) {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Không thể tải danh sách đối tác';
@@ -42,9 +42,9 @@ const useDoiTac = () => {
       setLoading(true);
       setError('');
       try {
-        const newPartner = await addDoiTac(partnerData);
+        const response = await addDoiTac(partnerData);
         await fetchPartners();
-        return { success: true, data: newPartner };
+        return { success: true, data: response?.data };
       } catch (err) {
         const errorMessage =
           (err instanceof Error ? err.message : String(err)) || 'Lỗi khi thêm đối tác';
@@ -84,7 +84,8 @@ const useDoiTac = () => {
     async (ma_dinh_danh, excludeId = null) => {
       if (!ma_dinh_danh || ma_dinh_danh.trim() === '') return false;
       try {
-        const all = await fetchAllDoiTac();
+        const response = await fetchAllDoiTac();
+        const all = response?.data || [];
         const found = all.find(
           /** @param {any} p */
           p => p?.ma_dinh_danh === ma_dinh_danh && (!excludeId || p?.id !== excludeId)
@@ -105,9 +106,9 @@ const useDoiTac = () => {
     setLoading(true);
     setError('');
     try {
-      const updatedPartner = await editDoiTac(id, partnerData);
+      const response = await editDoiTac(id, partnerData);
       await fetchPartners();
-      return { success: true, data: updatedPartner };
+      return { success: true, data: response?.data };
     } catch (err) {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Lỗi khi sửa đối tác';
@@ -146,7 +147,8 @@ const useDoiTac = () => {
    */
   const getPartnerById = async id => {
     try {
-      const partner = await fetchDoiTacById(id);
+      const response = await fetchDoiTacById(id);
+      const partner = response?.data;
       if (partner) {
         return { success: true, data: partner };
       } else {

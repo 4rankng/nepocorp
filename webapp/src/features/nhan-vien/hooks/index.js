@@ -1,1 +1,1 @@
-export { default as useNhanVienManagement } from '@features/nhan-vien/hooks/useNhanVienManagement';
+export { default as useNhanVien } from '@features/nhan-vien/hooks/useNhanVien';

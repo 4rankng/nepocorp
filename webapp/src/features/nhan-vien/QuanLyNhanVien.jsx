@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PlusIcon } from '@assets/icons/index.jsx'; // Assuming PlusIcon is used for FAB
-import useNhanVienManagement from '@features/nhan-vien/hooks/useNhanVienManagement';
+import useNhanVien from '@features/nhan-vien/hooks/useNhanVien';
 import {
   Box,
   CircularProgress, // Keep for top-level loading if needed before views render
@@ -34,8 +34,10 @@ const QuanLyNhanVien = () => {
     handleSaveEmployee,
     handleDeleteEmployee,
     employeeRoles,
-    vehicles,
-  } = useNhanVienManagement();
+    dauKeoList,
+    isDauKeoLoading,
+    loadDauKeoList,
+  } = useNhanVien();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
@@ -156,7 +158,9 @@ const QuanLyNhanVien = () => {
         isLoading={isLoading}
         error={error}
         employeeRoles={employeeRoles}
-        vehicles={vehicles}
+        dauKeoList={dauKeoList}
+        isDauKeoLoading={isDauKeoLoading}
+        onLoadDauKeo={loadDauKeoList}
       />
       {/* Delete Confirmation Dialog */}
       <Dialog
