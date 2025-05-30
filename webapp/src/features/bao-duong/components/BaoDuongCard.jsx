@@ -10,10 +10,8 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-
 const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
-
   // Calculate expiration date if not present
   const getExpirationDate = record => {
     if (record.ngay_het_han) return new Date(record.ngay_het_han);
@@ -24,19 +22,15 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
     }
     return null;
   };
-
   const expirationDate = getExpirationDate(record);
-
   // Format date to Vietnamese locale
   const formatDate = dateString => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
-
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
-
   return (
     <Card
       onClick={handleExpandClick}

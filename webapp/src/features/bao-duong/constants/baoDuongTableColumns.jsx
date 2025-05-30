@@ -1,7 +1,28 @@
 import React from 'react';
 import { formatCurrency, addMonths } from '../utils/baoDuongUtils';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-export const baoDuongTableColumns = [
+
+export const getBaoDuongTableColumns = (page = 0, pageSize = 10) => [
+  {
+    key: 'stt',
+    label: 'STT',
+    align: 'center',
+    minWidth: 60,
+    maxWidth: 80,
+    render: (_, __, index) => {
+      try {
+        // Ensure we have valid numbers for calculation
+        const pageNum = Number.isInteger(page) ? Math.max(0, page) : 0;
+        const size = Number.isInteger(pageSize) && pageSize > 0 ? pageSize : 10;
+        const rowNumber = (pageNum * size) + index + 1;
+        return isNaN(rowNumber) ? index + 1 : rowNumber; // Fallback to index + 1 if calculation fails
+      } catch (error) {
+        console.error('Error calculating row number:', error);
+        return index + 1; // Fallback to index + 1 if there's an error
+      }
+    },
+    sortable: false,
+  },
   {
     key: 'bien_so',
     label: 'Biển số',
@@ -61,3 +82,5 @@ export const baoDuongTableColumns = [
     flex: 1,
   },
 ];
+
+export const baoDuongTableColumns = getBaoDuongTableColumns();

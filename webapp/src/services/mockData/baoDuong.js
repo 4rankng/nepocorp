@@ -6,7 +6,6 @@ const getAllValidBienSo = async () => {
   try {
     // Get data from the API services
     const [dauKeoResponse, roMoocResponse] = await Promise.all([getAllDauKeo(), getAllRoMooc()]);
-
     // Extract data from API responses
     const extractData = response => {
       if (Array.isArray(response)) return response;
@@ -15,17 +14,13 @@ const getAllValidBienSo = async () => {
       }
       return [];
     };
-
     const dauKeoList = extractData(dauKeoResponse);
     const roMoocList = extractData(roMoocResponse);
-
     // Extract license plates
     const dauKeoBienSo = dauKeoList.map(dk => dk?.bien_so).filter(Boolean);
     const roMoocBienSo = roMoocList.map(rm => rm?.bien_so).filter(Boolean);
-
     // Combine and deduplicate
     const allBienSo = [...new Set([...dauKeoBienSo, ...roMoocBienSo])];
-    console.log('Retrieved valid license plates:', allBienSo);
     return allBienSo;
   } catch (error) {
     console.error('Error getting valid license plates:', error);
@@ -268,16 +263,12 @@ const isValidBienSo = async bienSo => {
       console.error('No license plate provided for validation');
       return false;
     }
-
     const validBienSoList = await getAllValidBienSo();
-
     if (!Array.isArray(validBienSoList)) {
       console.error('Invalid license plate list format:', validBienSoList);
       return false;
     }
-
     const isValid = validBienSoList.includes(bienSo);
-    console.log(`License plate validation for ${bienSo}:`, isValid);
     return isValid;
   } catch (error) {
     console.error('Error validating license plate:', error);
@@ -294,8 +285,6 @@ const getValidBienSoList = async () => {
     return [];
   }
 };
-
 // Export the main data and utility functions
 export { isValidBienSo, getValidBienSoList };
-
 export default baoDuongData;

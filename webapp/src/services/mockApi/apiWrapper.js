@@ -320,7 +320,6 @@ export async function mockApiCall(apiCall, options = {}) {
       result = await apiCall();
     } catch (callError) {
       console.warn('API call execution error:', callError);
-
       // Enhanced error handling to provide more detailed information
       const errorDetails = callError.message || 'Unknown error occurred';
       const errorResponse =
@@ -331,7 +330,6 @@ export async function mockApiCall(apiCall, options = {}) {
               originalError: callError.toString(),
               timestamp: new Date().toISOString(),
             });
-
       console.error('API error details:', errorResponse);
       return errorResponse;
     }

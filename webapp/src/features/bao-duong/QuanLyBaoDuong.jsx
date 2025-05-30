@@ -44,7 +44,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-
 // Utility function to format currency
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {
@@ -58,7 +57,7 @@ import { baoDuongApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';
-import { baoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
+import { getBaoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
 import useBaoDuongForm from './hooks/useBaoDuongForm';
 import useBaoDuongRecords from './hooks/useBaoDuongRecords';
 const initialFormData = {
@@ -94,7 +93,6 @@ const QuanLyBaoDuong = memo(() => {
     fetchData,
     pagination,
   } = useBaoDuongRecords(baoDuongApi);
-
   // Extract pagination props for StandardTable
   const {
     page,
@@ -237,7 +235,6 @@ const QuanLyBaoDuong = memo(() => {
         setFormLoading(true);
         // Pass current pagination state to handleFormSave
         await handleFormSave(e, pagination.page, pagination.pageSize);
-
         // If we get here, the save was successful
         setSnackbar({
           open: true,
@@ -246,23 +243,19 @@ const QuanLyBaoDuong = memo(() => {
             : 'Thêm thông tin bảo dưỡng thành công',
           severity: 'success',
         });
-
         // Refresh data with current pagination and close dialog
         await fetchData(pagination.page, pagination.pageSize);
         refetchCount();
         setOpenDialog(false);
       } catch (error) {
         console.error('Error in handleSave:', error);
-
         // Extract detailed error information
         const errorDetails = error.response?.error?.details || {};
         const errorMessage = error.message || 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng';
-
         // If there are validation errors, set them in the form
         if (error.validationError && errorDetails) {
           setErrors(errorDetails);
         }
-
         // Show error message to user if not a validation error
         // (validation errors are shown in the form fields)
         if (!error.validationError) {
@@ -310,30 +303,27 @@ const QuanLyBaoDuong = memo(() => {
   );
   // Render desktop table view
   const renderDesktopView = () => {
+    const tableColumns = getBaoDuongTableColumns(pagination.page, pagination.pageSize);
     return (
       <StandardTable
-        columns={baoDuongTableColumns}
+        columns={tableColumns}
         data={maintenanceRecords}
-        rowKeyField="id"
         loading={isLoading}
-        error={error}
-        emptyMessage="Chưa có dữ liệu bảo dưỡng"
-        renderActions={record => (
-          <>
-            <EditButton onClick={() => handleOpenEditDialog(record)} tooltip="Chỉnh sửa" />
-            <DeleteButton onClick={() => handleDeleteClick(record)} tooltip="Xóa" />
-          </>
-        )}
+        error={error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null)}
+        emptyMessage="Không có dữ liệu bảo dưỡng"
         onRowClick={handleOpenEditDialog}
-        minHeight={400}
         pagination={true}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalCount={totalCount}
-        onPageChange={(e, newPage) => handlePageChange(newPage)}
-        onRowsPerPageChange={e => {
-          handleRowsPerPageChange(parseInt(e.target.value, 10));
+        page={pagination.page}
+        rowsPerPage={pagination.pageSize}
+        totalCount={pagination.total}
+        onPageChange={(_, newPage) => {
+          fetchData(newPage, pagination.pageSize);
         }}
+        onRowsPerPageChange={(event) => {
+          const newPageSize = parseInt(event.target.value, 10);
+          fetchData(0, newPageSize);
+        }}
+        rowKeyField="id"
       />
     );
   };
@@ -412,7 +402,6 @@ const QuanLyBaoDuong = memo(() => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       {/* Floating Action Button */}
       <Zoom in={!isFormLoading}>
         <Fab

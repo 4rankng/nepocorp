@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-
 export default function useBaoDuongRecords(api) {
   const [baoDuongRecords, setBaoDuongRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
@@ -11,16 +10,29 @@ export default function useBaoDuongRecords(api) {
     total: 0,
     totalPages: 1,
   });
+  // Fetch license plates separately to avoid pagination issues
+  const fetchLicensePlates = useCallback(async () => {
+    try {
+      const allRecordsRes = await api.getAll(1, 1000); // Get all records for license plates
+      const licensePlateOptions = Array.from(
+        new Set((allRecordsRes.data || []).map(r => r.bien_so).filter(Boolean))
+      ).map(plate => ({ id: plate, bien_so: plate }));
+      setLicensePlates(licensePlateOptions);
+    } catch (err) {
+      console.error('Error fetching license plates:', err);
+    }
+  }, [api]);
 
+  // Fetch paginated data
   const fetchData = useCallback(
     async (page = 0, pageSize = 10) => {
       setIsLoading(true);
       try {
         // Note: API is 1-indexed for page number
         const recordsRes = await api.getAll(page + 1, pageSize);
-
+        
         setBaoDuongRecords(recordsRes.data || []);
-
+        
         // Update pagination state from API response
         setPagination(prev => ({
           ...prev,
@@ -29,14 +41,12 @@ export default function useBaoDuongRecords(api) {
           total: recordsRes.meta?.total || 0,
           totalPages: recordsRes.meta?.totalPages || 1,
         }));
-
-        // Extract unique license plates from all records (not just current page)
-        const allRecordsRes = await api.getAll(1, 1000); // Get all records for license plates
-        const licensePlateOptions = Array.from(
-          new Set((allRecordsRes.data || []).map(r => r.bien_so))
-        ).map(plate => ({ id: plate, bien_so: plate }));
-
-        setLicensePlates(licensePlateOptions);
+        
+        // Only fetch license plates once on initial load
+        if (licensePlates.length === 0) {
+          await fetchLicensePlates();
+        }
+        
         setError('');
       } catch (err) {
         setError('Không thể tải dữ liệu bảo dưỡng');
@@ -47,21 +57,18 @@ export default function useBaoDuongRecords(api) {
     },
     [api]
   );
-
   const handlePageChange = useCallback(
     newPage => {
       fetchData(newPage, pagination.pageSize);
     },
     [fetchData, pagination.pageSize]
   );
-
   const handlePageSizeChange = useCallback(
     newPageSize => {
       fetchData(0, newPageSize); // Reset to first page when page size changes
     },
     [fetchData]
   );
-
   return {
     baoDuongRecords,
     setBaoDuongRecords,

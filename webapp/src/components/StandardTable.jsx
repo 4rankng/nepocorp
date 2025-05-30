@@ -426,7 +426,6 @@ const StandardTable = ({
               ))}
             </Select>
           </Box>
-          
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <IconButton
               onClick={() => onPageChange(null, page - 1)}
@@ -440,14 +439,12 @@ const StandardTable = ({
             >
               <ChevronLeftIcon />
             </IconButton>
-            
             <Typography variant="body2" sx={{ minWidth: 80, textAlign: 'center' }}>
               Trang {page + 1} / {Math.ceil(totalCount / rowsPerPage) || 1}
             </Typography>
-            
             <IconButton
               onClick={() => onPageChange(null, page + 1)}
-              disabled={page >= Math.ceil(totalCount / rowsPerPage) - 1}
+              disabled={page >= Math.ceil(totalCount / rowsPerPage) - 1 || (page + 1) * rowsPerPage >= totalCount}
               size="small"
               sx={{
                 width: 32,

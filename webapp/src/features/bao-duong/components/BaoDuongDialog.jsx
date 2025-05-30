@@ -46,58 +46,36 @@ const BaoDuongDialog = ({
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [licensePlates, setLicensePlates] = useState([]);
   const [isLoadingPlates, setIsLoadingPlates] = useState(true);
-
   // Fetch license plates from both dauKeo and roMooc APIs
   useEffect(() => {
     const fetchLicensePlates = async () => {
       try {
         setIsLoadingPlates(true);
-
         // Fetch dau keo license plates
-        console.log('Fetching dau keo...');
         const dauKeoResponse = await dauKeoApi.getAll(1, 1000);
-        console.log('Dau keo API response:', dauKeoResponse);
-
         // The API returns data in the response.data array
         const dauKeoData = Array.isArray(dauKeoResponse?.data) ? dauKeoResponse.data : [];
-        console.log('Dau keo data:', dauKeoData);
-
         const dauKeoPlates = dauKeoData
           .filter(item => item?.bien_so) // Filter out items without bien_so
           .map(item => ({
             value: item.bien_so,
             type: 'Đầu kéo',
           }));
-
-        console.log('Processed dau keo plates:', dauKeoPlates);
-
         // Fetch ro mooc license plates
-        console.log('Fetching ro mooc...');
         const roMoocResponse = await roMoocApi.getAll(1, 1000);
-        console.log('Ro mooc API response:', roMoocResponse);
-
         // The API returns data in the response.data array
         const roMoocData = Array.isArray(roMoocResponse?.data) ? roMoocResponse.data : [];
-        console.log('Ro mooc data:', roMoocData);
-
         const roMoocPlates = roMoocData
           .filter(item => item?.bien_so) // Filter out items without bien_so
           .map(item => ({
             value: item.bien_so,
             type: 'Rơ moóc',
           }));
-
-        console.log('Processed ro mooc plates:', roMoocPlates);
-
         // Combine and deduplicate plates
         const allPlates = [...dauKeoPlates, ...roMoocPlates];
-        console.log('All plates before deduplication:', allPlates);
-
         const uniquePlates = Array.from(
           new Map(allPlates.map(plate => [plate.value, plate])).values()
         ).sort((a, b) => (a.value || '').localeCompare(b.value || ''));
-
-        console.log('Final unique plates:', uniquePlates);
         setLicensePlates(uniquePlates);
       } catch (error) {
         console.error('Error fetching license plates:', error);
@@ -112,12 +90,10 @@ const BaoDuongDialog = ({
         setIsLoadingPlates(false);
       }
     };
-
     if (open) {
       fetchLicensePlates();
     }
   }, [open]);
-
   const handleBienSoChange = event => {
     onChange({
       target: {
@@ -126,7 +102,6 @@ const BaoDuongDialog = ({
       },
     });
   };
-
   // Convert string date to Date object for DatePicker
   const parseDate = dateString => {
     if (!dateString) return null;

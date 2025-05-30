@@ -25,29 +25,29 @@ const persist = () => {
 };
 export const baoDuongApi = {
   getAll: async (page = 1, limit = 10) => {
-    return mockApiCall(() => withPagination(() => data, { page, limit }));
+    return mockApiCall(() => withPagination(
+      () => [...data], // Return a copy of the data array to avoid mutations
+      { 
+        page: Math.max(1, parseInt(page, 10) || 1), // Ensure page is at least 1
+        limit: Math.max(1, parseInt(limit, 10) || 10), // Ensure limit is at least 1
+      }
+    ));
   },
   create: async record => {
     return mockApiCall(() =>
       withCreate(async () => {
         try {
-          console.log('Creating new record with data:', record);
-
           // Validate required fields
           if (!record.bien_so || !record.item_name || !record.ngay_thay) {
             throw new Error('Thiếu thông tin bắt buộc. Vui lòng kiểm tra lại.');
           }
-
           // Ensure we have a valid license plate format
           const trimmedBienSo = String(record.bien_so).trim();
           if (!trimmedBienSo) {
             throw new Error('Biển số không được để trống');
           }
-
           // Get all valid license plates for validation
           const validBienSoList = await getValidBienSoList();
-          console.log('Available license plates:', validBienSoList);
-
           // Check if the provided license plate exists in the system
           const isValid = validBienSoList.includes(trimmedBienSo);
           console.log('License plate validation result:', {
@@ -55,22 +55,18 @@ export const baoDuongApi = {
             isValid,
             validPlates: validBienSoList,
           });
-
           if (!isValid) {
             throw new Error(
               `Biển số "${trimmedBienSo}" không tồn tại trong hệ thống. Vui lòng kiểm tra lại.`
             );
           }
-
           // Calculate total if not provided
           const so_luong = Number(record.so_luong) || 1;
           const don_gia = Number(record.don_gia) || 0;
           const tong_tien = so_luong * don_gia;
-
           // Create new record with calculated fields
           const id = data.length ? Math.max(...data.map(r => r.id)) + 1 : 1;
           const now = new Date().toISOString();
-
           const raw = {
             ...record,
             id,
@@ -86,8 +82,6 @@ export const baoDuongApi = {
             so_thang_bao_hanh: Number(record.so_thang_bao_hanh) || 0,
             ngay_het_han: record.ngay_het_han || '',
           };
-
-          console.log('Saving new record:', raw);
           data.push(raw);
           persist();
           return raw;

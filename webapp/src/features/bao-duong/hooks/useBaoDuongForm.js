@@ -63,20 +63,15 @@ export default function useBaoDuongForm({
       pageSize,
     });
     e?.preventDefault();
-
     try {
       // Validate form
       const isValid = validateForm();
-      console.log('Form validation result:', isValid);
       if (!isValid) {
-        console.log('Form validation failed, not submitting');
         const validationError = new Error('Vui lòng kiểm tra lại thông tin nhập vào');
         validationError.validationError = true;
         throw validationError;
       }
-
       setIsLoading(true);
-
       // Prepare data for submission
       const tong_tien = Number(formData.so_luong || 0) * Number(formData.don_gia || 0);
       const submissionData = {
@@ -90,16 +85,10 @@ export default function useBaoDuongForm({
         ghi_chu: formData.ghi_chu || '',
         currency: formData.currency || 'VND',
       };
-
-      console.log('Submitting form data:', submissionData);
-
       // Call the appropriate API method
       let response;
       if (isEdit) {
-        console.log('Updating existing record with ID:', submissionData.id);
         response = await api.update(submissionData.id, submissionData);
-        console.log('Update API response:', response);
-
         // Check for API error responses
         if (!response?.success) {
           const error = new Error(response?.error?.message || 'Cập nhật thất bại');
@@ -107,13 +96,9 @@ export default function useBaoDuongForm({
           error.validationError = response?.error?.code === 'VALIDATION_ERROR';
           throw error;
         }
-
         onSuccess?.(response?.message || 'Cập nhật thông tin bảo dưỡng thành công');
       } else {
-        console.log('Creating new record');
         response = await api.create(submissionData);
-        console.log('Create API response:', response);
-
         // Check for API error responses
         if (!response?.success) {
           const error = new Error(response?.error?.message || 'Tạo mới thất bại');
@@ -121,16 +106,12 @@ export default function useBaoDuongForm({
           error.validationError = response?.error?.code === 'VALIDATION_ERROR';
           throw error;
         }
-
         onSuccess?.(response?.message || 'Thêm thông tin bảo dưỡng thành công');
       }
-
       // Refresh data if fetchData is provided
       if (fetchData) {
         try {
-          console.log('Refreshing data with pagination...', { currentPage, pageSize });
           await fetchData(currentPage, pageSize);
-          console.log('Data refresh complete');
         } catch (refreshError) {
           console.error('Error refreshing data:', refreshError);
           // Fallback to page 0 if there's an error with the current page
@@ -141,14 +122,11 @@ export default function useBaoDuongForm({
           }
         }
       }
-
       return response;
     } catch (error) {
       console.error('Error in handleSave:', error);
-
       // Extract and format error message from API response
       let errorMessage = 'Đã xảy ra lỗi khi lưu dữ liệu';
-
       if (error?.response?.error?.message) {
         errorMessage = error.response.error.message;
       } else if (error?.message) {
@@ -156,7 +134,6 @@ export default function useBaoDuongForm({
       } else if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-
       // Update form errors if available in the API response
       if (error?.response?.data?.errors) {
         setErrors(error.response.data.errors);
@@ -168,7 +145,6 @@ export default function useBaoDuongForm({
         });
         setErrors(apiErrors);
       }
-
       // Call onError if provided
       if (onError) {
         onError({
@@ -177,14 +153,12 @@ export default function useBaoDuongForm({
           isValidationError: error.validationError === true,
         });
       }
-
       // Re-throw the error with additional context
       const enhancedError = new Error(errorMessage);
       enhancedError.originalError = error;
       enhancedError.isValidationError = error.validationError === true;
       throw enhancedError;
     } finally {
-      console.log('Setting isLoading to false');
       setIsLoading(false);
     }
   };

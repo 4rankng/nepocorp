@@ -3,66 +3,54 @@
  * Centralized in-memory database that bootstraps with hard-coded data
  * and manages all subsequent CRUD operations
  */
-
 class MockDB {
   constructor() {
     this.tables = new Map();
     this.initialized = false;
     this.listeners = new Map(); // For data change notifications
   }
-
   /**
    * Initialize the database with bootstrap data
    */
   async initialize() {
     if (this.initialized) return;
-
     try {
       // Import all mock data
       const { default: baoDuongData } = await import('@services/mockData/baoDuong');
       const { default: userData } = await import('@services/mockData/users');
-
       // Initialize tables with bootstrap data
       this.tables.set('baoDuong', [...baoDuongData]);
       this.tables.set('users', [...userData]);
-
       // Try to load persisted data from localStorage if available
       this.loadPersistedData();
-
       this.initialized = true;
-      console.log('MockDB initialized with tables:', Array.from(this.tables.keys()));
     } catch (error) {
       console.error('Failed to initialize MockDB:', error);
       throw error;
     }
   }
-
   /**
    * Load persisted data from localStorage
    */
   loadPersistedData() {
     if (typeof window === 'undefined' || !window.localStorage) return;
-
     try {
       for (const [tableName] of this.tables) {
         const persistedData = window.localStorage.getItem(`mockDB_${tableName}`);
         if (persistedData) {
           const data = JSON.parse(persistedData);
           this.tables.set(tableName, data);
-          console.log(`Loaded persisted data for table: ${tableName}`);
         }
       }
     } catch (error) {
       console.error('Failed to load persisted data:', error);
     }
   }
-
   /**
    * Persist data to localStorage
    */
   persistData(tableName) {
     if (typeof window === 'undefined' || !window.localStorage) return;
-
     try {
       const data = this.tables.get(tableName);
       if (data) {
@@ -72,7 +60,6 @@ class MockDB {
       console.error(`Failed to persist data for table ${tableName}:`, error);
     }
   }
-
   /**
    * Subscribe to data changes for a specific table
    */
@@ -81,7 +68,6 @@ class MockDB {
       this.listeners.set(tableName, new Set());
     }
     this.listeners.get(tableName).add(callback);
-
     // Return unsubscribe function
     return () => {
       const tableListeners = this.listeners.get(tableName);
@@ -90,7 +76,6 @@ class MockDB {
       }
     };
   }
-
   /**
    * Notify listeners of data changes
    */
@@ -106,7 +91,6 @@ class MockDB {
       });
     }
   }
-
   /**
    * Get all records from a table
    */
@@ -118,7 +102,6 @@ class MockDB {
     }
     return [...data]; // Return a copy to prevent external mutations
   }
-
   /**
    * Get a single record by ID
    */
@@ -130,7 +113,6 @@ class MockDB {
     }
     return data.find(record => record.id === id);
   }
-
   /**
    * Create a new record
    */
@@ -140,11 +122,9 @@ class MockDB {
     if (!data) {
       throw new Error(`Table '${tableName}' not found`);
     }
-
     // Generate new ID
     const maxId = data.length > 0 ? Math.max(...data.map(r => r.id || 0)) : 0;
     const newId = maxId + 1;
-
     // Add timestamps
     const now = new Date().toISOString();
     const newRecord = {
@@ -153,17 +133,13 @@ class MockDB {
       created_at: now,
       updated_at: now,
     };
-
     // Add to table
     data.push(newRecord);
-
     // Persist and notify
     this.persistData(tableName);
     this.notifyListeners(tableName, 'CREATE', newRecord);
-
     return { ...newRecord };
   }
-
   /**
    * Update an existing record
    */
@@ -173,12 +149,10 @@ class MockDB {
     if (!data) {
       throw new Error(`Table '${tableName}' not found`);
     }
-
     const index = data.findIndex(record => record.id === id);
     if (index === -1) {
       throw new Error(`Record with id ${id} not found in table '${tableName}'`);
     }
-
     // Update record
     const updatedRecord = {
       ...data[index],
@@ -186,16 +160,12 @@ class MockDB {
       id, // Ensure ID doesn't change
       updated_at: new Date().toISOString(),
     };
-
     data[index] = updatedRecord;
-
     // Persist and notify
     this.persistData(tableName);
     this.notifyListeners(tableName, 'UPDATE', updatedRecord);
-
     return { ...updatedRecord };
   }
-
   /**
    * Delete a record
    */
@@ -205,22 +175,17 @@ class MockDB {
     if (!data) {
       throw new Error(`Table '${tableName}' not found`);
     }
-
     const index = data.findIndex(record => record.id === id);
     if (index === -1) {
       return false; // Record not found
     }
-
     const deletedRecord = data[index];
     data.splice(index, 1);
-
     // Persist and notify
     this.persistData(tableName);
     this.notifyListeners(tableName, 'DELETE', deletedRecord);
-
     return true;
   }
-
   /**
    * Count records in a table
    */
@@ -232,7 +197,6 @@ class MockDB {
     }
     return data.length;
   }
-
   /**
    * Query records with filtering
    */
@@ -244,16 +208,13 @@ class MockDB {
     }
     return data.filter(filterFn);
   }
-
   /**
    * Reset a table to its bootstrap data
    */
   async resetTable(tableName) {
     this.ensureInitialized();
-
     try {
       let bootstrapData;
-
       switch (tableName) {
         case 'baoDuong': {
           const { default: baoDuongData } = await import('@services/mockData/baoDuong');
@@ -268,18 +229,15 @@ class MockDB {
         default:
           throw new Error(`Unknown table: ${tableName}`);
       }
-
       this.tables.set(tableName, bootstrapData);
       this.persistData(tableName);
       this.notifyListeners(tableName, 'RESET', bootstrapData);
-
       return true;
     } catch (error) {
       console.error(`Failed to reset table ${tableName}:`, error);
       throw error;
     }
   }
-
   /**
    * Clear all data and reset to bootstrap state
    */
@@ -290,12 +248,10 @@ class MockDB {
         window.localStorage.removeItem(`mockDB_${tableName}`);
       }
     }
-
     // Reinitialize
     this.initialized = false;
     await this.initialize();
   }
-
   /**
    * Ensure the database is initialized
    */
@@ -304,7 +260,6 @@ class MockDB {
       throw new Error('MockDB not initialized. Call initialize() first.');
     }
   }
-
   /**
    * Get current state for debugging
    */
@@ -319,12 +274,9 @@ class MockDB {
     return state;
   }
 }
-
 // Create singleton instance
 const mockDB = new MockDB();
-
 export default mockDB;
-
 // Export utility functions for easier access
 export const initializeMockDB = () => mockDB.initialize();
 export const getMockDBState = () => mockDB.getState();
