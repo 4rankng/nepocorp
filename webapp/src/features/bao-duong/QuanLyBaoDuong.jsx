@@ -29,6 +29,8 @@ import {
   useMediaQuery,
   useTheme,
   Divider,
+  Fab,
+  Zoom,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -38,7 +40,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import AddIcon from '@mui/icons-material/Add';
+import AddIcon from '@mui/icons-material/Add'; // This AddIcon will be used for the FAB
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import StandardTable from '@/components/StandardTable';
@@ -336,32 +338,30 @@ const QuanLyBaoDuong = memo(() => {
             )}
             {/* Error state */}
             {error && (
-              <Box color="error.main" py={2}>
+              <Box color="error.main" py={2} textAlign="center">
                 <Typography>{error}</Typography>
               </Box>
             )}
             {/* Content */}
             {!isLoading && !error && (
-              <Box>
-                {/* Lốp Xe Section */}
-                <LopXeSection
-                  title="Lốp Xe"
-                  count={counts.tire}
-                  expanded={expandedSections.tire}
-                  onToggle={() => toggleSection('tire')}
-                  onAdd={() => handleAddNew('tire')}
+              <LopXeSection>{isMobile ? renderMobileView() : renderDesktopView()}</LopXeSection>
+            )}
+            {/* FAB for adding new record */}
+            {!isLoading && currentTab === 'lop-xe' && (
+              <Zoom in={true}>
+                <Fab
+                  color="primary"
+                  aria-label="Thêm bảo dưỡng lốp xe"
+                  onClick={handleOpenAddDialog}
+                  sx={{
+                    position: 'fixed',
+                    bottom: { xs: 24, sm: 32 }, // Standard FAB positioning
+                    right: { xs: 24, sm: 32 },
+                  }}
                 >
-                  {isLoading && !loadedSections.tire ? (
-                    <Box textAlign="center" py={4}>
-                      <CircularProgress />
-                    </Box>
-                  ) : isMobile ? (
-                    renderMobileView()
-                  ) : (
-                    renderDesktopView()
-                  )}
-                </LopXeSection>
-              </Box>
+                  <AddIcon />
+                </Fab>
+              </Zoom>
             )}
           </React.Fragment>
         );
@@ -385,6 +385,7 @@ const QuanLyBaoDuong = memo(() => {
             flexGrow: 1,
             overflowY: 'auto',
             p: isMobile ? 1 : 2,
+            pb: { xs: 10, sm: 11 }, // Add more padding at the bottom for the FAB
           }}
         >
           {renderTabContent()}
