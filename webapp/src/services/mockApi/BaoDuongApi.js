@@ -29,7 +29,7 @@ export const baoDuongApi = {
   },
   create: async record => {
     return mockApiCall(
-      withCreate(async () => {
+      ()=>withCreate(async () => {
         try {
           console.log('Creating new record with data:', record);
           
@@ -104,7 +104,7 @@ export const baoDuongApi = {
   },
   update: async (id, record) => {
     return mockApiCall(
-      withUpdate(() => {
+      () => withUpdate(() => {
         const idx = data.findIndex(r => r.id === id);
         if (idx === -1) throw new Error('Không tìm thấy bản ghi');
         // If bien_so is being updated, validate it exists in the system
