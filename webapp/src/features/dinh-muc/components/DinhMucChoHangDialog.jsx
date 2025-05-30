@@ -77,11 +77,11 @@ const DinhMucChoHangDialog = ({
 
       <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              flexDirection: { xs: 'column', sm: 'row' }, 
-              gap: 2 
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2
             }}
           >
             <Box sx={{ flex: 1 }}>
@@ -129,7 +129,7 @@ const DinhMucChoHangDialog = ({
               error={!!errors.standard}
               helperText={errors.standard}
               InputProps={{
-                endAdornment: <InputAdornment position="end">l/100km</InputAdornment>,
+                endAdornment: <InputAdornment position="end">l/km</InputAdornment>,
               }}
             />
           </Box>

@@ -76,7 +76,7 @@ const DinhMucTheoBienSoXeSection = ({
             }
             onDelete={(standard, loaiDinhMuc) => {
               // Construct details for the delete dialog
-              const itemDetails = `Từ ${standard.fromKm}km đến ${standard.toKm}km (${standard.standard} l/100km)`;
+              const itemDetails = `Từ ${standard.fromKm}km đến ${standard.toKm}km (${standard.standard} l/1km)`;
               onOpenDeleteDialog(standard.id, loaiDinhMuc, itemDetails, plateData.licensePlate);
             }}
             normTypeFilter={normTypeFilter}

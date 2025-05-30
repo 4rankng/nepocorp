@@ -279,8 +279,8 @@ Lái xe là người trực tiếp thực hiện các chuyến vận chuyển, �
     - Biển số xe (Vehicle Plate Number)
     - Rơ-mooc (Trailer Plate Number)
     - Loại rơ-mooc (Trailer Type, e.g. 20', 40')
-    - Định mức hàng (L/100km) (Cargo quota, e.g. 43)
-    - Định mức vỏ (L/100km) (Empty quota, e.g. 39)
+    - Định mức hàng (L/km) (Cargo quota, e.g. 43)
+    - Định mức vỏ (L/km) (Empty quota, e.g. 39)
     - Động cơ (Engine type, optional)
     - Định mức bổ sung (Supplement, e.g. +3L/trip, manager-configurable, default 3)
 - **Actions:**
