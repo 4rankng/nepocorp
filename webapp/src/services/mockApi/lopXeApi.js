@@ -47,10 +47,7 @@ const fromUI = item => ({
 });
 export const lopXeApi = {
   getAll: async (page = 1, limit = 10) => {
-    return mockApiCall(
-      withPagination(() => data.map(toUI), page, limit),
-      'LopXe'
-    );
+    return mockApiCall(() => withPagination(() => data.map(toUI), { page, limit }));
   },
 
   create: async record => {
@@ -61,8 +58,7 @@ export const lopXeApi = {
         data.push(raw);
         persist();
         return toUI(raw);
-      }),
-      'LopXe'
+      })
     );
   },
 

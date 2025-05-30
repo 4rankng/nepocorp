@@ -18,58 +18,25 @@ export const useDiDuong = () => {
     setIsLoading(true);
     setError('');
     try {
-      // Fetch data sequentially to isolate errors
-      console.log('Fetching dinh muc di duong data...');
-      const dinhMucRes = await dinhMucDiDuongApi.getAllDinhMucDiDuong();
+      console.log('Fetching all data concurrently...');
+      const [dinhMucRes, tuyenDuongRes, containerRes] = await Promise.all([
+        dinhMucDiDuongApi.getAllDinhMucDiDuong(),
+        tuyenDuongApi.getAllTuyenDuong(),
+        containerApi.getAll(),
+      ]);
 
-      // Validate dinh muc response
-      if (!dinhMucRes) {
-        throw new Error(
-          'Không nhận được phản hồi từ máy chủ khi tải định mức đi đường. Vui lòng kiểm tra kết nối mạng.'
-        );
+      // Validate responses
+      if (!dinhMucRes || !dinhMucRes.success) {
+        console.error('DinhMucDiDuong API Error:', dinhMucRes?.error);
+        throw new Error(dinhMucRes?.error?.message || 'Lỗi khi tải dữ liệu định mức đi đường.');
       }
-
-      if (!dinhMucRes.success) {
-        console.error('DinhMucDiDuong API Error:', dinhMucRes.error);
-        throw new Error(
-          dinhMucRes.error?.message ||
-            'Lỗi khi tải dữ liệu định mức đi đường. Vui lòng thử lại sau.'
-        );
+      if (!tuyenDuongRes || !tuyenDuongRes.success) {
+        console.error('TuyenDuong API Error:', tuyenDuongRes?.error);
+        throw new Error(tuyenDuongRes?.error?.message || 'Lỗi khi tải danh sách tuyến đường.');
       }
-
-      console.log('Fetching tuyen duong data...');
-      const tuyenDuongRes = await tuyenDuongApi.getAllTuyenDuong();
-
-      // Validate tuyen duong response
-      if (!tuyenDuongRes) {
-        throw new Error(
-          'Không nhận được phản hồi từ máy chủ khi tải tuyến đường. Vui lòng kiểm tra kết nối mạng.'
-        );
-      }
-
-      if (!tuyenDuongRes.success) {
-        console.error('TuyenDuong API Error:', tuyenDuongRes.error);
-        throw new Error(
-          tuyenDuongRes.error?.message || 'Lỗi khi tải danh sách tuyến đường. Vui lòng thử lại sau.'
-        );
-      }
-
-      console.log('Fetching container data...');
-      const containerRes = await containerApi.getAll();
-
-      // Validate container response
-      if (!containerRes) {
-        throw new Error(
-          'Không nhận được phản hồi từ máy chủ khi tải container. Vui lòng kiểm tra kết nối mạng.'
-        );
-      }
-
-      if (!containerRes.success) {
-        console.error('Container API Error:', containerRes.error);
-        throw new Error(
-          containerRes.error?.message ||
-            'Lỗi khi tải danh sách loại container. Vui lòng thử lại sau.'
-        );
+      if (!containerRes || !containerRes.success) {
+        console.error('Container API Error:', containerRes?.error);
+        throw new Error(containerRes?.error?.message || 'Lỗi khi tải danh sách loại container.');
       }
 
       // Handle different response structures from mock API
