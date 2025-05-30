@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ROLES } from '@/config/roles';
 // Mock user data - in a real app, this would come from your authentication service
 const MOCK_USERS = {
@@ -15,6 +16,8 @@ const getStoredAuthData = () => {
   return storedData ? JSON.parse(storedData) : null;
 };
 export const AuthProvider = ({ children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [currentUser, setCurrentUser] = useState(() => {
     const storedData = getStoredAuthData();
     return storedData?.currentUser || null;
@@ -24,29 +27,46 @@ export const AuthProvider = ({ children }) => {
     return storedData?.isAuthenticated || false;
   });
   // Login function - in a real app, this would call your auth API
-  const login = useCallback(role => {
-    const user = MOCK_USERS[role];
-    if (user) {
-      const authData = {
-        currentUser: user,
-        isAuthenticated: true,
-        timestamp: new Date().toISOString(),
-      };
-      setCurrentUser(user);
-      setIsAuthenticated(true);
-      localStorage.setItem('auth', JSON.stringify(authData));
-      return true;
-    }
-    return false;
-  }, []);
+  const login = useCallback(
+    role => {
+      const user = MOCK_USERS[role];
+      if (user) {
+        const authData = {
+          currentUser: user,
+          isAuthenticated: true,
+          timestamp: new Date().toISOString(),
+        };
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        localStorage.setItem('auth', JSON.stringify(authData));
+        if (user.role === ROLES.QUAN_LY) {
+          navigate('/lich-van-chuyen', { replace: true });
+        }
+        return true;
+      }
+      return false;
+    },
+    [navigate]
+  );
   useEffect(() => {
     const storedData = getStoredAuthData();
     if (storedData) {
-      // Optional: Add token expiration check here if needed
       setCurrentUser(storedData.currentUser);
       setIsAuthenticated(storedData.isAuthenticated);
     }
-  }, []);
+  }, []); // Run once on mount to load session
+
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      currentUser &&
+      currentUser.role === ROLES.QUAN_LY &&
+      (location.pathname === '/' || location.pathname === '/bao-cao')
+    ) {
+      navigate('/lich-van-chuyen', { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, currentUser, navigate]); // Location removed from deps, navigate is stable
   const logout = useCallback(() => {
     setCurrentUser(null);
     setIsAuthenticated(false);

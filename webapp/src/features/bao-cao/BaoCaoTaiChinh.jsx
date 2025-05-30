@@ -1,57 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import BaoCaoLoiNhuanDoanhThu from '@features/bao-cao/BaoCaoLoiNhuanDoanhThu';
-import BaoCaoChiTietChiPhi from '@features/bao-cao/BaoCaoChiTietChiPhi';
-import BaoCaoTheoDoiDoanhThuChiPhiPhuongTien from '@features/bao-cao/BaoCaoTheoDoiDoanhThuChiPhiPhuongTien';
-import BaoCaoCongNo from '@features/bao-cao/BaoCaoCongNo';
-import { useLocation } from 'react-router-dom';
-const tabs = [
-  { id: 'loi-nhuan-doanh-thu', label: 'Lợi nhuận & Doanh thu' },
-  { id: 'chi-tiet-chi-phi', label: 'Chi tiết chi phí' },
-  { id: 'phuong-tien-van-chuyen', label: 'Theo dõi Doanh thu/Chi phí' },
-  { id: 'bao-cao-cong-no', label: 'Báo cáo Công nợ' },
-];
+import React from 'react';
+import { Box, Typography } from '@mui/material';
+
 const BaoCaoTaiChinh = () => {
-  const [activeTab, setActiveTab] = useState('loi-nhuan-doanh-thu');
-  const location = useLocation();
-  // Set default tab when component mounts
-  useEffect(() => {
-    setActiveTab('loi-nhuan-doanh-thu');
-  }, []);
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'loi-nhuan-doanh-thu':
-        return <BaoCaoLoiNhuanDoanhThu />;
-      case 'chi-tiet-chi-phi':
-        return <BaoCaoChiTietChiPhi />;
-      case 'phuong-tien-van-chuyen':
-        return <BaoCaoTheoDoiDoanhThuChiPhiPhuongTien />;
-      case 'bao-cao-cong-no':
-        return <BaoCaoCongNo />;
-      default:
-        return null;
-    }
-  };
   return (
-    <div className="bg-white min-h-screen">
-      <div className="border-b border-gray-200 bg-white">
-        <nav className="flex -mb-px">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === tab.id
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-      <div className="p-6">{renderTabContent()}</div>
-    </div>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 'calc(100vh - 200px)', // Adjust height as needed
+        textAlign: 'center',
+      }}
+    >
+      <Typography variant="h4" component="h1" gutterBottom>
+        Báo Cáo Tài Chính
+      </Typography>
+      <Typography variant="h6" component="p">
+        Tính năng này sẽ sớm được ra mắt!
+      </Typography>
+      <Typography variant="body1" sx={{ mt: 2 }}>
+        Chúng tôi đang làm việc chăm chỉ để mang đến cho bạn những phân tích tài chính chi tiết và
+        hữu ích.
+      </Typography>
+    </Box>
   );
 };
+
 export default BaoCaoTaiChinh;

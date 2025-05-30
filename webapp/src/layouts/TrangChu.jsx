@@ -49,11 +49,9 @@ const TrangChu = () => {
   // Auto-navigate authenticated users from root path to their default page
   useEffect(() => {
     if (isAuthenticated && currentUser && location.pathname === '/') {
-      // Navigate based on role
+      // Navigate based on role (AuthContext handles QUAN_LY redirect from /)
       switch (currentUser.role) {
-        case ROLES.QUAN_LY:
-          navigate('/bao-cao', { replace: true });
-          break;
+        // case ROLES.QUAN_LY: is handled by AuthContext if landing on / or /bao-cao
         case ROLES.KE_TOAN:
           navigate('/chi-phi', { replace: true });
           break;
@@ -64,7 +62,7 @@ const TrangChu = () => {
           navigate('/lich-lam-viec', { replace: true });
           break;
         default:
-          // Stay on root if role is unknown
+          // Stay on root if role is unknown or QUAN_LY (AuthContext will redirect if needed)
           break;
       }
     }
@@ -74,11 +72,9 @@ const TrangChu = () => {
   const handleRoleSelect = async roleKey => {
     const success = login(roleKey);
     if (success) {
-      // Navigate based on role
+      // Navigate based on role (AuthContext.login handles QUAN_LY redirect)
       switch (roleKey) {
-        case ROLES.QUAN_LY:
-          navigate('/bao-cao');
-          break;
+        // case ROLES.QUAN_LY: is handled by AuthContext.login()
         case ROLES.KE_TOAN:
           navigate('/chi-phi');
           break;
@@ -89,7 +85,12 @@ const TrangChu = () => {
           navigate('/lich-lam-viec');
           break;
         default:
-          navigate('/');
+          // For QUAN_LY, AuthContext.login already navigated.
+          // For other roles not listed or if default needed.
+          if (roleKey !== ROLES.QUAN_LY) {
+             navigate('/');
+          }
+          break;
       }
     }
   };
