@@ -94,14 +94,16 @@ const MobileView = ({
                     <Box display="flex" alignItems="center" gap={1} mb={0.5}>
                       <Typography 
                         variant="body2" 
-                        color="primary" 
+                        color="text.secondary" 
                         fontWeight="medium"
                         sx={{ 
                           px: 1, 
                           py: 0.25, 
-                          backgroundColor: 'primary.light',
+                          border: '1px solid',
+                          borderColor: 'divider',
                           borderRadius: 0.5,
-                          fontSize: '0.75rem'
+                          fontSize: '0.75rem',
+                          backgroundColor: 'background.paper'
                         }}
                       >
                         {partner.ma_dinh_danh || '--'}

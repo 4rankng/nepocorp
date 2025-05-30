@@ -148,7 +148,7 @@ const QuanLyDoiTac = () => {
     error,
     onEdit: handleOpenFormForEdit,
     onDelete: handleDeleteClick,
-    onAddPartner: handleOpenFormForAdd,
+    onAdd: handleOpenFormForAdd, // Fixed: changed from onAddPartner to onAdd
   };
 
   return (

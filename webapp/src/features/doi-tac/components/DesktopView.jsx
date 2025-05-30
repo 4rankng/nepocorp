@@ -15,7 +15,7 @@ const DesktopView = ({
   error, 
   onEdit, 
   onDelete, 
-  onAddPartner 
+  onAdd 
 }) => {
   return (
     <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
@@ -35,7 +35,7 @@ const DesktopView = ({
         <Fab
           color="primary"
           aria-label="Thêm đối tác"
-          onClick={onAddPartner}
+          onClick={onAdd}
           sx={{
             position: 'fixed',
             bottom: { xs: 24, sm: 32 },
