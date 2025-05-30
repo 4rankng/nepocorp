@@ -109,13 +109,6 @@ const router = createBrowserRouter(
           path: 'bao-duong',
           element: withErrorBoundary(QuanLyBaoDuong),
           errorElement: <ErrorPage />,
-          children: [
-            {
-              path: ':tab',
-              element: withErrorBoundary(QuanLyBaoDuong),
-              errorElement: <ErrorPage />,
-            },
-          ],
         },
         // Keep old routes for backward compatibility
         {

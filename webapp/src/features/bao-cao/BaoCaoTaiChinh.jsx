@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-
 const BaoCaoTaiChinh = () => {
   return (
     <Box
@@ -26,5 +25,4 @@ const BaoCaoTaiChinh = () => {
     </Box>
   );
 };
-
 export default BaoCaoTaiChinh;

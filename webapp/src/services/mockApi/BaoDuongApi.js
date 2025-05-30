@@ -1,4 +1,4 @@
-import baoDuongData from '@services/mockData/baoDuong';
+import baoDuongData, { isValidBienSo } from '@services/mockData/baoDuong';
 import {
   mockApiCall,
   withPagination,
@@ -23,59 +23,56 @@ const persist = () => {
     window.localStorage.setItem('baoDuongData', JSON.stringify(data));
   }
 };
-const toUI = item => ({
-  id: item.id,
-  licensePlate: item.bien_so,
-  replacementDate: item.ngay_thay,
-  warrantyPeriod: item.so_thang_bao_hanh,
-  quantity: item.so_luong,
-  unitPrice: item.don_gia,
-  total: item.tong_tien,
-  note: item.ghi_chu,
-  currency: item.currency,
-});
-const fromUI = item => ({
-  id: item.id,
-  bien_so: item.licensePlate,
-  ngay_thay: item.replacementDate,
-  so_thang_bao_hanh: item.warrantyPeriod,
-  so_luong: item.quantity,
-  don_gia: item.unitPrice,
-  tong_tien: item.total,
-  ghi_chu: item.note,
-  currency: item.currency || 'VND',
-});
 export const baoDuongApi = {
   getAll: async (page = 1, limit = 10) => {
-    return mockApiCall(() => withPagination(() => data.map(toUI), { page, limit }));
+    return mockApiCall(() => withPagination(() => data, { page, limit }));
   },
   create: async record => {
     return mockApiCall(
       withCreate(() => {
+        // Validate bien_so exists in the system
+        if (!isValidBienSo(record.bien_so)) {
+          throw new Error(
+            `Biển số "${record.bien_so}" không tồn tại trong hệ thống. Vui lòng kiểm tra lại.`
+          );
+        }
         const id = data.length ? Math.max(...data.map(r => r.id)) + 1 : 1;
-        const raw = fromUI({ ...record, id });
+        const now = new Date().toISOString();
+        const raw = { 
+          ...record, 
+          id,
+          created_at: now,
+          updated_at: now 
+        };
         data.push(raw);
         persist();
-        return toUI(raw);
+        return raw;
       })
     );
   },
   update: async (id, record) => {
     return mockApiCall(
-      withUpdate(
-        () => {
-          const idx = data.findIndex(r => r.id === id);
-          if (idx !== -1) {
-            data[idx] = { ...data[idx], ...fromUI(record) };
-            persist();
-            return toUI(data[idx]);
+      withUpdate(() => {
+        const idx = data.findIndex(r => r.id === id);
+        if (idx === -1) throw new Error('Không tìm thấy bản ghi');
+        // If bien_so is being updated, validate it exists in the system
+        if (record.bien_so && record.bien_so !== data[idx].bien_so) {
+          if (!isValidBienSo(record.bien_so)) {
+            throw new Error(
+              `Biển số "${record.bien_so}" không tồn tại trong hệ thống. Vui lòng kiểm tra lại.`
+            );
           }
-          return null;
-        },
-        ErrorCodes.NOT_FOUND,
-        'Thông tin lốp xe không tồn tại'
-      ),
-      'BaoDuong'
+        }
+        const updatedRecord = { 
+          ...data[idx], 
+          ...record, 
+          id,
+          updated_at: new Date().toISOString() 
+        };
+        data[idx] = updatedRecord;
+        persist();
+        return updatedRecord;
+      })
     );
   },
   delete: async id => {
@@ -101,9 +98,6 @@ export const baoDuongApi = {
     }, 'BaoDuong');
   },
   getCount: async () => {
-    return mockApiCall(
-      withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe'),
-      'BaoDuong'
-    );
+    return mockApiCall(() => withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe'));
   },
 };

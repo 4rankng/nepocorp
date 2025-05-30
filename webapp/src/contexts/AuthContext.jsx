@@ -55,7 +55,6 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(storedData.isAuthenticated);
     }
   }, []); // Run once on mount to load session
-
   useEffect(() => {
     if (
       isAuthenticated &&

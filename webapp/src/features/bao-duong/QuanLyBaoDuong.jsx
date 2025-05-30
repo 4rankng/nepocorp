@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
-
 import {
   Box,
   Button,
@@ -50,8 +49,7 @@ import { baoDuongApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';
-
-import { baoDuongTableColumns } from './constants/baoDuongTableColumns';
+import { baoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
 import useLopXeForm from './hooks/useLopXeForm';
 import useLopXeRecords from './hooks/useLopXeRecords';
 const initialFormData = {
@@ -74,19 +72,6 @@ const QuanLyBaoDuong = memo(() => {
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [counts, setCounts] = useState({ tire: 0 });
-  // Get current tab from URL
-  const getCurrentTab = () => {
-    const pathParts = location.pathname.split('/');
-    const tabFromUrl = pathParts[pathParts.length - 1];
-    return tabFromUrl === 'bao-duong' ? 'lop-xe' : tabFromUrl;
-  };
-  const currentTab = getCurrentTab();
-  // Redirect to default tab if on base route
-  useEffect(() => {
-    if (location.pathname === '/bao-duong') {
-      navigate('/bao-duong/lop-xe', { replace: true });
-    }
-  }, [location.pathname, navigate]);
   // Data fetching
   const {
     baoDuongRecords: maintenanceRecords,
@@ -138,21 +123,33 @@ const QuanLyBaoDuong = memo(() => {
   }, []);
   const handleOpenAddDialog = () => {
     setIsEdit(false);
-    setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null });
+    setFormData({
+      bien_so: '',
+      item_name: '',
+      ngay_thay: '',
+      ngay_het_han: '',
+      so_thang_bao_hanh: 0,
+      so_luong: 1,
+      don_gia: 0,
+      tong_tien: 0,
+      ghi_chu: '',
+      id: undefined,
+    });
     setErrors({});
     setOpenDialog(true);
   };
   const handleOpenEditDialog = record => {
     setIsEdit(true);
     setFormData({
-      licensePlate: record.licensePlate,
-      replacementDate: new Date(record.replacementDate),
-      warrantyPeriod: record.warrantyPeriod,
-      ngayHetHan: record.ngayHetHan ? new Date(record.ngayHetHan) : null,
-      quantity: record.quantity,
-      unitPrice: record.unitPrice,
-      total: record.total,
-      note: record.note || '',
+      bien_so: record.bien_so,
+      item_name: record.item_name,
+      ngay_thay: record.ngay_thay,
+      ngay_het_han: record.ngay_het_han,
+      so_thang_bao_hanh: record.so_thang_bao_hanh,
+      so_luong: record.so_luong,
+      don_gia: record.don_gia,
+      tong_tien: record.tong_tien,
+      ghi_chu: record.ghi_chu || '',
       id: record.id,
     });
     setErrors({});
@@ -209,27 +206,11 @@ const QuanLyBaoDuong = memo(() => {
     const search = searchTerm.toLowerCase();
     return maintenanceRecords.filter(
       record =>
-        (record.licensePlate && record.licensePlate.toLowerCase().includes(search)) ||
-        (record.note && record.note.toLowerCase().includes(search))
+        (record.bien_so && record.bien_so.toLowerCase().includes(search)) ||
+        (record.ghi_chu && record.ghi_chu.toLowerCase().includes(search))
     );
   }, [maintenanceRecords, searchTerm]);
-  const toggleSection = section => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-    // Lazy load: only fetch if not loaded yet and expanding
-    if (!loadedSections[section] && !expandedSections[section]) {
-      fetchData();
-      setLoadedSections(prev => ({ ...prev, [section]: true }));
-    }
-  };
-  const handleAddNew = (type = 'tire') => {
-    setIsEdit(false);
-    setFormData({ ...initialFormData, replacementDate: new Date(), ngayHetHan: null, type });
-    setErrors({});
-    setOpenDialog(true);
-  };
+  // Debug: Log the filtered records before rendering
   // Render mobile card view
   const renderMobileView = () => (
     <Box>
@@ -250,102 +231,56 @@ const QuanLyBaoDuong = memo(() => {
     </Box>
   );
   // Render desktop table view
-  const renderDesktopView = () => (
-    <StandardTable
-      columns={baoDuongTableColumns}
-      data={filteredRecords}
-      loading={isLoading}
-      error={error}
-      emptyMessage="Không có dữ liệu bảo dưỡng nào"
-      sx={{
-        '& .MuiTableRow-hover:hover': {
-          backgroundColor: 'action.hover',
-        },
-      }}
-      renderActions={record => (
-        <>
-          <EditButton onClick={() => handleOpenEditDialog(record)} tooltip="Chỉnh sửa" />
-          <DeleteButton onClick={() => handleDeleteClick(record)} tooltip="Xóa" />
-        </>
-      )}
-    />
-  );
-  const handleTabChange = newTab => {
-    navigate(`/bao-duong/${newTab}`, { replace: true });
-  };
-  // Define tabs configuration
-  const tabs = [{ value: 'lop-xe', label: 'Lốp Xe' }];
-  // Render tab content based on active tab
-  const renderTabContent = () => {
-    switch (currentTab) {
-      case 'lop-xe':
-        return (
-          <React.Fragment>
-            {/* Search Bar */}
-            <Box sx={{ mb: 3 }}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  sx: {
-                    borderRadius: '6px',
-                    height: 36,
-                    minHeight: 36,
-                    fontSize: '0.95rem',
-                  },
-                }}
-              />
-            </Box>
-            {/* Loading state */}
-            {isLoading && (
-              <Box textAlign="center" py={4}>
-                <Typography>Đang tải dữ liệu...</Typography>
-              </Box>
-            )}
-            {/* Error state */}
-            {error && (
-              <Box color="error.main" py={2} textAlign="center">
-                <Typography>{error}</Typography>
-              </Box>
-            )}
-            {/* Content */}
-            {!isLoading && !error && (
-              <LopXeSection>{isMobile ? renderMobileView() : renderDesktopView()}</LopXeSection>
-            )}
-            {/* FAB for adding new record */}
-            {!isLoading && currentTab === 'lop-xe' && (
-              <Zoom in={true}>
-                <Fab
-                  color="primary"
-                  aria-label="Thêm bảo dưỡng lốp xe"
-                  onClick={handleOpenAddDialog}
-                  sx={{
-                    position: 'fixed',
-                    bottom: { xs: 24, sm: 32 }, // Standard FAB positioning
-                    right: { xs: 24, sm: 32 },
-                  }}
-                >
-                  <AddIcon />
-                </Fab>
-              </Zoom>
-            )}
-          </React.Fragment>
-        );
-      default:
-        return null;
-    }
+  const renderDesktopView = () => {
+    // Debug: Log each row's data before rendering
+    filteredRecords.forEach((row, idx) => {
+    });
+    return (
+      <StandardTable
+        columns={baoDuongTableColumns}
+        data={filteredRecords}
+        loading={isLoading}
+        error={error}
+        emptyMessage="Không có dữ liệu bảo dưỡng nào"
+        sx={{
+          '& .MuiTableRow-hover:hover': {
+            backgroundColor: 'action.hover',
+          },
+        }}
+        renderActions={record => (
+          <>
+            <EditButton onClick={() => handleOpenEditDialog(record)} tooltip="Chỉnh sửa" />
+            <DeleteButton onClick={() => handleDeleteClick(record)} tooltip="Xóa" />
+          </>
+        )}
+      />
+    );
   };
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
-      {/* Main Bao Duong Content - No Tabs */}
+      {/* Main Bao Duong Content */}
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            sx: {
+              borderRadius: '6px',
+              height: 36,
+              minHeight: 36,
+              fontSize: '0.95rem',
+            },
+          }}
+        />
+      </Box>
       <Box
         sx={{
           flexGrow: 1,

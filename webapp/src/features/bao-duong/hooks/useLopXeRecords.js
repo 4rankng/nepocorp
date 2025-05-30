@@ -9,10 +9,10 @@ export default function useLopXeRecords(api) {
     try {
       const recordsRes = await api.getAll();
       setLopXeRecords(recordsRes.data || []);
-      // Extract unique license plates from records
+      // Extract unique license plates from records (use bien_so)
       const licensePlateOptions = Array.from(
-        new Set((recordsRes.data || []).map(r => r.licensePlate))
-      ).map(plate => ({ id: plate, licensePlate: plate }));
+        new Set((recordsRes.data || []).map(r => r.bien_so))
+      ).map(plate => ({ id: plate, bien_so: plate }));
       setLicensePlates(licensePlateOptions);
       setError('');
     } catch (err) {
