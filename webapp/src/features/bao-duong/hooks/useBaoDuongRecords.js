@@ -7,7 +7,8 @@ export default function useBaoDuongRecords(api) {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const recordsRes = await api.getAll();
+      // Fetch all records by using a large page size
+      const recordsRes = await api.getAll(1, 1000);
       setBaoDuongRecords(recordsRes.data || []);
       // Extract unique license plates from records (use bien_so)
       const licensePlateOptions = Array.from(

@@ -1,4 +1,4 @@
-import baoDuongData, { isValidBienSo } from '@services/mockData/baoDuong';
+import baoDuongData, { isValidBienSo, getValidBienSoList } from '@services/mockData/baoDuong';
 import {
   mockApiCall,
   withPagination,
