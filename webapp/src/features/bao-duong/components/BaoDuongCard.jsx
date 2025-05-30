@@ -10,21 +10,33 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
+
+const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
+
   // Calculate expiration date if not present
-  const getExpirationDate = record => {
-    if (record.ngayHetHan) return new Date(record.ngayHetHan);
-    if (record.replacementDate && record.warrantyPeriod) {
-      const date = new Date(record.replacementDate);
-      date.setMonth(date.getMonth() + Number(record.warrantyPeriod));
+  const getExpirationDate = (record) => {
+    if (record.ngay_het_han) return new Date(record.ngay_het_han);
+    if (record.ngay_thay && record.so_thang_bao_hanh) {
+      const date = new Date(record.ngay_thay);
+      date.setMonth(date.getMonth() + Number(record.so_thang_bao_hanh));
       return date;
     }
     return null;
   };
+
+  const expirationDate = getExpirationDate(record);
+
+  // Format date to Vietnamese locale
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  };
+
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
+
   return (
     <Card
       onClick={handleExpandClick}
@@ -53,10 +65,10 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
         >
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {record.licensePlate}
+              {record.bien_so}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Thay lốp: {new Date(record.replacementDate).toLocaleDateString('vi-VN')}
+              {record.item_name} - {formatDate(record.ngay_thay)}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -88,9 +100,9 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
               }}
             >
               <Typography variant="body2" color="text.secondary">
-                Bảo hành:
+                Thời hạn bảo hành:
               </Typography>
-              <Typography variant="body2">{record.warrantyPeriod} tháng</Typography>
+              <Typography variant="body2">{record.so_thang_bao_hanh} tháng</Typography>
             </Box>
             <Box
               sx={{
@@ -100,12 +112,10 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
               }}
             >
               <Typography variant="body2" color="text.secondary">
-                Hết hạn:
+                Ngày hết hạn:
               </Typography>
               <Typography variant="body2">
-                {getExpirationDate(record)
-                  ? getExpirationDate(record).toLocaleDateString('vi-VN')
-                  : 'N/A'}
+                {formatDate(record.ngay_het_han) || 'N/A'}
               </Typography>
             </Box>
             <Box
@@ -118,7 +128,7 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
               <Typography variant="body2" color="text.secondary">
                 Số lượng:
               </Typography>
-              <Typography variant="body2">{record.quantity}</Typography>
+              <Typography variant="body2">{record.so_luong}</Typography>
             </Box>
             <Box
               sx={{
@@ -130,7 +140,7 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
               <Typography variant="body2" color="text.secondary">
                 Đơn giá:
               </Typography>
-              <Typography variant="body2">{formatCurrency(record.unitPrice)}</Typography>
+              <Typography variant="body2">{formatCurrency(record.don_gia)}</Typography>
             </Box>
             <Box
               sx={{
@@ -140,18 +150,18 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
               }}
             >
               <Typography variant="body2" color="text.secondary">
-                Thành tiền:
+                Tổng tiền:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {formatCurrency(record.total)}
+                {formatCurrency(record.tong_tien)}
               </Typography>
             </Box>
-            {record.note && (
+            {record.ghi_chu && (
               <Box sx={{ mt: 1 }}>
                 <Typography variant="body2" color="text.secondary">
                   Ghi chú:
                 </Typography>
-                <Typography variant="body2">{record.note}</Typography>
+                <Typography variant="body2">{record.ghi_chu}</Typography>
               </Box>
             )}
           </Box>
@@ -171,4 +181,4 @@ const LopXeCard = ({ record, onEdit, onDelete, isLoading }) => {
     </Card>
   );
 };
-export default LopXeCard;
+export default BaoDuongCard;

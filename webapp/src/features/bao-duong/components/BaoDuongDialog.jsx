@@ -26,7 +26,7 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-const LopXeDialog = ({
+const BaoDuongDialog = ({
   open,
   isEdit,
   isLoading,
@@ -74,20 +74,32 @@ const LopXeDialog = ({
                 fullWidth
                 size="small"
                 label="Biển số xe"
-                name="licensePlate"
-                value={formData.licensePlate}
+                name="bien_so"
+                value={formData.bien_so || ''}
                 onChange={onChange}
-                error={!!errors.licensePlate}
-                helperText={errors.licensePlate}
+                error={!!errors.bien_so}
+                helperText={errors.bien_so}
+                required
+              />
+              <TextField
+                fullWidth
+                size="small"
+                label="Hạng mục"
+                name="item_name"
+                value={formData.item_name || ''}
+                onChange={onChange}
+                error={!!errors.item_name}
+                helperText={errors.item_name}
+                required
               />
               <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
                 <DatePicker
-                  label="Ngày thay lốp"
-                  value={formData.replacementDate}
+                  label="Ngày thay thế"
+                  value={formData.ngay_thay || null}
                   onChange={date => {
                     onChange({
                       target: {
-                        name: 'replacementDate',
+                        name: 'ngay_thay',
                         value: date,
                       },
                     });
@@ -96,8 +108,9 @@ const LopXeDialog = ({
                     textField: {
                       fullWidth: true,
                       size: 'small',
-                      error: !!errors.replacementDate,
-                      helperText: errors.replacementDate,
+                      error: !!errors.ngay_thay,
+                      helperText: errors.ngay_thay,
+                      required: true,
                       InputProps: {
                         startAdornment: (
                           <InputAdornment position="start">
@@ -113,12 +126,13 @@ const LopXeDialog = ({
                 fullWidth
                 size="small"
                 label="Thời hạn bảo hành (tháng)"
-                name="warrantyPeriod"
+                name="so_thang_bao_hanh"
                 type="number"
-                value={formData.warrantyPeriod}
+                value={formData.so_thang_bao_hanh || ''}
                 onChange={onChange}
-                error={!!errors.warrantyPeriod}
-                helperText={errors.warrantyPeriod}
+                error={!!errors.so_thang_bao_hanh}
+                helperText={errors.so_thang_bao_hanh}
+                required
                 InputProps={{
                   endAdornment: <InputAdornment position="end">tháng</InputAdornment>,
                 }}
@@ -126,7 +140,7 @@ const LopXeDialog = ({
               <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
                 <DatePicker
                   label="Ngày hết hạn (tự động tính)"
-                  value={formData.ngayHetHan}
+                  value={formData.ngay_het_han}
                   disabled
                   slotProps={{
                     textField: {
@@ -163,23 +177,29 @@ const LopXeDialog = ({
                 fullWidth
                 size="small"
                 label="Số lượng"
-                name="quantity"
+                name="so_luong"
                 type="number"
-                value={formData.quantity}
+                value={formData.so_luong || ''}
                 onChange={onChange}
-                error={!!errors.quantity}
-                helperText={errors.quantity}
+                error={!!errors.so_luong}
+                helperText={errors.so_luong}
+                required
+                inputProps={{ min: 1 }}
+                onWheel={e => e.target.blur()}
               />
               <TextField
                 fullWidth
                 size="small"
                 label="Đơn giá"
-                name="unitPrice"
+                name="don_gia"
                 type="number"
-                value={formData.unitPrice}
+                value={formData.don_gia || ''}
                 onChange={onChange}
-                error={!!errors.unitPrice}
-                helperText={errors.unitPrice}
+                error={!!errors.don_gia}
+                helperText={errors.don_gia}
+                required
+                inputProps={{ min: 0 }}
+                onWheel={e => e.target.blur()}
                 InputProps={{
                   endAdornment: <InputAdornment position="end">VND</InputAdornment>,
                 }}
@@ -187,27 +207,25 @@ const LopXeDialog = ({
               <TextField
                 fullWidth
                 size="small"
-                label="Thành tiền (tự động tính)"
-                value={formatCurrency(formData.quantity * formData.unitPrice)}
+                label="Tổng tiền"
+                name="tong_tien"
+                value={formData.tong_tien ? formatCurrency(formData.tong_tien) : '0 VND'}
                 disabled
-                sx={{
-                  '& .MuiInputBase-input': {
-                    fontWeight: 'bold',
-                    color: theme.palette.success.main,
-                  },
+                InputProps={{
+                  endAdornment: <InputAdornment position="end">VND</InputAdornment>,
                 }}
               />
               <TextField
                 fullWidth
                 size="small"
                 label="Ghi chú"
-                name="note"
-                multiline
-                rows={4}
-                value={formData.note}
+                name="ghi_chu"
+                value={formData.ghi_chu || ''}
                 onChange={onChange}
-                placeholder="Nhập ghi chú nếu có"
-                sx={{ flexGrow: 1 }}
+                error={!!errors.ghi_chu}
+                helperText={errors.ghi_chu}
+                multiline
+                rows={3}
               />
             </Paper>
           </Box>
@@ -218,20 +236,21 @@ const LopXeDialog = ({
               fullWidth
               size="small"
               label="Biển số xe"
-              name="licensePlate"
-              value={formData.licensePlate}
+              name="bien_so"
+              value={formData.bien_so || ''}
               onChange={onChange}
-              error={!!errors.licensePlate}
-              helperText={errors.licensePlate}
+              error={!!errors.bien_so}
+              helperText={errors.bien_so}
+              required
             />
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
               <DatePicker
-                label="Ngày thay lốp"
-                value={formData.replacementDate}
+                label="Ngày thay thế"
+                value={formData.ngay_thay || null}
                 onChange={date => {
                   onChange({
                     target: {
-                      name: 'replacementDate',
+                      name: 'ngay_thay',
                       value: date,
                     },
                   });
@@ -240,8 +259,9 @@ const LopXeDialog = ({
                   textField: {
                     fullWidth: true,
                     size: 'small',
-                    error: !!errors.replacementDate,
-                    helperText: errors.replacementDate,
+                    error: !!errors.ngay_thay,
+                    helperText: errors.ngay_thay,
+                    required: true,
                     InputProps: {
                       startAdornment: (
                         <InputAdornment position="start">
@@ -257,15 +277,18 @@ const LopXeDialog = ({
               fullWidth
               size="small"
               label="Thời hạn bảo hành (tháng)"
-              name="warrantyPeriod"
+              name="so_thang_bao_hanh"
               type="number"
-              value={formData.warrantyPeriod}
+              value={formData.so_thang_bao_hanh || ''}
               onChange={onChange}
-              error={!!errors.warrantyPeriod}
-              helperText={errors.warrantyPeriod}
+              error={!!errors.so_thang_bao_hanh}
+              helperText={errors.so_thang_bao_hanh}
+              required
               InputProps={{
                 endAdornment: <InputAdornment position="end">tháng</InputAdornment>,
               }}
+              inputProps={{ min: 1 }}
+              onWheel={e => e.target.blur()}
             />
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
               <DatePicker
@@ -291,23 +314,40 @@ const LopXeDialog = ({
               fullWidth
               size="small"
               label="Số lượng"
-              name="quantity"
+              name="so_luong"
               type="number"
-              value={formData.quantity}
+              value={formData.so_luong || ''}
               onChange={onChange}
-              error={!!errors.quantity}
-              helperText={errors.quantity}
+              error={!!errors.so_luong}
+              helperText={errors.so_luong}
+              required
+              inputProps={{ min: 1 }}
+              onWheel={e => e.target.blur()}
             />
             <TextField
               fullWidth
               size="small"
               label="Đơn giá"
-              name="unitPrice"
+              name="don_gia"
               type="number"
-              value={formData.unitPrice}
-              onChange={onChange}
-              error={!!errors.unitPrice}
-              helperText={errors.unitPrice}
+              value={formData.don_gia || ''}
+              onChange={e => {
+                const value = e.target.value;
+                onChange(e);
+                if (formData.so_luong) {
+                  onChange({
+                    target: {
+                      name: 'tong_tien',
+                      value: value * formData.so_luong,
+                    },
+                  });
+                }
+              }}
+              error={!!errors.don_gia}
+              helperText={errors.don_gia}
+              required
+              inputProps={{ min: 0 }}
+              onWheel={e => e.target.blur()}
               InputProps={{
                 endAdornment: <InputAdornment position="end">VND</InputAdornment>,
               }}
@@ -315,19 +355,24 @@ const LopXeDialog = ({
             <TextField
               fullWidth
               size="small"
-              label="Thành tiền (tự động tính)"
-              value={formatCurrency(formData.quantity * formData.unitPrice)}
+              label="Tổng tiền"
+              value={formData.tong_tien ? formatCurrency(formData.tong_tien) : '0 VND'}
               disabled
+              InputProps={{
+                endAdornment: <InputAdornment position="end">VND</InputAdornment>,
+              }}
             />
             <TextField
               fullWidth
               size="small"
               label="Ghi chú"
-              name="note"
+              name="ghi_chu"
               multiline
               rows={3}
-              value={formData.note}
+              value={formData.ghi_chu || ''}
               onChange={onChange}
+              error={!!errors.ghi_chu}
+              helperText={errors.ghi_chu}
               placeholder="Nhập ghi chú nếu có"
             />
           </Box>
@@ -350,4 +395,4 @@ const LopXeDialog = ({
     </Dialog>
   );
 };
-export default LopXeDialog;
+export default BaoDuongDialog;

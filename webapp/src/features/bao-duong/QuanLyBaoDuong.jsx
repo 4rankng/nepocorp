@@ -43,24 +43,35 @@ import AddIcon from '@mui/icons-material/Add'; // This AddIcon will be used for 
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import StandardTable from '@/components/StandardTable';
-import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
+import { EditButton, DeleteButton } from '@/components/ActionButtons';
+
+// Utility function to format currency
+const formatCurrency = value => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+  }).format(value);
+};
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { baoDuongApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';
 import { baoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
-import useLopXeForm from './hooks/useLopXeForm';
-import useLopXeRecords from './hooks/useLopXeRecords';
+import useBaoDuongForm from './hooks/useBaoDuongForm';
+import useBaoDuongRecords from './hooks/useBaoDuongRecords';
 const initialFormData = {
-  licensePlate: '',
-  replacementDate: new Date(),
-  warrantyPeriod: 6,
-  ngayHetHan: null,
-  quantity: 1,
-  unitPrice: 0,
-  total: 0,
-  note: '',
+  bien_so: '',
+  item_name: '',
+  ngay_thay: new Date(),
+  so_thang_bao_hanh: 6,
+  ngay_het_han: null,
+  so_luong: 1,
+  don_gia: 0,
+  currency: 'VND',
+  tong_tien: 0,
+  ghi_chu: '',
 };
 const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();
@@ -81,7 +92,7 @@ const QuanLyBaoDuong = memo(() => {
     isLoading,
     error,
     fetchData,
-  } = useLopXeRecords(baoDuongApi);
+  } = useBaoDuongRecords(baoDuongApi);
   // Form state/handlers
   const {
     formData,
@@ -93,7 +104,7 @@ const QuanLyBaoDuong = memo(() => {
     handleInputChange,
     validateForm,
     handleSave,
-  } = useLopXeForm({
+  } = useBaoDuongForm({
     initialFormData,
     isEdit,
     api: baoDuongApi,
@@ -164,12 +175,14 @@ const QuanLyBaoDuong = memo(() => {
       open: true,
       recordId: record.id,
       details: {
-        'Biển số xe': record.licensePlate,
-        'Ngày thay lốp': new Date(record.replacementDate).toLocaleDateString('vi-VN'),
-        'Số lượng': record.quantity,
-        'Đơn giá': record.unitPrice,
-        'Thành tiền': record.total,
-        'Ghi chú': record.note || 'Không có',
+        'Biển số xe': record.bien_so,
+        'Hạng mục': record.item_name,
+        'Ngày thay': record.ngay_thay ? new Date(record.ngay_thay).toLocaleDateString('vi-VN') : 'N/A',
+        'Ngày hết hạn': record.ngay_het_han ? new Date(record.ngay_het_han).toLocaleDateString('vi-VN') : 'N/A',
+        'Số lượng': record.so_luong,
+        'Đơn giá': formatCurrency(record.don_gia),
+        'Tổng tiền': formatCurrency(record.tong_tien),
+        'Ghi chú': record.ghi_chu || 'Không có',
       },
     });
   };
@@ -331,6 +344,27 @@ const QuanLyBaoDuong = memo(() => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      
+      {/* Floating Action Button */}
+      <Zoom in={!isFormLoading}>
+        <Fab
+          color="primary"
+          aria-label="Thêm mới"
+          onClick={handleOpenAddDialog}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+            boxShadow: 3,
+            '&:hover': {
+              boxShadow: 6,
+            },
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Zoom>
     </Box>
   );
 });

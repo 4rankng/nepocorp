@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { addMonths } from '../utils/baoDuongUtils';
-export default function useLopXeForm({
+export default function useBaoDuongForm({
   initialFormData,
   onSuccess,
   onError,
@@ -11,11 +11,11 @@ export default function useLopXeForm({
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  // Auto-calculate ngayHetHan when replacementDate or warrantyPeriod changes
-  const updateNgayHetHan = useCallback((replacementDate, warrantyPeriod) => {
+  // Auto-calculate ngay_het_han when ngay_thay or so_thang_bao_hanh changes
+  const updateNgayHetHan = useCallback((ngay_thay, so_thang_bao_hanh) => {
     setFormData(prev => ({
       ...prev,
-      ngayHetHan: addMonths(replacementDate, warrantyPeriod),
+      ngay_het_han: addMonths(ngay_thay, so_thang_bao_hanh),
     }));
   }, []);
   const handleInputChange = e => {
@@ -27,28 +27,31 @@ export default function useLopXeForm({
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-    if (name === 'replacementDate' || name === 'warrantyPeriod') {
+    if (name === 'ngay_thay' || name === 'so_thang_bao_hanh') {
       updateNgayHetHan(
-        name === 'replacementDate' ? value : formData.replacementDate,
-        name === 'warrantyPeriod' ? value : formData.warrantyPeriod
+        name === 'ngay_thay' ? value : formData.ngay_thay,
+        name === 'so_thang_bao_hanh' ? value : formData.so_thang_bao_hanh
       );
     }
-    // Auto-calculate total when quantity or unitPrice changes
-    if (name === 'quantity' || name === 'unitPrice') {
-      const quantity = name === 'quantity' ? Number(value) : Number(formData.quantity);
-      const unitPrice = name === 'unitPrice' ? Number(value) : Number(formData.unitPrice);
+    // Auto-calculate tong_tien when so_luong or don_gia changes
+    if (name === 'so_luong' || name === 'don_gia') {
+      const so_luong = name === 'so_luong' ? Number(value) : Number(formData.so_luong || 0);
+      const don_gia = name === 'don_gia' ? Number(value) : Number(formData.don_gia || 0);
       setFormData(prev => ({
         ...prev,
-        total: quantity * unitPrice,
+        tong_tien: so_luong * don_gia,
       }));
     }
   };
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.licensePlate) newErrors.licensePlate = 'Vui lòng chọn biển số xe';
-    if (!formData.replacementDate) newErrors.replacementDate = 'Vui lòng chọn ngày thay lốp';
-    if (!formData.quantity || formData.quantity <= 0)
-      newErrors.quantity = 'Số lượng phải lớn hơn 0';
+    if (!formData.bien_so) newErrors.bien_so = 'Vui lòng nhập biển số xe';
+    if (!formData.item_name) newErrors.item_name = 'Vui lòng nhập hạng mục bảo dưỡng';
+    if (!formData.ngay_thay) newErrors.ngay_thay = 'Vui lòng chọn ngày thay thế';
+    if (!formData.so_luong || formData.so_luong <= 0)
+      newErrors.so_luong = 'Số lượng phải lớn hơn 0';
+    if (!formData.don_gia || formData.don_gia < 0)
+      newErrors.don_gia = 'Đơn giá không hợp lệ';
     if (!formData.unitPrice || formData.unitPrice < 0) newErrors.unitPrice = 'Đơn giá không hợp lệ';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

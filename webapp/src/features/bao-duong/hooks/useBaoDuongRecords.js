@@ -1,6 +1,6 @@
 import { useState } from 'react';
-export default function useLopXeRecords(api) {
-  const [baoDuongRecords, setLopXeRecords] = useState([]);
+export default function useBaoDuongRecords(api) {
+  const [baoDuongRecords, setBaoDuongRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -8,7 +8,7 @@ export default function useLopXeRecords(api) {
     setIsLoading(true);
     try {
       const recordsRes = await api.getAll();
-      setLopXeRecords(recordsRes.data || []);
+      setBaoDuongRecords(recordsRes.data || []);
       // Extract unique license plates from records (use bien_so)
       const licensePlateOptions = Array.from(
         new Set((recordsRes.data || []).map(r => r.bien_so))
@@ -24,7 +24,7 @@ export default function useLopXeRecords(api) {
   };
   return {
     baoDuongRecords,
-    setLopXeRecords,
+    setBaoDuongRecords,
     licensePlates,
     setLicensePlates,
     isLoading,
