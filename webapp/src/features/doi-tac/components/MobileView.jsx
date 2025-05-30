@@ -3,15 +3,13 @@ import {
   Box,
   TextField,
   InputAdornment,
-  Card,
-  CardContent,
   Typography,
   CircularProgress,
   Fab,
   Zoom,
 } from '@mui/material';
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
-import { EditButton, DeleteButton } from '@/components/ActionButtons';
+import ProfileCard from '@/components/ProfileCard';
 
 const MobileView = ({
   partners = [],
@@ -87,62 +85,25 @@ const MobileView = ({
       {!loading && !error && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {filteredPartners.map(partner => (
-            <Card key={partner.id} elevation={2} sx={{ borderRadius: 2 }}>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        fontWeight="medium"
-                        sx={{
-                          px: 1,
-                          py: 0.25,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          borderRadius: 0.5,
-                          fontSize: '0.75rem',
-                          backgroundColor: 'background.paper',
-                        }}
-                      >
-                        {partner.ma_dinh_danh || '--'}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      variant="h6"
-                      component="div"
-                      sx={{
-                        fontWeight: 600,
-                        mb: 1,
-                        fontSize: '1.1rem',
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {partner.ten}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                      <strong>Địa chỉ:</strong> {partner.dia_chi || 'Chưa cập nhật'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Mã số thuế:</strong> {partner.ma_so_thue || 'Chưa cập nhật'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
-                    <EditButton
-                      onClick={() => onEdit(partner)}
-                      size="small"
-                      sx={{ minWidth: 32, height: 32 }}
-                    />
-                    <DeleteButton
-                      onClick={() => onDelete(partner)}
-                      size="small"
-                      sx={{ minWidth: 32, height: 32 }}
-                    />
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+            <ProfileCard
+              key={partner.id}
+              item={partner}
+              identifier={partner.ma_dinh_danh || '--'}
+              name={partner.ten}
+              infoLine1={
+                <>
+                  <strong>Địa chỉ:</strong> {partner.dia_chi || 'Chưa cập nhật'}
+                </>
+              }
+              infoLine2={
+                <>
+                  <strong>Mã số thuế:</strong> {partner.ma_so_thue || 'Chưa cập nhật'}
+                </>
+              }
+              onEdit={onEdit}
+              onDelete={onDelete}
+              loading={loading}
+            />
           ))}
 
           {filteredPartners.length === 0 && (
