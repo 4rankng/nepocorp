@@ -2,10 +2,38 @@
 import { getAllDauKeo } from './dauKeo';
 import { getAllRoMooc } from './roMooc';
 // Get all existing vehicle license plates
-const getAllValidBienSo = () => {
-  const dauKeoBienSo = getAllDauKeo().map(dk => dk.bien_so);
-  const roMoocBienSo = getAllRoMooc().map(rm => rm.bien_so);
-  return [...new Set([...dauKeoBienSo, ...roMoocBienSo])];
+const getAllValidBienSo = async () => {
+  try {
+    // Get data from the API services
+    const [dauKeoResponse, roMoocResponse] = await Promise.all([
+      getAllDauKeo(),
+      getAllRoMooc()
+    ]);
+    
+    // Extract data from API responses
+    const extractData = (response) => {
+      if (Array.isArray(response)) return response;
+      if (response?.data) {
+        return Array.isArray(response.data) ? response.data : [response.data];
+      }
+      return [];
+    };
+    
+    const dauKeoList = extractData(dauKeoResponse);
+    const roMoocList = extractData(roMoocResponse);
+    
+    // Extract license plates
+    const dauKeoBienSo = dauKeoList.map(dk => dk?.bien_so).filter(Boolean);
+    const roMoocBienSo = roMoocList.map(rm => rm?.bien_so).filter(Boolean);
+    
+    // Combine and deduplicate
+    const allBienSo = [...new Set([...dauKeoBienSo, ...roMoocBienSo])];
+    console.log('Retrieved valid license plates:', allBienSo);
+    return allBienSo;
+  } catch (error) {
+    console.error('Error getting valid license plates:', error);
+    return [];
+  }
 };
 // Mock database for BaoDuong (Maintenance Records)
 // Fields: id, bien_so, item_name, ngay_thay, ngay_het_han, so_thang_bao_hanh, so_luong, don_gia, currency, tong_tien, ghi_chu, created_at, updated_at
@@ -237,11 +265,43 @@ const baoDuongData = [
   },
 ];
 // Function to validate if a bien_so exists in the system
-export const isValidBienSo = (bienSo) => {
-  return getAllValidBienSo().includes(bienSo);
+const isValidBienSo = async (bienSo) => {
+  try {
+    if (!bienSo) {
+      console.error('No license plate provided for validation');
+      return false;
+    }
+    
+    const validBienSoList = await getAllValidBienSo();
+    
+    if (!Array.isArray(validBienSoList)) {
+      console.error('Invalid license plate list format:', validBienSoList);
+      return false;
+    }
+    
+    const isValid = validBienSoList.includes(bienSo);
+    console.log(`License plate validation for ${bienSo}:`, isValid);
+    return isValid;
+  } catch (error) {
+    console.error('Error validating license plate:', error);
+    return false;
+  }
 };
 // Function to get all valid bien_so values
-export const getValidBienSoList = () => {
-  return getAllValidBienSo();
+const getValidBienSoList = async () => {
+  try {
+    const bienSoList = await getAllValidBienSo();
+    return Array.isArray(bienSoList) ? bienSoList : [];
+  } catch (error) {
+    console.error('Error getting valid license plate list:', error);
+    return [];
+  }
 };
+
+// Export the main data and utility functions
+export {
+  isValidBienSo,
+  getValidBienSoList
+};
+
 export default baoDuongData;

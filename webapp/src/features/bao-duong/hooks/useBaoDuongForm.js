@@ -52,32 +52,129 @@ export default function useBaoDuongForm({
       newErrors.so_luong = 'Số lượng phải lớn hơn 0';
     if (!formData.don_gia || formData.don_gia < 0)
       newErrors.don_gia = 'Đơn giá không hợp lệ';
-    if (!formData.unitPrice || formData.unitPrice < 0) newErrors.unitPrice = 'Đơn giá không hợp lệ';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  const handleSave = async e => {
+  const handleSave = async (e) => {
+    console.log('useBaoDuongForm handleSave called', { e, formData, isEdit });
     e?.preventDefault();
-    if (!validateForm()) return;
-    setIsLoading(true);
+    
     try {
-      // Calculate total before saving
-      const formDataWithTotal = {
-        ...formData,
-        total: Number(formData.quantity) * Number(formData.unitPrice),
-      };
-      if (isEdit) {
-        await api.update(formDataWithTotal.id, formDataWithTotal);
-        onSuccess?.('Cập nhật thông tin lốp xe thành công');
-      } else {
-        await api.create(formDataWithTotal);
-        onSuccess?.('Thêm thông tin lốp xe thành công');
+      // Validate form
+      const isValid = validateForm();
+      console.log('Form validation result:', isValid);
+      if (!isValid) {
+        console.log('Form validation failed, not submitting');
+        const validationError = new Error('Vui lòng kiểm tra lại thông tin nhập vào');
+        validationError.validationError = true;
+        throw validationError;
       }
-      fetchData?.();
+      
+      setIsLoading(true);
+      
+      // Prepare data for submission
+      const tong_tien = Number(formData.so_luong || 0) * Number(formData.don_gia || 0);
+      const submissionData = {
+        ...formData,
+        bien_so: String(formData.bien_so).trim(),
+        so_luong: Number(formData.so_luong) || 1,
+        don_gia: Number(formData.don_gia) || 0,
+        tong_tien: tong_tien,
+        so_thang_bao_hanh: Number(formData.so_thang_bao_hanh) || 0,
+        ngay_het_han: formData.ngay_het_han || '',
+        ghi_chu: formData.ghi_chu || '',
+        currency: formData.currency || 'VND'
+      };
+      
+      console.log('Submitting form data:', submissionData);
+      
+      // Call the appropriate API method
+      let response;
+      if (isEdit) {
+        console.log('Updating existing record with ID:', submissionData.id);
+        response = await api.update(submissionData.id, submissionData);
+        console.log('Update API response:', response);
+        
+        // Check for API error responses
+        if (!response?.success) {
+          const error = new Error(response?.error?.message || 'Cập nhật thất bại');
+          error.response = response;
+          error.validationError = response?.error?.code === 'VALIDATION_ERROR';
+          throw error;
+        }
+        
+        onSuccess?.(response?.message || 'Cập nhật thông tin bảo dưỡng thành công');
+      } else {
+        console.log('Creating new record');
+        response = await api.create(submissionData);
+        console.log('Create API response:', response);
+        
+        // Check for API error responses
+        if (!response?.success) {
+          const error = new Error(response?.error?.message || 'Tạo mới thất bại');
+          error.response = response;
+          error.validationError = response?.error?.code === 'VALIDATION_ERROR';
+          throw error;
+        }
+        
+        onSuccess?.(response?.message || 'Thêm thông tin bảo dưỡng thành công');
+      }
+      
+      // Refresh data if fetchData is provided
+      if (fetchData) {
+        try {
+          console.log('Refreshing data...');
+          await fetchData();
+          console.log('Data refresh complete');
+        } catch (refreshError) {
+          console.error('Error refreshing data:', refreshError);
+          // Don't fail the entire operation if refresh fails
+        }
+      }
+      
+      return response;
     } catch (error) {
-      console.error('Error saving lop xe data:', error);
-      onError?.(error);
+      console.error('Error in handleSave:', error);
+      
+      // Extract and format error message from API response
+      let errorMessage = 'Đã xảy ra lỗi khi lưu dữ liệu';
+      
+      if (error?.response?.error?.message) {
+        errorMessage = error.response.error.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      // Update form errors if available in the API response
+      if (error?.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      } else if (error?.response?.error?.details) {
+        // Handle validation errors from API
+        const apiErrors = {};
+        Object.entries(error.response.error.details).forEach(([field, message]) => {
+          apiErrors[field] = Array.isArray(message) ? message[0] : message;
+        });
+        setErrors(apiErrors);
+      }
+      
+      // Call onError if provided
+      if (onError) {
+        onError({ 
+          ...error, 
+          message: errorMessage,
+          isValidationError: error.validationError === true
+        });
+      }
+      
+      // Re-throw the error with additional context
+      const enhancedError = new Error(errorMessage);
+      enhancedError.originalError = error;
+      enhancedError.isValidationError = error.validationError === true;
+      throw enhancedError;
     } finally {
+      console.log('Setting isLoading to false');
       setIsLoading(false);
     }
   };

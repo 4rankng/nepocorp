@@ -29,24 +29,76 @@ export const baoDuongApi = {
   },
   create: async record => {
     return mockApiCall(
-      withCreate(() => {
-        // Validate bien_so exists in the system
-        if (!isValidBienSo(record.bien_so)) {
-          throw new Error(
-            `Biển số "${record.bien_so}" không tồn tại trong hệ thống. Vui lòng kiểm tra lại.`
-          );
+      withCreate(async () => {
+        try {
+          console.log('Creating new record with data:', record);
+          
+          // Validate required fields
+          if (!record.bien_so || !record.item_name || !record.ngay_thay) {
+            throw new Error('Thiếu thông tin bắt buộc. Vui lòng kiểm tra lại.');
+          }
+          
+          // Ensure we have a valid license plate format
+          const trimmedBienSo = String(record.bien_so).trim();
+          if (!trimmedBienSo) {
+            throw new Error('Biển số không được để trống');
+          }
+          
+          // Get all valid license plates for validation
+          const validBienSoList = await getValidBienSoList();
+          console.log('Available license plates:', validBienSoList);
+          
+          // Check if the provided license plate exists in the system
+          const isValid = validBienSoList.includes(trimmedBienSo);
+          console.log('License plate validation result:', { 
+            provided: trimmedBienSo, 
+            isValid,
+            validPlates: validBienSoList 
+          });
+          
+          if (!isValid) {
+            throw new Error(
+              `Biển số "${trimmedBienSo}" không tồn tại trong hệ thống. Vui lòng kiểm tra lại.`
+            );
+          }
+          
+          // Calculate total if not provided
+          const so_luong = Number(record.so_luong) || 1;
+          const don_gia = Number(record.don_gia) || 0;
+          const tong_tien = so_luong * don_gia;
+          
+          // Create new record with calculated fields
+          const id = data.length ? Math.max(...data.map(r => r.id)) + 1 : 1;
+          const now = new Date().toISOString();
+          
+          const raw = { 
+            ...record,
+            id,
+            bien_so: trimmedBienSo, // Ensure consistent formatting
+            so_luong,
+            don_gia,
+            tong_tien,
+            created_at: now,
+            updated_at: now,
+            // Ensure these fields exist with defaults
+            currency: record.currency || 'VND',
+            ghi_chu: record.ghi_chu || '',
+            so_thang_bao_hanh: Number(record.so_thang_bao_hanh) || 0,
+            ngay_het_han: record.ngay_het_han || ''
+          };
+          
+          console.log('Saving new record:', raw);
+          data.push(raw);
+          persist();
+          return raw;
+        } catch (error) {
+          console.error('Error in BaoDuongApi.create:', error);
+          // Format error message for better user feedback
+          const errorMessage = error.message || 'Đã xảy ra lỗi khi tạo bản ghi bảo dưỡng';
+          const formattedError = new Error(errorMessage);
+          formattedError.originalError = error;
+          throw formattedError;
         }
-        const id = data.length ? Math.max(...data.map(r => r.id)) + 1 : 1;
-        const now = new Date().toISOString();
-        const raw = { 
-          ...record, 
-          id,
-          created_at: now,
-          updated_at: now 
-        };
-        data.push(raw);
-        persist();
-        return raw;
       })
     );
   },

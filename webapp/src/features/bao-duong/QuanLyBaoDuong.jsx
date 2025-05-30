@@ -97,13 +97,15 @@ const QuanLyBaoDuong = memo(() => {
   const {
     formData,
     setFormData,
-    errors,
+    errors: formErrors,
     setErrors,
+    handleSave: handleFormSave,
+    isLoading: isFormSubmitting,
     isLoading: isFormLoading,
     setIsLoading: setFormLoading,
     handleInputChange,
     validateForm,
-    handleSave,
+    handleSave: handleSaveForm,
   } = useBaoDuongForm({
     initialFormData,
     isEdit,
@@ -213,6 +215,64 @@ const QuanLyBaoDuong = memo(() => {
       setFormLoading(false);
     }
   };
+  // Handle save from dialog with proper error handling
+  const handleSave = useCallback(
+    async e => {
+      try {
+        setFormLoading(true);
+        
+        // Use the form's handleSave which includes validation
+        const result = await handleFormSave(e);
+        
+        // Enhanced error handling for API responses
+        if (result?.success === false) {
+          // Handle API error response
+          let errorMessage = 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng';
+          
+          if (result.error?.message) {
+            errorMessage = result.error.message;
+          } else if (result.error?.details?.message) {
+            errorMessage = result.error.details.message;
+          }
+          
+          console.warn('API returned error:', result);
+          throw new Error(errorMessage);
+        }
+        
+        // If we get here, the save was successful
+        setSnackbar({
+          open: true,
+          message: isEdit 
+            ? 'Cập nhật thông tin bảo dưỡng thành công'
+            : 'Thêm thông tin bảo dưỡng thành công',
+          severity: 'success',
+        });
+        
+        // Refresh data and close dialog
+        await fetchData();
+        refetchCount();
+        setOpenDialog(false);
+      } catch (error) {
+        console.error('Error in handleSave:', error);
+        
+        // Extract detailed error information
+        const errorDetails = error.response?.error?.details || {};
+        const errorMessage = error.message || 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng';
+        
+        // Only show snackbar for non-validation errors
+        if (!error.isValidationError) {
+          setSnackbar({
+            open: true,
+            message: errorMessage,
+            severity: 'error',
+          });
+        }
+      } finally {
+        setFormLoading(false);
+      }
+    },
+    [formData, isEdit, fetchData, refetchCount, handleFormSave]
+  );
   // Filter maintenance records based on search term
   const filteredRecords = React.useMemo(() => {
     if (!searchTerm.trim()) return maintenanceRecords;
@@ -310,7 +370,7 @@ const QuanLyBaoDuong = memo(() => {
         isEdit={isEdit}
         isLoading={isFormLoading}
         formData={formData}
-        errors={errors}
+        errors={formErrors}
         onClose={handleCloseDialog}
         onChange={handleInputChange}
         onSave={handleSave}
