@@ -11,7 +11,7 @@ import {
 
 export const getAllDinhMucDau = async (page = 1, limit = 10) => {
   return mockApiCall(
-    withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), page, limit),
+    () => withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), { page, limit }),
     'DinhMucDau'
   );
 };
@@ -71,3 +71,9 @@ export const getDinhMucDauCount = async () => {
     'DinhMucDau'
   );
 };
+
+// Alias exports for simplified naming
+export const create = createDinhMucDau;
+export const update = updateDinhMucDau;
+export const delete_ = deleteDinhMucDau;
+export { deleteDinhMucDau as delete };

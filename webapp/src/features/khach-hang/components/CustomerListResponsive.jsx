@@ -42,6 +42,12 @@ const CustomerListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
+      key: 'ma_dinh_danh',
+      label: 'Mã khách hàng',
+      align: 'left',
+      sortable: true,
+    },
+    {
       key: 'ten',
       label: 'Tên khách hàng',
       align: 'left',

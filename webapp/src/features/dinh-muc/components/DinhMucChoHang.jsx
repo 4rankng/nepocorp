@@ -17,7 +17,7 @@ import { useChoHang } from '../hooks';
 const DinhMucChoHang = () => {
   const muiTheme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -72,13 +72,6 @@ const DinhMucChoHang = () => {
         boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
       }}
     >
-      <Typography
-        variant="h6"
-        component="h2"
-        sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1rem', md: '1.25rem' } }}
-      >
-        Định mức chở hàng
-      </Typography>
 
       {isLoading ? (
         <Box
@@ -115,7 +108,12 @@ const DinhMucChoHang = () => {
                     </span>
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '6px', height: 36, fontSize: '0.95rem' },
+                sx: {
+                  borderRadius: '6px',
+                  height: 36,
+                  minHeight: 36,
+                  fontSize: '0.95rem',
+                },
               }}
               sx={{
                 maxWidth: 400,
@@ -128,20 +126,7 @@ const DinhMucChoHang = () => {
                 '& .MuiInputBase-input': { py: 0.5, fontSize: '0.95rem' },
               }}
             />
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() =>
-                openAddNewDinhMucDialog({
-                  licensePlate: null,
-                  loaiDinhMuc: 'km_hang',
-                })
-              }
-              sx={{ height: 36, ml: 2, whiteSpace: 'nowrap' }}
-            >
-              Thêm mới
-            </Button>
+
           </Box>
           <DinhMucTheoBienSoXeSection
             dinhMucHang={dinhMucChoHang}

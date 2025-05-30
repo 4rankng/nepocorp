@@ -17,7 +17,7 @@ import { useVoRong } from '../hooks';
 const DinhMucVoRong = () => {
   const muiTheme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -115,10 +115,15 @@ const DinhMucVoRong = () => {
                     </span>
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '6px', height: 36, fontSize: '0.95rem' },
+                sx: {
+                  borderRadius: '6px',
+                  height: 36,
+                  minHeight: 36,
+                  fontSize: '0.95rem',
+                },
               }}
               sx={{
-                maxWidth: 400,
+                maxWidth: '100%',
                 flexGrow: 1,
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '6px',

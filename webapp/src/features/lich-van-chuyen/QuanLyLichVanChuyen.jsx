@@ -153,7 +153,7 @@ const QuanLyLichVanChuyen = () => {
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
   };
-  const [lichVanChuyenItems, setLichVanChuyenItems] = useState([]);
+  const [lichVanChuyenItems, setLichVanChuyenItems] = useState(() => []); // Initialize with function for better performance
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
@@ -204,28 +204,34 @@ const QuanLyLichVanChuyen = () => {
     setError('');
     try {
       const [
-        lichVanChuyenList,
-        nhanVienList,
-        containerList,
-        khachHangList,
-        dauKeoList,
-        roMoocList,
+        lichVanChuyenResponse,
+        nhanVienResponse,
+        containerResponse,
+        khachHangResponse,
+        dauKeoResponse,
+        roMoocResponse,
       ] = await Promise.all([
         fetchAllLichVanChuyen(),
         fetchAllNhanVien(),
         fetchAllContainer(),
         fetchAllKhachHang(),
-        fetchAllDauKeo(),
-        fetchAllRoMooc(),
+        fetchAllDauKeo({ limit: 1000 }), // Increase limit to get all items
+        fetchAllRoMooc({ limit: 1000 }), // Increase limit to get all items
       ]);
-      // Extract the actual customer list from the response object
-      const actualKhachHangList = khachHangList?.data || [];
-      // Log the first item to see its exact structure
-      if (lichVanChuyenList && lichVanChuyenList.length > 0) {
-      }
+
+      // Extract data from API responses
+      const lichVanChuyenList = Array.isArray(lichVanChuyenResponse?.data) ? lichVanChuyenResponse.data : [];
+      const nhanVienList = Array.isArray(nhanVienResponse?.data) ? nhanVienResponse.data : [];
+      const containerList = Array.isArray(containerResponse?.data) ? containerResponse.data : [];
+      const khachHangList = Array.isArray(khachHangResponse?.data) ? khachHangResponse.data : [];
+      const dauKeoList = Array.isArray(dauKeoResponse?.data) ? dauKeoResponse.data : [];
+      const roMoocList = Array.isArray(roMoocResponse?.data) ? roMoocResponse.data : [];
+
       setLichVanChuyenItems(lichVanChuyenList);
+      
+      // Format data for select inputs
       const vehiclesData = formatVehiclesForSelect(dauKeoList, roMoocList);
-      const customersData = formatCustomersForSelect(actualKhachHangList); // Use the extracted list
+      const customersData = formatCustomersForSelect(khachHangList);
       const employeesData = formatEmployeesForSelect(nhanVienList);
       const containersData = formatContainersForSelect(containerList);
       setSelectOptions({
@@ -373,6 +379,7 @@ const QuanLyLichVanChuyen = () => {
   };
   // Filter functions for mobile search
   const filteredLichVanChuyenItems = React.useMemo(() => {
+    if (!Array.isArray(lichVanChuyenItems)) return [];
     const filtered = lichVanChuyenItems.filter(item => {
       try {
         if (!item) return false;
@@ -455,18 +462,7 @@ const QuanLyLichVanChuyen = () => {
         flexDirection: 'column',
       }}
     >
-      <Typography
-        variant={isMobile ? 'h6' : 'h5'}
-        component="h1"
-        gutterBottom
-        sx={{
-          fontWeight: 'bold',
-          fontFamily: 'Inter, sans-serif',
-          mb: isMobile ? 2 : 3,
-        }}
-      >
-        Quản Lý Lịch Vận Chuyển
-      </Typography>
+
       {isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
           <CircularProgress />

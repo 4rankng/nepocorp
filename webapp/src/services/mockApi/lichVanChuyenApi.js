@@ -11,7 +11,8 @@ import {
 } from './apiWrapper.js';
 
 // All data now uses the new schema: ma_chuyen, ngay_di, etc.
-export const fetchAllLichVanChuyen = (page = 1, limit = 50) => {
+export const fetchAllLichVanChuyen = (options = {}) => {
+  const { page = 1, limit = 50 } = typeof options === 'object' ? options : {};
   return mockApiCall(() =>
     withPagination(() => lichVanChuyenDataService.getAllLichVanChuyen(), { page, limit })
   );

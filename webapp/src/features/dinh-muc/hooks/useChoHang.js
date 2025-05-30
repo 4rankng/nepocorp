@@ -176,7 +176,10 @@ export const useChoHang = () => {
 
   // Load data on mount
   useEffect(() => {
-    fetchChoHangData();
+    fetchChoHangData().catch(err => {
+      // Error is already handled in fetchChoHangData, this is just to prevent unhandled promise rejection
+      console.warn('Error caught in useChoHang useEffect:', err.message);
+    });
   }, [fetchChoHangData]);
 
   return {
