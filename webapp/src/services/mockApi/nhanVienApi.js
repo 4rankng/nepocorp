@@ -17,7 +17,7 @@ const simulateApiCall = fn => {
 export const fetchAllNhanVien = (page = 1, pageSize = 10) => {
   return simulateApiCall(async () => {
     // Reset to original data before fetching to ensure consistency for this diagnostic step
-    await nhanVienDataService._resetNhanVien(); 
+    await nhanVienDataService._resetNhanVien();
     const allNhanVien = await nhanVienDataService.getAllNhanVien();
     const total = allNhanVien.length;
     const start = (page - 1) * pageSize;

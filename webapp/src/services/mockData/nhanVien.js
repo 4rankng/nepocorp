@@ -171,7 +171,8 @@ const originalNhanVienData = [
 ];
 
 let nhanVienData = [...originalNhanVienData];
-let nextNhanVienId = originalNhanVienData.length > 0 ? Math.max(...originalNhanVienData.map(nv => nv.id)) + 1 : 1;
+let nextNhanVienId =
+  originalNhanVienData.length > 0 ? Math.max(...originalNhanVienData.map(nv => nv.id)) + 1 : 1;
 const CHUC_VU_TYPES = ['quan-ly', 'ke-toan', 'giao-nhan', 'lai-xe'];
 export const getAllNhanVien = async () => {
   return [...nhanVienData];
@@ -228,18 +229,18 @@ export const deleteNhanVien = async id => {
   nhanVienData.splice(index, 1);
   return true;
 };
-export const _resetNhanVien = (data) => {
-      if (data) {
-        nhanVienData = [...data]; // Use provided data as is
-      } else {
-        nhanVienData = [...originalNhanVienData]; // Reset to a fresh copy of original data, preserving original IDs
-      }
+export const _resetNhanVien = data => {
+  if (data) {
+    nhanVienData = [...data]; // Use provided data as is
+  } else {
+    nhanVienData = [...originalNhanVienData]; // Reset to a fresh copy of original data, preserving original IDs
+  }
 
-      if (nhanVienData.length > 0) {
-        // Recalculate nextNhanVienId based on the current state of nhanVienData
-        nextNhanVienId = Math.max(...nhanVienData.map(nv => nv.id)) + 1;
-      } else {
-        nextNhanVienId = 1;
-      }
-    };
+  if (nhanVienData.length > 0) {
+    // Recalculate nextNhanVienId based on the current state of nhanVienData
+    nextNhanVienId = Math.max(...nhanVienData.map(nv => nv.id)) + 1;
+  } else {
+    nextNhanVienId = 1;
+  }
+};
 // This block is now handled within _resetNhanVien

@@ -6,12 +6,12 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 
 const NhanVienCard = ({ employee, onEdit, onDelete, loading }) => {
   return (
-    <Card className="mb-4 shadow-md" sx={{ borderRadius: 2 }}>
+    <Card className="mb-4 shadow-md" sx={{ borderRadius: 2, width: '100%' }}>
       <CardContent>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>
+          <Box sx={{ flexGrow: 1, minWidth: 0, pr: 1 }}>
             <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <Typography variant="h6" className="font-semibold text-gray-800">
+              <Typography variant="h6" className="font-semibold text-gray-800" sx={{ wordBreak: 'break-word' }}>
                 {employee.tenNhanVien}
               </Typography>
               <Chip
@@ -22,10 +22,10 @@ const NhanVienCard = ({ employee, onEdit, onDelete, loading }) => {
               />
             </Box>
             <Box display="flex" flexWrap="wrap" gap={1} mb={1}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
                 <span className="font-medium">Tài khoản:</span> {employee.tenDangNhap}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
                 <span className="font-medium">•</span> {employee.email}
               </Typography>
             </Box>
