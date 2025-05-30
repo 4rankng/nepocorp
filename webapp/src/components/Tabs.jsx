@@ -11,22 +11,22 @@ import PropTypes from 'prop-types';
  * @param {Function} onSwipeLeft - Optional callback for swipe left
  * @param {Function} onSwipeRight - Optional callback for swipe right
  */
-const CommonTabs = ({ 
-  tabs, 
-  activeTab, 
-  basePath, 
+const CommonTabs = ({
+  tabs,
+  activeTab,
+  basePath,
   onTabChange,
   onSwipeLeft,
   onSwipeRight,
-  className = '' 
+  className = '',
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleTabClick = (tabValue) => {
+  const handleTabClick = tabValue => {
     const newPath = `${basePath}/${tabValue}`;
     navigate(newPath);
-    
+
     if (onTabChange) {
       onTabChange(tabValue);
     }
@@ -58,7 +58,7 @@ const CommonTabs = ({
     <div className={`w-full bg-white border-b border-gray-200 ${className}`}>
       <div className="flex overflow-x-auto scrollbar-hide">
         <div className="flex space-x-1 p-2 min-w-full">
-          {tabs.map((tab) => {
+          {tabs.map(tab => {
             const isActive = activeTab === tab.value;
             return (
               <button
@@ -72,17 +72,19 @@ const CommonTabs = ({
               >
                 {/* Label */}
                 <span className="relative z-10 tracking-wide">{tab.label}</span>
-                
+
                 {/* Active indicator dot */}
-                <div className={`absolute top-2 right-2 w-2 h-2 bg-slate-400 rounded-full transition-all duration-300 ${
-                  isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                }`}></div>
+                <div
+                  className={`absolute top-2 right-2 w-2 h-2 bg-slate-400 rounded-full transition-all duration-300 ${
+                    isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                  }`}
+                ></div>
               </button>
             );
           })}
         </div>
       </div>
-      
+
       {/* Swipe indicators for mobile (optional) */}
       <div className="flex justify-center space-x-1 py-2 md:hidden">
         {tabs.map((tab, index) => (

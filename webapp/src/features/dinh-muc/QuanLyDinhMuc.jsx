@@ -1,10 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import {
-  Box,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 import { SwipeTabs } from '@/components';
 import DinhMucBoSung from './components/DinhMucBoSung';
 import DinhMucChoHang from './components/DinhMucChoHang';
@@ -37,7 +33,7 @@ const QuanLyDinhMuc = () => {
     }
   }, [tabFromUrl, navigate]);
 
-  const handleTabChange = (newValue) => {
+  const handleTabChange = newValue => {
     navigate(`/dinh-muc/${newValue}`);
   };
 

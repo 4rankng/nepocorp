@@ -96,12 +96,7 @@ const DauKeoContent = () => {
 
   return (
     <Box sx={{ position: 'relative', pb: 8 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Danh sách Đầu Kéo
-        </Typography>
-        <AddButton onClick={() => setDialog({ open: true, edit: false, data: null })} />
-      </Box>
+      <AddButton onClick={() => setDialog({ open: true, edit: false, data: null })} />
 
       {dauKeoHook.loading ? (
         <Box display="flex" justifyContent="center" my={4}>
@@ -216,9 +211,6 @@ const RoMoocContent = () => {
   return (
     <Box sx={{ position: 'relative', pb: 8 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Danh sách Rơ-Mooc
-        </Typography>
         <AddButton onClick={() => setDialog({ open: true, edit: false, data: null })} />
       </Box>
 
@@ -338,11 +330,8 @@ const ContainerContent = () => {
   };
 
   return (
-    <Box sx={{ position: 'relative', pb: 8 }}>
+    <Box sx={{ p: 0 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Danh sách Container
-        </Typography>
         <AddButton onClick={() => setDialog({ open: true, edit: false, data: null })} />
       </Box>
 
@@ -429,9 +418,12 @@ const QuanLyPhuongTien = () => {
       navigate(`/phuong-tien/dau-keo`, { replace: true });
     }
   }, [tabFromUrl, navigate]);
-  const handleTabChange = useCallback((newValue) => {
-    navigate(`/phuong-tien/${newValue}`);
-  }, [navigate]);
+  const handleTabChange = useCallback(
+    newValue => {
+      navigate(`/phuong-tien/${newValue}`);
+    },
+    [navigate]
+  );
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -454,9 +446,7 @@ const QuanLyPhuongTien = () => {
         basePath="/phuong-tien"
         onTabChange={handleTabChange}
       >
-        <Box sx={{ p: 2, minHeight: '60vh' }}>
-          {renderTabContent()}
-        </Box>
+        <Box sx={{ p: 2, minHeight: '60vh' }}>{renderTabContent()}</Box>
       </SwipeTabs>
     </Box>
   );

@@ -292,14 +292,12 @@ const QuanLyBaoDuong = memo(() => {
     />
   );
 
-  const handleTabChange = (newTab) => {
+  const handleTabChange = newTab => {
     navigate(`/bao-duong/${newTab}`, { replace: true });
   };
 
   // Define tabs configuration
-  const tabs = [
-    { value: 'lop-xe', label: 'Lốp Xe' },
-  ];
+  const tabs = [{ value: 'lop-xe', label: 'Lốp Xe' }];
 
   // Render tab content based on active tab
   const renderTabContent = () => {

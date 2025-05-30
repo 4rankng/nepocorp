@@ -51,6 +51,12 @@ const DesktopView = ({
                 <SearchIcon />
               </InputAdornment>
             ),
+            sx: {
+              borderRadius: '6px',
+              height: 36,
+              minHeight: 36,
+              fontSize: '0.95rem',
+            },
           }}
         />
       </Box>

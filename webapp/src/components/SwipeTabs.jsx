@@ -11,14 +11,7 @@ import PropTypes from 'prop-types';
  * @param {Function} onTabChange - Optional callback for tab change
  * @param {React.ReactNode} children - Tab panel content
  */
-const SwipeTabs = ({ 
-  tabs, 
-  activeTab, 
-  basePath, 
-  onTabChange,
-  children,
-  className = '' 
-}) => {
+const SwipeTabs = ({ tabs, activeTab, basePath, onTabChange, children, className = '' }) => {
   const currentTabIndex = tabs.findIndex(tab => tab.value === activeTab);
 
   const handleSwipeLeft = useCallback(() => {
@@ -49,9 +42,9 @@ const SwipeTabs = ({
         onSwipeLeft={handleSwipeLeft}
         onSwipeRight={handleSwipeRight}
       />
-      
-      <SwipeDetector 
-        onSwipeLeft={handleSwipeLeft} 
+
+      <SwipeDetector
+        onSwipeLeft={handleSwipeLeft}
         onSwipeRight={handleSwipeRight}
         className="flex-1 overflow-y-auto"
       >
