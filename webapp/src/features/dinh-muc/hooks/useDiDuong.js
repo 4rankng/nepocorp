@@ -18,25 +18,41 @@ export const useDiDuong = () => {
     setIsLoading(true);
     setError('');
     try {
-      const [dinhMucRes, tuyenDuongRes, containerRes] = await Promise.all([
-        dinhMucDiDuongApi.getAllDinhMucDiDuong(),
-        tuyenDuongApi.getAllTuyenDuong(),
-        containerApi.getAll(),
-      ]);
+      // Fetch data sequentially to isolate errors
+      console.log('Fetching dinh muc di duong data...');
+      const dinhMucRes = await dinhMucDiDuongApi.getAllDinhMucDiDuong();
 
-      // Handle API response errors with more specific messages
-      if (!dinhMucRes || !tuyenDuongRes || !containerRes) {
-        throw new Error('Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.');
+      // Validate dinh muc response
+      if (!dinhMucRes) {
+        throw new Error('Không nhận được phản hồi từ máy chủ khi tải định mức đi đường. Vui lòng kiểm tra kết nối mạng.');
       }
 
       if (!dinhMucRes.success) {
         console.error('DinhMucDiDuong API Error:', dinhMucRes.error);
         throw new Error(dinhMucRes.error?.message || 'Lỗi khi tải dữ liệu định mức đi đường. Vui lòng thử lại sau.');
       }
+
+      console.log('Fetching tuyen duong data...');
+      const tuyenDuongRes = await tuyenDuongApi.getAllTuyenDuong();
+
+      // Validate tuyen duong response
+      if (!tuyenDuongRes) {
+        throw new Error('Không nhận được phản hồi từ máy chủ khi tải tuyến đường. Vui lòng kiểm tra kết nối mạng.');
+      }
+
       if (!tuyenDuongRes.success) {
         console.error('TuyenDuong API Error:', tuyenDuongRes.error);
         throw new Error(tuyenDuongRes.error?.message || 'Lỗi khi tải danh sách tuyến đường. Vui lòng thử lại sau.');
       }
+
+      console.log('Fetching container data...');
+      const containerRes = await containerApi.getAll();
+
+      // Validate container response
+      if (!containerRes) {
+        throw new Error('Không nhận được phản hồi từ máy chủ khi tải container. Vui lòng kiểm tra kết nối mạng.');
+      }
+
       if (!containerRes.success) {
         console.error('Container API Error:', containerRes.error);
         throw new Error(containerRes.error?.message || 'Lỗi khi tải danh sách loại container. Vui lòng thử lại sau.');
@@ -69,11 +85,11 @@ export const useDiDuong = () => {
 
       return { roadNorms: allDinhMuc, routes: allTuyenDuong, containerTypes: uniqueContainerTypes };
     } catch (err) {
-      console.error('Failed to fetch road travel data:', err);
-      
+      console.error('useDiDuong.js error: ', err);
+
       // Handle different error object structures
       let errorMessage = 'Không thể tải dữ liệu định mức đi đường. Vui lòng thử lại.';
-      
+
       if (err.error && typeof err.error === 'object') {
         // Handle API error response object
         errorMessage = err.error.message || errorMessage;
@@ -84,15 +100,15 @@ export const useDiDuong = () => {
         // Handle string errors
         errorMessage = err;
       }
-      
-      console.error('Error details:', { 
-        error: err, 
+
+      console.error('Error details:', {
+        error: err,
         errorMessage,
         errorType: typeof err,
         hasErrorProperty: !!err.error,
         errorKeys: err ? Object.keys(err) : []
       });
-      
+
       setError(errorMessage);
       // Return empty data to prevent UI from breaking
       setRoadNorms([]);
@@ -111,7 +127,7 @@ export const useDiDuong = () => {
     setError('');
     try {
       const response = await dinhMucDiDuongApi.createDinhMucDiDuong(formData);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to create road norm');
       }
@@ -134,7 +150,7 @@ export const useDiDuong = () => {
     setError('');
     try {
       const response = await dinhMucDiDuongApi.updateDinhMucDiDuong(id, formData);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to update road norm');
       }
@@ -157,7 +173,7 @@ export const useDiDuong = () => {
     setError('');
     try {
       const response = await dinhMucDiDuongApi.deleteDinhMucDiDuong(id);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to delete road norm');
       }

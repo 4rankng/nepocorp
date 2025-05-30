@@ -737,9 +737,6 @@ const MobileShipmentFormStepper = ({
           <Box
             sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#374151' }}>
-              {editingPlan ? 'Chỉnh sửa lịch vận chuyển' : 'Thêm lịch vận chuyển mới'}
-            </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box
                 sx={{

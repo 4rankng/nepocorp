@@ -2,12 +2,10 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
   MenuItem,
-  Grid,
   Box,
   Typography,
   Button,
@@ -22,7 +20,6 @@ import {
   Divider,
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   Add as AddIcon,
   Remove as RemoveIcon,
   CalendarToday as CalendarIcon,
@@ -102,27 +99,6 @@ const DesktopShipmentFormDialog = ({
         },
       }}
     >
-      <DialogTitle
-        sx={{
-          pb: 2, // Nepocorp Design Guide: 16px vertical padding
-          pt: 2,
-          px: 3, // Nepocorp Design Guide: 24px horizontal padding
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.125rem' }}>
-          {' '}
-          {/* Nepocorp Design Guide */}
-          {editing ? 'Chỉnh sửa Lịch Vận Chuyển' : 'Tạo Lịch Vận Chuyển Mới'}
-        </Typography>
-        <IconButton onClick={onClose} size="medium" sx={{ color: 'text.secondary' }}>
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ p: '24px' }}>
           <Typography
@@ -143,12 +119,12 @@ const DesktopShipmentFormDialog = ({
               {error}
             </Alert>
           )}
-          <Grid container spacing={2.5}>
-            <Grid container spacing={3}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {' '}
               {/* Main container for all sections */}
               {/* Section 1: Thông tin cơ bản */}
-              <Grid item xs={12}>
+              <Box>
                 <Paper
                   elevation={0}
                   sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
@@ -159,8 +135,8 @@ const DesktopShipmentFormDialog = ({
                       Thông tin cơ bản
                     </Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                    <Box>
                       <TextField
                         fullWidth
                         type="date"
@@ -174,8 +150,8 @@ const DesktopShipmentFormDialog = ({
                         required
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
                       />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    </Box>
+                    <Box>
                       <TextField
                         fullWidth
                         name="ma_chuyen"
@@ -187,8 +163,8 @@ const DesktopShipmentFormDialog = ({
                         required
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
                       />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    </Box>
+                    <Box>
                       <FormControl fullWidth size="small" required>
                         <InputLabel>Khách hàng</InputLabel>
                         <Select
@@ -208,8 +184,8 @@ const DesktopShipmentFormDialog = ({
                           ))}
                         </Select>
                       </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    </Box>
+                    <Box>
                       <FormControl fullWidth size="small" required>
                         <InputLabel>Trạng thái</InputLabel>
                         <Select
@@ -226,12 +202,12 @@ const DesktopShipmentFormDialog = ({
                           ))}
                         </Select>
                       </FormControl>
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  </Box>
                 </Paper>
-              </Grid>
+              </Box>
               {/* Section 2: Thông tin Tuyến đường */}
-              <Grid item xs={12}>
+              <Box>
                 <Paper
                   elevation={0}
                   sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
@@ -242,8 +218,8 @@ const DesktopShipmentFormDialog = ({
                       Thông tin Tuyến đường
                     </Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <Box>
                       <TextField
                         fullWidth
                         name="diem_xuat_phat"
@@ -255,8 +231,8 @@ const DesktopShipmentFormDialog = ({
                         required
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
                       />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </Box>
+                    <Box>
                       <TextField
                         fullWidth
                         name="diem_tra_hang"
@@ -268,12 +244,12 @@ const DesktopShipmentFormDialog = ({
                         required
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
                       />
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  </Box>
                 </Paper>
-              </Grid>
+              </Box>
               {/* Section 3: Phương tiện & Nhân sự */}
-              <Grid item xs={12}>
+              <Box>
                 <Paper
                   elevation={0}
                   sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
@@ -284,8 +260,8 @@ const DesktopShipmentFormDialog = ({
                       Phương tiện & Nhân sự
                     </Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                    <Box>
                       <FormControl fullWidth size="small" required>
                         <InputLabel>Biển số xe</InputLabel>
                         <Select
@@ -305,8 +281,8 @@ const DesktopShipmentFormDialog = ({
                           ))}
                         </Select>
                       </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    </Box>
+                    <Box>
                       <FormControl fullWidth size="small" required>
                         <InputLabel>Container</InputLabel>
                         <Select
@@ -326,8 +302,8 @@ const DesktopShipmentFormDialog = ({
                           ))}
                         </Select>
                       </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    </Box>
+                    <Box>
                       <FormControl fullWidth size="small" required>
                         <InputLabel>Nhân viên lái xe</InputLabel>
                         <Select
@@ -347,8 +323,8 @@ const DesktopShipmentFormDialog = ({
                           ))}
                         </Select>
                       </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    </Box>
+                    <Box>
                       <FormControl fullWidth size="small" required>
                         <InputLabel>Nhân viên giao nhận</InputLabel>
                         <Select
@@ -368,12 +344,12 @@ const DesktopShipmentFormDialog = ({
                           ))}
                         </Select>
                       </FormControl>
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  </Box>
                 </Paper>
-              </Grid>
+              </Box>
               {/* Section 4: Ghi chú */}
-              <Grid item xs={12}>
+              <Box>
                 <Paper
                   elevation={0}
                   sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
@@ -384,8 +360,8 @@ const DesktopShipmentFormDialog = ({
                       Ghi chú
                     </Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                  <Box>
+                    <Box>
                       <TextField
                         fullWidth
                         name="ghi_chu"
@@ -398,12 +374,12 @@ const DesktopShipmentFormDialog = ({
                         rows={3}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
                       />
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  </Box>
                 </Paper>
-              </Grid>
+              </Box>
               {/* Section 5: Chi phí & Thanh toán */}
-              <Grid item xs={12}>
+              <Box>
                 <Paper
                   elevation={0}
                   sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
@@ -414,8 +390,8 @@ const DesktopShipmentFormDialog = ({
                       Chi phí & Thanh toán
                     </Typography>
                   </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <Box>
                       <TextField
                         fullWidth
                         type="number"
@@ -450,8 +426,8 @@ const DesktopShipmentFormDialog = ({
                           },
                         }}
                       />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </Box>
+                    <Box>
                       <TextField
                         fullWidth
                         type="number"
@@ -501,13 +477,13 @@ const DesktopShipmentFormDialog = ({
                           },
                         }}
                       />
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  </Box>
                 </Paper>
-              </Grid>
+              </Box>
               {/* Section 6: Trạng thái - chỉ hiển thị khi edit */}
               {editing && (
-                <Grid item xs={12}>
+                <Box>
                   <Paper
                     elevation={0}
                     sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
@@ -518,8 +494,8 @@ const DesktopShipmentFormDialog = ({
                         Trạng thái
                       </Typography>
                     </Box>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                      <Box>
                         <FormControl fullWidth size="small" required>
                           <InputLabel>Trạng thái kế hoạch</InputLabel>
                           <Select
@@ -545,14 +521,14 @@ const DesktopShipmentFormDialog = ({
                             <MenuItem value="Hủy">Hủy</MenuItem>
                           </Select>
                         </FormControl>
-                      </Grid>
-                    </Grid>
+                      </Box>
+                    </Box>
                   </Paper>
-                </Grid>
+                </Box>
               )}
-            </Grid>{' '}
-            {/* Closes Grid container spacing={3} from line 146 */}
-          </Grid>
+            </Box>{' '}
+            {/* Closes Box container spacing={3} from line 146 */}
+          </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
           <Button

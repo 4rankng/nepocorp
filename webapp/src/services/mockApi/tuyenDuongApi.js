@@ -10,10 +10,7 @@ import {
 } from './apiWrapper.js';
 
 export const getAllTuyenDuong = async (page = 1, limit = 10) => {
-  return mockApiCall(
-    withPagination(() => tuyenDuongDataService.getAllTuyenDuong(), page, limit),
-    'TuyenDuong'
-  );
+  return mockApiCall(() => withPagination(() => tuyenDuongDataService.getAllTuyenDuong(), {page, limit }));
 };
 
 export const getTuyenDuongById = async id => {

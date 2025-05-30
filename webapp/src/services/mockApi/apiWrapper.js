@@ -95,8 +95,27 @@ export function createApiErrorResponse(code, message, details) {
 export async function withPagination(dataFetcher, options = {}) {
   try {
     const { page = 1, limit = 10, message } = options;
+    
+    let allData;
+    try {
+      allData = await dataFetcher();
+    } catch (fetchError) {
+      console.warn('Data fetcher error in pagination:', fetchError);
+      return createApiErrorResponse(
+        ErrorCodes.INTERNAL_ERROR, 
+        'Failed to fetch data for pagination', 
+        fetchError.message
+      );
+    }
+    
+    if (!allData || !Array.isArray(allData)) {
+      console.warn('Invalid data returned for pagination:', allData);
+      return createApiErrorResponse(
+        ErrorCodes.INTERNAL_ERROR, 
+        'Invalid data format for pagination'
+      );
+    }
 
-    const allData = await dataFetcher();
     const totalItems = allData.length;
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
@@ -109,7 +128,12 @@ export async function withPagination(dataFetcher, options = {}) {
       message,
     });
   } catch (error) {
-    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to fetch data', error.message);
+    console.error('Pagination wrapper error:', error);
+    return createApiErrorResponse(
+      ErrorCodes.INTERNAL_ERROR, 
+      'Failed to process pagination', 
+      error.message
+    );
   }
 }
 
@@ -127,19 +151,30 @@ export async function withSingleItem(
   successMessage
 ) {
   try {
-    const data = await dataFetcher();
+    let data;
+    try {
+      data = await dataFetcher();
+    } catch (fetchError) {
+      console.warn('Data fetcher error in single item:', fetchError);
+      return createApiErrorResponse(
+        ErrorCodes.INTERNAL_ERROR, 
+        'Failed to fetch item data', 
+        fetchError.message
+      );
+    }
 
     if (!data) {
-      throw createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
+      return createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
     }
 
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
+    console.error('Single item wrapper error:', error);
     if (error.success === false) {
       // Already an API error response
-      throw error;
+      return error;
     }
-    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to fetch item', error.message);
+    return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to process item', error.message);
   }
 }
 
@@ -152,10 +187,20 @@ export async function withSingleItem(
  */
 export async function withCreate(creator, successMessage = 'Item created successfully') {
   try {
-    const data = await creator();
+    let data;
+    try {
+      data = await creator();
+    } catch (createError) {
+      console.warn('Creator function error:', createError);
+      return createApiErrorResponse(
+        ErrorCodes.INTERNAL_ERROR,
+        'Failed to execute create operation',
+        createError.message
+      );
+    }
 
     if (!data) {
-      throw createApiErrorResponse(
+      return createApiErrorResponse(
         ErrorCodes.VALIDATION_ERROR,
         'Failed to create item - invalid data provided'
       );
@@ -163,10 +208,11 @@ export async function withCreate(creator, successMessage = 'Item created success
 
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
+    console.error('Create wrapper error:', error);
     if (error.success === false) {
-      throw error;
+      return error;
     }
-    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to create item', error.message);
+    return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to create item', error.message);
   }
 }
 
@@ -184,27 +230,39 @@ export async function withUpdate(
   successMessage = 'Item updated successfully'
 ) {
   try {
-    const data = await updater();
+    let data;
+    try {
+      data = await updater();
+    } catch (updateError) {
+      console.warn('Updater function error:', updateError);
+      return createApiErrorResponse(
+        ErrorCodes.INTERNAL_ERROR,
+        'Failed to execute update operation',
+        updateError.message
+      );
+    }
 
     if (!data) {
-      throw createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
+      return createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
     }
 
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
+    console.error('Update wrapper error:', error);
     if (error.success === false) {
-      throw error;
+      return error;
     }
-    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to update item', error.message);
+    return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to update item', error.message);
   }
 }
 
 /**
  * Wraps a function to handle delete operations
- * @param {Function} deleter - Function that performs deletion and returns boolean
+ * @template T
+ * @param {Function} deleter - Function that deletes and returns deleted item or success indicator
  * @param {string} [notFoundMessage='Item not found'] - Message when item is not found
  * @param {string} [successMessage='Item deleted successfully'] - Success message
- * @returns {Promise<ApiSingleResponse<{deleted: boolean}>>}
+ * @returns {Promise<ApiSingleResponse<T>>}
  */
 export async function withDelete(
   deleter,
@@ -212,18 +270,33 @@ export async function withDelete(
   successMessage = 'Item deleted successfully'
 ) {
   try {
-    const success = await deleter();
-
-    if (!success) {
-      throw createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
+    let result;
+    try {
+      result = await deleter();
+    } catch (deleteError) {
+      console.warn('Deleter function error:', deleteError);
+      return createApiErrorResponse(
+        ErrorCodes.INTERNAL_ERROR,
+        'Failed to execute delete operation',
+        deleteError.message
+      );
     }
 
-    return createApiSingleResponse({ deleted: true }, successMessage);
+    // Some delete operations might return the deleted item, others true/false
+    // In case false is returned, treat as not found
+    if (result === false) {
+      return createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
+    }
+
+    // For delete operations that return the deleted item
+    const data = result === true ? { deleted: true } : result;
+    return createApiSingleResponse(data, successMessage);
   } catch (error) {
+    console.error('Delete wrapper error:', error);
     if (error.success === false) {
-      throw error;
+      return error;
     }
-    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to delete item', error.message);
+    return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to delete item', error.message);
   }
 }
 
@@ -242,27 +315,41 @@ export function simulateDelay(delay = 100) {
  * @param {Function} apiCall - The API call function
  * @param {Object} [options] - Options
  * @param {number} [options.delay=0] - Simulated delay in ms
- * @param {boolean} [options.throwOnError=true] - Whether to throw errors or return them
  * @returns {Promise<T>}
  */
 export async function mockApiCall(apiCall, options = {}) {
-  const { delay = 0, throwOnError = true } = options;
+  const { delay = 0 } = options;
 
   try {
     if (delay > 0) {
       await simulateDelay(delay);
     }
 
-    return await apiCall();
+    // Safely execute the API call and capture any errors
+    let result;
+    try {
+      result = await apiCall();
+    } catch (callError) {
+      console.warn('API call execution error:', callError);
+      return callError.success === false
+        ? callError
+        : createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API call execution failed', callError.message);
+    }
+    
+    // Check if result is valid
+    if (!result) {
+      console.warn('API call returned empty result');
+      return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API returned empty result');
+    }
+    
+    return result;
   } catch (error) {
+    // This catches any other errors in the wrapper itself
+    console.error('Mock API wrapper error:', error);
     const errorResponse =
       error.success === false
         ? error
         : createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API call failed', error.message);
-
-    if (throwOnError) {
-      throw errorResponse;
-    }
 
     return errorResponse;
   }
