@@ -1,4 +1,4 @@
-import lopXeData from '@services/mockData/lopXe';
+import baoDuongData from '@services/mockData/baoDuong';
 import {
   mockApiCall,
   withPagination,
@@ -12,15 +12,15 @@ let data;
 if (
   typeof window !== 'undefined' &&
   window.localStorage &&
-  window.localStorage.getItem('lopXeData')
+  window.localStorage.getItem('baoDuongData')
 ) {
-  data = JSON.parse(window.localStorage.getItem('lopXeData'));
+  data = JSON.parse(window.localStorage.getItem('baoDuongData'));
 } else {
-  data = lopXeData.slice();
+  data = baoDuongData.slice();
 }
 const persist = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
-    window.localStorage.setItem('lopXeData', JSON.stringify(data));
+    window.localStorage.setItem('baoDuongData', JSON.stringify(data));
   }
 };
 const toUI = item => ({
@@ -45,7 +45,7 @@ const fromUI = item => ({
   ghi_chu: item.note,
   currency: item.currency || 'VND',
 });
-export const lopXeApi = {
+export const baoDuongApi = {
   getAll: async (page = 1, limit = 10) => {
     return mockApiCall(() => withPagination(() => data.map(toUI), { page, limit }));
   },
@@ -75,7 +75,7 @@ export const lopXeApi = {
         ErrorCodes.NOT_FOUND,
         'Thông tin lốp xe không tồn tại'
       ),
-      'LopXe'
+      'BaoDuong'
     );
   },
   delete: async id => {
@@ -90,20 +90,20 @@ export const lopXeApi = {
         ErrorCodes.NOT_FOUND,
         'Thông tin lốp xe không tồn tại'
       ),
-      'LopXe'
+      'BaoDuong'
     );
   },
   reset: () => {
     return mockApiCall(() => {
-      data = lopXeData.slice();
+      data = baoDuongData.slice();
       persist();
       return true;
-    }, 'LopXe');
+    }, 'BaoDuong');
   },
   getCount: async () => {
     return mockApiCall(
       withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe'),
-      'LopXe'
+      'BaoDuong'
     );
   },
 };

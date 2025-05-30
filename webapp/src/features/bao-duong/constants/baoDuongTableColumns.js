@@ -1,5 +1,5 @@
-import { formatCurrency, addMonths } from '../utils/lopXeUtils';
-export const lopXeTableColumns = [
+import { formatCurrency, addMonths } from '../utils/baoDuongUtils';
+export const baoDuongTableColumns = [
   {
     key: 'licensePlate',
     label: 'Biển số xe',

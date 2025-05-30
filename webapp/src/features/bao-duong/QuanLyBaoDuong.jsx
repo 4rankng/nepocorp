@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
-import { SwipeTabs } from '@/components';
+
 import {
   Box,
   Button,
@@ -46,12 +46,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
-import { lopXeApi } from '@services/mockApi';
+import { baoDuongApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
-import LopXeCard from './components/LopXeCard';
-import LopXeDialog from './components/LopXeDialog';
-import LopXeSection from './components/LopXeSection';
-import { lopXeTableColumns } from './constants/lopXeTableColumns';
+import BaoDuongCard from './components/BaoDuongCard';
+import BaoDuongDialog from './components/BaoDuongDialog';
+
+import { baoDuongTableColumns } from './constants/baoDuongTableColumns';
 import useLopXeForm from './hooks/useLopXeForm';
 import useLopXeRecords from './hooks/useLopXeRecords';
 const initialFormData = {
@@ -67,10 +67,7 @@ const initialFormData = {
 const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [expandedSections, setExpandedSections] = useState({ tire: true });
-  const [loadedSections, setLoadedSections] = useState({ tire: true });
   const [isEdit, setIsEdit] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: null });
@@ -92,14 +89,14 @@ const QuanLyBaoDuong = memo(() => {
   }, [location.pathname, navigate]);
   // Data fetching
   const {
-    lopXeRecords: maintenanceRecords,
-    setLopXeRecords: setMaintenanceRecords,
+    baoDuongRecords: maintenanceRecords,
+    setBaoDuongRecords: setMaintenanceRecords,
     licensePlates,
     setLicensePlates,
     isLoading,
     error,
     fetchData,
-  } = useLopXeRecords(lopXeApi);
+  } = useLopXeRecords(baoDuongApi);
   // Form state/handlers
   const {
     formData,
@@ -114,7 +111,7 @@ const QuanLyBaoDuong = memo(() => {
   } = useLopXeForm({
     initialFormData,
     isEdit,
-    api: lopXeApi,
+    api: baoDuongApi,
     fetchData,
     onSuccess: msg => {
       setSnackbar({ open: true, message: msg, severity: 'success' });
@@ -131,13 +128,13 @@ const QuanLyBaoDuong = memo(() => {
   });
   // Fetch count and data on mount
   useEffect(() => {
-    lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
+    baoDuongApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
     // Also fetch initial data
     fetchData();
   }, []); // Empty dependency array for mount only
   // Helper to refetch count
   const refetchCount = useCallback(() => {
-    lopXeApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
+    baoDuongApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
   }, []);
   const handleOpenAddDialog = () => {
     setIsEdit(false);
@@ -186,7 +183,7 @@ const QuanLyBaoDuong = memo(() => {
     if (!deleteDialog.recordId) return;
     setFormLoading(true);
     try {
-      await lopXeApi.delete(deleteDialog.recordId);
+      await baoDuongApi.delete(deleteDialog.recordId);
       setSnackbar({
         open: true,
         message: 'Xóa thông tin bảo dưỡng thành công',
@@ -237,7 +234,7 @@ const QuanLyBaoDuong = memo(() => {
   const renderMobileView = () => (
     <Box>
       {filteredRecords.map(record => (
-        <LopXeCard
+        <BaoDuongCard
           key={record.id}
           record={record}
           onEdit={handleOpenEditDialog}
@@ -255,7 +252,7 @@ const QuanLyBaoDuong = memo(() => {
   // Render desktop table view
   const renderDesktopView = () => (
     <StandardTable
-      columns={lopXeTableColumns}
+      columns={baoDuongTableColumns}
       data={filteredRecords}
       loading={isLoading}
       error={error}
@@ -348,27 +345,19 @@ const QuanLyBaoDuong = memo(() => {
   };
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
-      {/* SwipeTabs System */}
-      <SwipeTabs
-        tabs={tabs}
-        activeTab={currentTab}
-        basePath="/bao-duong"
-        onTabChange={handleTabChange}
-        ariaLabel="Tabs for maintenance categories"
+      {/* Main Bao Duong Content - No Tabs */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflowY: 'auto',
+          p: isMobile ? 1 : 2,
+          pb: { xs: 10, sm: 11 },
+        }}
       >
-        <Box
-          sx={{
-            flexGrow: 1,
-            overflowY: 'auto',
-            p: isMobile ? 1 : 2,
-            pb: { xs: 10, sm: 11 }, // Add more padding at the bottom for the FAB
-          }}
-        >
-          {renderTabContent()}
-        </Box>
-      </SwipeTabs>
+        {isMobile ? renderMobileView() : renderDesktopView()}
+      </Box>
       {/* Add/Edit Dialog */}
-      <LopXeDialog
+      <BaoDuongDialog
         open={openDialog}
         isEdit={isEdit}
         isLoading={isFormLoading}

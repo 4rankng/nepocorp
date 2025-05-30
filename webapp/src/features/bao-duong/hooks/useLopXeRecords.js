@@ -1,6 +1,6 @@
 import { useState } from 'react';
 export default function useLopXeRecords(api) {
-  const [lopXeRecords, setLopXeRecords] = useState([]);
+  const [baoDuongRecords, setLopXeRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +23,7 @@ export default function useLopXeRecords(api) {
     }
   };
   return {
-    lopXeRecords,
+    baoDuongRecords,
     setLopXeRecords,
     licensePlates,
     setLicensePlates,

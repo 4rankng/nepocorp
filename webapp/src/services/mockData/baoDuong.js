@@ -1,8 +1,10 @@
-const lopXeData = [
+const baoDuongData = [
   {
     id: 1,
     bien_so: '51C-001.01',
+    item_name: 'Lop xe',
     ngay_thay: '2024-05-01',
+    ngay_het_han: '2025-05-01',
     so_thang_bao_hanh: 12,
     so_luong: 2,
     don_gia: 3500000,
@@ -176,4 +178,4 @@ const lopXeData = [
     ghi_chu: 'Thay lốp lần 2',
   },
 ];
-export default lopXeData;
+export default baoDuongData;
