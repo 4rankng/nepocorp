@@ -6,7 +6,7 @@ import {
   withCreate,
   withUpdate,
   withDelete,
-  ERROR_CODES,
+  ErrorCodes,
 } from './apiWrapper.js';
 let data;
 if (
@@ -78,7 +78,7 @@ export const lopXeApi = {
           }
           return null;
         },
-        ERROR_CODES.NOT_FOUND,
+        ErrorCodes.NOT_FOUND,
         'Thông tin lốp xe không tồn tại'
       ),
       'LopXe'
@@ -94,7 +94,7 @@ export const lopXeApi = {
           persist();
           return initialLength !== data.length;
         },
-        ERROR_CODES.NOT_FOUND,
+        ErrorCodes.NOT_FOUND,
         'Thông tin lốp xe không tồn tại'
       ),
       'LopXe'
@@ -111,7 +111,7 @@ export const lopXeApi = {
 
   getCount: async () => {
     return mockApiCall(
-      withSingleItem(() => data.length, ERROR_CODES.NOT_FOUND, 'Không thể lấy số lượng lốp xe'),
+      withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe'),
       'LopXe'
     );
   },

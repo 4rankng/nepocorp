@@ -6,7 +6,7 @@ import {
   withCreate,
   withUpdate,
   withDelete,
-  ERROR_CODES,
+  ErrorCodes,
 } from './apiWrapper.js';
 
 export const getAllDinhMucDau = async (page = 1, limit = 10) => {
@@ -20,7 +20,7 @@ export const getDinhMucDauById = async id => {
   return mockApiCall(
     withSingleItem(
       () => dinhMucDauDataService.getDinhMucDauById(id),
-      ERROR_CODES.NOT_FOUND,
+      ErrorCodes.NOT_FOUND,
       'Định mức dầu không tồn tại'
     ),
     'DinhMucDau'
@@ -38,7 +38,7 @@ export const updateDinhMucDau = async (id, updates) => {
   return mockApiCall(
     withUpdate(
       () => dinhMucDauDataService.updateDinhMucDau(id, updates),
-      ERROR_CODES.NOT_FOUND,
+      ErrorCodes.NOT_FOUND,
       'Định mức dầu không tồn tại'
     ),
     'DinhMucDau'
@@ -49,7 +49,7 @@ export const deleteDinhMucDau = async id => {
   return mockApiCall(
     withDelete(
       () => dinhMucDauDataService.deleteDinhMucDau(id),
-      ERROR_CODES.NOT_FOUND,
+      ErrorCodes.NOT_FOUND,
       'Định mức dầu không tồn tại'
     ),
     'DinhMucDau'
@@ -65,7 +65,7 @@ export const getDinhMucDauCount = async () => {
   return mockApiCall(
     withSingleItem(
       () => dinhMucDauDataService.getDinhMucDauCount(),
-      ERROR_CODES.NOT_FOUND,
+      ErrorCodes.NOT_FOUND,
       'Không thể lấy số lượng định mức dầu'
     ),
     'DinhMucDau'

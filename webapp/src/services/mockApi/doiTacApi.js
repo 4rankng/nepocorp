@@ -7,7 +7,7 @@ import {
   withCreate,
   withUpdate,
   withDelete,
-  ERROR_CODES,
+  ErrorCodes,
 } from './apiWrapper.js';
 export const fetchAllDoiTac = (page = 1, limit = 10) => {
   return mockApiCall(
@@ -20,7 +20,7 @@ export const fetchDoiTacById = id => {
   return mockApiCall(
     withSingleItem(
       () => doiTacDataService.getDoiTacById(id),
-      ERROR_CODES.NOT_FOUND,
+      ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'
     ),
     'DoiTac'
@@ -38,7 +38,7 @@ export const editDoiTac = (id, data) => {
   return mockApiCall(
     withUpdate(
       () => doiTacDataService.updateDoiTac(id, data),
-      ERROR_CODES.NOT_FOUND,
+      ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'
     ),
     'DoiTac'
@@ -49,7 +49,7 @@ export const removeDoiTac = id => {
   return mockApiCall(
     withDelete(
       () => doiTacDataService.deleteDoiTac(id),
-      ERROR_CODES.NOT_FOUND,
+      ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'
     ),
     'DoiTac'
