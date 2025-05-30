@@ -1,19 +1,19 @@
 import React from 'react';
-import { Box, Paper, Typography, Fab, Zoom } from '@mui/material';
+import { Box, Paper, Fab, Zoom } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import PartnerListResponsive from '@features/doi-tac/components/PartnerListResponsive';
+import CustomerListResponsive from '@features/khach-hang/components/CustomerListResponsive';
 
-const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
+const DesktopView = ({ customers, loading, error, onEdit, onDelete, onAdd }) => {
   return (
     <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
-        <PartnerListResponsive
-          partners={partners}
+        <CustomerListResponsive
+          customers={customers}
           loading={loading}
           onEdit={onEdit}
           onDelete={onDelete}
           error={error}
-          emptyMessage="Chưa có đối tác nào"
+          emptyMessage="Chưa có khách hàng nào"
         />
       </Paper>
 
@@ -21,7 +21,7 @@ const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
       <Zoom in={!loading}>
         <Fab
           color="primary"
-          aria-label="Thêm đối tác"
+          aria-label="Thêm khách hàng"
           onClick={onAdd}
           sx={{
             position: 'fixed',

@@ -14,28 +14,28 @@ import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 
 const MobileView = ({
-  partners = [],
+  customers = [],
   loading = false,
   onEdit,
   onDelete,
   onAdd,
-  emptyMessage = 'Không có dữ liệu đối tác',
+  emptyMessage = 'Không có dữ liệu khách hàng',
   error = '',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter partners based on search term
-  const filteredPartners = useMemo(() => {
-    if (!searchTerm.trim()) return partners;
+  // Filter customers based on search term
+  const filteredCustomers = useMemo(() => {
+    if (!searchTerm.trim()) return customers;
     const term = searchTerm.toLowerCase();
-    return partners.filter(
-      partner =>
-        (partner.ten && partner.ten.toLowerCase().includes(term)) ||
-        (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
-        (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
-        (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
+    return customers.filter(
+      customer =>
+        (customer.ten && customer.ten.toLowerCase().includes(term)) ||
+        (customer.dia_chi && customer.dia_chi.toLowerCase().includes(term)) ||
+        (customer.ma_so_thue && customer.ma_so_thue.toLowerCase().includes(term)) ||
+        (customer.ma_dinh_danh && customer.ma_dinh_danh.toLowerCase().includes(term))
     );
-  }, [partners, searchTerm]);
+  }, [customers, searchTerm]);
 
   // Handle search input change
   const handleSearchChange = event => {
@@ -86,8 +86,8 @@ const MobileView = ({
       {/* Content */}
       {!loading && !error && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {filteredPartners.map(partner => (
-            <Card key={partner.id} elevation={2} sx={{ borderRadius: 2 }}>
+          {filteredCustomers.map(customer => (
+            <Card key={customer.id} elevation={2} sx={{ borderRadius: 2 }}>
               <CardContent>
                 <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                   <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -106,7 +106,7 @@ const MobileView = ({
                           backgroundColor: 'background.paper',
                         }}
                       >
-                        {partner.ma_dinh_danh || '--'}
+                        {customer.ma_dinh_danh || '--'}
                       </Typography>
                     </Box>
                     <Typography
@@ -119,23 +119,23 @@ const MobileView = ({
                         wordBreak: 'break-word',
                       }}
                     >
-                      {partner.ten}
+                      {customer.ten}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                      <strong>Địa chỉ:</strong> {partner.dia_chi || 'Chưa cập nhật'}
+                      <strong>Địa chỉ:</strong> {customer.dia_chi || 'Chưa cập nhật'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      <strong>Mã số thuế:</strong> {partner.ma_so_thue || 'Chưa cập nhật'}
+                      <strong>Mã số thuế:</strong> {customer.ma_so_thue || 'Chưa cập nhật'}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
                     <EditButton
-                      onClick={() => onEdit(partner)}
+                      onClick={() => onEdit(customer)}
                       size="small"
                       sx={{ minWidth: 32, height: 32 }}
                     />
                     <DeleteButton
-                      onClick={() => onDelete(partner)}
+                      onClick={() => onDelete(customer)}
                       size="small"
                       sx={{ minWidth: 32, height: 32 }}
                     />
@@ -145,10 +145,10 @@ const MobileView = ({
             </Card>
           ))}
 
-          {filteredPartners.length === 0 && (
+          {filteredCustomers.length === 0 && (
             <Box textAlign="center" py={6}>
               <Typography variant="body1" color="text.secondary">
-                {searchTerm ? 'Không tìm thấy đối tác phù hợp' : emptyMessage}
+                {searchTerm ? 'Không tìm thấy khách hàng phù hợp' : emptyMessage}
               </Typography>
             </Box>
           )}
@@ -159,7 +159,7 @@ const MobileView = ({
       <Zoom in={!loading}>
         <Fab
           color="primary"
-          aria-label="Thêm đối tác"
+          aria-label="Thêm khách hàng"
           onClick={onAdd}
           sx={{
             position: 'fixed',

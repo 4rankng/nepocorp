@@ -3,7 +3,8 @@ import { Card, CardContent, Typography, Box, IconButton, Chip } from '@mui/mater
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-const EmployeeCard = ({ employee, onEdit, onDelete, loading }) => {
+
+const NhanVienCard = ({ employee, onEdit, onDelete, loading }) => {
   return (
     <Card className="mb-4 shadow-md" sx={{ borderRadius: 2 }}>
       <CardContent>
@@ -80,4 +81,5 @@ const EmployeeCard = ({ employee, onEdit, onDelete, loading }) => {
     </Card>
   );
 };
-export default EmployeeCard;
+
+export default NhanVienCard;

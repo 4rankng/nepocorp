@@ -154,11 +154,7 @@ const QuanLyDoiTac = () => {
   return (
     <Box>
       {/* Render appropriate view based on screen size */}
-      {isMobile ? (
-        <MobileView {...commonProps} />
-      ) : (
-        <DesktopView {...commonProps} />
-      )}
+      {isMobile ? <MobileView {...commonProps} /> : <DesktopView {...commonProps} />}
 
       {/* Add/Edit Form */}
       <PartnerForm

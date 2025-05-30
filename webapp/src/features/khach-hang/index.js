@@ -5,7 +5,9 @@ export { default as QuanLyKhachHang } from '@features/khach-hang/QuanLyKhachHang
 export {
   CustomerForm,
   CustomerList,
-  CustomerManagement,
+  CustomerListResponsive,
+  DesktopView,
+  MobileView,
   KhachHangList,
 } from '@features/khach-hang/components';
 // Custom hooks

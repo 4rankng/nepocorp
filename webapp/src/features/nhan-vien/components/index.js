@@ -1,2 +1,5 @@
 export { default as NhanVienForm } from '@features/nhan-vien/components/NhanVienForm';
-export { default as EmployeeCard } from '@features/nhan-vien/components/EmployeeCard';
+
+export { default as DesktopView } from './DesktopView';
+export { default as MobileView } from './MobileView';
+export { default as NhanVienCard } from './NhanVienCard';
