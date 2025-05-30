@@ -14,8 +14,17 @@ const simulateApiCall = fn => {
     }, SIMULATED_DELAY);
   });
 };
-export const fetchAllNhanVien = () => {
-  return simulateApiCall(nhanVienDataService.getAllNhanVien);
+export const fetchAllNhanVien = (page = 1, pageSize = 10) => {
+  return simulateApiCall(async () => {
+    // Reset to original data before fetching to ensure consistency for this diagnostic step
+    await nhanVienDataService._resetNhanVien(); 
+    const allNhanVien = await nhanVienDataService.getAllNhanVien();
+    const total = allNhanVien.length;
+    const start = (page - 1) * pageSize;
+    const end = page * pageSize;
+    const items = allNhanVien.slice(start, end);
+    return { items, total };
+  });
 };
 export const fetchNhanVienById = id => {
   return simulateApiCall(() => nhanVienDataService.getNhanVienById(id));

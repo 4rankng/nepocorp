@@ -1,7 +1,8 @@
 // Mock database for NhanVien (Employees)
 // Static data. Numeric auto-incrementing ID.
 // Fields: id, ma_so, ho_ten, ten_dang_nhap, mat_khau, chuc_vu, email, createdAt, updatedAt
-let nhanVienData = [
+
+const originalNhanVienData = [
   {
     id: 1,
     ma_so: 'QL001',
@@ -168,7 +169,9 @@ let nhanVienData = [
     updatedAt: '2024-05-18T13:30:00Z',
   },
 ];
-let nextNhanVienId = 16;
+
+let nhanVienData = [...originalNhanVienData];
+let nextNhanVienId = originalNhanVienData.length > 0 ? Math.max(...originalNhanVienData.map(nv => nv.id)) + 1 : 1;
 const CHUC_VU_TYPES = ['quan-ly', 'ke-toan', 'giao-nhan', 'lai-xe'];
 export const getAllNhanVien = async () => {
   return [...nhanVienData];
@@ -225,16 +228,18 @@ export const deleteNhanVien = async id => {
   nhanVienData.splice(index, 1);
   return true;
 };
-export const _resetNhanVien = (data = []) => {
-  nhanVienData = data.map((item, index) => ({
-    ...item,
-    id: index + 1,
-    email: item.email !== undefined ? item.email : null,
-  }));
-  nextNhanVienId = nhanVienData.length > 0 ? Math.max(...nhanVienData.map(nv => nv.id)) + 1 : 1;
-};
-if (nhanVienData.length > 0) {
-  nextNhanVienId = Math.max(...nhanVienData.map(nv => nv.id)) + 1;
-} else {
-  nextNhanVienId = 1;
-}
+export const _resetNhanVien = (data) => {
+      if (data) {
+        nhanVienData = [...data]; // Use provided data as is
+      } else {
+        nhanVienData = [...originalNhanVienData]; // Reset to a fresh copy of original data, preserving original IDs
+      }
+
+      if (nhanVienData.length > 0) {
+        // Recalculate nextNhanVienId based on the current state of nhanVienData
+        nextNhanVienId = Math.max(...nhanVienData.map(nv => nv.id)) + 1;
+      } else {
+        nextNhanVienId = 1;
+      }
+    };
+// This block is now handled within _resetNhanVien

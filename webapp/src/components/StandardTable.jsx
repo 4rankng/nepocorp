@@ -346,7 +346,11 @@ const StandardTable = ({
                           textOverflow: column.maxWidth ? 'ellipsis' : 'clip',
                         }}
                       >
-                        {column.render ? column.render(row[column.key], row) : row[column.key]}
+                        {column.Cell
+                          ? <column.Cell row={row} value={row[column.key || column.id]} column={column} />
+                          : column.render
+                          ? column.render(row[column.key || column.id], row)
+                          : row[column.key || column.id]}
                       </TableCell>
                     ))}
                     {renderActions && (
