@@ -11,7 +11,7 @@ import PropTypes from 'prop-types';
  * @param {Function} onSwipeLeft - Optional callback for swipe left
  * @param {Function} onSwipeRight - Optional callback for swipe right
  */
-const CommonTabs = ({
+const Tabs = ({
   tabs,
   activeTab,
   basePath,
@@ -100,7 +100,7 @@ const CommonTabs = ({
   );
 };
 
-CommonTabs.propTypes = {
+Tabs.propTypes = {
   tabs: PropTypes.arrayOf(
     PropTypes.shape({
       value: PropTypes.string.isRequired,
@@ -115,4 +115,4 @@ CommonTabs.propTypes = {
   className: PropTypes.string,
 };
 
-export default CommonTabs;
+export default Tabs;
