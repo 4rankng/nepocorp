@@ -12,7 +12,14 @@ export const useDauKeo = () => {
     setLoading(true);
     setError('');
     try {
-      const result = await fetchAllDauKeo();
+      const response = await fetchAllDauKeo();
+      
+      // Handle new standardized API response format
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to fetch tractors');
+      }
+
+      const result = response.data?.items || response.data || [];
       setData(result);
       setCount(result.length);
       return result;
@@ -29,7 +36,13 @@ export const useDauKeo = () => {
     setLoading(true);
     setError('');
     try {
-      const newTractor = await addDauKeo(formData);
+      const response = await addDauKeo(formData);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to create tractor');
+      }
+
+      const newTractor = response.data;
       setData(prev => [...prev, newTractor]);
       setCount(prev => prev + 1);
       return newTractor;
@@ -46,8 +59,14 @@ export const useDauKeo = () => {
     setLoading(true);
     setError('');
     try {
-      const updatedTractor = await editDauKeo(id, formData);
-      setData(prev => prev.map(item => (item.id === id ? { ...item, ...formData } : item)));
+      const response = await editDauKeo(id, formData);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to update tractor');
+      }
+
+      const updatedTractor = response.data;
+      setData(prev => prev.map(item => (item.id === id ? updatedTractor : item)));
       return updatedTractor;
     } catch (err) {
       setError('Không thể cập nhật đầu kéo');
@@ -62,7 +81,12 @@ export const useDauKeo = () => {
     setLoading(true);
     setError('');
     try {
-      await removeDauKeo(id);
+      const response = await removeDauKeo(id);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to delete tractor');
+      }
+
       setData(prev => prev.filter(item => item.id !== id));
       setCount(prev => prev - 1);
     } catch (err) {
@@ -76,8 +100,12 @@ export const useDauKeo = () => {
   // Refresh count only
   const refreshCount = useCallback(async () => {
     try {
-      const result = await fetchAllDauKeo();
-      setCount(result.length);
+      const response = await fetchAllDauKeo();
+      
+      if (response.success) {
+        const result = response.data?.items || response.data || [];
+        setCount(result.length);
+      }
     } catch (err) {
       console.error('Failed to refresh count:', err);
     }

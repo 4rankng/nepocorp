@@ -1,12 +1,12 @@
 import lopXeData from '@services/mockData/lopXe';
-import { 
-  mockApiCall, 
-  withPagination, 
-  withSingleItem, 
-  withCreate, 
-  withUpdate, 
+import {
+  mockApiCall,
+  withPagination,
+  withSingleItem,
+  withCreate,
+  withUpdate,
   withDelete,
-  ERROR_CODES 
+  ERROR_CODES,
 } from './apiWrapper.js';
 let data;
 if (
@@ -52,7 +52,7 @@ export const lopXeApi = {
       'LopXe'
     );
   },
-  
+
   create: async record => {
     return mockApiCall(
       withCreate(() => {
@@ -65,45 +65,50 @@ export const lopXeApi = {
       'LopXe'
     );
   },
-  
+
   update: async (id, record) => {
     return mockApiCall(
-      withUpdate(() => {
-        const idx = data.findIndex(r => r.id === id);
-        if (idx !== -1) {
-          data[idx] = { ...data[idx], ...fromUI(record) };
-          persist();
-          return toUI(data[idx]);
-        }
-        return null;
-      }, ERROR_CODES.NOT_FOUND, 'Thông tin lốp xe không tồn tại'),
+      withUpdate(
+        () => {
+          const idx = data.findIndex(r => r.id === id);
+          if (idx !== -1) {
+            data[idx] = { ...data[idx], ...fromUI(record) };
+            persist();
+            return toUI(data[idx]);
+          }
+          return null;
+        },
+        ERROR_CODES.NOT_FOUND,
+        'Thông tin lốp xe không tồn tại'
+      ),
       'LopXe'
     );
   },
-  
+
   delete: async id => {
     return mockApiCall(
-      withDelete(() => {
-        const initialLength = data.length;
-        data = data.filter(r => r.id !== id);
-        persist();
-        return initialLength !== data.length;
-      }, ERROR_CODES.NOT_FOUND, 'Thông tin lốp xe không tồn tại'),
+      withDelete(
+        () => {
+          const initialLength = data.length;
+          data = data.filter(r => r.id !== id);
+          persist();
+          return initialLength !== data.length;
+        },
+        ERROR_CODES.NOT_FOUND,
+        'Thông tin lốp xe không tồn tại'
+      ),
       'LopXe'
     );
   },
-  
+
   reset: () => {
-    return mockApiCall(
-      () => {
-        data = lopXeData.slice();
-        persist();
-        return true;
-      },
-      'LopXe'
-    );
+    return mockApiCall(() => {
+      data = lopXeData.slice();
+      persist();
+      return true;
+    }, 'LopXe');
   },
-  
+
   getCount: async () => {
     return mockApiCall(
       withSingleItem(() => data.length, ERROR_CODES.NOT_FOUND, 'Không thể lấy số lượng lốp xe'),

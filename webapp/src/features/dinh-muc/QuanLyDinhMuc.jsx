@@ -6,7 +6,7 @@ import DinhMucBoSung from './components/DinhMucBoSung';
 import DinhMucChoHang from './components/DinhMucChoHang';
 import DinhMucVoRong from './components/DinhMucVoRong';
 import DinhMucDiDuong from './components/DinhMucDiDuong';
-import { useDinhMucDauManagement } from '@/hooks/useDinhMucDauManagement';
+import { useBoSung } from './hooks';
 
 const TABS = [
   { value: 'bo-sung', label: 'Bổ Sung' },
@@ -22,7 +22,7 @@ const QuanLyDinhMuc = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const { supplementaryStandard, handleSaveSupplementary } = useDinhMucDauManagement();
+  const { supplementaryStandard, updateSupplementaryStandard } = useBoSung();
 
   const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : TABS[0].value;
 
@@ -43,7 +43,7 @@ const QuanLyDinhMuc = () => {
         return (
           <DinhMucBoSung
             supplementaryStandard={supplementaryStandard}
-            onSaveSupplementary={handleSaveSupplementary}
+            onSaveSupplementary={updateSupplementaryStandard}
           />
         );
       case 'cho-hang':

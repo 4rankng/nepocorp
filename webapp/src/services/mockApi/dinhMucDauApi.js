@@ -1,12 +1,12 @@
 import * as dinhMucDauDataService from '@services/mockData/dinhMucDau';
-import { 
-  mockApiCall, 
-  withPagination, 
-  withSingleItem, 
-  withCreate, 
-  withUpdate, 
+import {
+  mockApiCall,
+  withPagination,
+  withSingleItem,
+  withCreate,
+  withUpdate,
   withDelete,
-  ERROR_CODES 
+  ERROR_CODES,
 } from './apiWrapper.js';
 
 export const getAllDinhMucDau = async (page = 1, limit = 10) => {
@@ -18,7 +18,11 @@ export const getAllDinhMucDau = async (page = 1, limit = 10) => {
 
 export const getDinhMucDauById = async id => {
   return mockApiCall(
-    withSingleItem(() => dinhMucDauDataService.getDinhMucDauById(id), ERROR_CODES.NOT_FOUND, 'Định mức dầu không tồn tại'),
+    withSingleItem(
+      () => dinhMucDauDataService.getDinhMucDauById(id),
+      ERROR_CODES.NOT_FOUND,
+      'Định mức dầu không tồn tại'
+    ),
     'DinhMucDau'
   );
 };
@@ -32,29 +36,38 @@ export const createDinhMucDau = async dinhMucDau => {
 
 export const updateDinhMucDau = async (id, updates) => {
   return mockApiCall(
-    withUpdate(() => dinhMucDauDataService.updateDinhMucDau(id, updates), ERROR_CODES.NOT_FOUND, 'Định mức dầu không tồn tại'),
+    withUpdate(
+      () => dinhMucDauDataService.updateDinhMucDau(id, updates),
+      ERROR_CODES.NOT_FOUND,
+      'Định mức dầu không tồn tại'
+    ),
     'DinhMucDau'
   );
 };
 
 export const deleteDinhMucDau = async id => {
   return mockApiCall(
-    withDelete(() => dinhMucDauDataService.deleteDinhMucDau(id), ERROR_CODES.NOT_FOUND, 'Định mức dầu không tồn tại'),
+    withDelete(
+      () => dinhMucDauDataService.deleteDinhMucDau(id),
+      ERROR_CODES.NOT_FOUND,
+      'Định mức dầu không tồn tại'
+    ),
     'DinhMucDau'
   );
 };
 
 // For testing and resetting
 export const _resetDinhMucDau = async (newData = []) => {
-  return mockApiCall(
-    () => dinhMucDauDataService._resetDinhMucDau(newData),
-    'DinhMucDau'
-  );
+  return mockApiCall(() => dinhMucDauDataService._resetDinhMucDau(newData), 'DinhMucDau');
 };
 
 export const getDinhMucDauCount = async () => {
   return mockApiCall(
-    withSingleItem(() => dinhMucDauDataService.getDinhMucDauCount(), ERROR_CODES.NOT_FOUND, 'Không thể lấy số lượng định mức dầu'),
+    withSingleItem(
+      () => dinhMucDauDataService.getDinhMucDauCount(),
+      ERROR_CODES.NOT_FOUND,
+      'Không thể lấy số lượng định mức dầu'
+    ),
     'DinhMucDau'
   );
 };

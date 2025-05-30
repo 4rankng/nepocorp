@@ -1,47 +1,53 @@
 // Mock API services for DauKeo (Tractor Units)
 import * as dauKeoDataService from '@services/mockData/dauKeo';
-import { 
-  withPagination, 
-  withSingleItem, 
-  withCreate, 
-  withUpdate, 
+import {
+  withPagination,
+  withSingleItem,
+  withCreate,
+  withUpdate,
   withDelete,
   createApiSingleResponse,
-  mockApiCall 
+  mockApiCall,
 } from './apiWrapper.js';
 
 export const fetchAllDauKeo = (page = 1, limit = 50) => {
-  return mockApiCall(() => 
-    withPagination(() => dauKeoDataService.getAllDauKeo(), { page, limit })
-  );
+  return mockApiCall(() => withPagination(() => dauKeoDataService.getAllDauKeo(), { page, limit }));
 };
 
 export const fetchDauKeoById = id => {
-  return mockApiCall(() => 
+  return mockApiCall(() =>
     withSingleItem(() => dauKeoDataService.getDauKeoById(id), 'Dau keo not found')
   );
 };
 
 export const addDauKeo = data => {
-  return mockApiCall(() => 
+  return mockApiCall(() =>
     withCreate(() => dauKeoDataService.createDauKeo(data), 'Dau keo created successfully')
   );
 };
 
 export const editDauKeo = (id, data) => {
-  return mockApiCall(() => 
-    withUpdate(() => dauKeoDataService.updateDauKeo(id, data), 'Dau keo not found', 'Dau keo updated successfully')
+  return mockApiCall(() =>
+    withUpdate(
+      () => dauKeoDataService.updateDauKeo(id, data),
+      'Dau keo not found',
+      'Dau keo updated successfully'
+    )
   );
 };
 
 export const removeDauKeo = id => {
-  return mockApiCall(() => 
-    withDelete(() => dauKeoDataService.deleteDauKeo(id), 'Dau keo not found', 'Dau keo deleted successfully')
+  return mockApiCall(() =>
+    withDelete(
+      () => dauKeoDataService.deleteDauKeo(id),
+      'Dau keo not found',
+      'Dau keo deleted successfully'
+    )
   );
 };
 
 export const _resetDauKeoMockData = data => {
-  return mockApiCall(() => 
+  return mockApiCall(() =>
     createApiSingleResponse(dauKeoDataService._resetDauKeo(data), 'Dau keo data reset successfully')
   );
 };

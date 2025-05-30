@@ -12,21 +12,46 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
-import { useDinhMucDauManagement } from '@/hooks/useDinhMucDauManagement';
+import { useVoRong } from '../hooks';
 
 const DinhMucVoRong = () => {
   const muiTheme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Dialog states
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [currentStandard, setCurrentStandard] = useState(null);
+  const [deleteDetails, setDeleteDetails] = useState({ id: null, type: null, details: '' });
 
   const {
-    dinhMucVo,
-    activeLicensePlatesWithStandards: platesFromHook,
+    dinhMucVoRong,
+    availableLicensePlates,
     isLoading,
     error,
-    openAddNewDinhMucDialog,
-    openEditDinhMucDialog,
-    openDeleteDialog,
-  } = useDinhMucDauManagement();
+    createVoRongStandard,
+    updateVoRongStandard,
+    deleteVoRongStandard,
+  } = useVoRong();
+
+  // Convert the license plates data to match the expected format
+  const activeLicensePlatesWithStandards = availableLicensePlates;
+
+  const openAddNewDinhMucDialog = (params) => {
+    setCurrentStandard(null);
+    setAddDialogOpen(true);
+  };
+
+  const openEditDinhMucDialog = (standard) => {
+    setCurrentStandard(standard);
+    setEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (id, type, details) => {
+    setDeleteDetails({ id, type, details });
+    setDeleteDialogOpen(true);
+  };
 
   const handleTriggerDeleteDialog = (id, type, item, licensePlate) => {
     let detailsText = '';
@@ -120,8 +145,8 @@ const DinhMucVoRong = () => {
           </Box>
           <DinhMucTheoBienSoXeSection
             dinhMucHang={[]} // Empty array since we're only showing km_vo
-            dinhMucVo={dinhMucVo}
-            activeLicensePlatesWithStandards={platesFromHook}
+            dinhMucVo={dinhMucVoRong}
+            activeLicensePlatesWithStandards={activeLicensePlatesWithStandards}
             isLoading={isLoading}
             error={error ? error.message || 'Lỗi không xác định' : null}
             searchQuery={searchQuery}

@@ -1,28 +1,36 @@
 // Mock API services for Reports
 import * as reportDataService from '../mockData/reports.js';
-import { 
-  mockApiCall, 
-  withSingleItem, 
-  ERROR_CODES 
-} from './apiWrapper.js';
+import { mockApiCall, withSingleItem, ERROR_CODES } from './apiWrapper.js';
 // Financial reports
 export const fetchMonthlyProfitAndRevenueReport = (_startDate, endDate) => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.getMonthlyProfitAndRevenueReport(_startDate, endDate), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu báo cáo'),
+    withSingleItem(
+      () => reportDataService.getMonthlyProfitAndRevenueReport(_startDate, endDate),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu báo cáo'
+    ),
     'Reports'
   );
 };
 
 export const fetchDetailedCostReport = (_startDate, endDate) => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.getDetailedCostReport(_startDate, endDate), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu báo cáo chi phí'),
+    withSingleItem(
+      () => reportDataService.getDetailedCostReport(_startDate, endDate),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu báo cáo chi phí'
+    ),
     'Reports'
   );
 };
 
 export const fetchDebtReport = (_startDate, endDate) => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.getDebtReport(_startDate, endDate), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu báo cáo công nợ'),
+    withSingleItem(
+      () => reportDataService.getDebtReport(_startDate, endDate),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu báo cáo công nợ'
+    ),
     'Reports'
   );
 };
@@ -30,14 +38,22 @@ export const fetchDebtReport = (_startDate, endDate) => {
 // Vehicle tracking reports
 export const fetchVehicleMonthlyDetailsReport = (vehicleId, monthYear) => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.getVehicleMonthlyDetailsReport(vehicleId, monthYear), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu báo cáo xe'),
+    withSingleItem(
+      () => reportDataService.getVehicleMonthlyDetailsReport(vehicleId, monthYear),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu báo cáo xe'
+    ),
     'Reports'
   );
 };
 
 export const fetchAvailableMonthsForReport = () => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.getAvailableMonthsForReport(), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu tháng báo cáo'),
+    withSingleItem(
+      () => reportDataService.getAvailableMonthsForReport(),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu tháng báo cáo'
+    ),
     'Reports'
   );
 };
@@ -45,7 +61,11 @@ export const fetchAvailableMonthsForReport = () => {
 // Additional report types
 export const fetchDailyRevenueReport = (_startDate, endDate) => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.getDailyRevenueReport(_startDate, endDate), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu báo cáo doanh thu'),
+    withSingleItem(
+      () => reportDataService.getDailyRevenueReport(_startDate, endDate),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu báo cáo doanh thu'
+    ),
     'Reports'
   );
 };
@@ -57,7 +77,11 @@ export const fetchCustomerRevenueReport = (customerId, _startDate, endDate) => {
     endDate,
   });
   return mockApiCall(
-    withSingleItem(() => reportDataService.getCustomerRevenueReport(customerId, _startDate, endDate), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu báo cáo khách hàng'),
+    withSingleItem(
+      () => reportDataService.getCustomerRevenueReport(customerId, _startDate, endDate),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu báo cáo khách hàng'
+    ),
     'Reports'
   );
 };
@@ -69,14 +93,22 @@ export const fetchVehiclePerformanceReport = (vehicleId, _startDate, endDate) =>
     endDate,
   });
   return mockApiCall(
-    withSingleItem(() => reportDataService.getVehiclePerformanceReport(vehicleId, _startDate, endDate), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu báo cáo hiệu suất xe'),
+    withSingleItem(
+      () => reportDataService.getVehiclePerformanceReport(vehicleId, _startDate, endDate),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu báo cáo hiệu suất xe'
+    ),
     'Reports'
   );
 };
 
 export const fetchPartnerReport = (partnerId, _startDate, endDate) => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.getPartnerReport(partnerId, _startDate, endDate), ERROR_CODES.NOT_FOUND, 'Không tìm thấy dữ liệu báo cáo đối tác'),
+    withSingleItem(
+      () => reportDataService.getPartnerReport(partnerId, _startDate, endDate),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy dữ liệu báo cáo đối tác'
+    ),
     'Reports'
   );
 };
@@ -84,14 +116,22 @@ export const fetchPartnerReport = (partnerId, _startDate, endDate) => {
 // Export report functionality
 export const exportReportToExcel = (reportType, reportData, filename) => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.exportReportToExcel(reportType, reportData, filename), ERROR_CODES.VALIDATION_ERROR, 'Lỗi xuất báo cáo Excel'),
+    withSingleItem(
+      () => reportDataService.exportReportToExcel(reportType, reportData, filename),
+      ERROR_CODES.VALIDATION_ERROR,
+      'Lỗi xuất báo cáo Excel'
+    ),
     'Reports'
   );
 };
 
 export const exportReportToPDF = (reportType, reportData, filename) => {
   return mockApiCall(
-    withSingleItem(() => reportDataService.exportReportToPDF(reportType, reportData, filename), ERROR_CODES.VALIDATION_ERROR, 'Lỗi xuất báo cáo PDF'),
+    withSingleItem(
+      () => reportDataService.exportReportToPDF(reportType, reportData, filename),
+      ERROR_CODES.VALIDATION_ERROR,
+      'Lỗi xuất báo cáo PDF'
+    ),
     'Reports'
   );
 };

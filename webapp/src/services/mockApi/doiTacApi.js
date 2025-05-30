@@ -1,13 +1,13 @@
 // Mock API services for DoiTac (Partners)
 import * as doiTacDataService from '@services/mockData/doiTac';
-import { 
-  mockApiCall, 
-  withPagination, 
-  withSingleItem, 
-  withCreate, 
-  withUpdate, 
+import {
+  mockApiCall,
+  withPagination,
+  withSingleItem,
+  withCreate,
+  withUpdate,
   withDelete,
-  ERROR_CODES 
+  ERROR_CODES,
 } from './apiWrapper.js';
 export const fetchAllDoiTac = (page = 1, limit = 10) => {
   return mockApiCall(
@@ -18,7 +18,11 @@ export const fetchAllDoiTac = (page = 1, limit = 10) => {
 
 export const fetchDoiTacById = id => {
   return mockApiCall(
-    withSingleItem(() => doiTacDataService.getDoiTacById(id), ERROR_CODES.NOT_FOUND, 'Đối tác không tồn tại'),
+    withSingleItem(
+      () => doiTacDataService.getDoiTacById(id),
+      ERROR_CODES.NOT_FOUND,
+      'Đối tác không tồn tại'
+    ),
     'DoiTac'
   );
 };
@@ -32,21 +36,26 @@ export const addDoiTac = data => {
 
 export const editDoiTac = (id, data) => {
   return mockApiCall(
-    withUpdate(() => doiTacDataService.updateDoiTac(id, data), ERROR_CODES.NOT_FOUND, 'Đối tác không tồn tại'),
+    withUpdate(
+      () => doiTacDataService.updateDoiTac(id, data),
+      ERROR_CODES.NOT_FOUND,
+      'Đối tác không tồn tại'
+    ),
     'DoiTac'
   );
 };
 
 export const removeDoiTac = id => {
   return mockApiCall(
-    withDelete(() => doiTacDataService.deleteDoiTac(id), ERROR_CODES.NOT_FOUND, 'Đối tác không tồn tại'),
+    withDelete(
+      () => doiTacDataService.deleteDoiTac(id),
+      ERROR_CODES.NOT_FOUND,
+      'Đối tác không tồn tại'
+    ),
     'DoiTac'
   );
 };
 
 export const _resetDoiTacMockData = data => {
-  return mockApiCall(
-    () => doiTacDataService._resetDoiTac(data),
-    'DoiTac'
-  );
+  return mockApiCall(() => doiTacDataService._resetDoiTac(data), 'DoiTac');
 };

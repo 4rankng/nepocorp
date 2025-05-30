@@ -3,8 +3,6 @@
  * Provides standardized response formats for all mock API endpoints
  */
 
-import { ApiResponseTypes } from './apiTypes.js';
-
 /**
  * Error codes used throughout the application
  */
@@ -30,12 +28,7 @@ export const ErrorCodes = {
  * @returns {ApiResponse<T>}
  */
 export function createApiResponse(data, options = {}) {
-  const {
-    page = 1,
-    limit = 10,
-    totalItems = data.length,
-    message
-  } = options;
+  const { page = 1, limit = 10, totalItems = data.length, message } = options;
 
   const count = data.length;
   const offset = (page - 1) * limit;
@@ -102,7 +95,7 @@ export function createApiErrorResponse(code, message, details) {
 export async function withPagination(dataFetcher, options = {}) {
   try {
     const { page = 1, limit = 10, message } = options;
-    
+
     const allData = await dataFetcher();
     const totalItems = allData.length;
     const startIndex = (page - 1) * limit;
@@ -116,11 +109,7 @@ export async function withPagination(dataFetcher, options = {}) {
       message,
     });
   } catch (error) {
-    throw createApiErrorResponse(
-      ErrorCodes.INTERNAL_ERROR,
-      'Failed to fetch data',
-      error.message
-    );
+    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to fetch data', error.message);
   }
 }
 
@@ -132,15 +121,16 @@ export async function withPagination(dataFetcher, options = {}) {
  * @param {string} [successMessage] - Optional success message
  * @returns {Promise<ApiSingleResponse<T>>}
  */
-export async function withSingleItem(dataFetcher, notFoundMessage = 'Item not found', successMessage) {
+export async function withSingleItem(
+  dataFetcher,
+  notFoundMessage = 'Item not found',
+  successMessage
+) {
   try {
     const data = await dataFetcher();
-    
+
     if (!data) {
-      throw createApiErrorResponse(
-        ErrorCodes.NOT_FOUND,
-        notFoundMessage
-      );
+      throw createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
     }
 
     return createApiSingleResponse(data, successMessage);
@@ -149,11 +139,7 @@ export async function withSingleItem(dataFetcher, notFoundMessage = 'Item not fo
       // Already an API error response
       throw error;
     }
-    throw createApiErrorResponse(
-      ErrorCodes.INTERNAL_ERROR,
-      'Failed to fetch item',
-      error.message
-    );
+    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to fetch item', error.message);
   }
 }
 
@@ -167,7 +153,7 @@ export async function withSingleItem(dataFetcher, notFoundMessage = 'Item not fo
 export async function withCreate(creator, successMessage = 'Item created successfully') {
   try {
     const data = await creator();
-    
+
     if (!data) {
       throw createApiErrorResponse(
         ErrorCodes.VALIDATION_ERROR,
@@ -180,11 +166,7 @@ export async function withCreate(creator, successMessage = 'Item created success
     if (error.success === false) {
       throw error;
     }
-    throw createApiErrorResponse(
-      ErrorCodes.INTERNAL_ERROR,
-      'Failed to create item',
-      error.message
-    );
+    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to create item', error.message);
   }
 }
 
@@ -196,15 +178,16 @@ export async function withCreate(creator, successMessage = 'Item created success
  * @param {string} [successMessage='Item updated successfully'] - Success message
  * @returns {Promise<ApiSingleResponse<T>>}
  */
-export async function withUpdate(updater, notFoundMessage = 'Item not found', successMessage = 'Item updated successfully') {
+export async function withUpdate(
+  updater,
+  notFoundMessage = 'Item not found',
+  successMessage = 'Item updated successfully'
+) {
   try {
     const data = await updater();
-    
+
     if (!data) {
-      throw createApiErrorResponse(
-        ErrorCodes.NOT_FOUND,
-        notFoundMessage
-      );
+      throw createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
     }
 
     return createApiSingleResponse(data, successMessage);
@@ -212,11 +195,7 @@ export async function withUpdate(updater, notFoundMessage = 'Item not found', su
     if (error.success === false) {
       throw error;
     }
-    throw createApiErrorResponse(
-      ErrorCodes.INTERNAL_ERROR,
-      'Failed to update item',
-      error.message
-    );
+    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to update item', error.message);
   }
 }
 
@@ -227,15 +206,16 @@ export async function withUpdate(updater, notFoundMessage = 'Item not found', su
  * @param {string} [successMessage='Item deleted successfully'] - Success message
  * @returns {Promise<ApiSingleResponse<{deleted: boolean}>>}
  */
-export async function withDelete(deleter, notFoundMessage = 'Item not found', successMessage = 'Item deleted successfully') {
+export async function withDelete(
+  deleter,
+  notFoundMessage = 'Item not found',
+  successMessage = 'Item deleted successfully'
+) {
   try {
     const success = await deleter();
-    
+
     if (!success) {
-      throw createApiErrorResponse(
-        ErrorCodes.NOT_FOUND,
-        notFoundMessage
-      );
+      throw createApiErrorResponse(ErrorCodes.NOT_FOUND, notFoundMessage);
     }
 
     return createApiSingleResponse({ deleted: true }, successMessage);
@@ -243,11 +223,7 @@ export async function withDelete(deleter, notFoundMessage = 'Item not found', su
     if (error.success === false) {
       throw error;
     }
-    throw createApiErrorResponse(
-      ErrorCodes.INTERNAL_ERROR,
-      'Failed to delete item',
-      error.message
-    );
+    throw createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to delete item', error.message);
   }
 }
 
@@ -271,24 +247,23 @@ export function simulateDelay(delay = 100) {
  */
 export async function mockApiCall(apiCall, options = {}) {
   const { delay = 0, throwOnError = true } = options;
-  
+
   try {
     if (delay > 0) {
       await simulateDelay(delay);
     }
-    
+
     return await apiCall();
   } catch (error) {
-    const errorResponse = error.success === false ? error : createApiErrorResponse(
-      ErrorCodes.INTERNAL_ERROR,
-      'API call failed',
-      error.message
-    );
-    
+    const errorResponse =
+      error.success === false
+        ? error
+        : createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API call failed', error.message);
+
     if (throwOnError) {
       throw errorResponse;
     }
-    
+
     return errorResponse;
   }
 }

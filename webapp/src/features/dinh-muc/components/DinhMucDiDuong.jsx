@@ -13,11 +13,11 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import useDinhMucDiDuong from '@hooks/useDinhMucDiDuong';
+import { useDiDuong } from '../hooks';
 
 const DinhMucDiDuong = () => {
   const muiTheme = useTheme();
-  const { roadNorms, containerTypes, isLoading, error } = useDinhMucDiDuong();
+  const { roadNorms, containerTypes, isLoading, error } = useDiDuong();
 
   // Sort container types by name (e.g., "20'", "40'") for consistent column order
   const sortedContainerTypes = React.useMemo(() => {

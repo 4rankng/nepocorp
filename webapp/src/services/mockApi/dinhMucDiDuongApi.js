@@ -1,12 +1,12 @@
 import * as dinhMucDiDuongDataService from '@services/mockData/dinhMucDiDuong';
-import { 
-  mockApiCall, 
-  withPagination, 
-  withSingleItem, 
-  withCreate, 
-  withUpdate, 
+import {
+  mockApiCall,
+  withPagination,
+  withSingleItem,
+  withCreate,
+  withUpdate,
   withDelete,
-  ERROR_CODES 
+  ERROR_CODES,
 } from './apiWrapper.js';
 
 export const getAllDinhMucDiDuong = async (page = 1, limit = 10) => {
@@ -18,14 +18,22 @@ export const getAllDinhMucDiDuong = async (page = 1, limit = 10) => {
 
 export const getDinhMucDiDuongById = async id => {
   return mockApiCall(
-    withSingleItem(() => dinhMucDiDuongDataService.getDinhMucDiDuongById(id), ERROR_CODES.NOT_FOUND, 'Định mức đi đường không tồn tại'),
+    withSingleItem(
+      () => dinhMucDiDuongDataService.getDinhMucDiDuongById(id),
+      ERROR_CODES.NOT_FOUND,
+      'Định mức đi đường không tồn tại'
+    ),
     'DinhMucDiDuong'
   );
 };
 
 export const getDinhMucByContainerAndTuyen = async (ma_cont, ma_tuyen) => {
   return mockApiCall(
-    withSingleItem(() => dinhMucDiDuongDataService.getDinhMucByContainerAndTuyen(ma_cont, ma_tuyen), ERROR_CODES.NOT_FOUND, 'Không tìm thấy định mức cho container và tuyến này'),
+    withSingleItem(
+      () => dinhMucDiDuongDataService.getDinhMucByContainerAndTuyen(ma_cont, ma_tuyen),
+      ERROR_CODES.NOT_FOUND,
+      'Không tìm thấy định mức cho container và tuyến này'
+    ),
     'DinhMucDiDuong'
   );
 };
@@ -39,14 +47,22 @@ export const createDinhMucDiDuong = async dinhMuc => {
 
 export const updateDinhMucDiDuong = async (id, updates) => {
   return mockApiCall(
-    withUpdate(() => dinhMucDiDuongDataService.updateDinhMucDiDuong(id, updates), ERROR_CODES.NOT_FOUND, 'Định mức đi đường không tồn tại'),
+    withUpdate(
+      () => dinhMucDiDuongDataService.updateDinhMucDiDuong(id, updates),
+      ERROR_CODES.NOT_FOUND,
+      'Định mức đi đường không tồn tại'
+    ),
     'DinhMucDiDuong'
   );
 };
 
 export const deleteDinhMucDiDuong = async id => {
   return mockApiCall(
-    withDelete(() => dinhMucDiDuongDataService.deleteDinhMucDiDuong(id), ERROR_CODES.NOT_FOUND, 'Định mức đi đường không tồn tại'),
+    withDelete(
+      () => dinhMucDiDuongDataService.deleteDinhMucDiDuong(id),
+      ERROR_CODES.NOT_FOUND,
+      'Định mức đi đường không tồn tại'
+    ),
     'DinhMucDiDuong'
   );
 };
@@ -61,7 +77,11 @@ export const _resetDinhMucDiDuong = async (newData = []) => {
 
 export const getDinhMucDiDuongCount = async () => {
   return mockApiCall(
-    withSingleItem(() => dinhMucDiDuongDataService.getDinhMucDiDuongCount(), ERROR_CODES.NOT_FOUND, 'Không thể lấy số lượng định mức đi đường'),
+    withSingleItem(
+      () => dinhMucDiDuongDataService.getDinhMucDiDuongCount(),
+      ERROR_CODES.NOT_FOUND,
+      'Không thể lấy số lượng định mức đi đường'
+    ),
     'DinhMucDiDuong'
   );
 };

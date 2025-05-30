@@ -12,21 +12,46 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
-import { useDinhMucDauManagement } from '@/hooks/useDinhMucDauManagement';
+import { useChoHang } from '../hooks';
 
 const DinhMucChoHang = () => {
   const muiTheme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Dialog states
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [currentStandard, setCurrentStandard] = useState(null);
+  const [deleteDetails, setDeleteDetails] = useState({ id: null, type: null, details: '' });
 
   const {
-    dinhMucHang,
-    activeLicensePlatesWithStandards: platesFromHook,
+    dinhMucChoHang,
+    availableLicensePlates,
     isLoading,
     error,
-    openAddNewDinhMucDialog,
-    openEditDinhMucDialog,
-    openDeleteDialog,
-  } = useDinhMucDauManagement();
+    createChoHangStandard,
+    updateChoHangStandard,
+    deleteChoHangStandard,
+  } = useChoHang();
+
+  // Convert the license plates data to match the expected format
+  const activeLicensePlatesWithStandards = availableLicensePlates;
+
+  const openAddNewDinhMucDialog = (params) => {
+    setCurrentStandard(null);
+    setAddDialogOpen(true);
+  };
+
+  const openEditDinhMucDialog = (standard) => {
+    setCurrentStandard(standard);
+    setEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (id, type, details) => {
+    setDeleteDetails({ id, type, details });
+    setDeleteDialogOpen(true);
+  };
 
   const handleTriggerDeleteDialog = (id, type, item, licensePlate) => {
     let detailsText = '';
@@ -119,9 +144,9 @@ const DinhMucChoHang = () => {
             </Button>
           </Box>
           <DinhMucTheoBienSoXeSection
-            dinhMucHang={dinhMucHang}
+            dinhMucHang={dinhMucChoHang}
             dinhMucVo={[]} // Empty array since we're only showing km_hang
-            activeLicensePlatesWithStandards={platesFromHook}
+            activeLicensePlatesWithStandards={activeLicensePlatesWithStandards}
             isLoading={isLoading}
             error={error ? error.message || 'Lỗi không xác định' : null}
             searchQuery={searchQuery}

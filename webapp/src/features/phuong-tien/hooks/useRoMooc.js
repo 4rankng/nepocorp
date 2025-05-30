@@ -12,7 +12,14 @@ export const useRoMooc = () => {
     setLoading(true);
     setError('');
     try {
-      const result = await fetchAllRoMooc();
+      const response = await fetchAllRoMooc();
+      
+      // Handle new standardized API response format
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to fetch trailers');
+      }
+
+      const result = response.data?.items || response.data || [];
       setData(result);
       setCount(result.length);
       return result;
@@ -29,7 +36,13 @@ export const useRoMooc = () => {
     setLoading(true);
     setError('');
     try {
-      const newTrailer = await addRoMooc(formData);
+      const response = await addRoMooc(formData);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to create trailer');
+      }
+
+      const newTrailer = response.data;
       setData(prev => [...prev, newTrailer]);
       setCount(prev => prev + 1);
       return newTrailer;
@@ -46,8 +59,14 @@ export const useRoMooc = () => {
     setLoading(true);
     setError('');
     try {
-      const updatedTrailer = await editRoMooc(id, formData);
-      setData(prev => prev.map(item => (item.id === id ? { ...item, ...formData } : item)));
+      const response = await editRoMooc(id, formData);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to update trailer');
+      }
+
+      const updatedTrailer = response.data;
+      setData(prev => prev.map(item => (item.id === id ? updatedTrailer : item)));
       return updatedTrailer;
     } catch (err) {
       setError('Không thể cập nhật rơ-mooc');
@@ -62,7 +81,12 @@ export const useRoMooc = () => {
     setLoading(true);
     setError('');
     try {
-      await removeRoMooc(id);
+      const response = await removeRoMooc(id);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to delete trailer');
+      }
+
       setData(prev => prev.filter(item => item.id !== id));
       setCount(prev => prev - 1);
     } catch (err) {
@@ -76,8 +100,12 @@ export const useRoMooc = () => {
   // Refresh count only
   const refreshCount = useCallback(async () => {
     try {
-      const result = await fetchAllRoMooc();
-      setCount(result.length);
+      const response = await fetchAllRoMooc();
+      
+      if (response.success) {
+        const result = response.data?.items || response.data || [];
+        setCount(result.length);
+      }
     } catch (err) {
       console.error('Failed to refresh count:', err);
     }

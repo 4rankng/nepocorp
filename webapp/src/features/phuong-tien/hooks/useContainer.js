@@ -12,7 +12,14 @@ export const useContainer = () => {
     setLoading(true);
     setError('');
     try {
-      const result = await fetchAllContainer();
+      const response = await fetchAllContainer();
+      
+      // Handle new standardized API response format
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to fetch containers');
+      }
+
+      const result = response.data?.items || response.data || [];
       setData(result);
       setCount(result.length);
       return result;
@@ -29,7 +36,13 @@ export const useContainer = () => {
     setLoading(true);
     setError('');
     try {
-      const newContainer = await addContainer(formData);
+      const response = await addContainer(formData);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to create container');
+      }
+
+      const newContainer = response.data;
       setData(prev => [...prev, newContainer]);
       setCount(prev => prev + 1);
       return newContainer;
@@ -46,8 +59,14 @@ export const useContainer = () => {
     setLoading(true);
     setError('');
     try {
-      const updatedContainer = await editContainer(id, formData);
-      setData(prev => prev.map(item => (item.id === id ? { ...item, ...formData } : item)));
+      const response = await editContainer(id, formData);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to update container');
+      }
+
+      const updatedContainer = response.data;
+      setData(prev => prev.map(item => (item.id === id ? updatedContainer : item)));
       return updatedContainer;
     } catch (err) {
       setError('Không thể cập nhật container');
@@ -62,7 +81,12 @@ export const useContainer = () => {
     setLoading(true);
     setError('');
     try {
-      await removeContainer(id);
+      const response = await removeContainer(id);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to delete container');
+      }
+
       setData(prev => prev.filter(item => item.id !== id));
       setCount(prev => prev - 1);
     } catch (err) {
@@ -76,8 +100,12 @@ export const useContainer = () => {
   // Refresh count only
   const refreshCount = useCallback(async () => {
     try {
-      const result = await fetchAllContainer();
-      setCount(result.length);
+      const response = await fetchAllContainer();
+      
+      if (response.success) {
+        const result = response.data?.items || response.data || [];
+        setCount(result.length);
+      }
     } catch (err) {
       console.error('Failed to refresh count:', err);
     }
