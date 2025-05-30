@@ -110,21 +110,27 @@ export const useDiDuong = () => {
 
       // Transform roadNorms (allDinhMuc) to include ma_loai_container based on the phan_loai
       // Each norm in allDinhMuc has ma_cont which corresponds to ma_so in allContainerTypes.
-      const transformedRoadNorms = allDinhMuc.map(norm => {
-        const phanLoaiForNorm = maSoToPhanLoaiMap[String(norm.ma_cont)];
-        return {
-          ...norm,
-          // Add ma_loai_container, which will be the phan_loai string (e.g., "20ft DC")
-          // This ensures it matches the ma_loai_container in uniqueContainerTypes
-          ma_loai_container: phanLoaiForNorm || null, // Handle cases where ma_cont might not map
-        };
-      }).filter(norm => norm.ma_loai_container !== null); // Optionally filter out norms that couldn't be mapped
+      const transformedRoadNorms = allDinhMuc
+        .map(norm => {
+          const phanLoaiForNorm = maSoToPhanLoaiMap[String(norm.ma_cont)];
+          return {
+            ...norm,
+            // Add ma_loai_container, which will be the phan_loai string (e.g., "20ft DC")
+            // This ensures it matches the ma_loai_container in uniqueContainerTypes
+            ma_loai_container: phanLoaiForNorm || null, // Handle cases where ma_cont might not map
+          };
+        })
+        .filter(norm => norm.ma_loai_container !== null); // Optionally filter out norms that couldn't be mapped
 
       setContainerTypes(uniqueContainerTypes);
       setRoutes(allTuyenDuong);
       setRoadNorms(transformedRoadNorms);
 
-      return { roadNorms: transformedRoadNorms, routes: allTuyenDuong, containerTypes: uniqueContainerTypes };
+      return {
+        roadNorms: transformedRoadNorms,
+        routes: allTuyenDuong,
+        containerTypes: uniqueContainerTypes,
+      };
     } catch (err) {
       console.error('useDiDuong.js error: ', err);
 

@@ -21,19 +21,25 @@ const DinhMucDiDuong = () => {
   const columns = useMemo(
     () => [
       {
-        key: 'route',
-        label: 'Tuyến đường',
-        width: '25%',
+        key: 'ma_tuyen',
+        label: 'Mã tuyến',
+        width: '10%', // Adjusted width
         sortable: true,
         render: (_cellValue, rowData) => (
-          <Box>
-            <Typography variant="body2" fontWeight={500}>
-              {rowData.ma_tuyen}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {`${rowData.diem_di} → ${rowData.diem_den?.split(';')[0] || ''}`}
-            </Typography>
-          </Box>
+          <Typography variant="body2" fontWeight={500}>
+            {rowData.ma_tuyen}
+          </Typography>
+        ),
+      },
+      {
+        key: 'ten_tuyen',
+        label: 'Tên tuyến',
+        width: '20%', // Adjusted width
+        sortable: true,
+        render: (_cellValue, rowData) => (
+          <Typography variant="caption" color="text.secondary">
+            {`${rowData.diem_di} → ${rowData.diem_den?.split(';')[0] || ''}`}
+          </Typography>
         ),
       },
       ...sortedContainerTypes.map(ct => ({
