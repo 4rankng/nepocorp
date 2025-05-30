@@ -1,4 +1,13 @@
 import lopXeData from '@services/mockData/lopXe';
+import { 
+  mockApiCall, 
+  withPagination, 
+  withSingleItem, 
+  withCreate, 
+  withUpdate, 
+  withDelete,
+  ERROR_CODES 
+} from './apiWrapper.js';
 let data;
 if (
   typeof window !== 'undefined' &&
@@ -37,31 +46,68 @@ const fromUI = item => ({
   currency: item.currency || 'VND',
 });
 export const lopXeApi = {
-  getAll: async () => ({ data: data.map(toUI) }),
+  getAll: async (page = 1, limit = 10) => {
+    return mockApiCall(
+      withPagination(() => data.map(toUI), page, limit),
+      'LopXe'
+    );
+  },
+  
   create: async record => {
-    const id = data.length ? Math.max(...data.map(r => r.id)) + 1 : 1;
-    const raw = fromUI({ ...record, id });
-    data.push(raw);
-    persist();
-    return { data: toUI(raw) };
+    return mockApiCall(
+      withCreate(() => {
+        const id = data.length ? Math.max(...data.map(r => r.id)) + 1 : 1;
+        const raw = fromUI({ ...record, id });
+        data.push(raw);
+        persist();
+        return toUI(raw);
+      }),
+      'LopXe'
+    );
   },
+  
   update: async (id, record) => {
-    const idx = data.findIndex(r => r.id === id);
-    if (idx !== -1) {
-      data[idx] = { ...data[idx], ...fromUI(record) };
-      persist();
-      return { data: toUI(data[idx]) };
-    }
-    throw new Error('Record not found');
+    return mockApiCall(
+      withUpdate(() => {
+        const idx = data.findIndex(r => r.id === id);
+        if (idx !== -1) {
+          data[idx] = { ...data[idx], ...fromUI(record) };
+          persist();
+          return toUI(data[idx]);
+        }
+        return null;
+      }, ERROR_CODES.NOT_FOUND, 'Thông tin lốp xe không tồn tại'),
+      'LopXe'
+    );
   },
+  
   delete: async id => {
-    data = data.filter(r => r.id !== id);
-    persist();
-    return { success: true };
+    return mockApiCall(
+      withDelete(() => {
+        const initialLength = data.length;
+        data = data.filter(r => r.id !== id);
+        persist();
+        return initialLength !== data.length;
+      }, ERROR_CODES.NOT_FOUND, 'Thông tin lốp xe không tồn tại'),
+      'LopXe'
+    );
   },
+  
   reset: () => {
-    data = lopXeData.slice();
-    persist();
+    return mockApiCall(
+      () => {
+        data = lopXeData.slice();
+        persist();
+        return true;
+      },
+      'LopXe'
+    );
   },
-  getCount: async () => data.length,
+  
+  getCount: async () => {
+    return mockApiCall(
+      withSingleItem(() => data.length, ERROR_CODES.NOT_FOUND, 'Không thể lấy số lượng lốp xe'),
+      'LopXe'
+    );
+  },
 };

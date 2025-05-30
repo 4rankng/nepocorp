@@ -1,91 +1,67 @@
 import * as dinhMucDiDuongDataService from '@services/mockData/dinhMucDiDuong';
+import { 
+  mockApiCall, 
+  withPagination, 
+  withSingleItem, 
+  withCreate, 
+  withUpdate, 
+  withDelete,
+  ERROR_CODES 
+} from './apiWrapper.js';
 
-export const getAllDinhMucDiDuong = async () => {
-  try {
-    const data = await dinhMucDiDuongDataService.getAllDinhMucDiDuong();
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in getAllDinhMucDiDuong:', error);
-    return { data: null, error: error.message };
-  }
+export const getAllDinhMucDiDuong = async (page = 1, limit = 10) => {
+  return mockApiCall(
+    withPagination(() => dinhMucDiDuongDataService.getAllDinhMucDiDuong(), page, limit),
+    'DinhMucDiDuong'
+  );
 };
 
 export const getDinhMucDiDuongById = async id => {
-  try {
-    const data = await dinhMucDiDuongDataService.getDinhMucDiDuongById(id);
-    if (!data) {
-      return { data: null, error: 'Dinh muc di duong not found' };
-    }
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in getDinhMucDiDuongById:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    withSingleItem(() => dinhMucDiDuongDataService.getDinhMucDiDuongById(id), ERROR_CODES.NOT_FOUND, 'Định mức đi đường không tồn tại'),
+    'DinhMucDiDuong'
+  );
 };
 
 export const getDinhMucByContainerAndTuyen = async (ma_cont, ma_tuyen) => {
-  try {
-    const data = await dinhMucDiDuongDataService.getDinhMucByContainerAndTuyen(ma_cont, ma_tuyen);
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in getDinhMucByContainerAndTuyen:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    withSingleItem(() => dinhMucDiDuongDataService.getDinhMucByContainerAndTuyen(ma_cont, ma_tuyen), ERROR_CODES.NOT_FOUND, 'Không tìm thấy định mức cho container và tuyến này'),
+    'DinhMucDiDuong'
+  );
 };
 
 export const createDinhMucDiDuong = async dinhMuc => {
-  try {
-    const data = await dinhMucDiDuongDataService.createDinhMucDiDuong(dinhMuc);
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in createDinhMucDiDuong:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    withCreate(() => dinhMucDiDuongDataService.createDinhMucDiDuong(dinhMuc)),
+    'DinhMucDiDuong'
+  );
 };
 
 export const updateDinhMucDiDuong = async (id, updates) => {
-  try {
-    const data = await dinhMucDiDuongDataService.updateDinhMucDiDuong(id, updates);
-    if (!data) {
-      return { data: null, error: 'Dinh muc di duong not found' };
-    }
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in updateDinhMucDiDuong:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    withUpdate(() => dinhMucDiDuongDataService.updateDinhMucDiDuong(id, updates), ERROR_CODES.NOT_FOUND, 'Định mức đi đường không tồn tại'),
+    'DinhMucDiDuong'
+  );
 };
 
 export const deleteDinhMucDiDuong = async id => {
-  try {
-    const success = await dinhMucDiDuongDataService.deleteDinhMucDiDuong(id);
-    if (!success) {
-      return { error: 'Dinh muc di duong not found' };
-    }
-    return { error: null };
-  } catch (error) {
-    console.error('Error in deleteDinhMucDiDuong:', error);
-    return { error: error.message };
-  }
+  return mockApiCall(
+    withDelete(() => dinhMucDiDuongDataService.deleteDinhMucDiDuong(id), ERROR_CODES.NOT_FOUND, 'Định mức đi đường không tồn tại'),
+    'DinhMucDiDuong'
+  );
 };
 
 // For testing and resetting
 export const _resetDinhMucDiDuong = async (newData = []) => {
-  try {
-    const data = await dinhMucDiDuongDataService._resetDinhMucDiDuong(newData);
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in _resetDinhMucDiDuong:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    () => dinhMucDiDuongDataService._resetDinhMucDiDuong(newData),
+    'DinhMucDiDuong'
+  );
 };
 
 export const getDinhMucDiDuongCount = async () => {
-  try {
-    const count = await dinhMucDiDuongDataService.getDinhMucDiDuongCount();
-    return { data: count, error: null };
-  } catch (error) {
-    console.error('Error in getDinhMucDiDuongCount:', error);
-    return { data: 0, error: error.message };
-  }
+  return mockApiCall(
+    withSingleItem(() => dinhMucDiDuongDataService.getDinhMucDiDuongCount(), ERROR_CODES.NOT_FOUND, 'Không thể lấy số lượng định mức đi đường'),
+    'DinhMucDiDuong'
+  );
 };

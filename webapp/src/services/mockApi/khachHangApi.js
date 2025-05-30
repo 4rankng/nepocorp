@@ -1,37 +1,47 @@
 // Mock API services for KhachHang (Customers)
 import * as khachHangDataService from '@services/mockData/khachHang';
-const SIMULATED_DELAY = 0; // ms
-const simulateApiCall = fn => {
-  return new Promise((resolve, reject) => {
-    setTimeout(async () => {
-      try {
-        const result = await fn();
-        resolve(result);
-      } catch (error) {
-        console.error('Mock API Error (KhachHang):', error);
-        reject(error);
-      }
-    }, SIMULATED_DELAY);
-  });
+import { 
+  withPagination, 
+  withSingleItem, 
+  withCreate, 
+  withUpdate, 
+  withDelete,
+  createApiSingleResponse,
+  mockApiCall 
+} from './apiWrapper.js';
+
+export const fetchAllKhachHang = (page = 1, limit = 50) => {
+  return mockApiCall(() => 
+    withPagination(() => khachHangDataService.getAllKhachHang(), { page, limit })
+  );
 };
-export const fetchAllKhachHang = () => {
-  return simulateApiCall(async () => {
-    const allCustomers = await khachHangDataService.getAllKhachHang();
-    return { data: allCustomers };
-  });
-};
+
 export const fetchKhachHangById = id => {
-  return simulateApiCall(() => khachHangDataService.getKhachHangById(id));
+  return mockApiCall(() => 
+    withSingleItem(() => khachHangDataService.getKhachHangById(id), 'Khach hang not found')
+  );
 };
+
 export const addKhachHang = data => {
-  return simulateApiCall(() => khachHangDataService.createKhachHang(data));
+  return mockApiCall(() => 
+    withCreate(() => khachHangDataService.createKhachHang(data), 'Khach hang created successfully')
+  );
 };
+
 export const editKhachHang = (id, data) => {
-  return simulateApiCall(() => khachHangDataService.updateKhachHang(id, data));
+  return mockApiCall(() => 
+    withUpdate(() => khachHangDataService.updateKhachHang(id, data), 'Khach hang not found', 'Khach hang updated successfully')
+  );
 };
+
 export const removeKhachHang = id => {
-  return simulateApiCall(() => khachHangDataService.deleteKhachHang(id));
+  return mockApiCall(() => 
+    withDelete(() => khachHangDataService.deleteKhachHang(id), 'Khach hang not found', 'Khach hang deleted successfully')
+  );
 };
+
 export const _resetKhachHangMockData = data => {
-  return simulateApiCall(() => khachHangDataService._resetKhachHang(data));
+  return mockApiCall(() => 
+    createApiSingleResponse(khachHangDataService._resetKhachHang(data), 'Khach hang data reset successfully')
+  );
 };

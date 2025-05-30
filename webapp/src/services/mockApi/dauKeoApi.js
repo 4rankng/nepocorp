@@ -1,40 +1,58 @@
 // Mock API services for DauKeo (Tractor Units)
 import * as dauKeoDataService from '@services/mockData/dauKeo';
-const SIMULATED_DELAY = 0; // ms - No delay
-const simulateApiCall = fn => {
-  return new Promise((resolve, reject) => {
-    // If delay is 0, execute immediately.
-    // Still using setTimeout to maintain async structure if delay is re-introduced.
-    setTimeout(async () => {
-      try {
-        const result = await fn();
-        resolve(result);
-      } catch (error) {
-        console.error('Mock API Error (DauKeo):', error);
-        reject(error);
-      }
-    }, SIMULATED_DELAY);
+import { 
+  withPagination, 
+  withSingleItem, 
+  withCreate, 
+  withUpdate, 
+  withDelete,
+  createApiSingleResponse,
+  mockApiCall 
+} from './apiWrapper.js';
+
+export const fetchAllDauKeo = (page = 1, limit = 50) => {
+  return mockApiCall(() => 
+    withPagination(() => dauKeoDataService.getAllDauKeo(), { page, limit })
+  );
+};
+
+export const fetchDauKeoById = id => {
+  return mockApiCall(() => 
+    withSingleItem(() => dauKeoDataService.getDauKeoById(id), 'Dau keo not found')
+  );
+};
+
+export const addDauKeo = data => {
+  return mockApiCall(() => 
+    withCreate(() => dauKeoDataService.createDauKeo(data), 'Dau keo created successfully')
+  );
+};
+
+export const editDauKeo = (id, data) => {
+  return mockApiCall(() => 
+    withUpdate(() => dauKeoDataService.updateDauKeo(id, data), 'Dau keo not found', 'Dau keo updated successfully')
+  );
+};
+
+export const removeDauKeo = id => {
+  return mockApiCall(() => 
+    withDelete(() => dauKeoDataService.deleteDauKeo(id), 'Dau keo not found', 'Dau keo deleted successfully')
+  );
+};
+
+export const _resetDauKeoMockData = data => {
+  return mockApiCall(() => 
+    createApiSingleResponse(dauKeoDataService._resetDauKeo(data), 'Dau keo data reset successfully')
+  );
+};
+
+export const getDauKeoCount = async () => {
+  return mockApiCall(async () => {
+    const count = await dauKeoDataService.getDauKeoCount();
+    return createApiSingleResponse({ count }, 'Dau keo count retrieved');
   });
 };
-export const fetchAllDauKeo = () => {
-  return simulateApiCall(dauKeoDataService.getAllDauKeo);
-};
-export const fetchDauKeoById = id => {
-  return simulateApiCall(() => dauKeoDataService.getDauKeoById(id));
-};
-export const addDauKeo = data => {
-  return simulateApiCall(() => dauKeoDataService.createDauKeo(data));
-};
-export const editDauKeo = (id, data) => {
-  return simulateApiCall(() => dauKeoDataService.updateDauKeo(id, data));
-};
-export const removeDauKeo = id => {
-  return simulateApiCall(() => dauKeoDataService.deleteDauKeo(id));
-};
-export const _resetDauKeoMockData = data => {
-  return simulateApiCall(() => dauKeoDataService._resetDauKeo(data));
-};
-export const getDauKeoCount = () => simulateApiCall(dauKeoDataService.getDauKeoCount);
+
 // Export object for backward compatibility
 export const dauKeoApi = {
   getAll: fetchAllDauKeo,

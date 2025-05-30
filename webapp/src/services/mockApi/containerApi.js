@@ -1,38 +1,58 @@
 // Mock API services for Container
 import * as containerDataService from '@services/mockData/container';
-const SIMULATED_DELAY = 0; // ms - No delay
-const simulateApiCall = fn => {
-  return new Promise((resolve, reject) => {
-    setTimeout(async () => {
-      try {
-        const result = await fn();
-        resolve(result);
-      } catch (error) {
-        console.error('Mock API Error (Container):', error);
-        reject(error);
-      }
-    }, SIMULATED_DELAY);
+import { 
+  withPagination, 
+  withSingleItem, 
+  withCreate, 
+  withUpdate, 
+  withDelete,
+  createApiSingleResponse,
+  mockApiCall 
+} from './apiWrapper.js';
+
+export const fetchAllContainer = (page = 1, limit = 50) => {
+  return mockApiCall(() => 
+    withPagination(() => containerDataService.getAllContainer(), { page, limit })
+  );
+};
+
+export const fetchContainerById = id => {
+  return mockApiCall(() => 
+    withSingleItem(() => containerDataService.getContainerById(id), 'Container not found')
+  );
+};
+
+export const addContainer = data => {
+  return mockApiCall(() => 
+    withCreate(() => containerDataService.createContainer(data), 'Container created successfully')
+  );
+};
+
+export const editContainer = (id, data) => {
+  return mockApiCall(() => 
+    withUpdate(() => containerDataService.updateContainer(id, data), 'Container not found', 'Container updated successfully')
+  );
+};
+
+export const removeContainer = id => {
+  return mockApiCall(() => 
+    withDelete(() => containerDataService.deleteContainer(id), 'Container not found', 'Container deleted successfully')
+  );
+};
+
+export const _resetContainerMockData = data => {
+  return mockApiCall(() => 
+    createApiSingleResponse(containerDataService._resetContainer(data), 'Container data reset successfully')
+  );
+};
+
+export const getContainerCount = async () => {
+  return mockApiCall(async () => {
+    const count = await containerDataService.getContainerCount();
+    return createApiSingleResponse({ count }, 'Container count retrieved');
   });
 };
-export const fetchAllContainer = () => {
-  return simulateApiCall(containerDataService.getAllContainer);
-};
-export const fetchContainerById = id => {
-  return simulateApiCall(() => containerDataService.getContainerById(id));
-};
-export const addContainer = data => {
-  return simulateApiCall(() => containerDataService.createContainer(data));
-};
-export const editContainer = (id, data) => {
-  return simulateApiCall(() => containerDataService.updateContainer(id, data));
-};
-export const removeContainer = id => {
-  return simulateApiCall(() => containerDataService.deleteContainer(id));
-};
-export const _resetContainerMockData = data => {
-  return simulateApiCall(() => containerDataService._resetContainer(data));
-};
-export const getContainerCount = () => simulateApiCall(containerDataService.getContainerCount);
+
 export const containerApi = {
   getAll: fetchAllContainer,
   getById: fetchContainerById,

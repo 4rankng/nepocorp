@@ -1,94 +1,67 @@
 import * as tuyenDuongDataService from '@services/mockData/tuyenDuong';
+import { 
+  mockApiCall, 
+  withPagination, 
+  withSingleItem, 
+  withCreate, 
+  withUpdate, 
+  withDelete,
+  ERROR_CODES 
+} from './apiWrapper.js';
 
-export const getAllTuyenDuong = async () => {
-  try {
-    const data = await tuyenDuongDataService.getAllTuyenDuong();
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in getAllTuyenDuong:', error);
-    return { data: null, error: error.message };
-  }
+export const getAllTuyenDuong = async (page = 1, limit = 10) => {
+  return mockApiCall(
+    withPagination(() => tuyenDuongDataService.getAllTuyenDuong(), page, limit),
+    'TuyenDuong'
+  );
 };
 
 export const getTuyenDuongById = async id => {
-  try {
-    const data = await tuyenDuongDataService.getTuyenDuongById(id);
-    if (!data) {
-      return { data: null, error: 'Tuyen duong not found' };
-    }
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in getTuyenDuongById:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    withSingleItem(() => tuyenDuongDataService.getTuyenDuongById(id), ERROR_CODES.NOT_FOUND, 'Tuyến đường không tồn tại'),
+    'TuyenDuong'
+  );
 };
 
 export const getTuyenDuongByMaSo = async ma_so => {
-  try {
-    const data = await tuyenDuongDataService.getTuyenDuongByMaSo(ma_so);
-    if (!data) {
-      return { data: null, error: 'Tuyen duong not found' };
-    }
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in getTuyenDuongByMaSo:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    withSingleItem(() => tuyenDuongDataService.getTuyenDuongByMaSo(ma_so), ERROR_CODES.NOT_FOUND, 'Tuyến đường không tồn tại'),
+    'TuyenDuong'
+  );
 };
 
 export const createTuyenDuong = async tuyenDuong => {
-  try {
-    const data = await tuyenDuongDataService.createTuyenDuong(tuyenDuong);
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in createTuyenDuong:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    withCreate(() => tuyenDuongDataService.createTuyenDuong(tuyenDuong)),
+    'TuyenDuong'
+  );
 };
 
 export const updateTuyenDuong = async (id, updates) => {
-  try {
-    const data = await tuyenDuongDataService.updateTuyenDuong(id, updates);
-    if (!data) {
-      return { data: null, error: 'Tuyen duong not found' };
-    }
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in updateTuyenDuong:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    withUpdate(() => tuyenDuongDataService.updateTuyenDuong(id, updates), ERROR_CODES.NOT_FOUND, 'Tuyến đường không tồn tại'),
+    'TuyenDuong'
+  );
 };
 
 export const deleteTuyenDuong = async id => {
-  try {
-    const success = await tuyenDuongDataService.deleteTuyenDuong(id);
-    if (!success) {
-      return { error: 'Tuyen duong not found' };
-    }
-    return { error: null };
-  } catch (error) {
-    console.error('Error in deleteTuyenDuong:', error);
-    return { error: error.message };
-  }
+  return mockApiCall(
+    withDelete(() => tuyenDuongDataService.deleteTuyenDuong(id), ERROR_CODES.NOT_FOUND, 'Tuyến đường không tồn tại'),
+    'TuyenDuong'
+  );
 };
 
 // For testing and resetting
 export const _resetTuyenDuong = async (newData = []) => {
-  try {
-    const data = await tuyenDuongDataService._resetTuyenDuong(newData);
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error in _resetTuyenDuong:', error);
-    return { data: null, error: error.message };
-  }
+  return mockApiCall(
+    () => tuyenDuongDataService._resetTuyenDuong(newData),
+    'TuyenDuong'
+  );
 };
 
 export const getTuyenDuongCount = async () => {
-  try {
-    const count = await tuyenDuongDataService.getTuyenDuongCount();
-    return { data: count, error: null };
-  } catch (error) {
-    console.error('Error in getTuyenDuongCount:', error);
-    return { data: 0, error: error.message };
-  }
+  return mockApiCall(
+    withSingleItem(() => tuyenDuongDataService.getTuyenDuongCount(), ERROR_CODES.NOT_FOUND, 'Không thể lấy số lượng tuyến đường'),
+    'TuyenDuong'
+  );
 };

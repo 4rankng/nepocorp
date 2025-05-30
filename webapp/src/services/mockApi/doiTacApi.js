@@ -1,34 +1,52 @@
 // Mock API services for DoiTac (Partners)
 import * as doiTacDataService from '@services/mockData/doiTac';
-const SIMULATED_DELAY = 0; // ms
-const simulateApiCall = fn => {
-  return new Promise((resolve, reject) => {
-    setTimeout(async () => {
-      try {
-        const result = await fn();
-        resolve(result);
-      } catch (error) {
-        console.error('Mock API Error (DoiTac):', error);
-        reject(error);
-      }
-    }, SIMULATED_DELAY);
-  });
+import { 
+  mockApiCall, 
+  withPagination, 
+  withSingleItem, 
+  withCreate, 
+  withUpdate, 
+  withDelete,
+  ERROR_CODES 
+} from './apiWrapper.js';
+export const fetchAllDoiTac = (page = 1, limit = 10) => {
+  return mockApiCall(
+    withPagination(() => doiTacDataService.getAllDoiTac(), page, limit),
+    'DoiTac'
+  );
 };
-export const fetchAllDoiTac = () => {
-  return simulateApiCall(doiTacDataService.getAllDoiTac);
-};
+
 export const fetchDoiTacById = id => {
-  return simulateApiCall(() => doiTacDataService.getDoiTacById(id));
+  return mockApiCall(
+    withSingleItem(() => doiTacDataService.getDoiTacById(id), ERROR_CODES.NOT_FOUND, 'Đối tác không tồn tại'),
+    'DoiTac'
+  );
 };
+
 export const addDoiTac = data => {
-  return simulateApiCall(() => doiTacDataService.createDoiTac(data));
+  return mockApiCall(
+    withCreate(() => doiTacDataService.createDoiTac(data)),
+    'DoiTac'
+  );
 };
+
 export const editDoiTac = (id, data) => {
-  return simulateApiCall(() => doiTacDataService.updateDoiTac(id, data));
+  return mockApiCall(
+    withUpdate(() => doiTacDataService.updateDoiTac(id, data), ERROR_CODES.NOT_FOUND, 'Đối tác không tồn tại'),
+    'DoiTac'
+  );
 };
+
 export const removeDoiTac = id => {
-  return simulateApiCall(() => doiTacDataService.deleteDoiTac(id));
+  return mockApiCall(
+    withDelete(() => doiTacDataService.deleteDoiTac(id), ERROR_CODES.NOT_FOUND, 'Đối tác không tồn tại'),
+    'DoiTac'
+  );
 };
+
 export const _resetDoiTacMockData = data => {
-  return simulateApiCall(() => doiTacDataService._resetDoiTac(data));
+  return mockApiCall(
+    () => doiTacDataService._resetDoiTac(data),
+    'DoiTac'
+  );
 };
