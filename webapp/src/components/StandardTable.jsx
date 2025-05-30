@@ -1,19 +1,27 @@
 import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Box,
+  IconButton,
+  MenuItem,
+  Select,
   Table,
   TableBody,
+  Typography,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
   Paper,
-  Box,
   TablePagination,
   CircularProgress,
   Alert,
   TableSortLabel,
 } from '@mui/material';
+import {
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+} from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 // Enhanced theme configuration based on DinhMucDau.jsx
 const theme = {
@@ -386,22 +394,71 @@ const StandardTable = ({
         </Table>
       </TableContainer>
       {pagination && (
-        <TablePagination
-          component="div"
-          count={totalCount}
-          page={page}
-          onPageChange={onPageChange}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={onRowsPerPageChange}
-          labelRowsPerPage="Hàng mỗi trang:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
+        <Box
           sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             borderTop: `1px solid ${theme.palette.grey[200]}`,
-            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-              fontSize: theme.typography.body2.fontSize,
-            },
+            p: 1,
           }}
-        />
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Hàng mỗi trang:
+            </Typography>
+            <Select
+              value={rowsPerPage}
+              onChange={onRowsPerPageChange}
+              size="small"
+              sx={{
+                height: 32,
+                '& .MuiSelect-select': {
+                  py: 0.5,
+                  fontSize: '0.875rem',
+                },
+              }}
+            >
+              {[5, 10, 25, 50, 100].map(rows => (
+                <MenuItem key={rows} value={rows}>
+                  {rows}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              onClick={() => onPageChange(null, page - 1)}
+              disabled={page === 0}
+              size="small"
+              sx={{
+                width: 32,
+                height: 32,
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <ChevronLeftIcon />
+            </IconButton>
+            
+            <Typography variant="body2" sx={{ minWidth: 80, textAlign: 'center' }}>
+              Trang {page + 1} / {Math.ceil(totalCount / rowsPerPage) || 1}
+            </Typography>
+            
+            <IconButton
+              onClick={() => onPageChange(null, page + 1)}
+              disabled={page >= Math.ceil(totalCount / rowsPerPage) - 1}
+              size="small"
+              sx={{
+                width: 32,
+                height: 32,
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <ChevronRightIcon />
+            </IconButton>
+          </Box>
+        </Box>
       )}
     </Paper>
   );

@@ -15,7 +15,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
 
   // Calculate expiration date if not present
-  const getExpirationDate = (record) => {
+  const getExpirationDate = record => {
     if (record.ngay_het_han) return new Date(record.ngay_het_han);
     if (record.ngay_thay && record.so_thang_bao_hanh) {
       const date = new Date(record.ngay_thay);
@@ -28,7 +28,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
   const expirationDate = getExpirationDate(record);
 
   // Format date to Vietnamese locale
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
@@ -114,9 +114,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
               <Typography variant="body2" color="text.secondary">
                 Ngày hết hạn:
               </Typography>
-              <Typography variant="body2">
-                {formatDate(record.ngay_het_han) || 'N/A'}
-              </Typography>
+              <Typography variant="body2">{formatDate(record.ngay_het_han) || 'N/A'}</Typography>
             </Box>
             <Box
               sx={{

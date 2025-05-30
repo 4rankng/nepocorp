@@ -59,5 +59,5 @@ export const baoDuongTableColumns = [
     minWidth: 200,
     sortable: false,
     flex: 1,
-  }
+  },
 ];

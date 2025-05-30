@@ -21,14 +21,14 @@ class MockDB {
       // Import all mock data
       const { default: baoDuongData } = await import('@services/mockData/baoDuong');
       const { default: userData } = await import('@services/mockData/users');
-      
+
       // Initialize tables with bootstrap data
       this.tables.set('baoDuong', [...baoDuongData]);
       this.tables.set('users', [...userData]);
-      
+
       // Try to load persisted data from localStorage if available
       this.loadPersistedData();
-      
+
       this.initialized = true;
       console.log('MockDB initialized with tables:', Array.from(this.tables.keys()));
     } catch (error) {
@@ -156,7 +156,7 @@ class MockDB {
 
     // Add to table
     data.push(newRecord);
-    
+
     // Persist and notify
     this.persistData(tableName);
     this.notifyListeners(tableName, 'CREATE', newRecord);
@@ -250,19 +250,21 @@ class MockDB {
    */
   async resetTable(tableName) {
     this.ensureInitialized();
-    
+
     try {
       let bootstrapData;
-      
+
       switch (tableName) {
-        case 'baoDuong':
+        case 'baoDuong': {
           const { default: baoDuongData } = await import('@services/mockData/baoDuong');
           bootstrapData = [...baoDuongData];
           break;
-        case 'users':
+        }
+        case 'users': {
           const { default: userData } = await import('@services/mockData/users');
           bootstrapData = [...userData];
           break;
+        }
         default:
           throw new Error(`Unknown table: ${tableName}`);
       }
@@ -270,7 +272,7 @@ class MockDB {
       this.tables.set(tableName, bootstrapData);
       this.persistData(tableName);
       this.notifyListeners(tableName, 'RESET', bootstrapData);
-      
+
       return true;
     } catch (error) {
       console.error(`Failed to reset table ${tableName}:`, error);

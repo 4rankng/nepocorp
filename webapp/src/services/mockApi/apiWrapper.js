@@ -320,21 +320,18 @@ export async function mockApiCall(apiCall, options = {}) {
       result = await apiCall();
     } catch (callError) {
       console.warn('API call execution error:', callError);
-      
+
       // Enhanced error handling to provide more detailed information
       const errorDetails = callError.message || 'Unknown error occurred';
-      const errorResponse = callError.success === false
-        ? callError
-        : createApiErrorResponse(
-            ErrorCodes.INTERNAL_ERROR,
-            'API call execution failed',
-            {
+      const errorResponse =
+        callError.success === false
+          ? callError
+          : createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API call execution failed', {
               message: errorDetails,
               originalError: callError.toString(),
-              timestamp: new Date().toISOString()
-            }
-          );
-      
+              timestamp: new Date().toISOString(),
+            });
+
       console.error('API error details:', errorResponse);
       return errorResponse;
     }

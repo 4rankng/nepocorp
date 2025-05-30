@@ -92,7 +92,18 @@ const QuanLyBaoDuong = memo(() => {
     isLoading,
     error,
     fetchData,
+    pagination,
   } = useBaoDuongRecords(baoDuongApi);
+
+  // Extract pagination props for StandardTable
+  const {
+    page,
+    pageSize: rowsPerPage,
+    total: totalCount,
+    totalPages,
+    onPageChange: handlePageChange,
+    onRowsPerPageChange: handleRowsPerPageChange,
+  } = pagination;
   // Form state/handlers
   const {
     formData,
@@ -127,8 +138,8 @@ const QuanLyBaoDuong = memo(() => {
   // Fetch count and data on mount
   useEffect(() => {
     baoDuongApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
-    // Also fetch initial data
-    fetchData();
+    // Also fetch initial data with pagination
+    fetchData(0, 10);
   }, []); // Empty dependency array for mount only
   // Helper to refetch count
   const refetchCount = useCallback(() => {
@@ -179,8 +190,12 @@ const QuanLyBaoDuong = memo(() => {
       details: {
         'Biển số xe': record.bien_so,
         'Hạng mục': record.item_name,
-        'Ngày thay': record.ngay_thay ? new Date(record.ngay_thay).toLocaleDateString('vi-VN') : 'N/A',
-        'Ngày hết hạn': record.ngay_het_han ? new Date(record.ngay_het_han).toLocaleDateString('vi-VN') : 'N/A',
+        'Ngày thay': record.ngay_thay
+          ? new Date(record.ngay_thay).toLocaleDateString('vi-VN')
+          : 'N/A',
+        'Ngày hết hạn': record.ngay_het_han
+          ? new Date(record.ngay_het_han).toLocaleDateString('vi-VN')
+          : 'N/A',
         'Số lượng': record.so_luong,
         'Đơn giá': formatCurrency(record.don_gia),
         'Tổng tiền': formatCurrency(record.tong_tien),
@@ -215,52 +230,42 @@ const QuanLyBaoDuong = memo(() => {
       setFormLoading(false);
     }
   };
-  // Handle save from dialog with proper error handling
+  // Handle save from dialog with proper error handling and pagination
   const handleSave = useCallback(
     async e => {
       try {
         setFormLoading(true);
-        
-        // Use the form's handleSave which includes validation
-        const result = await handleFormSave(e);
-        
-        // Enhanced error handling for API responses
-        if (result?.success === false) {
-          // Handle API error response
-          let errorMessage = 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng';
-          
-          if (result.error?.message) {
-            errorMessage = result.error.message;
-          } else if (result.error?.details?.message) {
-            errorMessage = result.error.details.message;
-          }
-          
-          console.warn('API returned error:', result);
-          throw new Error(errorMessage);
-        }
-        
+        // Pass current pagination state to handleFormSave
+        await handleFormSave(e, pagination.page, pagination.pageSize);
+
         // If we get here, the save was successful
         setSnackbar({
           open: true,
-          message: isEdit 
+          message: isEdit
             ? 'Cập nhật thông tin bảo dưỡng thành công'
             : 'Thêm thông tin bảo dưỡng thành công',
           severity: 'success',
         });
-        
-        // Refresh data and close dialog
-        await fetchData();
+
+        // Refresh data with current pagination and close dialog
+        await fetchData(pagination.page, pagination.pageSize);
         refetchCount();
         setOpenDialog(false);
       } catch (error) {
         console.error('Error in handleSave:', error);
-        
+
         // Extract detailed error information
         const errorDetails = error.response?.error?.details || {};
         const errorMessage = error.message || 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng';
-        
-        // Only show snackbar for non-validation errors
-        if (!error.isValidationError) {
+
+        // If there are validation errors, set them in the form
+        if (error.validationError && errorDetails) {
+          setErrors(errorDetails);
+        }
+
+        // Show error message to user if not a validation error
+        // (validation errors are shown in the form fields)
+        if (!error.validationError) {
           setSnackbar({
             open: true,
             message: errorMessage,
@@ -305,27 +310,30 @@ const QuanLyBaoDuong = memo(() => {
   );
   // Render desktop table view
   const renderDesktopView = () => {
-    // Debug: Log each row's data before rendering
-    filteredRecords.forEach((row, idx) => {
-    });
     return (
       <StandardTable
         columns={baoDuongTableColumns}
-        data={filteredRecords}
+        data={maintenanceRecords}
+        rowKeyField="id"
         loading={isLoading}
         error={error}
-        emptyMessage="Không có dữ liệu bảo dưỡng nào"
-        sx={{
-          '& .MuiTableRow-hover:hover': {
-            backgroundColor: 'action.hover',
-          },
-        }}
+        emptyMessage="Chưa có dữ liệu bảo dưỡng"
         renderActions={record => (
           <>
             <EditButton onClick={() => handleOpenEditDialog(record)} tooltip="Chỉnh sửa" />
             <DeleteButton onClick={() => handleDeleteClick(record)} tooltip="Xóa" />
           </>
         )}
+        onRowClick={handleOpenEditDialog}
+        minHeight={400}
+        pagination={true}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalCount={totalCount}
+        onPageChange={(e, newPage) => handlePageChange(newPage)}
+        onRowsPerPageChange={e => {
+          handleRowsPerPageChange(parseInt(e.target.value, 10));
+        }}
       />
     );
   };
@@ -404,7 +412,7 @@ const QuanLyBaoDuong = memo(() => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      
+
       {/* Floating Action Button */}
       <Zoom in={!isFormLoading}>
         <Fab

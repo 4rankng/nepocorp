@@ -28,50 +28,50 @@ export const baoDuongApi = {
     return mockApiCall(() => withPagination(() => data, { page, limit }));
   },
   create: async record => {
-    return mockApiCall(
-      ()=>withCreate(async () => {
+    return mockApiCall(() =>
+      withCreate(async () => {
         try {
           console.log('Creating new record with data:', record);
-          
+
           // Validate required fields
           if (!record.bien_so || !record.item_name || !record.ngay_thay) {
             throw new Error('Thiếu thông tin bắt buộc. Vui lòng kiểm tra lại.');
           }
-          
+
           // Ensure we have a valid license plate format
           const trimmedBienSo = String(record.bien_so).trim();
           if (!trimmedBienSo) {
             throw new Error('Biển số không được để trống');
           }
-          
+
           // Get all valid license plates for validation
           const validBienSoList = await getValidBienSoList();
           console.log('Available license plates:', validBienSoList);
-          
+
           // Check if the provided license plate exists in the system
           const isValid = validBienSoList.includes(trimmedBienSo);
-          console.log('License plate validation result:', { 
-            provided: trimmedBienSo, 
+          console.log('License plate validation result:', {
+            provided: trimmedBienSo,
             isValid,
-            validPlates: validBienSoList 
+            validPlates: validBienSoList,
           });
-          
+
           if (!isValid) {
             throw new Error(
               `Biển số "${trimmedBienSo}" không tồn tại trong hệ thống. Vui lòng kiểm tra lại.`
             );
           }
-          
+
           // Calculate total if not provided
           const so_luong = Number(record.so_luong) || 1;
           const don_gia = Number(record.don_gia) || 0;
           const tong_tien = so_luong * don_gia;
-          
+
           // Create new record with calculated fields
           const id = data.length ? Math.max(...data.map(r => r.id)) + 1 : 1;
           const now = new Date().toISOString();
-          
-          const raw = { 
+
+          const raw = {
             ...record,
             id,
             bien_so: trimmedBienSo, // Ensure consistent formatting
@@ -84,9 +84,9 @@ export const baoDuongApi = {
             currency: record.currency || 'VND',
             ghi_chu: record.ghi_chu || '',
             so_thang_bao_hanh: Number(record.so_thang_bao_hanh) || 0,
-            ngay_het_han: record.ngay_het_han || ''
+            ngay_het_han: record.ngay_het_han || '',
           };
-          
+
           console.log('Saving new record:', raw);
           data.push(raw);
           persist();
@@ -103,8 +103,8 @@ export const baoDuongApi = {
     );
   },
   update: async (id, record) => {
-    return mockApiCall(
-      () => withUpdate(() => {
+    return mockApiCall(() =>
+      withUpdate(() => {
         const idx = data.findIndex(r => r.id === id);
         if (idx === -1) throw new Error('Không tìm thấy bản ghi');
         // If bien_so is being updated, validate it exists in the system
@@ -115,11 +115,11 @@ export const baoDuongApi = {
             );
           }
         }
-        const updatedRecord = { 
-          ...data[idx], 
-          ...record, 
+        const updatedRecord = {
+          ...data[idx],
+          ...record,
           id,
-          updated_at: new Date().toISOString() 
+          updated_at: new Date().toISOString(),
         };
         data[idx] = updatedRecord;
         persist();
@@ -150,6 +150,8 @@ export const baoDuongApi = {
     }, 'BaoDuong');
   },
   getCount: async () => {
-    return mockApiCall(() => withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe'));
+    return mockApiCall(() =>
+      withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe')
+    );
   },
 };

@@ -50,15 +50,20 @@ export default function useBaoDuongForm({
     if (!formData.ngay_thay) newErrors.ngay_thay = 'Vui lòng chọn ngày thay thế';
     if (!formData.so_luong || formData.so_luong <= 0)
       newErrors.so_luong = 'Số lượng phải lớn hơn 0';
-    if (!formData.don_gia || formData.don_gia < 0)
-      newErrors.don_gia = 'Đơn giá không hợp lệ';
+    if (!formData.don_gia || formData.don_gia < 0) newErrors.don_gia = 'Đơn giá không hợp lệ';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  const handleSave = async (e) => {
-    console.log('useBaoDuongForm handleSave called', { e, formData, isEdit });
+  const handleSave = async (e, currentPage = 0, pageSize = 10) => {
+    console.log('useBaoDuongForm handleSave called', {
+      e,
+      formData,
+      isEdit,
+      currentPage,
+      pageSize,
+    });
     e?.preventDefault();
-    
+
     try {
       // Validate form
       const isValid = validateForm();
@@ -69,9 +74,9 @@ export default function useBaoDuongForm({
         validationError.validationError = true;
         throw validationError;
       }
-      
+
       setIsLoading(true);
-      
+
       // Prepare data for submission
       const tong_tien = Number(formData.so_luong || 0) * Number(formData.don_gia || 0);
       const submissionData = {
@@ -83,18 +88,18 @@ export default function useBaoDuongForm({
         so_thang_bao_hanh: Number(formData.so_thang_bao_hanh) || 0,
         ngay_het_han: formData.ngay_het_han || '',
         ghi_chu: formData.ghi_chu || '',
-        currency: formData.currency || 'VND'
+        currency: formData.currency || 'VND',
       };
-      
+
       console.log('Submitting form data:', submissionData);
-      
+
       // Call the appropriate API method
       let response;
       if (isEdit) {
         console.log('Updating existing record with ID:', submissionData.id);
         response = await api.update(submissionData.id, submissionData);
         console.log('Update API response:', response);
-        
+
         // Check for API error responses
         if (!response?.success) {
           const error = new Error(response?.error?.message || 'Cập nhật thất bại');
@@ -102,13 +107,13 @@ export default function useBaoDuongForm({
           error.validationError = response?.error?.code === 'VALIDATION_ERROR';
           throw error;
         }
-        
+
         onSuccess?.(response?.message || 'Cập nhật thông tin bảo dưỡng thành công');
       } else {
         console.log('Creating new record');
         response = await api.create(submissionData);
         console.log('Create API response:', response);
-        
+
         // Check for API error responses
         if (!response?.success) {
           const error = new Error(response?.error?.message || 'Tạo mới thất bại');
@@ -116,29 +121,34 @@ export default function useBaoDuongForm({
           error.validationError = response?.error?.code === 'VALIDATION_ERROR';
           throw error;
         }
-        
+
         onSuccess?.(response?.message || 'Thêm thông tin bảo dưỡng thành công');
       }
-      
+
       // Refresh data if fetchData is provided
       if (fetchData) {
         try {
-          console.log('Refreshing data...');
-          await fetchData();
+          console.log('Refreshing data with pagination...', { currentPage, pageSize });
+          await fetchData(currentPage, pageSize);
           console.log('Data refresh complete');
         } catch (refreshError) {
           console.error('Error refreshing data:', refreshError);
-          // Don't fail the entire operation if refresh fails
+          // Fallback to page 0 if there's an error with the current page
+          try {
+            await fetchData(0, pageSize);
+          } catch (fallbackError) {
+            console.error('Fallback refresh also failed:', fallbackError);
+          }
         }
       }
-      
+
       return response;
     } catch (error) {
       console.error('Error in handleSave:', error);
-      
+
       // Extract and format error message from API response
       let errorMessage = 'Đã xảy ra lỗi khi lưu dữ liệu';
-      
+
       if (error?.response?.error?.message) {
         errorMessage = error.response.error.message;
       } else if (error?.message) {
@@ -146,7 +156,7 @@ export default function useBaoDuongForm({
       } else if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       // Update form errors if available in the API response
       if (error?.response?.data?.errors) {
         setErrors(error.response.data.errors);
@@ -158,16 +168,16 @@ export default function useBaoDuongForm({
         });
         setErrors(apiErrors);
       }
-      
+
       // Call onError if provided
       if (onError) {
-        onError({ 
-          ...error, 
+        onError({
+          ...error,
           message: errorMessage,
-          isValidationError: error.validationError === true
+          isValidationError: error.validationError === true,
         });
       }
-      
+
       // Re-throw the error with additional context
       const enhancedError = new Error(errorMessage);
       enhancedError.originalError = error;
