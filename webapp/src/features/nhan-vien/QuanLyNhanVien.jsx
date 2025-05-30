@@ -18,6 +18,7 @@ import {
   DialogContentText,
   DialogTitle,
   Button,
+  Zoom,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import EmployeeCard from '@features/nhan-vien/components/EmployeeCard';
@@ -125,7 +126,7 @@ const QuanLyNhanVien = () => {
     );
   });
   return (
-    <Box sx={{ p: 0, pb: { xs: 10, md: 11 } }}>
+    <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
       {/* Search bar */}
       <Box sx={{ mb: 3 }}>
         <TextField
@@ -188,20 +189,30 @@ const QuanLyNhanVien = () => {
         )}
       </Paper>
       {/* Floating Add FAB */}
-      <Fab
-        color="primary"
-        aria-label="add"
-        onClick={handleOpenModalForAdd}
-        sx={{
-          position: 'fixed',
-          bottom: { xs: 24, md: 32 },
-          right: { xs: 24, md: 32 },
-          zIndex: 1201,
-          boxShadow: 6,
-        }}
-      >
-        <PlusIcon />
-      </Fab>
+      <Zoom in={!isLoading}>
+        <Fab
+          color="primary"
+          aria-label="Thêm nhân viên"
+          onClick={handleOpenModalForAdd}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 24, sm: 32 },
+            right: { xs: 24, sm: 32 },
+            zIndex: 1201,
+            boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)',
+            '&:hover': {
+              transform: 'scale(1.05)',
+              boxShadow: '0 12px 40px rgba(25, 118, 210, 0.35)',
+            },
+            transition: 'all 0.2s ease-in-out',
+            // Ensure visibility on all screen sizes
+            width: { xs: 56, sm: 56 },
+            height: { xs: 56, sm: 56 },
+          }}
+        >
+          <PlusIcon />
+        </Fab>
+      </Zoom>
       <NhanVienForm
         open={isModalOpen}
         onClose={handleCloseModal}
