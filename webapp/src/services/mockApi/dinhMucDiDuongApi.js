@@ -11,12 +11,9 @@ import {
 
 export const getAllDinhMucDiDuong = async (page = 1, limit = 10) => {
   return mockApiCall(() =>
-    withPagination(() => dinhMucDiDuongDataService.getAllDinhMucDiDuong(), {page, limit})
+    withPagination(() => dinhMucDiDuongDataService.getAllDinhMucDiDuong(), { page, limit })
   );
 };
-
-
-
 
 export const getDinhMucDiDuongById = async id => {
   return mockApiCall(() =>
@@ -66,9 +63,7 @@ export const deleteDinhMucDiDuong = async id => {
 
 // For testing and resetting
 export const _resetDinhMucDiDuong = async (newData = []) => {
-  return mockApiCall(() =>
-    dinhMucDiDuongDataService._resetDinhMucDiDuong(newData)
-  );
+  return mockApiCall(() => dinhMucDiDuongDataService._resetDinhMucDiDuong(newData));
 };
 
 export const getDinhMucDiDuongCount = async () => {

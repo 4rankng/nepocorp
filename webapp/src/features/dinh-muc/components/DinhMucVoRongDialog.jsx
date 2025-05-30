@@ -82,7 +82,7 @@ const DinhMucVoRongDialog = ({
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
-              gap: 2
+              gap: 2,
             }}
           >
             <Box sx={{ flex: 1 }}>

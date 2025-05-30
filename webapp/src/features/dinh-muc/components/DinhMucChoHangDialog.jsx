@@ -68,7 +68,8 @@ const DinhMucChoHangDialog = ({
         }}
       >
         <Typography variant="h6" component="h2">
-          {isEdit ? 'Sửa định mức cho' : 'Thêm định mức cho'}{licensePlate && ` ${licensePlate}`}
+          {isEdit ? 'Sửa định mức cho' : 'Thêm định mức cho'}
+          {licensePlate && ` ${licensePlate}`}
         </Typography>
         <IconButton edge="end" color="inherit" onClick={onClose} aria-label="close">
           <CloseIcon />
@@ -81,7 +82,7 @@ const DinhMucChoHangDialog = ({
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
-              gap: 2
+              gap: 2,
             }}
           >
             <Box sx={{ flex: 1 }}>

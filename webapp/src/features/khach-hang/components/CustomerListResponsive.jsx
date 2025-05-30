@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Box,
-  useMediaQuery,
-  useTheme,
-  Card,
-  CardContent,
-  Typography,
-} from '@mui/material';
+import { Box, useMediaQuery, useTheme, Card, CardContent, Typography } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, SearchBar } from '@/components';
 const CustomerListResponsive = ({

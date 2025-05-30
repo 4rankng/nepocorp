@@ -13,7 +13,7 @@ export const useContainer = () => {
     setError('');
     try {
       const response = await fetchAllContainer();
-      
+
       // Handle new standardized API response format
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to fetch containers');
@@ -37,7 +37,7 @@ export const useContainer = () => {
     setError('');
     try {
       const response = await addContainer(formData);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to create container');
       }
@@ -60,7 +60,7 @@ export const useContainer = () => {
     setError('');
     try {
       const response = await editContainer(id, formData);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to update container');
       }
@@ -82,7 +82,7 @@ export const useContainer = () => {
     setError('');
     try {
       const response = await removeContainer(id);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to delete container');
       }
@@ -101,7 +101,7 @@ export const useContainer = () => {
   const refreshCount = useCallback(async () => {
     try {
       const response = await fetchAllContainer();
-      
+
       if (response.success) {
         const result = response.data?.items || response.data || [];
         setCount(result.length);

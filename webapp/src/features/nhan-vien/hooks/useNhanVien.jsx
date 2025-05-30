@@ -95,11 +95,11 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
         }
         // Fetch with retry logic
         const response = await withRetry(() => fetchAllNhanVien(page, size));
-        
+
         // Extract data from API response
         const items = response?.data || [];
         const total = response?.meta?.totalItems || 0;
-        
+
         // Map backend fields to UI fields
         const mapped = items.map(emp => ({
           ...emp,
@@ -108,14 +108,14 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
           tenDangNhap: emp.ten_dang_nhap,
           chucVu: mapChucVu(emp.chuc_vu),
         }));
-        
+
         // Update cache
         cacheRef.current.employees = {
           data: mapped,
           total: total,
           timestamp: now,
         };
-        
+
         // Update state
         setEmployees(mapped);
         setPagination(prev => ({
@@ -145,33 +145,33 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   // Lazy load dau keo list for driver assignment
   const loadDauKeoList = useCallback(async () => {
     if (isDauKeoLoading) return; // Prevent multiple simultaneous calls
-    
+
     setIsDauKeoLoading(true);
     try {
       const now = Date.now();
       const cachedData = cacheRef.current.dauKeo;
-      
+
       // Return cached data if valid
       if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
         setDauKeoList(cachedData.data);
         return;
       }
-      
+
       const response = await withRetry(() => fetchAllDauKeo());
       const dauKeoData = response?.data || [];
-      
+
       const mappedDauKeo = dauKeoData.map(item => ({
         ...item,
         label: `${item.bien_so} - ${item.loai_xe || 'Đầu kéo'}`,
         value: item.id,
       }));
-      
+
       // Update cache
       cacheRef.current.dauKeo = {
         data: mappedDauKeo,
         timestamp: now,
       };
-      
+
       setDauKeoList(mappedDauKeo);
     } catch (err) {
       console.error('Error loading dau keo list:', err);

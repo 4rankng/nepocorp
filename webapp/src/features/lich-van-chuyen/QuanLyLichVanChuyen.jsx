@@ -220,7 +220,9 @@ const QuanLyLichVanChuyen = () => {
       ]);
 
       // Extract data from API responses
-      const lichVanChuyenList = Array.isArray(lichVanChuyenResponse?.data) ? lichVanChuyenResponse.data : [];
+      const lichVanChuyenList = Array.isArray(lichVanChuyenResponse?.data)
+        ? lichVanChuyenResponse.data
+        : [];
       const nhanVienList = Array.isArray(nhanVienResponse?.data) ? nhanVienResponse.data : [];
       const containerList = Array.isArray(containerResponse?.data) ? containerResponse.data : [];
       const khachHangList = Array.isArray(khachHangResponse?.data) ? khachHangResponse.data : [];
@@ -228,7 +230,7 @@ const QuanLyLichVanChuyen = () => {
       const roMoocList = Array.isArray(roMoocResponse?.data) ? roMoocResponse.data : [];
 
       setLichVanChuyenItems(lichVanChuyenList);
-      
+
       // Format data for select inputs
       const vehiclesData = formatVehiclesForSelect(dauKeoList, roMoocList);
       const customersData = formatCustomersForSelect(khachHangList);
@@ -462,7 +464,6 @@ const QuanLyLichVanChuyen = () => {
         flexDirection: 'column',
       }}
     >
-
       {isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
           <CircularProgress />

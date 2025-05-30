@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Paper,
-  Alert,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, Paper, Alert, useTheme } from '@mui/material';
 import { SearchBar } from '@components';
 import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
 import DinhMucChoHangDialog from './DinhMucChoHangDialog';
@@ -48,7 +41,7 @@ const DinhMucChoHang = () => {
   // Convert the license plates data to match the expected format
   const activeLicensePlatesWithStandards = availableLicensePlates;
 
-  const openAddNewDinhMucDialog = (params) => {
+  const openAddNewDinhMucDialog = params => {
     setCurrentStandard(null);
     setSelectedLicensePlate(params?.licensePlate || '');
     setFormData({
@@ -62,7 +55,7 @@ const DinhMucChoHang = () => {
     setAddDialogOpen(true);
   };
 
-  const openEditDinhMucDialog = (params) => {
+  const openEditDinhMucDialog = params => {
     const { standard, licensePlate } = params;
     setCurrentStandard(standard);
     setSelectedLicensePlate(licensePlate);
@@ -104,12 +97,12 @@ const DinhMucChoHang = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.bienSoXe) newErrors.bienSoXe = 'Biển số xe không được để trống';
     if (!formData.fromKm) newErrors.fromKm = 'Số km bắt đầu không được để trống';
     if (!formData.toKm) newErrors.toKm = 'Số km kết thúc không được để trống';
     if (!formData.standard) newErrors.standard = 'Định mức không được để trống';
-    
+
     if (formData.fromKm && formData.toKm) {
       const fromKm = parseFloat(formData.fromKm);
       const toKm = parseFloat(formData.toKm);
@@ -176,7 +169,6 @@ const DinhMucChoHang = () => {
         boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
       }}
     >
-
       {isLoading ? (
         <Box
           sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 150 }}

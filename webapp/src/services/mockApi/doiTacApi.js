@@ -10,14 +10,12 @@ import {
   ErrorCodes,
 } from './apiWrapper.js';
 export const fetchAllDoiTac = (page = 1, limit = 10) => {
-  return mockApiCall(
-    () => withPagination(() => doiTacDataService.getAllDoiTac(), { page, limit })
-  );
+  return mockApiCall(() => withPagination(() => doiTacDataService.getAllDoiTac(), { page, limit }));
 };
 
 export const fetchDoiTacById = id => {
-  return mockApiCall(
-    () => withSingleItem(
+  return mockApiCall(() =>
+    withSingleItem(
       () => doiTacDataService.getDoiTacById(id),
       ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'
@@ -26,14 +24,12 @@ export const fetchDoiTacById = id => {
 };
 
 export const addDoiTac = data => {
-  return mockApiCall(
-    () => withCreate(() => doiTacDataService.createDoiTac(data))
-  );
+  return mockApiCall(() => withCreate(() => doiTacDataService.createDoiTac(data)));
 };
 
 export const editDoiTac = (id, data) => {
-  return mockApiCall(
-    () => withUpdate(
+  return mockApiCall(() =>
+    withUpdate(
       () => doiTacDataService.updateDoiTac(id, data),
       ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'
@@ -42,8 +38,8 @@ export const editDoiTac = (id, data) => {
 };
 
 export const removeDoiTac = id => {
-  return mockApiCall(
-    () => withDelete(
+  return mockApiCall(() =>
+    withDelete(
       () => doiTacDataService.deleteDoiTac(id),
       ErrorCodes.NOT_FOUND,
       'Đối tác không tồn tại'

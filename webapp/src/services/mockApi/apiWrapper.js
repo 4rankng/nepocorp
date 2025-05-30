@@ -95,23 +95,23 @@ export function createApiErrorResponse(code, message, details) {
 export async function withPagination(dataFetcher, options = {}) {
   try {
     const { page = 1, limit = 10, message } = options;
-    
+
     let allData;
     try {
       allData = await dataFetcher();
     } catch (fetchError) {
       console.warn('Data fetcher error in pagination:', fetchError);
       return createApiErrorResponse(
-        ErrorCodes.INTERNAL_ERROR, 
-        'Failed to fetch data for pagination', 
+        ErrorCodes.INTERNAL_ERROR,
+        'Failed to fetch data for pagination',
         fetchError.message
       );
     }
-    
+
     if (!allData || !Array.isArray(allData)) {
       console.warn('Invalid data returned for pagination:', allData);
       return createApiErrorResponse(
-        ErrorCodes.INTERNAL_ERROR, 
+        ErrorCodes.INTERNAL_ERROR,
         'Invalid data format for pagination'
       );
     }
@@ -130,8 +130,8 @@ export async function withPagination(dataFetcher, options = {}) {
   } catch (error) {
     console.error('Pagination wrapper error:', error);
     return createApiErrorResponse(
-      ErrorCodes.INTERNAL_ERROR, 
-      'Failed to process pagination', 
+      ErrorCodes.INTERNAL_ERROR,
+      'Failed to process pagination',
       error.message
     );
   }
@@ -157,8 +157,8 @@ export async function withSingleItem(
     } catch (fetchError) {
       console.warn('Data fetcher error in single item:', fetchError);
       return createApiErrorResponse(
-        ErrorCodes.INTERNAL_ERROR, 
-        'Failed to fetch item data', 
+        ErrorCodes.INTERNAL_ERROR,
+        'Failed to fetch item data',
         fetchError.message
       );
     }
@@ -174,7 +174,11 @@ export async function withSingleItem(
       // Already an API error response
       return error;
     }
-    return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to process item', error.message);
+    return createApiErrorResponse(
+      ErrorCodes.INTERNAL_ERROR,
+      'Failed to process item',
+      error.message
+    );
   }
 }
 
@@ -212,7 +216,11 @@ export async function withCreate(creator, successMessage = 'Item created success
     if (error.success === false) {
       return error;
     }
-    return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to create item', error.message);
+    return createApiErrorResponse(
+      ErrorCodes.INTERNAL_ERROR,
+      'Failed to create item',
+      error.message
+    );
   }
 }
 
@@ -252,7 +260,11 @@ export async function withUpdate(
     if (error.success === false) {
       return error;
     }
-    return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to update item', error.message);
+    return createApiErrorResponse(
+      ErrorCodes.INTERNAL_ERROR,
+      'Failed to update item',
+      error.message
+    );
   }
 }
 
@@ -296,7 +308,11 @@ export async function withDelete(
     if (error.success === false) {
       return error;
     }
-    return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'Failed to delete item', error.message);
+    return createApiErrorResponse(
+      ErrorCodes.INTERNAL_ERROR,
+      'Failed to delete item',
+      error.message
+    );
   }
 }
 
@@ -333,15 +349,19 @@ export async function mockApiCall(apiCall, options = {}) {
       console.warn('API call execution error:', callError);
       return callError.success === false
         ? callError
-        : createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API call execution failed', callError.message);
+        : createApiErrorResponse(
+            ErrorCodes.INTERNAL_ERROR,
+            'API call execution failed',
+            callError.message
+          );
     }
-    
+
     // Check if result is valid
     if (!result) {
       console.warn('API call returned empty result');
       return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API returned empty result');
     }
-    
+
     return result;
   } catch (error) {
     // This catches any other errors in the wrapper itself

@@ -15,7 +15,7 @@ export const useBoSung = () => {
     setError('');
     try {
       const response = await cauHinhApi.getDinhMucBoSung();
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to fetch supplementary standard');
       }
@@ -33,12 +33,12 @@ export const useBoSung = () => {
   }, []);
 
   // Update supplementary standard
-  const updateSupplementaryStandard = useCallback(async (newValue) => {
+  const updateSupplementaryStandard = useCallback(async newValue => {
     setIsLoading(true);
     setError('');
     try {
       const response = await cauHinhApi.updateDinhMucBoSung(newValue);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to update supplementary standard');
       }

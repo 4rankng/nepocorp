@@ -138,33 +138,33 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   // Lazy load dau keo list for driver assignment
   const loadDauKeoList = useCallback(async () => {
     if (isDauKeoLoading) return; // Prevent multiple simultaneous calls
-    
+
     setIsDauKeoLoading(true);
     try {
       const now = Date.now();
       const cachedData = cacheRef.current.dauKeo;
-      
+
       // Return cached data if valid
       if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
         setDauKeoList(cachedData.data);
         return;
       }
-      
+
       const response = await withRetry(() => fetchAllDauKeo());
       const dauKeoData = response?.data || [];
-      
+
       const mappedDauKeo = dauKeoData.map(item => ({
         ...item,
         label: `${item.bien_so} - ${item.loai_xe || 'Đầu kéo'}`,
         value: item.id,
       }));
-      
+
       // Update cache
       cacheRef.current.dauKeo = {
         data: mappedDauKeo,
         timestamp: now,
       };
-      
+
       setDauKeoList(mappedDauKeo);
     } catch (err) {
       console.error('Error loading dau keo list:', err);

@@ -13,7 +13,7 @@ export const useRoMooc = () => {
     setError('');
     try {
       const response = await fetchAllRoMooc();
-      
+
       // Handle new standardized API response format
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to fetch trailers');
@@ -37,7 +37,7 @@ export const useRoMooc = () => {
     setError('');
     try {
       const response = await addRoMooc(formData);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to create trailer');
       }
@@ -60,7 +60,7 @@ export const useRoMooc = () => {
     setError('');
     try {
       const response = await editRoMooc(id, formData);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to update trailer');
       }
@@ -82,7 +82,7 @@ export const useRoMooc = () => {
     setError('');
     try {
       const response = await removeRoMooc(id);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to delete trailer');
       }
@@ -101,7 +101,7 @@ export const useRoMooc = () => {
   const refreshCount = useCallback(async () => {
     try {
       const response = await fetchAllRoMooc();
-      
+
       if (response.success) {
         const result = response.data?.items || response.data || [];
         setCount(result.length);

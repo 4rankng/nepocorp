@@ -135,7 +135,17 @@ const DesktopShipmentFormDialog = ({
                       Thông tin cơ bản
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: 'repeat(2, 1fr)',
+                        md: 'repeat(4, 1fr)',
+                      },
+                      gap: 2,
+                    }}
+                  >
                     <Box>
                       <TextField
                         fullWidth
@@ -218,7 +228,13 @@ const DesktopShipmentFormDialog = ({
                       Thông tin Tuyến đường
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                      gap: 2,
+                    }}
+                  >
                     <Box>
                       <TextField
                         fullWidth
@@ -260,7 +276,17 @@ const DesktopShipmentFormDialog = ({
                       Phương tiện & Nhân sự
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: 'repeat(2, 1fr)',
+                        md: 'repeat(4, 1fr)',
+                      },
+                      gap: 2,
+                    }}
+                  >
                     <Box>
                       <FormControl fullWidth size="small" required>
                         <InputLabel>Biển số xe</InputLabel>
@@ -390,7 +416,13 @@ const DesktopShipmentFormDialog = ({
                       Chi phí & Thanh toán
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                      gap: 2,
+                    }}
+                  >
                     <Box>
                       <TextField
                         fullWidth
@@ -494,7 +526,13 @@ const DesktopShipmentFormDialog = ({
                         Trạng thái
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                        gap: 2,
+                      }}
+                    >
                       <Box>
                         <FormControl fullWidth size="small" required>
                           <InputLabel>Trạng thái kế hoạch</InputLabel>

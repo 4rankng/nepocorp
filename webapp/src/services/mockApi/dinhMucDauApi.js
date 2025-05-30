@@ -10,11 +10,13 @@ import {
 } from './apiWrapper.js';
 
 export const getAllDinhMucDau = async (page = 1, limit = 10) => {
-  return mockApiCall(() => withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), { page, limit }));
+  return mockApiCall(() =>
+    withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), { page, limit })
+  );
 };
 
 export const getDinhMucDauById = async id => {
-  return mockApiCall(() => 
+  return mockApiCall(() =>
     withSingleItem(
       () => dinhMucDauDataService.getDinhMucDauById(id),
       ErrorCodes.NOT_FOUND,
@@ -24,13 +26,11 @@ export const getDinhMucDauById = async id => {
 };
 
 export const createDinhMucDau = async dinhMucDau => {
-  return mockApiCall(() => 
-    withCreate(() => dinhMucDauDataService.createDinhMucDau(dinhMucDau))
-  );
+  return mockApiCall(() => withCreate(() => dinhMucDauDataService.createDinhMucDau(dinhMucDau)));
 };
 
 export const updateDinhMucDau = async (id, updates) => {
-  return mockApiCall(() => 
+  return mockApiCall(() =>
     withUpdate(
       () => dinhMucDauDataService.updateDinhMucDau(id, updates),
       ErrorCodes.NOT_FOUND,
@@ -40,7 +40,7 @@ export const updateDinhMucDau = async (id, updates) => {
 };
 
 export const deleteDinhMucDau = async id => {
-  return mockApiCall(() => 
+  return mockApiCall(() =>
     withDelete(
       () => dinhMucDauDataService.deleteDinhMucDau(id),
       ErrorCodes.NOT_FOUND,
@@ -55,7 +55,7 @@ export const _resetDinhMucDau = async (newData = []) => {
 };
 
 export const getDinhMucDauCount = async () => {
-  return mockApiCall(() => 
+  return mockApiCall(() =>
     withSingleItem(
       () => dinhMucDauDataService.getDinhMucDauCount(),
       ErrorCodes.NOT_FOUND,

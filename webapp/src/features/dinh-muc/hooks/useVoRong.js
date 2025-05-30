@@ -30,15 +30,22 @@ export const useVoRong = () => {
 
       if (!dinhMucResponse.success) {
         console.error('DinhMucDau API Error:', dinhMucResponse.error);
-        throw new Error(dinhMucResponse.error?.message || 'Lỗi khi tải dữ liệu định mức dầu. Vui lòng thử lại sau.');
+        throw new Error(
+          dinhMucResponse.error?.message ||
+            'Lỗi khi tải dữ liệu định mức dầu. Vui lòng thử lại sau.'
+        );
       }
       if (!dauKeoResponse.success) {
         console.error('DauKeo API Error:', dauKeoResponse.error);
-        throw new Error(dauKeoResponse.error?.message || 'Lỗi khi tải danh sách đầu kéo. Vui lòng thử lại sau.');
+        throw new Error(
+          dauKeoResponse.error?.message || 'Lỗi khi tải danh sách đầu kéo. Vui lòng thử lại sau.'
+        );
       }
       if (!roMoocResponse.success) {
         console.error('RoMooc API Error:', roMoocResponse.error);
-        throw new Error(roMoocResponse.error?.message || 'Lỗi khi tải danh sách rơ mooc. Vui lòng thử lại sau.');
+        throw new Error(
+          roMoocResponse.error?.message || 'Lỗi khi tải danh sách rơ mooc. Vui lòng thử lại sau.'
+        );
       }
 
       const allDinhMucData = dinhMucResponse.data?.items || dinhMucResponse.data || [];
@@ -74,20 +81,23 @@ export const useVoRong = () => {
       setDinhMucVoRong(voRongGrouped);
 
       // Combine tractor and trailer license plates
-      const tractorPlates = dauKeoData.map(dk => ({ 
-        licensePlate: dk.bien_so, 
-        type: 'dau_keo' 
+      const tractorPlates = dauKeoData.map(dk => ({
+        licensePlate: dk.bien_so,
+        type: 'dau_keo',
       }));
-      const trailerPlates = roMoocData.map(rm => ({ 
-        licensePlate: rm.bien_so, 
-        type: 'ro_mooc' 
+      const trailerPlates = roMoocData.map(rm => ({
+        licensePlate: rm.bien_so,
+        type: 'ro_mooc',
       }));
       setAvailableLicensePlates([...tractorPlates, ...trailerPlates]);
 
       return { voRongGrouped, tractorPlates, trailerPlates };
     } catch (err) {
       console.error('Failed to fetch empty fuel standards:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Không thể tải dữ liệu định mức vỏ rỗng. Vui lòng thử lại.';
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        'Không thể tải dữ liệu định mức vỏ rỗng. Vui lòng thử lại.';
       setError(errorMessage);
       // Return empty data to prevent UI from breaking
       setDinhMucVoRong({});
@@ -99,91 +109,100 @@ export const useVoRong = () => {
   }, []);
 
   // Create vo rong standard
-  const createVoRongStandard = useCallback(async (formData) => {
-    setIsLoading(true);
-    setError('');
-    try {
-      const apiData = {
-        bien_so_xe: formData.bienSoXe,
-        phan_loai: 'km_vo',
-        tuKm: parseFloat(formData.fromKm),
-        denKm: parseFloat(formData.toKm),
-        l_km: parseFloat(formData.standard),
-        ghiChu: formData.note,
-      };
+  const createVoRongStandard = useCallback(
+    async formData => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const apiData = {
+          bien_so_xe: formData.bienSoXe,
+          phan_loai: 'km_vo',
+          tuKm: parseFloat(formData.fromKm),
+          denKm: parseFloat(formData.toKm),
+          l_km: parseFloat(formData.standard),
+          ghiChu: formData.note,
+        };
 
-      const response = await dinhMucDauApi.create(apiData);
-      
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Failed to create vo rong standard');
+        const response = await dinhMucDauApi.create(apiData);
+
+        if (!response.success) {
+          throw new Error(response.error?.message || 'Failed to create vo rong standard');
+        }
+
+        // Refresh data to get updated grouping
+        await fetchVoRongData();
+        return response.data;
+      } catch (err) {
+        console.error('Error creating vo rong standard:', err);
+        setError('Không thể thêm định mức vỏ rỗng');
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-
-      // Refresh data to get updated grouping
-      await fetchVoRongData();
-      return response.data;
-    } catch (err) {
-      console.error('Error creating vo rong standard:', err);
-      setError('Không thể thêm định mức vỏ rỗng');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchVoRongData]);
+    },
+    [fetchVoRongData]
+  );
 
   // Update vo rong standard
-  const updateVoRongStandard = useCallback(async (id, formData) => {
-    setIsLoading(true);
-    setError('');
-    try {
-      const apiData = {
-        bien_so_xe: formData.bienSoXe,
-        phan_loai: 'km_vo',
-        tuKm: parseFloat(formData.fromKm),
-        denKm: parseFloat(formData.toKm),
-        l_km: parseFloat(formData.standard),
-        ghiChu: formData.note,
-      };
+  const updateVoRongStandard = useCallback(
+    async (id, formData) => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const apiData = {
+          bien_so_xe: formData.bienSoXe,
+          phan_loai: 'km_vo',
+          tuKm: parseFloat(formData.fromKm),
+          denKm: parseFloat(formData.toKm),
+          l_km: parseFloat(formData.standard),
+          ghiChu: formData.note,
+        };
 
-      const response = await dinhMucDauApi.update(id, apiData);
-      
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Failed to update vo rong standard');
+        const response = await dinhMucDauApi.update(id, apiData);
+
+        if (!response.success) {
+          throw new Error(response.error?.message || 'Failed to update vo rong standard');
+        }
+
+        // Refresh data to get updated grouping
+        await fetchVoRongData();
+        return response.data;
+      } catch (err) {
+        console.error('Error updating vo rong standard:', err);
+        setError('Không thể cập nhật định mức vỏ rỗng');
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-
-      // Refresh data to get updated grouping
-      await fetchVoRongData();
-      return response.data;
-    } catch (err) {
-      console.error('Error updating vo rong standard:', err);
-      setError('Không thể cập nhật định mức vỏ rỗng');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchVoRongData]);
+    },
+    [fetchVoRongData]
+  );
 
   // Delete vo rong standard
-  const deleteVoRongStandard = useCallback(async (id) => {
-    setIsLoading(true);
-    setError('');
-    try {
-      const response = await dinhMucDauApi.delete(id);
-      
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Failed to delete vo rong standard');
-      }
+  const deleteVoRongStandard = useCallback(
+    async id => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const response = await dinhMucDauApi.delete(id);
 
-      // Refresh data to get updated grouping
-      await fetchVoRongData();
-      return true;
-    } catch (err) {
-      console.error('Error deleting vo rong standard:', err);
-      setError('Không thể xóa định mức vỏ rỗng');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchVoRongData]);
+        if (!response.success) {
+          throw new Error(response.error?.message || 'Failed to delete vo rong standard');
+        }
+
+        // Refresh data to get updated grouping
+        await fetchVoRongData();
+        return true;
+      } catch (err) {
+        console.error('Error deleting vo rong standard:', err);
+        setError('Không thể xóa định mức vỏ rỗng');
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchVoRongData]
+  );
 
   // Load data on mount
   useEffect(() => {

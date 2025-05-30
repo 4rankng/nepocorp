@@ -1,13 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {
-  Box,
-  Paper,
-  Fab,
-  Typography,
-  useTheme,
-  TableSortLabel,
-} from '@mui/material';
+import { Box, Paper, Fab, Typography, useTheme, TableSortLabel } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import AddIcon from '@mui/icons-material/Add';
 import StandardTable from '@/components/StandardTable';

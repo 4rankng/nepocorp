@@ -13,7 +13,7 @@ export const useDauKeo = () => {
     setError('');
     try {
       const response = await fetchAllDauKeo();
-      
+
       // Handle new standardized API response format
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to fetch tractors');
@@ -37,7 +37,7 @@ export const useDauKeo = () => {
     setError('');
     try {
       const response = await addDauKeo(formData);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to create tractor');
       }
@@ -60,7 +60,7 @@ export const useDauKeo = () => {
     setError('');
     try {
       const response = await editDauKeo(id, formData);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to update tractor');
       }
@@ -82,7 +82,7 @@ export const useDauKeo = () => {
     setError('');
     try {
       const response = await removeDauKeo(id);
-      
+
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to delete tractor');
       }
@@ -101,7 +101,7 @@ export const useDauKeo = () => {
   const refreshCount = useCallback(async () => {
     try {
       const response = await fetchAllDauKeo();
-      
+
       if (response.success) {
         const result = response.data?.items || response.data || [];
         setCount(result.length);

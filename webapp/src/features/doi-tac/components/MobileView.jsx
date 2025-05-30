@@ -26,7 +26,7 @@ const MobileView = ({
   const filteredPartners = useMemo(() => {
     // Ensure partners is always an array
     const partnersArray = Array.isArray(partners) ? partners : [];
-    
+
     if (!searchTerm.trim()) return partnersArray;
     const term = searchTerm.toLowerCase();
     return partnersArray.filter(
