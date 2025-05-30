@@ -95,9 +95,7 @@ const DauKeoContent = () => {
   };
 
   return (
-    <Box sx={{ position: 'relative', pb: 8 }}>
-      <AddButton onClick={() => setDialog({ open: true, edit: false, data: null })} />
-
+    <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
       {dauKeoHook.loading ? (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress size={24} />
@@ -133,7 +131,6 @@ const DauKeoContent = () => {
           )}
         />
       )}
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -146,7 +143,6 @@ const DauKeoContent = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       <DauKeoDialog
         open={dialog.open}
         edit={dialog.edit}
@@ -154,7 +150,28 @@ const DauKeoContent = () => {
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
-
+      <AddButton
+        onClick={() => setDialog({ open: true, edit: false, data: null })}
+        iconOnly={true}
+        size="large" // For 24px icon in 56x56 FAB
+        aria-label="Thêm đầu kéo"
+        sx={{
+          position: 'fixed',
+          bottom: { xs: theme.spacing(3), sm: theme.spacing(4) }, // Match /doi-tac (24px, 32px)
+          right: { xs: theme.spacing(3), sm: theme.spacing(4) }, // Match /doi-tac (24px, 32px)
+          borderRadius: '50%',
+          zIndex: theme.zIndex.speedDial || 1050,
+          width: 56, // Match /doi-tac FAB size
+          height: 56, // Match /doi-tac FAB size
+          minWidth: 56, // Ensure minWidth is also set for iconOnly button
+          boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)', // Match /doi-tac FAB shadow
+          '&:hover': {
+            transform: 'scale(1.05)',
+            boxShadow: '0 12px 40px rgba(25, 118, 210, 0.35)', // Match /doi-tac FAB hover shadow
+          },
+          transition: 'all 0.2s ease-in-out', // Match /doi-tac FAB transition
+        }}
+      />
       <DauKeoDeleteDialog
         open={deleteDialog.open}
         data={deleteDialog.data}
@@ -209,10 +226,8 @@ const RoMoocContent = () => {
   };
 
   return (
-    <Box sx={{ position: 'relative', pb: 8 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <AddButton onClick={() => setDialog({ open: true, edit: false, data: null })} />
-      </Box>
+    <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
+      {/* Old AddButton block removed, FAB is already at the end of the component */}
 
       {roMoocHook.loading ? (
         <Box display="flex" justifyContent="center" my={4}>
@@ -277,6 +292,28 @@ const RoMoocContent = () => {
         onConfirm={handleDelete}
         onClose={() => setDeleteDialog({ open: false, data: null })}
       />
+      <AddButton
+        onClick={() => setDialog({ open: true, edit: false, data: null })}
+        iconOnly={true}
+        size="large"
+        aria-label="Thêm rơ mooc"
+        sx={{
+          position: 'fixed',
+          bottom: { xs: theme.spacing(3), sm: theme.spacing(4) },
+          right: { xs: theme.spacing(3), sm: theme.spacing(4) },
+          borderRadius: '50%',
+          zIndex: theme.zIndex.speedDial || 1050,
+          width: 56,
+          height: 56,
+          minWidth: 56,
+          boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)',
+          '&:hover': {
+            transform: 'scale(1.05)',
+            boxShadow: '0 12px 40px rgba(25, 118, 210, 0.35)',
+          },
+          transition: 'all 0.2s ease-in-out',
+        }}
+      />
     </Box>
   );
 };
@@ -330,10 +367,8 @@ const ContainerContent = () => {
   };
 
   return (
-    <Box sx={{ p: 0 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <AddButton onClick={() => setDialog({ open: true, edit: false, data: null })} />
-      </Box>
+    <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
+      {/* Old AddButton block removed, FAB is already at the end of the component */}
 
       {containerHook.loading ? (
         <Box display="flex" justifyContent="center" my={4}>
@@ -398,6 +433,28 @@ const ContainerContent = () => {
         onConfirm={handleDelete}
         onClose={() => setDeleteDialog({ open: false, data: null })}
       />
+      <AddButton
+        onClick={() => setDialog({ open: true, edit: false, data: null })}
+        iconOnly={true}
+        size="large"
+        aria-label="Thêm container"
+        sx={{
+          position: 'fixed',
+          bottom: { xs: theme.spacing(3), sm: theme.spacing(4) },
+          right: { xs: theme.spacing(3), sm: theme.spacing(4) },
+          borderRadius: '50%',
+          zIndex: theme.zIndex.speedDial || 1050,
+          width: 56,
+          height: 56,
+          minWidth: 56,
+          boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)',
+          '&:hover': {
+            transform: 'scale(1.05)',
+            boxShadow: '0 12px 40px rgba(25, 118, 210, 0.35)',
+          },
+          transition: 'all 0.2s ease-in-out',
+        }}
+      />
     </Box>
   );
 };
@@ -439,16 +496,17 @@ const QuanLyPhuongTien = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', typography: 'body1' }}>
+    <div className="w-full">
       <SwipeTabs
         tabs={TABS}
         activeTab={activeTab}
         basePath="/phuong-tien"
         onTabChange={handleTabChange}
+        stickyTabs={true}
       >
-        <Box sx={{ p: 2, minHeight: '60vh' }}>{renderTabContent()}</Box>
+        <div className="p-4">{renderTabContent()}</div>
       </SwipeTabs>
-    </Box>
+    </div>
   );
 };
 export default QuanLyPhuongTien;

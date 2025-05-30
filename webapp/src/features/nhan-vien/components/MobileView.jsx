@@ -23,7 +23,7 @@ const MobileView = ({
   canEditDelete,
 }) => {
   // Helper function to render employee chips
-  const renderEmployeeChips = (employee) => (
+  const renderEmployeeChips = employee => (
     <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
       <Chip
         label={employee.chucVu || 'Chưa xác định'}

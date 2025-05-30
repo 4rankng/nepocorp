@@ -71,11 +71,7 @@ const ProfileCard = ({
                 {infoLine3}
               </Typography>
             )}
-            {extraContent && (
-              <Box sx={{ mt: 1 }}>
-                {extraContent}
-              </Box>
-            )}
+            {extraContent && <Box sx={{ mt: 1 }}>{extraContent}</Box>}
           </Box>
           {(onEdit || onDelete) && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
