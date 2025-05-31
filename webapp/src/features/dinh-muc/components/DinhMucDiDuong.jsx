@@ -16,10 +16,15 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { StandardTable, EditButton, DeleteButton } from '@components';
 import { useDiDuong } from '../hooks';
 import { Search as SearchIcon } from '@mui/icons-material';
+import DinhMucDiDuongDeleteDialog from './DinhMucDiDuongDeleteDialog'; // Import the new dialog
 
 const DinhMucDiDuong = () => {
   const muiTheme = useTheme();
-  const { roadNorms, containerTypes, routes, isLoading, error } = useDiDuong();
+  const { roadNorms, containerTypes, routes, isLoading, error, deleteRoadNorm, fetchAllData } =
+    useDiDuong();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -35,36 +40,64 @@ const DinhMucDiDuong = () => {
     });
   }, [containerTypes]);
   // Handle edit action
-  const handleEdit = (id) => {
+  const handleEdit = id => {
     // TODO: Implement edit functionality
     console.log('Edit record:', id);
   };
 
-  // Handle delete action
-  const handleDelete = (id) => {
-    // TODO: Implement delete functionality with confirmation dialog
-    if (window.confirm('Bạn có chắc chắn muốn xóa bản ghi này?')) {
-      console.log('Delete record:', id);
+  // Handle delete action - open dialog
+  const handleDelete = rowData => {
+    setItemToDelete(rowData);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setItemToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+    setIsDeleting(true);
+    try {
+      // Find all individual norm IDs for the selected route (ma_tuyen)
+      const normsToDelete = roadNorms.filter(norm => norm.ma_tuyen === itemToDelete.ma_tuyen);
+
+      // Call deleteRoadNorm for each individual norm ID
+      for (const norm of normsToDelete) {
+        // The mock API deleteDinhMucDiDuong(id) uses the specific record ID.
+        await deleteRoadNorm(norm.id);
+      }
+      // Optionally, refetch all data to ensure consistency if deleteRoadNorm doesn't perfectly update local state for multiple deletions
+      // await fetchAllData(); // Uncomment if needed after testing
+      // Show success notification (implement snackbar later)
+      console.log(`Successfully deleted norms for route: ${itemToDelete.ma_tuyen}`);
+    } catch (deleteError) {
+      console.error('Failed to delete norms:', deleteError);
+      // Show error notification (implement snackbar later)
+    } finally {
+      setIsDeleting(false);
+      handleCloseDeleteDialog();
     }
   };
 
   // Render action buttons for each row
-  const renderActions = (rowData) => (
+  const renderActions = rowData => (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      <EditButton 
-        onClick={(e) => {
+      <EditButton
+        onClick={e => {
           e.stopPropagation();
           console.log('Edit:', rowData);
-        }} 
-        size="small" 
+        }}
+        size="small"
       />
-      <DeleteButton 
-        onClick={(e) => {
+      <DeleteButton
+        onClick={e => {
           e.stopPropagation();
-          console.log('Delete:', rowData);
-        }} 
-        size="small" 
-        sx={{ ml: 1 }} 
+          handleDelete(rowData); // Call new handleDelete with rowData
+        }}
+        size="small"
+        sx={{ ml: 1 }}
       />
     </Box>
   );
@@ -187,103 +220,119 @@ const DinhMucDiDuong = () => {
   };
 
   return (
-    <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
-      <Paper
-        sx={{
-          p: { xs: 1.5, md: 2 },
-          mb: 3,
-          boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
-        }}
-      >
-      {isLoading && (
-        <Box sx={{ width: '100%', minHeight: 200, p: 2 }}>
-          <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
-          {[...Array(5)].map((_, index) => (
-            <Skeleton key={index} variant="rectangular" width="100%" height={52} sx={{ mb: 0.5 }} />
-          ))}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <CircularProgress size={24} sx={{ mr: 1 }} />
-            <Typography variant="body2">Đang tải dữ liệu...</Typography>
-          </Box>
-        </Box>
-      )}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Không thể tải dữ liệu định mức đi đường: {error}
-        </Alert>
-      )}
-      {!isLoading && !error && (
-        <>
-          <Box sx={{ mb: 2, width: '100%' }}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Tìm kiếm theo mã tuyến, điểm đi, điểm đến..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                sx: {
-                  borderRadius: '6px',
-                  height: 36,
-                  minHeight: 36,
-                  fontSize: '0.95rem',
-                },
-              }}
-            />
-          </Box>
-          <StandardTable
-            columns={columns}
-            data={paginatedData}
-            loading={isLoading}
-            emptyMessage={
-              searchTerm
-                ? `Không tìm thấy kết quả cho "${searchTerm}"`
-                : 'Chưa có dữ liệu định mức đi đường'
-            }
-            rowKeyField="id"
-            pagination
-            page={page}
-            rowsPerPage={rowsPerPage}
-            totalCount={filteredData.length}
-            onPageChange={handlePageChange}
-            onRowsPerPageChange={handleRowsPerPageChange}
-            sx={{
-              '& .MuiTableCell-root': {
-                py: 1.5,
-                px: 2,
-              },
-              '& .MuiTableHead-root': {
-                backgroundColor: muiTheme.palette.grey[100],
-              },
-              '& .MuiTableRow-hover:hover': {
-                backgroundColor: muiTheme.palette.action.hover,
-              },
-            }}
-          />
-        </>
-      )}
-      </Paper>
-      <Fab
-        color="primary"
-        aria-label="add"
-        onClick={handleAddNew}
-        sx={{
-          position: 'fixed',
-          bottom: 16,
-          right: 16,
-          ...(isMobile && {
-            bottom: 80, // Above mobile navigation
-          }),
-        }}
-      >
-        <AddIcon />
-      </Fab>
-    </Box>
+    <>
+      <DinhMucDiDuongDeleteDialog
+        open={deleteDialogOpen}
+        rowData={itemToDelete}
+        containerTypes={sortedContainerTypes} // Pass sortedContainerTypes
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
+      <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
+        <Paper
+          sx={{
+            p: { xs: 1.5, md: 2 },
+            mb: 3,
+            boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
+          }}
+        >
+          {isLoading && (
+            <Box sx={{ width: '100%', minHeight: 200, p: 2 }}>
+              <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
+              {[...Array(5)].map((_, index) => (
+                <Skeleton
+                  key={index}
+                  variant="rectangular"
+                  width="100%"
+                  height={52}
+                  sx={{ mb: 0.5 }}
+                />
+              ))}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <CircularProgress size={24} sx={{ mr: 1 }} />
+                <Typography variant="body2">Đang tải dữ liệu...</Typography>
+              </Box>
+            </Box>
+          )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              Không thể tải dữ liệu định mức đi đường: {error}
+            </Alert>
+          )}
+          {!isLoading && !error && (
+            <>
+              <Box sx={{ mb: 2, width: '100%' }}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Tìm kiếm theo mã tuyến, điểm đi, điểm đến..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                    sx: {
+                      borderRadius: '6px',
+                      height: 36,
+                      minHeight: 36,
+                      fontSize: '0.95rem',
+                    },
+                  }}
+                />
+              </Box>
+              <StandardTable
+                columns={columns}
+                data={paginatedData}
+                loading={isLoading}
+                emptyMessage={
+                  searchTerm
+                    ? `Không tìm thấy kết quả cho "${searchTerm}"`
+                    : 'Chưa có dữ liệu định mức đi đường'
+                }
+                rowKeyField="id"
+                pagination
+                page={page}
+                rowsPerPage={rowsPerPage}
+                totalCount={filteredData.length}
+                onPageChange={handlePageChange}
+                onRowsPerPageChange={handleRowsPerPageChange}
+                sx={{
+                  '& .MuiTableCell-root': {
+                    py: 1.5,
+                    px: 2,
+                  },
+                  '& .MuiTableHead-root': {
+                    backgroundColor: muiTheme.palette.grey[100],
+                  },
+                  '& .MuiTableRow-hover:hover': {
+                    backgroundColor: muiTheme.palette.action.hover,
+                  },
+                }}
+              />
+            </>
+          )}
+        </Paper>
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={handleAddNew}
+          sx={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            ...(isMobile && {
+              bottom: 80, // Above mobile navigation
+            }),
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Box>
+    </>
   );
 };
 export default DinhMucDiDuong;
