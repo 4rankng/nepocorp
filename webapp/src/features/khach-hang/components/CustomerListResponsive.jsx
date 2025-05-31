@@ -140,6 +140,13 @@ const CustomerListResponsive = ({
         emptyMessage={searchTerm ? 'Không tìm thấy khách hàng phù hợp' : emptyMessage}
         sortable={true}
         defaultSort={{ key: 'ten', direction: 'asc' }}
+        pagination={true}
+        page={0}
+        rowsPerPage={10}
+        totalCount={filteredCustomers.length}
+        onPageChange={(_, page) => console.log('Page changed to:', page)}
+        onRowsPerPageChange={(e) => console.log('Rows per page changed to:', e.target.value)}
+        showSTT={true}
       />
     </Box>
   );

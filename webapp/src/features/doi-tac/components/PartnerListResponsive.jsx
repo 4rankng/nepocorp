@@ -11,15 +11,11 @@ import {
   IconButton,
   Divider,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
+import StandardTable from '@/components/StandardTable'; 
+import { SearchBar } from '@/components';
 const PartnerListResponsive = ({
   partners = [],
   loading = false,
@@ -87,82 +83,80 @@ const PartnerListResponsive = ({
       )}
     </Box>
   );
-  // Render desktop table view
+  // Define columns for StandardTable
+  const columns = [
+    {
+      key: 'ma_dinh_danh',
+      label: 'Mã đối tác',
+      align: 'left',
+      sortable: true,
+      render: value => value || '--',
+    },
+    {
+      key: 'ten',
+      label: 'Tên đối tác',
+      align: 'left',
+      sortable: true,
+    },
+    {
+      key: 'dia_chi',
+      label: 'Địa chỉ',
+      align: 'left',
+      sortable: true,
+      render: value => value || '--',
+    },
+    {
+      key: 'ma_so_thue',
+      label: 'Mã số thuế',
+      align: 'left',
+      sortable: true,
+      render: value => value || '--',
+    },
+  ];
+
+  // Render action buttons for each row
+  const renderActions = partner => (
+    <>
+      <EditButton onClick={() => onEdit(partner)} size="small" />
+      <DeleteButton onClick={() => onDelete(partner)} size="small" sx={{ ml: 1 }} />
+    </>
+  );
+
+  // Handle row click for better UX
+  const handleRowClick = partner => {
+    // Optional: you can implement row click functionality here
+    // For now, we'll just use the action buttons
+  };
+
+  // Render desktop view using StandardTable
   const renderDesktopView = () => (
-    <TableContainer component={Paper} elevation={2}>
-      <Table sx={{ minWidth: 650 }} aria-label="danh sách đối tác">
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ width: '60px' }}>
-              <strong>STT</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Mã đối tác</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Tên đối tác</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Địa chỉ</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Mã số thuế</strong>
-            </TableCell>
-            <TableCell align="right">
-              <strong>Thao tác</strong>
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredPartners.map((partner, index) => (
-            <TableRow key={partner.id} hover>
-              <TableCell sx={{ color: 'text.secondary' }}>{index + 1}</TableCell>
-              <TableCell sx={{ fontWeight: 'medium' }}>{partner.ma_dinh_danh || '--'}</TableCell>
-              <TableCell>{partner.ten}</TableCell>
-              <TableCell>{partner.dia_chi || '--'}</TableCell>
-              <TableCell>{partner.ma_so_thue || '--'}</TableCell>
-              <TableCell align="right">
-                <EditButton onClick={() => onEdit(partner)} size="small" />
-                <DeleteButton onClick={() => onDelete(partner)} size="small" sx={{ ml: 1 }} />
-              </TableCell>
-            </TableRow>
-          ))}
-          {!loading && filteredPartners.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                <Typography variant="body1" color="text.secondary">
-                  {searchTerm ? 'Không tìm thấy đối tác phù hợp' : emptyMessage}
-                </Typography>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <StandardTable
+      columns={columns}
+      data={filteredPartners}
+      renderActions={renderActions}
+      loading={loading}
+      error={error}
+      onRowClick={handleRowClick}
+      emptyMessage={searchTerm ? 'Không tìm thấy đối tác phù hợp' : emptyMessage}
+      sortable={true}
+      defaultSort={{ key: 'ten', direction: 'asc' }}
+      pagination={true}
+      page={0}
+      rowsPerPage={10}
+      totalCount={filteredPartners.length}
+      onPageChange={(_, page) => console.log('Page changed to:', page)}
+      onRowsPerPageChange={(e) => console.log('Rows per page changed to:', e.target.value)}
+      showSTT={true}
+    />
   );
   return (
     <Box>
       {/* Search Bar */}
       <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
+        <SearchBar
           value={searchTerm}
           onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            sx: {
-              borderRadius: '6px',
-              height: 36,
-              minHeight: 36,
-              fontSize: '0.95rem',
-            },
-          }}
+          placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
         />
       </Box>
       {/* Loading state */}

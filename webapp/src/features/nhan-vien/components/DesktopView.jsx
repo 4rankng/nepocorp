@@ -23,34 +23,55 @@ const DesktopView = ({
 }) => {
   const columns = React.useMemo(
     () => [
-      { id: 'maNhanVien', label: 'MÃ NV', minWidth: 100 },
-      { id: 'tenNhanVien', label: 'HỌ TÊN', minWidth: 170 },
-      { id: 'tenDangNhap', label: 'TÊN ĐĂNG NHẬP', minWidth: 150 },
-      { id: 'email', label: 'EMAIL', minWidth: 170 }, // Email field name is likely consistent
-      { id: 'chucVu', label: 'CHỨC VỤ', minWidth: 120 }, // Mapped field from hook
-      {
-        id: 'actions',
-        label: 'THAO TÁC',
+      { 
+        key: 'maNhanVien', 
+        label: 'MÃ NV', 
         minWidth: 100,
-        align: 'right',
-        disableSort: true,
-        Cell: ({ row }) => (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <EditButton
-              onClick={() => handleOpenModalForEdit(row)}
-              disabled={!canEditDelete(row)}
-              tooltip="Chỉnh sửa nhân viên"
-            />
-            <DeleteButton
-              onClick={() => handleDeleteRequest(row)}
-              disabled={!canEditDelete(row)}
-              tooltip="Xóa nhân viên"
-            />
-          </Box>
-        ),
+        sortable: true 
       },
+      { 
+        key: 'tenNhanVien', 
+        label: 'HỌ TÊN', 
+        minWidth: 170,
+        sortable: true 
+      },
+      { 
+        key: 'tenDangNhap', 
+        label: 'TÊN ĐĂNG NHẬP', 
+        minWidth: 150,
+        sortable: true 
+      },
+      { 
+        key: 'email', 
+        label: 'EMAIL', 
+        minWidth: 170,
+        sortable: true 
+      },
+      { 
+        key: 'chucVu', 
+        label: 'CHỨC VỤ', 
+        minWidth: 120,
+        sortable: true 
+      }
     ],
-    [handleOpenModalForEdit, handleDeleteRequest, canEditDelete]
+    []
+  );
+
+  // Render action buttons for each row
+  const renderActions = (row) => (
+    <>
+      <EditButton
+        onClick={() => handleOpenModalForEdit(row)}
+        disabled={!canEditDelete(row)}
+        tooltip="Chỉnh sửa nhân viên"
+      />
+      <DeleteButton
+        onClick={() => handleDeleteRequest(row)}
+        disabled={!canEditDelete(row)}
+        tooltip="Xóa nhân viên"
+        sx={{ ml: 1 }}
+      />
+    </>
   );
   if (isLoading) {
     return (
@@ -101,8 +122,19 @@ const DesktopView = ({
           <StandardTable
             columns={columns}
             data={employees}
-            rowKeyField="id"
-            // Pass other necessary props like onSort, order, orderBy if needed
+            renderActions={renderActions}
+            loading={isLoading}
+            error={error}
+            emptyMessage="Không có dữ liệu nhân viên"
+            sortable={true}
+            defaultSort={{ key: 'tenNhanVien', direction: 'asc' }}
+            pagination={true}
+            page={0}
+            rowsPerPage={10}
+            totalCount={employees.length}
+            onPageChange={(_, page) => console.log('Page changed to:', page)}
+            onRowsPerPageChange={(e) => console.log('Rows per page changed to:', e.target.value)}
+            showSTT={true}
           />
         )}
       </Paper>
