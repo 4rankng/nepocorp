@@ -13,3 +13,4 @@ export * from '@services/mockApi/BaoDuongApi';
 export * from '@services/mockApi/dinhMucDauApi';
 export * from '@services/mockApi/dinhMucDiDuongApi';
 export * from '@services/mockApi/tuyenDuongApi';
+export * from '@services/api/dinhMucBoSungApi';

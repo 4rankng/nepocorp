@@ -6,7 +6,6 @@ import DinhMucBoSung from './components/DinhMucBoSung';
 import DinhMucChoHang from './components/DinhMucChoHang';
 import DinhMucVoRong from './components/DinhMucVoRong';
 import DinhMucDiDuong from './components/DinhMucDiDuong';
-import { useBoSung } from './hooks';
 const TABS = [
   { value: 'bo-sung', label: 'Bổ Sung' },
   { value: 'cho-hang', label: 'Chở hàng' },
@@ -19,7 +18,7 @@ const QuanLyDinhMuc = () => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { supplementaryStandard, updateSupplementaryStandard } = useBoSung();
+  
   const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : TABS[0].value;
   // Redirect to the default tab if the current tab from URL is invalid
   useEffect(() => {
@@ -33,12 +32,7 @@ const QuanLyDinhMuc = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'bo-sung':
-        return (
-          <DinhMucBoSung
-            supplementaryStandard={supplementaryStandard}
-            onSaveSupplementary={updateSupplementaryStandard}
-          />
-        );
+        return <DinhMucBoSung />;
       case 'cho-hang':
         return <DinhMucChoHang />;
       case 'vo-rong':
