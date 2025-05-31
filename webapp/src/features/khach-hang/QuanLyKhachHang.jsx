@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import PersonOffIcon from '@mui/icons-material/PersonOff';
 import {
   Box,
   Alert,
@@ -169,7 +170,12 @@ const QuanLyKhachHang = () => {
         open={deleteDialog.open}
         onCancel={() => setDeleteDialog({ open: false, data: null })}
         onConfirm={handleDeleteConfirm}
-        title="Xóa khách hàng"
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PersonOffIcon color="error" />
+            <span>Xóa khách hàng</span>
+          </Box>
+        }
         message="Bạn có chắc chắn muốn xóa khách hàng này?"
         confirmText="Xóa"
         cancelText="Hủy"

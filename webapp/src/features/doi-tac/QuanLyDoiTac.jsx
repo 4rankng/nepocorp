@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import BusinessIcon from '@mui/icons-material/Business';
 import {
   Box,
   Alert,
@@ -164,7 +165,12 @@ const QuanLyDoiTac = () => {
         open={deleteDialog.open}
         onCancel={() => setDeleteDialog({ open: false, data: null })}
         onConfirm={handleDeleteConfirm}
-        title="Xóa đối tác"
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <BusinessIcon color="error" />
+            <span>Xóa đối tác</span>
+          </Box>
+        }
         message="Bạn có chắc chắn muốn xóa đối tác này?"
         confirmText="Xóa"
         cancelText="Hủy"

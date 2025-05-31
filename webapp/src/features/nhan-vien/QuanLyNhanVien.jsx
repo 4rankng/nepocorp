@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PlusIcon } from '@assets/icons/index.jsx'; // Assuming PlusIcon is used for FAB
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import useNhanVien from '@features/nhan-vien/hooks/useNhanVien';
 import {
   Box,
@@ -155,7 +156,12 @@ const QuanLyNhanVien = () => {
         open={deleteDialog.open}
         onCancel={() => setDeleteDialog({ open: false, data: null })}
         onConfirm={handleConfirmDelete}
-        title="Xóa nhân viên"
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PersonRemoveIcon color="error" />
+            <span>Xóa nhân viên</span>
+          </Box>
+        }
         confirmText="Xóa"
         cancelText="Hủy"
         confirmColor="error"
