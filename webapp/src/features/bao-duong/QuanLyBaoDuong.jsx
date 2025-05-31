@@ -82,8 +82,6 @@ const QuanLyBaoDuong = memo(() => {
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [counts, setCounts] = useState({ tire: 0 });
-  const [selectedBienSo, setSelectedBienSo] = useState('');
-  const [isBienSoLoading, setIsBienSoLoading] = useState(false);
   // Data fetching
   const {
     baoDuongRecords: maintenanceRecords,
@@ -145,25 +143,6 @@ const QuanLyBaoDuong = memo(() => {
   const refetchCount = useCallback(() => {
     baoDuongApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
   }, []);
-  // Fetch records by license plate when selectedBienSo changes
-  useEffect(() => {
-    const fetchByBienSo = async () => {
-      setIsBienSoLoading(true);
-      try {
-        if (selectedBienSo) {
-          const res = await baoDuongApi.getByBienSo(selectedBienSo, 1, rowsPerPage);
-          setMaintenanceRecords(res.data || []);
-          // Optionally update pagination if needed
-        } else {
-          fetchData(0, rowsPerPage);
-        }
-      } finally {
-        setIsBienSoLoading(false);
-      }
-    };
-    fetchByBienSo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBienSo, rowsPerPage]);
   const handleOpenAddDialog = () => {
     setIsEdit(false);
     setFormData({
@@ -325,46 +304,40 @@ const QuanLyBaoDuong = memo(() => {
   // Render desktop table view
   const renderDesktopView = () => {
     const tableColumns = getBaoDuongTableColumns();
-
+    
     const tableProps = {
       columns: tableColumns,
-      data: filteredRecords,
+      data: maintenanceRecords,
       loading: isLoading,
       error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
-      emptyMessage: 'Không có dữ liệu bảo dưỡng',
+      emptyMessage: "Không có dữ liệu bảo dưỡng",
       onRowClick: handleOpenEditDialog,
       pagination: true,
       page: pagination.page,
       rowsPerPage: pagination.pageSize,
       totalCount: pagination.total,
-      rowKeyField: 'id',
+      rowKeyField: "id"
     };
-
+    
     console.log('🎯 QuanLyBaoDuong - Pagination data to StandardTable:', {
       page: pagination.page,
       rowsPerPage: pagination.pageSize,
       totalCount: pagination.total,
-      dataLength: filteredRecords.length,
+      dataLength: maintenanceRecords.length,
       fullPagination: pagination,
-      maintenanceRecords: filteredRecords.slice(0, 3), // Show first 3 records
+      maintenanceRecords: maintenanceRecords.slice(0, 3) // Show first 3 records
     });
-
+    
     return (
       <StandardTable
         {...tableProps}
         onPageChange={(_, newPage) => {
-          console.log('📄 QuanLyBaoDuong - Page change requested:', {
-            newPage,
-            currentPage: pagination.page,
-          });
+          console.log('📄 QuanLyBaoDuong - Page change requested:', { newPage, currentPage: pagination.page });
           fetchData(newPage, pagination.pageSize);
         }}
-        onRowsPerPageChange={event => {
+        onRowsPerPageChange={(event) => {
           const newPageSize = parseInt(event.target.value, 10);
-          console.log('📏 QuanLyBaoDuong - Page size change requested:', {
-            newPageSize,
-            currentPageSize: pagination.pageSize,
-          });
+          console.log('📏 QuanLyBaoDuong - Page size change requested:', { newPageSize, currentPageSize: pagination.pageSize });
           fetchData(0, newPageSize);
         }}
       />
@@ -373,9 +346,9 @@ const QuanLyBaoDuong = memo(() => {
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
       {/* Main Bao Duong Content */}
-      <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Box sx={{ mb: 2 }}>
         <TextField
-          sx={{ width: '50%' }}
+          fullWidth
           variant="outlined"
           placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
           value={searchTerm}
@@ -394,26 +367,6 @@ const QuanLyBaoDuong = memo(() => {
             },
           }}
         />
-        <FormControl sx={{ minWidth: 200 }} size="small">
-          <InputLabel id="bien-so-select-label">Biển số</InputLabel>
-          <Select
-            labelId="bien-so-select-label"
-            id="bien-so-select"
-            value={selectedBienSo}
-            label="Biển số"
-            onChange={e => setSelectedBienSo(e.target.value)}
-            disabled={isBienSoLoading || isLoading}
-          >
-            <MenuItem value="">
-              <em>Tất cả</em>
-            </MenuItem>
-            {licensePlates.map(plate => (
-              <MenuItem key={plate.bien_so || plate.id} value={plate.bien_so || plate.id}>
-                {plate.bien_so || plate.id}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
       </Box>
       <Box
         sx={{
@@ -423,20 +376,7 @@ const QuanLyBaoDuong = memo(() => {
           pb: { xs: 10, sm: 11 },
         }}
       >
-        {isBienSoLoading || isLoading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            sx={{ p: 3, height: '50vh' }}
-          >
-            <CircularProgress />
-          </Box>
-        ) : isMobile ? (
-          renderMobileView()
-        ) : (
-          renderDesktopView()
-        )}
+        {isMobile ? renderMobileView() : renderDesktopView()}
       </Box>
       {/* Add/Edit Dialog */}
       <BaoDuongDialog

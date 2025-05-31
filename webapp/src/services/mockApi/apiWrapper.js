@@ -33,12 +33,11 @@ export function createApiResponse(data, options = {}) {
   return {
     data,
     meta: {
-      count,
       offset,
       limit,
       page,
       totalPages,
-      total: totalItems, // Add total items to meta
+      total: totalItems, // Total items across all pages
     },
     ...(message && { message }),
     success: true,

@@ -26,24 +26,24 @@ const persist = () => {
 export const baoDuongApi = {
   getAll: async (page = 1, limit = 10) => {
     console.log('🔗 BaoDuongApi - getAll called with:', { page, limit });
-
+    
     return mockApiCall(() => {
       const result = withPagination(
         () => [...data], // Return a copy of the data array to avoid mutations
-        {
+        { 
           page: Math.max(1, parseInt(page, 10) || 1), // Ensure page is at least 1
           limit: Math.max(1, parseInt(limit, 10) || 10), // Ensure limit is at least 1
         }
       );
-
+      
       console.log('📋 BaoDuongApi - Returning result:', {
         dataLength: result.data?.length || 0,
         meta: result.meta,
         totalDataInStorage: data.length,
         requestedPage: page,
-        requestedLimit: limit,
+        requestedLimit: limit
       });
-
+      
       return result;
     });
   },
@@ -161,14 +161,5 @@ export const baoDuongApi = {
     return mockApiCall(() =>
       withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe')
     );
-  },
-  getByBienSo: async (bienSo, page = 1, limit = 10) => {
-    return mockApiCall(() => {
-      const filtered = data.filter(r => r.bien_so === bienSo);
-      return withPagination(() => filtered, {
-        page: Math.max(1, parseInt(page, 10) || 1),
-        limit: Math.max(1, parseInt(limit, 10) || 10),
-      });
-    });
   },
 };

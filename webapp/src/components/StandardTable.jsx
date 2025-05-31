@@ -80,45 +80,26 @@ const StandardTable = ({
   loading = false,
   error = null,
   emptyMessage = 'Chưa có dữ liệu',
-  pagination = false, // Enables/disables the pagination UI section
-  // Default individual pagination props (used if paginationProps is not provided or incomplete)
+  pagination = false,
   page: initialPage = 0,
   rowsPerPage: initialRowsPerPage = 10,
   totalCount: initialTotalCount = 0,
   onPageChange: initialOnPageChange = () => {},
   onRowsPerPageChange: initialOnRowsPerPageChange = () => {},
-  paginationProps = null, // To receive { page, pageSize, total, onPageChange, onRowsPerPageChange }
+  paginationProps = null,
   headerAction = null,
   onRowClick = null,
   rowKeyField,
   minHeight,
-  sortable = true, // New prop to enable/disable sorting
-  defaultSort = null, // New prop for default sort configuration
-  onSortChange = null, // New prop for external sort handling
+  sortable = true,
+  defaultSort = null,
+  onSortChange = null,
   customRowsPerPageOptions = [5, 10, 50, 100],
+  showSTT = true,
   ...tableProps
 }) => {
   // Internal sort state
   const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
-
-  // Determine effective pagination settings
-  const effectivePage =
-    pagination && paginationProps?.page !== undefined ? paginationProps.page : initialPage;
-  const effectiveRowsPerPage =
-    pagination && paginationProps?.pageSize !== undefined
-      ? paginationProps.pageSize
-      : initialRowsPerPage;
-  const effectiveTotalCount =
-    pagination && paginationProps?.total !== undefined ? paginationProps.total : initialTotalCount;
-  const effectiveOnPageChange =
-    pagination && paginationProps?.onPageChange
-      ? paginationProps.onPageChange
-      : initialOnPageChange;
-  const effectiveOnRowsPerPageChange =
-    pagination && paginationProps?.onRowsPerPageChange
-      ? paginationProps.onRowsPerPageChange
-      : initialOnRowsPerPageChange;
-
   // Handle sort request
   const handleSort = columnKey => {
     if (!sortable) return;
@@ -144,6 +125,29 @@ const StandardTable = ({
     // Internal sorting
     return sortData(data, sortConfig);
   }, [data, sortConfig, onSortChange]);
+  // Insert STT column as the first column if showSTT is true
+  const effectiveColumns = useMemo(() => {
+    if (!showSTT) return columns;
+    return [
+      {
+        key: '__stt',
+        label: 'STT',
+        align: 'left',
+        sortable: false,
+        width: 60,
+        render: (_value, _row, index) => {
+          const page =
+            pagination && paginationProps?.page !== undefined ? paginationProps.page : initialPage;
+          const rowsPerPage =
+            pagination && paginationProps?.pageSize !== undefined
+              ? paginationProps.pageSize
+              : initialRowsPerPage;
+          return (pagination ? page * rowsPerPage : 0) + index + 1;
+        },
+      },
+      ...columns,
+    ];
+  }, [columns, showSTT, pagination, paginationProps, initialPage, initialRowsPerPage]);
   // Validate data and columns
   if (!Array.isArray(data)) {
     console.error('StandardTable: data prop must be an array');
@@ -275,7 +279,7 @@ const StandardTable = ({
         >
           <TableHead>
             <TableRow>
-              {columns.map(column => {
+              {effectiveColumns.map(column => {
                 const columnKey = column.key || column.id;
                 const isSortable = sortable && column.sortable !== false;
                 const isSorted = sortConfig && sortConfig.key === columnKey;
@@ -335,7 +339,7 @@ const StandardTable = ({
             {sortedData.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + (renderActions ? 1 : 0)}
+                  colSpan={effectiveColumns.length + (renderActions ? 1 : 0)}
                   align="center"
                   sx={{ py: 3, color: 'text.secondary' }}
                 >
@@ -360,7 +364,7 @@ const StandardTable = ({
                       },
                     }}
                   >
-                    {columns.map((column, columnIndex) => (
+                    {effectiveColumns.map((column, columnIndex) => (
                       <TableCell
                         key={`${row.id || index}-${column.key || column.id || columnIndex}`}
                         align={column.align || (column.numeric ? 'right' : 'left')}
@@ -382,10 +386,15 @@ const StandardTable = ({
 
                           if (column.Cell) {
                             cellContent = (
-                              <column.Cell row={row} value={cellValue} column={column} />
+                              <column.Cell
+                                row={row}
+                                value={cellValue}
+                                column={column}
+                                index={index}
+                              />
                             );
                           } else if (column.render) {
-                            cellContent = column.render(cellValue, row);
+                            cellContent = column.render(cellValue, row, index);
                           } else {
                             cellContent = cellValue;
                           }
@@ -437,22 +446,71 @@ const StandardTable = ({
         </Table>
       </TableContainer>
       {pagination && (
-        <TablePagination
-          component="div"
-          count={effectiveTotalCount}
-          page={effectivePage}
-          rowsPerPage={effectiveRowsPerPage}
-          onPageChange={effectiveOnPageChange}
-          onRowsPerPageChange={effectiveOnRowsPerPageChange}
-          rowsPerPageOptions={customRowsPerPageOptions}
-          labelRowsPerPage="Hàng mỗi trang:"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
-          }
+        <Box
           sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             borderTop: `1px solid ${theme.palette.grey[200]}`,
+            p: 1,
           }}
-        />
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Hàng mỗi trang:
+            </Typography>
+            <Select
+              value={initialRowsPerPage}
+              onChange={initialOnRowsPerPageChange}
+              size="small"
+              sx={{
+                height: 32,
+                '& .MuiSelect-select': {
+                  py: 0.5,
+                  fontSize: '0.875rem',
+                },
+              }}
+            >
+              {customRowsPerPageOptions.map(rows => (
+                <MenuItem key={rows} value={rows}>
+                  {rows}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              onClick={() => initialOnPageChange(null, initialPage - 1)}
+              disabled={initialPage === 0}
+              size="small"
+              sx={{
+                width: 32,
+                height: 32,
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <ChevronLeftIcon />
+            </IconButton>
+            <Typography variant="body2" sx={{ minWidth: 80, textAlign: 'center' }}>
+              Trang {initialPage + 1} / {Math.ceil(initialTotalCount / initialRowsPerPage) || 1}
+            </Typography>
+            <IconButton
+              onClick={() => initialOnPageChange(null, initialPage + 1)}
+              disabled={
+                initialPage >= Math.ceil(initialTotalCount / initialRowsPerPage) - 1 ||
+                (initialPage + 1) * initialRowsPerPage >= initialTotalCount
+              }
+              size="small"
+              sx={{
+                width: 32,
+                height: 32,
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <ChevronRightIcon />
+            </IconButton>
+          </Box>
+        </Box>
       )}
     </Paper>
   );
@@ -473,13 +531,6 @@ StandardTable.propTypes = {
   headerAction: PropTypes.node,
   onRowClick: PropTypes.func,
   rowKeyField: PropTypes.string,
-  paginationProps: PropTypes.shape({
-    page: PropTypes.number,
-    pageSize: PropTypes.number,
-    total: PropTypes.number,
-    onPageChange: PropTypes.func,
-    onRowsPerPageChange: PropTypes.func,
-  }),
   minHeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   sortable: PropTypes.bool,
   defaultSort: PropTypes.shape({
@@ -487,5 +538,8 @@ StandardTable.propTypes = {
     direction: PropTypes.oneOf(['asc', 'desc']).isRequired,
   }),
   onSortChange: PropTypes.func,
+  paginationProps: PropTypes.object,
+  customRowsPerPageOptions: PropTypes.array,
+  showSTT: PropTypes.bool,
 };
 export default StandardTable;
