@@ -1,10 +1,27 @@
-import React, { useMemo } from 'react';
-import { Box, Typography, Paper, useTheme, CircularProgress, Alert, Skeleton } from '@mui/material';
+import React, { useMemo, useState } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  useTheme,
+  CircularProgress,
+  Alert,
+  Skeleton,
+  TextField,
+  InputAdornment,
+} from '@mui/material';
 import { StandardTable } from '@components';
 import { useDiDuong } from '../hooks';
+import { Search as SearchIcon } from '@mui/icons-material';
+
 const DinhMucDiDuong = () => {
   const muiTheme = useTheme();
   const { roadNorms, containerTypes, routes, isLoading, error } = useDiDuong();
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
   // Sort container types by name (e.g., "20'", "40'") for consistent column order
   const sortedContainerTypes = useMemo(() => {
     return [...containerTypes].sort((a, b) => {
@@ -87,6 +104,36 @@ const DinhMucDiDuong = () => {
     // Convert the map to an array for the table
     return Object.values(routeMap);
   }, [routes, roadNorms]);
+
+  // Filtered data by search term
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) return tableData;
+    const lower = searchTerm.trim().toLowerCase();
+    return tableData.filter(
+      row =>
+        (row.ma_tuyen && row.ma_tuyen.toLowerCase().includes(lower)) ||
+        (row.diem_di && row.diem_di.toLowerCase().includes(lower)) ||
+        (row.diem_den && row.diem_den.toLowerCase().includes(lower))
+    );
+  }, [tableData, searchTerm]);
+
+  // Paginated data
+  const paginatedData = useMemo(() => {
+    const start = page * rowsPerPage;
+    return filteredData.slice(start, start + rowsPerPage);
+  }, [filteredData, page, rowsPerPage]);
+
+  const handlePageChange = (_event, newPage) => {
+    setPage(newPage);
+  };
+  const handleRowsPerPageChange = event => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+  const handleSearchChange = event => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
   return (
     <Paper
       sx={{
@@ -113,25 +160,59 @@ const DinhMucDiDuong = () => {
         </Alert>
       )}
       {!isLoading && !error && (
-        <StandardTable
-          columns={columns}
-          data={tableData}
-          loading={false} // We handle loading state separately
-          emptyMessage="Chưa có dữ liệu định mức đi đường"
-          rowKeyField="id"
-          sx={{
-            '& .MuiTableCell-root': {
-              py: 1.5,
-              px: 2,
-            },
-            '& .MuiTableHead-root': {
-              backgroundColor: muiTheme.palette.grey[100],
-            },
-            '& .MuiTableRow-hover:hover': {
-              backgroundColor: muiTheme.palette.action.hover,
-            },
-          }}
-        />
+        <>
+          <Box sx={{ mb: 2, width: '100%' }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Tìm kiếm theo mã tuyến, điểm đi, điểm đến..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                sx: {
+                  borderRadius: '6px',
+                  height: 36,
+                  minHeight: 36,
+                  fontSize: '0.95rem',
+                },
+              }}
+            />
+          </Box>
+          <StandardTable
+            columns={columns}
+            data={paginatedData}
+            loading={false} // We handle loading state separately
+            emptyMessage={
+              searchTerm
+                ? `Không tìm thấy kết quả cho "${searchTerm}"`
+                : 'Chưa có dữ liệu định mức đi đường'
+            }
+            rowKeyField="id"
+            pagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={filteredData.length}
+            onPageChange={handlePageChange}
+            onRowsPerPageChange={handleRowsPerPageChange}
+            sx={{
+              '& .MuiTableCell-root': {
+                py: 1.5,
+                px: 2,
+              },
+              '& .MuiTableHead-root': {
+                backgroundColor: muiTheme.palette.grey[100],
+              },
+              '& .MuiTableRow-hover:hover': {
+                backgroundColor: muiTheme.palette.action.hover,
+              },
+            }}
+          />
+        </>
       )}
     </Paper>
   );
