@@ -57,17 +57,21 @@ const DauKeoListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'bien_so',
-      label: 'BIỂN SỐ',
+      field: 'bien_so', // key -> field
+      headerName: 'BIỂN SỐ', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
+      flex: 1,
     },
     {
-      key: 'mo_ta',
-      label: 'MÔ TẢ',
+      field: 'mo_ta', // key -> field
+      headerName: 'MÔ TẢ', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      renderCell: params => params.value || 'Chưa cập nhật', // render -> renderCell
+      flex: 1,
     },
   ];
   // Render action buttons for each row
@@ -171,7 +175,7 @@ const DauKeoListResponsive = ({
       </Box>
       <StandardTable
         columns={columns}
-        data={paginatedData}
+        rows={paginatedData} // data -> rows
         renderActions={renderActions}
         loading={loading}
         error={error}

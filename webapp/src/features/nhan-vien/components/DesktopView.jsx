@@ -42,34 +42,44 @@ const DesktopView = ({
   const columns = React.useMemo(
     () => [
       {
-        key: 'maNhanVien',
-        label: 'MÃ NV',
-        minWidth: 100,
+        field: 'maNhanVien', // key -> field
+        headerName: 'MÃ NV', // label -> headerName
+        width: 120, // minWidth -> width
         sortable: true,
+        align: 'left',
+        headerAlign: 'left',
       },
       {
-        key: 'tenNhanVien',
-        label: 'HỌ TÊN',
-        minWidth: 170,
+        field: 'tenNhanVien', // key -> field
+        headerName: 'HỌ TÊN', // label -> headerName
+        width: 200, // minWidth -> width
         sortable: true,
+        align: 'left',
+        headerAlign: 'left',
       },
       {
-        key: 'tenDangNhap',
-        label: 'TÊN ĐĂNG NHẬP',
-        minWidth: 150,
+        field: 'tenDangNhap', // key -> field
+        headerName: 'TÊN ĐĂNG NHẬP', // label -> headerName
+        width: 180, // minWidth -> width
         sortable: true,
+        align: 'left',
+        headerAlign: 'left',
       },
       {
-        key: 'email',
-        label: 'EMAIL',
-        minWidth: 170,
+        field: 'email', // key -> field
+        headerName: 'EMAIL', // label -> headerName
+        width: 220, // minWidth -> width, increased
         sortable: true,
+        align: 'left',
+        headerAlign: 'left',
       },
       {
-        key: 'chucVu',
-        label: 'CHỨC VỤ',
-        minWidth: 120,
+        field: 'chucVu', // key -> field
+        headerName: 'CHỨC VỤ', // label -> headerName
+        width: 150, // minWidth -> width
         sortable: true,
+        align: 'left',
+        headerAlign: 'left',
       },
     ],
     []
@@ -139,7 +149,7 @@ const DesktopView = ({
         ) : (
           <StandardTable
             columns={columns}
-            data={paginatedEmployees}
+            rows={paginatedEmployees} // data -> rows
             renderActions={renderActions}
             loading={isLoading}
             error={error}

@@ -319,7 +319,7 @@ const QuanLyBaoDuong = memo(() => {
 
     const tableProps = {
       columns: tableColumns,
-      data: maintenanceRecords,
+      rows: maintenanceRecords, // data -> rows
       loading: isLoading,
       error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
       emptyMessage: 'Không có dữ liệu bảo dưỡng',

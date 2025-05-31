@@ -28,10 +28,12 @@ const BaoCaoLoiNhuanDoanhThu = () => {
   // Table columns configuration
   const columns = [
     {
-      key: 'monthYear',
-      label: 'Tháng',
+      field: 'monthYear', // key -> field
+      headerName: 'Tháng', // label -> headerName
       align: 'left',
-      render: value => {
+      headerAlign: 'left',
+      renderCell: params => { // render -> renderCell
+        const value = params.value;
         if (!value) return '-';
         if (typeof value === 'string' && value.includes('/')) {
           const [month, year] = value.split('/');
@@ -39,27 +41,34 @@ const BaoCaoLoiNhuanDoanhThu = () => {
         }
         return value;
       },
+      flex: 1,
     },
     {
-      key: 'revenue',
-      label: 'Doanh Thu',
+      field: 'revenue', // key -> field
+      headerName: 'Doanh Thu', // label -> headerName
       align: 'right',
-      numeric: true,
-      render: value => formatMillion(value),
+      headerAlign: 'right',
+      numeric: true, // Handled by StandardTable for type and alignment
+      renderCell: params => formatMillion(params.value), // render -> renderCell
+      flex: 1,
     },
     {
-      key: 'profit',
-      label: 'Lợi Nhuận',
+      field: 'profit', // key -> field
+      headerName: 'Lợi Nhuận', // label -> headerName
       align: 'right',
+      headerAlign: 'right',
       numeric: true,
-      render: value => formatMillion(value),
+      renderCell: params => formatMillion(params.value), // render -> renderCell
+      flex: 1,
     },
     {
-      key: 'profitMargin',
-      label: 'Tỷ Suất Lợi Nhuận',
+      field: 'profitMargin', // key -> field
+      headerName: 'Tỷ Suất Lợi Nhuận', // label -> headerName
       align: 'right',
+      headerAlign: 'right',
       numeric: true,
-      render: (value, row) => ((row.profit / row.revenue) * 100).toFixed(2) + '%',
+      renderCell: params => ((params.row.profit / params.row.revenue) * 100).toFixed(2) + '%', // render -> renderCell
+      flex: 1,
     },
   ];
   const fetchReportData = async () => {
@@ -176,7 +185,7 @@ const BaoCaoLoiNhuanDoanhThu = () => {
             <h2 className="text-lg font-semibold mb-4">Chi tiết theo tháng</h2>
             <StandardTable
               columns={columns}
-              data={sortedData}
+              rows={sortedData} // data -> rows
               loading={isLoading}
               error={null}
               emptyMessage="Không có dữ liệu cho khoảng thời gian đã chọn"

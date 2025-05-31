@@ -195,7 +195,7 @@ const DinhMucDiDuong = () => {
   };
 
   // Render action buttons for each row
-  const renderActions = (_cellValue, rowData) => {
+  const renderActionsRow = (rowData) => { // Changed signature for clarity with renderCell
     const isCurrentlySavingThisRow = isSaving && editingRowId === rowData.id;
     if (rowData.id === editingRowId) {
       return (
@@ -204,7 +204,7 @@ const DinhMucDiDuong = () => {
         >
           <IconButton
             aria-label="confirm edit"
-            onClick={handleConfirmEdit} // Pass the function directly, event is implicitly passed
+            onClick={handleConfirmEdit}
             size="small"
             color="primary"
             disabled={isCurrentlySavingThisRow}
@@ -239,7 +239,7 @@ const DinhMucDiDuong = () => {
         </IconButton>
         <DeleteButton
           onClick={e => {
-            e.stopPropagation();
+            e.stopPropagation(); // Keep stopPropagation
             handleDelete(rowData);
           }}
           size="small"
@@ -270,11 +270,12 @@ const DinhMucDiDuong = () => {
   const columns = useMemo(
     () => [
       {
-        key: 'ma_tuyen',
-        label: 'Mã tuyến',
-        width: '10%',
+        field: 'ma_tuyen', // key -> field
+        headerName: 'Mã tuyến', // label -> headerName
+        width: 120, // '10%' -> numeric
         sortable: true,
-        render: (_cellValue, rowData) => {
+        renderCell: (params) => { // render -> renderCell
+          const { row: rowData, value: cellValue } = params;
           if (rowData.id === editingRowId) {
             return (
               <TextField
@@ -298,11 +299,12 @@ const DinhMucDiDuong = () => {
         },
       },
       {
-        key: 'diem_di',
-        label: 'Điểm đi',
-        width: '10%',
+        field: 'diem_di', // key -> field
+        headerName: 'Điểm đi', // label -> headerName
+        width: 150, // '10%' -> numeric
         sortable: true,
-        render: (_cellValue, rowData) => {
+        renderCell: (params) => { // render -> renderCell
+          const { row: rowData, value: cellValue } = params;
           if (rowData.id === editingRowId) {
             return (
               <TextField
@@ -322,11 +324,12 @@ const DinhMucDiDuong = () => {
         },
       },
       {
-        key: 'diem_den',
-        label: 'Điểm đến',
-        width: '20%',
+        field: 'diem_den', // key -> field
+        headerName: 'Điểm đến', // label -> headerName
+        width: 250, // '20%' -> numeric
         sortable: true,
-        render: (_cellValue, rowData) => {
+        renderCell: (params) => { // render -> renderCell
+          const { row: rowData, value: cellValue } = params;
           if (rowData.id === editingRowId) {
             return (
               <TextField
@@ -346,11 +349,14 @@ const DinhMucDiDuong = () => {
         },
       },
       ...sortedContainerTypes.map(ct => ({
-        key: `container_${ct.ma_loai_container}`,
-        label: ct.ten_loai_container,
+        field: `container_${ct.ma_loai_container}`, // key -> field
+        headerName: ct.ten_loai_container, // label -> headerName
+        width: 120, // Default width for dynamic columns
         align: 'right',
+        headerAlign: 'right',
         sortable: true,
-        render: (_cellValue, rowData) => {
+        renderCell: (params) => { // render -> renderCell
+          const { row: rowData, value: cellValue } = params;
           const containerKey = ct.ma_loai_container;
           if (rowData.id === editingRowId) {
             const normValue = editedData.containerNorms?.[containerKey];
@@ -380,14 +386,16 @@ const DinhMucDiDuong = () => {
         },
       })),
       {
-        key: 'actions',
-        label: 'Thao tác',
-        width: '15%',
+        field: 'actions', // key -> field
+        headerName: 'Thao tác', // label -> headerName
+        width: 150, // '15%' -> numeric
         align: 'center',
-        render: renderActions,
+        headerAlign: 'center',
+        sortable: false,
+        renderCell: (params) => renderActionsRow(params.row), // render -> renderCell, adapt signature
       },
     ],
-    [sortedContainerTypes, renderActions, editingRowId, editedData, handleInputChange]
+    [sortedContainerTypes, renderActionsRow, editingRowId, editedData, handleInputChange] // Ensure renderActionsRow is in dependency array
   );
   // Transform data for StandardTable - group by routes and container types
   // Click outside handler
@@ -564,20 +572,22 @@ const DinhMucDiDuong = () => {
             {/* The duplicate search TextField that was here (lines 435-456 in previous view) has been removed. */}
             <StandardTable
               columns={columns}
-              data={paginatedData}
-              loading={isLoading} // Pass loading state to StandardTable if it supports it
+              rows={paginatedData} // data -> rows
+              loading={isLoading}
               emptyMessage={
                 searchTerm
                   ? `Không tìm thấy kết quả cho "${searchTerm}"`
                   : 'Chưa có dữ liệu định mức đi đường'
               }
-              rowKeyField="id"
+              rowKeyField="id" // This is used by StandardTable to pick the ID field from your row data.
               pagination
-              count={filteredCount} // Use state for filtered count
-              page={page} // Added page for pagination
-              rowsPerPage={rowsPerPage} // Added rowsPerPage for pagination
-              onPageChange={handlePageChange} // Added onPageChange for pagination
-              onRowsPerPageChange={handleRowsPerPageChange} // Added onRowsPerPageChange for pagination
+              rowCount={filteredCount} // count -> rowCount (StandardTable should handle this mapping)
+              page={page}
+              rowsPerPage={rowsPerPage} // pageSize in DataGrid, StandardTable maps this
+              onPageChange={handlePageChange}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              // No onSortChange was used, so client-side sort is fine.
+              // renderActions prop is not used here as actions are defined as a column.
             />
           </>
         )}

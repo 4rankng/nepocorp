@@ -5,61 +5,79 @@ import { EditButton, DeleteButton } from '@/components/ActionButtons';
 export const getBaoDuongTableColumns = () => {
   return [
     {
-      key: 'bien_so',
-      label: 'Biển số',
+      field: 'bien_so', // key -> field
+      headerName: 'Biển số', // label -> headerName
       sortable: true,
-      minWidth: 50,
+      width: 120, // minWidth -> width
+      headerAlign: 'left',
+      align: 'left',
     },
     {
-      key: 'item_name',
-      label: 'Hạng mục',
+      field: 'item_name', // key -> field
+      headerName: 'Hạng mục', // label -> headerName
       sortable: true,
-      minWidth: 50,
+      width: 180, // minWidth -> width, increased
+      headerAlign: 'left',
+      align: 'left',
     },
     {
-      key: 'ngay_thay',
-      label: 'Ngày thay',
-      render: value => (value ? new Date(value).toLocaleDateString('vi-VN') : '-'),
+      field: 'ngay_thay', // key -> field
+      headerName: 'Ngày thay', // label -> headerName
+      renderCell: params => (params.value ? new Date(params.value).toLocaleDateString('vi-VN') : '-'), // render -> renderCell
       sortable: true,
-      minWidth: 50,
+      width: 120, // minWidth -> width
+      type: 'date',
+      valueGetter: params => params.value ? new Date(params.value) : null,
+      headerAlign: 'left',
+      align: 'left',
     },
     {
-      key: 'ngay_het_han',
-      label: 'Ngày hết hạn',
-      render: value => (value ? new Date(value).toLocaleDateString('vi-VN') : '-'),
+      field: 'ngay_het_han', // key -> field
+      headerName: 'Ngày hết hạn', // label -> headerName
+      renderCell: params => (params.value ? new Date(params.value).toLocaleDateString('vi-VN') : '-'), // render -> renderCell
       sortable: true,
-      minWidth: 50,
+      width: 120, // minWidth -> width
+      type: 'date',
+      valueGetter: params => params.value ? new Date(params.value) : null,
+      headerAlign: 'left',
+      align: 'left',
     },
     {
-      key: 'so_luong',
-      label: 'Số lượng',
+      field: 'so_luong', // key -> field
+      headerName: 'Số lượng', // label -> headerName
       align: 'right',
       sortable: true,
-      minWidth: 32,
-      maxWidth: 40,
+      width: 80, // minWidth, maxWidth -> width
       headerAlign: 'center',
+      type: 'number',
     },
     {
-      key: 'don_gia',
-      label: 'Đơn giá',
-      render: formatCurrency,
+      field: 'don_gia', // key -> field
+      headerName: 'Đơn giá', // label -> headerName
+      renderCell: params => formatCurrency(params.value), // render -> renderCell
       align: 'right',
+      headerAlign: 'right',
       sortable: true,
-      minWidth: 50,
+      width: 120, // minWidth -> width
+      type: 'number',
     },
     {
-      key: 'tong_tien',
-      label: 'Tổng tiền',
-      render: formatCurrency,
+      field: 'tong_tien', // key -> field
+      headerName: 'Tổng tiền', // label -> headerName
+      renderCell: params => formatCurrency(params.value), // render -> renderCell
       align: 'right',
+      headerAlign: 'right',
       sortable: true,
-      minWidth: 50,
+      width: 150, // minWidth -> width, increased
+      type: 'number',
     },
     {
-      key: 'ghi_chu',
-      label: 'Ghi chú',
+      field: 'ghi_chu', // key -> field
+      headerName: 'Ghi chú', // label -> headerName
       sortable: false,
-      flex: 1,
+      flex: 1, // Keeps flex
+      headerAlign: 'left',
+      align: 'left',
     },
   ];
 };

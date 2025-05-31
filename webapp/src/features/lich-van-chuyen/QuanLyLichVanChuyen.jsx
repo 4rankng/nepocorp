@@ -145,12 +145,13 @@ const QuanLyLichVanChuyen = () => {
   const { hasAnyRole } = useAuth();
   const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]);
   const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('ngayDi');
+  const [orderBy, setOrderBy] = useState('ngay_di'); // Default sort field, ensure it matches a field in columns
   // Handle request to sort a column
-  const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
+  // Updated signature to match what DesktopView provides via onSortChange from StandardTable
+  const handleRequestSort = (event, key, direction) => {
+    // event is typically null or not used when sortConfig is provided
+    setOrder(direction);
+    setOrderBy(key);
   };
   const [lichVanChuyenItems, setLichVanChuyenItems] = useState(() => []); // Initialize with function for better performance
   const [isModalOpen, setIsModalOpen] = useState(false);

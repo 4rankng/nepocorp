@@ -42,29 +42,29 @@ const LicensePlateNormsCard = ({
             <StandardTable
               columns={[
                 {
-                  key: 'fromKm',
-                  label: 'TỪ (KM)',
-                  numeric: true,
-                  render: value =>
-                    value !== undefined && value !== null ? value.toLocaleString() : '-',
+                  field: 'fromKm', // key -> field
+                  headerName: 'TỪ (KM)', // label -> headerName
+                  numeric: true, // StandardTable will handle type and alignment
+                  renderCell: params => // render -> renderCell
+                    params.value !== undefined && params.value !== null ? params.value.toLocaleString() : '-',
                 },
                 {
-                  key: 'toKm',
-                  label: 'ĐẾN (KM)',
+                  field: 'toKm', // key -> field
+                  headerName: 'ĐẾN (KM)', // label -> headerName
                   numeric: true,
-                  render: value =>
-                    value !== undefined && value !== null ? value.toLocaleString() : '-',
+                  renderCell: params => // render -> renderCell
+                    params.value !== undefined && params.value !== null ? params.value.toLocaleString() : '-',
                 },
                 {
-                  key: 'standard',
-                  label: 'ĐỊNH MỨC (L/KM)',
+                  field: 'standard', // key -> field
+                  headerName: 'ĐỊNH MỨC (L/KM)', // label -> headerName
                   numeric: true,
-                  render: value =>
-                    value !== undefined && value !== null ? Number(value).toFixed(2) : '-',
+                  renderCell: params => // render -> renderCell
+                    params.value !== undefined && params.value !== null ? Number(params.value).toFixed(2) : '-',
                 },
-                { key: 'note', label: 'MÔ TẢ', render: value => value || '' },
+                { field: 'note', headerName: 'MÔ TẢ', renderCell: params => params.value || '' }, // key -> field, label -> headerName, render -> renderCell
               ]}
-              data={standardsHang.sort((a, b) => a.fromKm - b.fromKm)}
+              rows={standardsHang.sort((a, b) => a.fromKm - b.fromKm)} // data -> rows
               renderActions={row => (
                 <>
                   <EditButton
@@ -91,29 +91,29 @@ const LicensePlateNormsCard = ({
             <StandardTable
               columns={[
                 {
-                  key: 'fromKm',
-                  label: 'TỪ (KM)',
+                  field: 'fromKm', // key -> field
+                  headerName: 'TỪ (KM)', // label -> headerName
                   numeric: true,
-                  render: value =>
-                    value !== undefined && value !== null ? value.toLocaleString() : '-',
+                  renderCell: params => // render -> renderCell
+                    params.value !== undefined && params.value !== null ? params.value.toLocaleString() : '-',
                 },
                 {
-                  key: 'toKm',
-                  label: 'ĐẾN (KM)',
+                  field: 'toKm', // key -> field
+                  headerName: 'ĐẾN (KM)', // label -> headerName
                   numeric: true,
-                  render: value =>
-                    value !== undefined && value !== null ? value.toLocaleString() : '-',
+                  renderCell: params => // render -> renderCell
+                    params.value !== undefined && params.value !== null ? params.value.toLocaleString() : '-',
                 },
                 {
-                  key: 'standard',
-                  label: 'ĐỊNH MỨC (L/KM)',
+                  field: 'standard', // key -> field
+                  headerName: 'ĐỊNH MỨC (L/KM)', // label -> headerName
                   numeric: true,
-                  render: value =>
-                    value !== undefined && value !== null ? Number(value).toFixed(2) : '-',
+                  renderCell: params => // render -> renderCell
+                    params.value !== undefined && params.value !== null ? Number(params.value).toFixed(2) : '-',
                 },
-                { key: 'note', label: 'MÔ TẢ', render: value => value || '' },
+                { field: 'note', headerName: 'MÔ TẢ', renderCell: params => params.value || '' }, // key -> field, label -> headerName, render -> renderCell
               ]}
-              data={standardsVo.sort((a, b) => a.fromKm - b.fromKm)}
+              rows={standardsVo.sort((a, b) => a.fromKm - b.fromKm)} // data -> rows
               renderActions={row => (
                 <>
                   <EditButton

@@ -52,30 +52,38 @@ const CustomerListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'ma_dinh_danh',
-      label: 'Mã khách hàng',
+      field: 'ma_dinh_danh', // key -> field
+      headerName: 'Mã khách hàng', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
+      flex: 1,
     },
     {
-      key: 'ten',
-      label: 'Tên khách hàng',
+      field: 'ten', // key -> field
+      headerName: 'Tên khách hàng', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
+      flex: 1.5,
     },
     {
-      key: 'dia_chi',
-      label: 'Địa chỉ',
+      field: 'dia_chi', // key -> field
+      headerName: 'Địa chỉ', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      renderCell: params => params.value || 'Chưa cập nhật', // render -> renderCell
+      flex: 2,
     },
     {
-      key: 'ma_so_thue',
-      label: 'Mã số thuế',
+      field: 'ma_so_thue', // key -> field
+      headerName: 'Mã số thuế', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      renderCell: params => params.value || 'Chưa cập nhật', // render -> renderCell
+      flex: 1,
     },
   ];
   // Render action buttons for each row
@@ -152,7 +160,7 @@ const CustomerListResponsive = ({
       </Box>
       <StandardTable
         columns={columns}
-        data={paginatedCustomers}
+        rows={paginatedCustomers} // data -> rows
         renderActions={renderActions}
         loading={loading}
         error={error}

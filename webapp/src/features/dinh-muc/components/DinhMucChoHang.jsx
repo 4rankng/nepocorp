@@ -315,7 +315,7 @@ const DinhMucChoHang = () => {
 
       <StandardTable
         columns={columns}
-        data={choHangRecords}
+        rows={choHangRecords} // data -> rows
         loading={isLoading}
         error={error}
         emptyMessage={

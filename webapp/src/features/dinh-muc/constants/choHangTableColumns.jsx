@@ -6,48 +6,53 @@ import { EditButton, DeleteButton } from '@/components/ActionButtons'; // Assumi
 
 export const getChoHangTableColumns = (onEdit, onDelete, page, pageSize) => [
   {
-    id: 'bienSoXe',
-    label: 'Biển số',
-    render: (value, record) => record.bienSoXe,
-    width: '15%',
+    field: 'bienSoXe', // id -> field
+    headerName: 'Biển số', // label -> headerName
+    renderCell: (params) => params.row.bienSoXe, // render -> renderCell
+    width: 150, // '15%' -> numeric
   },
   {
-    id: 'tuKm',
-    label: 'Từ Km',
-    render: (value, record) => record.tuKm,
-    width: '10%',
+    field: 'tuKm', // id -> field
+    headerName: 'Từ Km', // label -> headerName
+    renderCell: (params) => params.row.tuKm, // render -> renderCell
+    width: 100, // '10%' -> numeric
     align: 'right',
+    headerAlign: 'right',
   },
   {
-    id: 'denKm',
-    label: 'Đến Km',
-    render: (value, record) => record.denKm,
-    width: '10%',
+    field: 'denKm', // id -> field
+    headerName: 'Đến Km', // label -> headerName
+    renderCell: (params) => params.row.denKm, // render -> renderCell
+    width: 100, // '10%' -> numeric
     align: 'right',
+    headerAlign: 'right',
   },
   {
-    id: 'l_km',
-    label: 'Định mức (L/km)',
-    render: (value, record) => record.l_km,
-    width: '15%',
+    field: 'l_km', // id -> field
+    headerName: 'Định mức (L/km)', // label -> headerName
+    renderCell: (params) => params.row.l_km, // render -> renderCell
+    width: 150, // '15%' -> numeric
     align: 'right',
+    headerAlign: 'right',
   },
   {
-    id: 'ghiChu',
-    label: 'Ghi chú',
-    render: (value, record) => record.ghiChu || '-',
-    width: '25%',
+    field: 'ghiChu', // id -> field
+    headerName: 'Ghi chú', // label -> headerName
+    renderCell: (params) => params.row.ghiChu || '-', // render -> renderCell
+    width: 250, // '25%' -> numeric
   },
   {
-    id: 'actions',
-    label: 'Thao tác',
-    render: (value, record) => (
+    field: 'actions', // id -> field
+    headerName: 'Thao tác', // label -> headerName
+    renderCell: (params) => ( // render -> renderCell
       <>
-        <EditButton onClick={() => onEdit(record)} sx={{ mr: 1 }} />
-        <DeleteButton onClick={() => onDelete(record)} />
+        <EditButton onClick={() => onEdit(params.row)} sx={{ mr: 1 }} />
+        <DeleteButton onClick={() => onDelete(params.row)} />
       </>
     ),
-    width: '15%',
+    width: 150, // '15%' -> numeric
     align: 'center',
+    headerAlign: 'center',
+    sortable: false,
   },
 ];

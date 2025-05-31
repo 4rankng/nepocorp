@@ -35,15 +35,27 @@ const DesktopView = ({
       </Box>
       <Paper elevation={0} sx={{ p: 0 }}>
         <StandardTable
-          columns={columns.map(column => ({
-            ...column,
-            header: column.header,
-            sortable: column.sortable,
-            onSort: column.sortable ? createSortHandler(column.id) : undefined,
+          columns={columns.map(col => ({
+            field: col.id, // id -> field
+            headerName: col.header, // header -> headerName
+            width: col.width ? parseInt(col.width) : undefined, // Ensure width is numeric if present
+            align: col.align,
+            headerAlign: col.align, // Added headerAlign
+            sortable: col.sortable,
+            // renderCell needs to be adapted if col.render exists. Assuming col.render has signature (value, row, index)
+            // The new StandardTable expects renderCell as (params) or handles col.render itself.
+            // StandardTable's column transformer:
+            // if (col.render) { newCol.renderCell = params => col.render(params.value, params.row, params.api.getRowIndex(params.row.id)); }
+            // So, just passing col.render should be fine if its signature matches what StandardTable expects.
+            // The propTypes for DesktopView's columns show `render: PropTypes.func`. Its signature is not specified here.
+            // Let's assume the StandardTable wrapper handles the original render function correctly.
+            render: col.render, // Pass original render, StandardTable wrapper will adapt it to renderCell
+            // onSort logic is removed here, handled by StandardTable's onSortChange prop + sortable flag
           }))}
-          sortable={true}
-          defaultSort={{ key: orderBy, direction: order }}
-          data={shipmentPlans}
+          sortable={true} // Enables sorting features in StandardTable
+          onSortChange={onRequestSort ? (sortConfig) => onRequestSort(null, sortConfig.key, sortConfig.direction) : undefined} // Adapt from {key, direction} to (event, property, direction) if needed by parent
+          defaultSort={{ key: orderBy, direction: order }} // This is correctly mapped to sortModel by StandardTable
+          rows={shipmentPlans} // data -> rows
           onRowClick={onItemClick}
           loading={isLoading}
           renderActions={renderActions}

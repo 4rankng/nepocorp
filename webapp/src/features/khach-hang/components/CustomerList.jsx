@@ -13,27 +13,38 @@ const CustomerList = ({
   // Define table columns with enhanced features
   const columns = [
     {
-      key: 'ma_dinh_danh',
-      label: 'Mã khách hàng',
+      field: 'ma_dinh_danh', // key -> field
+      headerName: 'Mã khách hàng', // label -> headerName
       sortable: true,
+      headerAlign: 'left',
+      align: 'left',
+      flex: 0.75,
     },
     {
-      key: 'ten',
-      label: 'Tên khách hàng',
+      field: 'ten', // key -> field
+      headerName: 'Tên khách hàng', // label -> headerName
       sortable: true,
+      headerAlign: 'left',
+      align: 'left',
+      flex: 1.5,
     },
     {
-      key: 'dia_chi',
-      label: 'Địa chỉ',
+      field: 'dia_chi', // key -> field
+      headerName: 'Địa chỉ', // label -> headerName
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
-      maxWidth: 300,
+      renderCell: params => params.value || 'Chưa cập nhật', // render -> renderCell
+      width: 300, // maxWidth -> width
+      headerAlign: 'left',
+      align: 'left',
     },
     {
-      key: 'ma_so_thue',
-      label: 'Mã số thuế',
+      field: 'ma_so_thue', // key -> field
+      headerName: 'Mã số thuế', // label -> headerName
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      renderCell: params => params.value || 'Chưa cập nhật', // render -> renderCell
+      headerAlign: 'left',
+      align: 'left',
+      flex: 0.75,
     },
   ];
   // Render action buttons for each row
@@ -50,7 +61,7 @@ const CustomerList = ({
   return (
     <StandardTable
       columns={columns}
-      data={customers}
+      rows={customers} // data -> rows
       renderActions={renderActions}
       loading={loading}
       emptyMessage={emptyMessage}

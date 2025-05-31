@@ -17,115 +17,116 @@ export const trangThaiMap = {
  */
 export const createLichVanChuyenColumns = (selectOptions, theme) => [
   {
-    id: 'ma_chuyen',
-    header: 'Mã',
-    width: '1%',
-    maxWidth: '60px',
-    padding: '0px',
+    field: 'ma_chuyen', // id -> field
+    headerName: 'Mã', // header -> headerName
+    width: 60, // '1%', maxWidth: '60px' -> fixed width
+    // padding: '0px', // Not a standard DataGrid prop, handle with sx if needed
     sortable: true,
-    render: (_, row) => (
-      <Box
-        component="span"
-        sx={{
-          fontSize: '0.75rem',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          display: 'block',
-          maxWidth: '60px',
-        }}
-      >
-        {row.ma_chuyen || '-'}
-      </Box>
-    ),
-    sortValue: (_, row) => row.ma_chuyen || '',
+    renderCell: (params) => { // render -> renderCell, adapt signature
+      const row = params.row;
+      return (
+        <Box
+          component="span"
+          sx={{
+            fontSize: '0.75rem',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: 'block',
+            maxWidth: '60px', // Keep maxWidth for content
+          }}
+        >
+          {row.ma_chuyen || '-'}
+        </Box>
+      );
+    }
+    // sortValue removed, DataGrid sorts by 'ma_chuyen' field by default
   },
   {
-    id: 'ngay_di',
-    header: 'Ngày Đi',
-    width: '5%',
+    field: 'ngay_di', // id -> field
+    headerName: 'Ngày Đi', // header -> headerName
+    width: 100, // '5%' -> fixed width or flex
     sortable: true,
-    render: (_, row) => (row.ngay_di ? formatDateForDisplay(row.ngay_di) : '-'),
-    sortValue: (_, row) => row.ngay_di || '',
+    renderCell: (params) => (params.row.ngay_di ? formatDateForDisplay(params.row.ngay_di) : '-'),
+    type: 'date', // Hint for DataGrid
+    valueGetter: params => params.row.ngay_di ? new Date(params.row.ngay_di) : null, // For proper date sorting
   },
   {
-    id: 'ma_khach_hang',
-    header: 'Khách Hàng',
-    width: '35%',
+    field: 'ma_khach_hang_display', // Using a new field for display/sorting by name
+    headerName: 'Khách Hàng', // header -> headerName
+    flex: 3.5, // '35%' -> flex
     sortable: true,
-    render: (_, row) => {
-      try {
-        if (!selectOptions.khachHang || selectOptions.khachHang.length === 0) {
-
-          return row.ma_khach_hang || '-';
-        }
-        // Look up the customer by ma_dinh_danh instead of ID
-        const khachHang = selectOptions.khachHang.find(kh => kh.ma_dinh_danh === row.ma_khach_hang);
-        // Display the customer name (label) if found, otherwise show the ID
-        return (
-          <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
-            {khachHang ? khachHang.label : row.ma_khach_hang || '-'}
-          </Box>
-        );
-      } catch (error) {
-
+    valueGetter: params => { // To get customer name for sorting/filtering
+      const row = params.row;
+      if (!selectOptions.khachHang || selectOptions.khachHang.length === 0) {
         return row.ma_khach_hang || '-';
       }
-    },
-    sortValue: (_, row) => {
       const khachHang = selectOptions.khachHang.find(kh => kh.ma_dinh_danh === row.ma_khach_hang);
-      return khachHang ? khachHang.label : row.ma_khach_hang || '';
+      return khachHang ? khachHang.label : row.ma_khach_hang || '-';
     },
+    renderCell: (params) => { // render -> renderCell
+        // Value from valueGetter is params.value
+      return (
+        <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
+          {params.value}
+        </Box>
+      );
+    }
   },
   {
-    id: 'bien_so_dau_keo',
-    header: 'Xe Vận Chuyển',
-    width: '5%',
+    field: 'bien_so_dau_keo', // id -> field
+    headerName: 'Xe Vận Chuyển', // header -> headerName
+    flex: 1, // '5%' -> flex
     sortable: true,
-    render: (_, row) => (
+    renderCell: (params) => ( // render -> renderCell
       <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>
-        {row.bien_so_dau_keo || '-'}
+        {params.row.bien_so_dau_keo || '-'}
       </Box>
-    ),
-    sortValue: (_, row) => row.bien_so_dau_keo || '',
+    )
   },
   {
-    id: 'ghi_chu',
-    header: 'Diễn Giải',
-    width: '30%',
+    field: 'ghi_chu', // id -> field
+    headerName: 'Diễn Giải', // header -> headerName
+    flex: 3, // '30%' -> flex
     sortable: true,
-    render: (_, row) => row.ghi_chu || '-',
-    sortValue: (_, row) => row.ghi_chu || '',
+    renderCell: (params) => params.row.ghi_chu || '-'
   },
   {
-    id: 'cuoc_van_chuyen_vnd',
-    header: 'Cước Vận Chuyển',
+    field: 'cuoc_van_chuyen_vnd', // id -> field
+    headerName: 'Cước Vận Chuyển', // header -> headerName
     align: 'right',
-    width: '12%',
+    headerAlign: 'right',
+    flex: 1.2, // '12%' -> flex
     sortable: true,
-    render: (_, row) =>
-      row.cuoc_van_chuyen_vnd ? formatCurrencyVND(row.cuoc_van_chuyen_vnd) : '-',
-    sortValue: (_, row) => row.cuoc_van_chuyen_vnd || 0,
+    renderCell: (params) =>
+      params.row.cuoc_van_chuyen_vnd ? formatCurrencyVND(params.row.cuoc_van_chuyen_vnd) : '-',
+    type: 'number',
   },
   {
-    id: 'vnd_chi_phi',
-    header: 'Tổng Chi Phí',
+    field: 'vnd_chi_phi', // id -> field
+    headerName: 'Tổng Chi Phí', // header -> headerName
     align: 'right',
-    width: '10%',
+    headerAlign: 'right',
+    flex: 1, // '10%' -> flex
     sortable: true,
-    render: (_, row) => formatCurrencyVND(row.vnd_chi_phi || 0),
-    sortValue: (_, row) => row.vnd_chi_phi || 0,
+    renderCell: (params) => formatCurrencyVND(params.row.vnd_chi_phi || 0),
+    type: 'number',
   },
   {
-    id: 'loi_nhuan_gop',
-    header: 'Lợi Nhuận Gộp',
+    field: 'loi_nhuan_gop', // id -> field
+    headerName: 'Lợi Nhuận Gộp', // header -> headerName
     align: 'right',
-    width: '10%',
+    headerAlign: 'right',
+    flex: 1, // '10%' -> flex
     sortable: true,
-    render: (_, row) => {
+    valueGetter: params => { // For correct sorting
+      const row = params.row;
       const totalCost = row.vnd_chi_phi || 0;
       const revenue = row.cuoc_van_chuyen_vnd || 0;
-      const grossProfit = revenue - totalCost;
+      return revenue - totalCost;
+    },
+    renderCell: (params) => { // render -> renderCell
+      const grossProfit = params.value; // Value from valueGetter
       return (
         <Box
           component="span"
@@ -138,20 +139,18 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
         </Box>
       );
     },
-    sortValue: (_, row) => {
-      const totalCost = row.vnd_chi_phi || 0;
-      const revenue = row.cuoc_van_chuyen_vnd || 0;
-      return revenue - totalCost;
-    },
+    type: 'number',
   },
   {
-    id: 'trang_thai',
-    header: 'Trạng Thái',
-    width: '8%',
+    field: 'trang_thai', // id -> field
+    headerName: 'Trạng Thái', // header -> headerName
+    width: 130, // '8%' -> fixed width for Chip or flex: 0.8
     sortable: true,
-    render: (_, row) => (
-      <Chip
-        label={trangThaiMap[row.trang_thai] || row.trang_thai}
+    renderCell: (params) => { // render -> renderCell
+      const row = params.row;
+      return (
+        <Chip
+          label={trangThaiMap[row.trang_thai] || row.trang_thai}
         size="small"
         sx={{
           borderRadius: 0.5,

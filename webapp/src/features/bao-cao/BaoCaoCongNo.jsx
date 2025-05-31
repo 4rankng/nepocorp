@@ -33,34 +33,44 @@ const BaoCaoCongNo = () => {
   // Table columns configuration
   const columns = [
     {
-      key: 'entityName',
-      label: 'Tên',
+      field: 'entityName', // key -> field
+      headerName: 'Tên', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
+      flex: 2, // Give more space to name
     },
     {
-      key: 'entityType',
-      label: 'Nhóm',
+      field: 'entityType', // key -> field
+      headerName: 'Nhóm', // label -> headerName
       align: 'left',
-      render: value => (value === 'customer' ? 'Khách hàng' : 'Đối tác'),
+      headerAlign: 'left',
+      renderCell: params => (params.value === 'customer' ? 'Khách hàng' : 'Đối tác'), // render -> renderCell
+      flex: 1,
     },
     {
-      key: 'phaiThu',
-      label: 'Phải Thu',
+      field: 'phaiThu', // key -> field
+      headerName: 'Phải Thu', // label -> headerName
       align: 'right',
-      numeric: true,
-      render: value => formatCurrency(value),
+      headerAlign: 'right',
+      numeric: true, // Handled by StandardTable
+      renderCell: params => formatCurrency(params.value), // render -> renderCell
+      flex: 1,
     },
     {
-      key: 'phaiTra',
-      label: 'Phải Trả',
+      field: 'phaiTra', // key -> field
+      headerName: 'Phải Trả', // label -> headerName
       align: 'right',
+      headerAlign: 'right',
       numeric: true,
-      render: value => formatCurrency(value),
+      renderCell: params => formatCurrency(params.value), // render -> renderCell
+      flex: 1,
     },
     {
-      key: 'ghiChu',
-      label: 'Ghi Chú',
+      field: 'ghiChu', // key -> field
+      headerName: 'Ghi Chú', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
+      flex: 1,
     },
   ];
   const fetchReportData = async monthYear => {
@@ -106,7 +116,7 @@ const BaoCaoCongNo = () => {
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
       <StandardTable
         columns={columns}
-        data={filteredData}
+        rows={filteredData} // data -> rows
         loading={isLoading}
         error={error}
         emptyMessage="Không có dữ liệu công nợ cho khoảng thời gian đã chọn"

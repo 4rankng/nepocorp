@@ -56,11 +56,13 @@ const ContainerListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'phan_loai',
-      label: 'LOẠI CONTAINER',
+      field: 'phan_loai', // key -> field
+      headerName: 'LOẠI CONTAINER', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      renderCell: params => params.value || 'Chưa cập nhật', // render -> renderCell
+      flex: 1, // Allow it to take available space
     },
   ];
   // Render action buttons for each row
@@ -161,7 +163,7 @@ const ContainerListResponsive = ({
       </Box>
       <StandardTable
         columns={columns}
-        data={paginatedData}
+        rows={paginatedData} // data -> rows
         renderActions={renderActions}
         loading={loading}
         error={error}

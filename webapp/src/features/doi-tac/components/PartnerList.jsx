@@ -13,36 +13,41 @@ const PartnerList = ({
   // Define table columns
   const columns = [
     {
-      key: 'ma_dinh_danh',
-      label: 'Mã đối tác',
+      field: 'ma_dinh_danh', // key -> field
+      headerName: 'Mã đối tác', // label -> headerName
+      width: 150, // Default width
     },
     {
-      key: 'ten',
-      label: 'Tên đối tác',
+      field: 'ten', // key -> field
+      headerName: 'Tên đối tác', // label -> headerName
+      width: 200, // Default width
     },
     {
-      key: 'dia_chi',
-      label: 'Địa chỉ',
-      render: value => value || 'Chưa cập nhật',
-      maxWidth: 300,
+      field: 'dia_chi', // key -> field
+      headerName: 'Địa chỉ', // label -> headerName
+      renderCell: params => params.value || 'Chưa cập nhật', // render -> renderCell
+      width: 300, // maxWidth replaced by width
     },
     {
-      key: 'ma_so_thue',
-      label: 'Mã số thuế',
-      render: value => value || 'Chưa cập nhật',
+      field: 'ma_so_thue', // key -> field
+      headerName: 'Mã số thuế', // label -> headerName
+      renderCell: params => params.value || 'Chưa cập nhật', // render -> renderCell
+      width: 150, // Default width
     },
     {
-      key: 'actions',
-      label: 'Thao tác',
+      field: 'actions', // key -> field
+      headerName: 'Thao tác', // label -> headerName
       align: 'right',
-      render: (_, record) => (
+      headerAlign: 'right',
+      sortable: false,
+      renderCell: (params) => ( // render -> renderCell, adapt signature
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
           <EditButton
-            onClick={() => onEdit(record)}
+            onClick={() => onEdit(params.row)}
             disabled={loading}
             tooltip="Chỉnh sửa đối tác"
           />
-          <DeleteButton onClick={() => onDelete(record)} disabled={loading} tooltip="Xóa đối tác" />
+          <DeleteButton onClick={() => onDelete(params.row)} disabled={loading} tooltip="Xóa đối tác" />
         </Box>
       ),
     },
@@ -50,7 +55,7 @@ const PartnerList = ({
   return (
     <StandardTable
       columns={columns}
-      data={partners}
+      rows={partners} // data -> rows
       loading={loading}
       emptyMessage={emptyMessage}
       error={error}

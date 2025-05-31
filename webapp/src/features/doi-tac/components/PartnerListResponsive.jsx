@@ -106,31 +106,39 @@ const PartnerListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'ma_dinh_danh',
-      label: 'Mã đối tác',
+      field: 'ma_dinh_danh', // key -> field
+      headerName: 'Mã đối tác', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
-      render: value => value || '--',
+      renderCell: params => params.value || '--', // render -> renderCell
+      width: 150, // Default width
     },
     {
-      key: 'ten',
-      label: 'Tên đối tác',
+      field: 'ten', // key -> field
+      headerName: 'Tên đối tác', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
+      width: 200, // Default width
     },
     {
-      key: 'dia_chi',
-      label: 'Địa chỉ',
+      field: 'dia_chi', // key -> field
+      headerName: 'Địa chỉ', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
-      render: value => value || '--',
+      renderCell: params => params.value || '--', // render -> renderCell
+      width: 300, // Default width
     },
     {
-      key: 'ma_so_thue',
-      label: 'Mã số thuế',
+      field: 'ma_so_thue', // key -> field
+      headerName: 'Mã số thuế', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
       sortable: true,
-      render: value => value || '--',
+      renderCell: params => params.value || '--', // render -> renderCell
+      width: 150, // Default width
     },
   ];
 
@@ -152,7 +160,7 @@ const PartnerListResponsive = ({
   const renderDesktopView = () => (
     <StandardTable
       columns={columns}
-      data={paginatedPartners}
+      rows={paginatedPartners} // data -> rows
       renderActions={renderActions}
       loading={loading}
       error={error}

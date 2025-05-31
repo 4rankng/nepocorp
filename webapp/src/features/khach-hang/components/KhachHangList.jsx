@@ -187,21 +187,51 @@ const KhachHangList = () => {
   };
   // Table columns configuration
   const columns = [
-    { key: 'name', label: 'Tên khách hàng' },
-    { key: 'phone', label: 'Số điện thoại', numeric: false },
-    { key: 'email', label: 'Email' },
     {
-      key: 'address',
-      label: 'Địa chỉ',
-      maxWidth: 250,
-      noWrap: true,
+      field: 'name', // key -> field
+      headerName: 'Tên khách hàng', // label -> headerName
+      flex: 1.5,
+      headerAlign: 'left',
+      align: 'left',
     },
     {
-      key: 'status',
-      label: 'Trạng thái',
-      render: value => (value === 'active' ? 'Hoạt động' : 'Không hoạt động'),
-      getColor: value =>
-        value === 'active' ? theme.palette.primary.main : theme.palette.text.secondary,
+      field: 'phone', // key -> field
+      headerName: 'Số điện thoại', // label -> headerName
+      numeric: false, // StandardTable handles this for type if needed
+      flex: 1,
+      headerAlign: 'left',
+      align: 'left',
+    },
+    {
+      field: 'email', // key -> field
+      headerName: 'Email', // label -> headerName
+      flex: 1.5,
+      headerAlign: 'left',
+      align: 'left',
+    },
+    {
+      field: 'address', // key -> field
+      headerName: 'Địa chỉ', // label -> headerName
+      width: 250, // maxWidth -> width
+      // noWrap: true, // Apply via sx in renderCell if needed, or rely on DataGrid default
+      headerAlign: 'left',
+      align: 'left',
+    },
+    {
+      field: 'status', // key -> field
+      headerName: 'Trạng thái', // label -> headerName
+      renderCell: params => { // render -> renderCell
+        const isActive = params.value === 'active';
+        return (
+          <span style={{ color: isActive ? theme.palette.primary.main : theme.palette.text.secondary }}>
+            {isActive ? 'Hoạt động' : 'Không hoạt động'}
+          </span>
+        );
+      },
+      // getColor removed, styling handled in renderCell
+      flex: 0.75,
+      headerAlign: 'left',
+      align: 'left',
     },
   ];
   return (
@@ -221,7 +251,7 @@ const KhachHangList = () => {
       </Box>
       <StandardTable
         columns={columns}
-        data={customers}
+        rows={customers} // data -> rows
         loading={loading}
         error={error}
         emptyMessage="Chưa có khách hàng nào"

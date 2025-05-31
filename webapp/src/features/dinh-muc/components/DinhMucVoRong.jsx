@@ -287,7 +287,7 @@ const DinhMucVoRong = () => {
 
       <StandardTable
         columns={columns}
-        data={voRongRecords}
+        rows={voRongRecords} // data -> rows
         loading={isLoading}
         error={error}
         emptyMessage={

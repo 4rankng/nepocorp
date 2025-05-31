@@ -81,7 +81,8 @@ const DinhMucBoSung = () => {
   }, [dinhMucBoSungData, tuyenDuongList]);
 
   // Action buttons renderer
-  const renderActions = (cellValue, rowData) => (
+  // Signature changed for renderCell: (params) => renderActions(params.row)
+  const renderActionsCell = (rowData) => (
     <Box sx={{ display: 'flex', gap: 1 }}>
       <EditButton
         onClick={(e) => {
@@ -103,69 +104,72 @@ const DinhMucBoSung = () => {
   // Table columns
   const columns = useMemo(() => [
     {
-      key: 'bien_so',
-      label: 'Biển số',
-      width: '15%',
+      field: 'bien_so', // key -> field
+      headerName: 'Biển số', // label -> headerName
+      width: 150, // '15%' -> numeric
       sortable: true,
-      render: (cellValue) => (
-        <Typography variant="body2" fontWeight={cellValue ? 500 : 400}>
-          {cellValue || '*'}
+      renderCell: (params) => ( // render -> renderCell
+        <Typography variant="body2" fontWeight={params.value ? 500 : 400}>
+          {params.value || '*'}
         </Typography>
       ),
     },
     {
-      key: 'ma_tuyen',
-      label: 'Mã tuyến',
-      width: '12%',
+      field: 'ma_tuyen', // key -> field
+      headerName: 'Mã tuyến', // label -> headerName
+      width: 120, // '12%' -> numeric
       sortable: true,
-      render: (cellValue) => (
-        <Typography variant="body2" fontWeight={cellValue ? 500 : 400}>
-          {cellValue || '*'}
+      renderCell: (params) => ( // render -> renderCell
+        <Typography variant="body2" fontWeight={params.value ? 500 : 400}>
+          {params.value || '*'}
         </Typography>
       ),
     },
     {
-      key: 'diem_di',
-      label: 'Điểm đi',
-      width: '20%',
+      field: 'diem_di', // key -> field
+      headerName: 'Điểm đi', // label -> headerName
+      width: 200, // '20%' -> numeric
       sortable: true,
-      render: (cellValue) => (
+      renderCell: (params) => ( // render -> renderCell
         <Typography variant="body2">
-          {cellValue}
+          {params.value}
         </Typography>
       ),
     },
     {
-      key: 'diem_den',
-      label: 'Điểm đến',
-      width: '25%',
+      field: 'diem_den', // key -> field
+      headerName: 'Điểm đến', // label -> headerName
+      width: 250, // '25%' -> numeric
       sortable: true,
-      render: (cellValue) => (
+      renderCell: (params) => ( // render -> renderCell
         <Typography variant="body2">
-          {cellValue}
+          {params.value}
         </Typography>
       ),
     },
     {
-      key: 'dinh_muc_l',
-      label: 'Định mức (lít)',
-      width: '15%',
+      field: 'dinh_muc_l', // key -> field
+      headerName: 'Định mức (lít)', // label -> headerName
+      width: 150, // '15%' -> numeric
       align: 'right',
+      headerAlign: 'right',
       sortable: true,
-      render: (cellValue) => (
+      renderCell: (params) => ( // render -> renderCell
         <Typography variant="body2" fontWeight={500}>
-          {cellValue?.toLocaleString('vi-VN')}
+          {params.value?.toLocaleString('vi-VN')}
         </Typography>
       ),
     },
     {
-      key: 'actions',
-      label: 'Thao tác',
-      width: '13%',
+      field: 'actions', // key -> field
+      headerName: 'Thao tác', // label -> headerName
+      width: 130, // '13%' -> numeric
       align: 'center',
-      render: renderActions,
+      headerAlign: 'center',
+      sortable: false,
+      renderCell: (params) => renderActionsCell(params.row), // render -> renderCell, pass params.row
     },
-  ], []);
+  ], [renderActionsCell]); // Added renderActionsCell to dependency array
 
   // Form handlers
   const handleOpenForm = () => {
@@ -281,7 +285,7 @@ const DinhMucBoSung = () => {
       {/* Data Table */}
       <Paper elevation={2} sx={{ borderRadius: 2 }}>
         <StandardTable
-          data={tableData}
+          rows={tableData} // data -> rows
           columns={columns}
           showSTT={true}
           loading={isLoading}

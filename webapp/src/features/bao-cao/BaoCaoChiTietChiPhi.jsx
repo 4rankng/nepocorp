@@ -26,31 +26,40 @@ const BaoCaoChiTietChiPhi = () => {
   // Table columns configuration
   const columns = [
     {
-      key: 'monthYear',
-      label: 'Tháng',
+      field: 'monthYear', // key -> field
+      headerName: 'Tháng', // label -> headerName
       align: 'left',
-      render: value => {
+      headerAlign: 'left',
+      renderCell: params => { // render -> renderCell
+        const value = params.value;
         if (!value || !value.includes('/')) return value;
         const [month, year] = value.split('/');
         return `${month}/${year.slice(-2)}`;
       },
+      flex: 1,
     },
     {
-      key: 'bienSoXe',
-      label: 'Biển Số Xe',
+      field: 'bienSoXe', // key -> field
+      headerName: 'Biển Số Xe', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
+      flex: 1,
     },
     {
-      key: 'category',
-      label: 'Hạng Mục Chi Phí',
+      field: 'category', // key -> field
+      headerName: 'Hạng Mục Chi Phí', // label -> headerName
       align: 'left',
+      headerAlign: 'left',
+      flex: 2, // More space for category name
     },
     {
-      key: 'amount',
-      label: 'Số Tiền',
+      field: 'amount', // key -> field
+      headerName: 'Số Tiền', // label -> headerName
       align: 'right',
-      numeric: true,
-      render: value => formatMillion(value),
+      headerAlign: 'right',
+      numeric: true, // Handled by StandardTable
+      renderCell: params => formatMillion(params.value), // render -> renderCell
+      flex: 1,
     },
   ];
   // Define a color palette for chart segments
@@ -122,7 +131,7 @@ const BaoCaoChiTietChiPhi = () => {
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
       <StandardTable
         columns={columns}
-        data={sortedData}
+        rows={sortedData} // data -> rows
         loading={isLoading}
         error={error}
         emptyMessage="Không có dữ liệu cho khoảng thời gian đã chọn"
