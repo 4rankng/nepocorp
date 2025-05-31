@@ -7,8 +7,9 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  Divider,
 } from '@mui/material';
-import ConfirmationModal from '@/components/ConfirmationDialog';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
 import MobileView from '@features/doi-tac/components/MobileView';
 import DesktopView from '@features/doi-tac/components/DesktopView';
@@ -32,9 +33,8 @@ const QuanLyDoiTac = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [formError, setFormError] = useState('');
-  // Delete confirmation state
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [partnerToDelete, setPartnerToDelete] = useState(null);
+  // Delete dialog state
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -104,24 +104,19 @@ const QuanLyDoiTac = () => {
   };
   // Delete handlers
   const handleDeleteClick = partner => {
-    setPartnerToDelete(partner);
-    setIsDeleteModalOpen(true);
+    setDeleteDialog({ open: true, data: partner });
   };
+  
   const handleDeleteConfirm = async () => {
-    if (partnerToDelete) {
-      const result = await deletePartner(partnerToDelete.id);
+    if (deleteDialog.data) {
+      const result = await deletePartner(deleteDialog.data.id);
       if (result.success) {
         showSnackbar('Xóa đối tác thành công');
       } else {
-        showSnackbar(result.error, 'error');
+        showSnackbar(result.error || 'Có lỗi xảy ra khi xóa đối tác', 'error');
       }
     }
-    setIsDeleteModalOpen(false);
-    setPartnerToDelete(null);
-  };
-  const handleDeleteCancel = () => {
-    setIsDeleteModalOpen(false);
-    setPartnerToDelete(null);
+    setDeleteDialog({ open: false, data: null });
   };
   const commonProps = {
     partners,
@@ -164,49 +159,41 @@ const QuanLyDoiTac = () => {
           <CircularProgress color="primary" />
         </div>
       )}
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        open={isDeleteModalOpen}
-        onCancel={handleDeleteCancel}
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onCancel={() => setDeleteDialog({ open: false, data: null })}
         onConfirm={handleDeleteConfirm}
-        title="Xác nhận xóa đối tác"
-        message={
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Bạn có chắc chắn muốn xóa đối tác này?
-            </Typography>
-            <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto 1fr',
-                  gap: 1,
-                  fontSize: '0.875rem',
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Tên đối tác:
-                </Typography>
-                <Typography variant="body2">{partnerToDelete?.ten}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Địa chỉ:
-                </Typography>
+        title="Xóa đối tác"
+        message="Bạn có chắc chắn muốn xóa đối tác này?"
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
+        type="delete"
+        content={() => (
+          <Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" color="error.main" gutterBottom>
+                Thông tin đối tác:
+              </Typography>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
+                <Typography variant="body2" fontWeight={500}>Tên đối tác:</Typography>
+                <Typography variant="body2">{deleteDialog.data?.ten || '-'}</Typography>
+
+                <Typography variant="body2" fontWeight={500}>Địa chỉ:</Typography>
                 <Typography variant="body2">
-                  {partnerToDelete?.dia_chi || 'Chưa cập nhật'}
+                  {deleteDialog.data?.dia_chi || 'Chưa cập nhật'}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Mã số thuế:
-                </Typography>
+
+                <Typography variant="body2" fontWeight={500}>Mã số thuế:</Typography>
                 <Typography variant="body2">
-                  {partnerToDelete?.ma_so_thue || 'Chưa cập nhật'}
+                  {deleteDialog.data?.ma_so_thue || 'Chưa cập nhật'}
                 </Typography>
               </Box>
             </Box>
           </Box>
-        }
-        confirmText="Xóa"
-        cancelText="Hủy"
-        confirmColor="error"
+        )}
       />
       {/* Snackbar for notifications */}
       <Snackbar

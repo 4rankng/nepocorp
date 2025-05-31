@@ -112,7 +112,7 @@ const DauKeoContent = () => {
       />
       <ConfirmationDialog
         open={deleteDialog.open}
-        title="Xác nhận xóa đầu kéo"
+        title="Xóa đầu kéo"
         message="Bạn có chắc chắn muốn xóa đầu kéo sau đây? Hành động này không thể hoàn tác."
         onConfirm={handleDelete}
         onCancel={() => setDeleteDialog({ open: false, data: null })}
@@ -207,7 +207,7 @@ const RoMoocContent = () => {
       />
       <ConfirmationDialog
         open={deleteDialog.open}
-        title="Xác nhận xóa rơ-mooc"
+        title="Xóa rơ-mooc"
         message="Bạn có chắc chắn muốn xóa rơ-mooc sau đây? Hành động này không thể hoàn tác."
         onConfirm={handleDelete}
         onCancel={() => setDeleteDialog({ open: false, data: null })}
@@ -332,7 +332,7 @@ const ContainerContent = () => {
       />
       <ConfirmationDialog
         open={deleteDialog.open}
-        title="Xác nhận xóa container"
+        title="Xóa container"
         message="Bạn có chắc chắn muốn xóa container sau đây? Hành động này không thể hoàn tác."
         onConfirm={handleDelete}
         onCancel={() => setDeleteDialog({ open: false, data: null })}

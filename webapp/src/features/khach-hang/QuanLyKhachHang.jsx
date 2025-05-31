@@ -7,8 +7,9 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  Divider,
 } from '@mui/material';
-import ConfirmationModal from '@/components/ConfirmationDialog';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 import CustomerForm from '@features/khach-hang/components/CustomerForm';
 import MobileView from '@features/khach-hang/components/MobileView';
 import DesktopView from '@features/khach-hang/components/DesktopView';
@@ -32,9 +33,8 @@ const QuanLyKhachHang = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [formError, setFormError] = useState('');
-  // Delete confirmation state
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState(null);
+  // Delete dialog state
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -108,24 +108,19 @@ const QuanLyKhachHang = () => {
   );
   // Delete handlers
   const handleDeleteClick = customer => {
-    setCustomerToDelete(customer);
-    setIsDeleteModalOpen(true);
+    setDeleteDialog({ open: true, data: customer });
   };
+
   const handleDeleteConfirm = async () => {
-    if (customerToDelete) {
-      const result = await deleteCustomer(customerToDelete.id);
+    if (deleteDialog.data) {
+      const result = await deleteCustomer(deleteDialog.data.id);
       if (result.success) {
         showSnackbar('Xóa khách hàng thành công');
       } else {
-        showSnackbar(result.error, 'error');
+        showSnackbar(result.error || 'Có lỗi xảy ra khi xóa khách hàng', 'error');
       }
     }
-    setIsDeleteModalOpen(false);
-    setCustomerToDelete(null);
-  };
-  const handleDeleteCancel = () => {
-    setIsDeleteModalOpen(false);
-    setCustomerToDelete(null);
+    setDeleteDialog({ open: false, data: null });
   };
   // Common props for both mobile and desktop views
   const commonProps = {
@@ -169,49 +164,41 @@ const QuanLyKhachHang = () => {
           <CircularProgress color="primary" />
         </div>
       )}
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        open={isDeleteModalOpen}
-        onCancel={handleDeleteCancel}
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onCancel={() => setDeleteDialog({ open: false, data: null })}
         onConfirm={handleDeleteConfirm}
-        title="Xác nhận xóa khách hàng"
-        message={
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Bạn có chắc chắn muốn xóa khách hàng này?
-            </Typography>
-            <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto 1fr',
-                  gap: 1,
-                  fontSize: '0.875rem',
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Tên khách hàng:
-                </Typography>
-                <Typography variant="body2">{customerToDelete?.ten}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Địa chỉ:
-                </Typography>
+        title="Xóa khách hàng"
+        message="Bạn có chắc chắn muốn xóa khách hàng này?"
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
+        type="delete"
+        content={() => (
+          <Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" color="error.main" gutterBottom>
+                Thông tin khách hàng:
+              </Typography>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
+                <Typography variant="body2" fontWeight={500}>Tên khách hàng:</Typography>
+                <Typography variant="body2">{deleteDialog.data?.ten || '-'}</Typography>
+
+                <Typography variant="body2" fontWeight={500}>Địa chỉ:</Typography>
                 <Typography variant="body2">
-                  {customerToDelete?.dia_chi || 'Chưa cập nhật'}
+                  {deleteDialog.data?.dia_chi || 'Chưa cập nhật'}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Mã số thuế:
-                </Typography>
+
+                <Typography variant="body2" fontWeight={500}>Mã số thuế:</Typography>
                 <Typography variant="body2">
-                  {customerToDelete?.ma_so_thue || 'Chưa cập nhật'}
+                  {deleteDialog.data?.ma_so_thue || 'Chưa cập nhật'}
                 </Typography>
               </Box>
             </Box>
           </Box>
-        }
-        confirmText="Xóa"
-        cancelText="Hủy"
-        confirmColor="error"
+        )}
       />
       {/* Snackbar for notifications */}
       <Snackbar

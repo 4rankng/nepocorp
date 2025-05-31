@@ -6,14 +6,11 @@ import {
   CircularProgress, // Keep for top-level loading if needed before views render
   Alert, // Keep for top-level error before views render
   Fab,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Button,
   Zoom,
+  Typography,
+  Divider,
 } from '@mui/material';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { useTheme, useMediaQuery } from '@mui/material';
 import NhanVienForm from '@features/nhan-vien/components/NhanVienForm';
 import DesktopView from './components/DesktopView';
@@ -40,8 +37,8 @@ const QuanLyNhanVien = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  // Delete dialog state
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, data: null });
   // useEffect for initial data fetch is in the hook.
   // useEffect for ESC key is in the hook.
   // If there's an error from the hook (e.g. save error), it will be passed to NhanVienForm.
@@ -49,19 +46,14 @@ const QuanLyNhanVien = () => {
   // For simplicity, we can use the 'error' from the hook for the main Alert,
   // and NhanVienForm will also display it.
   const handleDeleteClick = record => {
-    setEmployeeToDelete(record);
-    setDeleteDialogOpen(true);
+    setDeleteDialog({ open: true, data: record });
   };
+
   const handleConfirmDelete = async () => {
-    if (employeeToDelete) {
-      await handleDeleteEmployee(employeeToDelete.id);
-      setDeleteDialogOpen(false);
-      setEmployeeToDelete(null);
+    if (deleteDialog.data) {
+      await handleDeleteEmployee(deleteDialog.data.id);
     }
-  };
-  const handleCancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setEmployeeToDelete(null);
+    setDeleteDialog({ open: false, data: null });
   };
   // Filter employees by search
   const filteredEmployees = employees.filter(emp => {
@@ -159,28 +151,33 @@ const QuanLyNhanVien = () => {
         onLoadDauKeo={loadDauKeoList}
       />
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleCancelDelete}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Xác nhận xóa nhân viên</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Bạn có chắc chắn muốn xóa nhân viên "{employeeToDelete?.tenNhanVien}" (Mã:{' '}
-            {employeeToDelete?.maNhanVien})? Hành động này không thể hoàn tác.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">
-            Hủy
-          </Button>
-          <Button onClick={handleConfirmDelete} color="error" autoFocus>
-            Xác nhận xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onCancel={() => setDeleteDialog({ open: false, data: null })}
+        onConfirm={handleConfirmDelete}
+        title="Xóa nhân viên"
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
+        type="delete"
+        content={() => (
+          <Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" color="error.main" gutterBottom>
+                Thông tin nhân viên:
+              </Typography>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
+                <Typography variant="body2" fontWeight={500}>Tên nhân viên:</Typography>
+                <Typography variant="body2">{deleteDialog.data?.tenNhanVien || '-'}</Typography>
+
+                <Typography variant="body2" fontWeight={500}>Mã nhân viên:</Typography>
+                <Typography variant="body2">{deleteDialog.data?.maNhanVien || '-'}</Typography>
+              </Box>
+            </Box>
+          </Box>
+        )}
+      />
     </Box>
   );
 };
