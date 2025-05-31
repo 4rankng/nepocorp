@@ -42,6 +42,7 @@ const ROLE_CARDS = [
 ];
 const TrangChu = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const { login, logout, currentUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -69,6 +70,7 @@ const TrangChu = () => {
   }, [isAuthenticated, currentUser, location.pathname, navigate]);
   const handleSidebarToggle = () => setSidebarOpen(open => !open);
   const handleSidebarClose = () => setSidebarOpen(false);
+  const handleDesktopSidebarToggle = () => setDesktopSidebarCollapsed(collapsed => !collapsed);
   const handleRoleSelect = async roleKey => {
     const success = login(roleKey);
     if (success) {
@@ -153,9 +155,31 @@ const TrangChu = () => {
       {currentUser && (
         <div className="flex pt-12 w-full">
           {/* Fixed Sidebar for desktop */}
-          <div className="hidden md:block fixed top-12 left-0 bottom-0 z-40">
+          <div className={`hidden md:block fixed top-12 left-0 bottom-0 z-40 transition-transform duration-300 ease-in-out ${
+            desktopSidebarCollapsed ? '-translate-x-full' : 'translate-x-0'
+          }`}>
             <ThanhBen onNavItemClick={handleSidebarClose} />
           </div>
+          
+          {/* Desktop Sidebar Toggle Button */}
+          <button
+            onClick={handleDesktopSidebarToggle}
+            className={`hidden md:flex fixed bottom-16 z-50 w-6 h-12 bg-gray-200 hover:bg-gray-300 border border-gray-300 rounded-r-md items-center justify-center transition-all duration-300 ease-in-out ${
+              desktopSidebarCollapsed ? 'left-0' : 'left-64'
+            }`}
+            aria-label={desktopSidebarCollapsed ? 'Mở sidebar' : 'Thu gọn sidebar'}
+          >
+            <svg
+              className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
+                desktopSidebarCollapsed ? 'rotate-0' : 'rotate-180'
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
           {/* Mobile Sidebar Overlay */}
           <div
             className={`fixed top-12 left-0 right-0 bottom-0 z-40 flex md:hidden ${
@@ -180,7 +204,9 @@ const TrangChu = () => {
             </div>
           </div>
           {/* Main Content */}
-          <main className="flex-1 md:ml-64 min-h-screen bg-white w-full">
+          <main className={`flex-1 min-h-screen bg-white w-full transition-all duration-300 ease-in-out ${
+            desktopSidebarCollapsed ? 'md:ml-0' : 'md:ml-64'
+          }`}>
             <div className="p-2 sm:p-4 w-full relative min-h-screen">
               <Outlet />
             </div>
