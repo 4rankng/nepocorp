@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
 import * as dauKeoApi from '@services/mockApi/dauKeoApi';
 import * as roMoocApi from '@services/mockApi/roMoocApi';
@@ -22,7 +22,13 @@ export const useVoRong = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlate, setSelectedPlate] = useState('');
 
-  // Process data function to handle filtering and pagination
+  // Store raw data for filtering/pagination
+  const [rawVoRongData, setRawVoRongData] = useState([]);
+  
+  // Use ref to store the latest fetch function to avoid dependency issues
+  const fetchVoRongDataRef = useRef();
+
+  // Process data function to handle grouping only (no filtering/pagination)
   const processVoRongData = useCallback(
     (voRongDataItems, dauKeoData, roMoocData) => {
       // Group by license plate
@@ -49,7 +55,7 @@ export const useVoRong = () => {
       }, {});
       setDinhMucVoRong(voRongGrouped);
 
-      // Create flat array for table display with search and pagination
+      // Create flat array for table display
       const voRongFlat = voRongDataItems.map(item => ({
         id: item.id,
         bienSoXe: item.bien_so_xe || item.bienSoXe,
@@ -64,28 +70,8 @@ export const useVoRong = () => {
         updatedAt: item.updatedAt,
       }));
 
-      // Apply search filter
-      let filteredRecords = voRongFlat;
-      if (searchTerm || selectedPlate) {
-        const searchValue = selectedPlate || searchTerm;
-        filteredRecords = voRongFlat.filter(
-          record =>
-            record.bienSoXe?.toLowerCase().includes(searchValue.toLowerCase()) ||
-            record.ghiChu?.toLowerCase().includes(searchValue.toLowerCase())
-        );
-      }
-
-      // Apply pagination
-      const startIndex = pagination.page * pagination.pageSize;
-      const endIndex = startIndex + pagination.pageSize;
-      const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
-
-      setVoRongRecords(paginatedRecords);
-      setPagination(prev => ({
-        ...prev,
-        total: filteredRecords.length,
-        totalPages: Math.ceil(filteredRecords.length / prev.pageSize),
-      }));
+      // Store raw data for filtering/pagination
+      setRawVoRongData(voRongFlat);
 
       // Combine tractor and trailer license plates
       const tractorPlates =
@@ -105,9 +91,39 @@ export const useVoRong = () => {
         plate => ({ id: plate, bien_so: plate })
       );
       setLicensePlates(voRongPlates);
+
+      return { voRongGrouped, voRongFlat };
     },
-    [searchTerm, selectedPlate, pagination.page, pagination.pageSize]
+    [] // Remove all dependencies to make this stable
   );
+
+  // Separate function to handle filtering and pagination
+  const applyFiltersAndPagination = useCallback(() => {
+    if (rawVoRongData.length === 0) return;
+
+    // Apply search filter
+    let filteredRecords = rawVoRongData;
+    if (searchTerm || selectedPlate) {
+      const searchValue = selectedPlate || searchTerm;
+      filteredRecords = rawVoRongData.filter(
+        record =>
+          record.bienSoXe?.toLowerCase().includes(searchValue.toLowerCase()) ||
+          record.ghiChu?.toLowerCase().includes(searchValue.toLowerCase())
+      );
+    }
+
+    // Apply pagination
+    const startIndex = pagination.page * pagination.pageSize;
+    const endIndex = startIndex + pagination.pageSize;
+    const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
+
+    setVoRongRecords(paginatedRecords);
+    setPagination(prev => ({
+      ...prev,
+      total: filteredRecords.length,
+      totalPages: Math.ceil(filteredRecords.length / prev.pageSize),
+    }));
+  }, [rawVoRongData, searchTerm, selectedPlate, pagination.page, pagination.pageSize]);
 
   // Fetch all empty fuel standards
   const fetchVoRongData = useCallback(async () => {
@@ -168,11 +184,15 @@ export const useVoRong = () => {
       setVoRongRecords([]);
       setAvailableLicensePlates([]);
       setLicensePlates([]);
+      setRawVoRongData([]);
       throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [processVoRongData]);
+  }, [processVoRongData]); // Keep processVoRongData dependency
+  
+  // Update the ref whenever fetchVoRongData changes
+  fetchVoRongDataRef.current = fetchVoRongData;
   // Create vo rong standard
   const createVoRongStandard = useCallback(
     async formData => {
@@ -187,13 +207,12 @@ export const useVoRong = () => {
           l_km: parseFloat(formData.standard),
           ghiChu: formData.note,
         };
-        const response = await dinhMucDauApi.create(apiData);
-        if (!response.success) {
-          throw new Error(response.error?.message || 'Failed to create vo rong standard');
-        }
-        // Refresh data to get updated grouping
-        await fetchVoRongData();
-        return response.data;
+        const response = await dinhMucDauApi.create(apiData);      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to create vo rong standard');
+      }
+      // Refresh data to get updated grouping
+      await fetchVoRongDataRef.current();
+      return response.data;
       } catch (err) {
         console.error('Error creating vo rong standard:', err);
         setError('Không thể thêm định mức vỏ rỗng');
@@ -202,7 +221,7 @@ export const useVoRong = () => {
         setIsLoading(false);
       }
     },
-    [fetchVoRongData]
+    [] // Remove fetchVoRongData dependency to prevent infinite loops
   );
   // Update vo rong standard
   const updateVoRongStandard = useCallback(
@@ -218,13 +237,12 @@ export const useVoRong = () => {
           l_km: parseFloat(formData.standard),
           ghiChu: formData.note,
         };
-        const response = await dinhMucDauApi.update(id, apiData);
-        if (!response.success) {
-          throw new Error(response.error?.message || 'Failed to update vo rong standard');
-        }
-        // Refresh data to get updated grouping
-        await fetchVoRongData();
-        return response.data;
+        const response = await dinhMucDauApi.update(id, apiData);      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to update vo rong standard');
+      }
+      // Refresh data to get updated grouping
+      await fetchVoRongDataRef.current();
+      return response.data;
       } catch (err) {
         console.error('Error updating vo rong standard:', err);
         setError('Không thể cập nhật định mức vỏ rỗng');
@@ -233,7 +251,7 @@ export const useVoRong = () => {
         setIsLoading(false);
       }
     },
-    [fetchVoRongData]
+    [] // Remove fetchVoRongData dependency to prevent infinite loops
   );
   // Delete vo rong standard
   const deleteVoRongStandard = useCallback(
@@ -241,13 +259,12 @@ export const useVoRong = () => {
       setIsLoading(true);
       setError('');
       try {
-        const response = await dinhMucDauApi.delete(id);
-        if (!response.success) {
-          throw new Error(response.error?.message || 'Failed to delete vo rong standard');
-        }
-        // Refresh data to get updated grouping
-        await fetchVoRongData();
-        return true;
+        const response = await dinhMucDauApi.delete(id);      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to delete vo rong standard');
+      }
+      // Refresh data to get updated grouping
+      await fetchVoRongDataRef.current();
+      return true;
       } catch (err) {
         console.error('Error deleting vo rong standard:', err);
         setError('Không thể xóa định mức vỏ rỗng');
@@ -256,7 +273,7 @@ export const useVoRong = () => {
         setIsLoading(false);
       }
     },
-    [fetchVoRongData]
+    [] // Remove fetchVoRongData dependency to prevent infinite loops
   );
 
   // Pagination and search handlers
@@ -286,21 +303,18 @@ export const useVoRong = () => {
 
   // Refetch with current filters
   const refetchData = useCallback(() => {
-    fetchVoRongData();
-  }, [fetchVoRongData]);
+    fetchVoRongDataRef.current?.();
+  }, []);
 
-  // Re-run data processing when search/pagination changes
+  // Apply filtering and pagination when search/pagination state changes
   useEffect(() => {
-    if (Object.keys(dinhMucVoRong).length > 0) {
-      // Reprocess the data with current filters
-      fetchVoRongData();
-    }
-  }, [searchTerm, selectedPlate, pagination.page, pagination.pageSize, dinhMucVoRong, fetchVoRongData]);
+    applyFiltersAndPagination();
+  }, [applyFiltersAndPagination]);
 
   // Load data on mount
   useEffect(() => {
-    fetchVoRongData();
-  }, [fetchVoRongData]);
+    fetchVoRongDataRef.current?.();
+  }, []);
   return {
     dinhMucVoRong,
     voRongRecords,
