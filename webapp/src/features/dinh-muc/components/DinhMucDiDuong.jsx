@@ -13,7 +13,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import { StandardTable } from '@components';
+import { StandardTable, EditButton, DeleteButton } from '@components';
 import { useDiDuong } from '../hooks';
 import { Search as SearchIcon } from '@mui/icons-material';
 
@@ -34,13 +34,48 @@ const DinhMucDiDuong = () => {
       return numA - numB;
     });
   }, [containerTypes]);
+  // Handle edit action
+  const handleEdit = (id) => {
+    // TODO: Implement edit functionality
+    console.log('Edit record:', id);
+  };
+
+  // Handle delete action
+  const handleDelete = (id) => {
+    // TODO: Implement delete functionality with confirmation dialog
+    if (window.confirm('Bạn có chắc chắn muốn xóa bản ghi này?')) {
+      console.log('Delete record:', id);
+    }
+  };
+
+  // Render action buttons for each row
+  const renderActions = (rowData) => (
+    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <EditButton 
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('Edit:', rowData);
+        }} 
+        size="small" 
+      />
+      <DeleteButton 
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('Delete:', rowData);
+        }} 
+        size="small" 
+        sx={{ ml: 1 }} 
+      />
+    </Box>
+  );
+
   // Prepare columns for StandardTable
   const columns = useMemo(
     () => [
       {
         key: 'ma_tuyen',
         label: 'Mã tuyến',
-        width: '10%', // Adjusted width
+        width: '10%',
         sortable: true,
         render: (_cellValue, rowData) => (
           <Typography variant="body2" fontWeight={500}>
@@ -78,8 +113,15 @@ const DinhMucDiDuong = () => {
           );
         },
       })),
+      {
+        key: 'actions',
+        label: 'Thao tác',
+        width: '15%',
+        align: 'center',
+        render: renderActions,
+      },
     ],
-    [sortedContainerTypes]
+    [sortedContainerTypes, renderActions]
   );
   // Transform data for StandardTable - group by routes and container types
   const tableData = useMemo(() => {
@@ -140,7 +182,7 @@ const DinhMucDiDuong = () => {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
   const handleAddNew = () => {
-    // TODO: Implement add new record functionality
+    // This will be implemented in the next step to add a new row with empty inputs
     console.log('Add new record clicked');
   };
 
@@ -197,7 +239,7 @@ const DinhMucDiDuong = () => {
           <StandardTable
             columns={columns}
             data={paginatedData}
-            loading={false} // We handle loading state separately
+            loading={isLoading}
             emptyMessage={
               searchTerm
                 ? `Không tìm thấy kết quả cho "${searchTerm}"`
