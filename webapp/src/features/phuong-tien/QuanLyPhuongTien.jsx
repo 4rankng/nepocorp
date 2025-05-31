@@ -5,43 +5,24 @@ import {
   Box,
   useTheme,
   useMediaQuery,
-  Typography,
-  Paper,
-  Chip,
-  CircularProgress,
   Snackbar,
   Alert,
-  IconButton,
-  Card,
-  CardContent,
-  Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Grid,
-  TextField,
 } from '@mui/material';
 import { useNavigate, useParams, useLocation, Routes, Route, Navigate } from 'react-router-dom';
-import { AddButton, EditButton, DeleteButton } from '@/components/ActionButtons';
-import ConfirmationDialog from '@/components/ConfirmationDialog';
-import StandardTable from '@/components/StandardTable';
-import CloseIcon from '@mui/icons-material/Close';
+import { AddButton } from '@/components/ActionButtons';
 // Import custom hooks for data management
 import { useDauKeo, useRoMooc, useContainer } from './hooks';
 // Import specific component files from centralized index
 import {
-  DauKeoCard,
   DauKeoDialog,
   DauKeoDeleteDialog,
-  RoMoocCard,
+  DauKeoListResponsive,
   RoMoocDialog,
   RoMoocDeleteDialog,
-  ContainerCard,
+  RoMoocListResponsive,
   ContainerDialog,
   ContainerDeleteDialog,
+  ContainerListResponsive,
 } from './components';
 // Define valid tabs and their labels
 const TABS = [
@@ -60,10 +41,6 @@ const DauKeoContent = () => {
   useEffect(() => {
     dauKeoHook.fetchAll();
   }, []);
-  const columns = [
-    { key: 'bien_so', label: 'BIỂN SỐ', render: v => v },
-    { key: 'mo_ta', label: 'MÔ TẢ', render: v => v || '' },
-  ];
   const handleSave = async formData => {
     try {
       if (dialog.edit) {
@@ -89,41 +66,14 @@ const DauKeoContent = () => {
   };
   return (
     <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
-      {dauKeoHook.loading ? (
-        <Box display="flex" justifyContent="center" my={4}>
-          <CircularProgress size={24} />
-        </Box>
-      ) : dauKeoHook.error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {dauKeoHook.error}
-        </Alert>
-      ) : isMobile ? (
-        dauKeoHook.data.length === 0 ? (
-          <Alert severity="info">Chưa có dữ liệu đầu kéo</Alert>
-        ) : (
-          dauKeoHook.data.map(item => (
-            <DauKeoCard
-              key={item.id}
-              data={item}
-              onEdit={data => setDialog({ open: true, edit: true, data })}
-              onDelete={data => setDeleteDialog({ open: true, data })}
-              isLoading={dauKeoHook.loading}
-            />
-          ))
-        )
-      ) : (
-        <StandardTable
-          columns={columns}
-          data={dauKeoHook.data}
-          emptyMessage="Chưa có dữ liệu đầu kéo"
-          renderActions={row => (
-            <>
-              <EditButton onClick={() => setDialog({ open: true, edit: true, data: row })} />
-              <DeleteButton onClick={() => setDeleteDialog({ open: true, data: row })} />
-            </>
-          )}
-        />
-      )}
+      <DauKeoListResponsive
+        data={dauKeoHook.data}
+        loading={dauKeoHook.loading}
+        error={dauKeoHook.error}
+        onEdit={data => setDialog({ open: true, edit: true, data })}
+        onDelete={data => setDeleteDialog({ open: true, data })}
+        emptyMessage="Chưa có dữ liệu đầu kéo"
+      />
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -184,10 +134,6 @@ const RoMoocContent = () => {
   useEffect(() => {
     roMoocHook.fetchAll();
   }, []);
-  const columns = [
-    { key: 'bien_so', label: 'BIỂN SỐ', render: v => v },
-    { key: 'mo_ta', label: 'MÔ TẢ', render: v => v || '' },
-  ];
   const handleSave = async formData => {
     try {
       if (dialog.edit) {
@@ -213,42 +159,14 @@ const RoMoocContent = () => {
   };
   return (
     <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
-      {/* Old AddButton block removed, FAB is already at the end of the component */}
-      {roMoocHook.loading ? (
-        <Box display="flex" justifyContent="center" my={4}>
-          <CircularProgress size={24} />
-        </Box>
-      ) : roMoocHook.error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {roMoocHook.error}
-        </Alert>
-      ) : isMobile ? (
-        roMoocHook.data.length === 0 ? (
-          <Alert severity="info">Chưa có dữ liệu rơ-mooc</Alert>
-        ) : (
-          roMoocHook.data.map(item => (
-            <RoMoocCard
-              key={item.id}
-              data={item}
-              onEdit={data => setDialog({ open: true, edit: true, data })}
-              onDelete={data => setDeleteDialog({ open: true, data })}
-              isLoading={roMoocHook.loading}
-            />
-          ))
-        )
-      ) : (
-        <StandardTable
-          columns={columns}
-          data={roMoocHook.data}
-          emptyMessage="Chưa có dữ liệu rơ-mooc"
-          renderActions={row => (
-            <>
-              <EditButton onClick={() => setDialog({ open: true, edit: true, data: row })} />
-              <DeleteButton onClick={() => setDeleteDialog({ open: true, data: row })} />
-            </>
-          )}
-        />
-      )}
+      <RoMoocListResponsive
+        data={roMoocHook.data}
+        loading={roMoocHook.loading}
+        error={roMoocHook.error}
+        onEdit={data => setDialog({ open: true, edit: true, data })}
+        onDelete={data => setDeleteDialog({ open: true, data })}
+        emptyMessage="Chưa có dữ liệu rơ-mooc"
+      />
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -309,7 +227,6 @@ const ContainerContent = () => {
   useEffect(() => {
     containerHook.fetchAll();
   }, []);
-  const columns = [{ key: 'phan_loai', label: 'LOẠI CONTAINER', render: v => v || '' }];
   const handleSave = async formData => {
     try {
       if (dialog.edit) {
@@ -343,42 +260,14 @@ const ContainerContent = () => {
   };
   return (
     <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
-      {/* Old AddButton block removed, FAB is already at the end of the component */}
-      {containerHook.loading ? (
-        <Box display="flex" justifyContent="center" my={4}>
-          <CircularProgress size={24} />
-        </Box>
-      ) : containerHook.error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {containerHook.error}
-        </Alert>
-      ) : isMobile ? (
-        containerHook.data.length === 0 ? (
-          <Alert severity="info">Chưa có dữ liệu container</Alert>
-        ) : (
-          containerHook.data.map(item => (
-            <ContainerCard
-              key={item.id}
-              data={item}
-              onEdit={data => setDialog({ open: true, edit: true, data })}
-              onDelete={data => setDeleteDialog({ open: true, data })}
-              isLoading={containerHook.loading}
-            />
-          ))
-        )
-      ) : (
-        <StandardTable
-          columns={columns}
-          data={containerHook.data}
-          emptyMessage="Chưa có dữ liệu container"
-          renderActions={row => (
-            <>
-              <EditButton onClick={() => setDialog({ open: true, edit: true, data: row })} />
-              <DeleteButton onClick={() => setDeleteDialog({ open: true, data: row })} />
-            </>
-          )}
-        />
-      )}
+      <ContainerListResponsive
+        data={containerHook.data}
+        loading={containerHook.loading}
+        error={containerHook.error}
+        onEdit={data => setDialog({ open: true, edit: true, data })}
+        onDelete={data => setDeleteDialog({ open: true, data })}
+        emptyMessage="Chưa có dữ liệu container"
+      />
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
