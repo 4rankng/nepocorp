@@ -1,78 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 import {
   Box,
   IconButton,
   MenuItem,
   Select,
-  Table,
-  TableBody,
   Typography,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
-  TablePagination,
   CircularProgress,
   Alert,
-  TableSortLabel,
 } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
-// Enhanced theme configuration based on DinhMucDau.jsx
-const theme = {
-  spacing: 8,
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    fontSize: 14,
-    h6: { fontSize: '1rem', fontWeight: 600 },
-    body2: { fontSize: '0.8125rem' },
-    caption: { fontSize: '0.75rem', color: 'text.secondary' },
-  },
-  palette: {
-    primary: { main: '#1976d2' },
-    background: { default: '#f5f7fa', paper: '#ffffff' },
-    text: { primary: '#1a1a1a', secondary: '#6b7280' },
-    grey: { 50: '#fafafa', 100: '#f3f4f6', 200: '#e5e7eb' },
-    success: { light: '#4caf50', main: '#2e7d32' },
-    warning: { light: '#ff9800', main: '#ed6c02' },
-    error: { main: '#d32f2f' },
-  },
-  shape: { borderRadius: 6 },
-  shadows: ['none', '0px 2px 8px rgba(0, 0, 0, 0.08)', '0px 4px 12px rgba(0, 0, 0, 0.1)'],
-};
-// Utility function for sorting data
-const sortData = (data, sortConfig) => {
-  if (!sortConfig || !sortConfig.key) return data;
-  return [...data].sort((a, b) => {
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
-    // Handle null/undefined values
-    if (aValue == null && bValue == null) return 0;
-    if (aValue == null) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (bValue == null) return sortConfig.direction === 'asc' ? 1 : -1;
-    // Handle numeric values
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
-    }
-    // Handle date values
-    if (aValue instanceof Date && bValue instanceof Date) {
-      return sortConfig.direction === 'asc'
-        ? aValue.getTime() - bValue.getTime()
-        : bValue.getTime() - aValue.getTime();
-    }
-    // Handle string values (case-insensitive)
-    const aStr = String(aValue).toLowerCase();
-    const bStr = String(bValue).toLowerCase();
-    if (aStr < bStr) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (aStr > bStr) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
-  });
-};
+
 const StandardTable = ({
   columns = [],
   data = [],
@@ -80,51 +26,87 @@ const StandardTable = ({
   loading = false,
   error = null,
   emptyMessage = 'Chưa có dữ liệu',
-  pagination = false,
-  page: initialPage = 0,
+  pagination: enablePagination = false, // Renamed to avoid conflict with AgGridReact prop
   rowsPerPage: initialRowsPerPage = 10,
-  totalCount: initialTotalCount = 0,
-  onPageChange: initialOnPageChange = () => {},
-  onRowsPerPageChange: initialOnRowsPerPageChange = () => {},
-  paginationProps = null,
+  // page: initialPage = 0, // Removed, AG Grid handles current page
+  // totalCount: initialTotalCount = 0, // Removed, AG Grid handles for client-side
+  // onPageChange: initialOnPageChange = () => {}, // Removed
+  // onRowsPerPageChange: initialOnRowsPerPageChange = () => {}, // Removed
+  // paginationProps = null, // Removed
   headerAction = null,
   onRowClick = null,
   rowKeyField,
   minHeight,
   sortable = true,
-  defaultSort = null,
-  onSortChange = null,
-  customRowsPerPageOptions = [5, 10, 50, 100],
-  showSTT = true,
-  ...tableProps
+  // defaultSort = null, // Removed, AG Grid handles sort state internally
+  // onSortChange = null, // Removed, AG Grid has onSortChanged event
+  // customRowsPerPageOptions = [5, 10, 50, 100], // Removed
+  showSTT = true
+  // ...tableProps // Removed MUI specific tableProps
 }) => {
-  // Internal sort state
-  const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
-  // Handle sort request
-  const handleSort = columnKey => {
-    if (!sortable) return;
-    const column = columns.find(col => (col.key || col.id) === columnKey);
-    if (column && column.sortable === false) return;
-    let direction = 'asc';
-    if (sortConfig && sortConfig.key === columnKey && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    const newSortConfig = { key: columnKey, direction };
-    setSortConfig(newSortConfig);
-    // Call external sort handler if provided
-    if (onSortChange) {
-      onSortChange(newSortConfig);
-    }
+  const gridApiRef = useRef(null);
+  const [overlayNoRowsTemplate, setOverlayNoRowsTemplate] = useState(emptyMessage);
+
+  const onGridReady = params => {
+    gridApiRef.current = params.api;
   };
-  // Sort data if not handled externally
-  const sortedData = useMemo(() => {
-    if (onSortChange) {
-      // External sorting - return data as is
-      return data;
+
+  useEffect(() => {
+    if (!gridApiRef.current) return;
+
+    if (loading) {
+      gridApiRef.current.showLoadingOverlay();
+    } else if (error) {
+      setOverlayNoRowsTemplate(error);
+      gridApiRef.current.showNoRowsOverlay();
+    } else if (!rowData || rowData.length === 0) {
+      setOverlayNoRowsTemplate(emptyMessage);
+      gridApiRef.current.showNoRowsOverlay();
+    } else {
+      gridApiRef.current.hideOverlay();
     }
-    // Internal sorting
-    return sortData(data, sortConfig);
-  }, [data, sortConfig, onSortChange]);
+  }, [loading, error, rowData, emptyMessage, gridApiRef.current]);
+
+
+  // Internal sort state - Removed
+  // const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
+  // Handle sort request - Removed
+  // const handleSort = columnKey => { ... };
+  // Sort data if not handled externally - Removed (AG Grid handles this)
+  // const sortedData = useMemo(() => { ... });
+
+  const columnDefs = useMemo(() => {
+    let mappedColumns = effectiveColumns.map(col => {
+      const colDef = {
+        field: col.key || col.id,
+        headerName: col.label || col.header,
+        width: col.width,
+        sortable: col.sortable !== false && sortable, // Respect global sortable and individual column sortable
+        cellRenderer: col.render ? params => col.render(params.value, params.data, params.rowIndex) : undefined,
+        // AG Grid specific: custom cell renderers can be components too via cellRendererFramework
+        // For STT, the render prop is already a function.
+      };
+      if (col.align) {
+        colDef.cellClass = `ag-${col.align}-aligned-cell`;
+      }
+      // TODO: Map other props like numeric, getColor, fontWeight, maxWidth, noWrap if needed
+      return colDef;
+    });
+
+    if (renderActions) {
+      mappedColumns.push({
+        headerName: 'Thao tác',
+        cellRenderer: params => renderActions(params.data),
+        width: 120, // Default width for actions, can be made configurable
+        sortable: false,
+        filter: false,
+        pinned: 'right', // Pin actions column to the right
+        resizable: false,
+      });
+    }
+    return mappedColumns;
+  }, [effectiveColumns, renderActions, sortable]);
+
   // Insert STT column as the first column if showSTT is true
   const effectiveColumns = useMemo(() => {
     if (!showSTT) return columns;
@@ -133,77 +115,87 @@ const StandardTable = ({
         key: '__stt',
         label: 'STT',
         align: 'left',
-        sortable: false,
+        sortable: false, // STT column is usually not sortable by value
         width: 60,
-        render: (_value, _row, index) => {
-          const page =
-            pagination && paginationProps?.page !== undefined ? paginationProps.page : initialPage;
-          const rowsPerPage =
-            pagination && paginationProps?.pageSize !== undefined
-              ? paginationProps.pageSize
-              : initialRowsPerPage;
-          return (pagination ? page * rowsPerPage : 0) + index + 1;
+        // The render function for STT needs access to AG Grid's api.valueGetter for row index
+        // For now, this simple index might be offset if pagination is client-side with AG Grid.
+        // AG Grid provides rowIndex in params. A valueGetter might be better.
+        // valueGetter for STT needs to be aware of AG Grid pagination
+        valueGetter: params => {
+          if (params.node && params.node.rowIndex != null) {
+            // For client-side pagination, rowIndex is 0-based for current page.
+            // For a global STT: (currentPage * pageSize) + rowIndex + 1
+            // This requires gridApi.paginationGetCurrentPage() and gridApi.paginationGetPageSize()
+            // A simpler approach for display if full dataset is given to AG Grid:
+            // If pagination is active, this is index on page. Otherwise, global index.
+            // For now, let's provide index on page, can be enhanced with gridApi later if global STT needed.
+            // A common simple way:
+            // return params.node.rowIndex + 1;
+            // More robust with access to API (e.g. via onGridReady or if cellRendererFramework used)
+            // For now, this will be index on page if ag-grid pagination is on.
+            // If enablePagination is false, it's global index as data is not paginated by AG Grid.
+            if (enablePagination && params.api) {
+              return (params.api.paginationGetCurrentPage() * params.api.paginationGetPageSize()) + params.node.rowIndex + 1;
+            }
+            return params.node.rowIndex + 1; // Fallback or for non-paginated
+          }
+          return ''; // Should not happen for valid rows
         },
       },
       ...columns,
     ];
-  }, [columns, showSTT, pagination, paginationProps, initialPage, initialRowsPerPage]);
-  // Validate data and columns
-  if (!Array.isArray(data)) {
+  }, [columns, showSTT, enablePagination]); // Removed dependencies on old pagination props
 
-    return (
-      <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
-        Lỗi: Dữ liệu không hợp lệ
-      </Alert>
-    );
-  }
-  if (!Array.isArray(columns)) {
+  const rowData = data;
 
-    return (
-      <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
-        Lỗi: Cấu hình cột không hợp lệ
-      </Alert>
-    );
-  }
+  const getRowId = useMemo(() => {
+    if (rowKeyField) {
+      return params => params.data[rowKeyField];
+    }
+    return undefined;
+  }, [rowKeyField]);
+
+  // Validate data and columns - AG Grid handles invalid rowData (shows no rows). Column validation is separate.
+  // if (!Array.isArray(rowData)) {
+  //   return (
+  //     <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
+  //       Lỗi: Dữ liệu không hợp lệ
+  //     </Alert>
+  //   );
+  // }
+  // if (!Array.isArray(columns)) {
+  //   return (
+  //     <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
+  //       Lỗi: Cấu hình cột không hợp lệ
+  //     </Alert>
+  //   );
+  // }
   // Extract and omit non-DOM props to prevent them from being passed to the DOM
-  const { jsx: _jsx, component: _component, ...filteredTableProps } = tableProps || {};
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" my={4}>
-        <CircularProgress size={24} />
-      </Box>
-    );
-  }
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
-        {error}
-      </Alert>
-    );
-  }
-  // Extract and omit non-DOM props to prevent them from being passed to DOM
-  const {
-    rowKeyField: _rowKeyField,
-    minHeight: _minHeight,
-    jsx: _jsxProp,
-    component: _componentProp,
-    sortable: _sortable,
-    defaultSort: _defaultSort,
-    onSortChange: _onSortChange,
-    ...cleanTableProps
-  } = tableProps || {};
+  // const { jsx: _jsx, component: _component, ...filteredTableProps } = tableProps || {};
+
+  // Old loading, error, and empty message handling removed
+  // if (loading) { ... }
+  // if (error) { ... }
+  // if (!loading && !error && rowData.length === 0) { ... }
+
+  // Extract and omit non-DOM props to prevent them from being passed to DOM - Removed
+  // const {
+  //   rowKeyField: _rowKeyField,
+  //   minHeight: _minHeight,
+  //   jsx: _jsxProp,
+  //   component: _componentProp,
+  //   sortable: _sortable,
+  //   defaultSort: _defaultSort,
+  //   onSortChange: _onSortChange,
+  //   ...cleanTableProps
+  // } = tableProps || {};
   return (
     <Paper
       elevation={0}
       sx={{
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: `${theme.shape.borderRadius}px`,
-        boxShadow: theme.shadows[1],
         overflow: 'hidden',
-        '&:hover': {
-          boxShadow: theme.shadows[2],
-        },
       }}
     >
       {/* Header Action */}
@@ -221,295 +213,27 @@ const StandardTable = ({
           {headerAction}
         </Box>
       )}
-      <TableContainer {...cleanTableProps} component="div" sx={{ minHeight: minHeight || 'auto' }}>
-        <Table
-          size="small"
-          sx={{
-            minWidth: 650,
-            '& .MuiTableCell-root': {
-              py: 1,
-              px: 2,
-              borderColor: theme.palette.grey[200],
-              fontSize: theme.typography.body2.fontSize,
-            },
-            '& .MuiTableHead-root': {
-              '& .MuiTableCell-root': {
-                backgroundColor: theme.palette.grey[50],
-                color: theme.palette.text.secondary,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-                borderBottom: '2px solid',
-                borderColor: 'divider',
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                },
-              },
-            },
-            '& .MuiTableBody-root': {
-              '& tr:last-child td': {
-                borderBottom: 'none',
-              },
-              '& tr': {
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                  cursor: onRowClick ? 'pointer' : 'default',
-                  transform: onRowClick ? 'translateY(-1px)' : 'none',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                  '& .MuiTableCell-root': {
-                    borderColor: alpha(theme.palette.primary.main, 0.2),
-                  },
-                },
-                '&:active': onRowClick
-                  ? {
-                      transform: 'translateY(0)',
-                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.06)',
-                    }
-                  : {},
-              },
-              '& tr.Mui-selected, & tr.Mui-selected:hover': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.12),
-              },
-            },
-            ...(filteredTableProps.sx || {}), // Merge any additional sx props
-          }}
-          {...filteredTableProps} // Spread filtered props (excluding jsx)
-        >
-          <TableHead>
-            <TableRow>
-              {effectiveColumns.map(column => {
-                const columnKey = column.key || column.id;
-                const isSortable = sortable && column.sortable !== false;
-                const isSorted = sortConfig && sortConfig.key === columnKey;
-                const sortDirection = isSorted
-                  ? sortConfig.direction === 'desc'
-                    ? 'desc'
-                    : 'asc'
-                  : 'asc';
-                return (
-                  <TableCell
-                    key={columnKey}
-                    align={column.align || (column.numeric ? 'right' : 'left')}
-                    sx={{
-                      width: column.width,
-                      cursor: isSortable ? 'pointer' : 'default',
-                    }}
-                    sortDirection={isSorted ? sortDirection : undefined}
-                  >
-                    {isSortable ? (
-                      <TableSortLabel
-                        active={!!isSorted}
-                        direction={sortDirection}
-                        onClick={() => handleSort(columnKey)}
-                        sx={{
-                          '& .MuiTableSortLabel-icon': {
-                            fontSize: '1rem',
-                          },
-                          '&:hover': {
-                            color: theme.palette.primary.main,
-                            cursor: 'pointer',
-                          },
-                          '&.Mui-active': {
-                            color: theme.palette.primary.main,
-                            '& .MuiTableSortLabel-icon': {
-                              color: theme.palette.primary.main,
-                            },
-                          },
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {column.label || column.header}
-                      </TableSortLabel>
-                    ) : (
-                      column.label || column.header
-                    )}
-                  </TableCell>
-                );
-              })}
-              {renderActions && (
-                <TableCell align="right" sx={{ width: '120px' }}>
-                  Thao tác
-                </TableCell>
-              )}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedData.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={effectiveColumns.length + (renderActions ? 1 : 0)}
-                  align="center"
-                  sx={{ py: 3, color: 'text.secondary' }}
-                >
-                  {emptyMessage}
-                </TableCell>
-              </TableRow>
-            ) : (
-              sortedData.map((row, index) => {
-                const handleRowClick = onRowClick ? () => onRowClick(row) : undefined;
-                // Extract rowId from row to prevent it from being passed to the DOM
-                const { rowId, ...restRow } = row;
-
-                return (
-                  <TableRow
-                    key={row.id || index}
-                    hover
-                    onClick={handleRowClick}
-                    sx={{
-                      cursor: onRowClick ? 'pointer' : 'default',
-                      '&.Mui-selected': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                        '&:hover': {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                        },
-                      },
-                    }}
-                  >
-                    {effectiveColumns.map((column, columnIndex) => (
-                      <TableCell
-                        key={`${row.id || index}-${column.key || column.id || columnIndex}`}
-                        align={column.align || (column.numeric ? 'right' : 'left')}
-                        sx={{
-                          fontFamily: column.numeric ? 'monospace' : 'inherit',
-                          color: column.getColor
-                            ? column.getColor(row[column.key], row)
-                            : 'inherit',
-                          fontWeight: column.fontWeight || 'inherit',
-                          maxWidth: column.maxWidth,
-                          whiteSpace: column.noWrap ? 'nowrap' : 'normal',
-                          overflow: column.maxWidth ? 'hidden' : 'visible',
-                          textOverflow: column.maxWidth ? 'ellipsis' : 'clip',
-                        }}
-                      >
-                        {(() => {
-                          let cellContent;
-                          const cellValue = row[column.key || column.id];
-
-                          if (column.Cell) {
-                            cellContent = (
-                              <column.Cell
-                                row={row}
-                                value={cellValue}
-                                column={column}
-                                index={index}
-                              />
-                            );
-                          } else if (column.render) {
-                            cellContent = column.render(cellValue, row, index);
-                          } else {
-                            cellContent = cellValue;
-                          }
-
-                          // Handle NaN values and other invalid content
-                          if (typeof cellContent === 'number' && isNaN(cellContent)) {
-
-                            return '-';
-                          }
-
-                          // Handle null/undefined
-                          if (cellContent == null) {
-                            return '-';
-                          }
-
-                          return cellContent;
-                        })()}
-                      </TableCell>
-                    ))}
-                    {renderActions && (
-                      <TableCell align="right" sx={{ py: 0.5 }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            gap: 0.5,
-                            justifyContent: 'flex-end',
-                            '& button, & [role="button"]': {
-                              cursor: 'pointer',
-                            },
-                            '& .MuiIconButton-root:hover': {
-                              cursor: 'pointer',
-                            },
-                          }}
-                        >
-                          {renderActions(row)}
-                        </Box>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      {pagination && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderTop: `1px solid ${theme.palette.grey[200]}`,
-            p: 1,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Hàng mỗi trang:
-            </Typography>
-            <Select
-              value={initialRowsPerPage}
-              onChange={initialOnRowsPerPageChange}
-              size="small"
-              sx={{
-                height: 32,
-                '& .MuiSelect-select': {
-                  py: 0.5,
-                  fontSize: '0.875rem',
-                },
-              }}
-            >
-              {customRowsPerPageOptions.map(rows => (
-                <MenuItem key={rows} value={rows}>
-                  {rows}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              onClick={() => initialOnPageChange(null, initialPage - 1)}
-              disabled={initialPage === 0}
-              size="small"
-              sx={{
-                width: 32,
-                height: 32,
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <ChevronLeftIcon />
-            </IconButton>
-            <Typography variant="body2" sx={{ minWidth: 80, textAlign: 'center' }}>
-              Trang {initialPage + 1} / {Math.ceil(initialTotalCount / initialRowsPerPage) || 1}
-            </Typography>
-            <IconButton
-              onClick={() => initialOnPageChange(null, initialPage + 1)}
-              disabled={
-                initialPage >= Math.ceil(initialTotalCount / initialRowsPerPage) - 1 ||
-                (initialPage + 1) * initialRowsPerPage >= initialTotalCount
-              }
-              size="small"
-              sx={{
-                width: 32,
-                height: 32,
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <ChevronRightIcon />
-            </IconButton>
-          </Box>
-        </Box>
-      )}
+      {/* AG Grid component */}
+      <div className="ag-theme-alpine" style={{ height: minHeight || '500px', width: '100%' }}>
+        <AgGridReact
+          columnDefs={columnDefs}
+          rowData={rowData}
+          getRowId={getRowId}
+          onRowClicked={onRowClick ? params => onRowClick(params.data) : undefined}
+          onGridReady={onGridReady}
+          // AG Grid Overlays
+          overlayLoadingTemplate='<span class="ag-overlay-loading-center">Đang tải...</span>'
+          overlayNoRowsTemplate={overlayNoRowsTemplate}
+          // AG Grid Pagination
+          pagination={enablePagination}
+          paginationPageSize={initialRowsPerPage}
+          // Default AG Grid options
+          domLayout="normal" // or 'autoHeight' or 'print'
+          rowSelection="single" // Example, can be 'multiple'
+          // TODO: Add more AG Grid features as needed: sorting, filtering
+        />
+      </div>
+      {/* MUI Pagination removed */}
     </Paper>
   );
 };
@@ -520,24 +244,24 @@ StandardTable.propTypes = {
   loading: PropTypes.bool,
   error: PropTypes.string,
   emptyMessage: PropTypes.string,
-  pagination: PropTypes.bool,
-  page: PropTypes.number,
-  rowsPerPage: PropTypes.number,
-  totalCount: PropTypes.number,
-  onPageChange: PropTypes.func,
-  onRowsPerPageChange: PropTypes.func,
+  pagination: PropTypes.bool, // Keep this to enable/disable AG Grid pagination
+  rowsPerPage: PropTypes.number, // For initial page size
+  // page: PropTypes.number, // Removed
+  // totalCount: PropTypes.number, // Removed
+  // onPageChange: PropTypes.func, // Removed
+  // onRowsPerPageChange: PropTypes.func, // Removed
   headerAction: PropTypes.node,
   onRowClick: PropTypes.func,
   rowKeyField: PropTypes.string,
   minHeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   sortable: PropTypes.bool,
-  defaultSort: PropTypes.shape({
-    key: PropTypes.string.isRequired,
-    direction: PropTypes.oneOf(['asc', 'desc']).isRequired,
-  }),
-  onSortChange: PropTypes.func,
-  paginationProps: PropTypes.object,
-  customRowsPerPageOptions: PropTypes.array,
+  // defaultSort: PropTypes.shape({ // Removed
+  //   key: PropTypes.string.isRequired,
+  //   direction: PropTypes.oneOf(['asc', 'desc']).isRequired,
+  // }),
+  // onSortChange: PropTypes.func, // Removed
+  // paginationProps: PropTypes.object, // Removed
+  // customRowsPerPageOptions: PropTypes.array, // Removed
   showSTT: PropTypes.bool,
 };
 export default StandardTable;
