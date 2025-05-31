@@ -4,6 +4,7 @@ import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
 
 const useChoHangRecords = () => {
   const [choHangRecords, setChoHangRecords] = useState([]);
+  const [licensePlates, setLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
@@ -13,6 +14,20 @@ const useChoHangRecords = () => {
     totalPages: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPlate, setSelectedPlate] = useState('');
+
+  // Fetch license plates separately to avoid pagination issues
+  const fetchLicensePlates = useCallback(async () => {
+    try {
+      const allRecordsRes = await dinhMucDauApi.getAllDinhMucChoHang(1, 1000); // Get all records for license plates
+      const licensePlateOptions = Array.from(
+        new Set((allRecordsRes.data || []).map(r => r.bienSoXe).filter(Boolean))
+      ).map(plate => ({ id: plate, bien_so: plate }));
+      setLicensePlates(licensePlateOptions);
+    } catch (err) {
+      console.error('Error fetching license plates:', err);
+    }
+  }, []);
 
   const fetchDataInternal = useCallback(async (currentPage, currentLimit, currentSearchTerm) => {
     setIsLoading(true);
@@ -35,6 +50,11 @@ const useChoHangRecords = () => {
           total: response.meta.total, // Use the grand total for TablePagination
           totalPages: response.meta.totalPages,
         }));
+
+        // Only fetch license plates once on initial load
+        if (licensePlates.length === 0) {
+          await fetchLicensePlates();
+        }
       } else {
         throw new Error(response.error?.message || 'Failed to fetch Cho Hang records');
       }
@@ -45,11 +65,13 @@ const useChoHangRecords = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []); // Removed searchTerm from here as it's passed directly
+  }, [fetchLicensePlates, licensePlates.length]); // Added missing dependencies
 
   useEffect(() => {
-    fetchDataInternal(pagination.page, pagination.pageSize, searchTerm);
-  }, [fetchDataInternal, pagination.page, pagination.pageSize, searchTerm]);
+    // Plate filter takes precedence over search term
+    const effectiveSearchTerm = selectedPlate || searchTerm;
+    fetchDataInternal(pagination.page, pagination.pageSize, effectiveSearchTerm);
+  }, [fetchDataInternal, pagination.page, pagination.pageSize, searchTerm, selectedPlate]);
 
   const handlePageChange = (event, newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
@@ -61,16 +83,27 @@ const useChoHangRecords = () => {
 
   const handleSearchChange = newSearchTerm => {
     setSearchTerm(newSearchTerm);
+    setSelectedPlate(''); // Clear plate filter when searching
     setPagination(prev => ({ ...prev, page: 0 })); // Reset to first page on new search
   };
 
+  const handlePlateChange = newPlate => {
+    setSelectedPlate(newPlate);
+    setSearchTerm(''); // Clear search when filtering by plate
+    setPagination(prev => ({ ...prev, page: 0 })); // Reset to first page on plate change
+  };
+
   const refetchData = useCallback(() => {
-    fetchDataInternal(pagination.page, pagination.pageSize, searchTerm);
-  }, [fetchDataInternal, pagination.page, pagination.pageSize, searchTerm]);
+    // Plate filter takes precedence over search term
+    const effectiveSearchTerm = selectedPlate || searchTerm;
+    fetchDataInternal(pagination.page, pagination.pageSize, effectiveSearchTerm);
+  }, [fetchDataInternal, pagination.page, pagination.pageSize, searchTerm, selectedPlate]);
 
   return {
     choHangRecords,
     setChoHangRecords,
+    licensePlates,
+    setLicensePlates,
     isLoading,
     error,
     fetchData: refetchData,
@@ -80,7 +113,9 @@ const useChoHangRecords = () => {
       onRowsPerPageChange: handleRowsPerPageChange,
     },
     searchTerm,
+    selectedPlate,
     handleSearchChange,
+    handlePlateChange,
   };
 };
 

@@ -25,6 +25,12 @@ const DinhMucChoHangDialog = ({
   licensePlate,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Safety check to prevent rendering with undefined formData
+  if (!formData) {
+    return null;
+  }
+
   const handleInternalSave = async () => {
     if (onValidateForm && !onValidateForm()) {
       return; // Validation failed

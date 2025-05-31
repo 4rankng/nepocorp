@@ -13,6 +13,29 @@ export const getAllDinhMucDau = async (page = 1, limit = 10) => {
     withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), { page, limit })
   );
 };
+export const getAllDinhMucVoRong = async (page = 1, limit = 10, searchTerm = '') => {
+  return mockApiCall(() =>
+    withPagination(
+      async () => {
+        // Get all data and filter for 'km_vo' type
+        let items = await dinhMucDauDataService.getAllDinhMucDau();
+        items = items.filter(item => item.phan_loai === 'km_vo');
+
+        if (searchTerm && typeof searchTerm === 'string') {
+          const lowerSearchTerm = searchTerm.toLowerCase();
+          items = items.filter(
+            item =>
+              item.bienSoXe?.toLowerCase().includes(lowerSearchTerm) ||
+              item.ghiChu?.toLowerCase().includes(lowerSearchTerm)
+          );
+        }
+        return items;
+      },
+      { page, limit }
+    )
+  );
+};
+
 export const getAllDinhMucChoHang = async (page = 1, limit = 10, searchTerm = '') => {
   return mockApiCall(() =>
     withPagination(

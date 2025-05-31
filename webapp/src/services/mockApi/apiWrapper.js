@@ -27,13 +27,13 @@ export const ErrorCodes = {
  */
 export function createApiResponse(data, options = {}) {
   const { page = 1, limit = 10, totalItems = data.length, message } = options;
-  const count = data.length;
   const offset = (page - 1) * limit;
   const totalPages = Math.ceil(totalItems / limit);
   return {
     data,
     meta: {
       offset,
+      count: data.length,
       limit,
       page,
       totalPages,

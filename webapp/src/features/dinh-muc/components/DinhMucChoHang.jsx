@@ -9,6 +9,12 @@ import {
   Zoom,
   Typography,
   useTheme,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
 } from '@mui/material';
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 
@@ -19,7 +25,6 @@ import ConfirmationDialog from '@/components/ConfirmationDialog';
 import useChoHangRecords from '../hooks/useChoHangRecords';
 import { getChoHangTableColumns } from '../constants/choHangTableColumns';
 import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi'; // For CUD operations
-import SearchBar from '@/components/SearchBar';
 
 const initialFormData = {
   bienSoXe: '',
@@ -37,9 +42,12 @@ const DinhMucChoHang = () => {
     isLoading,
     error,
     fetchData: refetchChoHangData,
+    licensePlates,
     pagination,
     searchTerm,
+    selectedPlate,
     handleSearchChange,
+    handlePlateChange: hookHandlePlateChange,
   } = useChoHangRecords();
 
   const [openAddEditDialog, setOpenAddEditDialog] = useState(false);
@@ -206,6 +214,16 @@ const DinhMucChoHang = () => {
     }
   };
 
+  // Handler for license plate dropdown
+  const handlePlateChange = event => {
+    const plate = event.target.value;
+    if (plate === 'Tất cả') {
+      hookHandlePlateChange('');
+    } else {
+      hookHandlePlateChange(plate);
+    }
+  };
+
   // Effect to update form when currentRecord changes for edit dialog
   // This was previously part of handleOpenEditDialog but can be an effect too
   useEffect(() => {
@@ -243,13 +261,50 @@ const DinhMucChoHang = () => {
         pb: { xs: 10, sm: 11 },
       }}
     >
-      <Box sx={{ mb: 2 }}>
-        <SearchBar
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <TextField
+          sx={{ width: '50%' }}
+          variant="outlined"
+          placeholder="Tìm kiếm theo biển số, ghi chú..."
           value={searchTerm}
           onChange={event => handleSearchChange(event.target.value)}
-          placeholder="Tìm kiếm theo biển số, ghi chú..."
-          containerSx={{ width: '100%' }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            sx: {
+              borderRadius: '6px',
+              height: 36,
+              minHeight: 36,
+              fontSize: '0.95rem',
+            },
+          }}
         />
+        <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
+          <InputLabel id="plate-select-label">Biển số xe</InputLabel>
+          <Select
+            labelId="plate-select-label"
+            id="plate-select"
+            value={selectedPlate || 'Tất cả'}
+            onChange={handlePlateChange}
+            label="Biển số xe"
+            renderValue={selected => {
+              if (!selected || selected === 'Tất cả') return 'Tất cả';
+              return selected;
+            }}
+          >
+            <MenuItem key="all" value="Tất cả">
+              <em>Tất cả</em>
+            </MenuItem>
+            {licensePlates.map(plate => (
+              <MenuItem key={plate.id} value={plate.bien_so}>
+                {plate.bien_so}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       {error && !isLoading && (
@@ -261,16 +316,24 @@ const DinhMucChoHang = () => {
       <StandardTable
         columns={columns}
         data={choHangRecords}
-        pagination={true} // Enable pagination UI
-        paginationProps={pagination} // Pass pagination data and handlers
-        customRowsPerPageOptions={[5, 10, 50, 100]} // Set custom options
-        isLoading={isLoading}
-        dense
-        noDataMessage={
-          searchTerm
-            ? `Không tìm thấy kết quả cho "${searchTerm}"`
+        loading={isLoading}
+        error={error}
+        emptyMessage={
+          searchTerm || selectedPlate
+            ? `Không tìm thấy kết quả cho "${selectedPlate || searchTerm}"`
             : 'Không có dữ liệu định mức chở hàng.'
         }
+        pagination={true}
+        page={pagination.page}
+        rowsPerPage={pagination.pageSize}
+        totalCount={pagination.total}
+        rowKeyField="id"
+        onPageChange={(_, newPage) => {
+          pagination.onPageChange(_, newPage);
+        }}
+        onRowsPerPageChange={event => {
+          pagination.onRowsPerPageChange(event);
+        }}
       />
 
       <DinhMucChoHangDialog
@@ -302,7 +365,7 @@ const DinhMucChoHang = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
@@ -313,15 +376,20 @@ const DinhMucChoHang = () => {
         </Alert>
       </Snackbar>
 
-      <Zoom in={true} timeout={300} unmountOnExit>
+      <Zoom in={!isSubmitting}>
         <Fab
           color="primary"
-          aria-label="add new dinh muc cho hang"
+          aria-label="Thêm mới"
           onClick={handleOpenAddDialog}
           sx={{
             position: 'fixed',
-            bottom: { xs: 72, sm: 32 },
-            right: { xs: 16, sm: 32 },
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+            boxShadow: 3,
+            '&:hover': {
+              boxShadow: 6,
+            },
           }}
         >
           <AddIcon />

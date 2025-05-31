@@ -71,7 +71,7 @@ export default function useBaoDuongRecords(api) {
         setIsLoading(false);
       }
     },
-    [api]
+    [api, fetchLicensePlates, licensePlates.length]
   );
   const handlePageChange = useCallback(
     newPage => {

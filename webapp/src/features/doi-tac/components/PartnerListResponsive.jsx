@@ -93,6 +93,9 @@ const PartnerListResponsive = ({
       <Table sx={{ minWidth: 650 }} aria-label="danh sách đối tác">
         <TableHead>
           <TableRow>
+            <TableCell sx={{ width: '60px' }}>
+              <strong>STT</strong>
+            </TableCell>
             <TableCell>
               <strong>Mã đối tác</strong>
             </TableCell>
@@ -111,8 +114,9 @@ const PartnerListResponsive = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredPartners.map(partner => (
+          {filteredPartners.map((partner, index) => (
             <TableRow key={partner.id} hover>
+              <TableCell sx={{ color: 'text.secondary' }}>{index + 1}</TableCell>
               <TableCell sx={{ fontWeight: 'medium' }}>{partner.ma_dinh_danh || '--'}</TableCell>
               <TableCell>{partner.ten}</TableCell>
               <TableCell>{partner.dia_chi || '--'}</TableCell>
@@ -125,7 +129,7 @@ const PartnerListResponsive = ({
           ))}
           {!loading && filteredPartners.length === 0 && (
             <TableRow>
-              <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+              <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                 <Typography variant="body1" color="text.secondary">
                   {searchTerm ? 'Không tìm thấy đối tác phù hợp' : emptyMessage}
                 </Typography>
