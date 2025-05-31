@@ -132,7 +132,7 @@ const QuanLyBaoDuong = memo(() => {
         message: 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng',
         severity: 'error',
       });
-      console.error(err);
+
     },
   });
   // Fetch count and data on mount
@@ -225,7 +225,7 @@ const QuanLyBaoDuong = memo(() => {
         message: 'Đã xảy ra lỗi khi xóa thông tin bảo dưỡng',
         severity: 'error',
       });
-      console.error(err);
+
     } finally {
       setFormLoading(false);
     }
@@ -250,7 +250,7 @@ const QuanLyBaoDuong = memo(() => {
         refetchCount();
         setOpenDialog(false);
       } catch (error) {
-        console.error('Error in handleSave:', error);
+
         // Extract detailed error information
         const errorDetails = error.response?.error?.details || {};
         const errorMessage = error.message || 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng';
@@ -330,15 +330,6 @@ const QuanLyBaoDuong = memo(() => {
       rowKeyField: 'id',
     };
 
-    console.log('🎯 QuanLyBaoDuong - Pagination data to StandardTable:', {
-      page: pagination.page,
-      rowsPerPage: pagination.pageSize,
-      totalCount: pagination.total,
-      dataLength: maintenanceRecords.length,
-      fullPagination: pagination,
-      maintenanceRecords: maintenanceRecords.slice(0, 3), // Show first 3 records
-    });
-
     return (
       <StandardTable
         {...tableProps}
@@ -362,18 +353,12 @@ const QuanLyBaoDuong = memo(() => {
           </Box>
         )}
         onPageChange={(_, newPage) => {
-          console.log('📄 QuanLyBaoDuong - Page change requested:', {
-            newPage,
-            currentPage: pagination.page,
-          });
+
           fetchData(newPage, pagination.pageSize);
         }}
         onRowsPerPageChange={event => {
           const newPageSize = parseInt(event.target.value, 10);
-          console.log('📏 QuanLyBaoDuong - Page size change requested:', {
-            newPageSize,
-            currentPageSize: pagination.pageSize,
-          });
+
           fetchData(0, newPageSize);
         }}
       />

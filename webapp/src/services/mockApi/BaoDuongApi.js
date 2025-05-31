@@ -25,7 +25,7 @@ const persist = () => {
 };
 export const baoDuongApi = {
   getAll: async (page = 1, limit = 10, bienSo) => {
-    console.log('🔗 BaoDuongApi - getAll called with:', { page, limit, bienSo });
+
     return mockApiCall(() => {
       let filteredData = [...data];
       if (bienSo) {
@@ -35,14 +35,7 @@ export const baoDuongApi = {
         page: Math.max(1, parseInt(page, 10) || 1),
         limit: Math.max(1, parseInt(limit, 10) || 10),
       });
-      console.log('📋 BaoDuongApi - Returning result:', {
-        dataLength: result.data?.length || 0,
-        meta: result.meta,
-        totalDataInStorage: filteredData.length,
-        requestedPage: page,
-        requestedLimit: limit,
-        bienSo,
-      });
+
       return result;
     });
   },
@@ -63,11 +56,7 @@ export const baoDuongApi = {
           const validBienSoList = await getValidBienSoList();
           // Check if the provided license plate exists in the system
           const isValid = validBienSoList.includes(trimmedBienSo);
-          console.log('License plate validation result:', {
-            provided: trimmedBienSo,
-            isValid,
-            validPlates: validBienSoList,
-          });
+
           if (!isValid) {
             throw new Error(
               `Biển số "${trimmedBienSo}" không tồn tại trong hệ thống. Vui lòng kiểm tra lại.`
@@ -99,7 +88,7 @@ export const baoDuongApi = {
           persist();
           return raw;
         } catch (error) {
-          console.error('Error in BaoDuongApi.create:', error);
+
           // Format error message for better user feedback
           const errorMessage = error.message || 'Đã xảy ra lỗi khi tạo bản ghi bảo dưỡng';
           const formattedError = new Error(errorMessage);

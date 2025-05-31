@@ -23,15 +23,15 @@ export const useDiDuong = () => {
       ]);
       // Validate responses
       if (!dinhMucRes || !dinhMucRes.success) {
-        console.error('DinhMucDiDuong API Error:', dinhMucRes?.error);
+
         throw new Error(dinhMucRes?.error?.message || 'Lỗi khi tải dữ liệu định mức đi đường.');
       }
       if (!tuyenDuongRes || !tuyenDuongRes.success) {
-        console.error('TuyenDuong API Error:', tuyenDuongRes?.error);
+
         throw new Error(tuyenDuongRes?.error?.message || 'Lỗi khi tải danh sách tuyến đường.');
       }
       if (!containerRes || !containerRes.success) {
-        console.error('Container API Error:', containerRes?.error);
+
         throw new Error(containerRes?.error?.message || 'Lỗi khi tải danh sách loại container.');
       }
       // Handle different response structures from mock API
@@ -88,7 +88,7 @@ export const useDiDuong = () => {
         containerTypes: uniqueContainerTypes,
       };
     } catch (err) {
-      console.error('useDiDuong.js error: ', err);
+
       // Handle different error object structures
       let errorMessage = 'Không thể tải dữ liệu định mức đi đường. Vui lòng thử lại.';
       if (err.error && typeof err.error === 'object') {
@@ -101,13 +101,7 @@ export const useDiDuong = () => {
         // Handle string errors
         errorMessage = err;
       }
-      console.error('Error details:', {
-        error: err,
-        errorMessage,
-        errorType: typeof err,
-        hasErrorProperty: !!err.error,
-        errorKeys: err ? Object.keys(err) : [],
-      });
+
       setError(errorMessage);
       // Return empty data to prevent UI from breaking
       setRoadNorms([]);
@@ -132,7 +126,7 @@ export const useDiDuong = () => {
       setRoadNorms(prev => [...prev, newNorm]);
       return newNorm;
     } catch (err) {
-      console.error('Error creating road norm:', err);
+
       setError('Không thể thêm định mức đi đường mới');
       throw err;
     } finally {
@@ -152,7 +146,7 @@ export const useDiDuong = () => {
       setRoadNorms(prev => prev.map(item => (item.id === id ? updatedNorm : item)));
       return updatedNorm;
     } catch (err) {
-      console.error('Error updating road norm:', err);
+
       setError('Không thể cập nhật định mức đi đường');
       throw err;
     } finally {
@@ -171,7 +165,7 @@ export const useDiDuong = () => {
       setRoadNorms(prev => prev.filter(item => item.id !== id));
       return true;
     } catch (err) {
-      console.error('Error deleting road norm:', err);
+
       setError('Không thể xóa định mức đi đường');
       throw err;
     } finally {

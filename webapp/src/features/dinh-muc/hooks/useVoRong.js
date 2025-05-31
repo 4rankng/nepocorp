@@ -24,7 +24,7 @@ export const useVoRong = () => {
 
   // Store raw data for filtering/pagination
   const [rawVoRongData, setRawVoRongData] = useState([]);
-  
+
   // Use ref to store the latest fetch function to avoid dependency issues
   const fetchVoRongDataRef = useRef();
 
@@ -141,20 +141,20 @@ export const useVoRong = () => {
         throw new Error('Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.');
       }
       if (!dinhMucResponse.success) {
-        console.error('DinhMucDau API Error:', dinhMucResponse.error);
+
         throw new Error(
           dinhMucResponse.error?.message ||
             'Lỗi khi tải dữ liệu định mức dầu. Vui lòng thử lại sau.'
         );
       }
       if (!dauKeoResponse.success) {
-        console.error('DauKeo API Error:', dauKeoResponse.error);
+
         throw new Error(
           dauKeoResponse.error?.message || 'Lỗi khi tải danh sách đầu kéo. Vui lòng thử lại sau.'
         );
       }
       if (!roMoocResponse.success) {
-        console.error('RoMooc API Error:', roMoocResponse.error);
+
         throw new Error(
           roMoocResponse.error?.message || 'Lỗi khi tải danh sách rơ mooc. Vui lòng thử lại sau.'
         );
@@ -172,7 +172,7 @@ export const useVoRong = () => {
 
       return { voRongDataItems, dauKeoData, roMoocData };
     } catch (err) {
-      console.error('Failed to fetch empty fuel standards:', err);
+
       const errorMessage =
         err.response?.data?.message ||
         err.message ||
@@ -190,7 +190,7 @@ export const useVoRong = () => {
       setIsLoading(false);
     }
   }, [processVoRongData]); // Keep processVoRongData dependency
-  
+
   // Update the ref whenever fetchVoRongData changes
   fetchVoRongDataRef.current = fetchVoRongData;
   // Create vo rong standard
@@ -214,7 +214,7 @@ export const useVoRong = () => {
       await fetchVoRongDataRef.current();
       return response.data;
       } catch (err) {
-        console.error('Error creating vo rong standard:', err);
+
         setError('Không thể thêm định mức vỏ rỗng');
         throw err;
       } finally {
@@ -244,7 +244,7 @@ export const useVoRong = () => {
       await fetchVoRongDataRef.current();
       return response.data;
       } catch (err) {
-        console.error('Error updating vo rong standard:', err);
+
         setError('Không thể cập nhật định mức vỏ rỗng');
         throw err;
       } finally {
@@ -266,7 +266,7 @@ export const useVoRong = () => {
       await fetchVoRongDataRef.current();
       return true;
       } catch (err) {
-        console.error('Error deleting vo rong standard:', err);
+
         setError('Không thể xóa định mức vỏ rỗng');
         throw err;
       } finally {

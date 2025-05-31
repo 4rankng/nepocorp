@@ -28,7 +28,7 @@ const useDoiTac = () => {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Không thể tải danh sách đối tác';
       setError(errorMessage);
-      console.error('Error fetching partners:', err);
+
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ const useDoiTac = () => {
         const errorMessage =
           (err instanceof Error ? err.message : String(err)) || 'Lỗi khi thêm đối tác';
         setError(errorMessage);
-        console.error('Error adding partner:', err);
+
         return { success: false, error: errorMessage };
       } finally {
         setLoading(false);
@@ -112,7 +112,7 @@ const useDoiTac = () => {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Lỗi khi sửa đối tác';
       setError(errorMessage);
-      console.error('Error updating partner:', err);
+
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -133,7 +133,7 @@ const useDoiTac = () => {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Lỗi khi xóa đối tác';
       setError(errorMessage);
-      console.error('Error deleting partner:', err);
+
       await fetchPartners();
       return { success: false, error: errorMessage };
     } finally {
@@ -155,7 +155,7 @@ const useDoiTac = () => {
     } catch (err) {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Không tìm thấy đối tác';
-      console.error('Error getting partner by ID:', err);
+
       return { success: false, error: errorMessage };
     }
   };

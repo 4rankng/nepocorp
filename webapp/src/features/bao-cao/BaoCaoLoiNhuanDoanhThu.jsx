@@ -71,7 +71,7 @@ const BaoCaoLoiNhuanDoanhThu = () => {
       setFilteredData(data);
     } catch (err) {
       setError('Không thể tải dữ liệu báo cáo.');
-      console.error(err);
+
     } finally {
       setIsLoading(false);
     }

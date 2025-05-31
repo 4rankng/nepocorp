@@ -108,7 +108,7 @@ export const createDoiTac = async data => {
     updatedAt: new Date().toISOString(),
   };
   if (!data.ma_dinh_danh || !data.ten || !data.dia_chi || !data.ma_so_thue) {
-    console.error('Missing required fields for new DoiTac:', data);
+
     return null;
   }
   doiTacData.push(newDoiTac);

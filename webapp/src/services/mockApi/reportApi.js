@@ -65,11 +65,7 @@ export const fetchDailyRevenueReport = (_startDate, endDate) => {
   );
 };
 export const fetchCustomerRevenueReport = (customerId, _startDate, endDate) => {
-  console.log('[Mock API] Fetching customer revenue report...', {
-    customerId,
-    _startDate,
-    endDate,
-  });
+
   return mockApiCall(
     withSingleItem(
       () => reportDataService.getCustomerRevenueReport(customerId, _startDate, endDate),
@@ -80,11 +76,7 @@ export const fetchCustomerRevenueReport = (customerId, _startDate, endDate) => {
   );
 };
 export const fetchVehiclePerformanceReport = (vehicleId, _startDate, endDate) => {
-  console.log('[Mock API] Fetching vehicle performance report...', {
-    vehicleId,
-    _startDate,
-    endDate,
-  });
+
   return mockApiCall(
     withSingleItem(
       () => reportDataService.getVehiclePerformanceReport(vehicleId, _startDate, endDate),

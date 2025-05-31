@@ -73,7 +73,7 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
       if (months.length > 0) setSelectedMonthYear(months[0].value); // Default select first month
     } catch (err) {
       setError('Không thể tải dữ liệu cho các mục chọn.');
-      console.error(err);
+
     }
     setIsLoading(false);
   }, []);
@@ -125,19 +125,14 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     } catch (err) {
       setError(`Lỗi khi tải báo cáo: ${err.message}`);
       setReportDetails(null);
-      console.error(err);
+
     } finally {
       setIsLoading(false);
     }
   };
   const handleExportExcel = () => {
     // This is a UI placeholder as per requirements
-    console.log(
-      'Export to Excel clicked for:',
-      selectedVehicleId,
-      selectedMonthYear,
-      reportDetails
-    );
+
     alert('Chức năng Xuất Excel chưa được triển khai trong bản demo này.');
   };
   return (

@@ -481,7 +481,7 @@ export const getDinhMucById = async id => {
 // Get dinh muc by bien so and type (phan_loai)
 export const getDinhMucByBienSoAndType = async (bienSoXe, phanLoai) => {
   if (!PHAN_LOAI_TYPES.includes(phanLoai)) {
-    console.error('Invalid phan_loai for DinhMuc query:', phanLoai);
+
     return [];
   }
   const filteredData = dinhMucData.filter(
@@ -492,11 +492,11 @@ export const getDinhMucByBienSoAndType = async (bienSoXe, phanLoai) => {
 export const createDinhMuc = async data => {
   const { bienSoXe, phan_loai, tuKm, denKm, l_km, ghiChu } = data;
   if (!bienSoXe || !phan_loai || tuKm === undefined || denKm === undefined || l_km === undefined) {
-    console.error('Missing required fields for new DinhMuc:', data);
+
     return null;
   }
   if (!PHAN_LOAI_TYPES.includes(phan_loai)) {
-    console.error('Invalid phan_loai for new DinhMuc:', phan_loai);
+
     return null;
   }
   const newDinhMuc = {
@@ -518,7 +518,7 @@ export const updateDinhMuc = async (id, updates) => {
   if (index === -1) return null;
   const { id: _, createdAt: __, ...validUpdates } = updates;
   if (validUpdates.phan_loai && !PHAN_LOAI_TYPES.includes(validUpdates.phan_loai)) {
-    console.error('Invalid phan_loai for DinhMuc update:', validUpdates.phan_loai);
+
     return null;
   }
   const updatedDinhMuc = { ...dinhMucData[index] };

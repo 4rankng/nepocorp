@@ -140,7 +140,7 @@ export const createDauKeo = async data => {
     updatedAt: new Date().toISOString(),
   };
   if (!data.bien_so || !data.mo_ta) {
-    console.error('Missing required fields for new DauKeo:', data);
+
     return null;
   }
   dauKeoData.push(newDauKeo);

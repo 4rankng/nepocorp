@@ -51,15 +51,15 @@ export const getContainerByMaSo = async ma_so => {
 export const createContainer = async data => {
   const { ma_so, phan_loai } = data;
   if (!ma_so || !phan_loai) {
-    console.error('Missing required fields for new Container (ma_so, phan_loai):', data);
+
     return null;
   }
   if (typeof ma_so !== 'string' || ma_so.trim() === '') {
-    console.error('Container ma_so must be a non-empty string:', ma_so);
+
     return null;
   }
   if (containerData.some(c => c.ma_so === ma_so)) {
-    console.error('Container with this ma_so already exists:', ma_so);
+
     return null;
   }
   const newContainer = {
@@ -85,11 +85,7 @@ export const updateContainer = async (id, updates) => {
     new_ma_so !== existingContainer.ma_so &&
     containerData.some(c => c.ma_so === new_ma_so && c.id !== numericId)
   ) {
-    console.error(
-      'Cannot update container. Another container with ma_so',
-      new_ma_so,
-      'already exists.'
-    );
+
     return null; // Or throw an error
   }
   const updatedContainer = {
@@ -120,14 +116,11 @@ export const _resetContainer = (newData = []) => {
       item.ma_so.trim() === '' ||
       !item.phan_loai
     ) {
-      console.warn(
-        'Skipping invalid item during _resetContainer (missing ma_so or phan_loai):',
-        item
-      );
+
       continue;
     }
     if (maSoSet.has(item.ma_so)) {
-      console.warn('Skipping duplicate ma_so during _resetContainer:', item.ma_so);
+
       continue;
     }
     maSoSet.add(item.ma_so);
@@ -157,10 +150,7 @@ export const _resetContainer = (newData = []) => {
     (item, index) => currentNumericIds.indexOf(item) !== index
   );
   if (postResetDuplicateNumericIds.length > 0) {
-    console.error(
-      'CRITICAL: Duplicate numeric IDs found after _resetContainer:',
-      postResetDuplicateNumericIds
-    );
+
   }
   // Post-reset check for duplicate ma_so (should be caught by maSoSet earlier)
   const currentMaSos = containerData.map(c => c.ma_so);
@@ -168,17 +158,14 @@ export const _resetContainer = (newData = []) => {
     (item, index) => currentMaSos.indexOf(item) !== index
   );
   if (postResetDuplicateMaSos.length > 0) {
-    console.error(
-      'CRITICAL: Duplicate ma_so found after _resetContainer (should not happen):',
-      postResetDuplicateMaSos
-    );
+
   }
 };
 // Initial check for duplicate ma_so in the seed data
 const initialMaSos = containerData.map(c => c.ma_so);
 const duplicateMaSos = initialMaSos.filter((item, index) => initialMaSos.indexOf(item) !== index);
 if (duplicateMaSos.length > 0) {
-  console.error('CRITICAL: Duplicate ma_so found in initial containerData:', duplicateMaSos);
+
 }
 // Initial check for duplicate numeric IDs in the seed data
 const initialNumericIds = containerData.map(c => c.id);
@@ -186,9 +173,6 @@ const duplicateNumericIds = initialNumericIds.filter(
   (item, index) => initialNumericIds.indexOf(item) !== index
 );
 if (duplicateNumericIds.length > 0) {
-  console.error(
-    'CRITICAL: Duplicate numeric IDs found in initial containerData:',
-    duplicateNumericIds
-  );
+
 }
 export const getContainerCount = async () => containerData.length;

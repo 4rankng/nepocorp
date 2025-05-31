@@ -77,7 +77,7 @@ const QuanLyDoiTac = () => {
           return;
         }
       } catch (err) {
-        console.error('Error validating partner code:', err);
+
         setFormError('Có lỗi xảy ra khi kiểm tra mã đối tác. Vui lòng thử lại.');
         setIsValidatingCode(false);
         return;
@@ -98,7 +98,7 @@ const QuanLyDoiTac = () => {
         setFormError(result.error || 'Có lỗi xảy ra. Vui lòng thử lại.');
       }
     } catch (err) {
-      console.error('Error saving partner:', err);
+
       setFormError('Có lỗi xảy ra khi lưu thông tin đối tác.');
     }
   };

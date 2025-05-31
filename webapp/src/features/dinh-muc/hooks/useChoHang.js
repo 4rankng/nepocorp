@@ -25,7 +25,7 @@ export const useChoHang = () => {
       ).map(plate => ({ id: plate, bien_so: plate }));
       setLicensePlates(licensePlateOptions);
     } catch (err) {
-      console.error('Error fetching license plates:', err);
+
     }
   }, []);
 
@@ -60,7 +60,7 @@ export const useChoHang = () => {
           throw new Error(response.error?.message || 'Failed to fetch Cho Hang records');
         }
       } catch (err) {
-        console.error('Error fetching Cho Hang records:', err);
+
         setError(err.message || 'An unexpected error occurred');
         setChoHangRecords([]); // Clear data on error
       } finally {

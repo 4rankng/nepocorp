@@ -67,11 +67,7 @@ const MobileShipmentFormStepper = ({
     setActiveStep(0);
     setValidationAttempted({});
     // Log the received props for debugging
-    console.log('MobileShipmentFormStepper - Component mounted/updated:', {
-      formData,
-      editingPlan,
-      selectOptions,
-    });
+
   }, [editingPlan, selectOptions]);
   const getFieldOptions = field => {
     // Handle different field types and their options
@@ -252,7 +248,7 @@ const MobileShipmentFormStepper = ({
       // Close the dialog
       handleCloseCustomerDialog();
     } catch (error) {
-      console.error('Error adding customer:', error);
+
       setDataError('Lỗi khi thêm khách hàng mới.');
       // Keep dialog open on error so user can see the error
     }

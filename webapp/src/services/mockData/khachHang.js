@@ -160,7 +160,7 @@ export const createKhachHang = async data => {
   // Ensure required fields are present from data
   if (!data.ma_dinh_danh || !data.ten || !data.dia_chi || !data.ma_so_thue) {
     // In a real API, you'd throw an error or return a specific error response
-    console.error('Missing required fields for new KhachHang:', data);
+
     return null; // Or throw new Error("Missing required fields");
   }
   khachHangData.push(newKhachHang);

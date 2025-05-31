@@ -160,7 +160,7 @@ const DinhMucChoHang = () => {
         });
       }
     } catch (err) {
-      console.error('Error saving Dinh Muc Cho Hang:', err);
+
       setSnackbar({
         open: true,
         message: err.message || 'Đã có lỗi xảy ra khi lưu.',
@@ -199,7 +199,7 @@ const DinhMucChoHang = () => {
         });
       }
     } catch (err) {
-      console.error('Error deleting Dinh Muc Cho Hang:', err);
+
       setSnackbar({ open: true, message: err.message || 'Lỗi khi xóa.', severity: 'error' });
     } finally {
       setIsSubmitting(false);

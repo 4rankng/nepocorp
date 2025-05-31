@@ -39,7 +39,7 @@ const DinhMucChoHangDialog = ({
     try {
       await onSave();
     } catch (error) {
-      console.error('Error saving Dinh Muc Cho Hang:', error);
+
     } finally {
       setIsSubmitting(false);
     }

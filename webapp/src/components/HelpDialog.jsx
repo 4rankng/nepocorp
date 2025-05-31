@@ -33,7 +33,7 @@ const HelpDialog = ({ helpContent, markdownPath }) => {
       const text = await response.text();
       setContent(text);
     } catch (error) {
-      console.error('Error loading markdown file:', error);
+
       setContent('Không thể tải nội dung trợ giúp.');
     } finally {
       setLoading(false);

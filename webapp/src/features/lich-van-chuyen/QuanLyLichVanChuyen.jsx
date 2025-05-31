@@ -239,7 +239,7 @@ const QuanLyLichVanChuyen = () => {
       });
     } catch (err) {
       setError('Không thể tải dữ liệu Lịch Vận Chuyển.');
-      console.error('Error fetching page data:', err);
+
     } finally {
       setIsLoading(false);
     }
@@ -333,7 +333,7 @@ const QuanLyLichVanChuyen = () => {
       setFormData(initialFormState); // Reset form
     } catch (err) {
       setError(`Lỗi khi lưu lịch vận chuyển: ${err.message}`);
-      console.error('Error saving LichVanChuyen:', err);
+
     } finally {
       setIsLoading(false);
     }
@@ -359,7 +359,7 @@ const QuanLyLichVanChuyen = () => {
     } catch (err) {
       setError(`Lỗi khi xóa lịch vận chuyển: ${err.message}`);
       showSnackbar(`Lỗi khi xóa: ${err.message}`, 'error');
-      console.error('Error deleting LichVanChuyen:', err);
+
     } finally {
       setIsLoading(false);
     }
@@ -386,7 +386,7 @@ const QuanLyLichVanChuyen = () => {
         const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
         return matchesSearch && matchesStatus;
       } catch (error) {
-        console.error('Error filtering item:', error, 'Item:', item);
+
         return false;
       }
     });

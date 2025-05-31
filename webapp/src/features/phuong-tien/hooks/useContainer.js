@@ -92,7 +92,7 @@ export const useContainer = () => {
         setCount(result.length);
       }
     } catch (err) {
-      console.error('Failed to refresh count:', err);
+
     }
   }, []);
   // Initialize data on mount

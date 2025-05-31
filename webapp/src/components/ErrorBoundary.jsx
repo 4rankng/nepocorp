@@ -9,7 +9,7 @@ class ErrorBoundary extends Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+
   }
   render() {
     if (this.state.hasError) {
@@ -41,7 +41,7 @@ class ErrorBoundary extends Component {
 // A component that uses the useRouteError hook
 function ErrorPage() {
   const error = useRouteError();
-  console.error(error);
+
   let errorMessage = 'Đã xảy ra lỗi không xác định';
   if (isRouteErrorResponse(error)) {
     // Error from the router

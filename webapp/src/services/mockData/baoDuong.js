@@ -23,7 +23,7 @@ const getAllValidBienSo = async () => {
     const allBienSo = [...new Set([...dauKeoBienSo, ...roMoocBienSo])];
     return allBienSo;
   } catch (error) {
-    console.error('Error getting valid license plates:', error);
+
     return [];
   }
 };
@@ -260,18 +260,18 @@ const baoDuongData = [
 const isValidBienSo = async bienSo => {
   try {
     if (!bienSo) {
-      console.error('No license plate provided for validation');
+
       return false;
     }
     const validBienSoList = await getAllValidBienSo();
     if (!Array.isArray(validBienSoList)) {
-      console.error('Invalid license plate list format:', validBienSoList);
+
       return false;
     }
     const isValid = validBienSoList.includes(bienSo);
     return isValid;
   } catch (error) {
-    console.error('Error validating license plate:', error);
+
     return false;
   }
 };
@@ -281,7 +281,7 @@ const getValidBienSoList = async () => {
     const bienSoList = await getAllValidBienSo();
     return Array.isArray(bienSoList) ? bienSoList : [];
   } catch (error) {
-    console.error('Error getting valid license plate list:', error);
+
     return [];
   }
 };

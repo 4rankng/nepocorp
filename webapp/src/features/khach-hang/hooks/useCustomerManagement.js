@@ -40,7 +40,7 @@ const useCustomerManagement = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không thể tải danh sách khách hàng';
       setError(errorMessage);
-      console.error('Error fetching customers:', err);
+
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ const useCustomerManagement = () => {
       } catch (err) {
         const errorMessage = err.response?.data?.error || 'Lỗi khi thêm khách hàng';
         setError(errorMessage);
-        console.error('Error adding customer:', err);
+
         return { success: false, error: errorMessage };
       } finally {
         setLoading(false);
@@ -92,7 +92,7 @@ const useCustomerManagement = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Lỗi khi sửa khách hàng';
       setError(errorMessage);
-      console.error('Error updating customer:', err);
+
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -110,7 +110,7 @@ const useCustomerManagement = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Lỗi khi xóa khách hàng';
       setError(errorMessage);
-      console.error('Error deleting customer:', err);
+
       // Refresh the list in case of error to ensure consistency
       await fetchCustomers();
       return { success: false, error: errorMessage };
@@ -125,7 +125,7 @@ const useCustomerManagement = () => {
       return { success: true, data: response.data };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không tìm thấy khách hàng';
-      console.error('Error getting customer by ID:', err);
+
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -137,7 +137,7 @@ const useCustomerManagement = () => {
     } catch (err) {
       // Not found is an expected case, don't log as error
       if (err.response?.status !== 404) {
-        console.error('Error getting customer by code:', err);
+
       }
       return { success: false, error: err.response?.data?.error };
     }

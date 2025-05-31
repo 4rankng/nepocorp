@@ -164,7 +164,7 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
       };
       setDauKeoList(mappedDauKeo);
     } catch (err) {
-      console.error('Error loading dau keo list:', err);
+
       setDauKeoList([]);
     } finally {
       setIsDauKeoLoading(false);
@@ -259,7 +259,7 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
       handleCloseModal(); // Close modal on success
     } catch (err) {
       setError(err.message || `Lỗi khi ${editingEmployee ? 'sửa' : 'thêm'} nhân viên.`);
-      console.error(err);
+
       // Do not close modal on error, so user can see the error
     } finally {
       setIsLoading(false);
@@ -277,7 +277,7 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
         await fetchEmployeesData(); // Refresh data
       } catch (err) {
         setError('Lỗi khi xóa nhân viên.');
-        console.error(err);
+
       } finally {
         setIsLoading(false);
       }

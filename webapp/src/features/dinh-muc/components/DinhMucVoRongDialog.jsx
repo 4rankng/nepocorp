@@ -40,7 +40,7 @@ const DinhMucVoRongDialog = ({
     try {
       await onSave();
     } catch (error) {
-      console.error('Error saving Dinh Muc Vo Rong:', error);
+
     } finally {
       setIsSubmitting(false);
     }

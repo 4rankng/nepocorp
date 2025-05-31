@@ -33,7 +33,7 @@ export const getVehicles = async () => {
     ];
     return vehicles;
   } catch (error) {
-    console.error('Error fetching vehicles:', error);
+
     throw error;
   }
 };
@@ -49,7 +49,7 @@ export const getVehiclesForSelect = async () => {
       type: vehicle.type,
     }));
   } catch (error) {
-    console.error('Error formatting vehicles for select:', error);
+
     throw error;
   }
 };

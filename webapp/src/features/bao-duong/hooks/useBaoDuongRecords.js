@@ -19,7 +19,7 @@ export default function useBaoDuongRecords(api) {
       ).map(plate => ({ id: plate, bien_so: plate }));
       setLicensePlates(licensePlateOptions);
     } catch (err) {
-      console.error('Error fetching license plates:', err);
+
     }
   }, [api]);
 
@@ -29,14 +29,8 @@ export default function useBaoDuongRecords(api) {
       setIsLoading(true);
       try {
         // Note: API is 1-indexed for page number
-        console.log('🔍 BaoDuong Hook - Requesting data:', { page, pageSize, apiPage: page + 1 });
-        const recordsRes = await api.getAll(page + 1, pageSize);
 
-        console.log('📦 BaoDuong Hook - API Response:', {
-          data: recordsRes.data?.length || 0,
-          meta: recordsRes.meta,
-          fullResponse: recordsRes,
-        });
+        const recordsRes = await api.getAll(page + 1, pageSize);
 
         setBaoDuongRecords(recordsRes.data || []);
 
@@ -47,11 +41,6 @@ export default function useBaoDuongRecords(api) {
           total: recordsRes.meta?.total || 0,
           totalPages: recordsRes.meta?.totalPages || 1,
         };
-
-        console.log('📊 BaoDuong Hook - Setting pagination:', {
-          ...newPagination,
-          receivedMeta: recordsRes.meta,
-        });
 
         setPagination(prev => ({
           ...prev,
@@ -66,7 +55,7 @@ export default function useBaoDuongRecords(api) {
         setError('');
       } catch (err) {
         setError('Không thể tải dữ liệu bảo dưỡng');
-        console.error('Error fetching bao duong data:', err);
+
       } finally {
         setIsLoading(false);
       }
@@ -102,7 +91,7 @@ export default function useBaoDuongRecords(api) {
         setError('');
       } catch (err) {
         setError('Không thể tải dữ liệu bảo dưỡng');
-        console.error('Error fetching bao duong data by license plate:', err);
+
       } finally {
         setIsLoading(false);
       }

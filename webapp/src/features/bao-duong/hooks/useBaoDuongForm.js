@@ -55,13 +55,7 @@ export default function useBaoDuongForm({
     return Object.keys(newErrors).length === 0;
   };
   const handleSave = async (e, currentPage = 0, pageSize = 10) => {
-    console.log('useBaoDuongForm handleSave called', {
-      e,
-      formData,
-      isEdit,
-      currentPage,
-      pageSize,
-    });
+
     e?.preventDefault();
     try {
       // Validate form
@@ -113,18 +107,18 @@ export default function useBaoDuongForm({
         try {
           await fetchData(currentPage, pageSize);
         } catch (refreshError) {
-          console.error('Error refreshing data:', refreshError);
+
           // Fallback to page 0 if there's an error with the current page
           try {
             await fetchData(0, pageSize);
           } catch (fallbackError) {
-            console.error('Fallback refresh also failed:', fallbackError);
+
           }
         }
       }
       return response;
     } catch (error) {
-      console.error('Error in handleSave:', error);
+
       // Extract and format error message from API response
       let errorMessage = 'Đã xảy ra lỗi khi lưu dữ liệu';
       if (error?.response?.error?.message) {

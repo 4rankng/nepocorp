@@ -142,7 +142,7 @@ const DinhMucVoRong = () => {
       });
       handleCloseDialog();
     } catch (err) {
-      console.error('Error saving Dinh Muc Vo Rong:', err);
+
       setSnackbar({
         open: true,
         message: err.message || 'Đã có lỗi xảy ra khi lưu.',
@@ -172,7 +172,7 @@ const DinhMucVoRong = () => {
       await deleteVoRongStandard(deleteDialog.recordId);
       setSnackbar({ open: true, message: 'Xóa thành công!', severity: 'success' });
     } catch (err) {
-      console.error('Error deleting Dinh Muc Vo Rong:', err);
+
       setSnackbar({ open: true, message: err.message || 'Lỗi khi xóa.', severity: 'error' });
     } finally {
       setIsSubmitting(false);

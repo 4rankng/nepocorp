@@ -124,7 +124,7 @@ export const createRoMooc = async data => {
     updatedAt: new Date().toISOString(),
   };
   if (!data.bien_so || !data.mo_ta) {
-    console.error('Missing required fields for new RoMooc:', data);
+
     return null;
   }
   roMoocData.push(newRoMooc);

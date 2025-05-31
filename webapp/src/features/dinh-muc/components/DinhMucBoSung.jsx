@@ -70,7 +70,7 @@ const DinhMucBoSung = ({
       await onSaveSupplementary(parseFloat(editValue)); // Send as number
       handleCloseModal();
     } catch (error) {
-      console.error('Error saving supplementary standard:', error);
+
       // Optionally, show a local error message or rely on parent's snackbar
     } finally {
       setIsSaving(false);

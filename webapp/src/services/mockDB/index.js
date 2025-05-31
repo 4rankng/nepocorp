@@ -25,7 +25,7 @@ class MockDB {
       this.loadPersistedData();
       this.initialized = true;
     } catch (error) {
-      console.error('Failed to initialize MockDB:', error);
+
       throw error;
     }
   }
@@ -43,7 +43,7 @@ class MockDB {
         }
       }
     } catch (error) {
-      console.error('Failed to load persisted data:', error);
+
     }
   }
   /**
@@ -57,7 +57,7 @@ class MockDB {
         window.localStorage.setItem(`mockDB_${tableName}`, JSON.stringify(data));
       }
     } catch (error) {
-      console.error(`Failed to persist data for table ${tableName}:`, error);
+
     }
   }
   /**
@@ -86,7 +86,7 @@ class MockDB {
         try {
           callback({ operation, data, tableName });
         } catch (error) {
-          console.error('Error in data change listener:', error);
+
         }
       });
     }
@@ -234,7 +234,7 @@ class MockDB {
       this.notifyListeners(tableName, 'RESET', bootstrapData);
       return true;
     } catch (error) {
-      console.error(`Failed to reset table ${tableName}:`, error);
+
       throw error;
     }
   }
