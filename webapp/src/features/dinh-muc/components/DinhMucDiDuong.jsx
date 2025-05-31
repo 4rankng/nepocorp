@@ -29,14 +29,19 @@ const DinhMucDiDuong = () => {
         ),
       },
       {
-        key: 'ten_tuyen',
-        label: 'Tên tuyến',
-        width: '20%', // Adjusted width
+        key: 'diem_di',
+        label: 'Điểm đi',
+        width: '10%',
+        sortable: true,
+        render: (_cellValue, rowData) => <Typography variant="body2">{rowData.diem_di}</Typography>,
+      },
+      {
+        key: 'diem_den',
+        label: 'Điểm đến',
+        width: '20%',
         sortable: true,
         render: (_cellValue, rowData) => (
-          <Typography variant="caption" color="text.secondary">
-            {`${rowData.diem_di} → ${rowData.diem_den?.split(';')[0] || ''}`}
-          </Typography>
+          <Typography variant="body2">{rowData.diem_den}</Typography>
         ),
       },
       ...sortedContainerTypes.map(ct => ({
