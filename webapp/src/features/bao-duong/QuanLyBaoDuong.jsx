@@ -304,40 +304,46 @@ const QuanLyBaoDuong = memo(() => {
   // Render desktop table view
   const renderDesktopView = () => {
     const tableColumns = getBaoDuongTableColumns();
-    
+
     const tableProps = {
       columns: tableColumns,
-      data: maintenanceRecords,
+      data: filteredRecords,
       loading: isLoading,
       error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
-      emptyMessage: "Không có dữ liệu bảo dưỡng",
+      emptyMessage: 'Không có dữ liệu bảo dưỡng',
       onRowClick: handleOpenEditDialog,
       pagination: true,
       page: pagination.page,
       rowsPerPage: pagination.pageSize,
       totalCount: pagination.total,
-      rowKeyField: "id"
+      rowKeyField: 'id',
     };
-    
+
     console.log('🎯 QuanLyBaoDuong - Pagination data to StandardTable:', {
       page: pagination.page,
       rowsPerPage: pagination.pageSize,
       totalCount: pagination.total,
-      dataLength: maintenanceRecords.length,
+      dataLength: filteredRecords.length,
       fullPagination: pagination,
-      maintenanceRecords: maintenanceRecords.slice(0, 3) // Show first 3 records
+      maintenanceRecords: filteredRecords.slice(0, 3), // Show first 3 records
     });
-    
+
     return (
       <StandardTable
         {...tableProps}
         onPageChange={(_, newPage) => {
-          console.log('📄 QuanLyBaoDuong - Page change requested:', { newPage, currentPage: pagination.page });
+          console.log('📄 QuanLyBaoDuong - Page change requested:', {
+            newPage,
+            currentPage: pagination.page,
+          });
           fetchData(newPage, pagination.pageSize);
         }}
-        onRowsPerPageChange={(event) => {
+        onRowsPerPageChange={event => {
           const newPageSize = parseInt(event.target.value, 10);
-          console.log('📏 QuanLyBaoDuong - Page size change requested:', { newPageSize, currentPageSize: pagination.pageSize });
+          console.log('📏 QuanLyBaoDuong - Page size change requested:', {
+            newPageSize,
+            currentPageSize: pagination.pageSize,
+          });
           fetchData(0, newPageSize);
         }}
       />

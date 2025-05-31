@@ -89,7 +89,7 @@ const DinhMucChoHangDialog = ({
                 name="fromKm"
                 type="number"
                 value={formData.fromKm}
-                onChange={onInputChange}
+                onChange={e => onInputChange(e.target.name, e.target.value)}
                 error={!!errors.fromKm}
                 helperText={errors.fromKm}
                 InputProps={{
@@ -105,7 +105,7 @@ const DinhMucChoHangDialog = ({
                 name="toKm"
                 type="number"
                 value={formData.toKm}
-                onChange={onInputChange}
+                onChange={e => onInputChange(e.target.name, e.target.value)}
                 error={!!errors.toKm}
                 helperText={errors.toKm}
                 InputProps={{
@@ -122,7 +122,7 @@ const DinhMucChoHangDialog = ({
               name="standard"
               type="number"
               value={formData.standard}
-              onChange={onInputChange}
+              onChange={e => onInputChange(e.target.name, e.target.value)}
               error={!!errors.standard}
               helperText={errors.standard}
               InputProps={{
@@ -138,7 +138,7 @@ const DinhMucChoHangDialog = ({
               multiline
               rows={3}
               value={formData.note || ''}
-              onChange={onInputChange}
+              onChange={e => onInputChange(e.target.name, e.target.value)}
               placeholder="Nhập ghi chú về định mức (nếu có)"
             />
           </Box>

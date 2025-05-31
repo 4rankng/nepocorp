@@ -13,6 +13,27 @@ export const getAllDinhMucDau = async (page = 1, limit = 10) => {
     withPagination(() => dinhMucDauDataService.getAllDinhMucDau(), { page, limit })
   );
 };
+export const getAllDinhMucChoHang = async (page = 1, limit = 10, searchTerm = '') => {
+  return mockApiCall(() =>
+    withPagination(
+      async () => {
+        // Changed to async to await getDinhMucChoHangItems
+        let items = await dinhMucDauDataService.getDinhMucChoHangItems();
+        if (searchTerm && typeof searchTerm === 'string') {
+          const lowerSearchTerm = searchTerm.toLowerCase();
+          items = items.filter(
+            item =>
+              item.bienSoXe?.toLowerCase().includes(lowerSearchTerm) ||
+              item.ghiChu?.toLowerCase().includes(lowerSearchTerm)
+          );
+        }
+        return items;
+      },
+      { page, limit }
+    )
+  );
+};
+
 export const getDinhMucDauById = async id => {
   return mockApiCall(() =>
     withSingleItem(

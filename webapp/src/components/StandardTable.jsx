@@ -80,12 +80,14 @@ const StandardTable = ({
   loading = false,
   error = null,
   emptyMessage = 'Chưa có dữ liệu',
-  pagination = false,
-  page = 0,
-  rowsPerPage = 10,
-  totalCount = 0,
-  onPageChange = () => {},
-  onRowsPerPageChange = () => {},
+  pagination = false, // Enables/disables the pagination UI section
+  // Default individual pagination props (used if paginationProps is not provided or incomplete)
+  page: initialPage = 0,
+  rowsPerPage: initialRowsPerPage = 10,
+  totalCount: initialTotalCount = 0,
+  onPageChange: initialOnPageChange = () => {},
+  onRowsPerPageChange: initialOnRowsPerPageChange = () => {},
+  paginationProps = null, // To receive { page, pageSize, total, onPageChange, onRowsPerPageChange }
   headerAction = null,
   onRowClick = null,
   rowKeyField,
@@ -93,10 +95,30 @@ const StandardTable = ({
   sortable = true, // New prop to enable/disable sorting
   defaultSort = null, // New prop for default sort configuration
   onSortChange = null, // New prop for external sort handling
+  customRowsPerPageOptions = [5, 10, 50, 100],
   ...tableProps
 }) => {
   // Internal sort state
   const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
+
+  // Determine effective pagination settings
+  const effectivePage =
+    pagination && paginationProps?.page !== undefined ? paginationProps.page : initialPage;
+  const effectiveRowsPerPage =
+    pagination && paginationProps?.pageSize !== undefined
+      ? paginationProps.pageSize
+      : initialRowsPerPage;
+  const effectiveTotalCount =
+    pagination && paginationProps?.total !== undefined ? paginationProps.total : initialTotalCount;
+  const effectiveOnPageChange =
+    pagination && paginationProps?.onPageChange
+      ? paginationProps.onPageChange
+      : initialOnPageChange;
+  const effectiveOnRowsPerPageChange =
+    pagination && paginationProps?.onRowsPerPageChange
+      ? paginationProps.onRowsPerPageChange
+      : initialOnRowsPerPageChange;
+
   // Handle sort request
   const handleSort = columnKey => {
     if (!sortable) return;
@@ -357,37 +379,33 @@ const StandardTable = ({
                         {(() => {
                           let cellContent;
                           const cellValue = row[column.key || column.id];
-                          
+
                           if (column.Cell) {
                             cellContent = (
-                              <column.Cell
-                                row={row}
-                                value={cellValue}
-                                column={column}
-                              />
+                              <column.Cell row={row} value={cellValue} column={column} />
                             );
                           } else if (column.render) {
                             cellContent = column.render(cellValue, row);
                           } else {
                             cellContent = cellValue;
                           }
-                          
+
                           // Handle NaN values and other invalid content
                           if (typeof cellContent === 'number' && isNaN(cellContent)) {
                             console.warn('StandardTable: NaN value detected in cell:', {
                               columnKey: column.key || column.id,
                               rowId: row.id || index,
                               cellValue,
-                              cellContent
+                              cellContent,
                             });
                             return '-';
                           }
-                          
+
                           // Handle null/undefined
                           if (cellContent == null) {
                             return '-';
                           }
-                          
+
                           return cellContent;
                         })()}
                       </TableCell>
@@ -419,68 +437,22 @@ const StandardTable = ({
         </Table>
       </TableContainer>
       {pagination && (
-        <Box
+        <TablePagination
+          component="div"
+          count={effectiveTotalCount}
+          page={effectivePage}
+          rowsPerPage={effectiveRowsPerPage}
+          onPageChange={effectiveOnPageChange}
+          onRowsPerPageChange={effectiveOnRowsPerPageChange}
+          rowsPerPageOptions={customRowsPerPageOptions}
+          labelRowsPerPage="Hàng mỗi trang:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
+          }
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
             borderTop: `1px solid ${theme.palette.grey[200]}`,
-            p: 1,
           }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Hàng mỗi trang:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={onRowsPerPageChange}
-              size="small"
-              sx={{
-                height: 32,
-                '& .MuiSelect-select': {
-                  py: 0.5,
-                  fontSize: '0.875rem',
-                },
-              }}
-            >
-              {[5, 10, 25, 50, 100].map(rows => (
-                <MenuItem key={rows} value={rows}>
-                  {rows}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              onClick={() => onPageChange(null, page - 1)}
-              disabled={page === 0}
-              size="small"
-              sx={{
-                width: 32,
-                height: 32,
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <ChevronLeftIcon />
-            </IconButton>
-            <Typography variant="body2" sx={{ minWidth: 80, textAlign: 'center' }}>
-              Trang {page + 1} / {Math.ceil(totalCount / rowsPerPage) || 1}
-            </Typography>
-            <IconButton
-              onClick={() => onPageChange(null, page + 1)}
-              disabled={page >= Math.ceil(totalCount / rowsPerPage) - 1 || (page + 1) * rowsPerPage >= totalCount}
-              size="small"
-              sx={{
-                width: 32,
-                height: 32,
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <ChevronRightIcon />
-            </IconButton>
-          </Box>
-        </Box>
+        />
       )}
     </Paper>
   );
@@ -501,6 +473,13 @@ StandardTable.propTypes = {
   headerAction: PropTypes.node,
   onRowClick: PropTypes.func,
   rowKeyField: PropTypes.string,
+  paginationProps: PropTypes.shape({
+    page: PropTypes.number,
+    pageSize: PropTypes.number,
+    total: PropTypes.number,
+    onPageChange: PropTypes.func,
+    onRowsPerPageChange: PropTypes.func,
+  }),
   minHeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   sortable: PropTypes.bool,
   defaultSort: PropTypes.shape({

@@ -1,214 +1,334 @@
-import React, { useState } from 'react';
-import { Box, Typography, CircularProgress, Paper, Alert, useTheme } from '@mui/material';
-import { SearchBar } from '@components';
-import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
-import DinhMucChoHangDialog from './DinhMucChoHangDialog';
-import { ConfirmationDialog } from '@components';
-import { useChoHang } from '../hooks';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Box,
+  Paper,
+  CircularProgress,
+  Alert,
+  Snackbar,
+  Fab,
+  Zoom,
+  Typography,
+  useTheme,
+} from '@mui/material';
+import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
+
+import StandardTable from '@/components/StandardTable';
+import DinhMucChoHangDialog from './DinhMucChoHangDialog'; // Assuming this dialog is suitable
+import ConfirmationDialog from '@/components/ConfirmationDialog';
+// import { EditButton, DeleteButton } from '@/components/ActionButtons'; // These are now part of getChoHangTableColumns
+import useChoHangRecords from '../hooks/useChoHangRecords';
+import { getChoHangTableColumns } from '../constants/choHangTableColumns';
+import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi'; // For CUD operations
+import SearchBar from '@/components/SearchBar';
+
+const initialFormData = {
+  bienSoXe: '',
+  fromKm: '',
+  toKm: '',
+  standard: '',
+  note: '',
+  id: null, // For editing
+};
+
 const DinhMucChoHang = () => {
   const muiTheme = useTheme();
-  const [searchQuery, setSearchQuery] = useState('');
-  // Dialog states
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [currentStandard, setCurrentStandard] = useState(null);
-  const [deleteDetails, setDeleteDetails] = useState({ id: null, type: null, details: '' });
-  // Form states
-  const [formData, setFormData] = useState({
-    bienSoXe: '',
-    fromKm: '',
-    toKm: '',
-    standard: '',
-    note: '',
-  });
-  const [errors, setErrors] = useState({});
-  const [selectedLicensePlate, setSelectedLicensePlate] = useState('');
   const {
-    dinhMucChoHang,
-    availableLicensePlates,
+    choHangRecords,
     isLoading,
     error,
-    createChoHangStandard,
-    updateChoHangStandard,
-    deleteChoHangStandard,
-  } = useChoHang();
-  // Convert the license plates data to match the expected format
-  const activeLicensePlatesWithStandards = availableLicensePlates;
-  const openAddNewDinhMucDialog = params => {
-    setCurrentStandard(null);
-    setSelectedLicensePlate(params?.licensePlate || '');
+    fetchData: refetchChoHangData,
+    pagination,
+    searchTerm,
+    handleSearchChange,
+  } = useChoHangRecords();
+
+  const [openAddEditDialog, setOpenAddEditDialog] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [currentRecord, setCurrentRecord] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: '' });
+  const [formData, setFormData] = useState(initialFormData);
+  const [formErrors, setFormErrors] = useState({});
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const columns = getChoHangTableColumns(
+    record => handleOpenEditDialog(record),
+    record => handleDeleteClick(record),
+    pagination.page,
+    pagination.pageSize
+  );
+
+  const handleOpenAddDialog = () => {
+    setIsEdit(false);
+    setCurrentRecord(null);
+    setFormData(initialFormData);
+    setFormErrors({});
+    setOpenAddEditDialog(true);
+  };
+
+  const handleOpenEditDialog = record => {
+    setIsEdit(true);
+    setCurrentRecord(record);
     setFormData({
-      bienSoXe: params?.licensePlate || '',
-      fromKm: '',
-      toKm: '',
-      standard: '',
-      note: '',
+      id: record.id,
+      bienSoXe: record.bienSoXe || '',
+      fromKm: record.tuKm?.toString() || '', // API: tuKm, Dialog: fromKm
+      toKm: record.denKm?.toString() || '', // API: denKm, Dialog: toKm
+      standard: record.l_km?.toString() || '', // API: l_km, Dialog: standard
+      note: record.ghiChu || '', // API: ghiChu, Dialog: note
     });
-    setErrors({});
-    setAddDialogOpen(true);
+    setFormErrors({});
+    setOpenAddEditDialog(true);
   };
-  const openEditDinhMucDialog = params => {
-    const { standard, licensePlate } = params;
-    setCurrentStandard(standard);
-    setSelectedLicensePlate(licensePlate);
-    setFormData({
-      bienSoXe: licensePlate,
-      fromKm: standard.fromKm?.toString() || '',
-      toKm: standard.toKm?.toString() || '',
-      standard: standard.standard?.toString() || '',
-      note: standard.note || '',
-    });
-    setErrors({});
-    setEditDialogOpen(true);
-  };
-  const openDeleteDialog = (id, type, details) => {
-    setDeleteDetails({ id, type, details });
-    setDeleteDialogOpen(true);
-  };
-  const handleTriggerDeleteDialog = (id, type, item, licensePlate) => {
-    let detailsText = '';
-    const plateIdText = licensePlate ? `cho BSX ${licensePlate}` : '';
-    if (type === 'km_hang') {
-      detailsText = `định mức hàng (Từ ${item.fromKm}km đến ${item.toKm}km) ${plateIdText}`;
-    } else {
-      detailsText = 'định mức đã chọn'; // Fallback
-    }
-    openDeleteDialog(id, type, detailsText);
-  };
-  // Form handlers
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
+
+  const handleCloseDialog = useCallback(() => {
+    setOpenAddEditDialog(false);
+    setIsEdit(false);
+    setCurrentRecord(null);
+    setFormData(initialFormData);
+    setFormErrors({});
+  }, []);
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.bienSoXe) newErrors.bienSoXe = 'Biển số xe không được để trống';
     if (!formData.fromKm) newErrors.fromKm = 'Số km bắt đầu không được để trống';
+    else if (isNaN(parseFloat(formData.fromKm))) newErrors.fromKm = 'Số km bắt đầu phải là số';
     if (!formData.toKm) newErrors.toKm = 'Số km kết thúc không được để trống';
+    else if (isNaN(parseFloat(formData.toKm))) newErrors.toKm = 'Số km kết thúc phải là số';
     if (!formData.standard) newErrors.standard = 'Định mức không được để trống';
-    if (formData.fromKm && formData.toKm) {
-      const fromKm = parseFloat(formData.fromKm);
-      const toKm = parseFloat(formData.toKm);
-      if (fromKm >= toKm) {
+    else if (isNaN(parseFloat(formData.standard))) newErrors.standard = 'Định mức phải là số';
+
+    if (
+      formData.fromKm &&
+      formData.toKm &&
+      !isNaN(parseFloat(formData.fromKm)) &&
+      !isNaN(parseFloat(formData.toKm))
+    ) {
+      const fromKmVal = parseFloat(formData.fromKm);
+      const toKmVal = parseFloat(formData.toKm);
+      if (fromKmVal >= toKmVal) {
         newErrors.toKm = 'Số km kết thúc phải lớn hơn số km bắt đầu';
       }
     }
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   const handleSave = async () => {
     if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    const apiData = {
+      bien_so_xe: formData.bienSoXe, // API expects bien_so_xe
+      phan_loai: 'km_hang',
+      tuKm: parseFloat(formData.fromKm),
+      denKm: parseFloat(formData.toKm),
+      l_km: parseFloat(formData.standard),
+      ghiChu: formData.note,
+    };
+
     try {
-      if (currentStandard) {
-        await updateChoHangStandard(currentStandard.id, formData);
-        setEditDialogOpen(false);
+      let response;
+      if (isEdit && currentRecord?.id) {
+        response = await dinhMucDauApi.update(currentRecord.id, apiData);
       } else {
-        await createChoHangStandard(formData);
-        setAddDialogOpen(false);
+        response = await dinhMucDauApi.create(apiData);
       }
-      // Reset form
-      setFormData({
-        bienSoXe: '',
-        fromKm: '',
-        toKm: '',
-        standard: '',
-        note: '',
+
+      if (response.success) {
+        setSnackbar({
+          open: true,
+          message: isEdit ? 'Cập nhật thành công!' : 'Thêm mới thành công!',
+          severity: 'success',
+        });
+        handleCloseDialog();
+        refetchChoHangData();
+      } else {
+        setSnackbar({
+          open: true,
+          message: response.error?.message || 'Đã có lỗi xảy ra.',
+          severity: 'error',
+        });
+      }
+    } catch (err) {
+      console.error('Error saving Dinh Muc Cho Hang:', err);
+      setSnackbar({
+        open: true,
+        message: err.message || 'Đã có lỗi xảy ra khi lưu.',
+        severity: 'error',
       });
-    } catch (err) {
-      console.error('Error saving định mức:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  const handleDelete = async () => {
-    try {
-      await deleteChoHangStandard(deleteDetails.id);
-      setDeleteDialogOpen(false);
-    } catch (err) {
-      console.error('Error deleting định mức:', err);
-    }
-  };
-  const handleCloseDialog = () => {
-    setAddDialogOpen(false);
-    setEditDialogOpen(false);
-    setFormData({
-      bienSoXe: '',
-      fromKm: '',
-      toKm: '',
-      standard: '',
-      note: '',
+
+  const handleDeleteClick = record => {
+    setDeleteDialog({
+      open: true,
+      recordId: record.id,
+      details: `Bạn có chắc chắn muốn xóa định mức cho BSX ${record.bienSoXe} (Từ ${record.tuKm}km đến ${record.denKm}km)?`,
     });
-    setErrors({});
   };
+
+  const handleDeleteClose = () => {
+    setDeleteDialog({ open: false, recordId: null, details: '' });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.recordId) return;
+    setIsSubmitting(true);
+    try {
+      const response = await dinhMucDauApi.delete_(deleteDialog.recordId);
+      if (response.success) {
+        setSnackbar({ open: true, message: 'Xóa thành công!', severity: 'success' });
+        refetchChoHangData();
+      } else {
+        setSnackbar({
+          open: true,
+          message: response.error?.message || 'Lỗi khi xóa.',
+          severity: 'error',
+        });
+      }
+    } catch (err) {
+      console.error('Error deleting Dinh Muc Cho Hang:', err);
+      setSnackbar({ open: true, message: err.message || 'Lỗi khi xóa.', severity: 'error' });
+    } finally {
+      setIsSubmitting(false);
+      handleDeleteClose();
+    }
+  };
+
+  const handleDialogInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  // Effect to update form when currentRecord changes for edit dialog
+  // This was previously part of handleOpenEditDialog but can be an effect too
+  useEffect(() => {
+    if (isEdit && currentRecord) {
+      setFormData({
+        id: currentRecord.id,
+        bienSoXe: currentRecord.bienSoXe || '',
+        fromKm: currentRecord.tuKm?.toString() || '',
+        toKm: currentRecord.denKm?.toString() || '',
+        standard: currentRecord.l_km?.toString() || '',
+        note: currentRecord.ghiChu || '',
+      });
+    } else if (!isEdit) {
+      setFormData(initialFormData);
+    }
+  }, [isEdit, currentRecord]);
+
+  if (isLoading && !choHangRecords.length && !error && !searchTerm) {
+    // Show initial loading only
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Paper
       sx={{
         p: { xs: 1.5, md: 2 },
         mb: 3,
         boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
+        position: 'relative',
+        pb: { xs: 10, sm: 11 },
       }}
     >
-      {isLoading ? (
-        <Box
-          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 150 }}
-        >
-          <CircularProgress />
-          <Typography sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
-        </Box>
-      ) : error ? (
+      <Box sx={{ mb: 2 }}>
+        <SearchBar
+          value={searchTerm}
+          onChange={event => handleSearchChange(event.target.value)}
+          placeholder="Tìm kiếm theo biển số, ghi chú..."
+          containerSx={{ width: '100%' }}
+        />
+      </Box>
+
+      {error && !isLoading && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error.message || error.toString()}
+          {error}
         </Alert>
-      ) : (
-        <Box>
-          <Box
-            sx={{
-              mb: 2,
-            }}
-          >
-            <SearchBar
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm biển số xe..."
-            />
-          </Box>
-          <DinhMucTheoBienSoXeSection
-            dinhMucHang={dinhMucChoHang}
-            dinhMucVo={[]} // Empty array since we're only showing km_hang
-            activeLicensePlatesWithStandards={activeLicensePlatesWithStandards}
-            isLoading={isLoading}
-            error={error ? error.message || 'Lỗi không xác định' : null}
-            searchQuery={searchQuery}
-            onOpenAddNewDialog={openAddNewDinhMucDialog}
-            onOpenEditDialog={openEditDinhMucDialog}
-            onOpenDeleteDialog={handleTriggerDeleteDialog}
-            normTypeFilter="km_hang" // Only show km_hang standards
-          />
-        </Box>
       )}
-      {/* Add/Edit Dialog */}
+
+      <StandardTable
+        columns={columns}
+        data={choHangRecords}
+        pagination={true} // Enable pagination UI
+        paginationProps={pagination} // Pass pagination data and handlers
+        customRowsPerPageOptions={[5, 10, 50, 100]} // Set custom options
+        isLoading={isLoading}
+        dense
+        noDataMessage={
+          searchTerm
+            ? `Không tìm thấy kết quả cho "${searchTerm}"`
+            : 'Không có dữ liệu định mức chở hàng.'
+        }
+      />
+
       <DinhMucChoHangDialog
-        open={addDialogOpen || editDialogOpen}
-        isEdit={!!currentStandard}
+        open={openAddEditDialog}
+        isEdit={isEdit}
         formData={formData}
-        errors={errors}
-        licensePlate={selectedLicensePlate}
+        errors={formErrors}
+        licensePlate={formData.bienSoXe}
         onClose={handleCloseDialog}
         onSave={handleSave}
-        onInputChange={handleInputChange}
-        onValidateForm={validateForm}
+        onInputChange={handleDialogInputChange}
+        // onValidateForm={validateForm} // Dialog should call its own validation or rely on onSave
+        isLoading={isSubmitting}
+        // availableLicensePlates={[]} // This prop might not be needed if bienSoXe is a text field
       />
-      {/* Delete Confirmation Dialog */}
+
       <ConfirmationDialog
-        open={deleteDialogOpen}
+        open={deleteDialog.open}
+        onClose={handleDeleteClose}
+        onConfirm={handleDeleteConfirm}
         title="Xác nhận xóa"
-        message={`Bạn có chắc chắn muốn xóa ${deleteDetails.details}?`}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteDialogOpen(false)}
+        contentText={deleteDialog.details}
+        confirmButtonText="Xóa"
+        cancelButtonText="Hủy"
+        isLoading={isSubmitting}
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <Zoom in={true} timeout={300} unmountOnExit>
+        <Fab
+          color="primary"
+          aria-label="add new dinh muc cho hang"
+          onClick={handleOpenAddDialog}
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 72, sm: 32 },
+            right: { xs: 16, sm: 32 },
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Zoom>
     </Paper>
   );
 };
+
 export default DinhMucChoHang;

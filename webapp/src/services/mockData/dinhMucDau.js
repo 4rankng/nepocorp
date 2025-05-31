@@ -353,6 +353,11 @@ let dinhMucDauData = [
     updatedAt: '2023-06-01T08:00:00Z',
   },
 ];
+// Function to get only 'km_hang' items
+export const getDinhMucChoHangItems = async () => {
+  return dinhMucDauData.filter(item => item.phan_loai === 'km_hang');
+};
+
 // CRUD Operations
 export const getAllDinhMucDau = async () => {
   return [...dinhMucDauData];
