@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -7,28 +7,49 @@ import {
   CircularProgress,
   Alert,
   Skeleton,
-  TextField,
-  InputAdornment,
+  TextField, // Re-added for inline editing
   Fab,
   useMediaQuery,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
-import { StandardTable, EditButton, DeleteButton } from '@components';
-import { useDiDuong } from '../hooks';
-import { Search as SearchIcon } from '@mui/icons-material';
+import { Add as AddIcon, Check as CheckIcon, Edit as EditIcon } from '@mui/icons-material';
+import { StandardTable, DeleteButton, SearchBar } from '@components'; // EditButton will be handled by IconButton now
+import IconButton from '@mui/material/IconButton';
+import { useDiDuong } from '../hooks/useDiDuong';
+import { updateTuyenDuong } from '@services/mockApi/tuyenDuongApi';
+import logger from '@services/logger';
+import { useSnackbar } from 'notistack';
+
 import DinhMucDiDuongDeleteDialog from './DinhMucDiDuongDeleteDialog'; // Import the new dialog
 
 const DinhMucDiDuong = () => {
   const muiTheme = useTheme();
   const {
-    roadNorms,
+    roadNorms: hookRoadNorms,
     containerTypes,
-    routes,
+    routes: hookRoutes,
     isLoading,
     error,
     deleteTuyenDuongAndNorms,
     fetchAllData,
+    createRoadNorm, // Added from useDiDuong
+    updateRoadNorm, // Added from useDiDuong
   } = useDiDuong();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const [localRoutes, setLocalRoutes] = useState([]);
+  const [localRoadNorms, setLocalRoadNorms] = useState([]);
+
+  useEffect(() => {
+    if (hookRoutes) {
+      setLocalRoutes(JSON.parse(JSON.stringify(hookRoutes))); // Deep copy
+    }
+  }, [hookRoutes]);
+
+  useEffect(() => {
+    if (hookRoadNorms) {
+      setLocalRoadNorms(JSON.parse(JSON.stringify(hookRoadNorms))); // Deep copy
+    }
+  }, [hookRoadNorms]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -37,6 +58,12 @@ const DinhMucDiDuong = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
+  const [filteredCount, setFilteredCount] = useState(0);
+  // Editing state
+  const [editingRowId, setEditingRowId] = useState(null);
+  const [editedData, setEditedData] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const tableContainerRef = useRef(null);
   // Sort container types by name (e.g., "20'", "40'") for consistent column order
   const sortedContainerTypes = useMemo(() => {
     return [...containerTypes].sort((a, b) => {
@@ -46,11 +73,89 @@ const DinhMucDiDuong = () => {
       return numA - numB;
     });
   }, [containerTypes]);
-  // Handle edit action
-  const handleEdit = id => {
-    // TODO: Implement edit functionality
-    // console.log('Edit record:', id); // Placeholder removed
+  // Handle starting edit action
+  const handleEdit = (e, rowData) => {
+    e.stopPropagation();
+    setEditingRowId(rowData.id);
+    // Deep copy to avoid mutating original tableData, especially nested containerNorms
+    setEditedData(JSON.parse(JSON.stringify(rowData)));
   };
+
+  // Handle confirm edit action
+  const handleConfirmEdit = useCallback(
+    async e => {
+      e.stopPropagation();
+      if (!editedData || !editedData.id) {
+        logger.warn('handleConfirmEdit called with no editedData or no ID.');
+        return;
+      }
+
+      setIsSaving(true);
+      try {
+        const routeToUpdate = localRoutes.find(r => r.ma_so === editedData.id);
+        if (!routeToUpdate || !routeToUpdate.id) {
+          throw new Error(
+            `Route with ma_so ${editedData.id} not found or has no numeric ID for update.`
+          );
+        }
+
+        const routeUpdatePayload = {
+          diem_di: editedData.diem_di,
+          diem_den: editedData.diem_den,
+        };
+        await updateTuyenDuong(routeToUpdate.id, routeUpdatePayload);
+
+        const normPromises = Object.keys(editedData.containerNorms).map(async containerKey => {
+          const newDinhMucValue = parseFloat(editedData.containerNorms[containerKey]) || 0;
+          const existingNorm = localRoadNorms.find(
+            norm => norm.ma_tuyen === editedData.id && norm.ma_loai_container === containerKey
+          );
+
+          if (existingNorm) {
+            if (existingNorm.dinh_muc !== newDinhMucValue) {
+              await updateRoadNorm(existingNorm.id, { ...existingNorm, dinh_muc: newDinhMucValue });
+            }
+          } else {
+            await createRoadNorm({
+              ma_tuyen: editedData.id,
+              ma_loai_container: containerKey,
+              dinh_muc: newDinhMucValue,
+              // Other fields like ma_cont might be derived by the backend or mock API from ma_loai_container
+            });
+          }
+        });
+
+        await Promise.all(normPromises);
+
+        // 4. Refetch all data to update UI from the 'source of truth'
+        await fetchAllData();
+
+        enqueueSnackbar('Dữ liệu đã được cập nhật thành công!', { variant: 'success' });
+        setEditingRowId(null);
+        setEditedData({});
+      } catch (err) {
+        logger.error('Failed to save DinhMucDiDuong data:', err);
+        let errorMessage = 'Lỗi khi cập nhật dữ liệu. Vui lòng thử lại.';
+        if (err.response && err.response.data && err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        enqueueSnackbar(errorMessage, { variant: 'error' });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [
+      editedData,
+      localRoutes,
+      localRoadNorms,
+      updateRoadNorm,
+      createRoadNorm,
+      fetchAllData,
+      enqueueSnackbar,
+    ]
+  );
 
   // Handle delete action - open dialog
   const handleDelete = rowData => {
@@ -90,27 +195,78 @@ const DinhMucDiDuong = () => {
   };
 
   // Render action buttons for each row
-  const renderActions = (_cellValue, rowData) => (
-    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      <EditButton
-        onClick={e => {
-          e.stopPropagation();
-          console.log('Edit:', rowData);
-        }}
-        size="small"
-      />
-      <DeleteButton
-        onClick={e => {
-          e.stopPropagation();
-          handleDelete(rowData); // Call new handleDelete with rowData
-        }}
-        size="small"
-        sx={{ ml: 1 }}
-      />
-    </Box>
-  );
+  const renderActions = (_cellValue, rowData) => {
+    const isCurrentlySavingThisRow = isSaving && editingRowId === rowData.id;
+    if (rowData.id === editingRowId) {
+      return (
+        <Box
+          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}
+        >
+          <IconButton
+            aria-label="confirm edit"
+            onClick={handleConfirmEdit} // Pass the function directly, event is implicitly passed
+            size="small"
+            color="primary"
+            disabled={isCurrentlySavingThisRow}
+          >
+            {isCurrentlySavingThisRow ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <CheckIcon fontSize="small" />
+            )}
+          </IconButton>
+          <DeleteButton
+            onClick={e => {
+              e.stopPropagation(); // Keep for delete to prevent row click if needed
+              handleDelete(rowData);
+            }}
+            size="small"
+            sx={{ ml: 1 }}
+            disabled // Always disable delete when in edit mode for this row
+          />
+        </Box>
+      );
+    }
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <IconButton
+          aria-label="edit"
+          onClick={e => handleEdit(e, rowData)}
+          size="small"
+          disabled={isSaving} // Disable edit button on other rows if any save is in progress
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+        <DeleteButton
+          onClick={e => {
+            e.stopPropagation();
+            handleDelete(rowData);
+          }}
+          size="small"
+          sx={{ ml: 1 }}
+          disabled={isSaving} // Disable delete button on other rows if any save is in progress
+        />
+      </Box>
+    );
+  };
 
   // Prepare columns for StandardTable
+  const handleInputChange = (e, field, containerKey = null) => {
+    const { value } = e.target;
+    setEditedData(prev => {
+      const newData = { ...prev };
+      if (containerKey) {
+        if (!newData.containerNorms) {
+          newData.containerNorms = {};
+        }
+        newData.containerNorms[containerKey] = value;
+      } else {
+        newData[field] = value;
+      }
+      return newData;
+    });
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -118,27 +274,76 @@ const DinhMucDiDuong = () => {
         label: 'Mã tuyến',
         width: '10%',
         sortable: true,
-        render: (_cellValue, rowData) => (
-          <Typography variant="body2" fontWeight={500}>
-            {rowData.ma_tuyen}
-          </Typography>
-        ),
+        render: (_cellValue, rowData) => {
+          if (rowData.id === editingRowId) {
+            return (
+              <TextField
+                value={editedData.ma_tuyen || ''}
+                onChange={e => handleInputChange(e, 'ma_tuyen')}
+                size="small"
+                variant="outlined"
+                onClick={e => e.stopPropagation()} // Prevent row click-outside when clicking input
+                inputProps={{
+                  style: { fontSize: '0.4rem', paddingTop: '0px', paddingBottom: '0px' },
+                }} // Very small text & no vertical padding
+                fullWidth
+              />
+            );
+          }
+          return (
+            <Typography variant="body2" fontWeight={500}>
+              {rowData.ma_tuyen}
+            </Typography>
+          );
+        },
       },
       {
         key: 'diem_di',
         label: 'Điểm đi',
         width: '10%',
         sortable: true,
-        render: (_cellValue, rowData) => <Typography variant="body2">{rowData.diem_di}</Typography>,
+        render: (_cellValue, rowData) => {
+          if (rowData.id === editingRowId) {
+            return (
+              <TextField
+                value={editedData.diem_di || ''}
+                onChange={e => handleInputChange(e, 'diem_di')}
+                size="small"
+                variant="outlined"
+                onClick={e => e.stopPropagation()}
+                inputProps={{
+                  style: { fontSize: '0.4rem', paddingTop: '0px', paddingBottom: '0px' },
+                }} // Very small text & minimal padding
+                fullWidth
+              />
+            );
+          }
+          return <Typography variant="body2">{rowData.diem_di}</Typography>;
+        },
       },
       {
         key: 'diem_den',
         label: 'Điểm đến',
         width: '20%',
         sortable: true,
-        render: (_cellValue, rowData) => (
-          <Typography variant="body2">{rowData.diem_den}</Typography>
-        ),
+        render: (_cellValue, rowData) => {
+          if (rowData.id === editingRowId) {
+            return (
+              <TextField
+                value={editedData.diem_den || ''}
+                onChange={e => handleInputChange(e, 'diem_den')}
+                size="small"
+                variant="outlined"
+                onClick={e => e.stopPropagation()}
+                inputProps={{
+                  style: { fontSize: '0.4rem', paddingTop: '0px', paddingBottom: '0px' },
+                }} // Very small text & no vertical padding
+                fullWidth
+              />
+            );
+          }
+          return <Typography variant="body2">{rowData.diem_den}</Typography>;
+        },
       },
       ...sortedContainerTypes.map(ct => ({
         key: `container_${ct.ma_loai_container}`,
@@ -146,10 +351,30 @@ const DinhMucDiDuong = () => {
         align: 'right',
         sortable: true,
         render: (_cellValue, rowData) => {
-          const normValue = rowData.containerNorms[ct.ma_loai_container];
+          const containerKey = ct.ma_loai_container;
+          if (rowData.id === editingRowId) {
+            const normValue = editedData.containerNorms?.[containerKey];
+            return (
+              <TextField
+                value={normValue !== undefined ? normValue : ''}
+                onChange={e => handleInputChange(e, 'containerNorms', containerKey)}
+                size="small"
+                variant="outlined"
+                type="number" // Assuming norms are numbers
+                onClick={e => e.stopPropagation()}
+                inputProps={{
+                  style: { fontSize: '0.4rem', paddingTop: '0px', paddingBottom: '0px' },
+                }} // Very small text & no vertical padding
+                fullWidth
+              />
+            );
+          }
+          const displayNormValue = rowData.containerNorms?.[containerKey];
           return (
             <Typography variant="body2">
-              {normValue !== undefined ? normValue.toLocaleString('vi-VN') : '-'}
+              {displayNormValue !== undefined
+                ? parseFloat(displayNormValue).toLocaleString('vi-VN')
+                : '-'}
             </Typography>
           );
         },
@@ -162,12 +387,47 @@ const DinhMucDiDuong = () => {
         render: renderActions,
       },
     ],
-    [sortedContainerTypes, renderActions]
+    [sortedContainerTypes, renderActions, editingRowId, editedData, handleInputChange]
   );
   // Transform data for StandardTable - group by routes and container types
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = event => {
+      if (
+        editingRowId &&
+        tableContainerRef.current &&
+        !tableContainerRef.current.contains(event.target)
+      ) {
+        // Clicked outside the table container while a row is being edited
+        setEditingRowId(null);
+        setEditedData({}); // Discard changes
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [editingRowId]);
+
+  // Handle ESC key press to cancel editing
+  useEffect(() => {
+    const handleKeyDown = event => {
+      if (event.key === 'Escape' && editingRowId) {
+        setEditingRowId(null);
+        setEditedData({});
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editingRowId, setEditingRowId, setEditedData]);
+
   const tableData = useMemo(() => {
-    // Create a map of routes
-    const routeMap = routes.reduce((acc, route) => {
+    // Create a map of routes from localRoutes
+    const routeMap = localRoutes.reduce((acc, route) => {
       acc[route.ma_so] = {
         id: route.ma_so,
         ma_tuyen: route.ma_so,
@@ -177,8 +437,8 @@ const DinhMucDiDuong = () => {
       };
       return acc;
     }, {});
-    // Fill in the norm values for each route and container type
-    roadNorms.forEach(norm => {
+    // Fill in the norm values for each route and container type from localRoadNorms
+    localRoadNorms.forEach(norm => {
       const routeKey = norm.ma_tuyen;
       const containerKey = norm.ma_loai_container;
       // If the route exists in our map
@@ -189,7 +449,7 @@ const DinhMucDiDuong = () => {
     });
     // Convert the map to an array for the table
     return Object.values(routeMap);
-  }, [routes, roadNorms]);
+  }, [localRoutes, localRoadNorms, sortedContainerTypes]); // Added sortedContainerTypes as it's used in column generation indirectly affecting table display logic
 
   // Filtered data by search term
   const filteredData = useMemo(() => {
@@ -205,9 +465,22 @@ const DinhMucDiDuong = () => {
 
   // Paginated data
   const paginatedData = useMemo(() => {
+    if (!tableData) return []; // Ensure tableData is available
+    const lowerSearchTerm = searchTerm.trim().toLowerCase();
+    const currentFilteredData = lowerSearchTerm
+      ? tableData.filter(
+          row =>
+            (row.ma_tuyen && row.ma_tuyen.toLowerCase().includes(lowerSearchTerm)) ||
+            (row.diem_di && row.diem_di.toLowerCase().includes(lowerSearchTerm)) ||
+            (row.diem_den && row.diem_den.toLowerCase().includes(lowerSearchTerm))
+          // Add search for norm values if needed
+        )
+      : tableData;
+
+    setFilteredCount(currentFilteredData.length); // Update count for pagination
     const start = page * rowsPerPage;
-    return filteredData.slice(start, start + rowsPerPage);
-  }, [filteredData, page, rowsPerPage]);
+    return currentFilteredData.slice(start, start + rowsPerPage);
+  }, [tableData, searchTerm, page, rowsPerPage]);
 
   const handlePageChange = (_event, newPage) => {
     setPage(newPage);
@@ -231,115 +504,101 @@ const DinhMucDiDuong = () => {
       <DinhMucDiDuongDeleteDialog
         open={deleteDialogOpen}
         rowData={itemToDelete}
-        containerTypes={sortedContainerTypes} // Pass sortedContainerTypes
+        containerTypes={sortedContainerTypes}
         onClose={handleCloseDeleteDialog}
         onConfirm={handleConfirmDelete}
         isLoading={isDeleting}
       />
-      <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
-        <Paper
-          sx={{
-            p: { xs: 1.5, md: 2 },
-            mb: 3,
-            boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
-          }}
-        >
-          {isLoading && (
-            <Box sx={{ width: '100%', minHeight: 200, p: 2 }}>
-              <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
-              {[...Array(5)].map((_, index) => (
-                <Skeleton
-                  key={index}
-                  variant="rectangular"
-                  width="100%"
-                  height={52}
-                  sx={{ mb: 0.5 }}
-                />
-              ))}
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                <CircularProgress size={24} sx={{ mr: 1 }} />
-                <Typography variant="body2">Đang tải dữ liệu...</Typography>
-              </Box>
-            </Box>
-          )}
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              Không thể tải dữ liệu định mức đi đường: {error}
-            </Alert>
-          )}
-          {!isLoading && !error && (
-            <>
-              <Box sx={{ mb: 2, width: '100%' }}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Tìm kiếm theo mã tuyến, điểm đi, điểm đến..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    sx: {
-                      borderRadius: '6px',
-                      height: 36,
-                      minHeight: 36,
-                      fontSize: '0.95rem',
-                    },
-                  }}
-                />
-              </Box>
-              <StandardTable
-                columns={columns}
-                data={paginatedData}
-                loading={isLoading}
-                emptyMessage={
-                  searchTerm
-                    ? `Không tìm thấy kết quả cho "${searchTerm}"`
-                    : 'Chưa có dữ liệu định mức đi đường'
-                }
-                rowKeyField="id"
-                pagination
-                page={page}
-                rowsPerPage={rowsPerPage}
-                totalCount={filteredData.length}
-                onPageChange={handlePageChange}
-                onRowsPerPageChange={handleRowsPerPageChange}
-                sx={{
-                  '& .MuiTableCell-root': {
-                    py: 1.5,
-                    px: 2,
-                  },
-                  '& .MuiTableHead-root': {
-                    backgroundColor: muiTheme.palette.grey[100],
-                  },
-                  '& .MuiTableRow-hover:hover': {
-                    backgroundColor: muiTheme.palette.action.hover,
-                  },
-                }}
+      <Paper
+        ref={tableContainerRef}
+        elevation={3}
+        sx={{ p: muiTheme.spacing(3), m: muiTheme.spacing(1), mt: 2 }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <SearchBar
+            value={searchTerm}
+            onChange={handleSearchChange}
+            placeholder="Tìm kiếm Mã tuyến, Điểm đi, Điểm đến..."
+            containerSx={{ width: '100%', mb: 2 }} // Ensure full width and apply margin
+            // fullWidth is true by default in SearchBar
+          />
+        </Box>
+
+        {isLoading && (
+          <Box
+            sx={{
+              width: '100%',
+              minHeight: 200,
+              p: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
+            {[...Array(5)].map((_, index) => (
+              <Skeleton
+                key={index}
+                variant="rectangular"
+                width="100%"
+                height={52}
+                sx={{ mb: 0.5 }}
               />
-            </>
-          )}
-        </Paper>
+            ))}
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 2 }}>
+              <CircularProgress size={24} sx={{ mr: 1 }} />
+              <Typography variant="body2">Đang tải dữ liệu...</Typography>
+            </Box>
+          </Box>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Không thể tải dữ liệu định mức đi đường: {error.message || JSON.stringify(error)}
+          </Alert>
+        )}
+
+        {!isLoading && !error && (
+          <>
+            {/* The duplicate search TextField that was here (lines 435-456 in previous view) has been removed. */}
+            <StandardTable
+              columns={columns}
+              data={paginatedData}
+              loading={isLoading} // Pass loading state to StandardTable if it supports it
+              emptyMessage={
+                searchTerm
+                  ? `Không tìm thấy kết quả cho "${searchTerm}"`
+                  : 'Chưa có dữ liệu định mức đi đường'
+              }
+              rowKeyField="id"
+              pagination
+              count={filteredCount} // Use state for filtered count
+              page={page} // Added page for pagination
+              rowsPerPage={rowsPerPage} // Added rowsPerPage for pagination
+              onPageChange={handlePageChange} // Added onPageChange for pagination
+              onRowsPerPageChange={handleRowsPerPageChange} // Added onRowsPerPageChange for pagination
+            />
+          </>
+        )}
+      </Paper>
+
+      {!isMobile && !isLoading && !error && (
         <Fab
           color="primary"
           aria-label="add"
-          onClick={handleAddNew}
           sx={{
             position: 'fixed',
-            bottom: 16,
-            right: 16,
-            ...(isMobile && {
-              bottom: 80, // Above mobile navigation
-            }),
+            bottom: muiTheme.spacing(4),
+            right: muiTheme.spacing(4),
           }}
+          onClick={handleAddNew}
         >
           <AddIcon />
         </Fab>
-      </Box>
+      )}
     </>
   );
 };
+
 export default DinhMucDiDuong;
