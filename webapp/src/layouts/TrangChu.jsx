@@ -155,12 +155,14 @@ const TrangChu = () => {
       {currentUser && (
         <div className="flex pt-12 w-full">
           {/* Fixed Sidebar for desktop */}
-          <div className={`hidden md:block fixed top-12 left-0 bottom-0 z-40 transition-transform duration-300 ease-in-out ${
-            desktopSidebarCollapsed ? '-translate-x-full' : 'translate-x-0'
-          }`}>
+          <div
+            className={`hidden md:block fixed top-12 left-0 bottom-0 z-40 transition-transform duration-300 ease-in-out ${
+              desktopSidebarCollapsed ? '-translate-x-full' : 'translate-x-0'
+            }`}
+          >
             <ThanhBen onNavItemClick={handleSidebarClose} />
           </div>
-          
+
           {/* Desktop Sidebar Toggle Button */}
           <button
             onClick={handleDesktopSidebarToggle}
@@ -204,9 +206,11 @@ const TrangChu = () => {
             </div>
           </div>
           {/* Main Content */}
-          <main className={`flex-1 min-h-screen bg-white w-full transition-all duration-300 ease-in-out ${
-            desktopSidebarCollapsed ? 'md:ml-0' : 'md:ml-64'
-          }`}>
+          <main
+            className={`flex-1 min-h-screen bg-white w-full transition-all duration-300 ease-in-out ${
+              desktopSidebarCollapsed ? 'md:ml-0' : 'md:ml-64'
+            }`}
+          >
             <div className="p-2 sm:p-4 w-full relative min-h-screen">
               <Outlet />
             </div>

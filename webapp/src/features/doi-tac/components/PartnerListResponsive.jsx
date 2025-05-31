@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-import StandardTable from '@/components/StandardTable'; 
+import StandardTable from '@/components/StandardTable';
 import { SearchBar } from '@/components';
 const PartnerListResponsive = ({
   partners = [],
@@ -37,7 +37,7 @@ const PartnerListResponsive = ({
   };
 
   // Handle rows per page change
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -57,10 +57,7 @@ const PartnerListResponsive = ({
 
   // Get current partners for the current page
   const paginatedPartners = useMemo(() => {
-    return filteredPartners.slice(
-      page * rowsPerPage,
-      page * rowsPerPage + rowsPerPage
-    );
+    return filteredPartners.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   }, [filteredPartners, page, rowsPerPage]);
 
   // Handle search input change

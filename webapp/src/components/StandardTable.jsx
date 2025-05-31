@@ -351,7 +351,7 @@ const StandardTable = ({
                 const handleRowClick = onRowClick ? () => onRowClick(row) : undefined;
                 // Extract rowId from row to prevent it from being passed to the DOM
                 const { rowId, ...restRow } = row;
-                
+
                 return (
                   <TableRow
                     key={row.id || index}

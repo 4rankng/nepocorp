@@ -30,56 +30,53 @@ const DesktopView = ({
   };
 
   // Handle rows per page change
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
   // Get current employees for the current page
   const paginatedEmployees = useMemo(() => {
-    return employees.slice(
-      page * rowsPerPage,
-      page * rowsPerPage + rowsPerPage
-    );
+    return employees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   }, [employees, page, rowsPerPage]);
   const columns = React.useMemo(
     () => [
-      { 
-        key: 'maNhanVien', 
-        label: 'MÃ NV', 
+      {
+        key: 'maNhanVien',
+        label: 'MÃ NV',
         minWidth: 100,
-        sortable: true 
+        sortable: true,
       },
-      { 
-        key: 'tenNhanVien', 
-        label: 'HỌ TÊN', 
+      {
+        key: 'tenNhanVien',
+        label: 'HỌ TÊN',
         minWidth: 170,
-        sortable: true 
+        sortable: true,
       },
-      { 
-        key: 'tenDangNhap', 
-        label: 'TÊN ĐĂNG NHẬP', 
+      {
+        key: 'tenDangNhap',
+        label: 'TÊN ĐĂNG NHẬP',
         minWidth: 150,
-        sortable: true 
+        sortable: true,
       },
-      { 
-        key: 'email', 
-        label: 'EMAIL', 
+      {
+        key: 'email',
+        label: 'EMAIL',
         minWidth: 170,
-        sortable: true 
+        sortable: true,
       },
-      { 
-        key: 'chucVu', 
-        label: 'CHỨC VỤ', 
+      {
+        key: 'chucVu',
+        label: 'CHỨC VỤ',
         minWidth: 120,
-        sortable: true 
-      }
+        sortable: true,
+      },
     ],
     []
   );
 
   // Render action buttons for each row
-  const renderActions = (row) => (
+  const renderActions = row => (
     <>
       <EditButton
         onClick={() => handleOpenModalForEdit(row)}

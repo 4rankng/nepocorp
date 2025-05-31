@@ -23,7 +23,7 @@ const CustomerListResponsive = ({
   };
 
   // Handle rows per page change
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -43,10 +43,7 @@ const CustomerListResponsive = ({
 
   // Get current customers for the current page
   const paginatedCustomers = useMemo(() => {
-    return filteredCustomers.slice(
-      page * rowsPerPage,
-      page * rowsPerPage + rowsPerPage
-    );
+    return filteredCustomers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   }, [filteredCustomers, page, rowsPerPage]);
   // Handle search input change
   const handleSearchChange = event => {

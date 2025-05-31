@@ -22,7 +22,7 @@ import StandardTable from '@/components/StandardTable';
 import DinhMucChoHangDialog from './DinhMucChoHangDialog'; // Assuming this dialog is suitable
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 // import { EditButton, DeleteButton } from '@/components/ActionButtons'; // These are now part of getChoHangTableColumns
-import useChoHangRecords from '../hooks/useChoHangRecords';
+import { useChoHang } from '../hooks/useChoHang';
 import { getChoHangTableColumns } from '../constants/choHangTableColumns';
 import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi'; // For CUD operations
 
@@ -48,7 +48,7 @@ const DinhMucChoHang = () => {
     selectedPlate,
     handleSearchChange,
     handlePlateChange: hookHandlePlateChange,
-  } = useChoHangRecords();
+  } = useChoHang();
 
   const [openAddEditDialog, setOpenAddEditDialog] = useState(false);
   const [isEdit, setIsEdit] = useState(false);

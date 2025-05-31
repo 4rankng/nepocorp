@@ -25,7 +25,7 @@ const DinhMucChoHangDialog = ({
   licensePlate,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Safety check to prevent rendering with undefined formData
   if (!formData) {
     return null;
@@ -71,7 +71,7 @@ const DinhMucChoHangDialog = ({
         }}
       >
         <Typography variant="h6" component="h2">
-          {isEdit ? 'Sửa định mức cho' : 'Thêm định mức cho'}
+          {isEdit ? 'Sửa định mức cho' : 'Thêm định mức chở hàng'}
           {licensePlate && ` ${licensePlate}`}
         </Typography>
         <IconButton edge="end" color="inherit" onClick={onClose} aria-label="close">

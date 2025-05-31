@@ -12,6 +12,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+
 const DinhMucVoRongDialog = ({
   open,
   isEdit,
@@ -25,6 +26,12 @@ const DinhMucVoRongDialog = ({
   licensePlate,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Safety check to prevent rendering with undefined formData
+  if (!formData) {
+    return null;
+  }
+
   const handleInternalSave = async () => {
     if (onValidateForm && !onValidateForm()) {
       return; // Validation failed
@@ -38,6 +45,7 @@ const DinhMucVoRongDialog = ({
       setIsSubmitting(false);
     }
   };
+
   return (
     <Dialog
       open={open}
@@ -89,7 +97,7 @@ const DinhMucVoRongDialog = ({
                 name="fromKm"
                 type="number"
                 value={formData.fromKm}
-                onChange={onInputChange}
+                onChange={e => onInputChange(e.target.name, e.target.value)}
                 error={!!errors.fromKm}
                 helperText={errors.fromKm}
                 InputProps={{
@@ -105,7 +113,7 @@ const DinhMucVoRongDialog = ({
                 name="toKm"
                 type="number"
                 value={formData.toKm}
-                onChange={onInputChange}
+                onChange={e => onInputChange(e.target.name, e.target.value)}
                 error={!!errors.toKm}
                 helperText={errors.toKm}
                 InputProps={{
@@ -122,7 +130,7 @@ const DinhMucVoRongDialog = ({
               name="standard"
               type="number"
               value={formData.standard}
-              onChange={onInputChange}
+              onChange={e => onInputChange(e.target.name, e.target.value)}
               error={!!errors.standard}
               helperText={errors.standard}
               InputProps={{
@@ -138,7 +146,7 @@ const DinhMucVoRongDialog = ({
               multiline
               rows={3}
               value={formData.note || ''}
-              onChange={onInputChange}
+              onChange={e => onInputChange(e.target.name, e.target.value)}
               placeholder="Nhập ghi chú về định mức (nếu có)"
             />
           </Box>
@@ -169,4 +177,5 @@ const DinhMucVoRongDialog = ({
     </Dialog>
   );
 };
+
 export default DinhMucVoRongDialog;

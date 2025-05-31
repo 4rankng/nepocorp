@@ -1,214 +1,372 @@
-import React, { useState } from 'react';
-import { Box, Typography, CircularProgress, Paper, Alert, useTheme } from '@mui/material';
-import { SearchBar } from '@components';
-import DinhMucTheoBienSoXeSection from './DinhMucTheoBienSoXeSection';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Box,
+  Paper,
+  CircularProgress,
+  Alert,
+  Snackbar,
+  Fab,
+  Zoom,
+  Typography,
+  useTheme,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
+} from '@mui/material';
+import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
+
+import StandardTable from '@/components/StandardTable';
 import DinhMucVoRongDialog from './DinhMucVoRongDialog';
-import { ConfirmationDialog } from '@components';
-import { useVoRong } from '../hooks';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { useVoRong } from '../hooks/useVoRong';
+import { getVoRongTableColumns } from '../constants/voRongTableColumns';
+
+const initialFormData = {
+  bienSoXe: '',
+  fromKm: '',
+  toKm: '',
+  standard: '',
+  note: '',
+  id: null, // For editing
+};
+
 const DinhMucVoRong = () => {
   const muiTheme = useTheme();
-  const [searchQuery, setSearchQuery] = useState('');
-  // Dialog states
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [currentStandard, setCurrentStandard] = useState(null);
-  const [deleteDetails, setDeleteDetails] = useState({ id: null, type: null, details: '' });
-  // Form states
-  const [formData, setFormData] = useState({
-    bienSoXe: '',
-    fromKm: '',
-    toKm: '',
-    standard: '',
-    note: '',
-  });
-  const [errors, setErrors] = useState({});
-  const [selectedLicensePlate, setSelectedLicensePlate] = useState('');
   const {
-    dinhMucVoRong,
-    availableLicensePlates,
+    voRongRecords,
     isLoading,
     error,
+    fetchData: refetchVoRongData,
+    licensePlates,
+    pagination,
+    searchTerm,
+    selectedPlate,
+    handleSearchChange,
+    handlePlateChange: hookHandlePlateChange,
     createVoRongStandard,
     updateVoRongStandard,
     deleteVoRongStandard,
   } = useVoRong();
-  // Convert the license plates data to match the expected format
-  const activeLicensePlatesWithStandards = availableLicensePlates;
-  const openAddNewDinhMucDialog = params => {
-    setCurrentStandard(null);
-    setSelectedLicensePlate(params?.licensePlate || '');
+
+  const [openAddEditDialog, setOpenAddEditDialog] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [currentRecord, setCurrentRecord] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: '' });
+  const [formData, setFormData] = useState(initialFormData);
+  const [formErrors, setFormErrors] = useState({});
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const columns = getVoRongTableColumns(
+    record => handleOpenEditDialog(record),
+    record => handleDeleteClick(record),
+    pagination.page,
+    pagination.pageSize
+  );
+
+  const handleOpenAddDialog = () => {
+    setIsEdit(false);
+    setCurrentRecord(null);
+    setFormData(initialFormData);
+    setFormErrors({});
+    setOpenAddEditDialog(true);
+  };
+
+  const handleOpenEditDialog = record => {
+    setIsEdit(true);
+    setCurrentRecord(record);
     setFormData({
-      bienSoXe: params?.licensePlate || '',
-      fromKm: '',
-      toKm: '',
-      standard: '',
-      note: '',
+      id: record.id,
+      bienSoXe: record.bienSoXe || '',
+      fromKm: record.tuKm?.toString() || '', // API: tuKm, Dialog: fromKm
+      toKm: record.denKm?.toString() || '', // API: denKm, Dialog: toKm
+      standard: record.l_km?.toString() || '', // API: l_km, Dialog: standard
+      note: record.ghiChu || '', // API: ghiChu, Dialog: note
     });
-    setErrors({});
-    setAddDialogOpen(true);
+    setFormErrors({});
+    setOpenAddEditDialog(true);
   };
-  const openEditDinhMucDialog = params => {
-    const { standard, licensePlate } = params;
-    setCurrentStandard(standard);
-    setSelectedLicensePlate(licensePlate);
-    setFormData({
-      bienSoXe: licensePlate,
-      fromKm: standard.fromKm?.toString() || '',
-      toKm: standard.toKm?.toString() || '',
-      standard: standard.standard?.toString() || '',
-      note: standard.note || '',
-    });
-    setErrors({});
-    setEditDialogOpen(true);
-  };
-  const openDeleteDialog = (id, type, details) => {
-    setDeleteDetails({ id, type, details });
-    setDeleteDialogOpen(true);
-  };
-  const handleTriggerDeleteDialog = (id, type, item, licensePlate) => {
-    let detailsText = '';
-    const plateIdText = licensePlate ? `cho BSX ${licensePlate}` : '';
-    if (type === 'km_vo') {
-      detailsText = `định mức vỏ (Từ ${item.fromKm}km đến ${item.toKm}km) ${plateIdText}`;
-    } else {
-      detailsText = 'định mức đã chọn'; // Fallback
-    }
-    openDeleteDialog(id, type, detailsText);
-  };
-  // Form handlers
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
+
+  const handleCloseDialog = useCallback(() => {
+    setOpenAddEditDialog(false);
+    setIsEdit(false);
+    setCurrentRecord(null);
+    setFormData(initialFormData);
+    setFormErrors({});
+  }, []);
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.bienSoXe) newErrors.bienSoXe = 'Biển số xe không được để trống';
     if (!formData.fromKm) newErrors.fromKm = 'Số km bắt đầu không được để trống';
+    else if (isNaN(parseFloat(formData.fromKm))) newErrors.fromKm = 'Số km bắt đầu phải là số';
     if (!formData.toKm) newErrors.toKm = 'Số km kết thúc không được để trống';
+    else if (isNaN(parseFloat(formData.toKm))) newErrors.toKm = 'Số km kết thúc phải là số';
     if (!formData.standard) newErrors.standard = 'Định mức không được để trống';
-    if (formData.fromKm && formData.toKm) {
-      const fromKm = parseFloat(formData.fromKm);
-      const toKm = parseFloat(formData.toKm);
-      if (fromKm >= toKm) {
+    else if (isNaN(parseFloat(formData.standard))) newErrors.standard = 'Định mức phải là số';
+
+    if (
+      formData.fromKm &&
+      formData.toKm &&
+      !isNaN(parseFloat(formData.fromKm)) &&
+      !isNaN(parseFloat(formData.toKm))
+    ) {
+      const fromKmVal = parseFloat(formData.fromKm);
+      const toKmVal = parseFloat(formData.toKm);
+      if (fromKmVal >= toKmVal) {
         newErrors.toKm = 'Số km kết thúc phải lớn hơn số km bắt đầu';
       }
     }
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   const handleSave = async () => {
     if (!validateForm()) return;
+
+    setIsSubmitting(true);
     try {
-      if (currentStandard) {
-        await updateVoRongStandard(currentStandard.id, formData);
-        setEditDialogOpen(false);
+      if (isEdit && currentRecord?.id) {
+        await updateVoRongStandard(currentRecord.id, formData);
       } else {
         await createVoRongStandard(formData);
-        setAddDialogOpen(false);
       }
-      // Reset form
-      setFormData({
-        bienSoXe: '',
-        fromKm: '',
-        toKm: '',
-        standard: '',
-        note: '',
+
+      setSnackbar({
+        open: true,
+        message: isEdit ? 'Cập nhật thành công!' : 'Thêm mới thành công!',
+        severity: 'success',
       });
+      handleCloseDialog();
     } catch (err) {
-      console.error('Error saving định mức:', err);
+      console.error('Error saving Dinh Muc Vo Rong:', err);
+      setSnackbar({
+        open: true,
+        message: err.message || 'Đã có lỗi xảy ra khi lưu.',
+        severity: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  const handleDelete = async () => {
-    try {
-      await deleteVoRongStandard(deleteDetails.id);
-      setDeleteDialogOpen(false);
-    } catch (err) {
-      console.error('Error deleting định mức:', err);
-    }
-  };
-  const handleCloseDialog = () => {
-    setAddDialogOpen(false);
-    setEditDialogOpen(false);
-    setFormData({
-      bienSoXe: '',
-      fromKm: '',
-      toKm: '',
-      standard: '',
-      note: '',
+
+  const handleDeleteClick = record => {
+    setDeleteDialog({
+      open: true,
+      recordId: record.id,
+      details: `Bạn có chắc chắn muốn xóa định mức vỏ rỗng cho BSX ${record.bienSoXe} (Từ ${record.tuKm}km đến ${record.denKm}km)?`,
     });
-    setErrors({});
   };
+
+  const handleDeleteClose = () => {
+    setDeleteDialog({ open: false, recordId: null, details: '' });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.recordId) return;
+    setIsSubmitting(true);
+    try {
+      await deleteVoRongStandard(deleteDialog.recordId);
+      setSnackbar({ open: true, message: 'Xóa thành công!', severity: 'success' });
+    } catch (err) {
+      console.error('Error deleting Dinh Muc Vo Rong:', err);
+      setSnackbar({ open: true, message: err.message || 'Lỗi khi xóa.', severity: 'error' });
+    } finally {
+      setIsSubmitting(false);
+      handleDeleteClose();
+    }
+  };
+
+  const handleDialogInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  // Handler for license plate dropdown
+  const handlePlateChange = event => {
+    const plate = event.target.value;
+    if (plate === 'Tất cả') {
+      hookHandlePlateChange('');
+    } else {
+      hookHandlePlateChange(plate);
+    }
+  };
+
+  // Effect to update form when currentRecord changes for edit dialog
+  useEffect(() => {
+    if (isEdit && currentRecord) {
+      setFormData({
+        id: currentRecord.id,
+        bienSoXe: currentRecord.bienSoXe || '',
+        fromKm: currentRecord.tuKm?.toString() || '',
+        toKm: currentRecord.denKm?.toString() || '',
+        standard: currentRecord.l_km?.toString() || '',
+        note: currentRecord.ghiChu || '',
+      });
+    } else if (!isEdit) {
+      setFormData(initialFormData);
+    }
+  }, [isEdit, currentRecord]);
+
+  if (isLoading && !voRongRecords.length && !error && !searchTerm) {
+    // Show initial loading only
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Paper
       sx={{
         p: { xs: 1.5, md: 2 },
         mb: 3,
         boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
+        position: 'relative',
+        pb: { xs: 10, sm: 11 },
       }}
     >
-      {isLoading ? (
-        <Box
-          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 150 }}
-        >
-          <CircularProgress />
-          <Typography sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
-        </Box>
-      ) : error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error.message || error.toString()}
-        </Alert>
-      ) : (
-        <Box>
-          <Box
-            sx={{
-              mb: 2,
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <TextField
+          sx={{ width: '50%' }}
+          variant="outlined"
+          placeholder="Tìm kiếm theo biển số, ghi chú..."
+          value={searchTerm}
+          onChange={event => handleSearchChange(event.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            sx: {
+              borderRadius: '6px',
+              height: 36,
+              minHeight: 36,
+              fontSize: '0.95rem',
+            },
+          }}
+        />
+        <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
+          <InputLabel id="plate-select-label">Biển số xe</InputLabel>
+          <Select
+            labelId="plate-select-label"
+            id="plate-select"
+            value={selectedPlate || 'Tất cả'}
+            onChange={handlePlateChange}
+            label="Biển số xe"
+            renderValue={selected => {
+              if (!selected || selected === 'Tất cả') return 'Tất cả';
+              return selected;
             }}
           >
-            <SearchBar
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm biển số xe..."
-            />
-          </Box>
-          <DinhMucTheoBienSoXeSection
-            dinhMucHang={[]} // Empty array since we're only showing km_vo
-            dinhMucVo={dinhMucVoRong}
-            activeLicensePlatesWithStandards={activeLicensePlatesWithStandards}
-            isLoading={isLoading}
-            error={error ? error.message || 'Lỗi không xác định' : null}
-            searchQuery={searchQuery}
-            onOpenAddNewDialog={openAddNewDinhMucDialog}
-            onOpenEditDialog={openEditDinhMucDialog}
-            onOpenDeleteDialog={handleTriggerDeleteDialog}
-            normTypeFilter="km_vo" // Only show km_vo standards
-          />
-        </Box>
+            <MenuItem key="all" value="Tất cả">
+              <em>Tất cả</em>
+            </MenuItem>
+            {licensePlates.map(plate => (
+              <MenuItem key={plate.id} value={plate.bien_so}>
+                {plate.bien_so}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      {error && !isLoading && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
       )}
-      {/* Add/Edit Dialog */}
+
+      <StandardTable
+        columns={columns}
+        data={voRongRecords}
+        loading={isLoading}
+        error={error}
+        emptyMessage={
+          searchTerm || selectedPlate
+            ? `Không tìm thấy kết quả cho "${selectedPlate || searchTerm}"`
+            : 'Không có dữ liệu định mức vỏ rỗng.'
+        }
+        pagination={true}
+        page={pagination.page}
+        rowsPerPage={pagination.pageSize}
+        totalCount={pagination.total}
+        rowKeyField="id"
+        onPageChange={(_, newPage) => {
+          pagination.onPageChange(_, newPage);
+        }}
+        onRowsPerPageChange={event => {
+          pagination.onRowsPerPageChange(event);
+        }}
+      />
+
       <DinhMucVoRongDialog
-        open={addDialogOpen || editDialogOpen}
-        isEdit={!!currentStandard}
+        open={openAddEditDialog}
+        isEdit={isEdit}
         formData={formData}
-        errors={errors}
-        licensePlate={selectedLicensePlate}
+        errors={formErrors}
+        licensePlate={formData.bienSoXe}
         onClose={handleCloseDialog}
         onSave={handleSave}
-        onInputChange={handleInputChange}
-        onValidateForm={validateForm}
+        onInputChange={handleDialogInputChange}
+        isLoading={isSubmitting}
       />
-      {/* Delete Confirmation Dialog */}
+
       <ConfirmationDialog
-        open={deleteDialogOpen}
+        open={deleteDialog.open}
+        onClose={handleDeleteClose}
+        onConfirm={handleDeleteConfirm}
         title="Xác nhận xóa"
-        message={`Bạn có chắc chắn muốn xóa ${deleteDetails.details}?`}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteDialogOpen(false)}
+        contentText={deleteDialog.details}
+        confirmButtonText="Xóa"
+        cancelButtonText="Hủy"
+        isLoading={isSubmitting}
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <Zoom in={!isSubmitting}>
+        <Fab
+          color="primary"
+          aria-label="Thêm mới"
+          onClick={handleOpenAddDialog}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+            boxShadow: 3,
+            '&:hover': {
+              boxShadow: 6,
+            },
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Zoom>
     </Paper>
   );
 };
+
 export default DinhMucVoRong;
