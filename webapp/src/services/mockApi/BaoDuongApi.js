@@ -162,4 +162,13 @@ export const baoDuongApi = {
       withSingleItem(() => data.length, ErrorCodes.NOT_FOUND, 'Không thể lấy số lượng lốp xe')
     );
   },
+  getByBienSo: async (bienSo, page = 1, limit = 10) => {
+    return mockApiCall(() => {
+      const filtered = data.filter(r => r.bien_so === bienSo);
+      return withPagination(() => filtered, {
+        page: Math.max(1, parseInt(page, 10) || 1),
+        limit: Math.max(1, parseInt(limit, 10) || 10),
+      });
+    });
+  },
 };
