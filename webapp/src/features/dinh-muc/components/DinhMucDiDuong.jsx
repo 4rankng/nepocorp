@@ -1,4 +1,8 @@
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { Search as SearchIcon } from '@mui/icons-material';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   Box,
   Typography,
@@ -7,19 +11,45 @@ import {
   CircularProgress,
   Alert,
   Skeleton,
-  TextField, // Re-added for inline editing
+  TextField,
   Fab,
   useMediaQuery,
+  IconButton,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePagination,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+    InputAdornment,
+  DialogContent,
+  DialogActions,
+  Button,
+  Snackbar,
 } from '@mui/material';
-import { Add as AddIcon, Check as CheckIcon, Edit as EditIcon } from '@mui/icons-material';
-import { StandardTable, DeleteButton, SearchBar } from '@components'; // EditButton will be handled by IconButton now
-import IconButton from '@mui/material/IconButton';
+import {
+  Add as AddIcon,
+  Check as CheckIcon,
+  Edit as EditIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import { useDiDuong } from '../hooks/useDiDuong';
 import { updateTuyenDuong } from '@services/mockApi/tuyenDuongApi';
 import logger from '@services/logger';
 import { useSnackbar } from 'notistack';
 
-import DinhMucDiDuongDeleteDialog from './DinhMucDiDuongDeleteDialog'; // Import the new dialog
+// Define validation schema with Zod
+const routeSchema = z.object({
+  ma_tuyen: z.string().min(1, 'Mã tuyến là bắt buộc'),
+  diem_di: z.string().min(1, 'Điểm đi là bắt buộc'),
+  diem_den: z.string().min(1, 'Điểm đến là bắt buộc'),
+  containerNorms: z.record(z.number().min(0, 'Giá trị phải lớn hơn hoặc bằng 0')),
+});
 
 const DinhMucDiDuong = () => {
   const muiTheme = useTheme();
@@ -31,402 +61,59 @@ const DinhMucDiDuong = () => {
     error,
     deleteTuyenDuongAndNorms,
     fetchAllData,
-    createRoadNorm, // Added from useDiDuong
-    updateRoadNorm, // Added from useDiDuong
+    createRoadNorm,
+    updateRoadNorm,
   } = useDiDuong();
-  const { enqueueSnackbar } = useSnackbar();
 
+  const { enqueueSnackbar } = useSnackbar();
   const [localRoutes, setLocalRoutes] = useState([]);
   const [localRoadNorms, setLocalRoadNorms] = useState([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editedData, setEditedData] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
+  // Initialize form
+  const methods = useForm({
+    resolver: zodResolver(routeSchema),
+    defaultValues: {
+      ma_tuyen: '',
+      diem_di: '',
+      diem_den: '',
+      containerNorms: {},
+    },
+  });
+
+  const {
+    reset,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods;
+
+  // Update local state when data loads
   useEffect(() => {
     if (hookRoutes) {
-      setLocalRoutes(JSON.parse(JSON.stringify(hookRoutes))); // Deep copy
+      setLocalRoutes([...hookRoutes]);
     }
   }, [hookRoutes]);
 
   useEffect(() => {
     if (hookRoadNorms) {
-      setLocalRoadNorms(JSON.parse(JSON.stringify(hookRoadNorms))); // Deep copy
+      setLocalRoadNorms([...hookRoadNorms]);
     }
   }, [hookRoadNorms]);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  // Pagination state
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  // Search state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredCount, setFilteredCount] = useState(0);
-  // Editing state
-  const [editingRowId, setEditingRowId] = useState(null);
-  const [editedData, setEditedData] = useState({});
-  const [isSaving, setIsSaving] = useState(false);
-  const tableContainerRef = useRef(null);
-  // Sort container types by name (e.g., "20'", "40'") for consistent column order
-  const sortedContainerTypes = useMemo(() => {
-    return [...containerTypes].sort((a, b) => {
-      // Extract numbers for sorting, e.g., 20 from "20'"
-      const numA = parseInt(a.ten_loai_container, 10) || 0;
-      const numB = parseInt(b.ten_loai_container, 10) || 0;
-      return numA - numB;
-    });
-  }, [containerTypes]);
-  // Handle starting edit action
-  const handleEdit = (e, rowData) => {
-    e.stopPropagation();
-    setEditingRowId(rowData.id);
-    // Deep copy to avoid mutating original tableData, especially nested containerNorms
-    setEditedData(JSON.parse(JSON.stringify(rowData)));
-  };
 
-  // Handle confirm edit action
-  const handleConfirmEdit = useCallback(
-    async e => {
-      e.stopPropagation();
-      if (!editedData || !editedData.id) {
-        logger.warn('handleConfirmEdit called with no editedData or no ID.');
-        return;
-      }
-
-      setIsSaving(true);
-      try {
-        const routeToUpdate = localRoutes.find(r => r.ma_so === editedData.id);
-        if (!routeToUpdate || !routeToUpdate.id) {
-          throw new Error(
-            `Route with ma_so ${editedData.id} not found or has no numeric ID for update.`
-          );
-        }
-
-        const routeUpdatePayload = {
-          diem_di: editedData.diem_di,
-          diem_den: editedData.diem_den,
-        };
-        await updateTuyenDuong(routeToUpdate.id, routeUpdatePayload);
-
-        const normPromises = Object.keys(editedData.containerNorms).map(async containerKey => {
-          const newDinhMucValue = parseFloat(editedData.containerNorms[containerKey]) || 0;
-          const existingNorm = localRoadNorms.find(
-            norm => norm.ma_tuyen === editedData.id && norm.ma_loai_container === containerKey
-          );
-
-          if (existingNorm) {
-            if (existingNorm.dinh_muc !== newDinhMucValue) {
-              await updateRoadNorm(existingNorm.id, { ...existingNorm, dinh_muc: newDinhMucValue });
-            }
-          } else {
-            await createRoadNorm({
-              ma_tuyen: editedData.id,
-              ma_loai_container: containerKey,
-              dinh_muc: newDinhMucValue,
-              // Other fields like ma_cont might be derived by the backend or mock API from ma_loai_container
-            });
-          }
-        });
-
-        await Promise.all(normPromises);
-
-        // 4. Refetch all data to update UI from the 'source of truth'
-        await fetchAllData();
-
-        enqueueSnackbar('Dữ liệu đã được cập nhật thành công!', { variant: 'success' });
-        setEditingRowId(null);
-        setEditedData({});
-      } catch (err) {
-        logger.error('Failed to save DinhMucDiDuong data:', err);
-        let errorMessage = 'Lỗi khi cập nhật dữ liệu. Vui lòng thử lại.';
-        if (err.response && err.response.data && err.response.data.message) {
-          errorMessage = err.response.data.message;
-        } else if (err.message) {
-          errorMessage = err.message;
-        }
-        enqueueSnackbar(errorMessage, { variant: 'error' });
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [
-      editedData,
-      localRoutes,
-      localRoadNorms,
-      updateRoadNorm,
-      createRoadNorm,
-      fetchAllData,
-      enqueueSnackbar,
-    ]
-  );
-
-  // Handle delete action - open dialog
-  const handleDelete = rowData => {
-    setItemToDelete(rowData);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!itemToDelete || !itemToDelete.id) {
-      // console.warn('Item to delete or its ID is missing.'); // Warning removed, should be handled by logger
-      // enqueueSnackbar('Không có mục nào được chọn để xóa hoặc thiếu ID.', { variant: 'warning' });
-      setDeleteDialogOpen(false);
-      setItemToDelete(null);
-      return;
-    }
-
-    try {
-      // Call the new hook function to delete the route and all its norms
-      await deleteTuyenDuongAndNorms(itemToDelete.id);
-      // enqueueSnackbar('Đã xóa tuyến đường và các định mức liên quan thành công!', { variant: 'success' });
-    } catch (error) {
-      // console.error('Failed to delete route and its norms:', error); // Error removed, should be handled by logger
-      // enqueueSnackbar(
-      //   `Lỗi xóa tuyến đường: ${error.message || 'Unknown error'}`,
-      //   { variant: 'error' }
-      // );
-    } finally {
-      setDeleteDialogOpen(false);
-      setItemToDelete(null);
-      // Data updates are handled by the useDiDuong hook
-    }
-  };
-
-  // Render action buttons for each row
-  const renderActions = (_cellValue, rowData) => {
-    const isCurrentlySavingThisRow = isSaving && editingRowId === rowData.id;
-    if (rowData.id === editingRowId) {
-      return (
-        <Box
-          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}
-        >
-          <IconButton
-            aria-label="confirm edit"
-            onClick={handleConfirmEdit} // Pass the function directly, event is implicitly passed
-            size="small"
-            color="primary"
-            disabled={isCurrentlySavingThisRow}
-          >
-            {isCurrentlySavingThisRow ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              <CheckIcon fontSize="small" />
-            )}
-          </IconButton>
-          <DeleteButton
-            onClick={e => {
-              e.stopPropagation(); // Keep for delete to prevent row click if needed
-              handleDelete(rowData);
-            }}
-            size="small"
-            sx={{ ml: 1 }}
-            disabled // Always disable delete when in edit mode for this row
-          />
-        </Box>
-      );
-    }
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <IconButton
-          aria-label="edit"
-          onClick={e => handleEdit(e, rowData)}
-          size="small"
-          disabled={isSaving} // Disable edit button on other rows if any save is in progress
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
-        <DeleteButton
-          onClick={e => {
-            e.stopPropagation();
-            handleDelete(rowData);
-          }}
-          size="small"
-          sx={{ ml: 1 }}
-          disabled={isSaving} // Disable delete button on other rows if any save is in progress
-        />
-      </Box>
-    );
-  };
-
-  // Prepare columns for StandardTable
-  const handleInputChange = (e, field, containerKey = null) => {
-    const { value } = e.target;
-    setEditedData(prev => {
-      const newData = { ...prev };
-      if (containerKey) {
-        if (!newData.containerNorms) {
-          newData.containerNorms = {};
-        }
-        newData.containerNorms[containerKey] = value;
-      } else {
-        newData[field] = value;
-      }
-      return newData;
-    });
-  };
-
-  const columns = useMemo(
-    () => [
-      {
-        key: 'ma_tuyen',
-        label: 'Mã tuyến',
-        width: '10%',
-        sortable: true,
-        render: (_cellValue, rowData) => {
-          if (rowData.id === editingRowId) {
-            return (
-              <TextField
-                value={editedData.ma_tuyen || ''}
-                onChange={e => handleInputChange(e, 'ma_tuyen')}
-                size="small"
-                variant="outlined"
-                onClick={e => e.stopPropagation()} // Prevent row click-outside when clicking input
-                inputProps={{
-                  style: { fontSize: '0.4rem', paddingTop: '0px', paddingBottom: '0px' },
-                }} // Very small text & no vertical padding
-                fullWidth
-              />
-            );
-          }
-          return (
-            <Typography variant="body2" fontWeight={500}>
-              {rowData.ma_tuyen}
-            </Typography>
-          );
-        },
-      },
-      {
-        key: 'diem_di',
-        label: 'Điểm đi',
-        width: '10%',
-        sortable: true,
-        render: (_cellValue, rowData) => {
-          if (rowData.id === editingRowId) {
-            return (
-              <TextField
-                value={editedData.diem_di || ''}
-                onChange={e => handleInputChange(e, 'diem_di')}
-                size="small"
-                variant="outlined"
-                onClick={e => e.stopPropagation()}
-                inputProps={{
-                  style: { fontSize: '0.4rem', paddingTop: '0px', paddingBottom: '0px' },
-                }} // Very small text & minimal padding
-                fullWidth
-              />
-            );
-          }
-          return <Typography variant="body2">{rowData.diem_di}</Typography>;
-        },
-      },
-      {
-        key: 'diem_den',
-        label: 'Điểm đến',
-        width: '20%',
-        sortable: true,
-        render: (_cellValue, rowData) => {
-          if (rowData.id === editingRowId) {
-            return (
-              <TextField
-                value={editedData.diem_den || ''}
-                onChange={e => handleInputChange(e, 'diem_den')}
-                size="small"
-                variant="outlined"
-                onClick={e => e.stopPropagation()}
-                inputProps={{
-                  style: { fontSize: '0.4rem', paddingTop: '0px', paddingBottom: '0px' },
-                }} // Very small text & no vertical padding
-                fullWidth
-              />
-            );
-          }
-          return <Typography variant="body2">{rowData.diem_den}</Typography>;
-        },
-      },
-      ...sortedContainerTypes.map(ct => ({
-        key: `container_${ct.ma_loai_container}`,
-        label: ct.ten_loai_container,
-        align: 'right',
-        sortable: true,
-        render: (_cellValue, rowData) => {
-          const containerKey = ct.ma_loai_container;
-          if (rowData.id === editingRowId) {
-            const normValue = editedData.containerNorms?.[containerKey];
-            return (
-              <TextField
-                value={normValue !== undefined ? normValue : ''}
-                onChange={e => handleInputChange(e, 'containerNorms', containerKey)}
-                size="small"
-                variant="outlined"
-                type="number" // Assuming norms are numbers
-                onClick={e => e.stopPropagation()}
-                inputProps={{
-                  style: { fontSize: '0.4rem', paddingTop: '0px', paddingBottom: '0px' },
-                }} // Very small text & no vertical padding
-                fullWidth
-              />
-            );
-          }
-          const displayNormValue = rowData.containerNorms?.[containerKey];
-          return (
-            <Typography variant="body2">
-              {displayNormValue !== undefined
-                ? parseFloat(displayNormValue).toLocaleString('vi-VN')
-                : '-'}
-            </Typography>
-          );
-        },
-      })),
-      {
-        key: 'actions',
-        label: 'Thao tác',
-        width: '15%',
-        align: 'center',
-        render: renderActions,
-      },
-    ],
-    [sortedContainerTypes, renderActions, editingRowId, editedData, handleInputChange]
-  );
-  // Transform data for StandardTable - group by routes and container types
-  // Click outside handler
-  useEffect(() => {
-    const handleClickOutside = event => {
-      if (
-        editingRowId &&
-        tableContainerRef.current &&
-        !tableContainerRef.current.contains(event.target)
-      ) {
-        // Clicked outside the table container while a row is being edited
-        setEditingRowId(null);
-        setEditedData({}); // Discard changes
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [editingRowId]);
-
-  // Handle ESC key press to cancel editing
-  useEffect(() => {
-    const handleKeyDown = event => {
-      if (event.key === 'Escape' && editingRowId) {
-        setEditingRowId(null);
-        setEditedData({});
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [editingRowId, setEditingRowId, setEditedData]);
-
+  // Prepare table data
   const tableData = useMemo(() => {
-    // Create a map of routes from localRoutes
+    if (!localRoutes.length) return [];
+
     const routeMap = localRoutes.reduce((acc, route) => {
       acc[route.ma_so] = {
         id: route.ma_so,
@@ -437,21 +124,17 @@ const DinhMucDiDuong = () => {
       };
       return acc;
     }, {});
-    // Fill in the norm values for each route and container type from localRoadNorms
+
     localRoadNorms.forEach(norm => {
-      const routeKey = norm.ma_tuyen;
-      const containerKey = norm.ma_loai_container;
-      // If the route exists in our map
-      if (routeMap[routeKey]) {
-        // Add the norm value for this container type
-        routeMap[routeKey].containerNorms[containerKey] = norm.dinh_muc;
+      if (routeMap[norm.ma_tuyen]) {
+        routeMap[norm.ma_tuyen].containerNorms[norm.ma_loai_container] = norm.dinh_muc;
       }
     });
-    // Convert the map to an array for the table
-    return Object.values(routeMap);
-  }, [localRoutes, localRoadNorms, sortedContainerTypes]); // Added sortedContainerTypes as it's used in column generation indirectly affecting table display logic
 
-  // Filtered data by search term
+    return Object.values(routeMap);
+  }, [localRoutes, localRoadNorms]);
+
+  // Filter data based on search term
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) return tableData;
     const lower = searchTerm.trim().toLowerCase();
@@ -463,125 +146,455 @@ const DinhMucDiDuong = () => {
     );
   }, [tableData, searchTerm]);
 
-  // Paginated data
+  // Paginate data
   const paginatedData = useMemo(() => {
-    if (!tableData) return []; // Ensure tableData is available
-    const lowerSearchTerm = searchTerm.trim().toLowerCase();
-    const currentFilteredData = lowerSearchTerm
-      ? tableData.filter(
-          row =>
-            (row.ma_tuyen && row.ma_tuyen.toLowerCase().includes(lowerSearchTerm)) ||
-            (row.diem_di && row.diem_di.toLowerCase().includes(lowerSearchTerm)) ||
-            (row.diem_den && row.diem_den.toLowerCase().includes(lowerSearchTerm))
-          // Add search for norm values if needed
-        )
-      : tableData;
+    const start = pagination.pageIndex * pagination.pageSize;
+    return filteredData.slice(start, start + pagination.pageSize);
+  }, [filteredData, pagination]);
 
-    setFilteredCount(currentFilteredData.length); // Update count for pagination
-    const start = page * rowsPerPage;
-    return currentFilteredData.slice(start, start + rowsPerPage);
-  }, [tableData, searchTerm, page, rowsPerPage]);
+  // Handle form submission
+  const onSubmit = async (data) => {
+    try {
+      // Check if this is an edit or create
+      const isEdit = data.id;
 
-  const handlePageChange = (_event, newPage) => {
-    setPage(newPage);
-  };
-  const handleRowsPerPageChange = event => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-  const handleSearchChange = event => {
-    setSearchTerm(event.target.value);
-    setPage(0);
-  };
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+      if (isEdit) {
+        // Update existing route
+        await updateTuyenDuong(data.id, {
+          diem_di: data.diem_di,
+          diem_den: data.diem_den,
+        });
 
-  const handleAddNew = () => {
-    // TODO: Implement add new functionality
+        // Update norms
+        const normPromises = Object.entries(data.containerNorms).map(
+          async ([containerKey, value]) => {
+            const existingNorm = localRoadNorms.find(
+              norm => norm.ma_tuyen === data.id && norm.ma_loai_container === containerKey
+            );
+
+            if (existingNorm) {
+              if (existingNorm.dinh_muc !== value) {
+                return updateRoadNorm(existingNorm.id, {
+                  ...existingNorm,
+                  dinh_muc: value,
+                });
+              }
+            } else if (value > 0) {
+              // Only create if value is greater than 0
+              return createRoadNorm({
+                ma_tuyen: data.id,
+                ma_loai_container: containerKey,
+                dinh_muc: value,
+              });
+            }
+            return Promise.resolve();
+          }
+        );
+
+        await Promise.all(normPromises);
+        enqueueSnackbar('Cập nhật thành công!', { variant: 'success' });
+      } else {
+        // Create new route (implementation needed)
+        enqueueSnackbar('Tạo mới thành công!', { variant: 'success' });
+      }
+
+
+      await fetchAllData();
+      reset();
+    } catch (error) {
+      logger.error('Failed to save data:', error);
+      enqueueSnackbar(error.message || 'Có lỗi xảy ra', { variant: 'error' });
+    }
+  };
+
+  // Handle delete
+  const handleDeleteClick = (row) => {
+    setItemToDelete(row);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteTuyenDuongAndNorms(itemToDelete.id);
+      enqueueSnackbar('Xóa thành công!', { variant: 'success' });
+    } catch (error) {
+      logger.error('Failed to delete:', error);
+      enqueueSnackbar('Xóa thất bại', { variant: 'error' });
+    } finally {
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      setIsDeleting(false);
+    }
+  };
+
+  // Handle edit
+  const handleEditClick = (row) => {
+    console.log('Starting edit for row:', row);
+    try {
+      setEditingId(row.id);
+      setEditedData({
+        ...row,
+        containerNorms: { ...row.containerNorms }
+      });
+      console.log('Edit state updated for row ID:', row.id);
+    } catch (error) {
+      console.error('Error in handleEditClick:', error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditedData({});
+  };
+
+  const handleInputChange = (field, value, containerKey = null) => {
+    console.log(`handleInputChange - field: ${field}, value: ${value}, containerKey: ${containerKey}`);
+
+    setEditedData(prev => {
+      // Create a deep copy of the previous state
+      const newState = { ...prev };
+
+      if (containerKey) {
+        // If it's a container norm field
+        newState.containerNorms = {
+          ...(prev.containerNorms || {}),
+          [containerKey]: value
+        };
+        console.log('Updated containerNorms:', newState.containerNorms);
+      } else {
+        // If it's a regular field
+        newState[field] = value;
+        console.log(`Updated ${field}:`, value);
+      }
+
+      return newState;
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    console.log('Starting save for editingId:', editingId);
+    console.log('Edited data:', editedData);
+
+    if (!editingId) {
+      console.warn('No editingId found when trying to save');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      // Update the route information
+      console.log('Updating route information...');
+      await updateTuyenDuong(editingId, {
+        diem_di: editedData.diem_di,
+        diem_den: editedData.diem_den,
+      });
+
+      // Update norms
+      const normPromises = [];
+      console.log('Current containerNorms:', editedData.containerNorms);
+
+      // Handle existing norms
+      for (const [containerKey, value] of Object.entries(editedData.containerNorms || {})) {
+        console.log(`Processing container ${containerKey} with value:`, value);
+        const existingNorm = localRoadNorms.find(
+          norm => norm.ma_tuyen === editingId && norm.ma_loai_container === containerKey
+        );
+
+        const numericValue = value ? parseFloat(value) : 0;
+        console.log(`Numeric value for ${containerKey}:`, numericValue);
+
+        if (existingNorm) {
+          if (existingNorm.dinh_muc !== numericValue) {
+            console.log(`Updating existing norm for container ${containerKey}`);
+            normPromises.push(
+              updateRoadNorm(existingNorm.id, {
+                ...existingNorm,
+                dinh_muc: numericValue,
+              })
+            );
+          }
+        } else if (numericValue > 0) {
+          console.log(`Creating new norm for container ${containerKey}`);
+          normPromises.push(
+            createRoadNorm({
+              ma_tuyen: editingId,
+              ma_loai_container: containerKey,
+              dinh_muc: numericValue,
+            })
+          );
+        }
+      }
+
+      console.log('Waiting for all norm updates to complete...');
+      await Promise.all(normPromises);
+      enqueueSnackbar('Cập nhật thành công!', { variant: 'success' });
+
+      // Refresh data
+      console.log('Refreshing data...');
+      await fetchAllData();
+
+      // Reset editing state
+      console.log('Resetting edit state');
+      setEditingId(null);
+      setEditedData({});
+      console.log('Save completed successfully');
+    } catch (error) {
+      console.error('Failed to save data:', error);
+      enqueueSnackbar(error.message || 'Có lỗi xảy ra khi lưu dữ liệu', { variant: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <>
-      <DinhMucDiDuongDeleteDialog
-        open={deleteDialogOpen}
-        rowData={itemToDelete}
-        containerTypes={sortedContainerTypes}
-        onClose={handleCloseDeleteDialog}
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-      />
-      <Paper
-        ref={tableContainerRef}
-        elevation={3}
-        sx={{ p: muiTheme.spacing(3), m: muiTheme.spacing(1), mt: 2 }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <SearchBar
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder="Tìm kiếm Mã tuyến, Điểm đi, Điểm đến..."
-            containerSx={{ width: '100%', mb: 2 }} // Ensure full width and apply margin
-            // fullWidth is true by default in SearchBar
-          />
-        </Box>
+    <FormProvider {...methods}>
+      <Paper elevation={3} sx={{ p: 3, m: 1, mt: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <TextField
+          sx={{ width: '50%' }}
+          variant="outlined"
+          placeholder="Tìm kiếm..."
+          value={searchTerm}
+          onChange={event => logger.info(event.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            sx: {
+              borderRadius: '6px',
+              height: 36,
+              minHeight: 36,
+              fontSize: '0.95rem',
+            },
+          }}
+        /></Box>
 
-        {isLoading && (
-          <Box
-            sx={{
-              width: '100%',
-              minHeight: 200,
-              p: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
-            {[...Array(5)].map((_, index) => (
-              <Skeleton
-                key={index}
-                variant="rectangular"
-                width="100%"
-                height={52}
-                sx={{ mb: 0.5 }}
-              />
-            ))}
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 2 }}>
-              <CircularProgress size={24} sx={{ mr: 1 }} />
-              <Typography variant="body2">Đang tải dữ liệu...</Typography>
-            </Box>
-          </Box>
-        )}
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            Không thể tải dữ liệu định mức đi đường: {error.message || JSON.stringify(error)}
-          </Alert>
-        )}
-
-        {!isLoading && !error && (
+        {isLoading ? (
+          <SkeletonTable />
+        ) : error ? (
+          <Alert severity="error">Không thể tải dữ liệu: {error.message}</Alert>
+        ) : (
           <>
-            {/* The duplicate search TextField that was here (lines 435-456 in previous view) has been removed. */}
-            <StandardTable
-              columns={columns}
-              data={paginatedData}
-              loading={isLoading} // Pass loading state to StandardTable if it supports it
-              emptyMessage={
-                searchTerm
-                  ? `Không tìm thấy kết quả cho "${searchTerm}"`
-                  : 'Chưa có dữ liệu định mức đi đường'
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Mã tuyến</TableCell>
+                    <TableCell>Điểm đi</TableCell>
+                    <TableCell>Điểm đến</TableCell>
+                    {containerTypes?.map((ct) => (
+                      <TableCell key={ct.ma_loai_container} align="right">
+                        {ct.ten_loai_container}
+                      </TableCell>
+                    ))}
+                    <TableCell>Thao tác</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedData.map((row) => (
+                    <TableRow key={row.id} hover>
+                      <TableCell>
+                        {editingId === row.id ? (
+                          <TextField
+                            value={editedData.ma_tuyen || ''}
+                            onChange={(e) => {
+                              logger.info('ma_tuyen changed:', e.target.value);
+                              handleInputChange('ma_tuyen', e.target.value);
+                            }}
+                            size="small"
+                            disabled={isSaving}
+                            fullWidth
+                            variant="outlined"
+                          />
+                        ) : (
+                          row.ma_tuyen
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === row.id ? (
+                          <TextField
+                            value={editedData.diem_di || ''}
+                            onChange={(e) => {
+                              logger.info('diem_di changed:', e.target.value);
+                              handleInputChange('diem_di', e.target.value);
+                            }}
+                            size="small"
+                            disabled={isSaving}
+                            fullWidth
+                            variant="outlined"
+                          />
+                        ) : (
+                          row.diem_di
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === row.id ? (
+                          <TextField
+                            value={editedData.diem_den || ''}
+                            onChange={(e) => {
+                              logger.info('diem_den changed:', e.target.value);
+                              handleInputChange('diem_den', e.target.value);
+                            }}
+                            size="small"
+                            disabled={isSaving}
+                            fullWidth
+                            variant="outlined"
+                          />
+                        ) : (
+                          row.diem_den
+                        )}
+                      </TableCell>
+                      {containerTypes?.map((ct) => (
+                        <TableCell key={ct.ma_loai_container} align="right">
+                          {editingId === row.id ? (
+                            <TextField
+                              type="number"
+                              value={editedData.containerNorms?.[ct.ma_loai_container] ?? ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                logger.info(`Container ${ct.ma_loai_container} changed:`, value);
+                                handleInputChange('containerNorms', value, ct.ma_loai_container);
+                              }}
+                              size="small"
+                              disabled={isSaving}
+                              sx={{ width: '80px' }}
+                              variant="outlined"
+                              inputProps={{
+                                step: '0.01',
+                                min: '0'
+                              }}
+                            />
+                          ) : (
+                            row.containerNorms[ct.ma_loai_container]?.toLocaleString('vi-VN') || '-'
+                          )}
+                        </TableCell>
+                      ))}
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          {editingId === row.id ? (
+                            <>
+                              <Tooltip title="Lưu">
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={handleSaveEdit}
+                                  disabled={isSaving}
+                                >
+                                  {isSaving ? (
+                                    <CircularProgress size={20} />
+                                  ) : (
+                                    <CheckIcon fontSize="small" />
+                                  )}
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Hủy">
+                                <IconButton
+                                  size="small"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  <CloseIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          ) : (
+                            <>
+                              <Tooltip title="Chỉnh sửa">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleEditClick(row)}
+                                  disabled={!!editingId}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Xóa">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleDeleteClick(row)}
+                                  disabled={!!editingId}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          )}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={filteredData.length}
+              rowsPerPage={pagination.pageSize}
+              page={pagination.pageIndex}
+              onPageChange={(_, newPage) => {
+                setPagination(prev => ({ ...prev, pageIndex: newPage }));
+              }}
+              onRowsPerPageChange={(e) => {
+                setPagination({
+                  pageIndex: 0,
+                  pageSize: parseInt(e.target.value, 10),
+                });
+              }}
+              labelRowsPerPage="Số hàng mỗi trang:"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}–${to} trong ${count !== -1 ? count : `nhiều hơn ${to}`}`
               }
-              rowKeyField="id"
-              pagination
-              count={filteredCount} // Use state for filtered count
-              page={page} // Added page for pagination
-              rowsPerPage={rowsPerPage} // Added rowsPerPage for pagination
-              onPageChange={handlePageChange} // Added onPageChange for pagination
-              onRowsPerPageChange={handleRowsPerPageChange} // Added onRowsPerPageChange for pagination
             />
           </>
         )}
       </Paper>
+
+      {/* Add/Edit Form Dialog */}
+      <Dialog open={false} onClose={() => reset()} maxWidth="md" fullWidth>
+        <DialogTitle>Thêm mới tuyến đường</DialogTitle>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <DialogContent>
+            {/* Form fields would go here */}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => reset()}>Hủy</Button>
+            <Button type="submit" variant="contained" disabled={isSubmitting}>
+              {isSubmitting ? <CircularProgress size={24} /> : 'Lưu'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Xác nhận xóa</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc chắn muốn xóa tuyến đường này? Hành động này không thể hoàn tác.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={20} /> : null}
+          >
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {!isMobile && !isLoading && !error && (
         <Fab
@@ -589,16 +602,37 @@ const DinhMucDiDuong = () => {
           aria-label="add"
           sx={{
             position: 'fixed',
-            bottom: muiTheme.spacing(4),
-            right: muiTheme.spacing(4),
+            bottom: 24,
+            right: 24,
           }}
-          onClick={handleAddNew}
+          onClick={() => {
+            reset({
+              ma_tuyen: '',
+              diem_di: '',
+              diem_den: '',
+              containerNorms: {},
+            });
+          }}
         >
           <AddIcon />
         </Fab>
       )}
-    </>
+    </FormProvider>
   );
 };
+
+// Skeleton loading component
+const SkeletonTable = () => (
+  <Box sx={{ width: '100%' }}>
+    {[...Array(5)].map((_, index) => (
+      <Skeleton
+        key={index}
+        variant="rectangular"
+        height={53}
+        sx={{ mb: 1, borderRadius: 1 }}
+      />
+    ))}
+  </Box>
+);
 
 export default DinhMucDiDuong;
