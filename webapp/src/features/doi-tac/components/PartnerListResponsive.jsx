@@ -27,13 +27,26 @@ const PartnerListResponsive = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   // Filter partners based on search term
   const filteredPartners = useMemo(() => {
-    // Ensure partners is always an array
-    const partnersArray = Array.isArray(partners) ? partners : [];
-    if (!searchTerm.trim()) return partnersArray;
+    if (!searchTerm.trim()) return partners;
     const term = searchTerm.toLowerCase();
-    return partnersArray.filter(
+    return partners.filter(
       partner =>
         (partner.ten && partner.ten.toLowerCase().includes(term)) ||
         (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
@@ -41,10 +54,20 @@ const PartnerListResponsive = ({
         (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
     );
   }, [partners, searchTerm]);
+
+  // Get current partners for the current page
+  const paginatedPartners = useMemo(() => {
+    return filteredPartners.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+  }, [filteredPartners, page, rowsPerPage]);
+
   // Handle search input change
   const handleSearchChange = event => {
     setSearchTerm(event.target.value);
   };
+
   // Render mobile card view
   const renderMobileView = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
@@ -132,7 +155,7 @@ const PartnerListResponsive = ({
   const renderDesktopView = () => (
     <StandardTable
       columns={columns}
-      data={filteredPartners}
+      data={paginatedPartners}
       renderActions={renderActions}
       loading={loading}
       error={error}
@@ -141,11 +164,11 @@ const PartnerListResponsive = ({
       sortable={true}
       defaultSort={{ key: 'ten', direction: 'asc' }}
       pagination={true}
-      page={0}
-      rowsPerPage={10}
+      page={page}
+      rowsPerPage={rowsPerPage}
       totalCount={filteredPartners.length}
-      onPageChange={(_, page) => console.log('Page changed to:', page)}
-      onRowsPerPageChange={(e) => console.log('Rows per page changed to:', e.target.value)}
+      onPageChange={handleChangePage}
+      onRowsPerPageChange={handleChangeRowsPerPage}
       showSTT={true}
     />
   );

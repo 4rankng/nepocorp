@@ -13,6 +13,21 @@ const CustomerListResponsive = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
+  // State for pagination
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   // Filter customers based on search term
   const filteredCustomers = useMemo(() => {
     if (!searchTerm.trim()) return customers;
@@ -25,6 +40,14 @@ const CustomerListResponsive = ({
         (customer.ma_dinh_danh && customer.ma_dinh_danh.toLowerCase().includes(term))
     );
   }, [customers, searchTerm]);
+
+  // Get current customers for the current page
+  const paginatedCustomers = useMemo(() => {
+    return filteredCustomers.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+  }, [filteredCustomers, page, rowsPerPage]);
   // Handle search input change
   const handleSearchChange = event => {
     setSearchTerm(event.target.value);
@@ -132,7 +155,7 @@ const CustomerListResponsive = ({
       </Box>
       <StandardTable
         columns={columns}
-        data={filteredCustomers}
+        data={paginatedCustomers}
         renderActions={renderActions}
         loading={loading}
         error={error}
@@ -141,11 +164,11 @@ const CustomerListResponsive = ({
         sortable={true}
         defaultSort={{ key: 'ten', direction: 'asc' }}
         pagination={true}
-        page={0}
-        rowsPerPage={10}
+        page={page}
+        rowsPerPage={rowsPerPage}
         totalCount={filteredCustomers.length}
-        onPageChange={(_, page) => console.log('Page changed to:', page)}
-        onRowsPerPageChange={(e) => console.log('Rows per page changed to:', e.target.value)}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
         showSTT={true}
       />
     </Box>

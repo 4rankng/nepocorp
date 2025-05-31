@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   TextField,
@@ -21,6 +21,27 @@ const DesktopView = ({
   handleDeleteRequest,
   canEditDelete,
 }) => {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Get current employees for the current page
+  const paginatedEmployees = useMemo(() => {
+    return employees.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+  }, [employees, page, rowsPerPage]);
   const columns = React.useMemo(
     () => [
       { 
@@ -113,7 +134,7 @@ const DesktopView = ({
           }}
         />
       </Box>
-      <Paper elevation={0} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <Paper elevation={0} sx={{ borderRadius: 0, overflow: 'hidden' }}>
         {employees.length === 0 && !isLoading ? (
           <Box textAlign="center" py={4}>
             <Typography variant="subtitle1">Không tìm thấy nhân viên nào.</Typography>
@@ -121,7 +142,7 @@ const DesktopView = ({
         ) : (
           <StandardTable
             columns={columns}
-            data={employees}
+            data={paginatedEmployees}
             renderActions={renderActions}
             loading={isLoading}
             error={error}
@@ -129,11 +150,11 @@ const DesktopView = ({
             sortable={true}
             defaultSort={{ key: 'tenNhanVien', direction: 'asc' }}
             pagination={true}
-            page={0}
-            rowsPerPage={10}
+            page={page}
+            rowsPerPage={rowsPerPage}
             totalCount={employees.length}
-            onPageChange={(_, page) => console.log('Page changed to:', page)}
-            onRowsPerPageChange={(e) => console.log('Rows per page changed to:', e.target.value)}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
             showSTT={true}
           />
         )}
