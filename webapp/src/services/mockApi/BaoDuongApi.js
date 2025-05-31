@@ -24,26 +24,25 @@ const persist = () => {
   }
 };
 export const baoDuongApi = {
-  getAll: async (page = 1, limit = 10) => {
-    console.log('🔗 BaoDuongApi - getAll called with:', { page, limit });
-    
+  getAll: async (page = 1, limit = 10, bienSo) => {
+    console.log('🔗 BaoDuongApi - getAll called with:', { page, limit, bienSo });
     return mockApiCall(() => {
-      const result = withPagination(
-        () => [...data], // Return a copy of the data array to avoid mutations
-        { 
-          page: Math.max(1, parseInt(page, 10) || 1), // Ensure page is at least 1
-          limit: Math.max(1, parseInt(limit, 10) || 10), // Ensure limit is at least 1
-        }
-      );
-      
+      let filteredData = [...data];
+      if (bienSo) {
+        filteredData = filteredData.filter(r => r.bien_so === bienSo);
+      }
+      const result = withPagination(() => filteredData, {
+        page: Math.max(1, parseInt(page, 10) || 1),
+        limit: Math.max(1, parseInt(limit, 10) || 10),
+      });
       console.log('📋 BaoDuongApi - Returning result:', {
         dataLength: result.data?.length || 0,
         meta: result.meta,
-        totalDataInStorage: data.length,
+        totalDataInStorage: filteredData.length,
         requestedPage: page,
-        requestedLimit: limit
+        requestedLimit: limit,
+        bienSo,
       });
-      
       return result;
     });
   },

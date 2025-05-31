@@ -82,6 +82,7 @@ const QuanLyBaoDuong = memo(() => {
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [counts, setCounts] = useState({ tire: 0 });
+  const [selectedPlate, setSelectedPlate] = useState('');
   // Data fetching
   const {
     baoDuongRecords: maintenanceRecords,
@@ -91,6 +92,7 @@ const QuanLyBaoDuong = memo(() => {
     isLoading,
     error,
     fetchData,
+    fetchByLicensePlate,
     pagination,
   } = useBaoDuongRecords(baoDuongApi);
   // Extract pagination props for StandardTable
@@ -281,7 +283,17 @@ const QuanLyBaoDuong = memo(() => {
         (record.ghi_chu && record.ghi_chu.toLowerCase().includes(search))
     );
   }, [maintenanceRecords, searchTerm]);
-  // Debug: Log the filtered records before rendering
+  // Handler for license plate dropdown
+  const handlePlateChange = event => {
+    const plate = event.target.value;
+    if (plate === 'Tất cả') {
+      setSelectedPlate('');
+      fetchData(0, pagination.pageSize);
+    } else {
+      setSelectedPlate(plate);
+      fetchByLicensePlate(plate, 0, pagination.pageSize);
+    }
+  };
   // Render mobile card view
   const renderMobileView = () => (
     <Box>
@@ -304,40 +316,64 @@ const QuanLyBaoDuong = memo(() => {
   // Render desktop table view
   const renderDesktopView = () => {
     const tableColumns = getBaoDuongTableColumns();
-    
+
     const tableProps = {
       columns: tableColumns,
       data: maintenanceRecords,
       loading: isLoading,
       error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
-      emptyMessage: "Không có dữ liệu bảo dưỡng",
-      onRowClick: handleOpenEditDialog,
+      emptyMessage: 'Không có dữ liệu bảo dưỡng',
       pagination: true,
       page: pagination.page,
       rowsPerPage: pagination.pageSize,
       totalCount: pagination.total,
-      rowKeyField: "id"
+      rowKeyField: 'id',
     };
-    
+
     console.log('🎯 QuanLyBaoDuong - Pagination data to StandardTable:', {
       page: pagination.page,
       rowsPerPage: pagination.pageSize,
       totalCount: pagination.total,
       dataLength: maintenanceRecords.length,
       fullPagination: pagination,
-      maintenanceRecords: maintenanceRecords.slice(0, 3) // Show first 3 records
+      maintenanceRecords: maintenanceRecords.slice(0, 3), // Show first 3 records
     });
-    
+
     return (
       <StandardTable
         {...tableProps}
+        renderActions={row => (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <EditButton
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                handleOpenEditDialog(row);
+              }}
+            />
+            <DeleteButton
+              size="small"
+              color="error"
+              onClick={e => {
+                e.stopPropagation();
+                handleDeleteClick(row);
+              }}
+            />
+          </Box>
+        )}
         onPageChange={(_, newPage) => {
-          console.log('📄 QuanLyBaoDuong - Page change requested:', { newPage, currentPage: pagination.page });
+          console.log('📄 QuanLyBaoDuong - Page change requested:', {
+            newPage,
+            currentPage: pagination.page,
+          });
           fetchData(newPage, pagination.pageSize);
         }}
-        onRowsPerPageChange={(event) => {
+        onRowsPerPageChange={event => {
           const newPageSize = parseInt(event.target.value, 10);
-          console.log('📏 QuanLyBaoDuong - Page size change requested:', { newPageSize, currentPageSize: pagination.pageSize });
+          console.log('📏 QuanLyBaoDuong - Page size change requested:', {
+            newPageSize,
+            currentPageSize: pagination.pageSize,
+          });
           fetchData(0, newPageSize);
         }}
       />
@@ -346,9 +382,9 @@ const QuanLyBaoDuong = memo(() => {
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
       {/* Main Bao Duong Content */}
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
         <TextField
-          fullWidth
+          sx={{ width: '50%' }}
           variant="outlined"
           placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
           value={searchTerm}
@@ -367,6 +403,29 @@ const QuanLyBaoDuong = memo(() => {
             },
           }}
         />
+        <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
+          <InputLabel id="plate-select-label">Biển số xe</InputLabel>
+          <Select
+            labelId="plate-select-label"
+            id="plate-select"
+            value={selectedPlate || 'Tất cả'}
+            onChange={handlePlateChange}
+            label="Biển số xe"
+            renderValue={selected => {
+              if (!selected || selected === 'Tất cả') return 'Tất cả';
+              return selected;
+            }}
+          >
+            <MenuItem value="Tất cả">
+              <em>Tất cả</em>
+            </MenuItem>
+            {licensePlates.map(plate => (
+              <MenuItem key={plate.id} value={plate.bien_so}>
+                {plate.bien_so}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
       <Box
         sx={{
