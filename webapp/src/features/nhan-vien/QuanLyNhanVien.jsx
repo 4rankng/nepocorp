@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PlusIcon } from '@assets/icons/index.jsx'; // Assuming PlusIcon is used for FAB
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import PersonIcon from '@mui/icons-material/Person';
 import useNhanVien from '@features/nhan-vien/hooks/useNhanVien';
 import {
   Box,
@@ -158,7 +158,7 @@ const QuanLyNhanVien = () => {
         onConfirm={handleConfirmDelete}
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <PersonRemoveIcon color="error" />
+            <PersonIcon color="error" />
             <span>Xóa nhân viên</span>
           </Box>
         }

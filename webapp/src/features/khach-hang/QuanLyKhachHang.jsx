@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import PersonOffIcon from '@mui/icons-material/PersonOff';
+import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import {
   Box,
   Alert,
@@ -172,7 +172,7 @@ const QuanLyKhachHang = () => {
         onConfirm={handleDeleteConfirm}
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <PersonOffIcon color="error" />
+            <BusinessCenterIcon color="error" />
             <span>Xóa khách hàng</span>
           </Box>
         }

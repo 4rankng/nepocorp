@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import BusinessIcon from '@mui/icons-material/Business';
+import HandshakeIcon from '@mui/icons-material/Handshake';
 import {
   Box,
   Alert,
@@ -167,7 +167,7 @@ const QuanLyDoiTac = () => {
         onConfirm={handleDeleteConfirm}
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BusinessIcon color="error" />
+            <HandshakeIcon color="error" />
             <span>Xóa đối tác</span>
           </Box>
         }
