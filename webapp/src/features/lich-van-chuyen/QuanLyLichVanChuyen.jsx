@@ -13,7 +13,7 @@ import { fetchAllKhachHang } from '@services/mockApi/khachHangApi';
 import { fetchAllDauKeo } from '@services/mockApi/dauKeoApi';
 import { fetchAllRoMooc } from '@services/mockApi/roMoocApi';
 // import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx'; // Not used directly in this component
-import ConfirmationModal from '@components/ConfirmationModal';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { createLichVanChuyenColumns, trangThaiMap } from './config/tableColumns.jsx';
 import {
   Box,
@@ -578,33 +578,49 @@ const QuanLyLichVanChuyen = () => {
           selectOptions={selectOptions}
         />
       )}
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
+      <ConfirmationDialog
+        open={isDeleteModalOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirmed}
-        title="Xác nhận xóa"
-        message={
+        title="Xác nhận xóa lịch vận chuyển"
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
+        type="delete"
+        content={() => (
           <Box>
             <Typography variant="body1" sx={{ mb: 2 }}>
               Bạn có chắc chắn muốn xóa lịch vận chuyển này?
             </Typography>
             {itemToDelete && (
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Mã chuyến: {itemToDelete.ma_chuyen}
-                <br />
-                Khách hàng:{' '}
-                {getEntityNameById(
-                  itemToDelete.khach_hang_id,
-                  selectOptions.khachHang,
-                  'id',
-                  'ten'
-                )}
-                <br />
-                Ngày đi: {formatDateForDisplay(itemToDelete.ngay_van_chuyen)}
-              </Typography>
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" color="error.main" gutterBottom>
+                  Thông tin lịch vận chuyển:
+                </Typography>
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
+                  <Typography variant="body2" fontWeight={500}>Mã chuyến:</Typography>
+                  <Typography variant="body2">{itemToDelete.ma_chuyen}</Typography>
+                  
+                  <Typography variant="body2" fontWeight={500}>Khách hàng:</Typography>
+                  <Typography variant="body2">
+                    {getEntityNameById(
+                      itemToDelete.khach_hang_id,
+                      selectOptions.khachHang,
+                      'id',
+                      'ten'
+                    )}
+                  </Typography>
+                  
+                  <Typography variant="body2" fontWeight={500}>Ngày đi:</Typography>
+                  <Typography variant="body2">
+                    {formatDateForDisplay(itemToDelete.ngay_van_chuyen)}
+                  </Typography>
+                </Box>
+              </Box>
             )}
           </Box>
-        }
+        )}
       />
     </Box>
   );

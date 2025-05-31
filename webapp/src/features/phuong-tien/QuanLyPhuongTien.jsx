@@ -1,13 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { SwipeTabs } from '@/components';
 import { alpha } from '@mui/material/styles';
-import {
-  Box,
-  useTheme,
-  useMediaQuery,
-  Snackbar,
-  Alert,
-} from '@mui/material';
+import { Box, useTheme, useMediaQuery, Snackbar, Alert, Typography, Divider } from '@mui/material';
 import { useNavigate, useParams, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { AddButton } from '@/components/ActionButtons';
 // Import custom hooks for data management
@@ -15,15 +9,16 @@ import { useDauKeo, useRoMooc, useContainer } from './hooks';
 // Import specific component files from centralized index
 import {
   DauKeoDialog,
-  DauKeoDeleteDialog,
   DauKeoListResponsive,
   RoMoocDialog,
-  RoMoocDeleteDialog,
   RoMoocListResponsive,
   ContainerDialog,
-  ContainerDeleteDialog,
   ContainerListResponsive,
 } from './components';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import RvHookupIcon from '@mui/icons-material/RvHookup';
+import InventoryIcon from '@mui/icons-material/Inventory2';
 // Define valid tabs and their labels
 const TABS = [
   { value: 'dau-keo', label: 'Đầu Kéo' },
@@ -115,11 +110,35 @@ const DauKeoContent = () => {
           transition: 'all 0.2s ease-in-out', // Match /doi-tac FAB transition
         }}
       />
-      <DauKeoDeleteDialog
+      <ConfirmationDialog
         open={deleteDialog.open}
-        data={deleteDialog.data}
+        title="Xác nhận xóa đầu kéo"
+        message="Bạn có chắc chắn muốn xóa đầu kéo sau đây? Hành động này không thể hoàn tác."
         onConfirm={handleDelete}
-        onClose={() => setDeleteDialog({ open: false, data: null })}
+        onCancel={() => setDeleteDialog({ open: false, data: null })}
+        confirmText="Xóa"
+        confirmColor="error"
+        icon={LocalShippingIcon}
+        type="delete"
+        content={data => (
+          <>
+            <Typography variant="subtitle2" color="error.main" gutterBottom>
+              Thông tin đầu kéo:
+            </Typography>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1 }}>
+              <Typography variant="body2" fontWeight={500}>
+                Biển số:
+              </Typography>
+              <Typography variant="body2">{data?.bien_so || '-'}</Typography>
+              <Typography variant="body2" fontWeight={500}>
+                Mô tả:
+              </Typography>
+              <Typography variant="body2">{data?.mo_ta || '-'}</Typography>
+            </Box>
+          </>
+        )}
+        data={deleteDialog.data}
       />
     </Box>
   );
@@ -186,11 +205,35 @@ const RoMoocContent = () => {
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
-      <RoMoocDeleteDialog
+      <ConfirmationDialog
         open={deleteDialog.open}
-        data={deleteDialog.data}
+        title="Xác nhận xóa rơ-mooc"
+        message="Bạn có chắc chắn muốn xóa rơ-mooc sau đây? Hành động này không thể hoàn tác."
         onConfirm={handleDelete}
-        onClose={() => setDeleteDialog({ open: false, data: null })}
+        onCancel={() => setDeleteDialog({ open: false, data: null })}
+        confirmText="Xóa"
+        confirmColor="error"
+        icon={RvHookupIcon}
+        type="delete"
+        content={data => (
+          <>
+            <Typography variant="subtitle2" color="error.main" gutterBottom>
+              Thông tin rơ-mooc:
+            </Typography>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1 }}>
+              <Typography variant="body2" fontWeight={500}>
+                Biển số:
+              </Typography>
+              <Typography variant="body2">{data?.bien_so || '-'}</Typography>
+              <Typography variant="body2" fontWeight={500}>
+                Mô tả:
+              </Typography>
+              <Typography variant="body2">{data?.mo_ta || '-'}</Typography>
+            </Box>
+          </>
+        )}
+        data={deleteDialog.data}
       />
       <AddButton
         onClick={() => setDialog({ open: true, edit: false, data: null })}
@@ -287,11 +330,39 @@ const ContainerContent = () => {
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
-      <ContainerDeleteDialog
+      <ConfirmationDialog
         open={deleteDialog.open}
-        data={deleteDialog.data}
+        title="Xác nhận xóa container"
+        message="Bạn có chắc chắn muốn xóa container sau đây? Hành động này không thể hoàn tác."
         onConfirm={handleDelete}
-        onClose={() => setDeleteDialog({ open: false, data: null })}
+        onCancel={() => setDeleteDialog({ open: false, data: null })}
+        confirmText="Xóa"
+        confirmColor="error"
+        icon={InventoryIcon}
+        type="delete"
+        content={data => (
+          <>
+            <Typography variant="subtitle2" color="error.main" gutterBottom>
+              Thông tin container:
+            </Typography>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1 }}>
+              <Typography variant="body2" fontWeight={500}>
+                Phân loại:
+              </Typography>
+              <Typography variant="body2">{data?.phan_loai || '-'}</Typography>
+              <Typography variant="body2" fontWeight={500}>
+                Kích thước:
+              </Typography>
+              <Typography variant="body2">{data?.kich_thuoc || '-'}</Typography>
+              <Typography variant="body2" fontWeight={500}>
+                Trọng tải:
+              </Typography>
+              <Typography variant="body2">{data?.trong_tai || '-'}</Typography>
+            </Box>
+          </>
+        )}
+        data={deleteDialog.data}
       />
       <AddButton
         onClick={() => setDialog({ open: true, edit: false, data: null })}
