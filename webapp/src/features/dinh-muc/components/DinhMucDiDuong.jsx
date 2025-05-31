@@ -20,8 +20,15 @@ import DinhMucDiDuongDeleteDialog from './DinhMucDiDuongDeleteDialog'; // Import
 
 const DinhMucDiDuong = () => {
   const muiTheme = useTheme();
-  const { roadNorms, containerTypes, routes, isLoading, error, deleteRoadNorm, fetchAllData } =
-    useDiDuong();
+  const {
+    roadNorms,
+    containerTypes,
+    routes,
+    isLoading,
+    error,
+    deleteTuyenDuongAndNorms,
+    fetchAllData,
+  } = useDiDuong();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -42,12 +49,11 @@ const DinhMucDiDuong = () => {
   // Handle edit action
   const handleEdit = id => {
     // TODO: Implement edit functionality
-    console.log('Edit record:', id);
+    // console.log('Edit record:', id); // Placeholder removed
   };
 
   // Handle delete action - open dialog
   const handleDelete = rowData => {
-    console.log('handleDelete - rowData:', JSON.stringify(rowData, null, 2));
     setItemToDelete(rowData);
     setDeleteDialogOpen(true);
   };
@@ -58,27 +64,28 @@ const DinhMucDiDuong = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (!itemToDelete) return;
-    setIsDeleting(true);
-    try {
-      // Find all individual norm IDs for the selected route (ma_tuyen)
-      const normsToDelete = roadNorms.filter(norm => norm.ma_tuyen === itemToDelete.ma_tuyen);
+    if (!itemToDelete || !itemToDelete.id) {
+      // console.warn('Item to delete or its ID is missing.'); // Warning removed, should be handled by logger
+      // enqueueSnackbar('Không có mục nào được chọn để xóa hoặc thiếu ID.', { variant: 'warning' });
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      return;
+    }
 
-      // Call deleteRoadNorm for each individual norm ID
-      for (const norm of normsToDelete) {
-        // The mock API deleteDinhMucDiDuong(id) uses the specific record ID.
-        await deleteRoadNorm(norm.id);
-      }
-      // Optionally, refetch all data to ensure consistency if deleteRoadNorm doesn't perfectly update local state for multiple deletions
-      // await fetchAllData(); // Uncomment if needed after testing
-      // Show success notification (implement snackbar later)
-      console.log(`Successfully deleted norms for route: ${itemToDelete.ma_tuyen}`);
-    } catch (deleteError) {
-      console.error('Failed to delete norms:', deleteError);
-      // Show error notification (implement snackbar later)
+    try {
+      // Call the new hook function to delete the route and all its norms
+      await deleteTuyenDuongAndNorms(itemToDelete.id);
+      // enqueueSnackbar('Đã xóa tuyến đường và các định mức liên quan thành công!', { variant: 'success' });
+    } catch (error) {
+      // console.error('Failed to delete route and its norms:', error); // Error removed, should be handled by logger
+      // enqueueSnackbar(
+      //   `Lỗi xóa tuyến đường: ${error.message || 'Unknown error'}`,
+      //   { variant: 'error' }
+      // );
     } finally {
-      setIsDeleting(false);
-      handleCloseDeleteDialog();
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      // Data updates are handled by the useDiDuong hook
     }
   };
 
@@ -216,11 +223,9 @@ const DinhMucDiDuong = () => {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
   const handleAddNew = () => {
-    // This will be implemented in the next step to add a new row with empty inputs
-    console.log('Add new record clicked');
+    // TODO: Implement add new functionality
   };
 
-  console.log('Rendering DinhMucDiDuong - itemToDelete:', JSON.stringify(itemToDelete, null, 2));
   return (
     <>
       <DinhMucDiDuongDeleteDialog

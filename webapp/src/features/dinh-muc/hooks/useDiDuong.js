@@ -23,15 +23,12 @@ export const useDiDuong = () => {
       ]);
       // Validate responses
       if (!dinhMucRes || !dinhMucRes.success) {
-
         throw new Error(dinhMucRes?.error?.message || 'Lỗi khi tải dữ liệu định mức đi đường.');
       }
       if (!tuyenDuongRes || !tuyenDuongRes.success) {
-
         throw new Error(tuyenDuongRes?.error?.message || 'Lỗi khi tải danh sách tuyến đường.');
       }
       if (!containerRes || !containerRes.success) {
-
         throw new Error(containerRes?.error?.message || 'Lỗi khi tải danh sách loại container.');
       }
       // Handle different response structures from mock API
@@ -88,7 +85,6 @@ export const useDiDuong = () => {
         containerTypes: uniqueContainerTypes,
       };
     } catch (err) {
-
       // Handle different error object structures
       let errorMessage = 'Không thể tải dữ liệu định mức đi đường. Vui lòng thử lại.';
       if (err.error && typeof err.error === 'object') {
@@ -126,7 +122,6 @@ export const useDiDuong = () => {
       setRoadNorms(prev => [...prev, newNorm]);
       return newNorm;
     } catch (err) {
-
       setError('Không thể thêm định mức đi đường mới');
       throw err;
     } finally {
@@ -146,7 +141,6 @@ export const useDiDuong = () => {
       setRoadNorms(prev => prev.map(item => (item.id === id ? updatedNorm : item)));
       return updatedNorm;
     } catch (err) {
-
       setError('Không thể cập nhật định mức đi đường');
       throw err;
     } finally {
@@ -154,7 +148,83 @@ export const useDiDuong = () => {
     }
   }, []);
   // Delete road norm
-  const deleteRoadNorm = useCallback(async id => {
+  const deleteRoadNorm = useCallback(async (id, { updateLocalState = true } = {}) => {
+    // Added options object with updateLocalState, defaulting to true
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await dinhMucDiDuongApi.deleteDinhMucDiDuong(id);
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to delete road norm');
+      }
+      if (updateLocalState) {
+        setRoadNorms(prev => prev.filter(item => item.id !== id));
+      }
+      return true;
+    } catch (err) {
+      // It's better to throw the specific error message from the API if available
+      const apiErrorMessage = err.response?.data?.error?.message || err.message;
+      setError(apiErrorMessage || 'Không thể xóa định mức đi đường');
+      throw err; // Re-throw to allow calling function to handle
+    } finally {
+      // Only set isLoading to false if we are not in a batch operation controlled by another function
+      // However, for individual deletes, this is fine.
+      setIsLoading(false);
+    }
+  }, []);
+
+  // New function to delete a route and all its associated norms
+  const deleteTuyenDuongAndNorms = useCallback(
+    async routeId => {
+      setIsLoading(true);
+      setError('');
+      try {
+        // 1. Find all road norms associated with this routeId (ma_tuyen)
+        const normsForRoute = roadNorms.filter(norm => norm.ma_tuyen === routeId);
+
+        // 2. Delete each associated road norm
+        // We call deleteRoadNorm with updateLocalState = false to avoid multiple re-renders
+        // and then update roadNorms state once at the end.
+        for (const norm of normsForRoute) {
+          await deleteRoadNorm(norm.id, { updateLocalState: false });
+        }
+
+        // 3. Find the actual route object to get its numeric ID
+        const routeToDelete = routes.find(route => route.ma_so === routeId);
+        if (!routeToDelete) {
+          // This should ideally not happen if routeId comes from a valid selection
+          throw new Error(`Route with ma_so ${routeId} not found in local state.`);
+        }
+        const numericRouteId = routeToDelete.id; // Assuming 'id' is the numeric primary key
+
+        // Delete the tuyenDuong record itself using its numeric ID
+        const deleteRouteResponse = await tuyenDuongApi.deleteTuyenDuong(numericRouteId);
+        if (!deleteRouteResponse.success) {
+          throw new Error(
+            deleteRouteResponse.error?.message || `Failed to delete route with ID ${numericRouteId}`
+          );
+        }
+
+        // 4. Update local state for roadNorms (remove all norms for the deleted route)
+        setRoadNorms(prev => prev.filter(norm => norm.ma_tuyen !== routeId));
+
+        // 5. Update local state for routes (remove the deleted route)
+        setRoutes(prev => prev.filter(route => route.ma_so !== routeId));
+
+        return true;
+      } catch (err) {
+        const apiErrorMessage = err.response?.data?.error?.message || err.message;
+        setError(apiErrorMessage || 'Không thể xóa tuyến đường và các định mức liên quan.');
+        throw err; // Re-throw for the component to handle (e.g., show notification)
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [roadNorms, routes, deleteRoadNorm]
+  ); // Added routes to dependency array
+
+  // Delete road norm (original - kept for potential direct use, but deleteTuyenDuongAndNorms is preferred for UI actions)
+  const originalDeleteRoadNorm = useCallback(async id => {
     setIsLoading(true);
     setError('');
     try {
@@ -165,7 +235,6 @@ export const useDiDuong = () => {
       setRoadNorms(prev => prev.filter(item => item.id !== id));
       return true;
     } catch (err) {
-
       setError('Không thể xóa định mức đi đường');
       throw err;
     } finally {
@@ -185,6 +254,7 @@ export const useDiDuong = () => {
     fetchAllData,
     createRoadNorm,
     updateRoadNorm,
-    deleteRoadNorm,
+    deleteRoadNorm: originalDeleteRoadNorm, // Keep original for direct norm deletion if ever needed
+    deleteTuyenDuongAndNorms, // Expose the new function
   };
 };
