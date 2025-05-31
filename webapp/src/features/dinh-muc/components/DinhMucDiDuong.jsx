@@ -9,7 +9,10 @@ import {
   Skeleton,
   TextField,
   InputAdornment,
+  Fab,
+  useMediaQuery,
 } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { StandardTable } from '@components';
 import { useDiDuong } from '../hooks';
 import { Search as SearchIcon } from '@mui/icons-material';
@@ -134,14 +137,22 @@ const DinhMucDiDuong = () => {
     setSearchTerm(event.target.value);
     setPage(0);
   };
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+
+  const handleAddNew = () => {
+    // TODO: Implement add new record functionality
+    console.log('Add new record clicked');
+  };
+
   return (
-    <Paper
-      sx={{
-        p: { xs: 1.5, md: 2 },
-        mb: 3,
-        boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
-      }}
-    >
+    <Box sx={{ position: 'relative', pb: { xs: 10, sm: 11 } }}>
+      <Paper
+        sx={{
+          p: { xs: 1.5, md: 2 },
+          mb: 3,
+          boxShadow: muiTheme.customShadows ? muiTheme.customShadows.card : muiTheme.shadows[1],
+        }}
+      >
       {isLoading && (
         <Box sx={{ width: '100%', minHeight: 200, p: 2 }}>
           <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
@@ -214,7 +225,23 @@ const DinhMucDiDuong = () => {
           />
         </>
       )}
-    </Paper>
+      </Paper>
+      <Fab
+        color="primary"
+        aria-label="add"
+        onClick={handleAddNew}
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+          ...(isMobile && {
+            bottom: 80, // Above mobile navigation
+          }),
+        }}
+      >
+        <AddIcon />
+      </Fab>
+    </Box>
   );
 };
 export default DinhMucDiDuong;
