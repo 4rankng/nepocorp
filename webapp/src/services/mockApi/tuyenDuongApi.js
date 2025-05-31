@@ -65,3 +65,14 @@ export const getTuyenDuongCount = async () => {
     )
   );
 };
+// Bundled export for named import compatibility
+export const tuyenDuongApi = {
+  getAll: getAllTuyenDuong,
+  getById: getTuyenDuongById,
+  getByMaSo: getTuyenDuongByMaSo,
+  create: createTuyenDuong,
+  update: updateTuyenDuong,
+  delete: deleteTuyenDuong,
+  _reset: _resetTuyenDuong,
+  getCount: getTuyenDuongCount,
+};

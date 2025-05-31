@@ -2,7 +2,6 @@ import React from 'react';
 import { IconButton, Button } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { PencilIcon, TrashIcon } from '@assets/icons';
-import { PlusIcon } from '@heroicons/react/24/outline';
 import { useTheme } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { forwardRef } from 'react';

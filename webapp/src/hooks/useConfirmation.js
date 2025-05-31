@@ -1,60 +1,48 @@
 import { useState, useCallback } from 'react';
-const useConfirmation = () => {
+
+export const useConfirmation = () => {
   const [confirmationState, setConfirmationState] = useState({
     isOpen: false,
-    title: 'Xác nhận',
-    message: 'Bạn có chắc chắn muốn thực hiện thao tác này?',
-    onConfirm: () => {},
-    onCancel: () => {},
+    title: '',
+    message: '',
     confirmText: 'Xác nhận',
     cancelText: 'Hủy',
     confirmColor: 'primary',
+    resolve: null,
   });
-  const confirm = useCallback(
-    ({
-      title = 'Xác nhận',
-      message = 'Bạn có chắc chắn muốn thực hiện thao tác này?',
-      confirmText = 'Xác nhận',
-      cancelText = 'Hủy',
-      confirmColor = 'primary',
-    }) => {
-      return new Promise(resolve => {
-        setConfirmationState({
-          isOpen: true,
-          title,
-          message,
-          confirmText,
-          cancelText,
-          confirmColor,
-          onConfirm: () => {
-            setConfirmationState(prev => ({ ...prev, isOpen: false }));
-            resolve(true);
-          },
-          onCancel: () => {
-            setConfirmationState(prev => ({ ...prev, isOpen: false }));
-            resolve(false);
-          },
-        });
+
+  const showConfirmation = useCallback((options) => {
+    return new Promise((resolve) => {
+      setConfirmationState({
+        isOpen: true,
+        title: options.title || 'Xác nhận',
+        message: options.message || '',
+        confirmText: options.confirmText || 'Xác nhận',
+        cancelText: options.cancelText || 'Hủy',
+        confirmColor: options.confirmColor || 'primary',
+        resolve,
       });
-    },
-    []
-  );
-  const ConfirmationDialog = useCallback(() => {
-    const { isOpen, title, message, onConfirm, onCancel, confirmText, cancelText, confirmColor } =
-      confirmationState;
-    return (
-      <ConfirmationDialog
-        open={isOpen}
-        title={title}
-        message={message}
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-        confirmText={confirmText}
-        cancelText={cancelText}
-        confirmColor={confirmColor}
-      />
-    );
-  }, [confirmationState]);
-  return { confirm, ConfirmationDialog };
+    });
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    if (confirmationState.resolve) {
+      confirmationState.resolve(true);
+    }
+    setConfirmationState(prev => ({ ...prev, isOpen: false, resolve: null }));
+  }, [confirmationState.resolve]);
+
+  const handleCancel = useCallback(() => {
+    if (confirmationState.resolve) {
+      confirmationState.resolve(false);
+    }
+    setConfirmationState(prev => ({ ...prev, isOpen: false, resolve: null }));
+  }, [confirmationState.resolve]);
+
+  return {
+    showConfirmation,
+    confirmationState,
+    handleConfirm,
+    handleCancel,
+  };
 };
-export default useConfirmation;
