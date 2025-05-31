@@ -42,6 +42,7 @@ import { useDiDuong } from '../hooks/useDiDuong';
 import { updateTuyenDuong } from '@services/mockApi/tuyenDuongApi';
 import logger from '@services/logger';
 import { useSnackbar } from 'notistack';
+import DeleteDialog from '@/components/DeleteDialog';
 
 // Define validation schema with Zod
 const routeSchema = z.object({
@@ -68,8 +69,8 @@ const DinhMucDiDuong = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [localRoutes, setLocalRoutes] = useState([]);
   const [localRoadNorms, setLocalRoadNorms] = useState([]);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false); // Delete dialog state
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editedData, setEditedData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -210,23 +211,20 @@ const DinhMucDiDuong = () => {
   // Handle delete
   const handleDeleteClick = (row) => {
     setItemToDelete(row);
-    setDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
 
     try {
-      setIsDeleting(true);
       await deleteTuyenDuongAndNorms(itemToDelete.id);
       enqueueSnackbar('Xóa thành công!', { variant: 'success' });
+      await fetchAllData();
     } catch (error) {
       logger.error('Failed to delete:', error);
       enqueueSnackbar('Xóa thất bại', { variant: 'error' });
     } finally {
-      setDeleteDialogOpen(false);
       setItemToDelete(null);
-      setIsDeleting(false);
     }
   };
 
@@ -575,26 +573,18 @@ const DinhMucDiDuong = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Bạn có chắc chắn muốn xóa tuyến đường này? Hành động này không thể hoàn tác.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
-          <Button
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="contained"
-            disabled={isDeleting}
-            startIcon={isDeleting ? <CircularProgress size={20} /> : null}
-          >
-            Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteDialog
+        open={!!itemToDelete}
+        onCancel={() => setItemToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận xóa"
+        message={`Bạn có chắc chắn muốn xóa tuyến đường ${itemToDelete?.ma_tuyen}?`}
+        details="Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="delete"
+        confirmColor="error"
+      />
 
       {!isMobile && !isLoading && !error && (
         <Fab
