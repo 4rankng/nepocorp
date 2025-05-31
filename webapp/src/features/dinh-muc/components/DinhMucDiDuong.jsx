@@ -47,6 +47,7 @@ const DinhMucDiDuong = () => {
 
   // Handle delete action - open dialog
   const handleDelete = rowData => {
+    console.log('handleDelete - rowData:', JSON.stringify(rowData, null, 2));
     setItemToDelete(rowData);
     setDeleteDialogOpen(true);
   };
@@ -82,7 +83,7 @@ const DinhMucDiDuong = () => {
   };
 
   // Render action buttons for each row
-  const renderActions = rowData => (
+  const renderActions = (_cellValue, rowData) => (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       <EditButton
         onClick={e => {
@@ -219,6 +220,7 @@ const DinhMucDiDuong = () => {
     console.log('Add new record clicked');
   };
 
+  console.log('Rendering DinhMucDiDuong - itemToDelete:', JSON.stringify(itemToDelete, null, 2));
   return (
     <>
       <DinhMucDiDuongDeleteDialog

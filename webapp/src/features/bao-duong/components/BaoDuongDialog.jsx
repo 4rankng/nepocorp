@@ -78,7 +78,6 @@ const BaoDuongDialog = ({
         ).sort((a, b) => (a.value || '').localeCompare(b.value || ''));
         setLicensePlates(uniquePlates);
       } catch (error) {
-
         // Set some default plates for testing if API fails
         setLicensePlates([
           { value: '51C-001.01', type: 'Đầu kéo' },
