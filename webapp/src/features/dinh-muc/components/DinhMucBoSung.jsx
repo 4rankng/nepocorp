@@ -24,7 +24,7 @@ import {
 import { Add as AddIcon, Info as InfoIcon } from '@mui/icons-material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-import ConfirmationDialog from '@/components/ConfirmationDialog';
+import DeleteDialog from '@/components/DeleteDialog';
 import { useDinhMucBoSung } from '../hooks/useDinhMucBoSung';
 import { useConfirmation } from '@/hooks/useConfirmation';
 import logger from '@services/logger';
@@ -41,9 +41,9 @@ const DinhMucBoSung = () => {
     updateRecord,
     deleteRecord,
   } = useDinhMucBoSung();
-  
+
   const { showConfirmation, confirmationState, handleConfirm, handleCancel } = useConfirmation();
-  
+
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
@@ -58,12 +58,12 @@ const DinhMucBoSung = () => {
   // Helper function to get route details
   const getRouteDetails = (ma_tuyen) => {
     if (!ma_tuyen) return { diem_di: '*', diem_den: '*' };
-    
+
     if (!Array.isArray(tuyenDuongList)) {
       logger.warn('tuyenDuongList is not an array, type:', typeof tuyenDuongList);
       return { diem_di: '', diem_den: '' };
     }
-    
+
     const route = tuyenDuongList.find(r => r.ma_so === ma_tuyen);
     return route ? { diem_di: route.diem_di, diem_den: route.diem_den } : { diem_di: '', diem_den: '' };
   };
@@ -203,7 +203,7 @@ const DinhMucBoSung = () => {
 
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.dinh_muc_l.trim()) {
       errors.dinh_muc_l = 'Định mức không được để trống';
     } else {
@@ -233,7 +233,7 @@ const DinhMucBoSung = () => {
       } else {
         await createRecord(submitData);
       }
-      
+
       handleCloseForm();
     } catch (err) {
       // Error is handled by the hook
@@ -269,7 +269,7 @@ const DinhMucBoSung = () => {
 
   return (
     <Box sx={{ position: 'relative' }}>
-      
+
 
       {/* Error Alert */}
       {error && (
@@ -305,8 +305,8 @@ const DinhMucBoSung = () => {
       </Fab>
 
       {/* Form Dialog */}
-      <Dialog 
-        open={isFormOpen} 
+      <Dialog
+        open={isFormOpen}
         onClose={handleCloseForm}
         maxWidth="sm"
         fullWidth
@@ -381,7 +381,7 @@ const DinhMucBoSung = () => {
           <Button onClick={handleCloseForm}>
             Hủy
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
             variant="contained"
             disabled={isSubmitting}
@@ -392,7 +392,7 @@ const DinhMucBoSung = () => {
       </Dialog>
 
       {/* Confirmation Dialog */}
-      <ConfirmationDialog
+      <DeleteDialog
         open={confirmationState.isOpen}
         title={confirmationState.title}
         message={confirmationState.message}

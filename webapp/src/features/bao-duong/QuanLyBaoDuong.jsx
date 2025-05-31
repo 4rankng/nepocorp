@@ -52,7 +52,7 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-import ConfirmationDialog from '@/components/ConfirmationDialog';
+import DeleteDialog from '@/components/DeleteDialog';
 import { baoDuongApi } from '@services/mockApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
@@ -434,7 +434,7 @@ const QuanLyBaoDuong = memo(() => {
         onSave={handleSave}
       />
       {/* Delete Confirmation Dialog */}
-      <ConfirmationDialog
+      <DeleteDialog
         open={deleteDialog.open}
         onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}

@@ -20,7 +20,7 @@ import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 
 import StandardTable from '@/components/StandardTable';
 import DinhMucVoRongDialog from './DinhMucVoRongDialog';
-import ConfirmationDialog from '@/components/ConfirmationDialog';
+import DeleteDialog from '@/components/DeleteDialog';
 import { useVoRong } from '../hooks/useVoRong';
 import { getVoRongTableColumns } from '../constants/voRongTableColumns';
 
@@ -320,7 +320,7 @@ const DinhMucVoRong = () => {
         isLoading={isSubmitting}
       />
 
-      <ConfirmationDialog
+      <DeleteDialog
         open={deleteDialog.open}
         onClose={handleDeleteClose}
         onConfirm={handleDeleteConfirm}

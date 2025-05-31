@@ -20,7 +20,7 @@ import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 
 import StandardTable from '@/components/StandardTable';
 import DinhMucChoHangDialog from './DinhMucChoHangDialog'; // Assuming this dialog is suitable
-import ConfirmationDialog from '@/components/ConfirmationDialog';
+import DeleteDialog from '@/components/DeleteDialog';
 // import { EditButton, DeleteButton } from '@/components/ActionButtons'; // These are now part of getChoHangTableColumns
 import { useChoHang } from '../hooks/useChoHang';
 import { getChoHangTableColumns } from '../constants/choHangTableColumns';
@@ -350,7 +350,7 @@ const DinhMucChoHang = () => {
         // availableLicensePlates={[]} // This prop might not be needed if bienSoXe is a text field
       />
 
-      <ConfirmationDialog
+      <DeleteDialog
         open={deleteDialog.open}
         onClose={handleDeleteClose}
         onConfirm={handleDeleteConfirm}
