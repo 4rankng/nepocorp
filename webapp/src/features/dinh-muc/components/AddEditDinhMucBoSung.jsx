@@ -14,7 +14,10 @@ import {
   InputAdornment,
   CircularProgress,
   Box,
+  Grid,
+  Autocomplete,
 } from '@mui/material';
+import logger from '../../../services/logger';
 
 /**
  * A dialog component for adding/editing dinh muc bo sung records
@@ -43,62 +46,122 @@ const AddEditDinhMucBoSung = ({
   tuyenDuongList = [],
   onSubmit,
 }) => {
+  const [tuyenDuongOptions, setTuyenDuongOptions] = React.useState([]);
+
+  React.useEffect(() => {
+    try {
+      // Process tuyen duong list to extract unique diem di and diem den
+      const diemDiOptions = [];
+      const diemDenOptions = [];
+
+      tuyenDuongList.forEach(tuyen => {
+        if (tuyen.diem_di && !diemDiOptions.includes(tuyen.diem_di)) {
+          diemDiOptions.push(tuyen.diem_di);
+        }
+        if (tuyen.diem_den && !diemDenOptions.includes(tuyen.diem_den)) {
+          diemDenOptions.push(tuyen.diem_den);
+        }
+      });
+
+      setTuyenDuongOptions({
+        diemDi: diemDiOptions.sort(),
+        diemDen: diemDenOptions.sort()
+      });
+    } catch (error) {
+      logger.error('Error processing tuyen duong options:', error);
+    }
+  }, [tuyenDuongList]);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editingRecord ? 'Sửa định mức bổ sung' : 'Thêm định mức bổ sung'}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
           {/* Biển số */}
-          <FormControl fullWidth error={!!formErrors.bien_so}>
-            <InputLabel>Biển số xe (để trống để áp dụng cho tất cả)</InputLabel>
-            <Select
-              value={formData.bien_so}
-              onChange={e => setFormData(prev => ({ ...prev, bien_so: e.target.value }))}
-              label="Biển số xe (để trống để áp dụng cho tất cả)"
-            >
-              <MenuItem value="">
-                <em>Áp dụng cho tất cả (*)</em>
-              </MenuItem>
-              {dauKeoList.map(dauKeo => (
-                <MenuItem key={dauKeo.id} value={dauKeo.bien_so}>
-                  {dauKeo.bien_so} - {dauKeo.mo_ta}
-                </MenuItem>
-              ))}
-            </Select>
-            {formErrors.bien_so && <FormHelperText>{formErrors.bien_so}</FormHelperText>}
-          </FormControl>
+          <Box sx={{ width: '100%', mb: 2 }}>
+            <Autocomplete
+              value={formData.bien_so || ''}
+              onChange={(_, newValue) => setFormData(prev => ({ ...prev, bien_so: newValue || '' }))}
+              options={['', ...dauKeoList.map(dauKeo => dauKeo.bien_so)]}
+              getOptionLabel={(option) => option === '' ? 'Tất cả' : option}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Biển số đầu kéo"
+                  variant="outlined"
+                  error={!!formErrors.bien_so}
+                  helperText={formErrors.bien_so}
+                  fullWidth
+                />
+              )}
+              fullWidth
+            />
+          </Box>
 
-          {/* Mã tuyến */}
-          <FormControl fullWidth error={!!formErrors.ma_tuyen}>
-            <InputLabel>Mã tuyến (để trống để áp dụng cho tất cả)</InputLabel>
-            <Select
-              value={formData.ma_tuyen}
-              onChange={e => setFormData(prev => ({ ...prev, ma_tuyen: e.target.value }))}
-              label="Mã tuyến (để trống để áp dụng cho tất cả)"
-            >
-              <MenuItem value="">
-                <em>Áp dụng cho tất cả (*)</em>
-              </MenuItem>
-              {tuyenDuongList.map(tuyen => (
-                <MenuItem key={tuyen.id} value={tuyen.ma_so}>
-                  {tuyen.ma_so} - {tuyen.diem_di} → {tuyen.diem_den}
-                </MenuItem>
-              ))}
-            </Select>
-            {formErrors.ma_tuyen && <FormHelperText>{formErrors.ma_tuyen}</FormHelperText>}
-          </FormControl>
+          {/* Điểm đi */}
+          <Box sx={{ width: '100%', mb: 2 }}>
+            <Autocomplete
+              value={formData.diem_di || ''}
+              onChange={(_, newValue) => setFormData(prev => ({ ...prev, diem_di: newValue || '' }))}
+              options={['', ...(tuyenDuongOptions.diemDi || [])]}
+              getOptionLabel={(option) => option || 'Tất cả'}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Điểm đi"
+                  variant="outlined"
+                  error={!!formErrors.diem_di}
+                  helperText={formErrors.diem_di}
+                  fullWidth
+                />
+              )}
+              fullWidth
+            />
+          </Box>
+
+          {/* Điểm đến */}
+          <Box sx={{ width: '100%', mb: 2 }}>
+            <Autocomplete
+              value={formData.diem_den || ''}
+              onChange={(_, newValue) => setFormData(prev => ({ ...prev, diem_den: newValue || '' }))}
+              options={['', ...(tuyenDuongOptions.diemDen || [])]}
+              getOptionLabel={(option) => option || 'Tất cả'}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Điểm đến"
+                  variant="outlined"
+                  error={!!formErrors.diem_den}
+                  helperText={formErrors.diem_den}
+                  fullWidth
+                />
+              )}
+              fullWidth
+            />
+          </Box>
 
           {/* Định mức */}
           <TextField
-            label="Định mức"
+            label="Định mức nhiên liệu (lít) *"
             type="number"
             value={formData.dinh_muc_l}
-            onChange={e => setFormData(prev => ({ ...prev, dinh_muc_l: e.target.value }))}
+            onChange={e => {
+              const value = parseFloat(e.target.value);
+              if (!isNaN(value) && value >= 0) {
+                setFormData(prev => ({ ...prev, dinh_muc_l: value }));
+              } else if (e.target.value === '') {
+                setFormData(prev => ({ ...prev, dinh_muc_l: '' }));
+              }
+            }}
             error={!!formErrors.dinh_muc_l}
-            helperText={formErrors.dinh_muc_l}
+            helperText={formErrors.dinh_muc_l || 'Nhập định mức nhiên liệu tính bằng lít'}
             InputProps={{
               endAdornment: <InputAdornment position="end">lít</InputAdornment>,
-              inputProps: { min: 0, step: 0.1 },
+              inputProps: { 
+                min: 0, 
+                step: 0.1,
+                pattern: '^\\d*\\.?\\d*$' // Only allow numbers and decimal point
+              },
             }}
             fullWidth
             required
