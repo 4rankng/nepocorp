@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import logger from '@utils/logger';
+import logger from '@services/logger';
 
 export default function useBaoDuongRecords(api) {
   const [baoDuongRecords, setBaoDuongRecords] = useState([]);

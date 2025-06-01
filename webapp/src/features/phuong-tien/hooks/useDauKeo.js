@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import logger from '@utils/logger';
+import logger from '@services/logger';
 import { fetchAllDauKeo, addDauKeo, editDauKeo, removeDauKeo } from '@services/mockApi';
 export const useDauKeo = () => {
   const [data, setData] = useState([]);

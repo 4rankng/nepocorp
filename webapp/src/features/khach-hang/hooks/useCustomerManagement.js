@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import logger from '@utils/logger';
+import logger from '@services/logger';
 import {
   fetchAllKhachHang,
   fetchKhachHangById,
@@ -137,15 +137,15 @@ const useCustomerManagement = () => {
     } catch (error) {
       // Not found is an expected case, don't log as error
       if (error.response?.status !== 404) {
-        logger.error('Error fetching customer by code', { 
-          code, 
+        logger.error('Error fetching customer by code', {
+          code,
           error: error.message,
-          status: error.response?.status 
+          status: error.response?.status,
         });
       }
-      return { 
-        success: false, 
-        error: error.response?.data?.error || error.message 
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message,
       };
     }
   }, []);

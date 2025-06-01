@@ -1,7 +1,7 @@
 // Import existing vehicle data for validation
 import { getAllDauKeo } from './dauKeo';
 import { getAllRoMooc } from './roMooc';
-import logger from '@utils/logger';
+import logger from '@services/logger';
 // Get all existing vehicle license plates
 const getAllValidBienSo = async () => {
   try {

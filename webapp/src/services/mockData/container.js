@@ -1,4 +1,4 @@
-import logger from '@utils/logger';
+import logger from '@services/logger';
 
 // Mock database for Container
 // Fields: id (number, primary key), ma_so (string, container code), phan_loai (string), createdAt (ISO String), updatedAt (ISO String)
@@ -180,7 +180,7 @@ const duplicateNumericIds = initialNumericIds.filter(
 
 if (duplicateNumericIds.length > 0) {
   logger.warn('Duplicate container IDs found in seed data', {
-    duplicateIds: duplicateNumericIds
+    duplicateIds: duplicateNumericIds,
   });
 }
 

@@ -1,4 +1,4 @@
-import logger from '@utils/logger';
+import logger from '@services/logger';
 
 /**
  * Mock Database Service
@@ -20,18 +20,18 @@ class MockDB {
       // Import all mock data
       const { default: baoDuongData } = await import('@services/mockData/baoDuong');
       const { default: userData } = await import('@services/mockData/users');
-      
+
       // Initialize tables with bootstrap data
       this.tables.set('baoDuong', [...baoDuongData]);
       this.tables.set('users', [...userData]);
-      
+
       // Try to load persisted data from localStorage if available
       this.loadPersistedData();
       this.initialized = true;
     } catch (error) {
-      logger.error('Error initializing mock database', { 
+      logger.error('Error initializing mock database', {
         error: error.message,
-        stack: error.stack 
+        stack: error.stack,
       });
       throw error;
     }
@@ -41,7 +41,7 @@ class MockDB {
    */
   loadPersistedData() {
     if (typeof window === 'undefined' || !window.localStorage) return;
-    
+
     try {
       const persistedData = window.localStorage.getItem('mockDB');
       if (persistedData) {
@@ -54,7 +54,7 @@ class MockDB {
       }
     } catch (error) {
       logger.warn('Failed to load persisted data from localStorage', {
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -63,7 +63,7 @@ class MockDB {
    */
   persistData(tableName) {
     if (typeof window === 'undefined' || !window.localStorage) return;
-    
+
     try {
       const data = this.tables.get(tableName);
       if (data) {
@@ -103,10 +103,10 @@ class MockDB {
         try {
           callback({ operation, data, tableName });
         } catch (error) {
-          logger.error('Error in listener callback', { 
-            error: error.message, 
+          logger.error('Error in listener callback', {
+            error: error.message,
             tableName,
-            operation
+            operation,
           });
         }
       });
