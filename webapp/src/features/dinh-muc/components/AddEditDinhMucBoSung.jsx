@@ -76,9 +76,10 @@ const AddEditDinhMucBoSung = ({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editingRecord ? 'Sửa định mức bổ sung' : 'Thêm định mức bổ sung'}</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
-          {/* Biển số */}
-          <Box sx={{ width: '100%', mb: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
+            {/* Biển số */}
+            <Box sx={{ width: '50%' }}>
             <Autocomplete
               value={formData.bien_so || ''}
               onChange={(_, newValue) => setFormData(prev => ({ ...prev, bien_so: newValue || '' }))}
@@ -92,14 +93,64 @@ const AddEditDinhMucBoSung = ({
                   error={!!formErrors.bien_so}
                   helperText={formErrors.bien_so}
                   fullWidth
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '0.875rem',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.875rem',
+                    },
+                  }}
                 />
               )}
               fullWidth
+              size="small"
+              sx={{
+                '& .MuiAutocomplete-inputRoot': {
+                  padding: '6px 12px',
+                },
+              }}
             />
           </Box>
 
+          {/* Định mức */}
+          <Box sx={{ width: '50%' }}>
+              <TextField
+                label="Định mức"
+                type="number"
+                value={formData.dinh_muc_l}
+                onChange={e => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value >= 0) {
+                    setFormData(prev => ({ ...prev, dinh_muc_l: value }));
+                  } else if (e.target.value === '') {
+                    setFormData(prev => ({ ...prev, dinh_muc_l: '' }));
+                  }
+                }}
+                error={!!formErrors.dinh_muc_l}
+                helperText={formErrors.dinh_muc_l}
+                fullWidth
+                size="small"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">lít</InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    fontSize: '0.875rem',
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontSize: '0.875rem',
+                  },
+                }}
+              />
+            </Box>
+          </Box>
+
           {/* Điểm đi */}
-          <Box sx={{ width: '100%', mb: 2 }}>
+          <Box sx={{ width: '100%', mb: 0, mt: 0 }}>
             <Autocomplete
               value={formData.diem_di || ''}
               onChange={(_, newValue) => setFormData(prev => ({ ...prev, diem_di: newValue || '' }))}
@@ -113,14 +164,29 @@ const AddEditDinhMucBoSung = ({
                   error={!!formErrors.diem_di}
                   helperText={formErrors.diem_di}
                   fullWidth
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '0.875rem',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.875rem',
+                    },
+                  }}
                 />
               )}
               fullWidth
+              size="small"
+              sx={{
+                '& .MuiAutocomplete-inputRoot': {
+                  padding: '6px 12px',
+                },
+              }}
             />
           </Box>
 
           {/* Điểm đến */}
-          <Box sx={{ width: '100%', mb: 2 }}>
+          <Box sx={{ width: '100%', mb: 0, mt: 0 }}>
             <Autocomplete
               value={formData.diem_den || ''}
               onChange={(_, newValue) => setFormData(prev => ({ ...prev, diem_den: newValue || '' }))}
@@ -134,38 +200,26 @@ const AddEditDinhMucBoSung = ({
                   error={!!formErrors.diem_den}
                   helperText={formErrors.diem_den}
                   fullWidth
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '0.875rem',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.875rem',
+                    },
+                  }}
                 />
               )}
               fullWidth
+              size="small"
+              sx={{
+                '& .MuiAutocomplete-inputRoot': {
+                  padding: '6px 12px',
+                },
+              }}
             />
           </Box>
-
-          {/* Định mức */}
-          <TextField
-            label="Định mức nhiên liệu (lít) *"
-            type="number"
-            value={formData.dinh_muc_l}
-            onChange={e => {
-              const value = parseFloat(e.target.value);
-              if (!isNaN(value) && value >= 0) {
-                setFormData(prev => ({ ...prev, dinh_muc_l: value }));
-              } else if (e.target.value === '') {
-                setFormData(prev => ({ ...prev, dinh_muc_l: '' }));
-              }
-            }}
-            error={!!formErrors.dinh_muc_l}
-            helperText={formErrors.dinh_muc_l || 'Nhập định mức nhiên liệu tính bằng lít'}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">lít</InputAdornment>,
-              inputProps: { 
-                min: 0, 
-                step: 0.1,
-                pattern: '^\\d*\\.?\\d*$' // Only allow numbers and decimal point
-              },
-            }}
-            fullWidth
-            required
-          />
         </Box>
       </DialogContent>
       <DialogActions>
