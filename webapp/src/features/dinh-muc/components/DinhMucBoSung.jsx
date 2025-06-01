@@ -23,8 +23,7 @@ import {
   styled,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import Tippy from '@tippyjs/react';
-import 'tippy.js/dist/tippy.css';
+import AsteriskCell from '@/components/AsteriskCell';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import DeleteDialog from '@/components/DeleteDialog';
@@ -115,34 +114,6 @@ const DinhMucBoSung = () => {
   );
 
   // Table columns
-  // Helper component for cells with tooltip on asterisk
-  const AsteriskCell = ({ value, tooltip = 'Áp dụng cho tất cả' }) => {
-    if (value === '*') {
-      return (
-        <Tippy content={tooltip} placement="top" delay={[300, 0]}>
-          <Typography
-            variant="body2"
-            fontWeight={500}
-            sx={{
-              color: 'primary.main',
-              cursor: 'help',
-              textDecoration: 'underline',
-              textDecorationStyle: 'dotted',
-              textUnderlineOffset: '2px',
-            }}
-          >
-            {value}
-          </Typography>
-        </Tippy>
-      );
-    }
-    return (
-      <Typography variant="body2" fontWeight={500}>
-        {value}
-      </Typography>
-    );
-  };
-
   const columns = useMemo(
     () => [
       {
