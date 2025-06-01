@@ -7,12 +7,32 @@
       content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <title>Nepocorp Demo Web</title>
+    <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&family=Roboto:wght@400;500;700&display=swap"
-      rel="stylesheet"
+    
+    <!-- Preload critical font files -->
+    <link 
+      rel="preload" 
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&family=Roboto:wght@400;500;700&display=swap" 
+      as="style" 
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link 
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&family=Roboto:wght@400;500;700&display=swap" 
+        rel="stylesheet"
+      />
+    </noscript>
+    
+    <!-- Fallback font stack -->
+    <style>
+      /* System font stack as fallback */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+      /* Font face definitions will be loaded asynchronously */
+    </style>
   </head>
   <body>
     <div id="root"></div>
