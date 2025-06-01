@@ -19,7 +19,6 @@ import {
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 
 import StandardTable from '@/components/StandardTable';
-import DinhMucVoRongDialog from './DinhMucVoRongDialog';
 import DeleteDialog from '@/components/DeleteDialog';
 import { useVoRong } from '../hooks/useVoRong';
 import { getVoRongTableColumns } from '../constants/voRongTableColumns';
@@ -313,18 +312,6 @@ const DinhMucVoRong = () => {
         onRowsPerPageChange={event => {
           pagination.onRowsPerPageChange(event);
         }}
-      />
-
-      <DinhMucVoRongDialog
-        open={openAddEditDialog}
-        isEdit={isEdit}
-        formData={formData}
-        errors={formErrors}
-        licensePlate={formData.bienSoXe}
-        onClose={handleCloseDialog}
-        onSave={handleSave}
-        onInputChange={handleDialogInputChange}
-        isLoading={isSubmitting}
       />
 
       <DeleteDialog
