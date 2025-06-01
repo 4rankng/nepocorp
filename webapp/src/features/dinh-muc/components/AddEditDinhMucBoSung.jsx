@@ -66,13 +66,13 @@ const AddEditDinhMucBoSung = ({
         diem_den: '*',
         label: 'Tất cả',
       };
-      
+
       // Map the rest of the tuyen duong items
       const tuyenItems = tuyenDuongList.map(tuyen => ({
         ...tuyen,
         label: `${tuyen.diem_di} - ${tuyen.diem_den}`,
       }));
-      
+
       return [allOption, ...tuyenItems];
     } catch (error) {
       logger.error('Error processing tuyen duong list:', error);
@@ -89,21 +89,21 @@ const AddEditDinhMucBoSung = ({
         label: 'Tất cả',
         isAll: true
       };
-      
+
       // Map the dau keo items
       const items = dauKeoList.map(item => ({
         value: typeof item === 'object' ? item.bien_so : item,
         label: typeof item === 'object' ? item.bien_so : item,
         isAll: false
       }));
-      
+
       return [allOption, ...items];
     } catch (error) {
       logger.error('Error processing dau keo list:', error);
       return [];
     }
   }, [dauKeoList]);
-  
+
   // Get selected dau keo
   const selectedDauKeo = useMemo(() => {
     if (formData.bien_so === null || formData.bien_so === '') {
@@ -111,7 +111,7 @@ const AddEditDinhMucBoSung = ({
     }
     return processedDauKeoList.find(item => item.value === formData.bien_so) || null;
   }, [formData.bien_so, processedDauKeoList]);
-  
+
   // Handle dau keo change
   const handleDauKeoChange = (_, newValue) => {
     setFormData(prev => ({
@@ -303,8 +303,10 @@ const AddEditDinhMucBoSung = ({
                 fullWidth
                 size="small"
                 sx={{
+                  width: '100%',
                   '& .MuiAutocomplete-inputRoot': {
                     padding: '6px 12px',
+                    height: '40px',
                   },
                 }}
               />
@@ -313,14 +315,19 @@ const AddEditDinhMucBoSung = ({
                   variant="outlined"
                   onClick={handleOpenTuyenDuongManager}
                   sx={{
-                    minWidth: 'auto',
-                    height: '40px',
-                    width: '40px',
+                    minWidth: '40px',
+                    minHeight: '40px',
                     mt: '8px',
                     p: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    '& .MuiButton-startIcon': {
+                      m: 0
+                    }
                   }}
                 >
-                  <AddIcon />
+                  <AddIcon fontSize="small" />
                 </Button>
               </Tooltip>
             </Box>
