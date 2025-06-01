@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Box, Typography, Paper, useTheme, Fab, Alert, CircularProgress } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Warning as WarningIcon } from '@mui/icons-material';
 import AsteriskCell from '@/components/AsteriskCell';
 import AddEditDinhMucBoSung from './AddEditDinhMucBoSung';
 import StandardTable from '@/components/StandardTable';
@@ -220,12 +220,15 @@ const DinhMucBoSung = () => {
     }
   };
 
-  const handleDelete = async record => {
+  const handleDelete = async (record) => {
     const confirmed = await showConfirmation({
-      title: 'Xác nhận xóa',
-      message: `Bạn có chắc chắn muốn xóa định mức bổ sung này?`,
+      title: 'Xóa định mức bổ sung',
+      message: 'Bạn có chắc chắn muốn xóa định mức bổ sung này?',
       confirmText: 'Xóa',
       cancelText: 'Hủy',
+      data: record, // Pass the record data to show in the dialog
+      type: 'delete',
+      confirmColor: 'error',
     });
 
     if (confirmed) {
@@ -297,11 +300,22 @@ const DinhMucBoSung = () => {
 
       <DeleteDialog
         open={confirmationState.isOpen}
-        title={confirmationState.title}
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningIcon color="error" />
+            <span>{confirmationState.title || 'Xác nhận xóa'}</span>
+          </Box>
+        }
         message={confirmationState.message}
-        confirmText={confirmationState.confirmText}
-        cancelText={confirmationState.cancelText}
-        confirmColor={confirmationState.confirmColor}
+        details={confirmationState.data ? {
+          'Biển số': confirmationState.data.bien_so === '*' ? 'Tất cả' : confirmationState.data.bien_so,
+          'Điểm đi': confirmationState.data.diem_di === '*' ? 'Tất cả' : confirmationState.data.diem_di,
+          'Điểm đến': confirmationState.data.diem_den === '*' ? 'Tất cả' : confirmationState.data.diem_den,
+        } : null}
+        confirmText={confirmationState.confirmText || 'Xóa'}
+        cancelText={confirmationState.cancelText || 'Hủy'}
+        confirmColor="error"
+        type="delete"
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       />

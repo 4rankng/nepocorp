@@ -8,6 +8,8 @@ export const useConfirmation = () => {
     confirmText: 'Xác nhận',
     cancelText: 'Hủy',
     confirmColor: 'primary',
+    data: null,
+    type: 'info',
     resolve: null,
   });
 
@@ -20,6 +22,8 @@ export const useConfirmation = () => {
         confirmText: options.confirmText || 'Xác nhận',
         cancelText: options.cancelText || 'Hủy',
         confirmColor: options.confirmColor || 'primary',
+        data: options.data || null,
+        type: options.type || 'info',
         resolve,
       });
     });
