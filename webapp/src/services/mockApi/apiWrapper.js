@@ -92,7 +92,6 @@ export async function withPagination(dataFetcher, options = {}) {
     try {
       allData = await dataFetcher();
     } catch (fetchError) {
-
       return createApiErrorResponse(
         ErrorCodes.INTERNAL_ERROR,
         'Failed to fetch data for pagination',
@@ -100,7 +99,6 @@ export async function withPagination(dataFetcher, options = {}) {
       );
     }
     if (!allData || !Array.isArray(allData)) {
-
       return createApiErrorResponse(
         ErrorCodes.INTERNAL_ERROR,
         'Invalid data format for pagination'
@@ -117,7 +115,6 @@ export async function withPagination(dataFetcher, options = {}) {
       message,
     });
   } catch (error) {
-
     return createApiErrorResponse(
       ErrorCodes.INTERNAL_ERROR,
       'Failed to process pagination',
@@ -143,7 +140,6 @@ export async function withSingleItem(
     try {
       data = await dataFetcher();
     } catch (fetchError) {
-
       return createApiErrorResponse(
         ErrorCodes.INTERNAL_ERROR,
         'Failed to fetch item data',
@@ -155,7 +151,6 @@ export async function withSingleItem(
     }
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
-
     if (error.success === false) {
       // Already an API error response
       return error;
@@ -180,7 +175,6 @@ export async function withCreate(creator, successMessage = 'Item created success
     try {
       data = await creator();
     } catch (createError) {
-
       return createApiErrorResponse(
         ErrorCodes.INTERNAL_ERROR,
         'Failed to execute create operation',
@@ -195,7 +189,6 @@ export async function withCreate(creator, successMessage = 'Item created success
     }
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
-
     if (error.success === false) {
       return error;
     }
@@ -224,7 +217,6 @@ export async function withUpdate(
     try {
       data = await updater();
     } catch (updateError) {
-
       return createApiErrorResponse(
         ErrorCodes.INTERNAL_ERROR,
         'Failed to execute update operation',
@@ -236,7 +228,6 @@ export async function withUpdate(
     }
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
-
     if (error.success === false) {
       return error;
     }
@@ -265,7 +256,6 @@ export async function withDelete(
     try {
       result = await deleter();
     } catch (deleteError) {
-
       return createApiErrorResponse(
         ErrorCodes.INTERNAL_ERROR,
         'Failed to execute delete operation',
@@ -281,7 +271,6 @@ export async function withDelete(
     const data = result === true ? { deleted: true } : result;
     return createApiSingleResponse(data, successMessage);
   } catch (error) {
-
     if (error.success === false) {
       return error;
     }
@@ -319,7 +308,6 @@ export async function mockApiCall(apiCall, options = {}) {
     try {
       result = await apiCall();
     } catch (callError) {
-
       // Enhanced error handling to provide more detailed information
       const errorDetails = callError.message || 'Unknown error occurred';
       const errorResponse =
@@ -335,7 +323,6 @@ export async function mockApiCall(apiCall, options = {}) {
     }
     // Check if result is valid
     if (!result) {
-
       return createApiErrorResponse(ErrorCodes.INTERNAL_ERROR, 'API returned empty result');
     }
     return result;

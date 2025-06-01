@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Box, 
-  useMediaQuery, 
-  useTheme, 
-  Card, 
-  CardContent, 
-  Typography, 
+import {
+  Box,
+  useMediaQuery,
+  useTheme,
+  Card,
+  CardContent,
+  Typography,
   TablePagination,
   CircularProgress,
-  Alert
+  Alert,
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, SearchBar } from '@/components';
@@ -39,10 +39,7 @@ const ContainerListResponsive = ({
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) return data;
     const term = searchTerm.toLowerCase();
-    return data.filter(
-      item =>
-        (item.phan_loai && item.phan_loai.toLowerCase().includes(term))
-    );
+    return data.filter(item => item.phan_loai && item.phan_loai.toLowerCase().includes(term));
   }, [data, searchTerm]);
   // Get current data for the current page
   const paginatedData = useMemo(() => {

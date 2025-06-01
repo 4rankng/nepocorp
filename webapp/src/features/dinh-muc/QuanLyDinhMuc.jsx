@@ -18,7 +18,7 @@ const QuanLyDinhMuc = () => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const activeTab = TABS.some(tab => tab.value === tabFromUrl) ? tabFromUrl : TABS[0].value;
   // Redirect to the default tab if the current tab from URL is invalid
   useEffect(() => {

@@ -40,7 +40,6 @@ const useCustomerManagement = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không thể tải danh sách khách hàng';
       setError(errorMessage);
-
     } finally {
       setLoading(false);
     }
@@ -137,7 +136,6 @@ const useCustomerManagement = () => {
     } catch (err) {
       // Not found is an expected case, don't log as error
       if (err.response?.status !== 404) {
-
       }
       return { success: false, error: err.response?.data?.error };
     }

@@ -140,7 +140,6 @@ export const createDauKeo = async data => {
     updatedAt: new Date().toISOString(),
   };
   if (!data.bien_so || !data.mo_ta) {
-
     return null;
   }
   dauKeoData.push(newDauKeo);

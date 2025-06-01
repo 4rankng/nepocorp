@@ -72,7 +72,6 @@ const BaoCaoCongNo = () => {
       setFilteredData(data);
     } catch (err) {
       setError('Không thể tải dữ liệu báo cáo.');
-
     } finally {
       setIsLoading(false);
     }

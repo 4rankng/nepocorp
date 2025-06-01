@@ -28,7 +28,6 @@ const useDoiTac = () => {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Không thể tải danh sách đối tác';
       setError(errorMessage);
-
     } finally {
       setLoading(false);
     }

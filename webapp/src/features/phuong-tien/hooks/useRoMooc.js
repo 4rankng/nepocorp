@@ -91,9 +91,7 @@ export const useRoMooc = () => {
         const result = response.data?.items || response.data || [];
         setCount(result.length);
       }
-    } catch (err) {
-
-    }
+    } catch (err) {}
   }, []);
   // Initialize data on mount
   useEffect(() => {

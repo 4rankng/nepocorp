@@ -239,7 +239,6 @@ const QuanLyLichVanChuyen = () => {
       });
     } catch (err) {
       setError('Không thể tải dữ liệu Lịch Vận Chuyển.');
-
     } finally {
       setIsLoading(false);
     }
@@ -333,7 +332,6 @@ const QuanLyLichVanChuyen = () => {
       setFormData(initialFormState); // Reset form
     } catch (err) {
       setError(`Lỗi khi lưu lịch vận chuyển: ${err.message}`);
-
     } finally {
       setIsLoading(false);
     }
@@ -359,7 +357,6 @@ const QuanLyLichVanChuyen = () => {
     } catch (err) {
       setError(`Lỗi khi xóa lịch vận chuyển: ${err.message}`);
       showSnackbar(`Lỗi khi xóa: ${err.message}`, 'error');
-
     } finally {
       setIsLoading(false);
     }
@@ -386,7 +383,6 @@ const QuanLyLichVanChuyen = () => {
         const matchesStatus = !filterStatus || item.trang_thai === filterStatus;
         return matchesSearch && matchesStatus;
       } catch (error) {
-
         return false;
       }
     });
@@ -599,10 +595,14 @@ const QuanLyLichVanChuyen = () => {
                 </Typography>
                 <Divider sx={{ my: 1 }} />
                 <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
-                  <Typography variant="body2" fontWeight={500}>Mã chuyến:</Typography>
+                  <Typography variant="body2" fontWeight={500}>
+                    Mã chuyến:
+                  </Typography>
                   <Typography variant="body2">{itemToDelete.ma_chuyen}</Typography>
 
-                  <Typography variant="body2" fontWeight={500}>Khách hàng:</Typography>
+                  <Typography variant="body2" fontWeight={500}>
+                    Khách hàng:
+                  </Typography>
                   <Typography variant="body2">
                     {getEntityNameById(
                       itemToDelete.khach_hang_id,
@@ -612,7 +612,9 @@ const QuanLyLichVanChuyen = () => {
                     )}
                   </Typography>
 
-                  <Typography variant="body2" fontWeight={500}>Ngày đi:</Typography>
+                  <Typography variant="body2" fontWeight={500}>
+                    Ngày đi:
+                  </Typography>
                   <Typography variant="body2">
                     {formatDateForDisplay(itemToDelete.ngay_van_chuyen)}
                   </Typography>

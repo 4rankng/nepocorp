@@ -161,7 +161,6 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
       };
       setDauKeoList(mappedDauKeo);
     } catch (err) {
-
       setDauKeoList([]);
     } finally {
       setIsDauKeoLoading(false);
@@ -274,7 +273,6 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
         await fetchEmployeesData(); // Refresh data
       } catch (err) {
         setError('Lỗi khi xóa nhân viên.');
-
       } finally {
         setIsLoading(false);
       }

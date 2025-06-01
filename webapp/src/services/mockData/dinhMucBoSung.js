@@ -24,7 +24,7 @@ let dinhMucBoSungData = ensureUniqueIds([
   },
   {
     bien_so: '29H-111.22',
-    ma_tuyen: 'TD002', 
+    ma_tuyen: 'TD002',
     dinh_muc_l: 12.5,
     createdAt: '2023-01-02T08:00:00Z',
     updatedAt: '2023-01-02T08:00:00Z',
@@ -79,7 +79,7 @@ const createDinhMucBoSung = data => {
   // Generate new ID
   const maxId = dinhMucBoSungData.reduce((max, item) => Math.max(max, item.id), 0);
   const newId = maxId + 1;
-  
+
   const now = new Date().toISOString();
   const newItem = {
     ...data,
@@ -87,7 +87,7 @@ const createDinhMucBoSung = data => {
     createdAt: now,
     updatedAt: now,
   };
-  
+
   dinhMucBoSungData.push(newItem);
   return newItem;
 };
@@ -97,13 +97,13 @@ const updateDinhMucBoSung = (id, updates) => {
   if (index === -1) {
     throw new Error('DinhMucBoSung not found');
   }
-  
+
   const updatedItem = {
     ...dinhMucBoSungData[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  
+
   dinhMucBoSungData[index] = updatedItem;
   return updatedItem;
 };
@@ -113,7 +113,7 @@ const deleteDinhMucBoSung = id => {
   if (index === -1) {
     throw new Error('DinhMucBoSung not found');
   }
-  
+
   const deletedItem = dinhMucBoSungData[index];
   dinhMucBoSungData.splice(index, 1);
   return deletedItem;

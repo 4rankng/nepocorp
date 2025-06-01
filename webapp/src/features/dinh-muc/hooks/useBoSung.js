@@ -20,7 +20,6 @@ export const useBoSung = () => {
       setSupplementaryStandard(data.value || 0);
       return data.value || 0;
     } catch (err) {
-
       setError('Không thể tải dữ liệu định mức bổ sung. Vui lòng thử lại.');
       throw err;
     } finally {
@@ -39,7 +38,6 @@ export const useBoSung = () => {
       setSupplementaryStandard(newValue);
       return response.data;
     } catch (err) {
-
       setError('Lỗi khi cập nhật định mức bổ sung');
       throw err;
     } finally {

@@ -132,7 +132,6 @@ const QuanLyBaoDuong = memo(() => {
         message: 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng',
         severity: 'error',
       });
-
     },
   });
   // Fetch count and data on mount
@@ -225,7 +224,6 @@ const QuanLyBaoDuong = memo(() => {
         message: 'Đã xảy ra lỗi khi xóa thông tin bảo dưỡng',
         severity: 'error',
       });
-
     } finally {
       setFormLoading(false);
     }
@@ -250,7 +248,6 @@ const QuanLyBaoDuong = memo(() => {
         refetchCount();
         setOpenDialog(false);
       } catch (error) {
-
         // Extract detailed error information
         const errorDetails = error.response?.error?.details || {};
         const errorMessage = error.message || 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng';
@@ -353,7 +350,6 @@ const QuanLyBaoDuong = memo(() => {
           </Box>
         )}
         onPageChange={(_, newPage) => {
-
           fetchData(newPage, pagination.pageSize);
         }}
         onRowsPerPageChange={event => {

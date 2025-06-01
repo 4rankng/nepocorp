@@ -18,9 +18,7 @@ export default function useBaoDuongRecords(api) {
         new Set((allRecordsRes.data || []).map(r => r.bien_so).filter(Boolean))
       ).map(plate => ({ id: plate, bien_so: plate }));
       setLicensePlates(licensePlateOptions);
-    } catch (err) {
-
-    }
+    } catch (err) {}
   }, [api]);
 
   // Fetch paginated data
@@ -55,7 +53,6 @@ export default function useBaoDuongRecords(api) {
         setError('');
       } catch (err) {
         setError('Không thể tải dữ liệu bảo dưỡng');
-
       } finally {
         setIsLoading(false);
       }
@@ -91,7 +88,6 @@ export default function useBaoDuongRecords(api) {
         setError('');
       } catch (err) {
         setError('Không thể tải dữ liệu bảo dưỡng');
-
       } finally {
         setIsLoading(false);
       }

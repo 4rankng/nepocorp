@@ -174,10 +174,14 @@ const QuanLyNhanVien = () => {
               </Typography>
               <Divider sx={{ my: 1 }} />
               <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
-                <Typography variant="body2" fontWeight={500}>Tên nhân viên:</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Tên nhân viên:
+                </Typography>
                 <Typography variant="body2">{deleteDialog.data?.tenNhanVien || '-'}</Typography>
 
-                <Typography variant="body2" fontWeight={500}>Mã nhân viên:</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Mã nhân viên:
+                </Typography>
                 <Typography variant="body2">{deleteDialog.data?.maNhanVien || '-'}</Typography>
               </Box>
             </Box>

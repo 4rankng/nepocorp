@@ -67,7 +67,6 @@ const MobileShipmentFormStepper = ({
     setActiveStep(0);
     setValidationAttempted({});
     // Log the received props for debugging
-
   }, [editingPlan, selectOptions]);
   const getFieldOptions = field => {
     // Handle different field types and their options
@@ -248,7 +247,6 @@ const MobileShipmentFormStepper = ({
       // Close the dialog
       handleCloseCustomerDialog();
     } catch (error) {
-
       setDataError('Lỗi khi thêm khách hàng mới.');
       // Keep dialog open on error so user can see the error
     }

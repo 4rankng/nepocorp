@@ -78,7 +78,6 @@ const QuanLyDoiTac = () => {
           return;
         }
       } catch (err) {
-
         setFormError('Có lỗi xảy ra khi kiểm tra mã đối tác. Vui lòng thử lại.');
         setIsValidatingCode(false);
         return;
@@ -99,7 +98,6 @@ const QuanLyDoiTac = () => {
         setFormError(result.error || 'Có lỗi xảy ra. Vui lòng thử lại.');
       }
     } catch (err) {
-
       setFormError('Có lỗi xảy ra khi lưu thông tin đối tác.');
     }
   };
@@ -184,15 +182,21 @@ const QuanLyDoiTac = () => {
               </Typography>
               <Divider sx={{ my: 1 }} />
               <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
-                <Typography variant="body2" fontWeight={500}>Tên đối tác:</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Tên đối tác:
+                </Typography>
                 <Typography variant="body2">{deleteDialog.data?.ten || '-'}</Typography>
 
-                <Typography variant="body2" fontWeight={500}>Địa chỉ:</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Địa chỉ:
+                </Typography>
                 <Typography variant="body2">
                   {deleteDialog.data?.dia_chi || 'Chưa cập nhật'}
                 </Typography>
 
-                <Typography variant="body2" fontWeight={500}>Mã số thuế:</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Mã số thuế:
+                </Typography>
                 <Typography variant="body2">
                   {deleteDialog.data?.ma_so_thue || 'Chưa cập nhật'}
                 </Typography>

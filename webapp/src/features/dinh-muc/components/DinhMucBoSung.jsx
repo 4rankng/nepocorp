@@ -12,7 +12,7 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
 } from '@mui/material';
 import { Add as AddIcon, Warning as WarningIcon, Search as SearchIcon } from '@mui/icons-material';
 import AsteriskCell from '@/components/AsteriskCell';
@@ -38,7 +38,7 @@ const DinhMucBoSung = () => {
     selectedPlate,
     handlePlateChange,
     licensePlates,
-    loadData
+    loadData,
   } = useDinhMucBoSung();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,16 +74,19 @@ const DinhMucBoSung = () => {
   };
 
   // Handle search input change
-  const handleSearchChange = useCallback((event) => {
+  const handleSearchChange = useCallback(event => {
     const value = event.target.value;
     setSearchTerm(value);
   }, []);
 
   // Handle plate selection from dropdown (server-side filtering)
-  const handlePlateSelect = useCallback((event) => {
-    const plate = event.target.value === 'Tất cả' ? '' : event.target.value;
-    handlePlateChange(plate);
-  }, [handlePlateChange]);
+  const handlePlateSelect = useCallback(
+    event => {
+      const plate = event.target.value === 'Tất cả' ? '' : event.target.value;
+      handlePlateChange(plate);
+    },
+    [handlePlateChange]
+  );
 
   // Filter data based on search term and selected plate
   const filteredData = useMemo(() => {
@@ -95,7 +98,9 @@ const DinhMucBoSung = () => {
       if (selectedPlate) {
         const beforeFilter = result.length;
         result = result.filter(item => item.bien_so === selectedPlate);
-        logger.info(`Filtered by plate ${selectedPlate}: ${beforeFilter} -> ${result.length} items`);
+        logger.info(
+          `Filtered by plate ${selectedPlate}: ${beforeFilter} -> ${result.length} items`
+        );
       }
 
       // Apply search term filter if provided
@@ -111,8 +116,6 @@ const DinhMucBoSung = () => {
             (diem_den && diem_den.toLowerCase().includes(searchTermLower))
           );
         });
-
-
       }
 
       if (initialCount > 0 && result.length === 0) {
@@ -120,7 +123,6 @@ const DinhMucBoSung = () => {
       }
 
       return result;
-
     } catch (error) {
       logger.error('Error filtering data', { error: error.message });
       return [];
@@ -129,8 +131,6 @@ const DinhMucBoSung = () => {
 
   // Prepare table data with route information
   const tableData = useMemo(() => {
-
-
     if (!filteredData || filteredData.length === 0) {
       logger.info('No filtered data to display');
       return [];
@@ -273,9 +273,8 @@ const DinhMucBoSung = () => {
       errors.dinh_muc_l = 'Định mức không được để trống';
     } else {
       // Convert to number if it's a string
-      const numValue = typeof dinhMucValue === 'string'
-        ? parseFloat(dinhMucValue)
-        : Number(dinhMucValue);
+      const numValue =
+        typeof dinhMucValue === 'string' ? parseFloat(dinhMucValue) : Number(dinhMucValue);
 
       if (isNaN(numValue) || numValue <= 0) {
         errors.dinh_muc_l = 'Định mức phải là số dương';
@@ -297,8 +296,8 @@ const DinhMucBoSung = () => {
         dinh_muc_l: parseFloat(formData.dinh_muc_l),
         ...(editingRecord && {
           diem_di: formData.diem_di || '',
-          diem_den: formData.diem_den || ''
-        })
+          diem_den: formData.diem_den || '',
+        }),
       };
 
       if (editingRecord) {
@@ -315,7 +314,7 @@ const DinhMucBoSung = () => {
     }
   };
 
-  const handleDelete = async (record) => {
+  const handleDelete = async record => {
     const confirmed = await showConfirmation({
       title: 'Xóa định mức bổ sung',
       message: 'Bạn có chắc chắn muốn xóa định mức bổ sung này?',
@@ -451,7 +450,6 @@ const DinhMucBoSung = () => {
         />
       )}
 
-
       <DeleteDialog
         open={confirmationState.isOpen}
         title={
@@ -461,11 +459,24 @@ const DinhMucBoSung = () => {
           </Box>
         }
         message={confirmationState.message}
-        details={confirmationState.data ? {
-          'Biển số': confirmationState.data.bien_so === '*' ? 'Tất cả' : confirmationState.data.bien_so,
-          'Điểm đi': confirmationState.data.diem_di === '*' ? 'Tất cả' : confirmationState.data.diem_di,
-          'Điểm đến': confirmationState.data.diem_den === '*' ? 'Tất cả' : confirmationState.data.diem_den,
-        } : null}
+        details={
+          confirmationState.data
+            ? {
+                'Biển số':
+                  confirmationState.data.bien_so === '*'
+                    ? 'Tất cả'
+                    : confirmationState.data.bien_so,
+                'Điểm đi':
+                  confirmationState.data.diem_di === '*'
+                    ? 'Tất cả'
+                    : confirmationState.data.diem_di,
+                'Điểm đến':
+                  confirmationState.data.diem_den === '*'
+                    ? 'Tất cả'
+                    : confirmationState.data.diem_den,
+              }
+            : null
+        }
         confirmText={confirmationState.confirmText || 'Xóa'}
         cancelText={confirmationState.cancelText || 'Hủy'}
         confirmColor="error"

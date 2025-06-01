@@ -55,7 +55,6 @@ export default function useBaoDuongForm({
     return Object.keys(newErrors).length === 0;
   };
   const handleSave = async (e, currentPage = 0, pageSize = 10) => {
-
     e?.preventDefault();
     try {
       // Validate form
@@ -107,18 +106,14 @@ export default function useBaoDuongForm({
         try {
           await fetchData(currentPage, pageSize);
         } catch (refreshError) {
-
           // Fallback to page 0 if there's an error with the current page
           try {
             await fetchData(0, pageSize);
-          } catch (fallbackError) {
-
-          }
+          } catch (fallbackError) {}
         }
       }
       return response;
     } catch (error) {
-
       // Extract and format error message from API response
       let errorMessage = 'Đã xảy ra lỗi khi lưu dữ liệu';
       if (error?.response?.error?.message) {

@@ -150,7 +150,6 @@ const StandardTable = ({
   }, [columns, showSTT, pagination, paginationProps, initialPage, initialRowsPerPage]);
   // Validate data and columns
   if (!Array.isArray(data)) {
-
     return (
       <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
         Lỗi: Dữ liệu không hợp lệ
@@ -158,7 +157,6 @@ const StandardTable = ({
     );
   }
   if (!Array.isArray(columns)) {
-
     return (
       <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>
         Lỗi: Cấu hình cột không hợp lệ
@@ -404,7 +402,6 @@ const StandardTable = ({
 
                           // Handle NaN values and other invalid content
                           if (typeof cellContent === 'number' && isNaN(cellContent)) {
-
                             return '-';
                           }
 

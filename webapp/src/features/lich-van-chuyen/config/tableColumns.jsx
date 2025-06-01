@@ -56,7 +56,6 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
     render: (_, row) => {
       try {
         if (!selectOptions.khachHang || selectOptions.khachHang.length === 0) {
-
           return row.ma_khach_hang || '-';
         }
         // Look up the customer by ma_dinh_danh instead of ID
@@ -68,7 +67,6 @@ export const createLichVanChuyenColumns = (selectOptions, theme) => [
           </Box>
         );
       } catch (error) {
-
         return row.ma_khach_hang || '-';
       }
     },

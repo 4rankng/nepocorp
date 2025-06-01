@@ -45,23 +45,21 @@ export const dinhMucBoSungApi = {
     simulateError();
     const allRecords = getDinhMucBoSung();
     if (!bienSo) return allRecords;
-    
+
     // Return records that match the license plate or are applicable to all vehicles (bien_so is null)
-    return allRecords.filter(record => 
-      !record.bien_so || record.bien_so === bienSo
-    );
+    return allRecords.filter(record => !record.bien_so || record.bien_so === bienSo);
   },
 
   // Create new DinhMucBoSung
   create: async data => {
     await simulateDelay();
     simulateError();
-    
+
     // Validate required fields
     if (typeof data.dinh_muc_l !== 'number' || data.dinh_muc_l < 0) {
       throw new Error('Định mức phải là số dương');
     }
-    
+
     return createDinhMucBoSung(data);
   },
 
@@ -69,12 +67,15 @@ export const dinhMucBoSungApi = {
   update: async (id, data) => {
     await simulateDelay();
     simulateError();
-    
+
     // Validate required fields
-    if (data.dinh_muc_l !== undefined && (typeof data.dinh_muc_l !== 'number' || data.dinh_muc_l < 0)) {
+    if (
+      data.dinh_muc_l !== undefined &&
+      (typeof data.dinh_muc_l !== 'number' || data.dinh_muc_l < 0)
+    ) {
       throw new Error('Định mức phải là số dương');
     }
-    
+
     return updateDinhMucBoSung(id, data);
   },
 

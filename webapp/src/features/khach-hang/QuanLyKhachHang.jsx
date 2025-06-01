@@ -78,7 +78,6 @@ const QuanLyKhachHang = () => {
             return;
           }
         } catch (err) {
-
           setFormError('Có lỗi xảy ra khi kiểm tra mã khách hàng. Vui lòng thử lại.');
           setIsValidatingCode(false);
           return;
@@ -101,7 +100,6 @@ const QuanLyKhachHang = () => {
           setFormError(result.error || 'Có lỗi xảy ra. Vui lòng thử lại.');
         }
       } catch (err) {
-
         setFormError('Có lỗi xảy ra khi lưu thông tin khách hàng.');
       }
     },
@@ -189,15 +187,21 @@ const QuanLyKhachHang = () => {
               </Typography>
               <Divider sx={{ my: 1 }} />
               <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
-                <Typography variant="body2" fontWeight={500}>Tên khách hàng:</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Tên khách hàng:
+                </Typography>
                 <Typography variant="body2">{deleteDialog.data?.ten || '-'}</Typography>
 
-                <Typography variant="body2" fontWeight={500}>Địa chỉ:</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Địa chỉ:
+                </Typography>
                 <Typography variant="body2">
                   {deleteDialog.data?.dia_chi || 'Chưa cập nhật'}
                 </Typography>
 
-                <Typography variant="body2" fontWeight={500}>Mã số thuế:</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Mã số thuế:
+                </Typography>
                 <Typography variant="body2">
                   {deleteDialog.data?.ma_so_thue || 'Chưa cập nhật'}
                 </Typography>

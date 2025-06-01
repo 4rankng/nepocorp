@@ -23,7 +23,6 @@ const getAllValidBienSo = async () => {
     const allBienSo = [...new Set([...dauKeoBienSo, ...roMoocBienSo])];
     return allBienSo;
   } catch (error) {
-
     return [];
   }
 };
@@ -260,18 +259,15 @@ const baoDuongData = [
 const isValidBienSo = async bienSo => {
   try {
     if (!bienSo) {
-
       return false;
     }
     const validBienSoList = await getAllValidBienSo();
     if (!Array.isArray(validBienSoList)) {
-
       return false;
     }
     const isValid = validBienSoList.includes(bienSo);
     return isValid;
   } catch (error) {
-
     return false;
   }
 };
@@ -281,7 +277,6 @@ const getValidBienSoList = async () => {
     const bienSoList = await getAllValidBienSo();
     return Array.isArray(bienSoList) ? bienSoList : [];
   } catch (error) {
-
     return [];
   }
 };

@@ -51,15 +51,12 @@ export const getContainerByMaSo = async ma_so => {
 export const createContainer = async data => {
   const { ma_so, phan_loai } = data;
   if (!ma_so || !phan_loai) {
-
     return null;
   }
   if (typeof ma_so !== 'string' || ma_so.trim() === '') {
-
     return null;
   }
   if (containerData.some(c => c.ma_so === ma_so)) {
-
     return null;
   }
   const newContainer = {
@@ -85,7 +82,6 @@ export const updateContainer = async (id, updates) => {
     new_ma_so !== existingContainer.ma_so &&
     containerData.some(c => c.ma_so === new_ma_so && c.id !== numericId)
   ) {
-
     return null; // Or throw an error
   }
   const updatedContainer = {
@@ -116,11 +112,9 @@ export const _resetContainer = (newData = []) => {
       item.ma_so.trim() === '' ||
       !item.phan_loai
     ) {
-
       continue;
     }
     if (maSoSet.has(item.ma_so)) {
-
       continue;
     }
     maSoSet.add(item.ma_so);
@@ -150,7 +144,6 @@ export const _resetContainer = (newData = []) => {
     (item, index) => currentNumericIds.indexOf(item) !== index
   );
   if (postResetDuplicateNumericIds.length > 0) {
-
   }
   // Post-reset check for duplicate ma_so (should be caught by maSoSet earlier)
   const currentMaSos = containerData.map(c => c.ma_so);
@@ -158,14 +151,12 @@ export const _resetContainer = (newData = []) => {
     (item, index) => currentMaSos.indexOf(item) !== index
   );
   if (postResetDuplicateMaSos.length > 0) {
-
   }
 };
 // Initial check for duplicate ma_so in the seed data
 const initialMaSos = containerData.map(c => c.ma_so);
 const duplicateMaSos = initialMaSos.filter((item, index) => initialMaSos.indexOf(item) !== index);
 if (duplicateMaSos.length > 0) {
-
 }
 // Initial check for duplicate numeric IDs in the seed data
 const initialNumericIds = containerData.map(c => c.id);
@@ -173,6 +164,5 @@ const duplicateNumericIds = initialNumericIds.filter(
   (item, index) => initialNumericIds.indexOf(item) !== index
 );
 if (duplicateNumericIds.length > 0) {
-
 }
 export const getContainerCount = async () => containerData.length;

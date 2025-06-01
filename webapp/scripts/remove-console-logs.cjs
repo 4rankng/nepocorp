@@ -9,22 +9,22 @@ function removeConsoleLogsFromFile(filePath) {
 
   // Remove standard console statements (log, error, warn) - single line with semicolon
   newContent = newContent.replace(/^\s*console\.(log|error|warn)\s*\(.*?\);\s*$/gm, '');
-  
+
   // Remove standard console statements (log, error, warn) - single line without semicolon
   newContent = newContent.replace(/^\s*console\.(log|error|warn)\s*\(.*?\)\s*$/gm, '');
-  
+
   // Remove console statements within JSX curly braces (single line)
   newContent = newContent.replace(/\{\s*console\.(log|error|warn)\s*\([^}]*\)\s*\}/g, '');
-  
+
   // Remove multi-line console statements
   newContent = newContent.replace(/^\s*console\.(log|error|warn)\s*\(\s*[\s\S]*?\)\s*;?\s*$/gm, '');
-  
+
   // Remove console statements that span multiple lines within JSX
   newContent = newContent.replace(/\{\s*console\.(log|error|warn)\s*\(\s*[\s\S]*?\)\s*\}/g, '');
-  
+
   // Clean up multiple consecutive empty lines (replace with single empty line)
   newContent = newContent.replace(/\n\s*\n\s*\n/g, '\n\n');
-  
+
   // Clean up trailing whitespace on empty lines
   newContent = newContent.replace(/^[ \t]+$/gm, '');
 
@@ -42,17 +42,22 @@ function walkAndClean(dir) {
 
   function walk(currentDir) {
     const items = fs.readdirSync(currentDir);
-    
+
     for (const item of items) {
       const fullPath = path.join(currentDir, item);
       const stat = fs.statSync(fullPath);
-      
+
       if (stat.isDirectory()) {
         // Skip node_modules and other build directories
         if (!['node_modules', 'dist', 'build', '.git'].includes(item)) {
           walk(fullPath);
         }
-      } else if (item.endsWith('.js') || item.endsWith('.jsx') || item.endsWith('.ts') || item.endsWith('.tsx')) {
+      } else if (
+        item.endsWith('.js') ||
+        item.endsWith('.jsx') ||
+        item.endsWith('.ts') ||
+        item.endsWith('.tsx')
+      ) {
         filesProcessed++;
         const modified = removeConsoleLogsFromFile(fullPath);
         if (modified) {

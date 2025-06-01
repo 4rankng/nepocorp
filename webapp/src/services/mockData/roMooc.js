@@ -124,7 +124,6 @@ export const createRoMooc = async data => {
     updatedAt: new Date().toISOString(),
   };
   if (!data.bien_so || !data.mo_ta) {
-
     return null;
   }
   roMoocData.push(newRoMooc);

@@ -73,7 +73,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
       if (months.length > 0) setSelectedMonthYear(months[0].value); // Default select first month
     } catch (err) {
       setError('Không thể tải dữ liệu cho các mục chọn.');
-
     }
     setIsLoading(false);
   }, []);
@@ -125,7 +124,6 @@ const BaoCaoTheoDoiDoanhThuChiPhiPhuongTien = () => {
     } catch (err) {
       setError(`Lỗi khi tải báo cáo: ${err.message}`);
       setReportDetails(null);
-
     } finally {
       setIsLoading(false);
     }

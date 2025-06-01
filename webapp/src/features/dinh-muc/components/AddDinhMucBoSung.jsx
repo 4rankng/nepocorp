@@ -85,14 +85,14 @@ const AddDinhMucBoSung = ({
       const allOption = {
         value: '',
         label: 'Tất cả',
-        isAll: true
+        isAll: true,
       };
 
       // Map the dau keo items
       const items = dauKeoList.map(item => ({
         value: typeof item === 'object' ? item.bien_so : item,
         label: typeof item === 'object' ? item.bien_so : item,
-        isAll: false
+        isAll: false,
       }));
 
       return [allOption, ...items];
@@ -149,7 +149,7 @@ const AddDinhMucBoSung = ({
     setTuyenDuongManagerOpen(false);
   };
 
-  const handleSaveTuyenDuong = async (newTuyenDuong) => {
+  const handleSaveTuyenDuong = async newTuyenDuong => {
     setIsSubmittingTuyenDuong(true);
     try {
       // In a real app, you would call an API to save the new tuyen duong
@@ -196,9 +196,9 @@ const AddDinhMucBoSung = ({
                 value={selectedDauKeo}
                 onChange={handleDauKeoChange}
                 options={processedDauKeoList}
-                getOptionLabel={(option) => option?.label || ''}
+                getOptionLabel={option => option?.label || ''}
                 isOptionEqualToValue={(option, value) => option?.value === value?.value}
-                renderInput={(params) => (
+                renderInput={params => (
                   <TextField
                     {...params}
                     label="Biển số"
@@ -235,8 +235,8 @@ const AddDinhMucBoSung = ({
                 label="Định mức (lít)"
                 type="number"
                 value={formData.dinh_muc_l || ''}
-                onChange={(e) =>
-                  setFormData((prev) => ({
+                onChange={e =>
+                  setFormData(prev => ({
                     ...prev,
                     dinh_muc_l: e.target.value ? parseFloat(e.target.value) : null,
                   }))
@@ -277,9 +277,9 @@ const AddDinhMucBoSung = ({
                 value={selectedTuyenDuong}
                 onChange={handleTuyenDuongChange}
                 options={processedTuyenDuongList}
-                getOptionLabel={(option) => option?.label || ''}
+                getOptionLabel={option => option?.label || ''}
                 isOptionEqualToValue={(option, value) => option?.ma_so === value?.ma_so}
-                renderInput={(params) => (
+                renderInput={params => (
                   <TextField
                     {...params}
                     label="Tuyến đường"
@@ -321,8 +321,8 @@ const AddDinhMucBoSung = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     '& .MuiButton-startIcon': {
-                      m: 0
-                    }
+                      m: 0,
+                    },
                   }}
                 >
                   <AddIcon fontSize="small" />

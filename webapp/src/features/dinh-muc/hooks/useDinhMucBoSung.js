@@ -30,25 +30,25 @@ export const useDinhMucBoSung = () => {
       } else {
         dinhMucData = await dinhMucBoSungApi.getAll();
       }
-      
+
       logger.info('API responses:', { dinhMucData, dauKeoData, tuyenData });
-      
+
       // Normalize response shapes
       const extractedDinhMucData = Array.isArray(dinhMucData)
         ? dinhMucData
         : dinhMucData?.data || [];
       const extractedDauKeoList = dauKeoData.data || [];
       const extractedTuyenDuongList = tuyenData.data || [];
-      
+
       setDinhMucBoSungData(extractedDinhMucData);
       setDauKeoList(extractedDauKeoList);
       setTuyenDuongList(extractedTuyenDuongList);
-      
+
       logger.info('Data loaded:', {
         plateFilter: plate,
         recordCount: extractedDinhMucData.length,
         dauKeoCount: extractedDauKeoList.length,
-        tuyenDuongCount: extractedTuyenDuongList.length
+        tuyenDuongCount: extractedTuyenDuongList.length,
       });
     } catch (err) {
       setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
@@ -58,7 +58,7 @@ export const useDinhMucBoSung = () => {
   }, []);
 
   // Create new record
-  const createRecord = useCallback(async (data) => {
+  const createRecord = useCallback(async data => {
     setIsLoading(true);
     setError(null);
     try {
@@ -79,9 +79,7 @@ export const useDinhMucBoSung = () => {
     setError(null);
     try {
       const updatedRecord = await dinhMucBoSungApi.update(id, data);
-      setDinhMucBoSungData(prev => 
-        prev.map(item => item.id === id ? updatedRecord : item)
-      );
+      setDinhMucBoSungData(prev => prev.map(item => (item.id === id ? updatedRecord : item)));
       return updatedRecord;
     } catch (err) {
       setError(err.message || 'Có lỗi xảy ra khi cập nhật bản ghi');
@@ -92,7 +90,7 @@ export const useDinhMucBoSung = () => {
   }, []);
 
   // Delete record
-  const deleteRecord = useCallback(async (id) => {
+  const deleteRecord = useCallback(async id => {
     setIsLoading(true);
     setError(null);
     try {
@@ -107,10 +105,13 @@ export const useDinhMucBoSung = () => {
   }, []);
 
   // Handle plate selection change
-  const handlePlateChange = useCallback(async (plate) => {
-    setSelectedPlate(plate);
-    await loadData(plate);
-  }, [loadData]);
+  const handlePlateChange = useCallback(
+    async plate => {
+      setSelectedPlate(plate);
+      await loadData(plate);
+    },
+    [loadData]
+  );
 
   // Load initial data
   useEffect(() => {
@@ -120,7 +121,7 @@ export const useDinhMucBoSung = () => {
   // Get unique license plates from dauKeoList
   const licensePlates = useMemo(() => {
     if (!dauKeoList || !Array.isArray(dauKeoList)) return [];
-    
+
     // Extract unique license plates from dauKeoList
     const plates = new Set();
     dauKeoList.forEach(dauKeo => {
@@ -128,10 +129,10 @@ export const useDinhMucBoSung = () => {
         plates.add(dauKeo.bien_so);
       }
     });
-    
+
     return Array.from(plates).map(plate => ({
       id: plate,
-      bien_so: plate
+      bien_so: plate,
     }));
   }, [dauKeoList]);
 

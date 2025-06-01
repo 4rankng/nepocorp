@@ -24,9 +24,7 @@ export const useChoHang = () => {
         new Set((allRecordsRes.data || []).map(r => r.bienSoXe).filter(Boolean))
       ).map(plate => ({ id: plate, bien_so: plate }));
       setLicensePlates(licensePlateOptions);
-    } catch (err) {
-
-    }
+    } catch (err) {}
   }, []);
 
   const fetchDataInternal = useCallback(
@@ -60,7 +58,6 @@ export const useChoHang = () => {
           throw new Error(response.error?.message || 'Failed to fetch Cho Hang records');
         }
       } catch (err) {
-
         setError(err.message || 'An unexpected error occurred');
         setChoHangRecords([]); // Clear data on error
       } finally {

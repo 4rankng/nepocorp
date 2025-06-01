@@ -36,21 +36,20 @@ const EditDinhMucBoSung = ({
   dauKeoList = [],
   onSubmit,
 }) => {
-
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   // Handle change for number inputs to ensure they're parsed as numbers
-  const handleNumberChange = (e) => {
+  const handleNumberChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value ? parseFloat(value) : null
+      [name]: value ? parseFloat(value) : null,
     }));
   };
 
@@ -81,7 +80,7 @@ const EditDinhMucBoSung = ({
               }}
             >
               <option value="">Tất cả</option>
-              {dauKeoList.map((item) => {
+              {dauKeoList.map(item => {
                 const value = typeof item === 'object' ? item.bien_so : item;
                 const label = typeof item === 'object' ? item.bien_so : item;
                 return (

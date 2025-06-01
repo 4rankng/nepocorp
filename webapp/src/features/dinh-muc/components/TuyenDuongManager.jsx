@@ -57,7 +57,7 @@ const TuyenDuongManager = ({
 
     // Check for duplicate tuyen duong
     const isDuplicate = tuyenDuongList.some(
-      (tuyen) =>
+      tuyen =>
         tuyen.diem_di.toLowerCase() === formData.diem_di.toLowerCase().trim() &&
         tuyen.diem_den.toLowerCase() === formData.diem_den.toLowerCase().trim() &&
         (!initialData || tuyen.ma_so !== initialData.ma_so)
@@ -81,17 +81,17 @@ const TuyenDuongManager = ({
     }
   };
 
-  const handleChange = (field) => (e) => {
+  const handleChange = field => e => {
     setFormData(prev => ({
       ...prev,
-      [field]: e.target.value
+      [field]: e.target.value,
     }));
 
     // Clear error when user types
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
   };
@@ -138,11 +138,7 @@ const TuyenDuongManager = ({
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button
-          onClick={onClose}
-          color="inherit"
-          disabled={isSubmitting}
-        >
+        <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
           Hủy
         </Button>
         <Button
@@ -150,7 +146,7 @@ const TuyenDuongManager = ({
           variant="contained"
           color="primary"
           disabled={isSubmitting}
-          startIcon={isSubmitting ? <CircularProgress size={20} />:''}
+          startIcon={isSubmitting ? <CircularProgress size={20} /> : ''}
         >
           {isSubmitting ? 'Đang lưu...' : 'Thêm'}
         </Button>

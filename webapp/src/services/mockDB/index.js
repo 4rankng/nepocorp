@@ -25,7 +25,6 @@ class MockDB {
       this.loadPersistedData();
       this.initialized = true;
     } catch (error) {
-
       throw error;
     }
   }
@@ -42,9 +41,7 @@ class MockDB {
           this.tables.set(tableName, data);
         }
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
   /**
    * Persist data to localStorage
@@ -56,9 +53,7 @@ class MockDB {
       if (data) {
         window.localStorage.setItem(`mockDB_${tableName}`, JSON.stringify(data));
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
   /**
    * Subscribe to data changes for a specific table
@@ -85,9 +80,7 @@ class MockDB {
       tableListeners.forEach(callback => {
         try {
           callback({ operation, data, tableName });
-        } catch (error) {
-
-        }
+        } catch (error) {}
       });
     }
   }
@@ -234,7 +227,6 @@ class MockDB {
       this.notifyListeners(tableName, 'RESET', bootstrapData);
       return true;
     } catch (error) {
-
       throw error;
     }
   }

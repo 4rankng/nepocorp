@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Box, 
-  useMediaQuery, 
-  useTheme, 
-  Card, 
-  CardContent, 
-  Typography, 
+import {
+  Box,
+  useMediaQuery,
+  useTheme,
+  Card,
+  CardContent,
+  Typography,
   TablePagination,
   CircularProgress,
-  Alert
+  Alert,
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, SearchBar } from '@/components';

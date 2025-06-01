@@ -13,8 +13,8 @@ export const useConfirmation = () => {
     resolve: null,
   });
 
-  const showConfirmation = useCallback((options) => {
-    return new Promise((resolve) => {
+  const showConfirmation = useCallback(options => {
+    return new Promise(resolve => {
       setConfirmationState({
         isOpen: true,
         title: options.title || 'Xác nhận',

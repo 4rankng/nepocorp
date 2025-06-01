@@ -182,11 +182,9 @@ export const getNhanVienById = async id => {
 export const createNhanVien = async data => {
   const { ma_so, ho_ten, ten_dang_nhap, mat_khau, chuc_vu, email } = data;
   if (!ma_so || !ho_ten || !ten_dang_nhap || !mat_khau || !chuc_vu) {
-
     return null;
   }
   if (!CHUC_VU_TYPES.includes(chuc_vu)) {
-
     return null;
   }
   const newNhanVien = {
@@ -209,7 +207,6 @@ export const updateNhanVien = async (id, updates) => {
   if (index === -1) return null;
   const { id: _, createdAt: __, ...validUpdates } = updates;
   if (validUpdates.chuc_vu && !CHUC_VU_TYPES.includes(validUpdates.chuc_vu)) {
-
     return null; // Or handle error appropriately
   }
   nhanVienData[index] = {

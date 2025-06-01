@@ -1,7 +1,7 @@
 /**
  * Simple logging service with 3 essential levels
  * - INFO: General information and normal flow
- * - WARN: Something unexpected but doesn't break functionality  
+ * - WARN: Something unexpected but doesn't break functionality
  * - ERROR: Critical issues that break functionality
  */
 
@@ -16,7 +16,7 @@ class LogService {
 
   setupLogLevel() {
     const isDevelopment = this.detectDevelopmentMode();
-    
+
     if (isDevelopment) {
       // Show info and above in development
       this.logger.setLevel('info');
@@ -31,12 +31,12 @@ class LogService {
     if (typeof import.meta !== 'undefined' && import.meta.env) {
       return import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
     }
-    
+
     // In Node.js
     if (typeof process !== 'undefined' && process.env) {
       return process.env.NODE_ENV === 'development';
     }
-    
+
     // Default to development if unable to detect
     return true;
   }
@@ -46,7 +46,7 @@ class LogService {
     this.info = this.logger.info.bind(this.logger);
     this.warn = this.logger.warn.bind(this.logger);
     this.error = this.logger.error.bind(this.logger);
-    
+
     // Utility methods
     this.setLevel = this.logger.setLevel.bind(this.logger);
     this.getLevel = this.logger.getLevel.bind(this.logger);

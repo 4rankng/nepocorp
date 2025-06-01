@@ -25,7 +25,6 @@ const persist = () => {
 };
 export const baoDuongApi = {
   getAll: async (page = 1, limit = 10, bienSo) => {
-
     return mockApiCall(() => {
       let filteredData = [...data];
       if (bienSo) {
@@ -88,7 +87,6 @@ export const baoDuongApi = {
           persist();
           return raw;
         } catch (error) {
-
           // Format error message for better user feedback
           const errorMessage = error.message || 'Đã xảy ra lỗi khi tạo bản ghi bảo dưỡng';
           const formattedError = new Error(errorMessage);

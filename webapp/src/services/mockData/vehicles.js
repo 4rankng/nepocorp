@@ -33,7 +33,6 @@ export const getVehicles = async () => {
     ];
     return vehicles;
   } catch (error) {
-
     throw error;
   }
 };
@@ -49,7 +48,6 @@ export const getVehiclesForSelect = async () => {
       type: vehicle.type,
     }));
   } catch (error) {
-
     throw error;
   }
 };
