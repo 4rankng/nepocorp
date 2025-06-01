@@ -1,43 +1,132 @@
 # Data Models Documentation
 
-## Bảo Dưỡng (Maintenance)
-bao_duong(id, bien_so, item_name, ngay_thay, ngay_het_han, so_thang_bao_hanh, so_luong, don_gia, currency, tong_tien, ghi_chu, created_at, updated_at)
+## Chi phí
+bao_duong
+- id
+- bien_so // bao_duong.bien_so = dau_keo.bien_so OR bao_duong.bien_so = ro_mooc.bien_so
+- item_name
+- ngay_thay
+- ngay_het_han // bao_duong.ngay_het_han = bao_duong.ngay_thay + bao_duong.so_thang_bao_hanh
+- so_thang_bao_hanh
+- so_luong
+- don_gia
+- currency
+- tong_tien // bao_duong.tong_tien = bao_duong.so_luong * bao_duong.don_gia
+- ghi_chu
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Cấu Hình (Configuration)
-cau_hinh(id, key, value, created_at, updated_at)
+## Cấu hình
+cau_hinh
+- id
+- key
+- value
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Container
-container(id, ma_so, phan_loai, created_at, updated_at)
+## Phương tiện
+container
+- id
+- ma_so
+- phan_loai
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Đầu Kéo (Tractor)
-dau_keo(id, bien_so, lai_xe, mo_ta, created_at, updated_at)
+dau_keo
+- id
+- bien_so
+- lai_xe // dau_keo.lai_xe = nhan_vien.ma_so
+- mo_ta
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Định Mức (Fuel Standards)
-dinh_muc(id, bien_so_xe, phan_loai, tu_km, den_km, l_km, ghi_chu, created_at, updated_at)
+ro_mooc
+- id
+- bien_so
+- mo_ta
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Định Mức Bổ Sung (Supplementary Fuel Standards)
-dinh_muc_bo_sung(id, bien_so, ma_tuyen, dinh_muc_l, created_at, updated_at)
+## Định Mức
+dinh_muc_km
+- id
+- bien_so // dinh_muc_km.bien_so = dau_keo.bien_so
+- phan_loai // dinh_muc_km.phan_loai = 'km_hang' OR dinh_muc_km.phan_loai = 'km_vo'
+- tu_km
+- den_km
+- l_km
+- ghi_chu
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Đối Tác (Partner)
-doi_tac(id, ma_doi_tac, ten_doi_tac, dia_chi, so_dien_thoai, email, ma_so_thue, nguoi_dai_dien, created_at, updated_at)
+dinh_muc_bo_sung
+- id
+- bien_so // dinh_muc_bo_sung.bien_so = dau_keo.bien_so
+- ma_tuyen // dinh_muc_bo_sung.ma_tuyen = tuyen_duong.ma_so
+- dinh_muc_l
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Khách Hàng (Customer)
-khach_hang(id, ma_khach_hang, ten_khach_hang, dia_chi, so_dien_thoai, email, ma_so_thue, nguoi_dai_dien, created_at, updated_at)
+## Nhân sự
+doi_tac
+- id: 1,
+- ma_dinh_danh: 'DT001',
+- ten: 'Công ty TNHH Vận Tải Minh Phát',
+- dia_chi: 'Số 1, Đường Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh',
+- ma_so_thue: '0301234567',
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Lịch Vận Chuyển (Transport Schedule)
-lich_van_chuyen(id, ma_lich, ma_tuyen, bien_so, ngay_di, ngay_ve, trang_thai, ghi_chu, created_at, updated_at)
+khach_hang
+- id: 1,
+- ma_dinh_danh: 'MDD001',
+- ten: 'Công ty TNHH An Phát',
+- dia_chi: 'Số 10, Đường Nguyễn Trãi, Phường Thanh Xuân Trung, Quận Thanh Xuân, Hà Nội',
+- ma_so_thue: '0100123456',
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
 
-## Nhân Viên (Employee)
-nhan_vien(id, ma_nhan_vien, ho_ten, ngay_sinh, gioi_tinh, dia_chi, so_dien_thoai, email, chuc_vu, created_at, updated_at)
+nhan_vien
+id: 1,
+ma_so: 'QL001',
+ho_ten: 'Trần Văn Quản',
+ten_dang_nhap: 'quan.tv',
+mat_khau: 'password123',
+chuc_vu: 'quan-ly',
+email: 'quan.tv@example.com',
+created_at: '2023-01-05T08:00:00Z',
+updated_at: '2024-05-01T10:00:00Z',
 
-## Rơ Moóc (Trailer)
-ro_mooc(id, bien_so, mo_ta, created_at, updated_at)
+## Lịch Vận Chuyển
+lich_van_chuyen
+- id: 1,
+- ma_chuyen: 'MC001', // lich_van_chuyen.ma_chuyen = tuyen_duong.ma_so, allow null
+- ngay_di: '2024-05-28',
+- ngay_ha_hang: null, // Status is 'len_lich', not completed
+- trang_thai: 'tam_thoi', // tam_thoi, len_lich, hoan_thanh, huy_bo
+- ma_khach_hang: 'MDD001', // ma_khach_hang = khach_hang.ma_dinh_danh
+- diem_di: 'Kho Nepocorp, Hà Nội',
+- diem_den: 'Cảng Hải Phòng; Cảng Quảng Ninh',
+- cuoc_van_chuyen_vnd: 1222333,
+- cuoc_thue_van_chuyen_vnd: 1000333,
+- bien_so_dau_keo: '15C-11223', // bien_so_dau_keo = dau_keo.bien_so
+- ma_so_cont: '20DC', // ma_so_cont = container.ma_so
+- ma_nv_giao_nhan: 'NV003', // ma_nv_giao_nhan = nhan_vien.ma_so
+- ma_nv_lai_xe: 'NV004', // ma_nv_lai_xe = nhan_vien.ma_so
+- ghi_chu: 'Hàng dễ vỡ, xin nhẹ tay.',
+- km_hang: 50.12,
+- km_vo: 23.34,
+- l_dau: 2.96,
+- vnd_dau: 5123001,
+- vnd_di_duong: 1222333,
+- vnd_chi_phi: 6345334, // vnd_chi_phi = vnd_dau + vnd_di_duong
+- created_at: '2023-01-05T08:00:00Z',
+- updated_at: '2024-05-01T10:00:00Z',
 
-## Tuyến Đường (Route)
-tuyen_duong(id, ma_so, diem_di, diem_den, created_at, updated_at)
-
-## Định Mức Đi Đường (Route Fuel Standards)
-dinh_muc_di_duong(id, ma_tuyen, ma_loai_container, dinh_muc, created_at, updated_at)
-
-## Định Mức Dầu (Fuel Standards)
-dinh_muc_dau(id, ma_loai_xe, ma_loai_container, dinh_muc, created_at, updated_at)
+tuyen_duong
+- id
+- ma_so
+- diem_di
+- diem_den
+- created_at
+- updated_at
