@@ -19,12 +19,12 @@ import {
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 
 import StandardTable from '@/components/StandardTable';
-import DinhMucChoHangDialog from './DinhMucChoHangDialog'; // Assuming this dialog is suitable
 import DeleteDialog from '@/components/DeleteDialog';
 // import { EditButton, DeleteButton } from '@/components/ActionButtons'; // These are now part of getChoHangTableColumns
 import { useChoHang } from '../hooks/useChoHang';
 import { getChoHangTableColumns } from '../constants/choHangTableColumns';
 import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi'; // For CUD operations
+import logger from '@/services/logger';
 
 const initialFormData = {
   bienSoXe: '',
@@ -53,7 +53,7 @@ const DinhMucChoHang = () => {
   const [openAddEditDialog, setOpenAddEditDialog] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentRecord, setCurrentRecord] = useState(null);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: '' });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: null });
   const [formData, setFormData] = useState(initialFormData);
   const [formErrors, setFormErrors] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -160,7 +160,6 @@ const DinhMucChoHang = () => {
         });
       }
     } catch (err) {
-
       setSnackbar({
         open: true,
         message: err.message || 'Đã có lỗi xảy ra khi lưu.',
@@ -175,12 +174,17 @@ const DinhMucChoHang = () => {
     setDeleteDialog({
       open: true,
       recordId: record.id,
-      details: `Bạn có chắc chắn muốn xóa định mức cho BSX ${record.bienSoXe} (Từ ${record.tuKm}km đến ${record.denKm}km)?`,
+      details: {
+        'Biển số xe': record.bienSoXe,
+        'Từ km': `${record.tuKm}km`,
+        'Đến km': `${record.denKm}km`,
+        'Định mức': `${record.l_km}l/km`,
+      },
     });
   };
 
   const handleDeleteClose = () => {
-    setDeleteDialog({ open: false, recordId: null, details: '' });
+    setDeleteDialog({ open: false, recordId: null, details: null });
   };
 
   const handleDeleteConfirm = async () => {
@@ -192,6 +196,7 @@ const DinhMucChoHang = () => {
         setSnackbar({ open: true, message: 'Xóa thành công!', severity: 'success' });
         refetchChoHangData();
       } else {
+        logger.error('Error deleting record:', response.error);
         setSnackbar({
           open: true,
           message: response.error?.message || 'Lỗi khi xóa.',
@@ -199,7 +204,7 @@ const DinhMucChoHang = () => {
         });
       }
     } catch (err) {
-
+      logger.error('Error in delete operation:', err);
       setSnackbar({ open: true, message: err.message || 'Lỗi khi xóa.', severity: 'error' });
     } finally {
       setIsSubmitting(false);
@@ -336,29 +341,15 @@ const DinhMucChoHang = () => {
         }}
       />
 
-      <DinhMucChoHangDialog
-        open={openAddEditDialog}
-        isEdit={isEdit}
-        formData={formData}
-        errors={formErrors}
-        licensePlate={formData.bienSoXe}
-        onClose={handleCloseDialog}
-        onSave={handleSave}
-        onInputChange={handleDialogInputChange}
-        // onValidateForm={validateForm} // Dialog should call its own validation or rely on onSave
-        isLoading={isSubmitting}
-        // availableLicensePlates={[]} // This prop might not be needed if bienSoXe is a text field
-      />
-
       <DeleteDialog
         open={deleteDialog.open}
-        onClose={handleDeleteClose}
+        onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}
-        title="Xác nhận xóa"
-        contentText={deleteDialog.details}
-        confirmButtonText="Xóa"
-        cancelButtonText="Hủy"
+        details={deleteDialog.details}
         isLoading={isSubmitting}
+        type="delete"
+        title="Xóa định mức chở hàng"
+        message="Bạn có chắc chắn muốn xóa định mức này?"
       />
 
       <Snackbar
