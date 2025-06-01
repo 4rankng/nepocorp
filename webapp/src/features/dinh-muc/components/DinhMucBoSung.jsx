@@ -1,18 +1,18 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  useTheme, 
-  Fab, 
-  Alert, 
-  CircularProgress, 
-  TextField, 
-  InputAdornment, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem 
+import {
+  Box,
+  Typography,
+  Paper,
+  useTheme,
+  Fab,
+  Alert,
+  CircularProgress,
+  TextField,
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { Add as AddIcon, Warning as WarningIcon, Search as SearchIcon } from '@mui/icons-material';
 import AsteriskCell from '@/components/AsteriskCell';
@@ -40,7 +40,7 @@ const DinhMucBoSung = () => {
     licensePlates,
     loadData
   } = useDinhMucBoSung();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
 
   const { showConfirmation, confirmationState, handleConfirm, handleCancel } = useConfirmation();
@@ -73,7 +73,7 @@ const DinhMucBoSung = () => {
       : { diem_di: '', diem_den: '' };
   };
 
-  // Handle search input change (client-side filtering)
+  // Handle search input change
   const handleSearchChange = useCallback((event) => {
     const value = event.target.value;
     setSearchTerm(value);
@@ -85,18 +85,58 @@ const DinhMucBoSung = () => {
     handlePlateChange(plate);
   }, [handlePlateChange]);
 
-  // Filter data based on search term (client-side filtering)
+  // Filter data based on search term and selected plate
   const filteredData = useMemo(() => {
-    if (!searchTerm) return dinhMucBoSungData;
-    
-    return dinhMucBoSungData.filter(item => 
-      item.bien_so && item.bien_so.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [dinhMucBoSungData, searchTerm]);
+    try {
+      let result = [...dinhMucBoSungData];
+      const initialCount = result.length;
+
+      // Apply plate filter if selected
+      if (selectedPlate) {
+        const beforeFilter = result.length;
+        result = result.filter(item => item.bien_so === selectedPlate);
+        logger.info(`Filtered by plate ${selectedPlate}: ${beforeFilter} -> ${result.length} items`);
+      }
+
+      // Apply search term filter if provided
+      if (searchTerm) {
+        const beforeSearch = result.length;
+        const searchTermLower = searchTerm.toLowerCase();
+
+        result = result.filter(item => {
+          const { diem_di, diem_den } = getRouteDetails(item.ma_tuyen);
+          return (
+            (item.bien_so && item.bien_so.toLowerCase().includes(searchTermLower)) ||
+            (diem_di && diem_di.toLowerCase().includes(searchTermLower)) ||
+            (diem_den && diem_den.toLowerCase().includes(searchTermLower))
+          );
+        });
+
+
+      }
+
+      if (initialCount > 0 && result.length === 0) {
+        logger.warn('No matching records found', { searchTerm, selectedPlate });
+      }
+
+      return result;
+
+    } catch (error) {
+      logger.error('Error filtering data', { error: error.message });
+      return [];
+    }
+  }, [dinhMucBoSungData, searchTerm, selectedPlate, getRouteDetails]);
 
   // Prepare table data with route information
   const tableData = useMemo(() => {
-    return dinhMucBoSungData.map(record => {
+
+
+    if (!filteredData || filteredData.length === 0) {
+      logger.info('No filtered data to display');
+      return [];
+    }
+
+    return filteredData.map(record => {
       // If ma_tuyen is not set, use asterisks for diem_di and diem_den
       if (!record.ma_tuyen) {
         return {
@@ -113,7 +153,7 @@ const DinhMucBoSung = () => {
         diem_den: diem_den || '*',
       };
     });
-  }, [dinhMucBoSungData, tuyenDuongList]);
+  }, [filteredData, getRouteDetails]);
 
   // Action buttons renderer
   const renderActions = (cellValue, rowData) => (
@@ -233,10 +273,10 @@ const DinhMucBoSung = () => {
       errors.dinh_muc_l = 'Định mức không được để trống';
     } else {
       // Convert to number if it's a string
-      const numValue = typeof dinhMucValue === 'string' 
-        ? parseFloat(dinhMucValue) 
+      const numValue = typeof dinhMucValue === 'string'
+        ? parseFloat(dinhMucValue)
         : Number(dinhMucValue);
-      
+
       if (isNaN(numValue) || numValue <= 0) {
         errors.dinh_muc_l = 'Định mức phải là số dương';
       }
@@ -310,7 +350,7 @@ const DinhMucBoSung = () => {
         <TextField
           sx={{ width: '50%' }}
           variant="outlined"
-          placeholder="Tìm kiếm theo biển số..."
+          placeholder="Tìm kiếm theo biển số, điểm đi, điểm đến..."
           value={searchTerm}
           onChange={handleSearchChange}
           InputProps={{
