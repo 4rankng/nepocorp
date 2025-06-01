@@ -437,7 +437,7 @@ const DinhMucDiDuong = () => {
       <Paper elevation={3} sx={{ p: 3, m: 1, mt: 2 }}>
         <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
           <TextField
-            sx={{ width: '50%' }}
+            sx={{ width: '100%' }}
             variant="outlined"
             placeholder="Tìm kiếm..."
             value={searchTerm}
