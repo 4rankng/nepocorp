@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import logger from '@utils/logger';
+
 export default function useBaoDuongRecords(api) {
   const [baoDuongRecords, setBaoDuongRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
@@ -54,6 +56,7 @@ export default function useBaoDuongRecords(api) {
 
         setError('');
       } catch (err) {
+        logger.error('Error in loadBaoDuong', { error: err });
         setError('Không thể tải dữ liệu bảo dưỡng');
       } finally {
         setIsLoading(false);
@@ -89,6 +92,7 @@ export default function useBaoDuongRecords(api) {
         }));
         setError('');
       } catch (err) {
+        logger.error('Error in loadBaoDuong', { error: err });
         setError('Không thể tải dữ liệu bảo dưỡng');
       } finally {
         setIsLoading(false);

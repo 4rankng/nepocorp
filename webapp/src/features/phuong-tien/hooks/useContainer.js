@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import logger from '@utils/logger';
 import { fetchAllContainer, addContainer, editContainer, removeContainer } from '@services/mockApi';
 export const useContainer = () => {
   const [data, setData] = useState([]);

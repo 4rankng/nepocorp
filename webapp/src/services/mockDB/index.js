@@ -29,7 +29,10 @@ class MockDB {
       this.loadPersistedData();
       this.initialized = true;
     } catch (error) {
-      logger.error('Error initializing mock database', { error });
+      logger.error('Error initializing mock database', { 
+        error: error.message,
+        stack: error.stack 
+      });
       throw error;
     }
   }
@@ -39,16 +42,20 @@ class MockDB {
   loadPersistedData() {
     if (typeof window === 'undefined' || !window.localStorage) return;
     
-    for (const [tableName] of this.tables) {
-      try {
-        const persistedData = window.localStorage.getItem(`mockDB_${tableName}`);
-        if (persistedData) {
-          const data = JSON.parse(persistedData);
-          this.tables.set(tableName, data);
-        }
-      } catch (error) {
-        logger.error(`Error loading persisted data for table ${tableName}`, { error });
+    try {
+      const persistedData = localStorage.getItem('mockDB');
+      if (persistedData) {
+        const parsedData = JSON.parse(persistedData);
+        Object.entries(parsedData).forEach(([tableName, data]) => {
+          if (this.tables.has(tableName)) {
+            this.tables.set(tableName, data);
+          }
+        });
       }
+    } catch (error) {
+      logger.warn('Failed to load persisted data from localStorage', {
+        error: error.message
+      });
     }
   }
   /**
@@ -60,7 +67,11 @@ class MockDB {
     try {
       const data = this.tables.get(tableName);
       if (data) {
-        window.localStorage.setItem(`mockDB_${tableName}`, JSON.stringify(data));
+        const allData = {};
+        this.tables.forEach((tableData, table) => {
+          allData[table] = tableData;
+        });
+        window.localStorage.setItem('mockDB', JSON.stringify(allData));
       }
     } catch (error) {
       logger.error(`Error persisting data for table ${tableName}`, { error });
@@ -91,7 +102,13 @@ class MockDB {
       tableListeners.forEach(callback => {
         try {
           callback({ operation, data, tableName });
-        } catch (error) {}
+        } catch (error) {
+          logger.error('Error in listener callback', { 
+            error: error.message, 
+            tableName,
+            operation
+          });
+        }
       });
     }
   }

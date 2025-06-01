@@ -1,3 +1,5 @@
+import logger from '@utils/logger';
+
 // Mock database for LichVanChuyen (Transport Schedules)
 // Schema based on USER's new definition
 export const TRANG_THAI_LICH_VAN_CHUYEN = {

@@ -1,6 +1,7 @@
 // Import existing vehicle data for validation
 import { getAllDauKeo } from './dauKeo';
 import { getAllRoMooc } from './roMooc';
+import logger from '@utils/logger';
 // Get all existing vehicle license plates
 const getAllValidBienSo = async () => {
   try {
@@ -23,6 +24,7 @@ const getAllValidBienSo = async () => {
     const allBienSo = [...new Set([...dauKeoBienSo, ...roMoocBienSo])];
     return allBienSo;
   } catch (error) {
+    logger.error('Error getting all valid bien_so', { error: error.message });
     return [];
   }
 };
@@ -268,6 +270,10 @@ const isValidBienSo = async bienSo => {
     const isValid = validBienSoList.includes(bienSo);
     return isValid;
   } catch (error) {
+    logger.error('Error validating bien_so', {
+      bienSo,
+      error: error.message,
+    });
     return false;
   }
 };
@@ -277,6 +283,9 @@ const getValidBienSoList = async () => {
     const bienSoList = await getAllValidBienSo();
     return Array.isArray(bienSoList) ? bienSoList : [];
   } catch (error) {
+    logger.error('Error getting valid bien_so list', {
+      error: error.message,
+    });
     return [];
   }
 };

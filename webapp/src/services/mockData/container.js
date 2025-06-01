@@ -1,3 +1,5 @@
+import logger from '@utils/logger';
+
 // Mock database for Container
 // Fields: id (number, primary key), ma_so (string, container code), phan_loai (string), createdAt (ISO String), updatedAt (ISO String)
 let containerData = [
@@ -94,7 +96,7 @@ export const updateContainer = async (id, updates) => {
     containerData[index] = updatedContainer;
     return updatedContainer;
   } catch (error) {
-    logger.error('Error in container operation', { error });
+    logger.error('Error updating container', { error });
     throw error;
   }
 };
@@ -149,6 +151,9 @@ export const _resetContainer = (newData = []) => {
     (item, index) => currentNumericIds.indexOf(item) !== index
   );
   if (postResetDuplicateNumericIds.length > 0) {
+    logger.warn('Duplicate container IDs found after reset', {
+      duplicateIds: postResetDuplicateNumericIds,
+    });
   }
   // Post-reset check for duplicate ma_so (should be caught by maSoSet earlier)
   const currentMaSos = containerData.map(c => c.ma_so);
@@ -156,6 +161,9 @@ export const _resetContainer = (newData = []) => {
     (item, index) => currentMaSos.indexOf(item) !== index
   );
   if (postResetDuplicateMaSos.length > 0) {
+    logger.warn('Duplicate container ma_so found after reset', {
+      duplicateMaSos: postResetDuplicateMaSos,
+    });
   }
 };
 // Initial check for duplicate ma_so in the seed data
@@ -169,6 +177,5 @@ const initialNumericIds = containerData.map(c => c.id);
 const duplicateNumericIds = initialNumericIds.filter(
   (item, index) => initialNumericIds.indexOf(item) !== index
 );
-if (duplicateNumericIds.length > 0) {
-}
+
 export const getContainerCount = async () => containerData.length;
