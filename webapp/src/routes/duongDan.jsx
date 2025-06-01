@@ -1,18 +1,21 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@contexts/AuthContext';
 import { ErrorBoundary, ErrorPage } from '@components/ErrorBoundary';
-import TrangChu from '@layouts/TrangChu';
-import TrangXacThuc from '@layouts/TrangXacThuc';
-import DangNhap from '@features/xac-thuc/DangNhap';
-import BaoCaoTaiChinh from '@features/bao-cao/BaoCaoTaiChinh';
-import QuanLyLichVanChuyen from '@features/lich-van-chuyen/QuanLyLichVanChuyen';
-import QuanLyNhanVien from '@features/nhan-vien/QuanLyNhanVien';
-import QuanLyKhachHang from '@features/khach-hang/QuanLyKhachHang';
-import QuanLyDoiTac from '@features/doi-tac/QuanLyDoiTac';
-import QuanLyPhuongTien from '@features/phuong-tien/QuanLyPhuongTien';
-import QuanLyDinhMuc from '@features/dinh-muc/QuanLyDinhMuc';
-import QuanLyBaoDuong from '@features/bao-duong/QuanLyBaoDuong';
+import { createLazyComponent, LazyLoadingWrapper } from '@components/LazyLoadingWrapper';
+
+// Lazy load components with proper error handling
+const TrangChu = createLazyComponent(() => import('@layouts/TrangChu'), 'TrangChu');
+const TrangXacThuc = createLazyComponent(() => import('@layouts/TrangXacThuc'), 'TrangXacThuc');
+const DangNhap = createLazyComponent(() => import('@features/xac-thuc/DangNhap'), 'DangNhap');
+const BaoCaoTaiChinh = createLazyComponent(() => import('@features/bao-cao/BaoCaoTaiChinh'), 'BaoCaoTaiChinh');
+const QuanLyLichVanChuyen = createLazyComponent(() => import('@features/lich-van-chuyen/QuanLyLichVanChuyen'), 'QuanLyLichVanChuyen');
+const QuanLyNhanVien = createLazyComponent(() => import('@features/nhan-vien/QuanLyNhanVien'), 'QuanLyNhanVien');
+const QuanLyKhachHang = createLazyComponent(() => import('@features/khach-hang/QuanLyKhachHang'), 'QuanLyKhachHang');
+const QuanLyDoiTac = createLazyComponent(() => import('@features/doi-tac/QuanLyDoiTac'), 'QuanLyDoiTac');
+const QuanLyPhuongTien = createLazyComponent(() => import('@features/phuong-tien/QuanLyPhuongTien'), 'QuanLyPhuongTien');
+const QuanLyDinhMuc = createLazyComponent(() => import('@features/dinh-muc/QuanLyDinhMuc'), 'QuanLyDinhMuc');
+const QuanLyBaoDuong = createLazyComponent(() => import('@features/bao-duong/QuanLyBaoDuong'), 'QuanLyBaoDuong');
 // Future flags for React Router v7
 const routerConfig = {
   future: {
@@ -24,13 +27,16 @@ const routerConfig = {
     v7_skipActionErrorRevalidation: true,
   },
 };
+
 // Wrap the app with AuthProvider
 const AppWithAuth = ({ children }) => <AuthProvider>{children}</AuthProvider>;
-const withErrorBoundary = Component => {
+
+// Create a wrapper for components with error boundary and suspense
+const withErrorBoundaryAndSuspense = (Component, loadingMessage) => {
   return (
-    <ErrorBoundary>
+    <LazyLoadingWrapper loadingMessage={loadingMessage}>
       <Component />
-    </ErrorBoundary>
+    </LazyLoadingWrapper>
   );
 };
 const router = createBrowserRouter(
@@ -40,7 +46,9 @@ const router = createBrowserRouter(
       element: (
         <ErrorBoundary>
           <AppWithAuth>
-            <TrangChu />
+            <LazyLoadingWrapper loadingMessage="Đang tải trang chủ...">
+              <TrangChu />
+            </LazyLoadingWrapper>
           </AppWithAuth>
         </ErrorBoundary>
       ),
@@ -48,37 +56,37 @@ const router = createBrowserRouter(
       children: [
         {
           path: 'bao-cao',
-          element: withErrorBoundary(BaoCaoTaiChinh),
+          element: withErrorBoundaryAndSuspense(BaoCaoTaiChinh, 'Đang tải báo cáo tài chính...'),
           errorElement: <ErrorPage />,
         },
         {
           path: 'lich-van-chuyen',
-          element: withErrorBoundary(QuanLyLichVanChuyen),
+          element: withErrorBoundaryAndSuspense(QuanLyLichVanChuyen, 'Đang tải lịch vận chuyển...'),
           errorElement: <ErrorPage />,
         },
         {
           path: 'nhan-vien',
-          element: withErrorBoundary(QuanLyNhanVien),
+          element: withErrorBoundaryAndSuspense(QuanLyNhanVien, 'Đang tải quản lý nhân viên...'),
           errorElement: <ErrorPage />,
         },
         {
           path: 'khach-hang',
-          element: withErrorBoundary(QuanLyKhachHang),
+          element: withErrorBoundaryAndSuspense(QuanLyKhachHang, 'Đang tải quản lý khách hàng...'),
           errorElement: <ErrorPage />,
         },
         {
           path: 'doi-tac',
-          element: withErrorBoundary(QuanLyDoiTac),
+          element: withErrorBoundaryAndSuspense(QuanLyDoiTac, 'Đang tải quản lý đối tác...'),
           errorElement: <ErrorPage />,
         },
         {
           path: 'phuong-tien',
-          element: withErrorBoundary(QuanLyPhuongTien),
+          element: withErrorBoundaryAndSuspense(QuanLyPhuongTien, 'Đang tải quản lý phương tiện...'),
           errorElement: <ErrorPage />,
           children: [
             {
               path: ':tab',
-              element: withErrorBoundary(QuanLyPhuongTien),
+              element: withErrorBoundaryAndSuspense(QuanLyPhuongTien, 'Đang tải phương tiện...'),
               errorElement: <ErrorPage />,
             },
             {
@@ -90,12 +98,12 @@ const router = createBrowserRouter(
         // DinhMuc nested routes
         {
           path: 'dinh-muc',
-          element: withErrorBoundary(QuanLyDinhMuc),
+          element: withErrorBoundaryAndSuspense(QuanLyDinhMuc, 'Đang tải định mức...'),
           errorElement: <ErrorPage />,
           children: [
             {
               path: ':tab',
-              element: withErrorBoundary(QuanLyDinhMuc),
+              element: withErrorBoundaryAndSuspense(QuanLyDinhMuc, 'Đang tải định mức...'),
               errorElement: <ErrorPage />,
             },
             {
@@ -107,7 +115,7 @@ const router = createBrowserRouter(
         // BaoDuong route with tab support
         {
           path: 'bao-duong',
-          element: withErrorBoundary(QuanLyBaoDuong),
+          element: withErrorBoundaryAndSuspense(QuanLyBaoDuong, 'Đang tải bảo dưỡng...'),
           errorElement: <ErrorPage />,
         },
         // Keep old routes for backward compatibility
@@ -135,14 +143,16 @@ const router = createBrowserRouter(
       path: '/xac-thuc',
       element: (
         <ErrorBoundary>
-          <TrangXacThuc />
+          <LazyLoadingWrapper loadingMessage="Đang tải trang xác thực...">
+            <TrangXacThuc />
+          </LazyLoadingWrapper>
         </ErrorBoundary>
       ),
       errorElement: <ErrorPage />,
       children: [
         {
           path: 'dang-nhap',
-          element: withErrorBoundary(DangNhap),
+          element: withErrorBoundaryAndSuspense(DangNhap, 'Đang tải trang đăng nhập...'),
           errorElement: <ErrorPage />,
         },
       ],

@@ -18,6 +18,7 @@ const getStoredAuthData = () => {
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => {
     const storedData = getStoredAuthData();
     return storedData?.currentUser || null;
@@ -26,25 +27,34 @@ export const AuthProvider = ({ children }) => {
     const storedData = getStoredAuthData();
     return storedData?.isAuthenticated || false;
   });
+
   // Login function - in a real app, this would call your auth API
   const login = useCallback(
-    role => {
-      const user = MOCK_USERS[role];
-      if (user) {
-        const authData = {
-          currentUser: user,
-          isAuthenticated: true,
-          timestamp: new Date().toISOString(),
-        };
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-        localStorage.setItem('auth', JSON.stringify(authData));
-        if (user.role === ROLES.QUAN_LY) {
-          navigate('/lich-van-chuyen', { replace: true });
+    async role => {
+      setLoading(true);
+      try {
+        const user = MOCK_USERS[role];
+        if (user) {
+          const authData = {
+            currentUser: user,
+            isAuthenticated: true,
+            timestamp: new Date().toISOString(),
+          };
+          setCurrentUser(user);
+          setIsAuthenticated(true);
+          localStorage.setItem('auth', JSON.stringify(authData));
+          if (user.role === ROLES.QUAN_LY) {
+            navigate('/lich-van-chuyen', { replace: true });
+          }
+          return true;
         }
-        return true;
+        return false;
+      } catch (error) {
+        console.error('Login failed:', error);
+        return false;
+      } finally {
+        setLoading(false);
       }
-      return false;
     },
     [navigate]
   );
@@ -88,6 +98,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     currentUser,
     isAuthenticated,
+    loading,
     login,
     logout,
     hasRole,

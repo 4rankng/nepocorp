@@ -7,3 +7,5 @@ export { default as ThanhTieuDe } from '@/components/ThanhTieuDe';
 export { default as Tabs } from '@/components/Tabs';
 export { default as SwipeTabs } from '@/components/SwipeTabs';
 export { default as SearchBar } from '@/components/SearchBar';
+export { default as LazyLoadingWrapper, createLazyComponent } from '@/components/LazyLoadingWrapper';
+export { ErrorBoundary } from '@/components/ErrorBoundary';
