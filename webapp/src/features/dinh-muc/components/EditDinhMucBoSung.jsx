@@ -34,20 +34,18 @@ import TuyenDuongManager from './TuyenDuongManager';
  * @param {Function} props.setFormData - Function to update form data
  * @param {Object} props.formErrors - Form validation errors
  * @param {boolean} props.isSubmitting - Whether the form is being submitted
- * @param {boolean} props.editingRecord - Whether editing an existing record
  * @param {Array} props.dauKeoList - List of dau keo for the bien so dropdown
  * @param {Array} props.tuyenDuongList - List of tuyen duong for the ma tuyen dropdown
  * @param {Function} props.onSubmit - Callback when form is submitted
  * @returns {JSX.Element} The rendered component
  */
-const AddEditDinhMucBoSung = ({
+const EditDinhMucBoSung = ({
   open,
   onClose,
   formData,
   setFormData,
   formErrors,
   isSubmitting,
-  editingRecord,
   dauKeoList = [],
   tuyenDuongList = [],
   onSubmit,
@@ -188,7 +186,7 @@ const AddEditDinhMucBoSung = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{editingRecord ? 'Sửa định mức bổ sung' : 'Thêm định mức bổ sung'}</DialogTitle>
+      <DialogTitle>Sửa định mức bổ sung</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
@@ -316,8 +314,8 @@ const AddEditDinhMucBoSung = ({
                   onClick={handleOpenTuyenDuongManager}
                   sx={{
                     minWidth: '40px',
-                    minHeight: '40px',
-                    mt: '8px',
+                    width: '40px',
+                    height: '40px',
                     p: 0,
                     display: 'flex',
                     alignItems: 'center',
@@ -339,7 +337,7 @@ const AddEditDinhMucBoSung = ({
           Hủy
         </Button>
         <Button onClick={onSubmit} variant="contained" disabled={isSubmitting}>
-          {isSubmitting ? <CircularProgress size={24} /> : editingRecord ? 'Sửa' : 'Thêm'}
+          {isSubmitting ? <CircularProgress size={24} /> : 'Sửa'}
         </Button>
       </DialogActions>
 
@@ -356,4 +354,4 @@ const AddEditDinhMucBoSung = ({
   );
 };
 
-export default AddEditDinhMucBoSung;
+export default EditDinhMucBoSung;

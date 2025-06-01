@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Box, Typography, Paper, useTheme, Fab, Alert, CircularProgress } from '@mui/material';
 import { Add as AddIcon, Warning as WarningIcon } from '@mui/icons-material';
 import AsteriskCell from '@/components/AsteriskCell';
-import AddEditDinhMucBoSung from './AddEditDinhMucBoSung';
+import { AddDinhMucBoSung, EditDinhMucBoSung } from '.';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import DeleteDialog from '@/components/DeleteDialog';
@@ -32,6 +32,8 @@ const DinhMucBoSung = () => {
     bien_so: '',
     ma_tuyen: '',
     dinh_muc_l: '',
+    diem_di: '',
+    diem_den: '',
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,26 +148,26 @@ const DinhMucBoSung = () => {
   );
 
   // Form handlers
-  const handleOpenForm = () => {
+  const handleAddNew = () => {
     setEditingRecord(null);
     setFormData({
       bien_so: '',
       ma_tuyen: '',
       dinh_muc_l: '',
+      diem_di: '',
+      diem_den: '',
     });
     setFormErrors({});
     setIsFormOpen(true);
   };
 
   const handleEdit = record => {
-    setEditingRecord(record);
     const { diem_di, diem_den } = getRouteDetails(record.ma_tuyen);
+    setEditingRecord(record);
     setFormData({
-      bien_so: record.bien_so || '',
-      ma_tuyen: record.ma_tuyen || '',
-      dinh_muc_l: record.dinh_muc_l.toString(),
-      diem_di: diem_di || '*',
-      diem_den: diem_den || '*',
+      ...record,
+      diem_di: diem_di || '',
+      diem_den: diem_den || '',
     });
     setFormErrors({});
     setIsFormOpen(true);
@@ -212,6 +214,10 @@ const DinhMucBoSung = () => {
         bien_so: formData.bien_so || null,
         ma_tuyen: formData.ma_tuyen || null,
         dinh_muc_l: parseFloat(formData.dinh_muc_l),
+        ...(editingRecord && {
+          diem_di: formData.diem_di || '',
+          diem_den: formData.diem_den || ''
+        })
       };
 
       if (editingRecord) {
@@ -220,9 +226,9 @@ const DinhMucBoSung = () => {
         await createRecord(submitData);
       }
 
-      handleCloseForm();
-    } catch (err) {
-      // Error is handled by the hook
+      setIsFormOpen(false);
+    } catch (error) {
+      logger.error('Error saving dinh muc bo sung:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -280,7 +286,7 @@ const DinhMucBoSung = () => {
       <Fab
         color="primary"
         aria-label="Thêm định mức bổ sung"
-        onClick={handleOpenForm}
+        onClick={handleAddNew}
         sx={{
           position: 'fixed',
           bottom: theme.spacing(3),
@@ -292,18 +298,30 @@ const DinhMucBoSung = () => {
       </Fab>
 
       {/* Form Dialog */}
-      <AddEditDinhMucBoSung
-        open={isFormOpen}
-        onClose={handleCloseForm}
-        formData={formData}
-        setFormData={setFormData}
-        formErrors={formErrors}
-        isSubmitting={isSubmitting}
-        editingRecord={editingRecord}
-        dauKeoList={dauKeoList}
-        tuyenDuongList={tuyenDuongList}
-        onSubmit={handleSubmit}
-      />
+      {editingRecord ? (
+        <EditDinhMucBoSung
+          open={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          formData={formData}
+          setFormData={setFormData}
+          formErrors={formErrors}
+          isSubmitting={isSubmitting}
+          dauKeoList={dauKeoList}
+          onSubmit={handleSubmit}
+        />
+      ) : (
+        <AddDinhMucBoSung
+          open={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          formData={formData}
+          setFormData={setFormData}
+          formErrors={formErrors}
+          isSubmitting={isSubmitting}
+          dauKeoList={dauKeoList}
+          tuyenDuongList={tuyenDuongList}
+          onSubmit={handleSubmit}
+        />
+      )}
 
 
       <DeleteDialog

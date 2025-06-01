@@ -5,3 +5,5 @@ export { default as DinhMucDiDuong } from './DinhMucDiDuong';
 export { default as DinhMucVoRong } from './DinhMucVoRong';
 export { default as DinhMucVoRongDialog } from './DinhMucVoRongDialog';
 export { default as LicensePlateNormsCard } from './LicensePlateNormsCard';
+export { default as AddDinhMucBoSung } from './AddDinhMucBoSung';
+export { default as EditDinhMucBoSung } from './EditDinhMucBoSung';
