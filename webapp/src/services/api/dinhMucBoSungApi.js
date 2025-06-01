@@ -15,9 +15,9 @@ const simulateDelay = (min = 200, max = 800) => {
 
 // Simulate random API errors (5% chance)
 const simulateError = () => {
-  if (Math.random() < 0.05) {
-    throw new Error('Simulated API error');
-  }
+  // if (Math.random() < 0.05) {
+  //   throw new Error('Simulated API error');
+  // }
 };
 
 export const dinhMucBoSungApi = {
