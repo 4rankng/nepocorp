@@ -1,29 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  useTheme,
-  Fab,
-  Tooltip as MuiTooltip,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-  CircularProgress,
-  InputAdornment,
-  styled,
-} from '@mui/material';
+import { Box, Typography, Paper, useTheme, Fab, Alert, CircularProgress } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import AsteriskCell from '@/components/AsteriskCell';
+import AddEditDinhMucBoSung from './AddEditDinhMucBoSung';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import DeleteDialog from '@/components/DeleteDialog';
@@ -302,78 +281,20 @@ const DinhMucBoSung = () => {
       </Fab>
 
       {/* Form Dialog */}
-      <Dialog open={isFormOpen} onClose={handleCloseForm} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingRecord ? 'Sửa định mức bổ sung' : 'Thêm định mức bổ sung'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
-            {/* Biển số */}
-            <FormControl fullWidth error={!!formErrors.bien_so}>
-              <InputLabel>Biển số xe (để trống để áp dụng cho tất cả)</InputLabel>
-              <Select
-                value={formData.bien_so}
-                onChange={e => setFormData(prev => ({ ...prev, bien_so: e.target.value }))}
-                label="Biển số xe (để trống để áp dụng cho tất cả)"
-              >
-                <MenuItem value="">
-                  <em>Áp dụng cho tất cả (*)</em>
-                </MenuItem>
-                {dauKeoList.map(dauKeo => (
-                  <MenuItem key={dauKeo.id} value={dauKeo.bien_so}>
-                    {dauKeo.bien_so} - {dauKeo.mo_ta}
-                  </MenuItem>
-                ))}
-              </Select>
-              {formErrors.bien_so && <FormHelperText>{formErrors.bien_so}</FormHelperText>}
-            </FormControl>
+      <AddEditDinhMucBoSung
+        open={isFormOpen}
+        onClose={handleCloseForm}
+        formData={formData}
+        setFormData={setFormData}
+        formErrors={formErrors}
+        isSubmitting={isSubmitting}
+        editingRecord={editingRecord}
+        dauKeoList={dauKeoList}
+        tuyenDuongList={tuyenDuongList}
+        onSubmit={handleSubmit}
+      />
 
-            {/* Mã tuyến */}
-            <FormControl fullWidth error={!!formErrors.ma_tuyen}>
-              <InputLabel>Mã tuyến (để trống để áp dụng cho tất cả)</InputLabel>
-              <Select
-                value={formData.ma_tuyen}
-                onChange={e => setFormData(prev => ({ ...prev, ma_tuyen: e.target.value }))}
-                label="Mã tuyến (để trống để áp dụng cho tất cả)"
-              >
-                <MenuItem value="">
-                  <em>Áp dụng cho tất cả (*)</em>
-                </MenuItem>
-                {tuyenDuongList.map(tuyen => (
-                  <MenuItem key={tuyen.id} value={tuyen.ma_so}>
-                    {tuyen.ma_so} - {tuyen.diem_di} → {tuyen.diem_den}
-                  </MenuItem>
-                ))}
-              </Select>
-              {formErrors.ma_tuyen && <FormHelperText>{formErrors.ma_tuyen}</FormHelperText>}
-            </FormControl>
 
-            {/* Định mức */}
-            <TextField
-              label="Định mức"
-              type="number"
-              value={formData.dinh_muc_l}
-              onChange={e => setFormData(prev => ({ ...prev, dinh_muc_l: e.target.value }))}
-              error={!!formErrors.dinh_muc_l}
-              helperText={formErrors.dinh_muc_l}
-              InputProps={{
-                endAdornment: <InputAdornment position="end">lít</InputAdornment>,
-                inputProps: { min: 0, step: 0.1 },
-              }}
-              fullWidth
-              required
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseForm}>Hủy</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={isSubmitting}>
-            {isSubmitting ? <CircularProgress size={24} /> : editingRecord ? 'Cập nhật' : 'Thêm'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Confirmation Dialog */}
       <DeleteDialog
         open={confirmationState.isOpen}
         title={confirmationState.title}
