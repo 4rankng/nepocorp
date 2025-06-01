@@ -16,6 +16,20 @@ bao_duong
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
+chi_phi
+- id
+- dau_keo // chi_phi.dau_keo = dau_keo.bien_so, allow null
+- ro_mooc // chi_phi.ro_mooc = ro_mooc.bien_so, allow null
+- nhan_vien // chi_phi.nhan_vien = nhan_vien.ma_so, allow null
+- mo ta // luong, bao hiem, thuong, phu cap, ...
+- chi_tiet // json chứa các chi tiết của chi phí
+- tong_cong
+- currency // VND
+- ghi_chu
+- created_at: '2023-01-15T08:30:00Z',
+- updated_at: '2023-05-20T10:00:00Z',
+
+
 ## Cấu hình
 cau_hinh
 - id
@@ -87,15 +101,15 @@ khach_hang
 - updated_at: '2023-05-20T10:00:00Z',
 
 nhan_vien
-id: 1,
-ma_so: 'QL001',
-ho_ten: 'Trần Văn Quản',
-ten_dang_nhap: 'quan.tv',
-mat_khau: 'password123',
-chuc_vu: 'quan-ly',
-email: 'quan.tv@example.com',
-created_at: '2023-01-05T08:00:00Z',
-updated_at: '2024-05-01T10:00:00Z',
+- id: 1,
+- ma_so: 'QL001',
+- ho_ten: 'Trần Văn Quản',
+- ten_dang_nhap: 'quan.tv',
+- mat_khau: 'ah234hk2kfjJ', // hash
+- chuc_vu: 'quan-ly', // quan-ly, ke-toan, lai-xe, giao-nhan
+- email: 'quan.tv@example.com',
+- created_at: '2023-01-05T08:00:00Z',
+- updated_at: '2024-05-01T10:00:00Z',
 
 ## Lịch Vận Chuyển
 lich_van_chuyen
@@ -107,8 +121,8 @@ lich_van_chuyen
 - ma_khach_hang: 'MDD001', // ma_khach_hang = khach_hang.ma_dinh_danh
 - diem_di: 'Kho Nepocorp, Hà Nội',
 - diem_den: 'Cảng Hải Phòng; Cảng Quảng Ninh',
-- cuoc_van_chuyen_vnd: 1222333,
-- cuoc_thue_van_chuyen_vnd: 1000333,
+- cuoc_van_chuyen: 1222333, // income
+- cuoc_thue_van_chuyen: 1000333, // cost
 - bien_so_dau_keo: '15C-11223', // bien_so_dau_keo = dau_keo.bien_so
 - ma_so_cont: '20DC', // ma_so_cont = container.ma_so
 - ma_nv_giao_nhan: 'NV003', // ma_nv_giao_nhan = nhan_vien.ma_so
@@ -117,9 +131,10 @@ lich_van_chuyen
 - km_hang: 50.12,
 - km_vo: 23.34,
 - l_dau: 2.96,
-- vnd_dau: 5123001,
-- vnd_di_duong: 1222333,
-- vnd_chi_phi: 6345334, // vnd_chi_phi = vnd_dau + vnd_di_duong
+- tien_dau: 5123001, // cost
+- tien_di_duong: 1222333, // cost
+- tien_chi_phi: 6345334, // tien_chi_phi = tien_dau + tien_di_duong + cuoc_thue_van_chuyen
+- currency // VND
 - created_at: '2023-01-05T08:00:00Z',
 - updated_at: '2024-05-01T10:00:00Z',
 
