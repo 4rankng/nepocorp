@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { dinhMucBoSungApi } from '@services/api/dinhMucBoSungApi';
 import { dauKeoApi } from '@services/mockApi/dauKeoApi';
 import { tuyenDuongApi } from '@services/mockApi/tuyenDuongApi';
@@ -10,24 +10,33 @@ export const useDinhMucBoSung = () => {
   const [tuyenDuongList, setTuyenDuongList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedPlate, setSelectedPlate] = useState('');
 
-  // Load initial data
-  const loadData = useCallback(async () => {
+  // Load data based on selected plate
+  const loadData = useCallback(async (plate = '') => {
     setIsLoading(true);
     setError(null);
     try {
-      const [dinhMucData, dauKeoData, tuyenData] = await Promise.all([
-        dinhMucBoSungApi.getAll(),
+      // Load dauKeo and tuyenDuong in parallel
+      const [dauKeoData, tuyenData] = await Promise.all([
         dauKeoApi.getAll(),
         tuyenDuongApi.getAll(),
       ]);
+
+      // Load dinhMucBoSung with plate filter if provided
+      let dinhMucData;
+      if (plate) {
+        dinhMucData = await dinhMucBoSungApi.getByBienSo(plate);
+      } else {
+        dinhMucData = await dinhMucBoSungApi.getAll();
+      }
       
       logger.info('API responses:', { dinhMucData, dauKeoData, tuyenData });
       
-      // Normalize response shapes: dinhMucBoSungApi returns array directly, others return { data }
+      // Normalize response shapes
       const extractedDinhMucData = Array.isArray(dinhMucData)
         ? dinhMucData
-        : dinhMucData.data || [];
+        : dinhMucData?.data || [];
       const extractedDauKeoList = dauKeoData.data || [];
       const extractedTuyenDuongList = tuyenData.data || [];
       
@@ -35,10 +44,11 @@ export const useDinhMucBoSung = () => {
       setDauKeoList(extractedDauKeoList);
       setTuyenDuongList(extractedTuyenDuongList);
       
-      logger.info('Data extracted from APIs:', {
-        dinhMucBoSungData: extractedDinhMucData,
-        dauKeoList: extractedDauKeoList,
-        tuyenDuongList: extractedTuyenDuongList
+      logger.info('Data loaded:', {
+        plateFilter: plate,
+        recordCount: extractedDinhMucData.length,
+        dauKeoCount: extractedDauKeoList.length,
+        tuyenDuongCount: extractedTuyenDuongList.length
       });
     } catch (err) {
       setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
@@ -96,10 +106,34 @@ export const useDinhMucBoSung = () => {
     }
   }, []);
 
-  // Load data on mount
-  useEffect(() => {
-    loadData();
+  // Handle plate selection change
+  const handlePlateChange = useCallback(async (plate) => {
+    setSelectedPlate(plate);
+    await loadData(plate);
   }, [loadData]);
+
+  // Load initial data
+  useEffect(() => {
+    loadData('');
+  }, [loadData]);
+
+  // Get unique license plates from dauKeoList
+  const licensePlates = useMemo(() => {
+    if (!dauKeoList || !Array.isArray(dauKeoList)) return [];
+    
+    // Extract unique license plates from dauKeoList
+    const plates = new Set();
+    dauKeoList.forEach(dauKeo => {
+      if (dauKeo.bien_so) {
+        plates.add(dauKeo.bien_so);
+      }
+    });
+    
+    return Array.from(plates).map(plate => ({
+      id: plate,
+      bien_so: plate
+    }));
+  }, [dauKeoList]);
 
   return {
     dinhMucBoSungData,
@@ -107,7 +141,10 @@ export const useDinhMucBoSung = () => {
     tuyenDuongList,
     isLoading,
     error,
-    loadData,
+    selectedPlate,
+    handlePlateChange,
+    licensePlates,
+    loadData: () => loadData(selectedPlate),
     createRecord,
     updateRecord,
     deleteRecord,
