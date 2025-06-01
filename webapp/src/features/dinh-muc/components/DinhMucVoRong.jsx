@@ -23,6 +23,7 @@ import DinhMucVoRongDialog from './DinhMucVoRongDialog';
 import DeleteDialog from '@/components/DeleteDialog';
 import { useVoRong } from '../hooks/useVoRong';
 import { getVoRongTableColumns } from '../constants/voRongTableColumns';
+import logger from '@/services/logger';
 
 const initialFormData = {
   bienSoXe: '',
@@ -54,7 +55,7 @@ const DinhMucVoRong = () => {
   const [openAddEditDialog, setOpenAddEditDialog] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentRecord, setCurrentRecord] = useState(null);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: '' });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: null });
   const [formData, setFormData] = useState(initialFormData);
   const [formErrors, setFormErrors] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -142,7 +143,7 @@ const DinhMucVoRong = () => {
       });
       handleCloseDialog();
     } catch (err) {
-
+      logger.error('Error in save operation:', err);
       setSnackbar({
         open: true,
         message: err.message || 'Đã có lỗi xảy ra khi lưu.',
@@ -157,12 +158,17 @@ const DinhMucVoRong = () => {
     setDeleteDialog({
       open: true,
       recordId: record.id,
-      details: `Bạn có chắc chắn muốn xóa định mức vỏ rỗng cho BSX ${record.bienSoXe} (Từ ${record.tuKm}km đến ${record.denKm}km)?`,
+      details: {
+        'Biển số xe': record.bienSoXe,
+        'Từ km': `${record.tuKm}km`,
+        'Đến km': `${record.denKm}km`,
+        'Định mức': `${record.l_km}l/km`,
+      },
     });
   };
 
   const handleDeleteClose = () => {
-    setDeleteDialog({ open: false, recordId: null, details: '' });
+    setDeleteDialog({ open: false, recordId: null, details: null });
   };
 
   const handleDeleteConfirm = async () => {
@@ -171,8 +177,9 @@ const DinhMucVoRong = () => {
     try {
       await deleteVoRongStandard(deleteDialog.recordId);
       setSnackbar({ open: true, message: 'Xóa thành công!', severity: 'success' });
+      refetchVoRongData();
     } catch (err) {
-
+      logger.error('Error in delete operation:', err);
       setSnackbar({ open: true, message: err.message || 'Lỗi khi xóa.', severity: 'error' });
     } finally {
       setIsSubmitting(false);
@@ -322,13 +329,13 @@ const DinhMucVoRong = () => {
 
       <DeleteDialog
         open={deleteDialog.open}
-        onClose={handleDeleteClose}
+        onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}
-        title="Xác nhận xóa"
-        contentText={deleteDialog.details}
-        confirmButtonText="Xóa"
-        cancelButtonText="Hủy"
+        details={deleteDialog.details}
         isLoading={isSubmitting}
+        type="delete"
+        title="Xóa định mức vỏ rỗng"
+        message="Bạn có chắc chắn muốn xóa định mức này?"
       />
 
       <Snackbar
