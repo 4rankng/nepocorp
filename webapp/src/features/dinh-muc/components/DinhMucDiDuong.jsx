@@ -25,11 +25,12 @@ import {
   Tooltip,
   Dialog,
   DialogTitle,
-    InputAdornment,
+  InputAdornment,
   DialogContent,
   DialogActions,
   Button,
   Snackbar,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -43,6 +44,7 @@ import { updateTuyenDuong } from '@services/mockApi/tuyenDuongApi';
 import logger from '@services/logger';
 import { useSnackbar } from 'notistack';
 import DeleteDialog from '@/components/DeleteDialog';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 // Define validation schema with Zod
 const routeSchema = z.object({
@@ -154,7 +156,7 @@ const DinhMucDiDuong = () => {
   }, [filteredData, pagination]);
 
   // Handle form submission
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     try {
       // Check if this is an edit or create
       const isEdit = data.id;
@@ -199,7 +201,6 @@ const DinhMucDiDuong = () => {
         enqueueSnackbar('Tạo mới thành công!', { variant: 'success' });
       }
 
-
       await fetchAllData();
       reset();
     } catch (error) {
@@ -209,7 +210,7 @@ const DinhMucDiDuong = () => {
   };
 
   // Handle delete
-  const handleDeleteClick = (row) => {
+  const handleDeleteClick = row => {
     setItemToDelete(row);
   };
 
@@ -229,13 +230,13 @@ const DinhMucDiDuong = () => {
   };
 
   // Handle edit
-  const handleEditClick = (row) => {
+  const handleEditClick = row => {
     console.log('Starting edit for row:', row);
     try {
       setEditingId(row.id);
       setEditedData({
         ...row,
-        containerNorms: { ...row.containerNorms }
+        containerNorms: { ...row.containerNorms },
       });
       console.log('Edit state updated for row ID:', row.id);
     } catch (error) {
@@ -249,7 +250,9 @@ const DinhMucDiDuong = () => {
   };
 
   const handleInputChange = (field, value, containerKey = null) => {
-    console.log(`handleInputChange - field: ${field}, value: ${value}, containerKey: ${containerKey}`);
+    console.log(
+      `handleInputChange - field: ${field}, value: ${value}, containerKey: ${containerKey}`
+    );
 
     setEditedData(prev => {
       // Create a deep copy of the previous state
@@ -259,7 +262,7 @@ const DinhMucDiDuong = () => {
         // If it's a container norm field
         newState.containerNorms = {
           ...(prev.containerNorms || {}),
-          [containerKey]: value
+          [containerKey]: value,
         };
         console.log('Updated containerNorms:', newState.containerNorms);
       } else {
@@ -351,27 +354,28 @@ const DinhMucDiDuong = () => {
   return (
     <FormProvider {...methods}>
       <Paper elevation={3} sx={{ p: 3, m: 1, mt: 2 }}>
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <TextField
-          sx={{ width: '50%' }}
-          variant="outlined"
-          placeholder="Tìm kiếm..."
-          value={searchTerm}
-          onChange={event => logger.info(event.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            sx: {
-              borderRadius: '6px',
-              height: 36,
-              minHeight: 36,
-              fontSize: '0.95rem',
-            },
-          }}
-        /></Box>
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <TextField
+            sx={{ width: '50%' }}
+            variant="outlined"
+            placeholder="Tìm kiếm..."
+            value={searchTerm}
+            onChange={event => logger.info(event.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: '6px',
+                height: 36,
+                minHeight: 36,
+                fontSize: '0.95rem',
+              },
+            }}
+          />
+        </Box>
 
         {isLoading ? (
           <SkeletonTable />
@@ -386,7 +390,7 @@ const DinhMucDiDuong = () => {
                     <TableCell>Mã tuyến</TableCell>
                     <TableCell>Điểm đi</TableCell>
                     <TableCell>Điểm đến</TableCell>
-                    {containerTypes?.map((ct) => (
+                    {containerTypes?.map(ct => (
                       <TableCell key={ct.ma_loai_container} align="right">
                         {ct.ten_loai_container}
                       </TableCell>
@@ -395,13 +399,13 @@ const DinhMucDiDuong = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {paginatedData.map((row) => (
+                  {paginatedData.map(row => (
                     <TableRow key={row.id} hover>
                       <TableCell>
                         {editingId === row.id ? (
                           <TextField
                             value={editedData.ma_tuyen || ''}
-                            onChange={(e) => {
+                            onChange={e => {
                               logger.info('ma_tuyen changed:', e.target.value);
                               handleInputChange('ma_tuyen', e.target.value);
                             }}
@@ -418,7 +422,7 @@ const DinhMucDiDuong = () => {
                         {editingId === row.id ? (
                           <TextField
                             value={editedData.diem_di || ''}
-                            onChange={(e) => {
+                            onChange={e => {
                               logger.info('diem_di changed:', e.target.value);
                               handleInputChange('diem_di', e.target.value);
                             }}
@@ -435,7 +439,7 @@ const DinhMucDiDuong = () => {
                         {editingId === row.id ? (
                           <TextField
                             value={editedData.diem_den || ''}
-                            onChange={(e) => {
+                            onChange={e => {
                               logger.info('diem_den changed:', e.target.value);
                               handleInputChange('diem_den', e.target.value);
                             }}
@@ -448,13 +452,13 @@ const DinhMucDiDuong = () => {
                           row.diem_den
                         )}
                       </TableCell>
-                      {containerTypes?.map((ct) => (
+                      {containerTypes?.map(ct => (
                         <TableCell key={ct.ma_loai_container} align="right">
                           {editingId === row.id ? (
                             <TextField
                               type="number"
                               value={editedData.containerNorms?.[ct.ma_loai_container] ?? ''}
-                              onChange={(e) => {
+                              onChange={e => {
                                 const value = e.target.value;
                                 logger.info(`Container ${ct.ma_loai_container} changed:`, value);
                                 handleInputChange('containerNorms', value, ct.ma_loai_container);
@@ -465,7 +469,7 @@ const DinhMucDiDuong = () => {
                               variant="outlined"
                               inputProps={{
                                 step: '0.01',
-                                min: '0'
+                                min: '0',
                               }}
                             />
                           ) : (
@@ -541,7 +545,7 @@ const DinhMucDiDuong = () => {
               onPageChange={(_, newPage) => {
                 setPagination(prev => ({ ...prev, pageIndex: newPage }));
               }}
-              onRowsPerPageChange={(e) => {
+              onRowsPerPageChange={e => {
                 setPagination({
                   pageIndex: 0,
                   pageSize: parseInt(e.target.value, 10),
@@ -560,9 +564,7 @@ const DinhMucDiDuong = () => {
       <Dialog open={false} onClose={() => reset()} maxWidth="md" fullWidth>
         <DialogTitle>Thêm mới tuyến đường</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogContent>
-            {/* Form fields would go here */}
-          </DialogContent>
+          <DialogContent>{/* Form fields would go here */}</DialogContent>
           <DialogActions>
             <Button onClick={() => reset()}>Hủy</Button>
             <Button type="submit" variant="contained" disabled={isSubmitting}>
@@ -577,9 +579,58 @@ const DinhMucDiDuong = () => {
         open={!!itemToDelete}
         onCancel={() => setItemToDelete(null)}
         onConfirm={handleConfirmDelete}
-        title="Xác nhận xóa"
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteForeverIcon color="error" />
+            <span>Xóa tuyến đường</span>
+          </Box>
+        }
         message={`Bạn có chắc chắn muốn xóa tuyến đường ${itemToDelete?.ma_tuyen}?`}
-        details="Hành động này không thể hoàn tác."
+        content={() => {
+          if (!itemToDelete) return null;
+          return (
+            <Box>
+              <Typography variant="subtitle2" color="error.main" gutterBottom>
+                Thông tin chi tiết:
+              </Typography>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                <Typography variant="body2" fontWeight={500}>
+                  Điểm đi:
+                </Typography>
+                <Typography variant="body2">{itemToDelete.diem_di}</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Điểm đến:
+                </Typography>
+                <Typography variant="body2">{itemToDelete.diem_den}</Typography>
+              </Box>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      {containerTypes?.map(ct => (
+                        <TableCell key={ct.ma_loai_container} align="center">
+                          {ct.ten_loai_container}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow>
+                      {containerTypes?.map(ct => (
+                        <TableCell key={ct.ma_loai_container} align="center">
+                          {itemToDelete.containerNorms?.[ct.ma_loai_container]?.toLocaleString(
+                            'vi-VN'
+                          ) || '-'}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          );
+        }}
         confirmText="Xóa"
         cancelText="Hủy"
         type="delete"
@@ -615,12 +666,7 @@ const DinhMucDiDuong = () => {
 const SkeletonTable = () => (
   <Box sx={{ width: '100%' }}>
     {[...Array(5)].map((_, index) => (
-      <Skeleton
-        key={index}
-        variant="rectangular"
-        height={53}
-        sx={{ mb: 1, borderRadius: 1 }}
-      />
+      <Skeleton key={index} variant="rectangular" height={53} sx={{ mb: 1, borderRadius: 1 }} />
     ))}
   </Box>
 );
