@@ -23,8 +23,6 @@ export const useDiDuong = () => {
         containerApi.getAll(),
       ]);
 
-      logger.info('Count Response:', tuyenDuongCountRes);
-
       if (!tuyenDuongCountRes || !tuyenDuongCountRes.success) {
         throw new Error(tuyenDuongCountRes?.error?.message || 'Lỗi khi lấy số lượng tuyến đường.');
       }
@@ -49,12 +47,6 @@ export const useDiDuong = () => {
         dinhMucDiDuongApi.getAllDinhMucDiDuong(1, 1000), // Get all dinh muc records
       ]);
 
-      logger.info('API Responses:', {
-        dinhMuc: dinhMucRes,
-        tuyenDuong: routeResponses,
-        container: containerRes,
-      });
-
       // Validate responses
       if (!dinhMucRes || !dinhMucRes.success) {
         throw new Error(dinhMucRes?.error?.message || 'Lỗi khi tải dữ liệu định mức đi đường.');
@@ -71,12 +63,6 @@ export const useDiDuong = () => {
       // Handle different response structures from mock API
       const allDinhMuc = Array.isArray(dinhMucRes.data) ? dinhMucRes.data : [];
       const allContainerTypes = Array.isArray(containerRes.data) ? containerRes.data : [];
-
-      logger.info('Processed data:', {
-        allDinhMuc,
-        allTuyenDuong,
-        allContainerTypes,
-      });
 
       // Process container types from allContainerTypes (which has 'id', 'ma_so', and 'phan_loai')
       const processedContainerTypes = allContainerTypes
@@ -109,12 +95,6 @@ export const useDiDuong = () => {
           };
         })
         .filter(norm => norm.ma_loai_container !== null);
-
-      logger.info('Final processed data:', {
-        containerTypes: uniqueContainerTypes,
-        routes: allTuyenDuong,
-        roadNorms: transformedRoadNorms,
-      });
 
       setContainerTypes(uniqueContainerTypes);
       setRoutes(allTuyenDuong);

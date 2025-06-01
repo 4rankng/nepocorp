@@ -100,8 +100,8 @@ export const CustomerListExample = () => {
       </Typography>
       <CustomerList
         customers={mockCustomers}
-        onEdit={customer => console.log('Edit:', customer)}
-        onDelete={customer => console.log('Delete:', customer)}
+        onEdit={customer => {}}
+        onDelete={customer => {}}
       />
     </Box>
   );

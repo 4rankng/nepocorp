@@ -31,8 +31,6 @@ export const useDinhMucBoSung = () => {
         dinhMucData = await dinhMucBoSungApi.getAll();
       }
 
-      logger.info('API responses:', { dinhMucData, dauKeoData, tuyenData });
-
       // Normalize response shapes
       const extractedDinhMucData = Array.isArray(dinhMucData)
         ? dinhMucData
@@ -44,12 +42,6 @@ export const useDinhMucBoSung = () => {
       setDauKeoList(extractedDauKeoList);
       setTuyenDuongList(extractedTuyenDuongList);
 
-      logger.info('Data loaded:', {
-        plateFilter: plate,
-        recordCount: extractedDinhMucData.length,
-        dauKeoCount: extractedDauKeoList.length,
-        tuyenDuongCount: extractedTuyenDuongList.length,
-      });
     } catch (err) {
       setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
     } finally {

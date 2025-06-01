@@ -87,11 +87,11 @@ const DinhMucChoHangDialog = ({
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.bien_so) {
       newErrors.bien_so = 'Vui lòng nhập biển số';
     }
-    
+
     if (!formData.dinh_muc || isNaN(formData.dinh_muc) || formData.dinh_muc <= 0) {
       newErrors.dinh_muc = 'Vui lòng nhập định mức hợp lệ';
     }
@@ -102,7 +102,7 @@ const DinhMucChoHangDialog = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       onSave(formData);
     }
@@ -119,7 +119,7 @@ const DinhMucChoHangDialog = ({
       <DialogTitle id="dinh-muc-cho-hang-dialog-title">
         {title || (isEditMode ? 'Chỉnh sửa định mức chở hàng' : 'Thêm mới định mức chở hàng')}
       </DialogTitle>
-      
+
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Grid container spacing={2}>
@@ -137,7 +137,7 @@ const DinhMucChoHangDialog = ({
                 required
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -156,7 +156,7 @@ const DinhMucChoHangDialog = ({
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -172,7 +172,7 @@ const DinhMucChoHangDialog = ({
             </Grid>
           </Grid>
         </DialogContent>
-        
+
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={onClose} disabled={isLoading}>
             Hủy

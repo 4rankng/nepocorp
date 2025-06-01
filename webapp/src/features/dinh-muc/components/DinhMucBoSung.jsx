@@ -98,9 +98,7 @@ const DinhMucBoSung = () => {
       if (selectedPlate) {
         const beforeFilter = result.length;
         result = result.filter(item => item.bien_so === selectedPlate);
-        logger.info(
-          `Filtered by plate ${selectedPlate}: ${beforeFilter} -> ${result.length} items`
-        );
+
       }
 
       // Apply search term filter if provided
@@ -132,7 +130,7 @@ const DinhMucBoSung = () => {
   // Prepare table data with route information
   const tableData = useMemo(() => {
     if (!filteredData || filteredData.length === 0) {
-      logger.info('No filtered data to display');
+
       return [];
     }
 

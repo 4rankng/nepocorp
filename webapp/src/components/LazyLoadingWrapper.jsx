@@ -53,7 +53,7 @@ export const LazyLoadingWrapper = ({
   loadingMessage = 'Đang tải...' 
 }) => {
   const defaultFallback = <LoadingFallback message={loadingMessage} />;
-  
+
   return (
     <ErrorBoundary>
       <Suspense fallback={fallback || defaultFallback}>

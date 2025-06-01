@@ -237,8 +237,9 @@ let dinhMucDiDuongData = [
   },
 ];
 // CRUD Operations
-export const getAllDinhMucDiDuong = async () => {
-  return [...dinhMucDiDuongData];
+export const getAllDinhMucDiDuong = () => {
+
+  return dinhMucDiDuongData;
 };
 export const getDinhMucDiDuongById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
@@ -250,6 +251,7 @@ export const getDinhMucByContainerAndTuyen = async (ma_cont, ma_tuyen) => {
   );
 };
 export const createDinhMucDiDuong = async dinhMuc => {
+
   const newDinhMuc = {
     ...dinhMuc,
     id: Date.now(),
@@ -257,18 +259,25 @@ export const createDinhMucDiDuong = async dinhMuc => {
     updatedAt: new Date().toISOString(),
   };
   dinhMucDiDuongData.push(newDinhMuc);
+
   return newDinhMuc;
 };
 export const updateDinhMucDiDuong = async (id, updates) => {
+
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const index = dinhMucDiDuongData.findIndex(item => item.id === numericId);
-  if (index === -1) return null;
+
+  if (index === -1) {
+
+    return null;
+  }
   const updatedDinhMuc = {
     ...dinhMucDiDuongData[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
   dinhMucDiDuongData[index] = updatedDinhMuc;
+
   return updatedDinhMuc;
 };
 export const deleteDinhMucDiDuong = async id => {

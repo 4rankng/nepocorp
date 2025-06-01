@@ -47,6 +47,7 @@ import DeleteDialog from '@/components/DeleteDialog';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import * as tuyenDuongApi from '@services/mockApi/tuyenDuongApi';
 import * as dinhMucDiDuongApi from '@services/mockApi/dinhMucDiDuongApi';
+import ExcelTable from '@/components/ExcelTable';
 
 // Define validation schema with Zod
 const routeSchema = z.object({
@@ -106,14 +107,14 @@ const DinhMucDiDuong = () => {
   // Update local state when data loads
   useEffect(() => {
     if (hookRoutes) {
-      logger.info('Updating localRoutes with:', hookRoutes);
+
       setLocalRoutes([...hookRoutes]);
     }
   }, [hookRoutes]);
 
   useEffect(() => {
     if (hookRoadNorms) {
-      logger.info('Updating localRoadNorms with:', hookRoadNorms);
+
       setLocalRoadNorms([...hookRoadNorms]);
     }
   }, [hookRoadNorms]);
@@ -121,11 +122,10 @@ const DinhMucDiDuong = () => {
   // Prepare table data
   const tableData = useMemo(() => {
     if (!localRoutes.length) {
-      logger.info('No local routes available');
+
       return [];
     }
 
-    logger.info('Preparing table data with routes:', localRoutes);
     const routeMap = localRoutes.reduce((acc, route) => {
       acc[route.ma_so] = {
         id: route.ma_so,
@@ -144,7 +144,7 @@ const DinhMucDiDuong = () => {
     });
 
     const result = Object.values(routeMap);
-    logger.info('Final table data:', result);
+
     return result;
   }, [localRoutes, localRoadNorms]);
 
@@ -242,14 +242,14 @@ const DinhMucDiDuong = () => {
 
   // Handle edit
   const handleEditClick = row => {
-    console.log('Starting edit for row:', row);
+
     try {
       setEditingId(row.id);
       setEditedData({
         ...row,
         containerNorms: { ...row.containerNorms },
       });
-      console.log('Edit state updated for row ID:', row.id);
+
     } catch (error) {
       console.error('Error in handleEditClick:', error);
     }
@@ -290,9 +290,6 @@ const DinhMucDiDuong = () => {
   };
 
   const handleInputChange = (field, value, containerKey = null) => {
-    console.log(
-      `handleInputChange - field: ${field}, value: ${value}, containerKey: ${containerKey}`
-    );
 
     setEditedData(prev => {
       // Create a deep copy of the previous state
@@ -304,40 +301,91 @@ const DinhMucDiDuong = () => {
           ...(prev.containerNorms || {}),
           [containerKey]: value,
         };
-        console.log('Updated containerNorms:', newState.containerNorms);
+
       } else {
         // If it's a regular field
         newState[field] = value;
-        console.log(`Updated ${field}:`, value);
+
       }
 
       return newState;
     });
   };
 
-  const handleSaveEdit = async () => {
+  const handleSaveEditOptimistic = async () => {
     if (isSaving) return;
     setIsSaving(true);
 
+    // Store previous state for rollback in case of error
+    const previousRoutes = [...localRoutes];
+    const previousRoadNorms = [...localRoadNorms];
+
     try {
-      logger.info('Starting save process with data:', editedData);
+
+      // Apply optimistic updates first
+      if (editingId === 'new') {
+        // Add new route to local state optimistically
+        const newRouteData = {
+          id: editedData.ma_tuyen,
+          ma_so: editedData.ma_tuyen,
+          diem_di: editedData.diem_di,
+          diem_den: editedData.diem_den,
+        };
+        setLocalRoutes(prev => [...prev, newRouteData]);
+
+        // Add new norms to local state optimistically
+        const newNorms = Object.entries(editedData.containerNorms)
+          .filter(([_, value]) => parseFloat(value) > 0)
+          .map(([containerKey, value]) => ({
+            id: `${editedData.ma_tuyen}_${containerKey}`,
+            ma_tuyen: editedData.ma_tuyen,
+            ma_loai_container: containerKey,
+            dinh_muc: parseFloat(value),
+          }));
+        setLocalRoadNorms(prev => [...prev, ...newNorms]);
+      } else {
+        // Update existing route in local state optimistically
+        setLocalRoutes(prev => 
+          prev.map(route => 
+            route.id === editingId 
+              ? { ...route, diem_di: editedData.diem_di, diem_den: editedData.diem_den }
+              : route
+          )
+        );
+
+        // Update existing norms in local state optimistically
+        const updatedNorms = [...localRoadNorms];
+        for (const [containerKey, value] of Object.entries(editedData.containerNorms)) {
+          const numericValue = parseFloat(value);
+          const normIndex = updatedNorms.findIndex(
+            norm => norm.ma_tuyen === editingId && norm.ma_loai_container === containerKey
+          );
+
+          if (normIndex >= 0) {
+            updatedNorms[normIndex] = { ...updatedNorms[normIndex], dinh_muc: numericValue };
+          } else if (numericValue > 0) {
+            updatedNorms.push({
+              id: `${editingId}_${containerKey}`,
+              ma_tuyen: editingId,
+              ma_loai_container: containerKey,
+              dinh_muc: numericValue,
+            });
+          }
+        }
+        setLocalRoadNorms(updatedNorms);
+      }
+
+      // Now perform API calls
       const normPromises = [];
 
       if (editingId === 'new') {
         // Create new route
-        logger.info('Creating new route with:', {
-          ma_so: editedData.ma_tuyen,
-          diem_di: editedData.diem_di,
-          diem_den: editedData.diem_den,
-        });
 
         const newRoute = await tuyenDuongApi.createTuyenDuong({
           ma_so: editedData.ma_tuyen,
           diem_di: editedData.diem_di,
           diem_den: editedData.diem_den,
         });
-
-        logger.info('New route created:', newRoute);
 
         if (!newRoute || !newRoute.success) {
           throw new Error('Failed to create new route');
@@ -347,11 +395,6 @@ const DinhMucDiDuong = () => {
         for (const [containerKey, value] of Object.entries(editedData.containerNorms)) {
           const numericValue = parseFloat(value);
           if (numericValue > 0) {
-            logger.info('Creating norm for container:', {
-              ma_tuyen: newRoute.data.ma_so,
-              ma_loai_container: containerKey,
-              dinh_muc: numericValue,
-            });
 
             normPromises.push(
               createRoadNorm({
@@ -397,21 +440,22 @@ const DinhMucDiDuong = () => {
         }
       }
 
-      logger.info('Waiting for all norm updates to complete...');
       await Promise.all(normPromises);
-      enqueueSnackbar('Lưu thành công!', { variant: 'success' });
 
-      // Refresh data
-      logger.info('Refreshing data...');
-      await fetchAllData();
+      // API calls succeeded, reset editing state
 
-      // Reset editing state
-      logger.info('Resetting edit state');
       setEditingId(null);
       setEditedData({});
       setIsAddingNew(false);
+
+      enqueueSnackbar('Lưu thành công!', { variant: 'success' });
     } catch (error) {
-      logger.error('Failed to save data:', error);
+      logger.error('Failed to save data, reverting optimistic updates:', error);
+
+      // Revert optimistic updates by restoring previous state
+      setLocalRoutes(previousRoutes);
+      setLocalRoadNorms(previousRoadNorms);
+
       enqueueSnackbar(error.message || 'Có lỗi xảy ra khi lưu dữ liệu', { variant: 'error' });
     } finally {
       setIsSaving(false);
@@ -431,6 +475,92 @@ const DinhMucDiDuong = () => {
       window.removeEventListener('keydown', handleEsc);
     };
   }, [editingId]);
+
+  // Define table columns
+  const columns = [
+    {
+      id: 'ma_tuyen',
+      label: 'Mã tuyến',
+      editable: false,
+      render: (row) => row.ma_tuyen
+    },
+    {
+      id: 'diem_di',
+      label: 'Điểm đi',
+      editable: true,
+      render: (row) => row.diem_di
+    },
+    {
+      id: 'diem_den',
+      label: 'Điểm đến',
+      editable: true,
+      render: (row) => row.diem_den
+    }
+  ];
+
+  // Render new row for adding
+  const renderNewRow = () => (
+    <TableRow key="new-row" hover>
+      <TableCell>
+        <TextField
+          value={editedData.ma_tuyen || ''}
+          onChange={e => handleInputChange('ma_tuyen', e.target.value)}
+          size="small"
+          disabled={isSaving}
+          fullWidth
+          variant="outlined"
+          autoFocus
+        />
+      </TableCell>
+      <TableCell>
+        <TextField
+          value={editedData.diem_di || ''}
+          onChange={e => handleInputChange('diem_di', e.target.value)}
+          size="small"
+          disabled={isSaving}
+          fullWidth
+          variant="outlined"
+        />
+      </TableCell>
+      <TableCell>
+        <TextField
+          value={editedData.diem_den || ''}
+          onChange={e => handleInputChange('diem_den', e.target.value)}
+          size="small"
+          disabled={isSaving}
+          fullWidth
+          variant="outlined"
+        />
+      </TableCell>
+      {containerTypes?.map(ct => (
+        <TableCell key={ct.ma_loai_container} align="right">
+          <TextField
+            type="number"
+            value={editedData.containerNorms?.[ct.ma_loai_container] ?? ''}
+            onChange={e =>
+              handleInputChange(
+                'containerNorms',
+                e.target.value,
+                ct.ma_loai_container
+              )
+            }
+            size="small"
+            disabled={isSaving}
+            sx={{ width: '80px' }}
+            variant="outlined"
+            inputProps={{
+              step: '0.01',
+              min: '0',
+            }}
+          />
+        </TableCell>
+      ))}
+      {/* ExcelTable will handle the action buttons */}
+      <TableCell>
+        {/* Actions handled by ExcelTable */}
+      </TableCell>
+    </TableRow>
+  );
 
   return (
     <FormProvider {...methods}>
@@ -458,285 +588,37 @@ const DinhMucDiDuong = () => {
           />
         </Box>
 
-        {isLoading ? (
-          <SkeletonTable />
-        ) : error ? (
-          <Alert severity="error">Không thể tải dữ liệu: {error.message}</Alert>
-        ) : (
-          <>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Mã tuyến</TableCell>
-                    <TableCell>Điểm đi</TableCell>
-                    <TableCell>Điểm đến</TableCell>
-                    {containerTypes?.map(ct => (
-                      <TableCell key={ct.ma_loai_container} align="right">
-                        {ct.ten_loai_container}
-                      </TableCell>
-                    ))}
-                    <TableCell>Thao tác</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {isAddingNew && editingId === 'new' && (
-                    <TableRow key="new-row" hover>
-                      <TableCell>
-                        <TextField
-                          value={editedData.ma_tuyen || ''}
-                          onChange={e => handleInputChange('ma_tuyen', e.target.value)}
-                          size="small"
-                          disabled={isSaving}
-                          fullWidth
-                          variant="outlined"
-                          autoFocus
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          value={editedData.diem_di || ''}
-                          onChange={e => handleInputChange('diem_di', e.target.value)}
-                          size="small"
-                          disabled={isSaving}
-                          fullWidth
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          value={editedData.diem_den || ''}
-                          onChange={e => handleInputChange('diem_den', e.target.value)}
-                          size="small"
-                          disabled={isSaving}
-                          fullWidth
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      {containerTypes?.map(ct => (
-                        <TableCell key={ct.ma_loai_container} align="right">
-                          <TextField
-                            type="number"
-                            value={editedData.containerNorms?.[ct.ma_loai_container] ?? ''}
-                            onChange={e =>
-                              handleInputChange(
-                                'containerNorms',
-                                e.target.value,
-                                ct.ma_loai_container
-                              )
-                            }
-                            size="small"
-                            disabled={isSaving}
-                            sx={{ width: '80px' }}
-                            variant="outlined"
-                            inputProps={{
-                              step: '0.01',
-                              min: '0',
-                            }}
-                          />
-                        </TableCell>
-                      ))}
-                      <TableCell>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <Tooltip title="Lưu">
-                            <span>
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={handleSaveEdit}
-                                disabled={isSaving}
-                              >
-                                {isSaving ? (
-                                  <CircularProgress size={20} />
-                                ) : (
-                                  <CheckIcon fontSize="small" />
-                                )}
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip title="Hủy">
-                            <span>
-                              <IconButton
-                                size="small"
-                                onClick={handleCancelEdit}
-                                disabled={isSaving}
-                              >
-                                <CloseIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {paginatedData.map(row => (
-                    <TableRow key={row.id} hover>
-                      <TableCell>
-                        {editingId === row.id ? (
-                          <Typography variant="body2" sx={{ pt: 1 }}>
-                            {editedData.ma_tuyen || ''}
-                          </Typography>
-                        ) : (
-                          row.ma_tuyen
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === row.id ? (
-                          <TextField
-                            value={editedData.diem_di || ''}
-                            onChange={e => {
-                              logger.info('diem_di changed:', e.target.value);
-                              handleInputChange('diem_di', e.target.value);
-                            }}
-                            size="small"
-                            disabled={isSaving}
-                            fullWidth
-                            variant="outlined"
-                            onKeyDown={e => {
-                              if (e.key === 'Escape') handleCancelEdit();
-                            }}
-                          />
-                        ) : (
-                          row.diem_di
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === row.id ? (
-                          <TextField
-                            value={editedData.diem_den || ''}
-                            onChange={e => {
-                              logger.info('diem_den changed:', e.target.value);
-                              handleInputChange('diem_den', e.target.value);
-                            }}
-                            size="small"
-                            disabled={isSaving}
-                            fullWidth
-                            variant="outlined"
-                            onKeyDown={e => {
-                              if (e.key === 'Escape') handleCancelEdit();
-                            }}
-                          />
-                        ) : (
-                          row.diem_den
-                        )}
-                      </TableCell>
-                      {containerTypes?.map(ct => (
-                        <TableCell key={ct.ma_loai_container} align="right">
-                          {editingId === row.id ? (
-                            <TextField
-                              type="number"
-                              value={editedData.containerNorms?.[ct.ma_loai_container] ?? ''}
-                              onChange={e => {
-                                const value = e.target.value;
-                                logger.info(`Container ${ct.ma_loai_container} changed:`, value);
-                                handleInputChange('containerNorms', value, ct.ma_loai_container);
-                              }}
-                              size="small"
-                              disabled={isSaving}
-                              sx={{ width: '80px' }}
-                              variant="outlined"
-                              inputProps={{
-                                step: '0.01',
-                                min: '0',
-                              }}
-                              onKeyDown={e => {
-                                if (e.key === 'Escape') handleCancelEdit();
-                              }}
-                            />
-                          ) : (
-                            row.containerNorms[ct.ma_loai_container]?.toLocaleString('vi-VN') || '-'
-                          )}
-                        </TableCell>
-                      ))}
-                      <TableCell>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          {editingId === row.id ? (
-                            <>
-                              <Tooltip title="Lưu">
-                                <span>
-                                  <IconButton
-                                    size="small"
-                                    color="primary"
-                                    onClick={handleSaveEdit}
-                                    disabled={isSaving}
-                                  >
-                                    {isSaving ? (
-                                      <CircularProgress size={20} />
-                                    ) : (
-                                      <CheckIcon fontSize="small" />
-                                    )}
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                              <Tooltip title="Hủy">
-                                <span>
-                                  <IconButton
-                                    size="small"
-                                    onClick={handleCancelEdit}
-                                    disabled={isSaving}
-                                  >
-                                    <CloseIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            </>
-                          ) : (
-                            <>
-                              <Tooltip title="Chỉnh sửa">
-                                <span>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleEditClick(row)}
-                                    disabled={!!editingId}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                              <Tooltip title="Xóa">
-                                <span>
-                                  <IconButton
-                                    size="small"
-                                    color="error"
-                                    onClick={() => handleDeleteClick(row)}
-                                    disabled={!!editingId}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            </>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <TablePagination
-              rowsPerPageOptions={[10, 25, 50, 100]}
-              component="div"
-              count={filteredData.length}
-              rowsPerPage={pagination.pageSize}
-              page={pagination.pageIndex}
-              onPageChange={(_, newPage) => {
-                setPagination(prev => ({ ...prev, pageIndex: newPage }));
-              }}
-              onRowsPerPageChange={e => {
-                setPagination({
-                  pageIndex: 0,
-                  pageSize: parseInt(e.target.value, 10),
-                });
-              }}
-              labelRowsPerPage="Số hàng mỗi trang:"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}–${to} trong ${count !== -1 ? count : `nhiều hơn ${to}`}`
-              }
-            />
-          </>
-        )}
+        <ExcelTable
+          isLoading={isLoading}
+          error={error}
+          columns={columns}
+          data={tableData}
+          filteredData={filteredData}
+          paginatedData={paginatedData}
+          pagination={pagination}
+          onPageChange={(newPage) => {
+            setPagination(prev => ({ ...prev, pageIndex: newPage }));
+          }}
+          onRowsPerPageChange={(newPageSize) => {
+            setPagination({
+              pageIndex: 0,
+              pageSize: newPageSize,
+            });
+          }}
+          editingId={editingId}
+          editedData={editedData}
+          isSaving={isSaving}
+          isAddingNew={isAddingNew}
+          containerTypes={containerTypes}
+          handleEditClick={handleEditClick}
+          handleDeleteClick={handleDeleteClick}
+          handleSaveEdit={handleSaveEditOptimistic}
+          handleCancelEdit={handleCancelEdit}
+          handleInputChange={handleInputChange}
+          renderNewRow={renderNewRow}
+          showActions={true}
+          showPagination={true}
+        />
       </Paper>
 
       {/* Add/Edit Form Dialog */}

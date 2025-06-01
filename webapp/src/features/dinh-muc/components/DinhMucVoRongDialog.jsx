@@ -43,7 +43,7 @@ const DinhMucVoRongDialog = ({
   title = null,
 }) => {
   const isEditMode = Boolean(initialData?.id);
-  
+
   const [formData, setFormData] = useState({
     bienSoXe: '',
     fromKm: '',
@@ -83,12 +83,12 @@ const DinhMucVoRongDialog = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Ensure numeric fields contain only numbers
     if ((name === 'fromKm' || name === 'toKm' || name === 'standard') && value !== '' && isNaN(value)) {
       return;
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -108,7 +108,7 @@ const DinhMucVoRongDialog = ({
       ...prev,
       bienSoXe: newValue || '',
     }));
-    
+
     if (errors.bienSoXe) {
       setErrors((prev) => ({
         ...prev,
@@ -123,23 +123,23 @@ const DinhMucVoRongDialog = ({
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.bienSoXe) {
       newErrors.bienSoXe = 'Vui lòng chọn biển số';
     }
-    
+
     if (!formData.fromKm || isNaN(formData.fromKm) || formData.fromKm < 0) {
       newErrors.fromKm = 'Vui lòng nhập km bắt đầu hợp lệ';
     }
-    
+
     if (!formData.toKm || isNaN(formData.toKm) || formData.toKm < 0) {
       newErrors.toKm = 'Vui lòng nhập km kết thúc hợp lệ';
     }
-    
+
     if (parseFloat(formData.toKm) <= parseFloat(formData.fromKm)) {
       newErrors.toKm = 'Km kết thúc phải lớn hơn km bắt đầu';
     }
-    
+
     if (!formData.standard || isNaN(formData.standard) || formData.standard <= 0) {
       newErrors.standard = 'Vui lòng nhập định mức hợp lệ';
     }
@@ -150,7 +150,7 @@ const DinhMucVoRongDialog = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       onSave({
         ...formData,
@@ -177,7 +177,7 @@ const DinhMucVoRongDialog = ({
           </Typography>
         </Box>
       </DialogTitle>
-      
+
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Grid container spacing={2}>
@@ -202,7 +202,7 @@ const DinhMucVoRongDialog = ({
                 disabled={isLoading || isEditMode}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
@@ -237,7 +237,7 @@ const DinhMucVoRongDialog = ({
                 </Grid>
               </Grid>
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -256,7 +256,7 @@ const DinhMucVoRongDialog = ({
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -272,9 +272,9 @@ const DinhMucVoRongDialog = ({
             </Grid>
           </Grid>
         </DialogContent>
-        
+
         <Divider />
-        
+
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={onClose} disabled={isLoading}>
             Hủy
