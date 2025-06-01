@@ -591,11 +591,13 @@ const duplicateMaChuyenXe = initialMaChuyenXe.filter(
   (item, index) => initialMaChuyenXe.indexOf(item) !== index
 );
 if (duplicateMaChuyenXe.length > 0) {
+  logger.warn('Duplicate ma_chuyen_xe found in seed data', { duplicateMaChuyenXe });
 }
 // Initial check for duplicate IDs in seed data
 const initialIds = lichVanChuyenData.map(c => c.id);
 const duplicateIds = initialIds.filter((item, index) => initialIds.indexOf(item) !== index);
 if (duplicateIds.length > 0) {
+  throw new Error('Duplicate IDs found in seed data');
 }
 // Ensure cuoc_van_chuyen_vnd > vnd_chi_phi * 1.2 for all records
 lichVanChuyenData = lichVanChuyenData.map(record => {

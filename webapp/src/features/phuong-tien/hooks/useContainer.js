@@ -91,7 +91,9 @@ export const useContainer = () => {
         const result = response.data?.items || response.data || [];
         setCount(result.length);
       }
-    } catch (err) {}
+    } catch (error) {
+      logger.error('Error in loadContainers', { error });
+    }
   }, []);
   // Initialize data on mount
   useEffect(() => {

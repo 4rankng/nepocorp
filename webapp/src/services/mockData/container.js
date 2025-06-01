@@ -76,22 +76,27 @@ export const updateContainer = async (id, updates) => {
   if (index === -1) return null;
   const existingContainer = containerData[index];
   const { ma_so: new_ma_so, phan_loai: new_phan_loai } = updates;
-  // Check if ma_so is being changed and if the new one already exists (excluding current item)
-  if (
-    new_ma_so &&
-    new_ma_so !== existingContainer.ma_so &&
-    containerData.some(c => c.ma_so === new_ma_so && c.id !== numericId)
-  ) {
-    return null; // Or throw an error
+  try {
+    // Check if ma_so is being changed and if the new one already exists (excluding current item)
+    if (
+      new_ma_so &&
+      new_ma_so !== existingContainer.ma_so &&
+      containerData.some(c => c.ma_so === new_ma_so && c.id !== numericId)
+    ) {
+      throw new Error('Duplicate ma_so: already exists in the database');
+    }
+    const updatedContainer = {
+      ...existingContainer,
+      ma_so: new_ma_so !== undefined ? new_ma_so : existingContainer.ma_so,
+      phan_loai: new_phan_loai !== undefined ? new_phan_loai : existingContainer.phan_loai,
+      updatedAt: new Date().toISOString(),
+    };
+    containerData[index] = updatedContainer;
+    return updatedContainer;
+  } catch (error) {
+    logger.error('Error in container operation', { error });
+    throw error;
   }
-  const updatedContainer = {
-    ...existingContainer,
-    ma_so: new_ma_so !== undefined ? new_ma_so : existingContainer.ma_so,
-    phan_loai: new_phan_loai !== undefined ? new_phan_loai : existingContainer.phan_loai,
-    updatedAt: new Date().toISOString(),
-  };
-  containerData[index] = updatedContainer;
-  return updatedContainer;
 };
 export const deleteContainer = async id => {
   // id here is the numeric primary key
@@ -157,6 +162,7 @@ export const _resetContainer = (newData = []) => {
 const initialMaSos = containerData.map(c => c.ma_so);
 const duplicateMaSos = initialMaSos.filter((item, index) => initialMaSos.indexOf(item) !== index);
 if (duplicateMaSos.length > 0) {
+  logger.warn('Duplicate ma_so found in container seed data', { duplicateMaSos });
 }
 // Initial check for duplicate numeric IDs in the seed data
 const initialNumericIds = containerData.map(c => c.id);

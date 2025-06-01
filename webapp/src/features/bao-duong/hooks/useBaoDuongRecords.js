@@ -18,7 +18,9 @@ export default function useBaoDuongRecords(api) {
         new Set((allRecordsRes.data || []).map(r => r.bien_so).filter(Boolean))
       ).map(plate => ({ id: plate, bien_so: plate }));
       setLicensePlates(licensePlateOptions);
-    } catch (err) {}
+    } catch (error) {
+      logger.error('Error in loadBaoDuong', { error });
+    }
   }, [api]);
 
   // Fetch paginated data

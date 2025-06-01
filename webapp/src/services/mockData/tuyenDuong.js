@@ -103,13 +103,26 @@ const initialData = [
 ];
 
 // Helper functions for localStorage
+const logger = console; // Define logger
 const getStoredData = () => {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  let savedData = null;
+  try {
+    savedData = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
+  } catch (error) {
+    logger.error('Error accessing localStorage', { error });
+  }
+  const stored = savedData;
   return stored ? JSON.parse(stored) : initialData;
 };
 
 const setStoredData = data => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  try {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+  } catch (error) {
+    logger.error('Error saving to localStorage', { error });
+  }
 };
 
 // CRUD Operations

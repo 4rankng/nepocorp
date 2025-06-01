@@ -105,11 +105,15 @@ export default function useBaoDuongForm({
       if (fetchData) {
         try {
           await fetchData(currentPage, pageSize);
-        } catch (refreshError) {
-          // Fallback to page 0 if there's an error with the current page
-          try {
-            await fetchData(0, pageSize);
-          } catch (fallbackError) {}
+        } catch (error) {
+          logger.error('Error refreshing data', { error });
+          throw error;
+        }
+        try {
+          await fetchData(0, pageSize);
+        } catch (error) {
+          logger.error('Fallback error', { error });
+          throw error;
         }
       }
       return response;

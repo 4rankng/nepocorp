@@ -133,11 +133,19 @@ const useCustomerManagement = () => {
     try {
       const response = await fetchKhachHangById(code);
       return { success: true, data: response.data };
-    } catch (err) {
+    } catch (error) {
       // Not found is an expected case, don't log as error
-      if (err.response?.status !== 404) {
+      if (error.response?.status !== 404) {
+        logger.error('Error fetching customer by code', { 
+          code, 
+          error: error.message,
+          status: error.response?.status 
+        });
       }
-      return { success: false, error: err.response?.data?.error };
+      return { 
+        success: false, 
+        error: error.response?.data?.error || error.message 
+      };
     }
   }, []);
   // Check if a customer code is available

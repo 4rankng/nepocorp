@@ -24,7 +24,9 @@ export const useChoHang = () => {
         new Set((allRecordsRes.data || []).map(r => r.bienSoXe).filter(Boolean))
       ).map(plate => ({ id: plate, bien_so: plate }));
       setLicensePlates(licensePlateOptions);
-    } catch (err) {}
+    } catch (error) {
+      logger.error('Error in loadChoHang', { error });
+    }
   }, []);
 
   const fetchDataInternal = useCallback(
