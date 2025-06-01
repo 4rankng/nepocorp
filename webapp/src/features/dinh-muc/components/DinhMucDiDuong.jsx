@@ -45,6 +45,8 @@ import logger from '@services/logger';
 import { useSnackbar } from 'notistack';
 import DeleteDialog from '@/components/DeleteDialog';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import * as tuyenDuongApi from '@services/mockApi/tuyenDuongApi';
+import * as dinhMucDiDuongApi from '@services/mockApi/dinhMucDiDuongApi';
 
 // Define validation schema with Zod
 const routeSchema = z.object({
@@ -78,10 +80,11 @@ const DinhMucDiDuong = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
   });
   const [searchTerm, setSearchTerm] = useState('');
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+  const [isAddingNew, setIsAddingNew] = useState(false);
 
   // Initialize form
   const methods = useForm({
@@ -103,20 +106,26 @@ const DinhMucDiDuong = () => {
   // Update local state when data loads
   useEffect(() => {
     if (hookRoutes) {
+      logger.info('Updating localRoutes with:', hookRoutes);
       setLocalRoutes([...hookRoutes]);
     }
   }, [hookRoutes]);
 
   useEffect(() => {
     if (hookRoadNorms) {
+      logger.info('Updating localRoadNorms with:', hookRoadNorms);
       setLocalRoadNorms([...hookRoadNorms]);
     }
   }, [hookRoadNorms]);
 
   // Prepare table data
   const tableData = useMemo(() => {
-    if (!localRoutes.length) return [];
+    if (!localRoutes.length) {
+      logger.info('No local routes available');
+      return [];
+    }
 
+    logger.info('Preparing table data with routes:', localRoutes);
     const routeMap = localRoutes.reduce((acc, route) => {
       acc[route.ma_so] = {
         id: route.ma_so,
@@ -134,7 +143,9 @@ const DinhMucDiDuong = () => {
       }
     });
 
-    return Object.values(routeMap);
+    const result = Object.values(routeMap);
+    logger.info('Final table data:', result);
+    return result;
   }, [localRoutes, localRoadNorms]);
 
   // Filter data based on search term
@@ -244,9 +255,38 @@ const DinhMucDiDuong = () => {
     }
   };
 
+  const handleAddNew = () => {
+    // Determine next ma_tuyen
+    let nextMaTuyen = '';
+    if (localRoutes.length > 0) {
+      // Extract numeric part from codes like TD001, TD002, ...
+      const codes = localRoutes
+        .map(r => r.ma_so)
+        .filter(Boolean)
+        .map(code => {
+          const match = code.match(/TD(\d+)/i);
+          return match ? parseInt(match[1], 10) : 0;
+        });
+      const maxCode = codes.length > 0 ? Math.max(...codes) : 0;
+      nextMaTuyen = `TD${String(maxCode + 1).padStart(3, '0')}`;
+    } else {
+      nextMaTuyen = 'TD001';
+    }
+
+    setIsAddingNew(true);
+    setEditingId('new');
+    setEditedData({
+      ma_tuyen: nextMaTuyen,
+      diem_di: '',
+      diem_den: '',
+      containerNorms: {},
+    });
+  };
+
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditedData({});
+    setIsAddingNew(false);
   };
 
   const handleInputChange = (field, value, containerKey = null) => {
@@ -276,75 +316,102 @@ const DinhMucDiDuong = () => {
   };
 
   const handleSaveEdit = async () => {
-    console.log('Starting save for editingId:', editingId);
-    console.log('Edited data:', editedData);
-
-    if (!editingId) {
-      console.warn('No editingId found when trying to save');
-      return;
-    }
+    if (isSaving) return;
+    setIsSaving(true);
 
     try {
-      setIsSaving(true);
-
-      // Update the route information
-      console.log('Updating route information...');
-      await updateTuyenDuong(editingId, {
-        diem_di: editedData.diem_di,
-        diem_den: editedData.diem_den,
-      });
-
-      // Update norms
+      logger.info('Starting save process with data:', editedData);
       const normPromises = [];
-      console.log('Current containerNorms:', editedData.containerNorms);
 
-      // Handle existing norms
-      for (const [containerKey, value] of Object.entries(editedData.containerNorms || {})) {
-        console.log(`Processing container ${containerKey} with value:`, value);
-        const existingNorm = localRoadNorms.find(
-          norm => norm.ma_tuyen === editingId && norm.ma_loai_container === containerKey
-        );
+      if (editingId === 'new') {
+        // Create new route
+        logger.info('Creating new route with:', {
+          ma_so: editedData.ma_tuyen,
+          diem_di: editedData.diem_di,
+          diem_den: editedData.diem_den,
+        });
 
-        const numericValue = value ? parseFloat(value) : 0;
-        console.log(`Numeric value for ${containerKey}:`, numericValue);
+        const newRoute = await tuyenDuongApi.createTuyenDuong({
+          ma_so: editedData.ma_tuyen,
+          diem_di: editedData.diem_di,
+          diem_den: editedData.diem_den,
+        });
 
-        if (existingNorm) {
-          if (existingNorm.dinh_muc !== numericValue) {
-            console.log(`Updating existing norm for container ${containerKey}`);
+        logger.info('New route created:', newRoute);
+
+        if (!newRoute || !newRoute.success) {
+          throw new Error('Failed to create new route');
+        }
+
+        // Create norms for the new route
+        for (const [containerKey, value] of Object.entries(editedData.containerNorms)) {
+          const numericValue = parseFloat(value);
+          if (numericValue > 0) {
+            logger.info('Creating norm for container:', {
+              ma_tuyen: newRoute.data.ma_so,
+              ma_loai_container: containerKey,
+              dinh_muc: numericValue,
+            });
+
             normPromises.push(
-              updateRoadNorm(existingNorm.id, {
-                ...existingNorm,
+              createRoadNorm({
+                ma_tuyen: newRoute.data.ma_so,
+                ma_loai_container: containerKey,
                 dinh_muc: numericValue,
               })
             );
           }
-        } else if (numericValue > 0) {
-          console.log(`Creating new norm for container ${containerKey}`);
-          normPromises.push(
-            createRoadNorm({
-              ma_tuyen: editingId,
-              ma_loai_container: containerKey,
-              dinh_muc: numericValue,
-            })
+        }
+      } else {
+        // Update existing route
+        await updateTuyenDuong(editingId, {
+          diem_di: editedData.diem_di,
+          diem_den: editedData.diem_den,
+        });
+
+        // Update norms
+        for (const [containerKey, value] of Object.entries(editedData.containerNorms)) {
+          const numericValue = parseFloat(value);
+          const existingNorm = localRoadNorms.find(
+            norm => norm.ma_tuyen === editingId && norm.ma_loai_container === containerKey
           );
+
+          if (existingNorm) {
+            if (existingNorm.dinh_muc !== numericValue) {
+              normPromises.push(
+                updateRoadNorm(existingNorm.id, {
+                  ...existingNorm,
+                  dinh_muc: numericValue,
+                })
+              );
+            }
+          } else if (numericValue > 0) {
+            normPromises.push(
+              createRoadNorm({
+                ma_tuyen: editingId,
+                ma_loai_container: containerKey,
+                dinh_muc: numericValue,
+              })
+            );
+          }
         }
       }
 
-      console.log('Waiting for all norm updates to complete...');
+      logger.info('Waiting for all norm updates to complete...');
       await Promise.all(normPromises);
-      enqueueSnackbar('Cập nhật thành công!', { variant: 'success' });
+      enqueueSnackbar('Lưu thành công!', { variant: 'success' });
 
       // Refresh data
-      console.log('Refreshing data...');
+      logger.info('Refreshing data...');
       await fetchAllData();
 
       // Reset editing state
-      console.log('Resetting edit state');
+      logger.info('Resetting edit state');
       setEditingId(null);
       setEditedData({});
-      console.log('Save completed successfully');
+      setIsAddingNew(false);
     } catch (error) {
-      console.error('Failed to save data:', error);
+      logger.error('Failed to save data:', error);
       enqueueSnackbar(error.message || 'Có lỗi xảy ra khi lưu dữ liệu', { variant: 'error' });
     } finally {
       setIsSaving(false);
@@ -374,7 +441,7 @@ const DinhMucDiDuong = () => {
             variant="outlined"
             placeholder="Tìm kiếm..."
             value={searchTerm}
-            onChange={event => logger.info(event.target.value)}
+            onChange={event => setSearchTerm(event.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -413,6 +480,95 @@ const DinhMucDiDuong = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
+                  {isAddingNew && editingId === 'new' && (
+                    <TableRow key="new-row" hover>
+                      <TableCell>
+                        <TextField
+                          value={editedData.ma_tuyen || ''}
+                          onChange={e => handleInputChange('ma_tuyen', e.target.value)}
+                          size="small"
+                          disabled={isSaving}
+                          fullWidth
+                          variant="outlined"
+                          autoFocus
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          value={editedData.diem_di || ''}
+                          onChange={e => handleInputChange('diem_di', e.target.value)}
+                          size="small"
+                          disabled={isSaving}
+                          fullWidth
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          value={editedData.diem_den || ''}
+                          onChange={e => handleInputChange('diem_den', e.target.value)}
+                          size="small"
+                          disabled={isSaving}
+                          fullWidth
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      {containerTypes?.map(ct => (
+                        <TableCell key={ct.ma_loai_container} align="right">
+                          <TextField
+                            type="number"
+                            value={editedData.containerNorms?.[ct.ma_loai_container] ?? ''}
+                            onChange={e =>
+                              handleInputChange(
+                                'containerNorms',
+                                e.target.value,
+                                ct.ma_loai_container
+                              )
+                            }
+                            size="small"
+                            disabled={isSaving}
+                            sx={{ width: '80px' }}
+                            variant="outlined"
+                            inputProps={{
+                              step: '0.01',
+                              min: '0',
+                            }}
+                          />
+                        </TableCell>
+                      ))}
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Tooltip title="Lưu">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={handleSaveEdit}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? (
+                                  <CircularProgress size={20} />
+                                ) : (
+                                  <CheckIcon fontSize="small" />
+                                )}
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Hủy">
+                            <span>
+                              <IconButton
+                                size="small"
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                              >
+                                <CloseIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  )}
                   {paginatedData.map(row => (
                     <TableRow key={row.id} hover>
                       <TableCell>
@@ -497,49 +653,57 @@ const DinhMucDiDuong = () => {
                           {editingId === row.id ? (
                             <>
                               <Tooltip title="Lưu">
-                                <IconButton
-                                  size="small"
-                                  color="primary"
-                                  onClick={handleSaveEdit}
-                                  disabled={isSaving}
-                                >
-                                  {isSaving ? (
-                                    <CircularProgress size={20} />
-                                  ) : (
-                                    <CheckIcon fontSize="small" />
-                                  )}
-                                </IconButton>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="primary"
+                                    onClick={handleSaveEdit}
+                                    disabled={isSaving}
+                                  >
+                                    {isSaving ? (
+                                      <CircularProgress size={20} />
+                                    ) : (
+                                      <CheckIcon fontSize="small" />
+                                    )}
+                                  </IconButton>
+                                </span>
                               </Tooltip>
                               <Tooltip title="Hủy">
-                                <IconButton
-                                  size="small"
-                                  onClick={handleCancelEdit}
-                                  disabled={isSaving}
-                                >
-                                  <CloseIcon fontSize="small" />
-                                </IconButton>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    onClick={handleCancelEdit}
+                                    disabled={isSaving}
+                                  >
+                                    <CloseIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
                               </Tooltip>
                             </>
                           ) : (
                             <>
                               <Tooltip title="Chỉnh sửa">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleEditClick(row)}
-                                  disabled={!!editingId}
-                                >
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => handleEditClick(row)}
+                                    disabled={!!editingId}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
                               </Tooltip>
                               <Tooltip title="Xóa">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() => handleDeleteClick(row)}
-                                  disabled={!!editingId}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => handleDeleteClick(row)}
+                                    disabled={!!editingId}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
                               </Tooltip>
                             </>
                           )}
@@ -552,7 +716,7 @@ const DinhMucDiDuong = () => {
             </TableContainer>
 
             <TablePagination
-              rowsPerPageOptions={[5, 10, 25, 50]}
+              rowsPerPageOptions={[10, 25, 50, 100]}
               component="div"
               count={filteredData.length}
               rowsPerPage={pagination.pageSize}
@@ -661,14 +825,7 @@ const DinhMucDiDuong = () => {
             bottom: 24,
             right: 24,
           }}
-          onClick={() => {
-            reset({
-              ma_tuyen: '',
-              diem_di: '',
-              diem_den: '',
-              containerNorms: {},
-            });
-          }}
+          onClick={handleAddNew}
         >
           <AddIcon />
         </Fab>

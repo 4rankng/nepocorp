@@ -1,6 +1,9 @@
 // Mock database for Tuyến đường
 // Fields: id (number, primary key), ma_so (string), diem_di (string), diem_den (string), createdAt (ISO String), updatedAt (ISO String)
-let tuyenDuongData = [
+const STORAGE_KEY = 'mock_tuyen_duong_data';
+
+// Initial data
+const initialData = [
   {
     id: 1,
     ma_so: 'TD001',
@@ -98,50 +101,77 @@ let tuyenDuongData = [
     updatedAt: '2024-05-21T01:15:00Z',
   },
 ];
+
+// Helper functions for localStorage
+const getStoredData = () => {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  return stored ? JSON.parse(stored) : initialData;
+};
+
+const setStoredData = data => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+};
+
 // CRUD Operations
 export const getAllTuyenDuong = async () => {
-  return [...tuyenDuongData];
+  return getStoredData();
 };
+
 export const getTuyenDuongById = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-  return tuyenDuongData.find(item => item.id === numericId) || null;
+  const data = getStoredData();
+  return data.find(item => item.id === numericId) || null;
 };
+
 export const getTuyenDuongByMaSo = async ma_so => {
-  return tuyenDuongData.find(item => item.ma_so === ma_so) || null;
+  const data = getStoredData();
+  return data.find(item => item.ma_so === ma_so) || null;
 };
+
 export const createTuyenDuong = async tuyenDuong => {
+  const data = getStoredData();
   const newTuyenDuong = {
     ...tuyenDuong,
     id: Date.now(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  tuyenDuongData.push(newTuyenDuong);
+  data.push(newTuyenDuong);
+  setStoredData(data);
   return newTuyenDuong;
 };
+
 export const updateTuyenDuong = async (id, updates) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-  const index = tuyenDuongData.findIndex(item => item.id === numericId);
+  const data = getStoredData();
+  const index = data.findIndex(item => item.id === numericId);
   if (index === -1) return null;
   const updatedTuyenDuong = {
-    ...tuyenDuongData[index],
+    ...data[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  tuyenDuongData[index] = updatedTuyenDuong;
+  data[index] = updatedTuyenDuong;
+  setStoredData(data);
   return updatedTuyenDuong;
 };
+
 export const deleteTuyenDuong = async id => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-  const index = tuyenDuongData.findIndex(item => item.id === numericId);
+  const data = getStoredData();
+  const index = data.findIndex(item => item.id === numericId);
   if (index === -1) return false;
-  tuyenDuongData = tuyenDuongData.filter(item => item.id !== numericId);
+  const newData = data.filter(item => item.id !== numericId);
+  setStoredData(newData);
   return true;
 };
+
 // For testing and resetting
 export const _resetTuyenDuong = (newData = []) => {
-  tuyenDuongData = [...newData];
-  return tuyenDuongData;
+  const data = newData.length > 0 ? newData : initialData;
+  setStoredData(data);
+  return data;
 };
+
 // Get count
-export const getTuyenDuongCount = async () => tuyenDuongData.length;
+export const getTuyenDuongCount = async () => getStoredData().length;
