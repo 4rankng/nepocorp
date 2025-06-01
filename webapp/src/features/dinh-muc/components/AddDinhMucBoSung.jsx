@@ -314,8 +314,8 @@ const AddDinhMucBoSung = ({
                   onClick={handleOpenTuyenDuongManager}
                   sx={{
                     minWidth: '40px',
-                    width: '40px',
-                    height: '40px',
+                    minHeight: '40px',
+                    mt: '8px',
                     p: 0,
                     display: 'flex',
                     alignItems: 'center',
