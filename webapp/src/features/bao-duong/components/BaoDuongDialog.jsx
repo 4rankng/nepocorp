@@ -41,58 +41,11 @@ const BaoDuongDialog = ({
   onClose,
   onChange,
   onSave,
+  licensePlates = [],
+  isLoadingPlates = false,
 }) => {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-  const [licensePlates, setLicensePlates] = useState([]);
-  const [isLoadingPlates, setIsLoadingPlates] = useState(true);
-  // Fetch license plates from both dauKeo and roMooc APIs
-  useEffect(() => {
-    const fetchLicensePlates = async () => {
-      try {
-        setIsLoadingPlates(true);
-        // Fetch dau keo license plates
-        const dauKeoResponse = await dauKeoApi.getAll(1, 1000);
-        // The API returns data in the response.data array
-        const dauKeoData = Array.isArray(dauKeoResponse?.data) ? dauKeoResponse.data : [];
-        const dauKeoPlates = dauKeoData
-          .filter(item => item?.bien_so) // Filter out items without bien_so
-          .map(item => ({
-            value: item.bien_so,
-            type: 'Đầu kéo',
-          }));
-        // Fetch ro mooc license plates
-        const roMoocResponse = await roMoocApi.getAll(1, 1000);
-        // The API returns data in the response.data array
-        const roMoocData = Array.isArray(roMoocResponse?.data) ? roMoocResponse.data : [];
-        const roMoocPlates = roMoocData
-          .filter(item => item?.bien_so) // Filter out items without bien_so
-          .map(item => ({
-            value: item.bien_so,
-            type: 'Rơ moóc',
-          }));
-        // Combine and deduplicate plates
-        const allPlates = [...dauKeoPlates, ...roMoocPlates];
-        const uniquePlates = Array.from(
-          new Map(allPlates.map(plate => [plate.value, plate])).values()
-        ).sort((a, b) => (a.value || '').localeCompare(b.value || ''));
-        setLicensePlates(uniquePlates);
-      } catch (error) {
-        // Set some default plates for testing if API fails
-        setLicensePlates([
-          { value: '51C-001.01', type: 'Đầu kéo' },
-          { value: '29H-111.22', type: 'Đầu kéo' },
-          { value: '51R-001.11', type: 'Rơ moóc' },
-          { value: '51R-002.22', type: 'Rơ moóc' },
-        ]);
-      } finally {
-        setIsLoadingPlates(false);
-      }
-    };
-    if (open) {
-      fetchLicensePlates();
-    }
-  }, [open]);
   const handleBienSoChange = event => {
     onChange({
       target: {

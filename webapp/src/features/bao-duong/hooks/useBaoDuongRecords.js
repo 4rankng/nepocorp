@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import logger from '@services/logger';
+import { dauKeoApi, roMoocApi } from '@services/mockApi';
 
-export default function useBaoDuongRecords(api) {
+export default function useBaoDuongRecords(baoDuongApi) {
   const [baoDuongRecords, setBaoDuongRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingPlates, setIsLoadingPlates] = useState(true);
   const [error, setError] = useState('');
   const [pagination, setPagination] = useState({
     page: 0,
@@ -12,18 +14,56 @@ export default function useBaoDuongRecords(api) {
     total: 0,
     totalPages: 1,
   });
-  // Fetch license plates separately to avoid pagination issues
+
+  // Fetch license plates from both dauKeo and roMooc APIs
   const fetchLicensePlates = useCallback(async () => {
     try {
-      const allRecordsRes = await api.getAll(1, 1000); // Get all records for license plates
-      const licensePlateOptions = Array.from(
-        new Set((allRecordsRes.data || []).map(r => r.bien_so).filter(Boolean))
-      ).map(plate => ({ id: plate, bien_so: plate }));
-      setLicensePlates(licensePlateOptions);
+      setIsLoadingPlates(true);
+      // Fetch dau keo license plates
+      const dauKeoResponse = await dauKeoApi.getAll(1, 1000);
+      const dauKeoData = Array.isArray(dauKeoResponse?.data) ? dauKeoResponse.data : [];
+      const dauKeoPlates = dauKeoData
+        .filter(item => item?.bien_so)
+        .map(item => ({
+          value: item.bien_so,
+          type: 'Đầu kéo',
+        }));
+
+      // Fetch ro mooc license plates
+      const roMoocResponse = await roMoocApi.getAll(1, 1000);
+      const roMoocData = Array.isArray(roMoocResponse?.data) ? roMoocResponse.data : [];
+      const roMoocPlates = roMoocData
+        .filter(item => item?.bien_so)
+        .map(item => ({
+          value: item.bien_so,
+          type: 'Rơ moóc',
+        }));
+
+      // Combine and deduplicate plates
+      const allPlates = [...dauKeoPlates, ...roMoocPlates];
+      const uniquePlates = Array.from(
+        new Map(allPlates.map(plate => [plate.value, plate])).values()
+      ).sort((a, b) => (a.value || '').localeCompare(b.value || ''));
+
+      setLicensePlates(uniquePlates);
     } catch (error) {
-      logger.error('Error in loadBaoDuong', { error });
+      logger.error('Error fetching license plates', { error });
+      // Set some default plates for testing if API fails
+      setLicensePlates([
+        { value: '51C-001.01', type: 'Đầu kéo' },
+        { value: '29H-111.22', type: 'Đầu kéo' },
+        { value: '51R-001.11', type: 'Rơ moóc' },
+        { value: '51R-002.22', type: 'Rơ moóc' },
+      ]);
+    } finally {
+      setIsLoadingPlates(false);
     }
-  }, [api]);
+  }, []);
+
+  // Initial fetch of license plates
+  useEffect(() => {
+    fetchLicensePlates();
+  }, [fetchLicensePlates]);
 
   // Fetch paginated data
   const fetchData = useCallback(
@@ -31,8 +71,7 @@ export default function useBaoDuongRecords(api) {
       setIsLoading(true);
       try {
         // Note: API is 1-indexed for page number
-
-        const recordsRes = await api.getAll(page + 1, pageSize);
+        const recordsRes = await baoDuongApi.getAll(page + 1, pageSize);
 
         setBaoDuongRecords(recordsRes.data || []);
 
@@ -49,11 +88,6 @@ export default function useBaoDuongRecords(api) {
           ...newPagination,
         }));
 
-        // Only fetch license plates once on initial load
-        if (licensePlates.length === 0) {
-          await fetchLicensePlates();
-        }
-
         setError('');
       } catch (err) {
         logger.error('Error in loadBaoDuong', { error: err });
@@ -62,7 +96,7 @@ export default function useBaoDuongRecords(api) {
         setIsLoading(false);
       }
     },
-    [api, fetchLicensePlates, licensePlates.length]
+    [baoDuongApi]
   );
   const handlePageChange = useCallback(
     newPage => {
@@ -81,7 +115,7 @@ export default function useBaoDuongRecords(api) {
     async (bienSo, page = 0, pageSize = 10) => {
       setIsLoading(true);
       try {
-        const recordsRes = await api.getAll(page + 1, pageSize, bienSo);
+        const recordsRes = await baoDuongApi.getAll(page + 1, pageSize, { bien_so: bienSo });
         setBaoDuongRecords(recordsRes.data || []);
         setPagination(prev => ({
           ...prev,
@@ -98,14 +132,14 @@ export default function useBaoDuongRecords(api) {
         setIsLoading(false);
       }
     },
-    [api]
+    [baoDuongApi]
   );
   return {
     baoDuongRecords,
     setBaoDuongRecords,
     licensePlates,
     setLicensePlates,
-    isLoading,
+    isLoading: isLoading || isLoadingPlates,
     error,
     fetchData,
     fetchByLicensePlate,

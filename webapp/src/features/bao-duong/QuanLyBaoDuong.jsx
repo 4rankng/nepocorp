@@ -401,7 +401,7 @@ const QuanLyBaoDuong = memo(() => {
               <em>Tất cả</em>
             </MenuItem>
             {licensePlates.map(plate => (
-              <MenuItem key={plate.id} value={plate.bien_so}>
+              <MenuItem key={plate.value || plate.bien_so} value={plate.bien_so}>
                 {plate.bien_so}
               </MenuItem>
             ))}
@@ -428,6 +428,8 @@ const QuanLyBaoDuong = memo(() => {
         onClose={handleCloseDialog}
         onChange={handleInputChange}
         onSave={handleSave}
+        licensePlates={licensePlates}
+        isLoadingPlates={isLoading}
       />
       {/* Delete Confirmation Dialog */}
       <DeleteDialog
