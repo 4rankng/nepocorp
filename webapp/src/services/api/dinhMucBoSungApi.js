@@ -39,6 +39,19 @@ export const dinhMucBoSungApi = {
     return result;
   },
 
+  // Get DinhMucBoSung by license plate (bien_so)
+  getByBienSo: async bienSo => {
+    await simulateDelay();
+    simulateError();
+    const allRecords = getDinhMucBoSung();
+    if (!bienSo) return allRecords;
+    
+    // Return records that match the license plate or are applicable to all vehicles (bien_so is null)
+    return allRecords.filter(record => 
+      !record.bien_so || record.bien_so === bienSo
+    );
+  },
+
   // Create new DinhMucBoSung
   create: async data => {
     await simulateDelay();

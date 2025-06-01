@@ -1,6 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { Box, Typography, Paper, useTheme, Fab, Alert, CircularProgress } from '@mui/material';
-import { Add as AddIcon, Warning as WarningIcon } from '@mui/icons-material';
+import React, { useState, useMemo, useCallback } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  useTheme, 
+  Fab, 
+  Alert, 
+  CircularProgress, 
+  TextField, 
+  InputAdornment, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem 
+} from '@mui/material';
+import { Add as AddIcon, Warning as WarningIcon, Search as SearchIcon } from '@mui/icons-material';
 import AsteriskCell from '@/components/AsteriskCell';
 import { AddDinhMucBoSung, EditDinhMucBoSung } from '.';
 import StandardTable from '@/components/StandardTable';
@@ -21,7 +35,13 @@ const DinhMucBoSung = () => {
     createRecord,
     updateRecord,
     deleteRecord,
+    selectedPlate,
+    handlePlateChange,
+    licensePlates,
+    loadData
   } = useDinhMucBoSung();
+  
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { showConfirmation, confirmationState, handleConfirm, handleCancel } = useConfirmation();
 
@@ -52,6 +72,27 @@ const DinhMucBoSung = () => {
       ? { diem_di: route.diem_di, diem_den: route.diem_den }
       : { diem_di: '', diem_den: '' };
   };
+
+  // Handle search input change (client-side filtering)
+  const handleSearchChange = useCallback((event) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+  }, []);
+
+  // Handle plate selection from dropdown (server-side filtering)
+  const handlePlateSelect = useCallback((event) => {
+    const plate = event.target.value === 'Tất cả' ? '' : event.target.value;
+    handlePlateChange(plate);
+  }, [handlePlateChange]);
+
+  // Filter data based on search term (client-side filtering)
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return dinhMucBoSungData;
+    
+    return dinhMucBoSungData.filter(item => 
+      item.bien_so && item.bien_so.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [dinhMucBoSungData, searchTerm]);
 
   // Prepare table data with route information
   const tableData = useMemo(() => {
@@ -264,6 +305,53 @@ const DinhMucBoSung = () => {
 
   return (
     <Box sx={{ position: 'relative' }}>
+      {/* Search and Filter */}
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <TextField
+          sx={{ width: '50%' }}
+          variant="outlined"
+          placeholder="Tìm kiếm theo biển số..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            sx: {
+              borderRadius: '6px',
+              height: 36,
+              minHeight: 36,
+              fontSize: '0.95rem',
+            },
+          }}
+        />
+        <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
+          <InputLabel id="plate-select-label">Biển số xe</InputLabel>
+          <Select
+            labelId="plate-select-label"
+            id="plate-select"
+            value={selectedPlate || 'Tất cả'}
+            onChange={handlePlateSelect}
+            label="Biển số xe"
+            renderValue={selected => {
+              if (!selected || selected === 'Tất cả') return 'Tất cả';
+              return selected;
+            }}
+          >
+            <MenuItem key="all" value="Tất cả">
+              <em>Tất cả</em>
+            </MenuItem>
+            {licensePlates.map(plate => (
+              <MenuItem key={plate.id} value={plate.bien_so}>
+                {plate.bien_so}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
