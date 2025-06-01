@@ -184,12 +184,17 @@ const DinhMucBoSung = () => {
 
   const validateForm = () => {
     const errors = {};
+    const dinhMucValue = formData.dinh_muc_l;
 
-    if (!formData.dinh_muc_l.trim()) {
+    if (dinhMucValue === null || dinhMucValue === undefined || dinhMucValue === '') {
       errors.dinh_muc_l = 'Định mức không được để trống';
     } else {
-      const value = parseFloat(formData.dinh_muc_l);
-      if (isNaN(value) || value <= 0) {
+      // Convert to number if it's a string
+      const numValue = typeof dinhMucValue === 'string' 
+        ? parseFloat(dinhMucValue) 
+        : Number(dinhMucValue);
+      
+      if (isNaN(numValue) || numValue <= 0) {
         errors.dinh_muc_l = 'Định mức phải là số dương';
       }
     }

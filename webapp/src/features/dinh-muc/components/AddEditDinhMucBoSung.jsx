@@ -59,15 +59,66 @@ const AddEditDinhMucBoSung = ({
   // Process tuyen duong list for the dropdown
   const processedTuyenDuongList = useMemo(() => {
     try {
-      return tuyenDuongList.map(tuyen => ({
+      // Add 'Tất cả' option first
+      const allOption = {
+        ma_so: '',
+        diem_di: '*',
+        diem_den: '*',
+        label: 'Tất cả',
+      };
+      
+      // Map the rest of the tuyen duong items
+      const tuyenItems = tuyenDuongList.map(tuyen => ({
         ...tuyen,
         label: `${tuyen.diem_di} - ${tuyen.diem_den}`,
       }));
+      
+      return [allOption, ...tuyenItems];
     } catch (error) {
       logger.error('Error processing tuyen duong list:', error);
       return [];
     }
   }, [tuyenDuongList]);
+
+  // Process dau keo list for the dropdown
+  const processedDauKeoList = useMemo(() => {
+    try {
+      // Add 'Tất cả' option first
+      const allOption = {
+        value: '',
+        label: 'Tất cả',
+        isAll: true
+      };
+      
+      // Map the dau keo items
+      const items = dauKeoList.map(item => ({
+        value: typeof item === 'object' ? item.bien_so : item,
+        label: typeof item === 'object' ? item.bien_so : item,
+        isAll: false
+      }));
+      
+      return [allOption, ...items];
+    } catch (error) {
+      logger.error('Error processing dau keo list:', error);
+      return [];
+    }
+  }, [dauKeoList]);
+  
+  // Get selected dau keo
+  const selectedDauKeo = useMemo(() => {
+    if (formData.bien_so === null || formData.bien_so === '') {
+      return processedDauKeoList.find(item => item.isAll) || null;
+    }
+    return processedDauKeoList.find(item => item.value === formData.bien_so) || null;
+  }, [formData.bien_so, processedDauKeoList]);
+  
+  // Handle dau keo change
+  const handleDauKeoChange = (_, newValue) => {
+    setFormData(prev => ({
+      ...prev,
+      bien_so: newValue?.value || null,
+    }));
+  };
 
   // Initialize selected tuyen duong when form data changes
   React.useEffect(() => {
@@ -143,41 +194,39 @@ const AddEditDinhMucBoSung = ({
           <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
             {/* Biển số */}
             <Box sx={{ width: '50%' }}>
-              <FormControl fullWidth size="small" error={!!formErrors.bien_so}>
-                <InputLabel id="bien-so-label">Biển số</InputLabel>
-                <Select
-                  labelId="bien-so-label"
-                  value={formData.bien_so || ''}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      bien_so: e.target.value || null,
-                    }))
-                  }
-                  label="Biển số"
-                  sx={{
-                    '& .MuiSelect-select': {
-                      fontSize: '0.875rem',
-                      height: '40px',
-                      display: 'flex',
-                      alignItems: 'center',
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontSize: '0.875rem',
-                    },
-                  }}
-                >
-                  <MenuItem value="">Tất cả</MenuItem>
-                  {dauKeoList.map((dauKeo) => (
-                    <MenuItem key={dauKeo} value={dauKeo}>
-                      {dauKeo}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formErrors.bien_so && (
-                  <FormHelperText>{formErrors.bien_so}</FormHelperText>
+              <Autocomplete
+                value={selectedDauKeo}
+                onChange={handleDauKeoChange}
+                options={processedDauKeoList}
+                getOptionLabel={(option) => option?.label || ''}
+                isOptionEqualToValue={(option, value) => option?.value === value?.value}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Biển số"
+                    variant="outlined"
+                    error={!!formErrors.bien_so}
+                    helperText={formErrors.bien_so}
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        fontSize: '0.875rem',
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontSize: '0.875rem',
+                      },
+                    }}
+                  />
                 )}
-              </FormControl>
+                fullWidth
+                size="small"
+                sx={{
+                  '& .MuiAutocomplete-inputRoot': {
+                    padding: '6px 12px',
+                    height: '40px',
+                  },
+                }}
+              />
             </Box>
 
             {/* Định mức */}
@@ -231,7 +280,7 @@ const AddEditDinhMucBoSung = ({
                 onChange={handleTuyenDuongChange}
                 options={processedTuyenDuongList}
                 getOptionLabel={(option) => option?.label || ''}
-                isOptionEqualToValue={(option, value) => option.ma_so === value?.ma_so}
+                isOptionEqualToValue={(option, value) => option?.ma_so === value?.ma_so}
                 renderInput={(params) => (
                   <TextField
                     {...params}
