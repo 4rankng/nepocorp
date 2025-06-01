@@ -351,6 +351,20 @@ const DinhMucDiDuong = () => {
     }
   };
 
+  // Global ESC key handler for exiting edit mode
+  useEffect(() => {
+    if (!editingId) return;
+    const handleEsc = e => {
+      if (e.key === 'Escape') {
+        handleCancelEdit();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [editingId]);
+
   return (
     <FormProvider {...methods}>
       <Paper elevation={3} sx={{ p: 3, m: 1, mt: 2 }}>
@@ -403,17 +417,9 @@ const DinhMucDiDuong = () => {
                     <TableRow key={row.id} hover>
                       <TableCell>
                         {editingId === row.id ? (
-                          <TextField
-                            value={editedData.ma_tuyen || ''}
-                            onChange={e => {
-                              logger.info('ma_tuyen changed:', e.target.value);
-                              handleInputChange('ma_tuyen', e.target.value);
-                            }}
-                            size="small"
-                            disabled={isSaving}
-                            fullWidth
-                            variant="outlined"
-                          />
+                          <Typography variant="body2" sx={{ pt: 1 }}>
+                            {editedData.ma_tuyen || ''}
+                          </Typography>
                         ) : (
                           row.ma_tuyen
                         )}
@@ -430,6 +436,9 @@ const DinhMucDiDuong = () => {
                             disabled={isSaving}
                             fullWidth
                             variant="outlined"
+                            onKeyDown={e => {
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
                           />
                         ) : (
                           row.diem_di
@@ -447,6 +456,9 @@ const DinhMucDiDuong = () => {
                             disabled={isSaving}
                             fullWidth
                             variant="outlined"
+                            onKeyDown={e => {
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
                           />
                         ) : (
                           row.diem_den
@@ -470,6 +482,9 @@ const DinhMucDiDuong = () => {
                               inputProps={{
                                 step: '0.01',
                                 min: '0',
+                              }}
+                              onKeyDown={e => {
+                                if (e.key === 'Escape') handleCancelEdit();
                               }}
                             />
                           ) : (
