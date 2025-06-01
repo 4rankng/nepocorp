@@ -2,22 +2,22 @@
 
 ## Chi phí
 bao_duong
-- id
+- id // mysql auto increment eg 1, 2, 3, ...
 - bien_so // bao_duong.bien_so = dau_keo.bien_so OR bao_duong.bien_so = ro_mooc.bien_so
-- item_name
-- ngay_thay
-- ngay_het_han // bao_duong.ngay_het_han = bao_duong.ngay_thay + bao_duong.so_thang_bao_hanh
-- so_thang_bao_hanh
-- so_luong
-- don_gia
-- currency
+- item_name: 'Lop xe'
+- ngay_thay: '2024-05-28',
+- ngay_het_han: '2025-05-28', // bao_duong.ngay_het_han = bao_duong.ngay_thay + bao_duong.so_thang_bao_hanh
+- so_thang_bao_hanh: 12,
+- so_luong: 2,
+- don_gia: 100000,
+- currency: 'VND',
 - tong_tien // bao_duong.tong_tien = bao_duong.so_luong * bao_duong.don_gia
 - ghi_chu
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
 chi_phi
-- id
+- id // mysql auto increment eg 1, 2, 3, ...
 - dau_keo // chi_phi.dau_keo = dau_keo.bien_so, allow null
 - ro_mooc // chi_phi.ro_mooc = ro_mooc.bien_so, allow null
 - nhan_vien // chi_phi.nhan_vien = nhan_vien.ma_so, allow null
@@ -32,7 +32,7 @@ chi_phi
 
 ## Cấu hình
 cau_hinh
-- id
+- id // mysql auto increment eg 1, 2, 3, ...
 - key
 - value
 - created_at: '2023-01-15T08:30:00Z',
@@ -40,32 +40,32 @@ cau_hinh
 
 ## Phương tiện
 container
-- id
-- ma_so
-- phan_loai
+- id // mysql auto increment eg 1, 2, 3, ...
+- ma_so: '20DC',
+- phan_loai: '20in',
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
 dau_keo
 - id
-- bien_so
+- bien_so:  '16C-111.22',
 - lai_xe // dau_keo.lai_xe = nhan_vien.ma_so
 - mo_ta
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
 ro_mooc
-- id
-- bien_so
+- id // mysql auto increment eg 1, 2, 3, ...
+- bien_so:  '16C-111.22',
 - mo_ta
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
 ## Định Mức
 dinh_muc_km
-- id
+- id // mysql auto increment eg 1, 2, 3, ...
 - bien_so // dinh_muc_km.bien_so = dau_keo.bien_so
-- phan_loai // dinh_muc_km.phan_loai = 'km_hang' OR dinh_muc_km.phan_loai = 'km_vo'
+- phan_loai //  'km_hang' OR 'km_vo'
 - tu_km
 - den_km
 - l_km
@@ -74,16 +74,16 @@ dinh_muc_km
 - updated_at: '2023-05-20T10:00:00Z',
 
 dinh_muc_bo_sung
-- id
+- id // mysql auto increment eg 1, 2, 3, ...
 - bien_so // dinh_muc_bo_sung.bien_so = dau_keo.bien_so
-- ma_tuyen // dinh_muc_bo_sung.ma_tuyen = tuyen_duong.ma_so
+- ma_tuyen: 'TD001', // dinh_muc_bo_sung.ma_tuyen = tuyen_duong.ma_so
 - dinh_muc_l
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
 ## Nhân sự
 doi_tac
-- id: 1,
+- id // mysql auto increment eg 1, 2, 3, ...
 - ma_dinh_danh: 'DT001',
 - ten: 'Công ty TNHH Vận Tải Minh Phát',
 - dia_chi: 'Số 1, Đường Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh',
@@ -92,7 +92,7 @@ doi_tac
 - updated_at: '2023-05-20T10:00:00Z',
 
 khach_hang
-- id: 1,
+- id // mysql auto increment eg 1, 2, 3, ... 1,
 - ma_dinh_danh: 'MDD001',
 - ten: 'Công ty TNHH An Phát',
 - dia_chi: 'Số 10, Đường Nguyễn Trãi, Phường Thanh Xuân Trung, Quận Thanh Xuân, Hà Nội',
@@ -101,7 +101,7 @@ khach_hang
 - updated_at: '2023-05-20T10:00:00Z',
 
 nhan_vien
-- id: 1,
+- id // mysql auto increment eg 1, 2, 3, ...
 - ma_so: 'QL001',
 - ho_ten: 'Trần Văn Quản',
 - ten_dang_nhap: 'quan.tv',
@@ -113,7 +113,7 @@ nhan_vien
 
 ## Lịch Vận Chuyển
 lich_van_chuyen
-- id: 1,
+- id // mysql auto increment eg 1, 2, 3, ...
 - ma_chuyen: 'MC001', // lich_van_chuyen.ma_chuyen = tuyen_duong.ma_so, allow null
 - ngay_di: '2024-05-28',
 - ngay_ha_hang: null, // Status is 'len_lich', not completed
@@ -139,8 +139,8 @@ lich_van_chuyen
 - updated_at: '2024-05-01T10:00:00Z',
 
 tuyen_duong
-- id
-- ma_so
+- id // mysql auto increment eg 1, 2, 3, ...
+- ma_so: 'TD001',
 - diem_di
 - diem_den
 - created_at
