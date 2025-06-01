@@ -143,66 +143,77 @@ const AddEditDinhMucBoSung = ({
           <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
             {/* Biển số */}
             <Box sx={{ width: '50%' }}>
-            <Autocomplete
-              value={formData.bien_so || ''}
-              onChange={(_, newValue) => setFormData(prev => ({ ...prev, bien_so: newValue || '' }))}
-              options={['', ...dauKeoList.map(dauKeo => dauKeo.bien_so)]}
-              getOptionLabel={(option) => option === '' ? 'Tất cả' : option}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Biển số đầu kéo"
-                  variant="outlined"
-                  error={!!formErrors.bien_so}
-                  helperText={formErrors.bien_so}
-                  fullWidth
-                  size="small"
+              <FormControl fullWidth size="small" error={!!formErrors.bien_so}>
+                <InputLabel id="bien-so-label">Biển số</InputLabel>
+                <Select
+                  labelId="bien-so-label"
+                  value={formData.bien_so || ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      bien_so: e.target.value || null,
+                    }))
+                  }
+                  label="Biển số"
                   sx={{
-                    '& .MuiOutlinedInput-root': {
+                    '& .MuiSelect-select': {
                       fontSize: '0.875rem',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
                     },
                     '& .MuiInputLabel-root': {
                       fontSize: '0.875rem',
                     },
                   }}
-                />
-              )}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiAutocomplete-inputRoot': {
-                  padding: '6px 12px',
-                },
-              }}
-            />
-          </Box>
+                >
+                  <MenuItem value="">Tất cả</MenuItem>
+                  {dauKeoList.map((dauKeo) => (
+                    <MenuItem key={dauKeo} value={dauKeo}>
+                      {dauKeo}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {formErrors.bien_so && (
+                  <FormHelperText>{formErrors.bien_so}</FormHelperText>
+                )}
+              </FormControl>
+            </Box>
 
-          {/* Định mức */}
-          <Box sx={{ width: '50%' }}>
+            {/* Định mức */}
+            <Box sx={{ width: '50%' }}>
               <TextField
-                label="Định mức"
-                type="number"
-                value={formData.dinh_muc_l}
-                onChange={e => {
-                  const value = parseFloat(e.target.value);
-                  if (!isNaN(value) && value >= 0) {
-                    setFormData(prev => ({ ...prev, dinh_muc_l: value }));
-                  } else if (e.target.value === '') {
-                    setFormData(prev => ({ ...prev, dinh_muc_l: '' }));
-                  }
-                }}
-                error={!!formErrors.dinh_muc_l}
-                helperText={formErrors.dinh_muc_l}
                 fullWidth
                 size="small"
+                label="Định mức (lít)"
+                type="number"
+                value={formData.dinh_muc_l || ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    dinh_muc_l: e.target.value ? parseFloat(e.target.value) : null,
+                  }))
+                }
+                error={!!formErrors.dinh_muc_l}
+                helperText={formErrors.dinh_muc_l}
                 InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">lít</InputAdornment>
-                  ),
+                  endAdornment: <InputAdornment position="end">lít</InputAdornment>,
+                  sx: {
+                    height: '40px',
+                    '& input': {
+                      height: '100%',
+                      padding: '8.5px 14px',
+                    },
+                  },
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     fontSize: '0.875rem',
+                    height: '40px',
+                    '& input': {
+                      height: '100%',
+                      padding: '8.5px 14px',
+                    },
                   },
                   '& .MuiInputLabel-root': {
                     fontSize: '0.875rem',
