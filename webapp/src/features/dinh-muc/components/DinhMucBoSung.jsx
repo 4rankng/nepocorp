@@ -159,10 +159,13 @@ const DinhMucBoSung = () => {
 
   const handleEdit = record => {
     setEditingRecord(record);
+    const { diem_di, diem_den } = getRouteDetails(record.ma_tuyen);
     setFormData({
       bien_so: record.bien_so || '',
       ma_tuyen: record.ma_tuyen || '',
       dinh_muc_l: record.dinh_muc_l.toString(),
+      diem_di: diem_di || '*',
+      diem_den: diem_den || '*',
     });
     setFormErrors({});
     setIsFormOpen(true);

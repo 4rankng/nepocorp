@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -16,8 +16,14 @@ import {
   Box,
   Grid,
   Autocomplete,
+  Typography,
+  Tooltip,
+  IconButton,
+  Paper,
 } from '@mui/material';
-import logger from '../../../services/logger';
+import { Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
+import logger from '@services/logger';
+import TuyenDuongManager from './TuyenDuongManager';
 
 /**
  * A dialog component for adding/editing dinh muc bo sung records
@@ -46,31 +52,88 @@ const AddEditDinhMucBoSung = ({
   tuyenDuongList = [],
   onSubmit,
 }) => {
-  const [tuyenDuongOptions, setTuyenDuongOptions] = React.useState([]);
+  const [tuyenDuongManagerOpen, setTuyenDuongManagerOpen] = useState(false);
+  const [selectedTuyenDuong, setSelectedTuyenDuong] = useState(null);
+  const [isSubmittingTuyenDuong, setIsSubmittingTuyenDuong] = useState(false);
 
-  React.useEffect(() => {
+  // Process tuyen duong list for the dropdown
+  const processedTuyenDuongList = useMemo(() => {
     try {
-      // Process tuyen duong list to extract unique diem di and diem den
-      const diemDiOptions = [];
-      const diemDenOptions = [];
-
-      tuyenDuongList.forEach(tuyen => {
-        if (tuyen.diem_di && !diemDiOptions.includes(tuyen.diem_di)) {
-          diemDiOptions.push(tuyen.diem_di);
-        }
-        if (tuyen.diem_den && !diemDenOptions.includes(tuyen.diem_den)) {
-          diemDenOptions.push(tuyen.diem_den);
-        }
-      });
-
-      setTuyenDuongOptions({
-        diemDi: diemDiOptions.sort(),
-        diemDen: diemDenOptions.sort()
-      });
+      return tuyenDuongList.map(tuyen => ({
+        ...tuyen,
+        label: `${tuyen.diem_di} - ${tuyen.diem_den}`,
+      }));
     } catch (error) {
-      logger.error('Error processing tuyen duong options:', error);
+      logger.error('Error processing tuyen duong list:', error);
+      return [];
     }
   }, [tuyenDuongList]);
+
+  // Initialize selected tuyen duong when form data changes
+  React.useEffect(() => {
+    if (formData.ma_tuyen) {
+      const tuyen = tuyenDuongList.find(t => t.ma_so === formData.ma_tuyen);
+      if (tuyen) {
+        setSelectedTuyenDuong({
+          ...tuyen,
+          label: `${tuyen.diem_di} - ${tuyen.diem_den}`,
+        });
+      }
+    } else {
+      setSelectedTuyenDuong(null);
+    }
+  }, [formData.ma_tuyen, tuyenDuongList]);
+
+  const handleTuyenDuongChange = (_, newValue) => {
+    setSelectedTuyenDuong(newValue);
+    setFormData(prev => ({
+      ...prev,
+      ma_tuyen: newValue ? newValue.ma_so : null,
+    }));
+  };
+
+  const handleOpenTuyenDuongManager = () => {
+    setTuyenDuongManagerOpen(true);
+  };
+
+  const handleCloseTuyenDuongManager = () => {
+    setTuyenDuongManagerOpen(false);
+  };
+
+  const handleSaveTuyenDuong = async (newTuyenDuong) => {
+    setIsSubmittingTuyenDuong(true);
+    try {
+      // In a real app, you would call an API to save the new tuyen duong
+      // For now, we'll just update the local state
+      const newTuyen = {
+        ...newTuyenDuong,
+        ma_so: `td-${Date.now()}`,
+        diem_di: newTuyenDuong.diem_di.trim(),
+        diem_den: newTuyenDuong.diem_den.trim(),
+      };
+
+      // Update the selected tuyen duong
+      const updatedTuyen = {
+        ...newTuyen,
+        label: `${newTuyen.diem_di} - ${newTuyen.diem_den}`,
+      };
+
+      setSelectedTuyenDuong(updatedTuyen);
+      setFormData(prev => ({
+        ...prev,
+        ma_tuyen: updatedTuyen.ma_so,
+      }));
+
+      // In a real app, you would update the tuyenDuongList here
+      // by calling the parent component's update function
+
+      setTuyenDuongManagerOpen(false);
+    } catch (error) {
+      logger.error('Error saving tuyen duong:', error);
+    } finally {
+      setIsSubmittingTuyenDuong(false);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -149,76 +212,58 @@ const AddEditDinhMucBoSung = ({
             </Box>
           </Box>
 
-          {/* Điểm đi */}
+          {/* Tuyến đường */}
           <Box sx={{ width: '100%', mb: 0, mt: 0 }}>
-            <Autocomplete
-              value={formData.diem_di || ''}
-              onChange={(_, newValue) => setFormData(prev => ({ ...prev, diem_di: newValue || '' }))}
-              options={['', ...(tuyenDuongOptions.diemDi || [])]}
-              getOptionLabel={(option) => option || 'Tất cả'}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Điểm đi"
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+              <Autocomplete
+                value={selectedTuyenDuong}
+                onChange={handleTuyenDuongChange}
+                options={processedTuyenDuongList}
+                getOptionLabel={(option) => option?.label || ''}
+                isOptionEqualToValue={(option, value) => option.ma_so === value?.ma_so}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Tuyến đường"
+                    variant="outlined"
+                    error={!!formErrors.ma_tuyen}
+                    helperText={formErrors.ma_tuyen || 'Chọn tuyến đường hoặc tạo mới'}
+                    fullWidth
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        fontSize: '0.875rem',
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontSize: '0.875rem',
+                      },
+                    }}
+                  />
+                )}
+                fullWidth
+                size="small"
+                sx={{
+                  '& .MuiAutocomplete-inputRoot': {
+                    padding: '6px 12px',
+                  },
+                }}
+              />
+              <Tooltip title="Thêm tuyến đường mới">
+                <Button
                   variant="outlined"
-                  error={!!formErrors.diem_di}
-                  helperText={formErrors.diem_di}
-                  fullWidth
-                  size="small"
+                  onClick={handleOpenTuyenDuongManager}
                   sx={{
-                    '& .MuiOutlinedInput-root': {
-                      fontSize: '0.875rem',
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontSize: '0.875rem',
-                    },
+                    minWidth: 'auto',
+                    height: '40px',
+                    width: '40px',
+                    mt: '8px',
+                    p: 0,
                   }}
-                />
-              )}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiAutocomplete-inputRoot': {
-                  padding: '6px 12px',
-                },
-              }}
-            />
-          </Box>
-
-          {/* Điểm đến */}
-          <Box sx={{ width: '100%', mb: 0, mt: 0 }}>
-            <Autocomplete
-              value={formData.diem_den || ''}
-              onChange={(_, newValue) => setFormData(prev => ({ ...prev, diem_den: newValue || '' }))}
-              options={['', ...(tuyenDuongOptions.diemDen || [])]}
-              getOptionLabel={(option) => option || 'Tất cả'}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Điểm đến"
-                  variant="outlined"
-                  error={!!formErrors.diem_den}
-                  helperText={formErrors.diem_den}
-                  fullWidth
-                  size="small"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      fontSize: '0.875rem',
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontSize: '0.875rem',
-                    },
-                  }}
-                />
-              )}
-              fullWidth
-              size="small"
-              sx={{
-                '& .MuiAutocomplete-inputRoot': {
-                  padding: '6px 12px',
-                },
-              }}
-            />
+                >
+                  <AddIcon />
+                </Button>
+              </Tooltip>
+            </Box>
           </Box>
         </Box>
       </DialogContent>
@@ -227,9 +272,19 @@ const AddEditDinhMucBoSung = ({
           Hủy
         </Button>
         <Button onClick={onSubmit} variant="contained" disabled={isSubmitting}>
-          {isSubmitting ? <CircularProgress size={24} /> : editingRecord ? 'Cập nhật' : 'Thêm'}
+          {isSubmitting ? <CircularProgress size={24} /> : editingRecord ? 'Sửa' : 'Thêm'}
         </Button>
       </DialogActions>
+
+      {/* Tuyen Duong Manager Dialog */}
+      <TuyenDuongManager
+        open={tuyenDuongManagerOpen}
+        onClose={handleCloseTuyenDuongManager}
+        onSave={handleSaveTuyenDuong}
+        tuyenDuongList={tuyenDuongList}
+        initialData={null}
+        isSubmitting={isSubmittingTuyenDuong}
+      />
     </Dialog>
   );
 };
