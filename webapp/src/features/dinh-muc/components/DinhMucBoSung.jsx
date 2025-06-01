@@ -5,7 +5,7 @@ import {
   Paper,
   useTheme,
   Fab,
-  Tooltip,
+  Tooltip as MuiTooltip,
   Alert,
   Dialog,
   DialogTitle,
@@ -20,8 +20,11 @@ import {
   FormHelperText,
   CircularProgress,
   InputAdornment,
+  styled,
 } from '@mui/material';
-import { Add as AddIcon, Info as InfoIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import DeleteDialog from '@/components/DeleteDialog';
@@ -56,7 +59,7 @@ const DinhMucBoSung = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper function to get route details
-  const getRouteDetails = (ma_tuyen) => {
+  const getRouteDetails = ma_tuyen => {
     if (!ma_tuyen) return { diem_di: '*', diem_den: '*' };
 
     if (!Array.isArray(tuyenDuongList)) {
@@ -65,17 +68,28 @@ const DinhMucBoSung = () => {
     }
 
     const route = tuyenDuongList.find(r => r.ma_so === ma_tuyen);
-    return route ? { diem_di: route.diem_di, diem_den: route.diem_den } : { diem_di: '', diem_den: '' };
+    return route
+      ? { diem_di: route.diem_di, diem_den: route.diem_den }
+      : { diem_di: '', diem_den: '' };
   };
 
   // Prepare table data with route information
   const tableData = useMemo(() => {
     return dinhMucBoSungData.map(record => {
+      // If ma_tuyen is not set, use asterisks for diem_di and diem_den
+      if (!record.ma_tuyen) {
+        return {
+          ...record,
+          diem_di: '*',
+          diem_den: '*',
+        };
+      }
+
       const { diem_di, diem_den } = getRouteDetails(record.ma_tuyen);
       return {
         ...record,
-        diem_di,
-        diem_den,
+        diem_di: diem_di || '*',
+        diem_den: diem_den || '*',
       };
     });
   }, [dinhMucBoSungData, tuyenDuongList]);
@@ -84,14 +98,14 @@ const DinhMucBoSung = () => {
   const renderActions = (cellValue, rowData) => (
     <Box sx={{ display: 'flex', gap: 1 }}>
       <EditButton
-        onClick={(e) => {
+        onClick={e => {
           e.stopPropagation();
           handleEdit(rowData);
         }}
         size="small"
       />
       <DeleteButton
-        onClick={(e) => {
+        onClick={e => {
           e.stopPropagation();
           handleDelete(rowData);
         }}
@@ -101,71 +115,85 @@ const DinhMucBoSung = () => {
   );
 
   // Table columns
-  const columns = useMemo(() => [
-    {
-      key: 'bien_so',
-      label: 'Biển số',
-      width: '15%',
-      sortable: true,
-      render: (cellValue) => (
-        <Typography variant="body2" fontWeight={cellValue ? 500 : 400}>
-          {cellValue || '*'}
-        </Typography>
-      ),
-    },
-    {
-      key: 'ma_tuyen',
-      label: 'Mã tuyến',
-      width: '12%',
-      sortable: true,
-      render: (cellValue) => (
-        <Typography variant="body2" fontWeight={cellValue ? 500 : 400}>
-          {cellValue || '*'}
-        </Typography>
-      ),
-    },
-    {
-      key: 'diem_di',
-      label: 'Điểm đi',
-      width: '20%',
-      sortable: true,
-      render: (cellValue) => (
-        <Typography variant="body2">
-          {cellValue}
-        </Typography>
-      ),
-    },
-    {
-      key: 'diem_den',
-      label: 'Điểm đến',
-      width: '25%',
-      sortable: true,
-      render: (cellValue) => (
-        <Typography variant="body2">
-          {cellValue}
-        </Typography>
-      ),
-    },
-    {
-      key: 'dinh_muc_l',
-      label: 'Định mức (lít)',
-      width: '15%',
-      align: 'right',
-      sortable: true,
-      render: (cellValue) => (
-        <Typography variant="body2" fontWeight={500}>
-          {cellValue?.toLocaleString('vi-VN')}
-        </Typography>
-      ),
-    },
-    {
-      key: 'actions',
-      label: 'Thao tác',
-      width: '13%',
-      align: 'center',
-      render: renderActions,
-    },
-  ], []);
+  // Helper component for cells with tooltip on asterisk
+  const AsteriskCell = ({ value, tooltip = 'Áp dụng cho tất cả' }) => {
+    if (value === '*') {
+      return (
+        <Tippy content={tooltip} placement="top" delay={[300, 0]}>
+          <Typography
+            variant="body2"
+            fontWeight={500}
+            sx={{
+              color: 'primary.main',
+              cursor: 'help',
+              textDecoration: 'underline',
+              textDecorationStyle: 'dotted',
+              textUnderlineOffset: '2px',
+            }}
+          >
+            {value}
+          </Typography>
+        </Tippy>
+      );
+    }
+    return (
+      <Typography variant="body2" fontWeight={500}>
+        {value}
+      </Typography>
+    );
+  };
+
+  const columns = useMemo(
+    () => [
+      {
+        key: 'bien_so',
+        label: 'Biển số',
+        width: '20%',
+        sortable: true,
+        render: cellValue => (
+          <AsteriskCell value={cellValue || '*'} tooltip="Áp dụng cho tất cả biển số" />
+        ),
+      },
+      {
+        key: 'diem_di',
+        label: 'Điểm đi',
+        width: '30%',
+        sortable: true,
+        render: cellValue => (
+          <AsteriskCell value={cellValue} tooltip="Áp dụng cho tất cả điểm đi" />
+        ),
+      },
+      {
+        key: 'diem_den',
+        label: 'Điểm đến',
+        width: '30%',
+        sortable: true,
+        render: cellValue => (
+          <AsteriskCell value={cellValue} tooltip="Áp dụng cho tất cả điểm đến" />
+        ),
+      },
+      {
+        key: 'dinh_muc_l',
+        label: 'Định mức (lít)',
+        width: '15%',
+        align: 'right',
+        sortable: true,
+        render: cellValue => (
+          <Typography variant="body2" fontWeight={500}>
+            {cellValue?.toLocaleString('vi-VN')}
+          </Typography>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Thao tác',
+        width: '13%',
+        align: 'center',
+        render: renderActions,
+      },
+    ],
+    []
+  );
 
   // Form handlers
   const handleOpenForm = () => {
@@ -179,7 +207,7 @@ const DinhMucBoSung = () => {
     setIsFormOpen(true);
   };
 
-  const handleEdit = (record) => {
+  const handleEdit = record => {
     setEditingRecord(record);
     setFormData({
       bien_so: record.bien_so || '',
@@ -242,7 +270,7 @@ const DinhMucBoSung = () => {
     }
   };
 
-  const handleDelete = async (record) => {
+  const handleDelete = async record => {
     const confirmed = await showConfirmation({
       title: 'Xác nhận xóa',
       message: `Bạn có chắc chắn muốn xóa định mức bổ sung này?`,
@@ -269,8 +297,6 @@ const DinhMucBoSung = () => {
 
   return (
     <Box sx={{ position: 'relative' }}>
-
-
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -305,12 +331,7 @@ const DinhMucBoSung = () => {
       </Fab>
 
       {/* Form Dialog */}
-      <Dialog
-        open={isFormOpen}
-        onClose={handleCloseForm}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={isFormOpen} onClose={handleCloseForm} maxWidth="sm" fullWidth>
         <DialogTitle>
           {editingRecord ? 'Sửa định mức bổ sung' : 'Thêm định mức bổ sung'}
         </DialogTitle>
@@ -321,21 +342,19 @@ const DinhMucBoSung = () => {
               <InputLabel>Biển số xe (để trống để áp dụng cho tất cả)</InputLabel>
               <Select
                 value={formData.bien_so}
-                onChange={(e) => setFormData(prev => ({ ...prev, bien_so: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, bien_so: e.target.value }))}
                 label="Biển số xe (để trống để áp dụng cho tất cả)"
               >
                 <MenuItem value="">
                   <em>Áp dụng cho tất cả (*)</em>
                 </MenuItem>
-                {dauKeoList.map((dauKeo) => (
+                {dauKeoList.map(dauKeo => (
                   <MenuItem key={dauKeo.id} value={dauKeo.bien_so}>
                     {dauKeo.bien_so} - {dauKeo.mo_ta}
                   </MenuItem>
                 ))}
               </Select>
-              {formErrors.bien_so && (
-                <FormHelperText>{formErrors.bien_so}</FormHelperText>
-              )}
+              {formErrors.bien_so && <FormHelperText>{formErrors.bien_so}</FormHelperText>}
             </FormControl>
 
             {/* Mã tuyến */}
@@ -343,21 +362,19 @@ const DinhMucBoSung = () => {
               <InputLabel>Mã tuyến (để trống để áp dụng cho tất cả)</InputLabel>
               <Select
                 value={formData.ma_tuyen}
-                onChange={(e) => setFormData(prev => ({ ...prev, ma_tuyen: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, ma_tuyen: e.target.value }))}
                 label="Mã tuyến (để trống để áp dụng cho tất cả)"
               >
                 <MenuItem value="">
                   <em>Áp dụng cho tất cả (*)</em>
                 </MenuItem>
-                {tuyenDuongList.map((tuyen) => (
+                {tuyenDuongList.map(tuyen => (
                   <MenuItem key={tuyen.id} value={tuyen.ma_so}>
                     {tuyen.ma_so} - {tuyen.diem_di} → {tuyen.diem_den}
                   </MenuItem>
                 ))}
               </Select>
-              {formErrors.ma_tuyen && (
-                <FormHelperText>{formErrors.ma_tuyen}</FormHelperText>
-              )}
+              {formErrors.ma_tuyen && <FormHelperText>{formErrors.ma_tuyen}</FormHelperText>}
             </FormControl>
 
             {/* Định mức */}
@@ -365,12 +382,12 @@ const DinhMucBoSung = () => {
               label="Định mức"
               type="number"
               value={formData.dinh_muc_l}
-              onChange={(e) => setFormData(prev => ({ ...prev, dinh_muc_l: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, dinh_muc_l: e.target.value }))}
               error={!!formErrors.dinh_muc_l}
               helperText={formErrors.dinh_muc_l}
               InputProps={{
                 endAdornment: <InputAdornment position="end">lít</InputAdornment>,
-                inputProps: { min: 0, step: 0.1 }
+                inputProps: { min: 0, step: 0.1 },
               }}
               fullWidth
               required
@@ -378,15 +395,9 @@ const DinhMucBoSung = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseForm}>
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? <CircularProgress size={24} /> : (editingRecord ? 'Cập nhật' : 'Thêm')}
+          <Button onClick={handleCloseForm}>Hủy</Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={isSubmitting}>
+            {isSubmitting ? <CircularProgress size={24} /> : editingRecord ? 'Cập nhật' : 'Thêm'}
           </Button>
         </DialogActions>
       </Dialog>
