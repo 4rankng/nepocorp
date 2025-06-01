@@ -178,4 +178,10 @@ const duplicateNumericIds = initialNumericIds.filter(
   (item, index) => initialNumericIds.indexOf(item) !== index
 );
 
+if (duplicateNumericIds.length > 0) {
+  logger.warn('Duplicate container IDs found in seed data', {
+    duplicateIds: duplicateNumericIds
+  });
+}
+
 export const getContainerCount = async () => containerData.length;

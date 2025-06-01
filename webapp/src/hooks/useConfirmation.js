@@ -34,14 +34,14 @@ export const useConfirmation = () => {
       confirmationState.resolve(true);
     }
     setConfirmationState(prev => ({ ...prev, isOpen: false, resolve: null }));
-  }, [confirmationState.resolve]);
+  }, [confirmationState]);
 
   const handleCancel = useCallback(() => {
     if (confirmationState.resolve) {
       confirmationState.resolve(false);
     }
     setConfirmationState(prev => ({ ...prev, isOpen: false, resolve: null }));
-  }, [confirmationState.resolve]);
+  }, [confirmationState]);
 
   return {
     showConfirmation,

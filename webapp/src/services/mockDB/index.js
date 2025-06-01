@@ -43,7 +43,7 @@ class MockDB {
     if (typeof window === 'undefined' || !window.localStorage) return;
     
     try {
-      const persistedData = localStorage.getItem('mockDB');
+      const persistedData = window.localStorage.getItem('mockDB');
       if (persistedData) {
         const parsedData = JSON.parse(persistedData);
         Object.entries(parsedData).forEach(([tableName, data]) => {
@@ -234,29 +234,25 @@ class MockDB {
    */
   async resetTable(tableName) {
     this.ensureInitialized();
-    try {
-      let bootstrapData;
-      switch (tableName) {
-        case 'baoDuong': {
-          const { default: baoDuongData } = await import('@services/mockData/baoDuong');
-          bootstrapData = [...baoDuongData];
-          break;
-        }
-        case 'users': {
-          const { default: userData } = await import('@services/mockData/users');
-          bootstrapData = [...userData];
-          break;
-        }
-        default:
-          throw new Error(`Unknown table: ${tableName}`);
+    let bootstrapData;
+    switch (tableName) {
+      case 'baoDuong': {
+        const { default: baoDuongData } = await import('@services/mockData/baoDuong');
+        bootstrapData = [...baoDuongData];
+        break;
       }
-      this.tables.set(tableName, bootstrapData);
-      this.persistData(tableName);
-      this.notifyListeners(tableName, 'RESET', bootstrapData);
-      return true;
-    } catch (error) {
-      throw error;
+      case 'users': {
+        const { default: userData } = await import('@services/mockData/users');
+        bootstrapData = [...userData];
+        break;
+      }
+      default:
+        throw new Error(`Unknown table: ${tableName}`);
     }
+    this.tables.set(tableName, bootstrapData);
+    this.persistData(tableName);
+    this.notifyListeners(tableName, 'RESET', bootstrapData);
+    return true;
   }
   /**
    * Clear all data and reset to bootstrap state
