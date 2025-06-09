@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogActions,
+  DialogTitle,
   TextField,
   MenuItem,
   Box,
@@ -93,45 +94,46 @@ const DesktopShipmentFormDialog = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: '8px',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          maxHeight: '90vh',
+          borderRadius: '6px',
+          boxShadow: '0 8px 20px -4px rgba(0, 0, 0, 0.1), 0 8px 8px -4px rgba(0, 0, 0, 0.04)',
+          maxHeight: '94vh',
         },
       }}
     >
+      <DialogTitle sx={{ pb: 1, pt: 2, px: 2 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            color: 'primary.main',
+          }}
+        >
+          {editing
+            ? 'Chỉnh sửa lịch vận chuyển'
+            : 'Tạo lịch vận chuyển mới'}
+        </Typography>
+      </DialogTitle>
       <form onSubmit={handleSubmit}>
-        <DialogContent sx={{ p: '24px' }}>
-          <Typography
-            variant="body2"
-            sx={{
-              mb: 3,
-              color: 'text.secondary', // Per design guide
-              fontSize: '0.875rem',
-              lineHeight: 1.5,
-            }}
-          >
-            {editing
-              ? 'Chỉnh sửa thông tin lịch vận chuyển.'
-              : 'Nhập thông tin lịch vận chuyển mới.'}
-          </Typography>
+        <DialogContent sx={{ p: '12px', pt: '8px' }}>
           {error && (
             <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
               {error}
             </Alert>
           )}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {' '}
               {/* Main container for all sections */}
               {/* Section 1: Thông tin cơ bản */}
               <Box>
                 <Paper
                   elevation={0}
-                  sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
+                  sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <CalendarIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                    <CalendarIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.1rem' }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                       Thông tin cơ bản
                     </Typography>
                   </Box>
@@ -143,7 +145,7 @@ const DesktopShipmentFormDialog = ({
                         sm: 'repeat(2, 1fr)',
                         md: 'repeat(4, 1fr)',
                       },
-                      gap: 2,
+                      gap: 1.5,
                     }}
                   >
                     <Box>
@@ -154,11 +156,14 @@ const DesktopShipmentFormDialog = ({
                         label="Ngày vận chuyển"
                         value={currentFormData.ngay_van_chuyen}
                         onChange={onFormChange}
-                        InputLabelProps={{ shrink: true }}
+                        InputLabelProps={{ shrink: true, sx: { fontSize: '0.8rem' } }}
+                        InputProps={{
+                          sx: { fontSize: '0.8rem', height: '36px' }
+                        }}
                         variant="outlined"
                         size="small"
                         required
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
                       />
                     </Box>
                     <Box>
@@ -171,18 +176,27 @@ const DesktopShipmentFormDialog = ({
                         variant="outlined"
                         size="small"
                         required
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                        InputProps={{
+                          sx: { fontSize: '0.8rem', height: '36px' }
+                        }}
+                        InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
                       />
                     </Box>
                     <Box>
                       <FormControl fullWidth size="small" required>
-                        <InputLabel>Khách hàng</InputLabel>
+                        <InputLabel sx={{ fontSize: '0.8rem' }}>Khách hàng</InputLabel>
                         <Select
                           name="khach_hang_id"
                           value={currentFormData.khach_hang_id}
                           onChange={onFormChange}
                           label="Khách hàng"
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                          sx={{ 
+                            fontSize: '0.8rem', 
+                            height: '36px', 
+                            py: 0,
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                          }}
                         >
                           <MenuItem value="">
                             <em>Chọn khách hàng</em>
@@ -197,13 +211,18 @@ const DesktopShipmentFormDialog = ({
                     </Box>
                     <Box>
                       <FormControl fullWidth size="small" required>
-                        <InputLabel>Trạng thái</InputLabel>
+                        <InputLabel sx={{ fontSize: '0.8rem' }}>Trạng thái</InputLabel>
                         <Select
                           name="trang_thai"
                           value={currentFormData.trang_thai}
                           onChange={onFormChange}
                           label="Trạng thái"
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                          sx={{ 
+                            fontSize: '0.8rem', 
+                            height: '36px', 
+                            py: 0,
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                          }}
                         >
                           {trangThaiOptions.map(option => (
                             <MenuItem key={option.value} value={option.value}>
@@ -220,11 +239,11 @@ const DesktopShipmentFormDialog = ({
               <Box>
                 <Paper
                   elevation={0}
-                  sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
+                  sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <LocationIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                    <LocationIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.1rem' }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                       Thông tin Tuyến đường
                     </Typography>
                   </Box>
@@ -232,7 +251,7 @@ const DesktopShipmentFormDialog = ({
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                      gap: 2,
+                      gap: 1.5,
                     }}
                   >
                     <Box>
@@ -245,7 +264,11 @@ const DesktopShipmentFormDialog = ({
                         variant="outlined"
                         size="small"
                         required
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                        InputProps={{
+                          sx: { fontSize: '0.8rem', height: '36px' }
+                        }}
+                        InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
                       />
                     </Box>
                     <Box>
@@ -258,7 +281,11 @@ const DesktopShipmentFormDialog = ({
                         variant="outlined"
                         size="small"
                         required
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                        InputProps={{
+                          sx: { fontSize: '0.8rem', height: '36px' }
+                        }}
+                        InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
                       />
                     </Box>
                   </Box>
@@ -268,11 +295,11 @@ const DesktopShipmentFormDialog = ({
               <Box>
                 <Paper
                   elevation={0}
-                  sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
+                  sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <ShippingIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                    <ShippingIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.1rem' }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                       Phương tiện & Nhân sự
                     </Typography>
                   </Box>
@@ -284,18 +311,23 @@ const DesktopShipmentFormDialog = ({
                         sm: 'repeat(2, 1fr)',
                         md: 'repeat(4, 1fr)',
                       },
-                      gap: 2,
+                      gap: 1.5,
                     }}
                   >
                     <Box>
                       <FormControl fullWidth size="small" required>
-                        <InputLabel>Biển số xe</InputLabel>
+                        <InputLabel sx={{ fontSize: '0.8rem' }}>Biển số xe</InputLabel>
                         <Select
                           name="bien_so_xe_id"
                           value={currentFormData.bien_so_xe_id}
                           onChange={onFormChange}
                           label="Biển số xe"
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                          sx={{ 
+                            fontSize: '0.8rem', 
+                            height: '36px', 
+                            py: 0,
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                          }}
                         >
                           <MenuItem value="">
                             <em>Chọn xe</em>
@@ -310,13 +342,18 @@ const DesktopShipmentFormDialog = ({
                     </Box>
                     <Box>
                       <FormControl fullWidth size="small" required>
-                        <InputLabel>Container</InputLabel>
+                        <InputLabel sx={{ fontSize: '0.8rem' }}>Container</InputLabel>
                         <Select
                           name="container_id"
                           value={currentFormData.container_id}
                           onChange={onFormChange}
                           label="Container"
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                          sx={{ 
+                            fontSize: '0.8rem', 
+                            height: '36px', 
+                            py: 0,
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                          }}
                         >
                           <MenuItem value="">
                             <em>Chọn container</em>
@@ -331,13 +368,18 @@ const DesktopShipmentFormDialog = ({
                     </Box>
                     <Box>
                       <FormControl fullWidth size="small" required>
-                        <InputLabel>Nhân viên lái xe</InputLabel>
+                        <InputLabel sx={{ fontSize: '0.8rem' }}>Nhân viên lái xe</InputLabel>
                         <Select
                           name="nhan_vien_lai_xe_id"
                           value={currentFormData.nhan_vien_lai_xe_id}
                           onChange={onFormChange}
                           label="Nhân viên lái xe"
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                          sx={{ 
+                            fontSize: '0.8rem', 
+                            height: '36px', 
+                            py: 0,
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                          }}
                         >
                           <MenuItem value="">
                             <em>Chọn lái xe</em>
@@ -352,13 +394,18 @@ const DesktopShipmentFormDialog = ({
                     </Box>
                     <Box>
                       <FormControl fullWidth size="small" required>
-                        <InputLabel>Nhân viên giao nhận</InputLabel>
+                        <InputLabel sx={{ fontSize: '0.8rem' }}>Nhân viên giao nhận</InputLabel>
                         <Select
                           name="nhan_vien_giao_nhan_id"
                           value={currentFormData.nhan_vien_giao_nhan_id}
                           onChange={onFormChange}
                           label="Nhân viên giao nhận"
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                          sx={{ 
+                            fontSize: '0.8rem', 
+                            height: '36px', 
+                            py: 0,
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                          }}
                         >
                           <MenuItem value="">
                             <em>Chọn nhân viên giao nhận</em>
@@ -374,45 +421,15 @@ const DesktopShipmentFormDialog = ({
                   </Box>
                 </Paper>
               </Box>
-              {/* Section 4: Ghi chú */}
+              {/* Section 4: Chi phí & Thanh toán */}
               <Box>
                 <Paper
                   elevation={0}
-                  sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
+                  sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <InfoIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      Ghi chú
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Box>
-                      <TextField
-                        fullWidth
-                        name="ghi_chu"
-                        label="Ghi chú"
-                        value={currentFormData.ghi_chu}
-                        onChange={onFormChange}
-                        variant="outlined"
-                        size="small"
-                        multiline
-                        rows={3}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
-                      />
-                    </Box>
-                  </Box>
-                </Paper>
-              </Box>
-              {/* Section 5: Chi phí & Thanh toán */}
-              <Box>
-                <Paper
-                  elevation={0}
-                  sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <MoneyIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                    <MoneyIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.1rem' }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                       Chi phí & Thanh toán
                     </Typography>
                   </Box>
@@ -420,7 +437,7 @@ const DesktopShipmentFormDialog = ({
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                      gap: 2,
+                      gap: 1.5,
                     }}
                   >
                     <Box>
@@ -434,24 +451,14 @@ const DesktopShipmentFormDialog = ({
                         InputProps={{
                           inputProps: { min: 0, step: 1000 },
                           endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>,
+                          sx: { fontSize: '0.8rem', height: '36px' }
                         }}
                         variant="outlined"
                         size="small"
-                        InputLabelProps={{ shrink: true }}
-                        inputProps={{
-                          min: 0,
-                          step: 1000,
-                          style: {
-                            height: '40px',
-                            padding: '8px 12px',
-                            boxSizing: 'border-box',
-                            fontSize: '0.875rem',
-                            textAlign: 'right',
-                          },
-                        }}
+                        InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
                         sx={{
                           '& .MuiOutlinedInput-root': {
-                            borderRadius: '6px',
+                            borderRadius: '4px',
                             '&:hover .MuiOutlinedInput-notchedOutline': {
                               borderColor: 'text.secondary',
                             },
@@ -470,6 +477,7 @@ const DesktopShipmentFormDialog = ({
                         InputProps={{
                           inputProps: { min: 0, step: 1000 },
                           endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>,
+                          sx: { fontSize: '0.8rem', height: '36px' }
                         }}
                         variant="outlined"
                         size="small"
@@ -479,21 +487,10 @@ const DesktopShipmentFormDialog = ({
                             : ''
                         }
                         disabled={currentFormData.loaiXe === 'xe-cong-ty'}
-                        InputLabelProps={{ shrink: true }}
-                        inputProps={{
-                          min: 0,
-                          step: 1000,
-                          style: {
-                            height: '40px',
-                            padding: '8px 12px',
-                            boxSizing: 'border-box',
-                            fontSize: '0.875rem',
-                            textAlign: 'right',
-                          },
-                        }}
+                        InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
                         sx={{
                           '& .MuiOutlinedInput-root': {
-                            borderRadius: '6px',
+                            borderRadius: '4px',
                             backgroundColor:
                               currentFormData.loaiXe === 'xe-cong-ty'
                                 ? 'action.hover'
@@ -513,16 +510,48 @@ const DesktopShipmentFormDialog = ({
                   </Box>
                 </Paper>
               </Box>
+              {/* Section 5: Ghi chú */}
+              <Box>
+                <Paper
+                  elevation={0}
+                  sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                    <InfoIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.1rem' }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
+                      Ghi chú
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Box>
+                      <TextField
+                        fullWidth
+                        name="ghi_chu"
+                        label="Ghi chú"
+                        value={currentFormData.ghi_chu}
+                        onChange={onFormChange}
+                        variant="outlined"
+                        size="small"
+                        InputProps={{
+                          sx: { fontSize: '0.8rem', height: '36px' }
+                        }}
+                        InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
+                      />
+                    </Box>
+                  </Box>
+                </Paper>
+              </Box>
               {/* Section 6: Trạng thái - chỉ hiển thị khi edit */}
               {editing && (
                 <Box>
                   <Paper
                     elevation={0}
-                    sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
+                    sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <InfoIcon sx={{ mr: 1.5, color: 'secondary.main' }} />
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                      <InfoIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.1rem' }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                         Trạng thái
                       </Typography>
                     </Box>
@@ -530,26 +559,23 @@ const DesktopShipmentFormDialog = ({
                       sx={{
                         display: 'grid',
                         gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                        gap: 2,
+                        gap: 1.5,
                       }}
                     >
                       <Box>
                         <FormControl fullWidth size="small" required>
-                          <InputLabel>Trạng thái kế hoạch</InputLabel>
+                          <InputLabel sx={{ fontSize: '0.8rem' }}>Trạng thái kế hoạch</InputLabel>
                           <Select
                             name="trangThai"
                             value={currentFormData.trangThai}
                             onChange={onFormChange}
                             label="Trạng thái kế hoạch"
                             sx={{
-                              '& .MuiSelect-select': {
-                                height: '40px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                fontSize: '0.875rem',
-                              },
+                              fontSize: '0.8rem', 
+                              height: '36px', 
+                              py: 0,
                               '& .MuiOutlinedInput-root': {
-                                borderRadius: '6px',
+                                borderRadius: '4px',
                               },
                             }}
                           >
@@ -568,13 +594,15 @@ const DesktopShipmentFormDialog = ({
             {/* Closes Box container spacing={3} from line 146 */}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+        <DialogActions sx={{ p: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
           <Button
             onClick={onClose}
             variant="outlined"
             disabled={isLoading}
             sx={{
-              minWidth: '100px',
+              minWidth: '80px',
+              fontSize: '0.8rem',
+              py: 0.5,
               textTransform: 'none',
               '&:hover': {
                 backgroundColor: 'action.hover',
@@ -587,9 +615,11 @@ const DesktopShipmentFormDialog = ({
             type="submit"
             variant="contained"
             disabled={isLoading}
-            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+            startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : null}
             sx={{
               minWidth: '100px',
+              fontSize: '0.8rem',
+              py: 0.5,
               textTransform: 'none',
               '&.Mui-disabled': {
                 backgroundColor: 'action.disabledBackground',
