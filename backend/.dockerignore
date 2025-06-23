@@ -1,0 +1,48 @@
+# Git files
+.git
+.gitignore
+
+# Go build cache
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Dependency directories
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+*.cover
+*.coverage
+coverage.html
+
+# Temporary files
+tmp/
+temp/
+
+# Documentation
+docs/
+README.md
+
+# Build artifacts
+dist/
+build/

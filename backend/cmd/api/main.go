@@ -1,120 +1,163 @@
 package main
 
 import (
-	"database/sql"
-	"log"
+	"context"
 	"net/http"
 	"os"
-	"time"
-
-	"nepocorp/backend/internal/api/handlers"
-	"nepocorp/backend/internal/data"
-	"nepocorp/backend/internal/service"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
+	"github.com/nepocorp/backend/config"
+	"github.com/nepocorp/backend/handlers"
+	"github.com/nepocorp/backend/internal/migrations"
+	"github.com/nepocorp/backend/middleware"
+	"github.com/nepocorp/backend/models"
+	"github.com/nepocorp/backend/repositories"
+	"github.com/nepocorp/backend/routes"
+	activitylogger "github.com/nepocorp/backend/services/activity-logger"
+	"github.com/sirupsen/logrus"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 func main() {
-	// Initialize database connection
-	db, err := initDB()
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		logrus.Warn("No .env file found")
 	}
-	defer db.Close()
 
-	// Initialize repositories and services
-	reportRepo := data.NewReportRepository(db)
-	reportService := service.NewReportService(reportRepo)
+	// Initialize configuration
+	cfg := config.Load()
 
-	// Create handlers
-	healthHandler := handlers.NewHealthHandler(db)
-	reportHandler := handlers.NewReportHandler(reportService)
+	// Initialize logger
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetLevel(logrus.InfoLevel)
 
-	// Set Gin mode
-	if os.Getenv("GIN_MODE") == "release" {
-		gin.SetMode(gin.ReleaseMode)
-	} else {
+	// Check if running migration command
+	if len(os.Args) > 1 && os.Args[1] == "migrate" {
+		runMigrations(cfg, logger)
+		return
+	}
+
+	// Initialize database
+	db, err := initDB(cfg)
+	if err != nil {
+		logger.Fatal("Failed to connect to database: ", err)
+	}
+
+	// Run migrations if enabled
+	if cfg.RunMigrations {
+		if err := migrations.Run(cfg.DatabaseURL(), logger); err != nil {
+			logger.Fatal("Failed to run migrations: ", err)
+		}
+	}
+
+	// Initialize repositories
+	userRepo := repositories.NewUserRepository(db)
+	activityLogRepo := repositories.NewActivityLogRepository(db)
+
+	// Initialize services
+	activityLogger := activitylogger.NewService(activityLogRepo, logger, cfg.ActivityLogQueueSize)
+
+	// Initialize handlers
+	healthHandler := handlers.NewHealthHandler()
+
+	// Initialize Gin
+	gin.SetMode(gin.ReleaseMode)
+	if cfg.Debug {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	// Initialize router
-	r := gin.Default()
+	r := gin.New()
 
-	// Add CORS middleware
-	r.Use(corsMiddleware())
+	// Global middleware
+	r.Use(gin.Recovery())
+	r.Use(middleware.Logger(logger))
+	r.Use(middleware.Cors())
+	r.Use(middleware.ActivityLogger(activityLogger))
 
-	// Setup routes
-	setupRoutes(r, healthHandler, reportHandler)
+	// Initialize routes
+	routes.Setup(r, cfg, healthHandler, userRepo, logger)
+
+	// Create HTTP server
+	srv := &http.Server{
+		Addr:         ":" + cfg.Port,
+		Handler:      r,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+	}
 
 	// Start server
-	port := ":8080"
-	server := &http.Server{
-		Addr:         port,
-		Handler:      r,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  60 * time.Second,
+	go func() {
+		logger.Infof("Starting server on port %s", cfg.Port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal("Failed to start server: ", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logger.Info("Shutting down server...")
+
+	// Graceful shutdown with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.GracefulShutdownTimeout)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Fatal("Server forced to shutdown: ", err)
 	}
 
-	log.Printf("Server starting on port %s", port)
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Failed to start server: %v", err)
-	}
+	logger.Info("Server exiting")
 }
 
-func initDB() (*data.DB, error) {
-	dsn := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWORD") + "@tcp(" + 
-		os.Getenv("DB_HOST") + ":" + os.Getenv("DB_PORT") + ")/" + os.Getenv("DB_NAME") + 
-		"?parseTime=true&multiStatements=true"
-
-	sqlDB, err := sql.Open("mysql", dsn)
+func initDB(cfg *config.Config) (*gorm.DB, error) {
+	db, err := gorm.Open(mysql.Open(cfg.DatabaseDSN()), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	db := &data.DB{DB: sqlDB}
+	// Configure connection pool
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
 
-	// Set connection pool settings
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	sqlDB.SetMaxOpenConns(cfg.DBMaxOpenConns)
+	sqlDB.SetMaxIdleConns(cfg.DBMaxIdleConns)
+	sqlDB.SetConnMaxLifetime(cfg.DBConnMaxLifetime)
 
-	// Test the connection
-	if err := db.Ping(); err != nil {
-		db.Close()
+	// Auto-migrate models
+	if err := db.AutoMigrate(&models.User{}, &models.ActivityLog{}); err != nil {
 		return nil, err
 	}
 
 	return db, nil
 }
 
-func corsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
-
-		c.Next()
+func runMigrations(cfg *config.Config, logger *logrus.Logger) {
+	if len(os.Args) < 3 {
+		logger.Fatal("Usage: api migrate [up|down]")
 	}
-}
 
-func setupRoutes(r *gin.Engine, healthHandler *handlers.HealthHandler, reportHandler *handlers.ReportHandler) {
-	// Health check
-	r.GET("/health", healthHandler.HealthCheck)
-
-	// API v1
-	v1 := r.Group("/api/v1")
-	{
-		reports := v1.Group("/reports")
-		{
-			reports.POST("/generate", reportHandler.GenerateReport)
-			reports.POST("/export", reportHandler.ExportReport)
+	direction := os.Args[2]
+	switch direction {
+	case "up":
+		if err := migrations.Run(cfg.DatabaseURL(), logger); err != nil {
+			logger.Fatal("Failed to run migrations up: ", err)
 		}
+		logger.Info("Migrations completed successfully")
+	case "down":
+		if err := migrations.Down(cfg.DatabaseURL(), logger); err != nil {
+			logger.Fatal("Failed to run migrations down: ", err)
+		}
+		logger.Info("Migrations rolled back successfully")
+	default:
+		logger.Fatal("Unknown migration direction. Use 'up' or 'down'")
 	}
 }

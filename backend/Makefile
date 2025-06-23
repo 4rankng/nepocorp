@@ -1,45 +1,46 @@
-.PHONY: dev build test lint migrate-up migrate-down
+.PHONY: local db test migrate-up migrate-down docker-build docker-push
 
-# Build variables
-BINARY_NAME=api
-BIN_DIR=bin
+# Local development
+local:
+	go run cmd/api/main.go
 
-# Development
-dev:
-	@echo "Starting development server..."
-	@go run cmd/api/main.go
+# Start only database and adminer
+db:
+	docker compose up -d mysql adminer
 
-# Build
-build:
-	@echo "Building application..."
-	@go build -o $(BIN_DIR)/$(BINARY_NAME) cmd/api/main.go
-
-# Development
-dev:
-	@echo "Starting development environment..."
-	docker-compose up --build
-
-# Test
+# Run tests
 test:
-	@echo "Running tests..."
-	@go test -v ./...
+	go test ./...
 
-# Lint
-lint:
-	@echo "Running linter..."
-	@golangci-lint run
-
-# Database migrations
+# Run migrations up
 migrate-up:
-	@echo "Running database migrations..."
-	@migrate -path ./migrations -database "mysql://${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}" up
+	go run cmd/api/main.go migrate up
 
+# Run migrations down
 migrate-down:
-	@echo "Rolling back the last migration..."
-	@migrate -path ./migrations -database "mysql://${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}" down
+	go run cmd/api/main.go migrate down
 
-# Clean build artifacts
+# Build Docker image
+docker-build:
+	docker build -t nepo-backend .
+
+# Push Docker image to Docker Hub
+docker-push:
+	docker push $(DOCKER_USER)/nepo-backend:latest
+
+# Run with docker compose
+docker-up:
+	docker compose up -d
+
+# Stop docker compose
+docker-down:
+	docker compose down
+
+# View logs
+logs:
+	docker compose logs -f api
+
+# Clean up
 clean:
-	@echo "Cleaning up..."
-	@rm -rf $(BIN_DIR)
-	@go clean
+	docker compose down -v
+	rm -f main

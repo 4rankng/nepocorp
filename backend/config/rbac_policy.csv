@@ -1,0 +1,20 @@
+p, admin, *, *
+p, accountant, /api/v1/shipments, *
+p, accountant, /api/v1/expenses, *
+p, accountant, /api/v1/reports, *
+p, accountant, /api/v1/invoices, *
+p, accountant, /api/v1/fuel-quotas, *
+p, handler, /api/v1/shipments, GET
+p, handler, /api/v1/shipments, POST
+p, handler, /api/v1/shipments, PUT
+p, handler, /api/v1/customers, GET
+p, handler, /api/v1/partners, GET
+p, handler, /api/v1/vehicles, GET
+p, driver, /api/v1/shipments/assigned, GET
+p, driver, /api/v1/shipments/*/status, PUT
+p, driver, /api/v1/expenses/fuel, POST
+p, driver, /api/v1/expenses/receipts, POST
+
+g, admin, accountant
+g, admin, handler
+g, admin, driver

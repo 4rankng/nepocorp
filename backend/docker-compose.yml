@@ -1,53 +1,66 @@
 version: '3.8'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    volumes:
-      - .:/app/src
-    working_dir: /app
-    entrypoint: ["/app/nepocorp"]
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      - GIN_MODE=debug
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=nepocorp_db
-      - JWT_SECRET=your_jwt_secret_key_here
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  db:
+  mysql:
     image: mysql:8.0
+    container_name: nepo_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nepo
+      MYSQL_USER: nepo
+      MYSQL_PASSWORD: nepo_password
     ports:
       - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: nepocorp_db
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      MYSQL_ROOT_HOST: '%'
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - nepo_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uuser", "-ppassword"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
       retries: 10
+
+  api:
+    build: .
+    container_name: nepo_api
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DEBUG=false
+      - RUN_MIGRATIONS=true
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=nepo
+      - DB_PASSWORD=nepo_password
+      - DB_NAME=nepo
+      - JWT_SECRET=your-secret-key-change-in-production
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_RPS=10
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - nepo_network
+
+  adminer:
+    image: adminer:latest
+    container_name: nepo_adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=mysql
+    depends_on:
+      - mysql
+    networks:
+      - nepo_network
 
 volumes:
   mysql_data:
+
+networks:
+  nepo_network:
+    driver: bridge

@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-const BaoCaoTaiChinh = () => {
+const Dashboard = () => {
   // Color palette matching the design
   const colors = {
     teal: '#4DB6AC',
@@ -14,59 +14,54 @@ const BaoCaoTaiChinh = () => {
   };
 
   // Data for charts
-  const revenueByVehicleData = [
-    { name: 'Xe tải', small: 25, medium: 15, large: 8 },
-    { name: 'Container', small: 12, medium: 18, large: 22 },
+  const partnerCenterData = [
+    { name: 'No', small: 2, medium: 1, large: 3 },
+    { name: 'Yes', small: 1, medium: 2, large: 4 },
   ];
 
-  const costByTypeData = [
-    { name: 'Nhiên liệu', fuel: 45, maintenance: 0, salary: 0, insurance: 0, other: 0 },
-    { name: 'Bảo dưỡng', fuel: 0, maintenance: 25, salary: 0, insurance: 0, other: 0 },
-    { name: 'Lương', fuel: 0, maintenance: 0, salary: 35, insurance: 0, other: 0 },
-    { name: 'Bảo hiểm', fuel: 0, maintenance: 0, salary: 0, insurance: 15, other: 0 },
-    { name: 'Khác', fuel: 0, maintenance: 0, salary: 0, insurance: 0, other: 20 },
+  const salesStageData = [
+    { name: 'No', lead: 1, qualify: 0, solution: 0, proposal: 0, timeline: 0 },
+    { name: 'Yes', lead: 2, qualify: 1, solution: 1, proposal: 0, timeline: 0 },
   ];
 
   const regionData = [
-    { name: 'Miền Bắc', value: 42 },
-    { name: 'Miền Trung', value: 28 },
-    { name: 'Miền Nam', value: 30 },
+    { name: 'East', value: 43 },
+    { name: 'Central', value: 29 },
+    { name: 'West', value: 28 },
   ];
 
   const monthlyData = [
-    { month: 'T1', revenue: 85, cost: 65, profit: 20, maintenance: 12, fuel: 25 },
-    { month: 'T2', revenue: 92, cost: 70, profit: 22, maintenance: 15, fuel: 28 },
-    { month: 'T3', revenue: 88, cost: 68, profit: 20, maintenance: 18, fuel: 30 },
-    { month: 'T4', revenue: 95, cost: 72, profit: 23, maintenance: 14, fuel: 32 },
-    { month: 'T5', revenue: 90, cost: 69, profit: 21, maintenance: 16, fuel: 29 },
-    { month: 'T6', revenue: 98, cost: 75, profit: 23, maintenance: 20, fuel: 35 },
-    { month: 'T7', revenue: 102, cost: 78, profit: 24, maintenance: 22, fuel: 38 },
-    { month: 'T8', revenue: 105, cost: 80, profit: 25, maintenance: 25, fuel: 40 },
-    { month: 'T9', revenue: 100, cost: 76, profit: 24, maintenance: 18, fuel: 42 },
-    { month: 'T10', revenue: 108, cost: 82, profit: 26, maintenance: 20, fuel: 45 },
-    { month: 'T11', revenue: 112, cost: 85, profit: 27, maintenance: 22, fuel: 48 },
-    { month: 'T12', revenue: 115, cost: 88, profit: 27, maintenance: 25, fuel: 50 },
+    { month: 'Jan', lead: 20, qualify: 10, solution: 15, proposal: 20, timeline: 15 },
+    { month: 'Feb', lead: 8, qualify: 5, solution: 10, proposal: 25, timeline: 22 },
+    { month: 'Mar', lead: 5, qualify: 8, solution: 12, proposal: 30, timeline: 25 },
+    { month: 'Apr', lead: 10, qualify: 15, solution: 8, proposal: 20, timeline: 27 },
+    { month: 'May', lead: 5, qualify: 10, solution: 5, proposal: 15, timeline: 25 },
+    { month: 'Jun', lead: 3, qualify: 8, solution: 10, proposal: 12, timeline: 30 },
+    { month: 'Jul', lead: 2, qualify: 5, solution: 8, proposal: 10, timeline: 35 },
+    { month: 'Aug', lead: 5, qualify: 10, solution: 15, proposal: 20, timeline: 40 },
+    { month: 'Sep', lead: 0, qualify: 0, solution: 0, proposal: 0, timeline: 45 },
+    { month: 'Oct', lead: 0, qualify: 0, solution: 0, proposal: 0, timeline: 48 },
+    { month: 'Nov', lead: 0, qualify: 0, solution: 0, proposal: 0, timeline: 50 },
+    { month: 'Dec', lead: 0, qualify: 0, solution: 0, proposal: 0, timeline: 55 },
   ];
 
-  const routeProfitData = [
-    { route: 'HN-HCM', small: 120, medium: 85, large: 95 },
-    { route: 'HN-DN', small: 80, medium: 60, large: 70 },
-    { route: 'HCM-CN', small: 65, medium: 45, large: 55 },
+  const regionOpportunityData = [
+    { region: 'East', small: 70, medium: 10, large: 5 },
+    { region: 'Central', small: 50, medium: 15, large: 10 },
+    { region: 'West', small: 30, medium: 10, large: 5 },
   ];
 
-  const customerRevenueData = [
-    { stage: 'VIP', current: 180, new: 120 },
-    { stage: 'Thường xuyên', current: 140, new: 95 },
-    { stage: 'Mới', current: 85, new: 110 },
-    { stage: 'Tiềm năng', current: 60, new: 85 },
-    { stage: 'Khác', current: 45, new: 55 },
+  const revenueData = [
+    { stage: 'Lead', no: 4, yes: 1.2 },
+    { stage: 'Qualify', no: 0.8, yes: 1.5 },
+    { stage: 'Solution', no: 0.6, yes: 1.2 },
+    { stage: 'Proposal', no: 0.4, yes: 0.8 },
+    { stage: 'Timeline', no: 0.2, yes: 0.3 },
   ];
 
   const avgRevenueData = [
-    { name: 'Q1', small: 85, medium: 125, large: 185 },
-    { name: 'Q2', small: 92, medium: 135, large: 195 },
-    { name: 'Q3', small: 88, medium: 140, large: 200 },
-    { name: 'Q4', small: 95, medium: 150, large: 210 },
+    { name: 'Yes', small: 5, medium: 25, large: 85 },
+    { name: 'No', small: 8, medium: 25, large: 55 },
   ];
 
   const styles = {
@@ -149,15 +144,15 @@ const BaoCaoTaiChinh = () => {
       <div style={styles.grid}>
         {/* Large Number Display */}
         <div style={styles.bigNumberCard}>
-          <h1 style={styles.bigNumber}>32.5</h1>
+          <h1 style={styles.bigNumber}>487</h1>
         </div>
 
-        {/* Revenue by Vehicle Type */}
+        {/* Partner Center Bar Charts */}
         <div style={styles.card}>
-          <h3 style={styles.title}>Doanh thu theo Loại xe</h3>
-          <p style={styles.subtitle}>PHÂN LOẠI THEO TẢI TRỌNG</p>
+          <h3 style={styles.title}>Opportunity Count</h3>
+          <p style={styles.subtitle}>BY PARTNER CENTER, OPPORTUNITY SIZE</p>
           <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={revenueByVehicleData}>
+            <BarChart data={partnerCenterData}>
               <XAxis dataKey="name" />
               <YAxis />
               <Bar dataKey="small" fill={colors.teal} />
@@ -168,54 +163,52 @@ const BaoCaoTaiChinh = () => {
           <div style={styles.legend}>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
-              <span style={styles.legendText}>Nhỏ (< 5T)</span>
+              <span style={styles.legendText}>Small</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
-              <span style={styles.legendText}>Trung (5-15T)</span>
+              <span style={styles.legendText}>Medium</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
-              <span style={styles.legendText}>Lớn (> 15T)</span>
+              <span style={styles.legendText}>Large</span>
             </div>
           </div>
         </div>
 
-        {/* Cost by Type */}
+        {/* Sales Stage Bar Chart */}
         <div style={styles.card}>
-          <h3 style={styles.title}>Chi phí theo Loại</h3>
-          <p style={styles.subtitle}>PHÂN BỔ CHI PHÍ HOẠT ĐỘNG</p>
+          <h3 style={styles.title}>Opportunity Count</h3>
+          <p style={styles.subtitle}>BY PARTNER CENTER, SALES STAGE</p>
           <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={costByTypeData}>
+            <BarChart data={salesStageData}>
               <XAxis dataKey="name" />
               <YAxis />
-              <Bar dataKey="fuel" fill={colors.teal} />
-              <Bar dataKey="maintenance" fill={colors.darkGray} />
-              <Bar dataKey="salary" fill={colors.yellow} />
-              <Bar dataKey="insurance" fill={colors.coral} />
-              <Bar dataKey="other" fill={colors.mediumGray} />
+              <Bar dataKey="lead" fill={colors.teal} />
+              <Bar dataKey="qualify" fill={colors.darkGray} />
+              <Bar dataKey="solution" fill={colors.yellow} />
             </BarChart>
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
-              <span style={styles.legendText}>Nhiên liệu</span>
+              <span style={styles.legendText}>Lead</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
-              <span style={styles.legendText}>Bảo dưỡng</span>
+              <span style={styles.legendText}>Qualify</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.yellow}} />
-              <span style={styles.legendText}>Lương</span>
+              <span style={styles.legendText}>Solution</span>
             </div>
           </div>
         </div>
 
         {/* Pie Chart */}
         <div style={styles.card}>
-          <h3 style={styles.title}>Doanh thu theo Khu vực</h3>
-          <p style={styles.subtitle}>PHÂN BỔ THEO MIỀN</p>
+          <h3 style={styles.title}>Opportunity Count</h3>
+          <p style={styles.subtitle}>BY REGION</p>
           <ResponsiveContainer width="100%" height={150}>
             <PieChart>
               <Pie
@@ -237,66 +230,66 @@ const BaoCaoTaiChinh = () => {
           <div style={{...styles.legend, justifyContent: 'center'}}>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
-              <span style={styles.legendText}>Miền Bắc</span>
+              <span style={styles.legendText}>East</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
-              <span style={styles.legendText}>Miền Trung</span>
+              <span style={styles.legendText}>Central</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
-              <span style={styles.legendText}>Miền Nam</span>
+              <span style={styles.legendText}>West</span>
             </div>
           </div>
         </div>
 
         {/* Monthly Stacked Bar Chart */}
         <div style={{...styles.card, ...styles.fullWidth}}>
-          <h3 style={styles.title}>Báo cáo Tài chính theo Tháng</h3>
-          <p style={styles.subtitle}>DOANH THU, CHI PHÍ, LỢI NHUẬN (TỶ VND)</p>
+          <h3 style={styles.title}>Opportunity Count</h3>
+          <p style={styles.subtitle}>BY MONTH, SALES STAGE</p>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={monthlyData}>
               <XAxis dataKey="month" />
               <YAxis />
-              <Bar dataKey="revenue" stackId="a" fill={colors.teal} />
-              <Bar dataKey="cost" stackId="a" fill={colors.coral} />
-              <Bar dataKey="profit" stackId="a" fill={colors.yellow} />
-              <Bar dataKey="maintenance" stackId="b" fill={colors.darkGray} />
-              <Bar dataKey="fuel" stackId="b" fill={colors.mediumGray} />
+              <Bar dataKey="lead" stackId="a" fill={colors.coral} />
+              <Bar dataKey="qualify" stackId="a" fill={colors.yellow} />
+              <Bar dataKey="solution" stackId="a" fill={colors.darkGray} />
+              <Bar dataKey="proposal" stackId="a" fill={colors.mediumGray} />
+              <Bar dataKey="timeline" stackId="a" fill={colors.teal} />
             </BarChart>
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
-              <span style={styles.legendText}>Doanh thu</span>
-            </div>
-            <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
-              <span style={styles.legendText}>Chi phí</span>
+              <span style={styles.legendText}>Lead</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.yellow}} />
-              <span style={styles.legendText}>Lợi nhuận</span>
+              <span style={styles.legendText}>Qualify</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
-              <span style={styles.legendText}>Bảo dưỡng</span>
+              <span style={styles.legendText}>Solution</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.mediumGray}} />
-              <span style={styles.legendText}>Nhiên liệu</span>
+              <span style={styles.legendText}>Proposal</span>
+            </div>
+            <div style={styles.legendItem}>
+              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <span style={styles.legendText}>Timeline</span>
             </div>
           </div>
         </div>
 
-        {/* Route Profit */}
+        {/* Region Opportunity Size */}
         <div style={{...styles.card, ...styles.fullWidth}}>
-          <h3 style={styles.title}>Lợi nhuận theo Tuyến đường</h3>
-          <p style={styles.subtitle}>PHÂN LOẠI THEO TẢI TRỌNG XE</p>
+          <h3 style={styles.title}>Opportunity Count</h3>
+          <p style={styles.subtitle}>BY REGION, OPPORTUNITY SIZE</p>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={routeProfitData} layout="horizontal">
+            <BarChart data={regionOpportunityData} layout="horizontal">
               <XAxis type="number" />
-              <YAxis dataKey="route" type="category" />
+              <YAxis dataKey="region" type="category" />
               <Bar dataKey="large" stackId="a" fill={colors.coral} />
               <Bar dataKey="medium" stackId="a" fill={colors.darkGray} />
               <Bar dataKey="small" stackId="a" fill={colors.teal} />
@@ -305,47 +298,47 @@ const BaoCaoTaiChinh = () => {
           <div style={styles.legend}>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
-              <span style={styles.legendText}>Xe nhỏ</span>
+              <span style={styles.legendText}>Small</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
-              <span style={styles.legendText}>Xe trung</span>
+              <span style={styles.legendText}>Medium</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
-              <span style={styles.legendText}>Xe lớn</span>
+              <span style={styles.legendText}>Large</span>
             </div>
           </div>
         </div>
 
-        {/* Customer Revenue */}
+        {/* Revenue by Sales Stage */}
         <div style={{...styles.card, ...styles.fullWidth}}>
-          <h3 style={styles.title}>Doanh thu theo Khách hàng</h3>
-          <p style={styles.subtitle}>PHÂN LOẠI THEO NHÓM KHÁCH HÀNG</p>
+          <h3 style={styles.title}>Revenue</h3>
+          <p style={styles.subtitle}>BY SALES STAGE, PARTNER DRIVEN</p>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={customerRevenueData}>
+            <BarChart data={revenueData}>
               <XAxis dataKey="stage" />
               <YAxis />
-              <Bar dataKey="current" fill={colors.darkGray} />
-              <Bar dataKey="new" fill={colors.teal} />
+              <Bar dataKey="no" fill={colors.darkGray} />
+              <Bar dataKey="yes" fill={colors.teal} />
             </BarChart>
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
-              <span style={styles.legendText}>Hiện tại</span>
+              <span style={styles.legendText}>No</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
-              <span style={styles.legendText}>Mới</span>
+              <span style={styles.legendText}>Yes</span>
             </div>
           </div>
         </div>
 
         {/* Average Revenue */}
         <div style={{...styles.card, ...styles.fullWidth}}>
-          <h3 style={styles.title}>Doanh thu Trung bình</h3>
-          <p style={styles.subtitle}>THEO QUÝ, PHÂN LOẠI TẢI TRỌNG</p>
+          <h3 style={styles.title}>Average Revenue</h3>
+          <p style={styles.subtitle}>BY PARTNER CENTER, OPPORTUNITY SIZE</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={avgRevenueData} layout="horizontal">
               <XAxis type="number" />
@@ -358,15 +351,15 @@ const BaoCaoTaiChinh = () => {
           <div style={styles.legend}>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
-              <span style={styles.legendText}>Xe nhỏ</span>
+              <span style={styles.legendText}>Small</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
-              <span style={styles.legendText}>Xe trung</span>
+              <span style={styles.legendText}>Medium</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
-              <span style={styles.legendText}>Xe lớn</span>
+              <span style={styles.legendText}>Large</span>
             </div>
           </div>
         </div>
@@ -375,4 +368,4 @@ const BaoCaoTaiChinh = () => {
   );
 };
 
-export default BaoCaoTaiChinh;
+export default Dashboard;
