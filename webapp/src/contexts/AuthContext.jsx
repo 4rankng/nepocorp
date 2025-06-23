@@ -1,20 +1,16 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ROLES } from '@/config/roles';
-// Mock user data - in a real app, this would come from your authentication service
-const MOCK_USERS = {
-  [ROLES.QUAN_LY]: { id: 1, name: 'Nguyễn Văn Phú', role: ROLES.QUAN_LY },
-  [ROLES.KE_TOAN]: { id: 2, name: 'Tạ Thị Linh', role: ROLES.KE_TOAN },
-  [ROLES.GIAO_NHAN]: { id: 3, name: 'Lưu Đức Cường', role: ROLES.GIAO_NHAN },
-  [ROLES.LAI_XE]: { id: 4, name: 'Ngô Tử Đức', role: ROLES.LAI_XE },
-};
+import { authApi } from '@services/api/authApi';
+
 const AuthContext = createContext();
+
 // Helper function to get stored auth data
 const getStoredAuthData = () => {
   if (typeof window === 'undefined') return null;
   const storedData = localStorage.getItem('auth');
   return storedData ? JSON.parse(storedData) : null;
 };
+
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,84 +24,97 @@ export const AuthProvider = ({ children }) => {
     return storedData?.isAuthenticated || false;
   });
 
-  // Login function - in a real app, this would call your auth API
+  // Login function using real API
   const login = useCallback(
-    async role => {
+    async (username, password) => {
       setLoading(true);
       try {
-        const user = MOCK_USERS[role];
-        if (user) {
+        const response = await authApi.login(username, password);
+        
+        if (response.token) {
+          // For now, create a simple user object
+          // In real app, you'd decode the JWT or make another API call to get user info
+          const user = {
+            username,
+            token: response.token,
+          };
+          
           const authData = {
             currentUser: user,
             isAuthenticated: true,
             timestamp: new Date().toISOString(),
           };
+          
           setCurrentUser(user);
           setIsAuthenticated(true);
           localStorage.setItem('auth', JSON.stringify(authData));
-          if (user.role === ROLES.QUAN_LY) {
-            navigate('/lich-van-chuyen', { replace: true });
-          }
+          
+          // Navigate to default page after login
+          navigate('/lich-van-chuyen', { replace: true });
+          
           return true;
         }
         return false;
       } catch (error) {
         console.error('Login failed:', error);
-        return false;
+        throw error;
       } finally {
         setLoading(false);
       }
     },
     [navigate]
   );
+
+  // Check token validity on mount
   useEffect(() => {
-    const storedData = getStoredAuthData();
-    if (storedData) {
-      setCurrentUser(storedData.currentUser);
-      setIsAuthenticated(storedData.isAuthenticated);
-    }
-  }, []); // Run once on mount to load session
+    const checkAuth = async () => {
+      const storedData = getStoredAuthData();
+      if (storedData && localStorage.getItem('authToken')) {
+        try {
+          await authApi.verifyToken();
+          setCurrentUser(storedData.currentUser);
+          setIsAuthenticated(storedData.isAuthenticated);
+        } catch (error) {
+          // Token is invalid, clear auth
+          logout();
+        }
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
+  // Redirect authenticated users from root
   useEffect(() => {
-    if (
-      isAuthenticated &&
-      currentUser &&
-      currentUser.role === ROLES.QUAN_LY &&
-      (location.pathname === '/' || location.pathname === '/bao-cao')
-    ) {
+    if (isAuthenticated && currentUser && location.pathname === '/') {
       navigate('/lich-van-chuyen', { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, currentUser, navigate]); // Location removed from deps, navigate is stable
-  const logout = useCallback(() => {
+  }, [isAuthenticated, currentUser, location.pathname, navigate]);
+
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
     setCurrentUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('auth');
-  }, []);
-  // Check if current user has a specific role
-  const hasRole = useCallback(
-    role => {
-      return currentUser?.role === role;
-    },
-    [currentUser]
-  );
-  // Check if current user has any of the specified roles
-  const hasAnyRole = useCallback(
-    (roles = []) => {
-      return roles.includes(currentUser?.role);
-    },
-    [currentUser]
-  );
+    navigate('/', { replace: true });
+  }, [navigate]);
+
   const value = {
     currentUser,
     isAuthenticated,
     loading,
     login,
     logout,
-    hasRole,
-    hasAnyRole,
   };
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
 // Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -114,4 +123,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
 export default AuthContext;

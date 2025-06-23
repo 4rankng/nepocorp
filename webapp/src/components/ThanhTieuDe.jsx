@@ -65,13 +65,10 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
               >
                 <span className="sr-only">Open user menu</span>
                 <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
-                  {currentUser.name
-                    .split(' ')
-                    .map(n => n[0])
-                    .join('')}
+                  {(currentUser.username || currentUser.name || 'U')[0].toUpperCase()}
                 </div>
                 <span className="ml-2 font-medium text-gray-700 hidden sm:inline">
-                  {currentUser.name}
+                  {currentUser.username || currentUser.name}
                 </span>
               </button>
               {/* Dropdown menu */}
