@@ -44,19 +44,19 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
           <TextField
             label="Biển số xe"
-            value={data?.bien_so || ''}
-            onChange={e => handleFieldChange('bien_so', e.target.value)}
+            value={data?.license_plate || ''}
+            onChange={e => handleFieldChange('license_plate', e.target.value)}
             fullWidth
             autoFocus
             required
-            error={!data?.bien_so}
-            helperText={!data?.bien_so ? 'Vui lòng nhập biển số xe' : ''}
+            error={!data?.license_plate}
+            helperText={!data?.license_plate ? 'Vui lòng nhập biển số xe' : ''}
             placeholder="Ví dụ: 29A-12345"
           />
           <TextField
             label="Mô tả"
-            value={data?.mo_ta || ''}
-            onChange={e => handleFieldChange('mo_ta', e.target.value)}
+            value={data?.description || ''}
+            onChange={e => handleFieldChange('description', e.target.value)}
             fullWidth
             multiline
             rows={3}
@@ -71,7 +71,7 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={isLoading || !data?.bien_so}
+          disabled={isLoading || !data?.license_plate}
           startIcon={isLoading ? <CircularProgress size={16} /> : null}
         >
           {isLoading ? 'Đang lưu...' : edit ? 'Cập nhật' : 'Thêm mới'}

@@ -21,7 +21,7 @@ const ContainerCard = ({ data, onEdit, onDelete, isLoading }) => (
         <Box display="flex" alignItems="center" gap={1}>
           <InventoryIcon color="success" sx={{ fontSize: 20 }} />
           <Typography fontWeight={600} color="success.main">
-            {data.phan_loai || 'Chưa có phân loại'}
+            {data.category || 'Chưa có phân loại'}
           </Typography>
         </Box>
         <Box display="flex" gap={1}>

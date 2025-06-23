@@ -1,0 +1,53 @@
+package repositories
+
+import (
+	"github.com/nepocorp/backend/models"
+	"gorm.io/gorm"
+)
+
+type ExpenseCategoryRepository struct {
+	db *gorm.DB
+}
+
+func NewExpenseCategoryRepository(db *gorm.DB) *ExpenseCategoryRepository {
+	return &ExpenseCategoryRepository{db: db}
+}
+
+func (r *ExpenseCategoryRepository) Create(category *models.ExpenseCategory) error {
+	return r.db.Create(category).Error
+}
+
+func (r *ExpenseCategoryRepository) FindByID(id uint) (*models.ExpenseCategory, error) {
+	var category models.ExpenseCategory
+	err := r.db.First(&category, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &category, nil
+}
+
+func (r *ExpenseCategoryRepository) Update(category *models.ExpenseCategory) error {
+	return r.db.Save(category).Error
+}
+
+func (r *ExpenseCategoryRepository) Delete(id uint) error {
+	return r.db.Delete(&models.ExpenseCategory{}, id).Error
+}
+
+func (r *ExpenseCategoryRepository) List(offset, limit int) ([]*models.ExpenseCategory, error) {
+	var categories []*models.ExpenseCategory
+	query := r.db
+	
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+	
+	err := query.Find(&categories).Error
+	return categories, err
+}
+
+func (r *ExpenseCategoryRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&models.ExpenseCategory{}).Count(&count).Error
+	return count, err
+}

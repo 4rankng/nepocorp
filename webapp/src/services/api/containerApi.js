@@ -1,0 +1,35 @@
+import apiClient from './apiClient';
+
+export const containerApi = {
+  // Get all containers with pagination
+  getAll: async (page = 1, limit = 10) => {
+    const response = await apiClient.get('/container', {
+      params: { page, limit }
+    });
+    return response;
+  },
+
+  // Get container by ID
+  getById: async (id) => {
+    const response = await apiClient.get(`/container/${id}`);
+    return response;
+  },
+
+  // Create new container
+  create: async (data) => {
+    const response = await apiClient.post('/container', data);
+    return response;
+  },
+
+  // Update existing container
+  update: async (id, data) => {
+    const response = await apiClient.put(`/container/${id}`, data);
+    return response;
+  },
+
+  // Delete container
+  delete: async (id) => {
+    const response = await apiClient.delete(`/container/${id}`);
+    return response;
+  }
+};

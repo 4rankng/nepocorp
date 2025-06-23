@@ -21,7 +21,7 @@ const DauKeoCard = ({ data, onEdit, onDelete, isLoading }) => (
         <Box display="flex" alignItems="center" gap={1}>
           <LocalShippingIcon color="primary" sx={{ fontSize: 20 }} />
           <Typography fontWeight={600} color="primary.main">
-            {data.bien_so || 'Chưa có biển số'}
+            {data.license_plate || 'Chưa có biển số'}
           </Typography>
         </Box>
         <Box display="flex" gap={1}>
@@ -29,9 +29,9 @@ const DauKeoCard = ({ data, onEdit, onDelete, isLoading }) => (
           <DeleteButton size="small" onClick={() => onDelete(data)} disabled={isLoading} />
         </Box>
       </Box>
-      {data.mo_ta && (
+      {data.description && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          {data.mo_ta}
+          {data.description}
         </Typography>
       )}
       <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>

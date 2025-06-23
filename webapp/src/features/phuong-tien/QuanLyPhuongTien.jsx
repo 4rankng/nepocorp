@@ -85,6 +85,7 @@ const DauKeoContent = () => {
         open={dialog.open}
         edit={dialog.edit}
         data={dialog.data}
+        setData={(newData) => setDialog({ ...dialog, data: newData })}
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
@@ -130,11 +131,11 @@ const DauKeoContent = () => {
               <Typography variant="body2" fontWeight={500}>
                 Biển số:
               </Typography>
-              <Typography variant="body2">{data?.bien_so || '-'}</Typography>
+              <Typography variant="body2">{data?.license_plate || '-'}</Typography>
               <Typography variant="body2" fontWeight={500}>
                 Mô tả:
               </Typography>
-              <Typography variant="body2">{data?.mo_ta || '-'}</Typography>
+              <Typography variant="body2">{data?.description || '-'}</Typography>
             </Box>
           </>
         )}
@@ -202,6 +203,7 @@ const RoMoocContent = () => {
         open={dialog.open}
         edit={dialog.edit}
         data={dialog.data}
+        setData={(newData) => setDialog({ ...dialog, data: newData })}
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
@@ -225,11 +227,11 @@ const RoMoocContent = () => {
               <Typography variant="body2" fontWeight={500}>
                 Biển số:
               </Typography>
-              <Typography variant="body2">{data?.bien_so || '-'}</Typography>
+              <Typography variant="body2">{data?.license_plate || '-'}</Typography>
               <Typography variant="body2" fontWeight={500}>
                 Mô tả:
               </Typography>
-              <Typography variant="body2">{data?.mo_ta || '-'}</Typography>
+              <Typography variant="body2">{data?.description || '-'}</Typography>
             </Box>
           </>
         )}
@@ -327,6 +329,7 @@ const ContainerContent = () => {
         open={dialog.open}
         edit={dialog.edit}
         data={dialog.data}
+        setData={(newData) => setDialog({ ...dialog, data: newData })}
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
@@ -350,15 +353,7 @@ const ContainerContent = () => {
               <Typography variant="body2" fontWeight={500}>
                 Phân loại:
               </Typography>
-              <Typography variant="body2">{data?.phan_loai || '-'}</Typography>
-              <Typography variant="body2" fontWeight={500}>
-                Kích thước:
-              </Typography>
-              <Typography variant="body2">{data?.kich_thuoc || '-'}</Typography>
-              <Typography variant="body2" fontWeight={500}>
-                Trọng tải:
-              </Typography>
-              <Typography variant="body2">{data?.trong_tai || '-'}</Typography>
+              <Typography variant="body2">{data?.category || '-'}</Typography>
             </Box>
           </>
         )}

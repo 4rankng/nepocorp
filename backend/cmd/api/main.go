@@ -58,12 +58,22 @@ func main() {
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(db)
 	activityLogRepo := repositories.NewActivityLogRepository(db)
+	expenseCategoryRepo := repositories.NewExpenseCategoryRepository(db)
+	containerRepo := repositories.NewContainerRepository(db)
+	tractorRepo := repositories.NewTractorRepository(db)
+	trailerRepo := repositories.NewTrailerRepository(db)
+	tractorExpenseRepo := repositories.NewTractorExpenseRepository(db)
 
 	// Initialize services
 	activityLogger := activitylogger.NewService(activityLogRepo, logger, cfg.ActivityLogQueueSize)
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler()
+	expenseCategoryHandler := handlers.NewExpenseCategoryHandler(expenseCategoryRepo)
+	containerHandler := handlers.NewContainerHandler(containerRepo)
+	tractorHandler := handlers.NewTractorHandler(tractorRepo)
+	trailerHandler := handlers.NewTrailerHandler(trailerRepo)
+	tractorExpenseHandler := handlers.NewTractorExpenseHandler(tractorExpenseRepo)
 
 	// Initialize Gin
 	gin.SetMode(gin.ReleaseMode)
@@ -80,7 +90,8 @@ func main() {
 	r.Use(middleware.ActivityLogger(activityLogger))
 
 	// Initialize routes
-	routes.Setup(r, cfg, healthHandler, userRepo, logger)
+	routes.Setup(r, cfg, healthHandler, userRepo, expenseCategoryHandler, containerHandler, 
+		tractorHandler, trailerHandler, tractorExpenseHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -133,7 +144,16 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(cfg.DBConnMaxLifetime)
 
 	// Auto-migrate models
-	if err := db.AutoMigrate(&models.User{}, &models.ActivityLog{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.User{}, 
+		&models.ActivityLog{},
+		&models.ExpenseCategory{},
+		&models.Container{},
+		&models.Tractor{},
+		&models.Trailer{},
+		&models.TractorExpense{},
+		&models.TractorExpenseItem{},
+	); err != nil {
 		return nil, err
 	}
 

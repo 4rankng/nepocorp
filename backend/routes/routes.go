@@ -17,6 +17,11 @@ func Setup(
 	cfg *config.Config,
 	healthHandler *handlers.HealthHandler,
 	userRepo *repositories.UserRepository,
+	expenseCategoryHandler *handlers.ExpenseCategoryHandler,
+	containerHandler *handlers.ContainerHandler,
+	tractorHandler *handlers.TractorHandler,
+	trailerHandler *handlers.TrailerHandler,
+	tractorExpenseHandler *handlers.TractorExpenseHandler,
 	logger *logrus.Logger,
 ) {
 	// Rate limiter
@@ -49,11 +54,45 @@ func Setup(
 			_ = auth // Placeholder
 		}
 
-		// Protected routes (to be implemented)
+		// Protected routes
 		protected := v1.Group("/")
 		protected.Use(middleware.JWTAuth(cfg))
 		{
-			_ = protected // Placeholder
+			// Expense categories
+			protected.GET("/expense_category", expenseCategoryHandler.List)
+			protected.POST("/expense_category", expenseCategoryHandler.Create)
+			protected.PUT("/expense_category/:id", expenseCategoryHandler.Update)
+			protected.DELETE("/expense_category/:id", expenseCategoryHandler.Delete)
+
+			// Containers
+			protected.GET("/container", containerHandler.List)
+			protected.POST("/container", containerHandler.Create)
+			protected.PUT("/container/:id", containerHandler.Update)
+			protected.DELETE("/container/:id", containerHandler.Delete)
+
+			// Tractors
+			protected.GET("/tractor", tractorHandler.List)
+			protected.POST("/tractor", tractorHandler.Create)
+			protected.PUT("/tractor/:id", tractorHandler.Update)
+			protected.DELETE("/tractor/:id", tractorHandler.Delete)
+
+			// Trailers
+			protected.GET("/trailer", trailerHandler.List)
+			protected.POST("/trailer", trailerHandler.Create)
+			protected.PUT("/trailer/:id", trailerHandler.Update)
+			protected.DELETE("/trailer/:id", trailerHandler.Delete)
+
+			// Tractor expenses
+			protected.GET("/tractor_expense", tractorExpenseHandler.List)
+			protected.POST("/tractor_expense", tractorExpenseHandler.Create)
+			protected.GET("/tractor_expense/:id", tractorExpenseHandler.GetByID)
+			protected.PUT("/tractor_expense/:id", tractorExpenseHandler.Update)
+			protected.DELETE("/tractor_expense/:id", tractorExpenseHandler.Delete)
+
+			// Tractor expense items
+			protected.POST("/tractor_expense/:id/item", tractorExpenseHandler.CreateItem)
+			protected.PUT("/tractor_expense/:id/item/:item_id", tractorExpenseHandler.UpdateItem)
+			protected.DELETE("/tractor_expense/:id/item/:item_id", tractorExpenseHandler.DeleteItem)
 		}
 	}
 }

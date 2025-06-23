@@ -55,13 +55,13 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
           <TextField
             select
             label="Loại container"
-            value={data?.phan_loai || ''}
-            onChange={e => handleFieldChange('phan_loai', e.target.value)}
+            value={data?.category || ''}
+            onChange={e => handleFieldChange('category', e.target.value)}
             fullWidth
             autoFocus
             required
-            error={!data?.phan_loai}
-            helperText={!data?.phan_loai ? 'Vui lòng chọn loại container' : ''}
+            error={!data?.category}
+            helperText={!data?.category ? 'Vui lòng chọn loại container' : ''}
           >
             {CONTAINER_TYPES.map(type => (
               <MenuItem key={type} value={type}>
@@ -72,9 +72,9 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
           <TextField
             label="Hoặc nhập loại khác"
             value={
-              data?.phan_loai && !CONTAINER_TYPES.includes(data.phan_loai) ? data.phan_loai : ''
+              data?.category && !CONTAINER_TYPES.includes(data.category) ? data.category : ''
             }
-            onChange={e => handleFieldChange('phan_loai', e.target.value)}
+            onChange={e => handleFieldChange('category', e.target.value)}
             fullWidth
             placeholder="Nhập loại container tùy chỉnh..."
             helperText="Nếu loại container không có trong danh sách trên"
@@ -88,7 +88,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={isLoading || !data?.phan_loai}
+          disabled={isLoading || !data?.category}
           startIcon={isLoading ? <CircularProgress size={16} /> : null}
         >
           {isLoading ? 'Đang lưu...' : edit ? 'Cập nhật' : 'Thêm mới'}
