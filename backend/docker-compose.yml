@@ -6,10 +6,10 @@ services:
     container_name: nepo_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: nepo
-      MYSQL_USER: nepo
-      MYSQL_PASSWORD: nepo_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-nepo}
+      MYSQL_USER: ${DB_USER:-nepo}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-nepo_password}
     ports:
       - "3306:3306"
     volumes:
@@ -28,17 +28,17 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - PORT=8080
-      - DEBUG=false
-      - RUN_MIGRATIONS=true
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_USER=nepo
-      - DB_PASSWORD=nepo_password
-      - DB_NAME=nepo
-      - JWT_SECRET=your-secret-key-change-in-production
-      - RATE_LIMIT_ENABLED=true
-      - RATE_LIMIT_RPS=10
+      - PORT=${PORT:-8080}
+      - DEBUG=${DEBUG:-false}
+      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER:-nepo}
+      - DB_PASSWORD=${DB_PASSWORD:-nepo_password}
+      - DB_NAME=${DB_NAME:-nepo}
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_RPS=${RATE_LIMIT_RPS:-10}
     depends_on:
       mysql:
         condition: service_healthy
