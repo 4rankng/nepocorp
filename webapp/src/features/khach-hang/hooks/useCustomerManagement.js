@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import logger from '@services/logger';
-import {
-  fetchAllKhachHang,
-  fetchKhachHangById,
-  addKhachHang,
-  editKhachHang,
-  removeKhachHang,
-} from '@services/mockApi/khachHangApi';
+// TODO: Replace with actual API imports
 const initialFormState = {
   ma_dinh_danh: '',
   ten: '',
@@ -36,8 +30,8 @@ const useCustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetchAllKhachHang();
-      setCustomers(response.data || []);
+      // TODO: Replace with actual API call
+      throw new Error('fetchAllKhachHang API function not implemented');
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không thể tải danh sách khách hàng';
       setError(errorMessage);
@@ -57,10 +51,8 @@ const useCustomerManagement = () => {
           ...customerData,
           code: nextCode,
         };
-        const response = await addKhachHang(processedData);
-        // Refresh the customer list
-        await fetchCustomers();
-        return { success: true, data: response.data };
+        // TODO: Replace with actual API call
+        throw new Error('addKhachHang API function not implemented');
       } catch (err) {
         const errorMessage = err.response?.data?.error || 'Lỗi khi thêm khách hàng';
         setError(errorMessage);
@@ -85,10 +77,8 @@ const useCustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await editKhachHang(id, customerData);
-      // Refresh the customer list
-      await fetchCustomers();
-      return { success: true, data: response.data };
+      // TODO: Replace with actual API call
+      throw new Error('editKhachHang API function not implemented');
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Lỗi khi sửa khách hàng';
       setError(errorMessage);
@@ -103,16 +93,11 @@ const useCustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      await removeKhachHang(id);
-      // Remove from local state immediately for better UX
-      setCustomers(prev => prev.filter(c => c.id !== id));
-      return { success: true };
+      // TODO: Replace with actual API call
+      throw new Error('removeKhachHang API function not implemented');
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Lỗi khi xóa khách hàng';
       setError(errorMessage);
-
-      // Refresh the list in case of error to ensure consistency
-      await fetchCustomers();
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -121,8 +106,8 @@ const useCustomerManagement = () => {
   // Get customer by ID
   const getCustomerById = useCallback(async id => {
     try {
-      const response = await fetchKhachHangById(id);
-      return { success: true, data: response.data };
+      // TODO: Replace with actual API call
+      throw new Error('fetchKhachHangById API function not implemented');
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không tìm thấy khách hàng';
 
@@ -132,8 +117,8 @@ const useCustomerManagement = () => {
   // Get customer by code
   const getCustomerByCode = useCallback(async code => {
     try {
-      const response = await fetchKhachHangById(code);
-      return { success: true, data: response.data };
+      // TODO: Replace with actual API call
+      throw new Error('fetchKhachHangById API function not implemented');
     } catch (error) {
       // Not found is an expected case, don't log as error
       if (error.response?.status !== 404) {
@@ -153,12 +138,8 @@ const useCustomerManagement = () => {
   const isCustomerCodeAvailable = useCallback(async (code, excludeId = null) => {
     if (!code || code.trim() === '') return true;
     try {
-      const response = await fetchKhachHangById(code);
-      // If we're excluding an ID (for updates), it's okay if it's the same customer
-      if (excludeId && response.data && response.data.id === excludeId) {
-        return true;
-      }
-      return false;
+      // TODO: Replace with actual API call
+      throw new Error('fetchKhachHangById API function not implemented');
     } catch (err) {
       // 404 means code is available
       return err.response?.status === 404;

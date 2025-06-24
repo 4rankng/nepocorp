@@ -16,19 +16,7 @@ import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
 import DeleteDialog from '@/components/DeleteDialog';
 // NOTE: This is a legacy/demo component. Please use the new useCustomerManagement hook and CustomerManagement component for all real usage.
-import {
-  fetchAllKhachHang,
-  addKhachHang,
-  editKhachHang,
-  removeKhachHang,
-} from '@services/mockApi/khachHangApi';
-// Create an API object that matches the expected interface
-const customerApi = {
-  getAll: fetchAllKhachHang,
-  create: addKhachHang,
-  update: editKhachHang,
-  delete: removeKhachHang,
-};
+// TODO: Replace with actual API imports
 // Enhanced theme configuration based on DinhMucDau.jsx
 const theme = {
   spacing: 8,

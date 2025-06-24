@@ -120,12 +120,29 @@ The system supports the following roles:
 
 ## Security Features
 
-1. **Password Storage**: Passwords are hashed using bcrypt
+1. **Password Storage**: 
+   - Passwords are hashed using HMAC-SHA256 with configurable secret and salt
+   - Final hash is created using bcrypt for additional security
+   - Never store plain text passwords
 2. **Token Expiration**: 
    - Access tokens expire in 24 hours
    - Refresh tokens expire in 7 days
 3. **JWT Claims**: Tokens include user ID, username, email, and role
 4. **Rate Limiting**: Login endpoints are rate-limited to prevent brute force attacks
+
+## Initial Setup
+
+To create an admin account, use the init_db script:
+
+```bash
+# For local development (creates admin/admin)
+cd backend/scripts
+go run init_db.go local
+
+# For production (custom credentials)
+cd backend/scripts
+go run init_db.go -user=adminuser -pass=SecurePassword123!
+```
 
 ## Error Codes
 

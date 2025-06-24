@@ -40,7 +40,7 @@ const TrangChu = () => {
       onClick={() => setChangelogOpen(true)}
       className="fixed bottom-4 left-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm text-gray-500 border border-gray-200 shadow-sm z-50 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-300 transition-all"
     >
-      Bản Demo v{packageJson.version}
+      v{packageJson.version}
     </button>
   );
 
@@ -62,10 +62,12 @@ const TrangChu = () => {
         onClose={() => setLoginModalOpen(false)}
       />
 
-      {/* Banner/Header always visible */}
-      <div className="fixed top-0 left-0 right-0 z-50 w-full" style={{ minWidth: 0 }}>
-        <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
-      </div>
+      {/* Banner/Header only visible when authenticated */}
+      {currentUser && (
+        <div className="fixed top-0 left-0 right-0 z-50 w-full" style={{ minWidth: 0 }}>
+          <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
+        </div>
+      )}
 
       {/* If not authenticated, show landing page with login button */}
       {!currentUser && (
@@ -76,7 +78,6 @@ const TrangChu = () => {
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: '100vh',
-            pt: 12,
             px: 3,
             background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
           }}

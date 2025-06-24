@@ -72,7 +72,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Verify password
-	if err := utils.CheckPassword(req.Password, user.Password); err != nil {
+	if err := utils.CheckPassword(req.Password, user.Password, h.config.HashSecret, h.config.HashSalt); err != nil {
 		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrInvalidCredentials,
 			utils.ErrorDetail{Code: common.CodeInvalidCredentials, Message: "Invalid username or password"})
 		return

@@ -44,6 +44,10 @@ type Config struct {
 	// Casbin
 	CasbinModelPath  string
 	CasbinPolicyPath string
+
+	// Password Hashing
+	HashSecret string
+	HashSalt   string
 }
 
 func Load() *Config {
@@ -84,6 +88,10 @@ func Load() *Config {
 		// Casbin
 		CasbinModelPath:  getEnv("CASBIN_MODEL_PATH", "config/rbac_model.conf"),
 		CasbinPolicyPath: getEnv("CASBIN_POLICY_PATH", "config/rbac_policy.csv"),
+
+		// Password Hashing
+		HashSecret: getEnv("HASH_SECRET", "default-secret-change-in-production"),
+		HashSalt:   getEnv("HASH_SALT", "default-salt-change-in-production"),
 	}
 }
 
