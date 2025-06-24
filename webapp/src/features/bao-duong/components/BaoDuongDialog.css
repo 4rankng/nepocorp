@@ -1,4 +1,13 @@
 /* BaoDuong Modal specific optimizations */
+.bao-duong-modal {
+  /* CSS Variables for easy customization */
+  --input-font-size: 12px;
+  --input-height: 20px;
+  --input-padding-horizontal: 6px;
+  --input-padding-vertical: 2px;
+  --input-padding: var(--input-padding-vertical) var(--input-padding-horizontal);
+}
+
 .bao-duong-modal .modal-container {
   height: 92vh;
   max-height: 92vh;
@@ -42,12 +51,28 @@
 }
 
 .bao-duong-modal .form-control {
-  padding: 6px 8px;
-  font-size: 13px;
+  padding: var(--input-padding) !important;
+  font-size: var(--input-font-size) !important;
+  height: var(--input-height) !important;
+}
+
+.bao-duong-modal .form-control[type="date"] {
+  padding: var(--input-padding-vertical) 4px !important;
+  height: var(--input-height) !important;
+  font-size: var(--input-font-size) !important;
+}
+
+.bao-duong-modal .form-control[type="number"] {
+  padding: var(--input-padding) !important;
+  height: var(--input-height) !important;
+  font-size: var(--input-font-size) !important;
 }
 
 .bao-duong-modal textarea.form-control {
-  min-height: 50px;
+  min-height: 60px;
+  height: auto !important;
+  padding: var(--input-padding) !important;
+  font-size: var(--input-font-size) !important;
 }
 
 .bao-duong-modal .price-display {
@@ -81,12 +106,12 @@
     height: 95vh;
     max-height: 95vh;
   }
-  
+
   .bao-duong-modal .form-sections {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .bao-duong-modal .form-section {
     padding: 10px;
   }
@@ -97,16 +122,16 @@
     height: 98vh;
     max-height: 98vh;
   }
-  
+
   .bao-duong-modal .form-body {
     padding: 12px;
   }
-  
+
   .bao-duong-modal .form-actions {
     padding: 12px;
     flex-direction: column-reverse;
   }
-  
+
   .bao-duong-modal .btn {
     width: 100%;
   }

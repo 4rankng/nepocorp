@@ -41,6 +41,12 @@ const (
 	MsgExpenseItemUpdated = "Expense item updated successfully"
 	MsgExpenseItemDeleted = "Expense item deleted successfully"
 	
+	// Settings
+	MsgTaxRateRetrieved = "Tax rate retrieved successfully"
+	MsgTaxRateUpdated   = "Tax rate updated successfully"
+	MsgSettingRetrieved = "Setting retrieved successfully"
+	MsgSettingUpdated   = "Setting updated successfully"
+	
 	// Authentication
 	MsgLoginSuccess       = "Login successful"
 	MsgUserCreated        = "User created successfully"

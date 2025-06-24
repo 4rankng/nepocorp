@@ -75,6 +75,8 @@ func (h *TractorExpenseHandler) Create(c *gin.Context) {
 		return
 	}
 	expense.CreatedBy = userID.(uint)
+	userIDUint := userID.(uint)
+	expense.LastUpdatedBy = &userIDUint
 
 	// Validate required fields
 	if expense.TractorID == 0 || expense.VendorName == "" || expense.ExpenseCategoryID == 0 {
@@ -113,6 +115,16 @@ func (h *TractorExpenseHandler) Update(c *gin.Context) {
 			utils.ErrorDetail{Code: common.CodeBadRequest, Message: err.Error()})
 		return
 	}
+
+	// Get user ID from context for LastUpdatedBy
+	userID, exists := c.Get("userID")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized, 
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: common.ErrUserIDNotFound})
+		return
+	}
+	userIDUint := userID.(uint)
+	existingExpense.LastUpdatedBy = &userIDUint
 
 	// Update only provided fields
 	if vendorName, ok := updateData["vendor_name"].(string); ok && vendorName != "" {

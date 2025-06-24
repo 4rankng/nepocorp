@@ -23,6 +23,7 @@ func Setup(
 	tractorHandler *handlers.TractorHandler,
 	trailerHandler *handlers.TrailerHandler,
 	tractorExpenseHandler *handlers.TractorExpenseHandler,
+	settingHandler *handlers.SettingHandler,
 	logger *logrus.Logger,
 ) {
 	// Rate limiter
@@ -99,6 +100,10 @@ func Setup(
 			protected.POST("/tractor_expense/:id/item", tractorExpenseHandler.CreateItem)
 			protected.PUT("/tractor_expense/:id/item/:item_id", tractorExpenseHandler.UpdateItem)
 			protected.DELETE("/tractor_expense/:id/item/:item_id", tractorExpenseHandler.DeleteItem)
+
+			// Settings
+			protected.GET("/settings/:key", settingHandler.GetByKey)
+			protected.PUT("/settings/:key", settingHandler.UpdateByKey)
 		}
 	}
 }

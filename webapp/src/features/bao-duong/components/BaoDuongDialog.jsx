@@ -21,6 +21,8 @@ import {
   PriceDisplay,
   Button
 } from '@components/ui';
+import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
+import { settingsApi } from '@services/api/settingsApi';
 import './BaoDuongDialog.css';
 
 const formatCurrency = value => {
@@ -43,11 +45,77 @@ const BaoDuongDialog = ({
   licensePlates = [],
   isLoadingPlates = false,
 }) => {
-  const [localData, setLocalData] = useState({});
+  const [localData, setLocalData] = useState({
+    bien_so: '',
+    payment_status: PAYMENT_STATUS.DRAFT,
+    payment_proof: '',
+    items: [{
+      item_name: '',
+      price: '',
+      quantity: 1,
+      install_date: '',
+      expiry_date: ''
+    }],
+    remark: ''
+  });
+  const [taxRate, setTaxRate] = useState(0);
 
   useEffect(() => {
-    setLocalData(formData || {});
+    setLocalData(formData || {
+      bien_so: '',
+      payment_status: PAYMENT_STATUS.DRAFT,
+      payment_proof: '',
+      items: [{
+        item_name: '',
+        price: '',
+        quantity: 1,
+        install_date: '',
+        expiry_date: ''
+      }],
+      remark: ''
+    });
   }, [formData]);
+
+  // Load tax rate on component mount
+  useEffect(() => {
+    const loadTaxRate = async () => {
+      try {
+        const cachedTaxRate = localStorage.getItem('taxRate');
+        if (cachedTaxRate) {
+          setTaxRate(parseFloat(cachedTaxRate));
+        } else {
+          const response = await settingsApi.getTaxRate();
+          const rate = parseFloat(response.value);
+          setTaxRate(rate);
+          localStorage.setItem('taxRate', rate.toString());
+        }
+      } catch (error) {
+        console.error('Failed to load tax rate:', error);
+        setTaxRate(10); // Default to 10% if API fails
+      }
+    };
+
+    if (open) {
+      loadTaxRate();
+    }
+  }, [open]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape' && open) {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [open, onClose]);
 
   const handleBienSoChange = event => {
     const value = event.target.value;
@@ -66,50 +134,73 @@ const BaoDuongDialog = ({
     onChange(event);
   };
 
-  const calculateExpirationDate = () => {
-    const replacementDate = localData.ngay_thay;
-    const warrantyMonths = parseInt(localData.so_thang_bao_hanh) || 0;
+  const handleItemChange = (index, field, value) => {
+    const currentItems = localData.items || [];
+    const newItems = [...currentItems];
+    newItems[index] = { ...newItems[index], [field]: value };
 
-    if (replacementDate && warrantyMonths > 0) {
-      const date = new Date(replacementDate);
-      date.setMonth(date.getMonth() + warrantyMonths);
-      const expirationDate = date.toISOString().split('T')[0];
+    // Auto-calculate expiry date when install_date changes
+    if (field === 'install_date' && value) {
+      const installDate = new Date(value);
+      installDate.setFullYear(installDate.getFullYear() + 1); // Default 1 year warranty
+      newItems[index].expiry_date = installDate.toISOString().split('T')[0];
+    }
 
-      setLocalData(prev => ({ ...prev, ngay_het_han: expirationDate }));
+    setLocalData(prev => ({ ...prev, items: newItems }));
+    onChange({
+      target: {
+        name: 'items',
+        value: newItems,
+      },
+    });
+  };
+
+  const handleAddItem = () => {
+    const currentItems = localData.items || [];
+    const newItems = [...currentItems, {
+      item_name: '',
+      price: '',
+      quantity: 1,
+      install_date: '',
+      expiry_date: ''
+    }];
+    setLocalData(prev => ({ ...prev, items: newItems }));
+    onChange({
+      target: {
+        name: 'items',
+        value: newItems,
+      },
+    });
+  };
+
+  const handleRemoveItem = (index) => {
+    const currentItems = localData.items || [];
+    if (currentItems.length > 1) {
+      const newItems = currentItems.filter((_, i) => i !== index);
+      setLocalData(prev => ({ ...prev, items: newItems }));
       onChange({
         target: {
-          name: 'ngay_het_han',
-          value: expirationDate,
+          name: 'items',
+          value: newItems,
         },
       });
     }
   };
 
-  const calculateTotal = () => {
-    const quantity = parseInt(localData.so_luong) || 0;
-    const unitPrice = parseInt(localData.don_gia) || 0;
-    const taxRate = parseFloat(localData.thue) || 0;
-    
-    const subtotal = quantity * unitPrice;
+  // Calculate financial totals
+  const calculateTotals = () => {
+    const items = localData.items || [];
+    const subtotal = items.reduce((sum, item) => {
+      const price = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      return sum + (price * quantity);
+    }, 0);
+
     const taxAmount = subtotal * (taxRate / 100);
     const total = subtotal + taxAmount;
 
-    setLocalData(prev => ({ ...prev, tong_tien: total }));
-    onChange({
-      target: {
-        name: 'tong_tien',
-        value: total,
-      },
-    });
+    return { subtotal, taxAmount, total };
   };
-
-  useEffect(() => {
-    calculateExpirationDate();
-  }, [localData.ngay_thay, localData.so_thang_bao_hanh]);
-
-  useEffect(() => {
-    calculateTotal();
-  }, [localData.so_luong, localData.don_gia, localData.thue]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -119,6 +210,8 @@ const BaoDuongDialog = ({
   const handleCancel = () => {
     onClose();
   };
+
+  const { subtotal, taxAmount, total } = calculateTotals();
 
   return (
     <Modal
@@ -135,174 +228,218 @@ const BaoDuongDialog = ({
 
         <FormBody onSubmit={handleSubmit}>
           <FormSections columns={2}>
-            {/* Basic Information Section */}
-            <FormSection title="Thông tin cơ bản">
-              <FormGroup>
-                <FormLabel required>Biển số xe</FormLabel>
-                <FormControl
-                  type="select"
-                  value={localData.bien_so || ''}
-                  onChange={handleBienSoChange}
-                  disabled={isLoadingPlates}
-                  error={!!errors.bien_so}
-                  required
-                >
-                  <option value="">
-                    {isLoadingPlates ? 'Đang tải danh sách biển số...' : 'Chọn biển số xe'}
-                  </option>
-                  {licensePlates.map(plate => (
-                    <option key={plate.value} value={plate.value}>
-                      {plate.value} ({plate.type})
-                    </option>
-                  ))}
-                </FormControl>
-                {errors.bien_so && <ErrorText>{errors.bien_so}</ErrorText>}
-              </FormGroup>
-
-              <FormGroup>
-                <FormLabel required>Hạng mục</FormLabel>
-                <FormControl
-                  name="item_name"
-                  placeholder="Nhập hạng mục bảo dưỡng"
-                  value={localData.item_name || ''}
-                  onChange={handleInputChange}
-                  error={!!errors.item_name}
-                  required
-                />
-                {errors.item_name && <ErrorText>{errors.item_name}</ErrorText>}
-              </FormGroup>
-
-              <FormGroup>
-                <FormLabel required>Ngày thay thế</FormLabel>
-                <DateInputWrapper>
-                  <DateIcon />
-                  <FormControl
-                    type="date"
-                    name="ngay_thay"
-                    value={localData.ngay_thay || ''}
-                    onChange={handleInputChange}
-                    error={!!errors.ngay_thay}
-                    className="date-input"
-                    required
-                  />
-                </DateInputWrapper>
-                {errors.ngay_thay && <ErrorText>{errors.ngay_thay}</ErrorText>}
-              </FormGroup>
-
-              <FormGroup>
-                <FormLabel required>Thời hạn bảo hành (tháng)</FormLabel>
-                <InputGroup>
-                  <FormControl
-                    type="number"
-                    name="so_thang_bao_hanh"
-                    placeholder="0"
-                    min="0"
-                    value={localData.so_thang_bao_hanh || ''}
-                    onChange={handleInputChange}
-                    error={!!errors.so_thang_bao_hanh}
-                    required
-                  />
-                  <InputAddon>tháng</InputAddon>
-                </InputGroup>
-                {errors.so_thang_bao_hanh && <ErrorText>{errors.so_thang_bao_hanh}</ErrorText>}
-              </FormGroup>
-
-              <FormGroup>
-                <FormLabel>Ngày hết hạn (tự động tính)</FormLabel>
-                <DateInputWrapper>
-                  <DateIcon />
-                  <FormControl
-                    type="date"
-                    value={localData.ngay_het_han || ''}
-                    className="date-input"
-                    disabled
-                    style={{background: '#f9fafb'}}
-                  />
-                </DateInputWrapper>
-              </FormGroup>
-            </FormSection>
-
-            {/* Cost & Notes Section */}
-            <FormSection title="Chi phí & Ghi chú">
-              {/* Row 1: Số lượng & Đơn giá */}
+            {/* LEFT COLUMN */}
+            <FormSection title="Thông tin thanh toán">
+              {/* Bien so xe and Payment status in one row */}
               <FormRow>
                 <FormCol>
-                  <FormLabel required>Số lượng</FormLabel>
+                  <FormLabel required>Biển số xe</FormLabel>
                   <FormControl
-                    type="number"
-                    name="so_luong"
-                    value={localData.so_luong || '1'}
-                    min="1"
-                    onChange={handleInputChange}
-                    error={!!errors.so_luong}
+                    type="select"
+                    value={localData.bien_so || ''}
+                    onChange={handleBienSoChange}
+                    disabled={isLoadingPlates}
+                    error={!!errors.bien_so}
                     required
-                  />
-                  {errors.so_luong && <ErrorText>{errors.so_luong}</ErrorText>}
+                  >
+                    <option value="">
+                      {isLoadingPlates ? 'Đang tải danh sách biển số...' : 'Chọn biển số xe'}
+                    </option>
+                    {licensePlates.map(plate => (
+                      <option key={plate.value} value={plate.value}>
+                        {plate.value} ({plate.type})
+                      </option>
+                    ))}
+                  </FormControl>
+                  {errors.bien_so && <ErrorText>{errors.bien_so}</ErrorText>}
                 </FormCol>
 
                 <FormCol>
-                  <FormLabel required>Đơn giá</FormLabel>
-                  <InputGroup>
-                    <FormControl
-                      type="number"
-                      name="don_gia"
-                      placeholder="0"
-                      min="0"
-                      value={localData.don_gia || ''}
-                      onChange={handleInputChange}
-                      error={!!errors.don_gia}
-                      className="currency-input"
-                      required
-                    />
-                    <InputAddon>VND</InputAddon>
-                  </InputGroup>
-                  {errors.don_gia && <ErrorText>{errors.don_gia}</ErrorText>}
+                  <FormLabel required>Trạng thái thanh toán</FormLabel>
+                  <FormControl
+                    type="select"
+                    name="payment_status"
+                    value={localData.payment_status || PAYMENT_STATUS.DRAFT}
+                    onChange={handleInputChange}
+                    error={!!errors.payment_status}
+                    required
+                  >
+                    {Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => (
+                      <option key={status} value={status}>
+                        {label}
+                      </option>
+                    ))}
+                  </FormControl>
+                  {errors.payment_status && <ErrorText>{errors.payment_status}</ErrorText>}
                 </FormCol>
               </FormRow>
 
-              {/* Row 2: Thuế (%) & Tổng tiền */}
+              {/* Subtotal, Tax rate, Total in one row */}
               <FormRow>
                 <FormCol>
-                  <FormLabel>Thuế (%)</FormLabel>
+                  <FormLabel>Subtotal</FormLabel>
+                  <PriceDisplay
+                    value={formatCurrency(subtotal)}
+                  />
+                  <HelperText>Tự động tính dựa trên danh sách hạng mục</HelperText>
+                </FormCol>
+
+                <FormCol>
+                  <FormLabel>Thuế suất (%)</FormLabel>
                   <InputGroup>
                     <FormControl
                       type="number"
-                      name="thue"
-                      placeholder="0"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={localData.thue || ''}
-                      onChange={handleInputChange}
-                      error={!!errors.thue}
+                      value={taxRate}
+                      disabled
+                      style={{background: '#f9fafb'}}
                     />
                     <InputAddon>%</InputAddon>
                   </InputGroup>
-                  {errors.thue && <ErrorText>{errors.thue}</ErrorText>}
-                </FormCol>
 
-                <FormCol>
-                  <FormLabel>Tổng tiền</FormLabel>
-                  <PriceDisplay
-                    value={localData.tong_tien ? formatCurrency(localData.tong_tien) : '0 VND'}
-                  />
-                  <HelperText>Tự động tính = (Số lượng × Đơn giá) + Thuế</HelperText>
                 </FormCol>
               </FormRow>
 
+              <FormGroup>
+                <FormLabel>Tổng tiền</FormLabel>
+                <PriceDisplay
+                  value={formatCurrency(total)}
+                  style={{fontSize: '1.25rem', fontWeight: 'bold'}}
+                />
+                <HelperText>Subtotal + Thuế ({formatCurrency(taxAmount)})</HelperText>
+              </FormGroup>
+
+              {/* Payment proof */}
+              <FormGroup>
+                <FormLabel>Chứng từ thanh toán</FormLabel>
+                <FormControl
+                  name="payment_proof"
+                  placeholder="URL ảnh chứng từ thanh toán (ví dụ: Google Drive link)"
+                  value={localData.payment_proof || ''}
+                  onChange={handleInputChange}
+                  error={!!errors.payment_proof}
+                />
+                {errors.payment_proof && <ErrorText>{errors.payment_proof}</ErrorText>}
+              </FormGroup>
+
+              {/* Remarks TextArea */}
               <FormGroup>
                 <FormLabel>Ghi chú</FormLabel>
                 <FormControl
                   type="textarea"
-                  name="ghi_chu"
+                  name="remark"
                   placeholder="Nhập ghi chú nếu có"
-                  value={localData.ghi_chu || ''}
+                  value={localData.remark || ''}
                   onChange={handleInputChange}
-                  error={!!errors.ghi_chu}
-                  rows={3}
+                  error={!!errors.remark}
+                  rows={4}
                 />
-                {errors.ghi_chu && <ErrorText>{errors.ghi_chu}</ErrorText>}
+                {errors.remark && <ErrorText>{errors.remark}</ErrorText>}
               </FormGroup>
+            </FormSection>
+
+            {/* RIGHT COLUMN */}
+            <FormSection title="Danh sách hạng mục">
+              {/* Dynamic item rows with scrolling */}
+              <div style={{maxHeight: '400px', overflowY: 'auto', paddingRight: '8px'}}>
+                {(localData.items || []).map((item, index) => (
+                  <div key={index} style={{marginBottom: '1rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem'}}>
+                    <FormGroup>
+                      <FormLabel required>Tên hạng mục</FormLabel>
+                      <div style={{display: 'flex', gap: '8px', alignItems: 'flex-start'}}>
+                        <FormControl
+                          placeholder="Nhập tên hạng mục"
+                          value={item.item_name || ''}
+                          onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                          error={!!errors[`items.${index}.item_name`]}
+                          required
+                          style={{flex: 1}}
+                        />
+                        {(localData.items || []).length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="small"
+                            onClick={() => handleRemoveItem(index)}
+                            style={{
+                              backgroundColor: '#fef2f2',
+                              borderColor: '#fecaca',
+                              color: '#dc2626',
+                              fontSize: '12px',
+                              padding: '8px 12px',
+                              flexShrink: 0
+                            }}
+                          >
+                            Xóa
+                          </Button>
+                        )}
+                      </div>
+                      {errors[`items.${index}.item_name`] && <ErrorText>{errors[`items.${index}.item_name`]}</ErrorText>}
+                    </FormGroup>
+
+                  <FormRow>
+                    <FormCol>
+                      <FormLabel required>Đơn giá (VND)</FormLabel>
+                      <FormControl
+                        type="number"
+                        placeholder="0"
+                        min="0"
+                        value={item.price || ''}
+                        onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                        error={!!errors[`items.${index}.price`]}
+                        required
+                      />
+                      {errors[`items.${index}.price`] && <ErrorText>{errors[`items.${index}.price`]}</ErrorText>}
+                    </FormCol>
+
+                    <FormCol>
+                      <FormLabel required>Số lượng</FormLabel>
+                      <FormControl
+                        type="number"
+                        min="1"
+                        value={item.quantity || 1}
+                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                        error={!!errors[`items.${index}.quantity`]}
+                        required
+                      />
+                      {errors[`items.${index}.quantity`] && <ErrorText>{errors[`items.${index}.quantity`]}</ErrorText>}
+                    </FormCol>
+                  </FormRow>
+
+                  <FormRow>
+                    <FormCol>
+                      <FormLabel>Ngày lắp đặt</FormLabel>
+                      <FormControl
+                        type="date"
+                        value={item.install_date || ''}
+                        onChange={(e) => handleItemChange(index, 'install_date', e.target.value)}
+                        error={!!errors[`items.${index}.install_date`]}
+                      />
+                      {errors[`items.${index}.install_date`] && <ErrorText>{errors[`items.${index}.install_date`]}</ErrorText>}
+                    </FormCol>
+
+                    <FormCol>
+                      <FormLabel>Ngày hết hạn</FormLabel>
+                      <FormControl
+                        type="date"
+                        value={item.expiry_date || ''}
+                        onChange={(e) => handleItemChange(index, 'expiry_date', e.target.value)}
+                      />
+
+                    </FormCol>
+                  </FormRow>
+                </div>
+              ))}
+              </div>
+
+              {/* Add new row button */}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleAddItem}
+                style={{marginBottom: '1rem'}}
+              >
+                + Thêm hạng mục
+              </Button>
             </FormSection>
           </FormSections>
 

@@ -61,6 +61,10 @@ const (
 	ErrDeleteExpenseItem = "Failed to delete expense item"
 	ErrExpenseItemNotFound = "Expense item not found"
 	
+	// Settings errors
+	ErrSettingNotFound = "Setting not found"
+	ErrUpdateSetting = "Failed to update setting"
+	
 	// Authentication errors
 	ErrInvalidCredentials = "Invalid username or password"
 	ErrUserNotActive = "User account is not active"

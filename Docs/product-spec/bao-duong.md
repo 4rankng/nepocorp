@@ -4,10 +4,9 @@ Nhap thong tin bao duong
 
 The modal has two column
 LEFT COLUMN
-- Bien so xe
-- Subtotal (auto calculate base on list of items)
-- Tax rate (GET /api/v1/settings/tax_rate, frontend load one and store in cache)
-- Total (auto calculate)
+- Bien so xe and Payment status (DRAFT, PENDING, PAID, CANCELLED) in one row
+- Subtotal (auto calculate base on list of items), Tax rate (prefilled from cache), Total (auto calculate) in one row
+- Payment proof (url to payment proof image eg in google drive)
 
 RIGHT COLUMN
 - Default has one empty row with
@@ -19,7 +18,15 @@ RIGHT COLUMN
 - There is button to add new row
 - TextArea to write remark
 
-
+GET /api/v1/settings/tax_rate, frontend load one and store in cache
+Table
+setttings
+id auto increment
+key string
+value string
+last_updated_by int (foreign key to user table)
+created_at datetime
+updated_at datetime
 
 
 
@@ -36,7 +43,7 @@ tax_rate int (later total = subtotal * tax / 100)
 total int (in VND)
 payment_status string (DRAFT, PENDING, PAID, CANCELLED)
 payment_proof string (url to payment proof image eg in google drive)
-created_by (foreign key to user table)
+last_updated_by int (foreign key to user table)
 created_at datetime
 updated_at datetime
 
@@ -118,3 +125,67 @@ POST /api/v1/tractor_expense/:id/item
 PUT /api/v1/tractor_expense/:id/item/:item_id
 DELETE /api/v1/tractor_expense/:id/item/:item_id
 
+
+
+
+GET /api/v1/settings/:key (for getting tax rate, key=tax_rate)
+
+  Request:
+  Authorization: Bearer <jwt_token>
+
+  Response (Success - 200):
+  {
+    "success": true,
+    "message": "Tax rate retrieved successfully",
+    "data": {
+      "key": "tax_rate",
+      "value": "10",
+      "last_updated_by": "admin", // username
+      "created_at": "2024-06-24T10:00:00Z",
+      "updated_at": "2024-06-24T10:00:00Z",
+    }
+  }
+
+  Response (Error - 404):
+  {
+    "success": false,
+    "message": "Tax rate setting not found",
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "Tax rate setting not found"
+    }
+  }
+
+
+
+  Request:
+  PUT /api/v1/settings/:key (for updating tax rate, key=tax_rate)
+  Authorization: Bearer <jwt_token>
+  Content-Type: application/json
+
+  {
+    "value": "8"
+  }
+
+  Response (Success - 200):
+  {
+    "success": true,
+    "message": "Tax rate updated successfully",
+    "data": {
+      "key": "tax_rate",
+      "value": "8",
+      "last_updated_by": "manager", // username
+      "created_at": "2024-06-24T10:00:00Z",
+      "updated_at": "2024-06-24T11:30:00Z",
+    }
+  }
+
+  Response (Error - 400):
+  {
+    "success": false,
+    "message": "Invalid input",
+    "error": {
+      "code": "BAD_REQUEST",
+      "message": "Value is required and must be a valid number"
+    }
+  }
