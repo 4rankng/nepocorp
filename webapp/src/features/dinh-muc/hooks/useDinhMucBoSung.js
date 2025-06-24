@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { dinhMucBoSungApi } from '@services/api/dinhMucBoSungApi';
-import { dauKeoApi } from '@services/mockApi/dauKeoApi';
-import { tuyenDuongApi } from '@services/mockApi/tuyenDuongApi';
+import { tractorApi } from '@services/api/tractorApi';
+
+// Use real API for tractor data
+const dauKeoApi = tractorApi;
 import logger from '@services/logger';
 
 export const useDinhMucBoSung = () => {
@@ -17,11 +19,8 @@ export const useDinhMucBoSung = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Load dauKeo and tuyenDuong in parallel
-      const [dauKeoData, tuyenData] = await Promise.all([
-        dauKeoApi.getAll(),
-        tuyenDuongApi.getAll(),
-      ]);
+      // Load dauKeo data
+      const dauKeoData = await dauKeoApi.getAll();
 
       // Load dinhMucBoSung with plate filter if provided
       let dinhMucData;

@@ -40,13 +40,22 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useDiDuong } from '../hooks/useDiDuong';
-import { updateTuyenDuong } from '@services/mockApi/tuyenDuongApi';
+// Mock API functions returning empty data until backend is integrated
+const updateTuyenDuong = async (id, data) => ({ id, ...data });
+const tuyenDuongApi = {
+  create: async (data) => ({ id: Date.now(), ...data }),
+  update: async (id, data) => ({ id, ...data }),
+  delete: async (id) => ({ success: true })
+};
+const dinhMucDiDuongApi = {
+  create: async (data) => ({ id: Date.now(), ...data }),
+  update: async (id, data) => ({ id, ...data }),
+  delete: async (id) => ({ success: true })
+};
 import logger from '@services/logger';
 import { useSnackbar } from 'notistack';
 import DeleteDialog from '@/components/DeleteDialog';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import * as tuyenDuongApi from '@services/mockApi/tuyenDuongApi';
-import * as dinhMucDiDuongApi from '@services/mockApi/dinhMucDiDuongApi';
 import ExcelTable from '@/components/ExcelTable';
 
 // Define validation schema with Zod

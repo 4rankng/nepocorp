@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import logger from '@services/logger';
-import { dauKeoApi, roMoocApi } from '@services/mockApi';
+import { tractorApi } from '@services/api/tractorApi';
+import { trailerApi } from '@services/api/trailerApi';
 
 export default function useBaoDuongRecords(baoDuongApi) {
   const [baoDuongRecords, setBaoDuongRecords] = useState([]);
@@ -19,23 +20,23 @@ export default function useBaoDuongRecords(baoDuongApi) {
   const fetchLicensePlates = useCallback(async () => {
     try {
       setIsLoadingPlates(true);
-      // Fetch dau keo license plates
-      const dauKeoResponse = await dauKeoApi.getAll(1, 1000);
-      const dauKeoData = Array.isArray(dauKeoResponse?.data) ? dauKeoResponse.data : [];
-      const dauKeoPlates = dauKeoData
-        .filter(item => item?.bien_so)
+      // Fetch tractor license plates
+      const tractorResponse = await tractorApi.getAll(1, 1000);
+      const tractorData = Array.isArray(tractorResponse?.data) ? tractorResponse.data : [];
+      const tractorPlates = tractorData
+        .filter(item => item?.license_plate)
         .map(item => ({
-          value: item.bien_so,
+          value: item.license_plate,
           type: 'Đầu kéo',
         }));
 
-      // Fetch ro mooc license plates
-      const roMoocResponse = await roMoocApi.getAll(1, 1000);
-      const roMoocData = Array.isArray(roMoocResponse?.data) ? roMoocResponse.data : [];
-      const roMoocPlates = roMoocData
-        .filter(item => item?.bien_so)
+      // Fetch trailer license plates
+      const trailerResponse = await trailerApi.getAll(1, 1000);
+      const trailerData = Array.isArray(trailerResponse?.data) ? trailerResponse.data : [];
+      const trailerPlates = trailerData
+        .filter(item => item?.license_plate)
         .map(item => ({
-          value: item.bien_so,
+          value: item.license_plate,
           type: 'Rơ moóc',
         }));
 

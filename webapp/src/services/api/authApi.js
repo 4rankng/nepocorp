@@ -8,8 +8,8 @@ export const authApi = {
       password
     });
     
-    // Store tokens if login successful
-    if (response.data?.token) {
+    // Store tokens ONLY if login successful
+    if (response.status === 'success' && response.data?.token) {
       localStorage.setItem('authToken', response.data.token);
       if (response.data.refresh_token) {
         localStorage.setItem('refreshToken', response.data.refresh_token);

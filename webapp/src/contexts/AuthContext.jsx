@@ -53,12 +53,17 @@ export const AuthProvider = ({ children }) => {
           // Navigate to default page after login
           navigate('/lich-van-chuyen', { replace: true });
           
-          return true;
+          return { success: true, message: response.message };
         }
-        return false;
+        // Return backend message if login failed but no error was thrown
+        return { success: false, message: response.message || 'Đăng nhập thất bại' };
       } catch (error) {
         console.error('Login failed:', error);
-        throw error;
+        // Re-throw the error with enhanced information
+        const enhancedError = new Error(error.message || 'Đã xảy ra lỗi khi đăng nhập');
+        enhancedError.code = error.code;
+        enhancedError.originalData = error.originalData;
+        throw enhancedError;
       } finally {
         setLoading(false);
       }
@@ -89,9 +94,13 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('auth', JSON.stringify(authData));
           }
         } catch (error) {
-          // Token is invalid, clear auth
+          // Token is invalid, clear auth silently without navigation
           console.error('Auth check failed:', error);
-          logout();
+          setCurrentUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem('auth');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('refreshToken');
         }
       }
     };
@@ -119,12 +128,19 @@ export const AuthProvider = ({ children }) => {
     navigate('/', { replace: true });
   }, [navigate]);
 
+  // Role checking function
+  const hasAnyRole = useCallback((roles) => {
+    if (!currentUser?.role || !Array.isArray(roles)) return false;
+    return roles.includes(currentUser.role);
+  }, [currentUser?.role]);
+
   const value = {
     currentUser,
     isAuthenticated,
     loading,
     login,
     logout,
+    hasAnyRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

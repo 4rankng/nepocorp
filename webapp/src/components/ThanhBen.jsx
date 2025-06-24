@@ -184,8 +184,11 @@ const ThanhBen = ({ onNavItemClick }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
   if (!currentUser) return null;
-  const menuItems = getMenuItems(currentUser.role).map(item => ({
+  const menuItems = getMenuItems(currentUser.role).map((item, index) => ({
     ...item,
+    id: item.href || `menu-item-${index}`,
+    path: item.href,
+    label: item.name,
     icon: iconComponents[item.icon] || null,
   }));
   // Add more roles here if needed
@@ -195,7 +198,7 @@ const ThanhBen = ({ onNavItemClick }) => {
         <div className="space-y-2">
           {menuItems.map(item => (
             <NavLink
-              key={item.path}
+              key={item.id}
               to={item.path}
               className={({ isActive }) =>
                 `group flex items-center px-4 py-3 text-base font-medium rounded-lg transition-all duration-300 ease-in-out transform relative overflow-hidden ${

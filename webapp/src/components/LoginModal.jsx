@@ -37,16 +37,35 @@ const LoginModal = ({ open, onClose }) => {
     setLoading(true);
 
     try {
-      const success = await login(username, password);
-      if (success) {
+      const result = await login(username, password);
+      if (result.success) {
         onClose();
         setUsername('');
         setPassword('');
       } else {
-        setError('Tên đăng nhập hoặc mật khẩu không chính xác');
+        // Use backend message if available, otherwise fallback
+        setError(result.message || 'Tên đăng nhập hoặc mật khẩu không chính xác');
       }
     } catch (err) {
-      setError(err.message || 'Đã xảy ra lỗi khi đăng nhập');
+      // Handle specific error codes from backend
+      let userFriendlyMessage = 'Đã xảy ra lỗi khi đăng nhập';
+      
+      switch (err.code) {
+        case 'INVALID_CREDENTIALS':
+          userFriendlyMessage = 'Tên đăng nhập hoặc mật khẩu không chính xác';
+          break;
+        case 'USER_NOT_ACTIVE':
+          userFriendlyMessage = 'Tài khoản của bạn chưa được kích hoạt. Vui lòng liên hệ quản trị viên.';
+          break;
+        case 'BAD_REQUEST':
+          userFriendlyMessage = 'Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại.';
+          break;
+        default:
+          // Use backend message if available, otherwise fallback
+          userFriendlyMessage = err.message || 'Đã xảy ra lỗi khi đăng nhập';
+      }
+      
+      setError(userFriendlyMessage);
     } finally {
       setLoading(false);
     }

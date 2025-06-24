@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
-import * as dauKeoApi from '@services/mockApi/dauKeoApi';
-import * as roMoocApi from '@services/mockApi/roMoocApi';
+// Mock API objects returning empty data until backend is integrated
+const dinhMucDauApi = { 
+  getCount: async () => 0,
+  getVoRongRecords: async () => []
+};
+const dauKeoApi = { 
+  getAll: async () => ({ data: [] }),
+  getAllWithoutPagination: async () => []
+};
+const roMoocApi = { 
+  getAll: async () => ({ data: [] }),
+  getAllWithoutPagination: async () => []
+};
 
 /**
  * Hook for managing empty fuel standards (định mức vỏ rỗng/km không hàng)

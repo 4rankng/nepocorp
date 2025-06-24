@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  fetchAllDoiTac,
-  fetchDoiTacById,
-  addDoiTac,
-  editDoiTac,
-  removeDoiTac,
-} from '@services/mockApi/doiTacApi';
+// Mock API functions returning empty data until backend is integrated
+const fetchAllDoiTac = async () => [];
+const fetchDoiTacById = async (id) => null;
+const addDoiTac = async (data) => ({ id: Date.now(), ...data });
+const editDoiTac = async (id, data) => ({ id, ...data });
+const removeDoiTac = async (id) => ({ success: true });
 // Initial form state
 const initialFormState = {
   ma_dinh_danh: '',

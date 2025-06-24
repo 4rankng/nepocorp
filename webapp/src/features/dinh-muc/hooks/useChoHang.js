@@ -1,7 +1,12 @@
 // webapp/src/features/dinh-muc/hooks/useChoHang.js
 import { useState, useEffect, useCallback } from 'react';
 import logger from '@services/logger';
-import * as dinhMucDauApi from '@services/mockApi/dinhMucDauApi';
+// Mock API object returning empty data until backend is integrated
+const dinhMucDauApi = {
+  getCount: async () => 0,
+  getChoHangRecords: async () => [],
+  getAllLicensePlates: async () => []
+};
 
 export const useChoHang = () => {
   const [choHangRecords, setChoHangRecords] = useState([]);

@@ -9,27 +9,43 @@ export const trailerApi = {
     return response;
   },
 
+  // Get all trailers without pagination
+  getAllWithoutPagination: async () => {
+    const response = await apiClient.get('/trailer', {
+      params: { page: 1, limit: 1000 }
+    });
+    return response.data;
+  },
+
   // Get trailer by ID
   getById: async (id) => {
     const response = await apiClient.get(`/trailer/${id}`);
-    return response;
+    return response.data;
   },
 
   // Create new trailer
   create: async (data) => {
     const response = await apiClient.post('/trailer', data);
-    return response;
+    return response.data;
   },
 
   // Update existing trailer
   update: async (id, data) => {
     const response = await apiClient.put(`/trailer/${id}`, data);
-    return response;
+    return response.data;
   },
 
   // Delete trailer
   delete: async (id) => {
     const response = await apiClient.delete(`/trailer/${id}`);
     return response;
+  },
+
+  // Get count of trailers
+  getCount: async () => {
+    const response = await apiClient.get('/trailer', {
+      params: { page: 1, limit: 1 }
+    });
+    return response.pagination?.records_count || 0;
   }
 };

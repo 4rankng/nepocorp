@@ -53,7 +53,10 @@ const formatCurrency = value => {
   }).format(value);
 };
 import DeleteDialog from '@/components/DeleteDialog';
-import { baoDuongApi } from '@services/mockApi';
+import { tractorExpenseApi } from '@services/api/tractorExpenseApi';
+
+// Use tractor expense API for maintenance (bảo dưỡng) records
+const baoDuongApi = tractorExpenseApi;
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';

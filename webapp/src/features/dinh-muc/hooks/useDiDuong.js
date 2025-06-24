@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import * as dinhMucDiDuongApi from '@services/mockApi/dinhMucDiDuongApi';
-import * as tuyenDuongApi from '@services/mockApi/tuyenDuongApi';
-import { containerApi } from '@services/mockApi/containerApi';
+// Mock API objects returning empty data until backend is integrated
+const dinhMucDiDuongApi = {
+  getCount: async () => 0,
+  getRoadNorms: async () => []
+};
+const tuyenDuongApi = {
+  getAll: async () => ({ data: [] }),
+  getAllWithoutPagination: async () => []
+};
+const containerApi = {
+  getAll: async () => ({ data: [] }),
+  getAllWithoutPagination: async () => []
+};
 import logger from '@services/logger';
 /**
  * Hook for managing road travel fuel standards (định mức đi đường)

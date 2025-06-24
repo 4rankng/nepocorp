@@ -168,7 +168,7 @@ const BaoCaoTaiChinh = () => {
           <div style={styles.legend}>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
-              <span style={styles.legendText}>Nhỏ (< 5T)</span>
+              <span style={styles.legendText}>Nhỏ (&lt; 5T)</span>
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
@@ -176,7 +176,7 @@ const BaoCaoTaiChinh = () => {
             </div>
             <div style={styles.legendItem}>
               <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
-              <span style={styles.legendText}>Lớn (> 15T)</span>
+              <span style={styles.legendText}>Lớn (&gt; 15T)</span>
             </div>
           </div>
         </div>

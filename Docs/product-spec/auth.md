@@ -102,7 +102,7 @@ Authorization: Bearer {token}
 ## Authentication Flow
 
 1. **Login**: User provides username and password
-2. **Server Validation**: 
+2. **Server Validation**:
    - Verify user exists and is active
    - Verify password using bcrypt
    - Generate JWT access token (24 hour expiry)
@@ -115,16 +115,16 @@ Authorization: Bearer {token}
 The system supports the following roles:
 - `admin` - Full system access
 - `driver` - Driver-specific features
-- `accountant` - Financial management access  
+- `accountant` - Financial management access
 - `handler` - Container/shipment handling
 
 ## Security Features
 
-1. **Password Storage**: 
+1. **Password Storage**:
    - Passwords are hashed using HMAC-SHA256 with configurable secret and salt
    - Final hash is created using bcrypt for additional security
    - Never store plain text passwords
-2. **Token Expiration**: 
+2. **Token Expiration**:
    - Access tokens expire in 24 hours
    - Refresh tokens expire in 7 days
 3. **JWT Claims**: Tokens include user ID, username, email, and role
@@ -188,15 +188,44 @@ async function refreshAccessToken() {
             refresh_token: localStorage.getItem('refresh_token')
         })
     });
-    
+
     if (response.ok) {
         const data = await response.json();
         localStorage.setItem('access_token', data.data.token);
         localStorage.setItem('refresh_token', data.data.refresh_token);
         return data.data.token;
     }
-    
+
     // If refresh fails, redirect to login
     window.location.href = '/login';
 }
 ```
+
+The failed login responses in /Users/dev/Documents/clients/nepocorp/backend/handlers/auth_handler.go are:
+
+  Invalid credentials (lines 64-66, 76-78):
+  {
+    "error": "Invalid credentials",
+    "details": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "Invalid username or password"
+    }
+  }
+
+  Inactive user (lines 83-85):
+  {
+    "error": "User not active",
+    "details": {
+      "code": "USER_NOT_ACTIVE",
+      "message": "User account is not active"
+    }
+  }
+
+  Invalid input (lines 55-57):
+  {
+    "error": "Invalid input",
+    "details": {
+      "code": "BAD_REQUEST",
+      "message": "[validation error details]"
+    }
+  }

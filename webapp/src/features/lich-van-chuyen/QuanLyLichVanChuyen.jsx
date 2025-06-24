@@ -155,7 +155,7 @@ const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { hasAnyRole } = useAuth();
-  const canAddPlan = hasAnyRole([ROLES.QUAN_LY, ROLES.GIAO_NHAN]);
+  const canAddPlan = hasAnyRole([ROLES.ADMIN, ROLES.HANDLER]);
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('ngayDi');
   // Handle request to sort a column
