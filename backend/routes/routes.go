@@ -22,7 +22,7 @@ func Setup(
 	containerHandler *handlers.ContainerHandler,
 	tractorHandler *handlers.TractorHandler,
 	trailerHandler *handlers.TrailerHandler,
-	tractorExpenseHandler *handlers.TractorExpenseHandler,
+	expenseHandler *handlers.ExpenseHandler,
 	settingHandler *handlers.SettingHandler,
 	logger *logrus.Logger,
 ) {
@@ -89,17 +89,17 @@ func Setup(
 			protected.PUT("/trailer/:id", trailerHandler.Update)
 			protected.DELETE("/trailer/:id", trailerHandler.Delete)
 
-			// Tractor expenses
-			protected.GET("/tractor_expense", tractorExpenseHandler.List)
-			protected.POST("/tractor_expense", tractorExpenseHandler.Create)
-			protected.GET("/tractor_expense/:id", tractorExpenseHandler.GetByID)
-			protected.PUT("/tractor_expense/:id", tractorExpenseHandler.Update)
-			protected.DELETE("/tractor_expense/:id", tractorExpenseHandler.Delete)
+			// Expenses
+			protected.GET("/expense", expenseHandler.List)
+			protected.POST("/expense", expenseHandler.Create)
+			protected.GET("/expense/:id", expenseHandler.GetByID)
+			protected.PUT("/expense/:id", expenseHandler.Update)
+			protected.DELETE("/expense/:id", expenseHandler.Delete)
 
-			// Tractor expense items
-			protected.POST("/tractor_expense/:id/item", tractorExpenseHandler.CreateItem)
-			protected.PUT("/tractor_expense/:id/item/:item_id", tractorExpenseHandler.UpdateItem)
-			protected.DELETE("/tractor_expense/:id/item/:item_id", tractorExpenseHandler.DeleteItem)
+			// Expense items
+			protected.POST("/expense/:id/item", expenseHandler.CreateItem)
+			protected.PUT("/expense/:id/item/:item_id", expenseHandler.UpdateItem)
+			protected.DELETE("/expense/:id/item/:item_id", expenseHandler.DeleteItem)
 
 			// Settings
 			protected.GET("/settings/:key", settingHandler.GetByKey)

@@ -6,21 +6,21 @@ import (
 	"time"
 )
 
-type TractorExpenseItem struct {
-	ID               uint       `gorm:"primarykey" json:"id"`
-	TractorExpenseID uint       `gorm:"not null" json:"tractor_expense_id"`
-	ItemName         string     `gorm:"not null" json:"item_name"`
-	Price            int64      `gorm:"not null" json:"price"`
-	Quantity         int        `gorm:"not null;default:1" json:"quantity"`
-	Total            int64      `gorm:"not null" json:"total"`
-	InstallDate      *time.Time `json:"install_date"`
-	ExpiryDate       *time.Time `json:"expiry_date"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
+type ExpenseItem struct {
+	ID          uint       `gorm:"primarykey" json:"id"`
+	ExpenseID   uint       `gorm:"not null" json:"expense_id"`
+	ItemName    string     `gorm:"not null" json:"item_name"`
+	Price       int64      `gorm:"not null" json:"price"`
+	Quantity    int        `gorm:"not null;default:1" json:"quantity"`
+	Total       int64      `gorm:"not null" json:"total"`
+	InstallDate *time.Time `json:"install_date"`
+	ExpiryDate  *time.Time `json:"expiry_date"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
-func (t *TractorExpenseItem) UnmarshalJSON(data []byte) error {
-	type Alias TractorExpenseItem
+func (e *ExpenseItem) UnmarshalJSON(data []byte) error {
+	type Alias ExpenseItem
 	aux := &struct {
 		Price       any `json:"price"`
 		Quantity    any `json:"quantity"`
@@ -28,7 +28,7 @@ func (t *TractorExpenseItem) UnmarshalJSON(data []byte) error {
 		ExpiryDate  any `json:"expiry_date"`
 		*Alias
 	}{
-		Alias: (*Alias)(t),
+		Alias: (*Alias)(e),
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -43,14 +43,14 @@ func (t *TractorExpenseItem) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				return err
 			}
-			t.Price = price
+			e.Price = price
 		}
 	case float64:
-		t.Price = int64(v)
+		e.Price = int64(v)
 	case int64:
-		t.Price = v
+		e.Price = v
 	case int:
-		t.Price = int64(v)
+		e.Price = int64(v)
 	}
 
 	// Handle Quantity conversion
@@ -61,12 +61,12 @@ func (t *TractorExpenseItem) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				return err
 			}
-			t.Quantity = quantity
+			e.Quantity = quantity
 		}
 	case float64:
-		t.Quantity = int(v)
+		e.Quantity = int(v)
 	case int:
-		t.Quantity = v
+		e.Quantity = v
 	}
 
 	// Handle InstallDate conversion
@@ -82,7 +82,7 @@ func (t *TractorExpenseItem) UnmarshalJSON(data []byte) error {
 						return err
 					}
 				}
-				t.InstallDate = &installDate
+				e.InstallDate = &installDate
 			}
 		}
 	}
@@ -100,7 +100,7 @@ func (t *TractorExpenseItem) UnmarshalJSON(data []byte) error {
 						return err
 					}
 				}
-				t.ExpiryDate = &expiryDate
+				e.ExpiryDate = &expiryDate
 			}
 		}
 	}

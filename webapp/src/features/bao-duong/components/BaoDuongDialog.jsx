@@ -255,7 +255,7 @@ const BaoDuongDialog = ({
                 </FormCol>
 
                 <FormCol>
-                  <FormLabel required>Trạng thái thanh toán</FormLabel>
+                  <FormLabel required>Trạng thái</FormLabel>
                   <FormControl
                     type="select"
                     name="payment_status"

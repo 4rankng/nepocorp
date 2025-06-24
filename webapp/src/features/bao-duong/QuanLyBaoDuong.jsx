@@ -53,10 +53,7 @@ const formatCurrency = value => {
   }).format(value);
 };
 import DeleteDialog from '@/components/DeleteDialog';
-import { tractorExpenseApi } from '@services/api/tractorExpenseApi';
-
-// Use tractor expense API for maintenance (bảo dưỡng) records
-const baoDuongApi = tractorExpenseApi;
+import { baoDuongApi } from '@services/api/expenseApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';
@@ -65,15 +62,19 @@ import useBaoDuongForm from './hooks/useBaoDuongForm';
 import useBaoDuongRecords from './hooks/useBaoDuongRecords';
 const initialFormData = {
   bien_so: '',
-  item_name: '',
-  ngay_thay: new Date(),
-  so_thang_bao_hanh: 6,
-  ngay_het_han: null,
-  so_luong: 1,
-  don_gia: 0,
+  payment_status: 'DRAFT',
+  payment_proof: '',
+  items: [{
+    item_name: '',
+    price: '',
+    quantity: '',
+    install_date: '',
+    expiry_date: ''
+  }],
+  remark: '',
+  vendor_name: '',
+  tax_rate: 10,
   currency: 'VND',
-  tong_tien: 0,
-  ghi_chu: '',
 };
 const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();

@@ -114,16 +114,86 @@ POST /api/v1/container
 PUT /api/v1/container/:id
 DELETE /api/v1/container/:id
 
-GET /api/v1/tractor_expense
-POST /api/v1/tractor_expense
+remove all /tractor_expense
+replace with /expense
 
-GET /api/v1/tractor_expense/:id
-PUT /api/v1/tractor_expense/:id
-DELETE /api/v1/tractor_expense/:id
+GET /api/v1/expense
 
-POST /api/v1/tractor_expense/:id/item
-PUT /api/v1/tractor_expense/:id/item/:item_id
-DELETE /api/v1/tractor_expense/:id/item/:item_id
+For Bao duong, the expense_category_id = 1
+Backend should insert first record in expense_category table with value Bao duong if it does not exist
+POST /api/v1/expense
+{
+    "tractor_id": 1,
+    "trailier_id": null, // either tractor_id or trailer_id is required
+    "vendor_name": "",
+    "expense_category_id": 1,
+    "subtotal": 4000000,
+    "tax_rate": 10,
+    "total": 4400000,
+    "payment_status": "",
+    "payment_proof": "",
+    "remark": ""
+    "items": [
+        {
+            "item_name": "lốp xe",
+            "price": 1000000,
+            "quantity": 4,
+            "total": 4000000,
+            "install_date": "2023-01-15T08:30:00Z", // nullable
+            "expiry_date": "2024-01-15T08:30:00Z", // nullable
+        }
+    ],
+    "currency": "VND"
+}
+
+GET /api/v1/expense/:id
+PUT /api/v1/expense/:id
+DELETE /api/v1/expense/:id
+
+POST /api/v1/expense/:id/item
+PUT /api/v1/expense/:id/item/:item_id
+DELETE /api/v1/expense/:id/item/:item_id
+
+
+CREATE TABLE IF NOT EXISTS expenses (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tractor_id BIGINT UNSIGNED NULL,
+    trailer_id BIGINT UNSIGNED NULL,
+    vendor_name VARCHAR(255) NOT NULL,
+    expense_category_id BIGINT UNSIGNED NOT NULL,
+    subtotal BIGINT NOT NULL,
+    tax_rate INT NOT NULL DEFAULT 0,
+    total BIGINT NOT NULL,
+    payment_status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+    payment_proof VARCHAR(500),
+    currency VARCHAR(50) NOT NULL DEFAULT 'VND',
+    remark TEXT,
+    created_by BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (tractor_id) REFERENCES tractors(id) ON DELETE CASCADE,
+    FOREIGN KEY (expense_category_id) REFERENCES expense_categories(id) ON DELETE RESTRICT,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+    INDEX idx_tractor_id (tractor_id),
+    INDEX idx_expense_category_id (expense_category_id),
+    INDEX idx_payment_status (payment_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS expense_items (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    expense_id BIGINT UNSIGNED NOT NULL,
+    item_name VARCHAR(255) NOT NULL,
+    price BIGINT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    total BIGINT NOT NULL,
+    install_date DATETIME DEFAULT NULL,
+    expiry_date DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (tractor_expense_id) REFERENCES tractor_expenses(id) ON DELETE CASCADE,
+    INDEX idx_tractor_expense_id (tractor_expense_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 

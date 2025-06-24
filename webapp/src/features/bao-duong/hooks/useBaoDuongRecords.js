@@ -1,9 +1,47 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useContext } from 'react';
 import logger from '@services/logger';
 import { tractorApi } from '@services/api/tractorApi';
 import { trailerApi } from '@services/api/trailerApi';
+import { VehicleDataContext } from '@contexts/VehicleDataContext';
+
+// Utility function to transform expense data back to display format
+const transformExpenseToDisplay = (expense, tractors, trailers) => {
+  // Find the vehicle by ID to get license plate
+  let bien_so = '';
+  if (expense.tractor_id) {
+    const tractor = tractors.find(t => t.id === expense.tractor_id);
+    bien_so = tractor?.license_plate || `Tractor ID: ${expense.tractor_id}`;
+  } else if (expense.trailer_id) {
+    const trailer = trailers.find(t => t.id === expense.trailer_id);
+    bien_so = trailer?.license_plate || `Trailer ID: ${expense.trailer_id}`;
+  }
+
+  // Transform to display format - keeping compatibility with existing table columns
+  return {
+    id: expense.id,
+    bien_so: bien_so,
+    // For multi-item expenses, show first item or summary
+    item_name: expense.items?.[0]?.item_name || 'Nhiều hạng mục',
+    so_luong: expense.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0,
+    don_gia: expense.items?.[0]?.price || 0,
+    tong_tien: expense.total || 0,
+    subtotal: expense.subtotal || 0,
+    tax_rate: expense.tax_rate || 0,
+    payment_status: expense.payment_status || 'DRAFT',
+    payment_proof: expense.payment_proof || '',
+    remark: expense.remark || '',
+    ghi_chu: expense.remark || '', // For backward compatibility
+    ngay_thay: expense.items?.[0]?.install_date || '',
+    ngay_het_han: expense.items?.[0]?.expiry_date || '',
+    currency: expense.currency || 'VND',
+    items: expense.items || [],
+    // Add original expense data for editing
+    _original: expense
+  };
+};
 
 export default function useBaoDuongRecords(baoDuongApi) {
+  const { tractors, trailers } = useContext(VehicleDataContext);
   const [baoDuongRecords, setBaoDuongRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +112,11 @@ export default function useBaoDuongRecords(baoDuongApi) {
         // Note: API is 1-indexed for page number
         const recordsRes = await baoDuongApi.getAll(page + 1, pageSize);
 
-        setBaoDuongRecords(recordsRes.data || []);
+        // Transform expense data to display format
+        const transformedData = (recordsRes.data || []).map(expense => 
+          transformExpenseToDisplay(expense, tractors, trailers)
+        );
+        setBaoDuongRecords(transformedData);
 
         // Update pagination state from API response
         const newPagination = {
@@ -97,7 +139,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
         setIsLoading(false);
       }
     },
-    [baoDuongApi]
+    [baoDuongApi, tractors, trailers]
   );
   const handlePageChange = useCallback(
     newPage => {
@@ -117,7 +159,11 @@ export default function useBaoDuongRecords(baoDuongApi) {
       setIsLoading(true);
       try {
         const recordsRes = await baoDuongApi.getAll(page + 1, pageSize, { bien_so: bienSo });
-        setBaoDuongRecords(recordsRes.data || []);
+        // Transform expense data to display format
+        const transformedData = (recordsRes.data || []).map(expense => 
+          transformExpenseToDisplay(expense, tractors, trailers)
+        );
+        setBaoDuongRecords(transformedData);
         setPagination(prev => ({
           ...prev,
           page,
@@ -133,7 +179,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
         setIsLoading(false);
       }
     },
-    [baoDuongApi]
+    [baoDuongApi, tractors, trailers]
   );
   return {
     baoDuongRecords,

@@ -73,10 +73,11 @@ CREATE TABLE IF NOT EXISTS trailers (
     KEY idx_trailers_license_plate (license_plate(255))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create tractor_expenses table
-CREATE TABLE IF NOT EXISTS tractor_expenses (
+
+CREATE TABLE IF NOT EXISTS expenses (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tractor_id BIGINT UNSIGNED NOT NULL,
+    tractor_id BIGINT UNSIGNED NULL,
+    trailer_id BIGINT UNSIGNED NULL,
     vendor_name VARCHAR(255) NOT NULL,
     expense_category_id BIGINT UNSIGNED NOT NULL,
     subtotal BIGINT NOT NULL,
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS tractor_expenses (
     total BIGINT NOT NULL,
     payment_status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
     payment_proof VARCHAR(500),
+    currency VARCHAR(50) NOT NULL DEFAULT 'VND',
     remark TEXT,
     created_by BIGINT UNSIGNED NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -96,10 +98,10 @@ CREATE TABLE IF NOT EXISTS tractor_expenses (
     INDEX idx_payment_status (payment_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create tractor_expense_items table
-CREATE TABLE IF NOT EXISTS tractor_expense_items (
+
+CREATE TABLE IF NOT EXISTS expense_items (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tractor_expense_id BIGINT UNSIGNED NOT NULL,
+    expense_id BIGINT UNSIGNED NOT NULL,
     item_name VARCHAR(255) NOT NULL,
     price BIGINT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,

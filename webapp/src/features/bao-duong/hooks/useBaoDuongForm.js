@@ -1,6 +1,57 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useContext } from 'react';
 import logger from '@services/logger';
 import { addMonths } from '../utils/baoDuongUtils';
+import { VehicleDataContext } from '@contexts/VehicleDataContext';
+// Utility function to convert license plate to tractor_id/trailer_id
+const convertLicensePlateToIds = (licensePlate, tractors, trailers) => {
+  if (!licensePlate) return { tractor_id: null, trailer_id: null };
+  
+  const tractor = tractors.find(t => t.license_plate === licensePlate);
+  if (tractor) {
+    return { tractor_id: tractor.id, trailer_id: null };
+  }
+  
+  const trailer = trailers.find(t => t.license_plate === licensePlate);
+  if (trailer) {
+    return { tractor_id: null, trailer_id: trailer.id };
+  }
+  
+  return { tractor_id: null, trailer_id: null };
+};
+
+// Utility function to transform form data to new expense API format
+const transformToExpenseFormat = (formData, vehicleIds) => {
+  // Calculate totals
+  const subtotal = formData.items?.reduce((sum, item) => {
+    return sum + (parseFloat(item.price || 0) * parseInt(item.quantity || 0));
+  }, 0) || 0;
+  
+  const taxRate = parseFloat(formData.tax_rate || 10); // Default 10%
+  const taxAmount = subtotal * (taxRate / 100);
+  const total = subtotal + taxAmount;
+  
+  return {
+    ...vehicleIds, // tractor_id or trailer_id
+    vendor_name: formData.vendor_name || '',
+    expense_category_id: 1, // Fixed for BaoDuong
+    subtotal: Math.round(subtotal),
+    tax_rate: taxRate,
+    total: Math.round(total),
+    payment_status: formData.payment_status || 'DRAFT',
+    payment_proof: formData.payment_proof || '',
+    remark: formData.remark || '',
+    currency: 'VND',
+    items: formData.items?.map(item => ({
+      item_name: item.item_name || '',
+      price: parseInt(item.price || 0),
+      quantity: parseInt(item.quantity || 1),
+      total: parseInt(item.price || 0) * parseInt(item.quantity || 1),
+      install_date: item.install_date ? new Date(item.install_date).toISOString() : null,
+      expiry_date: item.expiry_date ? new Date(item.expiry_date).toISOString() : null,
+    })) || []
+  };
+};
+
 export default function useBaoDuongForm({
   initialFormData,
   onSuccess,
@@ -9,6 +60,7 @@ export default function useBaoDuongForm({
   isEdit,
   api,
 }) {
+  const { tractors, trailers } = useContext(VehicleDataContext);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -82,28 +134,34 @@ export default function useBaoDuongForm({
         throw validationError;
       }
       setIsLoading(true);
-      // Prepare data for submission
-      const tong_tien = Number(formData.so_luong || 0) * Number(formData.don_gia || 0);
-      const submissionData = {
-        ...formData,
-        bien_so: String(formData.bien_so).trim(),
-        so_luong: Number(formData.so_luong) || 1,
-        don_gia: Number(formData.don_gia) || 0,
-        tong_tien: tong_tien,
-        so_thang_bao_hanh: Number(formData.so_thang_bao_hanh) || 0,
-        ngay_het_han: formData.ngay_het_han || '',
-        ghi_chu: formData.ghi_chu || '',
-        currency: formData.currency || 'VND',
-      };
+      
+      // Convert license plate to tractor_id/trailer_id
+      const vehicleIds = convertLicensePlateToIds(formData.bien_so, tractors, trailers);
+      if (!vehicleIds.tractor_id && !vehicleIds.trailer_id) {
+        throw new Error(`Không tìm thấy xe với biển số: ${formData.bien_so}`);
+      }
+      
+      // Transform data to new expense API format
+      const submissionData = transformToExpenseFormat(formData, vehicleIds);
       // Call the appropriate API method
       let response;
       if (isEdit) {
         response = await api.update(submissionData.id, submissionData);
         // Check for API error responses
         if (!response?.success) {
-          const error = new Error(response?.error?.message || 'Cập nhật thất bại');
+          // Handle new backend error format: message + errors.message
+          let errorMessage = 'Cập nhật thất bại';
+          if (response?.message && response?.errors?.message) {
+            errorMessage = `${response.message}: ${response.errors.message}`;
+          } else if (response?.message) {
+            errorMessage = response.message;
+          } else if (response?.error?.message) {
+            errorMessage = response.error.message;
+          }
+          
+          const error = new Error(errorMessage);
           error.response = response;
-          error.validationError = response?.error?.code === 'VALIDATION_ERROR';
+          error.validationError = response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
           throw error;
         }
         onSuccess?.(response?.message || 'Cập nhật thông tin bảo dưỡng thành công');
@@ -111,9 +169,19 @@ export default function useBaoDuongForm({
         response = await api.create(submissionData);
         // Check for API error responses
         if (!response?.success) {
-          const error = new Error(response?.error?.message || 'Tạo mới thất bại');
+          // Handle new backend error format: message + errors.message
+          let errorMessage = 'Tạo mới thất bại';
+          if (response?.message && response?.errors?.message) {
+            errorMessage = `${response.message}: ${response.errors.message}`;
+          } else if (response?.message) {
+            errorMessage = response.message;
+          } else if (response?.error?.message) {
+            errorMessage = response.error.message;
+          }
+          
+          const error = new Error(errorMessage);
           error.response = response;
-          error.validationError = response?.error?.code === 'VALIDATION_ERROR';
+          error.validationError = response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
           throw error;
         }
         onSuccess?.(response?.message || 'Thêm thông tin bảo dưỡng thành công');
@@ -137,7 +205,13 @@ export default function useBaoDuongForm({
     } catch (error) {
       // Extract and format error message from API response
       let errorMessage = 'Đã xảy ra lỗi khi lưu dữ liệu';
-      if (error?.response?.error?.message) {
+      
+      // Handle new backend error format: message + errors.message
+      if (error?.response?.message && error?.response?.errors?.message) {
+        errorMessage = `${error.response.message}: ${error.response.errors.message}`;
+      } else if (error?.response?.message) {
+        errorMessage = error.response.message;
+      } else if (error?.response?.error?.message) {
         errorMessage = error.response.error.message;
       } else if (error?.message) {
         errorMessage = error.message;
