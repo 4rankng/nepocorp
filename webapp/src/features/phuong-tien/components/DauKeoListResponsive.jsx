@@ -12,6 +12,12 @@ import {
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, SearchBar } from '@/components';
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleString('vi-VN');
+};
+
 const DauKeoListResponsive = ({
   data = [],
   loading = false,
@@ -41,8 +47,8 @@ const DauKeoListResponsive = ({
     const term = searchTerm.toLowerCase();
     return data.filter(
       item =>
-        (item.bien_so && item.bien_so.toLowerCase().includes(term)) ||
-        (item.mo_ta && item.mo_ta.toLowerCase().includes(term))
+        (item.license_plate && item.license_plate.toLowerCase().includes(term)) ||
+        (item.description && item.description.toLowerCase().includes(term))
     );
   }, [data, searchTerm]);
   // Get current data for the current page
@@ -57,17 +63,24 @@ const DauKeoListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'bien_so',
+      key: 'license_plate',
       label: 'BIỂN SỐ',
       align: 'left',
       sortable: true,
     },
     {
-      key: 'mo_ta',
+      key: 'description',
       label: 'MÔ TẢ',
       align: 'left',
       sortable: true,
       render: value => value || 'Chưa cập nhật',
+    },
+    {
+      key: 'updated_at',
+      label: 'CẬP NHẬT',
+      align: 'left',
+      sortable: true,
+      render: value => formatDate(value),
     },
   ];
   // Render action buttons for each row
@@ -86,10 +99,13 @@ const DauKeoListResponsive = ({
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
               <Box>
                 <Typography variant="h6" component="div">
-                  {item.bien_so}
+                  {item.license_plate}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Mô tả:</strong> {item.mo_ta || 'Chưa cập nhật'}
+                  <strong>Mô tả:</strong> {item.description || 'Chưa cập nhật'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  <strong>Cập nhật:</strong> {formatDate(item.updated_at)}
                 </Typography>
               </Box>
               <Box>
@@ -177,7 +193,7 @@ const DauKeoListResponsive = ({
         error={error}
         emptyMessage={searchTerm ? 'Không tìm thấy đầu kéo phù hợp' : emptyMessage}
         sortable={true}
-        defaultSort={{ key: 'bien_so', direction: 'asc' }}
+        defaultSort={{ key: 'license_plate', direction: 'asc' }}
         pagination={true}
         page={page}
         rowsPerPage={rowsPerPage}

@@ -2,6 +2,12 @@ import React from 'react';
 import { Card, CardContent, Box, Typography, Chip } from '@mui/material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleString('vi-VN');
+};
+
 const DauKeoCard = ({ data, onEdit, onDelete, isLoading }) => (
   <Card
     sx={{
@@ -32,6 +38,11 @@ const DauKeoCard = ({ data, onEdit, onDelete, isLoading }) => (
       {data.description && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           {data.description}
+        </Typography>
+      )}
+      {data.updated_at && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Cập nhật: {formatDate(data.updated_at)}
         </Typography>
       )}
       <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>

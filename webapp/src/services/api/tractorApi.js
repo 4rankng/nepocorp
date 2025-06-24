@@ -26,13 +26,13 @@ export const tractorApi = {
   // Create new tractor
   create: async (data) => {
     const response = await apiClient.post('/tractor', data);
-    return response.data;
+    return response;
   },
 
   // Update existing tractor
   update: async (id, data) => {
     const response = await apiClient.put(`/tractor/${id}`, data);
-    return response.data;
+    return response;
   },
 
   // Delete tractor

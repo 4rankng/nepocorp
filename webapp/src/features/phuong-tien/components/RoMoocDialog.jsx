@@ -1,83 +1,95 @@
 import React from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  CircularProgress,
-  Box,
-  Typography,
-  IconButton,
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import TrailerIcon from '@mui/icons-material/RvHookup';
+  Modal,
+  FormContainer,
+  FormHeader,
+  FormBody,
+  FormSection,
+  FormGroup,
+  FormLabel,
+  FormControl,
+  FormActions,
+  ErrorText,
+  Button
+} from '@components/ui';
 const RoMoocDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = false }) => {
-  const handleSave = () => {
+  const handleSave = (e) => {
+    e.preventDefault();
     onSave(data);
   };
+  
   const handleFieldChange = (field, value) => {
     setData({
       ...data,
       [field]: value,
     });
   };
+  
+  const handleCancel = () => {
+    if (window.confirm('Bạn có chắc chắn muốn hủy? Mọi thông tin đã nhập sẽ bị mất.')) {
+      onClose();
+    }
+  };
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <TrailerIcon color="secondary" />
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {edit ? 'Chỉnh sửa rơ-mooc' : 'Thêm rơ-mooc mới'}
-        </Typography>
-        <IconButton
-          aria-label="close"
-          onClick={onClose}
-          sx={{
-            color: theme => theme.palette.grey[500],
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
-          <TextField
-            label="Biển số rơ-mooc"
-            value={data?.license_plate || ''}
-            onChange={e => handleFieldChange('license_plate', e.target.value)}
-            fullWidth
-            autoFocus
-            required
-            error={!data?.license_plate}
-            helperText={!data?.license_plate ? 'Vui lòng nhập biển số rơ-mooc' : ''}
-            placeholder="Ví dụ: 29R-12345"
-          />
-          <TextField
-            label="Mô tả"
-            value={data?.description || ''}
-            onChange={e => handleFieldChange('description', e.target.value)}
-            fullWidth
-            multiline
-            rows={3}
-            placeholder="Mô tả về rơ-mooc..."
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={isLoading}>
-          Hủy
-        </Button>
-        <Button
-          onClick={handleSave}
-          variant="contained"
-          disabled={isLoading || !data?.license_plate}
-          startIcon={isLoading ? <CircularProgress size={16} /> : null}
-        >
-          {isLoading ? 'Đang lưu...' : edit ? 'Cập nhật' : 'Thêm mới'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <Modal
+      isOpen={open}
+      onClose={onClose}
+      size="medium"
+      showCloseButton={false}
+    >
+      <FormContainer>
+        <FormHeader
+          title={edit ? 'Chỉnh sửa rơ-mooc' : 'Thêm rơ-mooc mới'}
+        />
+        
+        <FormBody onSubmit={handleSave}>
+          <FormSection>
+            <FormGroup>
+              <FormLabel required>Biển số rơ-mooc</FormLabel>
+              <FormControl
+                type="text"
+                value={data?.license_plate || ''}
+                onChange={e => handleFieldChange('license_plate', e.target.value)}
+                placeholder="Ví dụ: 29R-12345"
+                error={!data?.license_plate}
+                required
+                autoFocus
+              />
+              {!data?.license_plate && <ErrorText>Vui lòng nhập biển số rơ-mooc</ErrorText>}
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel>Mô tả</FormLabel>
+              <FormControl
+                type="textarea"
+                value={data?.description || ''}
+                onChange={e => handleFieldChange('description', e.target.value)}
+                placeholder="Mô tả về rơ-mooc..."
+                rows={3}
+              />
+            </FormGroup>
+          </FormSection>
+          
+          <FormActions>
+            <Button
+              variant="secondary"
+              onClick={handleCancel}
+              disabled={isLoading}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isLoading}
+              disabled={isLoading || !data?.license_plate}
+            >
+              {edit ? 'Cập nhật' : 'Thêm mới'}
+            </Button>
+          </FormActions>
+        </FormBody>
+      </FormContainer>
+    </Modal>
   );
 };
 export default RoMoocDialog;

@@ -41,7 +41,10 @@ export const useDauKeo = () => {
       const response = await tractorApi.create(formData);
       
       if (response.status !== 'success') {
-        throw new Error(response.message || 'Failed to create tractor');
+        const errorMessage = response.message || 'Failed to create tractor';
+        const detailedError = response.errors?.message || '';
+        const fullErrorMessage = detailedError ? `${errorMessage}: ${detailedError}` : errorMessage;
+        throw new Error(fullErrorMessage);
       }
       
       const newTractor = response.data;
@@ -65,7 +68,10 @@ export const useDauKeo = () => {
       const response = await tractorApi.update(id, formData);
       
       if (response.status !== 'success') {
-        throw new Error(response.message || 'Failed to update tractor');
+        const errorMessage = response.message || 'Failed to update tractor';
+        const detailedError = response.errors?.message || '';
+        const fullErrorMessage = detailedError ? `${errorMessage}: ${detailedError}` : errorMessage;
+        throw new Error(fullErrorMessage);
       }
       
       const updatedTractor = response.data;
@@ -88,7 +94,10 @@ export const useDauKeo = () => {
       const response = await tractorApi.delete(id);
       
       if (response.status !== 'success') {
-        throw new Error(response.message || 'Failed to delete tractor');
+        const errorMessage = response.message || 'Failed to delete tractor';
+        const detailedError = response.errors?.message || '';
+        const fullErrorMessage = detailedError ? `${errorMessage}: ${detailedError}` : errorMessage;
+        throw new Error(fullErrorMessage);
       }
       
       setData(prev => prev.filter(item => item.id !== id));

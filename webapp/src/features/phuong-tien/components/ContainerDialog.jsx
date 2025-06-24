@@ -1,19 +1,18 @@
 import React from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  CircularProgress,
-  Box,
-  Typography,
-  IconButton,
-  MenuItem,
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import InventoryIcon from '@mui/icons-material/Inventory2';
+  Modal,
+  FormContainer,
+  FormHeader,
+  FormBody,
+  FormSection,
+  FormGroup,
+  FormLabel,
+  FormControl,
+  FormActions,
+  ErrorText,
+  HelperText,
+  Button
+} from '@components/ui';
 const CONTAINER_TYPES = [
   '20ft Container',
   '40ft Container',
@@ -24,77 +23,91 @@ const CONTAINER_TYPES = [
   'Refrigerated Container',
 ];
 const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = false }) => {
-  const handleSave = () => {
+  const handleSave = (e) => {
+    e.preventDefault();
     onSave(data);
   };
+  
   const handleFieldChange = (field, value) => {
     setData({
       ...data,
       [field]: value,
     });
   };
+  
+  const handleCancel = () => {
+    if (window.confirm('Bạn có chắc chắn muốn hủy? Mọi thông tin đã nhập sẽ bị mất.')) {
+      onClose();
+    }
+  };
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <InventoryIcon color="success" />
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {edit ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'}
-        </Typography>
-        <IconButton
-          aria-label="close"
-          onClick={onClose}
-          sx={{
-            color: theme => theme.palette.grey[500],
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
-          <TextField
-            select
-            label="Loại container"
-            value={data?.category || ''}
-            onChange={e => handleFieldChange('category', e.target.value)}
-            fullWidth
-            autoFocus
-            required
-            error={!data?.category}
-            helperText={!data?.category ? 'Vui lòng chọn loại container' : ''}
-          >
-            {CONTAINER_TYPES.map(type => (
-              <MenuItem key={type} value={type}>
-                {type}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Hoặc nhập loại khác"
-            value={
-              data?.category && !CONTAINER_TYPES.includes(data.category) ? data.category : ''
-            }
-            onChange={e => handleFieldChange('category', e.target.value)}
-            fullWidth
-            placeholder="Nhập loại container tùy chỉnh..."
-            helperText="Nếu loại container không có trong danh sách trên"
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={isLoading}>
-          Hủy
-        </Button>
-        <Button
-          onClick={handleSave}
-          variant="contained"
-          disabled={isLoading || !data?.category}
-          startIcon={isLoading ? <CircularProgress size={16} /> : null}
-        >
-          {isLoading ? 'Đang lưu...' : edit ? 'Cập nhật' : 'Thêm mới'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <Modal
+      isOpen={open}
+      onClose={onClose}
+      size="medium"
+      showCloseButton={false}
+    >
+      <FormContainer>
+        <FormHeader
+          title={edit ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'}
+        />
+        
+        <FormBody onSubmit={handleSave}>
+          <FormSection>
+            <FormGroup>
+              <FormLabel required>Loại container</FormLabel>
+              <FormControl
+                type="select"
+                value={data?.category || ''}
+                onChange={e => handleFieldChange('category', e.target.value)}
+                error={!data?.category}
+                required
+                autoFocus
+              >
+                <option value="">Chọn loại container</option>
+                {CONTAINER_TYPES.map(type => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </FormControl>
+              {!data?.category && <ErrorText>Vui lòng chọn loại container</ErrorText>}
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel>Hoặc nhập loại khác</FormLabel>
+              <FormControl
+                type="text"
+                value={
+                  data?.category && !CONTAINER_TYPES.includes(data.category) ? data.category : ''
+                }
+                onChange={e => handleFieldChange('category', e.target.value)}
+                placeholder="Nhập loại container tùy chỉnh..."
+              />
+              <HelperText>Nếu loại container không có trong danh sách trên</HelperText>
+            </FormGroup>
+          </FormSection>
+          
+          <FormActions>
+            <Button
+              variant="secondary"
+              onClick={handleCancel}
+              disabled={isLoading}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isLoading}
+              disabled={isLoading || !data?.category}
+            >
+              {edit ? 'Cập nhật' : 'Thêm mới'}
+            </Button>
+          </FormActions>
+        </FormBody>
+      </FormContainer>
+    </Modal>
   );
 };
 export default ContainerDialog;
