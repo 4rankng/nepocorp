@@ -47,6 +47,7 @@ const BaoDuongDialog = ({
 }) => {
   const [localData, setLocalData] = useState({
     bien_so: '',
+    nha_cung_cap: '',
     payment_status: PAYMENT_STATUS.DRAFT,
     payment_proof: '',
     items: [{
@@ -63,6 +64,7 @@ const BaoDuongDialog = ({
   useEffect(() => {
     setLocalData(formData || {
       bien_so: '',
+      nha_cung_cap: '',
       payment_status: PAYMENT_STATUS.DRAFT,
       payment_proof: '',
       items: [{
@@ -230,7 +232,7 @@ const BaoDuongDialog = ({
           <FormSections columns={2}>
             {/* LEFT COLUMN */}
             <FormSection title="Thông tin thanh toán">
-              {/* Bien so xe and Payment status in one row */}
+              {/* Bien so xe and Nha cung cap in one row */}
               <FormRow>
                 <FormCol>
                   <FormLabel required>Biển số xe</FormLabel>
@@ -255,26 +257,20 @@ const BaoDuongDialog = ({
                 </FormCol>
 
                 <FormCol>
-                  <FormLabel required>Trạng thái</FormLabel>
+                  <FormLabel required>Nhà cung cấp</FormLabel>
                   <FormControl
-                    type="select"
-                    name="payment_status"
-                    value={localData.payment_status || PAYMENT_STATUS.DRAFT}
+                    name="nha_cung_cap"
+                    placeholder="Nhập tên nhà cung cấp"
+                    value={localData.nha_cung_cap || ''}
                     onChange={handleInputChange}
-                    error={!!errors.payment_status}
+                    error={!!errors.nha_cung_cap}
                     required
-                  >
-                    {Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => (
-                      <option key={status} value={status}>
-                        {label}
-                      </option>
-                    ))}
-                  </FormControl>
-                  {errors.payment_status && <ErrorText>{errors.payment_status}</ErrorText>}
+                  />
+                  {errors.nha_cung_cap && <ErrorText>{errors.nha_cung_cap}</ErrorText>}
                 </FormCol>
               </FormRow>
 
-              {/* Subtotal, Tax rate, Total in one row */}
+              {/* Subtotal and Tax rate in one row */}
               <FormRow>
                 <FormCol>
                   <FormLabel>Chi phí trước thuế</FormLabel>
@@ -295,18 +291,39 @@ const BaoDuongDialog = ({
                     />
                     <InputAddon>%</InputAddon>
                   </InputGroup>
-
                 </FormCol>
               </FormRow>
 
-              <FormGroup>
-                <FormLabel>Tổng tiền</FormLabel>
-                <PriceDisplay
-                  value={formatCurrency(total)}
-                  style={{fontSize: '1.25rem', fontWeight: 'bold'}}
-                />
-                <HelperText>Subtotal + Thuế ({formatCurrency(taxAmount)})</HelperText>
-              </FormGroup>
+              {/* Total amount and Payment status in one row */}
+              <FormRow>
+                <FormCol>
+                  <FormLabel>Tổng tiền</FormLabel>
+                  <PriceDisplay
+                    value={formatCurrency(total)}
+                    style={{fontSize: '1.25rem', fontWeight: 'bold'}}
+                  />
+                  <HelperText>Subtotal + Thuế ({formatCurrency(taxAmount)})</HelperText>
+                </FormCol>
+
+                <FormCol>
+                  <FormLabel required>Trạng thái</FormLabel>
+                  <FormControl
+                    type="select"
+                    name="payment_status"
+                    value={localData.payment_status || PAYMENT_STATUS.DRAFT}
+                    onChange={handleInputChange}
+                    error={!!errors.payment_status}
+                    required
+                  >
+                    {Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => (
+                      <option key={status} value={status}>
+                        {label}
+                      </option>
+                    ))}
+                  </FormControl>
+                  {errors.payment_status && <ErrorText>{errors.payment_status}</ErrorText>}
+                </FormCol>
+              </FormRow>
 
               {/* Payment proof */}
               <FormGroup>

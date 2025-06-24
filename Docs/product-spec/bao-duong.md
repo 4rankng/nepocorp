@@ -4,9 +4,12 @@ Nhap thong tin bao duong
 
 The modal has two column
 LEFT COLUMN
-- Bien so xe and Payment status (DRAFT, PENDING, PAID, CANCELLED) in one row
-- Subtotal (auto calculate base on list of items), Tax rate (prefilled from cache), Total (auto calculate) in one row
-- Payment proof (url to payment proof image eg in google drive)
+  The layout now has:
+  - Row 1: "Biển số xe" + "Nhà cung cấp"
+  - Row 2: "Chi phí trước thuế" + "Thuế suất"
+  - Row 3: "Tổng tiền" + "Trạng thái"
+  - Row 4: "Chứng từ thanh toán"
+  - Row 5: "Ghi chú"
 
 RIGHT COLUMN
 - Default has one empty row with
@@ -258,4 +261,268 @@ GET /api/v1/settings/:key (for getting tax rate, key=tax_rate)
       "code": "BAD_REQUEST",
       "message": "Value is required and must be a valid number"
     }
+  }
+
+
+1. Create Expense (POST /api/v1/expense)
+
+  Request:
+
+  POST /api/v1/expense
+  Authorization: Bearer <jwt_token>
+  Content-Type: application/json
+
+  {
+      "tractor_id": 1,
+      "trailer_id": null,
+      "vendor_name": "Auto Parts Store",
+      "expense_category_id": 1,
+      "subtotal": 4000000,
+      "tax_rate": 10,
+      "total": 4400000,
+      "payment_status": "DRAFT",
+      "payment_proof": "",
+      "remark": "Thay lốp xe định kỳ",
+      "items": [
+          {
+              "item_name": "lốp xe",
+              "price": "1000000",
+              "quantity": "4",
+              "total": 4000000,
+              "install_date": "2023-01-15T08:30:00Z",
+              "expiry_date": "2024-01-15T08:30:00Z"
+          }
+      ],
+      "currency": "VND"
+  }
+
+  Response (Success - 201):
+
+  {
+      "status": "success",
+      "message": "Tractor expense created successfully",
+      "data": {
+          "id": 1,
+          "tractor_id": 1,
+          "trailer_id": null,
+          "vendor_name": "Auto Parts Store",
+          "expense_category_id": 1,
+          "subtotal": 4000000,
+          "tax_rate": 10,
+          "total": 4400000,
+          "payment_status": "DRAFT",
+          "payment_proof": "",
+          "currency": "VND",
+          "remark": "Thay lốp xe định kỳ",
+          "created_by": 1,
+          "created_at": "2024-06-24T10:00:00Z",
+          "updated_at": "2024-06-24T10:00:00Z",
+          "items": [
+              {
+                  "id": 1,
+                  "expense_id": 1,
+                  "item_name": "lốp xe",
+                  "price": 1000000,
+                  "quantity": 4,
+                  "total": 4000000,
+                  "install_date": "2023-01-15T08:30:00Z",
+                  "expiry_date": "2024-01-15T08:30:00Z",
+                  "created_at": "2024-06-24T10:00:00Z",
+                  "updated_at": "2024-06-24T10:00:00Z"
+              }
+          ]
+      }
+  }
+
+  2. List Expenses (GET /api/v1/expense)
+
+  Request:
+
+  GET /api/v1/expense?page=1&limit=10
+  Authorization: Bearer <jwt_token>
+
+  Response (Success - 200):
+
+  {
+      "status": "success",
+      "message": "Tractor expenses retrieved successfully",
+      "data": [
+          {
+              "id": 1,
+              "tractor_id": 1,
+              "trailer_id": null,
+              "vendor_name": "Auto Parts Store",
+              "expense_category_id": 1,
+              "subtotal": 4000000,
+              "tax_rate": 10,
+              "total": 4400000,
+              "payment_status": "DRAFT",
+              "payment_proof": "",
+              "currency": "VND",
+              "remark": "Thay lốp xe định kỳ",
+              "created_by": 1,
+              "created_at": "2024-06-24T10:00:00Z",
+              "updated_at": "2024-06-24T10:00:00Z",
+          }
+      ],
+      "pagination": {
+          "current_page": 1,
+          "per_page": 10,
+          "total_pages": 1,
+          "total_records": 1
+      }
+  }
+
+  3. Get Expense by ID (GET /api/v1/expense/:id)
+
+  Request:
+
+  GET /api/v1/expense/1
+  Authorization: Bearer <jwt_token>
+
+  Response (Success - 200):
+
+  {
+      "status": "success",
+      "message": "Tractor expense retrieved successfully",
+      "data": {
+          "id": 1,
+          "tractor_id": 1,
+          "trailer_id": null,
+          "vendor_name": "Auto Parts Store",
+          "expense_category_id": 1,
+          "subtotal": 4000000,
+          "tax_rate": 10,
+          "total": 4400000,
+          "payment_status": "DRAFT",
+          "payment_proof": "",
+          "currency": "VND",
+          "remark": "Thay lốp xe định kỳ",
+          "created_by": 1,
+          "created_at": "2024-06-24T10:00:00Z",
+          "updated_at": "2024-06-24T10:00:00Z",
+          "items": [
+              {
+                  "id": 1,
+                  "expense_id": 1,
+                  "item_name": "lốp xe",
+                  "price": 1000000,
+                  "quantity": 4,
+                  "total": 4000000,
+                  "install_date": "2023-01-15T08:30:00Z",
+                  "expiry_date": "2024-01-15T08:30:00Z",
+                  "created_at": "2024-06-24T10:00:00Z",
+                  "updated_at": "2024-06-24T10:00:00Z"
+              }
+          ]
+      }
+  }
+
+  4. Update Expense (PUT /api/v1/expense/:id)
+
+  Request:
+
+  PUT /api/v1/expense/1
+  Authorization: Bearer <jwt_token>
+  Content-Type: application/json
+
+  {
+      "payment_status": "PAID",
+      "payment_proof": "https://drive.google.com/file/d/abc123",
+      "remark": "Đã thanh toán và thay lốp xe"
+  }
+
+  Response (Success - 200):
+
+  {
+      "status": "success",
+      "message": "Tractor expense updated successfully",
+      "data": {
+          "id": 1,
+          "tractor_id": 1,
+          "trailer_id": null,
+          "vendor_name": "Auto Parts Store",
+          "expense_category_id": 1,
+          "subtotal": 4000000,
+          "tax_rate": 10,
+          "total": 4400000,
+          "payment_status": "PAID",
+          "payment_proof": "https://drive.google.com/file/d/abc123",
+          "currency": "VND",
+          "remark": "Đã thanh toán và thay lốp xe",
+          "created_by": 1,
+          "created_at": "2024-06-24T10:00:00Z",
+          "updated_at": "2024-06-24T10:15:00Z"
+      }
+  }
+
+  5. Create Expense Item (POST /api/v1/expense/:id/item)
+
+  Request:
+
+  POST /api/v1/expense/1/item
+  Authorization: Bearer <jwt_token>
+  Content-Type: application/json
+
+  {
+      "item_name": "dầu nhớt",
+      "price": "500000",
+      "quantity": "2",
+      "total": 1000000,
+      "install_date": "2023-01-15T08:30:00Z",
+      "expiry_date": null
+  }
+
+  Response (Success - 201):
+
+  {
+      "status": "success",
+      "message": "Expense item created successfully",
+      "data": {
+          "id": 2,
+          "expense_id": 1,
+          "item_name": "dầu nhớt",
+          "price": 500000,
+          "quantity": 2,
+          "total": 1000000,
+          "install_date": "2023-01-15T08:30:00Z",
+          "expiry_date": null,
+          "created_at": "2024-06-24T10:20:00Z",
+          "updated_at": "2024-06-24T10:20:00Z"
+      }
+  }
+
+  Error Responses
+
+  Validation Error (400):
+
+  {
+      "status": "error",
+      "message": "Invalid input provided",
+      "errors": {
+          "code": 4001,
+          "message": "Either tractor_id or trailer_id is required (but not both)"
+      }
+  }
+
+  Not Found Error (404):
+
+  {
+      "status": "error",
+      "message": "Tractor expense not found",
+      "errors": {
+          "code": 4004,
+          "message": "Tractor expense not found"
+      }
+  }
+
+  Unauthorized Error (401):
+
+  {
+      "status": "error",
+      "message": "Unauthorized",
+      "errors": {
+          "code": 4001,
+          "message": "User ID not found in context"
+      }
   }
