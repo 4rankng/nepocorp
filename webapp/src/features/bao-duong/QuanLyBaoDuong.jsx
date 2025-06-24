@@ -444,7 +444,7 @@ const QuanLyBaoDuong = memo(() => {
         </Alert>
       </Snackbar>
       {/* Floating Action Button */}
-      <Zoom in={!isFormLoading}>
+      <Zoom in={!isFormLoading && !openDialog}>
         <Fab
           color="primary"
           aria-label="Thêm mới"
