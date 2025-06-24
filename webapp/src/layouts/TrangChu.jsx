@@ -64,9 +64,7 @@ const TrangChu = () => {
 
       {/* Banner/Header only visible when authenticated */}
       {currentUser && (
-        <div className="fixed top-0 left-0 right-0 z-50 w-full" style={{ minWidth: 0 }}>
-          <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
-        </div>
+        <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
       )}
 
       {/* If not authenticated, show landing page with login button */}
@@ -136,10 +134,10 @@ const TrangChu = () => {
 
       {/* Main Layout Container, only show if authenticated */}
       {currentUser && (
-        <div className="flex pt-12 w-full">
+        <div className="flex pt-16 w-full">
           {/* Fixed Sidebar for desktop */}
           <div
-            className={`hidden md:block fixed top-12 left-0 bottom-0 z-40 transition-transform duration-300 ease-in-out ${
+            className={`hidden md:block fixed top-16 left-0 bottom-0 z-40 transition-transform duration-300 ease-in-out ${
               desktopSidebarCollapsed ? '-translate-x-full' : 'translate-x-0'
             }`}
           >
@@ -168,7 +166,7 @@ const TrangChu = () => {
 
           {/* Mobile Sidebar Overlay */}
           <div
-            className={`fixed top-12 left-0 right-0 bottom-0 z-40 flex md:hidden ${
+            className={`fixed top-16 left-0 right-0 bottom-0 z-40 flex md:hidden ${
               sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'
             }`}
           >
@@ -177,7 +175,7 @@ const TrangChu = () => {
               className={`fixed inset-0 bg-black transition-opacity duration-300 ease-out ${
                 sidebarOpen ? 'bg-opacity-30' : 'bg-opacity-0'
               }`}
-              style={{ top: 48 }}
+              style={{ top: 64 }}
               onClick={handleSidebarClose}
             ></div>
 
@@ -193,11 +191,21 @@ const TrangChu = () => {
 
           {/* Main Content */}
           <main
-            className={`flex-1 min-h-screen bg-white w-full transition-all duration-300 ease-in-out ${
+            className={`flex-1 min-h-screen w-full transition-all duration-300 ease-in-out ${
               desktopSidebarCollapsed ? 'md:ml-0' : 'md:ml-64'
             }`}
+            style={{ 
+              backgroundColor: '#f0f2f5',
+              minHeight: 'calc(100vh - 64px)' 
+            }}
           >
-            <div className="p-2 sm:p-4 w-full relative min-h-screen">
+            <div 
+              className="p-8 w-full relative"
+              style={{ 
+                backgroundColor: '#ffffff',
+                minHeight: 'calc(100vh - 64px)'
+              }}
+            >
               <Outlet />
             </div>
           </main>

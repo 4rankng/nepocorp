@@ -6,58 +6,63 @@ export const ROLES = {
   HANDLER: 'handler',
 };
 
-// Simple menu configuration
+// Menu configuration with hierarchical sections
 export const getMenuItems = () => {
   return [
     {
-      name: 'Báo cáo',
-      href: '/bao-cao',
-      icon: 'ChartBarIcon',
+      sectionTitle: 'Kế Hoạch',
+      items: [
+        {
+          name: 'Tổng quan',
+          href: '/tong-quan',
+          icon: 'ChartBar',
+        },
+        {
+          name: 'Lịch vận chuyển',
+          href: '/lich-van-chuyen',
+          icon: 'Calendar',
+        },
+      ]
     },
     {
-      name: 'Lịch vận chuyển',
-      href: '/lich-van-chuyen',
-      icon: 'CalendarIcon',
+      sectionTitle: 'Quản Lý',
+      items: [
+        {
+          name: 'Nhân viên',
+          href: '/nhan-vien',
+          icon: 'Users',
+        },
+        {
+          name: 'Đối tác',
+          href: '/doi-tac',
+          icon: 'ChainLink',
+        },
+        {
+          name: 'Khách hàng',
+          href: '/khach-hang',
+          icon: 'Briefcase',
+        },
+        {
+          name: 'Phương tiện',
+          href: '/phuong-tien',
+          icon: 'Truck',
+        },
+        {
+          name: 'Định mức',
+          href: '/dinh-muc',
+          icon: 'Oil',
+        },
+      ]
     },
     {
-      name: 'Nhân viên',
-      href: '/nhan-vien',
-      icon: 'UsersIcon',
-    },
-    {
-      name: 'Khách hàng',
-      href: '/khach-hang',
-      icon: 'UserGroupIcon',
-    },
-    {
-      name: 'Đối tác',
-      href: '/doi-tac',
-      icon: 'BuildingOfficeIcon',
-    },
-    {
-      name: 'Phương tiện',
-      href: '/phuong-tien',
-      icon: 'TruckIcon',
-      children: [
-        { name: 'Đầu kéo', href: '/phuong-tien/dau-keo' },
-        { name: 'Rơ-mooc', href: '/phuong-tien/ro-mooc' },
-        { name: 'Container', href: '/phuong-tien/container' },
-      ],
-    },
-    {
-      name: 'Định mức',
-      href: '/dinh-muc',
-      icon: 'AdjustmentsHorizontalIcon',
-      children: [
-        { name: 'Bổ sung', href: '/dinh-muc/bo-sung' },
-        { name: 'Định mức đường', href: '/dinh-muc/duong' },
-        { name: 'Vỏ rỗng', href: '/dinh-muc/vo-rong' },
-      ],
-    },
-    {
-      name: 'Bảo dưỡng',
-      href: '/bao-duong',
-      icon: 'WrenchScrewdriverIcon',
-    },
+      sectionTitle: 'Chi Phí',
+      items: [
+        {
+          name: 'Bảo dưỡng',
+          href: '/bao-duong',
+          icon: 'Tire',
+        },
+      ]
+    }
   ];
 };
