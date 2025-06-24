@@ -248,9 +248,20 @@ const ExpenseForm = ({
               {/* Row 2: Chi phí trước thuế + Thuế suất */}
               <FormRow>
                 <FormCol>
-                  <FormLabel>Chi phí trước thuế</FormLabel>
+                  <FormLabel style={{ marginBottom: '0px' }}>Chi phí trước thuế</FormLabel>
                   <PriceDisplay
                     value={formatCurrency(subtotal)}
+                    style={{
+                      marginTop: '0px',
+                      height: '43px',
+                      lineHeight: '40px',
+                      padding: '0 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.375rem',
+                      backgroundColor: '#f9fafb',
+                      fontSize: '1rem',
+                      fontFamily: 'inherit'
+                    }}
                   />
                   <HelperText>Tự động tính dựa trên danh sách hạng mục</HelperText>
                 </FormCol>
@@ -272,10 +283,21 @@ const ExpenseForm = ({
               {/* Row 3: Tổng tiền + Trạng thái */}
               <FormRow>
                 <FormCol>
-                  <FormLabel>Tổng tiền</FormLabel>
+                  <FormLabel style={{ marginBottom: '0px' }}>Tổng tiền</FormLabel>
                   <PriceDisplay
                     value={formatCurrency(total)}
-                    style={{fontSize: '1.25rem', fontWeight: 'bold'}}
+                    style={{
+                      marginTop: '0px',
+                      height: '43px',
+                      lineHeight: '40px',
+                      padding: '0 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.375rem',
+                      backgroundColor: '#f9fafb',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      fontFamily: 'inherit'
+                    }}
                   />
                   <HelperText>Subtotal + Thuế ({formatCurrency(taxAmount)})</HelperText>
                 </FormCol>
