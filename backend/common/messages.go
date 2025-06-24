@@ -40,4 +40,10 @@ const (
 	MsgExpenseItemCreated = "Expense item created successfully"
 	MsgExpenseItemUpdated = "Expense item updated successfully"
 	MsgExpenseItemDeleted = "Expense item deleted successfully"
+	
+	// Authentication
+	MsgLoginSuccess       = "Login successful"
+	MsgUserCreated        = "User created successfully"
+	MsgTokenRefreshed     = "Token refreshed successfully"
+	MsgProfileRetrieved   = "Profile retrieved successfully"
 )

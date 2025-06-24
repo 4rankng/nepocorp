@@ -56,8 +56,6 @@ export const formatContainersForSelect = containersList => {
     };
   });
 };
-// Import addKhachHang for addQuickCustomer
-import { addKhachHang } from '@services/mockApi/index.js';
 // Helper function to add a new customer quickly
 // Helper to get human-readable status display string
 export const formatCurrencyVND = (value, fallback = '-') => {
@@ -98,6 +96,6 @@ export const addQuickCustomer = async customerName => {
     dia_chi: '', // Default empty address
     ma_so_thue: '', // Default empty tax code
   };
-  const newCustomer = await addKhachHang(newCustomerData);
-  return newCustomer;
+  // TODO: Replace with actual API call
+  throw new Error('API function not implemented');
 };

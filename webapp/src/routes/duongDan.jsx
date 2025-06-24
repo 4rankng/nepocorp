@@ -3,11 +3,10 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@contexts/AuthContext';
 import { ErrorBoundary, ErrorPage } from '@components/ErrorBoundary';
 import { createLazyComponent, LazyLoadingWrapper } from '@components/LazyLoadingWrapper';
+import ProtectedRoute from '@components/ProtectedRoute';
 
 // Lazy load components with proper error handling
 const TrangChu = createLazyComponent(() => import('@layouts/TrangChu'), 'TrangChu');
-const TrangXacThuc = createLazyComponent(() => import('@layouts/TrangXacThuc'), 'TrangXacThuc');
-const DangNhap = createLazyComponent(() => import('@features/xac-thuc/DangNhap'), 'DangNhap');
 const BaoCaoTaiChinh = createLazyComponent(() => import('@features/bao-cao/BaoCaoTaiChinh'), 'BaoCaoTaiChinh');
 const QuanLyLichVanChuyen = createLazyComponent(() => import('@features/lich-van-chuyen/QuanLyLichVanChuyen'), 'QuanLyLichVanChuyen');
 const QuanLyNhanVien = createLazyComponent(() => import('@features/nhan-vien/QuanLyNhanVien'), 'QuanLyNhanVien');
@@ -56,32 +55,32 @@ const router = createBrowserRouter(
       children: [
         {
           path: 'bao-cao',
-          element: withErrorBoundaryAndSuspense(BaoCaoTaiChinh, 'Đang tải báo cáo tài chính...'),
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(BaoCaoTaiChinh, 'Đang tải báo cáo tài chính...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
         },
         {
           path: 'lich-van-chuyen',
-          element: withErrorBoundaryAndSuspense(QuanLyLichVanChuyen, 'Đang tải lịch vận chuyển...'),
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyLichVanChuyen, 'Đang tải lịch vận chuyển...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
         },
         {
           path: 'nhan-vien',
-          element: withErrorBoundaryAndSuspense(QuanLyNhanVien, 'Đang tải quản lý nhân viên...'),
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyNhanVien, 'Đang tải quản lý nhân viên...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
         },
         {
           path: 'khach-hang',
-          element: withErrorBoundaryAndSuspense(QuanLyKhachHang, 'Đang tải quản lý khách hàng...'),
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyKhachHang, 'Đang tải quản lý khách hàng...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
         },
         {
           path: 'doi-tac',
-          element: withErrorBoundaryAndSuspense(QuanLyDoiTac, 'Đang tải quản lý đối tác...'),
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyDoiTac, 'Đang tải quản lý đối tác...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
         },
         {
           path: 'phuong-tien',
-          element: withErrorBoundaryAndSuspense(QuanLyPhuongTien, 'Đang tải quản lý phương tiện...'),
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyPhuongTien, 'Đang tải quản lý phương tiện...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
           children: [
             {
@@ -98,7 +97,7 @@ const router = createBrowserRouter(
         // DinhMuc nested routes
         {
           path: 'dinh-muc',
-          element: withErrorBoundaryAndSuspense(QuanLyDinhMuc, 'Đang tải định mức...'),
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyDinhMuc, 'Đang tải định mức...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
           children: [
             {
@@ -115,7 +114,7 @@ const router = createBrowserRouter(
         // BaoDuong route with tab support
         {
           path: 'bao-duong',
-          element: withErrorBoundaryAndSuspense(QuanLyBaoDuong, 'Đang tải bảo dưỡng...'),
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyBaoDuong, 'Đang tải bảo dưỡng...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
         },
         // Keep old routes for backward compatibility
@@ -137,24 +136,6 @@ const router = createBrowserRouter(
         //   element: withErrorBoundary(QuanLyDinhMucDuong),
         //   errorElement: <ErrorPage />,
         // },
-      ],
-    },
-    {
-      path: '/xac-thuc',
-      element: (
-        <ErrorBoundary>
-          <LazyLoadingWrapper loadingMessage="Đang tải trang xác thực...">
-            <TrangXacThuc />
-          </LazyLoadingWrapper>
-        </ErrorBoundary>
-      ),
-      errorElement: <ErrorPage />,
-      children: [
-        {
-          path: 'dang-nhap',
-          element: withErrorBoundaryAndSuspense(DangNhap, 'Đang tải trang đăng nhập...'),
-          errorElement: <ErrorPage />,
-        },
       ],
     },
   ],

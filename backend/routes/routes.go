@@ -16,6 +16,7 @@ func Setup(
 	r *gin.Engine,
 	cfg *config.Config,
 	healthHandler *handlers.HealthHandler,
+	authHandler *handlers.AuthHandler,
 	userRepo *repositories.UserRepository,
 	expenseCategoryHandler *handlers.ExpenseCategoryHandler,
 	containerHandler *handlers.ContainerHandler,
@@ -48,16 +49,21 @@ func Setup(
 		// Apply rate limiting
 		v1.Use(mgin.NewMiddleware(rateLimiter))
 
-		// Auth routes (to be implemented)
+		// Auth routes
 		auth := v1.Group("/auth")
 		{
-			_ = auth // Placeholder
+			// Username/password login
+			auth.POST("/login", authHandler.Login)
+			auth.POST("/refresh", authHandler.RefreshToken)
 		}
 
 		// Protected routes
 		protected := v1.Group("/")
 		protected.Use(middleware.JWTAuth(cfg))
 		{
+			// User profile
+			protected.GET("/auth/profile", authHandler.GetProfile)
+			
 			// Expense categories
 			protected.GET("/expense_category", expenseCategoryHandler.List)
 			protected.POST("/expense_category", expenseCategoryHandler.Create)

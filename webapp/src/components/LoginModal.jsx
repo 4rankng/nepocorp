@@ -222,17 +222,6 @@ const LoginModal = ({ open, onClose }) => {
                     }
                     label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
                   />
-                  <Link 
-                    href="#" 
-                    underline="hover" 
-                    variant="body2"
-                    sx={{ 
-                      color: '#667eea',
-                      fontWeight: 500,
-                    }}
-                  >
-                    Quên mật khẩu?
-                  </Link>
                 </Box>
                 
                 <Button

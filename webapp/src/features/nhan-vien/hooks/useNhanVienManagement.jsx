@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import {
-  fetchAllNhanVien,
-  addNhanVien,
-  editNhanVien,
-  removeNhanVien,
-  fetchAllDauKeo,
-} from '@services/mockApi/index.js';
+// TODO: Replace with actual API imports
 // Configuration
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_RETRY_ATTEMPTS = 3;
@@ -93,31 +87,8 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
           }));
           return;
         }
-        // Fetch with retry logic
-        const data = await withRetry(() => fetchAllNhanVien(page, size));
-        // Map backend fields to UI fields
-        const mapped = (Array.isArray(data?.items || data) ? data.items || data : []).map(emp => ({
-          ...emp,
-          maNhanVien: emp.ma_so,
-          tenNhanVien: emp.ho_ten,
-          tenDangNhap: emp.ten_dang_nhap,
-          chucVu: mapChucVu(emp.chuc_vu),
-        }));
-        // Update cache
-        cacheRef.current.employees = {
-          data: mapped,
-          total: data.total || mapped.length,
-          timestamp: now,
-        };
-        // Update state
-        setEmployees(mapped);
-        setPagination(prev => ({
-          ...prev,
-          page,
-          pageSize: size,
-          total: data.total || mapped.length,
-          totalPages: Math.ceil((data.total || mapped.length) / size),
-        }));
+        // TODO: Replace with actual API call
+        throw new Error('fetchAllNhanVien API function not implemented');
       } catch (err) {
         const errorMsg = err?.message || 'Không thể tải danh sách nhân viên.';
         setError(errorMsg);
@@ -147,19 +118,8 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
         setDauKeoList(cachedData.data);
         return;
       }
-      const response = await withRetry(() => fetchAllDauKeo());
-      const dauKeoData = response?.data || [];
-      const mappedDauKeo = dauKeoData.map(item => ({
-        ...item,
-        label: `${item.bien_so} - ${item.loai_xe || 'Đầu kéo'}`,
-        value: item.id,
-      }));
-      // Update cache
-      cacheRef.current.dauKeo = {
-        data: mappedDauKeo,
-        timestamp: now,
-      };
-      setDauKeoList(mappedDauKeo);
+      // TODO: Replace with actual API call
+      throw new Error('fetchAllDauKeo API function not implemented');
     } catch (err) {
       setDauKeoList([]);
     } finally {
@@ -243,16 +203,12 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
     setIsLoading(true);
     try {
       if (editingEmployee) {
-        const dataToUpdate = { ...formData };
-        if (!formData.mat_khau.trim()) {
-          delete dataToUpdate.mat_khau;
-        }
-        await editNhanVien(editingEmployee.id, dataToUpdate);
+        // TODO: Replace with actual API call
+        throw new Error('editNhanVien API function not implemented');
       } else {
-        await addNhanVien(formData);
+        // TODO: Replace with actual API call
+        throw new Error('addNhanVien API function not implemented');
       }
-      await fetchEmployeesData(); // Refresh data
-      handleCloseModal(); // Close modal on success
     } catch (err) {
       setError(err.message || `Lỗi khi ${editingEmployee ? 'sửa' : 'thêm'} nhân viên.`);
 
@@ -269,8 +225,8 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
       setIsLoading(true);
       setError('');
       try {
-        await removeNhanVien(id);
-        await fetchEmployeesData(); // Refresh data
+        // TODO: Replace with actual API call
+        throw new Error('removeNhanVien API function not implemented');
       } catch (err) {
         setError('Lỗi khi xóa nhân viên.');
       } finally {

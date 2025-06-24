@@ -8,30 +8,49 @@ export const authApi = {
       password
     });
     
-    // Store token if login successful
-    if (response.token) {
-      localStorage.setItem('authToken', response.token);
+    // Store tokens if login successful
+    if (response.data?.token) {
+      localStorage.setItem('authToken', response.data.token);
+      if (response.data.refresh_token) {
+        localStorage.setItem('refreshToken', response.data.refresh_token);
+      }
     }
     
+    return response;
+  },
+  
+  // Refresh token
+  refreshToken: async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      throw new Error('No refresh token found');
+    }
+    
+    const response = await apiClient.post('/auth/refresh', {
+      refresh_token: refreshToken
+    });
+    
+    if (response.data?.token) {
+      localStorage.setItem('authToken', response.data.token);
+      if (response.data.refresh_token) {
+        localStorage.setItem('refreshToken', response.data.refresh_token);
+      }
+    }
+    
+    return response;
+  },
+  
+  // Get user profile
+  getProfile: async () => {
+    const response = await apiClient.get('/auth/profile');
     return response;
   },
   
   // Logout user
   logout: async () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('auth');
     return { status: 'success' };
-  },
-  
-  // Verify token validity
-  verifyToken: async () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      throw new Error('No token found');
-    }
-    
-    // This endpoint would need to be implemented on backend
-    // For now, just check if token exists
-    return { valid: true };
   }
 };

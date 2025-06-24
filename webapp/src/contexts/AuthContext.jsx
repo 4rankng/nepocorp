@@ -31,12 +31,13 @@ export const AuthProvider = ({ children }) => {
       try {
         const response = await authApi.login(username, password);
         
-        if (response.token) {
-          // For now, create a simple user object
-          // In real app, you'd decode the JWT or make another API call to get user info
-          const user = {
+        if (response.status === 'success' && response.data) {
+          const user = response.data.user || {
             username,
-            token: response.token,
+            id: response.data.id,
+            name: response.data.name || username,
+            email: response.data.email,
+            role: response.data.role
           };
           
           const authData = {
@@ -65,17 +66,31 @@ export const AuthProvider = ({ children }) => {
     [navigate]
   );
 
-  // Check token validity on mount
+  // Get user profile on mount if token exists
   useEffect(() => {
     const checkAuth = async () => {
+      const token = localStorage.getItem('authToken');
       const storedData = getStoredAuthData();
-      if (storedData && localStorage.getItem('authToken')) {
+      
+      if (token && storedData) {
         try {
-          await authApi.verifyToken();
-          setCurrentUser(storedData.currentUser);
-          setIsAuthenticated(storedData.isAuthenticated);
+          // Verify token by getting profile
+          const response = await authApi.getProfile();
+          if (response.status === 'success' && response.data) {
+            const user = response.data;
+            const authData = {
+              currentUser: user,
+              isAuthenticated: true,
+              timestamp: new Date().toISOString(),
+            };
+            
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+            localStorage.setItem('auth', JSON.stringify(authData));
+          }
         } catch (error) {
           // Token is invalid, clear auth
+          console.error('Auth check failed:', error);
           logout();
         }
       }

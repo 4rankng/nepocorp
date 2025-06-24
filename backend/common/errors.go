@@ -60,6 +60,14 @@ const (
 	ErrUpdateExpenseItem = "Failed to update expense item"
 	ErrDeleteExpenseItem = "Failed to delete expense item"
 	ErrExpenseItemNotFound = "Expense item not found"
+	
+	// Authentication errors
+	ErrInvalidCredentials = "Invalid username or password"
+	ErrUserNotActive = "User account is not active"
+	ErrInvalidToken = "Invalid token"
+	ErrTokenExpired = "Token has expired"
+	ErrCreateUser = "Failed to create user"
+	ErrUserExists = "User already exists"
 )
 
 // Error codes
@@ -73,6 +81,10 @@ const (
 	CodeUnauthorized     = 4006
 	CodeInvalidExpenseID = 4007
 	CodeInvalidItemID    = 4008
+	CodeInvalidCredentials = 4009
+	CodeUserNotActive    = 4010
+	CodeTokenExpired     = 4011
+	CodeUserExists       = 4012
 	
 	// 5xxx - Server errors
 	CodeInternalError    = 5001

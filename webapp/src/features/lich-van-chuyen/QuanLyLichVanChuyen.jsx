@@ -1,17 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import { ROLES } from '@/config/roles';
-import {
-  fetchAllLichVanChuyen,
-  addLichVanChuyen,
-  editLichVanChuyen,
-  removeLichVanChuyen,
-} from '@services/mockApi/lichVanChuyenApi';
-import { fetchAllNhanVien } from '@services/mockApi/nhanVienApi';
-import { fetchAllContainer } from '@services/mockApi/containerApi';
-import { fetchAllKhachHang } from '@services/mockApi/khachHangApi';
-import { fetchAllDauKeo } from '@services/mockApi/dauKeoApi';
-import { fetchAllRoMooc } from '@services/mockApi/roMoocApi';
+// TODO: Replace with real API services
+// import {
+//   fetchAllLichVanChuyen,
+//   addLichVanChuyen,
+//   editLichVanChuyen,
+//   removeLichVanChuyen,
+// } from '@services/api/lichVanChuyenApi';
+// import { fetchAllNhanVien } from '@services/api/nhanVienApi';
+// import { fetchAllContainer } from '@services/api/containerApi';
+// import { fetchAllKhachHang } from '@services/api/khachHangApi';
+// import { fetchAllDauKeo } from '@services/api/dauKeoApi';
+// import { fetchAllRoMooc } from '@services/api/roMoocApi';
+
+// Temporary empty functions to prevent errors
+const fetchAllLichVanChuyen = async () => ({ success: true, data: { items: [] } });
+const addLichVanChuyen = async (data) => ({ success: true, data: { id: Date.now(), ...data } });
+const editLichVanChuyen = async (id, data) => ({ success: true, data: { id, ...data } });
+const removeLichVanChuyen = async (id) => ({ success: true });
+const fetchAllNhanVien = async () => ({ success: true, data: { items: [] } });
+const fetchAllContainer = async () => ({ success: true, data: { items: [] } });
+const fetchAllKhachHang = async () => ({ success: true, data: { items: [] } });
+const fetchAllDauKeo = async () => ({ success: true, data: { items: [] } });
+const fetchAllRoMooc = async () => ({ success: true, data: { items: [] } });
 // import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx'; // Not used directly in this component
 import DeleteDialog from '@/components/DeleteDialog.jsx';
 import { createLichVanChuyenColumns, trangThaiMap } from './config/tableColumns.jsx';
