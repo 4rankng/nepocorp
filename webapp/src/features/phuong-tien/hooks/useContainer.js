@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import logger from '@services/logger';
 import { containerApi } from '@services/api/containerApi';
+import { useVehicleData } from '@contexts/VehicleDataContext';
 
 export const useContainer = () => {
+  const { invalidateCache, refreshCache } = useVehicleData();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,6 +50,10 @@ export const useContainer = () => {
       setData(prev => [...prev, newContainer]);
       setCount(prev => prev + 1);
       
+      // Invalidate and refresh cache after creating
+      invalidateCache(['containers']);
+      refreshCache(['containers']);
+      
       return newContainer;
     } catch (err) {
       setError(err.message || 'Không thể thêm container mới');
@@ -71,6 +77,10 @@ export const useContainer = () => {
       const updatedContainer = response.data;
       setData(prev => prev.map(item => (item.id === id ? updatedContainer : item)));
       
+      // Invalidate and refresh cache after updating
+      invalidateCache(['containers']);
+      refreshCache(['containers']);
+      
       return updatedContainer;
     } catch (err) {
       setError(err.message || 'Không thể cập nhật container');
@@ -93,6 +103,10 @@ export const useContainer = () => {
       
       setData(prev => prev.filter(item => item.id !== id));
       setCount(prev => prev - 1);
+      
+      // Invalidate and refresh cache after deleting
+      invalidateCache(['containers']);
+      refreshCache(['containers']);
     } catch (err) {
       setError(err.message || 'Không thể xóa container');
       throw err;

@@ -5,3 +5,5 @@ DROP TABLE IF EXISTS trailers;
 DROP TABLE IF EXISTS tractors;
 DROP TABLE IF EXISTS containers;
 DROP TABLE IF EXISTS expense_categories;
+DROP TABLE IF EXISTS activity_logs;
+DROP TABLE IF EXISTS users;

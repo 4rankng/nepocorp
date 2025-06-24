@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Modal,
   FormContainer,
@@ -26,10 +26,25 @@ const RoMoocDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
   };
   
   const handleCancel = () => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy? Mọi thông tin đã nhập sẽ bị mất.')) {
-      onClose();
-    }
+    onClose();
   };
+
+  // Handle ESC key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && open) {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
   return (
     <Modal
       isOpen={open}

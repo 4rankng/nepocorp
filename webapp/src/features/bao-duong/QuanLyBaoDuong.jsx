@@ -367,26 +367,6 @@ const QuanLyBaoDuong = memo(() => {
     <Box sx={{ width: '100%', position: 'relative' }}>
       {/* Main Bao Duong Content */}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <TextField
-          sx={{ width: '50%' }}
-          variant="outlined"
-          placeholder="Tìm kiếm theo biển số hoặc ghi chú..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            sx: {
-              borderRadius: '6px',
-              height: 36,
-              minHeight: 36,
-              fontSize: '0.95rem',
-            },
-          }}
-        />
         <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
           <InputLabel id="plate-select-label">Biển số xe</InputLabel>
           <Select

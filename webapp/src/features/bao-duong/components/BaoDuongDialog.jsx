@@ -117,9 +117,7 @@ const BaoDuongDialog = ({
   };
 
   const handleCancel = () => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy? Mọi thông tin đã nhập sẽ bị mất.')) {
-      onClose();
-    }
+    onClose();
   };
 
   return (

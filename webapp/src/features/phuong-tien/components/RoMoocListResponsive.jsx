@@ -41,8 +41,8 @@ const RoMoocListResponsive = ({
     const term = searchTerm.toLowerCase();
     return data.filter(
       item =>
-        (item.bien_so && item.bien_so.toLowerCase().includes(term)) ||
-        (item.mo_ta && item.mo_ta.toLowerCase().includes(term))
+        (item.license_plate && item.license_plate.toLowerCase().includes(term)) ||
+        (item.description && item.description.toLowerCase().includes(term))
     );
   }, [data, searchTerm]);
   // Get current data for the current page
@@ -57,13 +57,13 @@ const RoMoocListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'bien_so',
+      key: 'license_plate',
       label: 'BIỂN SỐ',
       align: 'left',
       sortable: true,
     },
     {
-      key: 'mo_ta',
+      key: 'description',
       label: 'MÔ TẢ',
       align: 'left',
       sortable: true,
@@ -86,10 +86,10 @@ const RoMoocListResponsive = ({
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
               <Box>
                 <Typography variant="h6" component="div">
-                  {item.bien_so}
+                  {item.license_plate}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Mô tả:</strong> {item.mo_ta || 'Chưa cập nhật'}
+                  <strong>Mô tả:</strong> {item.description || 'Chưa cập nhật'}
                 </Typography>
               </Box>
               <Box>
@@ -177,7 +177,7 @@ const RoMoocListResponsive = ({
         error={error}
         emptyMessage={searchTerm ? 'Không tìm thấy rơ-mooc phù hợp' : emptyMessage}
         sortable={true}
-        defaultSort={{ key: 'bien_so', direction: 'asc' }}
+        defaultSort={{ key: 'license_plate', direction: 'asc' }}
         pagination={true}
         page={page}
         rowsPerPage={rowsPerPage}

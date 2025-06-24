@@ -29,29 +29,29 @@ const iconComponents = {
   Tire: TireIcon,
 };
 
-const ThanhBen = ({ onNavItemClick }) => {
+const ThanhBen = ({ onNavItemClick, version, onVersionClick }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  
+
   if (!currentUser) return null;
 
   const menuSections = getMenuItems(currentUser.role);
 
   return (
-    <aside 
-      className="w-64 h-full overflow-y-auto"
+    <aside
+      className="w-64 h-full flex flex-col"
       style={{
         background: '#ffffff',
         boxShadow: '2px 0 8px rgba(0,0,0,0.05)',
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
       }}
     >
-      <nav className="pt-6">
+      <nav className="pt-4 flex-1 overflow-y-auto">
         {menuSections.map((section, sectionIndex) => (
-          <div key={sectionIndex} className="mb-8">
+          <div key={sectionIndex} className="mb-2">
             {/* Section Title */}
-            <div 
-              className="px-6 mb-3"
+            <div
+              className="px-6 mb-2"
               style={{
                 fontSize: '11px',
                 fontWeight: 600,
@@ -62,13 +62,13 @@ const ThanhBen = ({ onNavItemClick }) => {
             >
               {section.sectionTitle}
             </div>
-            
+
             {/* Section Items */}
-            <div className="space-y-1">
+            <div className="space-y-0.1">
               {section.items.map((item) => {
                 const IconComponent = iconComponents[item.icon];
                 const isActive = location.pathname.startsWith(item.href);
-                
+
                 return (
                   <NavLink
                     key={item.href}
@@ -88,15 +88,15 @@ const ThanhBen = ({ onNavItemClick }) => {
                     {/* Icon */}
                     <span className="mr-3 transition-all duration-300 group-hover:scale-105">
                       {IconComponent && (
-                        <IconComponent 
+                        <IconComponent
                           className="w-5 h-5"
                           style={{ opacity: 0.8 }}
                         />
                       )}
                     </span>
-                    
+
                     {/* Label */}
-                    <span 
+                    <span
                       className="relative z-10"
                       style={{
                         fontSize: '15px',
@@ -106,14 +106,31 @@ const ThanhBen = ({ onNavItemClick }) => {
                     >
                       {item.name}
                     </span>
-                    
+
                   </NavLink>
                 );
               })}
             </div>
           </div>
         ))}
+
       </nav>
+      
+      {/* Version text at absolute bottom */}
+      {version && (
+        <div className="py-4 flex justify-center border-t border-gray-100">
+          <button
+            onClick={onVersionClick}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            style={{
+              fontSize: '11px',
+              fontWeight: 400,
+            }}
+          >
+            v{version}
+          </button>
+        </div>
+      )}
     </aside>
   );
 };

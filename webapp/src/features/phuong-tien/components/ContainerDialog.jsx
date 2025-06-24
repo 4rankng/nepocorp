@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Modal,
   FormContainer,
@@ -13,16 +13,12 @@ import {
   HelperText,
   Button
 } from '@components/ui';
-const CONTAINER_TYPES = [
-  '20ft Container',
-  '40ft Container',
-  '40ft HC Container',
-  'Tank Container',
-  'Open Top Container',
-  'Flat Rack Container',
-  'Refrigerated Container',
-];
+import { useVehicleData } from '@contexts/VehicleDataContext';
 const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = false }) => {
+  const { checkContainerExists, fetchContainers } = useVehicleData();
+  const [inputValue, setInputValue] = useState('');
+  const [validationError, setValidationError] = useState('');
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const handleSave = (e) => {
     e.preventDefault();
     onSave(data);
@@ -34,12 +30,74 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
       [field]: value,
     });
   };
+
+  const validateContainerName = useCallback((name) => {
+    if (!name || !name.trim()) {
+      setValidationError('');
+      setShowDuplicateWarning(false);
+      return;
+    }
+
+    const exists = checkContainerExists(name);
+    if (exists && !edit) {
+      setShowDuplicateWarning(true);
+      setValidationError('');
+    } else {
+      setShowDuplicateWarning(false);
+      setValidationError('');
+    }
+  }, [checkContainerExists, edit]);
+
+  const handleInputChange = useCallback((value) => {
+    setInputValue(value);
+    handleFieldChange('category', value);
+    
+    // Debounced validation
+    const timeoutId = setTimeout(() => {
+      validateContainerName(value);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [handleFieldChange, validateContainerName]);
   
   const handleCancel = () => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy? Mọi thông tin đã nhập sẽ bị mất.')) {
-      onClose();
-    }
+    onClose();
   };
+
+  // Initialize input value when dialog opens
+  useEffect(() => {
+    if (open) {
+      const currentValue = data?.category || '';
+      setInputValue(currentValue);
+      if (currentValue) {
+        validateContainerName(currentValue);
+      }
+      // Fetch latest container data when dialog opens
+      fetchContainers();
+    } else {
+      // Reset state when dialog closes
+      setInputValue('');
+      setValidationError('');
+      setShowDuplicateWarning(false);
+    }
+  }, [open, data?.category, validateContainerName, fetchContainers]);
+
+  // Handle ESC key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && open) {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
   return (
     <Modal
       isOpen={open}
@@ -55,36 +113,26 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
         <FormBody onSubmit={handleSave}>
           <FormSection>
             <FormGroup>
-              <FormLabel required>Loại container</FormLabel>
-              <FormControl
-                type="select"
-                value={data?.category || ''}
-                onChange={e => handleFieldChange('category', e.target.value)}
-                error={!data?.category}
-                required
-                autoFocus
-              >
-                <option value="">Chọn loại container</option>
-                {CONTAINER_TYPES.map(type => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </FormControl>
-              {!data?.category && <ErrorText>Vui lòng chọn loại container</ErrorText>}
-            </FormGroup>
-            
-            <FormGroup>
-              <FormLabel>Hoặc nhập loại khác</FormLabel>
+              <FormLabel required>Tên loại container</FormLabel>
               <FormControl
                 type="text"
-                value={
-                  data?.category && !CONTAINER_TYPES.includes(data.category) ? data.category : ''
-                }
-                onChange={e => handleFieldChange('category', e.target.value)}
-                placeholder="Nhập loại container tùy chỉnh..."
+                value={inputValue}
+                onChange={e => handleInputChange(e.target.value)}
+                error={!data?.category || !!validationError}
+                required
+                autoFocus
+                placeholder="Nhập tên loại container..."
               />
-              <HelperText>Nếu loại container không có trong danh sách trên</HelperText>
+              {!data?.category && <ErrorText>Vui lòng nhập tên loại container</ErrorText>}
+              {validationError && <ErrorText>{validationError}</ErrorText>}
+              {showDuplicateWarning && (
+                <HelperText style={{ color: '#ff9800' }}>
+                  ⚠️ Loại container này đã tồn tại trong hệ thống
+                </HelperText>
+              )}
+              <HelperText>
+                Nhập tên loại container (ví dụ: 20ft Container, 40ft Container, Tank Container, v.v.)
+              </HelperText>
             </FormGroup>
           </FormSection>
           
@@ -102,7 +150,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
               loading={isLoading}
               disabled={isLoading || !data?.category}
             >
-              {edit ? 'Cập nhật' : 'Thêm mới'}
+              {edit ? 'Cập nhật' : (showDuplicateWarning ? 'Thêm mới (Trùng lặp)' : 'Thêm mới')}
             </Button>
           </FormActions>
         </FormBody>

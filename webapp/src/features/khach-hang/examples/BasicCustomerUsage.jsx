@@ -24,10 +24,8 @@ const BasicCustomerUsage = () => {
     setIsFormOpen(true);
   };
   const handleDelete = async customer => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa khách hàng ${customer.name}?`)) {
-      const result = await deleteCustomer(customer.id);
-      if (result.success) {
-      }
+    const result = await deleteCustomer(customer.id);
+    if (result.success) {
     }
   };
   return (

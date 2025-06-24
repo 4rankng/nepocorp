@@ -34,20 +34,9 @@ const TrangChu = () => {
     setSidebarOpen(false);
   };
 
-  // Version badge component
-  const VersionBadge = () => (
-    <button
-      onClick={() => setChangelogOpen(true)}
-      className="fixed bottom-4 left-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm text-gray-500 border border-gray-200 shadow-sm z-50 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-300 transition-all"
-    >
-      v{packageJson.version}
-    </button>
-  );
 
   return (
     <div className="min-h-screen w-full bg-white overflow-x-hidden">
-      {/* Version badge - always visible */}
-      <VersionBadge />
 
       {/* Changelog Dialog */}
       <ChangelogDialog
@@ -141,7 +130,7 @@ const TrangChu = () => {
               desktopSidebarCollapsed ? '-translate-x-full' : 'translate-x-0'
             }`}
           >
-            <ThanhBen onNavItemClick={handleSidebarClose} />
+            <ThanhBen onNavItemClick={handleSidebarClose} version={packageJson.version} onVersionClick={() => setChangelogOpen(true)} />
           </div>
 
           {/* Desktop Sidebar Toggle Button */}
@@ -185,7 +174,7 @@ const TrangChu = () => {
                 sidebarOpen ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
-              <ThanhBen onNavItemClick={handleSidebarClose} />
+              <ThanhBen onNavItemClick={handleSidebarClose} version={packageJson.version} onVersionClick={() => setChangelogOpen(true)} />
             </div>
           </div>
 
@@ -194,14 +183,14 @@ const TrangChu = () => {
             className={`flex-1 min-h-screen w-full transition-all duration-300 ease-in-out ${
               desktopSidebarCollapsed ? 'md:ml-0' : 'md:ml-64'
             }`}
-            style={{ 
+            style={{
               backgroundColor: '#f0f2f5',
-              minHeight: 'calc(100vh - 64px)' 
+              minHeight: 'calc(100vh - 64px)'
             }}
           >
-            <div 
+            <div
               className="p-8 w-full relative"
-              style={{ 
+              style={{
                 backgroundColor: '#ffffff',
                 minHeight: 'calc(100vh - 64px)'
               }}

@@ -14,25 +14,25 @@ export const containerApi = {
     const response = await apiClient.get('/container', {
       params: { page: 1, limit: 1000 }
     });
-    return response.data;
+    return response;
   },
 
   // Get container by ID
   getById: async (id) => {
     const response = await apiClient.get(`/container/${id}`);
-    return response.data;
+    return response;
   },
 
   // Create new container
   create: async (data) => {
     const response = await apiClient.post('/container', data);
-    return response.data;
+    return response;
   },
 
   // Update existing container
   update: async (id, data) => {
     const response = await apiClient.put(`/container/${id}`, data);
-    return response.data;
+    return response;
   },
 
   // Delete container
@@ -46,6 +46,6 @@ export const containerApi = {
     const response = await apiClient.get('/container', {
       params: { page: 1, limit: 1 }
     });
-    return response.pagination?.records_count || 0;
+    return response;
   }
 };

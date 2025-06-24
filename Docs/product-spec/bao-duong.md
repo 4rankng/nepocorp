@@ -1,5 +1,27 @@
 # Chi phí xe vận chuyển
 
+Nhap thong tin bao duong
+
+The modal has two column
+LEFT COLUMN
+- Bien so xe
+- Subtotal (auto calculate base on list of items)
+- Tax rate (GET /api/v1/settings/tax_rate, frontend load one and store in cache)
+- Total (auto calculate)
+
+RIGHT COLUMN
+- Default has one empty row with
+  * Item name
+  * Price (in VND, before tax)
+  * Quantity
+  * Install date
+  * Expiry date
+- There is button to add new row
+- TextArea to write remark
+
+
+
+
 
 
 Table tractor_expenses
@@ -9,8 +31,6 @@ id auto increment
 tractor_id int (foreign key to tractor table)
 vendor_name string
 expense_category_id int (foreign key to expense_categories table)
-install_date datetime default null (the date the part is installed)
-expiry_date datetime default null (the date the part warranty expires)
 subtotal int (in VND)
 tax_rate int (later total = subtotal * tax / 100)
 total int (in VND)
@@ -27,6 +47,8 @@ item_name string
 price int (in VND)
 quantity int
 total int (in VND)
+install_date datetime default null (the date the part / insurance / road fee is installed)
+expiry_date datetime default null (the date the part / insurance / road fee expires)
 created_at datetime
 updated_at datetime
 
