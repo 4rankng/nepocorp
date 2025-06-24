@@ -52,7 +52,7 @@ const BaoDuongDialog = ({
     items: [{
       item_name: '',
       price: '',
-      quantity: 1,
+      quantity: '',
       install_date: '',
       expiry_date: ''
     }],
@@ -68,7 +68,7 @@ const BaoDuongDialog = ({
       items: [{
         item_name: '',
         price: '',
-        quantity: 1,
+        quantity: '',
         install_date: '',
         expiry_date: ''
       }],
@@ -160,7 +160,7 @@ const BaoDuongDialog = ({
     const newItems = [...currentItems, {
       item_name: '',
       price: '',
-      quantity: 1,
+      quantity: '',
       install_date: '',
       expiry_date: ''
     }];
@@ -192,7 +192,7 @@ const BaoDuongDialog = ({
     const items = localData.items || [];
     const subtotal = items.reduce((sum, item) => {
       const price = parseFloat(item.price) || 0;
-      const quantity = parseInt(item.quantity) || 0;
+      const quantity = item.quantity === '' ? 0 : parseInt(item.quantity) || 0;
       return sum + (price * quantity);
     }, 0);
 
@@ -277,7 +277,7 @@ const BaoDuongDialog = ({
               {/* Subtotal, Tax rate, Total in one row */}
               <FormRow>
                 <FormCol>
-                  <FormLabel>Subtotal</FormLabel>
+                  <FormLabel>Chi phí trước thuế</FormLabel>
                   <PriceDisplay
                     value={formatCurrency(subtotal)}
                   />
@@ -395,8 +395,9 @@ const BaoDuongDialog = ({
                       <FormLabel required>Số lượng</FormLabel>
                       <FormControl
                         type="number"
-                        min="1"
-                        value={item.quantity || 1}
+                        min="0"
+                        placeholder="0"
+                        value={item.quantity || ''}
                         onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                         error={!!errors[`items.${index}.quantity`]}
                         required
@@ -423,13 +424,16 @@ const BaoDuongDialog = ({
                         type="date"
                         value={item.expiry_date || ''}
                         onChange={(e) => handleItemChange(index, 'expiry_date', e.target.value)}
+                        error={!!errors[`items.${index}.expiry_date`]}
                       />
+                      {errors[`items.${index}.expiry_date`] && <ErrorText>{errors[`items.${index}.expiry_date`]}</ErrorText>}
 
                     </FormCol>
                   </FormRow>
                 </div>
               ))}
               </div>
+              {errors.items && <ErrorText>{errors.items}</ErrorText>}
 
               {/* Add new row button */}
               <Button

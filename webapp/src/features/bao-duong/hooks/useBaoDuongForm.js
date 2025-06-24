@@ -46,12 +46,28 @@ export default function useBaoDuongForm({
   };
   const validateForm = () => {
     const newErrors = {};
+    
+    // Validate main fields
     if (!formData.bien_so) newErrors.bien_so = 'Vui lòng nhập biển số xe';
-    if (!formData.item_name) newErrors.item_name = 'Vui lòng nhập hạng mục bảo dưỡng';
-    if (!formData.ngay_thay) newErrors.ngay_thay = 'Vui lòng chọn ngày thay thế';
-    if (!formData.so_luong || formData.so_luong <= 0)
-      newErrors.so_luong = 'Số lượng phải lớn hơn 0';
-    if (!formData.don_gia || formData.don_gia < 0) newErrors.don_gia = 'Đơn giá không hợp lệ';
+    // payment_status has a default value of DRAFT, so it's always valid
+    
+    // Validate items array
+    if (!formData.items || formData.items.length === 0) {
+      newErrors.items = 'Vui lòng thêm ít nhất một hạng mục bảo dưỡng';
+    } else {
+      formData.items.forEach((item, index) => {
+        if (!item.item_name) {
+          newErrors[`items.${index}.item_name`] = 'Vui lòng nhập tên hạng mục';
+        }
+        if (!item.price || item.price < 0) {
+          newErrors[`items.${index}.price`] = 'Đơn giá không hợp lệ';
+        }
+        if (!item.quantity || item.quantity <= 0) {
+          newErrors[`items.${index}.quantity`] = 'Số lượng phải lớn hơn 0';
+        }
+      });
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

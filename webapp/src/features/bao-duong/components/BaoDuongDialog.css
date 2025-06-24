@@ -6,6 +6,7 @@
   --input-padding-horizontal: 6px;
   --input-padding-vertical: 2px;
   --input-padding: var(--input-padding-vertical) var(--input-padding-horizontal);
+  --price-display-height: 42px;
 }
 
 .bao-duong-modal .modal-container {
@@ -68,6 +69,10 @@
   font-size: var(--input-font-size) !important;
 }
 
+.bao-duong-modal .form-control:disabled {
+  color: #000000 !important;
+}
+
 .bao-duong-modal textarea.form-control {
   min-height: 60px;
   height: auto !important;
@@ -76,9 +81,13 @@
 }
 
 .bao-duong-modal .price-display {
-  padding: 8px;
-  font-size: 14px;
-  margin-top: 4px;
+  height: var(--price-display-height);
+  padding: 8px var(--input-padding-horizontal);
+  font-size: var(--input-font-size);
+  margin-top: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .bao-duong-modal .helper-text,
