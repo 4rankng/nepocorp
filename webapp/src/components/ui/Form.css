@@ -246,12 +246,12 @@ textarea.form-control {
   .form-body {
     padding: 16px;
   }
-  
+
   .form-actions {
     flex-direction: column-reverse;
     padding: 16px;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 8px;

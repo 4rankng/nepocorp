@@ -227,4 +227,5 @@ export const useVehicleData = () => {
   return context;
 };
 
+export { VehicleDataContext };
 export default VehicleDataContext;

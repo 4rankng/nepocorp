@@ -58,10 +58,11 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';
 import { getBaoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
-import useBaoDuongForm from './hooks/useBaoDuongForm';
+import { useExpenseForm } from '@components/shared';
 import useBaoDuongRecords from './hooks/useBaoDuongRecords';
 const initialFormData = {
   bien_so: '',
+  vendor_name: '',
   payment_status: 'DRAFT',
   payment_proof: '',
   items: [{
@@ -72,7 +73,6 @@ const initialFormData = {
     expiry_date: ''
   }],
   remark: '',
-  vendor_name: '',
   tax_rate: 10,
   currency: 'VND',
 };
@@ -121,11 +121,12 @@ const QuanLyBaoDuong = memo(() => {
     handleInputChange,
     validateForm,
     handleSave: handleSaveForm,
-  } = useBaoDuongForm({
+  } = useExpenseForm({
     initialFormData,
     isEdit,
     api: baoDuongApi,
     fetchData,
+    expenseCategoryId: 1, // Fixed category for BaoDuong (maintenance)
     onSuccess: msg => {
       setSnackbar({ open: true, message: msg, severity: 'success' });
       handleCloseDialog();
