@@ -1,0 +1,113 @@
+/* BaoDuong Modal specific optimizations */
+.bao-duong-modal .modal-container {
+  height: 92vh;
+  max-height: 92vh;
+}
+
+.bao-duong-modal .form-container {
+  height: 100%;
+}
+
+.bao-duong-modal .form-body {
+  padding: 16px 20px;
+}
+
+.bao-duong-modal .form-sections {
+  gap: 16px;
+  height: 100%;
+}
+
+.bao-duong-modal .form-section {
+  padding: 12px;
+  overflow: hidden;
+}
+
+.bao-duong-modal .section-title {
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  font-size: 15px;
+}
+
+.bao-duong-modal .form-group {
+  margin-bottom: 12px;
+}
+
+.bao-duong-modal .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.bao-duong-modal .form-label {
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+
+.bao-duong-modal .form-control {
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.bao-duong-modal textarea.form-control {
+  min-height: 50px;
+}
+
+.bao-duong-modal .price-display {
+  padding: 8px;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.bao-duong-modal .helper-text,
+.bao-duong-modal .error-text {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.bao-duong-modal .form-actions {
+  margin-top: 12px;
+  padding: 12px 16px;
+}
+
+.bao-duong-modal .input-addon {
+  font-size: 12px;
+}
+
+.bao-duong-modal .date-icon {
+  font-size: 14px;
+}
+
+/* Responsive optimizations */
+@media (max-width: 1024px) {
+  .bao-duong-modal .modal-container {
+    height: 95vh;
+    max-height: 95vh;
+  }
+  
+  .bao-duong-modal .form-sections {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .bao-duong-modal .form-section {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .bao-duong-modal .modal-container {
+    height: 98vh;
+    max-height: 98vh;
+  }
+  
+  .bao-duong-modal .form-body {
+    padding: 12px;
+  }
+  
+  .bao-duong-modal .form-actions {
+    padding: 12px;
+    flex-direction: column-reverse;
+  }
+  
+  .bao-duong-modal .btn {
+    width: 100%;
+  }
+}

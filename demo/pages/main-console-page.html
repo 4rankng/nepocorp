@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NePO Transport - Dashboard</title>
+    <title>NePO Transport - Thêm Bảo Dưỡng</title>
     <style>
         * {
             margin: 0;
@@ -13,113 +13,99 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f0f2f5;
-            color: #1a1a1a;
+            background-color: #f9fafb;
+            min-height: 100vh;
+            color: #374151;
         }
 
-        /* Header/Banner Styles */
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 0 24px;
+            background: white;
             height: 64px;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 0 24px;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
+            z-index: 100;
         }
 
-        .logo-section {
+        .header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
 
         .logo {
-            width: 40px;
-            height: 40px;
-            background: white;
+            width: 42px;
+            height: 42px;
+            background: #e5e7eb;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            color: #2a5298;
-            font-size: 18px;
+            font-weight: 700;
+            font-size: 20px;
+            color: #374151;
         }
 
         .company-name {
             font-size: 20px;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            color: #374151;
         }
 
-        .header-actions {
+        .header-right {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 24px;
         }
 
         .notification-btn {
             position: relative;
-            background: rgba(255,255,255,0.1);
+            background: transparent;
             border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .notification-btn:hover {
-            background: rgba(255,255,255,0.2);
+            padding: 8px;
         }
 
         .notification-badge {
             position: absolute;
-            top: 6px;
-            right: 6px;
-            background: #ff4757;
+            top: 4px;
+            right: 4px;
+            background: #ef4444;
             color: white;
             font-size: 11px;
-            padding: 2px 5px;
-            border-radius: 10px;
-            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
         }
 
         .user-profile {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 8px 16px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 30px;
             cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .user-profile:hover {
-            background: rgba(255,255,255,0.2);
         }
 
         .user-avatar {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: #4834d4;
+            background: #6b7280;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 14px;
         }
 
         .user-info {
@@ -127,102 +113,82 @@
         }
 
         .user-name {
-            font-weight: 500;
             font-size: 14px;
+            font-weight: 600;
+            color: #374151;
         }
 
-        .user-role {
+        .user-subtitle {
             font-size: 12px;
-            opacity: 0.8;
+            color: #6b7280;
         }
 
-        /* Sidebar Styles */
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* Sidebar */
         .sidebar {
-            position: fixed;
-            top: 64px;
-            left: 0;
             width: 260px;
-            height: calc(100vh - 64px);
             background: white;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
-            overflow-y: auto;
+            border-right: 1px solid #e5e7eb;
             padding: 24px 0;
-            transition: all 0.3s ease;
+            position: fixed;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
         }
 
         .sidebar-section {
-            margin-bottom: 32px;
+            margin-bottom: 8px;
         }
 
         .sidebar-title {
             font-size: 11px;
             font-weight: 600;
-            color: #8e8e93;
+            color: #9ca3af;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 0 24px;
-            margin-bottom: 12px;
+            padding: 8px 24px;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
             padding: 12px 24px;
-            color: #4a4a4a;
+            color: #6b7280;
             text-decoration: none;
             transition: all 0.2s ease;
-            position: relative;
             gap: 12px;
+            font-size: 15px;
+            font-weight: 500;
         }
 
         .nav-item:hover {
-            background: #f5f5f7;
-            color: #2a5298;
+            background: #f3f4f6;
+            color: #374151;
         }
 
         .nav-item.active {
-            background: #e8f0fe;
-            color: #2a5298;
-        }
-
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: #2a5298;
-            border-radius: 0 4px 4px 0;
+            background: #eff6ff;
+            color: #3b82f6;
+            border-left: 3px solid #3b82f6;
+            padding-left: 21px;
         }
 
         .nav-icon {
             width: 20px;
             height: 20px;
-            opacity: 0.8;
+            stroke: currentColor;
         }
 
-        .nav-text {
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        .nav-badge {
-            margin-left: auto;
-            background: #ff4757;
-            color: white;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        /* Main Content Styles */
-        .main-content {
+        /* Content Area */
+        .content {
             margin-left: 260px;
-            margin-top: 64px;
+            flex: 1;
             padding: 32px;
-            min-height: calc(100vh - 64px);
         }
 
         .page-header {
@@ -230,9 +196,9 @@
         }
 
         .page-title {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
-            color: #1a1a1a;
+            color: #111827;
             margin-bottom: 8px;
         }
 
@@ -241,11 +207,11 @@
             align-items: center;
             gap: 8px;
             font-size: 14px;
-            color: #6c757d;
+            color: #6b7280;
         }
 
         .breadcrumb a {
-            color: #2a5298;
+            color: #3b82f6;
             text-decoration: none;
         }
 
@@ -253,426 +219,546 @@
             text-decoration: underline;
         }
 
-        /* Error State */
-        .error-container {
+        /* Form Container */
+        .form-container {
             background: white;
-            border-radius: 16px;
-            padding: 48px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            max-width: 600px;
-            margin: 0 auto;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
         }
 
-        .error-icon {
-            width: 80px;
-            height: 80px;
-            background: #fee;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 24px;
-            color: #ff4757;
-            font-size: 36px;
+        .form-header {
+            background: #f9fafb;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        .error-title {
-            font-size: 24px;
+        .form-header-title {
+            font-size: 18px;
             font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 12px;
+            color: #111827;
         }
 
-        .error-message {
+        .form-body {
+            padding: 24px;
+        }
+
+        .form-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .form-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fcfcfc;
+        }
+
+        .section-title {
             font-size: 16px;
-            color: #6c757d;
-            margin-bottom: 32px;
-            line-height: 1.6;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        .error-actions {
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .required {
+            color: #ef4444;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+            color: #374151;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        select.form-control {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-addon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .date-input-wrapper {
+            position: relative;
+        }
+
+        .date-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            pointer-events: none;
+        }
+
+        .date-input {
+            padding-left: 40px;
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .currency-input {
+            padding-right: 50px;
+        }
+
+        .form-actions {
+            margin-top: 24px;
             display: flex;
             gap: 12px;
-            justify-content: center;
+            justify-content: flex-end;
+            padding: 20px 24px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
         }
 
         .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 15px;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
             display: inline-flex;
             align-items: center;
             gap: 8px;
         }
 
         .btn-primary {
-            background: #2a5298;
+            background: #3b82f6;
             color: white;
+            border-color: #3b82f6;
         }
 
         .btn-primary:hover {
-            background: #1e3c72;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(42, 82, 152, 0.3);
+            background: #2563eb;
+            border-color: #2563eb;
         }
 
         .btn-secondary {
-            background: #e8e8e8;
-            color: #4a4a4a;
+            background: white;
+            color: #374151;
+            border-color: #d1d5db;
         }
 
         .btn-secondary:hover {
-            background: #d8d8d8;
+            background: #f9fafb;
         }
 
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
+        .helper-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
         }
 
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
+        .price-display {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            text-align: right;
+            margin-top: 6px;
         }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 56px;
+            height: 56px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
             font-size: 24px;
         }
 
-        .stat-icon.blue {
-            background: #e8f0fe;
-            color: #2a5298;
+        .fab:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
         }
 
-        .stat-icon.green {
-            background: #e6f4ea;
-            color: #188038;
-        }
-
-        .stat-icon.orange {
-            background: #fef7e0;
-            color: #f9ab00;
-        }
-
-        .stat-icon.purple {
-            background: #f3e8fd;
-            color: #7c4dff;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: #6c757d;
-        }
-
-        .stat-change {
-            font-size: 13px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .stat-change.positive {
-            color: #188038;
-            background: #e6f4ea;
-        }
-
-        .stat-change.negative {
-            color: #d33d3e;
-            background: #fee;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
             }
 
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .main-content {
+            .content {
                 margin-left: 0;
             }
 
-            .stats-grid {
+            .form-sections {
                 grid-template-columns: 1fr;
             }
+        }
 
-            .user-info {
-                display: none;
+        @media (max-width: 640px) {
+            .content {
+                padding: 16px;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Header/Banner -->
+    <!-- Header -->
     <header class="header">
-        <div class="logo-section">
+        <div class="header-left">
             <div class="logo">N</div>
             <div class="company-name">NePO Transport</div>
         </div>
-        
-        <div class="header-actions">
+
+        <div class="header-right">
             <button class="notification-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
                 <span class="notification-badge">3</span>
             </button>
-            
+
             <div class="user-profile">
                 <div class="user-avatar">A</div>
                 <div class="user-info">
-                    <div class="user-name">Admin</div>
-                    <div class="user-role">Quản trị viên</div>
+                    <div class="user-name">admin</div>
+                    <div class="user-subtitle">Quản trị viên</div>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Sidebar -->
-    <nav class="sidebar">
-        <div class="sidebar-section">
-            <div class="sidebar-title">Menu chính</div>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <span class="nav-text">Tổng quan</span>
-            </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                <span class="nav-text">Báo cáo</span>
-                <span class="nav-badge">2</span>
-            </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span class="nav-text">Lịch vận chuyển</span>
-            </a>
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-title">Quản lý</div>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                <span class="nav-text">Nhân viên</span>
-            </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <span class="nav-text">Khách hàng</span>
-            </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                </svg>
-                <span class="nav-text">Đối tác</span>
-            </a>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="1" y="3" width="15" height="13"></rect>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                </svg>
-                <span class="nav-text">Phương tiện</span>
-            </a>
-            <a href="#" class="nav-item active">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="4" y1="21" x2="4" y2="14"></line>
-                    <line x1="4" y1="10" x2="4" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12" y2="3"></line>
-                    <line x1="20" y1="21" x2="20" y2="16"></line>
-                    <line x1="20" y1="12" x2="20" y2="3"></line>
-                </svg>
-                <span class="nav-text">Định mức</span>
-            </a>
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-title">Hệ thống</div>
-            <a href="#" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 7.54L2.1 3.3m17.9 17.9l-4.24-4.24M7.54 17.66L3.3 21.9"></path>
-                </svg>
-                <span class="nav-text">Bảo dưỡng</span>
-            </a>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="page-header">
-            <h1 class="page-title">Quản lý định mức</h1>
-            <div class="breadcrumb">
-                <a href="#">Trang chủ</a>
-                <span>/</span>
-                <span>Quản lý</span>
-                <span>/</span>
-                <span>Định mức</span>
-            </div>
-        </div>
-
-        <!-- Stats Overview -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div>
-                        <div class="stat-value">24</div>
-                        <div class="stat-label">Tổng phương tiện</div>
-                    </div>
-                    <div class="stat-icon blue">🚛</div>
-                </div>
-                <div class="stat-change positive">↑ 12% so với tháng trước</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div>
-                        <div class="stat-value">156</div>
-                        <div class="stat-label">Chuyến trong tháng</div>
-                    </div>
-                    <div class="stat-icon green">📊</div>
-                </div>
-                <div class="stat-change positive">↑ 8% so với tháng trước</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div>
-                        <div class="stat-value">8.2L</div>
-                        <div class="stat-label">Mức tiêu thụ TB/100km</div>
-                    </div>
-                    <div class="stat-icon orange">⛽</div>
-                </div>
-                <div class="stat-change negative">↑ 3% so với tháng trước</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div>
-                        <div class="stat-value">92%</div>
-                        <div class="stat-label">Hiệu suất sử dụng</div>
-                    </div>
-                    <div class="stat-icon purple">⚡</div>
-                </div>
-                <div class="stat-change positive">↑ 5% so với tháng trước</div>
-            </div>
-        </div>
-
-        <!-- Error State -->
-        <div class="error-container">
-            <div class="error-icon">⚠️</div>
-            <h2 class="error-title">Không thể tải component</h2>
-            <p class="error-message">
-                Lỗi khi tải QuanLyDinhMuc. Vui lòng kiểm tra kết nối mạng và thử lại.
-            </p>
-            <div class="error-actions">
-                <button class="btn btn-primary">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M23 4v6h-6"></path>
-                        <path d="M1 20v-6h6"></path>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    <div class="main-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">KẾ HOẠCH</div>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
                     </svg>
-                    Tải lại trang
-                </button>
-                <button class="btn btn-secondary">Quay lại</button>
+                    Tổng quan
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    Lịch vận chuyển
+                </a>
             </div>
-        </div>
-    </main>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">QUẢN LÝ</div>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Nhân viên
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                    Đối tác
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Khách hàng
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                    </svg>
+                    Phương tiện
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                    </svg>
+                    Định mức
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">CHI PHÍ</div>
+                <a href="#" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 7.54L2.1 3.3m17.9 17.9l-4.24-4.24M7.54 17.66L3.3 21.9"></path>
+                    </svg>
+                    Bảo dưỡng
+                </a>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <main class="content">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2 class="form-header-title">Nhập thông tin chi tiết</h2>
+                </div>
+
+                <form class="form-body" id="maintenanceForm">
+                    <div class="form-sections">
+                        <!-- Basic Information Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">Thông tin cơ bản</h3>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Biển số xe <span class="required">*</span>
+                                </label>
+                                <select class="form-control" required>
+                                    <option value="">Chọn biển số xe</option>
+                                    <option value="29A-12345">29A-12345</option>
+                                    <option value="30H-67890">30H-67890</option>
+                                    <option value="51G-11111">51G-11111</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Hạng mục <span class="required">*</span>
+                                </label>
+                                <input type="text" class="form-control" placeholder="Nhập hạng mục bảo dưỡng" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Ngày thay thế <span class="required">*</span>
+                                </label>
+                                <div class="date-input-wrapper">
+                                    <span class="date-icon">📅</span>
+                                    <input type="date" class="form-control date-input" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Thời hạn bảo hành (tháng) <span class="required">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" placeholder="0" min="0" required>
+                                    <span class="input-addon">tháng</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Ngày hết hạn (tự động tính)
+                                </label>
+                                <div class="date-input-wrapper">
+                                    <span class="date-icon">📅</span>
+                                    <input type="date" class="form-control date-input" readonly style="background: #f9fafb;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cost & Notes Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">Chi phí & Ghi chú</h3>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Số lượng <span class="required">*</span>
+                                </label>
+                                <input type="number" class="form-control" value="1" min="1" required id="quantity">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Đơn giá <span class="required">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control currency-input" placeholder="0" min="0" required id="unitPrice">
+                                    <span class="input-addon">VND</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tổng tiền</label>
+                                <div class="price-display" id="totalPrice">0 VND</div>
+                                <p class="helper-text">Tự động tính = Số lượng × Đơn giá</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Ghi chú</label>
+                                <textarea class="form-control" placeholder="Nhập ghi chú nếu có"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="handleCancel()">
+                            Hủy
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            Thêm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="scrollToTop()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
 
     <script>
-        // Add interactivity
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
+        // Calculate expiration date
+        document.querySelector('input[type="date"]').addEventListener('change', calculateExpirationDate);
+        document.querySelector('input[type="number"][placeholder="0"]').addEventListener('input', calculateExpirationDate);
 
-        // Reload button
-        document.querySelector('.btn-primary').addEventListener('click', function() {
-            this.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Đang tải...';
+        function calculateExpirationDate() {
+            const replacementDate = document.querySelector('input[type="date"]').value;
+            const warrantyMonths = parseInt(document.querySelector('input[type="number"][placeholder="0"]').value) || 0;
+
+            if (replacementDate && warrantyMonths > 0) {
+                const date = new Date(replacementDate);
+                date.setMonth(date.getMonth() + warrantyMonths);
+
+                const expirationInput = document.querySelectorAll('input[type="date"]')[1];
+                expirationInput.value = date.toISOString().split('T')[0];
+            }
+        }
+
+        // Calculate total price
+        document.getElementById('quantity').addEventListener('input', calculateTotal);
+        document.getElementById('unitPrice').addEventListener('input', calculateTotal);
+
+        function calculateTotal() {
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+            const unitPrice = parseInt(document.getElementById('unitPrice').value) || 0;
+            const total = quantity * unitPrice;
+
+            document.getElementById('totalPrice').textContent = total.toLocaleString('vi-VN') + ' VND';
+        }
+
+        // Form submission
+        document.getElementById('maintenanceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = 'Đang xử lý...';
+            submitBtn.disabled = true;
+
             setTimeout(() => {
-                location.reload();
+                alert('Thông tin đã được thêm thành công!');
+                this.reset();
+                document.getElementById('totalPrice').textContent = '0 VND';
+                submitBtn.textContent = 'Thêm';
+                submitBtn.disabled = false;
             }, 1000);
         });
 
-        // Animation keyframes
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes spin {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
+        function handleCancel() {
+            if (confirm('Bạn có chắc chắn muốn hủy? Mọi thông tin đã nhập sẽ bị mất.')) {
+                document.getElementById('maintenanceForm').reset();
+                document.getElementById('totalPrice').textContent = '0 VND';
             }
-        `;
-        document.head.appendChild(style);
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Format currency input
+        document.getElementById('unitPrice').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = value;
+        });
     </script>
 </body>
 </html>
