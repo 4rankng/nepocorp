@@ -5,9 +5,9 @@ Nhap thong tin bao duong
 The modal has two column
 LEFT COLUMN
   The layout now has:
-  - Row 1: "Biển số xe" + "Nhà cung cấp"
-  - Row 2: "Chi phí trước thuế" + "Thuế suất"
-  - Row 3: "Tổng tiền" + "Trạng thái"
+  - Row 1: "Biển số xe" + "Nhà cung cấp" (same row)
+  - Row 2: "Chi phí trước thuế" + "Thuế suất" (same row)
+  - Row 3: "Tổng tiền" + "Trạng thái" (same row)
   - Row 4: "Chứng từ thanh toán"
   - Row 5: "Ghi chú"
 

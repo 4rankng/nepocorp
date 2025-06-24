@@ -172,8 +172,8 @@ export const HelperText = ({ children, className = '' }) => (
   </p>
 );
 
-export const PriceDisplay = ({ value, className = '' }) => (
-  <div className={`price-display ${className}`}>
+export const PriceDisplay = ({ value, className = '', style = {} }) => (
+  <div className={`price-display ${className}`} style={style}>
     {value}
   </div>
 );

@@ -207,7 +207,7 @@ const ExpenseForm = ({
           <FormSections columns={2}>
             {/* LEFT COLUMN */}
             <FormSection title="Thông tin thanh toán">
-              {/* Row 1: Biển số xe + Vendor/Payment Status */}
+              {/* Row 1: Biển số xe + Nhà cung cấp */}
               <FormRow>
                 <FormCol>
                   <FormLabel required>Biển số xe</FormLabel>
@@ -232,41 +232,16 @@ const ExpenseForm = ({
                 </FormCol>
 
                 <FormCol>
-                  {expenseCategoryId ? (
-                    // For BaoDuong - show payment status
-                    <>
-                      <FormLabel required>Trạng thái</FormLabel>
-                      <FormControl
-                        type="select"
-                        name="payment_status"
-                        value={localData.payment_status || PAYMENT_STATUS.DRAFT}
-                        onChange={handleInputChange}
-                        error={!!errors.payment_status}
-                        required
-                      >
-                        {Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => (
-                          <option key={status} value={status}>
-                            {label}
-                          </option>
-                        ))}
-                      </FormControl>
-                      {errors.payment_status && <ErrorText>{errors.payment_status}</ErrorText>}
-                    </>
-                  ) : (
-                    // For generic expenses - show vendor name
-                    <>
-                      <FormLabel required>Nhà cung cấp</FormLabel>
-                      <FormControl
-                        name="vendor_name"
-                        placeholder="Nhập tên nhà cung cấp"
-                        value={localData.vendor_name || ''}
-                        onChange={handleInputChange}
-                        error={!!errors.vendor_name}
-                        required
-                      />
-                      {errors.vendor_name && <ErrorText>{errors.vendor_name}</ErrorText>}
-                    </>
-                  )}
+                  <FormLabel required>Nhà cung cấp</FormLabel>
+                  <FormControl
+                    name="vendor_name"
+                    placeholder="Nhập tên nhà cung cấp"
+                    value={localData.vendor_name || ''}
+                    onChange={handleInputChange}
+                    error={!!errors.vendor_name}
+                    required
+                  />
+                  {errors.vendor_name && <ErrorText>{errors.vendor_name}</ErrorText>}
                 </FormCol>
               </FormRow>
 
@@ -294,15 +269,36 @@ const ExpenseForm = ({
                 </FormCol>
               </FormRow>
 
-              {/* Row 3: Tổng tiền (full width for BaoDuong layout) */}
-              <FormGroup>
-                <FormLabel>Tổng tiền</FormLabel>
-                <PriceDisplay
-                  value={formatCurrency(total)}
-                  style={{fontSize: '1.25rem', fontWeight: 'bold'}}
-                />
-                <HelperText>Subtotal + Thuế ({formatCurrency(taxAmount)})</HelperText>
-              </FormGroup>
+              {/* Row 3: Tổng tiền + Trạng thái */}
+              <FormRow>
+                <FormCol>
+                  <FormLabel>Tổng tiền</FormLabel>
+                  <PriceDisplay
+                    value={formatCurrency(total)}
+                    style={{fontSize: '1.25rem', fontWeight: 'bold'}}
+                  />
+                  <HelperText>Subtotal + Thuế ({formatCurrency(taxAmount)})</HelperText>
+                </FormCol>
+
+                <FormCol>
+                  <FormLabel required>Trạng thái</FormLabel>
+                  <FormControl
+                    type="select"
+                    name="payment_status"
+                    value={localData.payment_status || PAYMENT_STATUS.DRAFT}
+                    onChange={handleInputChange}
+                    error={!!errors.payment_status}
+                    required
+                  >
+                    {Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => (
+                      <option key={status} value={status}>
+                        {label}
+                      </option>
+                    ))}
+                  </FormControl>
+                  {errors.payment_status && <ErrorText>{errors.payment_status}</ErrorText>}
+                </FormCol>
+              </FormRow>
 
               {/* Category selection for generic expenses */}
               {!expenseCategoryId && (
@@ -327,28 +323,6 @@ const ExpenseForm = ({
                     ))}
                   </FormControl>
                   {errors.expense_category_id && <ErrorText>{errors.expense_category_id}</ErrorText>}
-                </FormGroup>
-              )}
-
-              {/* Payment status for generic expenses */}
-              {!expenseCategoryId && (
-                <FormGroup>
-                  <FormLabel required>Trạng thái thanh toán</FormLabel>
-                  <FormControl
-                    type="select"
-                    name="payment_status"
-                    value={localData.payment_status || PAYMENT_STATUS.DRAFT}
-                    onChange={handleInputChange}
-                    error={!!errors.payment_status}
-                    required
-                  >
-                    {Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => (
-                      <option key={status} value={status}>
-                        {label}
-                      </option>
-                    ))}
-                  </FormControl>
-                  {errors.payment_status && <ErrorText>{errors.payment_status}</ErrorText>}
                 </FormGroup>
               )}
 
