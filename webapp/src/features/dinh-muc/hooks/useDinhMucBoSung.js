@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { dinhMucBoSungApi } from '@services/api/dinhMucBoSungApi';
 import { tractorApi } from '@services/api/tractorApi';
-
-// Use real API for tractor data
-const dauKeoApi = tractorApi;
 import logger from '@services/logger';
 
 export const useDinhMucBoSung = () => {
@@ -19,8 +16,8 @@ export const useDinhMucBoSung = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Load dauKeo data
-      const dauKeoData = await dauKeoApi.getAll();
+      // Load tractor data
+      const tractorData = await tractorApi.getAll();
 
       // Load dinhMucBoSung with plate filter if provided
       let dinhMucData;
@@ -34,12 +31,11 @@ export const useDinhMucBoSung = () => {
       const extractedDinhMucData = Array.isArray(dinhMucData)
         ? dinhMucData
         : dinhMucData?.data || [];
-      const extractedDauKeoList = dauKeoData.data || [];
-      const extractedTuyenDuongList = tuyenData.data || [];
+      const extractedTractorList = tractorData.data || [];
 
       setDinhMucBoSungData(extractedDinhMucData);
-      setDauKeoList(extractedDauKeoList);
-      setTuyenDuongList(extractedTuyenDuongList);
+      setDauKeoList(extractedTractorList);
+      setTuyenDuongList([]);
 
     } catch (err) {
       setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
@@ -115,15 +111,15 @@ export const useDinhMucBoSung = () => {
 
     // Extract unique license plates from dauKeoList
     const plates = new Set();
-    dauKeoList.forEach(dauKeo => {
-      if (dauKeo.bien_so) {
-        plates.add(dauKeo.bien_so);
+    dauKeoList.forEach(tractor => {
+      if (tractor.license_plate) {
+        plates.add(tractor.license_plate);
       }
     });
 
     return Array.from(plates).map(plate => ({
       id: plate,
-      bien_so: plate,
+      license_plate: plate,
     }));
   }, [dauKeoList]);
 

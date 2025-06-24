@@ -41,7 +41,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
         }));
 
       // Combine and deduplicate plates
-      const allPlates = [...dauKeoPlates, ...roMoocPlates];
+      const allPlates = [...tractorPlates, ...trailerPlates];
       const uniquePlates = Array.from(
         new Map(allPlates.map(plate => [plate.value, plate])).values()
       ).sort((a, b) => (a.value || '').localeCompare(b.value || ''));

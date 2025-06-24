@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-// Mock API functions returning empty data until backend is integrated
-const fetchAllDoiTac = async () => [];
-const fetchDoiTacById = async (id) => null;
-const addDoiTac = async (data) => ({ id: Date.now(), ...data });
-const editDoiTac = async (id, data) => ({ id, ...data });
-const removeDoiTac = async (id) => ({ success: true });
+import { partnerApi } from '@services/api/partnerApi';
+
+const fetchAllDoiTac = partnerApi.getAllWithoutPagination;
+const fetchDoiTacById = partnerApi.getById;
+const addDoiTac = partnerApi.create;
+const editDoiTac = partnerApi.update;
+const removeDoiTac = partnerApi.delete;
 // Initial form state
 const initialFormState = {
   ma_dinh_danh: '',

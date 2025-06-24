@@ -21,10 +21,6 @@ import {
 } from '@mui/material';
 import { tractorApi } from '@services/api/tractorApi';
 import { trailerApi } from '@services/api/trailerApi';
-
-// Use real APIs for vehicle data
-const dauKeoApi = tractorApi;
-const roMoocApi = trailerApi;
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';

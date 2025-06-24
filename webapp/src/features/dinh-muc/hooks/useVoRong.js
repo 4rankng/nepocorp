@@ -1,16 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-// Mock API objects returning empty data until backend is integrated
+import { tractorApi } from '@services/api/tractorApi';
+import { trailerApi } from '@services/api/trailerApi';
+
+// Fuel standards API not yet implemented - return empty data
 const dinhMucDauApi = { 
   getCount: async () => 0,
   getVoRongRecords: async () => []
-};
-const dauKeoApi = { 
-  getAll: async () => ({ data: [] }),
-  getAllWithoutPagination: async () => []
-};
-const roMoocApi = { 
-  getAll: async () => ({ data: [] }),
-  getAllWithoutPagination: async () => []
 };
 
 /**
@@ -142,8 +137,8 @@ export const useVoRong = () => {
     try {
       const [dinhMucResponse, dauKeoResponse, roMoocResponse] = await Promise.all([
         dinhMucDauApi.getAllDinhMucDau(),
-        dauKeoApi.fetchAllDauKeo(),
-        roMoocApi.fetchAllRoMooc(),
+        tractorApi.getAllWithoutPagination(),
+        trailerApi.getAllWithoutPagination(),
       ]);
 
       // Handle API response errors with more specific messages
