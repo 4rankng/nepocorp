@@ -18,6 +18,7 @@ import (
 	"github.com/nepocorp/backend/routes"
 	activitylogger "github.com/nepocorp/backend/services/activity-logger"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -31,10 +32,24 @@ func main() {
 	// Initialize configuration
 	cfg := config.Load()
 
-	// Initialize logger
+	// Initialize logger with file rotation
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetLevel(logrus.InfoLevel)
+	
+	// Configure log file rotation (2 days retention)
+	logPath := os.Getenv("LOG_PATH")
+	if logPath == "" {
+		logPath = "logs/app.log" // default for development
+	}
+	logger.SetOutput(&lumberjack.Logger{
+		Filename:   logPath,
+		MaxSize:    10, // MB
+		MaxAge:     2,  // days
+		MaxBackups: 0,  // keep all backups within MaxAge
+		LocalTime:  true,
+		Compress:   true,
+	})
 
 	// Check if running migration command
 	if len(os.Args) > 1 && os.Args[1] == "migrate" {

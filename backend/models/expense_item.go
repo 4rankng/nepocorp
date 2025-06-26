@@ -7,7 +7,7 @@ import (
 )
 
 type ExpenseItem struct {
-	ID          uint       `gorm:"primarykey" json:"id"`
+	ID          uint       `gorm:"primarykey;autoIncrement" json:"id"`
 	ExpenseID   uint       `gorm:"not null" json:"expense_id"`
 	ItemName    string     `gorm:"not null" json:"item_name"`
 	Price       int64      `gorm:"not null" json:"price"`
@@ -15,8 +15,8 @@ type ExpenseItem struct {
 	Total       int64      `gorm:"not null" json:"total"`
 	InstallDate *time.Time `json:"install_date"`
 	ExpiryDate  *time.Time `json:"expiry_date"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 func (e *ExpenseItem) UnmarshalJSON(data []byte) error {
