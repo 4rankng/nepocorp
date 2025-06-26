@@ -51,12 +51,12 @@ export const VehicleDataProvider = ({ children }) => {
 
     try {
       const response = await tractorApi.getAllWithoutPagination();
-      if (response.data.status === 'success') {
-        setTractors(response.data.data);
+      if (response.status === 'success') {
+        setTractors(response.data);
         cacheTimestamps.current.tractors = Date.now();
-        return response.data.data;
+        return response.data;
       } else {
-        throw new Error(response.data.message || 'Lỗi khi tải danh sách đầu kéo');
+        throw new Error(response.message || 'Lỗi khi tải danh sách đầu kéo');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách đầu kéo';
@@ -78,12 +78,12 @@ export const VehicleDataProvider = ({ children }) => {
 
     try {
       const response = await trailerApi.getAllWithoutPagination();
-      if (response.data.status === 'success') {
-        setTrailers(response.data.data);
+      if (response.status === 'success') {
+        setTrailers(response.data);
         cacheTimestamps.current.trailers = Date.now();
-        return response.data.data;
+        return response.data;
       } else {
-        throw new Error(response.data.message || 'Lỗi khi tải danh sách rơ moóc');
+        throw new Error(response.message || 'Lỗi khi tải danh sách rơ moóc');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách rơ moóc';
@@ -105,12 +105,12 @@ export const VehicleDataProvider = ({ children }) => {
 
     try {
       const response = await containerApi.getAllWithoutPagination();
-      if (response.data.status === 'success') {
-        setContainers(response.data.data);
+      if (response.status === 'success') {
+        setContainers(response.data);
         cacheTimestamps.current.containers = Date.now();
-        return response.data.data;
+        return response.data;
       } else {
-        throw new Error(response.data.message || 'Lỗi khi tải danh sách container');
+        throw new Error(response.message || 'Lỗi khi tải danh sách container');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách container';
@@ -146,18 +146,20 @@ export const VehicleDataProvider = ({ children }) => {
 
   const refreshCache = useCallback(async (types = ['tractors', 'trailers', 'containers']) => {
     const promises = [];
+    const results = {};
     
     if (types.includes('tractors')) {
-      promises.push(fetchTractors(true));
+      promises.push(fetchTractors(true).then(data => { results.tractors = data; }));
     }
     if (types.includes('trailers')) {
-      promises.push(fetchTrailers(true));
+      promises.push(fetchTrailers(true).then(data => { results.trailers = data; }));
     }
     if (types.includes('containers')) {
-      promises.push(fetchContainers(true));
+      promises.push(fetchContainers(true).then(data => { results.containers = data; }));
     }
 
     await Promise.all(promises);
+    return results;
   }, [fetchTractors, fetchTrailers, fetchContainers]);
 
   const getContainerNames = useCallback(() => {

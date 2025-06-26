@@ -325,11 +325,13 @@ const QuanLyBaoDuong = memo(() => {
       loading: isLoading,
       error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
       emptyMessage: 'Không có dữ liệu bảo dưỡng',
+      showEmptyRows: true,
       pagination: true,
       page: pagination.page,
       rowsPerPage: pagination.pageSize,
       totalCount: pagination.total,
       rowKeyField: 'id',
+      customRowsPerPageOptions: [100, 200, 500],
     };
 
     return (

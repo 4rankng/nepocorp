@@ -80,9 +80,11 @@ const StandardTable = ({
   loading = false,
   error = null,
   emptyMessage = 'Chưa có dữ liệu',
+  showEmptyRows = false,
+  emptyRowsCount = 5,
   pagination = false,
   page: initialPage = 0,
-  rowsPerPage: initialRowsPerPage = 10,
+  rowsPerPage: initialRowsPerPage = 100,
   totalCount: initialTotalCount = 0,
   onPageChange: initialOnPageChange = () => {},
   onRowsPerPageChange: initialOnRowsPerPageChange = () => {},
@@ -94,7 +96,7 @@ const StandardTable = ({
   sortable = true,
   defaultSort = null,
   onSortChange = null,
-  customRowsPerPageOptions = [5, 10, 50, 100],
+  customRowsPerPageOptions = [100, 200, 500],
   showSTT = true,
   ...tableProps
 }) => {
@@ -335,15 +337,29 @@ const StandardTable = ({
           </TableHead>
           <TableBody>
             {sortedData.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={effectiveColumns.length + (renderActions ? 1 : 0)}
-                  align="center"
-                  sx={{ py: 3, color: 'text.secondary' }}
-                >
-                  {emptyMessage}
-                </TableCell>
-              </TableRow>
+              showEmptyRows ? (
+                // Show single empty row with message spanning all columns
+                <TableRow>
+                  <TableCell
+                    colSpan={effectiveColumns.length + (renderActions ? 1 : 0)}
+                    align="center"
+                    sx={{ py: 3, color: 'text.secondary' }}
+                  >
+                    {emptyMessage}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                // Show traditional empty message
+                <TableRow>
+                  <TableCell
+                    colSpan={effectiveColumns.length + (renderActions ? 1 : 0)}
+                    align="center"
+                    sx={{ py: 3, color: 'text.secondary' }}
+                  >
+                    {emptyMessage}
+                  </TableCell>
+                </TableRow>
+              )
             ) : (
               sortedData.map((row, index) => {
                 const handleRowClick = onRowClick ? () => onRowClick(row) : undefined;
@@ -517,6 +533,8 @@ StandardTable.propTypes = {
   loading: PropTypes.bool,
   error: PropTypes.string,
   emptyMessage: PropTypes.string,
+  showEmptyRows: PropTypes.bool,
+  emptyRowsCount: PropTypes.number,
   pagination: PropTypes.bool,
   page: PropTypes.number,
   rowsPerPage: PropTypes.number,
