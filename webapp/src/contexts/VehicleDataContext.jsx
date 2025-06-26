@@ -51,12 +51,14 @@ export const VehicleDataProvider = ({ children }) => {
 
     try {
       const response = await tractorApi.getAllWithoutPagination();
-      if (response.status === 'success') {
+      
+      if (response && response.status === 'success' && Array.isArray(response.data)) {
         setTractors(response.data);
         cacheTimestamps.current.tractors = Date.now();
         return response.data;
       } else {
-        throw new Error(response.message || 'Lỗi khi tải danh sách đầu kéo');
+        console.warn('Unexpected tractor API response structure:', response);
+        throw new Error(response?.message || 'Lỗi khi tải danh sách đầu kéo');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách đầu kéo';
@@ -78,12 +80,14 @@ export const VehicleDataProvider = ({ children }) => {
 
     try {
       const response = await trailerApi.getAllWithoutPagination();
-      if (response.status === 'success') {
+      
+      if (response && response.status === 'success' && Array.isArray(response.data)) {
         setTrailers(response.data);
         cacheTimestamps.current.trailers = Date.now();
         return response.data;
       } else {
-        throw new Error(response.message || 'Lỗi khi tải danh sách rơ moóc');
+        console.warn('Unexpected trailer API response structure:', response);
+        throw new Error(response?.message || 'Lỗi khi tải danh sách rơ moóc');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách rơ moóc';
@@ -105,12 +109,14 @@ export const VehicleDataProvider = ({ children }) => {
 
     try {
       const response = await containerApi.getAllWithoutPagination();
-      if (response.status === 'success') {
+      
+      if (response && response.status === 'success' && Array.isArray(response.data)) {
         setContainers(response.data);
         cacheTimestamps.current.containers = Date.now();
         return response.data;
       } else {
-        throw new Error(response.message || 'Lỗi khi tải danh sách container');
+        console.warn('Unexpected container API response structure:', response);
+        throw new Error(response?.message || 'Lỗi khi tải danh sách container');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách container';
@@ -145,20 +151,24 @@ export const VehicleDataProvider = ({ children }) => {
   }, []);
 
   const refreshCache = useCallback(async (types = ['tractors', 'trailers', 'containers']) => {
-    const promises = [];
     const results = {};
     
+    // Fetch data sequentially to ensure state is updated properly
     if (types.includes('tractors')) {
-      promises.push(fetchTractors(true).then(data => { results.tractors = data; }));
+      const tractorData = await fetchTractors(true);
+      results.tractors = tractorData;
     }
+    
     if (types.includes('trailers')) {
-      promises.push(fetchTrailers(true).then(data => { results.trailers = data; }));
+      const trailerData = await fetchTrailers(true);
+      results.trailers = trailerData;
     }
+    
     if (types.includes('containers')) {
-      promises.push(fetchContainers(true).then(data => { results.containers = data; }));
+      const containerData = await fetchContainers(true);
+      results.containers = containerData;
     }
 
-    await Promise.all(promises);
     return results;
   }, [fetchTractors, fetchTrailers, fetchContainers]);
 

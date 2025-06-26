@@ -1,7 +1,5 @@
-import { useState, useCallback, useEffect, useContext } from 'react';
+import { useState, useCallback, useEffect, useContext, useRef } from 'react';
 import logger from '@services/logger';
-import { tractorApi } from '@services/api/tractorApi';
-import { trailerApi } from '@services/api/trailerApi';
 import { VehicleDataContext } from '@contexts/VehicleDataContext';
 
 // Utility function to transform expense data back to display format
@@ -41,11 +39,12 @@ const transformExpenseToDisplay = (expense, tractors, trailers) => {
 };
 
 export default function useBaoDuongRecords(baoDuongApi) {
-  const { tractors, trailers } = useContext(VehicleDataContext);
+  const { tractors, trailers, fetchAllVehicleData, loading } = useContext(VehicleDataContext);
   const [baoDuongRecords, setBaoDuongRecords] = useState([]);
   const [licensePlates, setLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPlates, setIsLoadingPlates] = useState(true);
+  const initialLoadRef = useRef(false);
   const [error, setError] = useState('');
   const [pagination, setPagination] = useState({
     page: 0,
@@ -54,24 +53,18 @@ export default function useBaoDuongRecords(baoDuongApi) {
     totalPages: 1,
   });
 
-  // Fetch license plates from both dauKeo and roMooc APIs
-  const fetchLicensePlates = useCallback(async () => {
+  // Build license plates from VehicleDataContext data
+  const buildLicensePlates = useCallback(() => {
     try {
-      setIsLoadingPlates(true);
-      // Fetch tractor license plates
-      const tractorResponse = await tractorApi.getAll(1, 1000);
-      const tractorData = Array.isArray(tractorResponse?.data) ? tractorResponse.data : [];
-      const tractorPlates = tractorData
+      // Use cached data from VehicleDataContext
+      const tractorPlates = tractors
         .filter(item => item?.license_plate)
         .map(item => ({
           value: item.license_plate,
           type: 'Đầu kéo',
         }));
 
-      // Fetch trailer license plates
-      const trailerResponse = await trailerApi.getAll(1, 1000);
-      const trailerData = Array.isArray(trailerResponse?.data) ? trailerResponse.data : [];
-      const trailerPlates = trailerData
+      const trailerPlates = trailers
         .filter(item => item?.license_plate)
         .map(item => ({
           value: item.license_plate,
@@ -85,24 +78,44 @@ export default function useBaoDuongRecords(baoDuongApi) {
       ).sort((a, b) => (a.value || '').localeCompare(b.value || ''));
 
       setLicensePlates(uniquePlates);
+      
+      logger.info(`Built license plates from context: ${uniquePlates.length} plates`, { 
+        tractorCount: tractors.length,
+        trailerCount: trailers.length
+      });
     } catch (error) {
-      logger.error('Error fetching license plates', { error });
-      // Set some default plates for testing if API fails
+      logger.error('Error building license plates from context', { error });
+      // Set some default plates for testing if context fails
       setLicensePlates([
         { value: '51C-001.01', type: 'Đầu kéo' },
         { value: '29H-111.22', type: 'Đầu kéo' },
         { value: '51R-001.11', type: 'Rơ moóc' },
         { value: '51R-002.22', type: 'Rơ moóc' },
       ]);
-    } finally {
-      setIsLoadingPlates(false);
     }
-  }, []);
+  }, [tractors, trailers]);
 
-  // Initial fetch of license plates
+  // Handle loading state based on VehicleDataContext
   useEffect(() => {
-    fetchLicensePlates();
-  }, [fetchLicensePlates]);
+    setIsLoadingPlates(loading.initial || loading.tractors || loading.trailers);
+  }, [loading]);
+
+  // Initial load effect - only runs once
+  useEffect(() => {
+    const initialLoad = async () => {
+      if (!initialLoadRef.current && fetchAllVehicleData) {
+        initialLoadRef.current = true;
+        await fetchAllVehicleData();
+      }
+    };
+    
+    initialLoad();
+  }, [fetchAllVehicleData]);
+
+  // Build license plates when data changes
+  useEffect(() => {
+    buildLicensePlates();
+  }, [buildLicensePlates]);
 
   // Fetch paginated data
   const fetchData = useCallback(

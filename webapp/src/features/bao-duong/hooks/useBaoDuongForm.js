@@ -60,7 +60,7 @@ export default function useBaoDuongForm({
   isEdit,
   api,
 }) {
-  const { tractors, trailers, refreshCache } = useContext(VehicleDataContext);
+  const { tractors, trailers } = useContext(VehicleDataContext);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -136,31 +136,16 @@ export default function useBaoDuongForm({
       setIsLoading(true);
       
       // Convert license plate to tractor_id/trailer_id
-      let vehicleIds = convertLicensePlateToIds(formData.bien_so, tractors, trailers);
+      const vehicleIds = convertLicensePlateToIds(formData.bien_so, tractors, trailers);
       
-      // If license plate not found in cached data, refresh cache and try again
+      // If license plate not found, throw error (should not happen if dropdown and validation use same data)
       if (!vehicleIds.tractor_id && !vehicleIds.trailer_id) {
-        logger.info(`License plate ${formData.bien_so} not found in cache, refreshing vehicle data...`);
-        
-        try {
-          // Refresh vehicle data from API and get fresh data
-          const freshData = await refreshCache(['tractors', 'trailers']);
-          
-          // Try again with fresh data from API response
-          const freshTractors = freshData.tractors || tractors;
-          const freshTrailers = freshData.trailers || trailers;
-          vehicleIds = convertLicensePlateToIds(formData.bien_so, freshTractors, freshTrailers);
-          
-          // If still not found after refresh, throw error
-          if (!vehicleIds.tractor_id && !vehicleIds.trailer_id) {
-            throw new Error(`Không tìm thấy xe với biển số: ${formData.bien_so}`);
-          }
-          
-          logger.info(`License plate ${formData.bien_so} found after cache refresh`);
-        } catch (refreshError) {
-          logger.error('Failed to refresh vehicle data:', refreshError);
-          throw new Error(`Không tìm thấy xe với biển số: ${formData.bien_so}`);
-        }
+        logger.error(`License plate ${formData.bien_so} not found in VehicleDataContext`, { 
+          tractorCount: tractors.length, 
+          trailerCount: trailers.length,
+          bien_so: formData.bien_so
+        });
+        throw new Error(`Không tìm thấy xe với biển số: ${formData.bien_so}`);
       }
       
       // Transform data to new expense API format
