@@ -14,13 +14,13 @@ export const trailerApi = {
     const response = await apiClient.get('/trailer', {
       params: { page: 1, limit: 1000 }
     });
-    return response.data;
+    return response;
   },
 
   // Get trailer by ID
   getById: async (id) => {
     const response = await apiClient.get(`/trailer/${id}`);
-    return response.data;
+    return response;
   },
 
   // Create new trailer

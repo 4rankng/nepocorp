@@ -14,22 +14,8 @@ func NewExpenseRepository(db *gorm.DB) *ExpenseRepository {
 }
 
 func (r *ExpenseRepository) Create(expense *models.Expense) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		// Create the expense first
-		if err := tx.Create(expense).Error; err != nil {
-			return err
-		}
-
-		// Create the items if any
-		for i := range expense.Items {
-			expense.Items[i].ExpenseID = expense.ID
-			if err := tx.Create(&expense.Items[i]).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
+	// GORM will automatically create associated items when creating the expense
+	return r.db.Create(expense).Error
 }
 
 func (r *ExpenseRepository) FindByID(id uint) (*models.Expense, error) {

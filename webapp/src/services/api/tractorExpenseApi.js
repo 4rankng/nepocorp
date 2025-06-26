@@ -14,25 +14,25 @@ export const tractorExpenseApi = {
     const response = await apiClient.get('/tractor_expense', {
       params: { page: 1, limit: 1000 }
     });
-    return response.data;
+    return response;
   },
 
   // Get tractor expense by ID (includes items)
   getById: async (id) => {
     const response = await apiClient.get(`/tractor_expense/${id}`);
-    return response.data;
+    return response;
   },
 
   // Create new tractor expense
   create: async (data) => {
     const response = await apiClient.post('/tractor_expense', data);
-    return response.data;
+    return response;
   },
 
   // Update existing tractor expense
   update: async (id, data) => {
     const response = await apiClient.put(`/tractor_expense/${id}`, data);
-    return response.data;
+    return response;
   },
 
   // Delete tractor expense
@@ -52,13 +52,13 @@ export const tractorExpenseApi = {
   // Add item to tractor expense
   addItem: async (expenseId, itemData) => {
     const response = await apiClient.post(`/tractor_expense/${expenseId}/item`, itemData);
-    return response.data;
+    return response;
   },
 
   // Update expense item
   updateItem: async (expenseId, itemId, itemData) => {
     const response = await apiClient.put(`/tractor_expense/${expenseId}/item/${itemId}`, itemData);
-    return response.data;
+    return response;
   },
 
   // Delete expense item

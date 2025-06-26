@@ -14,13 +14,13 @@ export const tractorApi = {
     const response = await apiClient.get('/tractor', {
       params: { page: 1, limit: 1000 }
     });
-    return response.data;
+    return response;
   },
 
   // Get tractor by ID
   getById: async (id) => {
     const response = await apiClient.get(`/tractor/${id}`);
-    return response.data;
+    return response;
   },
 
   // Create new tractor

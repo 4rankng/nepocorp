@@ -20,25 +20,25 @@ export const expenseApi = {
         expense_category_id: categoryId
       }
     });
-    return response.data;
+    return response;
   },
 
   // Get expense by ID (includes items)
   getById: async (id) => {
     const response = await apiClient.get(`/expense/${id}`);
-    return response.data;
+    return response;
   },
 
   // Create new expense
   create: async (data) => {
     const response = await apiClient.post('/expense', data);
-    return response.data;
+    return response;
   },
 
   // Update existing expense
   update: async (id, data) => {
     const response = await apiClient.put(`/expense/${id}`, data);
-    return response.data;
+    return response;
   },
 
   // Delete expense
@@ -62,13 +62,13 @@ export const expenseApi = {
   // Add item to expense
   addItem: async (expenseId, itemData) => {
     const response = await apiClient.post(`/expense/${expenseId}/item`, itemData);
-    return response.data;
+    return response;
   },
 
   // Update expense item
   updateItem: async (expenseId, itemId, itemData) => {
     const response = await apiClient.put(`/expense/${expenseId}/item/${itemId}`, itemData);
-    return response.data;
+    return response;
   },
 
   // Delete expense item

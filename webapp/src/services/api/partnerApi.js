@@ -6,7 +6,7 @@ export const partnerApi = {
     const response = await apiClient.get('/partner', {
       params: { page, limit }
     });
-    return response.data;
+    return response;
   },
 
   // Get all partners without pagination
@@ -14,25 +14,25 @@ export const partnerApi = {
     const response = await apiClient.get('/partner', {
       params: { page: 1, limit: 1000 }
     });
-    return response.data;
+    return response;
   },
 
   // Get partner by ID
   getById: async (id) => {
     const response = await apiClient.get(`/partner/${id}`);
-    return response.data;
+    return response;
   },
 
   // Create new partner
   create: async (data) => {
     const response = await apiClient.post('/partner', data);
-    return response.data;
+    return response;
   },
 
   // Update existing partner
   update: async (id, data) => {
     const response = await apiClient.put(`/partner/${id}`, data);
-    return response.data;
+    return response;
   },
 
   // Delete partner

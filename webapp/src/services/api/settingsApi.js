@@ -8,7 +8,7 @@ export const settingsApi = {
    */
   getSetting: async (key) => {
     const response = await apiClient.get(`/settings/${key}`);
-    return response.data;
+    return response;
   },
 
   /**
@@ -19,7 +19,7 @@ export const settingsApi = {
    */
   updateSetting: async (key, value) => {
     const response = await apiClient.put(`/settings/${key}`, { value });
-    return response.data;
+    return response;
   },
 
   /**

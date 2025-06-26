@@ -14,25 +14,25 @@ export const expenseCategoryApi = {
     const response = await apiClient.get('/expense_category', {
       params: { page: 1, limit: 1000 }
     });
-    return response.data;
+    return response;
   },
 
   // Get expense category by ID
   getById: async (id) => {
     const response = await apiClient.get(`/expense_category/${id}`);
-    return response.data;
+    return response;
   },
 
   // Create new expense category
   create: async (data) => {
     const response = await apiClient.post('/expense_category', data);
-    return response.data;
+    return response;
   },
 
   // Update existing expense category
   update: async (id, data) => {
     const response = await apiClient.put(`/expense_category/${id}`, data);
-    return response.data;
+    return response;
   },
 
   // Delete expense category
