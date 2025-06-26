@@ -107,7 +107,9 @@ const QuanLyBaoDuong = memo(() => {
       if (tractor.license_plate) {
         plates.push({
           value: tractor.license_plate,
-          license_plate: tractor.license_plate
+          license_plate: tractor.license_plate,
+          type: 'Đầu kéo',
+          displayText: `${tractor.license_plate} (Đầu kéo)`
         });
       }
     });
@@ -117,12 +119,14 @@ const QuanLyBaoDuong = memo(() => {
       if (trailer.license_plate) {
         plates.push({
           value: trailer.license_plate,
-          license_plate: trailer.license_plate
+          license_plate: trailer.license_plate,
+          type: 'Rơ-moóc',
+          displayText: `${trailer.license_plate} (Rơ-moóc)`
         });
       }
     });
     
-    // Remove duplicates
+    // Remove duplicates based on license_plate
     const uniquePlates = plates.filter((plate, index, self) => 
       index === self.findIndex(p => p.license_plate === plate.license_plate)
     );
@@ -185,6 +189,19 @@ const QuanLyBaoDuong = memo(() => {
     fetchData(0, 100);
     fetchAllVehicleData(); // Fetch vehicle data for license plates
   }, [fetchData, fetchAllVehicleData]); // Include fetchData dependency
+
+  // Show error notification if vehicle data fails to load
+  useEffect(() => {
+    const hasVehicleError = vehicleErrors.tractors || vehicleErrors.trailers;
+    if (hasVehicleError) {
+      const errorMessage = vehicleErrors.tractors || vehicleErrors.trailers;
+      setSnackbar({
+        open: true,
+        message: `Lỗi tải danh sách biển số xe: ${errorMessage}`,
+        severity: 'warning',
+      });
+    }
+  }, [vehicleErrors.tractors, vehicleErrors.trailers]);
 
   // Removed refetchCount as we're working with maintenance items directly
   const handleOpenAddDialog = () => {
@@ -433,10 +450,16 @@ const QuanLyBaoDuong = memo(() => {
                 <CircularProgress size={16} sx={{ mr: 1 }} />
                 Đang tải...
               </MenuItem>
+            ) : vehicleErrors.tractors || vehicleErrors.trailers ? (
+              <MenuItem disabled>
+                <Typography color="error" variant="caption">
+                  Lỗi tải danh sách biển số xe
+                </Typography>
+              </MenuItem>
             ) : (
               licensePlates.map(plate => (
                 <MenuItem key={plate.value || plate.license_plate} value={plate.value || plate.license_plate}>
-                  {plate.value || plate.license_plate}
+                  {plate.displayText || plate.value || plate.license_plate}
                 </MenuItem>
               ))
             )}
