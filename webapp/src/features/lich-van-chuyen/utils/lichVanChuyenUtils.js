@@ -47,8 +47,8 @@ export const formatEmployeesForSelect = employeesList => {
 // Helper to format containers data for select options
 export const formatContainersForSelect = containersList => {
   return containersList.map(container => {
-    const label = container.phan_loai
-      ? `${String(container.id)} (${String(container.phan_loai)})`
+    const label = container.category
+      ? `${String(container.id)} (${String(container.category)})`
       : String(container.id);
     return {
       value: container.id,

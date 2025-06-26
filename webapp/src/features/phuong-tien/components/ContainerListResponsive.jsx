@@ -15,45 +15,46 @@ import { EditButton, DeleteButton, SearchBar } from '@/components';
 const ContainerListResponsive = ({
   data = [],
   loading = false,
+  pagination = null,
   onEdit,
   onDelete,
+  onPageChange,
   emptyMessage = 'Chưa có dữ liệu container',
   error = '',
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
-  // State for pagination
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // Use server pagination values
+  const page = pagination ? pagination.page - 1 : 0; // MUI uses 0-based indexing
+  const rowsPerPage = pagination ? pagination.limit : 10;
+  const totalCount = pagination ? pagination.records_count : data.length;
+  
   // Handle page change
   const handleChangePage = (event, newPage) => {
-    setPage(newPage);
+    if (onPageChange) {
+      onPageChange(newPage + 1, rowsPerPage); // Convert back to 1-based indexing for API
+    }
   };
   // Handle rows per page change
   const handleChangeRowsPerPage = event => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    if (onPageChange) {
+      onPageChange(1, newRowsPerPage); // Reset to first page when changing rows per page
+    }
   };
-  // Filter data based on search term
-  const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return data;
-    const term = searchTerm.toLowerCase();
-    return data.filter(item => item.phan_loai && item.phan_loai.toLowerCase().includes(term));
-  }, [data, searchTerm]);
-  // Get current data for the current page
-  const paginatedData = useMemo(() => {
-    return filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-  }, [filteredData, page, rowsPerPage]);
+  // For server-side pagination, we use the data as-is since it's already paginated
+  // Client-side search is removed as it should be handled server-side
+  const displayData = data;
   // Handle search input change
   const handleSearchChange = event => {
     setSearchTerm(event.target.value);
-    setPage(0); // Reset to first page when searching
+    // For now, keep local search until server-side search is implemented
   };
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'phan_loai',
+      key: 'category',
       label: 'LOẠI CONTAINER',
       align: 'left',
       sortable: true,
@@ -70,13 +71,13 @@ const ContainerListResponsive = ({
   // Render mobile card view for better responsive experience
   const renderMobileView = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-      {paginatedData.map(item => (
+      {displayData.map(item => (
         <Card key={item.id} elevation={2}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
               <Box>
                 <Typography variant="h6" component="div">
-                  {item.phan_loai || 'Chưa cập nhật'}
+                  {item.category || 'Chưa cập nhật'}
                 </Typography>
               </Box>
               <Box>
@@ -87,7 +88,7 @@ const ContainerListResponsive = ({
           </CardContent>
         </Card>
       ))}
-      {!loading && paginatedData.length === 0 && (
+      {!loading && displayData.length === 0 && (
         <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
           {searchTerm ? 'Không tìm thấy container phù hợp' : emptyMessage}
         </Typography>
@@ -118,10 +119,10 @@ const ContainerListResponsive = ({
           renderMobileView()
         )}
         {/* Pagination for mobile view */}
-        {!loading && !error && filteredData.length > 0 && (
+        {!loading && !error && totalCount > 0 && (
           <TablePagination
             component="div"
-            count={filteredData.length}
+            count={totalCount}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
@@ -158,17 +159,17 @@ const ContainerListResponsive = ({
       </Box>
       <StandardTable
         columns={columns}
-        data={paginatedData}
+        data={displayData}
         renderActions={renderActions}
         loading={loading}
         error={error}
         emptyMessage={searchTerm ? 'Không tìm thấy container phù hợp' : emptyMessage}
         sortable={true}
-        defaultSort={{ key: 'phan_loai', direction: 'asc' }}
+        defaultSort={{ key: 'category', direction: 'asc' }}
         pagination={true}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalCount={filteredData.length}
+        totalCount={totalCount}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         showSTT={true}

@@ -309,8 +309,10 @@ const ContainerContent = () => {
         data={containerHook.data}
         loading={containerHook.loading}
         error={containerHook.error}
+        pagination={containerHook.pagination}
         onEdit={data => setDialog({ open: true, edit: true, data })}
         onDelete={data => setDeleteDialog({ open: true, data })}
+        onPageChange={(page, limit) => containerHook.fetchAll(page, limit)}
         emptyMessage="Chưa có dữ liệu container"
       />
       <Snackbar
@@ -351,7 +353,7 @@ const ContainerContent = () => {
             <Divider sx={{ my: 1 }} />
             <Box sx={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 1 }}>
               <Typography variant="body2" fontWeight={500}>
-                Phân loại:
+                Loại container:
               </Typography>
               <Typography variant="body2">{data?.category || '-'}</Typography>
             </Box>
