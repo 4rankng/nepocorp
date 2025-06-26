@@ -156,7 +156,7 @@ export default function useExpenseForm({
         response = await api.update(formData.id, submissionData);
         
         // Check for API error responses
-        if (!response?.success) {
+        if (response?.status !== 'success') {
           let errorMessage = 'Cập nhật thất bại';
           if (response?.message && response?.errors?.message) {
             errorMessage = `${response.message}: ${response.errors.message}`;
@@ -177,7 +177,7 @@ export default function useExpenseForm({
         response = await api.create(submissionData);
         
         // Check for API error responses
-        if (!response?.success) {
+        if (response?.status !== 'success') {
           let errorMessage = 'Tạo mới thất bại';
           if (response?.message && response?.errors?.message) {
             errorMessage = `${response.message}: ${response.errors.message}`;

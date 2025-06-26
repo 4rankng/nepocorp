@@ -6,12 +6,54 @@ import { VehicleDataContext } from '@contexts/VehicleDataContext';
 const transformExpenseToDisplay = (expense, tractors, trailers) => {
   // Find the vehicle by ID to get license plate
   let bien_so = '';
+  
+  // Add debugging info
+  console.log('Transform expense:', {
+    expense_id: expense.id,
+    tractor_id: expense.tractor_id,
+    trailer_id: expense.trailer_id,
+    tractors_count: tractors?.length || 0,
+    trailers_count: trailers?.length || 0,
+    first_tractor: tractors?.[0],
+    first_trailer: trailers?.[0]
+  });
+  
   if (expense.tractor_id) {
-    const tractor = tractors.find(t => t.id === expense.tractor_id);
-    bien_so = tractor?.license_plate || `Tractor ID: ${expense.tractor_id}`;
+    // Handle both string and number IDs
+    const tractorId = parseInt(expense.tractor_id);
+    const tractor = tractors.find(t => parseInt(t.id) === tractorId);
+    
+    console.log('Tractor lookup:', {
+      looking_for: tractorId,
+      found: tractor,
+      all_tractor_ids: tractors.map(t => ({ id: t.id, license: t.license_plate }))
+    });
+    
+    if (tractor?.license_plate) {
+      bien_so = tractor.license_plate;
+    } else {
+      // More informative fallback
+      bien_so = `Tractor ID: ${expense.tractor_id} (not found in cache)`;
+    }
   } else if (expense.trailer_id) {
-    const trailer = trailers.find(t => t.id === expense.trailer_id);
-    bien_so = trailer?.license_plate || `Trailer ID: ${expense.trailer_id}`;
+    // Handle both string and number IDs
+    const trailerId = parseInt(expense.trailer_id);
+    const trailer = trailers.find(t => parseInt(t.id) === trailerId);
+    
+    console.log('Trailer lookup:', {
+      looking_for: trailerId,
+      found: trailer,
+      all_trailer_ids: trailers.map(t => ({ id: t.id, license: t.license_plate }))
+    });
+    
+    if (trailer?.license_plate) {
+      bien_so = trailer.license_plate;
+    } else {
+      // More informative fallback
+      bien_so = `Trailer ID: ${expense.trailer_id} (not found in cache)`;
+    }
+  } else {
+    bien_so = 'Không có thông tin xe';
   }
 
   // Transform to display format - keeping compatibility with existing table columns
@@ -122,14 +164,24 @@ export default function useBaoDuongRecords(baoDuongApi) {
     async (page = 0, pageSize = 10) => {
       setIsLoading(true);
       try {
+        // Ensure vehicle data is loaded before transforming expense data
+        if (tractors.length === 0 && trailers.length === 0) {
+          console.log('Vehicle data not loaded, fetching...');
+          await fetchAllVehicleData();
+        }
+        
         // Note: API is 1-indexed for page number
         const recordsRes = await baoDuongApi.getAll(page + 1, pageSize);
 
-        // Transform expense data to display format
-        const transformedData = (recordsRes.data || []).map(expense => 
-          transformExpenseToDisplay(expense, tractors, trailers)
-        );
-        setBaoDuongRecords(transformedData);
+        console.log('Fetched expense data:', {
+          count: recordsRes.data?.length || 0,
+          first_record: recordsRes.data?.[0],
+          tractors_available: tractors.length,
+          trailers_available: trailers.length
+        });
+
+        // Use backend data directly without transformation
+        setBaoDuongRecords(recordsRes.data || []);
 
         // Update pagination state from API response
         const newPagination = {
@@ -152,7 +204,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
         setIsLoading(false);
       }
     },
-    [baoDuongApi, tractors, trailers]
+    [baoDuongApi, tractors, trailers, fetchAllVehicleData]
   );
   const handlePageChange = useCallback(
     newPage => {
@@ -171,12 +223,15 @@ export default function useBaoDuongRecords(baoDuongApi) {
     async (bienSo, page = 0, pageSize = 10) => {
       setIsLoading(true);
       try {
+        // Ensure vehicle data is loaded before transforming expense data
+        if (tractors.length === 0 && trailers.length === 0) {
+          console.log('Vehicle data not loaded, fetching...');
+          await fetchAllVehicleData();
+        }
+        
         const recordsRes = await baoDuongApi.getAll(page + 1, pageSize, { bien_so: bienSo });
-        // Transform expense data to display format
-        const transformedData = (recordsRes.data || []).map(expense => 
-          transformExpenseToDisplay(expense, tractors, trailers)
-        );
-        setBaoDuongRecords(transformedData);
+        // Use backend data directly without transformation
+        setBaoDuongRecords(recordsRes.data || []);
         setPagination(prev => ({
           ...prev,
           page,
@@ -192,13 +247,15 @@ export default function useBaoDuongRecords(baoDuongApi) {
         setIsLoading(false);
       }
     },
-    [baoDuongApi, tractors, trailers]
+    [baoDuongApi, tractors, trailers, fetchAllVehicleData]
   );
   return {
     baoDuongRecords,
     setBaoDuongRecords,
     licensePlates,
     setLicensePlates,
+    tractors,
+    trailers,
     isLoading: isLoading || isLoadingPlates,
     error,
     fetchData,

@@ -1,8 +1,8 @@
 .PHONY: local db test migrate-up migrate-down docker-build docker-push
 
-# Local development
+# Local development with auto-refresh
 local:
-	go run cmd/api/main.go
+	air -c .air.toml
 
 # Start only database and adminer
 db:

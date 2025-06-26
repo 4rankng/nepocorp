@@ -93,6 +93,8 @@ const QuanLyBaoDuong = memo(() => {
     setBaoDuongRecords: setMaintenanceRecords,
     licensePlates,
     setLicensePlates,
+    tractors,
+    trailers,
     isLoading,
     error,
     fetchData,
@@ -317,7 +319,7 @@ const QuanLyBaoDuong = memo(() => {
   );
   // Render desktop table view
   const renderDesktopView = () => {
-    const tableColumns = getBaoDuongTableColumns();
+    const tableColumns = getBaoDuongTableColumns(tractors, trailers);
 
     const tableProps = {
       columns: tableColumns,
