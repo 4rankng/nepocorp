@@ -49,7 +49,7 @@ const ExpenseList = ({
       filtered = filtered.filter(expense => 
         (expense.vendor_name && expense.vendor_name.toLowerCase().includes(search)) ||
         (expense.remark && expense.remark.toLowerCase().includes(search)) ||
-        (expense.bien_so && expense.bien_so.toLowerCase().includes(search))
+        (expense.license_plate && expense.license_plate.toLowerCase().includes(search))
       );
     }
 
@@ -67,7 +67,7 @@ const ExpenseList = ({
   const tableColumns = useMemo(() => {
     const baseColumns = [
       {
-        field: 'bien_so',
+        field: 'license_plate',
         headerName: 'Biển số xe',
         width: 120,
         sortable: true,
@@ -201,7 +201,7 @@ const ExpenseList = ({
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
               <Typography variant="h6" component="h3">
-                {expense.bien_so}
+                {expense.license_plate}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <EditButton size="small" onClick={() => onEdit(expense)} />

@@ -60,8 +60,10 @@ import BaoDuongDialog from './components/BaoDuongDialog';
 import { getBaoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
 import { useExpenseForm } from '@components/shared';
 import useMaintenanceItemRecords from './hooks/useMaintenanceItemRecords';
+import { useVehicleData } from '@contexts/VehicleDataContext';
+import { extractErrorMessage, isValidationError, extractValidationErrors } from '@utils/errorUtils';
 const initialFormData = {
-  bien_so: '',
+  license_plate: '',
   vendor_name: '',
   payment_status: 'DRAFT',
   payment_proof: '',
@@ -87,12 +89,51 @@ const QuanLyBaoDuong = memo(() => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   // Removed counts state as we're now using maintenance items directly
   const [selectedPlate, setSelectedPlate] = useState('');
+  // Vehicle data from context
+  const {
+    tractors,
+    trailers,
+    loading: vehicleLoading,
+    errors: vehicleErrors,
+    fetchAllVehicleData,
+  } = useVehicleData();
+
+  // Combine license plates from tractors and trailers
+  const licensePlates = React.useMemo(() => {
+    const plates = [];
+    
+    // Add tractor license plates
+    tractors.forEach(tractor => {
+      if (tractor.license_plate) {
+        plates.push({
+          value: tractor.license_plate,
+          license_plate: tractor.license_plate
+        });
+      }
+    });
+    
+    // Add trailer license plates
+    trailers.forEach(trailer => {
+      if (trailer.license_plate) {
+        plates.push({
+          value: trailer.license_plate,
+          license_plate: trailer.license_plate
+        });
+      }
+    });
+    
+    // Remove duplicates
+    const uniquePlates = plates.filter((plate, index, self) => 
+      index === self.findIndex(p => p.license_plate === plate.license_plate)
+    );
+    
+    return uniquePlates;
+  }, [tractors, trailers]);
+
   // Data fetching
   const {
     baoDuongRecords: maintenanceRecords,
     setBaoDuongRecords: setMaintenanceRecords,
-    licensePlates,
-    setLicensePlates,
     isLoading,
     error,
     fetchData,
@@ -141,13 +182,15 @@ const QuanLyBaoDuong = memo(() => {
   });
   // Fetch initial data on mount
   useEffect(() => {
-    fetchData(0, 10);
-  }, [fetchData]); // Include fetchData dependency
+    fetchData(0, 100);
+    fetchAllVehicleData(); // Fetch vehicle data for license plates
+  }, [fetchData, fetchAllVehicleData]); // Include fetchData dependency
+
   // Removed refetchCount as we're working with maintenance items directly
   const handleOpenAddDialog = () => {
     setIsEdit(false);
     setFormData({
-      bien_so: '',
+      license_plate: '',
       item_name: '',
       ngay_thay: '',
       ngay_het_han: '',
@@ -164,7 +207,7 @@ const QuanLyBaoDuong = memo(() => {
   const handleOpenEditDialog = record => {
     setIsEdit(true);
     setFormData({
-      bien_so: record.bien_so,
+      license_plate: record.license_plate,
       item_name: record.item_name,
       ngay_thay: record.ngay_thay,
       ngay_het_han: record.ngay_het_han,
@@ -187,7 +230,7 @@ const QuanLyBaoDuong = memo(() => {
       open: true,
       recordId: record.id,
       details: {
-        'Biển số xe': record.bien_so,
+        'Biển số xe': record.license_plate,
         'Hạng mục': record.item_name,
         'Ngày thay': record.ngay_thay
           ? new Date(record.ngay_thay).toLocaleDateString('vi-VN')
@@ -218,9 +261,10 @@ const QuanLyBaoDuong = memo(() => {
       fetchData();
       handleDeleteClose();
     } catch (err) {
+      const errorMessage = extractErrorMessage(err, 'Đã xảy ra lỗi khi xóa thông tin bảo dưỡng');
       setSnackbar({
         open: true,
-        message: 'Đã xảy ra lỗi khi xóa thông tin bảo dưỡng',
+        message: errorMessage,
         severity: 'error',
       });
     } finally {
@@ -246,16 +290,19 @@ const QuanLyBaoDuong = memo(() => {
         await fetchData(pagination.page, pagination.pageSize);
         setOpenDialog(false);
       } catch (error) {
-        // Extract detailed error information
-        const errorDetails = error.response?.error?.details || {};
-        const errorMessage = error.message || 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng';
+        // Extract detailed error information using utility
+        const errorMessage = extractErrorMessage(error, 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng');
+        const validationError = isValidationError(error);
+        const errorDetails = extractValidationErrors(error);
+        
         // If there are validation errors, set them in the form
-        if (error.validationError && errorDetails) {
+        if (validationError && Object.keys(errorDetails).length > 0) {
           setErrors(errorDetails);
         }
+        
         // Show error message to user if not a validation error
         // (validation errors are shown in the form fields)
-        if (!error.validationError) {
+        if (!validationError) {
           setSnackbar({
             open: true,
             message: errorMessage,
@@ -274,7 +321,7 @@ const QuanLyBaoDuong = memo(() => {
     const search = searchTerm.toLowerCase();
     return maintenanceRecords.filter(
       record =>
-        (record.bien_so && record.bien_so.toLowerCase().includes(search)) ||
+        (record.license_plate && record.license_plate.toLowerCase().includes(search)) ||
         (record.ghi_chu && record.ghi_chu.toLowerCase().includes(search))
     );
   }, [maintenanceRecords, searchTerm]);
@@ -372,6 +419,7 @@ const QuanLyBaoDuong = memo(() => {
             value={selectedPlate || 'Tất cả'}
             onChange={handlePlateChange}
             label="Biển số xe"
+            disabled={vehicleLoading.initial || vehicleLoading.tractors || vehicleLoading.trailers}
             renderValue={selected => {
               if (!selected || selected === 'Tất cả') return 'Tất cả';
               return selected;
@@ -380,11 +428,18 @@ const QuanLyBaoDuong = memo(() => {
             <MenuItem value="Tất cả">
               <em>Tất cả</em>
             </MenuItem>
-            {licensePlates.map(plate => (
-              <MenuItem key={plate.value || plate.bien_so} value={plate.value || plate.bien_so}>
-                {plate.value || plate.bien_so}
+            {vehicleLoading.initial || vehicleLoading.tractors || vehicleLoading.trailers ? (
+              <MenuItem disabled>
+                <CircularProgress size={16} sx={{ mr: 1 }} />
+                Đang tải...
               </MenuItem>
-            ))}
+            ) : (
+              licensePlates.map(plate => (
+                <MenuItem key={plate.value || plate.license_plate} value={plate.value || plate.license_plate}>
+                  {plate.value || plate.license_plate}
+                </MenuItem>
+              ))
+            )}
           </Select>
         </FormControl>
       </Box>
@@ -409,7 +464,7 @@ const QuanLyBaoDuong = memo(() => {
         onChange={handleInputChange}
         onSave={handleSave}
         licensePlates={licensePlates}
-        isLoadingPlates={isLoading}
+        isLoadingPlates={vehicleLoading.initial || vehicleLoading.tractors || vehicleLoading.trailers}
       />
       {/* Delete Confirmation Dialog */}
       <DeleteDialog

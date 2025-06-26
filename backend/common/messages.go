@@ -3,56 +3,56 @@ package common
 // Success messages
 const (
 	// Generic
-	MsgSuccess = "Operation completed successfully"
+	MsgSuccess = "Thao tác hoàn thành thành công"
 	
 	// Expense Categories
-	MsgExpenseCategoriesRetrieved = "Expense categories retrieved successfully"
-	MsgExpenseCategoryCreated     = "Expense category created successfully"
-	MsgExpenseCategoryUpdated     = "Expense category updated successfully"
-	MsgExpenseCategoryDeleted     = "Expense category deleted successfully"
+	MsgExpenseCategoriesRetrieved = "Lấy danh sách danh mục chi phí thành công"
+	MsgExpenseCategoryCreated     = "Tạo danh mục chi phí thành công"
+	MsgExpenseCategoryUpdated     = "Cập nhật danh mục chi phí thành công"
+	MsgExpenseCategoryDeleted     = "Xóa danh mục chi phí thành công"
 	
 	// Containers
-	MsgContainersRetrieved = "Containers retrieved successfully"
-	MsgContainerCreated    = "Container created successfully"
-	MsgContainerUpdated    = "Container updated successfully"
-	MsgContainerDeleted    = "Container deleted successfully"
+	MsgContainersRetrieved = "Lấy danh sách container thành công"
+	MsgContainerCreated    = "Tạo container thành công"
+	MsgContainerUpdated    = "Cập nhật container thành công"
+	MsgContainerDeleted    = "Xóa container thành công"
 	
 	// Tractors
-	MsgTractorsRetrieved = "Tractors retrieved successfully"
-	MsgTractorCreated    = "Tractor created successfully"
-	MsgTractorUpdated    = "Tractor updated successfully"
-	MsgTractorDeleted    = "Tractor deleted successfully"
+	MsgTractorsRetrieved = "Lấy danh sách đầu kéo thành công"
+	MsgTractorCreated    = "Tạo đầu kéo thành công"
+	MsgTractorUpdated    = "Cập nhật đầu kéo thành công"
+	MsgTractorDeleted    = "Xóa đầu kéo thành công"
 	
 	// Trailers
-	MsgTrailersRetrieved = "Trailers retrieved successfully"
-	MsgTrailerCreated    = "Trailer created successfully"
-	MsgTrailerUpdated    = "Trailer updated successfully"
-	MsgTrailerDeleted    = "Trailer deleted successfully"
+	MsgTrailersRetrieved = "Lấy danh sách rơ moóc thành công"
+	MsgTrailerCreated    = "Tạo rơ moóc thành công"
+	MsgTrailerUpdated    = "Cập nhật rơ moóc thành công"
+	MsgTrailerDeleted    = "Xóa rơ moóc thành công"
 	
 	// Tractor Expenses
-	MsgTractorExpensesRetrieved = "Tractor expenses retrieved successfully"
-	MsgTractorExpenseRetrieved  = "Tractor expense retrieved successfully"
-	MsgTractorExpenseCreated    = "Tractor expense created successfully"
-	MsgTractorExpenseUpdated    = "Tractor expense updated successfully"
-	MsgTractorExpenseDeleted    = "Tractor expense deleted successfully"
+	MsgTractorExpensesRetrieved = "Lấy danh sách chi phí đầu kéo thành công"
+	MsgTractorExpenseRetrieved  = "Lấy chi phí đầu kéo thành công"
+	MsgTractorExpenseCreated    = "Tạo chi phí đầu kéo thành công"
+	MsgTractorExpenseUpdated    = "Cập nhật chi phí đầu kéo thành công"
+	MsgTractorExpenseDeleted    = "Xóa chi phí đầu kéo thành công"
 	
 	// Expense Items
-	MsgExpenseItemCreated = "Expense item created successfully"
-	MsgExpenseItemUpdated = "Expense item updated successfully"
-	MsgExpenseItemDeleted = "Expense item deleted successfully"
+	MsgExpenseItemCreated = "Tạo khoản chi phí thành công"
+	MsgExpenseItemUpdated = "Cập nhật khoản chi phí thành công"
+	MsgExpenseItemDeleted = "Xóa khoản chi phí thành công"
 	
 	// Maintenance Items
-	MsgMaintenanceItemsRetrieved = "Maintenance items retrieved successfully"
+	MsgMaintenanceItemsRetrieved = "Lấy danh sách vật tư bảo dưỡng thành công"
 	
 	// Settings
-	MsgTaxRateRetrieved = "Tax rate retrieved successfully"
-	MsgTaxRateUpdated   = "Tax rate updated successfully"
-	MsgSettingRetrieved = "Setting retrieved successfully"
-	MsgSettingUpdated   = "Setting updated successfully"
+	MsgTaxRateRetrieved = "Lấy thuế suất thành công"
+	MsgTaxRateUpdated   = "Cập nhật thuế suất thành công"
+	MsgSettingRetrieved = "Lấy cài đặt thành công"
+	MsgSettingUpdated   = "Cập nhật cài đặt thành công"
 	
 	// Authentication
-	MsgLoginSuccess       = "Login successful"
-	MsgUserCreated        = "User created successfully"
-	MsgTokenRefreshed     = "Token refreshed successfully"
-	MsgProfileRetrieved   = "Profile retrieved successfully"
+	MsgLoginSuccess       = "Đăng nhập thành công"
+	MsgUserCreated        = "Tạo người dùng thành công"
+	MsgTokenRefreshed     = "Làm mới token thành công"
+	MsgProfileRetrieved   = "Lấy thông tin hồ sơ thành công"
 )

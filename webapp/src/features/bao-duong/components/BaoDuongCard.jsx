@@ -59,7 +59,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
         >
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {record.bien_so}
+              {record.license_plate}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {record.item_name} - {formatDate(record.ngay_thay)}

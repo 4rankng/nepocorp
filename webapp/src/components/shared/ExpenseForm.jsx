@@ -49,7 +49,7 @@ const ExpenseForm = ({
   title = null, // Custom title, defaults to generic expense form
 }) => {
   const [localData, setLocalData] = useState({
-    bien_so: '',
+    license_plate: '',
     vendor_name: '',
     expense_category_id: expenseCategoryId || '',
     payment_status: PAYMENT_STATUS.DRAFT,
@@ -69,7 +69,7 @@ const ExpenseForm = ({
 
   useEffect(() => {
     setLocalData(formData || {
-      bien_so: '',
+      license_plate: '',
       vendor_name: '',
       expense_category_id: expenseCategoryId || '',
       payment_status: PAYMENT_STATUS.DRAFT,
@@ -136,12 +136,12 @@ const ExpenseForm = ({
     };
   }, [open, onClose]);
 
-  const handleBienSoChange = event => {
+  const handleLicensePlateChange = event => {
     const value = event.target.value;
-    setLocalData(prev => ({ ...prev, bien_so: value }));
+    setLocalData(prev => ({ ...prev, license_plate: value }));
     onChange({
       target: {
-        name: 'bien_so',
+        name: 'license_plate',
         value: value,
       },
     });
@@ -213,10 +213,10 @@ const ExpenseForm = ({
                   <FormLabel required>Biển số xe</FormLabel>
                   <FormControl
                     type="select"
-                    value={localData.bien_so || ''}
-                    onChange={handleBienSoChange}
+                    value={localData.license_plate || ''}
+                    onChange={handleLicensePlateChange}
                     disabled={isLoadingPlates}
-                    error={!!errors.bien_so}
+                    error={!!errors.license_plate}
                     required
                   >
                     <option value="">
@@ -228,7 +228,7 @@ const ExpenseForm = ({
                       </option>
                     ))}
                   </FormControl>
-                  {errors.bien_so && <ErrorText>{errors.bien_so}</ErrorText>}
+                  {errors.license_plate && <ErrorText>{errors.license_plate}</ErrorText>}
                 </FormCol>
 
                 <FormCol>

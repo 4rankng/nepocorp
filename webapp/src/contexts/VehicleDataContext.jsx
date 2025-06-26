@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useRef, useCallback } from 
 import { tractorApi } from '@services/api/tractorApi';
 import { trailerApi } from '@services/api/trailerApi';
 import { containerApi } from '@services/api/containerApi';
+import { extractErrorMessage } from '@utils/errorUtils';
 
 const VehicleDataContext = createContext();
 
@@ -61,7 +62,7 @@ export const VehicleDataProvider = ({ children }) => {
         throw new Error(response?.message || 'Lỗi khi tải danh sách đầu kéo');
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách đầu kéo';
+      const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách đầu kéo');
       setError('tractors', errorMessage);
       console.error('Error fetching tractors:', error);
       return [];
@@ -90,7 +91,7 @@ export const VehicleDataProvider = ({ children }) => {
         throw new Error(response?.message || 'Lỗi khi tải danh sách rơ moóc');
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách rơ moóc';
+      const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách rơ moóc');
       setError('trailers', errorMessage);
       console.error('Error fetching trailers:', error);
       return [];
@@ -119,7 +120,7 @@ export const VehicleDataProvider = ({ children }) => {
         throw new Error(response?.message || 'Lỗi khi tải danh sách container');
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi tải danh sách container';
+      const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách container');
       setError('containers', errorMessage);
       console.error('Error fetching containers:', error);
       return [];

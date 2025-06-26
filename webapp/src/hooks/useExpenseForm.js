@@ -1,6 +1,7 @@
 import { useState, useCallback, useContext } from 'react';
 import logger from '@services/logger';
 import { VehicleDataContext } from '@contexts/VehicleDataContext';
+import { extractErrorMessage, isValidationError } from '@utils/errorUtils';
 
 // Utility function to convert license plate to tractor_id/trailer_id
 const convertLicensePlateToIds = (licensePlate, tractors, trailers) => {
@@ -57,7 +58,7 @@ const validateExpenseForm = (formData, expenseCategoryId) => {
   const newErrors = {};
   
   // Validate main fields
-  if (!formData.bien_so) newErrors.bien_so = 'Vui lòng chọn biển số xe';
+  if (!formData.license_plate) newErrors.license_plate = 'Vui lòng chọn biển số xe';
   if (!formData.vendor_name) newErrors.vendor_name = 'Vui lòng nhập tên nhà cung cấp';
   
   // Validate expense category if not fixed
@@ -135,16 +136,16 @@ export default function useExpenseForm({
       setIsLoading(true);
       
       // Convert license plate to tractor_id/trailer_id
-      const vehicleIds = convertLicensePlateToIds(formData.bien_so, tractors, trailers);
+      const vehicleIds = convertLicensePlateToIds(formData.license_plate, tractors, trailers);
       
       // If license plate not found, throw error (should not happen if dropdown and validation use same data)
       if (!vehicleIds.tractor_id && !vehicleIds.trailer_id) {
-        logger.error(`License plate ${formData.bien_so} not found in VehicleDataContext`, { 
+        logger.error(`License plate ${formData.license_plate} not found in VehicleDataContext`, { 
           tractorCount: tractors.length, 
           trailerCount: trailers.length,
-          bien_so: formData.bien_so
+          license_plate: formData.license_plate
         });
-        throw new Error(`Không tìm thấy xe với biển số: ${formData.bien_so}`);
+        throw new Error(`Không tìm thấy xe với biển số: ${formData.license_plate}`);
       }
       
       // Transform data to expense API format
@@ -157,18 +158,10 @@ export default function useExpenseForm({
         
         // Check for API error responses
         if (response?.status !== 'success') {
-          let errorMessage = 'Cập nhật thất bại';
-          if (response?.message && response?.errors?.message) {
-            errorMessage = `${response.message}: ${response.errors.message}`;
-          } else if (response?.message) {
-            errorMessage = response.message;
-          } else if (response?.error?.message) {
-            errorMessage = response.error.message;
-          }
-          
+          const errorMessage = extractErrorMessage(response, 'Cập nhật thất bại');
           const error = new Error(errorMessage);
           error.response = response;
-          error.validationError = response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
+          error.validationError = isValidationError(response);
           throw error;
         }
         
@@ -178,18 +171,10 @@ export default function useExpenseForm({
         
         // Check for API error responses
         if (response?.status !== 'success') {
-          let errorMessage = 'Tạo mới thất bại';
-          if (response?.message && response?.errors?.message) {
-            errorMessage = `${response.message}: ${response.errors.message}`;
-          } else if (response?.message) {
-            errorMessage = response.message;
-          } else if (response?.error?.message) {
-            errorMessage = response.error.message;
-          }
-          
+          const errorMessage = extractErrorMessage(response, 'Tạo mới thất bại');
           const error = new Error(errorMessage);
           error.response = response;
-          error.validationError = response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
+          error.validationError = isValidationError(response);
           throw error;
         }
         

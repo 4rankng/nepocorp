@@ -5,7 +5,7 @@ import { VehicleDataContext } from '@contexts/VehicleDataContext';
 // Utility function to transform expense data back to display format
 const transformExpenseToDisplay = (expense, tractors, trailers) => {
   // Find the vehicle by ID to get license plate
-  let bien_so = '';
+  let license_plate = '';
   
   // Add debugging info
   console.log('Transform expense:', {
@@ -30,10 +30,10 @@ const transformExpenseToDisplay = (expense, tractors, trailers) => {
     });
     
     if (tractor?.license_plate) {
-      bien_so = tractor.license_plate;
+      license_plate = tractor.license_plate;
     } else {
       // More informative fallback
-      bien_so = `Tractor ID: ${expense.tractor_id} (not found in cache)`;
+      license_plate = `Tractor ID: ${expense.tractor_id} (not found in cache)`;
     }
   } else if (expense.trailer_id) {
     // Handle both string and number IDs
@@ -47,19 +47,19 @@ const transformExpenseToDisplay = (expense, tractors, trailers) => {
     });
     
     if (trailer?.license_plate) {
-      bien_so = trailer.license_plate;
+      license_plate = trailer.license_plate;
     } else {
       // More informative fallback
-      bien_so = `Trailer ID: ${expense.trailer_id} (not found in cache)`;
+      license_plate = `Trailer ID: ${expense.trailer_id} (not found in cache)`;
     }
   } else {
-    bien_so = 'Không có thông tin xe';
+    license_plate = 'Không có thông tin xe';
   }
 
   // Transform to display format - keeping compatibility with existing table columns
   return {
     id: expense.id,
-    bien_so: bien_so,
+    license_plate: license_plate,
     // For multi-item expenses, show first item or summary
     item_name: expense.items?.[0]?.item_name || 'Nhiều hạng mục',
     so_luong: expense.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0,
@@ -229,7 +229,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
           await fetchAllVehicleData();
         }
         
-        const recordsRes = await baoDuongApi.getAll(page + 1, pageSize, { bien_so: bienSo });
+        const recordsRes = await baoDuongApi.getAll(page + 1, pageSize, { license_plate: bienSo });
         // Use backend data directly without transformation
         setBaoDuongRecords(recordsRes.data || []);
         setPagination(prev => ({

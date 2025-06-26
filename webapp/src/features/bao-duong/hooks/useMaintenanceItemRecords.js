@@ -1,6 +1,9 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import logger from '@services/logger';
 import { maintenanceItemsApi } from '@services/api/maintenanceItemsApi';
+import { tractorApi } from '@services/api/tractorApi';
+import { trailerApi } from '@services/api/trailerApi';
+import { extractErrorMessage } from '@utils/errorUtils';
 
 export default function useMaintenanceItemRecords() {
   const [maintenanceItemRecords, setMaintenanceItemRecords] = useState([]);
@@ -15,27 +18,49 @@ export default function useMaintenanceItemRecords() {
     totalPages: 1,
   });
 
-  // Build license plates from maintenance items data
-  const buildLicensePlates = useCallback((data) => {
+  // Fetch license plates from vehicle APIs (tractors + trailers)
+  const fetchLicensePlates = useCallback(async () => {
     try {
-      // Extract unique license plates from maintenance items
-      const uniquePlates = [...new Set(
-        data
-          .filter(item => item.license_plate)
-          .map(item => item.license_plate)
-      )].sort();
+      // Fetch tractors and trailers in parallel
+      const [tractorResponse, trailerResponse] = await Promise.all([
+        tractorApi.getAllWithoutPagination(),
+        trailerApi.getAllWithoutPagination()
+      ]);
 
-      const formattedPlates = uniquePlates.map(plate => ({
-        value: plate,
-        bien_so: plate, // For backward compatibility
-        type: 'Vehicle' // We don't distinguish tractor/trailer in this view
-      }));
+      const formattedPlates = [];
+
+      // Add tractors
+      if (tractorResponse?.status === 'success' && Array.isArray(tractorResponse.data)) {
+        const tractorPlates = tractorResponse.data
+          .filter(tractor => tractor.license_plate)
+          .map(tractor => ({
+            value: tractor.license_plate,
+            license_plate: tractor.license_plate,
+            type: 'Đầu kéo'
+          }));
+        formattedPlates.push(...tractorPlates);
+      }
+
+      // Add trailers
+      if (trailerResponse?.status === 'success' && Array.isArray(trailerResponse.data)) {
+        const trailerPlates = trailerResponse.data
+          .filter(trailer => trailer.license_plate)
+          .map(trailer => ({
+            value: trailer.license_plate,
+            license_plate: trailer.license_plate,
+            type: 'Rơ-moóc'
+          }));
+        formattedPlates.push(...trailerPlates);
+      }
+
+      // Sort by license plate
+      formattedPlates.sort((a, b) => a.value.localeCompare(b.value));
 
       setLicensePlates(formattedPlates);
       
-      logger.info(`Built license plates from maintenance items: ${formattedPlates.length} plates`);
+      logger.info(`Fetched license plates from vehicle APIs: ${formattedPlates.length} plates (${tractorResponse?.data?.length || 0} tractors, ${trailerResponse?.data?.length || 0} trailers)`);
     } catch (error) {
-      logger.error('Error building license plates from maintenance items', { error });
+      logger.error('Error fetching license plates from vehicle APIs', { error });
       setLicensePlates([]);
     }
   }, []);
@@ -58,8 +83,8 @@ export default function useMaintenanceItemRecords() {
         const data = response.data || [];
         setMaintenanceItemRecords(data);
 
-        // Build license plates from the data
-        buildLicensePlates(data);
+        // Fetch license plates from vehicle APIs
+        await fetchLicensePlates();
 
         // Update pagination state from API response
         const newPagination = {
@@ -77,14 +102,15 @@ export default function useMaintenanceItemRecords() {
         setError('');
       } catch (err) {
         logger.error('Error loading maintenance items', { error: err });
-        setError('Không thể tải dữ liệu bảo dưỡng');
+        const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu bảo dưỡng');
+        setError(errorMessage);
         setMaintenanceItemRecords([]);
         setLicensePlates([]);
       } finally {
         setIsLoading(false);
       }
     },
-    [buildLicensePlates]
+    [fetchLicensePlates]
   );
 
   const handlePageChange = useCallback(
@@ -126,7 +152,8 @@ export default function useMaintenanceItemRecords() {
         setError('');
       } catch (err) {
         logger.error('Error loading maintenance items by license plate', { error: err });
-        setError('Không thể tải dữ liệu bảo dưỡng');
+        const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu bảo dưỡng');
+        setError(errorMessage);
         setMaintenanceItemRecords([]);
       } finally {
         setIsLoading(false);

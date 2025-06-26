@@ -234,7 +234,7 @@ const fuelExpenseForm = useExpenseForm({
 ### Expense Form Data
 ```javascript
 {
-  bien_so: '', // License plate
+  license_plate: '', // License plate
   vendor_name: '', // Vendor name
   expense_category_id: 1, // Category ID (optional if fixed)
   payment_status: 'DRAFT', // DRAFT | PENDING | PAID | CANCELLED

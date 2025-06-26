@@ -100,7 +100,7 @@ export default function useBaoDuongForm({
     const newErrors = {};
     
     // Validate main fields
-    if (!formData.bien_so) newErrors.bien_so = 'Vui lòng nhập biển số xe';
+    if (!formData.license_plate) newErrors.license_plate = 'Vui lòng nhập biển số xe';
     // payment_status has a default value of DRAFT, so it's always valid
     
     // Validate items array
@@ -136,16 +136,16 @@ export default function useBaoDuongForm({
       setIsLoading(true);
       
       // Convert license plate to tractor_id/trailer_id
-      const vehicleIds = convertLicensePlateToIds(formData.bien_so, tractors, trailers);
+      const vehicleIds = convertLicensePlateToIds(formData.license_plate, tractors, trailers);
       
       // If license plate not found, throw error (should not happen if dropdown and validation use same data)
       if (!vehicleIds.tractor_id && !vehicleIds.trailer_id) {
-        logger.error(`License plate ${formData.bien_so} not found in VehicleDataContext`, { 
+        logger.error(`License plate ${formData.license_plate} not found in VehicleDataContext`, { 
           tractorCount: tractors.length, 
           trailerCount: trailers.length,
-          bien_so: formData.bien_so
+          license_plate: formData.license_plate
         });
-        throw new Error(`Không tìm thấy xe với biển số: ${formData.bien_so}`);
+        throw new Error(`Không tìm thấy xe với biển số: ${formData.license_plate}`);
       }
       
       // Transform data to new expense API format

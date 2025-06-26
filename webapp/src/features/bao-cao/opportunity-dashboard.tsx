@@ -30,6 +30,7 @@ const Dashboard = () => {
     { name: 'West', value: 28 },
   ];
 
+
   const monthlyData = [
     { month: 'Jan', lead: 20, qualify: 10, solution: 15, proposal: 20, timeline: 15 },
     { month: 'Feb', lead: 8, qualify: 5, solution: 10, proposal: 25, timeline: 22 },
