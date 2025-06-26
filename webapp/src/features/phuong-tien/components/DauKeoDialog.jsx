@@ -17,14 +17,14 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
     e.preventDefault();
     onSave(data);
   };
-  
+
   const handleFieldChange = (field, value) => {
     setData({
       ...data,
       [field]: value,
     });
   };
-  
+
   const handleCancel = () => {
     onClose();
   };
@@ -57,7 +57,7 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
         <FormHeader
           title={edit ? 'Chỉnh sửa đầu kéo' : 'Thêm đầu kéo mới'}
         />
-        
+
         <FormBody onSubmit={handleSave}>
           <FormSection>
             <FormGroup>
@@ -73,7 +73,7 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
               />
               {!data?.license_plate && <ErrorText>Vui lòng nhập biển số xe</ErrorText>}
             </FormGroup>
-            
+
             <FormGroup>
               <FormLabel>Mô tả</FormLabel>
               <FormControl
@@ -85,7 +85,7 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
               />
             </FormGroup>
           </FormSection>
-          
+
           <FormActions>
             <Button
               variant="secondary"
@@ -100,7 +100,7 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
               loading={isLoading}
               disabled={isLoading || !data?.license_plate}
             >
-              {edit ? 'Cập nhật' : 'Thêm mới'}
+              {edit ? 'Cập nhật' : 'Thêm'}
             </Button>
           </FormActions>
         </FormBody>

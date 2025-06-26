@@ -286,7 +286,7 @@ const DinhMucVoRongDialog = ({
             disabled={isLoading}
             startIcon={isLoading ? <CircularProgress size={20} /> : null}
           >
-            {isEditMode ? 'Cập nhật' : 'Thêm mới'}
+            {isEditMode ? 'Cập nhật' : 'Thêm'}
           </Button>
         </DialogActions>
       </form>

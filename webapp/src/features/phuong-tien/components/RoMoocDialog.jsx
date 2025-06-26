@@ -17,14 +17,14 @@ const RoMoocDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
     e.preventDefault();
     onSave(data);
   };
-  
+
   const handleFieldChange = (field, value) => {
     setData({
       ...data,
       [field]: value,
     });
   };
-  
+
   const handleCancel = () => {
     onClose();
   };
@@ -56,7 +56,7 @@ const RoMoocDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
         <FormHeader
           title={edit ? 'Chỉnh sửa rơ-mooc' : 'Thêm rơ-mooc mới'}
         />
-        
+
         <FormBody onSubmit={handleSave}>
           <FormSection>
             <FormGroup>
@@ -72,7 +72,7 @@ const RoMoocDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
               />
               {!data?.license_plate && <ErrorText>Vui lòng nhập biển số rơ-mooc</ErrorText>}
             </FormGroup>
-            
+
             <FormGroup>
               <FormLabel>Mô tả</FormLabel>
               <FormControl
@@ -84,7 +84,7 @@ const RoMoocDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
               />
             </FormGroup>
           </FormSection>
-          
+
           <FormActions>
             <Button
               variant="secondary"
@@ -99,7 +99,7 @@ const RoMoocDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
               loading={isLoading}
               disabled={isLoading || !data?.license_plate}
             >
-              {edit ? 'Cập nhật' : 'Thêm mới'}
+              {edit ? 'Cập nhật' : 'Thêm'}
             </Button>
           </FormActions>
         </FormBody>

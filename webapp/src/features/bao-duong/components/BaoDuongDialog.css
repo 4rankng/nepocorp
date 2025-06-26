@@ -28,18 +28,19 @@
 }
 
 .bao-duong-modal .form-section {
-  padding: 12px;
-  overflow: hidden;
+  padding: 8px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 .bao-duong-modal .section-title {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   padding-bottom: 6px;
   font-size: 15px;
 }
 
 .bao-duong-modal .form-group {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .bao-duong-modal .form-group:last-child {

@@ -1,13 +1,72 @@
 # Backend APIs
 
-This document provides a list of currently available APIs in the backend with sample requests and responses.
+This document provides a comprehensive list of all available APIs in the backend with sample requests and responses.
+
+## Base URL
+
+All API endpoints are prefixed with `/api/v1` unless otherwise specified.
+
+## Rate Limiting
+
+All endpoints are protected by rate limiting. Please ensure your client handles rate limit responses appropriately.
+
+## General Response Format
+
+All API responses follow this standard format:
+
+```json
+{
+  "status": "success" | "error",
+  "message": "Descriptive message",
+  "data": {} | [] | null
+}
+```
+
+For paginated responses, an additional `pagination` object is included:
+
+```json
+{
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total_pages": 5,
+    "records_count": 50
+  }
+}
+```
+
+Query parameters for pagination:
+- `page`: Page number (default: 1)
+- `limit`: Number of records per page (default: 10)
+
+## Health Check
+
+### Health Status
+
+- **Endpoint:** `GET /healthz`
+- **Description:** Returns the health status of the service.
+- **Authentication:** None required
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "healthy",
+    "timestamp": "2025-06-26T10:00:00Z",
+    "service": "nepo-backend"
+  }
+  ```
 
 ## Authentication
+
+All protected endpoints require a valid JWT token in the Authorization header:
+```
+Authorization: Bearer <your_jwt_token>
+```
 
 ### Login
 
 - **Endpoint:** `POST /api/v1/auth/login`
 - **Description:** Authenticates a user and returns a JWT token.
+- **Authentication:** None required
 - **Request Body:**
   ```json
   {
@@ -38,6 +97,7 @@ This document provides a list of currently available APIs in the backend with sa
 
 - **Endpoint:** `POST /api/v1/auth/refresh`
 - **Description:** Refreshes a user's JWT token.
+- **Authentication:** None required
 - **Request Body:**
   ```json
   {
@@ -60,6 +120,7 @@ This document provides a list of currently available APIs in the backend with sa
 
 - **Endpoint:** `GET /api/v1/auth/profile`
 - **Description:** Retrieves the authenticated user's profile.
+- **Authentication:** Required (JWT token)
 - **Success Response (200 OK):**
   ```json
   {
@@ -84,6 +145,7 @@ This document provides a list of currently available APIs in the backend with sa
 
 - **Endpoint:** `GET /api/v1/expense_category`
 - **Description:** Retrieves a paginated list of expense categories.
+- **Authentication:** Required (JWT token)
 - **Success Response (200 OK):**
   ```json
   {
@@ -98,10 +160,10 @@ This document provides a list of currently available APIs in the backend with sa
       }
     ],
     "pagination": {
-      "current_page": 1,
+      "page": 1,
+      "limit": 10,
       "total_pages": 1,
-      "per_page": 10,
-      "total_records": 1
+      "records_count": 1
     }
   }
   ```
@@ -110,6 +172,7 @@ This document provides a list of currently available APIs in the backend with sa
 
 - **Endpoint:** `POST /api/v1/expense_category`
 - **Description:** Creates a new expense category.
+- **Authentication:** Required (JWT token)
 - **Request Body:**
   ```json
   {
@@ -134,6 +197,7 @@ This document provides a list of currently available APIs in the backend with sa
 
 - **Endpoint:** `PUT /api/v1/expense_category/:id`
 - **Description:** Updates an existing expense category.
+- **Authentication:** Required (JWT token)
 - **Request Body:**
   ```json
   {
@@ -158,6 +222,7 @@ This document provides a list of currently available APIs in the backend with sa
 
 - **Endpoint:** `DELETE /api/v1/expense_category/:id`
 - **Description:** Deletes an expense category.
+- **Authentication:** Required (JWT token)
 - **Success Response (200 OK):**
   ```json
   {
@@ -187,10 +252,10 @@ This document provides a list of currently available APIs in the backend with sa
       }
     ],
     "pagination": {
-      "current_page": 1,
+      "page": 1,
+      "limit": 10,
       "total_pages": 1,
-      "per_page": 10,
-      "total_records": 1
+      "records_count": 1
     }
   }
   ```
@@ -277,10 +342,10 @@ This document provides a list of currently available APIs in the backend with sa
       }
     ],
     "pagination": {
-      "current_page": 1,
+      "page": 1,
+      "limit": 10,
       "total_pages": 1,
-      "per_page": 10,
-      "total_records": 1
+      "records_count": 1
     }
   }
   ```
@@ -371,10 +436,10 @@ This document provides a list of currently available APIs in the backend with sa
       }
     ],
     "pagination": {
-      "current_page": 1,
+      "page": 1,
+      "limit": 10,
       "total_pages": 1,
-      "per_page": 10,
-      "total_records": 1
+      "records_count": 1
     }
   }
   ```
@@ -476,10 +541,10 @@ This document provides a list of currently available APIs in the backend with sa
       }
     ],
     "pagination": {
-      "current_page": 1,
+      "page": 1,
+      "limit": 10,
       "total_pages": 1,
-      "per_page": 10,
-      "total_records": 1
+      "records_count": 1
     }
   }
   ```

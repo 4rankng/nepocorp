@@ -200,7 +200,7 @@ const ExpenseForm = ({
       showCloseButton={false}
       className="expense-modal"
     >
-      <FormContainer>
+      <FormContainer className="expense-form">
         <FormHeader title={formTitle} />
 
         <FormBody onSubmit={handleSubmit}>
@@ -263,7 +263,7 @@ const ExpenseForm = ({
                       fontFamily: 'inherit'
                     }}
                   />
-                  <HelperText>Tự động tính dựa trên danh sách hạng mục</HelperText>
+
                 </FormCol>
 
                 <FormCol>
@@ -371,7 +371,7 @@ const ExpenseForm = ({
                   value={localData.remark || ''}
                   onChange={handleInputChange}
                   error={!!errors.remark}
-                  rows={4}
+                  rows={2}
                 />
                 {errors.remark && <ErrorText>{errors.remark}</ErrorText>}
               </FormGroup>
@@ -401,7 +401,7 @@ const ExpenseForm = ({
               loading={isLoading}
               disabled={isLoading}
             >
-              {isEdit ? 'Cập nhật' : 'Thêm mới'}
+              {isEdit ? 'Cập nhật' : 'Thêm'}
             </Button>
           </FormActions>
         </FormBody>

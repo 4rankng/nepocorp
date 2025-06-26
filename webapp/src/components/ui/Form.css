@@ -235,6 +235,23 @@ textarea.form-control {
   margin-top: 6px;
 }
 
+/* Expense Form Specific Styles */
+.expense-form .form-label {
+  font-size: var(--font-size-sm); /* 12px */
+}
+
+.expense-form .form-control {
+  font-size: var(--font-size-sm); /* 12px */
+}
+
+.expense-form select.form-control {
+  font-size: var(--font-size-sm); /* 12px */
+}
+
+.expense-form textarea.form-control {
+  font-size: var(--font-size-sm); /* 12px */
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .form-sections--double {

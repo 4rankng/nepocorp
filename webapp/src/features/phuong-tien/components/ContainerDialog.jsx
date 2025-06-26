@@ -23,7 +23,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
     e.preventDefault();
     onSave(data);
   };
-  
+
   const handleFieldChange = (field, value) => {
     setData({
       ...data,
@@ -51,7 +51,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
   const handleInputChange = useCallback((value) => {
     setInputValue(value);
     handleFieldChange('category', value);
-    
+
     // Debounced validation
     const timeoutId = setTimeout(() => {
       validateContainerName(value);
@@ -59,7 +59,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
 
     return () => clearTimeout(timeoutId);
   }, [handleFieldChange, validateContainerName]);
-  
+
   const handleCancel = () => {
     onClose();
   };
@@ -109,7 +109,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
         <FormHeader
           title={edit ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'}
         />
-        
+
         <FormBody onSubmit={handleSave}>
           <FormSection>
             <FormGroup>
@@ -135,7 +135,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
               </HelperText>
             </FormGroup>
           </FormSection>
-          
+
           <FormActions>
             <Button
               variant="secondary"
@@ -150,7 +150,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
               loading={isLoading}
               disabled={isLoading || !data?.category}
             >
-              {edit ? 'Cập nhật' : (showDuplicateWarning ? 'Thêm mới (Trùng lặp)' : 'Thêm mới')}
+              {edit ? 'Cập nhật' : (showDuplicateWarning ? 'Thêm mới (Trùng lặp)' : 'Thêm')}
             </Button>
           </FormActions>
         </FormBody>
