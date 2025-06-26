@@ -62,18 +62,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Check if user already exists
-	var existingUser models.User
-	result := db.Where("username = ?", username).First(&existingUser)
-	if result.Error == nil {
-		fmt.Printf("User '%s' already exists\n", username)
-		os.Exit(0)
-	}
-
 	// Hash the password
 	hashedPassword, err := utils.HashPassword(password, cfg.HashSecret, cfg.HashSalt)
 	if err != nil {
 		log.Fatal("Failed to hash password: ", err)
+	}
+
+	// Check if user already exists
+	var existingUser models.User
+	result := db.Where("username = ?", username).First(&existingUser)
+	if result.Error == nil {
+		// User exists, update the password
+		existingUser.Password = hashedPassword
+		existingUser.Email = fmt.Sprintf("%s@nepocorp.com", username)
+		existingUser.Name = "Administrator"
+		existingUser.Role = "admin"
+		existingUser.IsActive = true
+		
+		if err := db.Save(&existingUser).Error; err != nil {
+			log.Fatal("Failed to update admin user: ", err)
+		}
+		
+		fmt.Printf("Admin user '%s' updated successfully!\n", username)
+		fmt.Println("User details:")
+		fmt.Printf("  ID: %d\n", existingUser.ID)
+		fmt.Printf("  Username: %s\n", existingUser.Username)
+		fmt.Printf("  Email: %s\n", existingUser.Email)
+		fmt.Printf("  Role: %s\n", existingUser.Role)
+		return
 	}
 
 	// Create admin user

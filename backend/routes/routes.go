@@ -23,6 +23,7 @@ func Setup(
 	tractorHandler *handlers.TractorHandler,
 	trailerHandler *handlers.TrailerHandler,
 	expenseHandler *handlers.ExpenseHandler,
+	maintenanceItemHandler *handlers.MaintenanceItemHandler,
 	settingHandler *handlers.SettingHandler,
 	logger *logrus.Logger,
 ) {
@@ -100,6 +101,9 @@ func Setup(
 			protected.POST("/expense/:id/item", expenseHandler.CreateItem)
 			protected.PUT("/expense/:id/item/:item_id", expenseHandler.UpdateItem)
 			protected.DELETE("/expense/:id/item/:item_id", expenseHandler.DeleteItem)
+
+			// Maintenance items
+			protected.GET("/maintenance-items", maintenanceItemHandler.GetMaintenanceItems)
 
 			// Settings
 			protected.GET("/settings/:key", settingHandler.GetByKey)

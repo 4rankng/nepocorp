@@ -40,6 +40,14 @@ export const AuthProvider = ({ children }) => {
             role: response.data.role
           };
           
+          // Store the auth token for API requests
+          if (response.data.token) {
+            localStorage.setItem('authToken', response.data.token);
+          }
+          if (response.data.refresh_token) {
+            localStorage.setItem('refreshToken', response.data.refresh_token);
+          }
+          
           const authData = {
             currentUser: user,
             isAuthenticated: true,

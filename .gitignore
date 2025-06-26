@@ -3,7 +3,7 @@ node_modules/
 webapp/node_modules/
 /.pnp
 .pnp.js
-
+app.log
 .env
 backend/.env
 

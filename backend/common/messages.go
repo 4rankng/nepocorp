@@ -41,6 +41,9 @@ const (
 	MsgExpenseItemUpdated = "Expense item updated successfully"
 	MsgExpenseItemDeleted = "Expense item deleted successfully"
 	
+	// Maintenance Items
+	MsgMaintenanceItemsRetrieved = "Maintenance items retrieved successfully"
+	
 	// Settings
 	MsgTaxRateRetrieved = "Tax rate retrieved successfully"
 	MsgTaxRateUpdated   = "Tax rate updated successfully"

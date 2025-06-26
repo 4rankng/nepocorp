@@ -78,6 +78,7 @@ func main() {
 	tractorRepo := repositories.NewTractorRepository(db)
 	trailerRepo := repositories.NewTrailerRepository(db)
 	expenseRepo := repositories.NewExpenseRepository(db)
+	maintenanceItemRepo := repositories.NewMaintenanceItemRepository(db)
 	settingRepo := repositories.NewSettingRepository(db)
 
 	// Initialize services
@@ -91,6 +92,7 @@ func main() {
 	tractorHandler := handlers.NewTractorHandler(tractorRepo)
 	trailerHandler := handlers.NewTrailerHandler(trailerRepo)
 	expenseHandler := handlers.NewExpenseHandler(expenseRepo, expenseCategoryRepo)
+	maintenanceItemHandler := handlers.NewMaintenanceItemHandler(maintenanceItemRepo)
 	settingHandler := handlers.NewSettingHandler(settingRepo)
 
 	// Initialize Gin
@@ -109,7 +111,7 @@ func main() {
 
 	// Initialize routes
 	routes.Setup(r, cfg, healthHandler, authHandler, userRepo, expenseCategoryHandler, 
-		containerHandler, tractorHandler, trailerHandler, expenseHandler, settingHandler, logger)
+		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceItemHandler, settingHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{

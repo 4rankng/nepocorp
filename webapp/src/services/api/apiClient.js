@@ -58,15 +58,32 @@ apiClient.interceptors.response.use(
         // Only clear auth data if this is NOT a login attempt
         // Login failures should be handled by the login form, not treated as token expiration
         if (!isLoginEndpoint) {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('auth');
+          // Check if this is a genuine token expiration/invalid token that requires logout
+          const errorCode = errorData?.details?.code || errorData?.error;
+          const shouldLogout = [
+            'TOKEN_EXPIRED', 
+            'INVALID_TOKEN', 
+            'TOKEN_MALFORMED',
+            'INVALID_JWT_SIGNATURE',
+            'JWT_VERIFICATION_FAILED'
+          ].includes(errorCode);
           
-          // Only redirect if we're not already on root
-          const isCurrentlyOnRoot = window.location.pathname === '/';
-          if (!isCurrentlyOnRoot) {
-            window.location.href = '/';
+          // Also logout if this is an auth endpoint (like /auth/profile) failing
+          const isAuthEndpoint = error.config?.url?.includes('/auth/');
+          
+          if (shouldLogout || isAuthEndpoint) {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('auth');
+            
+            // Only redirect if we're not already on root
+            const isCurrentlyOnRoot = window.location.pathname === '/';
+            if (!isCurrentlyOnRoot) {
+              window.location.href = '/';
+            }
           }
+          // For other 401s (like missing user context, middleware issues), 
+          // don't logout - just let the error bubble up to be handled by the component
         }
       }
       

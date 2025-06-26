@@ -59,7 +59,7 @@ import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';
 import { getBaoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
 import { useExpenseForm } from '@components/shared';
-import useBaoDuongRecords from './hooks/useBaoDuongRecords';
+import useMaintenanceItemRecords from './hooks/useMaintenanceItemRecords';
 const initialFormData = {
   bien_so: '',
   vendor_name: '',
@@ -85,7 +85,7 @@ const QuanLyBaoDuong = memo(() => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [counts, setCounts] = useState({ tire: 0 });
+  // Removed counts state as we're now using maintenance items directly
   const [selectedPlate, setSelectedPlate] = useState('');
   // Data fetching
   const {
@@ -93,14 +93,12 @@ const QuanLyBaoDuong = memo(() => {
     setBaoDuongRecords: setMaintenanceRecords,
     licensePlates,
     setLicensePlates,
-    tractors,
-    trailers,
     isLoading,
     error,
     fetchData,
     fetchByLicensePlate,
     pagination,
-  } = useBaoDuongRecords(baoDuongApi);
+  } = useMaintenanceItemRecords();
   // Extract pagination props for StandardTable
   const {
     page,
@@ -141,16 +139,11 @@ const QuanLyBaoDuong = memo(() => {
       });
     },
   });
-  // Fetch count and data on mount
+  // Fetch initial data on mount
   useEffect(() => {
-    baoDuongApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
-    // Also fetch initial data with pagination
     fetchData(0, 10);
-  }, []); // Empty dependency array for mount only
-  // Helper to refetch count
-  const refetchCount = useCallback(() => {
-    baoDuongApi.getCount().then(count => setCounts(c => ({ ...c, tire: count })));
-  }, []);
+  }, [fetchData]); // Include fetchData dependency
+  // Removed refetchCount as we're working with maintenance items directly
   const handleOpenAddDialog = () => {
     setIsEdit(false);
     setFormData({
@@ -223,7 +216,6 @@ const QuanLyBaoDuong = memo(() => {
         severity: 'success',
       });
       fetchData();
-      refetchCount();
       handleDeleteClose();
     } catch (err) {
       setSnackbar({
@@ -252,7 +244,6 @@ const QuanLyBaoDuong = memo(() => {
         });
         // Refresh data with current pagination and close dialog
         await fetchData(pagination.page, pagination.pageSize);
-        refetchCount();
         setOpenDialog(false);
       } catch (error) {
         // Extract detailed error information
@@ -275,7 +266,7 @@ const QuanLyBaoDuong = memo(() => {
         setFormLoading(false);
       }
     },
-    [formData, isEdit, fetchData, refetchCount, handleFormSave]
+    [formData, isEdit, fetchData, handleFormSave, pagination.page, pagination.pageSize]
   );
   // Filter maintenance records based on search term
   const filteredRecords = React.useMemo(() => {
@@ -319,7 +310,7 @@ const QuanLyBaoDuong = memo(() => {
   );
   // Render desktop table view
   const renderDesktopView = () => {
-    const tableColumns = getBaoDuongTableColumns(tractors, trailers);
+    const tableColumns = getBaoDuongTableColumns();
 
     const tableProps = {
       columns: tableColumns,
@@ -390,8 +381,8 @@ const QuanLyBaoDuong = memo(() => {
               <em>Tất cả</em>
             </MenuItem>
             {licensePlates.map(plate => (
-              <MenuItem key={plate.value || plate.bien_so} value={plate.bien_so}>
-                {plate.bien_so}
+              <MenuItem key={plate.value || plate.bien_so} value={plate.value || plate.bien_so}>
+                {plate.value || plate.bien_so}
               </MenuItem>
             ))}
           </Select>

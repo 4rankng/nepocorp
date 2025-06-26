@@ -17,13 +17,13 @@ List all expense categories with pagination support.
   "data": [
     {
       "id": 1,
-      "name": "B£o d°áng",
+      "name": "Bï¿½o dï¿½ï¿½ng",
       "created_at": "2023-01-15T08:30:00Z",
       "updated_at": "2023-01-15T08:30:00Z"
     },
     {
       "id": 2,
-      "name": "Sía chïa",
+      "name": "Sï¿½a chï¿½a",
       "created_at": "2023-01-15T08:30:00Z",
       "updated_at": "2023-01-15T08:30:00Z"
     }
@@ -43,7 +43,7 @@ Create a new expense category.
 **Request Body:**
 ```json
 {
-  "name": "B£o hiÃm"
+  "name": "Bï¿½o hiï¿½m"
 }
 ```
 
@@ -54,7 +54,7 @@ Create a new expense category.
   "message": "Expense category created successfully",
   "data": {
     "id": 3,
-    "name": "B£o hiÃm",
+    "name": "Bï¿½o hiï¿½m",
     "created_at": "2023-01-15T08:30:00Z",
     "updated_at": "2023-01-15T08:30:00Z"
   }
@@ -67,7 +67,7 @@ Update an existing expense category.
 **Request Body:**
 ```json
 {
-  "name": "B£o hiÃm xe"
+  "name": "Bï¿½o hiï¿½m xe"
 }
 ```
 
@@ -78,7 +78,7 @@ Update an existing expense category.
   "message": "Expense category updated successfully",
   "data": {
     "id": 3,
-    "name": "B£o hiÃm xe",
+    "name": "Bï¿½o hiï¿½m xe",
     "created_at": "2023-01-15T08:30:00Z",
     "updated_at": "2023-01-16T10:00:00Z"
   }
@@ -404,7 +404,7 @@ List all tractor expenses with pagination support.
     {
       "id": 1,
       "tractor_id": 1,
-      "vendor_name": "Công ty TNHH ABC",
+      "vendor_name": "Cï¿½ng ty TNHH ABC",
       "expense_category_id": 1,
       "install_date": "2023-01-10T00:00:00Z",
       "expiry_date": "2024-01-10T00:00:00Z",
@@ -423,7 +423,7 @@ List all tractor expenses with pagination support.
       },
       "expense_category": {
         "id": 1,
-        "name": "B£o d°áng"
+        "name": "Bï¿½o dï¿½ï¿½ng"
       },
       "created_by_user": {
         "id": 1,
@@ -448,7 +448,7 @@ Create a new tractor expense.
 ```json
 {
   "tractor_id": 1,
-  "vendor_name": "Công ty TNHH XYZ",
+  "vendor_name": "Cï¿½ng ty TNHH XYZ",
   "expense_category_id": 2,
   "install_date": "2023-02-01T00:00:00Z",
   "expiry_date": "2024-02-01T00:00:00Z",
@@ -468,7 +468,7 @@ Create a new tractor expense.
   "data": {
     "id": 2,
     "tractor_id": 1,
-    "vendor_name": "Công ty TNHH XYZ",
+    "vendor_name": "Cï¿½ng ty TNHH XYZ",
     "expense_category_id": 2,
     "install_date": "2023-02-01T00:00:00Z",
     "expiry_date": "2024-02-01T00:00:00Z",
@@ -495,7 +495,7 @@ Get a single tractor expense with items.
   "data": {
     "id": 1,
     "tractor_id": 1,
-    "vendor_name": "Công ty TNHH ABC",
+    "vendor_name": "Cï¿½ng ty TNHH ABC",
     "expense_category_id": 1,
     "install_date": "2023-01-10T00:00:00Z",
     "expiry_date": "2024-01-10T00:00:00Z",
@@ -514,7 +514,7 @@ Get a single tractor expense with items.
     },
     "expense_category": {
       "id": 1,
-      "name": "B£o d°áng"
+      "name": "Bï¿½o dï¿½ï¿½ng"
     },
     "created_by_user": {
       "id": 1,
@@ -525,7 +525,7 @@ Get a single tractor expense with items.
       {
         "id": 1,
         "tractor_expense_id": 1,
-        "item_name": "Thay d§u Ùng c¡",
+        "item_name": "Thay dï¿½u ï¿½ng cï¿½",
         "price": 1500000,
         "quantity": 2,
         "total": 3000000,
@@ -535,7 +535,7 @@ Get a single tractor expense with items.
       {
         "id": 2,
         "tractor_expense_id": 1,
-        "item_name": "LÍc d§u",
+        "item_name": "Lï¿½c dï¿½u",
         "price": 500000,
         "quantity": 2,
         "total": 1000000,
@@ -553,7 +553,7 @@ Update an existing tractor expense.
 **Request Body:**
 ```json
 {
-  "vendor_name": "Công ty TNHH XYZ Updated",
+  "vendor_name": "Cï¿½ng ty TNHH XYZ Updated",
   "payment_status": "PAID",
   "payment_proof": "https://drive.google.com/file/d/yyy"
 }
@@ -567,7 +567,7 @@ Update an existing tractor expense.
   "data": {
     "id": 2,
     "tractor_id": 1,
-    "vendor_name": "Công ty TNHH XYZ Updated",
+    "vendor_name": "Cï¿½ng ty TNHH XYZ Updated",
     "expense_category_id": 2,
     "install_date": "2023-02-01T00:00:00Z",
     "expiry_date": "2024-02-01T00:00:00Z",
@@ -601,7 +601,7 @@ Add an item to a tractor expense.
 **Request Body:**
 ```json
 {
-  "item_name": "Bình ¯c quy",
+  "item_name": "Bï¿½nh ï¿½c quy",
   "price": 1200000,
   "quantity": 1,
   "total": 1200000
@@ -616,7 +616,7 @@ Add an item to a tractor expense.
   "data": {
     "id": 3,
     "tractor_expense_id": 1,
-    "item_name": "Bình ¯c quy",
+    "item_name": "Bï¿½nh ï¿½c quy",
     "price": 1200000,
     "quantity": 1,
     "total": 1200000,
@@ -632,7 +632,7 @@ Update an expense item.
 **Request Body:**
 ```json
 {
-  "item_name": "Bình ¯c quy 12V",
+  "item_name": "Bï¿½nh ï¿½c quy 12V",
   "price": 1300000,
   "quantity": 1,
   "total": 1300000
@@ -647,7 +647,7 @@ Update an expense item.
   "data": {
     "id": 3,
     "tractor_expense_id": 1,
-    "item_name": "Bình ¯c quy 12V",
+    "item_name": "Bï¿½nh ï¿½c quy 12V",
     "price": 1300000,
     "quantity": 1,
     "total": 1300000,
@@ -692,3 +692,55 @@ All endpoints use the same error response format:
 - 401 Unauthorized: Authentication required
 - 404 Not Found: Resource not found
 - 500 Internal Server Error: Server-side error
+
+
+
+  GET /maintenance-items
+
+  Sample Request:
+
+  GET /maintenance-items?page=1&limit=10&license_plate=51H-12345&vendor_na
+  me=Toyota&item_name=Oil&start_date=2024-01-01&end_date=2024-12-31
+  Authorization: Bearer <jwt_token>
+
+  Sample Response:
+
+  {
+    "status": "success",
+    "message": "Maintenance items retrieved successfully",
+    "data": [
+      {
+        "id": 1,
+        "expense_id": 123,
+        "tractor_id": 456,
+        "trailer_id": null,
+        "license_plate": "51H-12345",
+        "vendor_name": "Toyota Service Center",
+        "payment_status": "PAID",
+        "expense_created_at": "2024-06-15T10:30:00Z",
+        "item_name": "Engine Oil Change",
+        "quantity": 2,
+        "price": 500000,
+        "total": 1000000,
+        "install_date": "2024-06-15T14:00:00Z",
+        "expiry_date": "2024-09-15T14:00:00Z",
+        "remark": "Regular maintenance"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total_pages": 5,
+      "records_count": 47
+    }
+  }
+
+  Query Parameters:
+
+  - page (int): Page number (default: 1)
+  - limit (int): Items per page (default: 10)
+  - license_plate (string): Filter by vehicle license plate
+  - vendor_name (string): Filter by vendor name
+  - item_name (string): Filter by maintenance item name
+  - start_date (string): Filter by date range start (YYYY-MM-DD)
+  - end_date (string): Filter by date range end (YYYY-MM-DD)

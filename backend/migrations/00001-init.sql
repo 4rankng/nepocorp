@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     INDEX idx_payment_status (payment_status),
     -- Ensure expense belongs to either tractor or trailer, but not both
     CONSTRAINT chk_expense_vehicle CHECK (
-        (tractor_id IS NOT NULL AND trailer_id IS NULL) OR 
+        (tractor_id IS NOT NULL AND trailer_id IS NULL) OR
         (tractor_id IS NULL AND trailer_id IS NOT NULL)
     )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -145,22 +145,18 @@ CREATE TABLE IF NOT EXISTS settings (
 -- ================================================================
 
 -- Insert default admin user (password should be hashed in production)
-INSERT IGNORE INTO users (username, email, password, name, role, is_active) 
+INSERT IGNORE INTO users (username, email, password, name, role, is_active)
 VALUES ('admin', 'admin@nepocorp.com', '$2a$10$example_hash', 'Administrator', 'admin', TRUE);
 
 -- Insert default tax_rate setting
-INSERT IGNORE INTO settings (`key`, `value`, last_updated_by) 
+INSERT IGNORE INTO settings (`key`, `value`, last_updated_by)
 VALUES ('tax_rate', '10', 1);
 
 -- Insert default expense categories
-INSERT IGNORE INTO expense_categories (name) VALUES 
-('Fuel'),
-('Maintenance'),
-('Insurance'),
-('Registration'),
-('Repairs'),
-('Parts'),
-('Service');
+INSERT IGNORE INTO expense_categories (name) VALUES
+('Bảo dưỡng'),
+('Bảo hiểm'),
+('Lương');
 
 -- ================================================================
 -- Views for reporting (optional)
@@ -168,9 +164,9 @@ INSERT IGNORE INTO expense_categories (name) VALUES
 
 -- Create view for expense summary by vehicle
 CREATE OR REPLACE VIEW expense_summary AS
-SELECT 
+SELECT
     e.id,
-    CASE 
+    CASE
         WHEN e.tractor_id IS NOT NULL THEN CONCAT('Tractor: ', t.license_plate)
         WHEN e.trailer_id IS NOT NULL THEN CONCAT('Trailer: ', tr.license_plate)
         ELSE 'Unknown Vehicle'

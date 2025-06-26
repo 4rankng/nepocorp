@@ -1,54 +1,80 @@
 import React from 'react';
-import { formatCurrency, addMonths } from '../utils/baoDuongUtils';
+import { formatCurrency } from '../utils/baoDuongUtils';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 
-// Helper function to get license plate from tractor_id or trailer_id
-const getLicensePlate = (row, tractors, trailers) => {
-  if (row.tractor_id) {
-    const tractor = tractors.find(t => parseInt(t.id) === parseInt(row.tractor_id));
-    return tractor?.license_plate || `Tractor ID: ${row.tractor_id}`;
-  } else if (row.trailer_id) {
-    const trailer = trailers.find(t => parseInt(t.id) === parseInt(row.trailer_id));
-    return trailer?.license_plate || `Trailer ID: ${row.trailer_id}`;
-  }
-  return 'Không có thông tin xe';
+// Helper function to map payment status to Vietnamese
+const getPaymentStatusText = (status) => {
+  const statusMap = {
+    'DRAFT': 'Nháp',
+    'PENDING': 'Chờ xử lý',
+    'PAID': 'Đã thanh toán',
+    'UNPAID': 'Chưa thanh toán',
+    'CANCELLED': 'Đã hủy',
+    'APPROVED': 'Đã duyệt',
+    'REJECTED': 'Đã từ chối'
+  };
+  return statusMap[status] || status;
 };
 
-export const getBaoDuongTableColumns = (tractors = [], trailers = []) => {
+export const getBaoDuongTableColumns = () => {
   return [
+    {
+      key: 'stt',
+      label: 'STT',
+      render: (value, row, index) => index + 1,
+      minWidth: 50,
+      maxWidth: 60,
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+    },
     {
       key: 'license_plate',
       label: 'Biển số',
-      render: (value, row) => getLicensePlate(row, tractors, trailers),
       sortable: true,
-      minWidth: 50,
+      minWidth: 100,
     },
     {
       key: 'vendor_name',
       label: 'Nhà cung cấp',
       sortable: true,
-      minWidth: 50,
+      minWidth: 150,
     },
     {
-      key: 'created_at',
+      key: 'expense_created_at',
       label: 'Ngày tạo',
       render: value => (value ? new Date(value).toLocaleDateString('vi-VN') : '-'),
       sortable: true,
-      minWidth: 50,
+      minWidth: 100,
     },
     {
-      key: 'payment_status',
-      label: 'Trạng thái',
+      key: 'item_name',
+      label: 'Hạng mục',
       sortable: true,
-      minWidth: 50,
+      minWidth: 150,
     },
     {
-      key: 'subtotal',
-      label: 'Tạm tính',
-      render: formatCurrency,
+      key: 'install_date',
+      label: 'Ngày lắp đặt',
+      render: value => (value ? new Date(value).toLocaleDateString('vi-VN') : '-'),
+      sortable: true,
+      minWidth: 120,
+    },
+    {
+      key: 'expiry_date',
+      label: 'Ngày hết hạn',
+      render: value => (value ? new Date(value).toLocaleDateString('vi-VN') : '-'),
+      sortable: true,
+      minWidth: 120,
+    },
+    {
+      key: 'quantity',
+      label: 'Số lượng',
       align: 'right',
+      headerAlign: 'center',
       sortable: true,
-      minWidth: 50,
+      minWidth: 80,
+      maxWidth: 100,
     },
     {
       key: 'total',
@@ -56,13 +82,7 @@ export const getBaoDuongTableColumns = (tractors = [], trailers = []) => {
       render: formatCurrency,
       align: 'right',
       sortable: true,
-      minWidth: 50,
-    },
-    {
-      key: 'remark',
-      label: 'Ghi chú',
-      sortable: false,
-      flex: 1,
+      minWidth: 120,
     },
   ];
 };
