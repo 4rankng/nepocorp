@@ -224,7 +224,7 @@ const ExpenseForm = ({
                     </option>
                     {licensePlates.map(plate => (
                       <option key={plate.value} value={plate.value}>
-                        {plate.value} ({plate.type})
+                        {plate.displayText || `${plate.value} (${plate.type})`}
                       </option>
                     ))}
                   </FormControl>

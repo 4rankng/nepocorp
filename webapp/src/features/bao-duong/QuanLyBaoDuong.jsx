@@ -95,7 +95,6 @@ const QuanLyBaoDuong = memo(() => {
     trailers,
     loading: vehicleLoading,
     errors: vehicleErrors,
-    fetchAllVehicleData,
   } = useVehicleData();
 
   // Combine license plates from tractors and trailers
@@ -187,8 +186,7 @@ const QuanLyBaoDuong = memo(() => {
   // Fetch initial data on mount
   useEffect(() => {
     fetchData(0, 100);
-    fetchAllVehicleData(); // Fetch vehicle data for license plates
-  }, [fetchData, fetchAllVehicleData]); // Include fetchData dependency
+  }, []); // Removed fetchData dependency to prevent re-renders
 
   // Show error notification if vehicle data fails to load
   useEffect(() => {
@@ -206,18 +204,7 @@ const QuanLyBaoDuong = memo(() => {
   // Removed refetchCount as we're working with maintenance items directly
   const handleOpenAddDialog = () => {
     setIsEdit(false);
-    setFormData({
-      license_plate: '',
-      item_name: '',
-      ngay_thay: '',
-      ngay_het_han: '',
-      so_thang_bao_hanh: 0,
-      so_luong: 1,
-      don_gia: 0,
-      tong_tien: 0,
-      ghi_chu: '',
-      id: undefined,
-    });
+    setFormData(initialFormData);
     setErrors({});
     setOpenDialog(true);
   };
@@ -225,14 +212,19 @@ const QuanLyBaoDuong = memo(() => {
     setIsEdit(true);
     setFormData({
       license_plate: record.license_plate,
-      item_name: record.item_name,
-      ngay_thay: record.ngay_thay,
-      ngay_het_han: record.ngay_het_han,
-      so_thang_bao_hanh: record.so_thang_bao_hanh,
-      so_luong: record.so_luong,
-      don_gia: record.don_gia,
-      tong_tien: record.tong_tien,
-      ghi_chu: record.ghi_chu || '',
+      vendor_name: record.vendor_name || '',
+      payment_status: record.payment_status || 'DRAFT',
+      payment_proof: record.payment_proof || '',
+      items: [{
+        item_name: record.item_name || '',
+        price: record.price || '',
+        quantity: record.quantity || '',
+        install_date: record.install_date || '',
+        expiry_date: record.expiry_date || ''
+      }],
+      remark: record.remark || '',
+      tax_rate: 10,
+      currency: 'VND',
       id: record.id,
     });
     setErrors({});
@@ -249,16 +241,16 @@ const QuanLyBaoDuong = memo(() => {
       details: {
         'Biển số xe': record.license_plate,
         'Hạng mục': record.item_name,
-        'Ngày thay': record.ngay_thay
-          ? new Date(record.ngay_thay).toLocaleDateString('vi-VN')
+        'Ngày lắp đặt': record.install_date
+          ? new Date(record.install_date).toLocaleDateString('vi-VN')
           : 'N/A',
-        'Ngày hết hạn': record.ngay_het_han
-          ? new Date(record.ngay_het_han).toLocaleDateString('vi-VN')
+        'Ngày hết hạn': record.expiry_date
+          ? new Date(record.expiry_date).toLocaleDateString('vi-VN')
           : 'N/A',
-        'Số lượng': record.so_luong,
-        'Đơn giá': formatCurrency(record.don_gia),
-        'Tổng tiền': formatCurrency(record.tong_tien),
-        'Ghi chú': record.ghi_chu || 'Không có',
+        'Số lượng': record.quantity,
+        'Đơn giá': formatCurrency(record.price),
+        'Tổng tiền': formatCurrency(record.total),
+        'Ghi chú': record.remark || 'Không có',
       },
     });
   };

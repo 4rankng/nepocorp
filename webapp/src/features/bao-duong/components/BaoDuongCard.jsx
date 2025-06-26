@@ -14,9 +14,9 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
   // Calculate expiration date if not present
   const getExpirationDate = record => {
-    if (record.ngay_het_han) return new Date(record.ngay_het_han);
-    if (record.ngay_thay && record.so_thang_bao_hanh) {
-      const date = new Date(record.ngay_thay);
+    if (record.expiry_date) return new Date(record.expiry_date);
+    if (record.install_date && record.so_thang_bao_hanh) {
+      const date = new Date(record.install_date);
       date.setMonth(date.getMonth() + Number(record.so_thang_bao_hanh));
       return date;
     }
@@ -62,7 +62,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
               {record.license_plate}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {record.item_name} - {formatDate(record.ngay_thay)}
+              {record.item_name} - {formatDate(record.install_date)}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -108,7 +108,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
               <Typography variant="body2" color="text.secondary">
                 Ngày hết hạn:
               </Typography>
-              <Typography variant="body2">{formatDate(record.ngay_het_han) || 'N/A'}</Typography>
+              <Typography variant="body2">{formatDate(record.expiry_date) || 'N/A'}</Typography>
             </Box>
             <Box
               sx={{
@@ -120,7 +120,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
               <Typography variant="body2" color="text.secondary">
                 Số lượng:
               </Typography>
-              <Typography variant="body2">{record.so_luong}</Typography>
+              <Typography variant="body2">{record.quantity}</Typography>
             </Box>
             <Box
               sx={{
@@ -132,7 +132,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
               <Typography variant="body2" color="text.secondary">
                 Đơn giá:
               </Typography>
-              <Typography variant="body2">{formatCurrency(record.don_gia)}</Typography>
+              <Typography variant="body2">{formatCurrency(record.price)}</Typography>
             </Box>
             <Box
               sx={{
@@ -145,15 +145,15 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
                 Tổng tiền:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {formatCurrency(record.tong_tien)}
+                {formatCurrency(record.total)}
               </Typography>
             </Box>
-            {record.ghi_chu && (
+            {record.remark && (
               <Box sx={{ mt: 1 }}>
                 <Typography variant="body2" color="text.secondary">
                   Ghi chú:
                 </Typography>
-                <Typography variant="body2">{record.ghi_chu}</Typography>
+                <Typography variant="body2">{record.remark}</Typography>
               </Box>
             )}
           </Box>

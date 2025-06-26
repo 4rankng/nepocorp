@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -160,6 +161,56 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	}
 	if total, ok := updateData["total"].(float64); ok {
 		existingExpense.Total = int64(total)
+	}
+
+	// Handle items update
+	if itemsData, ok := updateData["items"].([]interface{}); ok {
+		for _, itemInterface := range itemsData {
+			if itemMap, ok := itemInterface.(map[string]interface{}); ok {
+				// Convert map to JSON then unmarshal to ExpenseItem to handle date parsing
+				itemJSON, err := json.Marshal(itemMap)
+				if err != nil {
+					continue
+				}
+				
+				var updateItem models.ExpenseItem
+				if err := json.Unmarshal(itemJSON, &updateItem); err != nil {
+					continue
+				}
+
+				// Find existing item by matching with expense items
+				for _, existingItem := range existingExpense.Items {
+					// Update the first item (assuming single item update for now)
+					// In a more robust implementation, you'd match by item ID
+					if updateItem.InstallDate != nil {
+						existingItem.InstallDate = updateItem.InstallDate
+					}
+					if updateItem.ExpiryDate != nil {
+						existingItem.ExpiryDate = updateItem.ExpiryDate
+					}
+					if updateItem.ItemName != "" {
+						existingItem.ItemName = updateItem.ItemName
+					}
+					if updateItem.Price > 0 {
+						existingItem.Price = updateItem.Price
+					}
+					if updateItem.Quantity > 0 {
+						existingItem.Quantity = updateItem.Quantity
+					}
+					if updateItem.Total > 0 {
+						existingItem.Total = updateItem.Total
+					}
+
+					// Update the item in database
+					if err := h.repo.UpdateItem(&existingItem); err != nil {
+						utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateExpenseItem, 
+							utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})
+						return
+					}
+					break // Only update the first item for now
+				}
+			}
+		}
 	}
 
 	if err := h.repo.Update(existingExpense); err != nil {
