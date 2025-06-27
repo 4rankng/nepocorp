@@ -135,8 +135,8 @@ const QuanLyBaoDuong = memo(() => {
 
   // Data fetching
   const {
-    baoDuongRecords: maintenanceRecords,
-    setBaoDuongRecords: setMaintenanceRecords,
+    maintenanceRecords,
+    setMaintenanceRecords,
     isLoading,
     error,
     fetchData,
@@ -326,9 +326,10 @@ const QuanLyBaoDuong = memo(() => {
   );
   // Filter maintenance records based on search term
   const filteredRecords = React.useMemo(() => {
-    if (!searchTerm.trim()) return maintenanceRecords;
+    const records = maintenanceRecords || [];
+    if (!searchTerm.trim()) return records;
     const search = searchTerm.toLowerCase();
-    return maintenanceRecords.filter(
+    return records.filter(
       record =>
         (record.license_plate && record.license_plate.toLowerCase().includes(search)) ||
         (record.ghi_chu && record.ghi_chu.toLowerCase().includes(search))
@@ -370,7 +371,7 @@ const QuanLyBaoDuong = memo(() => {
 
     const tableProps = {
       columns: tableColumns,
-      data: maintenanceRecords,
+      data: maintenanceRecords || [],
       loading: isLoading,
       error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
       emptyMessage: 'Không có dữ liệu bảo dưỡng',

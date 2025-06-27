@@ -1,8 +1,15 @@
-# Vehicle Expense Management API Documentation
+# Vehicle Expense & Maintenance Management API Documentation
 
 ## Overview
 
-This API provides endpoints for managing vehicle maintenance and expenses for tractors and trailers. All endpoints require JWT authentication and return responses in a consistent JSON format.
+This API provides endpoints for managing vehicle maintenance and expenses for tractors and trailers. The system includes both general expense management and a dedicated maintenance tracking system. All endpoints require JWT authentication and return responses in a consistent JSON format.
+
+### Key Features
+- **Expense Management**: Track expenses for tractors and trailers with detailed items
+- **Maintenance Tracking**: Dedicated maintenance records with install/expiry dates
+- **User Audit Trail**: Track who created and last updated records
+- **Flexible Filtering**: Search by license plate, vendor, date ranges, and more
+- **JWT Authentication**: Secure access with role-based permissions
 
 ## Base URL
 ```
@@ -941,18 +948,193 @@ Delete an expense item.
 
 ---
 
-## Maintenance View
+## Maintenance Management
 
-### List Maintenance Items
-Get a consolidated view of all maintenance items across vehicles.
+### List Maintenance Records
+Get all maintenance records with pagination and filtering.
 
 **Endpoint:** `GET /api/v1/maintenance`
 
 **Query Parameters:**
 - `page` (optional, default: 1) - Page number
-- `limit` (optional, default: 10) - Items per page
+- `limit` (optional, default: 10) - Records per page
 - `license_plate` (optional) - Filter by vehicle license plate
 - `vendor_name` (optional) - Filter by vendor name (partial match)
+- `item_name` (optional) - Filter by maintenance item name
+- `start_date` (optional) - Filter by maintenance date range start (YYYY-MM-DD)
+- `end_date` (optional) - Filter by maintenance date range end (YYYY-MM-DD)
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Maintenance records retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "expense_id": 10,
+      "license_plate": "16C-333.44",
+      "vendor_name": "Auto Parts Store",
+      "item_name": "Thay dầu động cơ",
+      "price": 1500000,
+      "quantity": 2,
+      "tax_rate": 10,
+      "total": 3300000,
+      "install_date": "2024-06-24T00:00:00Z",
+      "expiry_date": "2025-06-24T00:00:00Z",
+      "last_updated_by": "admin",
+      "created_at": "2024-06-24T10:00:00Z",
+      "updated_at": "2024-06-24T10:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total_pages": 1,
+    "records_count": 5
+  }
+}
+```
+
+### Get Maintenance Record
+Retrieve a single maintenance record by ID.
+
+**Endpoint:** `GET /api/v1/maintenance/:id`
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Maintenance record retrieved successfully",
+  "data": {
+    "id": 1,
+    "expense_id": 10,
+    "license_plate": "16C-333.44",
+    "vendor_name": "Auto Parts Store",
+    "item_name": "Thay dầu động cơ",
+    "price": 1500000,
+    "quantity": 2,
+    "tax_rate": 10,
+    "total": 3300000,
+    "install_date": "2024-06-24T00:00:00Z",
+    "expiry_date": "2025-06-24T00:00:00Z",
+    "last_updated_by": "admin",
+    "created_at": "2024-06-24T10:00:00Z",
+    "updated_at": "2024-06-24T10:00:00Z"
+  }
+}
+```
+
+### Create Maintenance Record
+Create a new maintenance record.
+
+**Endpoint:** `POST /api/v1/maintenance`
+
+**Request Body:**
+```json
+{
+  "expense_id": 10,
+  "license_plate": "16C-333.44",
+  "vendor_name": "Auto Parts Store",
+  "item_name": "Thay dầu động cơ",
+  "price": 1500000,
+  "quantity": 2,
+  "tax_rate": 10,
+  "install_date": "2024-06-24",
+  "expiry_date": "2025-06-24"
+}
+```
+
+**Validation Rules:**
+- `expense_id` is required and must be a valid expense ID
+- `license_plate` is required
+- `vendor_name` is required
+- `item_name` is required
+- `price` must be greater than 0
+- `quantity` must be greater than 0
+- `tax_rate` is optional, defaults to 0
+- `install_date` and `expiry_date` are optional, accept date format YYYY-MM-DD or ISO datetime
+
+**Response (201 Created):**
+```json
+{
+  "status": "success",
+  "message": "Maintenance record created successfully",
+  "data": {
+    "id": 15,
+    "expense_id": 10,
+    "license_plate": "16C-333.44",
+    "vendor_name": "Auto Parts Store",
+    "item_name": "Thay dầu động cơ",
+    "price": 1500000,
+    "quantity": 2,
+    "tax_rate": 10,
+    "total": 3300000,
+    "install_date": "2024-06-24T00:00:00Z",
+    "expiry_date": "2025-06-24T00:00:00Z",
+    "last_updated_by": "admin",
+    "created_at": "2024-06-24T10:00:00Z",
+    "updated_at": "2024-06-24T10:00:00Z"
+  }
+}
+```
+
+### Update Maintenance Record
+Update an existing maintenance record.
+
+**Endpoint:** `PUT /api/v1/maintenance/:id`
+
+**Request Body:**
+```json
+{
+  "expense_id": 10,
+  "license_plate": "16C-333.44",
+  "vendor_name": "Auto Parts Store",
+  "item_name": "Thay dầu động cơ + lọc dầu",
+  "price": 1700000,
+  "quantity": 2,
+  "tax_rate": 10,
+  "install_date": "2024-06-24",
+  "expiry_date": "2025-06-24"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Maintenance record updated successfully",
+  "data": {
+    "id": 15,
+    "expense_id": 10,
+    "license_plate": "16C-333.44",
+    "vendor_name": "Auto Parts Store",
+    "item_name": "Thay dầu động cơ + lọc dầu",
+    "price": 1700000,
+    "quantity": 2,
+    "tax_rate": 10,
+    "total": 3740000,
+    "install_date": "2024-06-24T00:00:00Z",
+    "expiry_date": "2025-06-24T00:00:00Z",
+    "last_updated_by": "admin",
+    "created_at": "2024-06-24T10:00:00Z",
+    "updated_at": "2024-06-24T10:15:00Z"
+  }
+}
+```
+
+### Delete Maintenance Record
+Delete a maintenance record by ID.
+
+**Endpoint:** `DELETE /api/v1/maintenance/:id`
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Maintenance record deleted successfully"
+}
+```
 
 ---
 
@@ -993,14 +1175,47 @@ Get a consolidated view of all maintenance items across vehicles.
 
 ---
 
-## Notes
+## Implementation Notes
 
-1. **Backend Initialization**: The backend automatically creates a "Bảo dưỡng" expense category with ID 1 if it doesn't exist.
+### Data Model Architecture
 
-2. **Currency**: All monetary values are in VND (Vietnamese Dong) by default.
+1. **Dual Tracking System**: The backend implements both a general expense system and a dedicated maintenance tracking system:
+   - **Expenses**: Track general costs with multiple items per expense
+   - **Maintenance**: Track specific maintenance activities with install/expiry dates
 
-3. **Date Format**: All dates use ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ).
+2. **Maintenance vs Expense Items**:
+   - **Maintenance records** are standalone entities with `expense_id` references
+   - **Expense items** are nested resources under expenses
+   - Both support similar fields but serve different purposes
 
-4. **Pagination**: All list endpoints support pagination with `page` and `limit` parameters.
+### Key Implementation Details
 
-5. **Audit Trail**: All modifications track `created_by` and `last_updated_by` user IDs.
+3. **Backend Initialization**: The backend automatically creates a "Bảo dưỡng" expense category with ID 1 if it doesn't exist.
+
+4. **User Tracking**: All records include audit trails:
+   - `created_by` - User ID who created the record
+   - `last_updated_by` - Username of the user who last modified the record
+
+5. **Data Validation**:
+   - Expenses require either `tractor_id` OR `trailer_id` (but not both)
+   - Maintenance records require valid `expense_id` references
+   - All monetary values must be positive integers
+   - Flexible date parsing supports both YYYY-MM-DD and ISO datetime formats
+
+6. **Automatic Calculations**:
+   - **Maintenance**: `total = (price * quantity) * (1 + tax_rate/100)`
+   - **Expenses**: Manual subtotal/total management with tax calculations
+
+### Technical Details
+
+7. **Currency**: All monetary values are stored as integers in VND (Vietnamese Dong).
+
+8. **Date Handling**: Supports flexible date input:
+   - Simple date format: `"2024-06-24"`
+   - ISO datetime format: `"2024-06-24T10:00:00Z"`
+
+9. **Pagination**: All list endpoints support pagination with `page` and `limit` parameters.
+
+10. **Authentication**: JWT tokens must be included as Bearer tokens in the Authorization header.
+
+11. **Error Codes**: Consistent error structure with both HTTP status codes and internal error codes for detailed error handling.
