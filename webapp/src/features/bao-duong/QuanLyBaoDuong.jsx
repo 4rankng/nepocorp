@@ -22,7 +22,7 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-import InvoiceModal from '@/components/InvoiceModal';
+import ExpenseViewModal from '@/components/ExpenseViewModal';
 import { maintenanceApi } from '@services/api/maintenanceApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
@@ -250,8 +250,8 @@ const QuanLyBaoDuong = memo(() => {
       >
         {renderDesktopView()}
       </Box>
-      {/* Invoice Modal */}
-      <InvoiceModal
+      {/* Expense View Modal */}
+      <ExpenseViewModal
         open={invoiceModal.open}
         onClose={handleInvoiceClose}
         expenseId={invoiceModal.expenseId}

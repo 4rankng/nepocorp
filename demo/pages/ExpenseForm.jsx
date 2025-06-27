@@ -219,7 +219,7 @@ const ExpenseForm = () => {
           {/* Items Section */}
           <div>
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-sm font-semibold text-gray-700">Danh sách hàng mục</h2>
+              <h2 className="text-sm font-semibold text-gray-700">Danh sách</h2>
               <button
                 onClick={() => {
                   setEditingItem(null);
@@ -228,7 +228,7 @@ const ExpenseForm = () => {
                 className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
               >
                 <Plus className="w-3 h-3" />
-                Thêm hàng mục
+                Thêm
               </button>
             </div>
 
@@ -280,7 +280,7 @@ const ExpenseForm = () => {
                   {items.length === 0 && (
                     <tr>
                       <td colSpan="9" className="px-3 py-6 text-center text-gray-500 text-xs">
-                        Chưa có hàng mục nào. Nhấn "Thêm hàng mục" để bắt đầu.
+                        Chưa có hàng mục nào. Nhấn "Thêm" để bắt đầu.
                       </td>
                     </tr>
                   )}
@@ -316,7 +316,7 @@ const ExpenseForm = () => {
           <div className="bg-white rounded-lg w-full max-w-3xl">
             <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-base font-medium text-gray-900">
-                {editingItem !== null ? 'Sửa hàng mục' : 'Thêm hàng mục'}
+                {editingItem !== null ? 'Sửa hàng mục' : 'Thêm'}
               </h3>
               <button
                 onClick={() => {

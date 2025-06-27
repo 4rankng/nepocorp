@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import ExpenseForm from '@/components/shared/ExpenseForm';
 import ExpenseList from '@/components/shared/ExpenseList';
-import InvoiceModal from '@/components/InvoiceModal';
+import ExpenseViewModal from '@/components/ExpenseViewModal';
 import useExpenses from './hooks/useExpenses';
 import useExpenseForm from '@/hooks/useExpenseForm';
 import { expenseApi } from '@services/api/expenseApi';
@@ -223,9 +223,9 @@ const QuanLyPhieuChi = () => {
         />
       </div>
 
-      {/* Invoice Modal - Conditional rendering to prevent unnecessary re-renders */}
+      {/* Expense View Modal - Conditional rendering to prevent unnecessary re-renders */}
       {showInvoiceModal && (
-        <InvoiceModal
+        <ExpenseViewModal
           open={true}
           onClose={handleCloseInvoiceModal}
           expenseId={viewingExpenseId}
