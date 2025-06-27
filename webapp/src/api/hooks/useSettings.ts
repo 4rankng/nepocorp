@@ -1,106 +1,255 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useCallback } from 'react';
 import { settingsService } from '@api/services';
-import { queryKeys } from './queryKeys';
 import { UpdateSettingRequest, SettingKey } from '@api/types';
 
 // Generic setting hooks
 export const useSetting = (key: string) => {
-  return useQuery({
-    queryKey: queryKeys.settings.detail(key),
-    queryFn: () => settingsService.get(key),
-    enabled: !!key,
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!key) return;
+
+    const fetchSetting = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await settingsService.get(key);
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch setting'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSetting();
+  }, [key]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error && !!data,
+  };
 };
 
 export const useUpdateSetting = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: ({ key, data }: { key: string; data: UpdateSettingRequest }) => 
-      settingsService.update(key, data),
-    onSuccess: (_, { key }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.settings.detail(key) });
-    },
-  });
+  const mutate = useCallback(async ({ key, data }: { key: string; data: UpdateSettingRequest }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await settingsService.update(key, data);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update setting');
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+  };
 };
 
 // Specific setting hooks
 export const useDefaultTaxRate = () => {
-  return useQuery({
-    queryKey: queryKeys.settings.detail(SettingKey.DEFAULT_TAX_RATE),
-    queryFn: () => settingsService.getDefaultTaxRate(),
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchTaxRate = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await settingsService.getDefaultTaxRate();
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch tax rate'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTaxRate();
+  }, []);
+
+  return { data, isLoading, error, isError: !!error, isSuccess: !isLoading && !error && !!data };
 };
 
 export const useUpdateDefaultTaxRate = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: (value: number) => settingsService.updateDefaultTaxRate(value),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.settings.detail(SettingKey.DEFAULT_TAX_RATE) 
-      });
-    },
-  });
+  const mutate = useCallback(async (value: number) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await settingsService.updateDefaultTaxRate(value);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update tax rate');
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, error, isError: !!error, isSuccess: !isLoading && !error };
 };
 
 export const useCurrency = () => {
-  return useQuery({
-    queryKey: queryKeys.settings.detail(SettingKey.CURRENCY),
-    queryFn: () => settingsService.getCurrency(),
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await settingsService.getCurrency();
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch currency'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCurrency();
+  }, []);
+
+  return { data, isLoading, error, isError: !!error, isSuccess: !isLoading && !error && !!data };
 };
 
 export const useUpdateCurrency = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: (value: string) => settingsService.updateCurrency(value),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.settings.detail(SettingKey.CURRENCY) 
-      });
-    },
-  });
+  const mutate = useCallback(async (value: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await settingsService.updateCurrency(value);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update currency');
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, error, isError: !!error, isSuccess: !isLoading && !error };
 };
 
 export const useDateFormat = () => {
-  return useQuery({
-    queryKey: queryKeys.settings.detail(SettingKey.DATE_FORMAT),
-    queryFn: () => settingsService.getDateFormat(),
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchDateFormat = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await settingsService.getDateFormat();
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch date format'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDateFormat();
+  }, []);
+
+  return { data, isLoading, error, isError: !!error, isSuccess: !isLoading && !error && !!data };
 };
 
 export const useUpdateDateFormat = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: (value: string) => settingsService.updateDateFormat(value),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.settings.detail(SettingKey.DATE_FORMAT) 
-      });
-    },
-  });
+  const mutate = useCallback(async (value: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await settingsService.updateDateFormat(value);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update date format');
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, error, isError: !!error, isSuccess: !isLoading && !error };
 };
 
 export const usePaginationLimit = () => {
-  return useQuery({
-    queryKey: queryKeys.settings.detail(SettingKey.PAGINATION_LIMIT),
-    queryFn: () => settingsService.getPaginationLimit(),
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchPaginationLimit = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await settingsService.getPaginationLimit();
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch pagination limit'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPaginationLimit();
+  }, []);
+
+  return { data, isLoading, error, isError: !!error, isSuccess: !isLoading && !error && !!data };
 };
 
 export const useUpdatePaginationLimit = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: (value: number) => settingsService.updatePaginationLimit(value),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.settings.detail(SettingKey.PAGINATION_LIMIT) 
-      });
-    },
-  });
+  const mutate = useCallback(async (value: number) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await settingsService.updatePaginationLimit(value);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update pagination limit');
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, error, isError: !!error, isSuccess: !isLoading && !error };
 };

@@ -19,7 +19,7 @@ import {
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 
 import StandardTable from '@/components/StandardTable';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { useVoRong } from '../hooks/useVoRong';
 import { getVoRongTableColumns } from '../constants/voRongTableColumns';
 import logger from '@/services/logger';
@@ -314,7 +314,7 @@ const DinhMucVoRong = () => {
         }}
       />
 
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}

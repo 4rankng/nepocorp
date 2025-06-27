@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, AddButton } from '@/components/ActionButtons';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 // NOTE: This is a legacy/demo component. Please use the new useCustomerManagement hook and CustomerManagement component for all real usage.
 // TODO: Replace with actual API imports
 // Enhanced theme configuration based on DinhMucDau.jsx
@@ -288,7 +288,7 @@ const KhachHangList = () => {
         </Alert>
       </Snackbar>
       {/* Delete Confirmation Dialog */}
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         onCancel={() => setDeleteDialog({ open: false, id: null, details: null })}
         onConfirm={handleDeleteConfirm}

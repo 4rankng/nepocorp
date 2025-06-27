@@ -11,6 +11,7 @@ const BaoDuongDialog = ({
   onClose,
   onChange,
   onSave,
+  onInvoiceClick,
   licensePlates = [],
   isLoadingPlates = false,
 }) => {
@@ -28,6 +29,8 @@ const BaoDuongDialog = ({
       isLoadingPlates={isLoadingPlates}
       expenseCategoryId={1} // Fixed category for BaoDuong (maintenance)
       title={isEdit ? 'Sửa thông tin bảo dưỡng' : 'Nhập thông tin bảo dưỡng'}
+      onInvoiceClick={onInvoiceClick}
+      showInvoiceButton={isEdit && formData?.id}
     />
   );
 };

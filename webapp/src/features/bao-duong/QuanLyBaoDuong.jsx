@@ -25,7 +25,6 @@ import {
   CardContent,
   Chip,
   Collapse,
-  useMediaQuery,
   useTheme,
   Divider,
   Fab,
@@ -52,7 +51,8 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import InvoiceModal from '@/components/InvoiceModal';
 import { baoDuongApi } from '@services/api/expenseApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
@@ -81,10 +81,10 @@ const initialFormData = {
 const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isEdit, setIsEdit] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: null });
+  const [invoiceModal, setInvoiceModal] = useState({ open: false, expenseId: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   // Removed counts state as we're now using maintenance items directly
@@ -234,6 +234,12 @@ const QuanLyBaoDuong = memo(() => {
     setOpenDialog(false);
     setErrors({});
   }, []);
+  const handleInvoiceClick = (expenseId) => {
+    setInvoiceModal({ open: true, expenseId });
+  };
+  const handleInvoiceClose = () => {
+    setInvoiceModal({ open: false, expenseId: null });
+  };
   const handleDeleteClick = record => {
     setDeleteDialog({
       open: true,
@@ -346,25 +352,6 @@ const QuanLyBaoDuong = memo(() => {
       fetchByLicensePlate(plate, 0, pagination.pageSize);
     }
   };
-  // Render mobile card view
-  const renderMobileView = () => (
-    <Box>
-      {filteredRecords.map(record => (
-        <BaoDuongCard
-          key={record.id}
-          record={record}
-          onEdit={handleOpenEditDialog}
-          onDelete={handleDeleteClick}
-          isLoading={isLoading}
-        />
-      ))}
-      {!isLoading && filteredRecords.length === 0 && (
-        <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
-          {searchTerm ? 'Không tìm thấy bảo dưỡng phù hợp' : 'Không có dữ liệu bảo dưỡng'}
-        </Typography>
-      )}
-    </Box>
-  );
   // Render desktop table view
   const renderDesktopView = () => {
     const tableColumns = getBaoDuongTableColumns();
@@ -463,11 +450,11 @@ const QuanLyBaoDuong = memo(() => {
         sx={{
           flexGrow: 1,
           overflowY: 'auto',
-          p: isMobile ? 1 : 2,
+          p: 2,
           pb: { xs: 10, sm: 11 },
         }}
       >
-        {isMobile ? renderMobileView() : renderDesktopView()}
+        {renderDesktopView()}
       </Box>
       {/* Add/Edit Dialog */}
       <BaoDuongDialog
@@ -479,11 +466,12 @@ const QuanLyBaoDuong = memo(() => {
         onClose={handleCloseDialog}
         onChange={handleInputChange}
         onSave={handleSave}
+        onInvoiceClick={handleInvoiceClick}
         licensePlates={licensePlates}
         isLoadingPlates={vehicleLoading.initial || vehicleLoading.tractors || vehicleLoading.trailers}
       />
       {/* Delete Confirmation Dialog */}
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}
@@ -494,6 +482,12 @@ const QuanLyBaoDuong = memo(() => {
         cancelText="Hủy"
         confirmColor="error"
         loading={isFormLoading}
+      />
+      {/* Invoice Modal */}
+      <InvoiceModal
+        open={invoiceModal.open}
+        onClose={handleInvoiceClose}
+        expenseId={invoiceModal.expenseId}
       />
       {/* Snackbar for notifications */}
       <Snackbar

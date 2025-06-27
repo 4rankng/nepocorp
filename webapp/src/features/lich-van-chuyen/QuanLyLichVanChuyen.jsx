@@ -25,14 +25,13 @@ const fetchAllKhachHang = async () => ({ success: true, data: { items: [] } });
 const fetchAllDauKeo = async () => ({ success: true, data: { items: [] } });
 const fetchAllRoMooc = async () => ({ success: true, data: { items: [] } });
 // import { PlusIcon, PencilIcon, TrashIcon } from '@assets/icons/index.jsx'; // Not used directly in this component
-import DeleteDialog from '@/components/DeleteDialog.jsx';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { createLichVanChuyenColumns, trangThaiMap } from './config/tableColumns.jsx';
 import {
   Box,
   Typography,
   Alert,
   CircularProgress,
-  useMediaQuery,
   useTheme,
   Dialog,
   DialogTitle,
@@ -46,17 +45,14 @@ import {
   // StepLabel, // Used in child components
   // StepContent, // Used in child components
   // Collapse, // Not used
-  Slide, // Used for Dialog transition
   // Fade, // Not used
   Chip,
 } from '@mui/material';
 // import CloseIcon from '@mui/icons-material/Close'; // Used in child components
 // import ExpandMoreIcon from '@mui/icons-material/ExpandMore'; // Used in child components
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-import MobileView from '@features/lich-van-chuyen/components/MobileView';
 import DesktopView from '@features/lich-van-chuyen/components/DesktopView';
 import DesktopShipmentFormDialog from '@features/lich-van-chuyen/components/DesktopShipmentFormDialog';
-import MobileShipmentFormStepper from '@features/lich-van-chuyen/components/MobileShipmentFormStepper';
 // import InfoIcon from '@mui/icons-material/Info'; // For guidance message - Linter flags as unused
 import {
   getDisplayTrangThai,
@@ -153,7 +149,6 @@ function stableSort(array, comparator) {
 // Map status codes to display text
 const QuanLyLichVanChuyen = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { hasAnyRole } = useAuth();
   const canAddPlan = hasAnyRole([ROLES.ADMIN, ROLES.HANDLER]);
   const [order, setOrder] = useState('asc');
@@ -181,7 +176,6 @@ const QuanLyLichVanChuyen = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [filterStatus, setFilterStatus] = useState('');
-  const [expandedCard, setExpandedCard] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   // Handle search input changes
   const handleSearchChange = e => {
@@ -378,10 +372,6 @@ const QuanLyLichVanChuyen = () => {
     const entity = list.find(item => item[keyField] === id);
     return entity ? entity[nameField] : '-';
   };
-  // Mobile-specific handlers
-  const handleCardExpand = planId => {
-    setExpandedCard(expandedCard === planId ? null : planId);
-  };
   // Filter functions for mobile search
   const filteredLichVanChuyenItems = React.useMemo(() => {
     if (!Array.isArray(lichVanChuyenItems)) return [];
@@ -402,11 +392,6 @@ const QuanLyLichVanChuyen = () => {
     }
     return filtered;
   }, [lichVanChuyenItems, searchTerm, filterStatus]);
-  // Handle form submission for mobile stepper
-  // This handleSubmit is called by MobileShipmentFormStepper via onSave prop
-  const handleSubmit = () => {
-    handleSave();
-  };
   // Define table columns for DesktopView
   // This 'columns' definition was from an older version or a merge artifact.
   // The correct one is defined later and used by DesktopView.
@@ -421,11 +406,6 @@ const QuanLyLichVanChuyen = () => {
   const sortedShipmentPlans = React.useMemo(() => {
     return stableSort(filteredLichVanChuyenItems, getComparator(order, orderBy, columns));
   }, [filteredLichVanChuyenItems, order, orderBy, columns]);
-  // Reset form and stepper for mobile
-  const resetForm = () => {
-    setFormData(initialFormState);
-    setError('');
-  };
   // Handle adding new customer from stepper
   const handleAddNewCustomer = async customerName => {
     try {
@@ -442,22 +422,12 @@ const QuanLyLichVanChuyen = () => {
       throw error; // Let child component handle the error
     }
   };
-  // Enhanced modal handlers for mobile - Now they can just call the consolidated ones.
-  const handleOpenModalForAddMobile = () => {
-    handleOpenModalForAdd();
-  };
-  const handleOpenModalForEditMobile = plan => {
-    handleOpenModalForEdit(plan);
-  };
-  const handleCloseModalMobile = () => {
-    handleCloseModal();
-  };
   return (
     <Box
       sx={{
-        px: isMobile ? 2 : 3, // Horizontal padding
+        px: 3, // Horizontal padding
         pt: 0, // No top padding
-        pb: isMobile ? 1 : 2, // Keep bottom padding
+        pb: 2, // Bottom padding
         backgroundColor: theme.palette.background.paper, // Change to white
         minHeight: 'calc(100vh - 64px)',
         display: 'flex',
@@ -481,112 +451,52 @@ const QuanLyLichVanChuyen = () => {
           {error}
         </Alert>
       )}
-      {isMobile ? (
-        <MobileView
-          searchTerm={searchTerm}
-          onSearchTermChange={e => setSearchTerm(e.target.value)}
-          filterStatus={filterStatus}
-          onFilterStatusChange={e => setFilterStatus(e.target.value)}
-          filteredPlans={filteredLichVanChuyenItems}
-          isLoading={isLoading}
-          expandedCard={expandedCard}
-          onCardExpand={handleCardExpand}
-          onEdit={handleOpenModalForEditMobile}
-          onDelete={handleDeleteConfirmation} // Use confirmation flow for mobile delete
-          onAdd={handleOpenModalForAddMobile}
-          canAddPlan={canAddPlan} // Assuming canAddPlan is still relevant for add button visibility
-        />
-      ) : (
-        <DesktopView
-          searchTerm={searchTerm}
-          onSearchTermChange={handleSearchChange}
-          columns={columns}
-          shipmentPlans={sortedShipmentPlans}
-          isLoading={isLoading}
-          onAdd={handleOpenModalForAdd}
-          canAddPlan={canAddPlan}
-          onItemClick={handleOpenModalForEdit}
-          order={order}
-          orderBy={orderBy}
-          onRequestSort={handleRequestSort}
-          renderActions={row => (
-            <>
-              <EditButton
-                onClick={e => {
-                  e.stopPropagation(); // Prevent row click event
-                  handleOpenModalForEdit(row);
-                }}
-                size="small"
-                tooltip="Chỉnh sửa"
-              />
-              <DeleteButton
-                onClick={e => {
-                  e.stopPropagation(); // Prevent row click event
-                  handleDeleteConfirmation(row);
-                }}
-                size="small"
-                tooltip="Xóa"
-              />
-            </>
-          )}
-        />
-      )}
+      <DesktopView
+        searchTerm={searchTerm}
+        onSearchTermChange={handleSearchChange}
+        columns={columns}
+        shipmentPlans={sortedShipmentPlans}
+        isLoading={isLoading}
+        onAdd={handleOpenModalForAdd}
+        canAddPlan={canAddPlan}
+        onItemClick={handleOpenModalForEdit}
+        order={order}
+        orderBy={orderBy}
+        onRequestSort={handleRequestSort}
+        renderActions={row => (
+          <>
+            <EditButton
+              onClick={e => {
+                e.stopPropagation(); // Prevent row click event
+                handleOpenModalForEdit(row);
+              }}
+              size="small"
+              tooltip="Chỉnh sửa"
+            />
+            <DeleteButton
+              onClick={e => {
+                e.stopPropagation(); // Prevent row click event
+                handleDeleteConfirmation(row);
+              }}
+              size="small"
+              tooltip="Xóa"
+            />
+          </>
+        )}
+      />
       {/* Modal for Add/Edit */}
-      {isMobile ? (
-        <Dialog
-          fullScreen
-          open={isModalOpen} // Removed && canAddPlan, let form decide if it shows content based on permissions if needed
-          onClose={handleCloseModalMobile}
-          TransitionComponent={Slide}
-          TransitionProps={{ direction: 'up' }}
-          sx={{ '& .MuiDialog-paper': { background: '#ffffff' } }}
-        >
-          <DialogContent
-            sx={{
-              p: 2,
-              pb: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-              overflow: 'hidden',
-            }}
-          >
-            <Box sx={{ flex: 1, overflow: 'auto', pr: 1, mr: -1, pb: 2 }}>
-              {/* Error display for the form itself */}
-              {error && !isDeleteModalOpen && (
-                <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-                  {error}
-                </Alert>
-              )}
-              <MobileShipmentFormStepper
-                editing={!!editingItem}
-                formData={formData}
-                onFormChange={handleInputChange} // Assuming handleInputChange exists
-                onSave={handleSubmit} // handleSubmit calls handleSave
-                isLoading={isLoading}
-                error={error} // Pass error for form-specific display if needed
-                selectOptions={selectOptions}
-                onClose={handleCloseModalMobile}
-                onAddNewCustomer={handleAddNewCustomer}
-                resetForm={resetForm}
-              />
-            </Box>
-          </DialogContent>
-        </Dialog>
-      ) : (
-        <DesktopShipmentFormDialog
-          open={isModalOpen}
-          onClose={handleCloseModal}
-          editing={!!editingItem}
-          formData={formData}
-          onFormChange={handleInputChange}
-          onSubmit={handleSave}
-          isLoading={isLoading}
-          error={error}
-          selectOptions={selectOptions}
-        />
-      )}
-      <DeleteDialog
+      <DesktopShipmentFormDialog
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        editing={!!editingItem}
+        formData={formData}
+        onFormChange={handleInputChange}
+        onSubmit={handleSave}
+        isLoading={isLoading}
+        error={error}
+        selectOptions={selectOptions}
+      />
+      <ConfirmDialog
         open={isDeleteModalOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirmed}

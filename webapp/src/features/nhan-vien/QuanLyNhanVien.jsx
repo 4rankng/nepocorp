@@ -11,7 +11,7 @@ import {
   Typography,
   Divider,
 } from '@mui/material';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTheme, useMediaQuery } from '@mui/material';
 import NhanVienForm from '@features/nhan-vien/components/NhanVienForm';
 import DesktopView from './components/DesktopView';
@@ -152,7 +152,7 @@ const QuanLyNhanVien = () => {
         onLoadDauKeo={loadDauKeoList}
       />
       {/* Delete Confirmation Dialog */}
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         onCancel={() => setDeleteDialog({ open: false, data: null })}
         onConfirm={handleConfirmDelete}

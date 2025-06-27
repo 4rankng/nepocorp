@@ -10,7 +10,7 @@ import {
   useMediaQuery,
   Divider,
 } from '@mui/material';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
 import MobileView from '@features/doi-tac/components/MobileView';
 import DesktopView from '@features/doi-tac/components/DesktopView';
@@ -159,7 +159,7 @@ const QuanLyDoiTac = () => {
         </div>
       )}
       {/* Delete Confirmation Dialog */}
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         onCancel={() => setDeleteDialog({ open: false, data: null })}
         onConfirm={handleDeleteConfirm}

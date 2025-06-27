@@ -19,7 +19,7 @@ import AsteriskCell from '@/components/AsteriskCell';
 import { AddDinhMucBoSung, EditDinhMucBoSung } from '.';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { useDinhMucBoSung } from '../hooks/useDinhMucBoSung';
 import { useConfirmation } from '@/hooks/useConfirmation';
 import logger from '@services/logger';
@@ -448,7 +448,7 @@ const DinhMucBoSung = () => {
         />
       )}
 
-      <DeleteDialog
+      <ConfirmDialog
         open={confirmationState.isOpen}
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

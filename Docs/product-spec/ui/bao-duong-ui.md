@@ -125,13 +125,13 @@ The form starts with one empty item row containing:
      - Required: Yes
      - Format: Currency (VND)
      - Min: 0
-   
+
    - **Số lượng (Quantity)**
      - Type: Number input
      - Required: Yes
      - Default: 1
      - Min: 1
-   
+
    - **Thành tiền (Subtotal)**
      - Type: Read-only display
      - Calculation: price × quantity
@@ -142,7 +142,7 @@ The form starts with one empty item row containing:
      - Type: Date picker
      - Required: No
      - Format: DD/MM/YYYY
-   
+
    - **Ngày hết hạn (Expiry Date)**
      - Type: Date picker
      - Required: No
@@ -291,3 +291,11 @@ Items:
    - Ngày lắp: 15/01/2024
    - Ngày hết hạn: 15/01/2025
 ```
+
+in QuanLyBaoDuong.jsx table,
+if user click edit button
+open modal with data from QuanLyBaoDuong.jsx table
+plus invoice button
+if user click invoice button, show modal with data from
+api/v1/expense
+please reuse existing modal UI design or reusable component if possible

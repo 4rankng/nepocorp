@@ -15,7 +15,7 @@ import {
   ContainerDialog,
   ContainerListResponsive,
 } from './components';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import RvHookupIcon from '@mui/icons-material/RvHookup';
 import InventoryIcon from '@mui/icons-material/Inventory2';
@@ -111,7 +111,7 @@ const DauKeoContent = () => {
           transition: 'all 0.2s ease-in-out', // Match /doi-tac FAB transition
         }}
       />
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         title="Xóa đầu kéo"
         message="Bạn có chắc chắn muốn xóa đầu kéo sau đây? Hành động này không thể hoàn tác."
@@ -207,7 +207,7 @@ const RoMoocContent = () => {
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         title="Xóa rơ-mooc"
         message="Bạn có chắc chắn muốn xóa rơ-mooc sau đây? Hành động này không thể hoàn tác."
@@ -335,7 +335,7 @@ const ContainerContent = () => {
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         title="Xóa container"
         message="Bạn có chắc chắn muốn xóa container sau đây? Hành động này không thể hoàn tác."

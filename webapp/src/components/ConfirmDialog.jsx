@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-const DeleteDialog = ({
+const ConfirmDialog = ({
   open,
   title = 'Xác nhận',
   message = 'Bạn có chắc chắn muốn thực hiện hành động này?',
@@ -156,4 +156,4 @@ const DeleteDialog = ({
   );
 };
 
-export default DeleteDialog;
+export default ConfirmDialog;

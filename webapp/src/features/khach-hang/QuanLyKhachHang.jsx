@@ -10,7 +10,7 @@ import {
   useMediaQuery,
   Divider,
 } from '@mui/material';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import CustomerForm from '@features/khach-hang/components/CustomerForm';
 import MobileView from '@features/khach-hang/components/MobileView';
 import DesktopView from '@features/khach-hang/components/DesktopView';
@@ -164,7 +164,7 @@ const QuanLyKhachHang = () => {
         </div>
       )}
       {/* Delete Confirmation Dialog */}
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         onCancel={() => setDeleteDialog({ open: false, data: null })}
         onConfirm={handleDeleteConfirm}

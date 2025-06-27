@@ -19,7 +19,7 @@ import {
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 
 import StandardTable from '@/components/StandardTable';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 // import { EditButton, DeleteButton } from '@/components/ActionButtons'; // These are now part of getChoHangTableColumns
 import { useChoHang } from '../hooks/useChoHang';
 import { getChoHangTableColumns } from '../constants/choHangTableColumns';
@@ -346,7 +346,7 @@ const DinhMucChoHang = () => {
         }}
       />
 
-      <DeleteDialog
+      <ConfirmDialog
         open={deleteDialog.open}
         onCancel={handleDeleteClose}
         onConfirm={handleDeleteConfirm}

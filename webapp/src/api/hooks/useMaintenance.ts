@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useState, useEffect, useCallback } from 'react';
 import { maintenanceService } from '@api/services';
-import { queryKeys } from './queryKeys';
 import { 
   MaintenanceFilters,
   CreateMaintenanceRequest,
@@ -9,116 +8,382 @@ import {
 
 // Maintenance queries
 export const useMaintenance = (filters?: MaintenanceFilters & { page?: number; limit?: number }) => {
-  return useQuery({
-    queryKey: queryKeys.maintenance.list(filters),
-    queryFn: () => maintenanceService.getAll(filters),
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchMaintenance = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await maintenanceService.getAll(filters);
+      setData(response);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch maintenance'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    fetchMaintenance();
+  }, [fetchMaintenance]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error && !!data,
+    refetch: fetchMaintenance,
+  };
 };
 
 export const useMaintenanceRecord = (id: number) => {
-  return useQuery({
-    queryKey: queryKeys.maintenance.detail(id),
-    queryFn: () => maintenanceService.getById(id),
-    enabled: !!id,
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchMaintenanceRecord = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await maintenanceService.getById(id);
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch maintenance record'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMaintenanceRecord();
+  }, [id]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error && !!data,
+  };
 };
 
-// Infinite query for maintenance pagination
+// Infinite query replacement with pagination state
 export const useInfiniteMaintenance = (filters?: MaintenanceFilters) => {
-  return useInfiniteQuery({
-    queryKey: queryKeys.maintenance.list(filters),
-    queryFn: ({ pageParam = 1 }) => maintenanceService.getAll({ ...filters, page: pageParam, limit: 10 }),
-    getNextPageParam: (lastPage) => {
-      const { pagination } = lastPage;
-      if (pagination && pagination.page < pagination.total_pages) {
-        return pagination.page + 1;
-      }
-      return undefined;
-    },
-    initialPageParam: 1,
-  });
+  const [data, setData] = useState<{ pages: any[]; pageParams: number[] }>({ pages: [], pageParams: [] });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+
+  const fetchPage = useCallback(async (pageParam = 1) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await maintenanceService.getAll({ ...filters, page: pageParam, limit: 10 });
+      const { pagination } = response;
+      
+      setData(prev => ({
+        pages: [...prev.pages, response],
+        pageParams: [...prev.pageParams, pageParam]
+      }));
+      
+      setHasNextPage(pagination && pagination.page < pagination.total_pages);
+      return response;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch maintenance'));
+      throw err;
+    } finally {
+      setIsLoading(false);
+      setIsFetchingNextPage(false);
+    }
+  }, [filters]);
+
+  const fetchNextPage = useCallback(async () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    
+    setIsFetchingNextPage(true);
+    const nextPageParam = data.pageParams.length > 0 ? data.pageParams[data.pageParams.length - 1] + 1 : 1;
+    await fetchPage(nextPageParam);
+  }, [hasNextPage, isFetchingNextPage, data.pageParams, fetchPage]);
+
+  useEffect(() => {
+    setData({ pages: [], pageParams: [] });
+    fetchPage(1);
+  }, [fetchPage]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  };
 };
 
 // Specialized queries
 export const useMaintenanceByLicensePlate = (licensePlate: string, page = 1, limit = 10) => {
-  return useQuery({
-    queryKey: queryKeys.maintenance.list({ license_plate: licensePlate, page, limit }),
-    queryFn: () => maintenanceService.getByLicensePlate(licensePlate, page, limit),
-    enabled: !!licensePlate,
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!licensePlate) return;
+
+    const fetchMaintenanceByLicensePlate = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await maintenanceService.getByLicensePlate(licensePlate, page, limit);
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch maintenance by license plate'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMaintenanceByLicensePlate();
+  }, [licensePlate, page, limit]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error && !!data,
+  };
 };
 
 export const useMaintenanceByVendor = (vendorName: string, page = 1, limit = 10) => {
-  return useQuery({
-    queryKey: queryKeys.maintenance.list({ vendor_name: vendorName, page, limit }),
-    queryFn: () => maintenanceService.getByVendor(vendorName, page, limit),
-    enabled: !!vendorName,
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!vendorName) return;
+
+    const fetchMaintenanceByVendor = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await maintenanceService.getByVendor(vendorName, page, limit);
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch maintenance by vendor'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMaintenanceByVendor();
+  }, [vendorName, page, limit]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error && !!data,
+  };
 };
 
 export const useMaintenanceByDateRange = (startDate: string, endDate: string, page = 1, limit = 10) => {
-  return useQuery({
-    queryKey: queryKeys.maintenance.list({ start_date: startDate, end_date: endDate, page, limit }),
-    queryFn: () => maintenanceService.getByDateRange(startDate, endDate, page, limit),
-    enabled: !!startDate && !!endDate,
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+
+    const fetchMaintenanceByDateRange = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await maintenanceService.getByDateRange(startDate, endDate, page, limit);
+        setData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch maintenance by date range'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMaintenanceByDateRange();
+  }, [startDate, endDate, page, limit]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error && !!data,
+  };
 };
 
 export const useExpiringMaintenance = (daysAhead = 30) => {
-  return useQuery({
-    queryKey: queryKeys.maintenance.expiring(daysAhead),
-    queryFn: () => maintenanceService.getExpiring(daysAhead),
-    staleTime: 1000 * 60 * 15, // 15 minutes
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchExpiringMaintenance = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await maintenanceService.getExpiring(daysAhead);
+      setData(response);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch expiring maintenance'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [daysAhead]);
+
+  useEffect(() => {
+    fetchExpiringMaintenance();
+    
+    // Refresh every 15 minutes
+    const interval = setInterval(fetchExpiringMaintenance, 15 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchExpiringMaintenance]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error && !!data,
+    refetch: fetchExpiringMaintenance,
+  };
 };
 
 export const useOverdueMaintenance = () => {
-  return useQuery({
-    queryKey: queryKeys.maintenance.overdue(),
-    queryFn: () => maintenanceService.getOverdue(),
-    staleTime: 1000 * 60 * 10, // 10 minutes
-  });
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchOverdueMaintenance = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await maintenanceService.getOverdue();
+      setData(response);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch overdue maintenance'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOverdueMaintenance();
+    
+    // Refresh every 10 minutes
+    const interval = setInterval(fetchOverdueMaintenance, 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchOverdueMaintenance]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error && !!data,
+    refetch: fetchOverdueMaintenance,
+  };
 };
 
 // Maintenance mutations
 export const useCreateMaintenance = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: (data: CreateMaintenanceRequest) => maintenanceService.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.expiring() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.overdue() });
-    },
-  });
+  const mutate = useCallback(async (data: CreateMaintenanceRequest) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await maintenanceService.create(data);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to create maintenance');
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+  };
 };
 
 export const useUpdateMaintenance = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateMaintenanceRequest }) => 
-      maintenanceService.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.detail(id) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.expiring() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.overdue() });
-    },
-  });
+  const mutate = useCallback(async ({ id, data }: { id: number; data: UpdateMaintenanceRequest }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await maintenanceService.update(id, data);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update maintenance');
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+  };
 };
 
 export const useDeleteMaintenance = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: (id: number) => maintenanceService.delete(id),
-    onSuccess: (_, id) => {
-      queryClient.removeQueries({ queryKey: queryKeys.maintenance.detail(id) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.expiring() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.overdue() });
-    },
-  });
+  const mutate = useCallback(async (id: number) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await maintenanceService.delete(id);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to delete maintenance');
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+  };
 };
