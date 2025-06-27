@@ -2,10 +2,56 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
+// Function to fix double-encoded UTF-8 strings
+const fixDoubleEncodedUTF8 = (str) => {
+  if (!str || typeof str !== 'string') return str;
+  
+  try {
+    // Check if string contains double-encoded UTF-8 patterns
+    if (str.includes('Ã') || str.includes('â') || str.includes('Ä') || str.includes('Ã©')) {
+      // Try to decode the double-encoded string
+      const bytes = new Uint8Array(str.length);
+      for (let i = 0; i < str.length; i++) {
+        bytes[i] = str.charCodeAt(i) & 0xFF;
+      }
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+    return str;
+  } catch (error) {
+    console.warn('Failed to fix UTF-8 encoding for string:', str, error);
+    return str;
+  }
+};
+
+// Function to recursively fix UTF-8 encoding in objects
+const fixUTF8InObject = (obj) => {
+  if (!obj) return obj;
+  
+  if (typeof obj === 'string') {
+    return fixDoubleEncodedUTF8(obj);
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => fixUTF8InObject(item));
+  }
+  
+  if (typeof obj === 'object') {
+    const fixed = {};
+    for (const [key, value] of Object.entries(obj)) {
+      fixed[key] = fixUTF8InObject(value);
+    }
+    return fixed;
+  }
+  
+  return obj;
+};
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
+    'Accept': 'application/json; charset=utf-8',
+    'Accept-Charset': 'utf-8',
   },
 });
 
@@ -27,8 +73,10 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
   (response) => {
+    // Fix UTF-8 encoding issues in response data
+    const fixedData = fixUTF8InObject(response.data);
     // Return the full response data, preserving the backend's status field
-    return response.data;
+    return fixedData;
   },
   (error) => {
     if (error.response) {

@@ -59,7 +59,7 @@ import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';
 import { getBaoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
 import { useExpenseForm } from '@components/shared';
-import useMaintenanceItemRecords from './hooks/useMaintenanceItemRecords';
+import useMaintenanceRecords from './hooks/useMaintenanceRecords';
 import { useVehicleData } from '@contexts/VehicleDataContext';
 import { extractErrorMessage, isValidationError, extractValidationErrors } from '@utils/errorUtils';
 const initialFormData = {
@@ -142,7 +142,7 @@ const QuanLyBaoDuong = memo(() => {
     fetchData,
     fetchByLicensePlate,
     pagination,
-  } = useMaintenanceItemRecords();
+  } = useMaintenanceRecords();
   // Extract pagination props for StandardTable
   const {
     page,

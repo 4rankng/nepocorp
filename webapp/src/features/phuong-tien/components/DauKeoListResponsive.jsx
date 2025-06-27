@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, SearchBar } from '@/components';
+import { sanitizeDisplayText } from '@/utils/stringUtils';
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -47,8 +48,8 @@ const DauKeoListResponsive = ({
     const term = searchTerm.toLowerCase();
     return data.filter(
       item =>
-        (item.license_plate && item.license_plate.toLowerCase().includes(term)) ||
-        (item.description && item.description.toLowerCase().includes(term))
+        (item.license_plate && sanitizeDisplayText(item.license_plate).toLowerCase().includes(term)) ||
+        (item.description && sanitizeDisplayText(item.description).toLowerCase().includes(term))
     );
   }, [data, searchTerm]);
   // Get current data for the current page
@@ -67,13 +68,14 @@ const DauKeoListResponsive = ({
       label: 'BIỂN SỐ',
       align: 'left',
       sortable: true,
+      render: value => sanitizeDisplayText(value),
     },
     {
       key: 'description',
       label: 'MÔ TẢ',
       align: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      render: value => sanitizeDisplayText(value) || 'Chưa cập nhật',
     },
     {
       key: 'updated_at',
@@ -99,10 +101,10 @@ const DauKeoListResponsive = ({
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
               <Box>
                 <Typography variant="h6" component="div">
-                  {item.license_plate}
+                  {sanitizeDisplayText(item.license_plate)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Mô tả:</strong> {item.description || 'Chưa cập nhật'}
+                  <strong>Mô tả:</strong> {sanitizeDisplayText(item.description) || 'Chưa cập nhật'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                   <strong>Cập nhật:</strong> {formatDate(item.updated_at)}
