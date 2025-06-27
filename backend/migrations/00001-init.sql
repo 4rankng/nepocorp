@@ -128,6 +128,27 @@ CREATE TABLE IF NOT EXISTS expense_items (
     INDEX idx_expense_id (expense_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Create maintenance table
+CREATE TABLE IF NOT EXISTS maintenance (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    expense_id BIGINT UNSIGNED NOT NULL,
+    license_plate VARCHAR(255) NOT NULL,
+    vendor_name VARCHAR(255) NOT NULL,
+    item_name VARCHAR(255) NOT NULL,
+    price BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    tax_rate FLOAT NOT NULL DEFAULT 0,
+    total BIGINT NOT NULL,
+    install_date DATETIME NULL,
+    expiry_date DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_expense_id (expense_id),
+    INDEX idx_license_plate (license_plate),
+    INDEX idx_vendor_name (vendor_name),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Create settings table
 CREATE TABLE IF NOT EXISTS settings (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

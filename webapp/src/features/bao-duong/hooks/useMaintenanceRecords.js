@@ -3,8 +3,8 @@ import logger from '@services/logger';
 import { maintenanceApi } from '@services/api/maintenanceApi';
 import { extractErrorMessage } from '@utils/errorUtils';
 
-export default function useMaintenanceItemRecords() {
-  const [maintenanceItemRecords, setMaintenanceItemRecords] = useState([]);
+export default function useMaintenanceRecords() {
+  const [maintenanceRecords, setMaintenanceRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [pagination, setPagination] = useState({
@@ -23,7 +23,7 @@ export default function useMaintenanceItemRecords() {
         // Note: API is 1-indexed for page number
         const response = await maintenanceApi.getAll(page + 1, pageSize);
 
-        console.log('Fetched maintenance items data:', {
+        console.log('Fetched maintenance data:', {
           count: response.data?.length || 0,
           first_record: response.data?.[0],
           pagination: response.pagination
@@ -43,7 +43,7 @@ export default function useMaintenanceItemRecords() {
 
         // Use backend data directly without transformation
         const data = response.data || [];
-        setMaintenanceItemRecords(data);
+        setMaintenanceRecords(data);
 
         // Update pagination state from API response
         const newPagination = {
@@ -60,10 +60,10 @@ export default function useMaintenanceItemRecords() {
 
         setError('');
       } catch (err) {
-        logger.error('Error loading maintenance items', { error: err });
+        logger.error('Error loading maintenance records', { error: err });
         const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu bảo dưỡng');
         setError(errorMessage);
-        setMaintenanceItemRecords([]);
+        setMaintenanceRecords([]);
       } finally {
         setIsLoading(false);
       }
@@ -97,7 +97,7 @@ export default function useMaintenanceItemRecords() {
         );
         
         const data = response.data || [];
-        setMaintenanceItemRecords(data);
+        setMaintenanceRecords(data);
         
         setPagination(prev => ({
           ...prev,
@@ -109,10 +109,10 @@ export default function useMaintenanceItemRecords() {
         
         setError('');
       } catch (err) {
-        logger.error('Error loading maintenance items by license plate', { error: err });
+        logger.error('Error loading maintenance records by license plate', { error: err });
         const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu bảo dưỡng');
         setError(errorMessage);
-        setMaintenanceItemRecords([]);
+        setMaintenanceRecords([]);
       } finally {
         setIsLoading(false);
       }
@@ -209,8 +209,8 @@ export default function useMaintenanceItemRecords() {
   );
 
   return {
-    baoDuongRecords: maintenanceItemRecords, // Keep same name for backward compatibility
-    setBaoDuongRecords: setMaintenanceItemRecords,
+    maintenanceRecords,
+    setMaintenanceRecords,
     isLoading,
     error,
     fetchData,

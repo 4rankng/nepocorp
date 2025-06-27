@@ -26,6 +26,17 @@ func HashPassword(password, secret, salt string) (string, error) {
 
 // CheckPassword compares a plain password with a hashed password using secret and salt
 func CheckPassword(password, hashedPassword, secret, salt string) error {
+	// Check if this is a development/SQL-generated hash (hex string)
+	if len(hashedPassword) == 64 && isHexString(hashedPassword) {
+		// This is a simple SHA256 hash from SQL mock data
+		expectedHash := fmt.Sprintf("%x", sha256.Sum256([]byte(password+salt+secret)))
+		if hashedPassword == expectedHash {
+			return nil
+		}
+		return fmt.Errorf("password mismatch")
+	}
+	
+	// Standard bcrypt verification
 	// First, create HMAC with secret
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(password + salt))
@@ -33,4 +44,14 @@ func CheckPassword(password, hashedPassword, secret, salt string) error {
 	
 	// Then compare with bcrypt
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(saltedPassword))
+}
+
+// isHexString checks if a string contains only hexadecimal characters
+func isHexString(s string) bool {
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return true
 }
