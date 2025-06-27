@@ -5,17 +5,17 @@ import { VehicleDataContext } from '@contexts/VehicleDataContext';
 // Utility function to convert license plate to tractor_id/trailer_id
 const convertLicensePlateToIds = (licensePlate, tractors, trailers) => {
   if (!licensePlate) return { tractor_id: null, trailer_id: null };
-  
+
   const tractor = tractors.find(t => t.license_plate === licensePlate);
   if (tractor) {
     return { tractor_id: tractor.id, trailer_id: null };
   }
-  
+
   const trailer = trailers.find(t => t.license_plate === licensePlate);
   if (trailer) {
     return { tractor_id: null, trailer_id: trailer.id };
   }
-  
+
   return { tractor_id: null, trailer_id: null };
 };
 
@@ -25,11 +25,11 @@ const transformToExpenseFormat = (formData, vehicleIds) => {
   const subtotal = formData.items?.reduce((sum, item) => {
     return sum + (parseFloat(item.price || 0) * parseInt(item.quantity || 0));
   }, 0) || 0;
-  
+
   const taxRate = parseFloat(formData.tax_rate || 10); // Default 10%
   const taxAmount = subtotal * (taxRate / 100);
   const total = subtotal + taxAmount;
-  
+
   return {
     ...vehicleIds, // tractor_id or trailer_id
     vendor_name: formData.vendor_name || '',
@@ -98,11 +98,11 @@ export default function useBaoDuongForm({
   };
   const validateForm = () => {
     const newErrors = {};
-    
+
     // Validate main fields
     if (!formData.license_plate) newErrors.license_plate = 'Vui lòng nhập biển số xe';
     // payment_status has a default value of DRAFT, so it's always valid
-    
+
     // Validate items array
     if (!formData.items || formData.items.length === 0) {
       newErrors.items = 'Vui lòng thêm ít nhất một hạng mục bảo dưỡng';
@@ -119,7 +119,7 @@ export default function useBaoDuongForm({
         }
       });
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -134,20 +134,20 @@ export default function useBaoDuongForm({
         throw validationError;
       }
       setIsLoading(true);
-      
+
       // Convert license plate to tractor_id/trailer_id
       const vehicleIds = convertLicensePlateToIds(formData.license_plate, tractors, trailers);
-      
+
       // If license plate not found, throw error (should not happen if dropdown and validation use same data)
       if (!vehicleIds.tractor_id && !vehicleIds.trailer_id) {
-        logger.error(`License plate ${formData.license_plate} not found in VehicleDataContext`, { 
-          tractorCount: tractors.length, 
+        logger.error(`License plate ${formData.license_plate} not found in VehicleDataContext`, {
+          tractorCount: tractors.length,
           trailerCount: trailers.length,
           license_plate: formData.license_plate
         });
         throw new Error(`Không tìm thấy xe với biển số: ${formData.license_plate}`);
       }
-      
+
       // Transform data to new expense API format
       const submissionData = transformToExpenseFormat(formData, vehicleIds);
       // Call the appropriate API method
@@ -157,7 +157,7 @@ export default function useBaoDuongForm({
         // Check for API error responses
         if (!response?.success) {
           // Handle new backend error format: message + errors.message
-          let errorMessage = 'Cập nhật thất bại';
+          let errorMessage = 'Sửa thất bại';
           if (response?.message && response?.errors?.message) {
             errorMessage = `${response.message}: ${response.errors.message}`;
           } else if (response?.message) {
@@ -165,13 +165,13 @@ export default function useBaoDuongForm({
           } else if (response?.error?.message) {
             errorMessage = response.error.message;
           }
-          
+
           const error = new Error(errorMessage);
           error.response = response;
           error.validationError = response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
           throw error;
         }
-        onSuccess?.(response?.message || 'Cập nhật thông tin bảo dưỡng thành công');
+        onSuccess?.(response?.message || 'Sửa thông tin bảo dưỡng thành công');
       } else {
         response = await api.create(submissionData);
         // Check for API error responses
@@ -185,7 +185,7 @@ export default function useBaoDuongForm({
           } else if (response?.error?.message) {
             errorMessage = response.error.message;
           }
-          
+
           const error = new Error(errorMessage);
           error.response = response;
           error.validationError = response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
@@ -212,7 +212,7 @@ export default function useBaoDuongForm({
     } catch (error) {
       // Extract and format error message from API response
       let errorMessage = 'Đã xảy ra lỗi khi lưu dữ liệu';
-      
+
       // Handle new backend error format: message + errors.message
       if (error?.response?.message && error?.response?.errors?.message) {
         errorMessage = `${error.response.message}: ${error.response.errors.message}`;

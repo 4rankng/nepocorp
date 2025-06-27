@@ -69,7 +69,7 @@ export const useDinhMucBoSung = () => {
       setDinhMucBoSungData(prev => prev.map(item => (item.id === id ? updatedRecord : item)));
       return updatedRecord;
     } catch (err) {
-      setError(err.message || 'Có lỗi xảy ra khi cập nhật bản ghi');
+      setError(err.message || 'Có lỗi xảy ra khi sửa bản ghi');
       throw err;
     } finally {
       setIsLoading(false);

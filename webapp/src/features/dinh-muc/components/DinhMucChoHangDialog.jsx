@@ -184,7 +184,7 @@ const DinhMucChoHangDialog = ({
             disabled={isLoading}
             startIcon={isLoading ? <CircularProgress size={20} /> : null}
           >
-            {isEditMode ? 'Cập nhật' : 'Thêm'}
+            {isEditMode ? 'Sửa' : 'Thêm'}
           </Button>
         </DialogActions>
       </form>

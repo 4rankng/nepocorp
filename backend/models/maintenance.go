@@ -11,16 +11,16 @@ import (
 type Maintenance struct {
 	ID           uint       `gorm:"primarykey;autoIncrement" json:"id"`
 	ExpenseID    uint       `gorm:"not null" json:"expense_id"`
-	LicensePlate string     `gorm:"not null;size:255" json:"license_plate"`
-	VendorName   string     `gorm:"not null;size:255" json:"vendor_name"`
-	ItemName     string     `gorm:"not null;size:255" json:"item_name"`
+	LicensePlate string     `gorm:"type:varchar(255);not null" json:"license_plate"`
+	VendorName   string     `gorm:"type:varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;not null" json:"vendor_name"`
+	ItemName     string     `gorm:"type:varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;not null" json:"item_name"`
 	Price        int64      `gorm:"not null" json:"price"`
 	Quantity     int        `gorm:"not null" json:"quantity"`
 	TaxRate      float64    `gorm:"not null;default:0" json:"tax_rate"`
 	Total        int64      `gorm:"not null" json:"total"`
 	InstallDate  *time.Time `json:"install_date"`
 	ExpiryDate   *time.Time `json:"expiry_date"`
-	LastUpdatedBy string     `gorm:"size:255" json:"last_updated_by"` // name (@username) of user who last created/updated the record
+	LastUpdatedBy string     `gorm:"type:varchar(255)" json:"last_updated_by"` // name (@username) of user who last created/updated the record
 	CreatedAt     time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }

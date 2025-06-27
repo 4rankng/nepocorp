@@ -15,15 +15,15 @@ export const useRoMooc = () => {
     setError('');
     try {
       const response = await trailerApi.getAll(page, limit);
-      
+
       if (response.status !== 'success') {
         throw new Error(response.message || 'Failed to fetch trailers');
       }
-      
+
       setData(response.data || []);
       setPagination(response.pagination);
       setCount(response.pagination?.records_count || response.data?.length || 0);
-      
+
       return response.data;
     } catch (err) {
       setError(err.message || 'Không thể tải danh sách rơ-mooc');
@@ -39,15 +39,15 @@ export const useRoMooc = () => {
     setError('');
     try {
       const response = await trailerApi.create(formData);
-      
+
       if (response.status !== 'success') {
         throw new Error(response.message || 'Failed to create trailer');
       }
-      
+
       const newTrailer = response.data;
       setData(prev => [...prev, newTrailer]);
       setCount(prev => prev + 1);
-      
+
       return newTrailer;
     } catch (err) {
       setError(err.message || 'Không thể thêm rơ-mooc mới');
@@ -63,17 +63,17 @@ export const useRoMooc = () => {
     setError('');
     try {
       const response = await trailerApi.update(id, formData);
-      
+
       if (response.status !== 'success') {
         throw new Error(response.message || 'Failed to update trailer');
       }
-      
+
       const updatedTrailer = response.data;
       setData(prev => prev.map(item => (item.id === id ? updatedTrailer : item)));
-      
+
       return updatedTrailer;
     } catch (err) {
-      setError(err.message || 'Không thể cập nhật rơ-mooc');
+      setError(err.message || 'Không thể sửa rơ-mooc');
       throw err;
     } finally {
       setLoading(false);
@@ -86,11 +86,11 @@ export const useRoMooc = () => {
     setError('');
     try {
       const response = await trailerApi.delete(id);
-      
+
       if (response.status !== 'success') {
         throw new Error(response.message || 'Failed to delete trailer');
       }
-      
+
       setData(prev => prev.filter(item => item.id !== id));
       setCount(prev => prev - 1);
     } catch (err) {

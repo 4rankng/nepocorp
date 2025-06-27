@@ -67,7 +67,7 @@ const RoMoocListResponsive = ({
       label: 'MÔ TẢ',
       align: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa sửa',
     },
   ];
   // Render action buttons for each row
@@ -89,7 +89,7 @@ const RoMoocListResponsive = ({
                   {item.license_plate}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Mô tả:</strong> {item.description || 'Chưa cập nhật'}
+                  <strong>Mô tả:</strong> {item.description || 'Chưa sửa'}
                 </Typography>
               </Box>
               <Box>

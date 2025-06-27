@@ -68,14 +68,14 @@ const CustomerListResponsive = ({
       label: 'Địa chỉ',
       align: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa sửa',
     },
     {
       key: 'ma_so_thue',
       label: 'Mã số thuế',
       align: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa sửa',
     },
   ];
   // Render action buttons for each row
@@ -102,10 +102,10 @@ const CustomerListResponsive = ({
                   {customer.ten}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Địa chỉ:</strong> {customer.dia_chi || 'Chưa cập nhật'}
+                  <strong>Địa chỉ:</strong> {customer.dia_chi || 'Chưa sửa'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Mã số thuế:</strong> {customer.ma_so_thue || 'Chưa cập nhật'}
+                  <strong>Mã số thuế:</strong> {customer.ma_so_thue || 'Chưa sửa'}
                 </Typography>
               </Box>
               <Box>

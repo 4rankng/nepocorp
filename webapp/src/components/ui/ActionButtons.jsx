@@ -19,12 +19,12 @@ export const FormActionButtons = ({
   extraButtons = null, // Additional buttons to show on the left side
   className = '',
 }) => {
-  const defaultSubmitText = isEdit ? 'Cập nhật' : 'Thêm';
-  
+  const defaultSubmitText = isEdit ? 'Sửa' : 'Thêm';
+
   return (
-    <div className={`action-buttons ${className}`} style={{ 
-      display: 'flex', 
-      justifyContent: 'space-between', 
+    <div className={`action-buttons ${className}`} style={{
+      display: 'flex',
+      justifyContent: 'space-between',
       alignItems: 'center',
       width: '100%'
     }}>
@@ -32,7 +32,7 @@ export const FormActionButtons = ({
       <div style={{ display: 'flex', gap: '8px' }}>
         {extraButtons}
       </div>
-      
+
       {/* Right side - Primary actions */}
       <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
         <Button
@@ -69,10 +69,10 @@ export const ConfirmActionButtons = ({
   confirmVariant = 'primary',
   className = '',
 }) => (
-  <div className={`action-buttons ${className}`} style={{ 
-    display: 'flex', 
-    justifyContent: 'flex-end', 
-    gap: '8px' 
+  <div className={`action-buttons ${className}`} style={{
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '8px'
   }}>
     <Button
       variant="secondary"
@@ -176,10 +176,10 @@ export const ActionButtonGroup = ({
   }[align];
 
   return (
-    <div 
+    <div
       className={`action-button-group ${className}`}
-      style={{ 
-        display: 'flex', 
+      style={{
+        display: 'flex',
         justifyContent,
         gap,
         alignItems: 'center'

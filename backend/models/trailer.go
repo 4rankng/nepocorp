@@ -10,5 +10,5 @@ type Trailer struct {
 	Description   string    `gorm:"type:text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" json:"description"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
-	LastUpdatedBy string    `gorm:"size:255" json:"last_updated_by"` // name (@username) of user who last created/updated the record
+	LastUpdatedBy string    `gorm:"type:varchar(255)" json:"last_updated_by"` // name (@username) of user who last created/updated the record
 }

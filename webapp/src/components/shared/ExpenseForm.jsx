@@ -401,7 +401,7 @@ const ExpenseForm = ({
               loading={isLoading}
               disabled={isLoading}
             >
-              {isEdit ? 'Cập nhật' : 'Thêm'}
+              {isEdit ? 'Sửa' : 'Thêm'}
             </Button>
           </FormActions>
         </FormBody>

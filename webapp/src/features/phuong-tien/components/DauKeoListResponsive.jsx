@@ -75,7 +75,7 @@ const DauKeoListResponsive = ({
       label: 'MÔ TẢ',
       align: 'left',
       sortable: true,
-      render: value => sanitizeDisplayText(value) || 'Chưa cập nhật',
+      render: value => sanitizeDisplayText(value) || 'Chưa sửa',
     },
     {
       key: 'updated_at',
@@ -104,10 +104,10 @@ const DauKeoListResponsive = ({
                   {sanitizeDisplayText(item.license_plate)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Mô tả:</strong> {sanitizeDisplayText(item.description) || 'Chưa cập nhật'}
+                  <strong>Mô tả:</strong> {sanitizeDisplayText(item.description) || 'Chưa sửa'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  <strong>Cập nhật:</strong> {formatDate(item.updated_at)}
+                  <strong>Sửa:</strong> {formatDate(item.updated_at)}
                 </Typography>
               </Box>
               <Box>

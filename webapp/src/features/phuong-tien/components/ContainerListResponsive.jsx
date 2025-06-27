@@ -29,7 +29,7 @@ const ContainerListResponsive = ({
   const page = pagination ? pagination.page - 1 : 0; // MUI uses 0-based indexing
   const rowsPerPage = pagination ? pagination.limit : 10;
   const totalCount = pagination ? pagination.records_count : data.length;
-  
+
   // Handle page change
   const handleChangePage = (event, newPage) => {
     if (onPageChange) {
@@ -58,7 +58,7 @@ const ContainerListResponsive = ({
       label: 'LOẠI CONTAINER',
       align: 'left',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa sửa',
     },
   ];
   // Render action buttons for each row
@@ -77,7 +77,7 @@ const ContainerListResponsive = ({
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
               <Box>
                 <Typography variant="h6" component="div">
-                  {item.category || 'Chưa cập nhật'}
+                  {item.category || 'Chưa sửa'}
                 </Typography>
               </Box>
               <Box>

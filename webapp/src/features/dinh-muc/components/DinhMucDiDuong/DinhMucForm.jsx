@@ -17,13 +17,13 @@ const routeSchema = z.object({
   containerNorms: z.record(z.number().min(0, 'Giá trị phải lớn hơn hoặc bằng 0')),
 });
 
-const DinhMucForm = ({ 
-  editedData, 
-  containerTypes, 
-  onSubmit, 
-  onCancel, 
-  isSaving, 
-  isEditing = false 
+const DinhMucForm = ({
+  editedData,
+  containerTypes,
+  onSubmit,
+  onCancel,
+  isSaving,
+  isEditing = false
 }) => {
   // Initialize form
   const methods = useForm({
@@ -107,7 +107,7 @@ const DinhMucForm = ({
             disabled={isSaving || !isValid}
             startIcon={isSaving && <CircularProgress size={16} />}
           >
-            {isSaving ? 'Đang lưu...' : isEditing ? 'Cập nhật' : 'Thêm mới'}
+            {isSaving ? 'Đang lưu...' : isEditing ? 'Sửa' : 'Thêm mới'}
           </Button>
         </Box>
       </Box>

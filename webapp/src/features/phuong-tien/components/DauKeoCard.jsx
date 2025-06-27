@@ -42,7 +42,7 @@ const DauKeoCard = ({ data, onEdit, onDelete, isLoading }) => (
       )}
       {data.updated_at && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Cập nhật: {formatDate(data.updated_at)}
+          Sửa: {formatDate(data.updated_at)}
         </Typography>
       )}
       <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>

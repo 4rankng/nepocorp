@@ -3,7 +3,7 @@ import { tractorApi } from '@services/api/tractorApi';
 import { trailerApi } from '@services/api/trailerApi';
 
 // Fuel standards API not yet implemented - return empty data
-const dinhMucDauApi = { 
+const dinhMucDauApi = {
   getCount: async () => 0,
   getVoRongRecords: async () => []
 };
@@ -246,7 +246,7 @@ export const useVoRong = () => {
         await fetchVoRongDataRef.current();
         return response.data;
       } catch (err) {
-        setError('Không thể cập nhật định mức vỏ rỗng');
+        setError('Không thể sửa định mức vỏ rỗng');
         throw err;
       } finally {
         setIsLoading(false);

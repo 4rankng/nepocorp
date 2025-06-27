@@ -60,7 +60,7 @@ export const useDinhMucDiDuongLogic = () => {
   // Data processing
   const tableData = useMemo(() => {
     if (!localRoutes || !Array.isArray(localRoutes)) return [];
-    
+
     return localRoutes.map(route => {
       const containerNorms = {};
       if (containerTypes && Array.isArray(containerTypes)) {
@@ -71,7 +71,7 @@ export const useDinhMucDiDuongLogic = () => {
           containerNorms[container.ma_loai_cont] = norm ? norm.gia_dinh_muc || 0 : 0;
         });
       }
-      
+
       return {
         id: route.id || route.ma_tuyen,
         ma_tuyen: route.ma_tuyen || '',
@@ -85,7 +85,7 @@ export const useDinhMucDiDuongLogic = () => {
   const filteredData = useMemo(() => {
     if (!searchTerm) return tableData;
     return tableData.filter(row =>
-      Object.values(row).some(value => 
+      Object.values(row).some(value =>
         value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
@@ -101,7 +101,7 @@ export const useDinhMucDiDuongLogic = () => {
     setIsSaving(true);
     try {
       logger.info('Submitting new route with norms', data);
-      
+
       // Create or update route
       let routeResult;
       if (editingId) {
@@ -125,7 +125,7 @@ export const useDinhMucDiDuongLogic = () => {
           ma_loai_cont: containerKey,
           gia_dinh_muc: data.containerNorms[containerKey],
         };
-        
+
         if (editingId) {
           await updateRoadNorm(normData);
         } else {
@@ -133,14 +133,14 @@ export const useDinhMucDiDuongLogic = () => {
         }
       }
 
-      enqueueSnackbar(editingId ? 'Cập nhật thành công!' : 'Thêm mới thành công!', { 
-        variant: 'success' 
+      enqueueSnackbar(editingId ? 'Sửa thành công!' : 'Thêm mới thành công!', {
+        variant: 'success'
       });
-      
+
       await fetchAllData();
       setEditingId(null);
       setIsAddingNew(false);
-      
+
     } catch (error) {
       logger.error('Error submitting form:', error);
       enqueueSnackbar('Có lỗi xảy ra, vui lòng thử lại', { variant: 'error' });
@@ -157,7 +157,7 @@ export const useDinhMucDiDuongLogic = () => {
 
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
-    
+
     try {
       await deleteTuyenDuongAndNorms(itemToDelete.ma_tuyen);
       enqueueSnackbar('Xóa thành công!', { variant: 'success' });
@@ -189,13 +189,13 @@ export const useDinhMucDiDuongLogic = () => {
       diem_den: '',
       containerNorms: {},
     };
-    
+
     if (containerTypes) {
       containerTypes.forEach(container => {
         newRow.containerNorms[container.ma_loai_cont] = 0;
       });
     }
-    
+
     setEditedData(newRow);
     setIsAddingNew(true);
   };
@@ -232,25 +232,25 @@ export const useDinhMucDiDuongLogic = () => {
     containerTypes,
     localRoutes,
     localRoadNorms,
-    
+
     // Loading states
     isLoading,
     error,
     isSaving,
     isDeleting,
-    
+
     // Edit states
     editingId,
     editedData,
     isAddingNew,
     itemToDelete,
-    
+
     // Pagination and search
     pagination,
     setPagination,
     searchTerm,
     setSearchTerm,
-    
+
     // Handlers
     onSubmit,
     handleDeleteClick,

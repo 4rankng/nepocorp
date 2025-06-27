@@ -40,7 +40,7 @@ const DauKeoContent = () => {
     try {
       if (dialog.edit) {
         await dauKeoHook.update(dialog.data.id, formData);
-        setSnackbar({ open: true, message: 'Cập nhật đầu kéo thành công!', severity: 'success' });
+        setSnackbar({ open: true, message: 'Sửa đầu kéo thành công!', severity: 'success' });
       } else {
         await dauKeoHook.create(formData);
         setSnackbar({ open: true, message: 'Thêm đầu kéo thành công!', severity: 'success' });
@@ -158,7 +158,7 @@ const RoMoocContent = () => {
     try {
       if (dialog.edit) {
         await roMoocHook.update(dialog.data.id, formData);
-        setSnackbar({ open: true, message: 'Cập nhật rơ-mooc thành công!', severity: 'success' });
+        setSnackbar({ open: true, message: 'Sửa rơ-mooc thành công!', severity: 'success' });
       } else {
         await roMoocHook.create(formData);
         setSnackbar({ open: true, message: 'Thêm rơ-mooc thành công!', severity: 'success' });
@@ -276,7 +276,7 @@ const ContainerContent = () => {
     try {
       if (dialog.edit) {
         await containerHook.update(dialog.data.id, formData);
-        setSnackbar({ open: true, message: 'Cập nhật container thành công!', severity: 'success' });
+        setSnackbar({ open: true, message: 'Sửa container thành công!', severity: 'success' });
       } else {
         await containerHook.create(formData);
         setSnackbar({ open: true, message: 'Thêm container thành công!', severity: 'success' });

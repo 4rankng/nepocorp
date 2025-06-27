@@ -100,7 +100,7 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
               loading={isLoading}
               disabled={isLoading || !data?.license_plate}
             >
-              {edit ? 'Cập nhật' : 'Thêm'}
+              {edit ? 'Sửa' : 'Thêm'}
             </Button>
           </FormActions>
         </FormBody>

@@ -26,14 +26,14 @@ const CustomerList = ({
       key: 'dia_chi',
       label: 'Địa chỉ',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa sửa',
       maxWidth: 300,
     },
     {
       key: 'ma_so_thue',
       label: 'Mã số thuế',
       sortable: true,
-      render: value => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa sửa',
     },
   ];
   // Render action buttons for each row

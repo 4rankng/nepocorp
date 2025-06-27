@@ -17,15 +17,15 @@ export const useContainer = () => {
     setError('');
     try {
       const response = await containerApi.getAll(page, limit);
-      
+
       if (response.status !== 'success') {
         throw new Error(response.message || 'Failed to fetch containers');
       }
-      
+
       setData(response.data || []);
       setPagination(response.pagination);
       setCount(response.pagination?.records_count || response.data?.length || 0);
-      
+
       return response.data;
     } catch (err) {
       setError(err.message || 'Không thể tải danh sách container');
@@ -41,19 +41,19 @@ export const useContainer = () => {
     setError('');
     try {
       const response = await containerApi.create(formData);
-      
+
       if (response.status !== 'success') {
         throw new Error(response.message || 'Failed to create container');
       }
-      
+
       const newContainer = response.data;
       setData(prev => [...prev, newContainer]);
       setCount(prev => prev + 1);
-      
+
       // Invalidate and refresh cache after creating
       invalidateCache(['containers']);
       refreshCache(['containers']);
-      
+
       return newContainer;
     } catch (err) {
       setError(err.message || 'Không thể thêm container mới');
@@ -69,21 +69,21 @@ export const useContainer = () => {
     setError('');
     try {
       const response = await containerApi.update(id, formData);
-      
+
       if (response.status !== 'success') {
         throw new Error(response.message || 'Failed to update container');
       }
-      
+
       const updatedContainer = response.data;
       setData(prev => prev.map(item => (item.id === id ? updatedContainer : item)));
-      
+
       // Invalidate and refresh cache after updating
       invalidateCache(['containers']);
       refreshCache(['containers']);
-      
+
       return updatedContainer;
     } catch (err) {
-      setError(err.message || 'Không thể cập nhật container');
+      setError(err.message || 'Không thể sửa container');
       throw err;
     } finally {
       setLoading(false);
@@ -96,14 +96,14 @@ export const useContainer = () => {
     setError('');
     try {
       const response = await containerApi.delete(id);
-      
+
       if (response.status !== 'success') {
         throw new Error(response.message || 'Failed to delete container');
       }
-      
+
       setData(prev => prev.filter(item => item.id !== id));
       setCount(prev => prev - 1);
-      
+
       // Invalidate and refresh cache after deleting
       invalidateCache(['containers']);
       refreshCache(['containers']);

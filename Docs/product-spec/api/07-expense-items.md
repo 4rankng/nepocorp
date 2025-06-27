@@ -73,7 +73,7 @@ Update an existing expense item.
 ```json
 {
   "status": "success",
-  "message": "Cập nhật khoản chi phí thành công",
+  "message": "Sửa khoản chi phí thành công",
   "data": {
     "id": 3,
     "expense_id": 1,

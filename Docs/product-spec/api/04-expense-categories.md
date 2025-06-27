@@ -88,7 +88,7 @@ Update an existing expense category.
 ```json
 {
   "status": "success",
-  "message": "Cập nhật danh mục chi phí thành công",
+  "message": "Sửa danh mục chi phí thành công",
   "data": {
     "id": 4,
     "name": "Phí đường bộ và cầu phà",

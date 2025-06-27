@@ -82,10 +82,10 @@ const PartnerListResponsive = ({
                   </Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Địa chỉ:</strong> {partner.dia_chi || 'Chưa cập nhật'}
+                  <strong>Địa chỉ:</strong> {partner.dia_chi || 'Chưa sửa'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Mã số thuế:</strong> {partner.ma_so_thue || 'Chưa cập nhật'}
+                  <strong>Mã số thuế:</strong> {partner.ma_so_thue || 'Chưa sửa'}
                 </Typography>
               </Box>
               <Box>

@@ -191,11 +191,11 @@ const DesktopShipmentFormDialog = ({
                           value={currentFormData.khach_hang_id}
                           onChange={onFormChange}
                           label="Khách hàng"
-                          sx={{ 
-                            fontSize: '0.8rem', 
-                            height: '36px', 
+                          sx={{
+                            fontSize: '0.8rem',
+                            height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
                           }}
                         >
                           <MenuItem value="">
@@ -217,11 +217,11 @@ const DesktopShipmentFormDialog = ({
                           value={currentFormData.trang_thai}
                           onChange={onFormChange}
                           label="Trạng thái"
-                          sx={{ 
-                            fontSize: '0.8rem', 
-                            height: '36px', 
+                          sx={{
+                            fontSize: '0.8rem',
+                            height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
                           }}
                         >
                           {trangThaiOptions.map(option => (
@@ -322,11 +322,11 @@ const DesktopShipmentFormDialog = ({
                           value={currentFormData.bien_so_xe_id}
                           onChange={onFormChange}
                           label="Biển số xe"
-                          sx={{ 
-                            fontSize: '0.8rem', 
-                            height: '36px', 
+                          sx={{
+                            fontSize: '0.8rem',
+                            height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
                           }}
                         >
                           <MenuItem value="">
@@ -348,11 +348,11 @@ const DesktopShipmentFormDialog = ({
                           value={currentFormData.container_id}
                           onChange={onFormChange}
                           label="Container"
-                          sx={{ 
-                            fontSize: '0.8rem', 
-                            height: '36px', 
+                          sx={{
+                            fontSize: '0.8rem',
+                            height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
                           }}
                         >
                           <MenuItem value="">
@@ -374,11 +374,11 @@ const DesktopShipmentFormDialog = ({
                           value={currentFormData.nhan_vien_lai_xe_id}
                           onChange={onFormChange}
                           label="Nhân viên lái xe"
-                          sx={{ 
-                            fontSize: '0.8rem', 
-                            height: '36px', 
+                          sx={{
+                            fontSize: '0.8rem',
+                            height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
                           }}
                         >
                           <MenuItem value="">
@@ -400,11 +400,11 @@ const DesktopShipmentFormDialog = ({
                           value={currentFormData.nhan_vien_giao_nhan_id}
                           onChange={onFormChange}
                           label="Nhân viên giao nhận"
-                          sx={{ 
-                            fontSize: '0.8rem', 
-                            height: '36px', 
+                          sx={{
+                            fontSize: '0.8rem',
+                            height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' } 
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
                           }}
                         >
                           <MenuItem value="">
@@ -571,8 +571,8 @@ const DesktopShipmentFormDialog = ({
                             onChange={onFormChange}
                             label="Trạng thái kế hoạch"
                             sx={{
-                              fontSize: '0.8rem', 
-                              height: '36px', 
+                              fontSize: '0.8rem',
+                              height: '36px',
                               py: 0,
                               '& .MuiOutlinedInput-root': {
                                 borderRadius: '4px',
@@ -629,10 +629,10 @@ const DesktopShipmentFormDialog = ({
           >
             {isLoading
               ? editing
-                ? 'Đang cập nhật...'
+                ? 'Đang sửa...'
                 : 'Đang tạo...'
               : editing
-                ? 'Cập nhật kế hoạch'
+                ? 'Sửa kế hoạch'
                 : 'Tạo kế hoạch'}
           </Button>
         </DialogActions>

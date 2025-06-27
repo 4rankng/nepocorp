@@ -239,7 +239,7 @@ Update an existing expense.
 ```json
 {
   "status": "success",
-  "message": "Cập nhật chi phí đầu kéo thành công",
+  "message": "Sửa chi phí đầu kéo thành công",
   "data": {
     "id": 1,
     "tractor_id": 1,

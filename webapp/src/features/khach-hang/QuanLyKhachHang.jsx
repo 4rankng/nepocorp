@@ -196,14 +196,14 @@ const QuanLyKhachHang = () => {
                   Địa chỉ:
                 </Typography>
                 <Typography variant="body2">
-                  {deleteDialog.data?.dia_chi || 'Chưa cập nhật'}
+                  {deleteDialog.data?.dia_chi || 'Chưa sửa'}
                 </Typography>
 
                 <Typography variant="body2" fontWeight={500}>
                   Mã số thuế:
                 </Typography>
                 <Typography variant="body2">
-                  {deleteDialog.data?.ma_so_thue || 'Chưa cập nhật'}
+                  {deleteDialog.data?.ma_so_thue || 'Chưa sửa'}
                 </Typography>
               </Box>
             </Box>

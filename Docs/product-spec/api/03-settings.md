@@ -43,7 +43,7 @@ Update the tax rate configuration.
 ```json
 {
   "status": "success",
-  "message": "Cập nhật thuế suất thành công",
+  "message": "Sửa thuế suất thành công",
   "data": {
     "key": "tax_rate",
     "value": "8",

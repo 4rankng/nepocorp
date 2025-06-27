@@ -10,7 +10,7 @@ type ExpenseItem struct {
 	ID           uint       `gorm:"primarykey;autoIncrement" json:"id"`
 	ExpenseID    uint       `gorm:"not null" json:"expense_id"`
 	LicensePlate string     `gorm:"type:varchar(255);not null" json:"license_plate"`
-	ItemName     string     `gorm:"not null" json:"item_name"`
+	ItemName     string     `gorm:"type:varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;not null" json:"item_name"`
 	Price        int64      `gorm:"not null" json:"price"`
 	Quantity     int        `gorm:"not null;default:1" json:"quantity"`
 	TaxRate      float64    `gorm:"not null;default:0" json:"tax_rate"`

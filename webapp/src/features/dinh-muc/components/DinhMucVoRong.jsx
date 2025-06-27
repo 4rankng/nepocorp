@@ -137,7 +137,7 @@ const DinhMucVoRong = () => {
 
       setSnackbar({
         open: true,
-        message: isEdit ? 'Cập nhật thành công!' : 'Thêm mới thành công!',
+        message: isEdit ? 'Sửa thành công!' : 'Thêm mới thành công!',
         severity: 'success',
       });
       handleCloseDialog();

@@ -23,13 +23,13 @@ const PartnerList = ({
     {
       key: 'dia_chi',
       label: 'Địa chỉ',
-      render: value => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa sửa',
       maxWidth: 300,
     },
     {
       key: 'ma_so_thue',
       label: 'Mã số thuế',
-      render: value => value || 'Chưa cập nhật',
+      render: value => value || 'Chưa sửa',
     },
     {
       key: 'actions',

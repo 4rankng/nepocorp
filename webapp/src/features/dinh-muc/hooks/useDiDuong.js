@@ -166,7 +166,7 @@ export const useDiDuong = () => {
       setRoadNorms(prev => prev.map(item => (item.id === id ? updatedNorm : item)));
       return updatedNorm;
     } catch (err) {
-      setError('Không thể cập nhật định mức đi đường');
+      setError('Không thể sửa định mức đi đường');
       throw err;
     } finally {
       setIsLoading(false);

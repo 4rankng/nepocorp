@@ -78,7 +78,7 @@ Manage tractors, trailers, and containers in the fleet.
 ```json
 {
   "status": "success",
-  "message": "Cập nhật đầu kéo thành công",
+  "message": "Sửa đầu kéo thành công",
   "data": {
     "id": 2,
     "license_plate": "16C-444.66",
@@ -176,7 +176,7 @@ Manage tractors, trailers, and containers in the fleet.
 ```json
 {
   "status": "success",
-  "message": "Cập nhật rơ moóc thành công",
+  "message": "Sửa rơ moóc thành công",
   "data": {
     "id": 2,
     "license_plate": "16C-222.44",
@@ -276,7 +276,7 @@ Manage tractors, trailers, and containers in the fleet.
 ```json
 {
   "status": "success",
-  "message": "Cập nhật container thành công",
+  "message": "Sửa container thành công",
   "data": {
     "id": 3,
     "category": "45HC",

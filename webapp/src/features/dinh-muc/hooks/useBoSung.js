@@ -42,7 +42,7 @@ export const useBoSung = () => {
       setSupplementaryStandard(newValue);
       return response.data;
     } catch (err) {
-      setError('Lỗi khi cập nhật định mức bổ sung');
+      setError('Lỗi khi sửa định mức bổ sung');
       throw err;
     } finally {
       setIsLoading(false);

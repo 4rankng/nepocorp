@@ -91,14 +91,14 @@ export default function useMaintenanceRecords() {
       setIsLoading(true);
       try {
         const response = await maintenanceApi.getByLicensePlate(
-          licensePlate, 
-          page + 1, 
+          licensePlate,
+          page + 1,
           pageSize
         );
-        
+
         const data = response.data || [];
         setMaintenanceRecords(data);
-        
+
         setPagination(prev => ({
           ...prev,
           page,
@@ -106,7 +106,7 @@ export default function useMaintenanceRecords() {
           total: response.pagination?.records_count || 0,
           totalPages: response.pagination?.total_pages || 1,
         }));
-        
+
         setError('');
       } catch (err) {
         logger.error('Error loading maintenance records by license plate', { error: err });
@@ -126,10 +126,10 @@ export default function useMaintenanceRecords() {
       setIsLoading(true);
       try {
         const response = await maintenanceApi.create(maintenanceData);
-        
+
         // Refresh the data after creation
         await fetchData(pagination.page, pagination.pageSize);
-        
+
         return response;
       } catch (err) {
         logger.error('Error creating maintenance record', { error: err });
@@ -149,14 +149,14 @@ export default function useMaintenanceRecords() {
       setIsLoading(true);
       try {
         const response = await maintenanceApi.update(id, maintenanceData);
-        
+
         // Refresh the data after update
         await fetchData(pagination.page, pagination.pageSize);
-        
+
         return response;
       } catch (err) {
         logger.error('Error updating maintenance record', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể cập nhật bản ghi bảo dưỡng');
+        const errorMessage = extractErrorMessage(err, 'Không thể sửa bản ghi bảo dưỡng');
         setError(errorMessage);
         throw err;
       } finally {
@@ -172,10 +172,10 @@ export default function useMaintenanceRecords() {
       setIsLoading(true);
       try {
         const response = await maintenanceApi.delete(id);
-        
+
         // Refresh the data after deletion
         await fetchData(pagination.page, pagination.pageSize);
-        
+
         return response;
       } catch (err) {
         logger.error('Error deleting maintenance record', { error: err });

@@ -321,7 +321,7 @@ const QuanLyLichVanChuyen = () => {
         await editLichVanChuyen(editingItem.id, formData);
         setSnackbar({
           open: true,
-          message: 'Cập nhật lịch vận chuyển thành công!',
+          message: 'Sửa lịch vận chuyển thành công!',
           severity: 'success',
         });
       } else {
