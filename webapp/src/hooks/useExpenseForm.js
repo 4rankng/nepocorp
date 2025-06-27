@@ -1,4 +1,4 @@
-import { useState, useCallback, useContext } from 'react';
+import { useState, useCallback, useContext, useEffect } from 'react';
 import logger from '@services/logger';
 import { VehicleDataContext } from '@contexts/VehicleDataContext';
 import { extractErrorMessage, isValidationError } from '@utils/errorUtils';
@@ -102,6 +102,13 @@ export default function useExpenseForm({
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
+  // Update formData when initialFormData changes (for edit mode)
+  useEffect(() => {
+    setFormData(initialFormData);
+    setErrors({}); // Clear errors when switching between add/edit
+  }, [initialFormData]);
+
+
   const handleInputChange = useCallback(e => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -109,11 +116,14 @@ export default function useExpenseForm({
       [name]: value,
     }));
 
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  }, [errors]);
+    // Clear error for this field - use functional update to avoid stale closures
+    setErrors(prev => {
+      if (prev[name]) {
+        return { ...prev, [name]: '' };
+      }
+      return prev;
+    });
+  }, []);
 
   const validateForm = useCallback(() => {
     const newErrors = validateExpenseForm(formData, expenseCategoryId);

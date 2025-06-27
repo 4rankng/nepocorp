@@ -192,6 +192,13 @@ const StandardTable = ({
     sortable: _sortable,
     defaultSort: _defaultSort,
     onSortChange: _onSortChange,
+    rowsPerPage: _rowsPerPage,
+    page: _page,
+    totalCount: _totalCount,
+    onPageChange: _onPageChange,
+    onRowsPerPageChange: _onRowsPerPageChange,
+    paginationProps: _paginationProps,
+    customRowsPerPageOptions: _customRowsPerPageOptions,
     ...cleanTableProps
   } = tableProps || {};
   return (

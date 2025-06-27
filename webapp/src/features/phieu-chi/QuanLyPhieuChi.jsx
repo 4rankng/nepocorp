@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import ExpenseForm from '@/components/shared/ExpenseForm';
@@ -113,9 +113,12 @@ const QuanLyPhieuChi = () => {
     };
   };
 
+  // Memoize the initial form data to prevent unnecessary recreations
+  const initialFormData = useMemo(() => getInitialFormData(), [editingExpense]);
+  
   // Single form manager that updates based on editing state
   const formManager = useExpenseForm({
-    initialFormData: getInitialFormData(),
+    initialFormData,
     onSuccess: (message) => {
       showSnackbar(message, 'success');
       setShowExpenseForm(false);
@@ -129,14 +132,6 @@ const QuanLyPhieuChi = () => {
     api: expenseApi
   });
 
-  // Update form data when editingExpense changes
-  useEffect(() => {
-    if (showExpenseForm) {
-      const newFormData = getInitialFormData();
-      formManager.setFormData(newFormData);
-      formManager.setErrors({}); // Clear any previous errors
-    }
-  }, [editingExpense, showExpenseForm]);
 
   const handleAddExpense = useCallback(async () => {
     setEditingExpense(null);
