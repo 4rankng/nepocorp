@@ -6,12 +6,12 @@ export const PAYMENT_STATUS = {
   CANCELLED: 'CANCELLED'
 };
 
-// Payment status display labels (Vietnamese)
+// Payment status display labels (English)
 export const PAYMENT_STATUS_LABELS = {
-  [PAYMENT_STATUS.DRAFT]: 'Nháp',
-  [PAYMENT_STATUS.PENDING]: 'Chờ thanh toán',
-  [PAYMENT_STATUS.PAID]: 'Đã thanh toán',
-  [PAYMENT_STATUS.CANCELLED]: 'Đã hủy'
+  [PAYMENT_STATUS.DRAFT]: 'DRAFT',
+  [PAYMENT_STATUS.PENDING]: 'PENDING',
+  [PAYMENT_STATUS.PAID]: 'PAID',
+  [PAYMENT_STATUS.CANCELLED]: 'CANCELLED'
 };
 
 // Payment status colors for UI

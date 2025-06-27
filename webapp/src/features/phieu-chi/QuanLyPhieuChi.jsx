@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ExpenseForm from '@/components/shared/ExpenseForm';
 import ExpenseList from '@/components/shared/ExpenseList';
-import ExpenseDetailDialog from '@/components/shared/ExpenseDetailDialog';
+import InvoiceModal from '@/components/InvoiceModal';
 import useExpenses from './hooks/useExpenses';
 import { Fab, Zoom } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
@@ -11,8 +11,8 @@ const QuanLyPhieuChi = () => {
   const { currentUser } = useAuth();
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
-  const [viewingExpense, setViewingExpense] = useState(null);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [viewingExpenseId, setViewingExpenseId] = useState(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   
   const {
     expenses,
@@ -34,8 +34,8 @@ const QuanLyPhieuChi = () => {
   };
 
   const handleViewExpense = (expense) => {
-    setViewingExpense(expense);
-    setShowDetailDialog(true);
+    setViewingExpenseId(expense.id);
+    setShowInvoiceModal(true);
   };
 
   const handleCloseForm = () => {
@@ -43,9 +43,9 @@ const QuanLyPhieuChi = () => {
     setEditingExpense(null);
   };
 
-  const handleCloseDetailDialog = () => {
-    setShowDetailDialog(false);
-    setViewingExpense(null);
+  const handleCloseInvoiceModal = () => {
+    setShowInvoiceModal(false);
+    setViewingExpenseId(null);
   };
 
   const handleDeleteExpense = async (expense) => {
@@ -88,12 +88,11 @@ const QuanLyPhieuChi = () => {
         />
       </div>
 
-      {/* Expense Detail Dialog */}
-      <ExpenseDetailDialog
-        open={showDetailDialog}
-        onClose={handleCloseDetailDialog}
-        expense={viewingExpense}
-        categories={categories}
+      {/* Invoice Modal */}
+      <InvoiceModal
+        open={showInvoiceModal}
+        onClose={handleCloseInvoiceModal}
+        expenseId={viewingExpenseId}
       />
 
       {/* FAB Button */}

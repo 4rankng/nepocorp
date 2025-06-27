@@ -13,6 +13,7 @@ type Expense struct {
 	PaymentProof      string     `json:"payment_proof"`
 	Currency          string     `gorm:"not null;default:'VND'" json:"currency"`
 	Remark            string     `json:"remark"`
+	CancelReason      string     `gorm:"type:text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" json:"cancel_reason"`
 	CreatedBy         uint       `gorm:"not null" json:"created_by"`
 	LastUpdatedBy     string     `gorm:"type:varchar(255)" json:"last_updated_by"` // name (@username) of user who last created/updated the record
 	CreatedAt         time.Time  `json:"created_at"`

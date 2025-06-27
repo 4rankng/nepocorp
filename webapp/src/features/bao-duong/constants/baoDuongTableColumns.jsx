@@ -41,19 +41,6 @@ const formatDate = (value, row, index) => {
   }
 };
 
-// Helper function to map payment status to Vietnamese
-const getPaymentStatusText = (status) => {
-  const statusMap = {
-    'DRAFT': 'Nháp',
-    'PENDING': 'Chờ xử lý',
-    'PAID': 'Đã thanh toán',
-    'UNPAID': 'Chưa thanh toán',
-    'CANCELLED': 'Đã hủy',
-    'APPROVED': 'Đã duyệt',
-    'REJECTED': 'Đã từ chối'
-  };
-  return statusMap[status] || status;
-};
 
 export const getBaoDuongTableColumns = (onInvoiceClick) => {
   return [

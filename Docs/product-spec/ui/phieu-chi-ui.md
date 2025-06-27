@@ -18,3 +18,5 @@ delete icon
 FAB icon bottom right to add new phieu chi
 
 
+Click eye icon should open expense detail modal (eg InvoiceModal)
+

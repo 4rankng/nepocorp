@@ -17,6 +17,7 @@ import {
   Grid,
 } from '@mui/material';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { expenseApi } from '@services/api/expenseApi';
 import { Modal, FormContainer, FormHeader, FormBody } from './ui';
 
@@ -36,28 +37,18 @@ const formatDate = (dateString) => {
 const getPaymentStatusColor = (status) => {
   switch (status) {
     case 'PAID':
-      return 'success';
+      return '#10b981';
     case 'PENDING':
-      return 'warning';
+      return '#f59e0b';
     case 'DRAFT':
-      return 'default';
+      return '#6b7280';
+    case 'CANCELLED':
+      return '#ef4444';
     default:
-      return 'default';
+      return '#6b7280';
   }
 };
 
-const getPaymentStatusText = (status) => {
-  switch (status) {
-    case 'PAID':
-      return 'Đã thanh toán';
-    case 'PENDING':
-      return 'Chờ thanh toán';
-    case 'DRAFT':
-      return 'Nháp';
-    default:
-      return status;
-  }
-};
 
 const InvoiceModal = ({ open, onClose, expenseId }) => {
   const [expenseData, setExpenseData] = useState(null);
@@ -166,12 +157,23 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                     <Typography variant="body2" color="text.secondary" className="mb-1">
                       Trạng thái thanh toán
                     </Typography>
-                    <Chip
-                      label={getPaymentStatusText(expenseData.payment_status)}
-                      color={getPaymentStatusColor(expenseData.payment_status)}
-                      size="small"
-                      sx={{ mt: 0.5 }}
-                    />
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        color: getPaymentStatusColor(expenseData.payment_status),
+                        backgroundColor: 'transparent',
+                        minWidth: '80px',
+                        textAlign: 'center',
+                        marginTop: '4px',
+                      }}
+                    >
+                      {expenseData.payment_status}
+                    </span>
                   </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -272,6 +274,37 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                   })()}
                 </Box>
               </Box>
+
+              {/* Payment Proof Section for PAID status */}
+              {expenseData.payment_status === 'PAID' && expenseData.payment_proof && (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" className="mb-2">
+                    Chứng từ thanh toán
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloudDownloadIcon />}
+                    onClick={() => window.open(expenseData.payment_proof, '_blank')}
+                    sx={{ mb: 2 }}
+                  >
+                    Xem chứng từ thanh toán
+                  </Button>
+                </Box>
+              )}
+
+              {/* Cancel Reason Section for CANCELLED status */}
+              {expenseData.payment_status === 'CANCELLED' && expenseData.cancel_reason && (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" className="mb-2">
+                    Lý do hủy
+                  </Typography>
+                  <Box className="p-3 bg-red-50 rounded border border-red-200">
+                    <Typography variant="body2" color="error">
+                      {expenseData.cancel_reason}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
 
               {expenseData.remark && (
                 <Box>

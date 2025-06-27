@@ -75,12 +75,15 @@ const PaymentManagement = ({
       <span 
         style={{
           display: 'inline-block',
-          padding: '2px 8px',
-          borderRadius: '12px',
+          padding: '4px 12px',
+          border: `1px solid ${getStatusColor(status)}`,
+          borderRadius: '4px',
           fontSize: '12px',
           fontWeight: '500',
-          color: 'white',
-          backgroundColor: getStatusColor(status),
+          color: getStatusColor(status),
+          backgroundColor: 'transparent',
+          minWidth: '80px',
+          textAlign: 'center',
           marginLeft: '8px'
         }}
       >
