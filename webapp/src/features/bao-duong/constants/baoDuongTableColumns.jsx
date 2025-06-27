@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatCurrency } from '../utils/baoDuongUtils';
-import { EditButton, DeleteButton } from '@/components/ActionButtons';
+import { InvoiceButton } from '@/components/ActionButtons';
 
 // Robust date formatting function
 const formatDate = (value, row, index) => {
@@ -55,7 +55,7 @@ const getPaymentStatusText = (status) => {
   return statusMap[status] || status;
 };
 
-export const getBaoDuongTableColumns = () => {
+export const getBaoDuongTableColumns = (onInvoiceClick) => {
   return [
     {
       key: 'license_plate',
@@ -107,6 +107,14 @@ export const getBaoDuongTableColumns = () => {
       maxWidth: 100,
     },
     {
+      key: 'tax_rate',
+      label: 'Thuế (%)',
+      render: (value) => value ? `${value}%` : '0%',
+      align: 'right',
+      sortable: true,
+      minWidth: 80,
+    },
+    {
       key: 'total',
       label: 'Tổng tiền',
       render: formatCurrency,
@@ -114,7 +122,27 @@ export const getBaoDuongTableColumns = () => {
       sortable: true,
       minWidth: 120,
     },
+    {
+      key: 'actions',
+      label: 'Hóa đơn',
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      minWidth: 80,
+      maxWidth: 80,
+      render: (value, row) => (
+        <InvoiceButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            onInvoiceClick(row);
+          }}
+          disabled={!row.expense_id}
+          tooltip={row.expense_id ? 'Xem hóa đơn' : 'Không có hóa đơn'}
+        />
+      ),
+    },
   ];
 };
 
-export const baoDuongTableColumns = getBaoDuongTableColumns();
+export const baoDuongTableColumns = getBaoDuongTableColumns;

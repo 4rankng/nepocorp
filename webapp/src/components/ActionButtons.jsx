@@ -3,7 +3,7 @@ import { IconButton, Button } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { PencilIcon, TrashIcon } from '@assets/icons';
 import { useTheme } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Receipt as ReceiptIcon } from '@mui/icons-material';
 import { forwardRef } from 'react';
 // Enhanced theme configuration based on DinhMucDau.jsx
 const theme = {
@@ -277,3 +277,48 @@ export const AddButton = forwardRef(
   }
 );
 AddButton.displayName = 'AddButton';
+
+export const InvoiceButton = forwardRef(
+  (
+    {
+      onClick,
+      size = 'small',
+      disabled = false,
+      tooltip = 'Xem hóa đơn',
+      // Extract and omit the jsx prop to prevent it from being passed to DOM
+      jsx: _jsx,
+      ...props
+    },
+    ref
+  ) => {
+    // Filter out the jsx prop before spreading the rest
+    const { jsx: _, ...filteredProps } = props || {};
+    return (
+      <IconButton
+        ref={ref}
+        size={size}
+        onClick={onClick}
+        disabled={disabled}
+        title={tooltip}
+        sx={{
+          color: theme.palette.text.secondary,
+          '&:hover': {
+            color: '#4caf50', // Green color for invoice/success
+            backgroundColor: alpha('#4caf50', 0.08),
+          },
+          p: 0.5,
+          '& .MuiSvgIcon-root': {
+            fontSize: '1.125rem',
+          },
+          '&.Mui-disabled': {
+            color: 'rgba(0, 0, 0, 0.26)',
+          },
+        }}
+        {...filteredProps}
+      >
+        <ReceiptIcon />
+      </IconButton>
+    );
+  }
+);
+InvoiceButton.displayName = 'InvoiceButton';

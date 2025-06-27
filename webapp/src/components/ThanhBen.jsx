@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { getMenuItems } from '@/config/roles';
+import { getMenuItems } from '@/config/menu-items';
 import {
   ChartBarIcon,
   CalendarIcon,

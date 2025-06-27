@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nepocorp/backend/common"
@@ -17,6 +17,8 @@ type ExpenseHandler struct {
 	categoryRepo *repositories.ExpenseCategoryRepository
 }
 
+var validPaymentStatuses = []string{"DRAFT", "PENDING", "PAID", "CANCELLED"}
+
 func NewExpenseHandler(repo *repositories.ExpenseRepository, categoryRepo *repositories.ExpenseCategoryRepository) *ExpenseHandler {
 	return &ExpenseHandler{
 		repo:         repo,
@@ -24,18 +26,41 @@ func NewExpenseHandler(repo *repositories.ExpenseRepository, categoryRepo *repos
 	}
 }
 
+func isValidPaymentStatus(status string) bool {
+	status = strings.ToUpper(status)
+	for _, validStatus := range validPaymentStatuses {
+		if status == validStatus {
+			return true
+		}
+	}
+	return false
+}
+
 func (h *ExpenseHandler) List(c *gin.Context) {
 	page, limit := utils.GetPaginationParams(c)
 	offset := (page - 1) * limit
 
-	expenses, err := h.repo.List(offset, limit)
+	// Get filter parameters
+	tractorID := c.Query("tractor_id")
+	trailerID := c.Query("trailer_id")
+	expenseCategoryID := c.Query("expense_category_id")
+	paymentStatus := c.Query("payment_status")
+
+	filters := map[string]string{
+		"tractor_id":          tractorID,
+		"trailer_id":          trailerID,
+		"expense_category_id": expenseCategoryID,
+		"payment_status":      paymentStatus,
+	}
+
+	expenses, err := h.repo.ListWithFilters(offset, limit, filters)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrFetchTractorExpenses, 
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
 		return
 	}
 
-	totalRecords, err := h.repo.Count()
+	totalRecords, err := h.repo.CountWithFilters(filters)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCountTractorExpenses, 
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
@@ -81,18 +106,19 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 	}
 	expense.CreatedBy = userID.(uint)
 
-	// Validate that either tractor_id or trailer_id is provided (but not both)
-	if (expense.TractorID == nil && expense.TrailerID == nil) || 
-	   (expense.TractorID != nil && expense.TrailerID != nil) {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
-			utils.ErrorDetail{Code: common.CodeRequiredField, Message: "Either tractor_id or trailer_id is required (but not both)"})
-		return
-	}
+	// Note: Vehicle association is now handled at the item level via license_plate
 
 	// Validate required fields
 	if expense.ExpenseCategoryID == 0 {
 		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrRequiredFields})
+		return
+	}
+
+	// Validate payment status
+	if expense.PaymentStatus != "" && !isValidPaymentStatus(expense.PaymentStatus) {
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+			utils.ErrorDetail{Code: common.CodeInvalidInput, Message: "Payment status must be one of: DRAFT, PENDING, PAID, CANCELLED"})
 		return
 	}
 
@@ -138,7 +164,7 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var updateData map[string]interface{}
+	var updateData map[string]any
 	if err := c.ShouldBindJSON(&updateData); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
 			utils.ErrorDetail{Code: common.CodeBadRequest, Message: err.Error()})
@@ -150,6 +176,11 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 		existingExpense.VendorName = vendorName
 	}
 	if paymentStatus, ok := updateData["payment_status"].(string); ok && paymentStatus != "" {
+		if !isValidPaymentStatus(paymentStatus) {
+			utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+				utils.ErrorDetail{Code: common.CodeInvalidInput, Message: "Payment status must be one of: DRAFT, PENDING, PAID, CANCELLED"})
+			return
+		}
 		existingExpense.PaymentStatus = paymentStatus
 	}
 	if paymentProof, ok := updateData["payment_proof"].(string); ok {
@@ -161,65 +192,12 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	if currency, ok := updateData["currency"].(string); ok && currency != "" {
 		existingExpense.Currency = currency
 	}
-	if subtotal, ok := updateData["subtotal"].(float64); ok {
-		existingExpense.Subtotal = int64(subtotal)
-	}
-	if taxRate, ok := updateData["tax_rate"].(float64); ok {
-		existingExpense.TaxRate = int(taxRate)
-	}
 	if total, ok := updateData["total"].(float64); ok {
 		existingExpense.Total = int64(total)
 	}
 
-	// Handle items update
-	if itemsData, ok := updateData["items"].([]interface{}); ok {
-		for _, itemInterface := range itemsData {
-			if itemMap, ok := itemInterface.(map[string]interface{}); ok {
-				// Convert map to JSON then unmarshal to ExpenseItem to handle date parsing
-				itemJSON, err := json.Marshal(itemMap)
-				if err != nil {
-					continue
-				}
-				
-				var updateItem models.ExpenseItem
-				if err := json.Unmarshal(itemJSON, &updateItem); err != nil {
-					continue
-				}
-
-				// Find existing item by matching with expense items
-				for _, existingItem := range existingExpense.Items {
-					// Update the first item (assuming single item update for now)
-					// In a more robust implementation, you'd match by item ID
-					if updateItem.InstallDate != nil {
-						existingItem.InstallDate = updateItem.InstallDate
-					}
-					if updateItem.ExpiryDate != nil {
-						existingItem.ExpiryDate = updateItem.ExpiryDate
-					}
-					if updateItem.ItemName != "" {
-						existingItem.ItemName = updateItem.ItemName
-					}
-					if updateItem.Price > 0 {
-						existingItem.Price = updateItem.Price
-					}
-					if updateItem.Quantity > 0 {
-						existingItem.Quantity = updateItem.Quantity
-					}
-					if updateItem.Total > 0 {
-						existingItem.Total = updateItem.Total
-					}
-
-					// Update the item in database
-					if err := h.repo.UpdateItem(&existingItem); err != nil {
-						utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateExpenseItem, 
-							utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})
-						return
-					}
-					break // Only update the first item for now
-				}
-			}
-		}
-	}
+	// Note: Item updates should be done through dedicated item endpoints
+	// This expense update endpoint focuses on expense-level fields only
 
 	if err := h.repo.UpdateWithUser(existingExpense, userID.(uint)); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractorExpense, 
@@ -281,7 +259,7 @@ func (h *ExpenseHandler) CreateItem(c *gin.Context) {
 	item.ExpenseID = uint(expenseID)
 
 	// Validate required fields
-	if item.ItemName == "" || item.Price == 0 || item.Quantity == 0 {
+	if item.ItemName == "" || item.Price == 0 || item.Quantity == 0 || item.LicensePlate == "" {
 		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrRequiredFields})
 		return
@@ -334,6 +312,12 @@ func (h *ExpenseHandler) UpdateItem(c *gin.Context) {
 	}
 	if updateData.Quantity > 0 {
 		existingItem.Quantity = updateData.Quantity
+	}
+	if updateData.LicensePlate != "" {
+		existingItem.LicensePlate = updateData.LicensePlate
+	}
+	if updateData.TaxRate >= 0 {
+		existingItem.TaxRate = updateData.TaxRate
 	}
 	if updateData.Total > 0 {
 		existingItem.Total = updateData.Total

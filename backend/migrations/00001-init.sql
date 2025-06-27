@@ -86,12 +86,8 @@ CREATE TABLE IF NOT EXISTS trailers (
 -- Create expenses table (unified for both tractors and trailers)
 CREATE TABLE IF NOT EXISTS expenses (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tractor_id BIGINT UNSIGNED NULL,
-    trailer_id BIGINT UNSIGNED NULL,
     vendor_name VARCHAR(255) NOT NULL,
     expense_category_id BIGINT UNSIGNED NOT NULL,
-    subtotal BIGINT NOT NULL,
-    tax_rate INT NOT NULL DEFAULT 0,
     total BIGINT NOT NULL,
     payment_status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
     payment_proof VARCHAR(500),
@@ -101,35 +97,29 @@ CREATE TABLE IF NOT EXISTS expenses (
     last_updated_by VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (tractor_id) REFERENCES tractors(id) ON DELETE CASCADE,
-    FOREIGN KEY (trailer_id) REFERENCES trailers(id) ON DELETE CASCADE,
     FOREIGN KEY (expense_category_id) REFERENCES expense_categories(id) ON DELETE RESTRICT,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
-    INDEX idx_tractor_id (tractor_id),
-    INDEX idx_trailer_id (trailer_id),
     INDEX idx_expense_category_id (expense_category_id),
-    INDEX idx_payment_status (payment_status),
-    -- Ensure expense belongs to either tractor or trailer, but not both
-    CONSTRAINT chk_expense_vehicle CHECK (
-        (tractor_id IS NOT NULL AND trailer_id IS NULL) OR
-        (tractor_id IS NULL AND trailer_id IS NOT NULL)
-    )
+    INDEX idx_payment_status (payment_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create expense_items table
 CREATE TABLE IF NOT EXISTS expense_items (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     expense_id BIGINT UNSIGNED NOT NULL,
+    license_plate VARCHAR(255) NOT NULL,
     item_name VARCHAR(255) NOT NULL,
     price BIGINT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
+    tax_rate FLOAT NOT NULL DEFAULT 0,
     total BIGINT NOT NULL,
     install_date DATETIME DEFAULT NULL,
     expiry_date DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (expense_id) REFERENCES expenses(id) ON DELETE CASCADE,
-    INDEX idx_expense_id (expense_id)
+    INDEX idx_expense_id (expense_id),
+    INDEX idx_license_plate (license_plate)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create maintenance table
@@ -187,22 +177,4 @@ INSERT IGNORE INTO expense_categories (name) VALUES
 -- Views for reporting (optional)
 -- ================================================================
 
--- Create view for expense summary by vehicle
-CREATE OR REPLACE VIEW expense_summary AS
-SELECT
-    e.id,
-    CASE
-        WHEN e.tractor_id IS NOT NULL THEN CONCAT('Tractor: ', t.license_plate)
-        WHEN e.trailer_id IS NOT NULL THEN CONCAT('Trailer: ', tr.license_plate)
-        ELSE 'Unknown Vehicle'
-    END as vehicle,
-    ec.name as category,
-    e.vendor_name,
-    e.total,
-    e.currency,
-    e.payment_status,
-    e.created_at
-FROM expenses e
-LEFT JOIN tractors t ON e.tractor_id = t.id
-LEFT JOIN trailers tr ON e.trailer_id = tr.id
-LEFT JOIN expense_categories ec ON e.expense_category_id = ec.id;
+-- Views removed to simplify schema - can be recreated as needed

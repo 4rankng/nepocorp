@@ -3,46 +3,17 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
 import {
   Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  TextField,
   CircularProgress,
   Snackbar,
   Alert,
   Typography,
-  IconButton,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  InputAdornment,
-  Paper,
-  Card,
-  CardContent,
-  Chip,
-  Collapse,
   useTheme,
-  Divider,
-  Fab,
-  Zoom,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { vi } from 'date-fns/locale';
-import CloseIcon from '@mui/icons-material/Close';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import AddIcon from '@mui/icons-material/Add'; // This AddIcon will be used for the FAB
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import StandardTable from '@/components/StandardTable';
-import { EditButton, DeleteButton } from '@/components/ActionButtons';
 // Utility function to format currency
 const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN', {
@@ -51,32 +22,17 @@ const formatCurrency = value => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-import ConfirmDialog from '@/components/ConfirmDialog';
 import InvoiceModal from '@/components/InvoiceModal';
 import { maintenanceApi } from '@services/api/maintenanceApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
-import BaoDuongDialog from './components/BaoDuongDialog';
 import { getBaoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
 import useMaintenanceRecords from './hooks/useMaintenanceRecords';
 import { useVehicleData } from '@contexts/VehicleDataContext';
 import { extractErrorMessage, isValidationError, extractValidationErrors } from '@utils/errorUtils';
-const initialFormData = {
-  license_plate: '',
-  vendor_name: '',
-  item_name: '',
-  price: '',
-  quantity: '',
-  install_date: '',
-  expiry_date: '',
-  remark: '',
-};
 const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [isEdit, setIsEdit] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, recordId: null, details: null });
   const [invoiceModal, setInvoiceModal] = useState({ open: false, expenseId: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -148,19 +104,6 @@ const QuanLyBaoDuong = memo(() => {
     onPageChange: handlePageChange,
     onRowsPerPageChange: handleRowsPerPageChange,
   } = pagination;
-  // Form state
-  const [formData, setFormData] = useState(initialFormData);
-  const [formErrors, setErrors] = useState({});
-  const [isFormLoading, setFormLoading] = useState(false);
-  
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (formErrors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
   // Fetch initial data on mount
   useEffect(() => {
     fetchData(0, 100);
@@ -179,58 +122,17 @@ const QuanLyBaoDuong = memo(() => {
     }
   }, [vehicleErrors.tractors, vehicleErrors.trailers]);
 
-  // Removed refetchCount as we're working with maintenance items directly
-  const handleOpenAddDialog = () => {
-    setIsEdit(false);
-    setFormData(initialFormData);
-    setErrors({});
-    setOpenDialog(true);
-  };
-  const handleOpenEditDialog = record => {
-    setIsEdit(true);
-    // For maintenance records, we store the maintenance data
-    setFormData({
-      // Maintenance record fields
-      id: record.id,
-      license_plate: record.license_plate,
-      item_name: record.item_name || '',
-      price: record.price || '',
-      quantity: record.quantity || '',
-      install_date: record.install_date || '',
-      expiry_date: record.expiry_date || '',
-      vendor_name: record.vendor_name || '',
-      remark: record.remark || '',
-      
-      // Store expense_id for invoice functionality
-      expense_id: record.expense_id,
-      
-      // Legacy fields for compatibility with form components
-      payment_status: 'DRAFT',
-      payment_proof: '',
-      items: [{
-        item_name: record.item_name || '',
-        price: record.price || '',
-        quantity: record.quantity || '',
-        install_date: record.install_date || '',
-        expiry_date: record.expiry_date || ''
-      }],
-      tax_rate: 10,
-      currency: 'VND',
-    });
-    setErrors({});
-    setOpenDialog(true);
-  };
-  const handleCloseDialog = useCallback(() => {
-    setOpenDialog(false);
-    setFormData(initialFormData);
-    setErrors({});
-  }, []);
   const handleInvoiceClick = (maintenanceRecord) => {
+    console.log('Invoice button clicked for maintenance record:', maintenanceRecord);
     // Use expense_id from maintenance record to show the related invoice
     const expenseId = maintenanceRecord?.expense_id || maintenanceRecord;
+    console.log('Extracted expense_id:', expenseId);
+    
     if (expenseId) {
+      console.log('Opening invoice modal with expense_id:', expenseId);
       setInvoiceModal({ open: true, expenseId });
     } else {
+      console.warn('No expense_id found in maintenance record:', maintenanceRecord);
       setSnackbar({
         open: true,
         message: 'Không có hóa đơn liên kết với bản ghi bảo dưỡng này',
@@ -241,111 +143,6 @@ const QuanLyBaoDuong = memo(() => {
   const handleInvoiceClose = () => {
     setInvoiceModal({ open: false, expenseId: null });
   };
-  const handleDeleteClick = record => {
-    setDeleteDialog({
-      open: true,
-      recordId: record.id,
-      details: {
-        'Biển số xe': record.license_plate,
-        'Hạng mục': record.item_name,
-        'Ngày lắp đặt': record.install_date
-          ? new Date(record.install_date).toLocaleDateString('vi-VN')
-          : 'N/A',
-        'Ngày hết hạn': record.expiry_date
-          ? new Date(record.expiry_date).toLocaleDateString('vi-VN')
-          : 'N/A',
-        'Số lượng': record.quantity,
-        'Đơn giá': formatCurrency(record.price),
-        'Thành tiền': formatCurrency((record.price || 0) * (record.quantity || 0)),
-        'Ghi chú': record.remark || 'Không có',
-      },
-    });
-  };
-  const handleDeleteClose = () => {
-    setDeleteDialog(prev => ({ ...prev, open: false }));
-  };
-  const handleDeleteConfirm = async () => {
-    if (!deleteDialog.recordId) return;
-    setFormLoading(true);
-    try {
-      await deleteMaintenance(deleteDialog.recordId);
-      setSnackbar({
-        open: true,
-        message: 'Xóa thông tin bảo dưỡng thành công',
-        severity: 'success',
-      });
-      fetchData();
-      handleDeleteClose();
-    } catch (err) {
-      const errorMessage = extractErrorMessage(err, 'Đã xảy ra lỗi khi xóa thông tin bảo dưỡng');
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
-    } finally {
-      setFormLoading(false);
-    }
-  };
-  // Handle save from dialog with proper error handling and pagination
-  const handleSave = useCallback(
-    async e => {
-      e.preventDefault();
-      try {
-        setFormLoading(true);
-        
-        // Validate required fields
-        const newErrors = {};
-        if (!formData.license_plate) newErrors.license_plate = 'Biển số xe là bắt buộc';
-        if (!formData.item_name) newErrors.item_name = 'Hạng mục bảo dưỡng là bắt buộc';
-        if (!formData.price) newErrors.price = 'Đơn giá là bắt buộc';
-        if (!formData.quantity) newErrors.quantity = 'Số lượng là bắt buộc';
-        
-        if (Object.keys(newErrors).length > 0) {
-          setErrors(newErrors);
-          return;
-        }
-        
-        // Prepare maintenance data
-        const maintenanceData = {
-          license_plate: formData.license_plate,
-          item_name: formData.item_name,
-          vendor_name: formData.vendor_name || '',
-          price: parseFloat(formData.price) || 0,
-          quantity: parseInt(formData.quantity) || 0,
-          install_date: formData.install_date || null,
-          expiry_date: formData.expiry_date || null,
-          remark: formData.remark || '',
-        };
-        
-        if (isEdit && formData.id) {
-          await updateMaintenance(formData.id, maintenanceData);
-        } else {
-          await createMaintenance(maintenanceData);
-        }
-        
-        setSnackbar({
-          open: true,
-          message: isEdit
-            ? 'Cập nhật thông tin bảo dưỡng thành công'
-            : 'Thêm thông tin bảo dưỡng thành công',
-          severity: 'success',
-        });
-        
-        handleCloseDialog();
-      } catch (error) {
-        const errorMessage = extractErrorMessage(error, 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng');
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: 'error',
-        });
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [formData, isEdit, createMaintenance, updateMaintenance, handleCloseDialog]
-  );
   // Filter maintenance records based on search term
   const filteredRecords = React.useMemo(() => {
     const records = maintenanceRecords || [];
@@ -370,7 +167,7 @@ const QuanLyBaoDuong = memo(() => {
   };
   // Render desktop table view
   const renderDesktopView = () => {
-    const tableColumns = getBaoDuongTableColumns();
+    const tableColumns = getBaoDuongTableColumns(handleInvoiceClick);
 
     const tableProps = {
       columns: tableColumns,
@@ -390,25 +187,6 @@ const QuanLyBaoDuong = memo(() => {
     return (
       <StandardTable
         {...tableProps}
-        renderActions={row => (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <EditButton
-              size="small"
-              onClick={e => {
-                e.stopPropagation();
-                handleOpenEditDialog(row);
-              }}
-            />
-            <DeleteButton
-              size="small"
-              color="error"
-              onClick={e => {
-                e.stopPropagation();
-                handleDeleteClick(row);
-              }}
-            />
-          </Box>
-        )}
         onPageChange={(_, newPage) => {
           fetchData(newPage, pagination.pageSize);
         }}
@@ -472,33 +250,6 @@ const QuanLyBaoDuong = memo(() => {
       >
         {renderDesktopView()}
       </Box>
-      {/* Add/Edit Dialog */}
-      <BaoDuongDialog
-        open={openDialog}
-        isEdit={isEdit}
-        isLoading={isFormLoading}
-        formData={formData}
-        errors={formErrors}
-        onClose={handleCloseDialog}
-        onChange={handleInputChange}
-        onSave={handleSave}
-        onInvoiceClick={() => handleInvoiceClick(formData)}
-        licensePlates={licensePlates}
-        isLoadingPlates={vehicleLoading.initial || vehicleLoading.tractors || vehicleLoading.trailers}
-      />
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        open={deleteDialog.open}
-        onCancel={handleDeleteClose}
-        onConfirm={handleDeleteConfirm}
-        title="Xác nhận xóa thông tin bảo dưỡng"
-        message="Bạn có chắc chắn muốn xóa thông tin bảo dưỡng này?"
-        details={deleteDialog.details}
-        confirmText="Xóa"
-        cancelText="Hủy"
-        confirmColor="error"
-        loading={isFormLoading}
-      />
       {/* Invoice Modal */}
       <InvoiceModal
         open={invoiceModal.open}
@@ -521,26 +272,6 @@ const QuanLyBaoDuong = memo(() => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      {/* Floating Action Button */}
-      <Zoom in={!isFormLoading && !openDialog}>
-        <Fab
-          color="primary"
-          aria-label="Thêm mới"
-          onClick={handleOpenAddDialog}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: 1000,
-            boxShadow: 3,
-            '&:hover': {
-              boxShadow: 6,
-            },
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      </Zoom>
     </Box>
   );
 });

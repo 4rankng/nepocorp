@@ -31,9 +31,7 @@ func (r *ExpenseRepository) CreateWithUser(expense *models.Expense, userID uint)
 
 func (r *ExpenseRepository) FindByID(id uint) (*models.Expense, error) {
 	var expense models.Expense
-	err := r.db.Preload("Tractor").
-		Preload("Trailer").
-		Preload("ExpenseCategory").
+	err := r.db.Preload("ExpenseCategory").
 		Preload("CreatedByUser").
 		Preload("Items").
 		First(&expense, id).Error
@@ -70,10 +68,29 @@ func (r *ExpenseRepository) Delete(id uint) error {
 
 func (r *ExpenseRepository) List(offset, limit int) ([]*models.Expense, error) {
 	var expenses []*models.Expense
-	query := r.db.Preload("Tractor").
-		Preload("Trailer").
-		Preload("ExpenseCategory").
+	query := r.db.Preload("ExpenseCategory").
 		Preload("CreatedByUser")
+	
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+	
+	err := query.Find(&expenses).Error
+	return expenses, err
+}
+
+func (r *ExpenseRepository) ListWithFilters(offset, limit int, filters map[string]string) ([]*models.Expense, error) {
+	var expenses []*models.Expense
+	query := r.db.Preload("ExpenseCategory").
+		Preload("CreatedByUser")
+
+	// Apply filters
+	if expenseCategoryID := filters["expense_category_id"]; expenseCategoryID != "" {
+		query = query.Where("expense_category_id = ?", expenseCategoryID)
+	}
+	if paymentStatus := filters["payment_status"]; paymentStatus != "" {
+		query = query.Where("payment_status = ?", paymentStatus)
+	}
 	
 	if limit > 0 {
 		query = query.Offset(offset).Limit(limit)
@@ -86,6 +103,22 @@ func (r *ExpenseRepository) List(offset, limit int) ([]*models.Expense, error) {
 func (r *ExpenseRepository) Count() (int64, error) {
 	var count int64
 	err := r.db.Model(&models.Expense{}).Count(&count).Error
+	return count, err
+}
+
+func (r *ExpenseRepository) CountWithFilters(filters map[string]string) (int64, error) {
+	var count int64
+	query := r.db.Model(&models.Expense{})
+
+	// Apply filters
+	if expenseCategoryID := filters["expense_category_id"]; expenseCategoryID != "" {
+		query = query.Where("expense_category_id = ?", expenseCategoryID)
+	}
+	if paymentStatus := filters["payment_status"]; paymentStatus != "" {
+		query = query.Where("payment_status = ?", paymentStatus)
+	}
+
+	err := query.Count(&count).Error
 	return count, err
 }
 

@@ -87,62 +87,59 @@ INSERT IGNORE INTO trailers (id, license_plate, description, last_updated_by) VA
 (4, '51R-44444', 'Rơ moóc tank chở xăng', 'Administrator (@admin)'),
 (5, '51R-55555', 'Rơ moóc thùng kín', 'Administrator (@admin)');
 
--- Insert mock expenses for tractors
-INSERT IGNORE INTO expenses (id, tractor_id, trailer_id, vendor_name, expense_category_id, subtotal, tax_rate, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
-(1, 1, NULL, 'Garage Minh Tuấn', 1, 2000000, 10, 2200000, 'PAID', 'VND', 'Bảo dưỡng định kỳ 10,000km', 2, 'Nguyễn Văn A (@manager1)'),
-(2, 2, NULL, 'Xưởng Hùng Vương', 1, 1500000, 10, 1650000, 'PENDING', 'VND', 'Thay dầu và lọc', 2, 'Nguyễn Văn A (@manager1)'),
-(3, 3, NULL, 'Bảo hiểm PTI', 2, 5000000, 0, 5000000, 'PAID', 'VND', 'Bảo hiểm xe 1 năm', 1, 'Administrator (@admin)'),
-(4, 1, NULL, 'Cửa hàng phụ tùng ABC', 5, 800000, 10, 880000, 'DRAFT', 'VND', 'Thay phanh trước', 3, 'Trần Văn B (@driver1)'),
-(5, 4, NULL, 'Garage Thành Đạt', 1, 3000000, 10, 3300000, 'PAID', 'VND', 'Sửa chữa động cơ', 2, 'Nguyễn Văn A (@manager1)');
+-- Insert mock expenses (simplified structure without vehicle associations)
+INSERT IGNORE INTO expenses (id, vendor_name, expense_category_id, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
+(1, 'Garage Minh Tuấn', 1, 2200000, 'PAID', 'VND', 'Bảo dưỡng định kỳ 10,000km', 2, 'Nguyễn Văn A (@manager1)'),
+(2, 'Xưởng Hùng Vương', 1, 1650000, 'PENDING', 'VND', 'Thay dầu và lọc', 2, 'Nguyễn Văn A (@manager1)'),
+(3, 'Bảo hiểm PTI', 2, 5000000, 'PAID', 'VND', 'Bảo hiểm xe 1 năm', 1, 'Administrator (@admin)'),
+(4, 'Cửa hàng phụ tùng ABC', 5, 880000, 'DRAFT', 'VND', 'Thay phanh trước', 3, 'Trần Văn B (@driver1)'),
+(5, 'Garage Thành Đạt', 1, 3300000, 'PAID', 'VND', 'Sửa chữa động cơ', 2, 'Nguyễn Văn A (@manager1)'),
+(6, 'Xưởng Hoàng Gia', 1, 1320000, 'PAID', 'VND', 'Bảo dưỡng hệ thống phanh', 2, 'Nguyễn Văn A (@manager1)'),
+(7, 'Garage Việt Nam', 1, 990000, 'PENDING', 'VND', 'Thay lốp xe', 2, 'Nguyễn Văn A (@manager1)'),
+(8, 'Bảo hiểm Bảo Việt', 2, 3000000, 'PAID', 'VND', 'Bảo hiểm rơ moóc', 1, 'Administrator (@admin)'),
+(9, 'Cửa hàng Minh Châu', 5, 660000, 'DRAFT', 'VND', 'Thay van an toàn', 3, 'Trần Văn B (@driver1)'),
+(10, 'Xưởng sơn Tấn Phát', 1, 2750000, 'PAID', 'VND', 'Sơn lại thùng xe', 2, 'Nguyễn Văn A (@manager1)');
 
--- Insert mock expenses for trailers
-INSERT IGNORE INTO expenses (id, tractor_id, trailer_id, vendor_name, expense_category_id, subtotal, tax_rate, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
-(6, NULL, 1, 'Xưởng Hoàng Gia', 1, 1200000, 10, 1320000, 'PAID', 'VND', 'Bảo dưỡng hệ thống phanh', 2, 'Nguyễn Văn A (@manager1)'),
-(7, NULL, 2, 'Garage Việt Nam', 1, 900000, 10, 990000, 'PENDING', 'VND', 'Thay lốp xe', 2, 'Nguyễn Văn A (@manager1)'),
-(8, NULL, 3, 'Bảo hiểm Bảo Việt', 2, 3000000, 0, 3000000, 'PAID', 'VND', 'Bảo hiểm rơ moóc', 1, 'Administrator (@admin)'),
-(9, NULL, 4, 'Cửa hàng Minh Châu', 5, 600000, 10, 660000, 'DRAFT', 'VND', 'Thay van an toàn', 3, 'Trần Văn B (@driver1)'),
-(10, NULL, 5, 'Xưởng sơn Tấn Phát', 1, 2500000, 10, 2750000, 'PAID', 'VND', 'Sơn lại thùng xe', 2, 'Nguyễn Văn A (@manager1)');
+-- Insert mock expense items with license_plate and tax_rate
+INSERT IGNORE INTO expense_items (id, expense_id, license_plate, item_name, price, quantity, tax_rate, total, install_date, expiry_date) VALUES
+-- For expense 1 (Tractor maintenance - 51A-12345)
+(1, 1, '51A-12345', 'Dầu động cơ Shell 15W40', 300000, 4, 10.0, 1320000, '2024-01-15', NULL),
+(2, 1, '51A-12345', 'Lọc dầu Toyota', 150000, 2, 10.0, 330000, '2024-01-15', '2024-07-15'),
+(3, 1, '51A-12345', 'Lọc gió', 200000, 1, 10.0, 220000, '2024-01-15', '2024-07-15'),
+(4, 1, '51A-12345', 'Chi phí công', 500000, 1, 10.0, 550000, '2024-01-15', NULL),
 
--- Insert mock expense items
-INSERT IGNORE INTO expense_items (id, expense_id, item_name, price, quantity, total, install_date, expiry_date) VALUES
--- For expense 1 (Tractor maintenance)
-(1, 1, 'Dầu động cơ Shell 15W40', 300000, 4, 1200000, '2024-01-15', NULL),
-(2, 1, 'Lọc dầu Toyota', 150000, 2, 300000, '2024-01-15', '2024-07-15'),
-(3, 1, 'Lọc gió', 200000, 1, 200000, '2024-01-15', '2024-07-15'),
-(4, 1, 'Chi phí công', 500000, 1, 500000, '2024-01-15', NULL),
+-- For expense 2 (Tractor oil change - 51B-67890)
+(5, 2, '51B-67890', 'Dầu động cơ Castrol', 350000, 3, 10.0, 1155000, '2024-02-01', NULL),
+(6, 2, '51B-67890', 'Lọc dầu Hino', 180000, 1, 10.0, 198000, '2024-02-01', '2024-08-01'),
+(7, 2, '51B-67890', 'Chi phí công', 420000, 1, 10.0, 462000, '2024-02-01', NULL),
 
--- For expense 2 (Tractor oil change)
-(5, 2, 'Dầu động cơ Castrol', 350000, 3, 1050000, '2024-02-01', NULL),
-(6, 2, 'Lọc dầu Hino', 180000, 1, 180000, '2024-02-01', '2024-08-01'),
-(7, 2, 'Chi phí công', 420000, 1, 420000, '2024-02-01', NULL),
+-- For expense 3 (Insurance - 51C-11111)
+(8, 3, '51C-11111', 'Bảo hiểm vật chất', 5000000, 1, 0.0, 5000000, '2024-01-01', '2024-12-31'),
 
--- For expense 3 (Insurance)
-(8, 3, 'Bảo hiểm vật chất', 5000000, 1, 5000000, '2024-01-01', '2024-12-31'),
+-- For expense 4 (Brake parts - 51A-12345)
+(9, 4, '51A-12345', 'Má phanh trước', 400000, 2, 10.0, 880000, '2024-02-10', '2025-02-10'),
 
--- For expense 4 (Brake parts)
-(9, 4, 'Má phanh trước', 400000, 2, 800000, '2024-02-10', '2025-02-10'),
+-- For expense 5 (Engine repair - 51D-22222)
+(10, 5, '51D-22222', 'Bộ piston', 1500000, 1, 10.0, 1650000, '2024-01-20', NULL),
+(11, 5, '51D-22222', 'Găng tay bảo hộ', 50000, 2, 10.0, 110000, '2024-01-20', NULL),
+(12, 5, '51D-22222', 'Chi phí sửa chữa', 1700000, 1, 10.0, 1870000, '2024-01-20', NULL),
 
--- For expense 5 (Engine repair)
-(10, 5, 'Bộ piston', 1500000, 1, 1500000, '2024-01-20', NULL),
-(11, 5, 'Găng tay bảo hộ', 50000, 2, 100000, '2024-01-20', NULL),
-(12, 5, 'Chi phí sửa chữa', 1700000, 1, 1700000, '2024-01-20', NULL),
+-- For expense 6 (Trailer brake maintenance - 51R-11111)
+(13, 6, '51R-11111', 'Dầu phanh DOT4', 200000, 3, 10.0, 660000, '2024-02-05', NULL),
+(14, 6, '51R-11111', 'Má phanh rơ moóc', 400000, 2, 10.0, 880000, '2024-02-05', '2025-02-05'),
 
--- For expense 6 (Trailer brake maintenance)
-(13, 6, 'Dầu phanh DOT4', 200000, 3, 600000, '2024-02-05', NULL),
-(14, 6, 'Má phanh rơ moóc', 400000, 2, 800000, '2024-02-05', '2025-02-05'),
+-- For expense 7 (Tire replacement - 51R-22222)
+(15, 7, '51R-22222', 'Lốp xe Bridgestone 11.00R20', 900000, 1, 10.0, 990000, '2024-02-15', NULL),
 
--- For expense 7 (Tire replacement)
-(15, 7, 'Lốp xe Bridgestone 11.00R20', 900000, 1, 900000, '2024-02-15', NULL),
+-- For expense 8 (Trailer insurance - 51R-33333)
+(16, 8, '51R-33333', 'Bảo hiểm rơ moóc', 3000000, 1, 0.0, 3000000, '2024-01-01', '2024-12-31'),
 
--- For expense 8 (Trailer insurance)
-(16, 8, 'Bảo hiểm rơ moóc', 3000000, 1, 3000000, '2024-01-01', '2024-12-31'),
+-- For expense 9 (Safety valve - 51R-44444)
+(17, 9, '51R-44444', 'Van an toàn khí nén', 600000, 1, 10.0, 660000, '2024-02-20', '2025-02-20'),
 
--- For expense 9 (Safety valve)
-(17, 9, 'Van an toàn khí nén', 600000, 1, 600000, '2024-02-20', '2025-02-20'),
-
--- For expense 10 (Paint job)
-(18, 10, 'Sơn Nippon Paint', 800000, 1, 800000, '2024-01-25', NULL),
-(19, 10, 'Chi phí thi công', 1950000, 1, 1950000, '2024-01-25', NULL);
+-- For expense 10 (Paint job - 51R-55555)
+(18, 10, '51R-55555', 'Sơn Nippon Paint', 800000, 1, 10.0, 880000, '2024-01-25', NULL),
+(19, 10, '51R-55555', 'Chi phí thi công', 1950000, 1, 10.0, 2145000, '2024-01-25', NULL);
 
 -- Insert mock maintenance records
 INSERT IGNORE INTO maintenance (id, expense_id, license_plate, vendor_name, item_name, price, quantity, tax_rate, total, install_date, expiry_date, last_updated_by) VALUES

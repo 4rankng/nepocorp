@@ -275,3 +275,72 @@ Delete an expense and all its items.
   "data": null
 }
 ```
+
+Sample Response for GET /expenses/10
+
+  {
+      "status": "success",
+      "message": "Lấy chi phí đầu kéo thành công",
+      "data": {
+          "id": 10,
+          "vendor_name": "Xưởng sơn Tấn Phát",
+          "expense_category_id": 1,
+          "total": 2750000,
+          "payment_status": "PAID",
+          "payment_proof": "",
+          "currency": "VND",
+          "remark": "Sơn lại thùng xe",
+          "created_by": 2,
+          "last_updated_by": "Nguyễn Văn A (@manager1)",
+          "created_at": "2025-06-27T09:27:37+08:00",
+          "updated_at": "2025-06-27T09:27:37+08:00",
+          "expense_category": {
+              "id": 1,
+              "name": "Bảo dưỡng",
+              "created_at": "2025-06-27T09:27:36+08:00",
+              "updated_at": "2025-06-27T09:27:36+08:00",
+              "last_updated_by": ""
+          },
+          "created_by_user": {
+              "id": 2,
+              "created_at": "2025-06-27T09:27:37+08:00",
+              "updated_at": "2025-06-27T09:27:37+08:00",
+              "username": "manager1",
+              "email": "manager1@nepocorp.com",
+              "name": "Nguyễn Văn A",
+              "role": "manager",
+              "is_active": true,
+              "last_updated_by": "Administrator (@admin)"
+          },
+          "items": [
+              {
+                  "id": 18,
+                  "expense_id": 10,
+                  "license_plate": "51R-55555",
+                  "item_name": "Sơn Nippon Paint",
+                  "price": 800000,
+                  "quantity": 1,
+                  "tax_rate": 10.0,
+                  "total": 880000,
+                  "install_date": "2024-01-25T00:00:00+08:00",
+                  "expiry_date": null,
+                  "created_at": "2025-06-27T09:27:37+08:00",
+                  "updated_at": "2025-06-27T09:27:37+08:00"
+              },
+              {
+                  "id": 19,
+                  "expense_id": 10,
+                  "license_plate": "51R-55555",
+                  "item_name": "Chi phí thi công",
+                  "price": 1950000,
+                  "quantity": 1,
+                  "tax_rate": 10.0,
+                  "total": 2145000,
+                  "install_date": "2024-01-25T00:00:00+08:00",
+                  "expiry_date": null,
+                  "created_at": "2025-06-27T09:27:37+08:00",
+                  "updated_at": "2025-06-27T09:27:37+08:00"
+              }
+          ]
+      }
+  }
