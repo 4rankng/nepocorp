@@ -18,7 +18,7 @@ const formatCurrency = value => {
 };
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('vi-VN');
 };
 
@@ -46,7 +46,7 @@ const ExpenseList = ({
     // Filter by search term
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(expense => 
+      filtered = filtered.filter(expense =>
         (expense.vendor_name && expense.vendor_name.toLowerCase().includes(search)) ||
         (expense.remark && expense.remark.toLowerCase().includes(search)) ||
         (expense.license_plate && expense.license_plate.toLowerCase().includes(search))
@@ -55,7 +55,7 @@ const ExpenseList = ({
 
     // Filter by category
     if (selectedCategory && selectedCategory !== 'all') {
-      filtered = filtered.filter(expense => 
+      filtered = filtered.filter(expense =>
         expense.expense_category_id === selectedCategory
       );
     }
@@ -89,7 +89,7 @@ const ExpenseList = ({
         sortable: true,
         renderCell: (params) => {
           const category = categories.find(cat => cat.id === params.value);
-          return category ? category.name : 'N/A';
+          return category ? category.name : '-';
         },
       });
     }
@@ -121,7 +121,7 @@ const ExpenseList = ({
           };
 
           return (
-            <span 
+            <span
               style={{
                 display: 'inline-block',
                 padding: '2px 8px',
@@ -151,7 +151,7 @@ const ExpenseList = ({
         sortable: false,
         renderCell: (params) => (
           <span title={params.value}>
-            {params.value ? (params.value.length > 50 ? `${params.value.substring(0, 50)}...` : params.value) : 'N/A'}
+            {params.value ? (params.value.length > 50 ? `${params.value.substring(0, 50)}...` : params.value) : '-'}
           </span>
         ),
       }
@@ -208,31 +208,31 @@ const ExpenseList = ({
                 <DeleteButton size="small" onClick={() => onDelete(expense)} />
               </Box>
             </Box>
-            
+
             <Typography variant="body2" color="text.secondary" gutterBottom>
               <strong>Nhà cung cấp:</strong> {expense.vendor_name}
             </Typography>
-            
+
             {showCategoryColumn && (
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 <strong>Loại chi phí:</strong> {
-                  categories.find(cat => cat.id === expense.expense_category_id)?.name || 'N/A'
+                  categories.find(cat => cat.id === expense.expense_category_id)?.name || '-'
                 }
               </Typography>
             )}
-            
+
             <Typography variant="body2" color="text.secondary" gutterBottom>
               <strong>Tổng tiền:</strong> {formatCurrency(expense.total)}
             </Typography>
-            
+
             <Typography variant="body2" color="text.secondary" gutterBottom>
               <strong>Trạng thái:</strong> {PAYMENT_STATUS_LABELS[expense.payment_status] || expense.payment_status}
             </Typography>
-            
+
             <Typography variant="body2" color="text.secondary" gutterBottom>
               <strong>Ngày tạo:</strong> {formatDate(expense.created_at)}
             </Typography>
-            
+
             {expense.remark && (
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 <strong>Ghi chú:</strong> {expense.remark}
@@ -240,7 +240,7 @@ const ExpenseList = ({
             )}
           </Box>
         ))}
-        
+
         {!loading && filteredExpenses.length === 0 && (
           <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
             {searchTerm || selectedCategory ? 'Không tìm thấy chi phí phù hợp' : emptyMessage}

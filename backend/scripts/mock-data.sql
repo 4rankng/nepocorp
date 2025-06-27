@@ -1,7 +1,12 @@
 -- ================================================================
 -- Nepo Corp Backend Mock Data Script
 -- Inserts sample data for testing and development
+-- CHARSET: UTF-8
 -- ================================================================
+
+-- Ensure proper UTF-8 encoding for the session
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 -- ================================================================
 -- Password Hashing Configuration

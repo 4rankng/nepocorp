@@ -319,6 +319,9 @@ func (h *ExpenseHandler) UpdateItem(c *gin.Context) {
 	if updateData.TaxRate >= 0 {
 		existingItem.TaxRate = updateData.TaxRate
 	}
+	if updateData.Subtotal > 0 {
+		existingItem.Subtotal = updateData.Subtotal
+	}
 	if updateData.Total > 0 {
 		existingItem.Total = updateData.Total
 	}

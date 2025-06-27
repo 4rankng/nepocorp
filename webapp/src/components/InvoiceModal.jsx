@@ -29,7 +29,7 @@ const formatCurrency = (value) => {
 };
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('vi-VN');
 };
 
@@ -124,7 +124,7 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
           icon={<ReceiptIcon />}
           onClose={handleClose}
         />
-        
+
         <FormBody>
           {loading && (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
@@ -147,7 +147,7 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                       Biển số xe
                     </Typography>
                     <Typography variant="body1" fontWeight="medium">
-                      {expenseData.items?.[0]?.license_plate || 'N/A'}
+                      {expenseData.items?.[0]?.license_plate || '-'}
                     </Typography>
                   </Box>
                 </Grid>
@@ -157,7 +157,7 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                       Nhà cung cấp
                     </Typography>
                     <Typography variant="body1" fontWeight="medium">
-                      {expenseData.vendor_name || 'N/A'}
+                      {expenseData.vendor_name || '-'}
                     </Typography>
                   </Box>
                 </Grid>
@@ -210,8 +210,8 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                       {expenseData.items && expenseData.items.length > 0 ? (
                         expenseData.items.map((item, index) => (
                           <TableRow key={item.id || index}>
-                            <TableCell>{item.item_name || 'N/A'}</TableCell>
-                            <TableCell align="center">{item.license_plate || 'N/A'}</TableCell>
+                            <TableCell>{item.item_name || '-'}</TableCell>
+                            <TableCell align="center">{item.license_plate || '-'}</TableCell>
                             <TableCell align="center">{item.quantity || 0}</TableCell>
                             <TableCell align="right">{formatCurrency(item.price || 0)}</TableCell>
                             <TableCell align="center">{item.tax_rate || 0}%</TableCell>
@@ -245,7 +245,7 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                     const totalWithTax = items.reduce((sum, item) => sum + item.total, 0);
                     const totalTax = totalWithTax - subtotal;
-                    
+
                     return (
                       <>
                         <Box className="flex justify-between mb-2">
@@ -262,7 +262,7 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                         </Box>
                         <Divider className="my-2" />
                         <Box className="flex justify-between">
-                          <Typography variant="h6">Tổng thanh toán:</Typography>
+                          <Typography variant="h6">Tổng:</Typography>
                           <Typography variant="h6" color="primary">
                             {formatCurrency(expenseData.total || totalWithTax)}
                           </Typography>

@@ -2,17 +2,22 @@
 export const getMenuItems = () => {
   return [
     {
-      sectionTitle: 'Kế Hoạch',
+      sectionTitle: 'Tổng quan',
       items: [
         {
-          name: 'Tổng quan',
-          href: '/tong-quan',
+          name: 'Tài chính',
+          href: '/tai-chinh',
           icon: 'ChartBar',
         },
         {
           name: 'Lịch vận chuyển',
           href: '/lich-van-chuyen',
           icon: 'Calendar',
+        },
+        {
+          name: 'Bảo dưỡng',
+          href: '/bao-duong',
+          icon: 'Tire',
         },
       ]
     },
@@ -47,12 +52,17 @@ export const getMenuItems = () => {
       ]
     },
     {
-      sectionTitle: 'Chi Phí',
+      sectionTitle: 'Công nợ',
       items: [
         {
-          name: 'Bảo dưỡng',
-          href: '/bao-duong',
-          icon: 'Tire',
+          name: 'Phiếu chi',
+          href: '/phieu-chi',
+          icon: 'CreditCard',
+        },
+        {
+          name: 'Phiếu thu',
+          href: '/phieu-thu',
+          icon: 'Wallet',
         },
       ]
     }

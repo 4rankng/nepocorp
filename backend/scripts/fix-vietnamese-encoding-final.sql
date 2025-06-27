@@ -1,7 +1,12 @@
 -- ================================================================
 -- Fix Vietnamese Text Encoding Issues
 -- Converts double-encoded UTF-8 text back to proper Vietnamese
+-- CHARSET: UTF-8
 -- ================================================================
+
+-- Ensure proper UTF-8 encoding for the session
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 -- Fix expense_categories table
 UPDATE expense_categories 

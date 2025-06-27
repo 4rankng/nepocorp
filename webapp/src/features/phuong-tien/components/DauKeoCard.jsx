@@ -4,7 +4,7 @@ import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return '-';
   return new Date(dateString).toLocaleString('vi-VN');
 };
 

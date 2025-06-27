@@ -36,8 +36,8 @@ export default function useMaintenanceRecords() {
             expiry_date: response.data[0].expiry_date,
             install_date_type: typeof response.data[0].install_date,
             expiry_date_type: typeof response.data[0].expiry_date,
-            install_date_parsed: response.data[0].install_date ? new Date(response.data[0].install_date) : 'N/A',
-            expiry_date_parsed: response.data[0].expiry_date ? new Date(response.data[0].expiry_date) : 'N/A'
+            install_date_parsed: response.data[0].install_date ? new Date(response.data[0].install_date) : '-',
+            expiry_date_parsed: response.data[0].expiry_date ? new Date(response.data[0].expiry_date) : '-'
           });
         }
 

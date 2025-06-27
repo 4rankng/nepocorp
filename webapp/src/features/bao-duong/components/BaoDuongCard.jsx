@@ -25,7 +25,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
   const expirationDate = getExpirationDate(record);
   // Format date to Vietnamese locale
   const formatDate = dateString => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
   const handleExpandClick = () => {
@@ -108,7 +108,7 @@ const BaoDuongCard = ({ record, onEdit, onDelete, isLoading }) => {
               <Typography variant="body2" color="text.secondary">
                 Ngày hết hạn:
               </Typography>
-              <Typography variant="body2">{formatDate(record.expiry_date) || 'N/A'}</Typography>
+              <Typography variant="body2">{formatDate(record.expiry_date) || '-'}</Typography>
             </Box>
             <Box
               sx={{

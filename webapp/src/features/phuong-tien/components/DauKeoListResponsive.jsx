@@ -15,7 +15,7 @@ import { EditButton, DeleteButton, SearchBar } from '@/components';
 import { sanitizeDisplayText } from '@/utils/stringUtils';
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return '-';
   return new Date(dateString).toLocaleString('vi-VN');
 };
 

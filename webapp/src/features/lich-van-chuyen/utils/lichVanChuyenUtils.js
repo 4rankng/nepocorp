@@ -17,11 +17,11 @@ export const formatDateForInput = dateStr_DDMMYYYY => {
 export const formatVehiclesForSelect = (dauKeoList, roMoocList) => {
   const dauKeoOptions = (dauKeoList || []).map(item => ({
     value: item.id,
-    label: `${item.bien_so} (${item.mo_ta || item.loai_xe || 'N/A'})`,
+    label: `${item.bien_so} (${item.mo_ta || item.loai_xe || '-'})`,
   }));
   const roMoocOptions = (roMoocList || []).map(item => ({
     value: item.id,
-    label: `${item.bien_so} (${item.mo_ta || item.loai_ro_mooc || 'N/A'})`,
+    label: `${item.bien_so} (${item.mo_ta || item.loai_ro_mooc || '-'})`,
   }));
   return {
     dauKeo: dauKeoOptions,

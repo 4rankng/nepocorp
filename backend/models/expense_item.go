@@ -14,6 +14,7 @@ type ExpenseItem struct {
 	Price        int64      `gorm:"not null" json:"price"`
 	Quantity     int        `gorm:"not null;default:1" json:"quantity"`
 	TaxRate      float64    `gorm:"not null;default:0" json:"tax_rate"`
+	Subtotal     int64      `gorm:"not null;default:0" json:"subtotal"`
 	Total        int64      `gorm:"not null" json:"total"`
 	InstallDate  *time.Time `json:"install_date"`
 	ExpiryDate   *time.Time `json:"expiry_date"`
@@ -27,6 +28,7 @@ func (e *ExpenseItem) UnmarshalJSON(data []byte) error {
 		Price       any `json:"price"`
 		Quantity    any `json:"quantity"`
 		TaxRate     any `json:"tax_rate"`
+		Subtotal    any `json:"subtotal"`
 		InstallDate any `json:"install_date"`
 		ExpiryDate  any `json:"expiry_date"`
 		*Alias
@@ -86,6 +88,24 @@ func (e *ExpenseItem) UnmarshalJSON(data []byte) error {
 		e.TaxRate = v
 	case int:
 		e.TaxRate = float64(v)
+	}
+
+	// Handle Subtotal conversion
+	switch v := aux.Subtotal.(type) {
+	case string:
+		if v != "" {
+			subtotal, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return err
+			}
+			e.Subtotal = subtotal
+		}
+	case float64:
+		e.Subtotal = int64(v)
+	case int64:
+		e.Subtotal = v
+	case int:
+		e.Subtotal = int64(v)
 	}
 
 	// Handle InstallDate conversion
