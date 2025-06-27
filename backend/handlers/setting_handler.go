@@ -43,7 +43,7 @@ func (h *SettingHandler) GetByKey(c *gin.Context) {
 	response := SettingResponse{
 		Key:           setting.Key,
 		Value:         setting.Value,
-		LastUpdatedBy: setting.LastUpdatedByUser.Username,
+		LastUpdatedBy: setting.LastUpdatedBy,
 		CreatedAt:     setting.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:     setting.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
@@ -94,7 +94,7 @@ func (h *SettingHandler) UpdateByKey(c *gin.Context) {
 	response := SettingResponse{
 		Key:           setting.Key,
 		Value:         setting.Value,
-		LastUpdatedBy: setting.LastUpdatedByUser.Username,
+		LastUpdatedBy: setting.LastUpdatedBy,
 		CreatedAt:     setting.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:     setting.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}

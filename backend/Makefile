@@ -1,4 +1,4 @@
-.PHONY: local db test migrate-up migrate-down docker-build docker-push
+.PHONY: local db test migrate-up migrate-down docker-build docker-push mock
 
 # Local development with auto-refresh
 local:
@@ -44,3 +44,35 @@ logs:
 clean:
 	docker compose down -v
 	rm -f main
+
+# Load mock data into database
+mock:
+	@echo "Ensuring database is running..."
+	@docker compose up -d mysql || true
+	@echo "Waiting for database to be ready..."
+	@sleep 3
+	@echo "Dropping all tables and recreating database..."
+	@if [ -f .env ]; then \
+		export $$(cat .env | grep -v '^#' | xargs); \
+		mysql --protocol=TCP -h$${DB_HOST:-localhost} -P$${DB_PORT:-3306} -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} -e "DROP DATABASE IF EXISTS $${DB_NAME:-nepo}; CREATE DATABASE $${DB_NAME:-nepo};"; \
+	else \
+		mysql --protocol=TCP -hlocalhost -P3306 -unepo -pnepo_password -e "DROP DATABASE IF EXISTS nepo; CREATE DATABASE nepo;"; \
+	fi
+	@echo "Creating tables from SQL migration..."
+	@if [ -f .env ]; then \
+		export $$(cat .env | grep -v '^#' | xargs); \
+		mysql --protocol=TCP -h$${DB_HOST:-localhost} -P$${DB_PORT:-3306} -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} $${DB_NAME:-nepo} < migrations/00001-init.sql; \
+	else \
+		mysql --protocol=TCP -hlocalhost -P3306 -unepo -pnepo_password nepo < migrations/00001-init.sql; \
+	fi
+	@echo "Preparing mock data..."
+	@chmod +x scripts/prepare-mock-data.sh
+	@./scripts/prepare-mock-data.sh
+	@echo "Loading mock data into database..."
+	@if [ -f .env ]; then \
+		export $$(cat .env | grep -v '^#' | xargs); \
+		mysql --protocol=TCP -h$${DB_HOST:-localhost} -P$${DB_PORT:-3306} -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} $${DB_NAME:-nepo} < scripts/mock-data-processed.sql; \
+	else \
+		mysql --protocol=TCP -hlocalhost -P3306 -unepo -pnepo_password nepo < scripts/mock-data-processed.sql; \
+	fi
+	@echo "Mock data loaded successfully!"
