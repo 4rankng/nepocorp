@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExpenseForm } from '@components/shared';
+import MaintenanceDialog from './MaintenanceDialog';
 import './BaoDuongDialog.css';
 
 const BaoDuongDialog = ({
@@ -16,7 +16,7 @@ const BaoDuongDialog = ({
   isLoadingPlates = false,
 }) => {
   return (
-    <ExpenseForm
+    <MaintenanceDialog
       open={open}
       isEdit={isEdit}
       isLoading={isLoading}
@@ -25,12 +25,9 @@ const BaoDuongDialog = ({
       onClose={onClose}
       onChange={onChange}
       onSave={onSave}
+      onInvoiceClick={onInvoiceClick}
       licensePlates={licensePlates}
       isLoadingPlates={isLoadingPlates}
-      expenseCategoryId={1} // Fixed category for BaoDuong (maintenance)
-      title={isEdit ? 'Sửa thông tin bảo dưỡng' : 'Nhập thông tin bảo dưỡng'}
-      onInvoiceClick={onInvoiceClick}
-      showInvoiceButton={isEdit && formData?.id}
     />
   );
 };

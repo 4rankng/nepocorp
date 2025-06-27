@@ -53,30 +53,23 @@ const formatCurrency = value => {
 };
 import ConfirmDialog from '@/components/ConfirmDialog';
 import InvoiceModal from '@/components/InvoiceModal';
-import { baoDuongApi } from '@services/api/expenseApi';
+import { maintenanceApi } from '@services/api/maintenanceApi';
 import { Search as SearchIcon } from '@mui/icons-material';
 import BaoDuongCard from './components/BaoDuongCard';
 import BaoDuongDialog from './components/BaoDuongDialog';
 import { getBaoDuongTableColumns } from './constants/baoDuongTableColumns.jsx';
-import { useExpenseForm } from '@components/shared';
 import useMaintenanceRecords from './hooks/useMaintenanceRecords';
 import { useVehicleData } from '@contexts/VehicleDataContext';
 import { extractErrorMessage, isValidationError, extractValidationErrors } from '@utils/errorUtils';
 const initialFormData = {
   license_plate: '',
   vendor_name: '',
-  payment_status: 'DRAFT',
-  payment_proof: '',
-  items: [{
-    item_name: '',
-    price: '',
-    quantity: '',
-    install_date: '',
-    expiry_date: ''
-  }],
+  item_name: '',
+  price: '',
+  quantity: '',
+  install_date: '',
+  expiry_date: '',
   remark: '',
-  tax_rate: 10,
-  currency: 'VND',
 };
 const QuanLyBaoDuong = memo(() => {
   const theme = useTheme();
@@ -141,6 +134,9 @@ const QuanLyBaoDuong = memo(() => {
     error,
     fetchData,
     fetchByLicensePlate,
+    createMaintenance,
+    updateMaintenance,
+    deleteMaintenance,
     pagination,
   } = useMaintenanceRecords();
   // Extract pagination props for StandardTable
@@ -152,37 +148,19 @@ const QuanLyBaoDuong = memo(() => {
     onPageChange: handlePageChange,
     onRowsPerPageChange: handleRowsPerPageChange,
   } = pagination;
-  // Form state/handlers
-  const {
-    formData,
-    setFormData,
-    errors: formErrors,
-    setErrors,
-    handleSave: handleFormSave,
-    isLoading: isFormSubmitting,
-    isLoading: isFormLoading,
-    setIsLoading: setFormLoading,
-    handleInputChange,
-    validateForm,
-    handleSave: handleSaveForm,
-  } = useExpenseForm({
-    initialFormData,
-    isEdit,
-    api: baoDuongApi,
-    fetchData,
-    expenseCategoryId: 1, // Fixed category for BaoDuong (maintenance)
-    onSuccess: msg => {
-      setSnackbar({ open: true, message: msg, severity: 'success' });
-      handleCloseDialog();
-    },
-    onError: err => {
-      setSnackbar({
-        open: true,
-        message: 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng',
-        severity: 'error',
-      });
-    },
-  });
+  // Form state
+  const [formData, setFormData] = useState(initialFormData);
+  const [formErrors, setErrors] = useState({});
+  const [isFormLoading, setFormLoading] = useState(false);
+  
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
   // Fetch initial data on mount
   useEffect(() => {
     fetchData(0, 100);
@@ -210,11 +188,25 @@ const QuanLyBaoDuong = memo(() => {
   };
   const handleOpenEditDialog = record => {
     setIsEdit(true);
+    // For maintenance records, we store the maintenance data
     setFormData({
+      // Maintenance record fields
+      id: record.id,
       license_plate: record.license_plate,
+      item_name: record.item_name || '',
+      price: record.price || '',
+      quantity: record.quantity || '',
+      install_date: record.install_date || '',
+      expiry_date: record.expiry_date || '',
       vendor_name: record.vendor_name || '',
-      payment_status: record.payment_status || 'DRAFT',
-      payment_proof: record.payment_proof || '',
+      remark: record.remark || '',
+      
+      // Store expense_id for invoice functionality
+      expense_id: record.expense_id,
+      
+      // Legacy fields for compatibility with form components
+      payment_status: 'DRAFT',
+      payment_proof: '',
       items: [{
         item_name: record.item_name || '',
         price: record.price || '',
@@ -222,20 +214,29 @@ const QuanLyBaoDuong = memo(() => {
         install_date: record.install_date || '',
         expiry_date: record.expiry_date || ''
       }],
-      remark: record.remark || '',
       tax_rate: 10,
       currency: 'VND',
-      id: record.id,
     });
     setErrors({});
     setOpenDialog(true);
   };
   const handleCloseDialog = useCallback(() => {
     setOpenDialog(false);
+    setFormData(initialFormData);
     setErrors({});
   }, []);
-  const handleInvoiceClick = (expenseId) => {
-    setInvoiceModal({ open: true, expenseId });
+  const handleInvoiceClick = (maintenanceRecord) => {
+    // Use expense_id from maintenance record to show the related invoice
+    const expenseId = maintenanceRecord?.expense_id || maintenanceRecord;
+    if (expenseId) {
+      setInvoiceModal({ open: true, expenseId });
+    } else {
+      setSnackbar({
+        open: true,
+        message: 'Không có hóa đơn liên kết với bản ghi bảo dưỡng này',
+        severity: 'warning',
+      });
+    }
   };
   const handleInvoiceClose = () => {
     setInvoiceModal({ open: false, expenseId: null });
@@ -255,7 +256,7 @@ const QuanLyBaoDuong = memo(() => {
           : 'N/A',
         'Số lượng': record.quantity,
         'Đơn giá': formatCurrency(record.price),
-        'Tổng tiền': formatCurrency(record.total),
+        'Thành tiền': formatCurrency((record.price || 0) * (record.quantity || 0)),
         'Ghi chú': record.remark || 'Không có',
       },
     });
@@ -267,7 +268,7 @@ const QuanLyBaoDuong = memo(() => {
     if (!deleteDialog.recordId) return;
     setFormLoading(true);
     try {
-      await baoDuongApi.delete(deleteDialog.recordId);
+      await deleteMaintenance(deleteDialog.recordId);
       setSnackbar({
         open: true,
         message: 'Xóa thông tin bảo dưỡng thành công',
@@ -289,11 +290,40 @@ const QuanLyBaoDuong = memo(() => {
   // Handle save from dialog with proper error handling and pagination
   const handleSave = useCallback(
     async e => {
+      e.preventDefault();
       try {
         setFormLoading(true);
-        // Pass current pagination state to handleFormSave
-        await handleFormSave(e, pagination.page, pagination.pageSize);
-        // If we get here, the save was successful
+        
+        // Validate required fields
+        const newErrors = {};
+        if (!formData.license_plate) newErrors.license_plate = 'Biển số xe là bắt buộc';
+        if (!formData.item_name) newErrors.item_name = 'Hạng mục bảo dưỡng là bắt buộc';
+        if (!formData.price) newErrors.price = 'Đơn giá là bắt buộc';
+        if (!formData.quantity) newErrors.quantity = 'Số lượng là bắt buộc';
+        
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors);
+          return;
+        }
+        
+        // Prepare maintenance data
+        const maintenanceData = {
+          license_plate: formData.license_plate,
+          item_name: formData.item_name,
+          vendor_name: formData.vendor_name || '',
+          price: parseFloat(formData.price) || 0,
+          quantity: parseInt(formData.quantity) || 0,
+          install_date: formData.install_date || null,
+          expiry_date: formData.expiry_date || null,
+          remark: formData.remark || '',
+        };
+        
+        if (isEdit && formData.id) {
+          await updateMaintenance(formData.id, maintenanceData);
+        } else {
+          await createMaintenance(maintenanceData);
+        }
+        
         setSnackbar({
           open: true,
           message: isEdit
@@ -301,34 +331,20 @@ const QuanLyBaoDuong = memo(() => {
             : 'Thêm thông tin bảo dưỡng thành công',
           severity: 'success',
         });
-        // Refresh data with current pagination and close dialog
-        await fetchData(pagination.page, pagination.pageSize);
-        setOpenDialog(false);
+        
+        handleCloseDialog();
       } catch (error) {
-        // Extract detailed error information using utility
         const errorMessage = extractErrorMessage(error, 'Đã xảy ra lỗi khi lưu thông tin bảo dưỡng');
-        const validationError = isValidationError(error);
-        const errorDetails = extractValidationErrors(error);
-        
-        // If there are validation errors, set them in the form
-        if (validationError && Object.keys(errorDetails).length > 0) {
-          setErrors(errorDetails);
-        }
-        
-        // Show error message to user if not a validation error
-        // (validation errors are shown in the form fields)
-        if (!validationError) {
-          setSnackbar({
-            open: true,
-            message: errorMessage,
-            severity: 'error',
-          });
-        }
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: 'error',
+        });
       } finally {
         setFormLoading(false);
       }
     },
-    [formData, isEdit, fetchData, handleFormSave, pagination.page, pagination.pageSize]
+    [formData, isEdit, createMaintenance, updateMaintenance, handleCloseDialog]
   );
   // Filter maintenance records based on search term
   const filteredRecords = React.useMemo(() => {
@@ -466,7 +482,7 @@ const QuanLyBaoDuong = memo(() => {
         onClose={handleCloseDialog}
         onChange={handleInputChange}
         onSave={handleSave}
-        onInvoiceClick={handleInvoiceClick}
+        onInvoiceClick={() => handleInvoiceClick(formData)}
         licensePlates={licensePlates}
         isLoadingPlates={vehicleLoading.initial || vehicleLoading.tractors || vehicleLoading.trailers}
       />
