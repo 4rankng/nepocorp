@@ -31,11 +31,11 @@ services:
       - PORT=${PORT:-8080}
       - DEBUG=${DEBUG:-false}
       - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
-      - DB_HOST=${DB_HOST:-mysql}
-      - DB_PORT=${DB_PORT:-3306}
-      - DB_USER=${DB_USER:-nepo}
-      - DB_PASSWORD=${DB_PASSWORD:-nepo_password}
-      - DB_NAME=${DB_NAME:-nepo}
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=nepo
+      - DB_PASSWORD=nepo_password
+      - DB_NAME=nepo
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
       - RATE_LIMIT_RPS=${RATE_LIMIT_RPS:-10}

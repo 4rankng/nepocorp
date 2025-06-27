@@ -54,16 +54,16 @@ mock:
 	@echo "Dropping all tables and recreating database..."
 	@if [ -f .env ]; then \
 		export $$(cat .env | grep -v '^#' | xargs); \
-		mysql --protocol=TCP -h$${DB_HOST:-localhost} -P$${DB_PORT:-3306} -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} -e "DROP DATABASE IF EXISTS $${DB_NAME:-nepo}; CREATE DATABASE $${DB_NAME:-nepo};"; \
+		docker exec nepo_mysql mysql -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} -e "DROP DATABASE IF EXISTS $${DB_NAME:-nepo}; CREATE DATABASE $${DB_NAME:-nepo};"; \
 	else \
-		mysql --protocol=TCP -hlocalhost -P3306 -unepo -pnepo_password -e "DROP DATABASE IF EXISTS nepo; CREATE DATABASE nepo;"; \
+		docker exec nepo_mysql mysql -unepo -pnepo_password -e "DROP DATABASE IF EXISTS nepo; CREATE DATABASE nepo;"; \
 	fi
 	@echo "Creating tables from SQL migration..."
 	@if [ -f .env ]; then \
 		export $$(cat .env | grep -v '^#' | xargs); \
-		mysql --protocol=TCP -h$${DB_HOST:-localhost} -P$${DB_PORT:-3306} -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} $${DB_NAME:-nepo} < migrations/00001-init.sql; \
+		docker exec -i nepo_mysql mysql -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} $${DB_NAME:-nepo} < migrations/00001-init.sql; \
 	else \
-		mysql --protocol=TCP -hlocalhost -P3306 -unepo -pnepo_password nepo < migrations/00001-init.sql; \
+		docker exec -i nepo_mysql mysql -unepo -pnepo_password nepo < migrations/00001-init.sql; \
 	fi
 	@echo "Preparing mock data..."
 	@chmod +x scripts/prepare-mock-data.sh
@@ -71,8 +71,8 @@ mock:
 	@echo "Loading mock data into database..."
 	@if [ -f .env ]; then \
 		export $$(cat .env | grep -v '^#' | xargs); \
-		mysql --protocol=TCP -h$${DB_HOST:-localhost} -P$${DB_PORT:-3306} -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} $${DB_NAME:-nepo} < scripts/mock-data-processed.sql; \
+		docker exec -i nepo_mysql mysql -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} $${DB_NAME:-nepo} < scripts/mock-data-processed.sql; \
 	else \
-		mysql --protocol=TCP -hlocalhost -P3306 -unepo -pnepo_password nepo < scripts/mock-data-processed.sql; \
+		docker exec -i nepo_mysql mysql -unepo -pnepo_password nepo < scripts/mock-data-processed.sql; \
 	fi
 	@echo "Mock data loaded successfully!"
