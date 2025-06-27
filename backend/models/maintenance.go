@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strconv"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Maintenance struct {
@@ -134,7 +136,7 @@ func (m *Maintenance) CalculateTotal() {
 }
 
 // BeforeSave hook to calculate total before saving
-func (m *Maintenance) BeforeSave() error {
+func (m *Maintenance) BeforeSave(tx *gorm.DB) error {
 	m.CalculateTotal()
 	return nil
 }
