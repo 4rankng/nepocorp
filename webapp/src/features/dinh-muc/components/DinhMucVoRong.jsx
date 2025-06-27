@@ -137,7 +137,7 @@ const DinhMucVoRong = () => {
 
       setSnackbar({
         open: true,
-        message: isEdit ? 'Sửa thành công!' : 'Thêm mới thành công!',
+        message: isEdit ? 'Sửa thành công!' : 'Thêm thành công!',
         severity: 'success',
       });
       handleCloseDialog();
@@ -343,7 +343,7 @@ const DinhMucVoRong = () => {
       <Zoom in={!isSubmitting}>
         <Fab
           color="primary"
-          aria-label="Thêm mới"
+          aria-label="Thêm"
           onClick={handleOpenAddDialog}
           sx={{
             position: 'fixed',

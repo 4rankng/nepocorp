@@ -6,7 +6,7 @@ import {
   useTheme,
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
-import { EditButton, DeleteButton } from '@/components/ActionButtons';
+import { EditButton, DeleteButton, ViewButton } from '@/components/ActionButtons';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
 
 const formatCurrency = value => {
@@ -26,6 +26,7 @@ const ExpenseList = ({
   expenses = [],
   loading = false,
   error = null,
+  onView,
   onEdit,
   onDelete,
   pagination = null,
@@ -67,48 +68,51 @@ const ExpenseList = ({
   const tableColumns = useMemo(() => {
     const baseColumns = [
       {
-        field: 'license_plate',
-        headerName: 'Biển số xe',
-        width: 120,
+        key: 'created_at',
+        label: 'Ngày tạo',
+        width: 100,
         sortable: true,
+        render: (value) => formatDate(value),
       },
       {
-        field: 'vendor_name',
-        headerName: 'Nhà cung cấp',
-        width: 150,
-        sortable: true,
-      },
-    ];
-
-    // Add category column if enabled
-    if (showCategoryColumn) {
-      baseColumns.push({
-        field: 'expense_category_id',
-        headerName: 'Loại chi phí',
+        key: 'expense_category_id',
+        label: 'Hạng mục',
         width: 120,
         sortable: true,
-        renderCell: (params) => {
-          const category = categories.find(cat => cat.id === params.value);
+        render: (value) => {
+          const category = categories.find(cat => cat.id === value);
           return category ? category.name : '-';
         },
-      });
-    }
-
-    baseColumns.push(
-      {
-        field: 'total',
-        headerName: 'Tổng tiền',
-        width: 120,
-        sortable: true,
-        renderCell: (params) => formatCurrency(params.value),
       },
       {
-        field: 'payment_status',
-        headerName: 'Trạng thái',
+        key: 'vendor_name',
+        label: 'Nhà cung cấp',
+        width: 150,
+        sortable: true,
+        render: (value, row) => {
+          // Special handling for salary category
+          const category = categories.find(cat => cat.id === row.expense_category_id);
+          if (category && category.name === 'Lương') {
+            // For salary, show recipient name if available
+            return row.recipient_name || value || '-';
+          }
+          return value || '-';
+        },
+      },
+      {
+        key: 'total',
+        label: 'Tổng tiền',
+        width: 120,
+        sortable: true,
+        render: (value) => formatCurrency(value),
+      },
+      {
+        key: 'payment_status',
+        label: 'Trạng thái',
         width: 130,
         sortable: true,
-        renderCell: (params) => {
-          const status = params.value;
+        render: (value) => {
+          const status = value;
           const label = PAYMENT_STATUS_LABELS[status] || status;
           const getStatusColor = () => {
             switch (status) {
@@ -138,27 +142,34 @@ const ExpenseList = ({
         },
       },
       {
-        field: 'created_at',
-        headerName: 'Ngày tạo',
-        width: 100,
-        sortable: true,
-        renderCell: (params) => formatDate(params.value),
-      },
-      {
-        field: 'remark',
-        headerName: 'Ghi chú',
+        key: 'remark',
+        label: 'Ghi chú',
         width: 200,
         sortable: false,
-        renderCell: (params) => (
-          <span title={params.value}>
-            {params.value ? (params.value.length > 50 ? `${params.value.substring(0, 50)}...` : params.value) : '-'}
+        render: (value) => (
+          <span title={value}>
+            {value ? (value.length > 50 ? `${value.substring(0, 50)}...` : value) : '-'}
           </span>
         ),
+      },
+      {
+        key: 'created_by',
+        label: 'Người tạo',
+        width: 120,
+        sortable: true,
+        render: (value, row) => {
+          // If user info is embedded in the expense object
+          if (row.created_by_user) {
+            return row.created_by_user.name || row.created_by_user.email || '-';
+          }
+          // Otherwise just show the user ID or fetch separately
+          return value || '-';
+        },
       }
-    );
+    ];
 
     return baseColumns;
-  }, [categories, showCategoryColumn]);
+  }, [categories]);
 
   // Render mobile card view
   const renderMobileView = () => {
@@ -204,6 +215,7 @@ const ExpenseList = ({
                 {expense.license_plate}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
+                <ViewButton size="small" onClick={() => onView(expense)} />
                 <EditButton size="small" onClick={() => onEdit(expense)} />
                 <DeleteButton size="small" onClick={() => onDelete(expense)} />
               </Box>
@@ -265,10 +277,18 @@ const ExpenseList = ({
     // Add pagination props if provided
     if (pagination) {
       tableProps.page = pagination.page;
-      tableProps.rowsPerPage = pagination.pageSize;
+      tableProps.rowsPerPage = pagination.pageSize || pagination.rowsPerPage || 10;
       tableProps.totalCount = pagination.total;
-      tableProps.onPageChange = pagination.onPageChange;
-      tableProps.onRowsPerPageChange = pagination.onRowsPerPageChange;
+      tableProps.onPageChange = (event, newPage) => {
+        if (pagination.onPageChange) {
+          pagination.onPageChange(newPage);
+        }
+      };
+      tableProps.onRowsPerPageChange = (event) => {
+        if (pagination.onRowsPerPageChange) {
+          pagination.onRowsPerPageChange(parseInt(event.target.value, 10));
+        }
+      };
     }
 
     return (
@@ -276,6 +296,13 @@ const ExpenseList = ({
         {...tableProps}
         renderActions={row => (
           <Box sx={{ display: 'flex', gap: 1 }}>
+            <ViewButton
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                onView(row);
+              }}
+            />
             <EditButton
               size="small"
               onClick={e => {

@@ -107,7 +107,7 @@ const DinhMucForm = ({
             disabled={isSaving || !isValid}
             startIcon={isSaving && <CircularProgress size={16} />}
           >
-            {isSaving ? 'Đang lưu...' : isEditing ? 'Sửa' : 'Thêm mới'}
+            {isSaving ? 'Đang lưu...' : isEditing ? 'Sửa' : 'Thêm'}
           </Button>
         </Box>
       </Box>

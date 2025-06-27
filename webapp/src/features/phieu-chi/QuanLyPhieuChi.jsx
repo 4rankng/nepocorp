@@ -2,12 +2,26 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ExpenseForm from '@/components/shared/ExpenseForm';
 import ExpenseList from '@/components/shared/ExpenseList';
-import { PlusIcon } from '@assets/icons';
+import ExpenseDetailDialog from '@/components/shared/ExpenseDetailDialog';
+import useExpenses from './hooks/useExpenses';
+import { Fab, Zoom } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 
 const QuanLyPhieuChi = () => {
   const { currentUser } = useAuth();
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [viewingExpense, setViewingExpense] = useState(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  
+  const {
+    expenses,
+    categories,
+    isLoading,
+    error,
+    deleteExpense,
+    pagination,
+  } = useExpenses();
 
   const handleAddExpense = () => {
     setEditingExpense(null);
@@ -19,9 +33,29 @@ const QuanLyPhieuChi = () => {
     setShowExpenseForm(true);
   };
 
+  const handleViewExpense = (expense) => {
+    setViewingExpense(expense);
+    setShowDetailDialog(true);
+  };
+
   const handleCloseForm = () => {
     setShowExpenseForm(false);
     setEditingExpense(null);
+  };
+
+  const handleCloseDetailDialog = () => {
+    setShowDetailDialog(false);
+    setViewingExpense(null);
+  };
+
+  const handleDeleteExpense = async (expense) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa phiếu chi này?')) {
+      try {
+        await deleteExpense(expense.id);
+      } catch (error) {
+        // Error is already handled in the hook
+      }
+    }
   };
 
   if (!currentUser) {
@@ -30,8 +64,6 @@ const QuanLyPhieuChi = () => {
 
   return (
     <div className="p-6">
-
-
       {/* Expense Form Modal */}
       {showExpenseForm && (
         <ExpenseForm
@@ -44,10 +76,46 @@ const QuanLyPhieuChi = () => {
       {/* Expense List */}
       <div className="bg-white rounded-lg shadow">
         <ExpenseList
+          expenses={expenses}
+          categories={categories}
+          loading={isLoading}
+          error={error}
+          onView={handleViewExpense}
           onEdit={handleEditExpense}
+          onDelete={handleDeleteExpense}
+          pagination={pagination}
           currentUser={currentUser}
         />
       </div>
+
+      {/* Expense Detail Dialog */}
+      <ExpenseDetailDialog
+        open={showDetailDialog}
+        onClose={handleCloseDetailDialog}
+        expense={viewingExpense}
+        categories={categories}
+      />
+
+      {/* FAB Button */}
+      <Zoom in={true}>
+        <Fab
+          color="primary"
+          aria-label="Thêm"
+          onClick={handleAddExpense}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+            boxShadow: 3,
+            '&:hover': {
+              boxShadow: 6,
+            },
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </Zoom>
     </div>
   );
 };

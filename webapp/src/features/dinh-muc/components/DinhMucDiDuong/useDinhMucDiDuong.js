@@ -133,7 +133,7 @@ export const useDinhMucDiDuongLogic = () => {
         }
       }
 
-      enqueueSnackbar(editingId ? 'Sửa thành công!' : 'Thêm mới thành công!', {
+      enqueueSnackbar(editingId ? 'Sửa thành công!' : 'Thêm thành công!', {
         variant: 'success'
       });
 

@@ -117,7 +117,7 @@ const DinhMucChoHangDialog = ({
       aria-labelledby="dinh-muc-cho-hang-dialog-title"
     >
       <DialogTitle id="dinh-muc-cho-hang-dialog-title">
-        {title || (isEditMode ? 'Chỉnh sửa định mức chở hàng' : 'Thêm mới định mức chở hàng')}
+        {title || (isEditMode ? 'Chỉnh sửa định mức chở hàng' : 'Thêm định mức chở hàng')}
       </DialogTitle>
 
       <form onSubmit={handleSubmit}>

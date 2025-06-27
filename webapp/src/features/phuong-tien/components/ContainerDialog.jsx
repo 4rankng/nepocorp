@@ -150,7 +150,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
               loading={isLoading}
               disabled={isLoading || !data?.category}
             >
-              {edit ? 'Sửa' : (showDuplicateWarning ? 'Thêm mới (Trùng lặp)' : 'Thêm')}
+              {edit ? 'Sửa' : (showDuplicateWarning ? 'Thêm (Trùng lặp)' : 'Thêm')}
             </Button>
           </FormActions>
         </FormBody>

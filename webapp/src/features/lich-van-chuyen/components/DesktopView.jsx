@@ -50,7 +50,7 @@ const DesktopView = ({
           emptyMessage={
             isLoading
               ? 'Đang tải dữ liệu...'
-              : 'Chưa có lịch vận chuyển nào. Vui lòng thêm mới hoặc kiểm tra bộ lọc.'
+              : 'Chưa có lịch vận chuyển nào. Vui lòng thêm hoặc kiểm tra bộ lọc.'
           }
         />
       </Paper>

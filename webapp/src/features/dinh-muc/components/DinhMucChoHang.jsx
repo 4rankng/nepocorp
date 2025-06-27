@@ -152,7 +152,7 @@ const DinhMucChoHang = () => {
       if (response.success) {
         setSnackbar({
           open: true,
-          message: isEdit ? 'Sửa thành công!' : 'Thêm mới thành công!',
+          message: isEdit ? 'Sửa thành công!' : 'Thêm thành công!',
           severity: 'success',
         });
         handleCloseDialog();
@@ -375,7 +375,7 @@ const DinhMucChoHang = () => {
       <Zoom in={!isSubmitting}>
         <Fab
           color="primary"
-          aria-label="Thêm mới"
+          aria-label="Thêm"
           onClick={handleOpenAddDialog}
           sx={{
             position: 'fixed',

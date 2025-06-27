@@ -173,7 +173,7 @@ const DinhMucVoRongDialog = ({
         <Box display="flex" alignItems="center">
           <InfoIcon color="primary" sx={{ mr: 1 }} />
           <Typography variant="h6" component="span">
-            {title || (isEditMode ? 'Chỉnh sửa định mức vỏ rỗng' : 'Thêm mới định mức vỏ rỗng')}
+            {title || (isEditMode ? 'Chỉnh sửa định mức vỏ rỗng' : 'Thêm định mức vỏ rỗng')}
           </Typography>
         </Box>
       </DialogTitle>

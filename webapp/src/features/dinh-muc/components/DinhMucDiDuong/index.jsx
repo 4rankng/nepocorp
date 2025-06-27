@@ -22,31 +22,31 @@ import DeleteDialog from '@/components/DeleteDialog';
 const DinhMucDiDuong = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
+
   const {
     // Data
     paginatedData,
     filteredData,
     containerTypes,
-    
+
     // Loading states
     isLoading,
     error,
     isSaving,
     isDeleting,
-    
+
     // Edit states
     editingId,
     editedData,
     isAddingNew,
     itemToDelete,
-    
+
     // Pagination and search
     pagination,
     setPagination,
     searchTerm,
     setSearchTerm,
-    
+
     // Handlers
     onSubmit,
     handleDeleteClick,
@@ -64,7 +64,7 @@ const DinhMucDiDuong = () => {
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
         Định mức đi đường
       </Typography>
-      
+
       <Divider sx={{ mb: 3 }} />
 
       {/* Search and Add New Section */}
@@ -83,12 +83,12 @@ const DinhMucDiDuong = () => {
           }}
           sx={{ flexGrow: 1, minWidth: 250 }}
         />
-        
+
         <Fab
           color="primary"
           size={isMobile ? "medium" : "large"}
           onClick={handleAddNew}
-          sx={{ 
+          sx={{
             boxShadow: theme.shadows[4],
             '&:hover': {
               boxShadow: theme.shadows[6],
@@ -103,7 +103,7 @@ const DinhMucDiDuong = () => {
       {isAddingNew && (
         <Paper sx={{ mb: 3, overflow: 'hidden' }}>
           <Typography variant="h6" sx={{ p: 2, bgcolor: theme.palette.primary.main, color: 'white' }}>
-            Thêm mới định mức
+            Thêm định mức
           </Typography>
           <DinhMucForm
             editedData={editedData}
