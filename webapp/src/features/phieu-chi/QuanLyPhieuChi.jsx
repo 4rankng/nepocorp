@@ -164,6 +164,16 @@ const QuanLyPhieuChi = () => {
     setViewingExpenseId(null);
   }, []);
 
+  const handlePaymentStatusChange = useCallback(async (expenseId, newStatus) => {
+    try {
+      await updateExpense(expenseId, { payment_status: newStatus });
+      showSnackbar('Cập nhật trạng thái thanh toán thành công', 'success');
+    } catch (error) {
+      showSnackbar('Không thể cập nhật trạng thái thanh toán', 'error');
+      throw error; // Re-throw to let the modal handle the error
+    }
+  }, [updateExpense, showSnackbar]);
+
   const handleDeleteExpense = useCallback(async (expense) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa phiếu chi này?')) {
       try {
@@ -219,6 +229,7 @@ const QuanLyPhieuChi = () => {
           open={true}
           onClose={handleCloseInvoiceModal}
           expenseId={viewingExpenseId}
+          onPaymentStatusChange={handlePaymentStatusChange}
         />
       )}
 

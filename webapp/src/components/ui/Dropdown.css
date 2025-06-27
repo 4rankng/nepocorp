@@ -1,0 +1,233 @@
+.dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  min-height: 40px;
+}
+
+.dropdown__trigger:hover:not(:disabled) {
+  border-color: #9ca3af;
+}
+
+.dropdown__trigger:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.dropdown__trigger:disabled {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.dropdown--disabled .dropdown__trigger {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.dropdown--error .dropdown__trigger {
+  border-color: #ef4444;
+}
+
+.dropdown--error .dropdown__trigger:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444;
+}
+
+.dropdown__value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1f2937;
+}
+
+.dropdown__trigger:disabled .dropdown__value,
+.dropdown--disabled .dropdown__value {
+  color: #9ca3af;
+}
+
+.dropdown__icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.dropdown__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: bold;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown__clear:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.dropdown__arrow {
+  font-size: 10px;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+.dropdown__arrow--open {
+  transform: rotate(180deg);
+}
+
+.dropdown__menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.dropdown__search {
+  padding: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dropdown__search-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.dropdown__search-input:focus {
+  border-color: #3b82f6;
+}
+
+.dropdown__options {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.dropdown__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1f2937;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown__option:hover:not(.dropdown__option--disabled) {
+  background-color: #f3f4f6;
+}
+
+.dropdown__option--selected {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+.dropdown__option--selected:hover {
+  background-color: #dbeafe;
+}
+
+.dropdown__option--disabled {
+  color: #9ca3af;
+  cursor: default;
+  font-style: italic;
+}
+
+.dropdown__checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: bold;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.dropdown__checkbox--checked {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.dropdown__option-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Scrollbar styling for options */
+.dropdown__options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropdown__options::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.dropdown__options::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dropdown__options::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .dropdown__menu {
+    max-height: 240px;
+  }
+  
+  .dropdown__options {
+    max-height: 180px;
+  }
+  
+  .dropdown__option {
+    padding: 10px 12px;
+  }
+}

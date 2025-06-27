@@ -19,7 +19,8 @@ import {
   ErrorText,
   HelperText,
   PriceDisplay,
-  Button
+  Button,
+  Dropdown
 } from '@components/ui';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
 import { settingsApi } from '@services/api/settingsApi';
@@ -213,25 +214,22 @@ const ExpenseForm = ({
               {/* Row 1: Biển số xe + Nhà cung cấp */}
               <FormRow>
                 <FormCol>
-                  <FormLabel required>Biển số xe</FormLabel>
-                  <FormControl
-                    type="select"
+                  <Dropdown
+                    label="Biển số xe"
+                    name="license_plate"
                     value={localData.license_plate || ''}
                     onChange={handleLicensePlateChange}
+                    options={licensePlates.map(plate => ({
+                      value: plate.value,
+                      label: plate.displayText || `${plate.value} (${plate.type})`
+                    }))}
+                    placeholder={isLoadingPlates ? 'Đang tải danh sách biển số...' : 'Chọn biển số xe'}
                     disabled={isLoadingPlates}
-                    error={!!errors.license_plate}
+                    loading={isLoadingPlates}
+                    error={errors.license_plate}
                     required
-                  >
-                    <option value="">
-                      {isLoadingPlates ? 'Đang tải danh sách biển số...' : 'Chọn biển số xe'}
-                    </option>
-                    {licensePlates.map(plate => (
-                      <option key={plate.value} value={plate.value}>
-                        {plate.displayText || `${plate.value} (${plate.type})`}
-                      </option>
-                    ))}
-                  </FormControl>
-                  {errors.license_plate && <ErrorText>{errors.license_plate}</ErrorText>}
+                    searchable
+                  />
                 </FormCol>
 
                 <FormCol>
@@ -306,48 +304,42 @@ const ExpenseForm = ({
                 </FormCol>
 
                 <FormCol>
-                  <FormLabel required>Trạng thái</FormLabel>
-                  <FormControl
-                    type="select"
+                  <Dropdown
+                    label="Trạng thái"
                     name="payment_status"
                     value={localData.payment_status || PAYMENT_STATUS.DRAFT}
                     onChange={handleInputChange}
-                    error={!!errors.payment_status}
+                    options={Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => ({
+                      value: status,
+                      label: label
+                    }))}
+                    placeholder="Chọn trạng thái"
+                    error={errors.payment_status}
                     required
-                  >
-                    {Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => (
-                      <option key={status} value={status}>
-                        {label}
-                      </option>
-                    ))}
-                  </FormControl>
-                  {errors.payment_status && <ErrorText>{errors.payment_status}</ErrorText>}
+                    searchable={false}
+                  />
                 </FormCol>
               </FormRow>
 
               {/* Category selection for generic expenses */}
               {!expenseCategoryId && (
                 <FormGroup>
-                  <FormLabel required>Loại chi phí</FormLabel>
-                  <FormControl
-                    type="select"
+                  <Dropdown
+                    label="Loại chi phí"
                     name="expense_category_id"
                     value={localData.expense_category_id || ''}
                     onChange={handleInputChange}
+                    options={Array.isArray(expenseCategories) ? expenseCategories.map(category => ({
+                      value: category.id,
+                      label: category.name
+                    })) : []}
+                    placeholder={isLoadingCategories ? 'Đang tải danh sách...' : 'Chọn loại chi phí'}
                     disabled={isLoadingCategories}
-                    error={!!errors.expense_category_id}
+                    loading={isLoadingCategories}
+                    error={errors.expense_category_id}
                     required
-                  >
-                    <option value="">
-                      {isLoadingCategories ? 'Đang tải danh sách...' : 'Chọn loại chi phí'}
-                    </option>
-                    {Array.isArray(expenseCategories) && expenseCategories.map(category => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </FormControl>
-                  {errors.expense_category_id && <ErrorText>{errors.expense_category_id}</ErrorText>}
+                    searchable
+                  />
                 </FormGroup>
               )}
 

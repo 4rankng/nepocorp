@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import {
   Button,
   Box,
@@ -19,7 +20,8 @@ import {
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { expenseApi } from '@services/api/expenseApi';
-import { Modal, FormContainer, FormHeader, FormBody } from './ui';
+import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
+import { Modal, FormContainer, FormHeader, FormBody, Dropdown } from './ui';
 
 // Move utility functions outside component to prevent recreation on every render
 const formatCurrency = (value) => {
@@ -51,10 +53,12 @@ const getPaymentStatusColor = (status) => {
 };
 
 
-const InvoiceModal = ({ open, onClose, expenseId }) => {
+const InvoiceModal = ({ open, onClose, expenseId, onPaymentStatusChange }) => {
   const [expenseData, setExpenseData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
 
   const fetchExpenseData = useCallback(async () => {
@@ -85,11 +89,15 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
     }
   }, [open, expenseId, fetchExpenseData]);
 
-  // Handle ESC key to close modal
+  // Handle ESC key to close modal or cancel editing
   useEffect(() => {
     const handleEscKey = (event) => {
       if (event.key === 'Escape' && open) {
-        handleClose();
+        if (isEditingStatus) {
+          setIsEditingStatus(false);
+        } else {
+          handleClose();
+        }
       }
     };
 
@@ -100,14 +108,40 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [open, handleClose]);
+  }, [open, handleClose, isEditingStatus]);
 
 
   const handleClose = useCallback(() => {
     setExpenseData(null);
     setError(null);
+    setIsEditingStatus(false);
     onClose();
   }, [onClose]);
+
+  const handleStatusChange = useCallback(async (event) => {
+    const newStatus = event.target.value;
+    setUpdatingStatus(true);
+    
+    try {
+      // Call the parent's callback to update the status
+      if (onPaymentStatusChange) {
+        await onPaymentStatusChange(expenseId, newStatus);
+        
+        // Update local state
+        setExpenseData(prev => ({
+          ...prev,
+          payment_status: newStatus
+        }));
+        
+        setIsEditingStatus(false);
+      }
+    } catch (error) {
+      console.error('Failed to update payment status:', error);
+      // You could show an error message here
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }, [expenseId, onPaymentStatusChange]);
 
   if (!open) return null;
 
@@ -161,23 +195,62 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                     <Typography variant="body2" color="text.secondary" className="mb-1">
                       Trạng thái thanh toán
                     </Typography>
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        padding: '4px 12px',
-                        border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        color: getPaymentStatusColor(expenseData.payment_status),
-                        backgroundColor: 'transparent',
-                        minWidth: '80px',
-                        textAlign: 'center',
-                        marginTop: '4px',
-                      }}
-                    >
-                      {expenseData.payment_status}
-                    </span>
+                    {isEditingStatus ? (
+                      <Box sx={{ width: '300px' }}>
+                        <Dropdown
+                          name="payment_status"
+                          value={expenseData.payment_status}
+                          onChange={handleStatusChange}
+                          options={Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => ({
+                            value: status,
+                            label: label
+                          }))}
+                          placeholder="Chọn trạng thái"
+                          searchable={false}
+                          disabled={updatingStatus}
+                          loading={updatingStatus}
+                        />
+                        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => setIsEditingStatus(false)}
+                            disabled={updatingStatus}
+                          >
+                            Hủy
+                          </Button>
+                        </Box>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '4px 12px',
+                            border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            color: getPaymentStatusColor(expenseData.payment_status),
+                            backgroundColor: 'transparent',
+                            minWidth: '80px',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
+                        </span>
+                        {onPaymentStatusChange && (
+                          <Button
+                            size="small"
+                            variant="text"
+                            onClick={() => setIsEditingStatus(true)}
+                            sx={{ minWidth: 'auto', p: 0.5 }}
+                          >
+                            Sửa
+                          </Button>
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -339,6 +412,14 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
       </FormContainer>
     </Modal>
   );
+};
+
+// PropTypes
+InvoiceModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  expenseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onPaymentStatusChange: PropTypes.func, // Optional callback for payment status changes
 };
 
 // Wrap with React.memo to prevent unnecessary re-renders when props haven't changed

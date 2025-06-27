@@ -35,6 +35,9 @@ export {
   PercentageField
 } from './FieldComponents';
 
+// Dropdown components
+export { default as Dropdown } from './Dropdown';
+
 // Action button components
 export {
   FormActionButtons,
