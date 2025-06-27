@@ -15,6 +15,7 @@ const QuanLyDoiTac = createLazyComponent(() => import('@features/doi-tac/QuanLyD
 const QuanLyPhuongTien = createLazyComponent(() => import('@features/phuong-tien/QuanLyPhuongTien'), 'QuanLyPhuongTien');
 const QuanLyDinhMuc = createLazyComponent(() => import('@features/dinh-muc/QuanLyDinhMuc'), 'QuanLyDinhMuc');
 const QuanLyBaoDuong = createLazyComponent(() => import('@features/bao-duong/QuanLyBaoDuong'), 'QuanLyBaoDuong');
+const QuanLyPhieuChi = createLazyComponent(() => import('@features/phieu-chi/QuanLyPhieuChi'), 'QuanLyPhieuChi');
 // Future flags for React Router v7
 const routerConfig = {
   future: {
@@ -115,6 +116,12 @@ const router = createBrowserRouter(
         {
           path: 'bao-duong',
           element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyBaoDuong, 'Đang tải bảo dưỡng...')}</ProtectedRoute>,
+          errorElement: <ErrorPage />,
+        },
+        // PhieuChi route
+        {
+          path: 'phieu-chi',
+          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyPhieuChi, 'Đang tải phiếu chi...')}</ProtectedRoute>,
           errorElement: <ErrorPage />,
         },
         // Keep old routes for backward compatibility
