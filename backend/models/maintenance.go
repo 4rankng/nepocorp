@@ -136,6 +136,11 @@ func (m *Maintenance) CalculateTotal() {
 	m.Total = int64(float64(m.Price*int64(m.Quantity)) * (1 + m.TaxRate/100))
 }
 
+// TableName specifies the table name for GORM
+func (Maintenance) TableName() string {
+	return "maintenance"
+}
+
 // BeforeSave hook to calculate total before saving
 func (m *Maintenance) BeforeSave(tx *gorm.DB) error {
 	m.CalculateTotal()
