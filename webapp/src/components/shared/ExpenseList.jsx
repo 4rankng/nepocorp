@@ -280,7 +280,7 @@ const ExpenseList = ({
     // Add pagination props if provided
     if (pagination) {
       tableProps.page = pagination.page;
-      tableProps.rowsPerPage = pagination.pageSize || pagination.rowsPerPage || 10;
+      tableProps.rowsPerPage = pagination.pageSize || pagination.rowsPerPage || 100;
       tableProps.totalCount = pagination.total;
       tableProps.onPageChange = (event, newPage) => {
         if (pagination.onPageChange) {

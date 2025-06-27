@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Button,
   Box,
@@ -21,6 +21,7 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { expenseApi } from '@services/api/expenseApi';
 import { Modal, FormContainer, FormHeader, FormBody } from './ui';
 
+// Move utility functions outside component to prevent recreation on every render
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -55,15 +56,34 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  console.log('InvoiceModal render:', { open, expenseId, hasData: !!expenseData });
+
+  const fetchExpenseData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await expenseApi.getById(expenseId);
+      // Handle API wrapper format: response.data.data
+      const expenseData = response.data?.data || response.data || response;
+      
+      // Ensure items is always an array
+      if (expenseData && !Array.isArray(expenseData.items)) {
+        expenseData.items = expenseData.items ? [expenseData.items] : [];
+      }
+      
+      setExpenseData(expenseData);
+    } catch (err) {
+      setError('Không thể tải thông tin hóa đơn');
+      console.error('Error fetching expense data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [expenseId]);
 
   useEffect(() => {
-    console.log('InvoiceModal useEffect triggered:', { open, expenseId });
     if (open && expenseId) {
-      console.log('Starting to fetch expense data for ID:', expenseId);
       fetchExpenseData();
     }
-  }, [open, expenseId]);
+  }, [open, expenseId, fetchExpenseData]);
 
   // Handle ESC key to close modal
   useEffect(() => {
@@ -80,37 +100,14 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [open]);
+  }, [open, handleClose]);
 
-  const fetchExpenseData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await expenseApi.getById(expenseId);
-      // Handle API wrapper format: response.data.data
-      const expenseData = response.data?.data || response.data || response;
-      console.log('Invoice data fetched:', expenseData);
-      console.log('Response structure:', response);
-      
-      // Ensure items is always an array
-      if (expenseData && !Array.isArray(expenseData.items)) {
-        expenseData.items = expenseData.items ? [expenseData.items] : [];
-      }
-      
-      setExpenseData(expenseData);
-    } catch (err) {
-      setError('Không thể tải thông tin hóa đơn');
-      console.error('Error fetching expense data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setExpenseData(null);
     setError(null);
     onClose();
-  };
+  }, [onClose]);
 
   if (!open) return null;
 
@@ -249,11 +246,16 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
                 <Box className="min-w-64">
                   <Divider className="mb-4" />
                   {(() => {
-                    // Calculate subtotal and tax from items
-                    const items = expenseData.items || [];
-                    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                    const totalWithTax = items.reduce((sum, item) => sum + item.total, 0);
-                    const totalTax = totalWithTax - subtotal;
+                    // Memoize expensive calculations
+                    const calculatedTotals = useMemo(() => {
+                      const items = expenseData.items || [];
+                      const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                      const totalWithTax = items.reduce((sum, item) => sum + item.total, 0);
+                      const totalTax = totalWithTax - subtotal;
+                      return { subtotal, totalWithTax, totalTax };
+                    }, [expenseData.items]);
+
+                    const { subtotal, totalWithTax, totalTax } = calculatedTotals;
 
                     return (
                       <>
@@ -339,4 +341,5 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
   );
 };
 
-export default InvoiceModal;
+// Wrap with React.memo to prevent unnecessary re-renders when props haven't changed
+export default React.memo(InvoiceModal);

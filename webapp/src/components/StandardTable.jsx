@@ -84,7 +84,6 @@ const StandardTable = ({
   emptyRowsCount = 5,
   pagination = false,
   page: initialPage = 0,
-  rowsPerPage: initialRowsPerPage = 100,
   totalCount: initialTotalCount = 0,
   onPageChange: initialOnPageChange = () => {},
   onRowsPerPageChange: initialOnRowsPerPageChange = () => {},
@@ -100,6 +99,9 @@ const StandardTable = ({
   showSTT = true,
   ...tableProps
 }) => {
+  // Get initial rows per page from first option or default to 100
+  const initialRowsPerPage = customRowsPerPageOptions?.[0] || 100;
+  
   // Internal sort state
   const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
   // Handle sort request

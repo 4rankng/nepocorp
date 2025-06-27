@@ -102,7 +102,7 @@ export default function useExpenseForm({
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleInputChange = e => {
+  const handleInputChange = useCallback(e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -113,7 +113,7 @@ export default function useExpenseForm({
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  };
+  }, [errors]);
 
   const validateForm = useCallback(() => {
     const newErrors = validateExpenseForm(formData, expenseCategoryId);
@@ -121,7 +121,7 @@ export default function useExpenseForm({
     return Object.keys(newErrors).length === 0;
   }, [formData, expenseCategoryId]);
 
-  const handleSave = async (e, currentPage = 0, pageSize = 10) => {
+  const handleSave = useCallback(async (e, currentPage = 0, pageSize = 10) => {
     e?.preventDefault();
 
     try {
@@ -244,7 +244,7 @@ export default function useExpenseForm({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [formData, expenseCategoryId, tractors, trailers, isEdit, api, validateForm, fetchData, onSuccess, onError]);
 
   return {
     formData,

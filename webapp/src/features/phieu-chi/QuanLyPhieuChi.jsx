@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import ExpenseForm from '@/components/shared/ExpenseForm';
@@ -138,38 +138,38 @@ const QuanLyPhieuChi = () => {
     }
   }, [editingExpense, showExpenseForm]);
 
-  const handleAddExpense = async () => {
+  const handleAddExpense = useCallback(async () => {
     setEditingExpense(null);
     setShowExpenseForm(true);
     // Ensure vehicle data is loaded
     await fetchTractors();
     await fetchTrailers();
-  };
+  }, [fetchTractors, fetchTrailers]);
 
-  const handleEditExpense = async (expense) => {
+  const handleEditExpense = useCallback(async (expense) => {
     setEditingExpense(expense);
     setShowExpenseForm(true);
     // Ensure vehicle data is loaded
     await fetchTractors();
     await fetchTrailers();
-  };
+  }, [fetchTractors, fetchTrailers]);
 
-  const handleViewExpense = (expense) => {
+  const handleViewExpense = useCallback((expense) => {
     setViewingExpenseId(expense.id);
     setShowInvoiceModal(true);
-  };
+  }, []);
 
-  const handleCloseForm = () => {
+  const handleCloseForm = useCallback(() => {
     setShowExpenseForm(false);
     setEditingExpense(null);
-  };
+  }, []);
 
-  const handleCloseInvoiceModal = () => {
+  const handleCloseInvoiceModal = useCallback(() => {
     setShowInvoiceModal(false);
     setViewingExpenseId(null);
-  };
+  }, []);
 
-  const handleDeleteExpense = async (expense) => {
+  const handleDeleteExpense = useCallback(async (expense) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa phiếu chi này?')) {
       try {
         await deleteExpense(expense.id);
@@ -178,7 +178,7 @@ const QuanLyPhieuChi = () => {
         showSnackbar('Không thể xóa phiếu chi', 'error');
       }
     }
-  };
+  }, [deleteExpense, showSnackbar]);
 
   if (!currentUser) {
     return <div>Loading...</div>;
@@ -218,12 +218,14 @@ const QuanLyPhieuChi = () => {
         />
       </div>
 
-      {/* Invoice Modal */}
-      <InvoiceModal
-        open={showInvoiceModal}
-        onClose={handleCloseInvoiceModal}
-        expenseId={viewingExpenseId}
-      />
+      {/* Invoice Modal - Conditional rendering to prevent unnecessary re-renders */}
+      {showInvoiceModal && (
+        <InvoiceModal
+          open={true}
+          onClose={handleCloseInvoiceModal}
+          expenseId={viewingExpenseId}
+        />
+      )}
 
       {/* FAB Button - Hidden when modals are open */}
       <Zoom in={!showExpenseForm && !showInvoiceModal}>
