@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"github.com/nepocorp/backend/models"
+	"github.com/nepocorp/backend/utils"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +16,16 @@ func NewExpenseRepository(db *gorm.DB) *ExpenseRepository {
 
 func (r *ExpenseRepository) Create(expense *models.Expense) error {
 	// GORM will automatically create associated items when creating the expense
+	return r.db.Create(expense).Error
+}
+
+func (r *ExpenseRepository) CreateWithUser(expense *models.Expense, userID uint) error {
+	// Set LastUpdatedBy using the user information
+	lastUpdatedBy, err := utils.GetFormattedLastUpdatedBy(r.db, userID)
+	if err != nil {
+		return err
+	}
+	expense.LastUpdatedBy = lastUpdatedBy
 	return r.db.Create(expense).Error
 }
 
@@ -33,6 +44,16 @@ func (r *ExpenseRepository) FindByID(id uint) (*models.Expense, error) {
 }
 
 func (r *ExpenseRepository) Update(expense *models.Expense) error {
+	return r.db.Save(expense).Error
+}
+
+func (r *ExpenseRepository) UpdateWithUser(expense *models.Expense, userID uint) error {
+	// Set LastUpdatedBy using the user information
+	lastUpdatedBy, err := utils.GetFormattedLastUpdatedBy(r.db, userID)
+	if err != nil {
+		return err
+	}
+	expense.LastUpdatedBy = lastUpdatedBy
 	return r.db.Save(expense).Error
 }
 

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
+    last_updated_by VARCHAR(255),
     UNIQUE INDEX idx_username (username),
     UNIQUE INDEX idx_email (email),
     INDEX idx_deleted_at (deleted_at)
@@ -45,7 +46,8 @@ CREATE TABLE IF NOT EXISTS expense_categories (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create containers table
@@ -53,7 +55,8 @@ CREATE TABLE IF NOT EXISTS containers (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create tractors table
@@ -63,6 +66,7 @@ CREATE TABLE IF NOT EXISTS tractors (
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     UNIQUE KEY uk_tractors_license_plate (license_plate),
     KEY idx_tractors_license_plate (license_plate)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -74,6 +78,7 @@ CREATE TABLE IF NOT EXISTS trailers (
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     UNIQUE KEY uk_trailers_license_plate (license_plate),
     KEY idx_trailers_license_plate (license_plate)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -93,14 +98,13 @@ CREATE TABLE IF NOT EXISTS expenses (
     currency VARCHAR(50) NOT NULL DEFAULT 'VND',
     remark TEXT,
     created_by BIGINT UNSIGNED NOT NULL,
-    last_updated_by BIGINT UNSIGNED,
+    last_updated_by VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tractor_id) REFERENCES tractors(id) ON DELETE CASCADE,
     FOREIGN KEY (trailer_id) REFERENCES trailers(id) ON DELETE CASCADE,
     FOREIGN KEY (expense_category_id) REFERENCES expense_categories(id) ON DELETE RESTRICT,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
-    FOREIGN KEY (last_updated_by) REFERENCES users(id) ON DELETE RESTRICT,
     INDEX idx_tractor_id (tractor_id),
     INDEX idx_trailer_id (trailer_id),
     INDEX idx_expense_category_id (expense_category_id),
@@ -143,6 +147,7 @@ CREATE TABLE IF NOT EXISTS maintenance (
     expiry_date DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     INDEX idx_expense_id (expense_id),
     INDEX idx_license_plate (license_plate),
     INDEX idx_vendor_name (vendor_name),
@@ -154,11 +159,10 @@ CREATE TABLE IF NOT EXISTS settings (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `key` VARCHAR(255) NOT NULL UNIQUE,
     `value` TEXT NOT NULL,
-    last_updated_by BIGINT UNSIGNED NOT NULL,
+    last_updated_by VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_key (`key`),
-    CONSTRAINT fk_settings_last_updated_by FOREIGN KEY (last_updated_by) REFERENCES users(id) ON DELETE RESTRICT
+    INDEX idx_key (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
@@ -171,7 +175,7 @@ VALUES ('admin', 'admin@nepocorp.com', '$2a$10$example_hash', 'Administrator', '
 
 -- Insert default tax_rate setting
 INSERT IGNORE INTO settings (`key`, `value`, last_updated_by)
-VALUES ('tax_rate', '10', 1);
+VALUES ('tax_rate', '10', 'Administrator (@admin)');
 
 -- Insert default expense categories
 INSERT IGNORE INTO expense_categories (name) VALUES

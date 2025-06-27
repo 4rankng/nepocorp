@@ -18,6 +18,7 @@ type Expense struct {
 	Currency          string     `gorm:"not null;default:'VND'" json:"currency"`
 	Remark            string     `json:"remark"`
 	CreatedBy         uint       `gorm:"not null" json:"created_by"`
+	LastUpdatedBy     string     `gorm:"size:255" json:"last_updated_by"` // name (@username) of user who last created/updated the record
 	CreatedAt         time.Time  `json:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at"`
 

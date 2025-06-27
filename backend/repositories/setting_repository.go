@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"github.com/nepocorp/backend/models"
+	"github.com/nepocorp/backend/utils"
 	"gorm.io/gorm"
 )
 
@@ -25,13 +26,11 @@ func (r *SettingRepository) GetByKey(key string) (*models.Setting, error) {
 func (r *SettingRepository) UpdateByKey(key, value string, userID uint) (*models.Setting, error) {
 	var setting models.Setting
 	
-	// Get user information to format LastUpdatedBy string
-	var user models.User
-	err := r.db.First(&user, userID).Error
+	// Get formatted LastUpdatedBy string
+	lastUpdatedBy, err := utils.GetFormattedLastUpdatedBy(r.db, userID)
 	if err != nil {
 		return nil, err
 	}
-	lastUpdatedBy := user.Name + " (" + user.Username + ")"
 	
 	// First try to find existing setting
 	err = r.db.Where("`key` = ?", key).First(&setting).Error

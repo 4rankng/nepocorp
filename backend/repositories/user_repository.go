@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"github.com/nepocorp/backend/models"
+	"github.com/nepocorp/backend/utils"
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,16 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 }
 
 func (r *UserRepository) Create(user *models.User) error {
+	return r.db.Create(user).Error
+}
+
+func (r *UserRepository) CreateWithUser(user *models.User, createdByUserID uint) error {
+	// Set LastUpdatedBy using the user information
+	lastUpdatedBy, err := utils.GetFormattedLastUpdatedBy(r.db, createdByUserID)
+	if err != nil {
+		return err
+	}
+	user.LastUpdatedBy = lastUpdatedBy
 	return r.db.Create(user).Error
 }
 
@@ -45,6 +56,16 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 }
 
 func (r *UserRepository) Update(user *models.User) error {
+	return r.db.Save(user).Error
+}
+
+func (r *UserRepository) UpdateWithUser(user *models.User, updatedByUserID uint) error {
+	// Set LastUpdatedBy using the user information
+	lastUpdatedBy, err := utils.GetFormattedLastUpdatedBy(r.db, updatedByUserID)
+	if err != nil {
+		return err
+	}
+	user.LastUpdatedBy = lastUpdatedBy
 	return r.db.Save(user).Error
 }
 
