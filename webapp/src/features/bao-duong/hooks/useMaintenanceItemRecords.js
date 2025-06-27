@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import logger from '@services/logger';
-import { maintenanceItemsApi } from '@services/api/maintenanceItemsApi';
+import { maintenanceApi } from '@services/api/maintenanceApi';
 import { extractErrorMessage } from '@utils/errorUtils';
 
 export default function useMaintenanceItemRecords() {
@@ -21,7 +21,7 @@ export default function useMaintenanceItemRecords() {
       setIsLoading(true);
       try {
         // Note: API is 1-indexed for page number
-        const response = await maintenanceItemsApi.getAll(page + 1, pageSize);
+        const response = await maintenanceApi.getAll(page + 1, pageSize);
 
         console.log('Fetched maintenance items data:', {
           count: response.data?.length || 0,
@@ -90,7 +90,7 @@ export default function useMaintenanceItemRecords() {
     async (licensePlate, page = 0, pageSize = 100) => {
       setIsLoading(true);
       try {
-        const response = await maintenanceItemsApi.getByLicensePlate(
+        const response = await maintenanceApi.getByLicensePlate(
           licensePlate, 
           page + 1, 
           pageSize
@@ -120,6 +120,94 @@ export default function useMaintenanceItemRecords() {
     []
   );
 
+  // Create new maintenance record
+  const createMaintenance = useCallback(
+    async (maintenanceData) => {
+      setIsLoading(true);
+      try {
+        const response = await maintenanceApi.create(maintenanceData);
+        
+        // Refresh the data after creation
+        await fetchData(pagination.page, pagination.pageSize);
+        
+        return response;
+      } catch (err) {
+        logger.error('Error creating maintenance record', { error: err });
+        const errorMessage = extractErrorMessage(err, 'Không thể tạo bản ghi bảo dưỡng');
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchData, pagination.page, pagination.pageSize]
+  );
+
+  // Update maintenance record
+  const updateMaintenance = useCallback(
+    async (id, maintenanceData) => {
+      setIsLoading(true);
+      try {
+        const response = await maintenanceApi.update(id, maintenanceData);
+        
+        // Refresh the data after update
+        await fetchData(pagination.page, pagination.pageSize);
+        
+        return response;
+      } catch (err) {
+        logger.error('Error updating maintenance record', { error: err });
+        const errorMessage = extractErrorMessage(err, 'Không thể cập nhật bản ghi bảo dưỡng');
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchData, pagination.page, pagination.pageSize]
+  );
+
+  // Delete maintenance record
+  const deleteMaintenance = useCallback(
+    async (id) => {
+      setIsLoading(true);
+      try {
+        const response = await maintenanceApi.delete(id);
+        
+        // Refresh the data after deletion
+        await fetchData(pagination.page, pagination.pageSize);
+        
+        return response;
+      } catch (err) {
+        logger.error('Error deleting maintenance record', { error: err });
+        const errorMessage = extractErrorMessage(err, 'Không thể xóa bản ghi bảo dưỡng');
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchData, pagination.page, pagination.pageSize]
+  );
+
+  // Get maintenance record by ID
+  const getMaintenanceById = useCallback(
+    async (id) => {
+      setIsLoading(true);
+      try {
+        const response = await maintenanceApi.getById(id);
+        return response;
+      } catch (err) {
+        logger.error('Error fetching maintenance record by ID', { error: err });
+        const errorMessage = extractErrorMessage(err, 'Không thể tải bản ghi bảo dưỡng');
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     baoDuongRecords: maintenanceItemRecords, // Keep same name for backward compatibility
     setBaoDuongRecords: setMaintenanceItemRecords,
@@ -127,6 +215,10 @@ export default function useMaintenanceItemRecords() {
     error,
     fetchData,
     fetchByLicensePlate,
+    createMaintenance,
+    updateMaintenance,
+    deleteMaintenance,
+    getMaintenanceById,
     pagination: {
       ...pagination,
       onPageChange: handlePageChange,

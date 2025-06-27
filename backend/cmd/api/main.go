@@ -78,7 +78,7 @@ func main() {
 	tractorRepo := repositories.NewTractorRepository(db)
 	trailerRepo := repositories.NewTrailerRepository(db)
 	expenseRepo := repositories.NewExpenseRepository(db)
-	maintenanceItemRepo := repositories.NewMaintenanceItemRepository(db)
+	maintenanceRepo := repositories.NewMaintenanceRepository(db)
 	settingRepo := repositories.NewSettingRepository(db)
 
 	// Initialize services
@@ -92,7 +92,7 @@ func main() {
 	tractorHandler := handlers.NewTractorHandler(tractorRepo)
 	trailerHandler := handlers.NewTrailerHandler(trailerRepo)
 	expenseHandler := handlers.NewExpenseHandler(expenseRepo, expenseCategoryRepo)
-	maintenanceItemHandler := handlers.NewMaintenanceItemHandler(maintenanceItemRepo)
+	maintenanceHandler := handlers.NewMaintenanceHandler(maintenanceRepo)
 	settingHandler := handlers.NewSettingHandler(settingRepo)
 
 	// Initialize Gin
@@ -111,7 +111,7 @@ func main() {
 
 	// Initialize routes
 	routes.Setup(r, cfg, healthHandler, authHandler, userRepo, expenseCategoryHandler, 
-		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceItemHandler, settingHandler, logger)
+		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -173,6 +173,7 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 		&models.Trailer{},
 		&models.Expense{},
 		&models.ExpenseItem{},
+		&models.Maintenance{},
 		&models.Setting{},
 	); err != nil {
 		return nil, err
