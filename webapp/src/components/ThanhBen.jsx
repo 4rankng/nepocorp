@@ -12,7 +12,13 @@ import {
   Cog8ToothIcon,
   DocumentTextIcon,
   OilIcon,
-  TireIcon
+  TireIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  WalletIcon,
+  CreditCardIcon,
+  BanknoteIcon,
+  ShoppingCartIcon
 } from '@assets/icons';
 
 // Icon mapping
@@ -27,6 +33,12 @@ const iconComponents = {
   DocumentText: DocumentTextIcon,
   Oil: OilIcon,
   Tire: TireIcon,
+  ArrowLeft: ArrowLeftIcon,
+  ArrowRight: ArrowRightIcon,
+  Wallet: WalletIcon,
+  CreditCard: CreditCardIcon,
+  Banknote: BanknoteIcon,
+  ShoppingCart: ShoppingCartIcon,
 };
 
 const ThanhBen = ({ onNavItemClick, version, onVersionClick }) => {

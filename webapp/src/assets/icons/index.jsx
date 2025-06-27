@@ -22,6 +22,10 @@ import TruckIcon from './TruckIcon';
 import Cog8ToothIcon from './Cog8ToothIcon';
 import DocumentTextIcon from './DocumentTextIcon';
 import BellIcon from './BellIcon';
+import WalletIcon from './WalletIcon';
+import CreditCardIcon from './CreditCardIcon';
+import BanknoteIcon from './BanknoteIcon';
+import ShoppingCartIcon from './ShoppingCartIcon';
 
 // Re-export all icons as named exports
 export {
@@ -50,6 +54,10 @@ export {
   Cog8ToothIcon,
   DocumentTextIcon,
   BellIcon,
+  WalletIcon,
+  CreditCardIcon,
+  BanknoteIcon,
+  ShoppingCartIcon,
 };
 
 // Export all icons as a single object for easier imports
@@ -78,6 +86,10 @@ export const Icons = {
   Cog8ToothIcon,
   DocumentTextIcon,
   BellIcon,
+  WalletIcon,
+  CreditCardIcon,
+  BanknoteIcon,
+  ShoppingCartIcon,
 };
 
 export default Icons;

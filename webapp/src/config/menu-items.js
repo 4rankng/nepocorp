@@ -57,12 +57,12 @@ export const getMenuItems = () => {
         {
           name: 'Phiếu chi',
           href: '/phieu-chi',
-          icon: 'CreditCard',
+          icon: 'ShoppingCart',
         },
         {
           name: 'Phiếu thu',
           href: '/phieu-thu',
-          icon: 'Wallet',
+          icon: 'Banknote',
         },
       ]
     }
