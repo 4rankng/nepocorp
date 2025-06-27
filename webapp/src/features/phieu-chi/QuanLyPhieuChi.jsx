@@ -1,18 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import ExpenseForm from '@/components/shared/ExpenseForm';
 import ExpenseList from '@/components/shared/ExpenseList';
 import InvoiceModal from '@/components/InvoiceModal';
 import useExpenses from './hooks/useExpenses';
-import { Fab, Zoom } from '@mui/material';
+import useExpenseForm from '@/hooks/useExpenseForm';
+import { expenseApi } from '@services/api/expenseApi';
+import { Fab, Zoom, Snackbar, Alert } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 
 const QuanLyPhieuChi = () => {
   const { currentUser } = useAuth();
+  const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [viewingExpenseId, setViewingExpenseId] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  // Snackbar handlers
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
   
   const {
     expenses,
@@ -20,17 +40,118 @@ const QuanLyPhieuChi = () => {
     isLoading,
     error,
     deleteExpense,
+    updateExpense,
+    createExpense,
     pagination,
   } = useExpenses();
 
-  const handleAddExpense = () => {
-    setEditingExpense(null);
-    setShowExpenseForm(true);
+  // Transform expense data for editing (from API format to form format)
+  const transformExpenseForForm = (expense) => {
+    if (!expense) return null;
+    
+    return {
+      id: expense.id,
+      license_plate: expense.license_plate || '',
+      vendor_name: expense.vendor_name || '',
+      expense_category_id: expense.expense_category_id || '',
+      payment_status: expense.payment_status || 'DRAFT',
+      payment_proof: expense.payment_proof || '',
+      remark: expense.remark || '',
+      items: expense.items?.map(item => ({
+        id: item.id,
+        item_name: item.item_name || '',
+        price: item.price?.toString() || '',
+        quantity: item.quantity?.toString() || '1',
+        install_date: item.install_date ? item.install_date.split('T')[0] : '',
+        expiry_date: item.expiry_date ? item.expiry_date.split('T')[0] : '',
+      })) || [{
+        item_name: '',
+        price: '',
+        quantity: '1',
+        install_date: '',
+        expiry_date: ''
+      }]
+    };
   };
 
-  const handleEditExpense = (expense) => {
+  // Get license plates for dropdown
+  const getAllLicensePlates = () => {
+    const tractorPlates = tractors.map(t => ({
+      value: t.license_plate,
+      displayText: `${t.license_plate} (Đầu kéo)`,
+      type: 'tractor'
+    }));
+    
+    const trailerPlates = trailers.map(t => ({
+      value: t.license_plate,
+      displayText: `${t.license_plate} (Rơ moóc)`,
+      type: 'trailer'
+    }));
+    
+    return [...tractorPlates, ...trailerPlates];
+  };
+
+  // Get initial form data based on mode
+  const getInitialFormData = () => {
+    if (editingExpense) {
+      return transformExpenseForForm(editingExpense);
+    }
+    return {
+      license_plate: '',
+      vendor_name: '',
+      expense_category_id: '',
+      payment_status: 'DRAFT',
+      payment_proof: '',
+      remark: '',
+      items: [{
+        item_name: '',
+        price: '',
+        quantity: '1',
+        install_date: '',
+        expiry_date: ''
+      }]
+    };
+  };
+
+  // Single form manager that updates based on editing state
+  const formManager = useExpenseForm({
+    initialFormData: getInitialFormData(),
+    onSuccess: (message) => {
+      showSnackbar(message, 'success');
+      setShowExpenseForm(false);
+      setEditingExpense(null);
+    },
+    onError: (error) => {
+      showSnackbar(error.message, 'error');
+    },
+    fetchData: pagination.onPageChange ? () => pagination.onPageChange(pagination.page) : null,
+    isEdit: !!editingExpense,
+    api: expenseApi
+  });
+
+  // Update form data when editingExpense changes
+  useEffect(() => {
+    if (showExpenseForm) {
+      const newFormData = getInitialFormData();
+      formManager.setFormData(newFormData);
+      formManager.setErrors({}); // Clear any previous errors
+    }
+  }, [editingExpense, showExpenseForm]);
+
+  const handleAddExpense = async () => {
+    setEditingExpense(null);
+    setShowExpenseForm(true);
+    // Ensure vehicle data is loaded
+    await fetchTractors();
+    await fetchTrailers();
+  };
+
+  const handleEditExpense = async (expense) => {
     setEditingExpense(expense);
     setShowExpenseForm(true);
+    // Ensure vehicle data is loaded
+    await fetchTractors();
+    await fetchTrailers();
   };
 
   const handleViewExpense = (expense) => {
@@ -52,8 +173,9 @@ const QuanLyPhieuChi = () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa phiếu chi này?')) {
       try {
         await deleteExpense(expense.id);
+        showSnackbar('Xóa phiếu chi thành công', 'success');
       } catch (error) {
-        // Error is already handled in the hook
+        showSnackbar('Không thể xóa phiếu chi', 'error');
       }
     }
   };
@@ -67,9 +189,17 @@ const QuanLyPhieuChi = () => {
       {/* Expense Form Modal */}
       {showExpenseForm && (
         <ExpenseForm
-          expense={editingExpense}
+          open={showExpenseForm}
+          isEdit={!!editingExpense}
+          isLoading={formManager.isLoading}
+          formData={formManager.formData}
+          errors={formManager.errors}
           onClose={handleCloseForm}
-          isOpen={showExpenseForm}
+          onChange={formManager.handleInputChange}
+          onSave={formManager.handleSave}
+          licensePlates={getAllLicensePlates()}
+          isLoadingPlates={false}
+          title={editingExpense ? 'Sửa phiếu chi' : 'Thêm phiếu chi mới'}
         />
       )}
 
@@ -95,8 +225,8 @@ const QuanLyPhieuChi = () => {
         expenseId={viewingExpenseId}
       />
 
-      {/* FAB Button */}
-      <Zoom in={true}>
+      {/* FAB Button - Hidden when modals are open */}
+      <Zoom in={!showExpenseForm && !showInvoiceModal}>
         <Fab
           color="primary"
           aria-label="Thêm"
@@ -115,6 +245,18 @@ const QuanLyPhieuChi = () => {
           <AddIcon />
         </Fab>
       </Zoom>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

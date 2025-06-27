@@ -103,12 +103,15 @@ const ExpenseForm = ({
         // Load expense categories if not fixed
         if (!expenseCategoryId) {
           setIsLoadingCategories(true);
-          const categories = await expenseCategoryApi.getAllWithoutPagination();
-          setExpenseCategories(categories);
+          const response = await expenseCategoryApi.getAllWithoutPagination();
+          // Handle API response format - could be response.data or direct array
+          const categories = response?.data || response || [];
+          setExpenseCategories(Array.isArray(categories) ? categories : []);
         }
       } catch (error) {
         console.error('Failed to load settings:', error);
         setTaxRate(10); // Default to 10% if API fails
+        setExpenseCategories([]); // Ensure it's always an array on error
       } finally {
         setIsLoadingCategories(false);
       }
@@ -338,7 +341,7 @@ const ExpenseForm = ({
                     <option value="">
                       {isLoadingCategories ? 'Đang tải danh sách...' : 'Chọn loại chi phí'}
                     </option>
-                    {expenseCategories.map(category => (
+                    {Array.isArray(expenseCategories) && expenseCategories.map(category => (
                       <option key={category.id} value={category.id}>
                         {category.name}
                       </option>

@@ -90,6 +90,13 @@ const InvoiceModal = ({ open, onClose, expenseId }) => {
       // Handle API wrapper format: response.data.data
       const expenseData = response.data?.data || response.data || response;
       console.log('Invoice data fetched:', expenseData);
+      console.log('Response structure:', response);
+      
+      // Ensure items is always an array
+      if (expenseData && !Array.isArray(expenseData.items)) {
+        expenseData.items = expenseData.items ? [expenseData.items] : [];
+      }
+      
       setExpenseData(expenseData);
     } catch (err) {
       setError('Không thể tải thông tin hóa đơn');
