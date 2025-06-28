@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { expenseApi } from '@services/api/expenseApi';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
 
@@ -93,7 +94,27 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
         {/* Compact Header */}
         <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-          <h1 className="text-lg font-semibold text-gray-900">Chi tiết phiếu chi</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold text-gray-900">Chi tiết phiếu chi</h1>
+            {expenseData && !loading && (
+              <span
+                style={{
+                  display: 'inline-block',
+                  padding: '4px 8px',
+                  border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: getPaymentStatusColor(expenseData.payment_status),
+                  backgroundColor: `${getPaymentStatusColor(expenseData.payment_status)}15`,
+                  minWidth: '80px',
+                  textAlign: 'center',
+                }}
+              >
+                {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
+              </span>
+            )}
+          </div>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600"
@@ -121,16 +142,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
               {/* Basic Information Section */}
               <div className="mb-4">
                 <h2 className="text-sm font-semibold text-gray-700 mb-2">Thông tin cơ bản</h2>
-                <div className="grid grid-cols-6 gap-3">
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Biển số xe
-                    </label>
-                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                      {expenseData.items?.[0]?.license_plate || '-'}
-                    </div>
-                  </div>
-
+                <div className="grid grid-cols-5 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Nhà cung cấp
@@ -172,74 +184,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                 </div>
               </div>
 
-              {/* Payment Information Section */}
-              <div className="mb-4">
-                <h2 className="text-sm font-semibold text-gray-700 mb-2">Thông tin thanh toán</h2>
-                <div className="grid grid-cols-12 gap-3">
-                  <div className="col-span-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Trạng thái thanh toán
-                    </label>
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        padding: '4px 8px',
-                        border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        color: getPaymentStatusColor(expenseData.payment_status),
-                        backgroundColor: `${getPaymentStatusColor(expenseData.payment_status)}15`,
-                        minWidth: '80px',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
-                    </span>
-                  </div>
 
-                  {expenseData.subtotal && (
-                    <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Tổng cộng (chưa thuế)
-                      </label>
-                      <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                        {formatCurrency(expenseData.subtotal)} ₫
-                      </div>
-                    </div>
-                  )}
-
-                  {expenseData.tax_rate !== undefined && (
-                    <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Thuế suất (%)
-                      </label>
-                      <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                        {expenseData.tax_rate}%
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="col-span-5">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      URL chứng từ
-                    </label>
-                    {expenseData.payment_status === 'PAID' && expenseData.payment_proof ? (
-                      <button
-                        onClick={() => window.open(expenseData.payment_proof, '_blank')}
-                        className="flex items-center gap-1 px-2 py-1.5 bg-green-50 text-green-700 text-sm border border-green-200 rounded hover:bg-green-100 transition-colors"
-                      >
-<CloudDownloadIcon sx={{ fontSize: 12 }} />
-                        Xem chứng từ
-                      </button>
-                    ) : (
-                      <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50 text-gray-500">
-                        {expenseData.payment_proof || 'Chưa có chứng từ'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
 
 
 
