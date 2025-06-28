@@ -57,13 +57,13 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       label: `${t.license_plate} (Đầu kéo)`,
       type: 'tractor'
     }));
-    
+
     const trailerPlates = trailers.map(t => ({
       value: t.license_plate,
       label: `${t.license_plate} (Rơ moóc)`,
       type: 'trailer'
     }));
-    
+
     return [...tractorPlates, ...trailerPlates];
   }, [tractors, trailers]);
 
@@ -135,7 +135,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         }
       }
     };
-    
+
     const fetchVehicles = async () => {
       if (isEditing && (tractors.length === 0 || trailers.length === 0)) {
         setIsLoadingPlates(true);
@@ -151,7 +151,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         }
       }
     };
-    
+
     fetchCategories();
     fetchVehicles();
   }, [isEditing, expenseCategories.length, tractors.length, trailers.length, fetchTractors, fetchTrailers]);
@@ -438,7 +438,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                       onChange={(e) => handleFieldChange('remark', e.target.value)}
                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       placeholder="Nhập ghi chú"
-                      rows="2"
+                      rows="1"
                     />
                   ) : (
                     <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-blue-50 text-blue-700">

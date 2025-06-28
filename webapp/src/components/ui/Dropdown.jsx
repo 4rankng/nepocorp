@@ -26,8 +26,10 @@ const Dropdown = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dropUp, setDropUp] = useState(false);
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
+  const menuRef = useRef(null);
 
   // Filter options based on search term
   const filteredOptions = useMemo(() => {
@@ -97,12 +99,37 @@ const Dropdown = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus search input when dropdown opens
+  // Focus search input when dropdown opens and calculate position
   useEffect(() => {
-    if (isOpen && searchable && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current?.focus(), 100);
+    if (isOpen) {
+      // Focus search input
+      if (searchable && searchInputRef.current) {
+        setTimeout(() => searchInputRef.current?.focus(), 100);
+      }
+      
+      // Calculate if should drop up or down
+      if (dropdownRef.current) {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const menuHeight = parseInt(maxHeight, 10) || 300;
+        
+        // Also check for parent scrollable container (like modal)
+        const scrollParent = dropdownRef.current.closest('.overflow-y-auto, .modal-body, [style*="overflow"]');
+        if (scrollParent) {
+          const parentRect = scrollParent.getBoundingClientRect();
+          const spaceInParent = parentRect.bottom - rect.bottom;
+          // Use the smaller of viewport space or parent space
+          const effectiveSpaceBelow = Math.min(spaceBelow, spaceInParent);
+          setDropUp(effectiveSpaceBelow < menuHeight && spaceAbove > effectiveSpaceBelow);
+        } else {
+          // If not enough space below and more space above, drop up
+          setDropUp(spaceBelow < menuHeight && spaceAbove > spaceBelow);
+        }
+      }
     }
-  }, [isOpen, searchable]);
+  }, [isOpen, searchable, maxHeight]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
@@ -179,7 +206,8 @@ const Dropdown = ({
 
         {isOpen && (
           <div 
-            className="dropdown__menu"
+            ref={menuRef}
+            className={`dropdown__menu ${dropUp ? 'dropdown__menu--dropup' : ''}`}
             style={{ maxHeight }}
           >
             {searchable && (
