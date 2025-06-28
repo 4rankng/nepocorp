@@ -3,8 +3,11 @@ import PropTypes from 'prop-types';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { expenseApi } from '@services/api/expenseApi';
 import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
+import { settingsApi } from '@services/api/settingsApi';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
 import Dropdown from '@components/ui/Dropdown';
 
@@ -42,6 +45,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [taxRate, setTaxRate] = useState(10);
 
   const fetchExpenseData = useCallback(async () => {
     setLoading(true);
@@ -69,6 +73,31 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       fetchExpenseData();
     }
   }, [open, expenseId, fetchExpenseData]);
+
+  // Load tax rate when modal opens
+  useEffect(() => {
+    const loadTaxRate = async () => {
+      if (!open) return;
+
+      // Check localStorage first
+      const cachedTaxRate = localStorage.getItem('taxRate');
+      if (cachedTaxRate) {
+        setTaxRate(parseFloat(cachedTaxRate));
+      } else {
+        try {
+          const response = await settingsApi.getTaxRate();
+          const rate = parseFloat(response.value);
+          setTaxRate(rate);
+          localStorage.setItem('taxRate', rate.toString());
+        } catch (error) {
+          console.warn('Failed to load tax rate:', error);
+          setTaxRate(10);
+        }
+      }
+    };
+
+    loadTaxRate();
+  }, [open]);
 
   // Fetch expense categories when entering edit mode
   useEffect(() => {
@@ -143,7 +172,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         const subtotal = price * quantity;
         const taxAmount = subtotal * (taxRate / 100);
         const total = subtotal + taxAmount;
-        
+
         return {
           ...item,
           price,
@@ -167,7 +196,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       };
 
       await expenseApi.update(expenseId, updateData);
-      
+
       // Refresh the expense data
       await fetchExpenseData();
       setIsEditing(false);
@@ -190,9 +219,32 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const handleItemChange = useCallback((index, field, value) => {
     setEditedData(prev => ({
       ...prev,
-      items: prev.items.map((item, i) => 
+      items: prev.items.map((item, i) =>
         i === index ? { ...item, [field]: value } : item
       )
+    }));
+  }, []);
+
+  const handleAddItem = useCallback(() => {
+    setEditedData(prev => ({
+      ...prev,
+      items: [...prev.items, {
+        license_plate: '',
+        item_name: '',
+        install_date: null,
+        expiry_date: null,
+        price: 0,
+        quantity: 1,
+        tax_rate: taxRate,
+        total: 0
+      }]
+    }));
+  }, [taxRate]);
+
+  const handleDeleteItem = useCallback((index) => {
+    setEditedData(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
     }));
   }, []);
 
@@ -359,7 +411,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
               )}
 
               {/* Cancel Reason Section */}
-              {((isEditing ? editedData.payment_status === 'CANCELLED' : expenseData.payment_status === 'CANCELLED') || 
+              {((isEditing ? editedData.payment_status === 'CANCELLED' : expenseData.payment_status === 'CANCELLED') ||
                 (expenseData.cancel_reason && !isEditing)) && (
                 <div className="mb-4">
                   <div className="grid grid-cols-12 gap-3">
@@ -386,8 +438,8 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
               )}
 
               {/* Payment Proof Section */}
-              {((isEditing ? editedData.payment_status === 'PAID' : expenseData.payment_status === 'PAID') || 
-                (expenseData.payment_proof && !isEditing)) && (
+              {((isEditing && editedData.payment_status === 'PAID') ||
+                (!isEditing && expenseData.payment_proof)) && (
                 <div className="mb-4">
                   <div className="grid grid-cols-12 gap-3">
                     <div className="col-span-8">
@@ -417,7 +469,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
 
               {/* Items Section */}
               <div>
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">Danh sách</h2>
+                <h2 className="text-sm font-semibold text-gray-700 mb-3">Danh sách hạng mục</h2>
 
                 {/* Compact Table - Exact same styling as demo */}
                 <div className="border border-gray-200 rounded overflow-hidden">
@@ -432,6 +484,9 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                         <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-16">SL</th>
                         <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Thuế (%)</th>
                         <th className="text-right px-3 py-2 text-xs font-medium text-gray-700">Thành tiền</th>
+                        {isEditing && (
+                          <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 w-20">Thao tác</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -528,16 +583,27 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                             </td>
                             <td className="px-3 py-2 text-xs text-right font-medium">
                               {formatCurrency(
-                                isEditing 
+                                isEditing
                                   ? ((parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 0) * (1 + (parseFloat(item.tax_rate) || 0) / 100))
                                   : (item.total || 0)
                               )}
                             </td>
+                            {isEditing && (
+                              <td className="px-3 py-2 text-center">
+                                <button
+                                  onClick={() => handleDeleteItem(index)}
+                                  className="text-red-600 hover:text-red-800 p-1"
+                                  title="Xóa hạng mục"
+                                >
+                                  <DeleteIcon sx={{ fontSize: 18 }} />
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="8" className="px-3 py-6 text-center text-gray-500 text-xs">
+                          <td colSpan={isEditing ? "9" : "8"} className="px-3 py-6 text-center text-gray-500 text-xs">
                             Không có dữ liệu hạng mục
                           </td>
                         </tr>
@@ -546,10 +612,10 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     {((isEditing ? editedData.items : expenseData.items) || []).length > 0 && (
                       <tfoot>
                         <tr className="bg-gray-50 font-medium border-t">
-                          <td colSpan="7" className="px-3 py-2 text-right text-xs">Tổng cộng:</td>
-                          <td className="px-3 py-2 text-right text-sm font-semibold">
+                          <td colSpan={isEditing ? "8" : "7"} className="px-3 py-2 text-right text-xs">Tổng cộng:</td>
+                          <td className="px-3 py-2 text-right text-sm font-semibold whitespace-nowrap">
                             {formatCurrency(
-                              isEditing 
+                              isEditing
                                 ? editedData.items.reduce((sum, item) => {
                                     const price = parseFloat(item.price) || 0;
                                     const quantity = parseFloat(item.quantity) || 0;
@@ -564,6 +630,17 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     )}
                   </table>
                 </div>
+                {isEditing && (
+                  <div className="mt-3 flex justify-start">
+                    <button
+                      onClick={handleAddItem}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                    >
+                      <AddIcon sx={{ fontSize: 16 }} />
+                      <span>Thêm hạng mục</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
