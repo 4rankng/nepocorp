@@ -303,55 +303,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId, onPaymentStatusChange }) =
                 </div>
               </div>
 
-              {/* User Information Section */}
-              <div className="mb-4">
-                <h2 className="text-sm font-semibold text-gray-700 mb-2">Thông tin người tạo & cập nhật</h2>
-                <div className="grid grid-cols-12 gap-3">
-                  <div className="col-span-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Người tạo
-                    </label>
-                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                      {expenseData.created_by_user?.name || '-'}
-                      {expenseData.created_by_user?.username && (
-                        <span className="text-gray-500"> (@{expenseData.created_by_user.username})</span>
-                      )}
-                      {expenseData.created_by_user?.role && (
-                        <div className="text-xs text-gray-400 mt-1">
-                          {expenseData.created_by_user.role} • {expenseData.created_by_user.email}
-                        </div>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Ngày tạo
-                    </label>
-                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                      {formatDate(expenseData.created_at)}
-                    </div>
-                  </div>
-
-                  <div className="col-span-4">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Cập nhật lần cuối
-                    </label>
-                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                      {expenseData.last_updated_by || '-'}
-                    </div>
-                  </div>
-
-                  <div className="col-span-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Ngày cập nhật
-                    </label>
-                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                      {formatDate(expenseData.updated_at)}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* Remark Section */}
               {expenseData.remark && (
