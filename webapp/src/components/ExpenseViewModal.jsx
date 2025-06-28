@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import CloseIcon from '@mui/icons-material/Close';
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { expenseApi } from '@services/api/expenseApi';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
@@ -142,8 +141,8 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
               {/* Basic Information Section */}
               <div className="mb-4">
                 <h2 className="text-sm font-semibold text-gray-700 mb-2">Thông tin cơ bản</h2>
-                <div className="grid grid-cols-5 gap-3">
-                  <div>
+                <div className="grid grid-cols-12 gap-3">
+                  <div className="col-span-6">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Nhà cung cấp
                     </label>
@@ -152,7 +151,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Loại chi phí
                     </label>
@@ -161,7 +160,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Đơn vị tiền tệ
                     </label>
@@ -170,7 +169,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Tổng tiền
                     </label>
