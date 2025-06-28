@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import CustomerForm from '@features/khach-hang/components/CustomerForm';
-import MobileView from '@features/khach-hang/components/MobileView';
+
 import DesktopView from '@features/khach-hang/components/DesktopView';
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
 const QuanLyKhachHang = () => {
@@ -133,7 +133,7 @@ const QuanLyKhachHang = () => {
   return (
     <Box>
       {/* Render appropriate view based on screen size */}
-      {isMobile ? <MobileView {...commonProps} /> : <DesktopView {...commonProps} />}
+      <DesktopView {...commonProps} />
       {/* Add/Edit Form */}
       <CustomerForm
         open={isFormOpen}
