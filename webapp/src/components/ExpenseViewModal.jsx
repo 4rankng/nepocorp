@@ -11,6 +11,7 @@ import { settingsApi } from '@services/api/settingsApi';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
 import Dropdown from '@components/ui/Dropdown';
 import { VehicleDataContext } from '@/contexts/VehicleDataContext';
+import LicensePlateSelectionModal from './LicensePlateSelectionModal';
 
 // Utility functions
 const formatCurrency = (value) => {
@@ -49,6 +50,8 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [taxRate, setTaxRate] = useState(10);
   const [isLoadingPlates, setIsLoadingPlates] = useState(false);
+  const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
+  const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
 
   // Get license plates for dropdown
   const getAllLicensePlates = useCallback(() => {
@@ -180,7 +183,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   // Handle ESC key to close modal or cancel editing
   useEffect(() => {
     const handleEscKey = (event) => {
-      if (event.key === 'Escape' && open) {
+      if (event.key === 'Escape' && open && !showLicensePlateModal) {
         if (isEditing) {
           handleCancelEdit();
         } else {
@@ -196,7 +199,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [open, isEditing, handleCancelEdit, handleClose]);
+  }, [open, isEditing, handleCancelEdit, handleClose, showLicensePlateModal]);
 
   const handleSaveEdit = useCallback(async () => {
     setIsSaving(true);
@@ -285,6 +288,36 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       items: prev.items.filter((_, i) => i !== index)
     }));
   }, []);
+
+  const handleLicensePlateCellClick = useCallback((index) => {
+    setCurrentLicensePlateIndex(index);
+    setShowLicensePlateModal(true);
+  }, []);
+
+  const handleLicensePlateSelect = useCallback((selectedPlate) => {
+    if (currentLicensePlateIndex !== null) {
+      setEditedData(prev => {
+        const updatedItems = prev.items.map((item, i) => {
+          if (i === currentLicensePlateIndex) {
+            return { ...item, license_plate: selectedPlate };
+          }
+          return item;
+        });
+
+        // Prefill other empty license plate cells
+        const prefilledItems = updatedItems.map(item => {
+          if (!item.license_plate) {
+            return { ...item, license_plate: selectedPlate };
+          }
+          return item;
+        });
+
+        return { ...prev, items: prefilledItems };
+      });
+      setCurrentLicensePlateIndex(null);
+    }
+    setShowLicensePlateModal(false);
+  }, [currentLicensePlateIndex]);
 
 
   if (!open) return null;
@@ -533,18 +566,13 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                           <tr key={item.id || index} className="hover:bg-gray-50 border-t">
                             <td className="px-3 py-2 text-xs border-r">
                               {isEditing ? (
-                                <div style={{ minWidth: '150px' }}>
-                                  <Dropdown
-                                    value={item.license_plate || ''}
-                                    onChange={(value) => handleItemChange(index, 'license_plate', value)}
-                                    options={getAllLicensePlates()}
-                                    placeholder="Chọn biển số"
-                                    searchable={true}
-                                    clearable={true}
-                                    loading={isLoadingPlates}
-                                    className="text-xs"
-                                    style={{ fontSize: '12px' }}
-                                  />
+                                <div
+                                  className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 p-1 rounded -ml-1 -my-1"
+                                  onClick={() => handleLicensePlateCellClick(index)}
+                                  style={{ minWidth: '150px' }}
+                                >
+                                  <span>{item.license_plate || <span className="text-gray-400">Chọn biển số</span>}</span>
+                                  <EditIcon sx={{ fontSize: 14, color: '#6b7280' }} />
                                 </div>
                               ) : (
                                 item.license_plate || '-'
@@ -729,6 +757,14 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
           )}
         </div>
       </div>
+
+      <LicensePlateSelectionModal
+        open={showLicensePlateModal}
+        onClose={() => setShowLicensePlateModal(false)}
+        onSelect={handleLicensePlateSelect}
+        licensePlates={getAllLicensePlates()}
+        isLoading={isLoadingPlates}
+      />
     </div>
   );
 };
