@@ -47,7 +47,7 @@ const DauKeoContent = () => {
       }
       setDialog({ open: false, edit: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: dauKeoHook.error || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({ open: true, message: dauKeoHook.error?.errors?.message || dauKeoHook.error?.message || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
   const handleDelete = async () => {
@@ -56,7 +56,7 @@ const DauKeoContent = () => {
       setSnackbar({ open: true, message: 'Xóa đầu kéo thành công!', severity: 'success' });
       setDeleteDialog({ open: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: dauKeoHook.error || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({ open: true, message: dauKeoHook.error?.errors?.message || dauKeoHook.error?.message || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
   return (
@@ -165,7 +165,7 @@ const RoMoocContent = () => {
       }
       setDialog({ open: false, edit: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: roMoocHook.error || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({ open: true, message: roMoocHook.error?.errors?.message || roMoocHook.error?.message || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
   const handleDelete = async () => {
@@ -174,7 +174,7 @@ const RoMoocContent = () => {
       setSnackbar({ open: true, message: 'Xóa rơ-mooc thành công!', severity: 'success' });
       setDeleteDialog({ open: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: roMoocHook.error || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({ open: true, message: roMoocHook.error?.errors?.message || roMoocHook.error?.message || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
   return (
@@ -285,7 +285,7 @@ const ContainerContent = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: containerHook.error || 'Có lỗi xảy ra',
+        message: containerHook.error?.errors?.message || containerHook.error?.message || 'Có lỗi xảy ra',
         severity: 'error',
       });
     }
@@ -298,7 +298,7 @@ const ContainerContent = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: containerHook.error || 'Có lỗi xảy ra',
+        message: containerHook.error?.errors?.message || containerHook.error?.message || 'Có lỗi xảy ra',
         severity: 'error',
       });
     }
