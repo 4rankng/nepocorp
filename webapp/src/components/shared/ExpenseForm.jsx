@@ -434,7 +434,7 @@ const ExpenseForm = ({
                     <thead>
                       <tr className="bg-gray-50">
                         <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Biển số xe</th>
-                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Tên hàng mục</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Hạng mục</th>
                         <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">Đơn giá (VND)</th>
                         <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-16">SL</th>
                         <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Thuế (%)</th>
@@ -484,7 +484,7 @@ const ExpenseForm = ({
                       ) : (
                         <tr>
                           <td colSpan="9" className="px-3 py-6 text-center text-gray-500 text-xs">
-                            Chưa có hàng mục nào. Nhấn "Thêm" để bắt đầu.
+                            Chưa có hạng mục nào. Nhấn "Thêm" để bắt đầu.
                           </td>
                         </tr>
                       )}
@@ -531,7 +531,7 @@ const ExpenseForm = ({
           <div className="bg-white rounded-lg w-full max-w-3xl">
             <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-base font-medium text-gray-900">
-                {editingItem !== null ? 'Sửa hàng mục' : 'Thêm'}
+                {editingItem !== null ? 'Sửa hạng mục' : 'Thêm'}
               </h3>
               <button
                 onClick={() => {
@@ -566,7 +566,7 @@ const ExpenseForm = ({
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Tên hàng mục <span className="text-red-500">*</span>
+                    Hạng mục <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"

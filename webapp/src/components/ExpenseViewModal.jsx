@@ -96,22 +96,45 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-gray-900">Chi tiết phiếu chi</h1>
             {expenseData && !loading && (
-              <span
-                style={{
-                  display: 'inline-block',
-                  padding: '4px 8px',
-                  border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  color: getPaymentStatusColor(expenseData.payment_status),
-                  backgroundColor: `${getPaymentStatusColor(expenseData.payment_status)}15`,
-                  minWidth: '80px',
-                  textAlign: 'center',
-                }}
-              >
-                {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
-              </span>
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 8px',
+                    border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: getPaymentStatusColor(expenseData.payment_status),
+                    backgroundColor: `${getPaymentStatusColor(expenseData.payment_status)}15`,
+                    minWidth: '80px',
+                    textAlign: 'center',
+                  }}
+                >
+                  {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
+                </span>
+                {expenseData.payment_status === 'PAID' && (
+                  expenseData.payment_proof ? (
+                    <button
+                      onClick={() => window.open(expenseData.payment_proof, '_blank')}
+                      className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                      title="Xem chứng từ thanh toán"
+                    >
+                      <OpenInNewIcon sx={{ fontSize: 14 }} />
+                      <span>Xem chứng từ</span>
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-400 text-xs font-medium rounded cursor-not-allowed"
+                      title="Chưa có chứng từ"
+                    >
+                      <OpenInNewIcon sx={{ fontSize: 14 }} />
+                      <span>Chưa có chứng từ</span>
+                    </button>
+                  )
+                )}
+              </>
             )}
           </div>
           <button
@@ -142,7 +165,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
               <div className="mb-4">
                 <h2 className="text-sm font-semibold text-gray-700 mb-2">Thông tin cơ bản</h2>
                 <div className="grid grid-cols-12 gap-3">
-                  <div className="col-span-6">
+                  <div className="col-span-10">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Nhà cung cấp
                     </label>
@@ -160,45 +183,16 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     </div>
                   </div>
 
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Đơn vị tiền tệ
-                    </label>
-                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                      {expenseData.currency || 'VND'}
-                    </div>
-                  </div>
 
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Tổng tiền
-                    </label>
-                    <div className="relative">
-                      <div className="w-full px-2 py-1.5 pr-8 text-sm font-semibold border border-gray-300 rounded bg-gray-50">
-                        {formatCurrency(expenseData.total || 0)}
-                      </div>
-                      <span className="absolute right-2 top-1.5 text-sm text-gray-500">₫</span>
-                    </div>
-                  </div>
                 </div>
               </div>
-
-
-
-
 
               {/* Remark Section */}
               {expenseData.remark && (
                 <div className="mb-4">
-                  <div className="grid grid-cols-12 gap-3">
-                    <div className="col-span-8">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Ghi chú
-                      </label>
-                      <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-blue-50 text-blue-700">
-                        {expenseData.remark}
-                      </div>
-                    </div>
+                  <h2 className="text-sm font-semibold text-gray-700 mb-2">Ghi chú</h2>
+                  <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-blue-50 text-blue-700">
+                    {expenseData.remark}
                   </div>
                 </div>
               )}
@@ -232,13 +226,13 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     <thead>
                       <tr className="bg-gray-50">
                         <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Biển số xe</th>
-                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Tên hàng mục</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Hạng mục</th>
+                        <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">Ngày lắp đặt</th>
+                        <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">Ngày hết hạn</th>
                         <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">Đơn giá (VND)</th>
                         <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-16">SL</th>
                         <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Thuế (%)</th>
-                        <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">Thành tiền</th>
-                        <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">Ngày lắp đặt</th>
-                        <th className="text-center px-3 py-2 text-xs font-medium text-gray-700">Ngày hết hạn</th>
+                        <th className="text-right px-3 py-2 text-xs font-medium text-gray-700">Thành tiền</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -247,18 +241,18 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                           <tr key={item.id || index} className="hover:bg-gray-50 border-t">
                             <td className="px-3 py-2 text-xs border-r">{item.license_plate || '-'}</td>
                             <td className="px-3 py-2 text-xs border-r">{item.item_name || '-'}</td>
+                            <td className="px-3 py-2 text-xs text-center border-r">{formatDate(item.install_date)}</td>
+                            <td className="px-3 py-2 text-xs text-center border-r">{formatDate(item.expiry_date)}</td>
                             <td className="px-3 py-2 text-xs text-right border-r">{formatCurrency(item.price || 0)}</td>
                             <td className="px-3 py-2 text-xs text-center border-r">{item.quantity || 0}</td>
                             <td className="px-3 py-2 text-xs text-right border-r">{item.tax_rate || 0}%</td>
-                            <td className="px-3 py-2 text-xs text-right font-medium border-r">{formatCurrency(item.total || 0)}</td>
-                            <td className="px-3 py-2 text-xs text-center border-r">{formatDate(item.install_date)}</td>
-                            <td className="px-3 py-2 text-xs text-center">{formatDate(item.expiry_date)}</td>
+                            <td className="px-3 py-2 text-xs text-right font-medium">{formatCurrency(item.total || 0)}</td>
                           </tr>
                         ))
                       ) : (
                         <tr>
                           <td colSpan="8" className="px-3 py-6 text-center text-gray-500 text-xs">
-                            Không có dữ liệu hàng mục
+                            Không có dữ liệu hạng mục
                           </td>
                         </tr>
                       )}
@@ -266,9 +260,8 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     {expenseData.items && expenseData.items.length > 0 && (
                       <tfoot>
                         <tr className="bg-gray-50 font-medium border-t">
-                          <td colSpan="5" className="px-3 py-2 text-right text-xs border-r">Tổng cộng:</td>
-                          <td className="px-3 py-2 text-right text-sm font-semibold border-r">{formatCurrency(expenseData.total || 0)} ₫</td>
-                          <td colSpan="2"></td>
+                          <td colSpan="7" className="px-3 py-2 text-right text-xs">Tổng cộng:</td>
+                          <td className="px-3 py-2 text-right text-sm font-semibold">{formatCurrency(expenseData.total || 0)} ₫</td>
                         </tr>
                       </tfoot>
                     )}

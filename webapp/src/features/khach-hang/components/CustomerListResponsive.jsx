@@ -162,7 +162,6 @@ const CustomerListResponsive = ({
         defaultSort={{ key: 'ten', direction: 'asc' }}
         pagination={true}
         page={page}
-        rowsPerPage={rowsPerPage}
         totalCount={filteredCustomers.length}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}

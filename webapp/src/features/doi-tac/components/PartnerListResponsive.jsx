@@ -162,7 +162,6 @@ const PartnerListResponsive = ({
       defaultSort={{ key: 'ten', direction: 'asc' }}
       pagination={true}
       page={page}
-      rowsPerPage={rowsPerPage}
       totalCount={filteredPartners.length}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}

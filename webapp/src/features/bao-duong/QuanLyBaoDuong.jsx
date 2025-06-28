@@ -178,7 +178,6 @@ const QuanLyBaoDuong = memo(() => {
       showEmptyRows: true,
       pagination: true,
       page: pagination.page,
-      rowsPerPage: pagination.pageSize,
       totalCount: pagination.total,
       rowKeyField: 'id',
       customRowsPerPageOptions: [100, 200, 500],

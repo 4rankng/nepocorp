@@ -168,7 +168,6 @@ const ContainerListResponsive = ({
         defaultSort={{ key: 'category', direction: 'asc' }}
         pagination={true}
         page={page}
-        rowsPerPage={rowsPerPage}
         totalCount={totalCount}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}

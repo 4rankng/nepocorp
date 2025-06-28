@@ -198,7 +198,6 @@ const DauKeoListResponsive = ({
         defaultSort={{ key: 'license_plate', direction: 'asc' }}
         pagination={true}
         page={page}
-        rowsPerPage={rowsPerPage}
         totalCount={filteredData.length}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}

@@ -148,7 +148,6 @@ const DesktopView = ({
             defaultSort={{ key: 'tenNhanVien', direction: 'asc' }}
             pagination={true}
             page={page}
-            rowsPerPage={rowsPerPage}
             totalCount={employees.length}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}

@@ -335,7 +335,6 @@ const DinhMucChoHang = () => {
         }
         pagination={true}
         page={pagination.page}
-        rowsPerPage={pagination.pageSize}
         totalCount={pagination.total}
         rowKeyField="id"
         onPageChange={(_, newPage) => {
