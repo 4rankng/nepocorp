@@ -6,18 +6,14 @@ import {
   Snackbar,
   CircularProgress,
   Typography,
-  useTheme,
-  useMediaQuery,
   Divider,
 } from '@mui/material';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import PartnerForm from '@features/doi-tac/components/PartnerForm';
-import MobileView from '@features/doi-tac/components/MobileView';
+
 import DesktopView from '@features/doi-tac/components/DesktopView';
 import useDoiTac from '@features/doi-tac/hooks/useDoiTac';
 const QuanLyDoiTac = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     partners,
     loading,
@@ -128,7 +124,7 @@ const QuanLyDoiTac = () => {
   return (
     <Box>
       {/* Render appropriate view based on screen size */}
-      {isMobile ? <MobileView {...commonProps} /> : <DesktopView {...commonProps} />}
+      <DesktopView {...commonProps} />
       {/* Add/Edit Form */}
       <PartnerForm
         open={isFormOpen}

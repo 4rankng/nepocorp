@@ -80,6 +80,8 @@ func main() {
 	expenseRepo := repositories.NewExpenseRepository(db)
 	maintenanceRepo := repositories.NewMaintenanceRepository(db)
 	settingRepo := repositories.NewSettingRepository(db)
+	customerRepo := repositories.NewCustomerRepository(db)
+	partnerRepo := repositories.NewPartnerRepository(db)
 
 	// Initialize services
 	activityLogger := activitylogger.NewService(activityLogRepo, logger, cfg.ActivityLogQueueSize)
@@ -94,6 +96,8 @@ func main() {
 	expenseHandler := handlers.NewExpenseHandler(expenseRepo, expenseCategoryRepo)
 	maintenanceHandler := handlers.NewMaintenanceHandler(maintenanceRepo)
 	settingHandler := handlers.NewSettingHandler(settingRepo)
+	customerHandler := handlers.NewCustomerHandler(customerRepo)
+	partnerHandler := handlers.NewPartnerHandler(partnerRepo)
 
 	// Initialize Gin
 	gin.SetMode(gin.ReleaseMode)
@@ -111,7 +115,7 @@ func main() {
 
 	// Initialize routes
 	routes.Setup(r, cfg, healthHandler, authHandler, userRepo, expenseCategoryHandler, 
-		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, logger)
+		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -175,6 +179,8 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 		&models.ExpenseItem{},
 		&models.Maintenance{},
 		&models.Setting{},
+		&models.Customer{},
+		&models.Partner{},
 	); err != nil {
 		return nil, err
 	}

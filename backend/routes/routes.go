@@ -25,6 +25,8 @@ func Setup(
 	expenseHandler *handlers.ExpenseHandler,
 	maintenanceHandler *handlers.MaintenanceHandler,
 	settingHandler *handlers.SettingHandler,
+	customerHandler *handlers.CustomerHandler,
+	partnerHandler *handlers.PartnerHandler,
 	logger *logrus.Logger,
 ) {
 	// Rate limiter
@@ -112,6 +114,20 @@ func Setup(
 			// Settings
 			protected.GET("/settings/:key", settingHandler.GetByKey)
 			protected.PUT("/settings/:key", settingHandler.UpdateByKey)
+
+			// Customers
+			protected.GET("/customer", customerHandler.GetAllCustomers)
+			protected.POST("/customer", customerHandler.CreateCustomer)
+			protected.GET("/customer/:id", customerHandler.GetCustomerByID)
+			protected.PUT("/customer/:id", customerHandler.UpdateCustomer)
+			protected.DELETE("/customer/:id", customerHandler.DeleteCustomer)
+
+			// Partners
+			protected.GET("/partner", partnerHandler.GetAllPartners)
+			protected.POST("/partner", partnerHandler.CreatePartner)
+			protected.GET("/partner/:id", partnerHandler.GetPartnerByID)
+			protected.PUT("/partner/:id", partnerHandler.UpdatePartner)
+			protected.DELETE("/partner/:id", partnerHandler.DeletePartner)
 		}
 	}
 }
