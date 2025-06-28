@@ -185,7 +185,7 @@ const ExpenseForm = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Chứng từ thanh toán
+                  URL chứng từ
                 </label>
                 <input
                   type="text"

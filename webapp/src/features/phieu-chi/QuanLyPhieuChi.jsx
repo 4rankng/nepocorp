@@ -142,12 +142,26 @@ const QuanLyPhieuChi = () => {
   }, [fetchTractors, fetchTrailers]);
 
   const handleEditExpense = useCallback(async (expense) => {
-    setEditingExpense(expense);
-    setShowExpenseForm(true);
-    // Ensure vehicle data is loaded
-    await fetchTractors();
-    await fetchTrailers();
-  }, [fetchTractors, fetchTrailers]);
+    try {
+      // Show loading state while fetching full expense data
+      showSnackbar('Đang tải thông tin phiếu chi...', 'info');
+      
+      // Fetch full expense data including items
+      const response = await expenseApi.getById(expense.id);
+      const fullExpenseData = response.data?.data || response.data || response;
+      
+      // Set the full expense data for editing
+      setEditingExpense(fullExpenseData);
+      setShowExpenseForm(true);
+      
+      // Ensure vehicle data is loaded
+      await fetchTractors();
+      await fetchTrailers();
+    } catch (error) {
+      console.error('Error fetching expense details:', error);
+      showSnackbar('Không thể tải thông tin phiếu chi', 'error');
+    }
+  }, [fetchTractors, fetchTrailers, showSnackbar]);
 
   const handleViewExpense = useCallback((expense) => {
     setViewingExpenseId(expense.id);
@@ -164,15 +178,6 @@ const QuanLyPhieuChi = () => {
     setViewingExpenseId(null);
   }, []);
 
-  const handlePaymentStatusChange = useCallback(async (expenseId, newStatus) => {
-    try {
-      await updateExpense(expenseId, { payment_status: newStatus });
-      showSnackbar('Cập nhật trạng thái thanh toán thành công', 'success');
-    } catch (error) {
-      showSnackbar('Không thể cập nhật trạng thái thanh toán', 'error');
-      throw error; // Re-throw to let the modal handle the error
-    }
-  }, [updateExpense, showSnackbar]);
 
   const handleDeleteExpense = useCallback(async (expense) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa phiếu chi này?')) {
@@ -229,7 +234,6 @@ const QuanLyPhieuChi = () => {
           open={true}
           onClose={handleCloseInvoiceModal}
           expenseId={viewingExpenseId}
-          onPaymentStatusChange={handlePaymentStatusChange}
         />
       )}
 

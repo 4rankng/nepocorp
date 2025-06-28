@@ -42,7 +42,7 @@ const PaymentManagement = ({
       // TODO: Implement file upload to cloud storage (Google Drive, AWS S3, etc.)
       // For now, this is a placeholder
       console.log('File upload not implemented yet:', file.name);
-      
+
       // Simulated upload result
       setTimeout(() => {
         const mockUrl = `https://drive.google.com/file/d/mock_${Date.now()}/view`;
@@ -72,7 +72,7 @@ const PaymentManagement = ({
 
   const getStatusBadge = (status) => {
     return (
-      <span 
+      <span
         style={{
           display: 'inline-block',
           padding: '4px 12px',
@@ -120,16 +120,16 @@ const PaymentManagement = ({
       </FormRow>
 
       <FormGroup>
-        <FormLabel>Chứng từ thanh toán</FormLabel>
+        <FormLabel>URL chứng từ</FormLabel>
         <FormControl
-          placeholder="URL ảnh chứng từ thanh toán (ví dụ: Google Drive link)"
+          placeholder="URL chứng từ (ví dụ: Google Drive link)"
           value={paymentProof}
           onChange={handleProofChange}
           error={!!errors.payment_proof}
           disabled={disabled || isUploading}
         />
         {errors.payment_proof && <ErrorText>{errors.payment_proof}</ErrorText>}
-        
+
         {showFileUpload && (
           <div style={{ marginTop: '8px' }}>
             <input
@@ -156,9 +156,9 @@ const PaymentManagement = ({
               {paymentProof && (
                 <span>
                   {' '}
-                  <a 
-                    href={paymentProof} 
-                    target="_blank" 
+                  <a
+                    href={paymentProof}
+                    target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: '#3b82f6', textDecoration: 'underline' }}
                   >
@@ -193,7 +193,7 @@ const PaymentManagement = ({
           marginTop: '12px'
         }}>
           <HelperText>
-            ⏳ <strong>Chờ thanh toán:</strong> Hãy cung cấp chứng từ thanh toán sau khi hoàn tất giao dịch.
+            ⏳ <strong>Chờ thanh toán:</strong> Hãy cung cấp URL chứng từ sau khi hoàn tất giao dịch.
           </HelperText>
         </div>
       )}
@@ -206,7 +206,7 @@ const PaymentManagement = ({
           marginTop: '12px'
         }}>
           <HelperText>
-            ⚠️ <strong>Thiếu chứng từ:</strong> Vui lòng cung cấp chứng từ thanh toán để hoàn tất hồ sơ.
+            ⚠️ <strong>Thiếu chứng từ:</strong> Vui lòng cung cấp URL chứng từ để hoàn tất hồ sơ.
           </HelperText>
         </div>
       )}

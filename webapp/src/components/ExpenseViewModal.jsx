@@ -30,12 +30,10 @@ const getPaymentStatusColor = (status) => {
   }
 };
 
-const ExpenseViewModal = ({ open, onClose, expenseId, onPaymentStatusChange }) => {
+const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const [expenseData, setExpenseData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isEditingStatus, setIsEditingStatus] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const fetchExpenseData = useCallback(async () => {
     setLoading(true);
@@ -68,11 +66,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId, onPaymentStatusChange }) =
   useEffect(() => {
     const handleEscKey = (event) => {
       if (event.key === 'Escape' && open) {
-        if (isEditingStatus) {
-          setIsEditingStatus(false);
-        } else {
-          handleClose();
-        }
+        handleClose();
       }
     };
 
@@ -83,36 +77,14 @@ const ExpenseViewModal = ({ open, onClose, expenseId, onPaymentStatusChange }) =
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [open, isEditingStatus]);
+  }, [open]);
 
   const handleClose = useCallback(() => {
     setExpenseData(null);
     setError(null);
-    setIsEditingStatus(false);
     onClose();
   }, [onClose]);
 
-  const handleStatusChange = useCallback(async (event) => {
-    const newStatus = event.target.value;
-    setUpdatingStatus(true);
-
-    try {
-      if (onPaymentStatusChange) {
-        await onPaymentStatusChange(expenseId, newStatus);
-
-        setExpenseData(prev => ({
-          ...prev,
-          payment_status: newStatus
-        }));
-
-        setIsEditingStatus(false);
-      }
-    } catch (error) {
-      console.error('Failed to update payment status:', error);
-    } finally {
-      setUpdatingStatus(false);
-    }
-  }, [expenseId, onPaymentStatusChange]);
 
   if (!open) return null;
 
@@ -208,56 +180,22 @@ const ExpenseViewModal = ({ open, onClose, expenseId, onPaymentStatusChange }) =
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Trạng thái thanh toán
                     </label>
-                    {isEditingStatus ? (
-                      <div>
-                        <select
-                          value={expenseData.payment_status}
-                          onChange={handleStatusChange}
-                          disabled={updatingStatus}
-                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                          {Object.entries(PAYMENT_STATUS_LABELS).map(([status, label]) => (
-                            <option key={status} value={status}>{label}</option>
-                          ))}
-                        </select>
-                        <div className="flex gap-1 mt-1">
-                          <button
-                            onClick={() => setIsEditingStatus(false)}
-                            disabled={updatingStatus}
-                            className="px-2 py-1 text-xs border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
-                          >
-                            Hủy
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            padding: '4px 8px',
-                            border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
-                            borderRadius: '4px',
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            color: getPaymentStatusColor(expenseData.payment_status),
-                            backgroundColor: `${getPaymentStatusColor(expenseData.payment_status)}15`,
-                            minWidth: '80px',
-                            textAlign: 'center',
-                          }}
-                        >
-                          {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
-                        </span>
-                        {onPaymentStatusChange && (
-                          <button
-                            onClick={() => setIsEditingStatus(true)}
-                            className="text-xs text-blue-600 hover:text-blue-800"
-                          >
-                            Sửa
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 8px',
+                        border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: getPaymentStatusColor(expenseData.payment_status),
+                        backgroundColor: `${getPaymentStatusColor(expenseData.payment_status)}15`,
+                        minWidth: '80px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
+                    </span>
                   </div>
 
                   {expenseData.subtotal && (
@@ -284,7 +222,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId, onPaymentStatusChange }) =
 
                   <div className="col-span-5">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Chứng từ thanh toán
+                      URL chứng từ
                     </label>
                     {expenseData.payment_status === 'PAID' && expenseData.payment_proof ? (
                       <button
@@ -415,7 +353,6 @@ ExpenseViewModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   expenseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  onPaymentStatusChange: PropTypes.func,
 };
 
 export default React.memo(ExpenseViewModal);

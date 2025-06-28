@@ -87,7 +87,7 @@ Two fields side by side:
    - Default: "Bảo dưỡng" (ID: 1)
 
 #### Row 4: Documentation
-**Chứng từ thanh toán (Payment Proof)**
+**URL chứng từ (Payment Proof)**
 - Type: File upload / URL input
 - Required: No
 - Accepts: Image files or Google Drive links
