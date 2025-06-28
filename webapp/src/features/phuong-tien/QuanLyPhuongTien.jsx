@@ -71,7 +71,7 @@ const DauKeoContent = () => {
       />
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={snackbar.severity === 'error' ? null : 6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
         <Alert
@@ -189,7 +189,7 @@ const RoMoocContent = () => {
       />
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={snackbar.severity === 'error' ? null : 6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
         <Alert
@@ -317,7 +317,7 @@ const ContainerContent = () => {
       />
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={snackbar.severity === 'error' ? null : 6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
         <Alert
