@@ -57,13 +57,13 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const getAllLicensePlates = useCallback(() => {
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
-      label: `${t.license_plate} (Đầu kéo)`,
+      label: t.license_plate,
       type: 'tractor'
     }));
 
     const trailerPlates = trailers.map(t => ({
       value: t.license_plate,
-      label: `${t.license_plate} (Rơ moóc)`,
+      label: t.license_plate,
       type: 'trailer'
     }));
 
