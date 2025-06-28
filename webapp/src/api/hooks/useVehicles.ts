@@ -7,7 +7,8 @@ import {
   CreateTrailerRequest,
   UpdateTrailerRequest,
   CreateContainerRequest,
-  UpdateContainerRequest
+  UpdateContainerRequest,
+  ApiError
 } from '@api/types';
 
 // Tractor hooks
@@ -23,7 +24,7 @@ export const useTractors = (filters?: VehicleFilters & { page?: number; limit?: 
       const response = await tractorService.getAll(filters);
       setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch tractors'));
+      setError(err instanceof Error ? err : (err as ApiError));
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +59,7 @@ export const useTractor = (id: number) => {
         const response = await tractorService.getById(id);
         setData(response);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch tractor'));
+        setError(err instanceof Error ? err : (err as ApiError));
       } finally {
         setIsLoading(false);
       }
@@ -88,7 +89,7 @@ export const useActiveTractors = (page = 1, limit = 10) => {
       const response = await tractorService.getActive(page, limit);
       setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch active tractors'));
+      setError(err instanceof Error ? err : (err as ApiError));
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +120,7 @@ export const useCreateTractor = () => {
       const response = await tractorService.create(data);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to create tractor');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
@@ -148,7 +149,7 @@ export const useUpdateTractor = () => {
       const response = await tractorService.update(id, data);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to update tractor');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
@@ -177,7 +178,7 @@ export const useDeleteTractor = () => {
       const response = await tractorService.delete(id);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to delete tractor');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
@@ -208,7 +209,7 @@ export const useTrailers = (filters?: VehicleFilters & { page?: number; limit?: 
       const response = await trailerService.getAll(filters);
       setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch trailers'));
+      setError(err instanceof Error ? err : (err as ApiError));
     } finally {
       setIsLoading(false);
     }
@@ -243,7 +244,7 @@ export const useTrailer = (id: number) => {
         const response = await trailerService.getById(id);
         setData(response);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch trailer'));
+        setError(err instanceof Error ? err : (err as ApiError));
       } finally {
         setIsLoading(false);
       }
@@ -273,7 +274,7 @@ export const useActiveTrailers = (page = 1, limit = 10) => {
       const response = await trailerService.getActive(page, limit);
       setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch active trailers'));
+      setError(err instanceof Error ? err : (err as ApiError));
     } finally {
       setIsLoading(false);
     }
@@ -304,7 +305,7 @@ export const useCreateTrailer = () => {
       const response = await trailerService.create(data);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to create trailer');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
@@ -333,7 +334,7 @@ export const useUpdateTrailer = () => {
       const response = await trailerService.update(id, data);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to update trailer');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
@@ -362,7 +363,7 @@ export const useDeleteTrailer = () => {
       const response = await trailerService.delete(id);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to delete trailer');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
@@ -393,7 +394,7 @@ export const useContainers = (filters?: VehicleFilters & { page?: number; limit?
       const response = await containerService.getAll(filters);
       setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch containers'));
+      setError(err instanceof Error ? err : (err as ApiError));
     } finally {
       setIsLoading(false);
     }
@@ -428,7 +429,7 @@ export const useContainer = (id: number) => {
         const response = await containerService.getById(id);
         setData(response);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch container'));
+        setError(err instanceof Error ? err : (err as ApiError));
       } finally {
         setIsLoading(false);
       }
@@ -458,7 +459,7 @@ export const useActiveContainers = (page = 1, limit = 10) => {
       const response = await containerService.getActive(page, limit);
       setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch active containers'));
+      setError(err instanceof Error ? err : (err as ApiError));
     } finally {
       setIsLoading(false);
     }
@@ -489,7 +490,7 @@ export const useCreateContainer = () => {
       const response = await containerService.create(data);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to create container');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
@@ -518,7 +519,7 @@ export const useUpdateContainer = () => {
       const response = await containerService.update(id, data);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to update container');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
@@ -547,7 +548,7 @@ export const useDeleteContainer = () => {
       const response = await containerService.delete(id);
       return response;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to delete container');
+      const error = err instanceof Error ? err : (err as ApiError);
       setError(error);
       throw error;
     } finally {
