@@ -4,8 +4,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import Dropdown from '@components/ui/Dropdown';
 
 const LicensePlateSelectionModal = ({ open, onClose, onSelect, licensePlates, isLoading }) => {
-  if (!open) return null;
-
   const handleSelectChange = (value) => {
     onSelect(value);
     onClose();
@@ -30,7 +28,7 @@ const LicensePlateSelectionModal = ({ open, onClose, onSelect, licensePlates, is
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh]">
+      <div className="bg-white rounded-lg w-full max-w-md">
         <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
           <h1 className="text-lg font-semibold text-gray-900">Chọn Biển Số Xe</h1>
           <button

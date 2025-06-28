@@ -758,13 +758,15 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         </div>
       </div>
 
-      <LicensePlateSelectionModal
-        open={showLicensePlateModal}
-        onClose={() => setShowLicensePlateModal(false)}
-        onSelect={handleLicensePlateSelect}
-        licensePlates={getAllLicensePlates()}
-        isLoading={isLoadingPlates}
-      />
+      {showLicensePlateModal && (
+        <LicensePlateSelectionModal
+          open={showLicensePlateModal}
+          onClose={() => setShowLicensePlateModal(false)}
+          onSelect={handleLicensePlateSelect}
+          licensePlates={getAllLicensePlates()}
+          isLoading={isLoadingPlates}
+        />
+      )}
     </div>
   );
 };
