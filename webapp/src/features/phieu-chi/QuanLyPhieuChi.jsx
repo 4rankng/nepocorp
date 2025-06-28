@@ -4,19 +4,37 @@ import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import ExpenseForm from '@/components/shared/ExpenseForm';
 import ExpenseList from '@/components/shared/ExpenseList';
 import ExpenseViewModal from '@/components/ExpenseViewModal';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import useExpenses from './hooks/useExpenses';
 import useExpenseForm from '@/hooks/useExpenseForm';
 import { expenseApi } from '@services/api/expenseApi';
 import { Fab, Zoom, Snackbar, Alert } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
+import { PAYMENT_STATUS_LABELS } from '@constants/payment';
 
 const QuanLyPhieuChi = () => {
   const { currentUser } = useAuth();
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
+  
+  // Helper functions
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+  
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  };
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [viewingExpenseId, setViewingExpenseId] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, expense: null });
+  const [isDeletingExpense, setIsDeletingExpense] = useState(false);
   
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -179,16 +197,28 @@ const QuanLyPhieuChi = () => {
   }, []);
 
 
-  const handleDeleteExpense = useCallback(async (expense) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phiếu chi này?')) {
-      try {
-        await deleteExpense(expense.id);
-        showSnackbar('Xóa phiếu chi thành công', 'success');
-      } catch (error) {
-        showSnackbar('Không thể xóa phiếu chi', 'error');
-      }
+  const handleDeleteExpense = useCallback((expense) => {
+    setDeleteDialog({ open: true, expense });
+  }, []);
+
+  const handleDeleteClose = useCallback(() => {
+    setDeleteDialog({ open: false, expense: null });
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteDialog.expense) return;
+    
+    setIsDeletingExpense(true);
+    try {
+      await deleteExpense(deleteDialog.expense.id);
+      showSnackbar('Xóa phiếu chi thành công', 'success');
+      handleDeleteClose();
+    } catch (error) {
+      showSnackbar('Không thể xóa phiếu chi', 'error');
+    } finally {
+      setIsDeletingExpense(false);
     }
-  }, [deleteExpense, showSnackbar]);
+  }, [deleteDialog.expense, deleteExpense, showSnackbar, handleDeleteClose]);
 
   if (!currentUser) {
     return <div>Loading...</div>;
@@ -269,6 +299,28 @@ const QuanLyPhieuChi = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onCancel={handleDeleteClose}
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeletingExpense}
+        type="delete"
+        title="Xóa phiếu chi"
+        message="Bạn có chắc chắn muốn xóa phiếu chi này?"
+        details={deleteDialog.expense ? {
+          'Nhà cung cấp': deleteDialog.expense.vendor_name || '-',
+          'Loại chi phí': (() => {
+            const category = categories.find(cat => cat.id === deleteDialog.expense.expense_category_id);
+            return category ? category.name : '-';
+          })(),
+          'Tổng tiền': formatCurrency(deleteDialog.expense.total || 0),
+          'Trạng thái': PAYMENT_STATUS_LABELS[deleteDialog.expense.payment_status] || deleteDialog.expense.payment_status || '-',
+          'Ngày tạo': formatDate(deleteDialog.expense.created_at),
+          ...(deleteDialog.expense.remark && { 'Ghi chú': deleteDialog.expense.remark }),
+        } : null}
+      />
     </div>
   );
 };

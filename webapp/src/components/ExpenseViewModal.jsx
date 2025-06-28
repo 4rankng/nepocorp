@@ -2,8 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import EditIcon from '@mui/icons-material/Edit';
 import { expenseApi } from '@services/api/expenseApi';
-import { PAYMENT_STATUS_LABELS } from '@constants/payment';
+import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
+import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
+import Dropdown from '@components/ui/Dropdown';
 
 // Utility functions
 const formatCurrency = (value) => {
@@ -34,6 +37,11 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const [expenseData, setExpenseData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState(null);
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchExpenseData = useCallback(async () => {
     setLoading(true);
@@ -62,11 +70,55 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     }
   }, [open, expenseId, fetchExpenseData]);
 
+  // Fetch expense categories when entering edit mode
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (isEditing && expenseCategories.length === 0) {
+        setIsLoadingCategories(true);
+        try {
+          const response = await expenseCategoryApi.getAll();
+          const categories = response.data?.data || response.data || [];
+          setExpenseCategories(categories);
+        } catch (err) {
+          console.error('Error fetching expense categories:', err);
+        } finally {
+          setIsLoadingCategories(false);
+        }
+      }
+    };
+    fetchCategories();
+  }, [isEditing, expenseCategories.length]);
+
+  const handleClose = useCallback(() => {
+    setExpenseData(null);
+    setError(null);
+    setIsEditing(false);
+    setEditedData(null);
+    onClose();
+  }, [onClose]);
+
+  const handleEditClick = useCallback(() => {
+    setIsEditing(true);
+    setEditedData({
+      ...expenseData,
+      items: expenseData.items.map(item => ({ ...item }))
+    });
+  }, [expenseData]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setEditedData(null);
+  }, []);
+
   // Handle ESC key to close modal or cancel editing
   useEffect(() => {
     const handleEscKey = (event) => {
       if (event.key === 'Escape' && open) {
-        handleClose();
+        if (isEditing) {
+          handleCancelEdit();
+        } else {
+          handleClose();
+        }
       }
     };
 
@@ -77,13 +129,72 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [open]);
+  }, [open, isEditing, handleCancelEdit, handleClose]);
 
-  const handleClose = useCallback(() => {
-    setExpenseData(null);
+  const handleSaveEdit = useCallback(async () => {
+    setIsSaving(true);
     setError(null);
-    onClose();
-  }, [onClose]);
+    try {
+      // Calculate totals for items
+      const updatedItems = editedData.items.map(item => {
+        const price = parseFloat(item.price) || 0;
+        const quantity = parseFloat(item.quantity) || 0;
+        const taxRate = parseFloat(item.tax_rate) || 0;
+        const subtotal = price * quantity;
+        const taxAmount = subtotal * (taxRate / 100);
+        const total = subtotal + taxAmount;
+        
+        return {
+          ...item,
+          price,
+          quantity,
+          tax_rate: taxRate,
+          total
+        };
+      });
+
+      const totalAmount = updatedItems.reduce((sum, item) => sum + item.total, 0);
+
+      const updateData = {
+        vendor_name: editedData.vendor_name,
+        expense_category_id: editedData.expense_category_id,
+        payment_status: editedData.payment_status,
+        payment_proof: editedData.payment_proof || null,
+        cancel_reason: editedData.cancel_reason || null,
+        remark: editedData.remark,
+        items: updatedItems,
+        total: totalAmount
+      };
+
+      await expenseApi.update(expenseId, updateData);
+      
+      // Refresh the expense data
+      await fetchExpenseData();
+      setIsEditing(false);
+      setEditedData(null);
+    } catch (err) {
+      setError('Không thể cập nhật phiếu chi');
+      console.error('Error updating expense:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [editedData, expenseId, fetchExpenseData]);
+
+  const handleFieldChange = useCallback((field, value) => {
+    setEditedData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
+
+  const handleItemChange = useCallback((index, field, value) => {
+    setEditedData(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  }, []);
 
 
   if (!open) return null;
@@ -97,42 +208,58 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
             <h1 className="text-lg font-semibold text-gray-900">Chi tiết phiếu chi</h1>
             {expenseData && !loading && (
               <>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    padding: '4px 8px',
-                    border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    color: getPaymentStatusColor(expenseData.payment_status),
-                    backgroundColor: `${getPaymentStatusColor(expenseData.payment_status)}15`,
-                    minWidth: '80px',
-                    textAlign: 'center',
-                  }}
-                >
-                  {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
-                </span>
-                {expenseData.payment_status === 'PAID' && (
-                  expenseData.payment_proof ? (
-                    <button
-                      onClick={() => window.open(expenseData.payment_proof, '_blank')}
-                      className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
-                      title="Xem chứng từ thanh toán"
+                {isEditing ? (
+                  <Dropdown
+                    value={editedData.payment_status}
+                    onChange={(value) => handleFieldChange('payment_status', value)}
+                    options={Object.entries(PAYMENT_STATUS).map(([key, value]) => ({
+                      value: value,
+                      label: PAYMENT_STATUS_LABELS[value]
+                    }))}
+                    placeholder="Chọn trạng thái"
+                    className="text-xs"
+                    style={{ minWidth: '120px' }}
+                  />
+                ) : (
+                  <>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 8px',
+                        border: `1px solid ${getPaymentStatusColor(expenseData.payment_status)}`,
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: getPaymentStatusColor(expenseData.payment_status),
+                        backgroundColor: `${getPaymentStatusColor(expenseData.payment_status)}15`,
+                        minWidth: '80px',
+                        textAlign: 'center',
+                      }}
                     >
-                      <OpenInNewIcon sx={{ fontSize: 14 }} />
-                      <span>Xem chứng từ</span>
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-400 text-xs font-medium rounded cursor-not-allowed"
-                      title="Chưa có chứng từ"
-                    >
-                      <OpenInNewIcon sx={{ fontSize: 14 }} />
-                      <span>Chưa có chứng từ</span>
-                    </button>
-                  )
+                      {PAYMENT_STATUS_LABELS[expenseData.payment_status] || expenseData.payment_status}
+                    </span>
+                    {expenseData.payment_status === 'PAID' && (
+                      expenseData.payment_proof ? (
+                        <button
+                          onClick={() => window.open(expenseData.payment_proof, '_blank')}
+                          className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                          title="Xem chứng từ thanh toán"
+                        >
+                          <OpenInNewIcon sx={{ fontSize: 14 }} />
+                          <span>Xem chứng từ</span>
+                        </button>
+                      ) : (
+                        <button
+                          disabled
+                          className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-400 text-xs font-medium rounded cursor-not-allowed"
+                          title="Chưa có chứng từ"
+                        >
+                          <OpenInNewIcon sx={{ fontSize: 14 }} />
+                          <span>Chưa có chứng từ</span>
+                        </button>
+                      )
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -169,18 +296,42 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Nhà cung cấp
                     </label>
-                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                      {expenseData.vendor_name || '-'}
-                    </div>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editedData.vendor_name || ''}
+                        onChange={(e) => handleFieldChange('vendor_name', e.target.value)}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="Nhập tên nhà cung cấp"
+                      />
+                    ) : (
+                      <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
+                        {expenseData.vendor_name || '-'}
+                      </div>
+                    )}
                   </div>
 
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Loại chi phí
                     </label>
-                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-                      {expenseData.expense_category?.name || '-'}
-                    </div>
+                    {isEditing ? (
+                      <Dropdown
+                        value={editedData.expense_category_id}
+                        onChange={(value) => handleFieldChange('expense_category_id', value)}
+                        options={expenseCategories.map(cat => ({
+                          value: cat.id,
+                          label: cat.name
+                        }))}
+                        placeholder="Chọn loại chi phí"
+                        isLoading={isLoadingCategories}
+                        className="text-sm"
+                      />
+                    ) : (
+                      <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
+                        {expenseData.expense_category?.name || '-'}
+                      </div>
+                    )}
                   </div>
 
 
@@ -188,26 +339,74 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
               </div>
 
               {/* Remark Section */}
-              {expenseData.remark && (
+              {(expenseData.remark || isEditing) && (
                 <div className="mb-4">
                   <h2 className="text-sm font-semibold text-gray-700 mb-2">Ghi chú</h2>
-                  <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-blue-50 text-blue-700">
-                    {expenseData.remark}
-                  </div>
+                  {isEditing ? (
+                    <textarea
+                      value={editedData.remark || ''}
+                      onChange={(e) => handleFieldChange('remark', e.target.value)}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="Nhập ghi chú"
+                      rows="2"
+                    />
+                  ) : (
+                    <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-blue-50 text-blue-700">
+                      {expenseData.remark}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Cancel Reason Section */}
-              {expenseData.payment_status === 'CANCELLED' && expenseData.cancel_reason && (
+              {((isEditing ? editedData.payment_status === 'CANCELLED' : expenseData.payment_status === 'CANCELLED') || 
+                (expenseData.cancel_reason && !isEditing)) && (
                 <div className="mb-4">
                   <div className="grid grid-cols-12 gap-3">
                     <div className="col-span-8">
                       <label className="block text-xs font-medium text-gray-600 mb-1">
                         Lý do hủy
                       </label>
-                      <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-red-50 text-red-700">
-                        {expenseData.cancel_reason}
-                      </div>
+                      {isEditing && editedData.payment_status === 'CANCELLED' ? (
+                        <textarea
+                          value={editedData.cancel_reason || ''}
+                          onChange={(e) => handleFieldChange('cancel_reason', e.target.value)}
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="Nhập lý do hủy"
+                          rows="2"
+                        />
+                      ) : (
+                        <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-red-50 text-red-700">
+                          {expenseData.cancel_reason || '-'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Proof Section */}
+              {((isEditing ? editedData.payment_status === 'PAID' : expenseData.payment_status === 'PAID') || 
+                (expenseData.payment_proof && !isEditing)) && (
+                <div className="mb-4">
+                  <div className="grid grid-cols-12 gap-3">
+                    <div className="col-span-8">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        URL chứng từ thanh toán
+                      </label>
+                      {isEditing && editedData.payment_status === 'PAID' ? (
+                        <input
+                          type="url"
+                          value={editedData.payment_proof || ''}
+                          onChange={(e) => handleFieldChange('payment_proof', e.target.value)}
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="https://example.com/payment-proof"
+                        />
+                      ) : (
+                        <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-green-50 text-green-700">
+                          {expenseData.payment_proof || '-'}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -236,17 +435,104 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {expenseData.items && expenseData.items.length > 0 ? (
-                        expenseData.items.map((item, index) => (
+                      {(isEditing ? editedData.items : expenseData.items) && (isEditing ? editedData.items : expenseData.items).length > 0 ? (
+                        (isEditing ? editedData.items : expenseData.items).map((item, index) => (
                           <tr key={item.id || index} className="hover:bg-gray-50 border-t">
-                            <td className="px-3 py-2 text-xs border-r">{item.license_plate || '-'}</td>
-                            <td className="px-3 py-2 text-xs border-r">{item.item_name || '-'}</td>
-                            <td className="px-3 py-2 text-xs text-center border-r">{formatDate(item.install_date)}</td>
-                            <td className="px-3 py-2 text-xs text-center border-r">{formatDate(item.expiry_date)}</td>
-                            <td className="px-3 py-2 text-xs text-right border-r">{formatCurrency(item.price || 0)}</td>
-                            <td className="px-3 py-2 text-xs text-center border-r">{item.quantity || 0}</td>
-                            <td className="px-3 py-2 text-xs text-right border-r">{item.tax_rate || 0}%</td>
-                            <td className="px-3 py-2 text-xs text-right font-medium">{formatCurrency(item.total || 0)}</td>
+                            <td className="px-3 py-2 text-xs border-r">
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={item.license_plate || ''}
+                                  onChange={(e) => handleItemChange(index, 'license_plate', e.target.value)}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                                />
+                              ) : (
+                                item.license_plate || '-'
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs border-r">
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={item.item_name || ''}
+                                  onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                                />
+                              ) : (
+                                item.item_name || '-'
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-center border-r">
+                              {isEditing ? (
+                                <input
+                                  type="date"
+                                  value={item.install_date ? item.install_date.split('T')[0] : ''}
+                                  onChange={(e) => handleItemChange(index, 'install_date', e.target.value)}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                                />
+                              ) : (
+                                formatDate(item.install_date)
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-center border-r">
+                              {isEditing ? (
+                                <input
+                                  type="date"
+                                  value={item.expiry_date ? item.expiry_date.split('T')[0] : ''}
+                                  onChange={(e) => handleItemChange(index, 'expiry_date', e.target.value)}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                                />
+                              ) : (
+                                formatDate(item.expiry_date)
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-right border-r">
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  value={item.price || ''}
+                                  onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-right"
+                                  min="0"
+                                />
+                              ) : (
+                                formatCurrency(item.price || 0)
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-center border-r">
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  value={item.quantity || ''}
+                                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-center"
+                                  min="1"
+                                />
+                              ) : (
+                                item.quantity || 0
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-right border-r">
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  value={item.tax_rate || ''}
+                                  onChange={(e) => handleItemChange(index, 'tax_rate', e.target.value)}
+                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-right"
+                                  min="0"
+                                  max="100"
+                                />
+                              ) : (
+                                `${item.tax_rate || 0}%`
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-right font-medium">
+                              {formatCurrency(
+                                isEditing 
+                                  ? ((parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 0) * (1 + (parseFloat(item.tax_rate) || 0) / 100))
+                                  : (item.total || 0)
+                              )}
+                            </td>
                           </tr>
                         ))
                       ) : (
@@ -257,11 +543,22 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                         </tr>
                       )}
                     </tbody>
-                    {expenseData.items && expenseData.items.length > 0 && (
+                    {((isEditing ? editedData.items : expenseData.items) || []).length > 0 && (
                       <tfoot>
                         <tr className="bg-gray-50 font-medium border-t">
                           <td colSpan="7" className="px-3 py-2 text-right text-xs">Tổng cộng:</td>
-                          <td className="px-3 py-2 text-right text-sm font-semibold">{formatCurrency(expenseData.total || 0)} ₫</td>
+                          <td className="px-3 py-2 text-right text-sm font-semibold">
+                            {formatCurrency(
+                              isEditing 
+                                ? editedData.items.reduce((sum, item) => {
+                                    const price = parseFloat(item.price) || 0;
+                                    const quantity = parseFloat(item.quantity) || 0;
+                                    const taxRate = parseFloat(item.tax_rate) || 0;
+                                    return sum + (price * quantity * (1 + taxRate / 100));
+                                  }, 0)
+                                : (expenseData.total || 0)
+                            )} ₫
+                          </td>
                         </tr>
                       </tfoot>
                     )}
@@ -273,13 +570,43 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="px-4 py-3 border-t border-gray-200 flex justify-end">
-          <button
-            onClick={handleClose}
-            className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
-          >
-            Đóng
-          </button>
+        <div className="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
+                disabled={isSaving}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                disabled={isSaving}
+              >
+                {isSaving ? 'Đang lưu...' : 'Lưu'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleClose}
+                className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
+              >
+                Đóng
+              </button>
+              {expenseData && (
+                <button
+                  onClick={handleEditClick}
+                  className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
+                >
+                  <EditIcon sx={{ fontSize: 16 }} />
+                  <span>Sửa</span>
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import {
   useTheme,
 } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
-import { EditButton, DeleteButton, ViewButton } from '@/components/ActionButtons';
+import { DeleteButton, ViewButton } from '@/components/ActionButtons';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
 
 const formatCurrency = value => {
@@ -219,7 +219,6 @@ const ExpenseList = ({
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <ViewButton size="small" onClick={() => onView(expense)} />
-                <EditButton size="small" onClick={() => onEdit(expense)} />
                 <DeleteButton size="small" onClick={() => onDelete(expense)} />
               </Box>
             </Box>
@@ -305,13 +304,6 @@ const ExpenseList = ({
               onClick={e => {
                 e.stopPropagation();
                 onView(row);
-              }}
-            />
-            <EditButton
-              size="small"
-              onClick={e => {
-                e.stopPropagation();
-                onEdit(row);
               }}
             />
             <DeleteButton
