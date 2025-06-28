@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import PropTypes from 'prop-types';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -10,6 +10,7 @@ import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
 import { settingsApi } from '@services/api/settingsApi';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
 import Dropdown from '@components/ui/Dropdown';
+import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 
 // Utility functions
 const formatCurrency = (value) => {
@@ -37,6 +38,7 @@ const getPaymentStatusColor = (status) => {
 };
 
 const ExpenseViewModal = ({ open, onClose, expenseId }) => {
+  const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
   const [expenseData, setExpenseData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -46,6 +48,24 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [taxRate, setTaxRate] = useState(10);
+  const [isLoadingPlates, setIsLoadingPlates] = useState(false);
+
+  // Get license plates for dropdown
+  const getAllLicensePlates = useCallback(() => {
+    const tractorPlates = tractors.map(t => ({
+      value: t.license_plate,
+      label: `${t.license_plate} (Đầu kéo)`,
+      type: 'tractor'
+    }));
+    
+    const trailerPlates = trailers.map(t => ({
+      value: t.license_plate,
+      label: `${t.license_plate} (Rơ moóc)`,
+      type: 'trailer'
+    }));
+    
+    return [...tractorPlates, ...trailerPlates];
+  }, [tractors, trailers]);
 
   const fetchExpenseData = useCallback(async () => {
     setLoading(true);
@@ -99,7 +119,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     loadTaxRate();
   }, [open]);
 
-  // Fetch expense categories when entering edit mode
+  // Fetch expense categories and vehicles when entering edit mode
   useEffect(() => {
     const fetchCategories = async () => {
       if (isEditing && expenseCategories.length === 0) {
@@ -115,8 +135,26 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         }
       }
     };
+    
+    const fetchVehicles = async () => {
+      if (isEditing && (tractors.length === 0 || trailers.length === 0)) {
+        setIsLoadingPlates(true);
+        try {
+          await Promise.all([
+            fetchTractors(),
+            fetchTrailers()
+          ]);
+        } catch (err) {
+          console.error('Error fetching vehicles:', err);
+        } finally {
+          setIsLoadingPlates(false);
+        }
+      }
+    };
+    
     fetchCategories();
-  }, [isEditing, expenseCategories.length]);
+    fetchVehicles();
+  }, [isEditing, expenseCategories.length, tractors.length, trailers.length, fetchTractors, fetchTrailers]);
 
   const handleClose = useCallback(() => {
     setExpenseData(null);
@@ -495,12 +533,19 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                           <tr key={item.id || index} className="hover:bg-gray-50 border-t">
                             <td className="px-3 py-2 text-xs border-r">
                               {isEditing ? (
-                                <input
-                                  type="text"
-                                  value={item.license_plate || ''}
-                                  onChange={(e) => handleItemChange(index, 'license_plate', e.target.value)}
-                                  className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
-                                />
+                                <div style={{ minWidth: '150px' }}>
+                                  <Dropdown
+                                    value={item.license_plate || ''}
+                                    onChange={(value) => handleItemChange(index, 'license_plate', value)}
+                                    options={getAllLicensePlates()}
+                                    placeholder="Chọn biển số"
+                                    searchable={true}
+                                    clearable={true}
+                                    loading={isLoadingPlates}
+                                    className="text-xs"
+                                    style={{ fontSize: '12px' }}
+                                  />
+                                </div>
                               ) : (
                                 item.license_plate || '-'
                               )}
@@ -630,43 +675,41 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                     )}
                   </table>
                 </div>
-                {isEditing && (
-                  <div className="mt-3 flex justify-start">
-                    <button
-                      onClick={handleAddItem}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
-                    >
-                      <AddIcon sx={{ fontSize: 16 }} />
-                      <span>Thêm hạng mục</span>
-                    </button>
-                  </div>
-                )}
               </div>
             </>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
+        <div className="px-4 py-3 border-t border-gray-200 flex justify-between items-center">
           {isEditing ? (
             <>
               <button
-                onClick={handleCancelEdit}
-                className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
-                disabled={isSaving}
+                onClick={handleAddItem}
+                className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
               >
-                Hủy
+                <AddIcon sx={{ fontSize: 16 }} />
+                <span>Thêm hạng mục</span>
               </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                disabled={isSaving}
-              >
-                {isSaving ? 'Đang lưu...' : 'Lưu'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
+                  disabled={isSaving}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Đang lưu...' : 'Lưu'}
+                </button>
+              </div>
             </>
           ) : (
-            <>
+            <div className="flex justify-end gap-2 w-full">
               <button
                 onClick={handleClose}
                 className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
@@ -682,7 +725,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                   <span>Sửa</span>
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>

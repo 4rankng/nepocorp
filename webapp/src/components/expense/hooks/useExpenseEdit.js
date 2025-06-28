@@ -3,7 +3,7 @@ import { expenseApi } from '@services/api/expenseApi';
 import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
 import { settingsApi } from '@services/api/settingsApi';
 
-const useExpenseEdit = (expenseData, expenseId, onDataRefresh) => {
+const useExpenseEdit = (expenseData, expenseId, onDataRefresh, fetchTractors, fetchTrailers) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(null);
   const [expenseCategories, setExpenseCategories] = useState([]);
@@ -11,6 +11,7 @@ const useExpenseEdit = (expenseData, expenseId, onDataRefresh) => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [taxRate, setTaxRate] = useState(10);
+  const [isLoadingPlates, setIsLoadingPlates] = useState(false);
 
   // Fetch expense categories when entering edit mode
   useEffect(() => {
@@ -54,6 +55,27 @@ const useExpenseEdit = (expenseData, expenseId, onDataRefresh) => {
 
     loadTaxRate();
   }, [isEditing]);
+
+  // Fetch vehicles when entering edit mode
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      if (!isEditing || !fetchTractors || !fetchTrailers) return;
+      
+      setIsLoadingPlates(true);
+      try {
+        await Promise.all([
+          fetchTractors(),
+          fetchTrailers()
+        ]);
+      } catch (err) {
+        console.error('Error fetching vehicles:', err);
+      } finally {
+        setIsLoadingPlates(false);
+      }
+    };
+
+    fetchVehicles();
+  }, [isEditing, fetchTractors, fetchTrailers]);
 
   const handleEditClick = useCallback(() => {
     if (!expenseData) return;
@@ -167,6 +189,7 @@ const useExpenseEdit = (expenseData, expenseId, onDataRefresh) => {
     editedData,
     expenseCategories,
     isLoadingCategories,
+    isLoadingPlates,
     isSaving,
     saveError,
     handleEditClick,

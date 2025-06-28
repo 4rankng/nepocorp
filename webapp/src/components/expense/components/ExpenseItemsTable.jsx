@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import Dropdown from '@components/ui/Dropdown';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN').format(value);
@@ -12,7 +13,7 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('vi-VN');
 };
 
-const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDeleteItem }) => {
+const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDeleteItem, licensePlateOptions = [], isLoadingPlates = false }) => {
   const calculateItemTotal = (item) => {
     const price = parseFloat(item.price) || 0;
     const quantity = parseFloat(item.quantity) || 0;
@@ -50,12 +51,19 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                 <tr key={item.id || index} className="hover:bg-gray-50 border-t">
                   <td className="px-3 py-2 text-xs border-r">
                     {isEditing ? (
-                      <input
-                        type="text"
-                        value={item.license_plate || ''}
-                        onChange={(e) => onItemChange(index, 'license_plate', e.target.value)}
-                        className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
-                      />
+                      <div style={{ minWidth: '150px' }}>
+                        <Dropdown
+                          value={item.license_plate || ''}
+                          onChange={(value) => onItemChange(index, 'license_plate', value)}
+                          options={licensePlateOptions}
+                          placeholder="Chọn biển số"
+                          searchable={true}
+                          clearable={true}
+                          loading={isLoadingPlates}
+                          className="text-xs"
+                          style={{ fontSize: '12px' }}
+                        />
+                      </div>
                     ) : (
                       item.license_plate || '-'
                     )}
@@ -176,17 +184,6 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
           )}
         </table>
       </div>
-      {isEditing && (
-        <div className="mt-3 flex justify-start">
-          <button
-            onClick={onAddItem}
-            className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
-          >
-            <AddIcon sx={{ fontSize: 16 }} />
-            <span>Thêm hạng mục</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 };
@@ -197,6 +194,8 @@ ExpenseItemsTable.propTypes = {
   onItemChange: PropTypes.func.isRequired,
   onAddItem: PropTypes.func,
   onDeleteItem: PropTypes.func,
+  licensePlateOptions: PropTypes.array,
+  isLoadingPlates: PropTypes.bool,
 };
 
 export default React.memo(ExpenseItemsTable);

@@ -1,10 +1,12 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useContext } from 'react';
 import PropTypes from 'prop-types';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
 import Dropdown from '@components/ui/Dropdown';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
+import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 
 // Custom components
 import StatusBadge from './components/StatusBadge';
@@ -17,6 +19,7 @@ import useExpenseData from './hooks/useExpenseData';
 import useExpenseEdit from './hooks/useExpenseEdit';
 
 const ExpenseViewModal = ({ open, onClose, expenseId }) => {
+  const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
   const { expenseData, loading, error, refreshData } = useExpenseData(expenseId, open);
   
   const {
@@ -24,6 +27,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     editedData,
     expenseCategories,
     isLoadingCategories,
+    isLoadingPlates,
     isSaving,
     saveError,
     handleEditClick,
@@ -33,7 +37,24 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     handleAddItem,
     handleDeleteItem,
     handleSaveEdit,
-  } = useExpenseEdit(expenseData, expenseId, refreshData);
+  } = useExpenseEdit(expenseData, expenseId, refreshData, fetchTractors, fetchTrailers);
+
+  // Get license plates for dropdown
+  const getAllLicensePlates = useCallback(() => {
+    const tractorPlates = tractors.map(t => ({
+      value: t.license_plate,
+      label: `${t.license_plate} (Đầu kéo)`,
+      type: 'tractor'
+    }));
+    
+    const trailerPlates = trailers.map(t => ({
+      value: t.license_plate,
+      label: `${t.license_plate} (Rơ moóc)`,
+      type: 'trailer'
+    }));
+    
+    return [...tractorPlates, ...trailerPlates];
+  }, [tractors, trailers]);
 
   const handleClose = useCallback(() => {
     handleCancelEdit();
@@ -166,32 +187,43 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                 onItemChange={handleItemChange}
                 onAddItem={handleAddItem}
                 onDeleteItem={handleDeleteItem}
+                licensePlateOptions={getAllLicensePlates()}
+                isLoadingPlates={isLoadingPlates}
               />
             </>
           )}
         </div>
 
         {/* Footer Actions */}
-        <div className="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
+        <div className="px-4 py-3 border-t border-gray-200 flex justify-between items-center">
           {isEditing ? (
             <>
               <button
-                onClick={handleCancelEdit}
-                className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
-                disabled={isSaving}
+                onClick={handleAddItem}
+                className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
               >
-                Hủy
+                <AddIcon sx={{ fontSize: 16 }} />
+                <span>Thêm hạng mục</span>
               </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                disabled={isSaving}
-              >
-                {isSaving ? 'Đang lưu...' : 'Lưu'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
+                  disabled={isSaving}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Đang lưu...' : 'Lưu'}
+                </button>
+              </div>
             </>
           ) : (
-            <>
+            <div className="flex justify-end gap-2 w-full">
               <button
                 onClick={handleClose}
                 className="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors"
@@ -207,7 +239,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                   <span>Sửa</span>
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
