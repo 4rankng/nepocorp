@@ -1,7 +1,10 @@
 package models
 
 import (
+	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Tractor struct {
@@ -11,4 +14,11 @@ type Tractor struct {
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	LastUpdatedBy string    `gorm:"type:varchar(255)" json:"last_updated_by"` // name (@username) of user who last created/updated the record
+}
+
+// BeforeSave GORM hook to trim spaces from string fields
+func (t *Tractor) BeforeSave(tx *gorm.DB) (err error) {
+	t.LicensePlate = strings.TrimSpace(t.LicensePlate)
+	t.Description = strings.TrimSpace(t.Description)
+	return
 }
