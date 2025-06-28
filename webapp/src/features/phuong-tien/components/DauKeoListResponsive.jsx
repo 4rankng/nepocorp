@@ -79,7 +79,7 @@ const DauKeoListResponsive = ({
     },
     {
       key: 'updated_at',
-      label: 'CẬP NHẬT',
+      label: 'Sửa',
       align: 'left',
       sortable: true,
       render: value => formatDate(value),

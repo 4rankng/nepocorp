@@ -19,7 +19,7 @@ const Dropdown = ({
   multiple = false,
   searchable = true,
   clearable = true,
-  maxHeight = '200px',
+  maxHeight = '300px',
   noOptionsText = 'Không có lựa chọn',
   loadingText = 'Đang tải...',
   ...props

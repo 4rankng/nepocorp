@@ -6,6 +6,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
 import { settingsApi } from '@services/api/settingsApi';
 import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
+import Dropdown from '@components/ui/Dropdown';
+import ConfirmDialog from '@components/ConfirmDialog';
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('vi-VN').format(amount);
@@ -47,6 +49,7 @@ const ExpenseForm = ({
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, index: null });
   const [newItem, setNewItem] = useState({
     license_plate: '',
     item_name: '',
@@ -225,10 +228,17 @@ const ExpenseForm = ({
   };
 
   const removeItem = (index) => {
-    const updatedItems = localData.items.filter((_, i) => i !== index);
-    const newData = { ...localData, items: updatedItems };
-    setLocalData(newData);
-    onChange({ target: { name: 'items', value: updatedItems } });
+    setDeleteConfirm({ open: true, index });
+  };
+
+  const confirmRemoveItem = () => {
+    if (deleteConfirm.index !== null) {
+      const updatedItems = localData.items.filter((_, i) => i !== deleteConfirm.index);
+      const newData = { ...localData, items: updatedItems };
+      setLocalData(newData);
+      onChange({ target: { name: 'items', value: updatedItems } });
+    }
+    setDeleteConfirm({ open: false, index: null });
   };
 
   const calculateTotals = () => {
@@ -302,26 +312,24 @@ const ExpenseForm = ({
                   </div>
 
                   <div className="col-span-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Loại chi phí <span className="text-red-500">*</span>
-                    </label>
-                    <select
+                    <Dropdown
+                      label="Loại chi phí"
                       name="expense_category_id"
                       value={localData.expense_category_id}
                       onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      options={expenseCategories.map(category => ({
+                        value: category.id,
+                        label: category.name
+                      }))}
+                      placeholder="Chọn loại chi phí"
+                      required
                       disabled={isLoading || isLoadingCategories || !!expenseCategoryId}
-                    >
-                      <option value="">Chọn loại chi phí</option>
-                      {expenseCategories.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.expense_category_id && (
-                      <div className="text-xs text-red-500 mt-1">{errors.expense_category_id}</div>
-                    )}
+                      loading={isLoadingCategories}
+                      error={errors.expense_category_id}
+                      className="dropdown-compact"
+                      clearable={!expenseCategoryId}
+                      searchable
+                    />
                   </div>
 
                   <div className="col-span-3">
@@ -451,7 +459,7 @@ const ExpenseForm = ({
                               <td className="px-3 py-2 text-xs text-center border-r">{item.install_date || '-'}</td>
                               <td className="px-3 py-2 text-xs text-center border-r">{item.expiry_date || '-'}</td>
                               <td className="px-3 py-2 text-center">
-                                <div className="flex justify-center gap-1">
+                                <div className="flex justify-center gap-3">
                                   <button
                                     type="button"
                                     onClick={() => editItem(index)}
@@ -538,21 +546,23 @@ const ExpenseForm = ({
             <div className="p-4">
               <div className="grid grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Biển số xe <span className="text-red-500">*</span>
-                  </label>
-                  <select
+                  <Dropdown
+                    label="Biển số xe"
+                    name="license_plate"
                     value={newItem.license_plate}
-                    onChange={(e) => setNewItem({ ...newItem, license_plate: e.target.value })}
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="">Chọn biển số</option>
-                    {licensePlates.map(plate => (
-                      <option key={plate.value} value={plate.value}>
-                        {plate.displayText || plate.value}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(e) => {
+                      const value = e.target?.value || e;
+                      setNewItem({ ...newItem, license_plate: value });
+                    }}
+                    options={licensePlates.map(plate => ({
+                      value: plate.value,
+                      label: plate.displayText || plate.value
+                    }))}
+                    placeholder="Chọn biển số"
+                    required
+                    searchable
+                    className="dropdown-compact"
+                  />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -655,13 +665,28 @@ const ExpenseForm = ({
                   disabled={!newItem.license_plate || !newItem.item_name || !newItem.price}
                   className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  {editingItem !== null ? 'Cập nhật' : 'Thêm'}
+                  {editingItem !== null ? 'Sửa' : 'Thêm'}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onCancel={() => setDeleteConfirm({ open: false, index: null })}
+        onConfirm={confirmRemoveItem}
+        title="Xác nhận xóa"
+        message={
+          deleteConfirm.index !== null && localData.items[deleteConfirm.index]
+            ? `Bạn có chắc chắn muốn xóa hạng mục "${localData.items[deleteConfirm.index].item_name}"?`
+            : 'Bạn có chắc chắn muốn xóa hạng mục này?'
+        }
+        type="delete"
+        confirmColor="error"
+      />
     </>
   );
 };

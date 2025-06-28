@@ -138,8 +138,29 @@ export default function useExpenseForm({
       // Validate form
       const isValid = validateForm();
       if (!isValid) {
-        const validationError = new Error('Vui lòng kiểm tra lại thông tin nhập vào');
+        // Get validation errors from state
+        const validationErrors = validateExpenseForm(formData, expenseCategoryId);
+        
+        // Create a more descriptive error message
+        const fieldErrors = Object.entries(validationErrors)
+          .filter(([key]) => !key.startsWith('items.'))
+          .map(([_key, value]) => value);
+        
+        const itemErrors = Object.entries(validationErrors)
+          .filter(([key]) => key.startsWith('items.'))
+          .length;
+        
+        let errorMessage = 'Vui lòng điền đầy đủ thông tin: ';
+        if (fieldErrors.length > 0) {
+          errorMessage += fieldErrors.join(', ');
+        }
+        if (itemErrors > 0) {
+          errorMessage += fieldErrors.length > 0 ? ' và kiểm tra thông tin hạng mục' : 'Kiểm tra thông tin hạng mục';
+        }
+        
+        const validationError = new Error(errorMessage);
         validationError.validationError = true;
+        validationError.errors = validationErrors;
         throw validationError;
       }
 
@@ -246,11 +267,14 @@ export default function useExpenseForm({
         });
       }
 
-      // Re-throw the error with additional context
-      const enhancedError = new Error(errorMessage);
-      enhancedError.originalError = error;
-      enhancedError.isValidationError = error.validationError === true;
-      throw enhancedError;
+      // Don't re-throw validation errors since they're already handled
+      if (!error.validationError) {
+        // Re-throw the error with additional context
+        const enhancedError = new Error(errorMessage);
+        enhancedError.originalError = error;
+        enhancedError.isValidationError = error.validationError === true;
+        throw enhancedError;
+      }
     } finally {
       setIsLoading(false);
     }

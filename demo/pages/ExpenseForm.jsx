@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Calendar, X, Edit2 } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
+import { TextField } from '@/components/ui/FieldComponents';
 
 const ExpenseForm = () => {
   const [expense, setExpense] = useState({
@@ -8,9 +10,34 @@ const ExpenseForm = () => {
     paymentStatus: 'PAID',
     currency: 'VND',
     paymentProof: '',
+    cancelReason: '',
     remark: 'Bảo dưỡng định kỳ 10,000km',
     total: 0
   });
+
+  // Payment status options
+  const paymentStatusOptions = [
+    { value: 'DRAFT', label: 'Nháp' },
+    { value: 'PAID', label: 'Đã thanh toán' },
+    { value: 'PENDING', label: 'Chờ thanh toán' },
+    { value: 'CANCELLED', label: 'Đã hủy' }
+  ];
+
+  // Handle payment status change
+  const handlePaymentStatusChange = (e) => {
+    const newStatus = e.target?.value || e;
+    const updatedExpense = { ...expense, paymentStatus: newStatus };
+
+    // Clear conditional fields based on status
+    if (newStatus !== 'PAID') {
+      updatedExpense.paymentProof = '';
+    }
+    if (newStatus !== 'CANCELLED') {
+      updatedExpense.cancelReason = '';
+    }
+
+    setExpense(updatedExpense);
+  };
 
   const [items, setItems] = useState([]);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -123,7 +150,7 @@ const ExpenseForm = () => {
           {/* Expense Information - Single Row Layout */}
           <div className="mb-4">
             <h2 className="text-sm font-semibold text-gray-700 mb-2">Thông tin thanh toán</h2>
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-5 gap-3">
               <div className="col-span-2">
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   Nhà cung cấp <span className="text-red-500">*</span>
@@ -153,19 +180,16 @@ const ExpenseForm = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Trạng thái <span className="text-red-500">*</span>
-                </label>
-                <select
+                <Dropdown
+                  label="Trạng thái"
+                  name="paymentStatus"
                   value={expense.paymentStatus}
-                  onChange={(e) => setExpense({ ...expense, paymentStatus: e.target.value })}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="DRAFT">Nháp</option>
-                  <option value="PAID">Đã thanh toán</option>
-                  <option value="PENDING">Chờ thanh toán</option>
-                  <option value="CANCELLED">Đã hủy</option>
-                </select>
+                  onChange={handlePaymentStatusChange}
+                  options={paymentStatusOptions}
+                  required
+                  clearable={false}
+                  className="dropdown-compact"
+                />
               </div>
 
               <div>
@@ -181,19 +205,6 @@ const ExpenseForm = () => {
                   />
                   <span className="absolute right-2 top-1.5 text-sm text-gray-500">₫</span>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  URL chứng từ
-                </label>
-                <input
-                  type="text"
-                  value={expense.paymentProof}
-                  onChange={(e) => setExpense({ ...expense, paymentProof: e.target.value })}
-                  placeholder="URL ảnh chứng từ"
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
               </div>
             </div>
 
@@ -211,6 +222,39 @@ const ExpenseForm = () => {
                 />
               </div>
             </div>
+
+            {/* Conditional fields based on payment status */}
+            {expense.paymentStatus === 'PAID' && (
+              <div className="mt-3 grid grid-cols-6 gap-3">
+                <div className="col-span-4">
+                  <TextField
+                    label="URL chứng từ thanh toán"
+                    name="paymentProof"
+                    value={expense.paymentProof}
+                    onChange={(e) => setExpense({ ...expense, paymentProof: e.target.value })}
+                    placeholder="Nhập URL ảnh chứng từ thanh toán"
+                    required
+                    className="!mb-0"
+                  />
+                </div>
+              </div>
+            )}
+
+            {expense.paymentStatus === 'CANCELLED' && (
+              <div className="mt-3 grid grid-cols-6 gap-3">
+                <div className="col-span-4">
+                  <TextField
+                    label="Lý do hủy"
+                    name="cancelReason"
+                    value={expense.cancelReason}
+                    onChange={(e) => setExpense({ ...expense, cancelReason: e.target.value })}
+                    placeholder="Nhập lý do hủy phiếu chi"
+                    required
+                    className="!mb-0"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Divider */}
@@ -460,7 +504,7 @@ const ExpenseForm = () => {
                   disabled={!newItem.licensePlate || !newItem.itemName || !newItem.price}
                   className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  {editingItem !== null ? 'Cập nhật' : 'Thêm'}
+                  {editingItem !== null ? 'Sửa' : 'Thêm'}
                 </button>
               </div>
             </div>
