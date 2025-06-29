@@ -31,6 +31,7 @@ const ExpenseForm = ({
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
   // Simulate expense data structure for add mode
   const expenseData = isEdit ? formData : {
+    expense_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
     vendor_name: '',
     expense_category_id: expenseCategoryId || '',
     payment_status: PAYMENT_STATUS.DRAFT,
@@ -67,6 +68,7 @@ const ExpenseForm = ({
           ? formData.items.map(item => ({ ...item }))
           : []
       } : {
+        expense_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
         vendor_name: '',
         expense_category_id: expenseCategoryId || '',
         payment_status: PAYMENT_STATUS.DRAFT,

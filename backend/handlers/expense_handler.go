@@ -125,6 +125,8 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 
 	// Create expense with items in transaction, setting LastUpdatedBy
 	if err := h.repo.CreateWithUser(&expense, userID.(uint)); err != nil {
+		// Log detailed error for debugging
+		c.Header("X-Error-Detail", err.Error())
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractorExpense,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
 		return

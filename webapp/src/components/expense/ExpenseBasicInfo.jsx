@@ -22,7 +22,36 @@ const ExpenseBasicInfo = ({
     <div className="mb-4">
       <h2 className="text-sm font-semibold text-gray-700 mb-2">Thông tin cơ bản</h2>
       <div className="grid grid-cols-12 gap-3">
-        <div className="col-span-10">
+        <div className="col-span-2">
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Ngày {isInvoiceMode ? 'hóa đơn' : 'chi phí'}
+            {isEditing && !editedData.expense_date && (
+              <span className="text-red-500 ml-1">*</span>
+            )}
+          </label>
+          {isEditing ? (
+            <>
+              <input
+                type="date"
+                value={editedData.expense_date || ''}
+                onChange={(e) => onFieldChange('expense_date', e.target.value)}
+                className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 ${
+                  errors.expense_date 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                }`}
+              />
+              {errors.expense_date && (
+                <div className="text-red-500 text-xs mt-1">{errors.expense_date}</div>
+              )}
+            </>
+          ) : (
+            <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
+              {expenseData.expense_date || '-'}
+            </div>
+          )}
+        </div>
+        <div className="col-span-8">
           <label className="block text-xs font-medium text-gray-600 mb-1">
             {isInvoiceMode ? 'Khách hàng' : 'Nhà cung cấp'}
             {isEditing && (isInvoiceMode ? !editedData.customer_id : !editedData.vendor_name) && (
