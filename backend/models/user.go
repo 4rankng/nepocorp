@@ -6,8 +6,8 @@ import (
 
 type User struct {
 	ID        uint      `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
 
 	Username      string `gorm:"type:varchar(255);uniqueIndex;not null" json:"username"`
 	Email         string `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`

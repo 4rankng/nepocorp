@@ -88,23 +88,15 @@ const EntityForm = ({
   useEffect(() => {
     if (open) {
       if (isEdit && entity) {
-        const entityData = {
-          name: entity.name || entity.ten || '',
-          tax_code: entity.tax_code || entity.ma_so_thue || '',
-          address: entity.address || entity.dia_chi || '',
-        };
-
-        if (includeContactFields) {
-          entityData.contact_person = entity.contact_person || '';
-          entityData.contact_phone = entity.contact_phone || '';
-          entityData.contact_email = entity.contact_email || '';
-        }
-
-        if (includeNotesField) {
-          entityData.notes = entity.notes || '';
-        }
-
-        setFormData(entityData);
+        setFormData({
+          name: entity.name || '',
+          tax_code: entity.tax_code || '',
+          address: entity.address || '',
+          contact_person: entity.contact_person || '',
+          contact_phone: entity.contact_phone || '',
+          contact_email: entity.contact_email || '',
+          notes: entity.notes || '',
+        });
       } else {
         // New entity
         const initialData = onGetInitialData ? onGetInitialData() : getInitialFormState();
@@ -178,17 +170,11 @@ const EntityForm = ({
         name: formData.name.trim(),
         tax_code: formData.tax_code.trim(),
         address: formData.address?.trim() || '',
+        contact_person: formData.contact_person?.trim() || '',
+        contact_phone: formData.contact_phone?.trim() || '',
+        contact_email: formData.contact_email?.trim() || '',
+        notes: formData.notes?.trim() || '',
       };
-
-      if (includeContactFields) {
-        cleanedData.contact_person = formData.contact_person?.trim() || '';
-        cleanedData.contact_phone = formData.contact_phone?.trim() || '';
-        cleanedData.contact_email = formData.contact_email?.trim() || '';
-      }
-
-      if (includeNotesField) {
-        cleanedData.notes = formData.notes?.trim() || '';
-      }
 
       await onSave(cleanedData);
       onClose();

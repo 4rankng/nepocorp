@@ -16,7 +16,7 @@ type ActivityLog struct {
 	UserAgent      string    `gorm:"type:text" json:"user_agent,omitempty"`
 	RequestData    JSONMap   `gorm:"type:json" json:"request_data,omitempty"`
 	ResponseStatus int       `json:"response_status,omitempty"`
-	CreatedAt      time.Time `gorm:"index" json:"created_at"`
+	CreatedAt      time.Time `gorm:"index" json:"-"`
 }
 
 // JSONMap is a custom type for handling JSON data in GORM

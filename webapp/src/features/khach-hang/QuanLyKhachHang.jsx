@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import {
   Box,
@@ -6,8 +6,6 @@ import {
   Snackbar,
   CircularProgress,
   Typography,
-  useTheme,
-  useMediaQuery,
   Divider,
 } from '@mui/material';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -16,9 +14,8 @@ import EntityForm from '@/components/shared/EntityForm';
 import DesktopView from '@features/khach-hang/components/DesktopView';
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
 import { Z_INDEX } from '@constants/zIndex';
+
 const QuanLyKhachHang = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     customers,
     loading,
@@ -27,8 +24,8 @@ const QuanLyKhachHang = () => {
     updateCustomer,
     deleteCustomer,
     clearError,
-    isTaxCodeAvailable: isCustomerCodeAvailable,
     getInitialFormData,
+    isTaxCodeAvailable,
   } = useCustomerManagement();
   const [isValidatingTaxCode, setIsValidatingTaxCode] = useState(false);
   // Form state
@@ -43,6 +40,7 @@ const QuanLyKhachHang = () => {
     message: '',
     severity: 'success',
   });
+  // Snackbar handlers
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -65,47 +63,42 @@ const QuanLyKhachHang = () => {
     setSelectedCustomer(null);
     setFormError('');
   };
-  const handleSaveCustomer = useCallback(
-    async formData => {
-      setFormError('');
-      // If this is an edit, validate tax code if it was changed
-      if (selectedCustomer && formData.tax_code && formData.tax_code !== selectedCustomer.tax_code) {
-        setIsValidatingTaxCode(true);
-        try {
-          const isAvailable = await isCustomerCodeAvailable(formData.tax_code, selectedCustomer.id);
-          if (!isAvailable) {
-            setFormError('Mã số thuế đã được sử dụng. Vui lòng nhập mã khác.');
-            setIsValidatingTaxCode(false);
-            return;
-          }
-        } catch (err) {
-          setFormError('Có lỗi xảy ra khi kiểm tra mã số thuế. Vui lòng thử lại.');
+  const handleSaveCustomer = async formData => {
+    setFormError('');
+    // If this is an edit, we need to validate the tax code if it was changed
+    if (selectedCustomer && formData.tax_code && formData.tax_code !== selectedCustomer.tax_code) {
+      setIsValidatingTaxCode(true);
+      try {
+        const isAvailable = await isTaxCodeAvailable(formData.tax_code, selectedCustomer.id);
+        if (!isAvailable) {
+          setFormError('Mã số thuế đã được sử dụng. Vui lòng chọn mã khác.');
           setIsValidatingTaxCode(false);
           return;
         }
-        setIsValidatingTaxCode(false);
-      }
-      let result;
-      try {
-        if (selectedCustomer) {
-          result = await updateCustomer(selectedCustomer.id, formData);
-        } else {
-          result = await addCustomer(formData);
-        }
-        if (result.success) {
-          handleCloseForm();
-          showSnackbar(
-            selectedCustomer ? 'Sửa khách hàng thành công' : 'Thêm khách hàng thành công'
-          );
-        } else {
-          setFormError(result.error || 'Có lỗi xảy ra. Vui lòng thử lại.');
-        }
       } catch (err) {
-        setFormError('Có lỗi xảy ra khi lưu thông tin khách hàng.');
+        setFormError('Có lỗi xảy ra khi kiểm tra mã số thuế. Vui lòng thử lại.');
+        setIsValidatingTaxCode(false);
+        return;
       }
-    },
-    [selectedCustomer, addCustomer, updateCustomer, isCustomerCodeAvailable]
-  );
+      setIsValidatingTaxCode(false);
+    }
+    try {
+      let result;
+      if (selectedCustomer) {
+        result = await updateCustomer(selectedCustomer.id, formData);
+      } else {
+        result = await addCustomer(formData);
+      }
+      if (result.success) {
+        handleCloseForm();
+        showSnackbar(selectedCustomer ? 'Sửa khách hàng thành công' : 'Thêm khách hàng thành công');
+      } else {
+        setFormError(result.error || 'Có lỗi xảy ra. Vui lòng thử lại.');
+      }
+    } catch (err) {
+      setFormError('Có lỗi xảy ra khi lưu thông tin khách hàng.');
+    }
+  };
   // Delete handlers
   const handleDeleteClick = customer => {
     setDeleteDialog({ open: true, data: customer });
@@ -122,7 +115,6 @@ const QuanLyKhachHang = () => {
     }
     setDeleteDialog({ open: false, data: null });
   };
-  // Common props for both mobile and desktop views
   const commonProps = {
     customers,
     loading,
@@ -145,8 +137,8 @@ const QuanLyKhachHang = () => {
         isLoading={loading || isValidatingTaxCode}
         error={formError}
         entityType="customer"
-        includeContactFields={false}
-        includeNotesField={false}
+        includeContactFields={true}
+        includeNotesField={true}
       />
       {/* Loading overlay for tax code validation */}
       {isValidatingTaxCode && (

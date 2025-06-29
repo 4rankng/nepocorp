@@ -18,8 +18,8 @@ type ExpenseItem struct {
 	Total        int64      `gorm:"not null" json:"total"`
 	InstallDate  *time.Time `json:"install_date"`
 	ExpiryDate   *time.Time `json:"expiry_date"`
-	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"-"`
 }
 
 func (e *ExpenseItem) UnmarshalJSON(data []byte) error {

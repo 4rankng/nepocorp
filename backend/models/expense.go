@@ -68,8 +68,8 @@ type Expense struct {
 	CancelReason      string    `gorm:"type:text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" json:"cancel_reason"`
 	CreatedBy         uint      `gorm:"not null" json:"created_by"`
 	LastUpdatedBy     string    `gorm:"type:varchar(255)" json:"last_updated_by"` // name (@username) of user who last created/updated the record
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
+	CreatedAt         time.Time `json:"-"`
+	UpdatedAt         time.Time `json:"-"`
 
 	// Associations
 	ExpenseCategory ExpenseCategory `gorm:"foreignKey:ExpenseCategoryID" json:"expense_category,omitempty"`

@@ -65,7 +65,7 @@ const QuanLyDoiTac = () => {
   const handleSavePartner = async formData => {
     setFormError('');
     // If this is an edit, we need to validate the tax code if it was changed
-    if (selectedPartner && formData.tax_code && formData.tax_code !== selectedPartner.ma_so_thue) {
+    if (selectedPartner && formData.tax_code && formData.tax_code !== selectedPartner.tax_code) {
       setIsValidatingTaxCode(true);
       try {
         const isAvailable = await isTaxCodeAvailable(formData.tax_code, selectedPartner.id);
@@ -185,20 +185,20 @@ const QuanLyDoiTac = () => {
                 <Typography variant="body2" fontWeight={500}>
                   Tên đối tác:
                 </Typography>
-                <Typography variant="body2">{deleteDialog.data?.ten || '-'}</Typography>
+                <Typography variant="body2">{deleteDialog.data?.name || '-'}</Typography>
 
                 <Typography variant="body2" fontWeight={500}>
                   Mã số thuế:
                 </Typography>
                 <Typography variant="body2">
-                  {deleteDialog.data?.ma_so_thue || 'Chưa có'}
+                  {deleteDialog.data?.tax_code || 'Chưa có'}
                 </Typography>
 
                 <Typography variant="body2" fontWeight={500}>
                   Địa chỉ:
                 </Typography>
                 <Typography variant="body2">
-                  {deleteDialog.data?.dia_chi || 'Chưa có'}
+                  {deleteDialog.data?.address || 'Chưa có'}
                 </Typography>
               </Box>
             </Box>

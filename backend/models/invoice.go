@@ -16,8 +16,8 @@ type Invoice struct {
 	CancelReason      string    `gorm:"type:text" json:"cancel_reason"`
 	CreatedBy         uint      `gorm:"not null" json:"created_by"`
 	LastUpdatedBy     string    `gorm:"type:varchar(255)" json:"last_updated_by"`
-	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt         time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	CreatedAt         time.Time `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt         time.Time `gorm:"autoUpdateTime" json:"-"`
 
 	// Relationships
 	Customer        Customer        `gorm:"foreignKey:CustomerID" json:"customer,omitempty"`

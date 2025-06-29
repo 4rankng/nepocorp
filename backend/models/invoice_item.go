@@ -16,8 +16,8 @@ type InvoiceItem struct {
 	Total        int64      `gorm:"not null" json:"total"`
 	ServiceDate  *time.Time `gorm:"type:datetime" json:"service_date"`
 	Notes        string     `gorm:"type:text" json:"notes"`
-	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"-"`
 
 	// Relationships
 	Invoice Invoice `gorm:"foreignKey:InvoiceID" json:"invoice,omitempty"`

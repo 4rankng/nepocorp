@@ -5,6 +5,10 @@ const initialFormState = {
   name: '',
   address: '',
   tax_code: '',
+  contact_person: '',
+  contact_phone: '',
+  contact_email: '',
+  notes: '',
 };
 // No data transformation needed - using backend field names directly
 const useCustomerManagement = () => {

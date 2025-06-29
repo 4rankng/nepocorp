@@ -8,9 +8,9 @@ const editDoiTac = partnerApi.update;
 const removeDoiTac = partnerApi.delete;
 // Initial form state
 const initialFormState = {
-  ten: '',
-  dia_chi: '',
-  ma_so_thue: '',
+  name: '',
+  address: '',
+  tax_code: '',
   contact_person: '',
   contact_phone: '',
   contact_email: '',
@@ -27,14 +27,7 @@ const useDoiTac = () => {
     try {
       const response = await fetchAllDoiTac();
       const partnersData = response?.data || [];
-      // Map API fields to frontend fields
-      const mappedPartners = partnersData.map(partner => ({
-        ...partner,
-        ten: partner.name,
-        ma_so_thue: partner.tax_code,
-        dia_chi: partner.address,
-      }));
-      setPartners(mappedPartners);
+      setPartners(partnersData);
     } catch (err) {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Không thể tải danh sách đối tác';

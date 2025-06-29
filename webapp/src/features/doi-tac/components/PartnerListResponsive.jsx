@@ -55,9 +55,9 @@ const PartnerListResponsive = ({
     const term = searchTerm.toLowerCase();
     return partners.filter(
       partner =>
-        (partner.ten && partner.ten.toLowerCase().includes(term)) ||
-        (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
-        (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
+        (partner.name && partner.name.toLowerCase().includes(term)) ||
+        (partner.address && partner.address.toLowerCase().includes(term)) ||
+        (partner.tax_code && partner.tax_code.toLowerCase().includes(term)) ||
         (partner.contact_person && partner.contact_person.toLowerCase().includes(term)) ||
         (partner.contact_phone && partner.contact_phone.toLowerCase().includes(term)) ||
         (partner.contact_email && partner.contact_email.toLowerCase().includes(term)) ||
@@ -80,7 +80,7 @@ const PartnerListResponsive = ({
     setNotesDialog({
       open: true,
       notes: partner.notes || 'Không có ghi chú',
-      partnerName: partner.ten || 'Đối tác'
+      partnerName: partner.name || 'Đối tác'
     });
   };
 
@@ -98,14 +98,14 @@ const PartnerListResponsive = ({
               <Box>
                 <Box display="flex" alignItems="center" gap={1} mb={0.5}>
                   <Typography variant="h6" component="div">
-                    {partner.ten}
+                    {partner.name}
                   </Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Địa chỉ:</strong> {partner.dia_chi || 'Chưa sửa'}
+                  <strong>Địa chỉ:</strong> {partner.address || 'Chưa sửa'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Mã số thuế:</strong> {partner.ma_so_thue || 'Chưa sửa'}
+                  <strong>Mã số thuế:</strong> {partner.tax_code || 'Chưa sửa'}
                 </Typography>
                 {(partner.contact_person || partner.contact_phone || partner.contact_email) && (
                   <Typography variant="body2" color="text.secondary">
@@ -157,20 +157,20 @@ const PartnerListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'ten',
+      key: 'name',
       label: 'Tên đối tác',
       align: 'left',
       sortable: true,
     },
     {
-      key: 'dia_chi',
+      key: 'address',
       label: 'Địa chỉ',
       align: 'left',
       sortable: true,
       render: value => value || '--',
     },
     {
-      key: 'ma_so_thue',
+      key: 'tax_code',
       label: 'Mã số thuế',
       align: 'left',
       sortable: true,
@@ -245,7 +245,7 @@ const PartnerListResponsive = ({
       onRowClick={handleRowClick}
       emptyMessage={searchTerm ? 'Không tìm thấy đối tác phù hợp' : emptyMessage}
       sortable={true}
-      defaultSort={{ key: 'ten', direction: 'asc' }}
+      defaultSort={{ key: 'name', direction: 'asc' }}
       pagination={true}
       page={page}
       totalCount={filteredPartners.length}
