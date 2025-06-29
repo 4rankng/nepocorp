@@ -26,16 +26,17 @@ const ConfirmDialog = ({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!disableEscapeKeyDown && e.key === 'Escape' && open && onCancel) {
+        e.stopPropagation(); // Prevent bubbling to parent modals
         onCancel();
       }
     };
 
     if (open) {
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [open, disableEscapeKeyDown, onCancel]);
 

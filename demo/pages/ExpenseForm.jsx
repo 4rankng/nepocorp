@@ -348,7 +348,7 @@ const ExpenseForm = () => {
               Hủy
             </button>
             <button className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
-              Lưu thay đổi
+              Lưu
             </button>
           </div>
         </div>

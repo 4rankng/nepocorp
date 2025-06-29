@@ -465,6 +465,9 @@ const ExpenseForm = ({
                 onLicensePlateCellClick={handleLicensePlateCellClick}
                 total={calculatedTotal}
                 errors={validationErrors}
+                licensePlates={getAllLicensePlates}
+                isLoadingPlates={isLoadingPlates}
+                taxRate={taxRate}
               />
             </div>
           </div>
