@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { FormCol, FormLabel, ErrorText, HelperText } from './index';
 import Portal from './Portal';
 import { Z_INDEX } from '@constants/zIndex';
+import { vietnameseSearch } from '@utils/vietnameseSearch';
 import './Dropdown.css';
 
 const Dropdown = ({
@@ -37,13 +38,13 @@ const Dropdown = ({
   const searchInputRef = useRef(null);
   const menuRef = useRef(null);
 
-  // Filter options based on search term
+  // Filter options based on search term with Vietnamese support
   const filteredOptions = useMemo(() => {
     if (!searchable || !searchTerm.trim()) return options;
     
     return options.filter(option => {
       const label = option.label || option.displayText || option.text || option.name || '';
-      return label.toLowerCase().includes(searchTerm.toLowerCase());
+      return vietnameseSearch(label, searchTerm);
     });
   }, [options, searchTerm, searchable]);
 

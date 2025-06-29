@@ -1,29 +1,39 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   Box, 
-  Typography, 
+  Typography,
+  Button,
+  TextField,
+  InputAdornment,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Paper,
   Snackbar, 
-  Alert,
-  Fab,
-  Zoom
+  Alert
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { 
+  Add as AddIcon,
+  Search as SearchIcon
+} from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
-import { BalanceSummary, StatementFilters, StatementTable } from './components';
-import { useFinancialLedger } from './hooks/useFinancialLedger';
 
-// Mock data for customers and partners - in real app, these would come from API
-const mockCustomers = [
-  { id: 1, name: 'Công ty ABC' },
-  { id: 2, name: 'Công ty XYZ' },
-  { id: 3, name: 'Công ty DEF' }
-];
+// Import simplified components
+import {
+  StatsGrid,
+  StatementTable,
+  TransactionModal,
+  TransactionViewModal
+} from './components';
 
-const mockPartners = [
-  { id: 1, name: 'Đối tác Alpha' },
-  { id: 2, name: 'Đối tác Beta' },
-  { id: 3, name: 'Đối tác Gamma' }
-];
+// Import hooks
+import {
+  useFinancialLedger,
+  useTransactionModal,
+  useCustomersPartners,
+  useTransactionActions
+} from './hooks';
 
 const QuanLyBangCongNo = () => {
   const { currentUser } = useAuth();
@@ -32,8 +42,10 @@ const QuanLyBangCongNo = () => {
     message: '',
     severity: 'success',
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-  // Financial ledger hook
+  // Main financial ledger hook
   const {
     transactions,
     loading,
@@ -49,7 +61,43 @@ const QuanLyBangCongNo = () => {
     refresh
   } = useFinancialLedger();
 
-  // Snackbar handlers
+  // Customer and partner data
+  const {
+    customers,
+    partners,
+    loading: customersPartnersLoading
+  } = useCustomersPartners();
+
+  // Modal management
+  const {
+    modalOpen,
+    modalMode,
+    modalTransaction,
+    viewModalOpen,
+    viewModalTransaction,
+    openCreateModal,
+    openEditModal,
+    closeModal,
+    closeViewModal,
+    handleView,
+    handleEditFromView
+  } = useTransactionModal();
+
+  // Transaction actions
+  const {
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+    loading: actionLoading,
+    error: actionError
+  } = useTransactionActions({
+    onCreateTransaction: createTransaction,
+    onUpdateTransaction: updateTransaction,
+    onDeleteTransaction: deleteTransaction,
+    onRefresh: refresh
+  });
+
+  // Snackbar management
   const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   }, []);
@@ -58,61 +106,56 @@ const QuanLyBangCongNo = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   }, []);
 
-  // Handle filter changes
-  const handleFiltersChange = useCallback((newFilters) => {
-    updateFilters(newFilters);
-  }, [updateFilters]);
+  // Handle transaction save (create or update)
+  const handleTransactionSave = useCallback(async (transactionData) => {
+    try {
+      let result;
+      
+      if (modalMode === 'create') {
+        result = await handleCreate(transactionData);
+      } else {
+        result = await handleUpdate(modalTransaction.id, transactionData);
+      }
 
-  // Handle clear all filters
-  const handleClearFilters = useCallback(() => {
-    clearFilters();
-    showSnackbar('Đã xóa tất cả bộ lọc', 'info');
-  }, [clearFilters, showSnackbar]);
+      if (result.success) {
+        showSnackbar(result.message, 'success');
+        closeModal();
+      } else {
+        showSnackbar(result.error, 'error');
+      }
+    } catch (error) {
+      showSnackbar('Có lỗi xảy ra khi lưu giao dịch', 'error');
+    }
+  }, [modalMode, modalTransaction, handleCreate, handleUpdate, showSnackbar, closeModal]);
 
-  // Handle view transaction
-  const handleViewTransaction = useCallback((transaction) => {
-    console.log('View transaction:', transaction);
-    // TODO: Implement view transaction modal
-    showSnackbar('Chức năng xem chi tiết đang được phát triển', 'info');
-  }, [showSnackbar]);
+  // Handle transaction delete
+  const handleTransactionDelete = useCallback(async (transaction) => {
+    const result = await handleDelete(transaction);
+    
+    if (result.success) {
+      showSnackbar(result.message, 'success');
+      closeViewModal();
+    } else if (!result.cancelled) {
+      showSnackbar(result.error, 'error');
+    }
+  }, [handleDelete, showSnackbar, closeViewModal]);
 
   // Handle edit transaction
   const handleEditTransaction = useCallback((transaction) => {
-    console.log('Edit transaction:', transaction);
-    // TODO: Implement edit transaction modal
-    showSnackbar('Chức năng chỉnh sửa đang được phát triển', 'info');
-  }, [showSnackbar]);
+    openEditModal(transaction);
+  }, [openEditModal]);
 
-  // Handle delete transaction
-  const handleDeleteTransaction = useCallback(async (transaction) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa giao dịch này?\n\nLoại: ${transaction.transaction_type}\nNgày: ${new Date(transaction.transaction_date).toLocaleDateString('vi-VN')}\nSố tiền: ${transaction.debit > 0 ? transaction.debit : transaction.credit} VND`)) {
-      try {
-        const result = await deleteTransaction(transaction.id);
-        if (result.success) {
-          showSnackbar('Xóa giao dịch thành công', 'success');
-        } else {
-          showSnackbar(result.error || 'Không thể xóa giao dịch', 'error');
-        }
-      } catch (err) {
-        showSnackbar('Có lỗi xảy ra khi xóa giao dịch', 'error');
-      }
-    }
-  }, [deleteTransaction, showSnackbar]);
+  // Handle search
+  const handleSearchChange = useCallback((event) => {
+    setSearchTerm(event.target.value);
+  }, []);
 
-  // Handle add new transaction
-  const handleAddTransaction = useCallback(() => {
-    console.log('Add new transaction');
-    // TODO: Implement add transaction modal
-    showSnackbar('Chức năng thêm giao dịch đang được phát triển', 'info');
-  }, [showSnackbar]);
+  // Handle status filter change
+  const handleStatusFilterChange = useCallback((event) => {
+    setStatusFilter(event.target.value);
+  }, []);
 
-  // Handle error from hook
-  useEffect(() => {
-    if (error) {
-      showSnackbar(error, 'error');
-    }
-  }, [error, showSnackbar]);
-
+  // Loading state
   if (!currentUser) {
     return (
       <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -122,64 +165,117 @@ const QuanLyBangCongNo = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Page Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
-          Bảng công nợ
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Quản lý và theo dõi các giao dịch tài chính với khách hàng và đối tác
-        </Typography>
-      </Box>
+    <Box sx={{ p: 2, maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Page Title */}
+      <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a202c', mb: 3 }}>
+        BẢNG TỔNG HỢP CÔNG NỢ PHẢI THU
+      </Typography>
 
-      {/* Balance Summary */}
-      <BalanceSummary balanceSummary={balanceSummary} loading={loading} />
-
-      {/* Filters */}
-      <StatementFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onClearFilters={handleClearFilters}
-        customers={mockCustomers}
-        partners={mockPartners}
+      {/* Statistics Overview */}
+      <StatsGrid
+        transactions={transactions}
         loading={loading}
+        variant="html-demo"
+        sx={{ mb: 3 }}
       />
 
-      {/* Transaction Table */}
-      <Box sx={{ bgcolor: 'background.paper', borderRadius: 1, overflow: 'hidden' }}>
+      {/* Main Card */}
+      <Paper sx={{ borderRadius: 2, boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
+        {/* Header with Search and Add Button */}
+        <Box sx={{ 
+          p: 2, 
+          borderBottom: '1px solid #e2e8f0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2
+        }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Search Box */}
+            <TextField
+              placeholder="Tìm kiếm khách hàng..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              sx={{ width: 320 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#a0aec0' }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            
+            {/* Status Filter */}
+            <FormControl sx={{ minWidth: 150 }}>
+              <InputLabel>Trạng thái</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+                label="Trạng thái"
+              >
+                <MenuItem value="all">Tất cả</MenuItem>
+                <MenuItem value="debt">Có nợ</MenuItem>
+                <MenuItem value="paid">Đã thanh toán</MenuItem>
+                <MenuItem value="overdue">Quá hạn</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* Add Transaction Button */}
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openCreateModal}
+            sx={{
+              bgcolor: '#3182ce',
+              '&:hover': {
+                bgcolor: '#2c5282',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }
+            }}
+          >
+            Thêm Giao Dịch Mới
+          </Button>
+        </Box>
+
+        {/* Transaction Table */}
         <StatementTable
           transactions={transactions}
           loading={loading}
           error={error}
           pagination={pagination}
-          onView={handleViewTransaction}
+          onView={handleView}
           onEdit={handleEditTransaction}
-          onDelete={handleDeleteTransaction}
+          onDelete={handleTransactionDelete}
           showActions={true}
+          variant="html-demo"
         />
-      </Box>
+      </Paper>
 
-      {/* Floating Action Button */}
-      <Zoom in={!loading}>
-        <Fab
-          color="primary"
-          aria-label="Thêm giao dịch"
-          onClick={handleAddTransaction}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: 1000,
-            boxShadow: 3,
-            '&:hover': {
-              boxShadow: 6,
-            },
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      </Zoom>
+      {/* Transaction Form Modal */}
+      <TransactionModal
+        open={modalOpen}
+        onClose={closeModal}
+        onSave={handleTransactionSave}
+        transaction={modalTransaction}
+        mode={modalMode}
+        customers={customers}
+        partners={partners}
+        loading={actionLoading}
+      />
+
+      {/* Transaction View Modal */}
+      <TransactionViewModal
+        open={viewModalOpen}
+        onClose={closeViewModal}
+        onEdit={handleEditFromView}
+        onDelete={handleTransactionDelete}
+        transaction={viewModalTransaction}
+        showActions={true}
+      />
 
       {/* Snackbar for notifications */}
       <Snackbar
@@ -192,6 +288,20 @@ const QuanLyBangCongNo = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Error handling */}
+      {actionError && (
+        <Snackbar
+          open={!!actionError}
+          autoHideDuration={6000}
+          onClose={() => {}}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Alert severity="error" sx={{ width: '100%' }}>
+            {actionError}
+          </Alert>
+        </Snackbar>
+      )}
     </Box>
   );
 };

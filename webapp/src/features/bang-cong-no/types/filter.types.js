@@ -45,25 +45,27 @@ export const DATE_RANGE_OPTIONS = Object.keys(DATE_RANGE_LABELS).map(key => ({
 // Helper function to get date range
 export const getDateRange = (preset) => {
   const today = new Date();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-
+  
   switch (preset) {
-    case DATE_RANGE_PRESETS.TODAY:
+    case DATE_RANGE_PRESETS.TODAY: {
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
       return {
         startDate: startOfDay.toISOString().split('T')[0],
         endDate: endOfDay.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.YESTERDAY:
+    case DATE_RANGE_PRESETS.YESTERDAY: {
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
       return {
         startDate: yesterday.toISOString().split('T')[0],
         endDate: yesterday.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.THIS_WEEK:
+    case DATE_RANGE_PRESETS.THIS_WEEK: {
       const startOfWeek = new Date(today);
       startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Monday
       const endOfWeek = new Date(startOfWeek);
@@ -72,8 +74,9 @@ export const getDateRange = (preset) => {
         startDate: startOfWeek.toISOString().split('T')[0],
         endDate: endOfWeek.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.LAST_WEEK:
+    case DATE_RANGE_PRESETS.LAST_WEEK: {
       const lastWeekStart = new Date(today);
       lastWeekStart.setDate(today.getDate() - today.getDay() - 6); // Last Monday
       const lastWeekEnd = new Date(lastWeekStart);
@@ -82,32 +85,36 @@ export const getDateRange = (preset) => {
         startDate: lastWeekStart.toISOString().split('T')[0],
         endDate: lastWeekEnd.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.THIS_MONTH:
+    case DATE_RANGE_PRESETS.THIS_MONTH: {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       return {
         startDate: startOfMonth.toISOString().split('T')[0],
         endDate: endOfMonth.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.LAST_MONTH:
+    case DATE_RANGE_PRESETS.LAST_MONTH: {
       const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
       return {
         startDate: lastMonthStart.toISOString().split('T')[0],
         endDate: lastMonthEnd.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.THIS_QUARTER:
+    case DATE_RANGE_PRESETS.THIS_QUARTER: {
       const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
       const quarterEnd = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3 + 3, 0);
       return {
         startDate: quarterStart.toISOString().split('T')[0],
         endDate: quarterEnd.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.LAST_QUARTER:
+    case DATE_RANGE_PRESETS.LAST_QUARTER: {
       const lastQuarterMonth = Math.floor(today.getMonth() / 3) * 3 - 3;
       const lastQuarterStart = new Date(today.getFullYear(), lastQuarterMonth, 1);
       const lastQuarterEnd = new Date(today.getFullYear(), lastQuarterMonth + 3, 0);
@@ -115,22 +122,25 @@ export const getDateRange = (preset) => {
         startDate: lastQuarterStart.toISOString().split('T')[0],
         endDate: lastQuarterEnd.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.THIS_YEAR:
+    case DATE_RANGE_PRESETS.THIS_YEAR: {
       const startOfYear = new Date(today.getFullYear(), 0, 1);
       const endOfYear = new Date(today.getFullYear(), 11, 31);
       return {
         startDate: startOfYear.toISOString().split('T')[0],
         endDate: endOfYear.toISOString().split('T')[0]
       };
+    }
 
-    case DATE_RANGE_PRESETS.LAST_YEAR:
+    case DATE_RANGE_PRESETS.LAST_YEAR: {
       const lastYearStart = new Date(today.getFullYear() - 1, 0, 1);
       const lastYearEnd = new Date(today.getFullYear() - 1, 11, 31);
       return {
         startDate: lastYearStart.toISOString().split('T')[0],
         endDate: lastYearEnd.toISOString().split('T')[0]
       };
+    }
 
     default:
       return null;

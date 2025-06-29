@@ -1,4 +1,8 @@
-// Transaction types with Vietnamese labels
+// Re-export from types for backward compatibility
+export * from '../types';
+export * from '../utils';
+
+// Legacy exports - kept for backward compatibility
 export const TRANSACTION_TYPES = {
   INVOICE: 'INVOICE',
   PAYMENT_RECEIVED: 'PAYMENT_RECEIVED',
@@ -141,13 +145,14 @@ export const getDateRange = (range) => {
         startDate: startOfDay.toISOString().split('T')[0],
         endDate: endOfDay.toISOString().split('T')[0]
       };
-    case 'yesterday':
+    case 'yesterday': {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       return {
         startDate: yesterday.toISOString().split('T')[0],
         endDate: yesterday.toISOString().split('T')[0]
       };
+    }
     case 'this_week':
       const startOfWeek = new Date(today);
       startOfWeek.setDate(today.getDate() - today.getDay());

@@ -30,6 +30,48 @@ const StatsGrid = ({
   const balanceGrowth = calculateGrowthRate(stats.netBalance, previousStats.netBalance);
 
   const getStatsConfig = () => {
+    // HTML demo specific stats configuration
+    if (variant === 'html-demo') {
+      return [
+        {
+          title: 'Tổng phải thu',
+          value: 723975720,
+          type: 'currency',
+          color: '#e53e3e',
+          icon: TrendingUpIcon,
+          subtitle: '48 khách hàng có nợ',
+          variant: 'danger'
+        },
+        {
+          title: 'Phải thu quá hạn',
+          value: 485320100,
+          type: 'currency',
+          color: '#3182ce',
+          icon: WarningIcon,
+          subtitle: '67% tổng nợ',
+          variant: 'default'
+        },
+        {
+          title: 'Thu trong tháng',
+          value: 125500000,
+          type: 'currency',
+          color: '#48bb78',
+          icon: TrendingUpIcon,
+          subtitle: '↑ 12% so với tháng trước',
+          variant: 'success'
+        },
+        {
+          title: 'Khách hàng',
+          value: 52,
+          type: 'number',
+          color: '#3182ce',
+          icon: PeopleAltIcon,
+          subtitle: '4 khách hàng mới',
+          variant: 'default'
+        }
+      ];
+    }
+
     const baseStats = [
       {
         title: 'Tổng phải thu',
@@ -112,8 +154,8 @@ const StatsGrid = ({
           </Typography>
         )}
         <Grid container spacing={3}>
-          {Array.from({ length: variant === 'compact' ? 3 : 6 }).map((_, index) => (
-            <Grid item xs={12} sm={6} md={variant === 'compact' ? 4 : 2} key={index}>
+          {Array.from({ length: variant === 'html-demo' ? 4 : variant === 'compact' ? 3 : 6 }).map((_, index) => (
+            <Grid item xs={12} sm={6} md={variant === 'html-demo' ? 3 : variant === 'compact' ? 4 : 2} key={index}>
               <Skeleton 
                 variant="rectangular" 
                 height={140} 
@@ -145,7 +187,7 @@ const StatsGrid = ({
             item 
             xs={12} 
             sm={6} 
-            md={variant === 'compact' ? 4 : statsConfig.length === 6 ? 2 : 4} 
+            md={variant === 'html-demo' ? 3 : variant === 'compact' ? 4 : statsConfig.length === 6 ? 2 : 4} 
             key={index}
           >
             <StatCard

@@ -146,7 +146,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         </div>
 
         {/* Body */}
-        <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]" style={{fontSize: '11px'}}>
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

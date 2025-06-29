@@ -132,7 +132,7 @@ export const validateReferenceNumber = (refNumber) => {
     return { isValid: false, error: 'Số tham chiếu không được vượt quá 100 ký tự' };
   }
 
-  const validPattern = /^[A-Za-z0-9\-_\.]+$/;
+  const validPattern = /^[A-Za-z0-9\-_.]+$/;
   if (!validPattern.test(refNumber)) {
     return { isValid: false, error: 'Số tham chiếu chỉ được chứa chữ cái, số, dấu gạch ngang, gạch dưới và dấu chấm' };
   }
