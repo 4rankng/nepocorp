@@ -27,6 +27,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const [isLoadingPlates, setIsLoadingPlates] = useState(false);
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
+  const [isItemEditModalOpen, setIsItemEditModalOpen] = useState(false);
 
   // Status change prompts
   const [showPaymentProofPrompt, setShowPaymentProofPrompt] = useState(false);
@@ -36,7 +37,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const [tempCancelReason, setTempCancelReason] = useState('');
 
   // Memoized status options to prevent recreation on every render
-  const statusOptions = useMemo(() => 
+  const statusOptions = useMemo(() =>
     Object.entries(INVOICE_STATUS).map(([key, value]) => ({
       value: value,
       label: INVOICE_STATUS_LABELS[value]
@@ -164,7 +165,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   // Handle ESC key to close modal or cancel editing
   useEffect(() => {
     const handleEscKey = (event) => {
-      if (event.key === 'Escape' && open && !showLicensePlateModal) {
+      if (event.key === 'Escape' && open && !showLicensePlateModal && !isItemEditModalOpen) {
         if (isEditing) {
           handleCancelEdit();
         } else {
@@ -180,20 +181,20 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [open, isEditing, handleCancelEdit, handleClose, showLicensePlateModal]);
+  }, [open, isEditing, handleCancelEdit, handleClose, showLicensePlateModal, isItemEditModalOpen]);
 
   const handleFieldChange = useCallback((field, value) => {
     // Handle status changes that require prompts
     if (field === 'payment_status') {
       const oldStatus = editedData?.payment_status;
-      
+
       if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
         setPendingStatus(value);
         setTempPaymentProof(editedData?.payment_proof || '');
         setShowPaymentProofPrompt(true);
         return;
       }
-      
+
       if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
         setPendingStatus(value);
         setTempCancelReason(editedData?.cancel_reason || '');
@@ -221,7 +222,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
       payment_proof: tempPaymentProof,
       cancel_reason: null // Clear cancel reason when marking as paid
     }));
-    
+
     setShowPaymentProofPrompt(false);
     setPendingStatus(null);
     setTempPaymentProof('');
@@ -240,7 +241,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
       cancel_reason: tempCancelReason,
       payment_proof: null // Clear payment proof when cancelling
     }));
-    
+
     setShowCancelReasonPrompt(false);
     setPendingStatus(null);
     setTempCancelReason('');
@@ -350,11 +351,15 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     setShowLicensePlateModal(false);
   }, [currentLicensePlateIndex]);
 
+  const handleEditModalStateChange = useCallback((isOpen) => {
+    setIsItemEditModalOpen(isOpen);
+  }, []);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
-      <div className="bg-white rounded-lg w-full max-w-[98vw] h-[98vh]" style={{zIndex: Z_INDEX.MODAL, overflow: 'visible'}}>
+      <div className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col" style={{zIndex: Z_INDEX.MODAL}}>
         <ExpenseHeader
           expenseData={invoiceData}
           loading={loading}
@@ -362,13 +367,12 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
           editedData={editedData}
           onClose={handleClose}
           onFieldChange={handleFieldChange}
-          title={`Chi tiết hóa đơn #${invoiceData?.id || ''}`}
+          title={`Chi tiết hóa đơn`}
           statusOptions={statusOptions}
         />
 
         {/* Modal Body */}
-        <div className="relative" style={{overflow: 'visible'}}>
-          <div className="p-2 overflow-y-auto h-[85vh] text-sm" style={{borderRadius: '0 0 0.5rem 0.5rem'}}>
+        <div className="flex-1 overflow-y-auto p-2 text-sm">
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -424,10 +428,12 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
                 onLicensePlateCellClick={handleLicensePlateCellClick}
                 total={calculatedTotal}
                 isInvoiceMode={true}
+                onEditModalStateChange={handleEditModalStateChange}
+                licensePlates={getAllLicensePlates}
+                isLoadingPlates={isLoadingPlates}
               />
             </>
           )}
-          </div>
         </div>
 
         <ExpenseActionButtons

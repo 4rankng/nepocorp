@@ -10,6 +10,7 @@ import ExpenseBasicInfo from '../expense/ExpenseBasicInfo';
 import ExpenseOptionalSections from '../expense/ExpenseOptionalSections';
 import ExpenseItemsTable from '../expense/ExpenseItemsTable';
 import ExpenseActionButtons from '../expense/ExpenseActionButtons';
+import InvoiceItemEditModal from '../invoice/InvoiceItemEditModal';
 import { formatCurrency } from '@utils/format';
 import { prepareInvoiceItemsForUpdate, calculateInvoiceTotal } from '@utils/invoiceHelpers';
 import { Z_INDEX } from '@constants/zIndex';
@@ -52,6 +53,8 @@ const InvoiceForm = ({
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showItemEditModal, setShowItemEditModal] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
 
   // Always in editing mode for add form
   const isEditing = true;
@@ -69,16 +72,7 @@ const InvoiceForm = ({
         invoice_category_id: '',
         payment_status: INVOICE_STATUS.DRAFT,
         payment_proof: '',
-        items: [{
-          license_plate: '',
-          item_name: '',
-          service_date: null,
-          notes: '',
-          price: 0,
-          quantity: 1,
-          tax_rate: taxRate,
-          total: 0
-        }],
+        items: [],
         remark: ''
       };
       setEditedData(initialData);
@@ -161,7 +155,7 @@ const InvoiceForm = ({
   // Handle ESC key
   useEffect(() => {
     const handleEscKey = (event) => {
-      if (event.key === 'Escape' && open && !showLicensePlateModal) {
+      if (event.key === 'Escape' && open && !showLicensePlateModal && !showItemEditModal) {
         onClose();
       }
     };
@@ -173,7 +167,7 @@ const InvoiceForm = ({
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [open, onClose, showLicensePlateModal]);
+  }, [open, onClose, showLicensePlateModal, showItemEditModal]);
 
   const handleClose = useCallback(() => {
     setEditedData(null);
@@ -199,20 +193,9 @@ const InvoiceForm = ({
   }, []);
 
   const handleAddItem = useCallback(() => {
-    setEditedData(prev => ({
-      ...prev,
-      items: [...prev.items, {
-        license_plate: '',
-        item_name: '',
-        service_date: null,
-        notes: '',
-        price: 0,
-        quantity: 1,
-        tax_rate: taxRate,
-        total: 0
-      }]
-    }));
-  }, [taxRate]);
+    setEditingItemIndex(null);
+    setShowItemEditModal(true);
+  }, []);
 
   const handleDeleteItem = useCallback((index) => {
     setEditedData(prev => ({
@@ -250,6 +233,32 @@ const InvoiceForm = ({
     }
     setShowLicensePlateModal(false);
   }, [currentLicensePlateIndex]);
+
+  // Handle item edit modal
+  const handleItemEditModalClose = useCallback(() => {
+    setShowItemEditModal(false);
+    setEditingItemIndex(null);
+  }, []);
+
+  const handleItemSave = useCallback((itemData) => {
+    if (editingItemIndex !== null) {
+      // Edit existing item
+      setEditedData(prev => ({
+        ...prev,
+        items: prev.items.map((item, index) =>
+          index === editingItemIndex ? itemData : item
+        )
+      }));
+    } else {
+      // Add new item
+      setEditedData(prev => ({
+        ...prev,
+        items: [...prev.items, itemData]
+      }));
+    }
+    setShowItemEditModal(false);
+    setEditingItemIndex(null);
+  }, [editingItemIndex]);
 
   // Placeholder functions for components that need them but aren't used in add mode
   const handleEditClick = useCallback(() => {}, []);
@@ -309,7 +318,7 @@ const InvoiceForm = ({
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
-        <div className="bg-white rounded-lg w-full max-w-[98vw] h-[98vh]" style={{zIndex: Z_INDEX.MODAL, overflow: 'visible'}}>
+        <div className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col" style={{zIndex: Z_INDEX.MODAL}}>
           <ExpenseHeader
             expenseData={invoiceData}
             loading={false}
@@ -325,48 +334,48 @@ const InvoiceForm = ({
           />
 
           {/* Modal Body */}
-          <div className="relative" style={{overflow: 'visible'}}>
-            <div className="p-2 overflow-y-auto h-[85vh]" style={{borderRadius: '0 0 0.5rem 0.5rem'}}>
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">
-                  {error}
-                </div>
-              )}
+          <div className="flex-1 overflow-y-auto p-2">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">
+                {error}
+              </div>
+            )}
 
-              <ExpenseBasicInfo
-                expenseData={invoiceData}
-                isEditing={isEditing}
-                editedData={editedData}
-                onFieldChange={handleFieldChange}
-                expenseCategories={adaptedInvoiceCategories}
-                isLoadingCategories={isLoadingCategories}
-                isInvoiceMode={true}
-                customers={adaptedCustomers}
-                isLoadingCustomers={isLoadingCustomers}
-              />
+            <ExpenseBasicInfo
+              expenseData={invoiceData}
+              isEditing={isEditing}
+              editedData={editedData}
+              onFieldChange={handleFieldChange}
+              expenseCategories={adaptedInvoiceCategories}
+              isLoadingCategories={isLoadingCategories}
+              isInvoiceMode={true}
+              customers={adaptedCustomers}
+              isLoadingCustomers={isLoadingCustomers}
+            />
 
-              <ExpenseOptionalSections
-                expenseData={invoiceData}
-                isEditing={isEditing}
-                editedData={editedData}
-                onFieldChange={handleFieldChange}
-                isInvoiceMode={true}
-              />
+            <ExpenseOptionalSections
+              expenseData={invoiceData}
+              isEditing={isEditing}
+              editedData={editedData}
+              onFieldChange={handleFieldChange}
+              isInvoiceMode={true}
+            />
 
-              {/* Divider */}
-              <div className="border-t border-gray-200 my-4"></div>
+            {/* Divider */}
+            <div className="border-t border-gray-200 my-4"></div>
 
-              <ExpenseItemsTable
-                items={editedData.items}
-                isEditing={isEditing}
-                onItemChange={handleItemChange}
-                onDeleteItem={handleDeleteItem}
-                onLicensePlateCellClick={handleLicensePlateCellClick}
-                total={calculateInvoiceTotal(editedData.items)}
-                isInvoiceMode={true}
-              />
-
-            </div>
+            <ExpenseItemsTable
+              items={editedData.items}
+              isEditing={isEditing}
+              onItemChange={handleItemChange}
+              onDeleteItem={handleDeleteItem}
+              onLicensePlateCellClick={handleLicensePlateCellClick}
+              total={calculateInvoiceTotal(editedData.items)}
+              isInvoiceMode={true}
+              licensePlates={getAllLicensePlates()}
+              isLoadingPlates={isLoadingPlates}
+              taxRate={taxRate}
+            />
           </div>
 
           <ExpenseActionButtons
@@ -391,6 +400,20 @@ const InvoiceForm = ({
           isLoading={isLoadingPlates}
         />
       )}
+
+      {showItemEditModal && (
+        <InvoiceItemEditModal
+          isOpen={showItemEditModal}
+          onClose={handleItemEditModalClose}
+          onSave={handleItemSave}
+          item={editingItemIndex !== null ? editedData.items[editingItemIndex] : null}
+          isEdit={editingItemIndex !== null}
+          licensePlates={getAllLicensePlates()}
+          isLoadingPlates={isLoadingPlates}
+          taxRate={taxRate}
+        />
+      )}
+
     </>
   );
 };

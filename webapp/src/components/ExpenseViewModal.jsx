@@ -358,7 +358,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
-      <div className="bg-white rounded-lg w-full max-w-[98vw] h-[98vh]" style={{zIndex: Z_INDEX.MODAL, overflow: 'visible'}}>
+      <div className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col" style={{zIndex: Z_INDEX.MODAL}}>
         <ExpenseHeader
           expenseData={expenseData}
           loading={loading}
@@ -369,8 +369,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         />
 
         {/* Modal Body */}
-        <div className="relative" style={{overflow: 'visible'}}>
-          <div className="p-2 overflow-y-auto h-[85vh] text-sm" style={{borderRadius: '0 0 0.5rem 0.5rem'}}>
+        <div className="flex-1 overflow-y-auto p-2 text-sm">
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -429,7 +428,6 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
               />
             </>
           )}
-          </div>
         </div>
 
         <ExpenseActionButtons

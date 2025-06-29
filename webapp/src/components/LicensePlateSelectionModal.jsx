@@ -23,16 +23,17 @@ const LicensePlateSelectionModal = ({ open, onClose, onSelect, licensePlates, is
     const handleEscKey = (event) => {
       if (event.key === 'Escape' && open) {
         event.stopPropagation(); // Prevent parent modal from reacting
+        event.preventDefault(); // Prevent default behavior
         onClose();
       }
     };
 
     if (open) {
-      document.addEventListener('keydown', handleEscKey);
+      document.addEventListener('keydown', handleEscKey, true); // Use capture phase
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscKey);
+      document.removeEventListener('keydown', handleEscKey, true);
     };
   }, [open, onClose]);
 

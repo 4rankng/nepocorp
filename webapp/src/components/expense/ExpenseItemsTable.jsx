@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import ExpenseItemRow from './ExpenseItemRow';
 import InvoiceItemRow from '../invoice/InvoiceItemRow';
 import ExpenseItemEditModal from './ExpenseItemEditModal';
+import InvoiceItemEditModal from '../invoice/InvoiceItemEditModal';
 import ConfirmDialog from '../ConfirmDialog';
 import { formatCurrency } from '@utils/format';
 import { calculateExpenseTotal } from '@utils/expenseHelpers';
@@ -18,7 +19,8 @@ const ExpenseItemsTable = ({
   errors = {},
   licensePlates = [],
   isLoadingPlates = false,
-  taxRate = 10
+  taxRate = 10,
+  onEditModalStateChange
 }) => {
   const displayItems = items || [];
   const hasItems = displayItems.length > 0;
@@ -38,6 +40,13 @@ const ExpenseItemsTable = ({
     index: null,
     isEdit: false
   });
+
+  // Notify parent when edit modal state changes
+  useEffect(() => {
+    if (onEditModalStateChange) {
+      onEditModalStateChange(editModal.open);
+    }
+  }, [editModal.open, onEditModalStateChange]);
 
   // Memoize expensive total calculation
   const calculatedTotal = useMemo(() => {
@@ -141,12 +150,12 @@ const ExpenseItemsTable = ({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50">
-              <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r w-24">Biển số xe</th>
+              <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r w-36">Biển số xe</th>
               <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r min-w-32">{isInvoiceMode ? 'Tên dịch vụ' : 'Hạng mục'}</th>
               {isInvoiceMode ? (
                 <>
                   <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-28">Ngày thực hiện</th>
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r w-32">Ghi chú</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r w-40">Ghi chú</th>
                 </>
               ) : (
                 <>
@@ -230,6 +239,20 @@ const ExpenseItemsTable = ({
           taxRate={taxRate}
         />
       )}
+
+      {/* Invoice Item Edit Modal */}
+      {isInvoiceMode && (
+        <InvoiceItemEditModal
+          isOpen={editModal.open}
+          onClose={handleCloseEditModal}
+          onSave={handleSaveItem}
+          item={editModal.item}
+          isEdit={editModal.isEdit}
+          licensePlates={licensePlates}
+          isLoadingPlates={isLoadingPlates}
+          taxRate={taxRate}
+        />
+      )}
     </div>
   );
 };
@@ -245,7 +268,8 @@ ExpenseItemsTable.propTypes = {
   errors: PropTypes.object,
   licensePlates: PropTypes.array,
   isLoadingPlates: PropTypes.bool,
-  taxRate: PropTypes.number
+  taxRate: PropTypes.number,
+  onEditModalStateChange: PropTypes.func
 };
 
 export default React.memo(ExpenseItemsTable);
