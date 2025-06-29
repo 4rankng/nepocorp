@@ -4,6 +4,7 @@ import { alpha } from '@mui/material/styles';
 import { Box, useTheme, useMediaQuery, Snackbar, Alert, Typography, Divider } from '@mui/material';
 import { useNavigate, useParams, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { AddButton } from '@/components/ActionButtons';
+import { useModalVisibility } from '@hooks/useModalVisibility';
 // Import custom hooks for data management
 import { useDauKeo, useRoMooc, useContainer } from './hooks';
 // Import specific component files from centralized index
@@ -28,6 +29,7 @@ const TABS = [
 // Individual tab content components
 const DauKeoContent = () => {
   const theme = useTheme();
+  const { hasActiveProfileModal } = useModalVisibility();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const dauKeoHook = useDauKeo();
   const [dialog, setDialog] = useState({ open: false, edit: false, data: null });

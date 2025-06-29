@@ -13,7 +13,7 @@ type DateOnly struct {
 
 // MarshalJSON implements json.Marshaler
 func (d DateOnly) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, d.Time.Format("2006-01-02"))), nil
+	return []byte(fmt.Sprintf(`"%s"`, d.Format("2006-01-02"))), nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler
@@ -30,7 +30,7 @@ func (d *DateOnly) UnmarshalJSON(data []byte) error {
 
 // Value implements driver.Valuer
 func (d DateOnly) Value() (driver.Value, error) {
-	return d.Time.Format("2006-01-02"), nil
+	return d.Format("2006-01-02"), nil
 }
 
 // Scan implements sql.Scanner

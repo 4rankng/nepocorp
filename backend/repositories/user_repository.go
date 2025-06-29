@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"github.com/nepocorp/backend/models"
-	"github.com/nepocorp/backend/utils"
 	"gorm.io/gorm"
 )
 
@@ -15,16 +14,6 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 }
 
 func (r *UserRepository) Create(user *models.User) error {
-	return r.db.Create(user).Error
-}
-
-func (r *UserRepository) CreateWithUser(user *models.User, createdByUserID uint) error {
-	// Set LastUpdatedBy using the user information
-	lastUpdatedBy, err := utils.GetFormattedLastUpdatedBy(r.db, createdByUserID)
-	if err != nil {
-		return err
-	}
-	user.LastUpdatedBy = lastUpdatedBy
 	return r.db.Create(user).Error
 }
 
@@ -57,18 +46,7 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 
 func (r *UserRepository) Update(user *models.User) error {
 	// Only update user-modifiable fields, explicitly omit backend-managed timestamp fields
-	return r.db.Model(user).Select("username", "email", "password", "name", "role").Omit("created_at", "updated_at", "last_updated_by").Updates(user).Error
-}
-
-func (r *UserRepository) UpdateWithUser(user *models.User, updatedByUserID uint) error {
-	// Set LastUpdatedBy using the user information
-	lastUpdatedBy, err := utils.GetFormattedLastUpdatedBy(r.db, updatedByUserID)
-	if err != nil {
-		return err
-	}
-	user.LastUpdatedBy = lastUpdatedBy
-	// Only update user-modifiable fields plus LastUpdatedBy, explicitly omit timestamp fields
-	return r.db.Model(user).Select("username", "email", "password", "name", "role", "last_updated_by").Omit("created_at", "updated_at").Updates(user).Error
+	return r.db.Model(user).Select("username", "email", "password", "name", "role").Omit("created_at", "updated_at").Updates(user).Error
 }
 
 func (r *UserRepository) Delete(id uint) error {

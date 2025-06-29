@@ -1,5 +1,6 @@
 // webapp/src/features/dinh-muc/hooks/useChoHang.js
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useVehicleData } from '@contexts/VehicleDataContext';
 import logger from '@services/logger';
 // Mock API object returning empty data until backend is integrated
 const dinhMucDauApi = {
@@ -9,8 +10,8 @@ const dinhMucDauApi = {
 };
 
 export const useChoHang = () => {
+  const { tractors, fetchTractors, loading } = useVehicleData();
   const [choHangRecords, setChoHangRecords] = useState([]);
-  const [licensePlates, setLicensePlates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
@@ -22,24 +23,32 @@ export const useChoHang = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlate, setSelectedPlate] = useState('');
 
-  // Fetch license plates separately to avoid pagination issues
-  const fetchLicensePlates = useCallback(async () => {
-    try {
-      const allRecordsRes = await dinhMucDauApi.getAllDinhMucChoHang(1, 1000); // Get all records for license plates
-      const licensePlateOptions = Array.from(
-        new Set((allRecordsRes.data || []).map(r => r.bienSoXe).filter(Boolean))
-      ).map(plate => ({ id: plate, bien_so: plate }));
-      setLicensePlates(licensePlateOptions);
-    } catch (error) {
-      logger.error('Error in loadChoHang', { error });
-    }
-  }, []);
+  // Get license plates from cached tractor data
+  const licensePlates = useMemo(() => {
+    if (!tractors || !Array.isArray(tractors)) return [];
+
+    // Extract unique license plates from tractors
+    const plates = new Set();
+    tractors.forEach(tractor => {
+      if (tractor.license_plate) {
+        plates.add(tractor.license_plate);
+      }
+    });
+
+    return Array.from(plates).map(plate => ({
+      id: plate,
+      bien_so: plate,
+    }));
+  }, [tractors]);
 
   const fetchDataInternal = useCallback(
     async (currentPage, currentLimit, currentSearchTerm) => {
       setIsLoading(true);
       setError(null);
       try {
+        // Ensure tractor data is loaded from cache
+        await fetchTractors();
+
         // API uses 1-based indexing for page, UI uses 0-based
         const response = await dinhMucDauApi.getAllDinhMucChoHang(
           currentPage + 1,
@@ -57,11 +66,6 @@ export const useChoHang = () => {
             total: response.meta.total, // Use the grand total for TablePagination
             totalPages: response.meta.totalPages,
           }));
-
-          // Only fetch license plates once on initial load
-          if (licensePlates.length === 0) {
-            await fetchLicensePlates();
-          }
         } else {
           throw new Error(response.error?.message || 'Failed to fetch Cho Hang records');
         }
@@ -72,8 +76,8 @@ export const useChoHang = () => {
         setIsLoading(false);
       }
     },
-    [fetchLicensePlates, licensePlates.length]
-  ); // Added missing dependencies
+    [fetchTractors]
+  );
 
   useEffect(() => {
     // Plate filter takes precedence over search term
@@ -111,8 +115,7 @@ export const useChoHang = () => {
     choHangRecords,
     setChoHangRecords,
     licensePlates,
-    setLicensePlates,
-    isLoading,
+    isLoading: isLoading || loading.tractors,
     error,
     fetchData: refetchData,
     pagination: {

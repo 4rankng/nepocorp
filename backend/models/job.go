@@ -17,6 +17,7 @@ type Job struct {
 	DistanceKm      *uint     `json:"distance_km"`
 	Revenue         float64   `gorm:"type:decimal(15,2);default:0.00" json:"revenue"`
 	Status          string    `gorm:"type:enum('DRAFT','PLANNED','IN_PROGRESS','COMPLETED','CANCELLED');default:'PLANNED'" json:"status"`
+	LastUpdatedBy   string    `gorm:"type:varchar(255)" json:"last_updated_by"`
 	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 

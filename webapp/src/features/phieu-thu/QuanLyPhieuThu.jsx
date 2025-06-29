@@ -12,9 +12,11 @@ import { Fab, Zoom, Snackbar, Alert } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { INVOICE_STATUS_LABELS } from '@constants/invoice';
 import { Z_INDEX } from '@constants/zIndex';
+import { useModalVisibility } from '@hooks/useModalVisibility';
 
 const QuanLyPhieuThu = () => {
   const { currentUser } = useAuth();
+  const { hasActiveProfileModal } = useModalVisibility();
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
 
   // Helper functions
@@ -272,7 +274,7 @@ const QuanLyPhieuThu = () => {
       )}
 
       {/* FAB Button - Hidden when modals are open */}
-      <Zoom in={!showInvoiceForm && !showInvoiceModal}>
+      <Zoom in={!showInvoiceForm && !showInvoiceModal && !hasActiveProfileModal}>
         <Fab
           color="primary"
           aria-label="Thêm"

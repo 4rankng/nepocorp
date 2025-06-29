@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/nepocorp/backend/config"
+	"github.com/nepocorp/backend/database"
 	"github.com/nepocorp/backend/handlers"
 	"github.com/nepocorp/backend/internal/migrations"
 	"github.com/nepocorp/backend/middleware"
@@ -127,7 +128,7 @@ func main() {
 	r.Use(middleware.ActivityLogger(activityLogger))
 
 	// Initialize routes
-	routes.Setup(r, cfg, healthHandler, authHandler, userHandler, userRepo, expenseCategoryHandler,
+	routes.Setup(r, cfg, db, healthHandler, authHandler, userHandler, userRepo, expenseCategoryHandler,
 		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, routeHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, logger)
 
 	// Create HTTP server
@@ -197,9 +198,16 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 		&models.InvoiceCategory{},
 		&models.Invoice{},
 		&models.InvoiceItem{},
+		&models.FinancialLedger{},
+		&models.FuelStandard{},
+		&models.Job{},
+		&models.Route{},
 	); err != nil {
 		return nil, err
 	}
+
+	// Register user tracking callbacks
+	database.RegisterUserTrackingCallbacks(db)
 
 	return db, nil
 }

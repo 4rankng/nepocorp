@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
-import { BellIcon } from '@assets/icons';
+import ChangePasswordModal from './ChangePasswordModal';
+import EditProfileModal from './EditProfileModal';
 
-const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
+const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, onModalStateChange }) => {
   const { currentUser, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+
+  // Notify parent about modal state changes
+  React.useEffect(() => {
+    const hasOpenModal = isChangePasswordModalOpen || isEditProfileModalOpen;
+    if (onModalStateChange) {
+      onModalStateChange(hasOpenModal);
+    }
+  }, [isChangePasswordModalOpen, isEditProfileModalOpen, onModalStateChange]);
 
   const handleLogout = () => {
     logout();
@@ -25,12 +36,13 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
     >
       {/* Left Section - Logo and Company Name */}
       <div className="flex items-center flex-shrink-0">
-        {/* Mobile Hamburger Menu */}
-        <button
-          className="relative md:hidden mr-3 p-2 rounded hover:bg-black/10 focus:outline-none transition-all duration-300"
-          onClick={onSidebarToggle}
-          aria-label={sidebarOpen ? 'Đóng menu' : 'Mở menu'}
-        >
+        {/* Mobile Hamburger Menu - Hidden when profile modals are open */}
+        {!isChangePasswordModalOpen && !isEditProfileModalOpen && (
+          <button
+            className="relative md:hidden mr-3 p-2 rounded hover:bg-black/10 focus:outline-none transition-all duration-300"
+            onClick={onSidebarToggle}
+            aria-label={sidebarOpen ? 'Đóng menu' : 'Mở menu'}
+          >
           {/* Hamburger Icon */}
           <svg
             className={`h-6 w-6 transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-0' : 'opacity-100'}`}
@@ -59,7 +71,8 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-        </button>
+          </button>
+        )}
 
         {/* Logo Section */}
         <Link to="/" className="flex items-center gap-3">
@@ -91,22 +104,6 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
       {/* Right Section - Actions */}
       {currentUser && (
         <div className="flex items-center gap-5">
-          {/* Notification Button */}
-          <button
-            className="relative bg-gray-100 hover:bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300"
-            aria-label="Thông báo"
-            style={{ border: '1px solid #d1d5db' }}
-          >
-            <BellIcon className="w-5 h-5" style={{ color: '#4b5563' }} />
-            {/* Notification Badge */}
-            <span 
-              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"
-              style={{ fontSize: '11px' }}
-            >
-              3
-            </span>
-          </button>
-
           {/* User Profile */}
           <div className="relative">
             <button
@@ -116,14 +113,13 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
               aria-expanded={isMenuOpen}
               aria-haspopup="true"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              style={{ border: '1px solid #d1d5db' }}
             >
               {/* User Avatar */}
               <div 
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm"
                 style={{ backgroundColor: '#6b7280' }}
               >
-                {(currentUser.username || currentUser.name || 'U')[0].toUpperCase()}
+                {(currentUser.name || 'U')[0].toUpperCase()}
               </div>
               
               {/* User Info - Hidden on small screens */}
@@ -132,13 +128,7 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
                   className="font-medium text-sm"
                   style={{ fontWeight: 500, color: '#4b5563' }}
                 >
-                  {currentUser.username || currentUser.name}
-                </div>
-                <div 
-                  className="text-xs"
-                  style={{ fontSize: '12px', color: '#6b7280' }}
-                >
-                  Quản trị viên
+                  {currentUser.name}
                 </div>
               </div>
             </button>
@@ -157,6 +147,28 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
                 }}
               >
                 <button
+                  onClick={() => {
+                    setIsChangePasswordModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                  role="menuitem"
+                  style={{ fontSize: '14px' }}
+                >
+                  Đổi mật khẩu
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditProfileModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                  role="menuitem"
+                  style={{ fontSize: '14px' }}
+                >
+                  Sửa thông tin
+                </button>
+                <button
                   onClick={handleLogout}
                   className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                   role="menuitem"
@@ -169,6 +181,16 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
           </div>
         </div>
       )}
+      
+      {/* Modals */}
+      <ChangePasswordModal 
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
+      <EditProfileModal 
+        isOpen={isEditProfileModalOpen}
+        onClose={() => setIsEditProfileModalOpen(false)}
+      />
     </header>
   );
 };

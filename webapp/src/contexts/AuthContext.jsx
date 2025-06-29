@@ -136,6 +136,34 @@ export const AuthProvider = ({ children }) => {
     navigate('/', { replace: true });
   }, [navigate]);
 
+  // Update current user function
+  const updateCurrentUser = useCallback((updatedUserData) => {
+    const updatedUser = {
+      ...currentUser,
+      ...updatedUserData
+    };
+    
+    setCurrentUser(updatedUser);
+    
+    // Update localStorage
+    const authData = {
+      currentUser: updatedUser,
+      isAuthenticated: true,
+      timestamp: new Date().toISOString(),
+    };
+    localStorage.setItem('auth', JSON.stringify(authData));
+  }, [currentUser]);
+
+  // Change password function
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
+    try {
+      const response = await authApi.changePassword(currentPassword, newPassword);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
   // Role checking function
   const hasAnyRole = useCallback((roles) => {
     if (!currentUser?.role || !Array.isArray(roles)) return false;
@@ -148,6 +176,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
+    updateCurrentUser,
+    changePassword,
     hasAnyRole,
   };
 

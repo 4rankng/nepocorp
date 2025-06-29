@@ -122,8 +122,8 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Create expense with items in transaction, setting LastUpdatedBy
-	if err := h.repo.CreateWithUser(&expense, userID.(uint)); err != nil {
+	// Create expense with items in transaction
+	if err := h.repo.Create(&expense); err != nil {
 		// Log detailed error for debugging
 		c.Header("X-Error-Detail", err.Error())
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractorExpense,
@@ -146,14 +146,6 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrTractorExpenseNotFound})
-		return
-	}
-
-	// Get user ID from context (set by JWT middleware)
-	userID, exists := c.Get("userID")
-	if !exists {
-		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
-			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: common.ErrUserIDNotFound})
 		return
 	}
 
@@ -192,7 +184,7 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	// Note: Item updates should be done through dedicated item endpoints
 	// This expense update endpoint focuses on expense-level fields only
 
-	if err := h.repo.UpdateWithUser(existingExpense, userID.(uint)); err != nil {
+	if err := h.repo.Update(existingExpense); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractorExpense,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})
 		return

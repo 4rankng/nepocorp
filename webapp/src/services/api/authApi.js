@@ -46,6 +46,21 @@ export const authApi = {
     return response;
   },
   
+  // Change password
+  changePassword: async (currentPassword, newPassword) => {
+    const response = await apiClient.put('/auth/profile/password', {
+      current_password: currentPassword,
+      new_password: newPassword
+    });
+    return response;
+  },
+  
+  // Update user profile
+  updateProfile: async (profileData) => {
+    const response = await apiClient.put('/auth/profile', profileData);
+    return response;
+  },
+  
   // Logout user
   logout: async () => {
     localStorage.removeItem('authToken');

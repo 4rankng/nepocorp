@@ -77,14 +77,7 @@ func (h *SettingHandler) UpdateByKey(c *gin.Context) {
 	}
 
 	// Get user ID from context (set by JWT middleware)
-	userID, exists := c.Get("userID")
-	if !exists {
-		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
-			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: common.ErrUserIDNotFound})
-		return
-	}
-
-	setting, err := h.repo.UpdateByKey(key, request.Value, userID.(uint))
+	setting, err := h.repo.UpdateByKey(key, request.Value)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateSetting,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})

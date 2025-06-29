@@ -56,12 +56,6 @@ func (h *InvoiceCategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Get user info from context
-	username, _ := c.Get("username")
-	if usernameStr, ok := username.(string); ok {
-		category.LastUpdatedBy = usernameStr
-	}
-
 	if err := h.repo.Create(&category); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateInvoiceCategory,
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
@@ -87,12 +81,6 @@ func (h *InvoiceCategoryHandler) Update(c *gin.Context) {
 	}
 
 	category.ID = uint(id)
-
-	// Get user info from context
-	username, _ := c.Get("username")
-	if usernameStr, ok := username.(string); ok {
-		category.LastUpdatedBy = usernameStr
-	}
 
 	if err := h.repo.Update(&category); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateInvoiceCategory,

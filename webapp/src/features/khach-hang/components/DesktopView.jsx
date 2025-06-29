@@ -3,7 +3,9 @@ import { Box, Paper, Fab, Zoom } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CustomerListResponsive from '@features/khach-hang/components/CustomerListResponsive';
 import { Z_INDEX } from '@constants/zIndex';
+import { useModalVisibility } from '@hooks/useModalVisibility';
 const DesktopView = ({ customers, loading, error, onEdit, onDelete, onAdd }) => {
+  const { hasActiveProfileModal } = useModalVisibility();
   return (
     <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
@@ -17,7 +19,7 @@ const DesktopView = ({ customers, loading, error, onEdit, onDelete, onAdd }) => 
         />
       </Paper>
       {/* Floating Action Button */}
-      <Zoom in={!loading}>
+      <Zoom in={!loading && !hasActiveProfileModal}>
         <Fab
           color="primary"
           aria-label="Thêm khách hàng"

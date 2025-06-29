@@ -10,11 +10,13 @@ import (
 	"github.com/ulule/limiter/v3"
 	mgin "github.com/ulule/limiter/v3/drivers/middleware/gin"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
+	"gorm.io/gorm"
 )
 
 func Setup(
 	r *gin.Engine,
 	cfg *config.Config,
+	db *gorm.DB,
 	healthHandler *handlers.HealthHandler,
 	authHandler *handlers.AuthHandler,
 	userHandler *handlers.UserHandler,
@@ -71,6 +73,7 @@ func Setup(
 		// Protected routes
 		protected := v1.Group("/")
 		protected.Use(middleware.JWTAuth(cfg))
+		protected.Use(middleware.UserContextMiddleware(db))
 		{
 			// User profile
 			protected.GET("/auth/profile", authHandler.GetProfile)

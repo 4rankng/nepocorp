@@ -14,6 +14,7 @@ const TrangChu = () => {
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [hasActiveProfileModal, setHasActiveProfileModal] = useState(false);
   const { logout, currentUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,7 +54,11 @@ const TrangChu = () => {
 
       {/* Banner/Header only visible when authenticated */}
       {currentUser && (
-        <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
+        <ThanhTieuDe 
+          onSidebarToggle={handleSidebarToggle} 
+          sidebarOpen={sidebarOpen}
+          onModalStateChange={setHasActiveProfileModal}
+        />
       )}
 
       {/* If not authenticated, show landing page with login button */}
@@ -133,25 +138,27 @@ const TrangChu = () => {
             <ThanhBen onNavItemClick={handleSidebarClose} version={packageJson.version} onVersionClick={() => setChangelogOpen(true)} />
           </div>
 
-          {/* Desktop Sidebar Toggle Button */}
-          <button
-            onClick={handleDesktopSidebarToggle}
-            className={`hidden md:flex fixed bottom-16 z-50 w-6 h-12 bg-gray-200 hover:bg-gray-300 border border-gray-300 rounded-r-md items-center justify-center transition-all duration-300 ease-in-out ${
-              desktopSidebarCollapsed ? 'left-0' : 'left-64'
-            }`}
-            aria-label={desktopSidebarCollapsed ? 'Mở sidebar' : 'Thu gọn sidebar'}
-          >
-            <svg
-              className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
-                desktopSidebarCollapsed ? 'rotate-0' : 'rotate-180'
+          {/* Desktop Sidebar Toggle Button - Hidden when profile modals are open */}
+          {!hasActiveProfileModal && (
+            <button
+              onClick={handleDesktopSidebarToggle}
+              className={`hidden md:flex fixed bottom-16 z-50 w-6 h-12 bg-gray-200 hover:bg-gray-300 border border-gray-300 rounded-r-md items-center justify-center transition-all duration-300 ease-in-out ${
+                desktopSidebarCollapsed ? 'left-0' : 'left-64'
               }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              aria-label={desktopSidebarCollapsed ? 'Mở sidebar' : 'Thu gọn sidebar'}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+              <svg
+                className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
+                  desktopSidebarCollapsed ? 'rotate-0' : 'rotate-180'
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
 
           {/* Mobile Sidebar Overlay */}
           <div

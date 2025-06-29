@@ -185,7 +185,7 @@ const PartnerForm = ({
             isEdit={isEdit}
             loading={isSubmitting || isLoading}
             cancelText="Hủy"
-            submitText={isEdit ? 'Lưu thay đổi' : 'Thêm đối tác'}
+            submitText={isEdit ? 'Lưu' : 'Thêm đối tác'}
           />
         </div>
       }

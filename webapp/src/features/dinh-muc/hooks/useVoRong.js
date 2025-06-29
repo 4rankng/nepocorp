@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { tractorApi } from '@services/api/tractorApi';
-import { trailerApi } from '@services/api/trailerApi';
+import { useVehicleData } from '@contexts/VehicleDataContext';
 
 // Fuel standards API not yet implemented - return empty data
 const dinhMucDauApi = {
@@ -12,6 +11,7 @@ const dinhMucDauApi = {
  * Hook for managing empty fuel standards (định mức vỏ rỗng/km không hàng)
  */
 export const useVoRong = () => {
+  const { tractors, trailers, fetchTractors, fetchTrailers, loading } = useVehicleData();
   const [dinhMucVoRong, setDinhMucVoRong] = useState({}); // Format: { '51C-12345': [...] }
   const [voRongRecords, setVoRongRecords] = useState([]); // Flat array for table
   const [availableLicensePlates, setAvailableLicensePlates] = useState([]);
@@ -35,7 +35,7 @@ export const useVoRong = () => {
 
   // Process data function to handle grouping only (no filtering/pagination)
   const processVoRongData = useCallback(
-    (voRongDataItems, dauKeoData, roMoocData) => {
+    (voRongDataItems) => {
       // Group by license plate
       const voRongGrouped = voRongDataItems.reduce((acc, item) => {
         const plateKey = item.bien_so_xe || item.bienSoXe;
@@ -78,15 +78,15 @@ export const useVoRong = () => {
       // Store raw data for filtering/pagination
       setRawVoRongData(voRongFlat);
 
-      // Combine tractor and trailer license plates
+      // Combine tractor and trailer license plates from cached data
       const tractorPlates =
-        dauKeoData?.map(dk => ({
-          licensePlate: dk.bien_so,
+        tractors?.map(dk => ({
+          licensePlate: dk.license_plate,
           type: 'dau_keo',
         })) || [];
       const trailerPlates =
-        roMoocData?.map(rm => ({
-          licensePlate: rm.bien_so,
+        trailers?.map(rm => ({
+          licensePlate: rm.license_plate,
           type: 'ro_mooc',
         })) || [];
       setAvailableLicensePlates([...tractorPlates, ...trailerPlates]);
@@ -99,7 +99,7 @@ export const useVoRong = () => {
 
       return { voRongGrouped, voRongFlat };
     },
-    [] // Remove all dependencies to make this stable
+    [tractors, trailers] // Add tractors and trailers as dependencies
   );
 
   // Separate function to handle filtering and pagination
@@ -135,14 +135,13 @@ export const useVoRong = () => {
     setIsLoading(true);
     setError('');
     try {
-      const [dinhMucResponse, dauKeoResponse, roMoocResponse] = await Promise.all([
-        dinhMucDauApi.getAllDinhMucDau(),
-        tractorApi.getAllWithoutPagination(),
-        trailerApi.getAllWithoutPagination(),
-      ]);
+      // Ensure vehicle data is loaded from cache
+      await Promise.all([fetchTractors(), fetchTrailers()]);
+
+      const dinhMucResponse = await dinhMucDauApi.getAllDinhMucDau();
 
       // Handle API response errors with more specific messages
-      if (!dinhMucResponse || !dauKeoResponse || !roMoocResponse) {
+      if (!dinhMucResponse) {
         throw new Error('Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.');
       }
       if (!dinhMucResponse.success) {
@@ -151,28 +150,16 @@ export const useVoRong = () => {
             'Lỗi khi tải dữ liệu định mức dầu. Vui lòng thử lại sau.'
         );
       }
-      if (!dauKeoResponse.success) {
-        throw new Error(
-          dauKeoResponse.error?.message || 'Lỗi khi tải danh sách đầu kéo. Vui lòng thử lại sau.'
-        );
-      }
-      if (!roMoocResponse.success) {
-        throw new Error(
-          roMoocResponse.error?.message || 'Lỗi khi tải danh sách rơ mooc. Vui lòng thử lại sau.'
-        );
-      }
 
       const allDinhMucData = dinhMucResponse.data?.items || dinhMucResponse.data || [];
-      const dauKeoData = dauKeoResponse.data?.items || dauKeoResponse.data || [];
-      const roMoocData = roMoocResponse.data?.items || roMoocResponse.data || [];
 
       // Filter for empty standards (km_vo)
       const voRongDataItems = allDinhMucData.filter(item => item.phan_loai === 'km_vo');
 
       // Process and set data
-      processVoRongData(voRongDataItems, dauKeoData, roMoocData);
+      processVoRongData(voRongDataItems);
 
-      return { voRongDataItems, dauKeoData, roMoocData };
+      return { voRongDataItems };
     } catch (err) {
       const errorMessage =
         err.response?.data?.message ||
@@ -190,7 +177,7 @@ export const useVoRong = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [processVoRongData]); // Keep processVoRongData dependency
+  }, [processVoRongData, fetchTractors, fetchTrailers]); // Keep processVoRongData dependency
 
   // Update the ref whenever fetchVoRongData changes
   fetchVoRongDataRef.current = fetchVoRongData;
@@ -321,7 +308,7 @@ export const useVoRong = () => {
     voRongRecords,
     licensePlates,
     availableLicensePlates,
-    isLoading,
+    isLoading: isLoading || loading.tractors || loading.trailers,
     error,
     fetchVoRongData,
     fetchData: refetchData,

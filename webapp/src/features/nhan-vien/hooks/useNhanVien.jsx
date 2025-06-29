@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { fetchAllNhanVien, addNhanVien, editNhanVien, removeNhanVien } from '../../../services/api/nhanVienApi';
+import { useAuth } from '@contexts/AuthContext';
 // Configuration
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_RETRY_ATTEMPTS = 3;
@@ -44,6 +45,8 @@ const getInitialFormState = () => ({
   role: '',
 });
 const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
+  const { currentUser, updateCurrentUser } = useAuth();
+  
   // State management
   const [employees, setEmployees] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,21 +63,26 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   const cacheRef = useRef({
     employees: { data: [], timestamp: 0, total: 0 },
   });
+  
+  // Cache invalidation method
+  const invalidateCache = useCallback(() => {
+    cacheRef.current.employees.timestamp = 0;
+  }, []);
   const errorBoundaryRef = useRef();
   // Clear error function
   const clearError = useCallback(() => {
     setError('');
   }, []);
   const fetchEmployeesData = useCallback(
-    async (page = pagination.page, size = pagination.pageSize) => {
+    async (page = pagination.page, size = pagination.pageSize, forceRefresh = false) => {
       setIsLoading(true);
       setError('');
       const cacheKey = `page-${page}-size-${size}`;
       try {
         const now = Date.now();
         const cachedData = cacheRef.current.employees;
-        // Return cached data if valid
-        if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
+        // Return cached data if valid and not forcing refresh
+        if (!forceRefresh && cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
           setEmployees(cachedData.data);
           setPagination(prev => ({
             ...prev,
@@ -203,8 +211,14 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
         throw new Error(response.message || `Failed to ${editingEmployee ? 'update' : 'create'} employee`);
       }
       
-      // Refresh employee list
-      await fetchEmployeesData();
+      // If editing current user, update the auth context
+      if (editingEmployee && currentUser && editingEmployee.id === currentUser.id) {
+        updateCurrentUser(response.data);
+      }
+      
+      // Invalidate cache and refresh employee list with fresh data
+      invalidateCache();
+      await fetchEmployeesData(pagination.page, pagination.pageSize, true);
       handleCloseModal();
     } catch (err) {
       setError(err.message || `Lỗi khi ${editingEmployee ? 'sửa' : 'thêm'} nhân viên.`);
@@ -227,8 +241,9 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
           throw new Error(response.message || 'Failed to delete employee');
         }
         
-        // Refresh employee list
-        await fetchEmployeesData();
+        // Invalidate cache and refresh employee list with fresh data
+        invalidateCache();
+        await fetchEmployeesData(pagination.page, pagination.pageSize, true);
       } catch (err) {
         setError(err.message || 'Lỗi khi xóa nhân viên.');
       } finally {
@@ -253,6 +268,7 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
     pagination,
     employeeRoles,
     fetchEmployeesData,
+    invalidateCache,
     handleInputChange,
     handleOpenModalForAdd,
     handleOpenModalForEdit,

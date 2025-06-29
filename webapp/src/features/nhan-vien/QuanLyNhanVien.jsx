@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PlusIcon } from '@assets/icons/index.jsx'; // Assuming PlusIcon is used for FAB
 import PersonIcon from '@mui/icons-material/Person';
 import useNhanVien from '@features/nhan-vien/hooks/useNhanVien';
+import { useModalVisibility } from '@hooks/useModalVisibility';
 import {
   Box,
   CircularProgress, // Keep for top-level loading if needed before views render
@@ -35,6 +36,7 @@ const QuanLyNhanVien = () => {
     isDauKeoLoading,
     loadDauKeoList,
   } = useNhanVien();
+  const { hasActiveProfileModal } = useModalVisibility();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,8 +100,8 @@ const QuanLyNhanVien = () => {
         handleDeleteRequest={handleDeleteClick}
         canEditDelete={canEditDelete}
       />
-      {/* Floating Add FAB */}
-      <Zoom in={!isLoading}>
+      {/* Floating Add FAB - Hidden when profile modals are open */}
+      <Zoom in={!isLoading && !hasActiveProfileModal}>
         <Fab
           color="primary"
           aria-label="Thêm nhân viên"

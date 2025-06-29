@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { dinhMucBoSungApi } from '@services/api/dinhMucBoSungApi';
-import { tractorApi } from '@services/api/tractorApi';
+import { useVehicleData } from '@contexts/VehicleDataContext';
 import logger from '@services/logger';
 
 export const useDinhMucBoSung = () => {
+  const { tractors, fetchTractors, loading } = useVehicleData();
   const [dinhMucBoSungData, setDinhMucBoSungData] = useState([]);
-  const [dauKeoList, setDauKeoList] = useState([]);
   const [tuyenDuongList, setTuyenDuongList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -16,8 +16,8 @@ export const useDinhMucBoSung = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Load tractor data
-      const tractorData = await tractorApi.getAll();
+      // Ensure tractor data is loaded from cache
+      await fetchTractors();
 
       // Load dinhMucBoSung with plate filter if provided
       let dinhMucData;
@@ -31,10 +31,8 @@ export const useDinhMucBoSung = () => {
       const extractedDinhMucData = Array.isArray(dinhMucData)
         ? dinhMucData
         : dinhMucData?.data || [];
-      const extractedTractorList = tractorData.data || [];
 
       setDinhMucBoSungData(extractedDinhMucData);
-      setDauKeoList(extractedTractorList);
       setTuyenDuongList([]);
 
     } catch (err) {
@@ -42,7 +40,7 @@ export const useDinhMucBoSung = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchTractors]);
 
   // Create new record
   const createRecord = useCallback(async data => {
@@ -91,13 +89,13 @@ export const useDinhMucBoSung = () => {
     }
   }, []);
 
-  // Handle plate selection change
+  // Handle plate selection change with client-side filtering
   const handlePlateChange = useCallback(
-    async plate => {
+    plate => {
       setSelectedPlate(plate);
-      await loadData(plate);
+      // No need to refetch data, filtering will be handled by consuming components
     },
-    [loadData]
+    []
   );
 
   // Load initial data
@@ -105,13 +103,13 @@ export const useDinhMucBoSung = () => {
     loadData('');
   }, [loadData]);
 
-  // Get unique license plates from dauKeoList
+  // Get unique license plates from tractors
   const licensePlates = useMemo(() => {
-    if (!dauKeoList || !Array.isArray(dauKeoList)) return [];
+    if (!tractors || !Array.isArray(tractors)) return [];
 
-    // Extract unique license plates from dauKeoList
+    // Extract unique license plates from tractors
     const plates = new Set();
-    dauKeoList.forEach(tractor => {
+    tractors.forEach(tractor => {
       if (tractor.license_plate) {
         plates.add(tractor.license_plate);
       }
@@ -121,13 +119,13 @@ export const useDinhMucBoSung = () => {
       id: plate,
       license_plate: plate,
     }));
-  }, [dauKeoList]);
+  }, [tractors]);
 
   return {
     dinhMucBoSungData,
-    dauKeoList,
+    dauKeoList: tractors,
     tuyenDuongList,
-    isLoading,
+    isLoading: isLoading || loading.tractors,
     error,
     selectedPlate,
     handlePlateChange,

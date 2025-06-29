@@ -112,12 +112,6 @@ func (h *InvoiceHandler) Create(c *gin.Context) {
 
 	invoice.CreatedBy = userIDUint
 
-	// Get username for last_updated_by
-	username, _ := c.Get("username")
-	if usernameStr, ok := username.(string); ok {
-		invoice.LastUpdatedBy = usernameStr
-	}
-
 	// Validate payment status
 	if invoice.PaymentStatus != "" && !isValidInvoiceStatus(invoice.PaymentStatus) {
 		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidPaymentStatus,
@@ -171,12 +165,6 @@ func (h *InvoiceHandler) Update(c *gin.Context) {
 	}
 
 	invoice.ID = uint(id)
-
-	// Get username for last_updated_by
-	username, _ := c.Get("username")
-	if usernameStr, ok := username.(string); ok {
-		invoice.LastUpdatedBy = usernameStr
-	}
 
 	// Validate payment status
 	if invoice.PaymentStatus != "" && !isValidInvoiceStatus(invoice.PaymentStatus) {
