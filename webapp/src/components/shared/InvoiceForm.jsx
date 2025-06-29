@@ -11,21 +11,18 @@ import ExpenseOptionalSections from '../expense/ExpenseOptionalSections';
 import ExpenseItemsTable from '../expense/ExpenseItemsTable';
 import ExpenseActionButtons from '../expense/ExpenseActionButtons';
 import InvoiceItemEditModal from '../invoice/InvoiceItemEditModal';
-import { formatCurrency } from '@utils/format';
 import { prepareInvoiceItemsForUpdate, calculateInvoiceTotal } from '@utils/invoiceHelpers';
 import { Z_INDEX } from '@constants/zIndex';
+import useInvoiceEdit from '../hooks/useInvoiceEdit';
 
 
 const InvoiceForm = ({
   open,
   isEdit,
-  isLoading,
   formData,
-  errors = {},
   onClose,
   onChange,
   onSave,
-  licensePlates = [],
   isLoadingPlates = false,
   title = null,
 }) => {
@@ -42,7 +39,26 @@ const InvoiceForm = ({
     total: 0
   };
 
-  const [editedData, setEditedData] = useState(null);
+  // Use the hook for state management
+  const {
+    isEditing,
+    editedData,
+    isSaving,
+    saveError,
+    showItemEditModal,
+    editingItemIndex,
+    handleAddItem,
+    handleDeleteItem,
+    handleItemEditModalClose,
+    handleItemSave,
+    handleFieldChange,
+    handleItemChange,
+    handleEditClick,
+    handleCancelEdit,
+    handleSaveEdit,
+    setShowItemEditModal,
+    setEditingItemIndex,
+  } = useInvoiceEdit(invoiceData, null, () => {}, fetchTractors, fetchTrailers, true);
 
   const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -51,33 +67,8 @@ const InvoiceForm = ({
   const [taxRate, setTaxRate] = useState(10);
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [showItemEditModal, setShowItemEditModal] = useState(false);
-  const [editingItemIndex, setEditingItemIndex] = useState(null);
 
-  // Always in editing mode for add form
-  const isEditing = true;
-
-  // Initialize editedData based on mode
-  useEffect(() => {
-    if (open) {
-      const initialData = isEdit && formData ? {
-        ...formData,
-        items: formData.items && formData.items.length > 0 
-          ? formData.items.map(item => ({ ...item }))
-          : []
-      } : {
-        customer_id: '',
-        invoice_category_id: '',
-        payment_status: INVOICE_STATUS.DRAFT,
-        payment_proof: '',
-        items: [],
-        remark: ''
-      };
-      setEditedData(initialData);
-    }
-  }, [open, isEdit, formData, taxRate]);
 
   // Load settings when modal opens
   useEffect(() => {
@@ -170,39 +161,15 @@ const InvoiceForm = ({
   }, [open, onClose, showLicensePlateModal, showItemEditModal]);
 
   const handleClose = useCallback(() => {
-    setEditedData(null);
     setError(null);
     onClose();
   }, [onClose]);
 
-  const handleFieldChange = useCallback((field, value) => {
-    setEditedData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  // Override handleFieldChange to also call parent onChange
+  const wrappedHandleFieldChange = useCallback((field, value) => {
+    handleFieldChange(field, value);
     onChange({ target: { name: field, value } });
-  }, [onChange]);
-
-  const handleItemChange = useCallback((index, field, value) => {
-    setEditedData(prev => ({
-      ...prev,
-      items: prev.items.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      )
-    }));
-  }, []);
-
-  const handleAddItem = useCallback(() => {
-    setEditingItemIndex(null);
-    setShowItemEditModal(true);
-  }, []);
-
-  const handleDeleteItem = useCallback((index) => {
-    setEditedData(prev => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index)
-    }));
-  }, []);
+  }, [handleFieldChange, onChange]);
 
   const handleLicensePlateCellClick = useCallback((index) => {
     setCurrentLicensePlateIndex(index);
@@ -234,41 +201,17 @@ const InvoiceForm = ({
     setShowLicensePlateModal(false);
   }, [currentLicensePlateIndex]);
 
-  // Handle item edit modal
-  const handleItemEditModalClose = useCallback(() => {
-    setShowItemEditModal(false);
-    setEditingItemIndex(null);
-  }, []);
-
-  const handleItemSave = useCallback((itemData) => {
-    if (editingItemIndex !== null) {
-      // Edit existing item
-      setEditedData(prev => ({
-        ...prev,
-        items: prev.items.map((item, index) =>
-          index === editingItemIndex ? itemData : item
-        )
-      }));
-    } else {
-      // Add new item
-      setEditedData(prev => ({
-        ...prev,
-        items: [...prev.items, itemData]
-      }));
-    }
-    setShowItemEditModal(false);
-    setEditingItemIndex(null);
-  }, [editingItemIndex]);
-
-  // Placeholder functions for components that need them but aren't used in add mode
-  const handleEditClick = useCallback(() => {}, []);
-  const handleCancelEdit = useCallback(() => {
+  // Override handleCancelEdit to also close the modal
+  const wrappedHandleCancelEdit = useCallback(() => {
+    handleCancelEdit();
     handleClose();
-  }, [handleClose]);
+  }, [handleCancelEdit, handleClose]);
 
-  const handleSaveEdit = useCallback(async () => {
-    setIsSaving(true);
-    setError(null);
+  // Override handleSaveEdit to work with parent form
+  const wrappedHandleSaveEdit = useCallback(async () => {
+    if (!editedData) return;
+    
+    
     try {
       const updatedItems = prepareInvoiceItemsForUpdate(editedData.items);
       const totalAmount = calculateInvoiceTotal(updatedItems);
@@ -291,15 +234,12 @@ const InvoiceForm = ({
     } catch (err) {
       setError('Không thể lưu hóa đơn');
       console.error('Error saving invoice:', err);
-    } finally {
-      setIsSaving(false);
     }
   }, [editedData, onChange, onSave, handleClose]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    handleSaveEdit();
-  };
+  const wrappedHandleAddItem = useCallback(() => {
+    handleAddItem();
+  }, [handleAddItem]);
 
   if (!open || !editedData) return null;
 
@@ -325,9 +265,9 @@ const InvoiceForm = ({
             isEditing={isEditing}
             editedData={editedData}
             onClose={handleClose}
-            onFieldChange={handleFieldChange}
+            onFieldChange={wrappedHandleFieldChange}
             title={title || (isEdit ? 'Sửa hóa đơn' : 'Thêm hóa đơn mới')}
-            statusOptions={Object.entries(INVOICE_STATUS).map(([key, value]) => ({
+            statusOptions={Object.entries(INVOICE_STATUS).map(([, value]) => ({
               value: value,
               label: INVOICE_STATUS_LABELS[value]
             }))}
@@ -345,7 +285,7 @@ const InvoiceForm = ({
               expenseData={invoiceData}
               isEditing={isEditing}
               editedData={editedData}
-              onFieldChange={handleFieldChange}
+              onFieldChange={wrappedHandleFieldChange}
               expenseCategories={adaptedInvoiceCategories}
               isLoadingCategories={isLoadingCategories}
               isInvoiceMode={true}
@@ -357,7 +297,7 @@ const InvoiceForm = ({
               expenseData={invoiceData}
               isEditing={isEditing}
               editedData={editedData}
-              onFieldChange={handleFieldChange}
+              onFieldChange={wrappedHandleFieldChange}
               isInvoiceMode={true}
             />
 
@@ -382,9 +322,9 @@ const InvoiceForm = ({
             isEditing={isEditing}
             isSaving={isSaving}
             expenseData={invoiceData}
-            onAddItem={handleAddItem}
-            onCancelEdit={handleCancelEdit}
-            onSaveEdit={handleSaveEdit}
+            onAddItem={wrappedHandleAddItem}
+            onCancelEdit={wrappedHandleCancelEdit}
+            onSaveEdit={wrappedHandleSaveEdit}
             onEditClick={handleEditClick}
             onClose={handleClose}
           />
@@ -402,17 +342,20 @@ const InvoiceForm = ({
       )}
 
       {showItemEditModal && (
-        <InvoiceItemEditModal
-          isOpen={showItemEditModal}
-          onClose={handleItemEditModalClose}
-          onSave={handleItemSave}
-          item={editingItemIndex !== null ? editedData.items[editingItemIndex] : null}
-          isEdit={editingItemIndex !== null}
-          licensePlates={getAllLicensePlates}
-          isLoadingPlates={isLoadingPlates}
-          taxRate={taxRate}
-        />
+        <div style={{ zIndex: Z_INDEX.NESTED_MODAL }}>
+          <InvoiceItemEditModal
+            isOpen={showItemEditModal}
+            onClose={handleItemEditModalClose}
+            onSave={handleItemSave}
+            item={editingItemIndex !== null ? editedData.items[editingItemIndex] : null}
+            isEdit={editingItemIndex !== null}
+            licensePlates={getAllLicensePlates}
+            isLoadingPlates={isLoadingPlates}
+            taxRate={taxRate}
+          />
+        </div>
       )}
+
 
     </>
   );

@@ -23,6 +23,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 // import { EditButton, DeleteButton } from '@/components/ActionButtons'; // These are now part of getChoHangTableColumns
 import { useChoHang } from '../hooks/useChoHang';
 import { getChoHangTableColumns } from '../constants/choHangTableColumns';
+import { Z_INDEX } from '@constants/zIndex';
 // Mock API object returning empty data until backend is integrated
 const dinhMucDauApi = {
   create: async (data) => ({ id: Date.now(), ...data }),
@@ -380,7 +381,7 @@ const DinhMucChoHang = () => {
             position: 'fixed',
             bottom: 24,
             right: 24,
-            zIndex: 1000,
+            zIndex: Z_INDEX.FLOATING,
             boxShadow: 3,
             '&:hover': {
               boxShadow: 6,

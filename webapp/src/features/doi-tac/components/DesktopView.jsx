@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Paper, Typography, Fab, Zoom } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PartnerListResponsive from '@features/doi-tac/components/PartnerListResponsive';
+import { Z_INDEX } from '@constants/zIndex';
 const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
   return (
     <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
@@ -25,7 +26,7 @@ const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
             position: 'fixed',
             bottom: { xs: 24, sm: 32 },
             right: { xs: 24, sm: 32 },
-            zIndex: 1201,
+            zIndex: Z_INDEX.FLOATING,
             boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)',
             '&:hover': {
               transform: 'scale(1.05)',

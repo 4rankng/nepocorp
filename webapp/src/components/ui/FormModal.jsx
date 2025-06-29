@@ -17,6 +17,7 @@ const FormModal = ({
   loading = false,
   showCloseButton = false,
   enableEscClose = true,
+  zIndexLayer = 'nested-modal', // Allow override of z-index layer
   ...props
 }) => {
   // Handle ESC key to close modal (following ExpenseForm pattern)
@@ -50,6 +51,7 @@ const FormModal = ({
       size={size}
       showCloseButton={showCloseButton}
       className={`form-modal ${className}`}
+      zIndexLayer={zIndexLayer}
       {...props}
     >
       <FormContainer className="form-modal-container">

@@ -11,6 +11,7 @@ import { invoiceApi } from '@services/api/invoiceApi';
 import { Fab, Zoom, Snackbar, Alert } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { INVOICE_STATUS_LABELS } from '@constants/invoice';
+import { Z_INDEX } from '@constants/zIndex';
 
 const QuanLyPhieuThu = () => {
   const { currentUser } = useAuth();
@@ -280,7 +281,7 @@ const QuanLyPhieuThu = () => {
             position: 'fixed',
             bottom: 24,
             right: 24,
-            zIndex: 1000,
+            zIndex: Z_INDEX.FLOATING,
             boxShadow: 3,
             '&:hover': {
               boxShadow: 6,

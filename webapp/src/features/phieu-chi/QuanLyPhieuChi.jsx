@@ -11,6 +11,7 @@ import { expenseApi } from '@services/api/expenseApi';
 import { Fab, Zoom, Snackbar, Alert } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
+import { Z_INDEX } from '@constants/zIndex';
 
 const QuanLyPhieuChi = () => {
   const { currentUser } = useAuth();
@@ -279,7 +280,7 @@ const QuanLyPhieuChi = () => {
             position: 'fixed',
             bottom: 24,
             right: 24,
-            zIndex: 1000,
+            zIndex: Z_INDEX.FLOATING,
             boxShadow: 3,
             '&:hover': {
               boxShadow: 6,

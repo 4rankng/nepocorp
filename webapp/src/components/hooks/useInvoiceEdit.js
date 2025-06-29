@@ -2,12 +2,14 @@ import { useState, useCallback, useEffect } from 'react';
 import { invoiceApi } from '@services/api/invoiceApi';
 import { INVOICE_STATUS } from '@constants/invoice';
 
-const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fetchTrailers) => {
-  const [isEditing, setIsEditing] = useState(false);
+const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fetchTrailers, isAddMode = false) => {
+  const [isEditing, setIsEditing] = useState(isAddMode);
   const [editedData, setEditedData] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [isLoadingPlates, setIsLoadingPlates] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
+  const [showItemEditModal, setShowItemEditModal] = useState(false);
   
   // Status change prompts
   const [showPaymentProofPrompt, setShowPaymentProofPrompt] = useState(false);
@@ -15,6 +17,16 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
   const [pendingStatus, setPendingStatus] = useState(null);
   const [tempPaymentProof, setTempPaymentProof] = useState('');
   const [tempCancelReason, setTempCancelReason] = useState('');
+
+  // Initialize for add mode
+  useEffect(() => {
+    if (isAddMode && invoiceData && !editedData) {
+      setEditedData({
+        ...invoiceData,
+        items: invoiceData.items?.map(item => ({ ...item })) || []
+      });
+    }
+  }, [isAddMode, invoiceData, editedData]);
 
   // Fetch vehicles when entering edit mode
   useEffect(() => {
@@ -104,6 +116,31 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
       items: prev.items.filter((_, i) => i !== index)
     }));
   }, []);
+
+  const handleItemEditModalClose = useCallback(() => {
+    setShowItemEditModal(false);
+    setEditingItemIndex(null);
+  }, []);
+
+  const handleItemSave = useCallback((itemData) => {
+    if (editingItemIndex !== null) {
+      // Edit existing item
+      setEditedData(prev => ({
+        ...prev,
+        items: prev.items.map((item, index) =>
+          index === editingItemIndex ? itemData : item
+        )
+      }));
+    } else {
+      // Add new item
+      setEditedData(prev => ({
+        ...prev,
+        items: [...prev.items, itemData]
+      }));
+    }
+    setShowItemEditModal(false);
+    setEditingItemIndex(null);
+  }, [editingItemIndex]);
 
   // Handle payment proof confirmation
   const handlePaymentProofConfirm = useCallback(() => {
@@ -210,18 +247,24 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
     showCancelReasonPrompt,
     tempPaymentProof,
     tempCancelReason,
+    editingItemIndex,
+    showItemEditModal,
     handleEditClick,
     handleCancelEdit,
     handleFieldChange,
     handleItemChange,
     handleAddItem,
     handleDeleteItem,
+    handleItemEditModalClose,
+    handleItemSave,
     handleSaveEdit,
     handlePaymentProofConfirm,
     handleCancelReasonConfirm,
     handlePromptCancel,
     setTempPaymentProof,
     setTempCancelReason,
+    setEditingItemIndex,
+    setShowItemEditModal,
   };
 };
 

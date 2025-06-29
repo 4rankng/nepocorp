@@ -22,6 +22,7 @@ import StandardTable from '@/components/StandardTable';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useVoRong } from '../hooks/useVoRong';
 import { getVoRongTableColumns } from '../constants/voRongTableColumns';
+import { Z_INDEX } from '@constants/zIndex';
 import logger from '@/services/logger';
 
 const initialFormData = {
@@ -348,7 +349,7 @@ const DinhMucVoRong = () => {
             position: 'fixed',
             bottom: 24,
             right: 24,
-            zIndex: 1000,
+            zIndex: Z_INDEX.FLOATING,
             boxShadow: 3,
             '&:hover': {
               boxShadow: 6,

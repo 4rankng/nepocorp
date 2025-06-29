@@ -15,6 +15,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTheme, useMediaQuery } from '@mui/material';
 import NhanVienForm from '@features/nhan-vien/components/NhanVienForm';
 import DesktopView from './components/DesktopView';
+import { Z_INDEX } from '@constants/zIndex';
 const QuanLyNhanVien = () => {
   const {
     employees,
@@ -108,7 +109,7 @@ const QuanLyNhanVien = () => {
             position: 'fixed',
             bottom: { xs: 24, sm: 32 },
             right: { xs: 24, sm: 32 },
-            zIndex: 1201,
+            zIndex: Z_INDEX.FLOATING,
             boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)',
             '&:hover': {
               transform: 'scale(1.05)',

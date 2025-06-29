@@ -17,6 +17,7 @@ import {
   Upload as UploadIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
+import { Z_INDEX } from '@constants/zIndex';
 
 const ActionToolbar = ({
   primaryAction,
@@ -33,7 +34,7 @@ const ActionToolbar = ({
   const getPositionStyles = () => {
     const baseStyles = {
       position: 'fixed',
-      zIndex: 1000
+      zIndex: Z_INDEX.FLOATING
     };
 
     switch (position) {

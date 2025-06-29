@@ -13,6 +13,7 @@ import PartnerForm from '@features/doi-tac/components/PartnerForm';
 
 import DesktopView from '@features/doi-tac/components/DesktopView';
 import useDoiTac from '@features/doi-tac/hooks/useDoiTac';
+import { Z_INDEX } from '@constants/zIndex';
 const QuanLyDoiTac = () => {
   const {
     partners,
@@ -148,7 +149,7 @@ const QuanLyDoiTac = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 1400,
+            zIndex: Z_INDEX.LOADING_OVERLAY,
           }}
         >
           <CircularProgress color="primary" />

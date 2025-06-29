@@ -8,7 +8,8 @@ const Modal = ({
   children, 
   size = 'medium',
   className = '',
-  showCloseButton = true 
+  showCloseButton = true,
+  zIndexLayer = 'nested-modal' // Default to nested modal layer
 }) => {
   if (!isOpen) return null;
 
@@ -25,8 +26,13 @@ const Modal = ({
     fullWidth: 'modal-container--full-width'
   }[size];
 
+  // Dynamic z-index based on layer prop
+  const overlayStyle = {
+    zIndex: `var(--z-index-${zIndexLayer}, 900)`
+  };
+
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
+    <div className="modal-overlay" onClick={handleOverlayClick} style={overlayStyle}>
       <div className={`modal-container ${sizeClass} ${className}`}>
         <div className="modal-content">
           {title && (

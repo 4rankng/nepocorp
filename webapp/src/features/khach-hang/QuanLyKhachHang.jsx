@@ -15,6 +15,7 @@ import CustomerForm from '@features/khach-hang/components/CustomerForm';
 
 import DesktopView from '@features/khach-hang/components/DesktopView';
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
+import { Z_INDEX } from '@constants/zIndex';
 const QuanLyKhachHang = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -157,7 +158,7 @@ const QuanLyKhachHang = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 1400,
+            zIndex: Z_INDEX.LOADING_OVERLAY,
           }}
         >
           <CircularProgress color="primary" />

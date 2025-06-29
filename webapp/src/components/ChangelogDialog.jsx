@@ -13,6 +13,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CloseIcon from '@mui/icons-material/Close';
+import { Z_INDEX } from '@constants/zIndex';
 const ChangelogDialog = ({ open, onClose, version }) => {
   const [changelog, setChangelog] = useState('');
   const [loading, setLoading] = useState(true);
@@ -57,7 +58,7 @@ const ChangelogDialog = ({ open, onClose, version }) => {
           position: 'absolute',
           right: 8,
           top: 8,
-          zIndex: 1,
+          zIndex: Z_INDEX.BASE,
         }}
       >
         <Button

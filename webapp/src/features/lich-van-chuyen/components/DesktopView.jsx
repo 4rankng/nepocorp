@@ -5,6 +5,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import AddIcon from '@mui/icons-material/Add';
 import StandardTable from '@/components/StandardTable';
 import { SearchBar } from '@/components';
+import { Z_INDEX } from '@constants/zIndex';
 const DesktopView = ({
   searchTerm,
   onSearchTermChange,
@@ -64,7 +65,7 @@ const DesktopView = ({
             position: 'fixed',
             bottom: { xs: 24, md: 32 },
             right: { xs: 24, md: 32 },
-            zIndex: 1201,
+            zIndex: Z_INDEX.FLOATING,
             boxShadow: 6,
             '&:hover': {
               transform: 'scale(1.05)',
