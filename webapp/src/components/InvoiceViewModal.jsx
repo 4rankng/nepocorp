@@ -12,6 +12,7 @@ import ExpenseItemsTable from './expense/ExpenseItemsTable';
 import ExpenseActionButtons from './expense/ExpenseActionButtons';
 import StatusChangePrompts from '@components/shared/modals/StatusChangePrompts';
 import { Z_INDEX } from '@constants/zIndex';
+import { prepareInvoiceItemsForUpdate, calculateInvoiceTotal } from '@utils/invoiceHelpers';
 
 const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
@@ -245,24 +246,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     setError(null);
     try {
       // Calculate totals for items
-      const updatedItems = editedData.items?.map(item => {
-        const price = parseFloat(item.price) || 0;
-        const quantity = parseFloat(item.quantity) || 0;
-        const subtotal = price * quantity;
-        const taxAmount = subtotal * (parseFloat(item.tax_rate) || 0) / 100;
-        const total = subtotal + taxAmount;
-        
-        return {
-          ...item,
-          price,
-          quantity,
-          tax_rate: parseFloat(item.tax_rate) || 0,
-          subtotal,
-          total
-        };
-      }) || [];
-
-      const totalAmount = updatedItems.reduce((sum, item) => sum + item.total, 0);
+      const updatedItems = prepareInvoiceItemsForUpdate(editedData.items || []);
+      const totalAmount = calculateInvoiceTotal(updatedItems);
 
       const updateData = {
         customer_id: editedData.customer_id,
@@ -427,6 +412,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
                 onDeleteItem={handleDeleteItem}
                 onLicensePlateCellClick={handleLicensePlateCellClick}
                 total={invoiceData.total}
+                isInvoiceMode={true}
               />
             </>
           )}

@@ -2,6 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Dropdown from '@components/ui/Dropdown';
 import { shouldUsePortal, Z_INDEX } from '@constants/zIndex';
+import { getExpenseCategoryLabel } from '@constants/expenseCategories';
+import { getInvoiceCategoryLabel } from '@constants/invoiceCategories';
 
 const ExpenseBasicInfo = ({
   expenseData,
@@ -10,7 +12,10 @@ const ExpenseBasicInfo = ({
   onFieldChange,
   expenseCategories,
   isLoadingCategories,
-  isInModal = false
+  isInModal = false,
+  isInvoiceMode = false,
+  customers = [],
+  isLoadingCustomers = false
 }) => {
   return (
     <div className="mb-4">
@@ -18,43 +23,61 @@ const ExpenseBasicInfo = ({
       <div className="grid grid-cols-12 gap-3">
         <div className="col-span-10">
           <label className="block text-xs font-medium text-gray-600 mb-1">
-            Nhà cung cấp
+            {isInvoiceMode ? 'Khách hàng' : 'Nhà cung cấp'}
           </label>
           {isEditing ? (
-            <input
-              type="text"
-              value={editedData.vendor_name || ''}
-              onChange={(e) => onFieldChange('vendor_name', e.target.value)}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Nhập tên nhà cung cấp"
-            />
+            isInvoiceMode ? (
+              <Dropdown
+                value={editedData.customer_id}
+                onChange={(value) => onFieldChange('customer_id', value)}
+                options={customers.map(customer => ({
+                  value: customer.id,
+                  label: customer.name
+                }))}
+                placeholder="Chọn khách hàng"
+                isLoading={isLoadingCustomers}
+                className="text-sm"
+                usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
+              />
+            ) : (
+              <input
+                type="text"
+                value={editedData.vendor_name || ''}
+                onChange={(e) => onFieldChange('vendor_name', e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Nhập tên nhà cung cấp"
+              />
+            )
           ) : (
             <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-              {expenseData.vendor_name || '-'}
+              {isInvoiceMode ? (expenseData.customer?.name || '-') : (expenseData.vendor_name || '-')}
             </div>
           )}
         </div>
 
         <div className="col-span-2">
           <label className="block text-xs font-medium text-gray-600 mb-1">
-            Loại chi phí
+            {isInvoiceMode ? 'Loại hóa đơn' : 'Loại chi phí'}
           </label>
           {isEditing ? (
             <Dropdown
-              value={editedData.expense_category_id}
-              onChange={(value) => onFieldChange('expense_category_id', value)}
+              value={isInvoiceMode ? editedData.invoice_category_id : editedData.expense_category_id}
+              onChange={(value) => onFieldChange(isInvoiceMode ? 'invoice_category_id' : 'expense_category_id', value)}
               options={expenseCategories.map(cat => ({
                 value: cat.id,
-                label: cat.name
+                label: isInvoiceMode ? getInvoiceCategoryLabel(cat.name) : getExpenseCategoryLabel(cat.name)
               }))}
-              placeholder="Chọn loại chi phí"
+              placeholder={isInvoiceMode ? "Chọn loại hóa đơn" : "Chọn loại chi phí"}
               isLoading={isLoadingCategories}
               className="text-sm"
               usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
             />
           ) : (
             <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-              {expenseData.expense_category?.name || '-'}
+              {isInvoiceMode 
+                ? (expenseData.invoice_category?.name ? getInvoiceCategoryLabel(expenseData.invoice_category.name) : '-')
+                : (expenseData.expense_category?.name ? getExpenseCategoryLabel(expenseData.expense_category.name) : '-')
+              }
             </div>
           )}
         </div>
@@ -70,7 +93,10 @@ ExpenseBasicInfo.propTypes = {
   onFieldChange: PropTypes.func.isRequired,
   expenseCategories: PropTypes.array.isRequired,
   isLoadingCategories: PropTypes.bool.isRequired,
-  isInModal: PropTypes.bool
+  isInModal: PropTypes.bool,
+  isInvoiceMode: PropTypes.bool,
+  customers: PropTypes.array,
+  isLoadingCustomers: PropTypes.bool
 };
 
 export default ExpenseBasicInfo;
