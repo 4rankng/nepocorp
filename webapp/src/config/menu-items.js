@@ -9,11 +9,12 @@ export const getMenuItems = () => {
           href: '/tai-chinh',
           icon: 'ChartBar',
         },
-        {
-          name: 'Lịch vận chuyển',
-          href: '/lich-van-chuyen',
-          icon: 'Calendar',
+                {
+          name: 'Công nợ',
+          href: '/bang-cong-no',
+          icon: 'Wallet',
         },
+
         {
           name: 'Bảo dưỡng',
           href: '/bao-duong',
@@ -24,6 +25,21 @@ export const getMenuItems = () => {
     {
       sectionTitle: 'Quản Lý',
       items: [
+                {
+          name: 'Lịch vận chuyển',
+          href: '/lich-van-chuyen',
+          icon: 'Calendar',
+        },
+                {
+          name: 'Phiếu chi',
+          href: '/phieu-chi',
+          icon: 'ShoppingCart',
+        },
+        {
+          name: 'Phiếu thu',
+          href: '/phieu-thu',
+          icon: 'Banknote',
+        },
         {
           name: 'Nhân viên',
           href: '/nhan-vien',
@@ -48,26 +64,6 @@ export const getMenuItems = () => {
           name: 'Định mức',
           href: '/dinh-muc',
           icon: 'Oil',
-        },
-      ]
-    },
-    {
-      sectionTitle: 'Công nợ',
-      items: [
-        {
-          name: 'Phiếu chi',
-          href: '/phieu-chi',
-          icon: 'ShoppingCart',
-        },
-        {
-          name: 'Phiếu thu',
-          href: '/phieu-thu',
-          icon: 'Banknote',
-        },
-        {
-          name: 'Bảng công nợ',
-          href: '/bang-cong-no',
-          icon: 'Wallet',
         },
       ]
     }
