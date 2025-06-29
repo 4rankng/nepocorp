@@ -1,183 +1,325 @@
-import React from 'react';
-import { INVOICE_STATUS_LABELS, INVOICE_STATUS_COLORS } from '@constants/invoice';
-import { formatCurrency, formatDate } from '@utils/format';
+import React, { useMemo } from 'react';
+import {
+  Box,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import StandardTable from '@/components/StandardTable';
+import { DeleteButton, ViewButton } from '@/components/ActionButtons';
+import { INVOICE_STATUS_LABELS } from '@constants/invoice';
+
+const formatCurrency = value => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+  }).format(value);
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('vi-VN');
+};
 
 const InvoiceList = ({
   invoices = [],
-  categories = [],
   loading = false,
-  error = '',
+  error = null,
   onView,
   onEdit,
   onDelete,
-  pagination = {},
-  currentUser
+  pagination = null,
+  searchTerm = '',
+  selectedCategory = '',
+  categories = [],
+  showCategoryColumn = true,
+  CardComponent = null,
+  emptyMessage = 'Không có dữ liệu hóa đơn',
 }) => {
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : '-';
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Filter invoices based on search and category
+  const filteredInvoices = useMemo(() => {
+    let filtered = invoices;
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(invoice =>
+        (invoice.customer?.name && invoice.customer.name.toLowerCase().includes(search)) ||
+        (invoice.customer?.tax_code && invoice.customer.tax_code.toLowerCase().includes(search)) ||
+        (invoice.remark && invoice.remark.toLowerCase().includes(search)) ||
+        (invoice.items && invoice.items.some(item => 
+          (item.license_plate && item.license_plate.toLowerCase().includes(search)) ||
+          (item.item_name && item.item_name.toLowerCase().includes(search))
+        ))
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory && selectedCategory !== 'all') {
+      filtered = filtered.filter(invoice =>
+        invoice.invoice_category_id === selectedCategory
+      );
+    }
+
+    return filtered;
+  }, [invoices, searchTerm, selectedCategory]);
+
+  // Define table columns
+  const tableColumns = useMemo(() => {
+    const baseColumns = [
+      {
+        key: 'created_at',
+        label: 'Ngày tạo',
+        width: 100,
+        sortable: true,
+        render: (value) => formatDate(value),
+      },
+      {
+        key: 'invoice_category_id',
+        label: 'Hạng mục',
+        width: 120,
+        sortable: true,
+        render: (value) => {
+          const category = categories.find(cat => cat.id === value);
+          return category ? category.name : '-';
+        },
+      },
+      {
+        key: 'customer_id',
+        label: 'Khách hàng',
+        width: 150,
+        sortable: true,
+        render: (_, row) => {
+          return row.customer?.name || '-';
+        },
+      },
+      {
+        key: 'total',
+        label: 'Tổng tiền',
+        width: 120,
+        sortable: true,
+        render: (value) => formatCurrency(value),
+      },
+      {
+        key: 'payment_status',
+        label: 'Trạng thái',
+        width: 130,
+        sortable: true,
+        render: (value) => {
+          const status = value;
+          const label = INVOICE_STATUS_LABELS[status] || status;
+          const getStatusColor = () => {
+            switch (status) {
+              case 'DRAFT': return '#6b7280';
+              case 'PENDING': return '#f59e0b';
+              case 'PAID': return '#10b981';
+              case 'CANCELLED': return '#ef4444';
+              default: return '#6b7280';
+            }
+          };
+
+          return (
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '4px 12px',
+                border: `1px solid ${getStatusColor()}`,
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: '500',
+                color: getStatusColor(),
+                backgroundColor: 'transparent',
+                minWidth: '80px',
+                textAlign: 'center',
+              }}
+            >
+              {label}
+            </span>
+          );
+        },
+      },
+      {
+        key: 'remark',
+        label: 'Ghi chú',
+        width: 200,
+        sortable: false,
+        render: (value) => (
+          <span title={value}>
+            {value ? (value.length > 50 ? `${value.substring(0, 50)}...` : value) : '-'}
+          </span>
+        ),
+      },
+      {
+        key: 'created_by',
+        label: 'Người tạo',
+        width: 120,
+        sortable: true,
+        render: (value, row) => {
+          // If user info is embedded in the invoice object
+          if (row.created_by_user) {
+            return row.created_by_user.name || row.created_by_user.email || '-';
+          }
+          // Otherwise just show the user ID or fetch separately
+          return value || '-';
+        },
+      }
+    ];
+
+    return baseColumns;
+  }, [categories]);
+
+  // Render mobile card view
+  const renderMobileView = () => {
+    if (CardComponent) {
+      return (
+        <Box>
+          {filteredInvoices.map(invoice => (
+            <CardComponent
+              key={invoice.id}
+              invoice={invoice}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              categories={categories}
+              isLoading={loading}
+            />
+          ))}
+          {!loading && filteredInvoices.length === 0 && (
+            <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
+              {searchTerm || selectedCategory ? 'Không tìm thấy hóa đơn phù hợp' : emptyMessage}
+            </Typography>
+          )}
+        </Box>
+      );
+    }
+
+    // Default mobile card layout
+    return (
+      <Box>
+        {filteredInvoices.map(invoice => (
+          <Box
+            key={invoice.id}
+            sx={{
+              p: 2,
+              mb: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              backgroundColor: 'background.paper',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+              <Typography variant="h6" component="h3">
+                #{invoice.id}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <ViewButton size="small" onClick={() => onView(invoice)} />
+                <DeleteButton size="small" onClick={() => onDelete(invoice)} />
+              </Box>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              <strong>Khách hàng:</strong> {invoice.customer?.name || '-'}
+            </Typography>
+
+            {showCategoryColumn && (
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                <strong>Loại hóa đơn:</strong> {
+                  categories.find(cat => cat.id === invoice.invoice_category_id)?.name || '-'
+                }
+              </Typography>
+            )}
+
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              <strong>Tổng tiền:</strong> {formatCurrency(invoice.total)}
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              <strong>Trạng thái:</strong> {INVOICE_STATUS_LABELS[invoice.payment_status] || invoice.payment_status}
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              <strong>Ngày tạo:</strong> {formatDate(invoice.created_at)}
+            </Typography>
+
+            {invoice.remark && (
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                <strong>Ghi chú:</strong> {invoice.remark}
+              </Typography>
+            )}
+          </Box>
+        ))}
+
+        {!loading && filteredInvoices.length === 0 && (
+          <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
+            {searchTerm || selectedCategory ? 'Không tìm thấy hóa đơn phù hợp' : emptyMessage}
+          </Typography>
+        )}
+      </Box>
+    );
   };
 
-  const getStatusBadge = (status) => {
-    const color = INVOICE_STATUS_COLORS[status] || 'gray';
-    const colorClasses = {
-      gray: 'bg-gray-100 text-gray-800',
-      orange: 'bg-orange-100 text-orange-800',
-      green: 'bg-green-100 text-green-800',
-      red: 'bg-red-100 text-red-800'
+  // Render desktop table view
+  const renderDesktopView = () => {
+    const tableProps = {
+      columns: tableColumns,
+      data: filteredInvoices,
+      loading: loading,
+      error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
+      emptyMessage: searchTerm || selectedCategory ? 'Không tìm thấy hóa đơn phù hợp' : emptyMessage,
+      pagination: !!pagination,
+      rowKeyField: 'id',
     };
 
+    // Add pagination props if provided
+    if (pagination) {
+      tableProps.page = pagination.page;
+      tableProps.totalCount = pagination.total;
+      tableProps.onPageChange = (_, newPage) => {
+        if (pagination.onPageChange) {
+          pagination.onPageChange(newPage);
+        }
+      };
+      tableProps.onRowsPerPageChange = (event) => {
+        if (pagination.onRowsPerPageChange) {
+          pagination.onRowsPerPageChange(parseInt(event.target.value, 10));
+        }
+      };
+    }
+
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClasses[color]}`}>
-        {INVOICE_STATUS_LABELS[status] || status}
-      </span>
+      <StandardTable
+        {...tableProps}
+        renderActions={row => (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <ViewButton
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                onView(row);
+              }}
+            />
+            <DeleteButton
+              size="small"
+              color="error"
+              onClick={e => {
+                e.stopPropagation();
+                onDelete(row);
+              }}
+            />
+          </Box>
+        )}
+      />
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center text-red-500 p-8">
-        <p>{error}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-white rounded-lg shadow">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Danh sách hóa đơn</h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Tổng số: {pagination.total || 0} hóa đơn
-        </p>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Khách hàng
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Loại hóa đơn
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tổng tiền
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Trạng thái
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ngày tạo
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Thao tác
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {invoices.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                  Không có hóa đơn nào
-                </td>
-              </tr>
-            ) : (
-              invoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    #{invoice.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {invoice.customer?.name || '-'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {invoice.customer?.tax_code || '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {getCategoryName(invoice.invoice_category_id)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(invoice.total || 0)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(invoice.payment_status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(invoice.created_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => onView?.(invoice)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Xem
-                      </button>
-                      <button
-                        onClick={() => onEdit?.(invoice)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => onDelete?.(invoice)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Hiển thị {Math.min((pagination.page * pagination.pageSize) + 1, pagination.total)} - {Math.min((pagination.page + 1) * pagination.pageSize, pagination.total)} trong tổng số {pagination.total} hóa đơn
-          </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => pagination.onPageChange?.(pagination.page - 1)}
-              disabled={pagination.page === 0}
-              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Trước
-            </button>
-            <span className="px-3 py-1 text-sm">
-              Trang {pagination.page + 1} / {pagination.totalPages}
-            </span>
-            <button
-              onClick={() => pagination.onPageChange?.(pagination.page + 1)}
-              disabled={pagination.page >= pagination.totalPages - 1}
-              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Sau
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+    <Box sx={{ width: '100%' }}>
+      {isMobile ? renderMobileView() : renderDesktopView()}
+    </Box>
   );
 };
 

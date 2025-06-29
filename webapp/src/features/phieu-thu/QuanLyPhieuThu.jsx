@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useContext, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import InvoiceForm from '@/components/shared/InvoiceForm';
@@ -29,7 +29,6 @@ const QuanLyPhieuThu = () => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
-  
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [viewingInvoiceId, setViewingInvoiceId] = useState(null);
@@ -59,8 +58,6 @@ const QuanLyPhieuThu = () => {
     isLoading,
     error,
     deleteInvoice,
-    updateInvoice,
-    createInvoice,
     pagination,
   } = useInvoices();
 
@@ -143,16 +140,19 @@ const QuanLyPhieuThu = () => {
     initialFormData,
     onSuccess: (message) => {
       showSnackbar(message, 'success');
+      // Only close modal on actual success
       setShowInvoiceForm(false);
       setEditingInvoice(null);
     },
     onError: (error) => {
       showSnackbar(error.message, 'error');
+      // NEVER close modal on errors - user should be able to fix and retry
     },
     fetchData: pagination.onPageChange ? () => pagination.onPageChange(pagination.page) : null,
     isEdit: !!editingInvoice,
     api: invoiceApi
   });
+
 
   const handleAddInvoice = useCallback(async () => {
     setEditingInvoice(null);
@@ -198,6 +198,7 @@ const QuanLyPhieuThu = () => {
     setShowInvoiceModal(false);
     setViewingInvoiceId(null);
   }, []);
+
 
   const handleDeleteInvoice = useCallback((invoice) => {
     setDeleteDialog({ open: true, invoice });

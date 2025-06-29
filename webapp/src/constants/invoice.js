@@ -3,12 +3,12 @@ import { PAYMENT_STATUS, PAYMENT_STATUS_COLORS } from './payment';
 // Invoice status constants (same as payment status)
 export const INVOICE_STATUS = PAYMENT_STATUS;
 
-// Vietnamese labels for invoice status
+// English labels for invoice status
 export const INVOICE_STATUS_LABELS = {
-  [INVOICE_STATUS.DRAFT]: 'Nháp',
-  [INVOICE_STATUS.PENDING]: 'Chờ thanh toán',
-  [INVOICE_STATUS.PAID]: 'Đã thanh toán',
-  [INVOICE_STATUS.CANCELLED]: 'Đã hủy'
+  [INVOICE_STATUS.DRAFT]: 'DRAFT',
+  [INVOICE_STATUS.PENDING]: 'PENDING',
+  [INVOICE_STATUS.PAID]: 'PAID',
+  [INVOICE_STATUS.CANCELLED]: 'CANCELLED'
 };
 
 // Colors for invoice status (same as payment)
