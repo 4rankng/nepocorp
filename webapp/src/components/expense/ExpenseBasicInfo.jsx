@@ -24,7 +24,7 @@ const ExpenseBasicInfo = ({
       <div className="grid grid-cols-12 gap-3">
         <div className="col-span-2">
           <label className="block text-xs font-medium text-gray-600 mb-1">
-            Ngày {isInvoiceMode ? 'hóa đơn' : 'chi phí'}
+            Ngày {isInvoiceMode ? 'phiếu thu' : 'chi phí'}
             {isEditing && !editedData.expense_date && (
               <span className="text-red-500 ml-1">*</span>
             )}
@@ -36,8 +36,8 @@ const ExpenseBasicInfo = ({
                 value={editedData.expense_date || ''}
                 onChange={(e) => onFieldChange('expense_date', e.target.value)}
                 className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 ${
-                  errors.expense_date 
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                  errors.expense_date
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
                 }`}
               />
@@ -86,8 +86,8 @@ const ExpenseBasicInfo = ({
                   value={editedData.vendor_name || ''}
                   onChange={(e) => onFieldChange('vendor_name', e.target.value)}
                   className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 ${
-                    errors.vendor_name 
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    errors.vendor_name
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
                   }`}
                   placeholder="Nhập tên nhà cung cấp"
@@ -106,7 +106,7 @@ const ExpenseBasicInfo = ({
 
         <div className="col-span-2">
           <label className="block text-xs font-medium text-gray-600 mb-1">
-            {isInvoiceMode ? 'Loại hóa đơn' : 'Loại chi phí'}
+            {isInvoiceMode ? 'Loại phiếu thu' : 'Loại chi phí'}
             {isEditing && (isInvoiceMode ? !editedData.invoice_category_id : !editedData.expense_category_id) && (
               <span className="text-red-500 ml-1">*</span>
             )}
@@ -120,7 +120,7 @@ const ExpenseBasicInfo = ({
                   value: cat.id,
                   label: isInvoiceMode ? getInvoiceCategoryLabel(cat.name) : getExpenseCategoryLabel(cat.name)
                 }))}
-                placeholder={isInvoiceMode ? "Chọn loại hóa đơn" : "Chọn loại chi phí"}
+                placeholder={isInvoiceMode ? "Chọn loại phiếu thu" : "Chọn loại chi phí"}
                 isLoading={isLoadingCategories}
                 className={`text-sm ${
                   (isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) ? 'border-red-500' : ''
@@ -135,7 +135,7 @@ const ExpenseBasicInfo = ({
             </>
           ) : (
             <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-              {isInvoiceMode 
+              {isInvoiceMode
                 ? (expenseData.invoice_category?.name ? getInvoiceCategoryLabel(expenseData.invoice_category.name) : '-')
                 : (expenseData.expense_category?.name ? getExpenseCategoryLabel(expenseData.expense_category.name) : '-')
               }

@@ -8,9 +8,9 @@ const formatDate = (value, row, index) => {
   if (index < 3) {
     console.log(`Row ${index} date formatting:`, { value, type: typeof value, row_id: row?.id });
   }
-  
+
   if (!value) return '-';
-  
+
   try {
     // Handle different date formats
     let date;
@@ -22,18 +22,18 @@ const formatDate = (value, row, index) => {
     } else {
       return '-';
     }
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
       console.warn('Invalid date value:', value);
       return '-';
     }
-    
+
     const formatted = date.toLocaleDateString('vi-VN');
     if (index < 3) {
       console.log(`Row ${index} formatted date:`, formatted);
     }
-    
+
     return formatted;
   } catch (error) {
     console.error('Error formatting date:', value, error);
@@ -111,7 +111,7 @@ export const getBaoDuongTableColumns = (onInvoiceClick) => {
     },
     {
       key: 'actions',
-      label: 'Hóa đơn',
+      label: 'Phiếu thu',
       align: 'center',
       headerAlign: 'center',
       sortable: false,
@@ -125,7 +125,7 @@ export const getBaoDuongTableColumns = (onInvoiceClick) => {
             onInvoiceClick(row);
           }}
           disabled={!row.expense_id}
-          tooltip={row.expense_id ? 'Xem hóa đơn' : 'Không có hóa đơn'}
+          tooltip={row.expense_id ? 'Xem phiếu thu' : 'Không có phiếu thu'}
         />
       ),
     },

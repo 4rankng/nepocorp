@@ -27,7 +27,7 @@ const InvoiceForm = ({
   title = null,
 }) => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
-  
+
   // Simulate invoice data structure for add mode
   const invoiceData = isEdit ? formData : {
     customer_id: '',
@@ -210,8 +210,8 @@ const InvoiceForm = ({
   // Override handleSaveEdit to work with parent form
   const wrappedHandleSaveEdit = useCallback(async () => {
     if (!editedData) return;
-    
-    
+
+
     try {
       const updatedItems = prepareInvoiceItemsForUpdate(editedData.items);
       const totalAmount = calculateInvoiceTotal(updatedItems);
@@ -232,7 +232,7 @@ const InvoiceForm = ({
       await onSave();
       handleClose();
     } catch (err) {
-      setError('Không thể lưu hóa đơn');
+      setError('Không thể lưu phiếu thu');
       console.error('Error saving invoice:', err);
     }
   }, [editedData, onChange, onSave, handleClose]);
@@ -266,7 +266,7 @@ const InvoiceForm = ({
             editedData={editedData}
             onClose={handleClose}
             onFieldChange={wrappedHandleFieldChange}
-            title={title || (isEdit ? 'Sửa hóa đơn' : 'Thêm hóa đơn mới')}
+            title={title || (isEdit ? 'Sửa phiếu thu' : 'Thêm phiếu thu mới')}
             statusOptions={Object.entries(INVOICE_STATUS).map(([, value]) => ({
               value: value,
               label: INVOICE_STATUS_LABELS[value]

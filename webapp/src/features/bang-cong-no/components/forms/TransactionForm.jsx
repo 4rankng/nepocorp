@@ -15,8 +15,8 @@ import {
 import TransactionTypeSelector from './TransactionTypeSelector';
 import CustomerPartnerSelector from './CustomerPartnerSelector';
 import CurrencyDisplay from '@/components/ui/CurrencyDisplay';
-import { 
-  validateTransaction, 
+import {
+  validateTransaction,
   validateAmount,
   validateDate,
   validateReferenceNumber,
@@ -24,7 +24,7 @@ import {
   sanitizeAmount,
   formatFormAmount
 } from '@/features/bang-cong-no/utils';
-import { 
+import {
   createEmptyTransaction,
   FORM_MODES
 } from '@/features/bang-cong-no/types';
@@ -51,12 +51,12 @@ const TransactionForm = ({
     if (initialData) {
       const debit = parseFloat(initialData.debit) || 0;
       const credit = parseFloat(initialData.credit) || 0;
-      
+
       setFormData({
         ...initialData,
         transaction_date: initialData.transaction_date?.split('T')[0] || new Date().toISOString().split('T')[0]
       });
-      
+
       setAmountType(debit > 0 ? 'debit' : 'credit');
       setAmountValue(formatFormAmount(Math.max(debit, credit)));
     } else {
@@ -103,7 +103,7 @@ const TransactionForm = ({
 
   const handleAmountChange = (value) => {
     setAmountValue(value);
-    
+
     // Clear amount error when user starts typing
     if (errors.amount) {
       setErrors(prev => ({
@@ -180,7 +180,7 @@ const TransactionForm = ({
 
   const validateForm = () => {
     const sanitizedAmount = sanitizeAmount(amountValue);
-    
+
     // Prepare transaction data for validation
     const transactionData = {
       ...formData,
@@ -189,7 +189,7 @@ const TransactionForm = ({
     };
 
     const validation = validateTransaction(transactionData);
-    
+
     // Additional field validations
     const amountValidation = validateAmount(amountValue);
     if (!amountValidation.isValid) {
@@ -225,13 +225,13 @@ const TransactionForm = ({
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     const sanitizedAmount = sanitizeAmount(amountValue);
-    
+
     const transactionData = {
       ...formData,
       debit: amountType === 'debit' ? sanitizedAmount : 0,
@@ -335,7 +335,7 @@ const TransactionForm = ({
                 />
               </RadioGroup>
             </FormControl>
-            
+
             <TextField
               label="Số tiền"
               type="number"
@@ -350,11 +350,11 @@ const TransactionForm = ({
                 inputProps: { min: 0, step: 0.01 }
               }}
             />
-            
+
             {amountValue && (
               <Box sx={{ mt: 1 }}>
-                <CurrencyDisplay 
-                  amount={sanitizeAmount(amountValue)} 
+                <CurrencyDisplay
+                  amount={sanitizeAmount(amountValue)}
                   variant="caption"
                   color={amountType === 'debit' ? '#d32f2f' : '#2e7d32'}
                 />
@@ -372,7 +372,7 @@ const TransactionForm = ({
             fullWidth
             disabled={isViewing}
             error={!!errors.reference_number}
-            helperText={errors.reference_number || 'VD: Hóa đơn số INV-2025-001, Thanh toán TT-001'}
+            helperText={errors.reference_number || 'VD: Phiếu thu số INV-2025-001, Thanh toán TT-001'}
             placeholder="Nhập số tham chiếu hoặc diễn giải"
           />
         </Grid>

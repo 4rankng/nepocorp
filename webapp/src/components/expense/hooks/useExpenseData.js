@@ -8,10 +8,10 @@ const useExpenseData = (expenseId, isOpen) => {
 
   const fetchExpenseData = useCallback(async () => {
     if (!expenseId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await expenseApi.getById(expenseId);
       const data = response.data?.data || response.data || response;
@@ -23,7 +23,7 @@ const useExpenseData = (expenseId, isOpen) => {
 
       setExpenseData(data);
     } catch (err) {
-      setError('Không thể tải thông tin hóa đơn');
+      setError('Không thể tải thông tin phiếu thu');
       console.error('Error fetching expense data:', err);
     } finally {
       setLoading(false);

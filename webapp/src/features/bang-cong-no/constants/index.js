@@ -13,10 +13,10 @@ export const TRANSACTION_TYPES = {
 };
 
 export const TRANSACTION_TYPE_LABELS = {
-  [TRANSACTION_TYPES.INVOICE]: 'Hóa đơn khách hàng',
+  [TRANSACTION_TYPES.INVOICE]: 'Phiếu thu khách hàng',
   [TRANSACTION_TYPES.PAYMENT_RECEIVED]: 'Nhận thanh toán',
   [TRANSACTION_TYPES.PARTNER_PAYMENT]: 'Thanh toán đối tác',
-  [TRANSACTION_TYPES.PARTNER_INVOICE]: 'Hóa đơn đối tác',
+  [TRANSACTION_TYPES.PARTNER_INVOICE]: 'Phiếu thu đối tác',
   [TRANSACTION_TYPES.OPENING_BALANCE]: 'Số dư đầu kỳ',
   [TRANSACTION_TYPES.ADJUSTMENT]: 'Điều chỉnh'
 };
@@ -119,7 +119,7 @@ export const FILTER_OPTIONS = {
     value: key,
     label: TRANSACTION_TYPE_LABELS[key]
   })),
-  
+
   DATE_RANGES: [
     { value: 'today', label: 'Hôm nay' },
     { value: 'yesterday', label: 'Hôm qua' },
@@ -138,7 +138,7 @@ export const getDateRange = (range) => {
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-  
+
   switch (range) {
     case 'today':
       return {

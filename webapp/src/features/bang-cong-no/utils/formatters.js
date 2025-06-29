@@ -27,7 +27,7 @@ export const formatCurrency = (value, options = {}) => {
 
 export const formatDate = (date, format = 'dd/MM/yyyy') => {
   if (!date) return '';
-  
+
   const d = new Date(date);
   if (isNaN(d.getTime())) return '';
 
@@ -51,7 +51,7 @@ export const formatDate = (date, format = 'dd/MM/yyyy') => {
 
 export const formatDateTime = (date) => {
   if (!date) return '';
-  
+
   const d = new Date(date);
   if (isNaN(d.getTime())) return '';
 
@@ -66,14 +66,14 @@ export const formatDateTime = (date) => {
 
 export const formatTransactionType = (type) => {
   const typeLabels = {
-    'INVOICE': 'Hóa đơn',
+    'INVOICE': 'Phiếu thu',
     'PAYMENT_RECEIVED': 'Thanh toán nhận',
     'PARTNER_PAYMENT': 'Thanh toán đối tác',
-    'PARTNER_INVOICE': 'Hóa đơn đối tác',
+    'PARTNER_INVOICE': 'Phiếu thu đối tác',
     'OPENING_BALANCE': 'Số dư đầu kỳ',
     'ADJUSTMENT': 'Điều chỉnh'
   };
-  
+
   return typeLabels[type] || type;
 };
 
@@ -85,7 +85,7 @@ export const formatAmount = (debit, credit) => {
       color: '#d32f2f'
     };
   }
-  
+
   if (credit > 0) {
     return {
       amount: formatCurrency(credit),
@@ -93,7 +93,7 @@ export const formatAmount = (debit, credit) => {
       color: '#2e7d32'
     };
   }
-  
+
   return {
     amount: formatCurrency(0),
     type: 'zero',
@@ -105,7 +105,7 @@ export const formatBalance = (balance) => {
   const absBalance = Math.abs(balance);
   const color = balance > 0 ? '#d32f2f' : balance < 0 ? '#2e7d32' : '#616161';
   const label = balance > 0 ? 'Nợ' : balance < 0 ? 'Có' : 'Cân bằng';
-  
+
   return {
     amount: formatCurrency(absBalance),
     label,
@@ -118,18 +118,18 @@ export const formatBalance = (balance) => {
 
 export const formatDateRange = (startDate, endDate) => {
   if (!startDate || !endDate) return '';
-  
+
   const start = formatDate(startDate);
   const end = formatDate(endDate);
-  
+
   if (start === end) return start;
-  
+
   return `${start} → ${end}`;
 };
 
 export const formatNumber = (value, decimals = 0) => {
   if (value === null || value === undefined || isNaN(value)) return '0';
-  
+
   return new Intl.NumberFormat('vi-VN', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals

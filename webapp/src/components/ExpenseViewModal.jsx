@@ -62,7 +62,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
 
       setExpenseData(expenseData);
     } catch (err) {
-      setError('Không thể tải thông tin hóa đơn');
+      setError('Không thể tải thông tin phiếu thu');
       console.error('Error fetching expense data:', err);
     } finally {
       setLoading(false);
@@ -183,17 +183,17 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     console.log('handleSaveEdit called');
     setIsSaving(true);
     setError(null);
-    
+
     try {
       console.log('Starting validation...');
-      
+
       // Basic validation
       if (!editedData.vendor_name?.trim()) {
         console.log('Validation failed: vendor_name');
         setError('Vui lòng nhập tên nhà cung cấp');
         return;
       }
-      
+
       if (!editedData.expense_category_id) {
         console.log('Validation failed: expense_category_id');
         setError('Vui lòng chọn loại chi phí');
@@ -217,7 +217,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       }
 
       console.log('Validation passed, preparing data...');
-      
+
       const updatedItems = prepareExpenseItemsForUpdate(editedData.items);
       const totalAmount = calculateExpenseTotal(updatedItems);
 
@@ -233,24 +233,24 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       };
 
       console.log('Calling API update with data:', updateData);
-      
+
       const apiResponse = await expenseApi.update(expenseId, updateData);
       console.log('API update successful:', apiResponse);
 
       // Only close editing mode if successful
       console.log('Refreshing data...');
       await fetchExpenseData();
-      
+
       console.log('Success! Closing edit mode...');
       setIsEditing(false);
       setEditedData(null);
-      
+
     } catch (err) {
       console.error('Caught error in handleSaveEdit:', err);
-      
+
       // Extract error message from API response with more comprehensive error handling
       let errorMessage = 'Không thể cập nhật phiếu chi';
-      
+
       // Handle different error response formats
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -261,7 +261,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       // Handle validation errors specifically
       if (err.response?.data?.errors) {
         const validationErrors = err.response.data.errors;
@@ -272,16 +272,16 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
           }
         }
       }
-      
+
       console.log('Setting error message:', errorMessage);
       setError(errorMessage);
       console.error('Error updating expense:', err);
       console.error('Error response:', err.response);
-      
+
       // IMPORTANT: Don't close modal or exit editing mode on error
       // The error will be displayed to the user and they can fix the issues
       return; // Explicitly return to prevent any further execution
-      
+
     } finally {
       console.log('handleSaveEdit finally block');
       setIsSaving(false);
@@ -395,7 +395,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
           )}
 
           {error && (
-            <div 
+            <div
               className="p-4 bg-red-100 border-2 border-red-300 rounded-lg text-red-800 text-sm mb-4 shadow-lg animate-pulse"
               ref={(el) => {
                 if (el) {

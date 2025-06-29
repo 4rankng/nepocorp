@@ -49,7 +49,7 @@ const QuanLyBaoDuong = memo(() => {
   // Combine license plates from tractors and trailers
   const licensePlates = React.useMemo(() => {
     const plates = [];
-    
+
     // Add tractor license plates
     tractors.forEach(tractor => {
       if (tractor.license_plate) {
@@ -61,7 +61,7 @@ const QuanLyBaoDuong = memo(() => {
         });
       }
     });
-    
+
     // Add trailer license plates
     trailers.forEach(trailer => {
       if (trailer.license_plate) {
@@ -73,12 +73,12 @@ const QuanLyBaoDuong = memo(() => {
         });
       }
     });
-    
+
     // Remove duplicates based on license_plate
-    const uniquePlates = plates.filter((plate, index, self) => 
+    const uniquePlates = plates.filter((plate, index, self) =>
       index === self.findIndex(p => p.license_plate === plate.license_plate)
     );
-    
+
     return uniquePlates;
   }, [tractors, trailers]);
 
@@ -127,7 +127,7 @@ const QuanLyBaoDuong = memo(() => {
     // Use expense_id from maintenance record to show the related invoice
     const expenseId = maintenanceRecord?.expense_id || maintenanceRecord;
     console.log('Extracted expense_id:', expenseId);
-    
+
     if (expenseId) {
       console.log('Opening invoice modal with expense_id:', expenseId);
       setInvoiceModal({ open: true, expenseId });
@@ -135,7 +135,7 @@ const QuanLyBaoDuong = memo(() => {
       console.warn('No expense_id found in maintenance record:', maintenanceRecord);
       setSnackbar({
         open: true,
-        message: 'Không có hóa đơn liên kết với bản ghi bảo dưỡng này',
+        message: 'Không có phiếu thu liên kết với bản ghi bảo dưỡng này',
         severity: 'warning',
       });
     }

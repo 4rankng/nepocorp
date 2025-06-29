@@ -240,11 +240,11 @@ INSERT IGNORE INTO invoice_categories (id, name, last_updated_by) VALUES
 
 -- Insert mock invoices
 INSERT IGNORE INTO invoices (id, customer_id, invoice_category_id, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
-(1, 1, 1, 15000000, 'PAID', 'VND', 'Hóa đơn vận chuyển container 40ft TP.HCM - Hà Nội', 2, 'Nguyễn Văn A (@manager1)'),
-(2, 2, 1, 6500000, 'PENDING', 'VND', 'Hóa đơn vận chuyển container 20ft TP.HCM - Đà Nẵng', 2, 'Nguyễn Văn A (@manager1)'),
-(3, 3, 1, 3000000, 'PAID', 'VND', 'Hóa đơn vận chuyển hàng sàn TP.HCM - Cần Thơ', 2, 'Nguyễn Văn A (@manager1)'),
-(4, 4, 1, 2000000, 'DRAFT', 'VND', 'Hóa đơn vận chuyển tank TP.HCM - Vũng Tàu', 2, 'Nguyễn Văn A (@manager1)'),
-(5, 5, 1, 1500000, 'DRAFT', 'VND', 'Hóa đơn vận chuyển container nội thành', 2, 'Nguyễn Văn A (@manager1)'),
+(1, 1, 1, 15000000, 'PAID', 'VND', 'Phiếu thu vận chuyển container 40ft TP.HCM - Hà Nội', 2, 'Nguyễn Văn A (@manager1)'),
+(2, 2, 1, 6500000, 'PENDING', 'VND', 'Phiếu thu vận chuyển container 20ft TP.HCM - Đà Nẵng', 2, 'Nguyễn Văn A (@manager1)'),
+(3, 3, 1, 3000000, 'PAID', 'VND', 'Phiếu thu vận chuyển hàng sàn TP.HCM - Cần Thơ', 2, 'Nguyễn Văn A (@manager1)'),
+(4, 4, 1, 2000000, 'DRAFT', 'VND', 'Phiếu thu vận chuyển tank TP.HCM - Vũng Tàu', 2, 'Nguyễn Văn A (@manager1)'),
+(5, 5, 1, 1500000, 'DRAFT', 'VND', 'Phiếu thu vận chuyển container nội thành', 2, 'Nguyễn Văn A (@manager1)'),
 (6, 1, 2, 500000, 'PAID', 'VND', 'Phí dịch vụ logistics bổ sung', 2, 'Nguyễn Văn A (@manager1)'),
 (7, 2, 3, 800000, 'PENDING', 'VND', 'Phí cảng và xếp dỡ container', 2, 'Nguyễn Văn A (@manager1)'),
 (8, 3, 4, 300000, 'PAID', 'VND', 'Phụ thu nhiên liệu tháng 2/2024', 2, 'Nguyễn Văn A (@manager1)');
@@ -287,13 +287,13 @@ INSERT IGNORE INTO invoice_items (id, invoice_id, license_plate, item_name, pric
 -- Insert mock financial ledger entries
 INSERT IGNORE INTO financial_ledgers (id, transaction_date, customer_id, partner_id, job_id, transaction_type, debit, credit, reference_number, notes) VALUES
 -- Customer receivables
-(1, '2024-01-15', 1, NULL, 1, 'INVOICE', 15000000.00, 0.00, 'INV-001', 'Hóa đơn vận chuyển container TCLU1234567'),
-(2, '2024-01-20', 1, NULL, 1, 'PAYMENT_RECEIVED', 0.00, 15000000.00, 'PAY-001', 'Thu tiền hóa đơn INV-001'),
-(3, '2024-01-20', 2, NULL, 2, 'INVOICE', 6500000.00, 0.00, 'INV-002', 'Hóa đơn vận chuyển container MSKU9876543'),
-(4, '2024-02-01', 3, NULL, 3, 'INVOICE', 3000000.00, 0.00, 'INV-003', 'Hóa đơn vận chuyển hàng sàn HLBU5555555'),
-(5, '2024-02-05', 3, NULL, 3, 'PAYMENT_RECEIVED', 0.00, 3000000.00, 'PAY-003', 'Thu tiền hóa đơn INV-003'),
-(6, '2024-02-10', 4, NULL, 4, 'INVOICE', 2000000.00, 0.00, 'INV-004', 'Hóa đơn vận chuyển tank TANK001'),
-(7, '2024-02-15', 5, NULL, 5, 'INVOICE', 1500000.00, 0.00, 'INV-005', 'Hóa đơn vận chuyển nội thành CSVU7777777'),
+(1, '2024-01-15', 1, NULL, 1, 'INVOICE', 15000000.00, 0.00, 'INV-001', 'Phiếu thu vận chuyển container TCLU1234567'),
+(2, '2024-01-20', 1, NULL, 1, 'PAYMENT_RECEIVED', 0.00, 15000000.00, 'PAY-001', 'Thu tiền phiếu thu INV-001'),
+(3, '2024-01-20', 2, NULL, 2, 'INVOICE', 6500000.00, 0.00, 'INV-002', 'Phiếu thu vận chuyển container MSKU9876543'),
+(4, '2024-02-01', 3, NULL, 3, 'INVOICE', 3000000.00, 0.00, 'INV-003', 'Phiếu thu vận chuyển hàng sàn HLBU5555555'),
+(5, '2024-02-05', 3, NULL, 3, 'PAYMENT_RECEIVED', 0.00, 3000000.00, 'PAY-003', 'Thu tiền phiếu thu INV-003'),
+(6, '2024-02-10', 4, NULL, 4, 'INVOICE', 2000000.00, 0.00, 'INV-004', 'Phiếu thu vận chuyển tank TANK001'),
+(7, '2024-02-15', 5, NULL, 5, 'INVOICE', 1500000.00, 0.00, 'INV-005', 'Phiếu thu vận chuyển nội thành CSVU7777777'),
 
 -- Partner payables
 (8, '2024-01-15', NULL, 1, 1, 'PARTNER_INVOICE', 0.00, 2000000.00, 'PINV-001', 'Chi phí đối tác tuyến Hà Nội'),

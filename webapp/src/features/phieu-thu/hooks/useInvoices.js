@@ -53,7 +53,7 @@ export default function useInvoices() {
         setError('');
       } catch (err) {
         logger.error('Error loading invoices', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu hóa đơn');
+        const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu phiếu thu');
         setError(errorMessage);
         setInvoices([]);
       } finally {
@@ -90,7 +90,7 @@ export default function useInvoices() {
         return response;
       } catch (err) {
         logger.error('Error creating invoice', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tạo hóa đơn');
+        const errorMessage = extractErrorMessage(err, 'Không thể tạo phiếu thu');
         setError(errorMessage);
         throw err;
       } finally {
@@ -113,7 +113,7 @@ export default function useInvoices() {
         return response;
       } catch (err) {
         logger.error('Error updating invoice', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể sửa hóa đơn');
+        const errorMessage = extractErrorMessage(err, 'Không thể sửa phiếu thu');
         setError(errorMessage);
         throw err;
       } finally {
@@ -136,7 +136,7 @@ export default function useInvoices() {
         return response;
       } catch (err) {
         logger.error('Error deleting invoice', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể xóa hóa đơn');
+        const errorMessage = extractErrorMessage(err, 'Không thể xóa phiếu thu');
         setError(errorMessage);
         throw err;
       } finally {
@@ -155,7 +155,7 @@ export default function useInvoices() {
         return response;
       } catch (err) {
         logger.error('Error fetching invoice by ID', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tải hóa đơn');
+        const errorMessage = extractErrorMessage(err, 'Không thể tải phiếu thu');
         setError(errorMessage);
         throw err;
       } finally {

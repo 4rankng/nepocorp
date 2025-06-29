@@ -85,7 +85,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
 
       setInvoiceData(invoiceData);
     } catch (err) {
-      setError('Không thể tải thông tin hóa đơn');
+      setError('Không thể tải thông tin phiếu thu');
       console.error('Error fetching invoice data:', err);
     } finally {
       setLoading(false);
@@ -284,7 +284,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
       setIsEditing(false);
       setEditedData(null);
     } catch (err) {
-      setError('Không thể cập nhật hóa đơn');
+      setError('Không thể cập nhật phiếu thu');
       console.error('Error updating invoice:', err);
     } finally {
       setIsSaving(false);
@@ -358,7 +358,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
           editedData={editedData}
           onClose={handleClose}
           onFieldChange={handleFieldChange}
-          title={`Chi tiết hóa đơn`}
+          title={`Chi tiết phiếu thu`}
           statusOptions={statusOptions}
         />
 

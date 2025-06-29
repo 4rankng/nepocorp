@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 import { formatDate } from '@utils/format';
 import { INVOICE_STATUS_LABELS } from '@constants/invoice';
 
-const InvoiceFormFields = ({ 
-  data, 
+const InvoiceFormFields = ({
+  data,
   isEditing = false,
   onFieldChange,
-  className = '' 
+  className = ''
 }) => {
   const displayData = data || {};
 
@@ -34,10 +34,10 @@ const InvoiceFormFields = ({
         </div>
 
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin hóa đơn</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin phiếu thu</h3>
           <div className="space-y-2">
             <div>
-              <span className="text-sm text-gray-500">Loại hóa đơn:</span>
+              <span className="text-sm text-gray-500">Loại phiếu thu:</span>
               <p className="font-medium">{displayData.invoice_category?.name || '-'}</p>
             </div>
             <div>
@@ -67,10 +67,10 @@ const InvoiceFormFields = ({
               <div>
                 <span className="text-sm text-gray-500">Chứng từ thanh toán:</span>
                 <p className="font-medium">
-                  <a 
-                    href={displayData.payment_proof} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={displayData.payment_proof}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-blue-600 hover:underline"
                   >
                     {displayData.payment_proof}

@@ -69,21 +69,21 @@ const (
 	MsgPartnerDeleted    = "Xóa đối tác thành công"
 
 	// Invoice Categories
-	MsgInvoiceCategoriesRetrieved = "Lấy danh sách danh mục hóa đơn thành công"
-	MsgInvoiceCategoryRetrieved   = "Lấy danh mục hóa đơn thành công"
-	MsgInvoiceCategoryCreated     = "Tạo danh mục hóa đơn thành công"
-	MsgInvoiceCategoryUpdated     = "Sửa danh mục hóa đơn thành công"
-	MsgInvoiceCategoryDeleted     = "Xóa danh mục hóa đơn thành công"
+	MsgInvoiceCategoriesRetrieved = "Lấy danh sách danh mục phiếu thu thành công"
+	MsgInvoiceCategoryRetrieved   = "Lấy danh mục phiếu thu thành công"
+	MsgInvoiceCategoryCreated     = "Tạo danh mục phiếu thu thành công"
+	MsgInvoiceCategoryUpdated     = "Sửa danh mục phiếu thu thành công"
+	MsgInvoiceCategoryDeleted     = "Xóa danh mục phiếu thu thành công"
 
 	// Invoices
-	MsgInvoicesRetrieved = "Lấy danh sách hóa đơn thành công"
-	MsgInvoiceRetrieved  = "Lấy hóa đơn thành công"
-	MsgInvoiceCreated    = "Tạo hóa đơn thành công"
-	MsgInvoiceUpdated    = "Sửa hóa đơn thành công"
-	MsgInvoiceDeleted    = "Xóa hóa đơn thành công"
+	MsgInvoicesRetrieved = "Lấy danh sách phiếu thu thành công"
+	MsgInvoiceRetrieved  = "Lấy phiếu thu thành công"
+	MsgInvoiceCreated    = "Tạo phiếu thu thành công"
+	MsgInvoiceUpdated    = "Sửa phiếu thu thành công"
+	MsgInvoiceDeleted    = "Xóa phiếu thu thành công"
 
 	// Invoice Items
-	MsgInvoiceItemCreated = "Tạo mục hóa đơn thành công"
-	MsgInvoiceItemUpdated = "Sửa mục hóa đơn thành công"
-	MsgInvoiceItemDeleted = "Xóa mục hóa đơn thành công"
+	MsgInvoiceItemCreated = "Tạo mục phiếu thu thành công"
+	MsgInvoiceItemUpdated = "Sửa mục phiếu thu thành công"
+	MsgInvoiceItemDeleted = "Xóa mục phiếu thu thành công"
 )

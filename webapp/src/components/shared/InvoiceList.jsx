@@ -35,7 +35,7 @@ const InvoiceList = ({
   categories = [],
   showCategoryColumn = true,
   CardComponent = null,
-  emptyMessage = 'Không có dữ liệu hóa đơn',
+  emptyMessage = 'Không có dữ liệu phiếu thu',
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -51,7 +51,7 @@ const InvoiceList = ({
         (invoice.customer?.name && invoice.customer.name.toLowerCase().includes(search)) ||
         (invoice.customer?.tax_code && invoice.customer.tax_code.toLowerCase().includes(search)) ||
         (invoice.remark && invoice.remark.toLowerCase().includes(search)) ||
-        (invoice.items && invoice.items.some(item => 
+        (invoice.items && invoice.items.some(item =>
           (item.license_plate && item.license_plate.toLowerCase().includes(search)) ||
           (item.item_name && item.item_name.toLowerCase().includes(search))
         ))
@@ -189,7 +189,7 @@ const InvoiceList = ({
           ))}
           {!loading && filteredInvoices.length === 0 && (
             <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
-              {searchTerm || selectedCategory ? 'Không tìm thấy hóa đơn phù hợp' : emptyMessage}
+              {searchTerm || selectedCategory ? 'Không tìm thấy phiếu thu phù hợp' : emptyMessage}
             </Typography>
           )}
         </Box>
@@ -227,7 +227,7 @@ const InvoiceList = ({
 
             {showCategoryColumn && (
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                <strong>Loại hóa đơn:</strong> {
+                <strong>Loại phiếu thu:</strong> {
                   categories.find(cat => cat.id === invoice.invoice_category_id)?.name || '-'
                 }
               </Typography>
@@ -255,7 +255,7 @@ const InvoiceList = ({
 
         {!loading && filteredInvoices.length === 0 && (
           <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
-            {searchTerm || selectedCategory ? 'Không tìm thấy hóa đơn phù hợp' : emptyMessage}
+            {searchTerm || selectedCategory ? 'Không tìm thấy phiếu thu phù hợp' : emptyMessage}
           </Typography>
         )}
       </Box>
@@ -269,7 +269,7 @@ const InvoiceList = ({
       data: filteredInvoices,
       loading: loading,
       error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
-      emptyMessage: searchTerm || selectedCategory ? 'Không tìm thấy hóa đơn phù hợp' : emptyMessage,
+      emptyMessage: searchTerm || selectedCategory ? 'Không tìm thấy phiếu thu phù hợp' : emptyMessage,
       pagination: !!pagination,
       rowKeyField: 'id',
     };

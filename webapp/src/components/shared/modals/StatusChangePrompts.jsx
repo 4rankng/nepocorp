@@ -58,7 +58,7 @@ const StatusChangePrompts = ({
           <textarea
             value={tempCancelReason}
             onChange={(e) => onCancelReasonChange(e.target.value)}
-            placeholder="Lý do hủy hóa đơn..."
+            placeholder="Lý do hủy phiếu thu..."
             className="w-full px-3 py-2 border border-gray-300 rounded text-sm mb-2 resize-none focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             rows={3}
             autoFocus

@@ -10,7 +10,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
   const [isLoadingPlates, setIsLoadingPlates] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState(null);
   const [showItemEditModal, setShowItemEditModal] = useState(false);
-  
+
   // Status change prompts
   const [showPaymentProofPrompt, setShowPaymentProofPrompt] = useState(false);
   const [showCancelReasonPrompt, setShowCancelReasonPrompt] = useState(false);
@@ -32,7 +32,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
   useEffect(() => {
     const fetchVehicles = async () => {
       if (!isEditing || !fetchTractors || !fetchTrailers) return;
-      
+
       setIsLoadingPlates(true);
       try {
         await Promise.all([
@@ -51,7 +51,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
 
   const handleEditClick = useCallback(() => {
     if (!invoiceData) return;
-    
+
     setIsEditing(true);
     setEditedData({
       ...invoiceData,
@@ -74,14 +74,14 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
     // Handle status changes that require prompts
     if (field === 'payment_status') {
       const oldStatus = editedData?.payment_status;
-      
+
       if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
         setPendingStatus(value);
         setTempPaymentProof(editedData?.payment_proof || '');
         setShowPaymentProofPrompt(true);
         return;
       }
-      
+
       if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
         setPendingStatus(value);
         setTempCancelReason(editedData?.cancel_reason || '');
@@ -99,7 +99,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
   const handleItemChange = useCallback((index, field, value) => {
     setEditedData(prev => ({
       ...prev,
-      items: prev.items.map((item, i) => 
+      items: prev.items.map((item, i) =>
         i === index ? { ...item, [field]: value } : item
       )
     }));
@@ -155,7 +155,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
       payment_proof: tempPaymentProof,
       cancel_reason: null // Clear cancel reason when marking as paid
     }));
-    
+
     setShowPaymentProofPrompt(false);
     setPendingStatus(null);
     setTempPaymentProof('');
@@ -174,7 +174,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
       cancel_reason: tempCancelReason,
       payment_proof: null // Clear payment proof when cancelling
     }));
-    
+
     setShowCancelReasonPrompt(false);
     setPendingStatus(null);
     setTempCancelReason('');
@@ -191,17 +191,17 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
 
   const handleSaveEdit = useCallback(async () => {
     if (!editedData) return;
-    
+
     setIsSaving(true);
     setSaveError(null);
-    
+
     try {
       // Calculate totals for items
       const updatedItems = editedData.items?.map(item => {
         const price = parseFloat(item.price) || 0;
         const quantity = parseFloat(item.quantity) || 0;
         const total = price * quantity;
-        
+
         return {
           ...item,
           price,
@@ -224,13 +224,13 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
       };
 
       await invoiceApi.update(invoiceId, updateData);
-      
+
       // Refresh the invoice data
       await onDataRefresh();
       setIsEditing(false);
       setEditedData(null);
     } catch (err) {
-      setSaveError('Không thể cập nhật hóa đơn');
+      setSaveError('Không thể cập nhật phiếu thu');
       console.error('Error updating invoice:', err);
     } finally {
       setIsSaving(false);

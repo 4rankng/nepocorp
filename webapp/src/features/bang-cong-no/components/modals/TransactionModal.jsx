@@ -26,8 +26,8 @@ import {
 } from '@mui/icons-material';
 import Dropdown from '@/components/ui/Dropdown';
 import CurrencyDisplay from '@/components/ui/CurrencyDisplay';
-import { 
-  validateTransaction, 
+import {
+  validateTransaction,
   validateAmount,
   validateDate,
   validateReferenceNumber,
@@ -35,7 +35,7 @@ import {
   sanitizeAmount,
   formatFormAmount
 } from '@/features/bang-cong-no/utils';
-import { 
+import {
   TRANSACTION_TYPE_OPTIONS,
   FORM_MODES,
   createEmptyTransaction
@@ -66,12 +66,12 @@ const TransactionModal = ({
       if (transaction && (isEditing || isViewing)) {
         const debit = parseFloat(transaction.debit) || 0;
         const credit = parseFloat(transaction.credit) || 0;
-        
+
         setFormData({
           ...transaction,
           transaction_date: transaction.transaction_date?.split('T')[0] || new Date().toISOString().split('T')[0]
         });
-        
+
         setAmountType(debit > 0 ? 'debit' : 'credit');
         setAmountValue(formatFormAmount(Math.max(debit, credit)));
       } else {
@@ -101,7 +101,7 @@ const TransactionModal = ({
 
   const handleAmountChange = (value) => {
     setAmountValue(value);
-    
+
     // Clear amount error when user starts typing
     if (errors.amount) {
       setErrors(prev => ({
@@ -138,7 +138,7 @@ const TransactionModal = ({
 
   const validateForm = () => {
     const sanitizedAmount = sanitizeAmount(amountValue);
-    
+
     // Prepare transaction data for validation
     const transactionData = {
       ...formData,
@@ -147,7 +147,7 @@ const TransactionModal = ({
     };
 
     const validation = validateTransaction(transactionData);
-    
+
     // Additional field validations
     const amountValidation = validateAmount(amountValue);
     if (!amountValidation.isValid) {
@@ -187,7 +187,7 @@ const TransactionModal = ({
     }
 
     const sanitizedAmount = sanitizeAmount(amountValue);
-    
+
     const transactionData = {
       ...formData,
       debit: amountType === 'debit' ? sanitizedAmount : 0,
@@ -238,10 +238,10 @@ const TransactionModal = ({
       }}
     >
       {loading && <LinearProgress />}
-      
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+
+      <DialogTitle sx={{
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
         pb: 1
       }}>
@@ -377,7 +377,7 @@ const TransactionModal = ({
                 />
               </RadioGroup>
             </FormControl>
-            
+
             <TextField
               label="Số tiền"
               type="number"
@@ -392,11 +392,11 @@ const TransactionModal = ({
                 inputProps: { min: 0, step: 0.01 }
               }}
             />
-            
+
             {amountValue && (
               <Box sx={{ mt: 1 }}>
-                <CurrencyDisplay 
-                  amount={sanitizeAmount(amountValue)} 
+                <CurrencyDisplay
+                  amount={sanitizeAmount(amountValue)}
                   variant="caption"
                   color={amountType === 'debit' ? '#d32f2f' : '#2e7d32'}
                 />
@@ -413,7 +413,7 @@ const TransactionModal = ({
               fullWidth
               disabled={isViewing}
               error={!!errors.reference_number}
-              helperText={errors.reference_number || 'VD: Hóa đơn số INV-2025-001'}
+              helperText={errors.reference_number || 'VD: Phiếu thu số INV-2025-001'}
               placeholder="Nhập số tham chiếu hoặc diễn giải"
             />
           </Grid>
@@ -446,7 +446,7 @@ const TransactionModal = ({
         >
           {isViewing ? 'Đóng' : 'Hủy'}
         </Button>
-        
+
         {!isViewing && (
           <Button
             onClick={handleSave}

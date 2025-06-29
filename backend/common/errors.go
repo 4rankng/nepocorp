@@ -92,27 +92,27 @@ const (
 	ErrPartnerTaxCodeExists   = "Mã số thuế của đối tác đã tồn tại"
 
 	// Invoice Categories errors
-	ErrFetchInvoiceCategories  = "Lỗi khi lấy danh sách danh mục hóa đơn"
-	ErrCreateInvoiceCategory   = "Lỗi khi tạo danh mục hóa đơn"
-	ErrUpdateInvoiceCategory   = "Lỗi khi sửa danh mục hóa đơn"
-	ErrDeleteInvoiceCategory   = "Lỗi khi xóa danh mục hóa đơn"
-	ErrInvoiceCategoryNotFound = "Không tìm thấy danh mục hóa đơn"
+	ErrFetchInvoiceCategories  = "Lỗi khi lấy danh sách danh mục phiếu thu"
+	ErrCreateInvoiceCategory   = "Lỗi khi tạo danh mục phiếu thu"
+	ErrUpdateInvoiceCategory   = "Lỗi khi sửa danh mục phiếu thu"
+	ErrDeleteInvoiceCategory   = "Lỗi khi xóa danh mục phiếu thu"
+	ErrInvoiceCategoryNotFound = "Không tìm thấy danh mục phiếu thu"
 
 	// Invoices errors
-	ErrFetchInvoices        = "Lỗi khi lấy danh sách hóa đơn"
-	ErrCountInvoices        = "Lỗi khi đếm số hóa đơn"
-	ErrCreateInvoice        = "Lỗi khi tạo hóa đơn"
-	ErrUpdateInvoice        = "Lỗi khi sửa hóa đơn"
-	ErrDeleteInvoice        = "Lỗi khi xóa hóa đơn"
-	ErrInvoiceNotFound      = "Không tìm thấy hóa đơn"
+	ErrFetchInvoices        = "Lỗi khi lấy danh sách phiếu thu"
+	ErrCountInvoices        = "Lỗi khi đếm số phiếu thu"
+	ErrCreateInvoice        = "Lỗi khi tạo phiếu thu"
+	ErrUpdateInvoice        = "Lỗi khi sửa phiếu thu"
+	ErrDeleteInvoice        = "Lỗi khi xóa phiếu thu"
+	ErrInvoiceNotFound      = "Không tìm thấy phiếu thu"
 	ErrInvalidPaymentStatus = "Trạng thái thanh toán không hợp lệ"
-	ErrCancelReasonRequired = "Lý do hủy là bắt buộc khi hủy hóa đơn"
+	ErrCancelReasonRequired = "Lý do hủy là bắt buộc khi hủy phiếu thu"
 
 	// Invoice Items errors
-	ErrCreateInvoiceItem   = "Lỗi khi tạo mục hóa đơn"
-	ErrUpdateInvoiceItem   = "Lỗi khi sửa mục hóa đơn"
-	ErrDeleteInvoiceItem   = "Lỗi khi xóa mục hóa đơn"
-	ErrInvoiceItemNotFound = "Không tìm thấy mục hóa đơn"
+	ErrCreateInvoiceItem   = "Lỗi khi tạo mục phiếu thu"
+	ErrUpdateInvoiceItem   = "Lỗi khi sửa mục phiếu thu"
+	ErrDeleteInvoiceItem   = "Lỗi khi xóa mục phiếu thu"
+	ErrInvoiceItemNotFound = "Không tìm thấy mục phiếu thu"
 )
 
 // Error codes

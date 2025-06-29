@@ -25,7 +25,7 @@ export default function useInvoiceForm({
       ...prev,
       [field]: value
     }));
-    
+
     // Clear error for this field when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -45,12 +45,12 @@ export default function useInvoiceForm({
     }
 
     if (!data.invoice_category_id) {
-      newErrors.invoice_category_id = 'Loại hóa đơn là bắt buộc';
+      newErrors.invoice_category_id = 'Loại phiếu thu là bắt buộc';
     }
 
     // Validate items
     if (!data.items || data.items.length === 0) {
-      newErrors.items = 'Ít nhất một mục hóa đơn là bắt buộc';
+      newErrors.items = 'Ít nhất một mục phiếu thu là bắt buộc';
     } else {
       data.items.forEach((item, index) => {
         if (!item.license_plate) {
@@ -70,7 +70,7 @@ export default function useInvoiceForm({
 
     // If status is CANCELLED, cancel_reason is required
     if (data.payment_status === 'CANCELLED' && !data.cancel_reason) {
-      newErrors.cancel_reason = 'Lý do hủy là bắt buộc khi hủy hóa đơn';
+      newErrors.cancel_reason = 'Lý do hủy là bắt buộc khi hủy phiếu thu';
     }
 
     return newErrors;
@@ -102,7 +102,7 @@ export default function useInvoiceForm({
   // Handle form submission
   const handleSave = useCallback(async () => {
     const validationErrors = validateForm(formData);
-    
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -113,14 +113,14 @@ export default function useInvoiceForm({
 
     try {
       const apiData = transformFormDataToAPI(formData);
-      
+
       let response;
       if (isEdit && formData.id) {
         response = await api.update(formData.id, apiData);
-        onSuccess?.('Cập nhật hóa đơn thành công');
+        onSuccess?.('Cập nhật phiếu thu thành công');
       } else {
         response = await api.create(apiData);
-        onSuccess?.('Tạo hóa đơn thành công');
+        onSuccess?.('Tạo phiếu thu thành công');
       }
 
       // Refresh data if fetchData is provided
@@ -131,7 +131,7 @@ export default function useInvoiceForm({
       return response;
     } catch (error) {
       logger.error('Error saving invoice', { error, formData });
-      const errorMessage = extractErrorMessage(error, 'Không thể lưu hóa đơn');
+      const errorMessage = extractErrorMessage(error, 'Không thể lưu phiếu thu');
       onError?.({ message: errorMessage });
       setErrors({ general: errorMessage });
     } finally {

@@ -284,7 +284,7 @@ export const InvoiceButton = forwardRef(
       onClick,
       size = 'small',
       disabled = false,
-      tooltip = 'Xem hóa đơn',
+      tooltip = 'Xem phiếu thu',
       // Extract and omit the jsx prop to prevent it from being passed to DOM
       jsx: _jsx,
       ...props
