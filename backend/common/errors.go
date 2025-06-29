@@ -72,6 +72,24 @@ const (
 	ErrTokenExpired = "Token đã hết hạn"
 	ErrCreateUser = "Lỗi khi tạo người dùng"
 	ErrUserExists = "Người dùng đã tồn tại"
+
+	// Customers errors
+	ErrFetchCustomers        = "Lỗi khi lấy danh sách khách hàng"
+	ErrCreateCustomer        = "Lỗi khi tạo khách hàng"
+	ErrUpdateCustomer        = "Lỗi khi sửa khách hàng"
+	ErrDeleteCustomer        = "Lỗi khi xóa khách hàng"
+	ErrCustomerNotFound      = "Không tìm thấy khách hàng"
+	ErrCustomerTaxCodeRequired = "Trường 'mã số thuế' của khách hàng là bắt buộc và không được để trống"
+	ErrCustomerTaxCodeExists = "Mã số thuế của khách hàng đã tồn tại"
+
+	// Partners errors
+	ErrFetchPartners        = "Lỗi khi lấy danh sách đối tác"
+	ErrCreatePartner        = "Lỗi khi tạo đối tác"
+	ErrUpdatePartner        = "Lỗi khi sửa đối tác"
+	ErrDeletePartner        = "Lỗi khi xóa đối tác"
+	ErrPartnerNotFound      = "Không tìm thấy đối tác"
+	ErrPartnerTaxCodeRequired = "Trường 'mã số thuế' của đối tác là bắt buộc và không được để trống"
+	ErrPartnerTaxCodeExists = "Mã số thuế của đối tác đã tồn tại"
 )
 
 // Error codes
@@ -89,6 +107,8 @@ const (
 	CodeUserNotActive    = 4010
 	CodeTokenExpired     = 4011
 	CodeUserExists       = 4012
+	CodeCustomerTaxCodeExists = 4013
+	CodePartnerTaxCodeExists = 4014
 
 	// 5xxx - Server errors
 	CodeInternalError    = 5001

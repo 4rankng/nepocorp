@@ -55,4 +55,16 @@ const (
 	MsgUserCreated        = "Tạo người dùng thành công"
 	MsgTokenRefreshed     = "Làm mới token thành công"
 	MsgProfileRetrieved   = "Lấy thông tin hồ sơ thành công"
+
+	// Customers
+	MsgCustomersRetrieved = "Lấy danh sách khách hàng thành công"
+	MsgCustomerCreated    = "Tạo khách hàng thành công"
+	MsgCustomerUpdated    = "Sửa khách hàng thành công"
+	MsgCustomerDeleted    = "Xóa khách hàng thành công"
+
+	// Partners
+	MsgPartnersRetrieved = "Lấy danh sách đối tác thành công"
+	MsgPartnerCreated    = "Tạo đối tác thành công"
+	MsgPartnerUpdated    = "Sửa đối tác thành công"
+	MsgPartnerDeleted    = "Xóa đối tác thành công"
 )

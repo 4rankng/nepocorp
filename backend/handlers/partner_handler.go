@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"backend/models"
-	"backend/repositories"
-	"backend/utils"
+	"github.com/nepocorp/backend/models"
+	"github.com/nepocorp/backend/repositories"
+	"github.com/nepocorp/backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,7 +22,7 @@ func NewPartnerHandler(partnerRepo *repositories.PartnerRepository) *PartnerHand
 func (h *PartnerHandler) CreatePartner(c *gin.Context) {
 	var partner models.Partner
 	if err := c.ShouldBindJSON(&partner); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON format", err.Error())
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *PartnerHandler) UpdatePartner(c *gin.Context) {
 
 	var partner models.Partner
 	if err := c.ShouldBindJSON(&partner); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON format", err.Error())
 		return
 	}
 
@@ -90,9 +90,9 @@ func (h *PartnerHandler) DeletePartner(c *gin.Context) {
 	}
 
 	if err := h.PartnerRepo.DeletePartner(uint(id)); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete partner", err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusNoContent, nil)
+	utils.SuccessResponse(c, http.StatusNoContent, common.MsgPartnerDeleted, nil)
 }

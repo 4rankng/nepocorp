@@ -49,3 +49,6 @@ export {
 
 // Button components
 export { default as Button } from './Button';
+
+// Status components
+export { default as StatusBadge } from './StatusBadge';
