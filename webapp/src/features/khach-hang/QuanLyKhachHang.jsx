@@ -11,7 +11,7 @@ import {
   Divider,
 } from '@mui/material';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import CustomerForm from '@features/khach-hang/components/CustomerForm';
+import EntityForm from '@/components/shared/EntityForm';
 
 import DesktopView from '@features/khach-hang/components/DesktopView';
 import useCustomerManagement from '@features/khach-hang/hooks/useCustomerManagement';
@@ -27,10 +27,10 @@ const QuanLyKhachHang = () => {
     updateCustomer,
     deleteCustomer,
     clearError,
-    isCustomerCodeAvailable,
+    isTaxCodeAvailable: isCustomerCodeAvailable,
     getInitialFormData,
   } = useCustomerManagement();
-  const [isValidatingCode, setIsValidatingCode] = useState(false);
+  const [isValidatingTaxCode, setIsValidatingTaxCode] = useState(false);
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -70,20 +70,20 @@ const QuanLyKhachHang = () => {
       setFormError('');
       // If this is an edit, validate tax code if it was changed
       if (selectedCustomer && formData.tax_code && formData.tax_code !== selectedCustomer.tax_code) {
-        setIsValidatingCode(true);
+        setIsValidatingTaxCode(true);
         try {
           const isAvailable = await isCustomerCodeAvailable(formData.tax_code, selectedCustomer.id);
           if (!isAvailable) {
             setFormError('Mã số thuế đã được sử dụng. Vui lòng nhập mã khác.');
-            setIsValidatingCode(false);
+            setIsValidatingTaxCode(false);
             return;
           }
         } catch (err) {
           setFormError('Có lỗi xảy ra khi kiểm tra mã số thuế. Vui lòng thử lại.');
-          setIsValidatingCode(false);
+          setIsValidatingTaxCode(false);
           return;
         }
-        setIsValidatingCode(false);
+        setIsValidatingTaxCode(false);
       }
       let result;
       try {
@@ -136,17 +136,20 @@ const QuanLyKhachHang = () => {
       {/* Render appropriate view based on screen size */}
       <DesktopView {...commonProps} />
       {/* Add/Edit Form */}
-      <CustomerForm
+      <EntityForm
         open={isFormOpen}
         onClose={handleCloseForm}
         onSave={handleSaveCustomer}
-        customer={selectedCustomer}
-        getInitialFormData={getInitialFormData}
-        isLoading={loading || isValidatingCode}
+        entity={selectedCustomer}
+        onGetInitialData={getInitialFormData}
+        isLoading={loading || isValidatingTaxCode}
         error={formError}
+        entityType="customer"
+        includeContactFields={false}
+        includeNotesField={false}
       />
-      {/* Loading overlay for code validation */}
-      {isValidatingCode && (
+      {/* Loading overlay for tax code validation */}
+      {isValidatingTaxCode && (
         <div
           style={{
             position: 'fixed',
@@ -194,17 +197,17 @@ const QuanLyKhachHang = () => {
                 <Typography variant="body2">{deleteDialog.data?.name || '-'}</Typography>
 
                 <Typography variant="body2" fontWeight={500}>
-                  Địa chỉ:
-                </Typography>
-                <Typography variant="body2">
-                  {deleteDialog.data?.address || 'Chưa sửa'}
-                </Typography>
-
-                <Typography variant="body2" fontWeight={500}>
                   Mã số thuế:
                 </Typography>
                 <Typography variant="body2">
-                  {deleteDialog.data?.tax_code || 'Chưa sửa'}
+                  {deleteDialog.data?.tax_code || 'Chưa có'}
+                </Typography>
+
+                <Typography variant="body2" fontWeight={500}>
+                  Địa chỉ:
+                </Typography>
+                <Typography variant="body2">
+                  {deleteDialog.data?.address || 'Chưa có'}
                 </Typography>
               </Box>
             </Box>

@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { FormModal } from '@/components/ui';
 import {
-  Dialog,
-  DialogContent,
-  DialogActions,
   TextField,
-  Button,
-  Box,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
+} from '@/components/ui/FieldComponents';
+import { FormActionButtons } from '@/components/ui/ActionButtons';
+import { FormRow, FormSection } from '@/components/ui';
+
 const initialFormState = {
-  ma_dinh_danh: '',
   ten: '',
-  dia_chi: '',
   ma_so_thue: '',
+  dia_chi: '',
+  contact_person: '',
+  contact_phone: '',
+  contact_email: '',
+  notes: '',
 };
+
 const PartnerForm = ({
   open,
   onClose,
@@ -24,152 +26,268 @@ const PartnerForm = ({
   isLoading = false,
   error = '',
 }) => {
+  // Modal state
   const [formData, setFormData] = useState(initialFormState);
-  const [localError, setLocalError] = useState('');
-  // Reset form when dialog opens/closes or partner changes
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localErrors, setLocalErrors] = useState({});
+
+  // Determine if this is an edit operation
+  const isEdit = !!partner;
+
+  // Initialize form data when modal opens or partner changes
   useEffect(() => {
     if (open) {
-      if (partner) {
+      if (isEdit && partner) {
         setFormData({
-          ma_dinh_danh: partner.ma_dinh_danh || '',
           ten: partner.ten || '',
-          dia_chi: partner.dia_chi || '',
           ma_so_thue: partner.ma_so_thue || '',
+          dia_chi: partner.dia_chi || '',
+          contact_person: partner.contact_person || '',
+          contact_phone: partner.contact_phone || '',
+          contact_email: partner.contact_email || '',
+          notes: partner.notes || '',
         });
       } else {
-        // If onGetInitialData is provided, use it to get initial data
-        // Otherwise, use the default initial form state
+        // New partner
         const initialData = onGetInitialData ? onGetInitialData() : initialFormState;
         setFormData(initialData);
       }
-      setLocalError('');
+      setLocalErrors({});
     }
-  }, [open, partner, onGetInitialData]);
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear local error when user starts typing
-    if (localError) setLocalError('');
-  };
-  const handleSubmit = e => {
+  }, [open, isEdit, partner, onGetInitialData]);
+
+  // Handle field changes
+  const handleFieldChange = useCallback((field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
+    // Clear error for this field
+    if (localErrors[field]) {
+      setLocalErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  }, [localErrors]);
+
+  // Validation
+  const validateForm = useCallback(() => {
+    const newErrors = {};
+
+    if (!formData.ten?.trim()) {
+      newErrors.ten = 'Vui lòng nhập tên đối tác';
+    }
+
+    if (!formData.ma_so_thue?.trim()) {
+      newErrors.ma_so_thue = 'Vui lòng nhập mã số thuế';
+    }
+
+    // Email validation if provided
+    if (formData.contact_email?.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.contact_email.trim())) {
+        newErrors.contact_email = 'Email không hợp lệ';
+      }
+    }
+
+    // Phone validation if provided
+    if (formData.contact_phone?.trim()) {
+      const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+      if (!phoneRegex.test(formData.contact_phone.trim()) || formData.contact_phone.trim().length < 10) {
+        newErrors.contact_phone = 'Số điện thoại không hợp lệ';
+      }
+    }
+
+    setLocalErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData]);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    setLocalError('');
-    // Validation
-    if (!formData.ten.trim()) {
-      setLocalError('Tên đối tác không được để trống.');
+
+    if (!validateForm()) {
       return;
     }
-    // Validate partner code format
-    if (!formData.ma_dinh_danh || formData.ma_dinh_danh.trim() === '') {
-      setLocalError('Vui lòng nhập mã đối tác.');
-      return;
+
+    setIsSubmitting(true);
+    try {
+      // Clean the data before sending
+      const cleanedData = {
+        ...formData,
+        ten: formData.ten.trim(),
+        ma_so_thue: formData.ma_so_thue.trim(),
+        dia_chi: formData.dia_chi?.trim() || '',
+        contact_person: formData.contact_person?.trim() || '',
+        contact_phone: formData.contact_phone?.trim() || '',
+        contact_email: formData.contact_email?.trim() || '',
+        notes: formData.notes?.trim() || '',
+      };
+
+      await onSave(cleanedData);
+      onClose();
+    } catch (error) {
+      console.error('Error saving partner:', error);
+      // Error handling is done by parent component
+    } finally {
+      setIsSubmitting(false);
     }
-    const codeRegex = /^DT\d{3,}$/i;
-    if (!codeRegex.test(formData.ma_dinh_danh.trim())) {
-      setLocalError('Mã đối tác phải có định dạng DT001, DT002, ...');
-      return;
-    }
-    // Call the onSave function with form data
-    onSave({
-      ...formData,
-      ma_dinh_danh: formData.ma_dinh_danh.trim().toUpperCase(),
-    });
-  };
-  const handleClose = () => {
+  }, [formData, validateForm, onSave, onClose]);
+
+  // Handle cancel
+  const handleCancel = useCallback(() => {
     setFormData(initialFormState);
-    setLocalError('');
+    setLocalErrors({});
     onClose();
-  };
-  // Handle ESC key press
+  }, [onClose]);
+
+  // Custom ESC key handler that prevents event bubbling
   useEffect(() => {
-    const handleKeyDown = e => {
-      if (e.key === 'Escape' && open) {
-        handleClose();
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape' && open) {
+        event.stopPropagation(); // Prevent bubbling to parent modal
+        handleCancel();
       }
     };
+
     if (open) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
+      document.addEventListener('keydown', handleEscKey, true); // Use capture phase
     }
-  }, [open]);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey, true);
+    };
+  }, [open, handleCancel]);
+
+  // Merge external and local errors
+  const allErrors = { ...localErrors };
+  if (error) {
+    allErrors.general = error;
+  }
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <form onSubmit={handleSubmit}>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label="Mã đối tác"
-              name="ma_dinh_danh"
-              value={formData.ma_dinh_danh}
-              onChange={handleInputChange}
-              placeholder="VD: DT001"
-              fullWidth
-              size="small"
-              margin="normal"
-              disabled={!!partner} // Disable editing code for existing partners
-              required
-              inputProps={{
-                pattern: '^DT\\d{3,}$',
-                title: 'Mã đối tác phải bắt đầu bằng DT và ít nhất 3 chữ số',
-              }}
-              helperText="Nhập mã đối tác (VD: DT001)"
-            />
-            <TextField
-              label="Tên đối tác"
-              name="ten"
-              value={formData.ten}
-              onChange={handleInputChange}
-              placeholder="Ví dụ: Công ty Cổ phần Vận tải ABC"
-              fullWidth
-              size="small"
-              required
-              margin="normal"
-              error={localError.includes('Tên đối tác')}
-            />
-            <TextField
-              label="Địa chỉ"
-              name="dia_chi"
-              value={formData.dia_chi}
-              onChange={handleInputChange}
-              placeholder="Ví dụ: 123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh"
-              fullWidth
-              size="small"
-              margin="normal"
-              multiline
-              rows={2}
-            />
-            <TextField
-              label="Mã số thuế"
-              name="ma_so_thue"
-              value={formData.ma_so_thue}
-              onChange={handleInputChange}
-              placeholder="Ví dụ: 0300584870"
-              fullWidth
-              size="small"
-              margin="normal"
-            />
-            {(error || localError) && (
-              <Alert severity="error" sx={{ mt: 1 }}>
-                {error || localError}
-              </Alert>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button onClick={handleClose} color="inherit" disabled={isLoading}>
-            Hủy
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isLoading || !formData.ten.trim()}
-            startIcon={isLoading ? <CircularProgress size={20} /> : null}
-          >
-            {partner ? 'Lưu' : 'Thêm'}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+    <FormModal
+      isOpen={open}
+      onClose={handleCancel}
+      title={isEdit ? 'Sửa thông tin đối tác' : 'Thêm đối tác mới'}
+      onSubmit={handleSubmit}
+      size="medium"
+      loading={isSubmitting || isLoading}
+      enableEscClose={false}
+      actions={
+        <div style={{ margin: 0, padding: '12px 20px' }}>
+          <FormActionButtons
+            onCancel={handleCancel}
+            onSubmit={handleSubmit}
+            isEdit={isEdit}
+            loading={isSubmitting || isLoading}
+            cancelText="Hủy"
+            submitText={isEdit ? 'Lưu thay đổi' : 'Thêm đối tác'}
+          />
+        </div>
+      }
+    >
+      <FormSection title="Thông tin cơ bản">
+        <FormRow>
+          <TextField
+            label="Tên đối tác"
+            name="ten"
+            value={formData.ten}
+            onChange={(e) => handleFieldChange('ten', e.target.value)}
+            placeholder="Nhập tên đối tác"
+            required
+            error={allErrors.ten}
+          />
+
+          <TextField
+            label="Mã số thuế"
+            name="ma_so_thue"
+            value={formData.ma_so_thue}
+            onChange={(e) => handleFieldChange('ma_so_thue', e.target.value)}
+            placeholder="Nhập mã số thuế"
+            required
+            error={allErrors.ma_so_thue}
+          />
+        </FormRow>
+
+        <FormRow>
+          <TextField
+            label="Địa chỉ"
+            name="dia_chi"
+            value={formData.dia_chi}
+            onChange={(e) => handleFieldChange('dia_chi', e.target.value)}
+            placeholder="Nhập địa chỉ đối tác"
+            multiline
+            rows={3}
+          />
+
+          <TextField
+            label="Ghi chú"
+            name="notes"
+            value={formData.notes}
+            onChange={(e) => handleFieldChange('notes', e.target.value)}
+            placeholder="Nhập ghi chú về đối tác"
+            multiline
+            rows={3}
+          />
+        </FormRow>
+      </FormSection>
+
+      <FormSection title="Thông tin liên hệ">
+        <FormRow>
+          <TextField
+            label="Người liên hệ"
+            name="contact_person"
+            value={formData.contact_person}
+            onChange={(e) => handleFieldChange('contact_person', e.target.value)}
+            placeholder="Nhập tên người liên hệ"
+          />
+
+          <TextField
+            label="Số điện thoại"
+            name="contact_phone"
+            value={formData.contact_phone}
+            onChange={(e) => handleFieldChange('contact_phone', e.target.value)}
+            placeholder="Nhập số điện thoại"
+            error={allErrors.contact_phone}
+          />
+        </FormRow>
+
+        <FormRow>
+          <TextField
+            label="Email"
+            name="contact_email"
+            value={formData.contact_email}
+            onChange={(e) => handleFieldChange('contact_email', e.target.value)}
+            placeholder="Nhập địa chỉ email"
+            type="email"
+            error={allErrors.contact_email}
+            fullWidth
+          />
+        </FormRow>
+      </FormSection>
+
+
+      {allErrors.general && (
+        <div className="text-red-500 text-sm mt-4 p-3 bg-red-50 rounded-md border border-red-200">
+          {allErrors.general}
+        </div>
+      )}
+    </FormModal>
   );
 };
+
+PartnerForm.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  partner: PropTypes.object,
+  onGetInitialData: PropTypes.func,
+  isLoading: PropTypes.bool,
+  error: PropTypes.string,
+};
+
 export default PartnerForm;

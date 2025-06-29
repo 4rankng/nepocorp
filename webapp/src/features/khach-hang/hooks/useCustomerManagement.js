@@ -122,7 +122,7 @@ const useCustomerManagement = () => {
     }
   }, []);
   // Check if a customer tax code is available
-  const isCustomerCodeAvailable = useCallback(async (taxCode, excludeId = null) => {
+  const isTaxCodeAvailable = useCallback(async (taxCode, excludeId = null) => {
     if (!taxCode || taxCode.trim() === '') return true;
     try {
       const response = await customerApi.getAll();
@@ -155,7 +155,7 @@ const useCustomerManagement = () => {
     deleteCustomer,
     getCustomerById,
     getCustomerByCode,
-    isCustomerCodeAvailable,
+    isTaxCodeAvailable,
     getInitialFormData,
     clearError,
   };

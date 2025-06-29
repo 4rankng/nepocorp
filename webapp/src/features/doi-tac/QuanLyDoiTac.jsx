@@ -9,7 +9,7 @@ import {
   Divider,
 } from '@mui/material';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import PartnerForm from '@features/doi-tac/components/PartnerForm';
+import EntityForm from '@/components/shared/EntityForm';
 
 import DesktopView from '@features/doi-tac/components/DesktopView';
 import useDoiTac from '@features/doi-tac/hooks/useDoiTac';
@@ -24,9 +24,9 @@ const QuanLyDoiTac = () => {
     deletePartner,
     clearError,
     getInitialFormData,
-    isPartnerCodeAvailable,
+    isTaxCodeAvailable,
   } = useDoiTac();
-  const [isValidatingCode, setIsValidatingCode] = useState(false);
+  const [isValidatingTaxCode, setIsValidatingTaxCode] = useState(false);
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState(null);
@@ -64,22 +64,22 @@ const QuanLyDoiTac = () => {
   };
   const handleSavePartner = async formData => {
     setFormError('');
-    // If this is an edit, we need to validate the code if it was changed
-    if (selectedPartner && formData.code && formData.code !== selectedPartner.code) {
-      setIsValidatingCode(true);
+    // If this is an edit, we need to validate the tax code if it was changed
+    if (selectedPartner && formData.tax_code && formData.tax_code !== selectedPartner.ma_so_thue) {
+      setIsValidatingTaxCode(true);
       try {
-        const isAvailable = await isPartnerCodeAvailable(formData.code, selectedPartner.id);
+        const isAvailable = await isTaxCodeAvailable(formData.tax_code, selectedPartner.id);
         if (!isAvailable) {
-          setFormError('Mã đối tác đã được sử dụng. Vui lòng chọn mã khác.');
-          setIsValidatingCode(false);
+          setFormError('Mã số thuế đã được sử dụng. Vui lòng chọn mã khác.');
+          setIsValidatingTaxCode(false);
           return;
         }
       } catch (err) {
-        setFormError('Có lỗi xảy ra khi kiểm tra mã đối tác. Vui lòng thử lại.');
-        setIsValidatingCode(false);
+        setFormError('Có lỗi xảy ra khi kiểm tra mã số thuế. Vui lòng thử lại.');
+        setIsValidatingTaxCode(false);
         return;
       }
-      setIsValidatingCode(false);
+      setIsValidatingTaxCode(false);
     }
     try {
       let result;
@@ -127,17 +127,20 @@ const QuanLyDoiTac = () => {
       {/* Render appropriate view based on screen size */}
       <DesktopView {...commonProps} />
       {/* Add/Edit Form */}
-      <PartnerForm
+      <EntityForm
         open={isFormOpen}
         onClose={handleCloseForm}
         onSave={handleSavePartner}
-        partner={selectedPartner}
+        entity={selectedPartner}
         onGetInitialData={getInitialFormData}
-        isLoading={loading || isValidatingCode}
+        isLoading={loading || isValidatingTaxCode}
         error={formError}
+        entityType="partner"
+        includeContactFields={true}
+        includeNotesField={true}
       />
-      {/* Loading overlay for code validation */}
-      {isValidatingCode && (
+      {/* Loading overlay for tax code validation */}
+      {isValidatingTaxCode && (
         <div
           style={{
             position: 'fixed',
@@ -185,17 +188,17 @@ const QuanLyDoiTac = () => {
                 <Typography variant="body2">{deleteDialog.data?.ten || '-'}</Typography>
 
                 <Typography variant="body2" fontWeight={500}>
-                  Địa chỉ:
-                </Typography>
-                <Typography variant="body2">
-                  {deleteDialog.data?.dia_chi || 'Chưa sửa'}
-                </Typography>
-
-                <Typography variant="body2" fontWeight={500}>
                   Mã số thuế:
                 </Typography>
                 <Typography variant="body2">
-                  {deleteDialog.data?.ma_so_thue || 'Chưa sửa'}
+                  {deleteDialog.data?.ma_so_thue || 'Chưa có'}
+                </Typography>
+
+                <Typography variant="body2" fontWeight={500}>
+                  Địa chỉ:
+                </Typography>
+                <Typography variant="body2">
+                  {deleteDialog.data?.dia_chi || 'Chưa có'}
                 </Typography>
               </Box>
             </Box>

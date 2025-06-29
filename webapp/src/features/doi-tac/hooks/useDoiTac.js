@@ -8,7 +8,6 @@ const editDoiTac = partnerApi.update;
 const removeDoiTac = partnerApi.delete;
 // Initial form state
 const initialFormState = {
-  ma_dinh_danh: '',
   ten: '',
   dia_chi: '',
   ma_so_thue: '',
@@ -34,7 +33,6 @@ const useDoiTac = () => {
         ten: partner.name,
         ma_so_thue: partner.tax_code,
         dia_chi: partner.address,
-        ma_dinh_danh: partner.id ? `DT${partner.id.toString().padStart(3, '0')}` : '',
       }));
       setPartners(mappedPartners);
     } catch (err) {
@@ -71,39 +69,24 @@ const useDoiTac = () => {
   );
   // Get initial form data
   const getInitialFormData = useCallback(() => {
-    let maxCode = 0;
-    partners.forEach(partner => {
-      if (partner?.ma_dinh_danh && partner.ma_dinh_danh.startsWith('DT')) {
-        const numPart = parseInt(partner.ma_dinh_danh.substring(2), 10);
-        if (!isNaN(numPart) && numPart > maxCode) {
-          maxCode = numPart;
-        }
-      }
-    });
-    const nextCodeNum = maxCode + 1;
-    const nextMaDinhDanh = `DT${nextCodeNum.toString().padStart(3, '0')}`;
     return {
       ...initialFormState,
-      ma_dinh_danh: nextMaDinhDanh,
     };
-  }, [partners]);
-  // Check if a partner code is available
-  const isPartnerCodeAvailable = useCallback(
+  }, []);
+  // Check if a tax code is available
+  const isTaxCodeAvailable = useCallback(
     /**
-     * @param {string} ma_dinh_danh - Partner code to check
+     * @param {string} ma_so_thue - Tax code to check
      * @param {string|null} excludeId - ID to exclude from check
      */
-    async (ma_dinh_danh, excludeId = null) => {
-      if (!ma_dinh_danh || ma_dinh_danh.trim() === '') return false;
+    async (ma_so_thue, excludeId = null) => {
+      if (!ma_so_thue || ma_so_thue.trim() === '') return false;
       try {
         const response = await fetchAllDoiTac();
         const all = response?.data || [];
         const found = all.find(
           /** @param {any} p */
-          p => {
-            const mappedCode = p.id ? `DT${p.id.toString().padStart(3, '0')}` : '';
-            return mappedCode === ma_dinh_danh && (!excludeId || p?.id !== excludeId);
-          }
+          p => p?.tax_code === ma_so_thue && (!excludeId || p?.id !== excludeId)
         );
         return !found;
       } catch (_err) {
@@ -193,7 +176,7 @@ const useDoiTac = () => {
     updatePartner: updateExistingPartner,
     deletePartner: deleteExistingPartner,
     getPartnerById,
-    isPartnerCodeAvailable,
+    isTaxCodeAvailable,
     getInitialFormData,
     clearError,
   };
