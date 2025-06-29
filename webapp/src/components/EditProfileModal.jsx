@@ -27,11 +27,13 @@ const EditProfileModal = ({ isOpen, onClose }) => {
 
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
-      // Dispatch custom event when modal opens
-      window.dispatchEvent(new CustomEvent('profileModalOpen'));
+      // Dispatch custom events when modal opens
+      window.dispatchEvent(new CustomEvent('profileModalOpen', { detail: { modalId: 'editProfile' } }));
+      window.dispatchEvent(new CustomEvent('modalOpen', { detail: { modalId: 'editProfile' } }));
     } else {
-      // Dispatch custom event when modal closes
-      window.dispatchEvent(new CustomEvent('profileModalClose'));
+      // Dispatch custom events when modal closes
+      window.dispatchEvent(new CustomEvent('profileModalClose', { detail: { modalId: 'editProfile' } }));
+      window.dispatchEvent(new CustomEvent('modalClose', { detail: { modalId: 'editProfile' } }));
     }
 
     return () => {

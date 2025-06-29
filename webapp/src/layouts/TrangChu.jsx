@@ -14,7 +14,7 @@ const TrangChu = () => {
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [hasActiveProfileModal, setHasActiveProfileModal] = useState(false);
+  const [hasActiveModal, setHasActiveModal] = useState(false);
   const { logout, currentUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,7 +57,7 @@ const TrangChu = () => {
         <ThanhTieuDe 
           onSidebarToggle={handleSidebarToggle} 
           sidebarOpen={sidebarOpen}
-          onModalStateChange={setHasActiveProfileModal}
+          onModalStateChange={setHasActiveModal}
         />
       )}
 
@@ -138,8 +138,8 @@ const TrangChu = () => {
             <ThanhBen onNavItemClick={handleSidebarClose} version={packageJson.version} onVersionClick={() => setChangelogOpen(true)} />
           </div>
 
-          {/* Desktop Sidebar Toggle Button - Hidden when profile modals are open */}
-          {!hasActiveProfileModal && (
+          {/* Desktop Sidebar Toggle Button - Hidden when any modal is open */}
+          {!hasActiveModal && (
             <button
               onClick={handleDesktopSidebarToggle}
               className={`hidden md:flex fixed bottom-16 z-50 w-6 h-12 bg-gray-200 hover:bg-gray-300 border border-gray-300 rounded-r-md items-center justify-center transition-all duration-300 ease-in-out ${

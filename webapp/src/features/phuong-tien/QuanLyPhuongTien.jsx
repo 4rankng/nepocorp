@@ -29,7 +29,7 @@ const TABS = [
 // Individual tab content components
 const DauKeoContent = () => {
   const theme = useTheme();
-  const { hasActiveProfileModal } = useModalVisibility();
+  const { hasActiveModal } = useModalVisibility();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const dauKeoHook = useDauKeo();
   const [dialog, setDialog] = useState({ open: false, edit: false, data: null });

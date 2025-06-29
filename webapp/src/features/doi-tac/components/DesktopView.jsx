@@ -5,7 +5,7 @@ import PartnerListResponsive from '@features/doi-tac/components/PartnerListRespo
 import { Z_INDEX } from '@constants/zIndex';
 import { useModalVisibility } from '@hooks/useModalVisibility';
 const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
-  const { hasActiveProfileModal } = useModalVisibility();
+  const { hasActiveModal } = useModalVisibility();
   return (
     <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
@@ -19,7 +19,7 @@ const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
         />
       </Paper>
       {/* Floating Action Button */}
-      <Zoom in={!loading && !hasActiveProfileModal}>
+      <Zoom in={!loading && !hasActiveModal}>
         <Fab
           color="primary"
           aria-label="Thêm đối tác"

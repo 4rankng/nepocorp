@@ -36,7 +36,7 @@ const QuanLyNhanVien = () => {
     isDauKeoLoading,
     loadDauKeoList,
   } = useNhanVien();
-  const { hasActiveProfileModal } = useModalVisibility();
+  const { hasActiveModal } = useModalVisibility();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,8 +100,8 @@ const QuanLyNhanVien = () => {
         handleDeleteRequest={handleDeleteClick}
         canEditDelete={canEditDelete}
       />
-      {/* Floating Add FAB - Hidden when profile modals are open */}
-      <Zoom in={!isLoading && !hasActiveProfileModal}>
+      {/* Floating Add FAB - Hidden when any modal is open */}
+      <Zoom in={!isLoading && !hasActiveModal}>
         <Fab
           color="primary"
           aria-label="Thêm nhân viên"

@@ -16,7 +16,7 @@ import { useModalVisibility } from '@hooks/useModalVisibility';
 
 const QuanLyPhieuChi = () => {
   const { currentUser } = useAuth();
-  const { hasActiveProfileModal } = useModalVisibility();
+  const { hasActiveModal } = useModalVisibility();
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
   
   // Helper functions
@@ -273,7 +273,7 @@ const QuanLyPhieuChi = () => {
       )}
 
       {/* FAB Button - Hidden when modals are open */}
-      <Zoom in={!showExpenseForm && !showInvoiceModal && !hasActiveProfileModal}>
+      <Zoom in={!showExpenseForm && !showInvoiceModal && !hasActiveModal}>
         <Fab
           color="primary"
           aria-label="Thêm"
