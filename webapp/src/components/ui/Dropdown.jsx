@@ -189,14 +189,21 @@ const Dropdown = ({
           </span>
           <div className="dropdown__icons">
             {shouldShowClear && (
-              <button
-                type="button"
+              <span
                 className="dropdown__clear"
                 onClick={handleClear}
                 aria-label="Xóa lựa chọn"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleClear(e);
+                  }
+                }}
               >
                 ×
-              </button>
+              </span>
             )}
             <span className={`dropdown__arrow ${isOpen ? 'dropdown__arrow--open' : ''}`}>
               ▼
