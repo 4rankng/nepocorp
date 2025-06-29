@@ -21,9 +21,9 @@ type Job struct {
 	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
 	// Associations
-	Tractor  Tractor  `gorm:"foreignKey:TractorID" json:"tractor,omitempty"`
-	Trailer  *Trailer `gorm:"foreignKey:TrailerID" json:"trailer,omitempty"`
-	Driver   *User    `gorm:"foreignKey:UserIDDriver" json:"driver,omitempty"`
+	Tractor  Tractor   `gorm:"foreignKey:TractorID" json:"tractor,omitempty"`
+	Trailer  *Trailer  `gorm:"foreignKey:TrailerID" json:"trailer,omitempty"`
+	Driver   *User     `gorm:"foreignKey:UserIDDriver" json:"driver,omitempty"`
 	Customer *Customer `gorm:"foreignKey:CustomerID" json:"customer,omitempty"`
-	Route    *Route   `gorm:"foreignKey:RouteID" json:"route,omitempty"`
+	Route    *Route    `gorm:"foreignKey:RouteID" json:"route,omitempty"`
 }

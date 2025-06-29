@@ -62,11 +62,11 @@ func (h *FinancialLedgerHandler) GetAllTransactions(c *gin.Context) {
 	}
 
 	response := map[string]interface{}{
-		"data":         transactions,
-		"total":        total,
-		"page":         page,
-		"limit":        limit,
-		"total_pages":  (total + int64(limit) - 1) / int64(limit),
+		"data":        transactions,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": (total + int64(limit) - 1) / int64(limit),
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Transactions retrieved successfully", response)

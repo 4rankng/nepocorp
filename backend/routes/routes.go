@@ -17,6 +17,7 @@ func Setup(
 	cfg *config.Config,
 	healthHandler *handlers.HealthHandler,
 	authHandler *handlers.AuthHandler,
+	userHandler *handlers.UserHandler,
 	userRepo *repositories.UserRepository,
 	expenseCategoryHandler *handlers.ExpenseCategoryHandler,
 	containerHandler *handlers.ContainerHandler,
@@ -73,6 +74,13 @@ func Setup(
 		{
 			// User profile
 			protected.GET("/auth/profile", authHandler.GetProfile)
+
+			// Users
+			protected.GET("/users", userHandler.GetAllUsers)
+			protected.POST("/users", userHandler.CreateUser)
+			protected.GET("/users/:id", userHandler.GetUserByID)
+			protected.PUT("/users/:id", userHandler.UpdateUser)
+			protected.DELETE("/users/:id", userHandler.DeleteUser)
 
 			// Expense categories
 			protected.GET("/expense_category", expenseCategoryHandler.List)

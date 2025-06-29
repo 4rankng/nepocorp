@@ -22,22 +22,22 @@ SET @hash_salt = '{{HASH_SALT}}';      -- Replace with actual HASH_SALT from .en
 -- ================================================================
 
 -- Insert mock users with properly hashed passwords
-INSERT IGNORE INTO users (id, username, email, password, name, role, is_active, last_updated_by) VALUES
+INSERT IGNORE INTO users (id, username, email, password, name, role, last_updated_by) VALUES
 (1, 'admin', 'admin@nepocorp.com',
    HEX(SHA2(CONCAT('admin', @hash_salt, @hash_secret), 256)),
-   'Administrator', 'admin', TRUE, 'Administrator (@admin)'),
+   'Administrator', 'admin', 'Administrator (@admin)'),
 (2, 'manager1', 'manager1@nepocorp.com',
    HEX(SHA2(CONCAT('manager', @hash_salt, @hash_secret), 256)),
-   'Nguyễn Văn A', 'manager', TRUE, 'Administrator (@admin)'),
+   'Nguyễn Văn A', 'manager', 'Administrator (@admin)'),
 (3, 'driver1', 'driver1@nepocorp.com',
    HEX(SHA2(CONCAT('driver', @hash_salt, @hash_secret), 256)),
-   'Trần Văn B', 'driver', TRUE, 'Administrator (@admin)'),
+   'Trần Văn B', 'driver', 'Administrator (@admin)'),
 (4, 'driver2', 'driver2@nepocorp.com',
    HEX(SHA2(CONCAT('driver', @hash_salt, @hash_secret), 256)),
-   'Lê Thị C', 'driver', TRUE, 'Administrator (@admin)'),
+   'Lê Thị C', 'driver', 'Administrator (@admin)'),
 (5, 'mechanic1', 'mechanic1@nepocorp.com',
    HEX(SHA2(CONCAT('mechanic', @hash_salt, @hash_secret), 256)),
-   'Phạm Văn D', 'mechanic', TRUE, 'Administrator (@admin)');
+   'Phạm Văn D', 'mechanic', 'Administrator (@admin)');
 
 -- Insert mock settings
 INSERT IGNORE INTO settings (id, `key`, `value`, last_updated_by) VALUES

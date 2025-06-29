@@ -58,7 +58,6 @@ const validateExpenseForm = (formData, expenseCategoryId) => {
   const newErrors = {};
 
   // Validate main fields
-  if (!formData.license_plate) newErrors.license_plate = 'Vui lòng chọn biển số xe';
   if (!formData.vendor_name) newErrors.vendor_name = 'Vui lòng nhập tên nhà cung cấp';
 
   // Validate expense category if not fixed
@@ -72,10 +71,19 @@ const validateExpenseForm = (formData, expenseCategoryId) => {
   if (!formData.items || formData.items.length === 0) {
     newErrors.items = 'Vui lòng thêm ít nhất một hạng mục';
   } else {
+    let hasValidItem = false;
     formData.items.forEach((item, index) => {
+      // Validate license plate for each item
+      if (!item.license_plate) {
+        newErrors[`items.${index}.license_plate`] = 'Vui lòng chọn biển số xe';
+      }
+      
       if (!item.item_name) {
         newErrors[`items.${index}.item_name`] = 'Vui lòng nhập tên hạng mục';
+      } else {
+        hasValidItem = true;
       }
+      
       if (!item.price || item.price < 0) {
         newErrors[`items.${index}.price`] = 'Đơn giá không hợp lệ';
       }
@@ -83,6 +91,10 @@ const validateExpenseForm = (formData, expenseCategoryId) => {
         newErrors[`items.${index}.quantity`] = 'Số lượng phải lớn hơn 0';
       }
     });
+    
+    if (!hasValidItem) {
+      newErrors.items = 'Vui lòng điền thông tin cho ít nhất một hạng mục';
+    }
   }
 
   return newErrors;
@@ -166,17 +178,24 @@ export default function useExpenseForm({
 
       setIsLoading(true);
 
+      // Get first valid license plate from items for vehicle ID conversion
+      const firstValidLicensePlate = formData.items.find(item => item.license_plate)?.license_plate;
+      
+      if (!firstValidLicensePlate) {
+        throw new Error('Không tìm thấy biển số xe hợp lệ');
+      }
+      
       // Convert license plate to tractor_id/trailer_id
-      const vehicleIds = convertLicensePlateToIds(formData.license_plate, tractors, trailers);
+      const vehicleIds = convertLicensePlateToIds(firstValidLicensePlate, tractors, trailers);
 
       // If license plate not found, throw error (should not happen if dropdown and validation use same data)
       if (!vehicleIds.tractor_id && !vehicleIds.trailer_id) {
-        logger.error(`License plate ${formData.license_plate} not found in VehicleDataContext`, {
+        logger.error(`License plate ${firstValidLicensePlate} not found in VehicleDataContext`, {
           tractorCount: tractors.length,
           trailerCount: trailers.length,
-          license_plate: formData.license_plate
+          license_plate: firstValidLicensePlate
         });
-        throw new Error(`Không tìm thấy xe với biển số: ${formData.license_plate}`);
+        throw new Error(`Không tìm thấy xe với biển số: ${firstValidLicensePlate}`);
       }
 
       // Transform data to expense API format

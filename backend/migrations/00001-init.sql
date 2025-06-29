@@ -20,14 +20,11 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     name VARCHAR(255),
     role VARCHAR(50) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL,
     last_updated_by VARCHAR(255),
     UNIQUE INDEX idx_username (username),
-    UNIQUE INDEX idx_email (email),
-    INDEX idx_deleted_at (deleted_at)
+    UNIQUE INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create activity_logs table
@@ -373,8 +370,8 @@ CREATE TABLE IF NOT EXISTS financial_ledgers (
 -- ================================================================
 
 -- Insert default admin user
-INSERT IGNORE INTO users (username, email, password, name, role, is_active)
-VALUES ('admin', 'admin@nepocorp.com', '$2a$10$example_hash', 'Administrator', 'admin', TRUE);
+INSERT IGNORE INTO users (username, email, password, name, role)
+VALUES ('admin', 'admin@nepocorp.com', '$2a$10$example_hash', 'Administrator', 'admin');
 
 -- Insert default tax_rate setting
 INSERT IGNORE INTO settings (`key`, `value`, last_updated_by)

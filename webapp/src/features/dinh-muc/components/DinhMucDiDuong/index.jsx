@@ -17,7 +17,7 @@ import {
 import { useDinhMucDiDuongLogic } from './useDinhMucDiDuong';
 import DinhMucForm from './DinhMucForm';
 import DinhMucTable from './DinhMucTable';
-import DeleteDialog from '@/components/DeleteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const DinhMucDiDuong = () => {
   const theme = useTheme();
@@ -136,17 +136,19 @@ const DinhMucDiDuong = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <DeleteDialog
+      <ConfirmDialog
         open={isDeleting}
-        onClose={() => {
+        onCancel={() => {
           setIsDeleting(false);
           setItemToDelete(null);
         }}
         onConfirm={handleConfirmDelete}
         title="Xác nhận xóa"
-        content={`Bạn có chắc chắn muốn xóa tuyến đường "${itemToDelete?.ma_tuyen}" không?`}
+        message={`Bạn có chắc chắn muốn xóa tuyến đường "${itemToDelete?.ma_tuyen}" không?`}
         confirmText="Xóa"
         cancelText="Hủy"
+        type="delete"
+        isLoading={isDeleting}
       />
     </Box>
   );

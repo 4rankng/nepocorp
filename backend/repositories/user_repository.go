@@ -78,3 +78,9 @@ func (r *UserRepository) List(offset, limit int) ([]*models.User, error) {
 	err := r.db.Offset(offset).Limit(limit).Find(&users).Error
 	return users, err
 }
+
+func (r *UserRepository) GetAllUsers() ([]*models.User, error) {
+	var users []*models.User
+	err := r.db.Find(&users).Error
+	return users, err
+}

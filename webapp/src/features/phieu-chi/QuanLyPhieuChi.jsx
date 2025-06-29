@@ -139,11 +139,13 @@ const QuanLyPhieuChi = () => {
     initialFormData,
     onSuccess: (message) => {
       showSnackbar(message, 'success');
+      // Only close modal on actual success
       setShowExpenseForm(false);
       setEditingExpense(null);
     },
     onError: (error) => {
       showSnackbar(error.message, 'error');
+      // NEVER close modal on errors - user should be able to fix and retry
     },
     fetchData: pagination.onPageChange ? () => pagination.onPageChange(pagination.page) : null,
     isEdit: !!editingExpense,

@@ -95,6 +95,7 @@ func main() {
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(userRepo, cfg, logger)
+	userHandler := handlers.NewUserHandler(userRepo)
 	expenseCategoryHandler := handlers.NewExpenseCategoryHandler(expenseCategoryRepo)
 	containerHandler := handlers.NewContainerHandler(containerRepo)
 	tractorHandler := handlers.NewTractorHandler(tractorRepo)
@@ -126,7 +127,7 @@ func main() {
 	r.Use(middleware.ActivityLogger(activityLogger))
 
 	// Initialize routes
-	routes.Setup(r, cfg, healthHandler, authHandler, userRepo, expenseCategoryHandler,
+	routes.Setup(r, cfg, healthHandler, authHandler, userHandler, userRepo, expenseCategoryHandler,
 		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, routeHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, logger)
 
 	// Create HTTP server

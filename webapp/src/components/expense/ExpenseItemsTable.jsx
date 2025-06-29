@@ -13,7 +13,8 @@ const ExpenseItemsTable = ({
   onDeleteItem,
   onLicensePlateCellClick,
   total,
-  isInvoiceMode = false
+  isInvoiceMode = false,
+  errors = {}
 }) => {
   const displayItems = items || [];
   const hasItems = displayItems.length > 0;
@@ -69,6 +70,9 @@ const ExpenseItemsTable = ({
   return (
     <div className="text-sm">
       <h2 className="text-base font-semibold text-gray-700 mb-3">{isInvoiceMode ? 'Danh sách dịch vụ' : 'Danh sách hạng mục'}</h2>
+      {errors.items && (
+        <div className="text-red-500 text-sm mb-2">{errors.items}</div>
+      )}
       <div className="border border-gray-200 rounded overflow-hidden">
         <table className="w-full text-sm">
           <thead>
@@ -108,6 +112,7 @@ const ExpenseItemsTable = ({
                     onItemChange={onItemChange}
                     onDeleteItem={handleDeleteClick}
                     onLicensePlateCellClick={onLicensePlateCellClick}
+                    errors={errors}
                   />
                 );
               })
@@ -156,7 +161,8 @@ ExpenseItemsTable.propTypes = {
   onDeleteItem: PropTypes.func.isRequired,
   onLicensePlateCellClick: PropTypes.func.isRequired,
   total: PropTypes.number,
-  isInvoiceMode: PropTypes.bool
+  isInvoiceMode: PropTypes.bool,
+  errors: PropTypes.object
 };
 
 export default React.memo(ExpenseItemsTable);

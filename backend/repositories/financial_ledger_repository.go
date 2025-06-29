@@ -78,7 +78,7 @@ func (r *FinancialLedgerRepository) GetCustomerBalance(customerID uint) (float64
 	var result struct {
 		Balance float64
 	}
-	
+
 	err := r.DB.Raw("SELECT COALESCE(SUM(debit - credit), 0) as balance FROM financial_ledgers WHERE customer_id = ?", customerID).Scan(&result).Error
 	return result.Balance, err
 }
@@ -87,7 +87,7 @@ func (r *FinancialLedgerRepository) GetPartnerBalance(partnerID uint) (float64, 
 	var result struct {
 		Balance float64
 	}
-	
+
 	err := r.DB.Raw("SELECT COALESCE(SUM(debit - credit), 0) as balance FROM financial_ledgers WHERE partner_id = ?", partnerID).Scan(&result).Error
 	return result.Balance, err
 }

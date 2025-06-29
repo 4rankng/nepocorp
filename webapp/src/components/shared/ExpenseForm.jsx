@@ -48,6 +48,7 @@ const ExpenseForm = ({
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
   // Memoize calculated total to prevent unnecessary recalculations
   const calculatedTotal = useMemo(() => {
@@ -167,6 +168,7 @@ const ExpenseForm = ({
   const handleClose = useCallback(() => {
     setEditedData(null);
     setError(null);
+    setValidationErrors({});
     onClose();
   }, [onClose]);
 
@@ -175,9 +177,19 @@ const ExpenseForm = ({
       ...prev,
       [field]: value
     }));
+    
+    // Clear validation error for this field when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+    
     // Don't call onChange immediately to prevent re-renders while typing
     // Parent will get the updated data when saving
-  }, []);
+  }, [validationErrors]);
 
   const handleItemChange = useCallback((index, field, value) => {
     setEditedData(prev => ({
@@ -186,7 +198,26 @@ const ExpenseForm = ({
         i === index ? { ...item, [field]: value } : item
       )
     }));
-  }, []);
+    
+    // Clear validation error for this item field when user starts typing
+    const errorKey = `items.${index}.${field}`;
+    if (validationErrors[errorKey]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[errorKey];
+        return newErrors;
+      });
+    }
+    
+    // Also clear general items error if user is actively editing
+    if (validationErrors.items && (field === 'item_name' || field === 'price' || field === 'quantity' || field === 'license_plate')) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.items;
+        return newErrors;
+      });
+    }
+  }, [validationErrors]);
 
   const handleAddItem = useCallback(() => {
     setEditedData(prev => ({
@@ -236,6 +267,21 @@ const ExpenseForm = ({
 
         return { ...prev, items: prefilledItems };
       });
+      
+      // Clear validation errors for license plates when user selects
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        // Clear license plate errors for all items since we prefill
+        Object.keys(newErrors).forEach(key => {
+          if (key.includes('.license_plate')) {
+            delete newErrors[key];
+          }
+        });
+        // Also clear general items error
+        delete newErrors.items;
+        return newErrors;
+      });
+      
       setCurrentLicensePlateIndex(null);
     }
     setShowLicensePlateModal(false);
@@ -247,9 +293,67 @@ const ExpenseForm = ({
     handleClose();
   }, [handleClose]);
 
+  // Validation function matching useExpenseForm structure
+  const validateForm = useCallback(() => {
+    const newErrors = {};
+    
+    // Validate main fields
+    if (!editedData?.vendor_name?.trim()) {
+      newErrors.vendor_name = 'Vui lòng nhập tên nhà cung cấp';
+    }
+    
+    if (!expenseCategoryId && !editedData?.expense_category_id) {
+      newErrors.expense_category_id = 'Vui lòng chọn loại chi phí';
+    }
+    
+    // Validate items
+    if (!editedData?.items || editedData.items.length === 0) {
+      newErrors.items = 'Vui lòng thêm ít nhất một hạng mục';
+    } else {
+      let hasValidItem = false;
+      editedData.items.forEach((item, index) => {
+        // Validate license plate for each item (critical for backend)
+        if (!item.license_plate) {
+          newErrors[`items.${index}.license_plate`] = 'Vui lòng chọn biển số xe';
+        }
+        
+        if (!item.item_name?.trim()) {
+          newErrors[`items.${index}.item_name`] = 'Vui lòng nhập tên hạng mục';
+        } else {
+          hasValidItem = true;
+        }
+        
+        if (!item.price || parseFloat(item.price) <= 0) {
+          newErrors[`items.${index}.price`] = 'Đơn giá không hợp lệ';
+        }
+        if (!item.quantity || parseInt(item.quantity) <= 0) {
+          newErrors[`items.${index}.quantity`] = 'Số lượng phải lớn hơn 0';
+        }
+      });
+      
+      if (!hasValidItem) {
+        newErrors.items = 'Vui lòng điền thông tin cho ít nhất một hạng mục';
+      }
+    }
+    
+    setValidationErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [editedData, expenseCategoryId]);
+
   const handleSaveEdit = useCallback(async () => {
-    setIsSaving(true);
+    // Clear previous errors
     setError(null);
+    setValidationErrors({});
+    
+    // Validate form before attempting to save
+    const isValid = validateForm();
+    if (!isValid) {
+      // Scroll to first error or show general validation message
+      setError('Vui lòng điền đầy đủ thông tin bắt buộc');
+      return; // Don't proceed with save or close modal
+    }
+    
+    setIsSaving(true);
     try {
       const updatedItems = prepareExpenseItemsForUpdate(editedData.items);
       const totalAmount = calculateExpenseTotal(updatedItems);
@@ -268,14 +372,34 @@ const ExpenseForm = ({
       // Update the parent with final data before saving
       onChange({ target: { name: 'formData', value: saveData } });
       await onSave();
+      
+      // Only close modal if save was successful
       handleClose();
     } catch (err) {
-      setError('Không thể lưu phiếu chi');
+      // Handle different types of errors
+      let errorMessage = 'Không thể lưu phiếu chi';
+      
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.response?.data?.errors?.message) {
+        errorMessage = err.response.data.errors.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      // Handle validation errors from backend
+      if (err?.response?.data?.errors && typeof err.response.data.errors === 'object') {
+        setValidationErrors(err.response.data.errors);
+      }
+      
+      setError(errorMessage);
       console.error('Error saving expense:', err);
+      
+      // Don't close modal on error - let user see the error and try again
     } finally {
       setIsSaving(false);
     }
-  }, [editedData, onChange, onSave, handleClose]);
+  }, [editedData, onChange, onSave, handleClose, validateForm]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -314,6 +438,7 @@ const ExpenseForm = ({
                 onFieldChange={handleFieldChange}
                 expenseCategories={expenseCategories}
                 isLoadingCategories={isLoadingCategories}
+                errors={validationErrors}
               />
 
               <ExpenseOptionalSections
@@ -333,6 +458,7 @@ const ExpenseForm = ({
                 onDeleteItem={handleDeleteItem}
                 onLicensePlateCellClick={handleLicensePlateCellClick}
                 total={calculatedTotal}
+                errors={validationErrors}
               />
             </div>
           </div>

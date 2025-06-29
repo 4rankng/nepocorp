@@ -15,7 +15,8 @@ const ExpenseBasicInfo = ({
   isInModal = false,
   isInvoiceMode = false,
   customers = [],
-  isLoadingCustomers = false
+  isLoadingCustomers = false,
+  errors = {}
 }) => {
   return (
     <div className="mb-4">
@@ -24,29 +25,48 @@ const ExpenseBasicInfo = ({
         <div className="col-span-10">
           <label className="block text-xs font-medium text-gray-600 mb-1">
             {isInvoiceMode ? 'Khách hàng' : 'Nhà cung cấp'}
+            {isEditing && (isInvoiceMode ? !editedData.customer_id : !editedData.vendor_name) && (
+              <span className="text-red-500 ml-1">*</span>
+            )}
           </label>
           {isEditing ? (
             isInvoiceMode ? (
-              <Dropdown
-                value={editedData.customer_id}
-                onChange={(value) => onFieldChange('customer_id', value)}
-                options={customers.map(customer => ({
-                  value: customer.id,
-                  label: customer.name
-                }))}
-                placeholder="Chọn khách hàng"
-                isLoading={isLoadingCustomers}
-                className="text-sm"
-                usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
-              />
+              <>
+                <Dropdown
+                  value={editedData.customer_id}
+                  onChange={(value) => onFieldChange('customer_id', value)}
+                  options={customers.map(customer => ({
+                    value: customer.id,
+                    label: customer.name
+                  }))}
+                  placeholder="Chọn khách hàng"
+                  isLoading={isLoadingCustomers}
+                  className={`text-sm ${
+                    errors.customer_id ? 'border-red-500' : ''
+                  }`}
+                  usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
+                />
+                {errors.customer_id && (
+                  <div className="text-red-500 text-xs mt-1">{errors.customer_id}</div>
+                )}
+              </>
             ) : (
-              <input
-                type="text"
-                value={editedData.vendor_name || ''}
-                onChange={(e) => onFieldChange('vendor_name', e.target.value)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Nhập tên nhà cung cấp"
-              />
+              <>
+                <input
+                  type="text"
+                  value={editedData.vendor_name || ''}
+                  onChange={(e) => onFieldChange('vendor_name', e.target.value)}
+                  className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 ${
+                    errors.vendor_name 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                  }`}
+                  placeholder="Nhập tên nhà cung cấp"
+                />
+                {errors.vendor_name && (
+                  <div className="text-red-500 text-xs mt-1">{errors.vendor_name}</div>
+                )}
+              </>
             )
           ) : (
             <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
@@ -58,20 +78,32 @@ const ExpenseBasicInfo = ({
         <div className="col-span-2">
           <label className="block text-xs font-medium text-gray-600 mb-1">
             {isInvoiceMode ? 'Loại hóa đơn' : 'Loại chi phí'}
+            {isEditing && (isInvoiceMode ? !editedData.invoice_category_id : !editedData.expense_category_id) && (
+              <span className="text-red-500 ml-1">*</span>
+            )}
           </label>
           {isEditing ? (
-            <Dropdown
-              value={isInvoiceMode ? editedData.invoice_category_id : editedData.expense_category_id}
-              onChange={(value) => onFieldChange(isInvoiceMode ? 'invoice_category_id' : 'expense_category_id', value)}
-              options={expenseCategories.map(cat => ({
-                value: cat.id,
-                label: isInvoiceMode ? getInvoiceCategoryLabel(cat.name) : getExpenseCategoryLabel(cat.name)
-              }))}
-              placeholder={isInvoiceMode ? "Chọn loại hóa đơn" : "Chọn loại chi phí"}
-              isLoading={isLoadingCategories}
-              className="text-sm"
-              usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
-            />
+            <>
+              <Dropdown
+                value={isInvoiceMode ? editedData.invoice_category_id : editedData.expense_category_id}
+                onChange={(value) => onFieldChange(isInvoiceMode ? 'invoice_category_id' : 'expense_category_id', value)}
+                options={expenseCategories.map(cat => ({
+                  value: cat.id,
+                  label: isInvoiceMode ? getInvoiceCategoryLabel(cat.name) : getExpenseCategoryLabel(cat.name)
+                }))}
+                placeholder={isInvoiceMode ? "Chọn loại hóa đơn" : "Chọn loại chi phí"}
+                isLoading={isLoadingCategories}
+                className={`text-sm ${
+                  (isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) ? 'border-red-500' : ''
+                }`}
+                usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
+              />
+              {(isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) && (
+                <div className="text-red-500 text-xs mt-1">
+                  {isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id}
+                </div>
+              )}
+            </>
           ) : (
             <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
               {isInvoiceMode 
@@ -96,7 +128,8 @@ ExpenseBasicInfo.propTypes = {
   isInModal: PropTypes.bool,
   isInvoiceMode: PropTypes.bool,
   customers: PropTypes.array,
-  isLoadingCustomers: PropTypes.bool
+  isLoadingCustomers: PropTypes.bool,
+  errors: PropTypes.object
 };
 
 export default React.memo(ExpenseBasicInfo);

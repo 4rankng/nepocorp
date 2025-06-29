@@ -11,16 +11,6 @@ import (
 	activitylogger "github.com/nepocorp/backend/services/activity-logger"
 )
 
-type bodyLogWriter struct {
-	gin.ResponseWriter
-	body *bytes.Buffer
-}
-
-func (w bodyLogWriter) Write(b []byte) (int, error) {
-	w.body.Write(b)
-	return w.ResponseWriter.Write(b)
-}
-
 func ActivityLogger(logger *activitylogger.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Skip logging for health check
@@ -34,7 +24,10 @@ func ActivityLogger(logger *activitylogger.Service) gin.HandlerFunc {
 		if c.Request.Method != "GET" && c.Request.Method != "DELETE" {
 			bodyBytes, _ := io.ReadAll(c.Request.Body)
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-			json.Unmarshal(bodyBytes, &requestData)
+			if err := json.Unmarshal(bodyBytes, &requestData); err != nil {
+				// Log error but continue processing
+				requestData = nil
+			}
 		}
 
 		// Get user ID from context (set by JWT middleware)
