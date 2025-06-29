@@ -5,6 +5,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Dropdown from '@components/ui/Dropdown';
 import StatusBadge from '@components/ui/StatusBadge';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
+import { INVOICE_STATUS, INVOICE_STATUS_LABELS } from '@constants/invoice';
 import { getPaymentStatusColor } from '@utils/expenseHelpers';
 
 const ExpenseHeader = ({
@@ -13,31 +14,39 @@ const ExpenseHeader = ({
   isEditing,
   editedData,
   onClose,
-  onFieldChange
+  onFieldChange,
+  title,
+  statusOptions = null // Allow custom status options for different entity types
 }) => {
   return (
     <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-gray-900">Chi tiết phiếu chi</h1>
+        <h1 className="text-lg font-semibold text-gray-900">
+          {title || 'Chi tiết phiếu chi'}
+        </h1>
         {expenseData && !loading && (
           <>
             {isEditing ? (
               <Dropdown
                 value={editedData.payment_status}
                 onChange={(value) => onFieldChange('payment_status', value)}
-                options={Object.entries(PAYMENT_STATUS).map(([key, value]) => ({
+                options={statusOptions || Object.entries(PAYMENT_STATUS).map(([key, value]) => ({
                   value: value,
                   label: PAYMENT_STATUS_LABELS[value]
                 }))}
                 placeholder="Chọn trạng thái"
                 className="text-xs"
                 style={{ minWidth: '120px' }}
+                usePortal={false}
               />
             ) : (
               <>
                 <StatusBadge
                   status={expenseData.payment_status}
-                  label={PAYMENT_STATUS_LABELS[expenseData.payment_status]}
+                  label={statusOptions ? 
+                    statusOptions.find(opt => opt.value === expenseData.payment_status)?.label :
+                    PAYMENT_STATUS_LABELS[expenseData.payment_status]
+                  }
                   color={getPaymentStatusColor(expenseData.payment_status)}
                 />
                 {expenseData.payment_status === 'PAID' && (
@@ -82,7 +91,9 @@ ExpenseHeader.propTypes = {
   isEditing: PropTypes.bool.isRequired,
   editedData: PropTypes.object,
   onClose: PropTypes.func.isRequired,
-  onFieldChange: PropTypes.func.isRequired
+  onFieldChange: PropTypes.func.isRequired,
+  title: PropTypes.string,
+  statusOptions: PropTypes.array
 };
 
 export default ExpenseHeader;

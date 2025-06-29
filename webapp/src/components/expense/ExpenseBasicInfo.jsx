@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Dropdown from '@components/ui/Dropdown';
+import { shouldUsePortal, Z_INDEX } from '@constants/zIndex';
 
 const ExpenseBasicInfo = ({
   expenseData,
@@ -8,7 +9,8 @@ const ExpenseBasicInfo = ({
   editedData,
   onFieldChange,
   expenseCategories,
-  isLoadingCategories
+  isLoadingCategories,
+  isInModal = false
 }) => {
   return (
     <div className="mb-4">
@@ -48,6 +50,7 @@ const ExpenseBasicInfo = ({
               placeholder="Chọn loại chi phí"
               isLoading={isLoadingCategories}
               className="text-sm"
+              usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
             />
           ) : (
             <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
@@ -66,7 +69,8 @@ ExpenseBasicInfo.propTypes = {
   editedData: PropTypes.object,
   onFieldChange: PropTypes.func.isRequired,
   expenseCategories: PropTypes.array.isRequired,
-  isLoadingCategories: PropTypes.bool.isRequired
+  isLoadingCategories: PropTypes.bool.isRequired,
+  isInModal: PropTypes.bool
 };
 
 export default ExpenseBasicInfo;

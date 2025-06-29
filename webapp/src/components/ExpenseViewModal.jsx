@@ -11,6 +11,7 @@ import ExpenseOptionalSections from './expense/ExpenseOptionalSections';
 import ExpenseItemsTable from './expense/ExpenseItemsTable';
 import ExpenseActionButtons from './expense/ExpenseActionButtons';
 import { prepareExpenseItemsForUpdate, calculateExpenseTotal } from '@utils/expenseHelpers';
+import { Z_INDEX } from '@constants/zIndex';
 
 const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
@@ -279,8 +280,8 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
+      <div className="bg-white rounded-lg w-full max-w-[98vw] h-[98vh]" style={{zIndex: Z_INDEX.MODAL, overflow: 'visible'}}>
         <ExpenseHeader
           expenseData={expenseData}
           loading={loading}
@@ -291,7 +292,8 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         />
 
         {/* Modal Body */}
-        <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="relative" style={{overflow: 'visible'}}>
+          <div className="p-2 overflow-y-auto h-[85vh]" style={{borderRadius: '0 0 0.5rem 0.5rem'}}>
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -313,6 +315,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                 onFieldChange={handleFieldChange}
                 expenseCategories={expenseCategories}
                 isLoadingCategories={isLoadingCategories}
+                isInModal={true}
               />
 
               <ExpenseOptionalSections
@@ -335,6 +338,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
               />
             </>
           )}
+          </div>
         </div>
 
         <ExpenseActionButtons

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import CloseIcon from '@mui/icons-material/Close';
 import Dropdown from '@components/ui/Dropdown';
+import { Z_INDEX } from '@constants/zIndex';
 
 const LicensePlateSelectionModal = ({ open, onClose, onSelect, licensePlates, isLoading }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,8 +37,8 @@ const LicensePlateSelectionModal = ({ open, onClose, onSelect, licensePlates, is
   }, [open, onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh]">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: Z_INDEX.SYSTEM_MODAL}}>
+      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh]" style={{zIndex: Z_INDEX.SYSTEM_MODAL + 1}}>
         <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
           <h1 className="text-lg font-semibold text-gray-900">Chọn Biển Số Xe</h1>
           <button

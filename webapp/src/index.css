@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Z-Index Management System */
+  --z-base: 1;
+  --z-elevated: 100;
+  --z-floating: 1000;
+  --z-dropdown: 1100;
+  --z-popover: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-drawer: 1500;
+  --z-snackbar: 1600;
+  --z-toast: 1700;
+  --z-system-modal: 1800;
+  --z-loading-overlay: 1900;
+  --z-max: 2147483647;
+}
+
 html,
 body {
   overflow-x: hidden !important;

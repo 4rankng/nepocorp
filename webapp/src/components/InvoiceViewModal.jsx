@@ -1,55 +1,378 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
+import PropTypes from 'prop-types';
 import { invoiceApi } from '@services/api/invoiceApi';
-import { INVOICE_STATUS_LABELS } from '@constants/invoice';
-import { formatCurrency, formatDate } from '@utils/format';
-import CloseIcon from '@mui/icons-material/Close';
+import { invoiceCategoryApi } from '@services/api/invoiceCategoryApi';
+import { INVOICE_STATUS, INVOICE_STATUS_LABELS } from '@constants/invoice';
+import { VehicleDataContext } from '@/contexts/VehicleDataContext';
+import LicensePlateSelectionModal from './LicensePlateSelectionModal';
+import ExpenseHeader from './expense/ExpenseHeader';
+import ExpenseBasicInfo from './expense/ExpenseBasicInfo';
+import ExpenseOptionalSections from './expense/ExpenseOptionalSections';
+import ExpenseItemsTable from './expense/ExpenseItemsTable';
+import ExpenseActionButtons from './expense/ExpenseActionButtons';
+import StatusChangePrompts from '@components/shared/modals/StatusChangePrompts';
+import { Z_INDEX } from '@constants/zIndex';
 
 const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
-  const [invoice, setInvoice] = useState(null);
+  const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
+  const [invoiceData, setInvoiceData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState(null);
+  const [invoiceCategories, setInvoiceCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingPlates, setIsLoadingPlates] = useState(false);
+  const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
+  const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
+
+  // Status change prompts
+  const [showPaymentProofPrompt, setShowPaymentProofPrompt] = useState(false);
+  const [showCancelReasonPrompt, setShowCancelReasonPrompt] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
+  const [tempPaymentProof, setTempPaymentProof] = useState('');
+  const [tempCancelReason, setTempCancelReason] = useState('');
+
+  // Get license plates for dropdown
+  const getAllLicensePlates = useCallback(() => {
+    const tractorPlates = tractors.map(t => ({
+      value: t.license_plate,
+      label: t.license_plate,
+      type: 'tractor'
+    }));
+
+    const trailerPlates = trailers.map(t => ({
+      value: t.license_plate,
+      label: t.license_plate,
+      type: 'trailer'
+    }));
+
+    return [...tractorPlates, ...trailerPlates];
+  }, [tractors, trailers]);
+
+  const fetchInvoiceData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await invoiceApi.getById(invoiceId);
+      const invoiceData = response.data?.data || response.data || response;
+
+      // Ensure items is always an array
+      if (invoiceData && !Array.isArray(invoiceData.items)) {
+        invoiceData.items = invoiceData.items ? [invoiceData.items] : [];
+      }
+
+      setInvoiceData(invoiceData);
+    } catch (err) {
+      setError('Không thể tải thông tin hóa đơn');
+      console.error('Error fetching invoice data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [invoiceId]);
 
   useEffect(() => {
-    const fetchInvoice = async () => {
-      if (!open || !invoiceId) return;
+    if (open && invoiceId) {
+      fetchInvoiceData();
+    }
+  }, [open, invoiceId, fetchInvoiceData]);
 
-      setLoading(true);
-      setError('');
-      
-      try {
-        const response = await invoiceApi.getById(invoiceId);
-        setInvoice(response.data?.data || response.data || response);
-      } catch (err) {
-        console.error('Error fetching invoice:', err);
-        setError('Không thể tải thông tin hóa đơn');
-      } finally {
-        setLoading(false);
+  // Fetch invoice categories and vehicles when entering edit mode
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (isEditing && invoiceCategories.length === 0) {
+        setIsLoadingCategories(true);
+        try {
+          const response = await invoiceCategoryApi.getAllWithoutPagination();
+          const categories = response.data?.data || response.data || [];
+          setInvoiceCategories(categories);
+        } catch (err) {
+          console.error('Error fetching invoice categories:', err);
+        } finally {
+          setIsLoadingCategories(false);
+        }
       }
     };
 
-    fetchInvoice();
-  }, [open, invoiceId]);
+    const fetchVehicles = async () => {
+      if (isEditing && (tractors.length === 0 || trailers.length === 0)) {
+        setIsLoadingPlates(true);
+        try {
+          await Promise.all([
+            fetchTractors(),
+            fetchTrailers()
+          ]);
+        } catch (err) {
+          console.error('Error fetching vehicles:', err);
+        } finally {
+          setIsLoadingPlates(false);
+        }
+      }
+    };
+
+    fetchCategories();
+    fetchVehicles();
+  }, [isEditing, invoiceCategories.length, tractors.length, trailers.length, fetchTractors, fetchTrailers]);
+
+  const handleClose = useCallback(() => {
+    setInvoiceData(null);
+    setError(null);
+    setIsEditing(false);
+    setEditedData(null);
+    setShowPaymentProofPrompt(false);
+    setShowCancelReasonPrompt(false);
+    setPendingStatus(null);
+    setTempPaymentProof('');
+    setTempCancelReason('');
+    onClose();
+  }, [onClose]);
+
+  const handleEditClick = useCallback(() => {
+    setIsEditing(true);
+    setEditedData({
+      ...invoiceData,
+      items: invoiceData.items.map(item => ({ ...item }))
+    });
+  }, [invoiceData]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setEditedData(null);
+    setShowPaymentProofPrompt(false);
+    setShowCancelReasonPrompt(false);
+    setPendingStatus(null);
+    setTempPaymentProof('');
+    setTempCancelReason('');
+  }, []);
+
+  // Handle ESC key to close modal or cancel editing
+  useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape' && open && !showLicensePlateModal) {
+        if (isEditing) {
+          handleCancelEdit();
+        } else {
+          handleClose();
+        }
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [open, isEditing, handleCancelEdit, handleClose, showLicensePlateModal]);
+
+  const handleFieldChange = useCallback((field, value) => {
+    // Handle status changes that require prompts
+    if (field === 'payment_status') {
+      const oldStatus = editedData?.payment_status;
+      
+      if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
+        setPendingStatus(value);
+        setTempPaymentProof(editedData?.payment_proof || '');
+        setShowPaymentProofPrompt(true);
+        return;
+      }
+      
+      if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
+        setPendingStatus(value);
+        setTempCancelReason(editedData?.cancel_reason || '');
+        setShowCancelReasonPrompt(true);
+        return;
+      }
+    }
+
+    setEditedData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, [editedData]);
+
+  // Handle payment proof confirmation
+  const handlePaymentProofConfirm = useCallback(() => {
+    if (!tempPaymentProof.trim()) {
+      alert('Vui lòng nhập URL chứng từ thanh toán');
+      return;
+    }
+
+    setEditedData(prev => ({
+      ...prev,
+      payment_status: pendingStatus,
+      payment_proof: tempPaymentProof,
+      cancel_reason: null // Clear cancel reason when marking as paid
+    }));
+    
+    setShowPaymentProofPrompt(false);
+    setPendingStatus(null);
+    setTempPaymentProof('');
+  }, [tempPaymentProof, pendingStatus]);
+
+  // Handle cancel reason confirmation
+  const handleCancelReasonConfirm = useCallback(() => {
+    if (!tempCancelReason.trim()) {
+      alert('Vui lòng nhập lý do hủy');
+      return;
+    }
+
+    setEditedData(prev => ({
+      ...prev,
+      payment_status: pendingStatus,
+      cancel_reason: tempCancelReason,
+      payment_proof: null // Clear payment proof when cancelling
+    }));
+    
+    setShowCancelReasonPrompt(false);
+    setPendingStatus(null);
+    setTempCancelReason('');
+  }, [tempCancelReason, pendingStatus]);
+
+  // Handle prompt cancellation
+  const handlePromptCancel = useCallback(() => {
+    setShowPaymentProofPrompt(false);
+    setShowCancelReasonPrompt(false);
+    setPendingStatus(null);
+    setTempPaymentProof('');
+    setTempCancelReason('');
+  }, []);
+
+  const handleSaveEdit = useCallback(async () => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      // Calculate totals for items
+      const updatedItems = editedData.items?.map(item => {
+        const price = parseFloat(item.price) || 0;
+        const quantity = parseFloat(item.quantity) || 0;
+        const subtotal = price * quantity;
+        const taxAmount = subtotal * (parseFloat(item.tax_rate) || 0) / 100;
+        const total = subtotal + taxAmount;
+        
+        return {
+          ...item,
+          price,
+          quantity,
+          tax_rate: parseFloat(item.tax_rate) || 0,
+          subtotal,
+          total
+        };
+      }) || [];
+
+      const totalAmount = updatedItems.reduce((sum, item) => sum + item.total, 0);
+
+      const updateData = {
+        customer_id: editedData.customer_id,
+        invoice_category_id: editedData.invoice_category_id,
+        payment_status: editedData.payment_status,
+        payment_proof: editedData.payment_proof || null,
+        cancel_reason: editedData.cancel_reason || null,
+        remark: editedData.remark,
+        items: updatedItems,
+        total: totalAmount
+      };
+
+      await invoiceApi.update(invoiceId, updateData);
+
+      // Refresh the invoice data
+      await fetchInvoiceData();
+      setIsEditing(false);
+      setEditedData(null);
+    } catch (err) {
+      setError('Không thể cập nhật hóa đơn');
+      console.error('Error updating invoice:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [editedData, invoiceId, fetchInvoiceData]);
+
+  const handleItemChange = useCallback((index, field, value) => {
+    setEditedData(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  }, []);
+
+  const handleAddItem = useCallback(() => {
+    setEditedData(prev => ({
+      ...prev,
+      items: [...prev.items, {
+        license_plate: '',
+        item_name: '',
+        service_date: null,
+        notes: '',
+        price: 0,
+        quantity: 1,
+        tax_rate: 0,
+        total: 0
+      }]
+    }));
+  }, []);
+
+  const handleDeleteItem = useCallback((index) => {
+    setEditedData(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }));
+  }, []);
+
+  const handleLicensePlateCellClick = useCallback((index) => {
+    setCurrentLicensePlateIndex(index);
+    setShowLicensePlateModal(true);
+  }, []);
+
+  const handleLicensePlateSelect = useCallback((selectedPlate) => {
+    if (currentLicensePlateIndex !== null) {
+      setEditedData(prev => {
+        const updatedItems = prev.items.map((item, i) => {
+          if (i === currentLicensePlateIndex) {
+            return { ...item, license_plate: selectedPlate };
+          }
+          return item;
+        });
+
+        // Prefill other empty license plate cells
+        const prefilledItems = updatedItems.map(item => {
+          if (!item.license_plate) {
+            return { ...item, license_plate: selectedPlate };
+          }
+          return item;
+        });
+
+        return { ...prev, items: prefilledItems };
+      });
+      setCurrentLicensePlateIndex(null);
+    }
+    setShowLicensePlateModal(false);
+  }, [currentLicensePlateIndex]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Chi tiết hóa đơn #{invoice?.id}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <CloseIcon />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
+      <div className="bg-white rounded-lg w-full max-w-[98vw] h-[98vh]" style={{zIndex: Z_INDEX.MODAL, overflow: 'visible'}}>
+        <ExpenseHeader
+          expenseData={invoiceData}
+          loading={loading}
+          isEditing={isEditing}
+          editedData={editedData}
+          onClose={handleClose}
+          onFieldChange={handleFieldChange}
+          title={`Chi tiết hóa đơn #${invoiceData?.id || ''}`}
+          statusOptions={Object.entries(INVOICE_STATUS).map(([key, value]) => ({
+            value: value,
+            label: INVOICE_STATUS_LABELS[value]
+          }))}
+        />
 
         {/* Modal Body */}
-        <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="relative" style={{overflow: 'visible'}}>
+          <div className="p-2 overflow-y-auto h-[85vh]" style={{borderRadius: '0 0 0.5rem 0.5rem'}}>
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -62,145 +385,83 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
             </div>
           )}
 
-          {invoice && !loading && (
-            <div className="space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin khách hàng</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm text-gray-500">Tên khách hàng:</span>
-                      <p className="font-medium">{invoice.customer?.name || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Mã số thuế:</span>
-                      <p className="font-medium">{invoice.customer?.tax_code || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Địa chỉ:</span>
-                      <p className="font-medium">{invoice.customer?.address || '-'}</p>
-                    </div>
-                  </div>
-                </div>
+          {/* Status Change Prompts */}
+          <StatusChangePrompts
+            showPaymentProofPrompt={showPaymentProofPrompt}
+            showCancelReasonPrompt={showCancelReasonPrompt}
+            tempPaymentProof={tempPaymentProof}
+            tempCancelReason={tempCancelReason}
+            onPaymentProofChange={setTempPaymentProof}
+            onCancelReasonChange={setTempCancelReason}
+            onPaymentProofConfirm={handlePaymentProofConfirm}
+            onCancelReasonConfirm={handleCancelReasonConfirm}
+            onCancel={handlePromptCancel}
+          />
 
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin hóa đơn</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm text-gray-500">Loại hóa đơn:</span>
-                      <p className="font-medium">{invoice.invoice_category?.name || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Trạng thái:</span>
-                      <p className="font-medium">{INVOICE_STATUS_LABELS[invoice.payment_status] || invoice.payment_status}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Ngày tạo:</span>
-                      <p className="font-medium">{formatDate(invoice.created_at)}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Người tạo:</span>
-                      <p className="font-medium">{invoice.created_by_user?.name || '-'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {invoiceData && !loading && (
+            <>
+              <ExpenseBasicInfo
+                expenseData={invoiceData}
+                isEditing={isEditing}
+                editedData={editedData}
+                onFieldChange={handleFieldChange}
+                expenseCategories={invoiceCategories}
+                isLoadingCategories={isLoadingCategories}
+                isInModal={true}
+              />
 
-              {/* Payment Info */}
-              {(invoice.payment_proof || invoice.cancel_reason) && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin thanh toán</h3>
-                  <div className="space-y-2">
-                    {invoice.payment_proof && (
-                      <div>
-                        <span className="text-sm text-gray-500">Chứng từ thanh toán:</span>
-                        <p className="font-medium">
-                          <a href={invoice.payment_proof} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            {invoice.payment_proof}
-                          </a>
-                        </p>
-                      </div>
-                    )}
-                    {invoice.cancel_reason && (
-                      <div>
-                        <span className="text-sm text-gray-500">Lý do hủy:</span>
-                        <p className="font-medium text-red-600">{invoice.cancel_reason}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <ExpenseOptionalSections
+                expenseData={invoiceData}
+                isEditing={isEditing}
+                editedData={editedData}
+                onFieldChange={handleFieldChange}
+              />
 
               {/* Divider */}
               <div className="border-t border-gray-200 my-4"></div>
 
-              {/* Items */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Danh sách dịch vụ</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-gray-300">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="border p-3 text-left">Biển số xe</th>
-                        <th className="border p-3 text-left">Tên dịch vụ</th>
-                        <th className="border p-3 text-right">Đơn giá</th>
-                        <th className="border p-3 text-right">Số lượng</th>
-                        <th className="border p-3 text-right">Thành tiền</th>
-                        <th className="border p-3 text-left">Ngày thực hiện</th>
-                        <th className="border p-3 text-left">Ghi chú</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoice.items?.map((item, index) => (
-                        <tr key={index}>
-                          <td className="border p-3">{item.license_plate}</td>
-                          <td className="border p-3">{item.item_name}</td>
-                          <td className="border p-3 text-right">{formatCurrency(item.price)}</td>
-                          <td className="border p-3 text-right">{item.quantity}</td>
-                          <td className="border p-3 text-right">{formatCurrency(item.total)}</td>
-                          <td className="border p-3">{item.service_date ? formatDate(item.service_date) : '-'}</td>
-                          <td className="border p-3">{item.notes || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-gray-50 font-bold">
-                        <td colSpan="4" className="border p-3 text-right">Tổng cộng:</td>
-                        <td className="border p-3 text-right">{formatCurrency(invoice.total)}</td>
-                        <td colSpan="2" className="border p-3"></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="border-t border-gray-200 my-4"></div>
-
-              {/* Remarks */}
-              {invoice.remark && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Ghi chú</h3>
-                  <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{invoice.remark}</p>
-                </div>
-              )}
+              <ExpenseItemsTable
+                items={isEditing ? editedData.items : invoiceData.items}
+                isEditing={isEditing}
+                onItemChange={handleItemChange}
+                onDeleteItem={handleDeleteItem}
+                onLicensePlateCellClick={handleLicensePlateCellClick}
+                total={invoiceData.total}
+              />
             </>
           )}
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end p-6 border-t bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-          >
-            Đóng
-          </button>
-        </div>
+        <ExpenseActionButtons
+          isEditing={isEditing}
+          isSaving={isSaving}
+          expenseData={invoiceData}
+          onAddItem={handleAddItem}
+          onCancelEdit={handleCancelEdit}
+          onSaveEdit={handleSaveEdit}
+          onEditClick={handleEditClick}
+          onClose={handleClose}
+        />
       </div>
+
+      {showLicensePlateModal && (
+        <LicensePlateSelectionModal
+          open={showLicensePlateModal}
+          onClose={() => setShowLicensePlateModal(false)}
+          onSelect={handleLicensePlateSelect}
+          licensePlates={getAllLicensePlates()}
+          isLoading={isLoadingPlates}
+        />
+      )}
     </div>
   );
 };
 
-export default InvoiceViewModal;
+InvoiceViewModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  invoiceId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
+
+export default React.memo(InvoiceViewModal);

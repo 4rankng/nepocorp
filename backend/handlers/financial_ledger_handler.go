@@ -52,13 +52,24 @@ func (h *FinancialLedgerHandler) GetTransactionByID(c *gin.Context) {
 }
 
 func (h *FinancialLedgerHandler) GetAllTransactions(c *gin.Context) {
-	transactions, err := h.FinancialLedgerRepo.GetAllTransactions()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+
+	transactions, total, err := h.FinancialLedgerRepo.GetAllTransactions(page, limit)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Transactions retrieved successfully", transactions)
+	response := map[string]interface{}{
+		"data":         transactions,
+		"total":        total,
+		"page":         page,
+		"limit":        limit,
+		"total_pages":  (total + int64(limit) - 1) / int64(limit),
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Transactions retrieved successfully", response)
 }
 
 func (h *FinancialLedgerHandler) UpdateTransaction(c *gin.Context) {

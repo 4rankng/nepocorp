@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { FormCol, FormLabel, ErrorText, HelperText } from './index';
+import Portal from './Portal';
+import { Z_INDEX } from '@constants/zIndex';
 import './Dropdown.css';
 
 const Dropdown = ({
@@ -22,11 +25,14 @@ const Dropdown = ({
   maxHeight = '300px',
   noOptionsText = 'Không có lựa chọn',
   loadingText = 'Đang tải...',
+  usePortal = false,
+  portalContainer = null,
   ...props
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [dropUp, setDropUp] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
   const menuRef = useRef(null);
@@ -99,6 +105,30 @@ const Dropdown = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Calculate position for portal or regular rendering
+  const calculatePosition = () => {
+    if (!dropdownRef.current) return;
+
+    const rect = dropdownRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const menuHeight = parseInt(maxHeight, 10) || 300;
+
+    // Determine if should drop up
+    const shouldDropUp = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    setDropUp(shouldDropUp);
+
+    // Calculate position for portal rendering
+    if (usePortal) {
+      setMenuPosition({
+        top: shouldDropUp ? Math.max(rect.top - menuHeight, 10) : rect.bottom + 4,
+        left: Math.max(rect.left, 10),
+        width: rect.width
+      });
+    }
+  };
+
   // Focus search input when dropdown opens and calculate position
   useEffect(() => {
     if (isOpen) {
@@ -107,29 +137,19 @@ const Dropdown = ({
         setTimeout(() => searchInputRef.current?.focus(), 100);
       }
       
-      // Calculate if should drop up or down
-      if (dropdownRef.current) {
-        const rect = dropdownRef.current.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const spaceBelow = viewportHeight - rect.bottom;
-        const spaceAbove = rect.top;
-        const menuHeight = parseInt(maxHeight, 10) || 300;
-        
-        // Also check for parent scrollable container (like modal)
-        const scrollParent = dropdownRef.current.closest('.overflow-y-auto, .modal-body, [style*="overflow"]');
-        if (scrollParent) {
-          const parentRect = scrollParent.getBoundingClientRect();
-          const spaceInParent = parentRect.bottom - rect.bottom;
-          // Use the smaller of viewport space or parent space
-          const effectiveSpaceBelow = Math.min(spaceBelow, spaceInParent);
-          setDropUp(effectiveSpaceBelow < menuHeight && spaceAbove > effectiveSpaceBelow);
-        } else {
-          // If not enough space below and more space above, drop up
-          setDropUp(spaceBelow < menuHeight && spaceAbove > spaceBelow);
-        }
-      }
+      calculatePosition();
+
+      // Recalculate position on scroll or resize
+      const handlePositionUpdate = () => calculatePosition();
+      window.addEventListener('scroll', handlePositionUpdate, true);
+      window.addEventListener('resize', handlePositionUpdate);
+
+      return () => {
+        window.removeEventListener('scroll', handlePositionUpdate, true);
+        window.removeEventListener('resize', handlePositionUpdate);
+      };
     }
-  }, [isOpen, searchable, maxHeight]);
+  }, [isOpen, searchable, maxHeight, usePortal]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
@@ -212,11 +232,22 @@ const Dropdown = ({
         </button>
 
         {isOpen && (
-          <div 
-            ref={menuRef}
-            className={`dropdown__menu ${dropUp ? 'dropdown__menu--dropup' : ''}`}
-            style={{ maxHeight }}
-          >
+          <Portal enabled={usePortal} container={portalContainer}>
+            <div 
+              ref={menuRef}
+              className={`dropdown__menu ${dropUp ? 'dropdown__menu--dropup' : ''} ${usePortal ? 'dropdown__menu--portal' : ''}`}
+              style={{
+                maxHeight,
+                ...(usePortal ? {
+                  position: 'fixed',
+                  top: menuPosition.top,
+                  left: menuPosition.left,
+                  width: menuPosition.width,
+                  zIndex: Z_INDEX.DROPDOWN,
+                  minWidth: '200px' // Ensure minimum width for visibility
+                } : {})
+              }}
+            >
             {searchable && (
               <div className="dropdown__search">
                 <input
@@ -267,7 +298,8 @@ const Dropdown = ({
                 })
               )}
             </div>
-          </div>
+            </div>
+          </Portal>
         )}
       </div>
 
@@ -275,6 +307,30 @@ const Dropdown = ({
       {helperText && <HelperText>{helperText}</HelperText>}
     </FormCol>
   );
+};
+
+Dropdown.propTypes = {
+  label: PropTypes.string,
+  name: PropTypes.string,
+  value: PropTypes.any,
+  onChange: PropTypes.func,
+  options: PropTypes.array,
+  placeholder: PropTypes.string,
+  searchPlaceholder: PropTypes.string,
+  required: PropTypes.bool,
+  disabled: PropTypes.bool,
+  loading: PropTypes.bool,
+  error: PropTypes.string,
+  helperText: PropTypes.string,
+  className: PropTypes.string,
+  multiple: PropTypes.bool,
+  searchable: PropTypes.bool,
+  clearable: PropTypes.bool,
+  maxHeight: PropTypes.string,
+  noOptionsText: PropTypes.string,
+  loadingText: PropTypes.string,
+  usePortal: PropTypes.bool,
+  portalContainer: PropTypes.instanceOf(Element)
 };
 
 export default Dropdown;

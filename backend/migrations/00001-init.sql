@@ -342,8 +342,8 @@ CREATE TABLE IF NOT EXISTS invoice_items (
 -- VII. FINANCIAL MANAGEMENT TABLES
 -- ================================================================
 
--- Create financial_ledger table for all financial transactions
-CREATE TABLE IF NOT EXISTS financial_ledger (
+-- Create financial_ledgers table for all financial transactions
+CREATE TABLE IF NOT EXISTS financial_ledgers (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     transaction_date DATE NOT NULL,
     customer_id BIGINT UNSIGNED NULL,

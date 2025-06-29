@@ -64,6 +64,11 @@ export const getMenuItems = () => {
           href: '/phieu-thu',
           icon: 'Banknote',
         },
+        {
+          name: 'Bảng công nợ',
+          href: '/bang-cong-no',
+          icon: 'Wallet',
+        },
       ]
     }
   ];
