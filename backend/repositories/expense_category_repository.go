@@ -61,24 +61,3 @@ func (r *ExpenseCategoryRepository) FindByName(name string) (*models.ExpenseCate
 	return &category, nil
 }
 
-func (r *ExpenseCategoryRepository) EnsureBaoDuongExists() error {
-	// Check if "Bao duong" category with ID=1 exists
-	var category models.ExpenseCategory
-	err := r.db.First(&category, 1).Error
-	if err == nil {
-		// Category with ID=1 exists, check if it's "Bao duong"
-		if category.Name != "Bao duong" {
-			// Update existing category to "Bao duong"
-			category.Name = "Bao duong"
-			return r.db.Save(&category).Error
-		}
-		return nil
-	}
-
-	// Category with ID=1 doesn't exist, create it
-	baoDuongCategory := &models.ExpenseCategory{
-		ID:   1,
-		Name: "Bao duong",
-	}
-	return r.db.Create(baoDuongCategory).Error
-}

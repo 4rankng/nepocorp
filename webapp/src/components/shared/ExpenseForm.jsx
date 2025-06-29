@@ -365,13 +365,17 @@ const ExpenseForm = ({
         payment_proof: editedData.payment_proof || null,
         cancel_reason: editedData.cancel_reason || null,
         remark: editedData.remark,
+        currency: 'VND',
         items: updatedItems,
         total: totalAmount
       };
 
+      // Debug: Log the payload being sent to API
+      console.log('💰 Expense payload being sent to API:', JSON.stringify(saveData, null, 2));
+
       // Update the parent with final data before saving
       onChange({ target: { name: 'formData', value: saveData } });
-      await onSave();
+      await onSave(null, 0, 10, saveData); // Pass the prepared data directly
       
       // Only close modal if save was successful
       handleClose();

@@ -19,12 +19,12 @@ export const getPaymentStatusColor = (status) => {
 };
 
 export const calculateItemTotal = (item) => {
-  const price = parseFloat(item.price) || 0;
-  const quantity = parseFloat(item.quantity) || 0;
+  const price = parseInt(item.price) || 0;
+  const quantity = parseInt(item.quantity) || 0;
   const taxRate = parseFloat(item.tax_rate) || 0;
   const subtotal = price * quantity;
   const taxAmount = subtotal * (taxRate / 100);
-  return subtotal + taxAmount;
+  return Math.round(subtotal + taxAmount); // Round to integer for VND
 };
 
 export const calculateExpenseTotal = (items) => {
@@ -33,19 +33,22 @@ export const calculateExpenseTotal = (items) => {
 
 export const prepareExpenseItemsForUpdate = (items) => {
   return items.map(item => {
-    const price = parseFloat(item.price) || 0;
-    const quantity = parseFloat(item.quantity) || 0;
+    const price = parseInt(item.price) || 0;
+    const quantity = parseInt(item.quantity) || 0;
     const taxRate = parseFloat(item.tax_rate) || 0;
     const subtotal = price * quantity;
     const taxAmount = subtotal * (taxRate / 100);
-    const total = subtotal + taxAmount;
+    const total = Math.round(subtotal + taxAmount);
 
     return {
       ...item,
       price,
       quantity,
       tax_rate: taxRate,
-      total
+      subtotal: Math.round(subtotal),
+      total,
+      install_date: item.install_date ? new Date(item.install_date).toISOString() : null,
+      expiry_date: item.expiry_date ? new Date(item.expiry_date).toISOString() : null,
     };
   });
 };

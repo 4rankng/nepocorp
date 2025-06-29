@@ -122,14 +122,6 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Ensure "Bao duong" category exists if expense_category_id is 1
-	if expense.ExpenseCategoryID == 1 {
-		if err := h.categoryRepo.EnsureBaoDuongExists(); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractorExpense,
-				utils.ErrorDetail{Code: common.CodeCreateFailed, Message: "Failed to ensure Bao duong category exists: " + err.Error()})
-			return
-		}
-	}
 
 	// Create expense with items in transaction, setting LastUpdatedBy
 	if err := h.repo.CreateWithUser(&expense, userID.(uint)); err != nil {

@@ -1,57 +1,6 @@
-import { useState, useCallback, useContext, useEffect } from 'react';
-import logger from '@services/logger';
-import { VehicleDataContext } from '@contexts/VehicleDataContext';
+import { useState, useCallback, useEffect } from 'react';
 import { extractErrorMessage, isValidationError } from '@utils/errorUtils';
 
-// Utility function to convert license plate to tractor_id/trailer_id
-const convertLicensePlateToIds = (licensePlate, tractors, trailers) => {
-  if (!licensePlate) return { tractor_id: null, trailer_id: null };
-
-  const tractor = tractors.find(t => t.license_plate === licensePlate);
-  if (tractor) {
-    return { tractor_id: tractor.id, trailer_id: null };
-  }
-
-  const trailer = trailers.find(t => t.license_plate === licensePlate);
-  if (trailer) {
-    return { tractor_id: null, trailer_id: trailer.id };
-  }
-
-  return { tractor_id: null, trailer_id: null };
-};
-
-// Utility function to transform form data to expense API format
-const transformToExpenseFormat = (formData, vehicleIds, expenseCategoryId) => {
-  // Calculate totals
-  const subtotal = formData.items?.reduce((sum, item) => {
-    return sum + (parseFloat(item.price || 0) * parseInt(item.quantity || 0));
-  }, 0) || 0;
-
-  const taxRate = parseFloat(formData.tax_rate || 10); // Default 10%
-  const taxAmount = subtotal * (taxRate / 100);
-  const total = subtotal + taxAmount;
-
-  return {
-    ...vehicleIds, // tractor_id or trailer_id
-    vendor_name: formData.vendor_name || '',
-    expense_category_id: expenseCategoryId || formData.expense_category_id,
-    subtotal: Math.round(subtotal),
-    tax_rate: taxRate,
-    total: Math.round(total),
-    payment_status: formData.payment_status || 'DRAFT',
-    payment_proof: formData.payment_proof || '',
-    remark: formData.remark || '',
-    currency: 'VND',
-    items: formData.items?.map(item => ({
-      item_name: item.item_name || '',
-      price: parseInt(item.price || 0),
-      quantity: parseInt(item.quantity || 1),
-      total: parseInt(item.price || 0) * parseInt(item.quantity || 1),
-      install_date: item.install_date ? new Date(item.install_date).toISOString() : null,
-      expiry_date: item.expiry_date ? new Date(item.expiry_date).toISOString() : null,
-    })) || []
-  };
-};
 
 
 export default function useExpenseForm({
@@ -63,7 +12,6 @@ export default function useExpenseForm({
   api,
   expenseCategoryId = null, // Fixed category (like BaoDuong = 1)
 }) {
-  const { tractors, trailers } = useContext(VehicleDataContext);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -98,39 +46,19 @@ export default function useExpenseForm({
     return true;
   }, []);
 
-  const handleSave = useCallback(async (e, currentPage = 0, pageSize = 10) => {
+  const handleSave = useCallback(async (e, currentPage = 0, pageSize = 10, preparedData = null) => {
     e?.preventDefault();
 
     try {
       setIsLoading(true);
 
-      // Get first valid license plate from items for vehicle ID conversion
-      const firstValidLicensePlate = formData.items.find(item => item.license_plate)?.license_plate;
-      
-      if (!firstValidLicensePlate) {
-        throw new Error('Không tìm thấy biển số xe hợp lệ');
-      }
-      
-      // Convert license plate to tractor_id/trailer_id
-      const vehicleIds = convertLicensePlateToIds(firstValidLicensePlate, tractors, trailers);
+      // Use prepared data if provided, otherwise fall back to formData
+      const dataToSave = preparedData || formData;
 
-      // If license plate not found, throw error (should not happen if dropdown and validation use same data)
-      if (!vehicleIds.tractor_id && !vehicleIds.trailer_id) {
-        logger.error(`License plate ${firstValidLicensePlate} not found in VehicleDataContext`, {
-          tractorCount: tractors.length,
-          trailerCount: trailers.length,
-          license_plate: firstValidLicensePlate
-        });
-        throw new Error(`Không tìm thấy xe với biển số: ${firstValidLicensePlate}`);
-      }
-
-      // Transform data to expense API format
-      const submissionData = transformToExpenseFormat(formData, vehicleIds, expenseCategoryId);
-
-      // Call the appropriate API method
+      // Call the appropriate API method directly with the prepared data
       let response;
       if (isEdit) {
-        response = await api.update(formData.id, submissionData);
+        response = await api.update(dataToSave.id, dataToSave);
 
         // Check for API error responses
         if (response?.status !== 'success') {
@@ -143,7 +71,7 @@ export default function useExpenseForm({
 
         onSuccess?.(response?.message || 'Sửa chi phí thành công');
       } else {
-        response = await api.create(submissionData);
+        response = await api.create(dataToSave);
 
         // Check for API error responses
         if (response?.status !== 'success') {
@@ -223,7 +151,7 @@ export default function useExpenseForm({
     } finally {
       setIsLoading(false);
     }
-  }, [formData, expenseCategoryId, tractors, trailers, isEdit, api, fetchData, onSuccess, onError]);
+  }, [formData, expenseCategoryId, isEdit, api, fetchData, onSuccess, onError]);
 
   return {
     formData,
