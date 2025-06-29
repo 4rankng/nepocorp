@@ -91,21 +91,21 @@ CREATE TABLE IF NOT EXISTS partners (
     UNIQUE INDEX idx_partners_tax_code (tax_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create vendors table for Accounts Payable
-CREATE TABLE IF NOT EXISTS vendors (
+-- Create containers table
+CREATE TABLE IF NOT EXISTS containers (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    contact_info TEXT NULL,
+    category VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
 -- III. VEHICLE MANAGEMENT TABLES
 -- ================================================================
 
--- Create vehicles table (consolidated tractors)
-CREATE TABLE IF NOT EXISTS vehicles (
+-- Create tractors table
+CREATE TABLE IF NOT EXISTS tractors (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     license_plate VARCHAR(50) NOT NULL,
     engine_type VARCHAR(100) NULL,
@@ -116,8 +116,8 @@ CREATE TABLE IF NOT EXISTS vehicles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_updated_by VARCHAR(255),
-    UNIQUE KEY uk_vehicles_license_plate (license_plate),
-    KEY idx_vehicles_license_plate (license_plate)
+    UNIQUE KEY uk_tractors_license_plate (license_plate),
+    KEY idx_tractors_license_plate (license_plate)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create trailers table
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS routes (
 -- Create fuel consumption standards
 CREATE TABLE IF NOT EXISTS fuel_standards (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    vehicle_id BIGINT UNSIGNED NOT NULL,
+    tractor_id BIGINT UNSIGNED NOT NULL,
     trailer_type ENUM('20ft', '40ft') NOT NULL,
     load_category ENUM('under_20t', 'over_20t', 'empty') NOT NULL,
     consumption_rate DECIMAL(5, 2) NOT NULL,
@@ -160,8 +160,8 @@ CREATE TABLE IF NOT EXISTS fuel_standards (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
-    UNIQUE KEY uk_fuel_standard (vehicle_id, trailer_type, load_category)
+    FOREIGN KEY (tractor_id) REFERENCES tractors(id),
+    UNIQUE KEY uk_fuel_standard (tractor_id, trailer_type, load_category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS fuel_standards (
 CREATE TABLE IF NOT EXISTS jobs (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     job_date DATE NOT NULL,
-    vehicle_id BIGINT UNSIGNED NOT NULL,
+    tractor_id BIGINT UNSIGNED NOT NULL,
     trailer_id BIGINT UNSIGNED NULL,
     user_id_driver BIGINT UNSIGNED NULL,
     customer_id BIGINT UNSIGNED NULL,
@@ -184,13 +184,13 @@ CREATE TABLE IF NOT EXISTS jobs (
     status ENUM('DRAFT', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED') DEFAULT 'PLANNED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
+    FOREIGN KEY (tractor_id) REFERENCES tractors(id),
     FOREIGN KEY (trailer_id) REFERENCES trailers(id),
     FOREIGN KEY (user_id_driver) REFERENCES users(id),
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (route_id) REFERENCES routes(id),
     INDEX idx_job_date (job_date),
-    INDEX idx_vehicle_id (vehicle_id)
+    INDEX idx_tractor_id (tractor_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
@@ -211,13 +211,9 @@ CREATE TABLE IF NOT EXISTS expenses (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     expense_date DATE NOT NULL,
     job_id BIGINT UNSIGNED NULL,
-    vehicle_id BIGINT UNSIGNED NULL,
+    tractor_id BIGINT UNSIGNED NULL,
     vendor_name VARCHAR(255) NOT NULL,
     expense_category_id BIGINT UNSIGNED NOT NULL,
-    category ENUM(
-        'FUEL', 'ROAD_FEES', 'REPAIRS', 'TIRES', 'DRIVER_SALARY',
-        'PARKING', 'MAINTENANCE', 'INSURANCE', 'REGISTRATION', 'OTHER'
-    ) NULL,
     total BIGINT NOT NULL,
     amount DECIMAL(15, 2) NULL,
     quantity DECIMAL(10, 2) NULL,
@@ -233,13 +229,13 @@ CREATE TABLE IF NOT EXISTS expenses (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE SET NULL,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
+    FOREIGN KEY (tractor_id) REFERENCES tractors(id),
     FOREIGN KEY (expense_category_id) REFERENCES expense_categories(id) ON DELETE RESTRICT,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
     INDEX idx_expense_date (expense_date),
     INDEX idx_expense_category_id (expense_category_id),
     INDEX idx_payment_status (payment_status),
-    INDEX idx_vehicle_id_category (vehicle_id, category)
+    INDEX idx_tractor_id (tractor_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create expense_items table
@@ -351,9 +347,9 @@ CREATE TABLE IF NOT EXISTS financial_ledger (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     transaction_date DATE NOT NULL,
     customer_id BIGINT UNSIGNED NULL,
-    vendor_id BIGINT UNSIGNED NULL,
+    partner_id BIGINT UNSIGNED NULL,
     job_id BIGINT UNSIGNED NULL,
-    transaction_type ENUM('INVOICE', 'PAYMENT_RECEIVED', 'PAYABLE_INVOICE', 'PAYMENT_MADE', 'OPENING_BALANCE', 'ADJUSTMENT') NOT NULL,
+    transaction_type ENUM('INVOICE', 'PAYMENT_RECEIVED', 'PARTNER_PAYMENT', 'PARTNER_INVOICE', 'OPENING_BALANCE', 'ADJUSTMENT') NOT NULL,
     debit DECIMAL(15, 2) DEFAULT 0.00,
     credit DECIMAL(15, 2) DEFAULT 0.00,
     reference_number VARCHAR(100) NULL,
@@ -361,11 +357,11 @@ CREATE TABLE IF NOT EXISTS financial_ledger (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id),
-    FOREIGN KEY (vendor_id) REFERENCES vendors(id),
+    FOREIGN KEY (partner_id) REFERENCES partners(id),
     FOREIGN KEY (job_id) REFERENCES jobs(id),
     INDEX idx_transaction_date (transaction_date),
     INDEX idx_customer_id (customer_id),
-    INDEX idx_vendor_id (vendor_id)
+    INDEX idx_partner_id (partner_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
@@ -382,16 +378,23 @@ VALUES ('tax_rate', '10', 'Administrator (@admin)');
 
 -- Insert default expense categories
 INSERT IGNORE INTO expense_categories (name, last_updated_by) VALUES
-('Bảo dưỡng', 'Administrator (@admin)'),
-('Bảo hiểm', 'Administrator (@admin)'),
-('Lương', 'Administrator (@admin)');
+('FUEL', 'Administrator (@admin)'),
+('ROAD_FEES', 'Administrator (@admin)'),
+('REPAIRS', 'Administrator (@admin)'),
+('TIRES', 'Administrator (@admin)'),
+('DRIVER_SALARY', 'Administrator (@admin)'),
+('PARKING', 'Administrator (@admin)'),
+('MAINTENANCE', 'Administrator (@admin)'),
+('INSURANCE', 'Administrator (@admin)'),
+('REGISTRATION', 'Administrator (@admin)'),
+('OTHER', 'Administrator (@admin)');
 
 -- Insert default invoice categories
 INSERT IGNORE INTO invoice_categories (name, last_updated_by) VALUES
-('Vận chuyển', 'Administrator (@admin)'),
-('Dịch vụ logistics', 'Administrator (@admin)'),
-('Phí cảng', 'Administrator (@admin)'),
-('Khác', 'Administrator (@admin)');
+('TRANSPORTATION', 'Administrator (@admin)'),
+('LOGISTICS_SERVICE', 'Administrator (@admin)'),
+('PORT_FEES', 'Administrator (@admin)'),
+('OTHER', 'Administrator (@admin)');
 
 -- ================================================================
 -- End of consolidated migration

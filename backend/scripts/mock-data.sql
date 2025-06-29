@@ -62,11 +62,11 @@ SELECT 'mechanic1', 'mechanic123',
 
 -- Insert mock expense categories
 INSERT IGNORE INTO expense_categories (id, name, last_updated_by) VALUES
-(1, 'Bảo dưỡng', 'Administrator (@admin)'),
-(2, 'Bảo hiểm', 'Administrator (@admin)'),
-(3, 'Lương', 'Administrator (@admin)'),
-(4, 'Nhiên liệu', 'Administrator (@admin)'),
-(5, 'Phụ tùng', 'Administrator (@admin)');
+(1, 'MAINTENANCE', 'Administrator (@admin)'),
+(2, 'INSURANCE', 'Administrator (@admin)'),
+(3, 'DRIVER_SALARY', 'Administrator (@admin)'),
+(4, 'FUEL', 'Administrator (@admin)'),
+(5, 'REPAIRS', 'Administrator (@admin)');
 
 -- Insert mock containers
 INSERT IGNORE INTO containers (id, category, last_updated_by) VALUES
@@ -92,18 +92,18 @@ INSERT IGNORE INTO trailers (id, license_plate, description, last_updated_by) VA
 (4, '51R-44444', 'Rơ moóc tank chở xăng', 'Administrator (@admin)'),
 (5, '51R-55555', 'Rơ moóc thùng kín', 'Administrator (@admin)');
 
--- Insert mock expenses (simplified structure without vehicle associations)
-INSERT IGNORE INTO expenses (id, vendor_name, expense_category_id, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
-(1, 'Garage Minh Tuấn', 1, 2200000, 'PAID', 'VND', 'Bảo dưỡng định kỳ 10,000km', 2, 'Nguyễn Văn A (@manager1)'),
-(2, 'Xưởng Hùng Vương', 1, 1650000, 'PENDING', 'VND', 'Thay dầu và lọc', 2, 'Nguyễn Văn A (@manager1)'),
-(3, 'Bảo hiểm PTI', 2, 5000000, 'PAID', 'VND', 'Bảo hiểm xe 1 năm', 1, 'Administrator (@admin)'),
-(4, 'Cửa hàng phụ tùng ABC', 5, 880000, 'DRAFT', 'VND', 'Thay phanh trước', 3, 'Trần Văn B (@driver1)'),
-(5, 'Garage Thành Đạt', 1, 3300000, 'PAID', 'VND', 'Sửa chữa động cơ', 2, 'Nguyễn Văn A (@manager1)'),
-(6, 'Xưởng Hoàng Gia', 1, 1320000, 'PAID', 'VND', 'Bảo dưỡng hệ thống phanh', 2, 'Nguyễn Văn A (@manager1)'),
-(7, 'Garage Việt Nam', 1, 990000, 'PENDING', 'VND', 'Thay lốp xe', 2, 'Nguyễn Văn A (@manager1)'),
-(8, 'Bảo hiểm Bảo Việt', 2, 3000000, 'PAID', 'VND', 'Bảo hiểm rơ moóc', 1, 'Administrator (@admin)'),
-(9, 'Cửa hàng Minh Châu', 5, 660000, 'DRAFT', 'VND', 'Thay van an toàn', 3, 'Trần Văn B (@driver1)'),
-(10, 'Xưởng sơn Tấn Phát', 1, 2750000, 'PAID', 'VND', 'Sơn lại thùng xe', 2, 'Nguyễn Văn A (@manager1)');
+-- Insert mock expenses (with tractor associations)
+INSERT IGNORE INTO expenses (id, expense_date, tractor_id, vendor_name, expense_category_id, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
+(1, '2024-01-15', 1, 'Garage Minh Tuấn', 1, 2200000, 'PAID', 'VND', 'Bảo dưỡng định kỳ 10,000km', 2, 'Nguyễn Văn A (@manager1)'),
+(2, '2024-02-01', 2, 'Xưởng Hùng Vương', 1, 1650000, 'PENDING', 'VND', 'Thay dầu và lọc', 2, 'Nguyễn Văn A (@manager1)'),
+(3, '2024-01-01', 3, 'Bảo hiểm PTI', 2, 5000000, 'PAID', 'VND', 'Bảo hiểm xe 1 năm', 1, 'Administrator (@admin)'),
+(4, '2024-02-10', 1, 'Cửa hàng phụ tùng ABC', 5, 880000, 'DRAFT', 'VND', 'Thay phanh trước', 3, 'Trần Văn B (@driver1)'),
+(5, '2024-01-20', 4, 'Garage Thành Đạt', 5, 3300000, 'PAID', 'VND', 'Sửa chữa động cơ', 2, 'Nguyễn Văn A (@manager1)'),
+(6, '2024-02-05', 1, 'Xưởng Hoàng Gia', 1, 1320000, 'PAID', 'VND', 'Bảo dưỡng hệ thống phanh', 2, 'Nguyễn Văn A (@manager1)'),
+(7, '2024-02-15', 2, 'Garage Việt Nam', 1, 990000, 'PENDING', 'VND', 'Thay lốp xe', 2, 'Nguyễn Văn A (@manager1)'),
+(8, '2024-01-01', 3, 'Bảo hiểm Bảo Việt', 2, 3000000, 'PAID', 'VND', 'Bảo hiểm rơ moóc', 1, 'Administrator (@admin)'),
+(9, '2024-02-20', 4, 'Cửa hàng Minh Châu', 5, 660000, 'DRAFT', 'VND', 'Thay van an toàn', 3, 'Trần Văn B (@driver1)'),
+(10, '2024-01-25', 5, 'Xưởng sơn Tấn Phát', 1, 2750000, 'PAID', 'VND', 'Sơn lại thùng xe', 2, 'Nguyễn Văn A (@manager1)');
 
 -- Insert mock expense items with license_plate and tax_rate
 INSERT IGNORE INTO expense_items (id, expense_id, license_plate, item_name, price, quantity, tax_rate, total, install_date, expiry_date) VALUES

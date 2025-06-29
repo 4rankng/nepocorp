@@ -84,6 +84,10 @@ func main() {
 	partnerRepo := repositories.NewPartnerRepository(db)
 	invoiceCategoryRepo := repositories.NewInvoiceCategoryRepository(db)
 	invoiceRepo := repositories.NewInvoiceRepository(db)
+	routeRepo := repositories.NewRouteRepository(db)
+	jobRepo := repositories.NewJobRepository(db)
+	financialLedgerRepo := repositories.NewFinancialLedgerRepository(db)
+	fuelStandardRepo := repositories.NewFuelStandardRepository(db)
 
 	// Initialize services
 	activityLogger := activitylogger.NewService(activityLogRepo, logger, cfg.ActivityLogQueueSize)
@@ -102,6 +106,10 @@ func main() {
 	partnerHandler := handlers.NewPartnerHandler(partnerRepo)
 	invoiceCategoryHandler := handlers.NewInvoiceCategoryHandler(invoiceCategoryRepo)
 	invoiceHandler := handlers.NewInvoiceHandler(invoiceRepo, invoiceCategoryRepo)
+	routeHandler := handlers.NewRouteHandler(routeRepo)
+	jobHandler := handlers.NewJobHandler(jobRepo)
+	financialLedgerHandler := handlers.NewFinancialLedgerHandler(financialLedgerRepo)
+	fuelStandardHandler := handlers.NewFuelStandardHandler(fuelStandardRepo)
 
 	// Initialize Gin
 	gin.SetMode(gin.ReleaseMode)
@@ -119,7 +127,7 @@ func main() {
 
 	// Initialize routes
 	routes.Setup(r, cfg, healthHandler, authHandler, userRepo, expenseCategoryHandler,
-		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, logger)
+		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, routeHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{

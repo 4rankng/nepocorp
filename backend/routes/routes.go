@@ -29,6 +29,10 @@ func Setup(
 	partnerHandler *handlers.PartnerHandler,
 	invoiceCategoryHandler *handlers.InvoiceCategoryHandler,
 	invoiceHandler *handlers.InvoiceHandler,
+	routeHandler *handlers.RouteHandler,
+	jobHandler *handlers.JobHandler,
+	financialLedgerHandler *handlers.FinancialLedgerHandler,
+	fuelStandardHandler *handlers.FuelStandardHandler,
 	logger *logrus.Logger,
 ) {
 	// Rate limiter
@@ -149,6 +153,47 @@ func Setup(
 			protected.POST("/invoice/:id/item", invoiceHandler.AddItem)
 			protected.PUT("/invoice/:id/item/:itemId", invoiceHandler.UpdateItem)
 			protected.DELETE("/invoice/:id/item/:itemId", invoiceHandler.DeleteItem)
+
+			// Routes
+			protected.GET("/route", routeHandler.GetAllRoutes)
+			protected.POST("/route", routeHandler.CreateRoute)
+			protected.GET("/route/:id", routeHandler.GetRouteByID)
+			protected.PUT("/route/:id", routeHandler.UpdateRoute)
+			protected.DELETE("/route/:id", routeHandler.DeleteRoute)
+
+			// Jobs
+			protected.GET("/job", jobHandler.GetAllJobs)
+			protected.POST("/job", jobHandler.CreateJob)
+			protected.GET("/job/:id", jobHandler.GetJobByID)
+			protected.PUT("/job/:id", jobHandler.UpdateJob)
+			protected.DELETE("/job/:id", jobHandler.DeleteJob)
+			protected.GET("/job/tractor/:tractorId", jobHandler.GetJobsByTractor)
+			protected.GET("/job/customer/:customerId", jobHandler.GetJobsByCustomer)
+			protected.GET("/job/status/:status", jobHandler.GetJobsByStatus)
+
+			// Financial Ledger
+			protected.GET("/financial-ledger", financialLedgerHandler.GetAllTransactions)
+			protected.POST("/financial-ledger", financialLedgerHandler.CreateTransaction)
+			protected.GET("/financial-ledger/:id", financialLedgerHandler.GetTransactionByID)
+			protected.PUT("/financial-ledger/:id", financialLedgerHandler.UpdateTransaction)
+			protected.DELETE("/financial-ledger/:id", financialLedgerHandler.DeleteTransaction)
+			protected.GET("/financial-ledger/customer/:customerId", financialLedgerHandler.GetTransactionsByCustomer)
+			protected.GET("/financial-ledger/partner/:partnerId", financialLedgerHandler.GetTransactionsByPartner)
+			protected.GET("/financial-ledger/type/:type", financialLedgerHandler.GetTransactionsByType)
+			protected.GET("/financial-ledger/date-range", financialLedgerHandler.GetTransactionsByDateRange)
+			protected.GET("/financial-ledger/customer/:customerId/balance", financialLedgerHandler.GetCustomerBalance)
+			protected.GET("/financial-ledger/partner/:partnerId/balance", financialLedgerHandler.GetPartnerBalance)
+
+			// Fuel Standards
+			protected.GET("/fuel-standard", fuelStandardHandler.GetAllFuelStandards)
+			protected.POST("/fuel-standard", fuelStandardHandler.CreateFuelStandard)
+			protected.GET("/fuel-standard/:id", fuelStandardHandler.GetFuelStandardByID)
+			protected.PUT("/fuel-standard/:id", fuelStandardHandler.UpdateFuelStandard)
+			protected.DELETE("/fuel-standard/:id", fuelStandardHandler.DeleteFuelStandard)
+			protected.GET("/fuel-standard/tractor/:tractorId", fuelStandardHandler.GetFuelStandardsByTractor)
+			protected.GET("/fuel-standard/tractor/:tractorId/:trailerType/:loadCategory", fuelStandardHandler.GetFuelStandardByTractorAndType)
+			protected.GET("/fuel-standard/trailer-type/:trailerType", fuelStandardHandler.GetFuelStandardsByTrailerType)
+			protected.GET("/fuel-standard/load-category/:loadCategory", fuelStandardHandler.GetFuelStandardsByLoadCategory)
 		}
 	}
 }

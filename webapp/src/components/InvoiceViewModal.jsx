@@ -33,8 +33,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -48,17 +48,21 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        {/* Modal Body */}
+        <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+          {loading && (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-          ) : error ? (
-            <div className="text-center text-red-500 p-8">
-              <p>{error}</p>
+          )}
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">
+              {error}
             </div>
-          ) : invoice ? (
+          )}
+
+          {invoice && !loading && (
             <div className="space-y-6">
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -128,6 +132,9 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
                 </div>
               )}
 
+              {/* Divider */}
+              <div className="border-t border-gray-200 my-4"></div>
+
               {/* Items */}
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Danh sách dịch vụ</h3>
@@ -168,6 +175,9 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
                 </div>
               </div>
 
+              {/* Divider */}
+              <div className="border-t border-gray-200 my-4"></div>
+
               {/* Remarks */}
               {invoice.remark && (
                 <div>
@@ -175,8 +185,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
                   <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{invoice.remark}</p>
                 </div>
               )}
-            </div>
-          ) : null}
+            </>
+          )}
         </div>
 
         {/* Footer */}
