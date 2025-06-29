@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     payment_proof VARCHAR(500),
     currency VARCHAR(50) NOT NULL DEFAULT 'VND',
     remark TEXT,
+    cancel_reason TEXT,
     created_by BIGINT UNSIGNED NOT NULL,
     last_updated_by VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -112,6 +113,7 @@ CREATE TABLE IF NOT EXISTS expense_items (
     price BIGINT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
     tax_rate FLOAT NOT NULL DEFAULT 0,
+    subtotal BIGINT NOT NULL DEFAULT 0,
     total BIGINT NOT NULL,
     install_date DATETIME DEFAULT NULL,
     expiry_date DATETIME DEFAULT NULL,
@@ -153,6 +155,28 @@ CREATE TABLE IF NOT EXISTS settings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_key (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create customers table
+CREATE TABLE IF NOT EXISTS customers (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    tax_code VARCHAR(255) NOT NULL,
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_customers_tax_code (tax_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create partners table
+CREATE TABLE IF NOT EXISTS partners (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    tax_code VARCHAR(255) NOT NULL,
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_partners_tax_code (tax_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
