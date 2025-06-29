@@ -94,18 +94,8 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
   }, []);
 
   const handleAddItem = useCallback(() => {
-    setEditedData(prev => ({
-      ...prev,
-      items: [...(prev.items || []), {
-        license_plate: '',
-        item_name: '',
-        price: 0,
-        quantity: 1,
-        total: 0,
-        service_date: null,
-        notes: ''
-      }]
-    }));
+    setEditingItemIndex(null);
+    setShowItemEditModal(true);
   }, []);
 
   const handleDeleteItem = useCallback((index) => {

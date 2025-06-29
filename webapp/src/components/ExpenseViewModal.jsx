@@ -10,6 +10,7 @@ import ExpenseBasicInfo from './expense/ExpenseBasicInfo';
 import ExpenseOptionalSections from './expense/ExpenseOptionalSections';
 import ExpenseItemsTable from './expense/ExpenseItemsTable';
 import ExpenseActionButtons from './expense/ExpenseActionButtons';
+import ExpenseItemEditModal from './expense/ExpenseItemEditModal';
 import { prepareExpenseItemsForUpdate, calculateExpenseTotal } from '@utils/expenseHelpers';
 import { Z_INDEX } from '@constants/zIndex';
 
@@ -27,6 +28,8 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const [isLoadingPlates, setIsLoadingPlates] = useState(false);
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
+  const [showItemEditModal, setShowItemEditModal] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
 
   // Get license plates for dropdown
   const getAllLicensePlates = useCallback(() => {
@@ -302,20 +305,9 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   }, []);
 
   const handleAddItem = useCallback(() => {
-    setEditedData(prev => ({
-      ...prev,
-      items: [...prev.items, {
-        license_plate: '',
-        item_name: '',
-        install_date: null,
-        expiry_date: null,
-        price: 0,
-        quantity: 1,
-        tax_rate: taxRate,
-        total: 0
-      }]
-    }));
-  }, [taxRate]);
+    setEditingItemIndex(null);
+    setShowItemEditModal(true);
+  }, []);
 
   const handleDeleteItem = useCallback((index) => {
     setEditedData(prev => ({
@@ -353,6 +345,32 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     }
     setShowLicensePlateModal(false);
   }, [currentLicensePlateIndex]);
+
+  // Handle item edit modal
+  const handleItemEditModalClose = useCallback(() => {
+    setShowItemEditModal(false);
+    setEditingItemIndex(null);
+  }, []);
+
+  const handleItemSave = useCallback((itemData) => {
+    if (editingItemIndex !== null) {
+      // Edit existing item
+      setEditedData(prev => ({
+        ...prev,
+        items: prev.items.map((item, index) =>
+          index === editingItemIndex ? itemData : item
+        )
+      }));
+    } else {
+      // Add new item
+      setEditedData(prev => ({
+        ...prev,
+        items: [...prev.items, itemData]
+      }));
+    }
+    setShowItemEditModal(false);
+    setEditingItemIndex(null);
+  }, [editingItemIndex]);
 
   if (!open) return null;
 
@@ -449,6 +467,19 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
           onSelect={handleLicensePlateSelect}
           licensePlates={getAllLicensePlates()}
           isLoading={isLoadingPlates}
+        />
+      )}
+
+      {showItemEditModal && (
+        <ExpenseItemEditModal
+          isOpen={showItemEditModal}
+          onClose={handleItemEditModalClose}
+          onSave={handleItemSave}
+          item={editingItemIndex !== null ? editedData.items[editingItemIndex] : null}
+          isEdit={editingItemIndex !== null}
+          licensePlates={getAllLicensePlates()}
+          isLoadingPlates={isLoadingPlates}
+          taxRate={taxRate}
         />
       )}
     </div>

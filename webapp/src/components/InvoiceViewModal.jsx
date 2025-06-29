@@ -28,6 +28,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
   const [isItemEditModalOpen, setIsItemEditModalOpen] = useState(false);
+  const [showItemEditModal, setShowItemEditModal] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
 
   // Status change prompts
   const [showPaymentProofPrompt, setShowPaymentProofPrompt] = useState(false);
@@ -38,7 +40,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
 
   // Memoized status options to prevent recreation on every render
   const statusOptions = useMemo(() =>
-    Object.entries(INVOICE_STATUS).map(([key, value]) => ({
+    Object.entries(INVOICE_STATUS).map(([, value]) => ({
       value: value,
       label: INVOICE_STATUS_LABELS[value]
     })), []
@@ -299,19 +301,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   }, []);
 
   const handleAddItem = useCallback(() => {
-    setEditedData(prev => ({
-      ...prev,
-      items: [...prev.items, {
-        license_plate: '',
-        item_name: '',
-        service_date: null,
-        notes: '',
-        price: 0,
-        quantity: 1,
-        tax_rate: 0,
-        total: 0
-      }]
-    }));
+    setEditingItemIndex(null);
+    setShowItemEditModal(true);
   }, []);
 
   const handleDeleteItem = useCallback((index) => {

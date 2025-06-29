@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   FormGroup,
   FormRow,
@@ -8,13 +8,19 @@ import {
   ErrorText,
   Button
 } from '@components/ui';
+import ExpenseItemEditModal from '../expense/ExpenseItemEditModal';
 
 const ExpenseItemManager = ({
   items = [],
   onChange,
   errors = {},
   showInstallExpiry = true, // Option to show/hide install and expiry date fields
+  licensePlates = [],
+  isLoadingPlates = false,
+  taxRate = 10
 }) => {
+  const [showItemEditModal, setShowItemEditModal] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
@@ -29,16 +35,35 @@ const ExpenseItemManager = ({
     onChange(newItems);
   };
 
-  const handleAddItem = () => {
-    const newItems = [...items, {
-      item_name: '',
-      price: '',
-      quantity: '',
-      install_date: '',
-      expiry_date: ''
-    }];
+  const handleAddItem = useCallback(() => {
+    setEditingItemIndex(null);
+    setShowItemEditModal(true);
+  }, []);
+
+  const handleEditItem = useCallback((index) => {
+    setEditingItemIndex(index);
+    setShowItemEditModal(true);
+  }, []);
+
+  const handleItemEditModalClose = useCallback(() => {
+    setShowItemEditModal(false);
+    setEditingItemIndex(null);
+  }, []);
+
+  const handleItemSave = useCallback((itemData) => {
+    let newItems;
+    if (editingItemIndex !== null) {
+      // Edit existing item
+      newItems = [...items];
+      newItems[editingItemIndex] = itemData;
+    } else {
+      // Add new item
+      newItems = [...items, itemData];
+    }
     onChange(newItems);
-  };
+    setShowItemEditModal(false);
+    setEditingItemIndex(null);
+  }, [editingItemIndex, items, onChange]);
 
   const handleRemoveItem = (index) => {
     if (items.length > 1) {
@@ -86,8 +111,25 @@ const ExpenseItemManager = ({
                     error={!!errors[`items.${index}.item_name`]}
                     required
                     style={{flex: 1}}
+                    readOnly
                   />
-                  {items.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="small"
+                    onClick={() => handleEditItem(index)}
+                    style={{
+                      backgroundColor: '#e0f2fe',
+                      borderColor: '#0ea5e9',
+                      color: '#0284c7',
+                      fontSize: '12px',
+                      padding: '8px 12px',
+                      flexShrink: 0
+                    }}
+                  >
+                    Sửa
+                  </Button>
+                  {items.length > 0 && (
                     <Button
                       type="button"
                       variant="outline"
@@ -120,6 +162,7 @@ const ExpenseItemManager = ({
                     onChange={(e) => handleItemChange(index, 'price', e.target.value)}
                     error={!!errors[`items.${index}.price`]}
                     required
+                    readOnly
                   />
                   {errors[`items.${index}.price`] && <ErrorText>{errors[`items.${index}.price`]}</ErrorText>}
                 </FormCol>
@@ -134,6 +177,7 @@ const ExpenseItemManager = ({
                     onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                     error={!!errors[`items.${index}.quantity`]}
                     required
+                    readOnly
                   />
                   {errors[`items.${index}.quantity`] && <ErrorText>{errors[`items.${index}.quantity`]}</ErrorText>}
                 </FormCol>
@@ -193,6 +237,19 @@ const ExpenseItemManager = ({
       >
         + Thêm hạng mục
       </Button>
+
+      {showItemEditModal && (
+        <ExpenseItemEditModal
+          isOpen={showItemEditModal}
+          onClose={handleItemEditModalClose}
+          onSave={handleItemSave}
+          item={editingItemIndex !== null ? items[editingItemIndex] : null}
+          isEdit={editingItemIndex !== null}
+          licensePlates={licensePlates}
+          isLoadingPlates={isLoadingPlates}
+          taxRate={taxRate}
+        />
+      )}
     </div>
   );
 };

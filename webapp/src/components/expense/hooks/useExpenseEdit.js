@@ -110,20 +110,9 @@ const useExpenseEdit = (expenseData, expenseId, onDataRefresh, fetchTractors, fe
   }, []);
 
   const handleAddItem = useCallback(() => {
-    setEditedData(prev => ({
-      ...prev,
-      items: [...prev.items, {
-        license_plate: '',
-        item_name: '',
-        install_date: null,
-        expiry_date: null,
-        price: 0,
-        quantity: 1,
-        tax_rate: taxRate,
-        total: 0
-      }]
-    }));
-  }, [taxRate]);
+    setEditingItemIndex(null);
+    setShowItemEditModal(true);
+  }, []);
 
   const handleDeleteItem = useCallback((index) => {
     setEditedData(prev => ({

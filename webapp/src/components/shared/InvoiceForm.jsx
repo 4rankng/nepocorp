@@ -134,8 +134,8 @@ const InvoiceForm = ({
     loadSettings();
   }, [open]);
 
-  // Get license plates for dropdown
-  const getAllLicensePlates = useCallback(() => {
+  // Get license plates for dropdown - memoized to prevent re-creation
+  const getAllLicensePlates = useMemo(() => {
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
@@ -372,7 +372,7 @@ const InvoiceForm = ({
               onLicensePlateCellClick={handleLicensePlateCellClick}
               total={calculateInvoiceTotal(editedData.items)}
               isInvoiceMode={true}
-              licensePlates={getAllLicensePlates()}
+              licensePlates={getAllLicensePlates}
               isLoadingPlates={isLoadingPlates}
               taxRate={taxRate}
             />
@@ -396,7 +396,7 @@ const InvoiceForm = ({
           open={showLicensePlateModal}
           onClose={() => setShowLicensePlateModal(false)}
           onSelect={handleLicensePlateSelect}
-          licensePlates={getAllLicensePlates()}
+          licensePlates={getAllLicensePlates}
           isLoading={isLoadingPlates}
         />
       )}
@@ -408,7 +408,7 @@ const InvoiceForm = ({
           onSave={handleItemSave}
           item={editingItemIndex !== null ? editedData.items[editingItemIndex] : null}
           isEdit={editingItemIndex !== null}
-          licensePlates={getAllLicensePlates()}
+          licensePlates={getAllLicensePlates}
           isLoadingPlates={isLoadingPlates}
           taxRate={taxRate}
         />
