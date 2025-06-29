@@ -10,10 +10,9 @@ import {
   CircularProgress,
 } from '@mui/material';
 const initialFormState = {
-  ma_dinh_danh: '',
-  ten: '',
-  dia_chi: '',
-  ma_so_thue: '',
+  name: '',
+  address: '',
+  tax_code: '',
 };
 const CustomerForm = ({
   open,
@@ -31,10 +30,9 @@ const CustomerForm = ({
     if (open) {
       if (customer) {
         setFormData({
-          ma_dinh_danh: customer.ma_dinh_danh || '',
-          ten: customer.ten || '',
-          dia_chi: customer.dia_chi || '',
-          ma_so_thue: customer.ma_so_thue || '',
+          name: customer.name || '',
+          address: customer.address || '',
+          tax_code: customer.tax_code || '',
         });
       } else {
         // Get initial form data with generated code
@@ -56,19 +54,17 @@ const CustomerForm = ({
   const handleSubmit = e => {
     e.preventDefault();
     // Basic validation
-    if (!formData.ten || formData.ten.trim() === '') {
+    if (!formData.name || formData.name.trim() === '') {
       setLocalError('Vui lòng nhập tên khách hàng');
       return;
     }
-    // Validate customer code format
-    if (!formData.ma_dinh_danh || formData.ma_dinh_danh.trim() === '') {
-      setLocalError('Vui lòng nhập mã khách hàng');
-      return;
-    }
-    const codeRegex = /^KH\d{3,}$/i;
-    if (!codeRegex.test(formData.ma_dinh_danh.trim())) {
-      setLocalError('Mã khách hàng phải có định dạng KH001, KH002, ...');
-      return;
+    // Validate tax code if provided
+    if (formData.tax_code && formData.tax_code.trim() !== '') {
+      const taxCodeRegex = /^\d{10,13}$/; // Vietnamese tax code format
+      if (!taxCodeRegex.test(formData.tax_code.trim())) {
+        setLocalError('Mã số thuế phải có từ 10-13 chữ số');
+        return;
+      }
     }
     // If we have a code validation error, don't submit
     if (localError) {
@@ -101,56 +97,42 @@ const CustomerForm = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}>
             {' '}
             {/* Reduced gap for tighter packing */}
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Mã khách hàng"
-                name="ma_dinh_danh"
-                value={formData.ma_dinh_danh}
-                onChange={handleInputChange}
-                placeholder="VD: KH001"
-                fullWidth
-                size="small"
-                margin="dense" // Changed to dense
-                disabled={!!customer} // Disable editing code for existing customers
-                required
-                inputProps={{
-                  pattern: '^KH\\d{3,}$',
-                  title: 'Mã khách hàng phải bắt đầu bằng KH và ít nhất 3 chữ số',
-                }}
-                helperText="VD: KH001"
-              />
-              <TextField
-                label="Mã số thuế"
-                name="ma_so_thue"
-                value={formData.ma_so_thue}
-                onChange={handleInputChange}
-                placeholder="VD: 5500157123"
-                fullWidth
-                size="small"
-                margin="dense" // Changed to dense
-              />
-            </Box>
+            <TextField
+              label="Mã số thuế"
+              name="tax_code"
+              value={formData.tax_code}
+              onChange={handleInputChange}
+              placeholder="VD: 5500157123"
+              fullWidth
+              size="small"
+              margin="dense"
+              inputProps={{
+                pattern: '^\\d{10,13}$',
+                title: 'Mã số thuế phải có từ 10-13 chữ số',
+              }}
+              helperText="Mã số thuế (10-13 chữ số)"
+            />
             <TextField
               label="Tên khách hàng"
-              name="ten"
-              value={formData.ten}
+              name="name"
+              value={formData.name}
               onChange={handleInputChange}
               placeholder="Ví dụ: Công ty Cổ phần ABC"
               fullWidth
               size="small"
               required
-              margin="dense" // Changed to dense
+              margin="dense"
               error={localError.includes('Tên khách hàng')}
             />
             <TextField
               label="Địa chỉ"
-              name="dia_chi"
-              value={formData.dia_chi}
+              name="address"
+              value={formData.address}
               onChange={handleInputChange}
               placeholder="Ví dụ: 123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh"
               fullWidth
               size="small"
-              margin="dense" // Changed to dense
+              margin="dense"
               multiline
               rows={2}
             />
@@ -168,7 +150,7 @@ const CustomerForm = ({
           <Button
             type="submit"
             variant="contained"
-            disabled={isLoading || !formData.ten.trim()}
+            disabled={isLoading || !formData.name.trim()}
             startIcon={isLoading ? <CircularProgress size={20} /> : null}
           >
             {customer ? 'Lưu' : 'Thêm'}

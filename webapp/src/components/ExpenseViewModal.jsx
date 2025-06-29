@@ -177,9 +177,44 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   }, [open, isEditing, handleCancelEdit, handleClose, showLicensePlateModal]);
 
   const handleSaveEdit = useCallback(async () => {
+    console.log('handleSaveEdit called');
     setIsSaving(true);
     setError(null);
+    
     try {
+      console.log('Starting validation...');
+      
+      // Basic validation
+      if (!editedData.vendor_name?.trim()) {
+        console.log('Validation failed: vendor_name');
+        setError('Vui lòng nhập tên nhà cung cấp');
+        return;
+      }
+      
+      if (!editedData.expense_category_id) {
+        console.log('Validation failed: expense_category_id');
+        setError('Vui lòng chọn loại chi phí');
+        return;
+      }
+
+      // Check if items have required license plates
+      const itemsWithoutLicensePlate = editedData.items.filter(item => !item.license_plate?.trim());
+      if (itemsWithoutLicensePlate.length > 0) {
+        console.log('Validation failed: license plates missing');
+        setError('Vui lòng chọn biển số xe cho tất cả hạng mục');
+        return;
+      }
+
+      // Check if items have required names
+      const itemsWithoutName = editedData.items.filter(item => !item.item_name?.trim());
+      if (itemsWithoutName.length > 0) {
+        console.log('Validation failed: item names missing');
+        setError('Vui lòng nhập tên cho tất cả hạng mục');
+        return;
+      }
+
+      console.log('Validation passed, preparing data...');
+      
       const updatedItems = prepareExpenseItemsForUpdate(editedData.items);
       const totalAmount = calculateExpenseTotal(updatedItems);
 
@@ -194,16 +229,58 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         total: totalAmount
       };
 
-      await expenseApi.update(expenseId, updateData);
+      console.log('Calling API update with data:', updateData);
+      
+      const apiResponse = await expenseApi.update(expenseId, updateData);
+      console.log('API update successful:', apiResponse);
 
-      // Refresh the expense data
+      // Only close editing mode if successful
+      console.log('Refreshing data...');
       await fetchExpenseData();
+      
+      console.log('Success! Closing edit mode...');
       setIsEditing(false);
       setEditedData(null);
+      
     } catch (err) {
-      setError('Không thể cập nhật phiếu chi');
+      console.error('Caught error in handleSaveEdit:', err);
+      
+      // Extract error message from API response with more comprehensive error handling
+      let errorMessage = 'Không thể cập nhật phiếu chi';
+      
+      // Handle different error response formats
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error?.message) {
+        errorMessage = err.response.data.error.message;
+      } else if (err.response?.message) {
+        errorMessage = err.response.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Handle validation errors specifically
+      if (err.response?.data?.errors) {
+        const validationErrors = err.response.data.errors;
+        if (typeof validationErrors === 'object') {
+          const errorMessages = Object.values(validationErrors).flat();
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join(', ');
+          }
+        }
+      }
+      
+      console.log('Setting error message:', errorMessage);
+      setError(errorMessage);
       console.error('Error updating expense:', err);
+      console.error('Error response:', err.response);
+      
+      // IMPORTANT: Don't close modal or exit editing mode on error
+      // The error will be displayed to the user and they can fix the issues
+      return; // Explicitly return to prevent any further execution
+      
     } finally {
+      console.log('handleSaveEdit finally block');
       setIsSaving(false);
     }
   }, [editedData, expenseId, fetchExpenseData]);
@@ -301,8 +378,22 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
           )}
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm mb-4">
-              {error}
+            <div 
+              className="p-4 bg-red-100 border-2 border-red-300 rounded-lg text-red-800 text-sm mb-4 shadow-lg animate-pulse"
+              ref={(el) => {
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <div className="font-medium">
+                  Lỗi: {error}
+                </div>
+              </div>
             </div>
           )}
 

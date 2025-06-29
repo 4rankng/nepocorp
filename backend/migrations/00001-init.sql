@@ -86,6 +86,10 @@ CREATE TABLE IF NOT EXISTS partners (
     name VARCHAR(255) NOT NULL,
     tax_code VARCHAR(255) NOT NULL,
     address TEXT,
+    contact_person VARCHAR(255) NULL,
+    contact_phone VARCHAR(50) NULL,
+    contact_email VARCHAR(255) NULL,
+    notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE INDEX idx_partners_tax_code (tax_code)

@@ -135,10 +135,44 @@ const useExpenseEdit = (expenseData, expenseId, onDataRefresh, fetchTractors, fe
   const handleSaveEdit = useCallback(async () => {
     if (!editedData) return;
     
+    console.log('useExpenseEdit handleSaveEdit called');
     setIsSaving(true);
     setSaveError(null);
     
     try {
+      console.log('Starting validation in useExpenseEdit...');
+      
+      // Client-side validation
+      if (!editedData.vendor_name?.trim()) {
+        console.log('Validation failed: vendor_name missing');
+        setSaveError('Vui lòng nhập tên nhà cung cấp');
+        return;
+      }
+      
+      if (!editedData.expense_category_id) {
+        console.log('Validation failed: expense_category_id missing');
+        setSaveError('Vui lòng chọn loại chi phí');
+        return;
+      }
+
+      // Check if items have required license plates
+      const itemsWithoutLicensePlate = editedData.items.filter(item => !item.license_plate?.trim());
+      if (itemsWithoutLicensePlate.length > 0) {
+        console.log('Validation failed: license plates missing');
+        setSaveError('Vui lòng chọn biển số xe cho tất cả hạng mục');
+        return;
+      }
+
+      // Check if items have required names
+      const itemsWithoutName = editedData.items.filter(item => !item.item_name?.trim());
+      if (itemsWithoutName.length > 0) {
+        console.log('Validation failed: item names missing');
+        setSaveError('Vui lòng nhập tên cho tất cả hạng mục');
+        return;
+      }
+
+      console.log('Validation passed in useExpenseEdit, preparing data...');
+      
       // Calculate totals for items
       const updatedItems = editedData.items.map(item => {
         const price = parseFloat(item.price) || 0;
@@ -170,16 +204,58 @@ const useExpenseEdit = (expenseData, expenseId, onDataRefresh, fetchTractors, fe
         total: totalAmount
       };
 
-      await expenseApi.update(expenseId, updateData);
+      console.log('Calling API update with data:', updateData);
       
-      // Refresh the expense data
+      const apiResponse = await expenseApi.update(expenseId, updateData);
+      console.log('API update successful:', apiResponse);
+      
+      // Only close editing mode if successful
+      console.log('Refreshing data...');
       await onDataRefresh();
+      
+      console.log('Success! Closing edit mode...');
       setIsEditing(false);
       setEditedData(null);
+      
     } catch (err) {
-      setSaveError('Không thể cập nhật phiếu chi');
+      console.error('Caught error in useExpenseEdit handleSaveEdit:', err);
+      
+      // Extract error message from API response with comprehensive error handling
+      let errorMessage = 'Không thể cập nhật phiếu chi';
+      
+      // Handle different error response formats
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error?.message) {
+        errorMessage = err.response.data.error.message;
+      } else if (err.response?.message) {
+        errorMessage = err.response.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Handle validation errors specifically
+      if (err.response?.data?.errors) {
+        const validationErrors = err.response.data.errors;
+        if (typeof validationErrors === 'object') {
+          const errorMessages = Object.values(validationErrors).flat();
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join(', ');
+          }
+        }
+      }
+      
+      console.log('Setting error message in useExpenseEdit:', errorMessage);
+      setSaveError(errorMessage);
       console.error('Error updating expense:', err);
+      console.error('Error response:', err.response);
+      
+      // IMPORTANT: Don't close editing mode on error
+      // The error will be displayed to the user and they can fix the issues
+      return; // Explicitly return to prevent any further execution
+      
     } finally {
+      console.log('useExpenseEdit handleSaveEdit finally block');
       setIsSaving(false);
     }
   }, [editedData, expenseId, onDataRefresh]);

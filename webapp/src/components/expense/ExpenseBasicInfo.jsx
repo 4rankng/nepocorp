@@ -99,4 +99,4 @@ ExpenseBasicInfo.propTypes = {
   isLoadingCustomers: PropTypes.bool
 };
 
-export default ExpenseBasicInfo;
+export default React.memo(ExpenseBasicInfo);

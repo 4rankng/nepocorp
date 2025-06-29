@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
 import { settingsApi } from '@services/api/settingsApi';
 import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
@@ -48,6 +48,11 @@ const ExpenseForm = ({
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Memoize calculated total to prevent unnecessary recalculations
+  const calculatedTotal = useMemo(() => {
+    return editedData?.items ? calculateExpenseTotal(editedData.items) : 0;
+  }, [editedData?.items]);
 
   // Always in editing mode for add form
   const isEditing = true;
@@ -125,8 +130,8 @@ const ExpenseForm = ({
     loadSettings();
   }, [open, expenseCategoryId]);
 
-  // Get license plates for dropdown
-  const getAllLicensePlates = useCallback(() => {
+  // Get license plates for dropdown - memoized to prevent re-creation
+  const getAllLicensePlates = useMemo(() => {
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
@@ -170,8 +175,9 @@ const ExpenseForm = ({
       ...prev,
       [field]: value
     }));
-    onChange({ target: { name: field, value } });
-  }, [onChange]);
+    // Don't call onChange immediately to prevent re-renders while typing
+    // Parent will get the updated data when saving
+  }, []);
 
   const handleItemChange = useCallback((index, field, value) => {
     setEditedData(prev => ({
@@ -259,7 +265,7 @@ const ExpenseForm = ({
         total: totalAmount
       };
 
-      // Update the onChange to reflect final data
+      // Update the parent with final data before saving
       onChange({ target: { name: 'formData', value: saveData } });
       await onSave();
       handleClose();
@@ -326,7 +332,7 @@ const ExpenseForm = ({
                 onItemChange={handleItemChange}
                 onDeleteItem={handleDeleteItem}
                 onLicensePlateCellClick={handleLicensePlateCellClick}
-                total={calculateExpenseTotal(editedData.items)}
+                total={calculatedTotal}
               />
             </div>
           </div>
@@ -349,7 +355,7 @@ const ExpenseForm = ({
           open={showLicensePlateModal}
           onClose={() => setShowLicensePlateModal(false)}
           onSelect={handleLicensePlateSelect}
-          licensePlates={getAllLicensePlates()}
+          licensePlates={getAllLicensePlates}
           isLoading={isLoadingPlates}
         />
       )}
@@ -357,4 +363,4 @@ const ExpenseForm = ({
   );
 };
 
-export default ExpenseForm;
+export default React.memo(ExpenseForm);

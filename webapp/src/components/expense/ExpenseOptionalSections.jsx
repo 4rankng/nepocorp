@@ -94,4 +94,4 @@ ExpenseOptionalSections.propTypes = {
   onFieldChange: PropTypes.func.isRequired
 };
 
-export default ExpenseOptionalSections;
+export default React.memo(ExpenseOptionalSections);

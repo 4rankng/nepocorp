@@ -15,7 +15,6 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTheme, useMediaQuery } from '@mui/material';
 import NhanVienForm from '@features/nhan-vien/components/NhanVienForm';
 import DesktopView from './components/DesktopView';
-import MobileView from './components/MobileView';
 const QuanLyNhanVien = () => {
   const {
     employees,
@@ -89,30 +88,16 @@ const QuanLyNhanVien = () => {
           {error}
         </Alert>
       )}
-      {/* Conditional Rendering of Views */}
-      {isMobile ? (
-        <MobileView
-          employees={filteredEmployees}
-          isLoading={isLoading}
-          error={error} // Pass error to be handled within MobileView if needed
-          searchTerm={searchTerm}
-          handleSearchChange={handleSearchChange}
-          handleOpenModalForEdit={handleOpenModalForEdit}
-          handleDeleteRequest={handleDeleteClick} // Renamed for clarity
-          canEditDelete={canEditDelete}
-        />
-      ) : (
-        <DesktopView
-          employees={filteredEmployees}
-          isLoading={isLoading}
-          error={error} // Pass error to be handled within DesktopView if needed
-          searchTerm={searchTerm}
-          handleSearchChange={handleSearchChange}
-          handleOpenModalForEdit={handleOpenModalForEdit}
-          handleDeleteRequest={handleDeleteClick} // Renamed for clarity
-          canEditDelete={canEditDelete}
-        />
-      )}
+      <DesktopView
+        employees={filteredEmployees}
+        isLoading={isLoading}
+        error={error}
+        searchTerm={searchTerm}
+        handleSearchChange={handleSearchChange}
+        handleOpenModalForEdit={handleOpenModalForEdit}
+        handleDeleteRequest={handleDeleteClick}
+        canEditDelete={canEditDelete}
+      />
       {/* Floating Add FAB */}
       <Zoom in={!isLoading}>
         <Fab

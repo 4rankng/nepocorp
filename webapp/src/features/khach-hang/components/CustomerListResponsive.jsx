@@ -34,10 +34,9 @@ const CustomerListResponsive = ({
     const term = searchTerm.toLowerCase();
     return customers.filter(
       customer =>
-        (customer.ten && customer.ten.toLowerCase().includes(term)) ||
-        (customer.dia_chi && customer.dia_chi.toLowerCase().includes(term)) ||
-        (customer.ma_so_thue && customer.ma_so_thue.toLowerCase().includes(term)) ||
-        (customer.ma_dinh_danh && customer.ma_dinh_danh.toLowerCase().includes(term))
+        (customer.name && customer.name.toLowerCase().includes(term)) ||
+        (customer.address && customer.address.toLowerCase().includes(term)) ||
+        (customer.tax_code && customer.tax_code.toLowerCase().includes(term))
     );
   }, [customers, searchTerm]);
 
@@ -52,27 +51,21 @@ const CustomerListResponsive = ({
   // Define columns for StandardTable
   const columns = [
     {
-      key: 'ma_dinh_danh',
-      label: 'Mã khách hàng',
-      align: 'left',
-      sortable: true,
-    },
-    {
-      key: 'ten',
+      key: 'name',
       label: 'Tên khách hàng',
       align: 'left',
       sortable: true,
     },
     {
-      key: 'dia_chi',
-      label: 'Địa chỉ',
+      key: 'tax_code',
+      label: 'Mã số thuế',
       align: 'left',
       sortable: true,
       render: value => value || 'Chưa sửa',
     },
     {
-      key: 'ma_so_thue',
-      label: 'Mã số thuế',
+      key: 'address',
+      label: 'Địa chỉ',
       align: 'left',
       sortable: true,
       render: value => value || 'Chưa sửa',
@@ -99,13 +92,13 @@ const CustomerListResponsive = ({
             <Box display="flex" justifyContent="space-between" alignItems="flex-start">
               <Box>
                 <Typography variant="h6" component="div">
-                  {customer.ten}
+                  {customer.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Địa chỉ:</strong> {customer.dia_chi || 'Chưa sửa'}
+                  <strong>Địa chỉ:</strong> {customer.address || 'Chưa sửa'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Mã số thuế:</strong> {customer.ma_so_thue || 'Chưa sửa'}
+                  <strong>Mã số thuế:</strong> {customer.tax_code || 'Chưa sửa'}
                 </Typography>
               </Box>
               <Box>
@@ -159,7 +152,7 @@ const CustomerListResponsive = ({
         onRowClick={handleRowClick}
         emptyMessage={searchTerm ? 'Không tìm thấy khách hàng phù hợp' : emptyMessage}
         sortable={true}
-        defaultSort={{ key: 'ten', direction: 'asc' }}
+        defaultSort={{ key: 'name', direction: 'asc' }}
         pagination={true}
         page={page}
         totalCount={filteredCustomers.length}

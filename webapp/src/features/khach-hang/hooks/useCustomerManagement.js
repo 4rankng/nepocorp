@@ -1,26 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import logger from '@services/logger';
-// TODO: Replace with actual API imports
+import { customerApi } from '@services/api/customerApi';
 const initialFormState = {
-  ma_dinh_danh: '',
-  ten: '',
-  dia_chi: '',
-  ma_so_thue: '',
+  name: '',
+  address: '',
+  tax_code: '',
 };
-// Helper function to generate the next customer code
-const generateNextCustomerCode = existingCustomers => {
-  if (!existingCustomers || existingCustomers.length === 0) return 'KH001';
-  // Find the highest code number
-  const maxCode = existingCustomers.reduce((max, customer) => {
-    if (!customer.code) return max;
-    const codeMatch = customer.code.match(/^KH(\d+)$/i);
-    if (!codeMatch) return max;
-    const num = parseInt(codeMatch[1], 10);
-    return !isNaN(num) ? Math.max(max, num) : max;
-  }, 0);
-  // Generate new code with leading zeros
-  return `KH${String(maxCode + 1).padStart(3, '0')}`;
-};
+// No data transformation needed - using backend field names directly
 const useCustomerManagement = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,8 +16,8 @@ const useCustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      // TODO: Replace with actual API call
-      throw new Error('fetchAllKhachHang API function not implemented');
+      const response = await customerApi.getAll();
+      setCustomers(response.data);
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không thể tải danh sách khách hàng';
       setError(errorMessage);
@@ -45,44 +31,38 @@ const useCustomerManagement = () => {
       setLoading(true);
       setError('');
       try {
-        // Always generate a new code for new customers
-        const nextCode = generateNextCustomerCode(customers);
-        const processedData = {
-          ...customerData,
-          code: nextCode,
-        };
-        // TODO: Replace with actual API call
-        throw new Error('addKhachHang API function not implemented');
+        const response = await customerApi.create(customerData);
+        const newCustomer = response.data;
+        setCustomers(prev => [...prev, newCustomer]);
+        return { success: true, data: newCustomer };
       } catch (err) {
         const errorMessage = err.response?.data?.error || 'Lỗi khi thêm khách hàng';
         setError(errorMessage);
-
         return { success: false, error: errorMessage };
       } finally {
         setLoading(false);
       }
     },
-    [customers, fetchCustomers]
+    []
   );
-  // Get initial form data with generated code
+  // Get initial form data
   const getInitialFormData = useCallback(() => {
-    const nextCode = generateNextCustomerCode(customers);
-    return {
-      ...initialFormState,
-      ma_dinh_danh: nextCode,
-    };
-  }, [customers]);
+    return { ...initialFormState };
+  }, []);
   // Update existing customer
   const updateCustomer = async (id, customerData) => {
     setLoading(true);
     setError('');
     try {
-      // TODO: Replace with actual API call
-      throw new Error('editKhachHang API function not implemented');
+      const response = await customerApi.update(id, customerData);
+      const updatedCustomer = response.data;
+      setCustomers(prev => prev.map(customer => 
+        customer.id === id ? updatedCustomer : customer
+      ));
+      return { success: true, data: updatedCustomer };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Lỗi khi sửa khách hàng';
       setError(errorMessage);
-
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -93,8 +73,9 @@ const useCustomerManagement = () => {
     setLoading(true);
     setError('');
     try {
-      // TODO: Replace with actual API call
-      throw new Error('removeKhachHang API function not implemented');
+      await customerApi.delete(id);
+      setCustomers(prev => prev.filter(customer => customer.id !== id));
+      return { success: true };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Lỗi khi xóa khách hàng';
       setError(errorMessage);
@@ -106,24 +87,30 @@ const useCustomerManagement = () => {
   // Get customer by ID
   const getCustomerById = useCallback(async id => {
     try {
-      // TODO: Replace with actual API call
-      throw new Error('fetchKhachHangById API function not implemented');
+      const response = await customerApi.getById(id);
+      return { success: true, data: response.data };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Không tìm thấy khách hàng';
-
       return { success: false, error: errorMessage };
     }
   }, []);
-  // Get customer by code
-  const getCustomerByCode = useCallback(async code => {
+  // Get customer by tax code
+  const getCustomerByCode = useCallback(async taxCode => {
     try {
-      // TODO: Replace with actual API call
-      throw new Error('fetchKhachHangById API function not implemented');
+      // Since backend doesn't have a specific endpoint for tax_code lookup,
+      // we'll search through all customers
+      const response = await customerApi.getAll();
+      const customer = response.data.find(c => c.tax_code === taxCode);
+      if (customer) {
+        return { success: true, data: customer };
+      } else {
+        return { success: false, error: 'Không tìm thấy khách hàng' };
+      }
     } catch (error) {
       // Not found is an expected case, don't log as error
       if (error.response?.status !== 404) {
-        logger.error('Error fetching customer by code', {
-          code,
+        logger.error('Error fetching customer by tax code', {
+          taxCode,
           error: error.message,
           status: error.response?.status,
         });
@@ -134,15 +121,20 @@ const useCustomerManagement = () => {
       };
     }
   }, []);
-  // Check if a customer code is available
-  const isCustomerCodeAvailable = useCallback(async (code, excludeId = null) => {
-    if (!code || code.trim() === '') return true;
+  // Check if a customer tax code is available
+  const isCustomerCodeAvailable = useCallback(async (taxCode, excludeId = null) => {
+    if (!taxCode || taxCode.trim() === '') return true;
     try {
-      // TODO: Replace with actual API call
-      throw new Error('fetchKhachHangById API function not implemented');
+      const response = await customerApi.getAll();
+      const existingCustomer = response.data.find(c => c.tax_code === taxCode);
+      if (existingCustomer) {
+        // If excludeId is provided, check if it's the same customer being updated
+        return excludeId && existingCustomer.id === excludeId;
+      }
+      return true; // Tax code is available
     } catch (err) {
-      // 404 means code is available
-      return err.response?.status === 404;
+      // If there's an error fetching, assume code is available
+      return true;
     }
   }, []);
   // Clear error

@@ -75,4 +75,4 @@ ExpenseActionButtons.propTypes = {
   onClose: PropTypes.func.isRequired
 };
 
-export default ExpenseActionButtons;
+export default React.memo(ExpenseActionButtons);

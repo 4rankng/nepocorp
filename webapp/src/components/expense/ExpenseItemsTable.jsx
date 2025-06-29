@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import ExpenseItemRow from './ExpenseItemRow';
 import InvoiceItemRow from '../invoice/InvoiceItemRow';
+import ConfirmDialog from '../ConfirmDialog';
 import { formatCurrency } from '@utils/format';
 import { calculateExpenseTotal } from '@utils/expenseHelpers';
 
@@ -16,8 +17,16 @@ const ExpenseItemsTable = ({
 }) => {
   const displayItems = items || [];
   const hasItems = displayItems.length > 0;
+  
+  // State for delete confirmation
+  const [deleteConfirmation, setDeleteConfirmation] = useState({
+    open: false,
+    index: null,
+    itemName: ''
+  });
 
-  const calculateTotal = () => {
+  // Memoize expensive total calculation
+  const calculatedTotal = useMemo(() => {
     if (isEditing) {
       if (isInvoiceMode) {
         // Calculate invoice total
@@ -33,6 +42,28 @@ const ExpenseItemsTable = ({
       return calculateExpenseTotal(displayItems);
     }
     return total || 0;
+  }, [isEditing, isInvoiceMode, displayItems, total]);
+
+  // Handle delete confirmation
+  const handleDeleteClick = (index) => {
+    const item = displayItems[index];
+    const itemName = item?.item_name || item?.license_plate || `${isInvoiceMode ? 'dịch vụ' : 'hạng mục'} ${index + 1}`;
+    setDeleteConfirmation({
+      open: true,
+      index,
+      itemName
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirmation.index !== null) {
+      onDeleteItem(deleteConfirmation.index);
+    }
+    setDeleteConfirmation({ open: false, index: null, itemName: '' });
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmation({ open: false, index: null, itemName: '' });
   };
 
   return (
@@ -58,7 +89,7 @@ const ExpenseItemsTable = ({
               <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">Đơn giá (VND)</th>
               <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-16">SL</th>
               <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Thuế (%)</th>
-              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700">Thành tiền</th>
+              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">Thành tiền</th>
               {isEditing && (
                 <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 w-20">Thao tác</th>
               )}
@@ -75,7 +106,7 @@ const ExpenseItemsTable = ({
                     index={index}
                     isEditing={isEditing}
                     onItemChange={onItemChange}
-                    onDeleteItem={onDeleteItem}
+                    onDeleteItem={handleDeleteClick}
                     onLicensePlateCellClick={onLicensePlateCellClick}
                   />
                 );
@@ -95,7 +126,7 @@ const ExpenseItemsTable = ({
                   Tổng cộng:
                 </td>
                 <td className="px-3 py-2 text-right text-sm font-semibold whitespace-nowrap">
-                  {formatCurrency(calculateTotal())} ₫
+                  {formatCurrency(calculatedTotal)}
                 </td>
                 {isEditing && <td></td>}
               </tr>
@@ -103,6 +134,17 @@ const ExpenseItemsTable = ({
           )}
         </table>
       </div>
+      
+      <ConfirmDialog
+        open={deleteConfirmation.open}
+        title="Xác nhận xóa"
+        message={`Bạn có chắc chắn muốn xóa ${deleteConfirmation.itemName}?`}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="delete"
+      />
     </div>
   );
 };
@@ -117,4 +159,4 @@ ExpenseItemsTable.propTypes = {
   isInvoiceMode: PropTypes.bool
 };
 
-export default ExpenseItemsTable;
+export default React.memo(ExpenseItemsTable);

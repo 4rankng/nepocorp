@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-// TODO: Replace with actual API imports
+import { fetchAllNhanVien, addNhanVien, editNhanVien, removeNhanVien } from '../../../services/api/nhanVienApi';
+import { tractorApi } from '../../../services/api/tractorApi';
 // Configuration
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_RETRY_ATTEMPTS = 3;
@@ -87,8 +88,31 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
           }));
           return;
         }
-        // TODO: Replace with actual API call
-        throw new Error('fetchAllNhanVien API function not implemented');
+        
+        const response = await withRetry(() => fetchAllNhanVien(page, size));
+        
+        if (response.status !== 'success') {
+          throw new Error(response.message || 'Failed to fetch employees');
+        }
+        
+        const employeesData = response.data || [];
+        const total = response.pagination?.records_count || employeesData.length;
+        
+        // Update cache
+        cacheRef.current.employees = {
+          data: employeesData,
+          timestamp: now,
+          total: total,
+        };
+        
+        setEmployees(employeesData);
+        setPagination(prev => ({
+          ...prev,
+          page,
+          pageSize: size,
+          total,
+          totalPages: Math.ceil(total / size),
+        }));
       } catch (err) {
         const errorMsg = err?.message || 'Không thể tải danh sách nhân viên.';
         setError(errorMsg);
@@ -118,8 +142,22 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
         setDauKeoList(cachedData.data);
         return;
       }
-      // TODO: Replace with actual API call
-      throw new Error('fetchAllDauKeo API function not implemented');
+      
+      const response = await tractorApi.getAll(1, 100); // Get all tractors for dropdown
+      
+      if (response.status !== 'success') {
+        throw new Error(response.message || 'Failed to fetch tractors');
+      }
+      
+      const tractorsData = response.data || [];
+      
+      // Update cache
+      cacheRef.current.dauKeo = {
+        data: tractorsData,
+        timestamp: now,
+      };
+      
+      setDauKeoList(tractorsData);
     } catch (err) {
       setDauKeoList([]);
     } finally {
@@ -202,16 +240,22 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
     }
     setIsLoading(true);
     try {
+      let response;
       if (editingEmployee) {
-        // TODO: Replace with actual API call
-        throw new Error('editNhanVien API function not implemented');
+        response = await editNhanVien(editingEmployee.id, formData);
       } else {
-        // TODO: Replace with actual API call
-        throw new Error('addNhanVien API function not implemented');
+        response = await addNhanVien(formData);
       }
+      
+      if (response.status !== 'success') {
+        throw new Error(response.message || `Failed to ${editingEmployee ? 'update' : 'create'} employee`);
+      }
+      
+      // Refresh employee list
+      await fetchEmployeesData();
+      handleCloseModal();
     } catch (err) {
       setError(err.message || `Lỗi khi ${editingEmployee ? 'sửa' : 'thêm'} nhân viên.`);
-
       // Do not close modal on error, so user can see the error
     } finally {
       setIsLoading(false);
@@ -225,10 +269,16 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
       setIsLoading(true);
       setError('');
       try {
-        // TODO: Replace with actual API call
-        throw new Error('removeNhanVien API function not implemented');
+        const response = await removeNhanVien(id);
+        
+        if (response.status !== 'success') {
+          throw new Error(response.message || 'Failed to delete employee');
+        }
+        
+        // Refresh employee list
+        await fetchEmployeesData();
       } catch (err) {
-        setError('Lỗi khi xóa nhân viên.');
+        setError(err.message || 'Lỗi khi xóa nhân viên.');
       } finally {
         setIsLoading(false);
       }

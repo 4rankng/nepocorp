@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { invoiceApi } from '@services/api/invoiceApi';
 import { invoiceCategoryApi } from '@services/api/invoiceCategoryApi';
@@ -35,8 +35,24 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const [tempPaymentProof, setTempPaymentProof] = useState('');
   const [tempCancelReason, setTempCancelReason] = useState('');
 
-  // Get license plates for dropdown
-  const getAllLicensePlates = useCallback(() => {
+  // Memoized status options to prevent recreation on every render
+  const statusOptions = useMemo(() => 
+    Object.entries(INVOICE_STATUS).map(([key, value]) => ({
+      value: value,
+      label: INVOICE_STATUS_LABELS[value]
+    })), []
+  );
+
+  // Memoized calculated total
+  const calculatedTotal = useMemo(() => {
+    if (isEditing && editedData?.items) {
+      return calculateInvoiceTotal(editedData.items);
+    }
+    return invoiceData?.total || 0;
+  }, [isEditing, editedData?.items, invoiceData?.total]);
+
+  // Get license plates for dropdown - memoized to prevent re-creation
+  const getAllLicensePlates = useMemo(() => {
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
@@ -79,42 +95,40 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     }
   }, [open, invoiceId, fetchInvoiceData]);
 
-  // Fetch invoice categories and vehicles when entering edit mode
+  // Fetch invoice categories when entering edit mode
   useEffect(() => {
-    const fetchCategories = async () => {
-      if (isEditing && invoiceCategories.length === 0) {
-        setIsLoadingCategories(true);
-        try {
-          const response = await invoiceCategoryApi.getAllWithoutPagination();
+    if (isEditing && invoiceCategories.length === 0) {
+      setIsLoadingCategories(true);
+      invoiceCategoryApi.getAllWithoutPagination()
+        .then(response => {
           const categories = response.data?.data || response.data || [];
           setInvoiceCategories(categories);
-        } catch (err) {
+        })
+        .catch(err => {
           console.error('Error fetching invoice categories:', err);
-        } finally {
+        })
+        .finally(() => {
           setIsLoadingCategories(false);
-        }
-      }
-    };
+        });
+    }
+  }, [isEditing, invoiceCategories.length]);
 
-    const fetchVehicles = async () => {
-      if (isEditing && (tractors.length === 0 || trailers.length === 0)) {
-        setIsLoadingPlates(true);
-        try {
-          await Promise.all([
-            fetchTractors(),
-            fetchTrailers()
-          ]);
-        } catch (err) {
+  // Fetch vehicles when entering edit mode
+  useEffect(() => {
+    if (isEditing && (tractors.length === 0 || trailers.length === 0)) {
+      setIsLoadingPlates(true);
+      Promise.all([
+        fetchTractors(),
+        fetchTrailers()
+      ])
+        .catch(err => {
           console.error('Error fetching vehicles:', err);
-        } finally {
+        })
+        .finally(() => {
           setIsLoadingPlates(false);
-        }
-      }
-    };
-
-    fetchCategories();
-    fetchVehicles();
-  }, [isEditing, invoiceCategories.length, tractors.length, trailers.length, fetchTractors, fetchTrailers]);
+        });
+    }
+  }, [isEditing, tractors.length, trailers.length, fetchTractors, fetchTrailers]);
 
   const handleClose = useCallback(() => {
     setInvoiceData(null);
@@ -192,7 +206,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
       ...prev,
       [field]: value
     }));
-  }, [editedData]);
+  }, [editedData?.payment_status, editedData?.payment_proof, editedData?.cancel_reason]);
 
   // Handle payment proof confirmation
   const handlePaymentProofConfirm = useCallback(() => {
@@ -349,10 +363,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
           onClose={handleClose}
           onFieldChange={handleFieldChange}
           title={`Chi tiết hóa đơn #${invoiceData?.id || ''}`}
-          statusOptions={Object.entries(INVOICE_STATUS).map(([key, value]) => ({
-            value: value,
-            label: INVOICE_STATUS_LABELS[value]
-          }))}
+          statusOptions={statusOptions}
         />
 
         {/* Modal Body */}
@@ -411,7 +422,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
                 onItemChange={handleItemChange}
                 onDeleteItem={handleDeleteItem}
                 onLicensePlateCellClick={handleLicensePlateCellClick}
-                total={invoiceData.total}
+                total={calculatedTotal}
                 isInvoiceMode={true}
               />
             </>
@@ -436,7 +447,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
           open={showLicensePlateModal}
           onClose={() => setShowLicensePlateModal(false)}
           onSelect={handleLicensePlateSelect}
-          licensePlates={getAllLicensePlates()}
+          licensePlates={getAllLicensePlates}
           isLoading={isLoadingPlates}
         />
       )}

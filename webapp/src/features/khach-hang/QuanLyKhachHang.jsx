@@ -67,18 +67,18 @@ const QuanLyKhachHang = () => {
   const handleSaveCustomer = useCallback(
     async formData => {
       setFormError('');
-      // If this is an edit, we need to validate the code if it was changed
-      if (selectedCustomer && formData.code && formData.code !== selectedCustomer.code) {
+      // If this is an edit, validate tax code if it was changed
+      if (selectedCustomer && formData.tax_code && formData.tax_code !== selectedCustomer.tax_code) {
         setIsValidatingCode(true);
         try {
-          const isAvailable = await isCustomerCodeAvailable(formData.code, selectedCustomer.id);
+          const isAvailable = await isCustomerCodeAvailable(formData.tax_code, selectedCustomer.id);
           if (!isAvailable) {
-            setFormError('Mã khách hàng đã được sử dụng. Vui lòng chọn mã khác.');
+            setFormError('Mã số thuế đã được sử dụng. Vui lòng nhập mã khác.');
             setIsValidatingCode(false);
             return;
           }
         } catch (err) {
-          setFormError('Có lỗi xảy ra khi kiểm tra mã khách hàng. Vui lòng thử lại.');
+          setFormError('Có lỗi xảy ra khi kiểm tra mã số thuế. Vui lòng thử lại.');
           setIsValidatingCode(false);
           return;
         }
@@ -190,20 +190,20 @@ const QuanLyKhachHang = () => {
                 <Typography variant="body2" fontWeight={500}>
                   Tên khách hàng:
                 </Typography>
-                <Typography variant="body2">{deleteDialog.data?.ten || '-'}</Typography>
+                <Typography variant="body2">{deleteDialog.data?.name || '-'}</Typography>
 
                 <Typography variant="body2" fontWeight={500}>
                   Địa chỉ:
                 </Typography>
                 <Typography variant="body2">
-                  {deleteDialog.data?.dia_chi || 'Chưa sửa'}
+                  {deleteDialog.data?.address || 'Chưa sửa'}
                 </Typography>
 
                 <Typography variant="body2" fontWeight={500}>
                   Mã số thuế:
                 </Typography>
                 <Typography variant="body2">
-                  {deleteDialog.data?.ma_so_thue || 'Chưa sửa'}
+                  {deleteDialog.data?.tax_code || 'Chưa sửa'}
                 </Typography>
               </Box>
             </Box>
