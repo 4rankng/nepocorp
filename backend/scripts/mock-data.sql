@@ -23,20 +23,20 @@ SET @hash_salt = '{{HASH_SALT}}';      -- Replace with actual HASH_SALT from .en
 
 -- Insert mock users with properly hashed passwords
 INSERT IGNORE INTO users (id, username, email, password, name, role, is_active, last_updated_by) VALUES
-(1, 'admin', 'admin@nepocorp.com', 
-   HEX(SHA2(CONCAT('admin123', @hash_salt, @hash_secret), 256)), 
+(1, 'admin', 'admin@nepocorp.com',
+   HEX(SHA2(CONCAT('admin', @hash_salt, @hash_secret), 256)),
    'Administrator', 'admin', TRUE, 'Administrator (@admin)'),
-(2, 'manager1', 'manager1@nepocorp.com', 
-   HEX(SHA2(CONCAT('manager123', @hash_salt, @hash_secret), 256)), 
+(2, 'manager1', 'manager1@nepocorp.com',
+   HEX(SHA2(CONCAT('manager', @hash_salt, @hash_secret), 256)),
    'Nguyễn Văn A', 'manager', TRUE, 'Administrator (@admin)'),
-(3, 'driver1', 'driver1@nepocorp.com', 
-   HEX(SHA2(CONCAT('driver123', @hash_salt, @hash_secret), 256)), 
+(3, 'driver1', 'driver1@nepocorp.com',
+   HEX(SHA2(CONCAT('driver', @hash_salt, @hash_secret), 256)),
    'Trần Văn B', 'driver', TRUE, 'Administrator (@admin)'),
-(4, 'driver2', 'driver2@nepocorp.com', 
-   HEX(SHA2(CONCAT('driver123', @hash_salt, @hash_secret), 256)), 
+(4, 'driver2', 'driver2@nepocorp.com',
+   HEX(SHA2(CONCAT('driver', @hash_salt, @hash_secret), 256)),
    'Lê Thị C', 'driver', TRUE, 'Administrator (@admin)'),
-(5, 'mechanic1', 'mechanic1@nepocorp.com', 
-   HEX(SHA2(CONCAT('mechanic123', @hash_salt, @hash_secret), 256)), 
+(5, 'mechanic1', 'mechanic1@nepocorp.com',
+   HEX(SHA2(CONCAT('mechanic', @hash_salt, @hash_secret), 256)),
    'Phạm Văn D', 'mechanic', TRUE, 'Administrator (@admin)');
 
 -- Insert mock settings
@@ -100,7 +100,7 @@ INSERT IGNORE INTO tractors (id, license_plate, engine_type, description, purcha
 (4, '51D-22222', 'Euro 4 Diesel', 'Xe đầu kéo Mitsubishi Fuso 2018', 1000000000.00, 800000000.00, '2018-12-05', 'Administrator (@admin)'),
 (5, '51E-33333', 'Euro 5 Diesel', 'Xe đầu kéo Daewoo Prima 2022', 1400000000.00, 1400000000.00, '2022-05-25', 'Administrator (@admin)');
 
--- Insert mock trailers  
+-- Insert mock trailers
 INSERT IGNORE INTO trailers (id, license_plate, trailer_number, type, description, valuation, last_updated_by) VALUES
 (1, '51R-11111', 'TR001', '40ft', 'Rơ moóc container 40ft Doosung', 300000000.00, 'Administrator (@admin)'),
 (2, '51R-22222', 'TR002', '20ft', 'Rơ moóc container 20ft Cimc', 250000000.00, 'Administrator (@admin)'),

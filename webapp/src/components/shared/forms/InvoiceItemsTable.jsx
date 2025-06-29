@@ -16,7 +16,7 @@ const InvoiceItemsTable = ({
   };
 
   return (
-    <div>
+    <div className="text-sm">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Danh sách dịch vụ</h3>
       <div className="overflow-x-auto">
         <table className="w-full border border-gray-300">

@@ -65,14 +65,6 @@ mock:
 	else \
 		docker exec -i nepo_mysql mysql --default-character-set=utf8mb4 -unepo -pnepo_password nepo < migrations/00001-init.sql; \
 	fi
-	@echo "Preparing mock data..."
+	@echo "Preparing and inserting mock data..."
 	@chmod +x scripts/prepare-mock-data.sh
 	@./scripts/prepare-mock-data.sh
-	@echo "Loading mock data into database..."
-	@if [ -f .env ]; then \
-		export $$(cat .env | grep -v '^#' | xargs); \
-		docker exec -i nepo_mysql mysql --default-character-set=utf8mb4 -u$${DB_USER:-nepo} -p$${DB_PASSWORD:-nepo_password} $${DB_NAME:-nepo} < scripts/mock-data-processed.sql; \
-	else \
-		docker exec -i nepo_mysql mysql --default-character-set=utf8mb4 -unepo -pnepo_password nepo < scripts/mock-data-processed.sql; \
-	fi
-	@echo "Mock data loaded successfully!"

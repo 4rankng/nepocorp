@@ -357,7 +357,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
 
         {/* Modal Body */}
         <div className="relative" style={{overflow: 'visible'}}>
-          <div className="p-2 overflow-y-auto h-[85vh]" style={{borderRadius: '0 0 0.5rem 0.5rem'}}>
+          <div className="p-2 overflow-y-auto h-[85vh] text-sm" style={{borderRadius: '0 0 0.5rem 0.5rem'}}>
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

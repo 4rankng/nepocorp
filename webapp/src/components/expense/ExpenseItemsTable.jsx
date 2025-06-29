@@ -36,8 +36,8 @@ const ExpenseItemsTable = ({
   };
 
   return (
-    <div>
-      <h2 className="text-sm font-semibold text-gray-700 mb-3">{isInvoiceMode ? 'Danh sách dịch vụ' : 'Danh sách hạng mục'}</h2>
+    <div className="text-sm">
+      <h2 className="text-base font-semibold text-gray-700 mb-3">{isInvoiceMode ? 'Danh sách dịch vụ' : 'Danh sách hạng mục'}</h2>
       <div className="border border-gray-200 rounded overflow-hidden">
         <table className="w-full text-sm">
           <thead>
