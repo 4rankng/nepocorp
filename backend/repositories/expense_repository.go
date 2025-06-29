@@ -70,11 +70,11 @@ func (r *ExpenseRepository) List(offset, limit int) ([]*models.Expense, error) {
 	var expenses []*models.Expense
 	query := r.db.Preload("ExpenseCategory").
 		Preload("CreatedByUser")
-	
+
 	if limit > 0 {
 		query = query.Offset(offset).Limit(limit)
 	}
-	
+
 	err := query.Find(&expenses).Error
 	return expenses, err
 }
@@ -91,11 +91,11 @@ func (r *ExpenseRepository) ListWithFilters(offset, limit int, filters map[strin
 	if paymentStatus := filters["payment_status"]; paymentStatus != "" {
 		query = query.Where("payment_status = ?", paymentStatus)
 	}
-	
+
 	if limit > 0 {
 		query = query.Offset(offset).Limit(limit)
 	}
-	
+
 	err := query.Find(&expenses).Error
 	return expenses, err
 }

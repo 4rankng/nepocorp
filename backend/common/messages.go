@@ -51,10 +51,10 @@ const (
 	MsgSettingUpdated   = "Sửa cài đặt thành công"
 
 	// Authentication
-	MsgLoginSuccess       = "Đăng nhập thành công"
-	MsgUserCreated        = "Tạo người dùng thành công"
-	MsgTokenRefreshed     = "Làm mới token thành công"
-	MsgProfileRetrieved   = "Lấy thông tin hồ sơ thành công"
+	MsgLoginSuccess     = "Đăng nhập thành công"
+	MsgUserCreated      = "Tạo người dùng thành công"
+	MsgTokenRefreshed   = "Làm mới token thành công"
+	MsgProfileRetrieved = "Lấy thông tin hồ sơ thành công"
 
 	// Customers
 	MsgCustomersRetrieved = "Lấy danh sách khách hàng thành công"
@@ -67,4 +67,23 @@ const (
 	MsgPartnerCreated    = "Tạo đối tác thành công"
 	MsgPartnerUpdated    = "Sửa đối tác thành công"
 	MsgPartnerDeleted    = "Xóa đối tác thành công"
+
+	// Invoice Categories
+	MsgInvoiceCategoriesRetrieved = "Lấy danh sách danh mục hóa đơn thành công"
+	MsgInvoiceCategoryRetrieved   = "Lấy danh mục hóa đơn thành công"
+	MsgInvoiceCategoryCreated     = "Tạo danh mục hóa đơn thành công"
+	MsgInvoiceCategoryUpdated     = "Sửa danh mục hóa đơn thành công"
+	MsgInvoiceCategoryDeleted     = "Xóa danh mục hóa đơn thành công"
+
+	// Invoices
+	MsgInvoicesRetrieved = "Lấy danh sách hóa đơn thành công"
+	MsgInvoiceRetrieved  = "Lấy hóa đơn thành công"
+	MsgInvoiceCreated    = "Tạo hóa đơn thành công"
+	MsgInvoiceUpdated    = "Sửa hóa đơn thành công"
+	MsgInvoiceDeleted    = "Xóa hóa đơn thành công"
+
+	// Invoice Items
+	MsgInvoiceItemCreated = "Tạo mục hóa đơn thành công"
+	MsgInvoiceItemUpdated = "Sửa mục hóa đơn thành công"
+	MsgInvoiceItemDeleted = "Xóa mục hóa đơn thành công"
 )

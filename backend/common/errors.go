@@ -3,117 +3,140 @@ package common
 // Error messages
 const (
 	// Generic errors
-	ErrInvalidInput      = "Dữ liệu đầu vào không hợp lệ"
-	ErrInternalServer    = "Lỗi máy chủ nội bộ"
-	ErrNotFound          = "Không tìm thấy tài nguyên"
-	ErrUnauthorized      = "Người dùng chưa được xác thực"
-	ErrInvalidID         = "ID không hợp lệ"
-	ErrRequiredFields    = "Các trường bắt buộc bị thiếu"
+	ErrInvalidInput   = "Dữ liệu đầu vào không hợp lệ"
+	ErrInternalServer = "Lỗi máy chủ nội bộ"
+	ErrNotFound       = "Không tìm thấy tài nguyên"
+	ErrUnauthorized   = "Người dùng chưa được xác thực"
+	ErrInvalidID      = "ID không hợp lệ"
+	ErrRequiredFields = "Các trường bắt buộc bị thiếu"
 
 	// Expense Categories errors
-	ErrFetchExpenseCategories = "Lỗi khi lấy danh sách danh mục chi phí"
-	ErrCountExpenseCategories = "Lỗi khi đếm số danh mục chi phí"
-	ErrCreateExpenseCategory  = "Lỗi khi tạo danh mục chi phí"
-	ErrUpdateExpenseCategory  = "Lỗi khi sửa danh mục chi phí"
-	ErrDeleteExpenseCategory  = "Lỗi khi xóa danh mục chi phí"
-	ErrExpenseCategoryNotFound = "Không tìm thấy danh mục chi phí"
+	ErrFetchExpenseCategories      = "Lỗi khi lấy danh sách danh mục chi phí"
+	ErrCountExpenseCategories      = "Lỗi khi đếm số danh mục chi phí"
+	ErrCreateExpenseCategory       = "Lỗi khi tạo danh mục chi phí"
+	ErrUpdateExpenseCategory       = "Lỗi khi sửa danh mục chi phí"
+	ErrDeleteExpenseCategory       = "Lỗi khi xóa danh mục chi phí"
+	ErrExpenseCategoryNotFound     = "Không tìm thấy danh mục chi phí"
 	ErrExpenseCategoryNameRequired = "Trường 'tên' là bắt buộc và không được để trống"
 
 	// Containers errors
-	ErrFetchContainers = "Lỗi khi lấy danh sách container"
-	ErrCountContainers = "Lỗi khi đếm số container"
-	ErrCreateContainer = "Lỗi khi tạo container"
-	ErrUpdateContainer = "Lỗi khi sửa container"
-	ErrDeleteContainer = "Lỗi khi xóa container"
-	ErrContainerNotFound = "Không tìm thấy container"
+	ErrFetchContainers           = "Lỗi khi lấy danh sách container"
+	ErrCountContainers           = "Lỗi khi đếm số container"
+	ErrCreateContainer           = "Lỗi khi tạo container"
+	ErrUpdateContainer           = "Lỗi khi sửa container"
+	ErrDeleteContainer           = "Lỗi khi xóa container"
+	ErrContainerNotFound         = "Không tìm thấy container"
 	ErrContainerCategoryRequired = "Trường 'danh mục' là bắt buộc và không được để trống"
 
 	// Tractors errors
-	ErrFetchTractors = "Lỗi khi lấy danh sách đầu kéo"
-	ErrCountTractors = "Lỗi khi đếm số đầu kéo"
-	ErrCreateTractor = "Lỗi khi tạo đầu kéo"
-	ErrUpdateTractor = "Lỗi khi sửa đầu kéo"
-	ErrDeleteTractor = "Lỗi khi xóa đầu kéo"
-	ErrTractorNotFound = "Không tìm thấy đầu kéo"
+	ErrFetchTractors               = "Lỗi khi lấy danh sách đầu kéo"
+	ErrCountTractors               = "Lỗi khi đếm số đầu kéo"
+	ErrCreateTractor               = "Lỗi khi tạo đầu kéo"
+	ErrUpdateTractor               = "Lỗi khi sửa đầu kéo"
+	ErrDeleteTractor               = "Lỗi khi xóa đầu kéo"
+	ErrTractorNotFound             = "Không tìm thấy đầu kéo"
 	ErrTractorLicensePlateRequired = "Trường 'biển số xe' là bắt buộc và không được để trống"
 
 	// Trailers errors
-	ErrFetchTrailers = "Lỗi khi lấy danh sách rơ moóc"
-	ErrCountTrailers = "Lỗi khi đếm số rơ moóc"
-	ErrCreateTrailer = "Lỗi khi tạo rơ moóc"
-	ErrUpdateTrailer = "Lỗi khi sửa rơ moóc"
-	ErrDeleteTrailer = "Lỗi khi xóa rơ moóc"
-	ErrTrailerNotFound = "Không tìm thấy rơ moóc"
+	ErrFetchTrailers               = "Lỗi khi lấy danh sách rơ moóc"
+	ErrCountTrailers               = "Lỗi khi đếm số rơ moóc"
+	ErrCreateTrailer               = "Lỗi khi tạo rơ moóc"
+	ErrUpdateTrailer               = "Lỗi khi sửa rơ moóc"
+	ErrDeleteTrailer               = "Lỗi khi xóa rơ moóc"
+	ErrTrailerNotFound             = "Không tìm thấy rơ moóc"
 	ErrTrailerLicensePlateRequired = "Trường 'biển số xe' là bắt buộc và không được để trống"
 
 	// Tractor Expenses errors
-	ErrFetchTractorExpenses = "Lỗi khi lấy danh sách chi phí đầu kéo"
-	ErrCountTractorExpenses = "Lỗi khi đếm số chi phí đầu kéo"
-	ErrCreateTractorExpense = "Lỗi khi tạo chi phí đầu kéo"
-	ErrUpdateTractorExpense = "Lỗi khi sửa chi phí đầu kéo"
-	ErrDeleteTractorExpense = "Lỗi khi xóa chi phí đầu kéo"
+	ErrFetchTractorExpenses   = "Lỗi khi lấy danh sách chi phí đầu kéo"
+	ErrCountTractorExpenses   = "Lỗi khi đếm số chi phí đầu kéo"
+	ErrCreateTractorExpense   = "Lỗi khi tạo chi phí đầu kéo"
+	ErrUpdateTractorExpense   = "Lỗi khi sửa chi phí đầu kéo"
+	ErrDeleteTractorExpense   = "Lỗi khi xóa chi phí đầu kéo"
 	ErrTractorExpenseNotFound = "Không tìm thấy chi phí đầu kéo"
-	ErrUserIDNotFound = "Không tìm thấy ID người dùng trong ngữ cảnh"
+	ErrUserIDNotFound         = "Không tìm thấy ID người dùng trong ngữ cảnh"
 
 	// Expense Items errors
-	ErrCreateExpenseItem = "Lỗi khi tạo khoản chi phí"
-	ErrUpdateExpenseItem = "Lỗi khi sửa khoản chi phí"
-	ErrDeleteExpenseItem = "Lỗi khi xóa khoản chi phí"
+	ErrCreateExpenseItem   = "Lỗi khi tạo khoản chi phí"
+	ErrUpdateExpenseItem   = "Lỗi khi sửa khoản chi phí"
+	ErrDeleteExpenseItem   = "Lỗi khi xóa khoản chi phí"
 	ErrExpenseItemNotFound = "Không tìm thấy khoản chi phí"
 
 	// Settings errors
 	ErrSettingNotFound = "Không tìm thấy cài đặt"
-	ErrUpdateSetting = "Lỗi khi sửa cài đặt"
+	ErrUpdateSetting   = "Lỗi khi sửa cài đặt"
 
 	// Authentication errors
 	ErrInvalidCredentials = "Tên đăng nhập hoặc mật khẩu không đúng"
-	ErrUserNotActive = "Tài khoản người dùng chưa được kích hoạt"
-	ErrInvalidToken = "Token không hợp lệ"
-	ErrTokenExpired = "Token đã hết hạn"
-	ErrCreateUser = "Lỗi khi tạo người dùng"
-	ErrUserExists = "Người dùng đã tồn tại"
+	ErrUserNotActive      = "Tài khoản người dùng chưa được kích hoạt"
+	ErrInvalidToken       = "Token không hợp lệ"
+	ErrTokenExpired       = "Token đã hết hạn"
+	ErrCreateUser         = "Lỗi khi tạo người dùng"
+	ErrUserExists         = "Người dùng đã tồn tại"
 
 	// Customers errors
-	ErrFetchCustomers        = "Lỗi khi lấy danh sách khách hàng"
-	ErrCreateCustomer        = "Lỗi khi tạo khách hàng"
-	ErrUpdateCustomer        = "Lỗi khi sửa khách hàng"
-	ErrDeleteCustomer        = "Lỗi khi xóa khách hàng"
-	ErrCustomerNotFound      = "Không tìm thấy khách hàng"
+	ErrFetchCustomers          = "Lỗi khi lấy danh sách khách hàng"
+	ErrCreateCustomer          = "Lỗi khi tạo khách hàng"
+	ErrUpdateCustomer          = "Lỗi khi sửa khách hàng"
+	ErrDeleteCustomer          = "Lỗi khi xóa khách hàng"
+	ErrCustomerNotFound        = "Không tìm thấy khách hàng"
 	ErrCustomerTaxCodeRequired = "Trường 'mã số thuế' của khách hàng là bắt buộc và không được để trống"
-	ErrCustomerTaxCodeExists = "Mã số thuế của khách hàng đã tồn tại"
+	ErrCustomerTaxCodeExists   = "Mã số thuế của khách hàng đã tồn tại"
 
 	// Partners errors
-	ErrFetchPartners        = "Lỗi khi lấy danh sách đối tác"
-	ErrCreatePartner        = "Lỗi khi tạo đối tác"
-	ErrUpdatePartner        = "Lỗi khi sửa đối tác"
-	ErrDeletePartner        = "Lỗi khi xóa đối tác"
-	ErrPartnerNotFound      = "Không tìm thấy đối tác"
+	ErrFetchPartners          = "Lỗi khi lấy danh sách đối tác"
+	ErrCreatePartner          = "Lỗi khi tạo đối tác"
+	ErrUpdatePartner          = "Lỗi khi sửa đối tác"
+	ErrDeletePartner          = "Lỗi khi xóa đối tác"
+	ErrPartnerNotFound        = "Không tìm thấy đối tác"
 	ErrPartnerTaxCodeRequired = "Trường 'mã số thuế' của đối tác là bắt buộc và không được để trống"
-	ErrPartnerTaxCodeExists = "Mã số thuế của đối tác đã tồn tại"
+	ErrPartnerTaxCodeExists   = "Mã số thuế của đối tác đã tồn tại"
+
+	// Invoice Categories errors
+	ErrFetchInvoiceCategories  = "Lỗi khi lấy danh sách danh mục hóa đơn"
+	ErrCreateInvoiceCategory   = "Lỗi khi tạo danh mục hóa đơn"
+	ErrUpdateInvoiceCategory   = "Lỗi khi sửa danh mục hóa đơn"
+	ErrDeleteInvoiceCategory   = "Lỗi khi xóa danh mục hóa đơn"
+	ErrInvoiceCategoryNotFound = "Không tìm thấy danh mục hóa đơn"
+
+	// Invoices errors
+	ErrFetchInvoices        = "Lỗi khi lấy danh sách hóa đơn"
+	ErrCountInvoices        = "Lỗi khi đếm số hóa đơn"
+	ErrCreateInvoice        = "Lỗi khi tạo hóa đơn"
+	ErrUpdateInvoice        = "Lỗi khi sửa hóa đơn"
+	ErrDeleteInvoice        = "Lỗi khi xóa hóa đơn"
+	ErrInvoiceNotFound      = "Không tìm thấy hóa đơn"
+	ErrInvalidPaymentStatus = "Trạng thái thanh toán không hợp lệ"
+	ErrCancelReasonRequired = "Lý do hủy là bắt buộc khi hủy hóa đơn"
+
+	// Invoice Items errors
+	ErrCreateInvoiceItem   = "Lỗi khi tạo mục hóa đơn"
+	ErrUpdateInvoiceItem   = "Lỗi khi sửa mục hóa đơn"
+	ErrDeleteInvoiceItem   = "Lỗi khi xóa mục hóa đơn"
+	ErrInvoiceItemNotFound = "Không tìm thấy mục hóa đơn"
 )
 
 // Error codes
 const (
 	// 4xxx - Client errors
-	CodeBadRequest       = 4001
-	CodeRequiredField    = 4002
-	CodeInvalidID        = 4003
-	CodeNotFound         = 4004
-	CodeInvalidInput     = 4005
-	CodeUnauthorized     = 4006
-	CodeInvalidExpenseID = 4007
-	CodeInvalidItemID    = 4008
-	CodeInvalidCredentials = 4009
-	CodeUserNotActive    = 4010
-	CodeTokenExpired     = 4011
-	CodeUserExists       = 4012
+	CodeBadRequest            = 4001
+	CodeRequiredField         = 4002
+	CodeInvalidID             = 4003
+	CodeNotFound              = 4004
+	CodeInvalidInput          = 4005
+	CodeUnauthorized          = 4006
+	CodeInvalidExpenseID      = 4007
+	CodeInvalidItemID         = 4008
+	CodeInvalidCredentials    = 4009
+	CodeUserNotActive         = 4010
+	CodeTokenExpired          = 4011
+	CodeUserExists            = 4012
 	CodeCustomerTaxCodeExists = 4013
-	CodePartnerTaxCodeExists = 4014
+	CodePartnerTaxCodeExists  = 4014
 
 	// 5xxx - Server errors
-	CodeInternalError    = 5001
-	CodeDatabaseError    = 5002
-	CodeCreateFailed     = 5003
-	CodeUpdateFailed     = 5004
-	CodeDeleteFailed     = 5005
+	CodeInternalError = 5001
+	CodeDatabaseError = 5002
+	CodeCreateFailed  = 5003
+	CodeUpdateFailed  = 5004
+	CodeDeleteFailed  = 5005
 )

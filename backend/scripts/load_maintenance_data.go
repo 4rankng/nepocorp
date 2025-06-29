@@ -157,7 +157,7 @@ func main() {
 		// Use Create instead of setting timestamps manually
 		record.CreatedAt = time.Time{} // Let GORM handle this
 		record.UpdatedAt = time.Time{} // Let GORM handle this
-		
+
 		if err := db.Create(&record).Error; err != nil {
 			log.Printf("Error inserting maintenance record %d: %v", record.ID, err)
 		} else {
@@ -180,7 +180,7 @@ func main() {
 	} else {
 		fmt.Println("\nAll maintenance records:")
 		for _, record := range allRecords {
-			fmt.Printf("ID: %d, License: %s, Item: %s, Price: %d\n", 
+			fmt.Printf("ID: %d, License: %s, Item: %s, Price: %d\n",
 				record.ID, record.LicensePlate, record.ItemName, record.Price)
 		}
 	}

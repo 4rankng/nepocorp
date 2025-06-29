@@ -8,7 +8,7 @@ func Cors() gin.HandlerFunc {
 	allowedOrigins := []string{
 		"http://localhost:5173",
 	}
-	
+
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 		allowed := false
@@ -18,7 +18,7 @@ func Cors() gin.HandlerFunc {
 				break
 			}
 		}
-		
+
 		if allowed {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 		}

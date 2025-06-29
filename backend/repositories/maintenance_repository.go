@@ -72,7 +72,7 @@ func (r *MaintenanceRepository) GetAll(filters MaintenanceFilters, page, limit i
 // GetByID returns a maintenance record by ID
 func (r *MaintenanceRepository) GetByID(id uint) (*models.Maintenance, error) {
 	var maintenance models.Maintenance
-	
+
 	if err := r.db.First(&maintenance, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("maintenance record not found")
@@ -133,7 +133,7 @@ func (r *MaintenanceRepository) Delete(id uint) error {
 // GetByExpenseID returns maintenance records by expense ID
 func (r *MaintenanceRepository) GetByExpenseID(expenseID uint) ([]models.Maintenance, error) {
 	var maintenances []models.Maintenance
-	
+
 	if err := r.db.Where("expense_id = ?", expenseID).Find(&maintenances).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch maintenance records by expense ID: %w", err)
 	}
@@ -144,7 +144,7 @@ func (r *MaintenanceRepository) GetByExpenseID(expenseID uint) ([]models.Mainten
 // GetByLicensePlate returns maintenance records by license plate
 func (r *MaintenanceRepository) GetByLicensePlate(licensePlate string) ([]models.Maintenance, error) {
 	var maintenances []models.Maintenance
-	
+
 	if err := r.db.Where("license_plate = ?", licensePlate).Find(&maintenances).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch maintenance records by license plate: %w", err)
 	}

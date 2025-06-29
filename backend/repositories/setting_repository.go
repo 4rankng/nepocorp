@@ -25,13 +25,13 @@ func (r *SettingRepository) GetByKey(key string) (*models.Setting, error) {
 
 func (r *SettingRepository) UpdateByKey(key, value string, userID uint) (*models.Setting, error) {
 	var setting models.Setting
-	
+
 	// Get formatted LastUpdatedBy string
 	lastUpdatedBy, err := utils.GetFormattedLastUpdatedBy(r.db, userID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// First try to find existing setting
 	err = r.db.Where("`key` = ?", key).First(&setting).Error
 	if err != nil {
@@ -58,6 +58,6 @@ func (r *SettingRepository) UpdateByKey(key, value string, userID uint) (*models
 			return nil, err
 		}
 	}
-	
+
 	return &setting, nil
 }

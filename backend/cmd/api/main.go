@@ -36,7 +36,7 @@ func main() {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetLevel(logrus.InfoLevel)
-	
+
 	// Configure log file rotation (2 days retention)
 	logPath := os.Getenv("LOG_PATH")
 	if logPath == "" {
@@ -82,6 +82,8 @@ func main() {
 	settingRepo := repositories.NewSettingRepository(db)
 	customerRepo := repositories.NewCustomerRepository(db)
 	partnerRepo := repositories.NewPartnerRepository(db)
+	invoiceCategoryRepo := repositories.NewInvoiceCategoryRepository(db)
+	invoiceRepo := repositories.NewInvoiceRepository(db)
 
 	// Initialize services
 	activityLogger := activitylogger.NewService(activityLogRepo, logger, cfg.ActivityLogQueueSize)
@@ -98,6 +100,8 @@ func main() {
 	settingHandler := handlers.NewSettingHandler(settingRepo)
 	customerHandler := handlers.NewCustomerHandler(customerRepo)
 	partnerHandler := handlers.NewPartnerHandler(partnerRepo)
+	invoiceCategoryHandler := handlers.NewInvoiceCategoryHandler(invoiceCategoryRepo)
+	invoiceHandler := handlers.NewInvoiceHandler(invoiceRepo, invoiceCategoryRepo)
 
 	// Initialize Gin
 	gin.SetMode(gin.ReleaseMode)
@@ -114,8 +118,8 @@ func main() {
 	r.Use(middleware.ActivityLogger(activityLogger))
 
 	// Initialize routes
-	routes.Setup(r, cfg, healthHandler, authHandler, userRepo, expenseCategoryHandler, 
-		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, logger)
+	routes.Setup(r, cfg, healthHandler, authHandler, userRepo, expenseCategoryHandler,
+		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -169,7 +173,7 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 
 	// Auto-migrate models
 	if err := db.AutoMigrate(
-		&models.User{}, 
+		&models.User{},
 		&models.ActivityLog{},
 		&models.ExpenseCategory{},
 		&models.Container{},
@@ -181,6 +185,9 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 		&models.Setting{},
 		&models.Customer{},
 		&models.Partner{},
+		&models.InvoiceCategory{},
+		&models.Invoice{},
+		&models.InvoiceItem{},
 	); err != nil {
 		return nil, err
 	}
@@ -201,10 +208,7 @@ func runMigrations(cfg *config.Config, logger *logrus.Logger) {
 		}
 		logger.Info("Migrations completed successfully")
 	case "down":
-		if err := migrations.Down(cfg.DatabaseURL(), logger); err != nil {
-			logger.Fatal("Failed to run migrations down: ", err)
-		}
-		logger.Info("Migrations rolled back successfully")
+		logger.Info("Migration rollback not implemented yet")
 	default:
 		logger.Fatal("Unknown migration direction. Use 'up' or 'down'")
 	}

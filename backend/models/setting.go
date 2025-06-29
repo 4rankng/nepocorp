@@ -11,5 +11,4 @@ type Setting struct {
 	LastUpdatedBy string    `gorm:"type:varchar(255);not null" json:"last_updated_by"` // name (username) of users who last created/updated the record
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
-
 }

@@ -25,14 +25,14 @@ func (h *ContainerHandler) List(c *gin.Context) {
 
 	containers, err := h.repo.List(offset, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrFetchContainers, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrFetchContainers,
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
 		return
 	}
 
 	totalRecords, err := h.repo.Count()
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCountContainers, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCountContainers,
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
 		return
 	}
@@ -44,19 +44,19 @@ func (h *ContainerHandler) List(c *gin.Context) {
 func (h *ContainerHandler) Create(c *gin.Context) {
 	var container models.Container
 	if err := c.ShouldBindJSON(&container); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeBadRequest, Message: err.Error()})
 		return
 	}
 
 	if container.Category == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrContainerCategoryRequired})
 		return
 	}
 
 	if err := h.repo.Create(&container); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateContainer, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateContainer,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
 		return
 	}
@@ -67,34 +67,34 @@ func (h *ContainerHandler) Create(c *gin.Context) {
 func (h *ContainerHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidID, Message: err.Error()})
 		return
 	}
 
 	existingContainer, err := h.repo.FindByID(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrContainerNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrContainerNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrContainerNotFound})
 		return
 	}
 
 	var updateData models.Container
 	if err := c.ShouldBindJSON(&updateData); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeInvalidInput, Message: err.Error()})
 		return
 	}
 
 	if updateData.Category == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrContainerCategoryRequired})
 		return
 	}
 
 	existingContainer.Category = updateData.Category
 	if err := h.repo.Update(existingContainer); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateContainer, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateContainer,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})
 		return
 	}
@@ -105,20 +105,20 @@ func (h *ContainerHandler) Update(c *gin.Context) {
 func (h *ContainerHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidID, Message: err.Error()})
 		return
 	}
 
 	_, err = h.repo.FindByID(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrContainerNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrContainerNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrContainerNotFound})
 		return
 	}
 
 	if err := h.repo.Delete(uint(id)); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteContainer, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteContainer,
 			utils.ErrorDetail{Code: common.CodeDeleteFailed, Message: err.Error()})
 		return
 	}

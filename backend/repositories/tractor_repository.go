@@ -37,11 +37,11 @@ func (r *TractorRepository) Delete(id uint) error {
 func (r *TractorRepository) List(offset, limit int) ([]*models.Tractor, error) {
 	var tractors []*models.Tractor
 	query := r.db
-	
+
 	if limit > 0 {
 		query = query.Offset(offset).Limit(limit)
 	}
-	
+
 	err := query.Find(&tractors).Error
 	return tractors, err
 }

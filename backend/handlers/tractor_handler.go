@@ -25,14 +25,14 @@ func (h *TractorHandler) List(c *gin.Context) {
 
 	tractors, err := h.repo.List(offset, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrFetchTractors, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrFetchTractors,
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
 		return
 	}
 
 	totalRecords, err := h.repo.Count()
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCountTractors, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCountTractors,
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
 		return
 	}
@@ -44,19 +44,19 @@ func (h *TractorHandler) List(c *gin.Context) {
 func (h *TractorHandler) Create(c *gin.Context) {
 	var tractor models.Tractor
 	if err := c.ShouldBindJSON(&tractor); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeBadRequest, Message: err.Error()})
 		return
 	}
 
 	if tractor.LicensePlate == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrTractorLicensePlateRequired})
 		return
 	}
 
 	if err := h.repo.Create(&tractor); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractor, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractor,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
 		return
 	}
@@ -67,36 +67,36 @@ func (h *TractorHandler) Create(c *gin.Context) {
 func (h *TractorHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidID, Message: err.Error()})
 		return
 	}
 
 	existingTractor, err := h.repo.FindByID(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrTractorNotFound})
 		return
 	}
 
 	var updateData models.Tractor
 	if err := c.ShouldBindJSON(&updateData); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeInvalidInput, Message: err.Error()})
 		return
 	}
 
 	if updateData.LicensePlate == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrTractorLicensePlateRequired})
 		return
 	}
 
 	existingTractor.LicensePlate = updateData.LicensePlate
 	existingTractor.Description = updateData.Description
-	
+
 	if err := h.repo.Update(existingTractor); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractor, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractor,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})
 		return
 	}
@@ -107,20 +107,20 @@ func (h *TractorHandler) Update(c *gin.Context) {
 func (h *TractorHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidID, Message: err.Error()})
 		return
 	}
 
 	_, err = h.repo.FindByID(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrTractorNotFound})
 		return
 	}
 
 	if err := h.repo.Delete(uint(id)); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteTractor, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteTractor,
 			utils.ErrorDetail{Code: common.CodeDeleteFailed, Message: err.Error()})
 		return
 	}

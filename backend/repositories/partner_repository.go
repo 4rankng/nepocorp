@@ -1,8 +1,8 @@
 package repositories
 
 import (
-	"gorm.io/gorm"
 	"github.com/nepocorp/backend/models"
+	"gorm.io/gorm"
 )
 
 type PartnerRepository struct {

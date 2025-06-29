@@ -43,7 +43,7 @@ func main() {
 
 	// Determine username and password
 	var username, password string
-	
+
 	// Check command line arguments
 	if len(flag.Args()) > 0 && flag.Args()[0] == "local" {
 		// Use default admin/admin for local
@@ -78,11 +78,11 @@ func main() {
 		existingUser.Name = "Administrator"
 		existingUser.Role = "admin"
 		existingUser.IsActive = true
-		
+
 		if err := db.Save(&existingUser).Error; err != nil {
 			log.Fatal("Failed to update admin user: ", err)
 		}
-		
+
 		fmt.Printf("Admin user '%s' updated successfully!\n", username)
 		fmt.Println("User details:")
 		fmt.Printf("  ID: %d\n", existingUser.ID)

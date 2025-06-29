@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/nepocorp/backend/common"
 	"github.com/nepocorp/backend/models"
 	"github.com/nepocorp/backend/repositories"
 	"github.com/nepocorp/backend/utils"
@@ -31,7 +32,7 @@ func (h *CustomerHandler) CreateCustomer(c *gin.Context) {
 		return
 	}
 
-		utils.SuccessResponse(c, http.StatusCreated, "Customer created successfully", customer)
+	utils.SuccessResponse(c, http.StatusCreated, "Customer created successfully", customer)
 }
 
 func (h *CustomerHandler) GetCustomerByID(c *gin.Context) {
@@ -47,11 +48,11 @@ func (h *CustomerHandler) GetCustomerByID(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, common.MsgCustomerUpdated, customer)
+	utils.SuccessResponse(c, http.StatusOK, "Customer retrieved successfully", customer)
 }
 
 func (h *CustomerHandler) GetAllCustomers(c *gin.Context) {
-		customers, err := h.CustomerRepo.GetAllCustomers()
+	customers, err := h.CustomerRepo.GetAllCustomers()
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
@@ -63,7 +64,7 @@ func (h *CustomerHandler) GetAllCustomers(c *gin.Context) {
 func (h *CustomerHandler) UpdateCustomer(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid customer ID")
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid customer ID", nil)
 		return
 	}
 
@@ -74,7 +75,7 @@ func (h *CustomerHandler) UpdateCustomer(c *gin.Context) {
 	}
 
 	customer.ID = uint(id)
-		if err := h.CustomerRepo.UpdateCustomer(&customer); err != nil {
+	if err := h.CustomerRepo.UpdateCustomer(&customer); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update customer", err.Error())
 		return
 	}
@@ -89,7 +90,7 @@ func (h *CustomerHandler) DeleteCustomer(c *gin.Context) {
 		return
 	}
 
-		if err := h.CustomerRepo.DeleteCustomer(uint(id)); err != nil {
+	if err := h.CustomerRepo.DeleteCustomer(uint(id)); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteCustomer, err.Error())
 		return
 	}

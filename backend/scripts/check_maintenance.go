@@ -52,7 +52,7 @@ func main() {
 	if len(maintenances) > 0 {
 		fmt.Println("\nFirst maintenance record:")
 		m := maintenances[0]
-		fmt.Printf("ID: %d, License: %s, Vendor: %s, Item: %s\n", 
+		fmt.Printf("ID: %d, License: %s, Vendor: %s, Item: %s\n",
 			m.ID, m.LicensePlate, m.VendorName, m.ItemName)
 	}
 

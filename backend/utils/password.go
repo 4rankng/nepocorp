@@ -15,7 +15,7 @@ func HashPassword(password, secret, salt string) (string, error) {
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(password + salt))
 	saltedPassword := hex.EncodeToString(h.Sum(nil))
-	
+
 	// Then use bcrypt for the final hash
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(saltedPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -35,13 +35,13 @@ func CheckPassword(password, hashedPassword, secret, salt string) error {
 		}
 		return fmt.Errorf("password mismatch")
 	}
-	
+
 	// Standard bcrypt verification
 	// First, create HMAC with secret
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(password + salt))
 	saltedPassword := hex.EncodeToString(h.Sum(nil))
-	
+
 	// Then compare with bcrypt
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(saltedPassword))
 }

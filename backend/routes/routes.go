@@ -27,6 +27,8 @@ func Setup(
 	settingHandler *handlers.SettingHandler,
 	customerHandler *handlers.CustomerHandler,
 	partnerHandler *handlers.PartnerHandler,
+	invoiceCategoryHandler *handlers.InvoiceCategoryHandler,
+	invoiceHandler *handlers.InvoiceHandler,
 	logger *logrus.Logger,
 ) {
 	// Rate limiter
@@ -67,7 +69,7 @@ func Setup(
 		{
 			// User profile
 			protected.GET("/auth/profile", authHandler.GetProfile)
-			
+
 			// Expense categories
 			protected.GET("/expense_category", expenseCategoryHandler.List)
 			protected.POST("/expense_category", expenseCategoryHandler.Create)
@@ -128,6 +130,25 @@ func Setup(
 			protected.GET("/partner/:id", partnerHandler.GetPartnerByID)
 			protected.PUT("/partner/:id", partnerHandler.UpdatePartner)
 			protected.DELETE("/partner/:id", partnerHandler.DeletePartner)
+
+			// Invoice categories
+			protected.GET("/invoice_category", invoiceCategoryHandler.List)
+			protected.POST("/invoice_category", invoiceCategoryHandler.Create)
+			protected.GET("/invoice_category/:id", invoiceCategoryHandler.GetByID)
+			protected.PUT("/invoice_category/:id", invoiceCategoryHandler.Update)
+			protected.DELETE("/invoice_category/:id", invoiceCategoryHandler.Delete)
+
+			// Invoices
+			protected.GET("/invoice", invoiceHandler.List)
+			protected.POST("/invoice", invoiceHandler.Create)
+			protected.GET("/invoice/:id", invoiceHandler.GetByID)
+			protected.PUT("/invoice/:id", invoiceHandler.Update)
+			protected.DELETE("/invoice/:id", invoiceHandler.Delete)
+
+			// Invoice items
+			protected.POST("/invoice/:id/item", invoiceHandler.AddItem)
+			protected.PUT("/invoice/:id/item/:itemId", invoiceHandler.UpdateItem)
+			protected.DELETE("/invoice/:id/item/:itemId", invoiceHandler.DeleteItem)
 		}
 	}
 }

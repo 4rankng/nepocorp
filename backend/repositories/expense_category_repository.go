@@ -37,11 +37,11 @@ func (r *ExpenseCategoryRepository) Delete(id uint) error {
 func (r *ExpenseCategoryRepository) List(offset, limit int) ([]*models.ExpenseCategory, error) {
 	var categories []*models.ExpenseCategory
 	query := r.db
-	
+
 	if limit > 0 {
 		query = query.Offset(offset).Limit(limit)
 	}
-	
+
 	err := query.Find(&categories).Error
 	return categories, err
 }

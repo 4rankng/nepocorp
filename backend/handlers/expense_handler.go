@@ -55,14 +55,14 @@ func (h *ExpenseHandler) List(c *gin.Context) {
 
 	expenses, err := h.repo.ListWithFilters(offset, limit, filters)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrFetchTractorExpenses, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrFetchTractorExpenses,
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
 		return
 	}
 
 	totalRecords, err := h.repo.CountWithFilters(filters)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCountTractorExpenses, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCountTractorExpenses,
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
 		return
 	}
@@ -74,14 +74,14 @@ func (h *ExpenseHandler) List(c *gin.Context) {
 func (h *ExpenseHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidID, Message: err.Error()})
 		return
 	}
 
 	expense, err := h.repo.FindByID(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrTractorExpenseNotFound})
 		return
 	}
@@ -92,7 +92,7 @@ func (h *ExpenseHandler) GetByID(c *gin.Context) {
 func (h *ExpenseHandler) Create(c *gin.Context) {
 	var expense models.Expense
 	if err := c.ShouldBindJSON(&expense); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeBadRequest, Message: err.Error()})
 		return
 	}
@@ -100,7 +100,7 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 	// Get user ID from context (set by JWT middleware)
 	userID, exists := c.Get("userID")
 	if !exists {
-		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized, 
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
 			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: common.ErrUserIDNotFound})
 		return
 	}
@@ -110,14 +110,14 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 
 	// Validate required fields
 	if expense.ExpenseCategoryID == 0 {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrRequiredFields})
 		return
 	}
 
 	// Validate payment status
 	if expense.PaymentStatus != "" && !isValidPaymentStatus(expense.PaymentStatus) {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeInvalidInput, Message: "Payment status must be one of: DRAFT, PENDING, PAID, CANCELLED"})
 		return
 	}
@@ -125,7 +125,7 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 	// Ensure "Bao duong" category exists if expense_category_id is 1
 	if expense.ExpenseCategoryID == 1 {
 		if err := h.categoryRepo.EnsureBaoDuongExists(); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractorExpense, 
+			utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractorExpense,
 				utils.ErrorDetail{Code: common.CodeCreateFailed, Message: "Failed to ensure Bao duong category exists: " + err.Error()})
 			return
 		}
@@ -133,7 +133,7 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 
 	// Create expense with items in transaction, setting LastUpdatedBy
 	if err := h.repo.CreateWithUser(&expense, userID.(uint)); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractorExpense, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractorExpense,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
 		return
 	}
@@ -144,14 +144,14 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 func (h *ExpenseHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidID, Message: err.Error()})
 		return
 	}
 
 	existingExpense, err := h.repo.FindByID(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrTractorExpenseNotFound})
 		return
 	}
@@ -159,14 +159,14 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	// Get user ID from context (set by JWT middleware)
 	userID, exists := c.Get("userID")
 	if !exists {
-		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized, 
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
 			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: common.ErrUserIDNotFound})
 		return
 	}
 
 	var updateData map[string]any
 	if err := c.ShouldBindJSON(&updateData); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeBadRequest, Message: err.Error()})
 		return
 	}
@@ -177,7 +177,7 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	}
 	if paymentStatus, ok := updateData["payment_status"].(string); ok && paymentStatus != "" {
 		if !isValidPaymentStatus(paymentStatus) {
-			utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+			utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 				utils.ErrorDetail{Code: common.CodeInvalidInput, Message: "Payment status must be one of: DRAFT, PENDING, PAID, CANCELLED"})
 			return
 		}
@@ -200,7 +200,7 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	// This expense update endpoint focuses on expense-level fields only
 
 	if err := h.repo.UpdateWithUser(existingExpense, userID.(uint)); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractorExpense, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractorExpense,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})
 		return
 	}
@@ -211,20 +211,20 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 func (h *ExpenseHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidID, Message: err.Error()})
 		return
 	}
 
 	_, err = h.repo.FindByID(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrTractorExpenseNotFound})
 		return
 	}
 
 	if err := h.repo.Delete(uint(id)); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteTractorExpense, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteTractorExpense,
 			utils.ErrorDetail{Code: common.CodeDeleteFailed, Message: err.Error()})
 		return
 	}
@@ -236,7 +236,7 @@ func (h *ExpenseHandler) Delete(c *gin.Context) {
 func (h *ExpenseHandler) CreateItem(c *gin.Context) {
 	expenseID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidExpenseID, Message: err.Error()})
 		return
 	}
@@ -244,14 +244,14 @@ func (h *ExpenseHandler) CreateItem(c *gin.Context) {
 	// Verify expense exists
 	_, err = h.repo.FindByID(uint(expenseID))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrTractorExpenseNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrTractorExpenseNotFound})
 		return
 	}
 
 	var item models.ExpenseItem
 	if err := c.ShouldBindJSON(&item); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeBadRequest, Message: err.Error()})
 		return
 	}
@@ -260,13 +260,13 @@ func (h *ExpenseHandler) CreateItem(c *gin.Context) {
 
 	// Validate required fields
 	if item.ItemName == "" || item.Price == 0 || item.Quantity == 0 || item.LicensePlate == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrRequiredFields})
 		return
 	}
 
 	if err := h.repo.CreateItem(&item); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateExpenseItem, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateExpenseItem,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
 		return
 	}
@@ -277,28 +277,28 @@ func (h *ExpenseHandler) CreateItem(c *gin.Context) {
 func (h *ExpenseHandler) UpdateItem(c *gin.Context) {
 	expenseID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidExpenseID, Message: err.Error()})
 		return
 	}
 
 	itemID, err := strconv.ParseUint(c.Param("item_id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidItemID, Message: err.Error()})
 		return
 	}
 
 	existingItem, err := h.repo.FindItemByID(uint(expenseID), uint(itemID))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrExpenseItemNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrExpenseItemNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrExpenseItemNotFound})
 		return
 	}
 
 	var updateData models.ExpenseItem
 	if err := c.ShouldBindJSON(&updateData); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
 			utils.ErrorDetail{Code: common.CodeBadRequest, Message: err.Error()})
 		return
 	}
@@ -333,7 +333,7 @@ func (h *ExpenseHandler) UpdateItem(c *gin.Context) {
 	}
 
 	if err := h.repo.UpdateItem(existingItem); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateExpenseItem, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateExpenseItem,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})
 		return
 	}
@@ -344,27 +344,27 @@ func (h *ExpenseHandler) UpdateItem(c *gin.Context) {
 func (h *ExpenseHandler) DeleteItem(c *gin.Context) {
 	expenseID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidExpenseID, Message: err.Error()})
 		return
 	}
 
 	itemID, err := strconv.ParseUint(c.Param("item_id"), 10, 32)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID, 
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidID,
 			utils.ErrorDetail{Code: common.CodeInvalidItemID, Message: err.Error()})
 		return
 	}
 
 	_, err = h.repo.FindItemByID(uint(expenseID), uint(itemID))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, common.ErrExpenseItemNotFound, 
+		utils.ErrorResponse(c, http.StatusNotFound, common.ErrExpenseItemNotFound,
 			utils.ErrorDetail{Code: common.CodeNotFound, Message: common.ErrExpenseItemNotFound})
 		return
 	}
 
 	if err := h.repo.DeleteItem(uint(expenseID), uint(itemID)); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteExpenseItem, 
+		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrDeleteExpenseItem,
 			utils.ErrorDetail{Code: common.CodeDeleteFailed, Message: err.Error()})
 		return
 	}
