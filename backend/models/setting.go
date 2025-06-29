@@ -9,6 +9,6 @@ type Setting struct {
 	Key           string    `gorm:"not null;unique" json:"key"`
 	Value         string    `gorm:"not null" json:"value"`
 	LastUpdatedBy string    `gorm:"type:varchar(255);not null" json:"last_updated_by"` // name (username) of users who last created/updated the record
-	CreatedAt     time.Time `json:"-"`
-	UpdatedAt     time.Time `json:"-"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }

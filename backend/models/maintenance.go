@@ -21,8 +21,8 @@ type Maintenance struct {
 	InstallDate   *time.Time `json:"install_date"`
 	ExpiryDate    *time.Time `json:"expiry_date"`
 	LastUpdatedBy string     `gorm:"type:varchar(255)" json:"last_updated_by"` // name (@username) of user who last created/updated the record
-	CreatedAt     time.Time  `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt     time.Time  `gorm:"autoUpdateTime" json:"-"`
+	CreatedAt     time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 func (m *Maintenance) UnmarshalJSON(data []byte) error {

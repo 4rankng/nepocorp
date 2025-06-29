@@ -15,8 +15,8 @@ type FinancialLedger struct {
 	Credit          float64   `gorm:"type:decimal(15,2);default:0.00" json:"credit"`
 	ReferenceNumber string    `gorm:"type:varchar(100)" json:"reference_number"`
 	Notes           string    `gorm:"type:text" json:"notes"`
-	CreatedAt       time.Time `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"-"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
 	// Associations
 	Customer *Customer `gorm:"foreignKey:CustomerID" json:"customer,omitempty"`

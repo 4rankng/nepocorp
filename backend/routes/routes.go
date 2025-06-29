@@ -130,11 +130,11 @@ func Setup(
 			protected.PUT("/settings/:key", settingHandler.UpdateByKey)
 
 			// Customers
-			protected.GET("/customer", customerHandler.GetAllCustomers)
-			protected.POST("/customer", customerHandler.CreateCustomer)
-			protected.GET("/customer/:id", customerHandler.GetCustomerByID)
-			protected.PUT("/customer/:id", customerHandler.UpdateCustomer)
-			protected.DELETE("/customer/:id", customerHandler.DeleteCustomer)
+			protected.GET("/customers", customerHandler.GetAllCustomers)
+			protected.POST("/customers", customerHandler.CreateCustomer)
+			protected.GET("/customers/:id", customerHandler.GetCustomerByID)
+			protected.PUT("/customers/:id", customerHandler.UpdateCustomer)
+			protected.DELETE("/customers/:id", customerHandler.DeleteCustomer)
 
 			// Partners
 			protected.GET("/partner", partnerHandler.GetAllPartners)
