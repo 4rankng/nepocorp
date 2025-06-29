@@ -77,7 +77,6 @@ func main() {
 		existingUser.Email = fmt.Sprintf("%s@nepocorp.com", username)
 		existingUser.Name = "Administrator"
 		existingUser.Role = "admin"
-		existingUser.IsActive = true
 
 		if err := db.Save(&existingUser).Error; err != nil {
 			log.Fatal("Failed to update admin user: ", err)
@@ -99,7 +98,6 @@ func main() {
 		Password: hashedPassword,
 		Name:     "Administrator",
 		Role:     "admin",
-		IsActive: true,
 	}
 
 	// Save to database

@@ -56,7 +56,8 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 }
 
 func (r *UserRepository) Update(user *models.User) error {
-	return r.db.Save(user).Error
+	// Only update user-modifiable fields, explicitly omit backend-managed timestamp fields
+	return r.db.Model(user).Select("username", "email", "password", "name", "role").Omit("created_at", "updated_at", "last_updated_by").Updates(user).Error
 }
 
 func (r *UserRepository) UpdateWithUser(user *models.User, updatedByUserID uint) error {
@@ -66,7 +67,8 @@ func (r *UserRepository) UpdateWithUser(user *models.User, updatedByUserID uint)
 		return err
 	}
 	user.LastUpdatedBy = lastUpdatedBy
-	return r.db.Save(user).Error
+	// Only update user-modifiable fields plus LastUpdatedBy, explicitly omit timestamp fields
+	return r.db.Model(user).Select("username", "email", "password", "name", "role", "last_updated_by").Omit("created_at", "updated_at").Updates(user).Error
 }
 
 func (r *UserRepository) Delete(id uint) error {

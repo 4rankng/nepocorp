@@ -60,13 +60,12 @@ const QuanLyNhanVien = () => {
   const filteredEmployees = employees.filter(emp => {
     if (!emp) return false;
     const q = searchTerm.toLowerCase();
-    // Search by fields relevant to the DesktopView columns and placeholder, using mapped field names
+    // Search by fields relevant to the DesktopView columns using backend field names
     return (
-      (emp.maNhanVien && emp.maNhanVien.toLowerCase().includes(q)) ||
-      (emp.tenNhanVien && emp.tenNhanVien.toLowerCase().includes(q)) ||
-      (emp.tenDangNhap && emp.tenDangNhap.toLowerCase().includes(q)) ||
-      (emp.email && emp.email.toLowerCase().includes(q)) || // Assuming email field name is consistent
-      (emp.chucVu && emp.chucVu.toLowerCase().includes(q)) // Mapped field from hook
+      (emp.name && emp.name.toLowerCase().includes(q)) ||
+      (emp.username && emp.username.toLowerCase().includes(q)) ||
+      (emp.email && emp.email.toLowerCase().includes(q)) ||
+      (emp.role && emp.role.toLowerCase().includes(q))
     );
   });
   const handleSearchChange = event => {
@@ -133,9 +132,6 @@ const QuanLyNhanVien = () => {
         isLoading={isLoading}
         error={error}
         employeeRoles={employeeRoles}
-        dauKeoList={dauKeoList}
-        isDauKeoLoading={isDauKeoLoading}
-        onLoadDauKeo={loadDauKeoList}
       />
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
@@ -163,12 +159,12 @@ const QuanLyNhanVien = () => {
                 <Typography variant="body2" fontWeight={500}>
                   Tên nhân viên:
                 </Typography>
-                <Typography variant="body2">{deleteDialog.data?.tenNhanVien || '-'}</Typography>
+                <Typography variant="body2">{deleteDialog.data?.name || '-'}</Typography>
 
                 <Typography variant="body2" fontWeight={500}>
-                  Mã nhân viên:
+                  Tên đăng nhập:
                 </Typography>
-                <Typography variant="body2">{deleteDialog.data?.maNhanVien || '-'}</Typography>
+                <Typography variant="body2">{deleteDialog.data?.username || '-'}</Typography>
               </Box>
             </Box>
           </Box>

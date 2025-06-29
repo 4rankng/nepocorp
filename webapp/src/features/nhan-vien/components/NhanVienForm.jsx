@@ -1,4 +1,5 @@
 import React from 'react';
+import Dropdown from '@/components/ui/Dropdown';
 const NhanVienForm = ({
   open,
   onClose,
@@ -9,9 +10,6 @@ const NhanVienForm = ({
   isLoading,
   error,
   employeeRoles,
-  dauKeoList = [], // List of available dau keo for drivers
-  isDauKeoLoading = false,
-  onLoadDauKeo,
 }) => {
   if (!open) {
     return null;
@@ -25,61 +23,46 @@ const NhanVienForm = ({
         {error && <p className="text-red-500 text-sm mb-3 bg-red-100 p-2 rounded">{error}</p>}
         <div className="space-y-4">
           <div>
-            <label htmlFor="ma_so" className="block text-sm font-medium text-gray-700">
-              Mã nhân viên *
-            </label>
-            <input
-              type="text"
-              name="ma_so"
-              id="ma_so"
-              value={formData.ma_so || ''}
-              onChange={onFormChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              required
-              disabled={!!editingEmployee}
-              placeholder="VD: NV001"
-              pattern="[Nn][Vv]\d{3,}"
-              title="Mã nhân viên phải bắt đầu bằng NV hoặc nv và ít nhất 3 chữ số"
-            />
-          </div>
-          <div>
-            <label htmlFor="ho_ten" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Tên nhân viên *
             </label>
             <input
               type="text"
-              name="ho_ten"
-              id="ho_ten"
-              value={formData.ho_ten || ''}
+              name="name"
+              id="name"
+              value={formData.name || ''}
               onChange={onFormChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
             />
           </div>
           <div>
-            <label htmlFor="ten_dang_nhap" className="block text-sm font-medium text-gray-700">
-              Tên đăng nhập
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              Tên đăng nhập *
             </label>
             <input
               type="text"
-              name="ten_dang_nhap"
-              id="ten_dang_nhap"
-              value={formData.ten_dang_nhap || ''}
+              name="username"
+              id="username"
+              value={formData.username || ''}
               onChange={onFormChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
             />
           </div>
           <div>
-            <label htmlFor="mat_khau" className="block text-sm font-medium text-gray-700">
-              Mật khẩu
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Mật khẩu {!editingEmployee && '*'}
             </label>
             <input
               type="password"
-              name="mat_khau"
-              id="mat_khau"
-              value={formData.mat_khau || ''}
+              name="password"
+              id="password"
+              value={formData.password || ''}
               onChange={onFormChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               placeholder={editingEmployee ? 'Để trống nếu không muốn thay đổi' : ''}
+              required={!editingEmployee}
             />
           </div>
           <div>
@@ -95,54 +78,17 @@ const NhanVienForm = ({
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
-          <div>
-            <label htmlFor="chuc_vu" className="block text-sm font-medium text-gray-700">
-              Chức vụ *
-            </label>
-            <select
-              name="chuc_vu"
-              id="chuc_vu"
-              value={formData.chuc_vu || ''}
-              onChange={onFormChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            >
-              {employeeRoles.map(role => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {formData.chuc_vu === 'lai-xe' && (
-            <div>
-              <label htmlFor="bienSoXe" className="block text-sm font-medium text-gray-700">
-                Biển số xe đầu kéo
-              </label>
-              <select
-                name="bienSoXe"
-                id="bienSoXe"
-                value={formData.bienSoXe || ''}
-                onChange={onFormChange}
-                onFocus={() => {
-                  // Lazy load dau keo list when dropdown is focused
-                  if (dauKeoList.length === 0 && !isDauKeoLoading && onLoadDauKeo) {
-                    onLoadDauKeo();
-                  }
-                }}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                disabled={isDauKeoLoading}
-              >
-                <option value="">
-                  {isDauKeoLoading ? 'Đang tải...' : 'Chọn biển số xe đầu kéo'}
-                </option>
-                {dauKeoList.map(dauKeo => (
-                  <option key={dauKeo.id} value={dauKeo.bien_so}>
-                    {dauKeo.label || `${dauKeo.bien_so} - ${dauKeo.loai_xe || 'Đầu kéo'}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <Dropdown
+            label="Chức vụ"
+            name="role"
+            value={formData.role || ''}
+            onChange={onFormChange}
+            options={employeeRoles}
+            placeholder="Chọn chức vụ"
+            required
+            searchable={false}
+            clearable={false}
+          />
         </div>
         <div className="mt-6 flex justify-end space-x-3">
           <button

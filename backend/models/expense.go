@@ -39,7 +39,7 @@ func (d *DateOnly) Scan(value interface{}) error {
 		*d = DateOnly{}
 		return nil
 	}
-	
+
 	switch v := value.(type) {
 	case time.Time:
 		*d = DateOnly{v}

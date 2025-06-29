@@ -78,13 +78,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Check if user is active
-	if !user.IsActive {
-		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUserNotActive,
-			utils.ErrorDetail{Code: common.CodeUserNotActive, Message: "User account is not active"})
-		return
-	}
-
 	// Generate tokens
 	token, err := utils.GenerateToken(user, h.config)
 	if err != nil {
@@ -156,13 +149,6 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrInvalidToken,
 			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User not found"})
-		return
-	}
-
-	// Check if user is active
-	if !user.IsActive {
-		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUserNotActive,
-			utils.ErrorDetail{Code: common.CodeUserNotActive, Message: "User account is not active"})
 		return
 	}
 

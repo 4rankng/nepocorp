@@ -51,7 +51,10 @@ const PartnerListResponsive = ({
         (partner.ten && partner.ten.toLowerCase().includes(term)) ||
         (partner.dia_chi && partner.dia_chi.toLowerCase().includes(term)) ||
         (partner.ma_so_thue && partner.ma_so_thue.toLowerCase().includes(term)) ||
-        (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term))
+        (partner.ma_dinh_danh && partner.ma_dinh_danh.toLowerCase().includes(term)) ||
+        (partner.contact_person && partner.contact_person.toLowerCase().includes(term)) ||
+        (partner.contact_phone && partner.contact_phone.toLowerCase().includes(term)) ||
+        (partner.contact_email && partner.contact_email.toLowerCase().includes(term))
     );
   }, [partners, searchTerm]);
 
@@ -87,6 +90,15 @@ const PartnerListResponsive = ({
                 <Typography variant="body2" color="text.secondary">
                   <strong>Mã số thuế:</strong> {partner.ma_so_thue || 'Chưa sửa'}
                 </Typography>
+                {(partner.contact_person || partner.contact_phone || partner.contact_email) && (
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Liên hệ:</strong> {[
+                      partner.contact_person,
+                      partner.contact_phone,
+                      partner.contact_email
+                    ].filter(Boolean).join(' / ')}
+                  </Typography>
+                )}
               </Box>
               <Box>
                 <EditButton onClick={() => onEdit(partner)} size="small" />
@@ -132,6 +144,19 @@ const PartnerListResponsive = ({
       sortable: true,
       render: value => value || '--',
     },
+    {
+      key: 'contact_info',
+      label: 'Thông tin liên hệ',
+      align: 'left',
+      sortable: false,
+      render: (value, partner) => {
+        const contactParts = [];
+        if (partner.contact_person) contactParts.push(partner.contact_person);
+        if (partner.contact_phone) contactParts.push(partner.contact_phone);
+        if (partner.contact_email) contactParts.push(partner.contact_email);
+        return contactParts.length > 0 ? contactParts.join(' / ') : '--';
+      },
+    },
   ];
 
   // Render action buttons for each row
@@ -175,7 +200,7 @@ const PartnerListResponsive = ({
         <SearchBar
           value={searchTerm}
           onChange={handleSearchChange}
-          placeholder="Tìm kiếm theo tên, địa chỉ hoặc mã số thuế..."
+          placeholder="Tìm kiếm theo tên, địa chỉ, mã số thuế hoặc thông tin liên hệ..."
         />
       </Box>
       {/* Loading state */}

@@ -122,7 +122,6 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 		return
 	}
 
-
 	// Create expense with items in transaction, setting LastUpdatedBy
 	if err := h.repo.CreateWithUser(&expense, userID.(uint)); err != nil {
 		// Log detailed error for debugging

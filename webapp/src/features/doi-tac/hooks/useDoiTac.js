@@ -12,6 +12,10 @@ const initialFormState = {
   ten: '',
   dia_chi: '',
   ma_so_thue: '',
+  contact_person: '',
+  contact_phone: '',
+  contact_email: '',
+  notes: '',
 };
 const useDoiTac = () => {
   const [partners, setPartners] = useState(/** @type {any[]} */ ([]));
@@ -23,7 +27,16 @@ const useDoiTac = () => {
     setError('');
     try {
       const response = await fetchAllDoiTac();
-      setPartners(response?.data || []);
+      const partnersData = response?.data || [];
+      // Map API fields to frontend fields
+      const mappedPartners = partnersData.map(partner => ({
+        ...partner,
+        ten: partner.name,
+        ma_so_thue: partner.tax_code,
+        dia_chi: partner.address,
+        ma_dinh_danh: partner.id ? `DT${partner.id.toString().padStart(3, '0')}` : '',
+      }));
+      setPartners(mappedPartners);
     } catch (err) {
       const errorMessage =
         (err instanceof Error ? err.message : String(err)) || 'Không thể tải danh sách đối tác';
@@ -87,7 +100,10 @@ const useDoiTac = () => {
         const all = response?.data || [];
         const found = all.find(
           /** @param {any} p */
-          p => p?.ma_dinh_danh === ma_dinh_danh && (!excludeId || p?.id !== excludeId)
+          p => {
+            const mappedCode = p.id ? `DT${p.id.toString().padStart(3, '0')}` : '';
+            return mappedCode === ma_dinh_danh && (!excludeId || p?.id !== excludeId);
+          }
         );
         return !found;
       } catch (_err) {

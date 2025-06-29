@@ -21,6 +21,23 @@ const DesktopView = ({
   handleDeleteRequest,
   canEditDelete,
 }) => {
+  // Format date to browser timezone
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -42,19 +59,13 @@ const DesktopView = ({
   const columns = React.useMemo(
     () => [
       {
-        key: 'maNhanVien',
-        label: 'MÃ NV',
-        minWidth: 100,
-        sortable: true,
-      },
-      {
-        key: 'tenNhanVien',
+        key: 'name',
         label: 'HỌ TÊN',
         minWidth: 170,
         sortable: true,
       },
       {
-        key: 'tenDangNhap',
+        key: 'username',
         label: 'TÊN ĐĂNG NHẬP',
         minWidth: 150,
         sortable: true,
@@ -66,10 +77,17 @@ const DesktopView = ({
         sortable: true,
       },
       {
-        key: 'chucVu',
+        key: 'role',
         label: 'CHỨC VỤ',
         minWidth: 120,
         sortable: true,
+      },
+      {
+        key: 'created_at',
+        label: 'NGÀY TẠO',
+        minWidth: 150,
+        sortable: true,
+        render: (value) => formatDateTime(value),
       },
     ],
     []

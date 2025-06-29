@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { fetchAllNhanVien, addNhanVien, editNhanVien, removeNhanVien } from '../../../services/api/nhanVienApi';
-import { tractorApi } from '../../../services/api/tractorApi';
 // Configuration
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_RETRY_ATTEMPTS = 3;
@@ -32,18 +31,17 @@ const withRetry = async (fn, retries = MAX_RETRY_ATTEMPTS, delay = RETRY_DELAY) 
 };
 // Define employee roles constant
 const employeeRoles = [
-  { value: 'giao-nhan', label: 'Giao Nhận' },
-  { value: 'lai-xe', label: 'Lái Xe' },
-  { value: 'quan-ly', label: 'Quản Lý' },
   { value: 'admin', label: 'Admin' },
+  { value: 'accountant', label: 'Accountant' },
+  { value: 'driver', label: 'Driver' },
+  { value: 'receiver', label: 'Receiver' },
 ];
 const getInitialFormState = () => ({
-  ma_so: '',
-  ho_ten: '',
-  ten_dang_nhap: '',
-  mat_khau: '',
-  chuc_vu: '',
+  username: '',
+  name: '',
   email: '',
+  password: '',
+  role: '',
 });
 const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   // State management
@@ -53,8 +51,6 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   const [formData, setFormData] = useState(getInitialFormState());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [dauKeoList, setDauKeoList] = useState([]);
-  const [isDauKeoLoading, setIsDauKeoLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: initialPage,
     pageSize,
@@ -63,7 +59,6 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   });
   const cacheRef = useRef({
     employees: { data: [], timestamp: 0, total: 0 },
-    dauKeo: { data: [], timestamp: 0 },
   });
   const errorBoundaryRef = useRef();
   // Clear error function
@@ -130,40 +125,6 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
     },
     [fetchEmployeesData]
   );
-  // Lazy load dau keo list for driver assignment
-  const loadDauKeoList = useCallback(async () => {
-    if (isDauKeoLoading) return; // Prevent multiple simultaneous calls
-    setIsDauKeoLoading(true);
-    try {
-      const now = Date.now();
-      const cachedData = cacheRef.current.dauKeo;
-      // Return cached data if valid
-      if (cachedData.timestamp && now - cachedData.timestamp < CACHE_TTL) {
-        setDauKeoList(cachedData.data);
-        return;
-      }
-      
-      const response = await tractorApi.getAll(1, 100); // Get all tractors for dropdown
-      
-      if (response.status !== 'success') {
-        throw new Error(response.message || 'Failed to fetch tractors');
-      }
-      
-      const tractorsData = response.data || [];
-      
-      // Update cache
-      cacheRef.current.dauKeo = {
-        data: tractorsData,
-        timestamp: now,
-      };
-      
-      setDauKeoList(tractorsData);
-    } catch (err) {
-      setDauKeoList([]);
-    } finally {
-      setIsDauKeoLoading(false);
-    }
-  }, [isDauKeoLoading]);
   useEffect(() => {
     fetchEmployeesData();
   }, [fetchEmployeesData]);
@@ -171,36 +132,20 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
-  const generateEmployeeCode = useCallback(employees => {
-    // Find the highest employee code
-    const maxCode = employees.reduce((max, emp) => {
-      if (!emp.maNhanVien) return max;
-      const num = parseInt(emp.maNhanVien.replace(/^NV0*/i, ''), 10);
-      return !isNaN(num) ? Math.max(max, num) : max;
-    }, 0);
-    // Generate new code with leading zeros (e.g., NV001, NV002, ...)
-    return `NV${String(maxCode + 1).padStart(3, '0')}`;
-  }, []);
   const handleOpenModalForAdd = useCallback(() => {
     setEditingEmployee(null);
-    // Generate new employee code based on existing employees
-    const newCode = generateEmployeeCode(employees);
-    setFormData({
-      ...getInitialFormState(),
-      ma_so: newCode,
-    });
+    setFormData(getInitialFormState());
     setError('');
     setIsModalOpen(true);
-  }, [employees, generateEmployeeCode]);
+  }, []);
   const handleOpenModalForEdit = useCallback(employee => {
     setEditingEmployee(employee);
     setFormData({
-      ma_so: employee.maNhanVien || '',
-      ho_ten: employee.tenNhanVien || '',
-      ten_dang_nhap: employee.tenDangNhap || '',
-      mat_khau: '', // Password field is cleared for edit
-      chuc_vu: employee.chucVu || '',
+      username: employee.username || '',
+      name: employee.name || '',
       email: employee.email || '',
+      password: '', // Password field is cleared for edit
+      role: employee.role || '',
     });
     setError('');
     setIsModalOpen(true);
@@ -226,25 +171,32 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   const handleSaveEmployee = useCallback(async () => {
     setError('');
     if (
-      !formData.ho_ten.trim() ||
-      !formData.ten_dang_nhap.trim() ||
+      !formData.name.trim() ||
+      !formData.username.trim() ||
       !formData.email.trim() ||
-      !formData.chuc_vu.trim()
+      !formData.role.trim()
     ) {
       setError('Vui lòng điền đầy đủ các trường: Tên nhân viên, Tên đăng nhập, Email, Chức vụ.');
       return;
     }
-    if (!editingEmployee && !formData.mat_khau.trim()) {
+    if (!editingEmployee && !formData.password.trim()) {
       setError('Mật khẩu là bắt buộc khi thêm nhân viên mới.');
       return;
     }
     setIsLoading(true);
     try {
+      // Filter out backend-managed fields before sending
+      const { ...userData } = formData;
+      // Remove password if empty during edit (don't change password)
+      if (editingEmployee && !userData.password?.trim()) {
+        delete userData.password;
+      }
+      
       let response;
       if (editingEmployee) {
-        response = await editNhanVien(editingEmployee.id, formData);
+        response = await editNhanVien(editingEmployee.id, userData);
       } else {
-        response = await addNhanVien(formData);
+        response = await addNhanVien(userData);
       }
       
       if (response.status !== 'success') {
@@ -298,12 +250,9 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
     formData,
     isLoading,
     error,
-    dauKeoList,
-    isDauKeoLoading,
     pagination,
     employeeRoles,
     fetchEmployeesData,
-    loadDauKeoList,
     handleInputChange,
     handleOpenModalForAdd,
     handleOpenModalForEdit,
@@ -315,19 +264,4 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
     clearError,
   };
 };
-// Helper to map chuc_vu code to display string
-function mapChucVu(code) {
-  switch (code) {
-    case 'quan-ly':
-      return 'Quản lý';
-    case 'ke-toan':
-      return 'Kế toán';
-    case 'giao-nhan':
-      return 'Giao nhận';
-    case 'lai-xe':
-      return 'Lái xe';
-    default:
-      return code || 'Chưa xác định';
-  }
-}
 export default useNhanVien;

@@ -60,4 +60,3 @@ func (r *ExpenseCategoryRepository) FindByName(name string) (*models.ExpenseCate
 	}
 	return &category, nil
 }
-
