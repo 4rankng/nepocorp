@@ -473,7 +473,7 @@ const ExpenseForm = ({
               onLicensePlateCellClick={handleLicensePlateCellClick}
               total={calculatedTotal}
               errors={validationErrors}
-              licensePlates={getAllLicensePlates()}
+              licensePlates={getAllLicensePlates}
               isLoadingPlates={isLoadingPlates}
               taxRate={taxRate}
             />
@@ -497,7 +497,7 @@ const ExpenseForm = ({
           open={showLicensePlateModal}
           onClose={() => setShowLicensePlateModal(false)}
           onSelect={handleLicensePlateSelect}
-          licensePlates={getAllLicensePlates()}
+          licensePlates={getAllLicensePlates}
           isLoading={isLoadingPlates}
         />
       )}
@@ -509,7 +509,7 @@ const ExpenseForm = ({
           onSave={handleItemSave}
           item={editingItemIndex !== null ? editedData.items[editingItemIndex] : null}
           isEdit={editingItemIndex !== null}
-          licensePlates={getAllLicensePlates()}
+          licensePlates={getAllLicensePlates}
           isLoadingPlates={isLoadingPlates}
           taxRate={taxRate}
         />
