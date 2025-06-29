@@ -53,52 +53,6 @@ const transformToExpenseFormat = (formData, vehicleIds, expenseCategoryId) => {
   };
 };
 
-// Expense form validation
-const validateExpenseForm = (formData, expenseCategoryId) => {
-  const newErrors = {};
-
-  // Validate main fields
-  if (!formData.vendor_name) newErrors.vendor_name = 'Vui lòng nhập tên nhà cung cấp';
-
-  // Validate expense category if not fixed
-  if (!expenseCategoryId && !formData.expense_category_id) {
-    newErrors.expense_category_id = 'Vui lòng chọn loại chi phí';
-  }
-
-  // payment_status has a default value of DRAFT, so it's always valid
-
-  // Validate items array
-  if (!formData.items || formData.items.length === 0) {
-    newErrors.items = 'Vui lòng thêm ít nhất một hạng mục';
-  } else {
-    let hasValidItem = false;
-    formData.items.forEach((item, index) => {
-      // Validate license plate for each item
-      if (!item.license_plate) {
-        newErrors[`items.${index}.license_plate`] = 'Vui lòng chọn biển số xe';
-      }
-      
-      if (!item.item_name) {
-        newErrors[`items.${index}.item_name`] = 'Vui lòng nhập tên hạng mục';
-      } else {
-        hasValidItem = true;
-      }
-      
-      if (!item.price || item.price < 0) {
-        newErrors[`items.${index}.price`] = 'Đơn giá không hợp lệ';
-      }
-      if (!item.quantity || item.quantity <= 0) {
-        newErrors[`items.${index}.quantity`] = 'Số lượng phải lớn hơn 0';
-      }
-    });
-    
-    if (!hasValidItem) {
-      newErrors.items = 'Vui lòng điền thông tin cho ít nhất một hạng mục';
-    }
-  }
-
-  return newErrors;
-};
 
 export default function useExpenseForm({
   initialFormData,
@@ -138,44 +92,16 @@ export default function useExpenseForm({
   }, []);
 
   const validateForm = useCallback(() => {
-    const newErrors = validateExpenseForm(formData, expenseCategoryId);
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, expenseCategoryId]);
+    // This function is kept for backward compatibility but validation
+    // is now handled by ExpenseForm.jsx before calling handleSave
+    setErrors({});
+    return true;
+  }, []);
 
   const handleSave = useCallback(async (e, currentPage = 0, pageSize = 10) => {
     e?.preventDefault();
 
     try {
-      // Validate form
-      const isValid = validateForm();
-      if (!isValid) {
-        // Get validation errors from state
-        const validationErrors = validateExpenseForm(formData, expenseCategoryId);
-        
-        // Create a more descriptive error message
-        const fieldErrors = Object.entries(validationErrors)
-          .filter(([key]) => !key.startsWith('items.'))
-          .map(([_key, value]) => value);
-        
-        const itemErrors = Object.entries(validationErrors)
-          .filter(([key]) => key.startsWith('items.'))
-          .length;
-        
-        let errorMessage = 'Vui lòng điền đầy đủ thông tin: ';
-        if (fieldErrors.length > 0) {
-          errorMessage += fieldErrors.join(', ');
-        }
-        if (itemErrors > 0) {
-          errorMessage += fieldErrors.length > 0 ? ' và kiểm tra thông tin hạng mục' : 'Kiểm tra thông tin hạng mục';
-        }
-        
-        const validationError = new Error(errorMessage);
-        validationError.validationError = true;
-        validationError.errors = validationErrors;
-        throw validationError;
-      }
-
       setIsLoading(true);
 
       // Get first valid license plate from items for vehicle ID conversion
@@ -297,7 +223,7 @@ export default function useExpenseForm({
     } finally {
       setIsLoading(false);
     }
-  }, [formData, expenseCategoryId, tractors, trailers, isEdit, api, validateForm, fetchData, onSuccess, onError]);
+  }, [formData, expenseCategoryId, tractors, trailers, isEdit, api, fetchData, onSuccess, onError]);
 
   return {
     formData,
