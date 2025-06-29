@@ -3,20 +3,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import ChangePasswordModal from './ChangePasswordModal';
 import EditProfileModal from './EditProfileModal';
+import SidebarToggle from './SidebarToggle';
 
-const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, onModalStateChange }) => {
+const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
   const { currentUser, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
-  // Notify parent about modal state changes
-  React.useEffect(() => {
-    const hasOpenModal = isChangePasswordModalOpen || isEditProfileModalOpen;
-    if (onModalStateChange) {
-      onModalStateChange(hasOpenModal);
-    }
-  }, [isChangePasswordModalOpen, isEditProfileModalOpen, onModalStateChange]);
 
   const handleLogout = () => {
     logout();
@@ -36,43 +30,12 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen, onModalStateChange }) => {
     >
       {/* Left Section - Logo and Company Name */}
       <div className="flex items-center flex-shrink-0">
-        {/* Mobile Hamburger Menu - Hidden when profile modals are open */}
-        {!isChangePasswordModalOpen && !isEditProfileModalOpen && (
-          <button
-            className="relative md:hidden mr-3 p-2 rounded hover:bg-black/10 focus:outline-none transition-all duration-300"
-            onClick={onSidebarToggle}
-            aria-label={sidebarOpen ? 'Đóng menu' : 'Mở menu'}
-          >
-          {/* Hamburger Icon */}
-          <svg
-            className={`h-6 w-6 transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-0' : 'opacity-100'}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-          {/* X Icon */}
-          <svg
-            className={`h-6 w-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-          </button>
-        )}
+        {/* Mobile Hamburger Menu */}
+        <SidebarToggle
+          type="mobile"
+          onClick={onSidebarToggle}
+          isOpen={sidebarOpen}
+        />
 
         {/* Logo Section */}
         <Link to="/" className="flex items-center gap-3">

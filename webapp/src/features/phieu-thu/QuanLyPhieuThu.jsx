@@ -8,15 +8,13 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import useInvoices from './hooks/useInvoices';
 import useInvoiceForm from '@/hooks/useInvoiceForm';
 import { invoiceApi } from '@services/api/invoiceApi';
-import { Fab, Zoom, Snackbar, Alert } from '@mui/material';
+import { Snackbar, Alert } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { INVOICE_STATUS_LABELS } from '@constants/invoice';
-import { Z_INDEX } from '@constants/zIndex';
-import { useModalVisibility } from '@hooks/useModalVisibility';
+import FAB from '@/components/FAB';
 
 const QuanLyPhieuThu = () => {
   const { currentUser } = useAuth();
-  const { hasActiveModal } = useModalVisibility();
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
 
   // Helper functions
@@ -273,26 +271,14 @@ const QuanLyPhieuThu = () => {
         />
       )}
 
-      {/* FAB Button - Hidden when modals are open */}
-      <Zoom in={!showInvoiceForm && !showInvoiceModal && !hasActiveModal}>
-        <Fab
-          color="primary"
-          aria-label="Thêm"
+      {/* FAB Button */}
+      {!showInvoiceForm && !showInvoiceModal && (
+        <FAB
           onClick={handleAddInvoice}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: Z_INDEX.FLOATING,
-            boxShadow: 3,
-            '&:hover': {
-              boxShadow: 6,
-            },
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      </Zoom>
+          icon={<AddIcon />}
+          ariaLabel="Thêm"
+        />
+      )}
 
       {/* Snackbar for notifications */}
       <Snackbar

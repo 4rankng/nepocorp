@@ -5,6 +5,7 @@ import ThanhTieuDe from '@/components/ThanhTieuDe';
 import ThanhBen from '@/components/ThanhBen';
 import ChangelogDialog from '@/components/ChangelogDialog';
 import LoginModal from '@/components/LoginModal';
+import SidebarToggle from '@/components/SidebarToggle';
 import packageJson from '../../package.json';
 import { Box, Typography, Button } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
@@ -14,7 +15,6 @@ const TrangChu = () => {
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [hasActiveModal, setHasActiveModal] = useState(false);
   const { logout, currentUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,7 +57,6 @@ const TrangChu = () => {
         <ThanhTieuDe 
           onSidebarToggle={handleSidebarToggle} 
           sidebarOpen={sidebarOpen}
-          onModalStateChange={setHasActiveModal}
         />
       )}
 
@@ -138,27 +137,12 @@ const TrangChu = () => {
             <ThanhBen onNavItemClick={handleSidebarClose} version={packageJson.version} onVersionClick={() => setChangelogOpen(true)} />
           </div>
 
-          {/* Desktop Sidebar Toggle Button - Hidden when any modal is open */}
-          {!hasActiveModal && (
-            <button
-              onClick={handleDesktopSidebarToggle}
-              className={`hidden md:flex fixed bottom-16 z-50 w-6 h-12 bg-gray-200 hover:bg-gray-300 border border-gray-300 rounded-r-md items-center justify-center transition-all duration-300 ease-in-out ${
-                desktopSidebarCollapsed ? 'left-0' : 'left-64'
-              }`}
-              aria-label={desktopSidebarCollapsed ? 'Mở sidebar' : 'Thu gọn sidebar'}
-            >
-              <svg
-                className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
-                  desktopSidebarCollapsed ? 'rotate-0' : 'rotate-180'
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
+          {/* Desktop Sidebar Toggle Button */}
+          <SidebarToggle
+            type="desktop"
+            onClick={handleDesktopSidebarToggle}
+            isCollapsed={desktopSidebarCollapsed}
+          />
 
           {/* Mobile Sidebar Overlay */}
           <div

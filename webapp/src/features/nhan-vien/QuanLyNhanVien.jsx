@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { PlusIcon } from '@assets/icons/index.jsx'; // Assuming PlusIcon is used for FAB
+import { PlusIcon } from '@assets/icons/index.jsx';
 import PersonIcon from '@mui/icons-material/Person';
 import useNhanVien from '@features/nhan-vien/hooks/useNhanVien';
-import { useModalVisibility } from '@hooks/useModalVisibility';
+import FAB from '@/components/FAB';
 import {
   Box,
   CircularProgress, // Keep for top-level loading if needed before views render
   Alert, // Keep for top-level error before views render
-  Fab,
-  Zoom,
   Typography,
   Divider,
 } from '@mui/material';
@@ -36,7 +34,6 @@ const QuanLyNhanVien = () => {
     isDauKeoLoading,
     loadDauKeoList,
   } = useNhanVien();
-  const { hasActiveModal } = useModalVisibility();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,30 +97,13 @@ const QuanLyNhanVien = () => {
         handleDeleteRequest={handleDeleteClick}
         canEditDelete={canEditDelete}
       />
-      {/* Floating Add FAB - Hidden when any modal is open */}
-      <Zoom in={!isLoading && !hasActiveModal}>
-        <Fab
-          color="primary"
-          aria-label="Thêm nhân viên"
-          onClick={handleOpenModalForAdd}
-          sx={{
-            position: 'fixed',
-            bottom: { xs: 24, sm: 32 },
-            right: { xs: 24, sm: 32 },
-            zIndex: Z_INDEX.FLOATING,
-            boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)',
-            '&:hover': {
-              transform: 'scale(1.05)',
-              boxShadow: '0 12px 40px rgba(25, 118, 210, 0.35)',
-            },
-            transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-            width: 56, // Standard FAB size
-            height: 56, // Standard FAB size
-          }}
-        >
-          <PlusIcon />
-        </Fab>
-      </Zoom>
+      {/* Floating Add FAB */}
+      <FAB
+        onClick={handleOpenModalForAdd}
+        icon={<PlusIcon />}
+        ariaLabel="Thêm nhân viên"
+        loading={isLoading}
+      />
       <NhanVienForm
         open={isModalOpen}
         onClose={handleCloseModal}

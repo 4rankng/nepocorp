@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Box, Paper, Fab, Typography, useTheme, TableSortLabel } from '@mui/material';
+import { Box, Paper, Typography, useTheme, TableSortLabel } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import AddIcon from '@mui/icons-material/Add';
 import StandardTable from '@/components/StandardTable';
 import { SearchBar } from '@/components';
-import { Z_INDEX } from '@constants/zIndex';
+import FAB from '@/components/FAB';
 const DesktopView = ({
   searchTerm,
   onSearchTermChange,
@@ -57,24 +57,12 @@ const DesktopView = ({
       </Paper>
       {/* Floating Action Button for Add */}
       {canAddPlan && (
-        <Fab
-          color="primary"
-          aria-label="add"
+        <FAB
           onClick={onAdd}
-          sx={{
-            position: 'fixed',
-            bottom: { xs: 24, md: 32 },
-            right: { xs: 24, md: 32 },
-            zIndex: Z_INDEX.FLOATING,
-            boxShadow: 6,
-            '&:hover': {
-              transform: 'scale(1.05)',
-            },
-            transition: 'all 0.2s ease-in-out',
-          }}
-        >
-          <AddIcon />
-        </Fab>
+          icon={<AddIcon />}
+          ariaLabel="Thêm lịch vận chuyển"
+          loading={isLoading}
+        />
       )}
     </Box>
   );

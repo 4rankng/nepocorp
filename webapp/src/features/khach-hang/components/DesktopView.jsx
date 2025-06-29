@@ -1,11 +1,9 @@
 import React from 'react';
-import { Box, Paper, Fab, Zoom } from '@mui/material';
+import { Box, Paper } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CustomerListResponsive from '@features/khach-hang/components/CustomerListResponsive';
-import { Z_INDEX } from '@constants/zIndex';
-import { useModalVisibility } from '@hooks/useModalVisibility';
+import FAB from '@/components/FAB';
 const DesktopView = ({ customers, loading, error, onEdit, onDelete, onAdd }) => {
-  const { hasActiveModal } = useModalVisibility();
   return (
     <Box sx={{ p: 0, pb: { xs: 10, sm: 11 } }}>
       <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
@@ -19,30 +17,12 @@ const DesktopView = ({ customers, loading, error, onEdit, onDelete, onAdd }) => 
         />
       </Paper>
       {/* Floating Action Button */}
-      <Zoom in={!loading && !hasActiveModal}>
-        <Fab
-          color="primary"
-          aria-label="Thêm khách hàng"
-          onClick={onAdd}
-          sx={{
-            position: 'fixed',
-            bottom: { xs: 24, sm: 32 },
-            right: { xs: 24, sm: 32 },
-            zIndex: Z_INDEX.FLOATING,
-            boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)',
-            '&:hover': {
-              transform: 'scale(1.05)',
-              boxShadow: '0 12px 40px rgba(25, 118, 210, 0.35)',
-            },
-            transition: 'all 0.2s ease-in-out',
-            // Ensure visibility on all screen sizes
-            width: { xs: 56, sm: 56 },
-            height: { xs: 56, sm: 56 },
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      </Zoom>
+      <FAB
+        onClick={onAdd}
+        icon={<AddIcon />}
+        ariaLabel="Thêm khách hàng"
+        loading={loading}
+      />
     </Box>
   );
 };
