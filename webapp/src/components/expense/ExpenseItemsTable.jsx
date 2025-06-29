@@ -18,7 +18,7 @@ const ExpenseItemsTable = ({
 }) => {
   const displayItems = items || [];
   const hasItems = displayItems.length > 0;
-  
+
   // State for delete confirmation
   const [deleteConfirmation, setDeleteConfirmation] = useState({
     open: false,
@@ -77,7 +77,7 @@ const ExpenseItemsTable = ({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50">
-              <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Biển số xe</th>
+              <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Biển số xe</th>
               <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">{isInvoiceMode ? 'Tên dịch vụ' : 'Hạng mục'}</th>
               {isInvoiceMode ? (
                 <>
@@ -86,16 +86,16 @@ const ExpenseItemsTable = ({
                 </>
               ) : (
                 <>
-                  <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">Ngày lắp đặt</th>
-                  <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">Ngày hết hạn</th>
+                  <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Ngày lắp đặt</th>
+                  <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Ngày hết hạn</th>
                 </>
               )}
-              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">Đơn giá (VND)</th>
-              <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-16">SL</th>
+              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-25">Đơn giá (VND)</th>
+              <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">SL</th>
               <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Thuế (%)</th>
-              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">Thành tiền</th>
+              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-40">Thành tiền</th>
               {isEditing && (
-                <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 w-20">Thao tác</th>
+                <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 w-10">Thao tác</th>
               )}
             </tr>
           </thead>
@@ -139,7 +139,7 @@ const ExpenseItemsTable = ({
           )}
         </table>
       </div>
-      
+
       <ConfirmDialog
         open={deleteConfirmation.open}
         title="Xác nhận xóa"
