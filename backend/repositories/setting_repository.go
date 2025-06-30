@@ -52,3 +52,36 @@ func (r *SettingRepository) UpdateByKey(key, value string) (*models.Setting, err
 
 	return &setting, nil
 }
+
+func (r *SettingRepository) UpdateByKeyWithUser(key, value, lastUpdatedBy string) (*models.Setting, error) {
+	var setting models.Setting
+
+	// First try to find existing setting
+	err := r.db.Where("`key` = ?", key).First(&setting).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// Create new setting if it doesn't exist
+			setting = models.Setting{
+				Key:           key,
+				Value:         value,
+				LastUpdatedBy: lastUpdatedBy,
+			}
+			err = r.db.Create(&setting).Error
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	} else {
+		// Update existing setting
+		setting.Value = value
+		setting.LastUpdatedBy = lastUpdatedBy
+		err = r.db.Save(&setting).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &setting, nil
+}

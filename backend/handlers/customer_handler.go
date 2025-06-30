@@ -27,6 +27,17 @@ func (h *CustomerHandler) CreateCustomer(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Set last_updated_by
+	customer.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.CustomerRepo.CreateCustomer(&customer); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
@@ -84,7 +95,18 @@ func (h *CustomerHandler) UpdateCustomer(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
 	customer.ID = uint(id)
+	// Set last_updated_by
+	customer.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.CustomerRepo.UpdateCustomer(&customer); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update customer", err.Error())
 		return

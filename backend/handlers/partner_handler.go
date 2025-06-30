@@ -27,6 +27,16 @@ func (h *PartnerHandler) CreatePartner(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized", "User context not found")
+		return
+	}
+
+	// Set last_updated_by
+	partner.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.PartnerRepo.CreatePartner(&partner); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
@@ -84,7 +94,17 @@ func (h *PartnerHandler) UpdatePartner(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized", "User context not found")
+		return
+	}
+
 	partner.ID = uint(id)
+	// Set last_updated_by
+	partner.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.PartnerRepo.UpdatePartner(&partner); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return

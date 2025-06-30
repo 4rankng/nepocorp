@@ -134,6 +134,16 @@ func (h *MaintenanceHandler) Create(c *gin.Context) {
 	// Calculate total (will be done in BeforeSave hook as well)
 	maintenance.CalculateTotal()
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized, "User context not found")
+		return
+	}
+
+	// Set last_updated_by
+	maintenance.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	// Create maintenance record
 	if err := h.repo.Create(&maintenance); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrInternalServer, err.Error())
@@ -201,6 +211,16 @@ func (h *MaintenanceHandler) Update(c *gin.Context) {
 
 	// Calculate total
 	maintenance.CalculateTotal()
+
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized, "User context not found")
+		return
+	}
+
+	// Set last_updated_by
+	maintenance.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	// Update maintenance record
 	if err := h.repo.Update(uint(id), &maintenance); err != nil {

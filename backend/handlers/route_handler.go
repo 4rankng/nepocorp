@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/nepocorp/backend/common"
 	"github.com/nepocorp/backend/models"
 	"github.com/nepocorp/backend/repositories"
 	"github.com/nepocorp/backend/utils"
@@ -25,6 +26,17 @@ func (h *RouteHandler) CreateRoute(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON format", err.Error())
 		return
 	}
+
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Set last_updated_by
+	route.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	if err := h.RouteRepo.CreateRoute(&route); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
@@ -83,7 +95,18 @@ func (h *RouteHandler) UpdateRoute(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
 	route.ID = uint(id)
+	// Set last_updated_by
+	route.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.RouteRepo.UpdateRoute(&route); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return

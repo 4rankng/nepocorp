@@ -26,6 +26,16 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized", "User context not found")
+		return
+	}
+
+	// Set last_updated_by
+	user.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.UserRepo.Create(&user); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
@@ -84,6 +94,17 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	user.ID = uint(id)
+
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized", "User context not found")
+		return
+	}
+
+	// Set last_updated_by
+	user.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.UserRepo.Update(&user); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update user", err.Error())
 		return

@@ -76,8 +76,16 @@ func (h *SettingHandler) UpdateByKey(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (set by JWT middleware)
-	setting, err := h.repo.UpdateByKey(key, request.Value)
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Update setting with user info
+	setting, err := h.repo.UpdateByKeyWithUser(key, request.Value, utils.FormatLastUpdatedByUserInfo(userInfo))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateSetting,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})

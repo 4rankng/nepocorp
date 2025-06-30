@@ -14,6 +14,19 @@ func FormatLastUpdatedBy(user *models.User) string {
 	return user.Name + " (@" + user.Username + ")"
 }
 
+// FormatLastUpdatedByUserInfo formats the UserInfo for the last_updated_by field
+// Returns format: "Name (@username)" - if Name is empty, uses username
+func FormatLastUpdatedByUserInfo(userInfo *UserInfo) string {
+	if userInfo == nil {
+		return ""
+	}
+	name := userInfo.Name
+	if name == "" {
+		name = userInfo.Username
+	}
+	return name + " (@" + userInfo.Username + ")"
+}
+
 // GetFormattedLastUpdatedBy retrieves user by ID and returns formatted last_updated_by string
 func GetFormattedLastUpdatedBy(db *gorm.DB, userID uint) (string, error) {
 	var user models.User

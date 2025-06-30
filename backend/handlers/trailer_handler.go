@@ -55,6 +55,17 @@ func (h *TrailerHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Set last_updated_by
+	trailer.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.repo.Create(&trailer); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTrailer,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
@@ -92,7 +103,17 @@ func (h *TrailerHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
 	existingTrailer.LicensePlate = updateData.LicensePlate
+	// Set last_updated_by
+	existingTrailer.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	if err := h.repo.Update(existingTrailer); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTrailer,

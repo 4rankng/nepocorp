@@ -149,6 +149,14 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
 	var updateData map[string]any
 	if err := c.ShouldBindJSON(&updateData); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
@@ -159,6 +167,17 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	// Update only provided fields
 	if vendorName, ok := updateData["vendor_name"].(string); ok && vendorName != "" {
 		existingExpense.VendorName = vendorName
+	}
+	if expenseCategoryID, ok := updateData["expense_category_id"].(float64); ok && expenseCategoryID > 0 {
+		categoryID := uint(expenseCategoryID)
+		// Validate that the expense category exists
+		_, err := h.categoryRepo.FindByID(categoryID)
+		if err != nil {
+			utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
+				utils.ErrorDetail{Code: common.CodeInvalidInput, Message: "Invalid expense category ID"})
+			return
+		}
+		existingExpense.ExpenseCategoryID = categoryID
 	}
 	if paymentStatus, ok := updateData["payment_status"].(string); ok && paymentStatus != "" {
 		if !isValidPaymentStatus(paymentStatus) {
@@ -181,8 +200,60 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 		existingExpense.Total = int64(total)
 	}
 
-	// Note: Item updates should be done through dedicated item endpoints
-	// This expense update endpoint focuses on expense-level fields only
+	// Set last_updated_by for expense
+	existingExpense.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
+	// Handle item updates if provided
+	if items, ok := updateData["items"].([]interface{}); ok && len(items) > 0 {
+		formattedUser := utils.FormatLastUpdatedByUserInfo(userInfo)
+
+		// Process item updates
+		for _, itemData := range items {
+			if itemMap, ok := itemData.(map[string]interface{}); ok {
+				if itemIDFloat, exists := itemMap["id"].(float64); exists && itemIDFloat > 0 {
+					itemID := uint(itemIDFloat)
+
+					// Find existing item
+					existingItem, err := h.repo.FindItemByID(uint(id), itemID)
+					if err != nil {
+						continue // Skip invalid items
+					}
+
+					// Update item fields
+					if itemName, ok := itemMap["item_name"].(string); ok && itemName != "" {
+						existingItem.ItemName = itemName
+					}
+					if price, ok := itemMap["price"].(float64); ok && price > 0 {
+						existingItem.Price = int64(price)
+					}
+					if quantity, ok := itemMap["quantity"].(float64); ok && quantity > 0 {
+						existingItem.Quantity = int(quantity)
+					}
+					if licensePlate, ok := itemMap["license_plate"].(string); ok && licensePlate != "" {
+						existingItem.LicensePlate = licensePlate
+					}
+					if taxRate, ok := itemMap["tax_rate"].(float64); ok && taxRate >= 0 {
+						existingItem.TaxRate = taxRate
+					}
+					if subtotal, ok := itemMap["subtotal"].(float64); ok && subtotal >= 0 {
+						existingItem.Subtotal = int64(subtotal)
+					}
+					if total, ok := itemMap["total"].(float64); ok && total > 0 {
+						existingItem.Total = int64(total)
+					}
+
+					// Set last_updated_by for item
+					existingItem.LastUpdatedBy = formattedUser
+
+					// Update the item
+					if err := h.repo.UpdateItem(existingItem); err != nil {
+						// Log error but continue with other items
+						continue
+					}
+				}
+			}
+		}
+	}
 
 	if err := h.repo.Update(existingExpense); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractorExpense,

@@ -56,6 +56,17 @@ func (h *InvoiceCategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Set last_updated_by
+	category.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.repo.Create(&category); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateInvoiceCategory,
 			utils.ErrorDetail{Code: common.CodeDatabaseError, Message: err.Error()})
@@ -81,6 +92,17 @@ func (h *InvoiceCategoryHandler) Update(c *gin.Context) {
 	}
 
 	category.ID = uint(id)
+
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Set last_updated_by
+	category.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	if err := h.repo.Update(&category); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateInvoiceCategory,

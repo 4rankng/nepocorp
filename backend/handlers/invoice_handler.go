@@ -95,22 +95,17 @@ func (h *InvoiceHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (set by JWT middleware)
-	userID, exists := c.Get("userID")
-	if !exists {
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
 		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
-			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User ID not found"})
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
 		return
 	}
 
-	userIDUint, ok := userID.(uint)
-	if !ok {
-		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrInternalServer,
-			utils.ErrorDetail{Code: common.CodeInternalError, Message: "Invalid user ID type"})
-		return
-	}
-
-	invoice.CreatedBy = userIDUint
+	// Set user info
+	invoice.CreatedBy = userInfo.ID
+	invoice.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	// Validate payment status
 	if invoice.PaymentStatus != "" && !isValidInvoiceStatus(invoice.PaymentStatus) {
@@ -165,6 +160,17 @@ func (h *InvoiceHandler) Update(c *gin.Context) {
 	}
 
 	invoice.ID = uint(id)
+
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Set last_updated_by
+	invoice.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	// Validate payment status
 	if invoice.PaymentStatus != "" && !isValidInvoiceStatus(invoice.PaymentStatus) {

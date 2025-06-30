@@ -55,6 +55,17 @@ func (h *ContainerHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Set last_updated_by
+	container.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.repo.Create(&container); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateContainer,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
@@ -92,7 +103,18 @@ func (h *ContainerHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
 	existingContainer.Category = updateData.Category
+	// Set last_updated_by
+	existingContainer.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.repo.Update(existingContainer); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateContainer,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})

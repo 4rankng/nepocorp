@@ -27,6 +27,16 @@ func (h *FinancialLedgerHandler) CreateTransaction(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized", "User context not found")
+		return
+	}
+
+	// Set last_updated_by
+	transaction.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.FinancialLedgerRepo.CreateTransaction(&transaction); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
@@ -78,6 +88,17 @@ func (h *FinancialLedgerHandler) UpdateTransaction(c *gin.Context) {
 	}
 
 	transaction.ID = uint(id)
+
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized", "User context not found")
+		return
+	}
+
+	// Set last_updated_by
+	transaction.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.FinancialLedgerRepo.UpdateTransaction(&transaction); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return

@@ -74,7 +74,7 @@ func Setup(
 		// Protected routes
 		protected := v1.Group("/")
 		protected.Use(middleware.JWTAuth(cfg))
-		protected.Use(middleware.UserContextMiddleware(db))
+		// Note: User context for audit trail is now handled manually in handlers
 		{
 			// User profile
 			protected.GET("/auth/profile", authHandler.GetProfile)

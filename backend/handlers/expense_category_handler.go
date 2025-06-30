@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -56,18 +55,16 @@ func (h *ExpenseCategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Get current user from context for audit trail
-	if userInfo, exists := c.Get("user"); exists {
-		if user, ok := userInfo.(map[string]interface{}); ok {
-			if username, exists := user["username"]; exists {
-				if name, exists := user["name"]; exists {
-					category.LastUpdatedBy = fmt.Sprintf("%s (%s)", name, username)
-				} else {
-					category.LastUpdatedBy = username.(string)
-				}
-			}
-		}
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
 	}
+
+	// Set last_updated_by
+	category.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	if err := h.repo.Create(&category); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateExpenseCategory,
@@ -112,18 +109,16 @@ func (h *ExpenseCategoryHandler) Update(c *gin.Context) {
 		existingCategory.Description = updateData.Description
 	}
 
-	// Get current user from context for audit trail
-	if userInfo, exists := c.Get("user"); exists {
-		if user, ok := userInfo.(map[string]interface{}); ok {
-			if username, exists := user["username"]; exists {
-				if name, exists := user["name"]; exists {
-					existingCategory.LastUpdatedBy = fmt.Sprintf("%s (%s)", name, username)
-				} else {
-					existingCategory.LastUpdatedBy = username.(string)
-				}
-			}
-		}
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
 	}
+
+	// Set last_updated_by
+	existingCategory.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	if err := h.repo.Update(existingCategory); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateExpenseCategory,

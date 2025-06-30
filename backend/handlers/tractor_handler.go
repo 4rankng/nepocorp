@@ -55,6 +55,17 @@ func (h *TractorHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
+	// Set last_updated_by
+	tractor.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
+
 	if err := h.repo.Create(&tractor); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateTractor,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
@@ -92,7 +103,17 @@ func (h *TractorHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Get user info for audit trail
+	userInfo, err := utils.GetUserFromGinContext(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, common.ErrUnauthorized,
+			utils.ErrorDetail{Code: common.CodeUnauthorized, Message: "User context not found"})
+		return
+	}
+
 	existingTractor.LicensePlate = updateData.LicensePlate
+	// Set last_updated_by
+	existingTractor.LastUpdatedBy = utils.FormatLastUpdatedByUserInfo(userInfo)
 
 	if err := h.repo.Update(existingTractor); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractor,

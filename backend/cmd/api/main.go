@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/nepocorp/backend/config"
-	"github.com/nepocorp/backend/database"
 	"github.com/nepocorp/backend/handlers"
 	"github.com/nepocorp/backend/internal/migrations"
 	"github.com/nepocorp/backend/middleware"
@@ -213,8 +212,8 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	// Register user tracking callbacks
-	database.RegisterUserTrackingCallbacks(db)
+	// Note: User tracking is now handled manually in handlers
+	// database.RegisterUserTrackingCallbacks(db)
 
 	return db, nil
 }
