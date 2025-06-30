@@ -232,9 +232,56 @@ const Dropdown = ({
         <button
           type="button"
           className="dropdown__trigger"
+          style={{
+            ...(value && !multiple && (() => {
+              const selectedOption = options.find(opt => opt.value === value);
+              if (selectedOption?.color) {
+                return { 
+                  border: `1px solid ${selectedOption.color}`,
+                  borderRadius: '4px',
+                  borderColor: selectedOption.color
+                };
+              }
+              return {};
+            })())
+          }}
+          onMouseEnter={(e) => {
+            if (!disabled && value && !multiple) {
+              const selectedOption = options.find(opt => opt.value === value);
+              if (selectedOption?.color) {
+                e.currentTarget.style.borderColor = selectedOption.color;
+              }
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!disabled && value && !multiple) {
+              const selectedOption = options.find(opt => opt.value === value);
+              if (selectedOption?.color) {
+                e.currentTarget.style.borderColor = selectedOption.color;
+              }
+            }
+          }}
           onClick={() => {
             if (!disabled) {
               setIsOpen(!isOpen);
+            }
+          }}
+          onFocus={(e) => {
+            if (!disabled && value && !multiple) {
+              const selectedOption = options.find(opt => opt.value === value);
+              if (selectedOption?.color) {
+                e.currentTarget.style.borderColor = selectedOption.color;
+                e.currentTarget.style.boxShadow = `0 0 0 1px ${selectedOption.color}`;
+              }
+            }
+          }}
+          onBlur={(e) => {
+            if (!disabled && value && !multiple) {
+              const selectedOption = options.find(opt => opt.value === value);
+              if (selectedOption?.color) {
+                e.currentTarget.style.borderColor = selectedOption.color;
+                e.currentTarget.style.boxShadow = '';
+              }
             }
           }}
           onKeyDown={handleKeyDown}
@@ -243,23 +290,7 @@ const Dropdown = ({
           aria-haspopup="listbox"
           {...domProps}
         >
-          <span className="dropdown__value" style={{ display: 'flex', alignItems: 'center' }}>
-            {!multiple && value && (() => {
-              const selectedOption = options.find(opt => opt.value === value);
-              return selectedOption?.color ? (
-                <span 
-                  style={{
-                    display: 'inline-block',
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: selectedOption.color,
-                    marginRight: '8px',
-                    flexShrink: 0
-                  }}
-                />
-              ) : null;
-            })()}
+          <span className="dropdown__value">
             {getDisplayValue()}
           </span>
           <div className="dropdown__icons">
@@ -328,6 +359,12 @@ const Dropdown = ({
                     <div
                       key={option.value}
                       className={`dropdown__option ${isSelected ? 'dropdown__option--selected' : ''}`}
+                      style={option.color ? { 
+                        border: `1px solid ${option.color}`,
+                        borderRadius: '4px',
+                        margin: '2px 4px',
+                        padding: '6px 8px'
+                      } : {}}
                       onClick={() => handleOptionSelect(option.value)}
                       role="option"
                       aria-selected={isSelected}
@@ -336,20 +373,6 @@ const Dropdown = ({
                         <span className={`dropdown__checkbox ${isSelected ? 'dropdown__checkbox--checked' : ''}`}>
                           {isSelected && '✓'}
                         </span>
-                      )}
-                      {option.color && (
-                        <span 
-                          className="dropdown__option-indicator"
-                          style={{
-                            display: 'inline-block',
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor: option.color,
-                            marginRight: '8px',
-                            flexShrink: 0
-                          }}
-                        />
                       )}
                       <span className="dropdown__option-text">
                         {option.label || option.displayText || option.text || option.name}

@@ -5,7 +5,7 @@ import Dropdown from '@components/ui/Dropdown';
 import StatusBadge from '@components/ui/StatusBadge';
 import PaymentProofButton from '@components/ui/PaymentProofButton';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
-import { INVOICE_STATUS, INVOICE_STATUS_LABELS } from '@constants/invoice';
+import { INVOICE_STATUS } from '@constants/invoice';
 import { getPaymentStatusColor } from '@utils/expenseHelpers';
 
 const ExpenseHeader = ({
@@ -31,7 +31,7 @@ const ExpenseHeader = ({
                 <Dropdown
                   value={editedData.payment_status}
                   onChange={(value) => onFieldChange('payment_status', value)}
-                  options={statusOptions || Object.entries(PAYMENT_STATUS).map(([key, value]) => ({
+                  options={statusOptions || Object.entries(PAYMENT_STATUS).map(([, value]) => ({
                     value: value,
                     label: PAYMENT_STATUS_LABELS[value],
                     color: getPaymentStatusColor(value)
