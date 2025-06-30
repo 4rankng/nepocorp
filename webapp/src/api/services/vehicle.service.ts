@@ -4,13 +4,21 @@ import {
   Tractor,
   Trailer,
   Container,
+  Route,
+  FuelStandard,
   CreateTractorRequest,
   UpdateTractorRequest,
   CreateTrailerRequest,
   UpdateTrailerRequest,
   CreateContainerRequest,
   UpdateContainerRequest,
-  VehicleFilters
+  CreateRouteRequest,
+  UpdateRouteRequest,
+  CreateFuelStandardRequest,
+  UpdateFuelStandardRequest,
+  VehicleFilters,
+  RouteFilters,
+  FuelStandardFilters
 } from '@api/types/vehicle.types';
 
 class TractorService extends BaseService<Tractor, CreateTractorRequest, UpdateTractorRequest> {
@@ -67,6 +75,52 @@ class ContainerService extends BaseService<Container, CreateContainerRequest, Up
   }
 }
 
+class RouteService extends BaseService<Route, CreateRouteRequest, UpdateRouteRequest> {
+  constructor() {
+    super('/route');
+  }
+
+  async getAll(params?: RouteFilters & { page?: number; limit?: number }): Promise<ApiResponse<Route[]>> {
+    return super.getAll(params);
+  }
+
+  async getByTrailerType(trailerType: string): Promise<ApiResponse<Route[]>> {
+    return this.getAll({ trailer_type: trailerType });
+  }
+
+  async search(query: string): Promise<ApiResponse<Route[]>> {
+    return this.getAll({ search: query });
+  }
+}
+
+class FuelStandardService extends BaseService<FuelStandard, CreateFuelStandardRequest, UpdateFuelStandardRequest> {
+  constructor() {
+    super('/fuel-standard');
+  }
+
+  async getAll(params?: FuelStandardFilters & { page?: number; limit?: number }): Promise<ApiResponse<FuelStandard[]>> {
+    return super.getAll(params);
+  }
+
+  async getByTractor(tractorId: number): Promise<ApiResponse<FuelStandard[]>> {
+    return this.client.get(`${this.basePath}/tractor/${tractorId}`);
+  }
+
+  async getByTractorAndType(tractorId: number, trailerType: string, loadCategory: string): Promise<ApiResponse<FuelStandard>> {
+    return this.client.get(`${this.basePath}/tractor/${tractorId}/${trailerType}/${loadCategory}`);
+  }
+
+  async getByTrailerType(trailerType: string): Promise<ApiResponse<FuelStandard[]>> {
+    return this.client.get(`${this.basePath}/trailer-type/${trailerType}`);
+  }
+
+  async getByLoadCategory(loadCategory: string): Promise<ApiResponse<FuelStandard[]>> {
+    return this.client.get(`${this.basePath}/load-category/${loadCategory}`);
+  }
+}
+
 export const tractorService = new TractorService();
 export const trailerService = new TrailerService();
 export const containerService = new ContainerService();
+export const routeService = new RouteService();
+export const fuelStandardService = new FuelStandardService();

@@ -29,9 +29,9 @@ export interface ExpenseItem extends AuditableEntity {
 }
 
 export interface ExpenseCategory extends AuditableEntity {
+  category_key: string;
   name: string;
   description?: string;
-  is_active: boolean;
 }
 
 export interface Vehicle {
@@ -67,6 +67,14 @@ export interface CreateExpenseItemRequest {
 }
 
 export interface UpdateExpenseItemRequest extends Partial<CreateExpenseItemRequest> {}
+
+export interface CreateExpenseCategoryRequest {
+  category_key: string;
+  name: string;
+  description?: string;
+}
+
+export interface UpdateExpenseCategoryRequest extends Partial<CreateExpenseCategoryRequest> {}
 
 // Filter types
 export interface ExpenseFilters {

@@ -25,6 +25,8 @@ const TABS = [
   { value: 'dau-keo', label: 'Đầu Kéo' },
   { value: 'ro-mooc', label: 'Rơ-Mooc' },
   { value: 'container', label: 'Container' },
+  { value: 'tuyen-duong', label: 'Tuyến Đường' },
+  { value: 'dinh-muc-nhien-lieu', label: 'Định Mức NL' },
 ];
 // Individual tab content components
 const DauKeoContent = () => {
@@ -388,6 +390,37 @@ const ContainerContent = () => {
     </Box>
   );
 };
+
+const TuyenDuongContent = () => {
+  const theme = useTheme();
+  
+  return (
+    <Box sx={{ p: 3, textAlign: 'center' }}>
+      <Typography variant="h6" color="text.secondary" gutterBottom>
+        Quản Lý Tuyến Đường
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Tính năng đang được phát triển...
+      </Typography>
+    </Box>
+  );
+};
+
+const DinhMucNhienLieuContent = () => {
+  const theme = useTheme();
+  
+  return (
+    <Box sx={{ p: 3, textAlign: 'center' }}>
+      <Typography variant="h6" color="text.secondary" gutterBottom>
+        Quản Lý Định Mức Nhiên Liệu
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Tính năng đang được phát triển...
+      </Typography>
+    </Box>
+  );
+};
+
 const QuanLyPhuongTien = () => {
   const { tab: tabFromUrl = 'dau-keo' } = useParams();
   const navigate = useNavigate();
@@ -416,6 +449,10 @@ const QuanLyPhuongTien = () => {
         return <RoMoocContent />;
       case 'container':
         return <ContainerContent />;
+      case 'tuyen-duong':
+        return <TuyenDuongContent />;
+      case 'dinh-muc-nhien-lieu':
+        return <DinhMucNhienLieuContent />;
       default:
         return <DauKeoContent />;
     }

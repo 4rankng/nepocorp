@@ -50,19 +50,15 @@ INSERT IGNORE INTO settings (id, `key`, `value`, last_updated_by) VALUES
 (7, 'insurance_renewal_reminder_days', '60', 'Administrator (@admin)');
 
 -- Insert mock activity logs
-INSERT IGNORE INTO activity_logs (id, user_id, action, resource, resource_id, ip_address, user_agent, response_status) VALUES
-(1, 1, 'LOGIN', 'auth', '1', '192.168.1.100', 'Mozilla/5.0', 200),
-(2, 2, 'CREATE', 'expense', '1', '192.168.1.101', 'Mozilla/5.0', 201),
-(3, 2, 'UPDATE', 'expense', '1', '192.168.1.101', 'Mozilla/5.0', 200),
-(4, 3, 'CREATE', 'maintenance', '1', '192.168.1.102', 'Mozilla/5.0', 201),
-(5, 1, 'DELETE', 'tractor', '99', '192.168.1.100', 'Mozilla/5.0', 200),
-(6, 2, 'VIEW', 'expense', '2', '192.168.1.101', 'Mozilla/5.0', 200),
-(7, 4, 'LOGIN', 'auth', '4', '192.168.1.103', 'Mozilla/5.0', 200),
-(8, 5, 'CREATE', 'maintenance', '2', '192.168.1.104', 'Mozilla/5.0', 201);
-
--- ================================================================
--- II. MASTER DATA TABLES
--- ================================================================
+INSERT IGNORE INTO activity_logs (id, user_id, action, resource, resource_id, ip_address, user_agent, request_data, response_status) VALUES
+(1, 1, 'LOGIN', 'auth', '1', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', '{"username": "admin"}', 200),
+(2, 1, 'CREATE', 'tractors', '1', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', '{"license_plate": "51A-12345"}', 201),
+(3, 2, 'LOGIN', 'auth', '2', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', '{"username": "manager1"}', 200),
+(4, 2, 'CREATE', 'jobs', '1', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', '{"job_date": "2024-01-15"}', 201),
+(5, 3, 'LOGIN', 'auth', '3', '192.168.1.102', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15', '{"username": "driver1"}', 200),
+(6, 2, 'UPDATE', 'expenses', '1', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', '{"payment_status": "PAID"}', 200),
+(7, 1, 'DELETE', 'settings', '8', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', '{"key": "test_setting"}', 200),
+(8, 4, 'LOGIN', 'auth', '4', '192.168.1.103', 'Mozilla/5.0 (Android 12; Mobile) AppleWebKit/537.36', '{"username": "driver2"}', 200);
 
 -- Insert mock customers
 INSERT IGNORE INTO customers (id, name, tax_code, address, contact_person, contact_phone, contact_email, notes) VALUES
@@ -93,41 +89,46 @@ INSERT IGNORE INTO containers (id, category, last_updated_by) VALUES
 -- ================================================================
 
 -- Insert mock tractors
-INSERT IGNORE INTO tractors (id, license_plate, engine_type, description, purchase_cost, initial_valuation, purchase_date, last_updated_by) VALUES
-(1, '51A-12345', 'Euro 5 Diesel', 'Xe đầu kéo Hyundai HD1000 2020', 1200000000.00, 1200000000.00, '2020-03-15', 'Administrator (@admin)'),
-(2, '51B-67890', 'Euro 4 Diesel', 'Xe đầu kéo Hino 700 Series 2019', 1100000000.00, 900000000.00, '2019-08-20', 'Administrator (@admin)'),
-(3, '51C-11111', 'Euro 5 Diesel', 'Xe đầu kéo Isuzu Giga 2021', 1300000000.00, 1300000000.00, '2021-01-10', 'Administrator (@admin)'),
-(4, '51D-22222', 'Euro 4 Diesel', 'Xe đầu kéo Mitsubishi Fuso 2018', 1000000000.00, 800000000.00, '2018-12-05', 'Administrator (@admin)'),
-(5, '51E-33333', 'Euro 5 Diesel', 'Xe đầu kéo Daewoo Prima 2022', 1400000000.00, 1400000000.00, '2022-05-25', 'Administrator (@admin)');
+INSERT IGNORE INTO tractors (id, license_plate, make, model, year_of_manufacture, inspection_due_date, road_fee_due_date, insurance_policy_number, insurance_expiry_date, remark, last_updated_by) VALUES
+(1, '51A-12345', 'Hyundai', 'HD1000', 2020, '2024-03-15', '2024-12-31', 'INS-HD1000-2024', '2024-12-31', 'Xe đầu kéo Hyundai HD1000 2020, Euro 5 Diesel', 'Administrator (@admin)'),
+(2, '51B-67890', 'Hino', '700 Series', 2019, '2024-08-20', '2024-12-31', 'INS-HINO700-2024', '2024-12-31', 'Xe đầu kéo Hino 700 Series 2019, Euro 4 Diesel', 'Administrator (@admin)'),
+(3, '51C-11111', 'Isuzu', 'Giga', 2021, '2024-01-10', '2024-12-31', 'INS-GIGA-2024', '2024-12-31', 'Xe đầu kéo Isuzu Giga 2021, Euro 5 Diesel', 'Administrator (@admin)'),
+(4, '51D-22222', 'Mitsubishi', 'Fuso', 2018, '2024-12-05', '2024-12-31', 'INS-FUSO-2024', '2024-12-31', 'Xe đầu kéo Mitsubishi Fuso 2018, Euro 4 Diesel', 'Administrator (@admin)'),
+(5, '51E-33333', 'Daewoo', 'Prima', 2022, '2024-05-25', '2024-12-31', 'INS-PRIMA-2024', '2024-12-31', 'Xe đầu kéo Daewoo Prima 2022, Euro 5 Diesel', 'Administrator (@admin)');
 
 -- Insert mock trailers
-INSERT IGNORE INTO trailers (id, license_plate, trailer_number, type, description, valuation, last_updated_by) VALUES
-(1, '51R-11111', 'TR001', '40ft', 'Rơ moóc container 40ft Doosung', 300000000.00, 'Administrator (@admin)'),
-(2, '51R-22222', 'TR002', '20ft', 'Rơ moóc container 20ft Cimc', 250000000.00, 'Administrator (@admin)'),
-(3, '51R-33333', 'TR003', 'other', 'Rơ moóc sàn 45ft Hyundai', 350000000.00, 'Administrator (@admin)'),
-(4, '51R-44444', 'TR004', 'other', 'Rơ moóc tank chở xăng 30m3', 400000000.00, 'Administrator (@admin)'),
-(5, '51R-55555', 'TR005', '40ft', 'Rơ moóc thùng kín 40ft', 320000000.00, 'Administrator (@admin)');
+INSERT IGNORE INTO trailers (id, license_plate, type, make, model, year_of_manufacture, remark, last_updated_by) VALUES
+(1, '51R-11111', '40FT', 'Doosung', 'Container 40ft', 2020, 'Rơ moóc container 40ft Doosung', 'Administrator (@admin)'),
+(2, '51R-22222', '20FT', 'Cimc', 'Container 20ft', 2019, 'Rơ moóc container 20ft Cimc', 'Administrator (@admin)'),
+(3, '51R-33333', '45FT', 'Hyundai', 'Flatbed 45ft', 2021, 'Rơ moóc sàn 45ft Hyundai', 'Administrator (@admin)'),
+(4, '51R-44444', 'TANK', 'Daehan', 'Tank 30m3', 2018, 'Rơ moóc tank chở xăng 30m3', 'Administrator (@admin)'),
+(5, '51R-55555', '40FT', 'Hyundai', 'Box 40ft', 2022, 'Rơ moóc thùng kín 40ft', 'Administrator (@admin)');
 
 -- Insert mock routes
-INSERT IGNORE INTO routes (id, name, base_fee_40ft, base_fee_20ft, surcharge, discount, is_two_way_combined, notes) VALUES
-(1, 'TP.HCM - Hà Nội', 15000000.00, 12000000.00, 500000.00, 0.00, TRUE, 'Tuyến đường chính Bắc Nam'),
-(2, 'TP.HCM - Đà Nẵng', 8000000.00, 6500000.00, 300000.00, 200000.00, FALSE, 'Tuyến miền Trung phổ biến'),
-(3, 'TP.HCM - Cần Thơ', 3000000.00, 2500000.00, 100000.00, 0.00, FALSE, 'Tuyến ngắn đồng bằng sông Cửu Long'),
-(4, 'TP.HCM - Vũng Tàu', 2000000.00, 1800000.00, 50000.00, 100000.00, FALSE, 'Tuyến cảng Vũng Tàu'),
-(5, 'Cát Lái - Tân Cảng', 1500000.00, 1200000.00, 0.00, 0.00, FALSE, 'Tuyến nội thành cảng');
+INSERT IGNORE INTO routes (id, name, trailer_type, base_fee, surcharge, discount, is_two_way_combined, notes) VALUES
+(1, 'TP.HCM - Hà Nội (40FT)', '40FT', 15000000.00, 500000.00, 0.00, TRUE, 'Tuyến đường chính Bắc Nam - Container 40ft'),
+(2, 'TP.HCM - Hà Nội (20FT)', '20FT', 12000000.00, 500000.00, 0.00, TRUE, 'Tuyến đường chính Bắc Nam - Container 20ft'),
+(3, 'TP.HCM - Đà Nẵng (40FT)', '40FT', 8000000.00, 300000.00, 200000.00, FALSE, 'Tuyến miền Trung phổ biến - Container 40ft'),
+(4, 'TP.HCM - Đà Nẵng (20FT)', '20FT', 6500000.00, 300000.00, 200000.00, FALSE, 'Tuyến miền Trung phổ biến - Container 20ft'),
+(5, 'TP.HCM - Cần Thơ (40FT)', '40FT', 3000000.00, 100000.00, 0.00, FALSE, 'Tuyến ngắn đồng bằng sông Cửu Long - Container 40ft'),
+(6, 'TP.HCM - Cần Thơ (20FT)', '20FT', 2500000.00, 100000.00, 0.00, FALSE, 'Tuyến ngắn đồng bằng sông Cửu Long - Container 20ft'),
+(7, 'TP.HCM - Vũng Tàu (40FT)', '40FT', 2000000.00, 50000.00, 100000.00, FALSE, 'Tuyến cảng Vũng Tàu - Container 40ft'),
+(8, 'TP.HCM - Vũng Tàu (20FT)', '20FT', 1800000.00, 50000.00, 100000.00, FALSE, 'Tuyến cảng Vũng Tàu - Container 20ft'),
+(9, 'Cát Lái - Tân Cảng (40FT)', '40FT', 1500000.00, 0.00, 0.00, FALSE, 'Tuyến nội thành cảng - Container 40ft'),
+(10, 'Cát Lái - Tân Cảng (20FT)', '20FT', 1200000.00, 0.00, 0.00, FALSE, 'Tuyến nội thành cảng - Container 20ft');
 
 -- Insert mock fuel standards
 INSERT IGNORE INTO fuel_standards (id, tractor_id, trailer_type, load_category, consumption_rate, surcharge_rate_mountain, notes) VALUES
-(1, 1, '40ft', 'under_20t', 28.50, 3.00, 'Hyundai HD1000 container 40ft tải nhẹ'),
-(2, 1, '40ft', 'over_20t', 32.00, 4.00, 'Hyundai HD1000 container 40ft tải nặng'),
-(3, 1, '40ft', 'empty', 25.00, 2.00, 'Hyundai HD1000 container 40ft rỗng'),
-(4, 2, '20ft', 'under_20t', 26.00, 2.50, 'Hino 700 container 20ft tải nhẹ'),
-(5, 2, '20ft', 'over_20t', 29.50, 3.50, 'Hino 700 container 20ft tải nặng'),
-(6, 2, '20ft', 'empty', 23.00, 2.00, 'Hino 700 container 20ft rỗng'),
-(7, 3, '40ft', 'under_20t', 27.00, 3.00, 'Isuzu Giga container 40ft tải nhẹ'),
-(8, 3, '40ft', 'over_20t', 31.00, 4.00, 'Isuzu Giga container 40ft tải nặng'),
-(9, 4, '40ft', 'empty', 24.50, 2.00, 'Mitsubishi Fuso container 40ft rỗng'),
-(10, 5, '40ft', 'under_20t', 29.00, 3.50, 'Daewoo Prima container 40ft tải nhẹ');
+(1, 1, '40FT', 'under_20t', 28.50, 3.00, 'Hyundai HD1000 container 40ft tải nhẹ'),
+(2, 1, '40FT', 'over_20t', 32.00, 4.00, 'Hyundai HD1000 container 40ft tải nặng'),
+(3, 1, '40FT', 'empty', 25.00, 2.00, 'Hyundai HD1000 container 40ft rỗng'),
+(4, 2, '20FT', 'under_20t', 26.00, 2.50, 'Hino 700 container 20ft tải nhẹ'),
+(5, 2, '20FT', 'over_20t', 29.50, 3.50, 'Hino 700 container 20ft tải nặng'),
+(6, 2, '20FT', 'empty', 23.00, 2.00, 'Hino 700 container 20ft rỗng'),
+(7, 3, '40FT', 'under_20t', 27.00, 3.00, 'Isuzu Giga container 40ft tải nhẹ'),
+(8, 3, '40FT', 'over_20t', 31.00, 4.00, 'Isuzu Giga container 40ft tải nặng'),
+(9, 4, '40FT', 'empty', 24.50, 2.00, 'Mitsubishi Fuso container 40ft rỗng'),
+(10, 5, '40FT', 'under_20t', 29.00, 3.50, 'Daewoo Prima container 40ft tải nhẹ');
 
 -- ================================================================
 -- IV. OPERATIONS TABLES
@@ -148,31 +149,52 @@ INSERT IGNORE INTO jobs (id, job_date, tractor_id, trailer_id, user_id_driver, c
 -- V. EXPENSE MANAGEMENT TABLES
 -- ================================================================
 
--- Insert mock expense categories
-INSERT IGNORE INTO expense_categories (id, name, last_updated_by) VALUES
-(1, 'MAINTENANCE', 'Administrator (@admin)'),
-(2, 'INSURANCE', 'Administrator (@admin)'),
-(3, 'DRIVER_SALARY', 'Administrator (@admin)'),
-(4, 'FUEL', 'Administrator (@admin)'),
-(5, 'REPAIRS', 'Administrator (@admin)'),
-(6, 'ROAD_FEES', 'Administrator (@admin)'),
-(7, 'TIRES', 'Administrator (@admin)'),
-(8, 'PARKING', 'Administrator (@admin)'),
-(9, 'REGISTRATION', 'Administrator (@admin)'),
-(10, 'OTHER', 'Administrator (@admin)');
+-- Insert expense categories (Vietnamese structure from migration)
+-- Nhóm 1: Chi phí Vận hành Trực tiếp
+INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
+('FUEL', 'Nhiên liệu (Dầu lade)', 'Chi phí dầu diesel tiêu thụ trong các chuyến đi.', 'system'),
+('ROAD_FEES', 'Phí Cầu đường', 'Bao gồm tất cả các khoản phí tại trạm thu phí BOT, vé cầu, vé phà.', 'system');
+
+-- Nhóm 2: Chi phí Sửa chữa & Bảo dưỡng
+INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
+('GENERAL_REPAIRS', 'Sửa chữa chung', 'Chi phí sửa chữa đột xuất hoặc theo kế hoạch (sửa điện, máy, gầm, điều hòa).', 'system'),
+('PERIODIC_MAINTENANCE', 'Bảo dưỡng định kỳ', 'Chi phí bảo dưỡng theo lịch trình (bơm mỡ, thay lọc, thay nước làm mát).', 'system'),
+('TIRES', 'Lốp xe', 'Chi phí mua mới, thay thế, vá hoặc đảo lốp.', 'system'),
+('LUBRICANTS_SUPPLIES', 'Dầu mỡ & Vật tư', 'Chi phí các loại dầu nhớt (dầu máy, dầu cầu), mỡ và các vật tư tiêu hao khác.', 'system'),
+('ROADSIDE_ASSISTANCE', 'Cứu hộ', 'Chi phí phát sinh khi xe gặp sự cố trên đường và cần xe cứu hộ.', 'system');
+
+-- Nhóm 3: Chi phí Nhân sự
+INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
+('DRIVER_SALARY', 'Lương Lái xe', 'Tiền lương hàng tháng, thưởng và các khoản phúc lợi khác cho tài xế.', 'system'),
+('DRIVER_BONUS', 'Thưởng Lễ/Tết', 'Các khoản thưởng cho lái xe vào các dịp đặc biệt như lễ, Tết.', 'system');
+
+-- Nhóm 4: Chi phí Cố định & Hành chính
+INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
+('PARKING_FEES', 'Phí Gửi xe', 'Chi phí đỗ xe, gửi xe tại bãi hàng tháng hoặc theo lượt.', 'system'),
+('INSURANCE', 'Bảo hiểm', 'Phí mua bảo hiểm TNDS bắt buộc và bảo hiểm vật chất (thân vỏ) tự nguyện.', 'system'),
+('ROAD_MAINTENANCE_FEES', 'Phí Bảo trì Đường bộ', 'Phí bắt buộc nộp hàng năm cho quỹ bảo trì đường bộ.', 'system'),
+('INSPECTION_FEES', 'Phí Đăng kiểm', 'Lệ phí kiểm định an toàn kỹ thuật và bảo vệ môi trường cho xe cơ giới.', 'system'),
+('INSPECTION_SERVICE_FEES', 'Phí Dịch vụ Đăng kiểm', 'Chi phí cho các dịch vụ hỗ trợ liên quan trong quá trình đăng kiểm.', 'system'),
+('PERMITS_LICENSES', 'Phí Phù hiệu & Giấy tờ', 'Các chi phí làm phù hiệu xe tải, giấy phép và các thủ tục hành chính liên quan.', 'system'),
+('GPS_SERVICE', 'Phí Định vị GPS', 'Chi phí dịch vụ giám sát hành trình GPS hàng năm.', 'system'),
+('FINES_PENALTIES', 'Phạt vi phạm', 'Các khoản tiền phạt do vi phạm luật giao thông đường bộ.', 'system');
+
+-- Nhóm 5: Chi phí Khác
+INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
+('EQUIPMENT_UPGRADES', 'Trang bị & Nâng cấp', 'Chi phí lắp đặt thêm thiết bị như camera, âm thanh, hoặc nâng cấp các bộ phận xe.', 'system');
 
 -- Insert mock expenses (with tractor associations)
 INSERT IGNORE INTO expenses (id, expense_date, job_id, tractor_id, vendor_name, expense_category_id, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
-(1, '2024-01-15', 1, 1, 'Garage Minh Tuấn', 1, 2200000, 'PAID', 'VND', 'Bảo dưỡng định kỳ 10,000km', 2, 'Nguyễn Văn A (@manager1)'),
-(2, '2024-02-01', 2, 2, 'Xưởng Hùng Vương', 1, 1650000, 'PENDING', 'VND', 'Thay dầu và lọc', 2, 'Nguyễn Văn A (@manager1)'),
-(3, '2024-01-01', NULL, 3, 'Bảo hiểm PTI', 2, 5000000, 'PAID', 'VND', 'Bảo hiểm xe 1 năm', 1, 'Administrator (@admin)'),
-(4, '2024-02-10', 4, 1, 'Cửa hàng phụ tùng ABC', 5, 880000, 'DRAFT', 'VND', 'Thay phanh trước', 3, 'Trần Văn B (@driver1)'),
-(5, '2024-01-20', NULL, 4, 'Garage Thành Đạt', 5, 3300000, 'PAID', 'VND', 'Sửa chữa động cơ', 2, 'Nguyễn Văn A (@manager1)'),
-(6, '2024-02-05', NULL, 1, 'Xưởng Hoàng Gia', 1, 1320000, 'PAID', 'VND', 'Bảo dưỡng hệ thống phanh', 2, 'Nguyễn Văn A (@manager1)'),
-(7, '2024-02-15', 3, 2, 'Garage Việt Nam', 7, 990000, 'PENDING', 'VND', 'Thay lốp xe', 2, 'Nguyễn Văn A (@manager1)'),
-(8, '2024-01-01', NULL, 3, 'Bảo hiểm Bảo Việt', 2, 3000000, 'PAID', 'VND', 'Bảo hiểm rơ moóc', 1, 'Administrator (@admin)'),
-(9, '2024-02-20', 5, 4, 'Cửa hàng Minh Châu', 5, 660000, 'DRAFT', 'VND', 'Thay van an toàn', 3, 'Trần Văn B (@driver1)'),
-(10, '2024-01-25', NULL, 5, 'Xưởng sơn Tấn Phát', 1, 2750000, 'PAID', 'VND', 'Sơn lại thùng xe', 2, 'Nguyễn Văn A (@manager1)');
+(1, '2024-01-15', 1, 1, 'Garage Minh Tuấn', (SELECT id FROM expense_categories WHERE category_key = 'PERIODIC_MAINTENANCE'), 2200000, 'PAID', 'VND', 'Bảo dưỡng định kỳ 10,000km', 2, 'Nguyễn Văn A (@manager1)'),
+(2, '2024-02-01', 2, 2, 'Xưởng Hùng Vương', (SELECT id FROM expense_categories WHERE category_key = 'PERIODIC_MAINTENANCE'), 1650000, 'PENDING', 'VND', 'Thay dầu và lọc', 2, 'Nguyễn Văn A (@manager1)'),
+(3, '2024-01-01', NULL, 3, 'Bảo hiểm PTI', (SELECT id FROM expense_categories WHERE category_key = 'INSURANCE'), 5000000, 'PAID', 'VND', 'Bảo hiểm xe 1 năm', 1, 'Administrator (@admin)'),
+(4, '2024-02-10', 4, 1, 'Cửa hàng phụ tùng ABC', (SELECT id FROM expense_categories WHERE category_key = 'GENERAL_REPAIRS'), 880000, 'DRAFT', 'VND', 'Thay phanh trước', 3, 'Trần Văn B (@driver1)'),
+(5, '2024-01-20', NULL, 4, 'Garage Thành Đạt', (SELECT id FROM expense_categories WHERE category_key = 'GENERAL_REPAIRS'), 3300000, 'PAID', 'VND', 'Sửa chữa động cơ', 2, 'Nguyễn Văn A (@manager1)'),
+(6, '2024-02-05', NULL, 1, 'Xưởng Hoàng Gia', (SELECT id FROM expense_categories WHERE category_key = 'PERIODIC_MAINTENANCE'), 1320000, 'PAID', 'VND', 'Bảo dưỡng hệ thống phanh', 2, 'Nguyễn Văn A (@manager1)'),
+(7, '2024-02-15', 3, 2, 'Garage Việt Nam', (SELECT id FROM expense_categories WHERE category_key = 'TIRES'), 990000, 'PENDING', 'VND', 'Thay lốp xe', 2, 'Nguyễn Văn A (@manager1)'),
+(8, '2024-01-01', NULL, 3, 'Bảo hiểm Bảo Việt', (SELECT id FROM expense_categories WHERE category_key = 'INSURANCE'), 3000000, 'PAID', 'VND', 'Bảo hiểm rơ moóc', 1, 'Administrator (@admin)'),
+(9, '2024-02-20', 5, 4, 'Cửa hàng Minh Châu', (SELECT id FROM expense_categories WHERE category_key = 'GENERAL_REPAIRS'), 660000, 'DRAFT', 'VND', 'Thay van an toàn', 3, 'Trần Văn B (@driver1)'),
+(10, '2024-01-25', NULL, 5, 'Xưởng sơn Tấn Phát', (SELECT id FROM expense_categories WHERE category_key = 'PERIODIC_MAINTENANCE'), 2750000, 'PAID', 'VND', 'Sơn lại thùng xe', 2, 'Nguyễn Văn A (@manager1)');
 
 -- Insert mock expense items with license_plate and tax_rate
 INSERT IGNORE INTO expense_items (id, expense_id, license_plate, item_name, price, quantity, tax_rate, subtotal, total, install_date, expiry_date) VALUES
@@ -232,11 +254,11 @@ INSERT IGNORE INTO maintenance (id, expense_id, license_plate, vendor_name, item
 
 -- Insert mock invoice categories
 INSERT IGNORE INTO invoice_categories (id, name, last_updated_by) VALUES
-(1, 'TRANSPORTATION', 'Administrator (@admin)'),
-(2, 'LOGISTICS_SERVICE', 'Administrator (@admin)'),
-(3, 'PORT_FEES', 'Administrator (@admin)'),
-(4, 'FUEL_SURCHARGE', 'Administrator (@admin)'),
-(5, 'OTHER', 'Administrator (@admin)');
+(1, 'Vận chuyển Container', 'Administrator (@admin)'),
+(2, 'Dịch vụ Logistics', 'Administrator (@admin)'),
+(3, 'Phí Cảng & Xếp dỡ', 'Administrator (@admin)'),
+(4, 'Phụ thu Nhiên liệu', 'Administrator (@admin)'),
+(5, 'Dịch vụ Khác', 'Administrator (@admin)');
 
 -- Insert mock invoices
 INSERT IGNORE INTO invoices (id, customer_id, invoice_category_id, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
@@ -334,3 +356,126 @@ INSERT IGNORE INTO financial_ledgers (id, transaction_date, customer_id, partner
 -- Invoice Items: 13 invoice line items
 -- Financial Ledgers: 17 financial transactions
 -- ================================================================
+
+
+
+-- =================================================================
+-- PHẦN II: DỮ LIỆU GIAO DỊCH VẬN HÀNH (JOBS & EXPENSES)
+-- Trích xuất từ file Xe-15C-070.63.xlsx [3]
+-- =================================================================
+
+-- Đặt các biến dùng chung
+SET @tractor_id = (SELECT id FROM tractors WHERE license_plate = '51A-12345');
+SET @trailer_id = (SELECT id FROM trailers WHERE license_plate = '51R-11111');
+SET @admin_user_id = 1; -- Giả định user admin có id=1
+
+-- ------------- Dữ liệu Tháng 12/2020 -------------
+-- Chuyến 1
+INSERT INTO jobs (job_date, tractor_id, trailer_id, container_number, description, revenue, status) VALUES ('2020-12-01', @tractor_id, @trailer_id, 'DRYU3044197', 'Tr hàng NK sáng 01/12 ng hng KH - Minh Trí, Sóc Sơn, Hà Nội - Tiên Du, Bắc Ninh', 5200000, 'COMPLETED');
+SET @last_job_id = LAST_INSERT_ID();
+INSERT INTO expenses (expense_date, job_id, tractor_id, vendor_name, expense_category_id, total, description, created_by) VALUES
+('2020-12-01', @last_job_id, @tractor_id, 'Trạm thu phí', (SELECT id FROM expense_categories WHERE category_key = 'ROAD_FEES'), 1230000, 'Đi đường', @admin_user_id);
+
+-- Chuyến 2
+INSERT INTO jobs (job_date, tractor_id, trailer_id, container_number, description, revenue, status) VALUES ('2020-12-03', @tractor_id, @trailer_id, 'PASU0000258', 'Tr hàng NK sáng 02/12 - 03/12 - KCN VSIP, Bắc Ninh', 5500000, 'COMPLETED');
+SET @last_job_id = LAST_INSERT_ID();
+INSERT INTO expenses (expense_date, job_id, tractor_id, vendor_name, expense_category_id, total, description, created_by) VALUES
+('2020-12-03', @last_job_id, @tractor_id, 'Trạm thu phí', (SELECT id FROM expense_categories WHERE category_key = 'ROAD_FEES'), 1230000, 'Đi đường', @admin_user_id);
+
+-- Chuyến 3
+INSERT INTO jobs (job_date, tractor_id, trailer_id, container_number, description, revenue, status) VALUES ('2020-12-04', @tractor_id, @trailer_id, 'CBHU5551029', 'Tr hàng Vietsun sáng 04/12 - P. Đông Tân, TP. Thanh Hóa', 5509091, 'COMPLETED');
+SET @last_job_id = LAST_INSERT_ID();
+INSERT INTO expenses (expense_date, job_id, tractor_id, vendor_name, expense_category_id, total, description, created_by) VALUES
+('2020-12-04', @last_job_id, @tractor_id, 'Cây xăng', (SELECT id FROM expense_categories WHERE category_key = 'FUEL'), 2400300, 'Dầu lade', @admin_user_id),
+('2020-12-04', @last_job_id, @tractor_id, 'Trạm thu phí', (SELECT id FROM expense_categories WHERE category_key = 'ROAD_FEES'), 890000, 'Đi đường', @admin_user_id);
+
+-- (Thêm các chuyến còn lại của tháng 12/2020...)
+
+-- Chi phí tổng hợp cuối tháng 12/2020
+INSERT INTO expenses (expense_date, tractor_id, vendor_name, expense_category_id, total, description, created_by) VALUES
+('2020-12-31', @tractor_id, 'Bãi xe', (SELECT id FROM expense_categories WHERE category_key = 'PARKING_FEES'), 1200000, 'Phí gửi xe T12/2020', @admin_user_id),
+('2020-12-31', @tractor_id, 'Gara', (SELECT id FROM expense_categories WHERE category_key = 'TIRES'), 10000000, 'Thanh toán tiền lốp 295/75R22.5 Deestone ngày 17/12', @admin_user_id),
+('2020-12-31', @tractor_id, 'Gara', (SELECT id FROM expense_categories WHERE category_key = 'GENERAL_REPAIRS'), 13200000, 'Sửa xe ngày 27/12 - Thay 2 bánh răng tống nhanh, chậm, 2 tháp số, đóng tống số', @admin_user_id),
+('2020-12-31', @tractor_id, 'Gara', (SELECT id FROM expense_categories WHERE category_key = 'GENERAL_REPAIRS'), 2400000, 'Sửa xe ngày 27/12 - Mua dầu rửa, gioăng, công thợ làm đóng tống, thay phớt bót lái', @admin_user_id),
+('2020-12-31', @tractor_id, 'Lái xe', (SELECT id FROM expense_categories WHERE category_key = 'DRIVER_SALARY'), 9692308, 'Lương lái xe T12/2020', @admin_user_id);
+
+
+-- ------------- Dữ liệu Tháng 01/2021 -------------
+-- Chuyến 1
+INSERT INTO jobs (job_date, tractor_id, trailer_id, container_number, description, revenue, status) VALUES ('2021-01-01', @tractor_id, @trailer_id, 'BSIU2599472', 'Tr hàng NK sáng 02/01 - TT Bích Động, Việt Yên, Bắc Giang', 4230000, 'COMPLETED');
+SET @last_job_id = LAST_INSERT_ID();
+INSERT INTO expenses (expense_date, job_id, tractor_id, vendor_name, expense_category_id, total, description, created_by) VALUES
+('2021-01-01', @last_job_id, @tractor_id, 'Cây xăng', (SELECT id FROM expense_categories WHERE category_key = 'FUEL'), 2288450, 'Dầu lade', @admin_user_id),
+('2021-01-01', @last_job_id, @tractor_id, 'Trạm thu phí', (SELECT id FROM expense_categories WHERE category_key = 'ROAD_FEES'), 810000, 'Đi đường', @admin_user_id);
+
+-- Chuyến 2
+INSERT INTO jobs (job_date, tractor_id, trailer_id, container_number, description, revenue, status) VALUES ('2021-01-04', @tractor_id, @trailer_id, 'GAOU2132769', 'Tr hàng NK, đóng hàng kết hợp - Minh Trí, Sóc Sơn & KCN Khai Quang, Vĩnh Phúc', 5500000, 'COMPLETED');
+SET @last_job_id = LAST_INSERT_ID();
+INSERT INTO expenses (expense_date, job_id, tractor_id, vendor_name, expense_category_id, total, description, created_by) VALUES
+('2021-01-04', @last_job_id, @tractor_id, 'Trạm thu phí', (SELECT id FROM expense_categories WHERE category_key = 'ROAD_FEES'), 1110000, 'Đi đường', @admin_user_id);
+
+-- (Thêm các chuyến còn lại của tháng 01/2021...)
+
+-- Chi phí tổng hợp cuối tháng 01/2021
+INSERT INTO expenses (expense_date, tractor_id, vendor_name, expense_category_id, total, description, created_by) VALUES
+('2021-01-31', @tractor_id, 'Bãi xe', (SELECT id FROM expense_categories WHERE category_key = 'PARKING_FEES'), 1200000, 'Phí gửi xe T01/2021', @admin_user_id),
+('2021-01-31', @tractor_id, 'Cứu hộ', (SELECT id FROM expense_categories WHERE category_key = 'ROADSIDE_ASSISTANCE'), 1100000, 'Cứu hộ xe tại Hà Nam, thay 1 mắt bơm hơi ngày 18/01', @admin_user_id),
+('2021-01-31', @tractor_id, 'Gara', (SELECT id FROM expense_categories WHERE category_key = 'GENERAL_REPAIRS'), 2200000, 'Tháo lắp thông két nước, thay hộp nhôm dưới, hàn 2 mép két nước ngày 10/01', @admin_user_id),
+('2021-01-31', @tractor_id, 'Lái xe', (SELECT id FROM expense_categories WHERE category_key = 'DRIVER_SALARY'), 9000000, 'Lương lái xe T01/2021', @admin_user_id);
+
+
+-- =================================================================
+-- PHẦN III: DỮ LIỆU SỔ CÁI TÀI CHÍNH (FINANCIAL LEDGERS)
+-- Trích xuất từ file CONG-NO-PHAI-THU-2025.xlsx [2]
+-- =================================================================
+
+-- ------------- Giao dịch Khách hàng: Mộc Sảng -------------
+SET @customer_id_ms = (SELECT id FROM customers WHERE name = 'Mộc Sảng');
+INSERT INTO financial_ledgers (transaction_date, customer_id, transaction_type, debit, credit, reference_number, notes) VALUES
+('2019-06-06', @customer_id_ms, 'INVOICE', 26567900, 0, 'MS19001', 'Giấy báo nợ số MS19001'),
+('2019-07-08', @customer_id_ms, 'PAYMENT_RECEIVED', 0, 26567000, 'MS19001', 'Công ty chè Mộc Sảng thanh toán tiền MS19001'),
+('2019-07-31', @customer_id_ms, 'INVOICE', 26819450, 0, 'MS19002', 'Giấy báo nợ số MS19002'),
+('2019-08-27', @customer_id_ms, 'PAYMENT_RECEIVED', 0, 26819450, 'MS19002', 'Công ty chè Mộc Sảng thanh toán tiền MS19002'),
+('2020-04-28', @customer_id_ms, 'INVOICE', 26687400, 0, 'MS20001', 'GBN MS20001'),
+('2020-06-01', @customer_id_ms, 'PAYMENT_RECEIVED', 0, 26687400, NULL, 'MS thanh toán'),
+('2021-05-05', @customer_id_ms, 'INVOICE', 40225450, 0, 'MS21001', 'GBN MS21001'),
+('2021-05-20', @customer_id_ms, 'PAYMENT_RECEIVED', 0, 40225450, NULL, 'MS thanh toán'),
+('2022-08-30', @customer_id_ms, 'INVOICE', 57276950, 0, 'MS22001', 'GBN MS22001'),
+('2022-09-23', @customer_id_ms, 'PAYMENT_RECEIVED', 0, 57276950, NULL, 'MS thanh toán'),
+('2023-09-13', @customer_id_ms, 'INVOICE', 43241200, 0, 'MS23001', 'GBN MS23001'),
+('2023-11-27', @customer_id_ms, 'PAYMENT_RECEIVED', 0, 105946550, NULL, 'MS thanh toán gộp nhiều GBN');
+
+
+-- ------------- Giao dịch Khách hàng: Tân Lập MC -------------
+SET @customer_id_tlmc = (SELECT id FROM customers WHERE name = 'Tân Lập MC');
+INSERT INTO financial_ledgers (transaction_date, customer_id, transaction_type, debit, credit, reference_number, notes) VALUES
+('2019-06-29', @customer_id_tlmc, 'INVOICE', 30932000, 0, NULL, 'Công nợ phát sinh trong T6/2019'),
+('2019-07-10', @customer_id_tlmc, 'PAYMENT_RECEIVED', 0, 30932000, NULL, 'Tân Lập MC thanh toán tiền'),
+('2020-03-31', @customer_id_tlmc, 'INVOICE', 16916000, 0, 'TLMC2003001', 'GBN TLMC2003001'),
+('2020-04-14', @customer_id_tlmc, 'PAYMENT_RECEIVED', 0, 16916000, NULL, 'TLMC thanh toán'),
+('2021-06-30', @customer_id_tlmc, 'INVOICE', 47288000, 0, 'TLMC2106002', 'GBN TLMC2106002'),
+('2021-08-18', @customer_id_tlmc, 'PAYMENT_RECEIVED', 0, 47288000, NULL, 'TLMC thanh toán'),
+('2022-06-29', @customer_id_tlmc, 'INVOICE', 71076800, 0, 'TLMC2206001', 'GBN TLMC2206001'),
+('2022-07-25', @customer_id_tlmc, 'PAYMENT_RECEIVED', 0, 71076800, NULL, 'TLMC thanh toán');
+
+-- ------------- Giao dịch Khách hàng: Vista -------------
+SET @customer_id_vista = (SELECT id FROM customers WHERE name = 'Vista');
+INSERT INTO financial_ledgers (transaction_date, customer_id, transaction_type, debit, credit, reference_number, notes) VALUES
+('2021-12-30', @customer_id_vista, 'INVOICE', 7274000, 0, 'VTA211201', 'GBN VTA211201'),
+('2022-01-17', @customer_id_vista, 'PAYMENT_RECEIVED', 0, 7274000, NULL, 'Vista thanh toán'),
+('2022-03-30', @customer_id_vista, 'INVOICE', 15740800, 0, 'VAT2203001', 'GBN VAT2203001'),
+('2022-04-18', @customer_id_vista, 'PAYMENT_RECEIVED', 0, 15740800, NULL, 'Vista thanh toán'),
+('2023-01-31', @customer_id_vista, 'INVOICE', 16593408, 0, 'VTA2301001', 'GBN VTA2301001'),
+('2023-02-16', @customer_id_vista, 'PAYMENT_RECEIVED', 0, 16593408, NULL, 'Vista thanh toán');
+
+-- ------------- Giao dịch Khách hàng: Vietsun -------------
+SET @customer_id_vs = (SELECT id FROM customers WHERE name = 'Vietsun');
+INSERT INTO financial_ledgers (transaction_date, customer_id, transaction_type, debit, credit, reference_number, notes) VALUES
+('2021-06-30', @customer_id_vs, 'INVOICE', 32018800, 0, NULL, 'Phat sinh cong no T6/2021'),
+('2021-07-09', @customer_id_vs, 'PAYMENT_RECEIVED', 0, 32018800, NULL, 'Vietsun thanh toan T6/2021'),
+('2022-06-30', @customer_id_vs, 'INVOICE', 92176800, 0, NULL, 'Phat sinh cong no T6/2022'),
+('2022-07-08', @customer_id_vs, 'PAYMENT_RECEIVED', 0, 92176800, NULL, 'Vietsun thanh toan T6/2022'),
+('2023-06-30', @customer_id_vs, 'INVOICE', 49915000, 0, NULL, 'Phat sinh cong no T6/2023'),
+('2023-07-07', @customer_id_vs, 'PAYMENT_RECEIVED', 0, 49915000, NULL, 'Vietsun thanh toan T6/2023'),
+('2024-06-30', @customer_id_vs, 'INVOICE', 61946160, 0, NULL, 'Phat sinh cong no T6/2024'),
+('2024-07-05', @customer_id_vs, 'PAYMENT_RECEIVED', 0, 30984400, NULL, 'Vietsun thanh toan mot phan T6/2024');
