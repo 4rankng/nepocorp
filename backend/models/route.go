@@ -16,6 +16,7 @@ type Route struct {
 	Discount         float64   `gorm:"type:decimal(15,2);default:0.00" json:"discount"`
 	IsTwoWayCombined bool      `gorm:"default:false" json:"is_two_way_combined"`
 	Notes            *string   `gorm:"type:text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" json:"notes"`
+	LastUpdatedBy    string    `gorm:"type:varchar(255)" json:"last_updated_by"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }

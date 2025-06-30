@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS settings (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `key` VARCHAR(255) NOT NULL UNIQUE,
     `value` TEXT NOT NULL,
-    last_updated_by VARCHAR(255) NOT NULL,
+    last_updated_by VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_key (`key`)
@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS customers (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     UNIQUE INDEX idx_customers_tax_code (tax_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -89,6 +90,7 @@ CREATE TABLE IF NOT EXISTS partners (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     UNIQUE INDEX idx_partners_tax_code (tax_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -157,7 +159,8 @@ CREATE TABLE IF NOT EXISTS routes (
     is_two_way_combined BOOLEAN DEFAULT FALSE,
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create fuel consumption standards
@@ -171,6 +174,7 @@ CREATE TABLE IF NOT EXISTS fuel_standards (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     FOREIGN KEY (tractor_id) REFERENCES tractors(id),
     UNIQUE KEY uk_fuel_standard (tractor_id, trailer_type, load_category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -195,6 +199,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     status ENUM('DRAFT', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED') DEFAULT 'PLANNED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     FOREIGN KEY (tractor_id) REFERENCES tractors(id),
     FOREIGN KEY (trailer_id) REFERENCES trailers(id),
     FOREIGN KEY (user_id_driver) REFERENCES users(id),
@@ -209,14 +214,13 @@ CREATE TABLE IF NOT EXISTS jobs (
 -- ================================================================
 CREATE TABLE IF NOT EXISTS expense_categories (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    category_key VARCHAR(100) NOT NULL COMMENT 'Khóa định danh duy nhất cho hệ thống (tiếng Anh, không dấu)',
     name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên hạng mục chi phí bằng tiếng Việt',
     description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT 'Mô tả chi tiết về hạng mục chi phí',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_updated_by VARCHAR(255),
-    UNIQUE KEY uk_expense_categories_key (category_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ các hạng mục chi phí vận tải';
+    UNIQUE KEY uk_expense_categories_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ các hạng mục chi phí vận tải (đã đơn giản hóa)';
 
 -- Create expenses table (unified for all expense types)
 CREATE TABLE IF NOT EXISTS expenses (
@@ -265,6 +269,7 @@ CREATE TABLE IF NOT EXISTS expense_items (
     expiry_date DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     FOREIGN KEY (expense_id) REFERENCES expenses(id) ON DELETE CASCADE,
     INDEX idx_expense_id (expense_id),
     INDEX idx_license_plate (license_plate)
@@ -344,6 +349,7 @@ CREATE TABLE IF NOT EXISTS invoice_items (
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
     INDEX idx_invoice_id (invoice_id),
     INDEX idx_license_plate (license_plate),
@@ -368,6 +374,7 @@ CREATE TABLE IF NOT EXISTS financial_ledgers (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated_by VARCHAR(255),
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (partner_id) REFERENCES partners(id),
     FOREIGN KEY (job_id) REFERENCES jobs(id),
@@ -376,81 +383,4 @@ CREATE TABLE IF NOT EXISTS financial_ledgers (
     INDEX idx_partner_id (partner_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-
--- 2. Thêm danh sách lớn Khách hàng từ file công nợ [2]
--- Mã số thuế được tạo giả định vì không có trong file nguồn.
-INSERT IGNORE INTO customers (name, tax_code) VALUES
-('Mộc Sảng', 'MST-MOC-SANG-001'),
-('Ligarden', 'MST-LIGARDEN-002'),
-('Tân Lập MC', 'MST-TAN-LAP-MC-003'),
-('Vista', 'MST-VISTA-004'),
-('Vinatea MC', 'MST-VINATEA-MC-005'),
-('Vietsun', 'MST-VIETSUN-006'),
-('Tân Việt Hưng', 'MST-TAN-VIET-HUNG-007'),
-('Chè Mỹ Lâm', 'MST-CHE-MY-LAM-008'),
-('Phú Tài', 'MST-PHU-TAI-009'),
-('Hải Đăng', 'MST-HAI-DANG-010'),
-('An Khánh', 'MST-AN-KHANH-011'),
-('Anh Đoàn Hồng Anh Phát', 'MST-ANH-DOAN-HAP-012'),
-('Hưng Thuận', 'MST-HUNG-THUAN-013'),
-('Nitoda', 'MST-NITODA-014'),
-('Công ty AT-AT', 'MST-AT-AT-015'),
-('Thịnh Vượng Phát', 'MST-THINH-VUONG-PHAT-016'),
-('Indigo', 'MST-INDIGO-017'),
-('ARI Việt Nam', 'MST-ARI-VN-018'),
-('Công ty Phúc An', 'MST-PHUC-AN-019'),
-('Bông sen vàng', 'MST-BONG-SEN-VANG-020'),
-('Công ty Dahua', 'MST-DAHUA-021'),
-('Tổng công ty chè Vinatea', 'MST-VINATEA-CORP-022'),
-('Công ty Thuận Vũ', 'MST-THUAN-VU-023'),
-('Công ty Lê Minh', 'MST-LE-MINH-024'),
-('Công ty Nam Tùng', 'MST-NAM-TUNG-025'),
-('Mr. Huân Vietsun', 'MST-HUAN-VS-026'),
-('Mr. Huy Vietsun', 'MST-HUY-VS-027');
-
--- 3. Thêm các Tuyến đường và Bảng giá chuẩn (giữ nguyên từ lần trước)
--- (Script INSERT cho bảng 'routes' có thể được thêm vào đây nếu cần)
-
-
-
--- ================================================================
--- Bảng và Dữ liệu cho Hạng mục Chi phí (Expense Categories)
--- Mô tả: Script này tạo bảng và chèn dữ liệu gốc cho các
--- hạng mục chi phí vận tải bằng tiếng Việt.
--- ================================================================
-
--- Nhóm 1: Chi phí Vận hành Trực tiếp
-INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
-('FUEL', 'Nhiên liệu (Dầu lade)', 'Chi phí dầu diesel tiêu thụ trong các chuyến đi.', 'system'),
-('ROAD_FEES', 'Phí Cầu đường', 'Bao gồm tất cả các khoản phí tại trạm thu phí BOT, vé cầu, vé phà.', 'system');
-
--- Nhóm 2: Chi phí Sửa chữa & Bảo dưỡng
-INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
-('GENERAL_REPAIRS', 'Sửa chữa chung', 'Chi phí sửa chữa đột xuất hoặc theo kế hoạch (sửa điện, máy, gầm, điều hòa).', 'system'),
-('PERIODIC_MAINTENANCE', 'Bảo dưỡng định kỳ', 'Chi phí bảo dưỡng theo lịch trình (bơm mỡ, thay lọc, thay nước làm mát).', 'system'),
-('TIRES', 'Lốp xe', 'Chi phí mua mới, thay thế, vá hoặc đảo lốp.', 'system'),
-('LUBRICANTS_SUPPLIES', 'Dầu mỡ & Vật tư', 'Chi phí các loại dầu nhớt (dầu máy, dầu cầu), mỡ và các vật tư tiêu hao khác.', 'system'),
-('ROADSIDE_ASSISTANCE', 'Cứu hộ', 'Chi phí phát sinh khi xe gặp sự cố trên đường và cần xe cứu hộ.', 'system');
-
--- Nhóm 3: Chi phí Nhân sự
-INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
-('DRIVER_SALARY', 'Lương Lái xe', 'Tiền lương hàng tháng, thưởng và các khoản phúc lợi khác cho tài xế.', 'system'),
-('DRIVER_BONUS', 'Thưởng Lễ/Tết', 'Các khoản thưởng cho lái xe vào các dịp đặc biệt như lễ, Tết.', 'system');
-
--- Nhóm 4: Chi phí Cố định & Hành chính
-INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
-('PARKING_FEES', 'Phí Gửi xe', 'Chi phí đỗ xe, gửi xe tại bãi hàng tháng hoặc theo lượt.', 'system'),
-('INSURANCE', 'Bảo hiểm', 'Phí mua bảo hiểm TNDS bắt buộc và bảo hiểm vật chất (thân vỏ) tự nguyện.', 'system'),
-('ROAD_MAINTENANCE_FEES', 'Phí Bảo trì Đường bộ', 'Phí bắt buộc nộp hàng năm cho quỹ bảo trì đường bộ.', 'system'),
-('INSPECTION_FEES', 'Phí Đăng kiểm', 'Lệ phí kiểm định an toàn kỹ thuật và bảo vệ môi trường cho xe cơ giới.', 'system'),
-('INSPECTION_SERVICE_FEES', 'Phí Dịch vụ Đăng kiểm', 'Chi phí cho các dịch vụ hỗ trợ liên quan trong quá trình đăng kiểm.', 'system'),
-('PERMITS_LICENSES', 'Phí Phù hiệu & Giấy tờ', 'Các chi phí làm phù hiệu xe tải, giấy phép và các thủ tục hành chính liên quan.', 'system'),
-('GPS_SERVICE', 'Phí Định vị GPS', 'Chi phí dịch vụ giám sát hành trình GPS hàng năm.', 'system'),
-('FINES_PENALTIES', 'Phạt vi phạm', 'Các khoản tiền phạt do vi phạm luật giao thông đường bộ.', 'system');
-
--- Nhóm 5: Chi phí Khác
-INSERT IGNORE INTO expense_categories (category_key, name, description, last_updated_by) VALUES
-('EQUIPMENT_UPGRADES', 'Trang bị & Nâng cấp', 'Chi phí lắp đặt thêm thiết bị như camera, âm thanh, hoặc nâng cấp các bộ phận xe.', 'system');
 

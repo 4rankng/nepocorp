@@ -15,6 +15,7 @@ type FuelStandard struct {
 	ConsumptionRate       float64   `gorm:"type:decimal(5,2);not null" json:"consumption_rate"`
 	SurchargeRateMountain float64   `gorm:"type:decimal(5,2);default:0.00" json:"surcharge_rate_mountain"`
 	Notes                 *string   `gorm:"type:text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" json:"notes"`
+	LastUpdatedBy         string    `gorm:"type:varchar(255)" json:"last_updated_by"`
 	CreatedAt             time.Time `json:"created_at"`
 	UpdatedAt             time.Time `json:"updated_at"`
 
