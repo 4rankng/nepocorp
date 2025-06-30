@@ -10,8 +10,6 @@ const ExpenseOptionalSections = ({
   const showRemark = expenseData.remark || isEditing;
   const showCancelReason = (isEditing ? editedData.payment_status === 'CANCELLED' : expenseData.payment_status === 'CANCELLED') ||
     (expenseData.cancel_reason && !isEditing);
-  const showPaymentProof = (isEditing && editedData.payment_status === 'PAID') ||
-    (!isEditing && expenseData.payment_proof);
 
   return (
     <>
@@ -52,31 +50,6 @@ const ExpenseOptionalSections = ({
               ) : (
                 <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-red-50 text-red-700">
                   {expenseData.cancel_reason || '-'}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showPaymentProof && (
-        <div className="mb-4">
-          <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-8">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                URL chứng từ thanh toán
-              </label>
-              {isEditing && editedData.payment_status === 'PAID' ? (
-                <input
-                  type="url"
-                  value={editedData.payment_proof || ''}
-                  onChange={(e) => onFieldChange('payment_proof', e.target.value)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="https://example.com/payment-proof"
-                />
-              ) : (
-                <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-green-50 text-green-700">
-                  {expenseData.payment_proof || '-'}
                 </div>
               )}
             </div>

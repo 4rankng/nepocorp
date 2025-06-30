@@ -153,14 +153,15 @@ export const getDateRange = (range) => {
         endDate: yesterday.toISOString().split('T')[0]
       };
     }
-    case 'this_week':
+    case 'this_week': {
       const startOfWeek = new Date(today);
       startOfWeek.setDate(today.getDate() - today.getDay());
       return {
         startDate: startOfWeek.toISOString().split('T')[0],
         endDate: today.toISOString().split('T')[0]
       };
-    case 'last_week':
+    }
+    case 'last_week': {
       const startOfLastWeek = new Date(today);
       startOfLastWeek.setDate(today.getDate() - today.getDay() - 7);
       const endOfLastWeek = new Date(startOfLastWeek);
@@ -169,32 +170,37 @@ export const getDateRange = (range) => {
         startDate: startOfLastWeek.toISOString().split('T')[0],
         endDate: endOfLastWeek.toISOString().split('T')[0]
       };
-    case 'this_month':
+    }
+    case 'this_month': {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       return {
         startDate: startOfMonth.toISOString().split('T')[0],
         endDate: today.toISOString().split('T')[0]
       };
-    case 'last_month':
+    }
+    case 'last_month': {
       const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
       return {
         startDate: startOfLastMonth.toISOString().split('T')[0],
         endDate: endOfLastMonth.toISOString().split('T')[0]
       };
-    case 'this_quarter':
+    }
+    case 'this_quarter': {
       const quarter = Math.floor(today.getMonth() / 3);
       const startOfQuarter = new Date(today.getFullYear(), quarter * 3, 1);
       return {
         startDate: startOfQuarter.toISOString().split('T')[0],
         endDate: today.toISOString().split('T')[0]
       };
-    case 'this_year':
+    }
+    case 'this_year': {
       const startOfYear = new Date(today.getFullYear(), 0, 1);
       return {
         startDate: startOfYear.toISOString().split('T')[0],
         endDate: today.toISOString().split('T')[0]
       };
+    }
     default:
       return null;
   }

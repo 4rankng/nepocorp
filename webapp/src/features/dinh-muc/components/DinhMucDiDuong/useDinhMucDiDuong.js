@@ -1,19 +1,19 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useDiDuong } from '../../hooks/useDiDuong';
 import { useSnackbar } from 'notistack';
 import logger from '@services/logger';
 
 // Mock API functions returning empty data until backend is integrated
-const updateTuyenDuong = async (id, data) => ({ id, ...data });
+const updateTuyenDuong = async (_id, data) => ({ id: _id, ...data });
 const tuyenDuongApi = {
   create: async (data) => ({ id: Date.now(), ...data }),
-  update: async (id, data) => ({ id, ...data }),
-  delete: async (id) => ({ success: true })
+  update: async (_id, data) => ({ id: _id, ...data }),
+  delete: async (_id) => ({ success: true })
 };
-const dinhMucDiDuongApi = {
+const _dinhMucDiDuongApi = {
   create: async (data) => ({ id: Date.now(), ...data }),
-  update: async (id, data) => ({ id, ...data }),
-  delete: async (id) => ({ success: true })
+  update: async (_id, data) => ({ id: _id, ...data }),
+  delete: async (_id) => ({ success: true })
 };
 
 export const useDinhMucDiDuongLogic = () => {
@@ -103,15 +103,14 @@ export const useDinhMucDiDuongLogic = () => {
       logger.info('Submitting new route with norms', data);
 
       // Create or update route
-      let routeResult;
       if (editingId) {
-        routeResult = await updateTuyenDuong(editingId, {
+        await updateTuyenDuong(editingId, {
           ma_tuyen: data.ma_tuyen,
           diem_di: data.diem_di,
           diem_den: data.diem_den,
         });
       } else {
-        routeResult = await tuyenDuongApi.create({
+        await tuyenDuongApi.create({
           ma_tuyen: data.ma_tuyen,
           diem_di: data.diem_di,
           diem_den: data.diem_den,

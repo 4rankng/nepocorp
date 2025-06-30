@@ -4,7 +4,7 @@ export const formatInvoiceDate = (dateString) => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '-';
     return date.toLocaleDateString('vi-VN');
-  } catch (error) {
+  } catch (_error) {
     return '-';
   }
 };

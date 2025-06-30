@@ -84,7 +84,7 @@ export const financialLedgerApi = {
 
   // Get filtered transactions (combining multiple filters)
   getFiltered: async (filters = {}, page = 1, limit = 50) => {
-    const params = { page, limit, ...filters };
+    // const params = { page, limit, ...filters };
     
     // If date range is provided, use the date-range endpoint
     if (filters.start_date && filters.end_date) {

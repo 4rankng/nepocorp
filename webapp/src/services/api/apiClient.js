@@ -14,7 +14,7 @@ const fixDoubleEncodedUTF8 = (str) => {
       for (let i = 0; i < str.length; i++) {
         bytes[i] = str.charCodeAt(i) & 0xFF;
       }
-      return new TextDecoder('utf-8').decode(bytes);
+      return new window.TextDecoder('utf-8').decode(bytes);
     }
     return str;
   } catch (error) {
@@ -58,7 +58,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Add auth token if available
-    const token = localStorage.getItem('authToken');
+    const token = window.localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -119,9 +119,9 @@ apiClient.interceptors.response.use(
           const isAuthEndpoint = error.config?.url?.includes('/auth/');
           
           if (shouldLogout || isAuthEndpoint) {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('auth');
+            window.localStorage.removeItem('authToken');
+            window.localStorage.removeItem('refreshToken');
+            window.localStorage.removeItem('auth');
             
             // Only redirect if we're not already on root
             const isCurrentlyOnRoot = window.location.pathname === '/';

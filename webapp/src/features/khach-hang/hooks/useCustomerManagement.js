@@ -136,7 +136,7 @@ const useCustomerManagement = () => {
         return excludeId && existingCustomer.id === excludeId;
       }
       return true; // Tax code is available
-    } catch (err) {
+    } catch (_err) {
       // If there's an error fetching, assume code is available
       return true;
     }

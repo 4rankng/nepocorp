@@ -179,7 +179,7 @@ export const detectParentZIndex = (element) => {
   if (!element) return 0;
   
   // First, check for CSS custom property --parent-z-index
-  const parentVar = getComputedStyle(element).getPropertyValue('--parent-z-index');
+  const parentVar = window.getComputedStyle(element).getPropertyValue('--parent-z-index');
   if (parentVar && parentVar.trim()) {
     const parsed = parseInt(parentVar.trim());
     if (!isNaN(parsed)) return parsed;
@@ -188,7 +188,7 @@ export const detectParentZIndex = (element) => {
   // Fallback: traverse DOM to find parent with z-index
   let parent = element.parentElement;
   while (parent && parent !== document.body) {
-    const computedStyle = getComputedStyle(parent);
+    const computedStyle = window.getComputedStyle(parent);
     const zIndex = parseInt(computedStyle.zIndex);
     
     // Only consider positive z-index values
@@ -275,7 +275,7 @@ export const debugZIndexForElement = (element, label = 'Element') => {
     return;
   }
   
-  const computedStyle = getComputedStyle(element);
+  const computedStyle = window.getComputedStyle(element);
   const elementZIndex = parseInt(computedStyle.zIndex);
   const parentZIndex = detectParentZIndex(element);
   const parentVar = computedStyle.getPropertyValue('--parent-z-index');

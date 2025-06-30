@@ -5,10 +5,10 @@ export const useModalEvents = (isOpen, modalId = 'modal') => {
   useEffect(() => {
     if (isOpen) {
       // Dispatch events when modal opens
-      window.dispatchEvent(new CustomEvent('modalOpen', { detail: { modalId } }));
+      window.dispatchEvent(new window.CustomEvent('modalOpen', { detail: { modalId } }));
     } else {
       // Dispatch events when modal closes
-      window.dispatchEvent(new CustomEvent('modalClose', { detail: { modalId } }));
+      window.dispatchEvent(new window.CustomEvent('modalClose', { detail: { modalId } }));
     }
   }, [isOpen, modalId]);
 };

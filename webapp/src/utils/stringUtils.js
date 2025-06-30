@@ -26,7 +26,7 @@ export const fixDoubleEncodedUTF8 = (str) => {
       for (let i = 0; i < str.length; i++) {
         bytes[i] = str.charCodeAt(i) & 0xFF;
       }
-      return new TextDecoder('utf-8').decode(bytes);
+      return new window.TextDecoder('utf-8').decode(bytes);
     }
     
     return str;
@@ -76,6 +76,8 @@ export const sanitizeDisplayText = (text) => {
   let cleaned = fixDoubleEncodedUTF8(text);
   
   // Remove any null bytes or other control characters
+  // Remove any null bytes or other control characters
+  // eslint-disable-next-line no-control-regex
   cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
   
   // Normalize whitespace

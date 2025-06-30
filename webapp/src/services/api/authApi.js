@@ -10,9 +10,9 @@ export const authApi = {
     
     // Store tokens ONLY if login successful
     if (response.status === 'success' && response.data?.token) {
-      localStorage.setItem('authToken', response.data.token);
+      window.localStorage.setItem('authToken', response.data.token);
       if (response.data.refresh_token) {
-        localStorage.setItem('refreshToken', response.data.refresh_token);
+        window.localStorage.setItem('refreshToken', response.data.refresh_token);
       }
     }
     
@@ -21,7 +21,7 @@ export const authApi = {
   
   // Refresh token
   refreshToken: async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = window.localStorage.getItem('refreshToken');
     if (!refreshToken) {
       throw new Error('No refresh token found');
     }
@@ -31,9 +31,9 @@ export const authApi = {
     });
     
     if (response.token) {
-      localStorage.setItem('authToken', response.token);
+      window.localStorage.setItem('authToken', response.token);
       if (response.refresh_token) {
-        localStorage.setItem('refreshToken', response.refresh_token);
+        window.localStorage.setItem('refreshToken', response.refresh_token);
       }
     }
     
@@ -63,9 +63,9 @@ export const authApi = {
   
   // Logout user
   logout: async () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('auth');
+    window.localStorage.removeItem('authToken');
+    window.localStorage.removeItem('refreshToken');
+    window.localStorage.removeItem('auth');
     return { status: 'success' };
   }
 };

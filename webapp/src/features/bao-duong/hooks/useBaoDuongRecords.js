@@ -3,7 +3,7 @@ import logger from '@services/logger';
 import { VehicleDataContext } from '@contexts/VehicleDataContext';
 
 // Utility function to transform expense data back to display format
-const transformExpenseToDisplay = (expense, tractors, trailers) => {
+const _transformExpenseToDisplay = (expense, tractors, trailers) => {
   // Find the vehicle by ID to get license plate
   let license_plate = '';
   

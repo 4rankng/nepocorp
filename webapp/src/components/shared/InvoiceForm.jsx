@@ -11,6 +11,7 @@ import ExpenseOptionalSections from '../expense/ExpenseOptionalSections';
 import ExpenseItemsTable from '../expense/ExpenseItemsTable';
 import ExpenseActionButtons from '../expense/ExpenseActionButtons';
 import InvoiceItemEditModal from '../invoice/InvoiceItemEditModal';
+import StatusChangePrompts from '../shared/modals/StatusChangePrompts';
 import { prepareInvoiceItemsForUpdate, calculateInvoiceTotal } from '@utils/invoiceHelpers';
 import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 import useInvoiceEdit from '../hooks/useInvoiceEdit';
@@ -68,6 +69,14 @@ const InvoiceForm = ({
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
   const [error, setError] = useState(null);
+  
+  // Status change prompts
+  const [showPaymentProofPrompt, setShowPaymentProofPrompt] = useState(false);
+  const [showCancelReasonPrompt, setShowCancelReasonPrompt] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
+  const [tempPaymentProof, setTempPaymentProof] = useState('');
+  const [tempCancelReason, setTempCancelReason] = useState('');
+  const [previousStatus, setPreviousStatus] = useState(null);
 
 
   // Load settings when modal opens
@@ -162,14 +171,56 @@ const InvoiceForm = ({
 
   const handleClose = useCallback(() => {
     setError(null);
+    setShowPaymentProofPrompt(false);
+    setShowCancelReasonPrompt(false);
+    setPendingStatus(null);
+    setTempPaymentProof('');
+    setTempCancelReason('');
     onClose();
   }, [onClose]);
 
   // Override handleFieldChange to also call parent onChange
   const wrappedHandleFieldChange = useCallback((field, value) => {
+    // Handle status changes that require prompts
+    if (field === 'payment_status') {
+      const oldStatus = editedData?.payment_status;
+
+      // First, close any existing prompts if changing to a different status
+      if (showPaymentProofPrompt || showCancelReasonPrompt) {
+        setShowPaymentProofPrompt(false);
+        setShowCancelReasonPrompt(false);
+        setPendingStatus(null);
+        setTempPaymentProof('');
+        setTempCancelReason('');
+        setPreviousStatus(null);
+      }
+
+      if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
+        setPreviousStatus(oldStatus); // Store the current status before changing
+        setPendingStatus(value);
+        setTempPaymentProof(editedData?.payment_proof || '');
+        setShowPaymentProofPrompt(true);
+        // Update the status immediately for visual feedback
+        handleFieldChange('payment_status', value);
+        onChange({ target: { name: 'payment_status', value } });
+        return;
+      }
+
+      if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
+        setPreviousStatus(oldStatus); // Store the current status before changing
+        setPendingStatus(value);
+        setTempCancelReason(editedData?.cancel_reason || '');
+        setShowCancelReasonPrompt(true);
+        // Update the status immediately for visual feedback
+        handleFieldChange('payment_status', value);
+        onChange({ target: { name: 'payment_status', value } });
+        return;
+      }
+    }
+    
     handleFieldChange(field, value);
     onChange({ target: { name: field, value } });
-  }, [handleFieldChange, onChange]);
+  }, [handleFieldChange, onChange, editedData?.payment_status, editedData?.payment_proof, editedData?.cancel_reason, showPaymentProofPrompt, showCancelReasonPrompt]);
 
   const handleLicensePlateCellClick = useCallback((index) => {
     setCurrentLicensePlateIndex(index);
@@ -241,6 +292,63 @@ const InvoiceForm = ({
     handleAddItem();
   }, [handleAddItem]);
 
+  // Handle payment proof confirmation
+  const handlePaymentProofConfirm = useCallback(() => {
+    if (!tempPaymentProof.trim()) {
+      alert('Vui lòng nhập URL chứng từ thanh toán');
+      return;
+    }
+
+    handleFieldChange('payment_status', pendingStatus);
+    handleFieldChange('payment_proof', tempPaymentProof);
+    handleFieldChange('cancel_reason', null); // Clear cancel reason when marking as paid
+    
+    onChange({ target: { name: 'payment_status', value: pendingStatus } });
+    onChange({ target: { name: 'payment_proof', value: tempPaymentProof } });
+    onChange({ target: { name: 'cancel_reason', value: null } });
+
+    setShowPaymentProofPrompt(false);
+    setPendingStatus(null);
+    setTempPaymentProof('');
+    setPreviousStatus(null);
+  }, [tempPaymentProof, pendingStatus, handleFieldChange, onChange]);
+
+  // Handle cancel reason confirmation
+  const handleCancelReasonConfirm = useCallback(() => {
+    if (!tempCancelReason.trim()) {
+      alert('Vui lòng nhập lý do hủy');
+      return;
+    }
+
+    handleFieldChange('payment_status', pendingStatus);
+    handleFieldChange('cancel_reason', tempCancelReason);
+    handleFieldChange('payment_proof', null); // Clear payment proof when cancelling
+    
+    onChange({ target: { name: 'payment_status', value: pendingStatus } });
+    onChange({ target: { name: 'cancel_reason', value: tempCancelReason } });
+    onChange({ target: { name: 'payment_proof', value: null } });
+
+    setShowCancelReasonPrompt(false);
+    setPendingStatus(null);
+    setTempCancelReason('');
+    setPreviousStatus(null);
+  }, [tempCancelReason, pendingStatus, handleFieldChange, onChange]);
+
+  // Handle prompt cancellation
+  const handlePromptCancel = useCallback(() => {
+    // Revert to previous status if cancelling
+    if (previousStatus !== null) {
+      handleFieldChange('payment_status', previousStatus);
+      onChange({ target: { name: 'payment_status', value: previousStatus } });
+    }
+    setShowPaymentProofPrompt(false);
+    setShowCancelReasonPrompt(false);
+    setPendingStatus(null);
+    setTempPaymentProof('');
+    setTempCancelReason('');
+    setPreviousStatus(null);
+  }, [previousStatus, handleFieldChange, onChange]);
+
   if (!open || !editedData) return null;
 
   // Adapt invoice categories for ExpenseBasicInfo component
@@ -291,6 +399,19 @@ const InvoiceForm = ({
                 {error}
               </div>
             )}
+
+            {/* Status Change Prompts */}
+            <StatusChangePrompts
+              showPaymentProofPrompt={showPaymentProofPrompt}
+              showCancelReasonPrompt={showCancelReasonPrompt}
+              tempPaymentProof={tempPaymentProof}
+              tempCancelReason={tempCancelReason}
+              onPaymentProofChange={setTempPaymentProof}
+              onCancelReasonChange={setTempCancelReason}
+              onPaymentProofConfirm={handlePaymentProofConfirm}
+              onCancelReasonConfirm={handleCancelReasonConfirm}
+              onCancel={handlePromptCancel}
+            />
 
             <ExpenseBasicInfo
               expenseData={invoiceData}

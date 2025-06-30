@@ -368,7 +368,7 @@ function autoValidateAndApply(changes) {
   console.log('🚀 Auto-applying changes...');
   
   // Apply changes immediately
-  const result = walkAndProcess(TARGET_DIR, false);
+  walkAndProcess(TARGET_DIR, false);
   
   // Delete the dry run file
   if (fs.existsSync(DRY_RUN_FILE)) {

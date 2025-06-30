@@ -47,9 +47,14 @@ const ExpenseBasicInfo = ({
               )}
             </>
           ) : (
-            <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-              {expenseData.expense_date || '-'}
-            </div>
+            <>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Ngày {isInvoiceMode ? 'phiếu thu' : 'chi phí'}
+              </label>
+              <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
+                {expenseData.expense_date || '-'}
+              </div>
+            </>
           )}
         </div>
         <div className="col-span-8">

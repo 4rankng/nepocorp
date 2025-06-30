@@ -90,12 +90,12 @@ export const addQuickCustomer = async customerName => {
   if (!customerName || customerName.trim() === '') {
     throw new Error('Tên khách hàng không được để trống');
   }
-  const newCustomerData = {
-    ma_dinh_danh: `MDD${Date.now()}`, // Generate unique identifier
-    ten: customerName.trim(),
-    dia_chi: '', // Default empty address
-    ma_so_thue: '', // Default empty tax code
-  };
+  // const newCustomerData = {
+  //   ma_dinh_danh: `MDD${Date.now()}`, // Generate unique identifier
+  //   ten: customerName.trim(),
+  //   dia_chi: '', // Default empty address
+  //   ma_so_thue: '', // Default empty tax code
+  // };
   // TODO: Replace with actual API call
   throw new Error('API function not implemented');
 };
