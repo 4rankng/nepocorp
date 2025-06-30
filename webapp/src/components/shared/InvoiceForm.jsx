@@ -15,6 +15,7 @@ import PaymentProofModal from '../shared/modals/PaymentProofModal';
 import CancelReasonModal from '../shared/modals/CancelReasonModal';
 import logger from '@services/logger';
 import { prepareInvoiceItemsForUpdate, calculateInvoiceTotal } from '@utils/invoiceHelpers';
+import { getPaymentStatusColor } from '@utils/expenseHelpers';
 import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 import useInvoiceEdit from '../hooks/useInvoiceEdit';
 
@@ -394,7 +395,8 @@ const InvoiceForm = ({
             title={title || (isEdit ? 'Sửa phiếu thu' : 'Thêm phiếu thu mới')}
             statusOptions={Object.entries(INVOICE_STATUS).map(([, value]) => ({
               value: value,
-              label: INVOICE_STATUS_LABELS[value]
+              label: INVOICE_STATUS_LABELS[value],
+              color: getPaymentStatusColor(value)
             }))}
           />
 

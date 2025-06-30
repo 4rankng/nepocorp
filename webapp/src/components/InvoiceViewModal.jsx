@@ -13,6 +13,7 @@ import ExpenseActionButtons from './expense/ExpenseActionButtons';
 import StatusChangePrompts from '@components/shared/modals/StatusChangePrompts';
 import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 import { prepareInvoiceItemsForUpdate, calculateInvoiceTotal } from '@utils/invoiceHelpers';
+import { getPaymentStatusColor } from '@utils/expenseHelpers';
 
 const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
@@ -42,7 +43,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const statusOptions = useMemo(() =>
     Object.entries(INVOICE_STATUS).map(([, value]) => ({
       value: value,
-      label: INVOICE_STATUS_LABELS[value]
+      label: INVOICE_STATUS_LABELS[value],
+      color: getPaymentStatusColor(value)
     })), []
   );
 

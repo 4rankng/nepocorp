@@ -243,7 +243,23 @@ const Dropdown = ({
           aria-haspopup="listbox"
           {...domProps}
         >
-          <span className="dropdown__value">
+          <span className="dropdown__value" style={{ display: 'flex', alignItems: 'center' }}>
+            {!multiple && value && (() => {
+              const selectedOption = options.find(opt => opt.value === value);
+              return selectedOption?.color ? (
+                <span 
+                  style={{
+                    display: 'inline-block',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: selectedOption.color,
+                    marginRight: '8px',
+                    flexShrink: 0
+                  }}
+                />
+              ) : null;
+            })()}
             {getDisplayValue()}
           </span>
           <div className="dropdown__icons">
@@ -320,6 +336,20 @@ const Dropdown = ({
                         <span className={`dropdown__checkbox ${isSelected ? 'dropdown__checkbox--checked' : ''}`}>
                           {isSelected && '✓'}
                         </span>
+                      )}
+                      {option.color && (
+                        <span 
+                          className="dropdown__option-indicator"
+                          style={{
+                            display: 'inline-block',
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: option.color,
+                            marginRight: '8px',
+                            flexShrink: 0
+                          }}
+                        />
                       )}
                       <span className="dropdown__option-text">
                         {option.label || option.displayText || option.text || option.name}

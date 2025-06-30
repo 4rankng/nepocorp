@@ -33,7 +33,8 @@ const ExpenseHeader = ({
                   onChange={(value) => onFieldChange('payment_status', value)}
                   options={statusOptions || Object.entries(PAYMENT_STATUS).map(([key, value]) => ({
                     value: value,
-                    label: PAYMENT_STATUS_LABELS[value]
+                    label: PAYMENT_STATUS_LABELS[value],
+                    color: getPaymentStatusColor(value)
                   }))}
                   placeholder="Chọn trạng thái"
                   className="text-xs"
