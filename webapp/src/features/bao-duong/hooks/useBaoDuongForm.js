@@ -177,7 +177,7 @@ export default function useBaoDuongForm({
         // Check for API error responses
         if (!response?.success) {
           // Handle new backend error format: message + errors.message
-          let errorMessage = 'Tạo mới thất bại';
+          let errorMessage = 'Thêm thất bại';
           if (response?.message && response?.errors?.message) {
             errorMessage = `${response.message}: ${response.errors.message}`;
           } else if (response?.message) {

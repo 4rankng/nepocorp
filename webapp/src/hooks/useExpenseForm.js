@@ -75,7 +75,7 @@ export default function useExpenseForm({
 
         // Check for API error responses
         if (response?.status !== 'success') {
-          const errorMessage = extractErrorMessage(response, 'Tạo mới thất bại');
+          const errorMessage = extractErrorMessage(response, 'Thêm thất bại');
           const error = new Error(errorMessage);
           error.response = response;
           error.validationError = isValidationError(response);

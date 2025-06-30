@@ -285,7 +285,7 @@ const AddDinhMucBoSung = ({
                     label="Tuyến đường"
                     variant="outlined"
                     error={!!formErrors.ma_tuyen}
-                    helperText={formErrors.ma_tuyen || 'Chọn tuyến đường hoặc tạo mới'}
+                    helperText={formErrors.ma_tuyen || 'Chọn tuyến đường hoặc thêm'}
                     fullWidth
                     size="small"
                     sx={{

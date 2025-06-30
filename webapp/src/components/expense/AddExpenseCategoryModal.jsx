@@ -50,16 +50,16 @@ const AddExpenseCategoryModal = ({ open, onClose, onSuccess }) => {
       };
 
       await createCategory(categoryData);
-      
+
       // Reset form
       setFormData({ name: '', description: '' });
       setErrors({});
-      
+
       // Notify parent of success
       if (onSuccess) {
         onSuccess('Tạo danh mục thành công');
       }
-      
+
       return true; // Indicates successful submission
     } catch (error) {
       console.error('Error creating category:', error);
@@ -85,7 +85,7 @@ const AddExpenseCategoryModal = ({ open, onClose, onSuccess }) => {
       icon={<AddIcon />}
       onSubmit={handleSubmit}
       isSubmitting={isSubmitting}
-      submitButtonText="Tạo mới"
+      submitButtonText="Thêm"
       cancelButtonText="Hủy"
       submittingText="Đang tạo..."
       size="md"
