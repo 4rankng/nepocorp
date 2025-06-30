@@ -92,6 +92,8 @@ func main() {
 
 	// Initialize services
 	activityLogger := activitylogger.NewService(activityLogRepo, logger, cfg.ActivityLogQueueSize)
+	activityLogCleanup := activitylogger.NewCleanupService(activityLogRepo, cfg, logger)
+	activityLogCleanup.Start()
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler()
@@ -112,6 +114,7 @@ func main() {
 	jobHandler := handlers.NewJobHandler(jobRepo)
 	financialLedgerHandler := handlers.NewFinancialLedgerHandler(financialLedgerRepo)
 	fuelStandardHandler := handlers.NewFuelStandardHandler(fuelStandardRepo)
+	activityLogHandler := handlers.NewActivityLogHandler(activityLogRepo)
 
 	// Initialize Gin
 	gin.SetMode(gin.ReleaseMode)
@@ -129,7 +132,7 @@ func main() {
 
 	// Initialize routes
 	routes.Setup(r, cfg, db, healthHandler, authHandler, userHandler, userRepo, expenseCategoryHandler,
-		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, routeHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, logger)
+		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, routeHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, activityLogHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -161,6 +164,10 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Fatal("Server forced to shutdown: ", err)
 	}
+
+	// Stop background services
+	activityLogCleanup.Stop()
+	activityLogger.Close()
 
 	logger.Info("Server exiting")
 }

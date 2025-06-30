@@ -109,39 +109,49 @@ CREATE TABLE IF NOT EXISTS containers (
 CREATE TABLE IF NOT EXISTS tractors (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     license_plate VARCHAR(50) NOT NULL,
-    engine_type VARCHAR(100) NULL,
-    description TEXT,
-    purchase_cost DECIMAL(15, 2) DEFAULT 0.00,
-    initial_valuation DECIMAL(15, 2) DEFAULT 0.00,
-    purchase_date DATE NULL,
+
+   -- Core Asset Details
+    make VARCHAR(100) NULL COMMENT 'Manufacturer, e.g., Howo, Freightliner',
+    model VARCHAR(100) NULL COMMENT 'Tractor model',
+    year_of_manufacture YEAR NULL COMMENT 'Year of manufacture',
+
+ -- Compliance and Maintenance Tracking (derived from expense logs [1, 3])
+    inspection_due_date DATE NULL COMMENT 'Due date for next vehicle inspection (đăng kiểm)',
+    road_fee_due_date DATE NULL COMMENT 'Due date for next road maintenance fee payment (phí đường bộ)',
+    insurance_policy_number VARCHAR(100) NULL,
+    insurance_expiry_date DATE NULL COMMENT 'Date when the current insurance policy expires',
+
+    -- Timestamps and Audit
+    remark TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_updated_by VARCHAR(255),
-    UNIQUE KEY uk_tractors_license_plate (license_plate),
-    KEY idx_tractors_license_plate (license_plate)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create trailers table
 CREATE TABLE IF NOT EXISTS trailers (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     license_plate VARCHAR(50) NOT NULL,
-    trailer_number VARCHAR(20) NULL,
-    type ENUM('20ft', '40ft', 'other') DEFAULT 'other',
-    description TEXT,
-    valuation DECIMAL(15, 2) DEFAULT 0.00,
+
+    -- Core Asset Details
+    type VARCHAR(255) COMMENT 'Trailer type, critical for job pricing eg 20FT, 40FT',
+    make VARCHAR(100) NULL COMMENT 'Manufacturer of the trailer',
+    model VARCHAR(100) NULL COMMENT 'Model of the trailer',
+    year_of_manufacture YEAR NULL,
+
+    -- Timestamps and Audit
+    remark TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_updated_by VARCHAR(255),
-    UNIQUE KEY uk_trailers_license_plate (license_plate),
-    KEY idx_trailers_license_plate (license_plate)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create routes table for standard pricing
 CREATE TABLE IF NOT EXISTS routes (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
-    base_fee_40ft DECIMAL(15, 2) DEFAULT 0.00,
-    base_fee_20ft DECIMAL(15, 2) DEFAULT 0.00,
+    trailer_type VARCHAR(255) NOT NULL,
+    base_fee DECIMAL(15, 2) DEFAULT 0.00,
     surcharge DECIMAL(15, 2) DEFAULT 0.00,
     discount DECIMAL(15, 2) DEFAULT 0.00,
     is_two_way_combined BOOLEAN DEFAULT FALSE,
@@ -154,7 +164,7 @@ CREATE TABLE IF NOT EXISTS routes (
 CREATE TABLE IF NOT EXISTS fuel_standards (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tractor_id BIGINT UNSIGNED NOT NULL,
-    trailer_type ENUM('20ft', '40ft') NOT NULL,
+    trailer_type VARCHAR(255) NOT NULL,
     load_category ENUM('under_20t', 'over_20t', 'empty') NOT NULL,
     consumption_rate DECIMAL(5, 2) NOT NULL,
     surcharge_rate_mountain DECIMAL(5, 2) DEFAULT 0.00,

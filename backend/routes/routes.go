@@ -36,6 +36,7 @@ func Setup(
 	jobHandler *handlers.JobHandler,
 	financialLedgerHandler *handlers.FinancialLedgerHandler,
 	fuelStandardHandler *handlers.FuelStandardHandler,
+	activityLogHandler *handlers.ActivityLogHandler,
 	logger *logrus.Logger,
 ) {
 	// Rate limiter
@@ -205,6 +206,11 @@ func Setup(
 			protected.GET("/fuel-standard/tractor/:tractorId/:trailerType/:loadCategory", fuelStandardHandler.GetFuelStandardByTractorAndType)
 			protected.GET("/fuel-standard/trailer-type/:trailerType", fuelStandardHandler.GetFuelStandardsByTrailerType)
 			protected.GET("/fuel-standard/load-category/:loadCategory", fuelStandardHandler.GetFuelStandardsByLoadCategory)
+
+			// Activity Logs
+			protected.GET("/activity-logs", activityLogHandler.GetActivityLogs)
+			protected.GET("/activity-logs/my", activityLogHandler.GetMyActivityLogs)
+			protected.DELETE("/activity-logs/cleanup", activityLogHandler.CleanupOldLogs)
 		}
 	}
 }
