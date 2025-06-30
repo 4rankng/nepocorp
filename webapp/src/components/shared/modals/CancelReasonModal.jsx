@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import StandardModal from '@components/ui/StandardModal';
 import ModalHeader from '@components/ui/ModalHeader';
@@ -6,7 +6,6 @@ import ModalBody from '@components/ui/ModalBody';
 import ModalFooter from '@components/ui/ModalFooter';
 import CancelIcon from '@mui/icons-material/Cancel';
 import logger from '@services/logger';
-import { maxWidth } from '@mui/system';
 
 const CancelReasonModal = ({
   open,
@@ -51,32 +50,56 @@ const CancelReasonModal = ({
     onClose();
   }, [initialValue, onClose, entityType]);
 
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!open) return;
+      
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, handleCancel]);
+
+  // Handle Enter key on input
+  const handleInputKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleConfirm();
+    }
+  }, [handleConfirm]);
+
   return (
     <StandardModal
       open={open}
       onClose={handleCancel}
       className="max-w-md"
-      style={{ maxHeight: '400px', maxWidth: '500px' }}
+      style={{ maxHeight: '500px', maxWidth: '500px' }}
     >
       <ModalHeader
         title={`Hủy ${entityType}`}
         subtitle=""
         onClose={handleCancel}
-        icon={<CancelIcon className="text-red-600" />}
+        icon={<CancelIcon className="text-red-600 w-5 h-5" />}
       />
 
       <ModalBody padding="lg" error={error}>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-gray-700 mb-2">
               Lý do hủy
             </label>
-            <textarea
+            <input
+              type="text"
               value={cancelReason}
               onChange={handleInputChange}
+              onKeyDown={handleInputKeyDown}
               placeholder={`Nhập lý do hủy ${entityType}...`}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               autoFocus
             />
           </div>

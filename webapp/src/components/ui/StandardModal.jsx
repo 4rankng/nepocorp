@@ -31,7 +31,7 @@ const StandardModal = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" 
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-1" 
       style={{ zIndex: Z_INDEX.MODAL_BACKDROP }}
     >
       <div 

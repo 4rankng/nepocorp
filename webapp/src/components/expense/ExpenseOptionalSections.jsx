@@ -10,19 +10,64 @@ const ExpenseOptionalSections = ({
   const showRemark = expenseData.remark || isEditing;
   const showCancelReason = (isEditing ? editedData.payment_status === 'CANCELLED' : expenseData.payment_status === 'CANCELLED') ||
     (expenseData.cancel_reason && !isEditing);
+  const showBoth = showRemark && showCancelReason;
 
+  // If both fields should be shown, render them in a grid
+  if (showBoth) {
+    return (
+      <div className="mb-4 grid grid-cols-2 gap-4">
+        {/* Ghi chú - 50% width */}
+        <div>
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Ghi chú</h2>
+          {isEditing ? (
+            <input
+              type="text"
+              value={editedData.remark || ''}
+              onChange={(e) => onFieldChange('remark', e.target.value)}
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Nhập ghi chú"
+            />
+          ) : (
+            <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-blue-50 text-blue-700">
+              {expenseData.remark}
+            </div>
+          )}
+        </div>
+
+        {/* Lý do hủy - 50% width */}
+        <div>
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Lý do hủy</h2>
+          {isEditing && editedData.payment_status === 'CANCELLED' ? (
+            <input
+              type="text"
+              value={editedData.cancel_reason || ''}
+              onChange={(e) => onFieldChange('cancel_reason', e.target.value)}
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Nhập lý do hủy"
+            />
+          ) : (
+            <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-red-50 text-red-700">
+              {expenseData.cancel_reason || '-'}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // If only one field should be shown, render it full width
   return (
     <>
       {showRemark && (
         <div className="mb-4">
           <h2 className="text-sm font-semibold text-gray-700 mb-2">Ghi chú</h2>
           {isEditing ? (
-            <textarea
+            <input
+              type="text"
               value={editedData.remark || ''}
               onChange={(e) => onFieldChange('remark', e.target.value)}
               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Nhập ghi chú"
-              rows="1"
             />
           ) : (
             <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-blue-50 text-blue-700">
@@ -34,26 +79,20 @@ const ExpenseOptionalSections = ({
 
       {showCancelReason && (
         <div className="mb-4">
-          <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-8">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Lý do hủy
-              </label>
-              {isEditing && editedData.payment_status === 'CANCELLED' ? (
-                <textarea
-                  value={editedData.cancel_reason || ''}
-                  onChange={(e) => onFieldChange('cancel_reason', e.target.value)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Nhập lý do hủy"
-                  rows="2"
-                />
-              ) : (
-                <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-red-50 text-red-700">
-                  {expenseData.cancel_reason || '-'}
-                </div>
-              )}
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Lý do hủy</h2>
+          {isEditing && editedData.payment_status === 'CANCELLED' ? (
+            <input
+              type="text"
+              value={editedData.cancel_reason || ''}
+              onChange={(e) => onFieldChange('cancel_reason', e.target.value)}
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Nhập lý do hủy"
+            />
+          ) : (
+            <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-red-50 text-red-700">
+              {expenseData.cancel_reason || '-'}
             </div>
-          </div>
+          )}
         </div>
       )}
     </>

@@ -209,7 +209,6 @@ const InvoiceForm = ({
         setShowPaymentProofPrompt(true);
         // Update the status immediately for visual feedback
         handleFieldChange('payment_status', value);
-        onChange({ target: { name: 'payment_status', value } });
         return;
       }
 
@@ -225,14 +224,12 @@ const InvoiceForm = ({
         setShowCancelReasonPrompt(true);
         // Update the status immediately for visual feedback
         handleFieldChange('payment_status', value);
-        onChange({ target: { name: 'payment_status', value } });
         return;
       }
     }
     
     handleFieldChange(field, value);
-    onChange({ target: { name: field, value } });
-  }, [handleFieldChange, onChange, editedData?.payment_status, editedData?.payment_proof, editedData?.cancel_reason, showPaymentProofPrompt, showCancelReasonPrompt]);
+  }, [handleFieldChange, editedData?.payment_status, editedData?.payment_proof, editedData?.cancel_reason, showPaymentProofPrompt, showCancelReasonPrompt]);
 
   const handleLicensePlateCellClick = useCallback((index) => {
     setCurrentLicensePlateIndex(index);
@@ -315,16 +312,12 @@ const InvoiceForm = ({
     handleFieldChange('payment_status', INVOICE_STATUS.PAID);
     handleFieldChange('payment_proof', paymentProof);
     handleFieldChange('cancel_reason', null); // Clear cancel reason when marking as paid
-    
-    onChange({ target: { name: 'payment_status', value: INVOICE_STATUS.PAID } });
-    onChange({ target: { name: 'payment_proof', value: paymentProof } });
-    onChange({ target: { name: 'cancel_reason', value: null } });
 
     setShowPaymentProofPrompt(false);
     setPendingStatus(null);
     setTempPaymentProof('');
     setPreviousStatus(null);
-  }, [handleFieldChange, onChange]);
+  }, [handleFieldChange]);
 
   // Handle cancel reason confirmation
   const handleCancelReasonConfirm = useCallback((cancelReason) => {
@@ -337,16 +330,12 @@ const InvoiceForm = ({
     handleFieldChange('payment_status', INVOICE_STATUS.CANCELLED);
     handleFieldChange('cancel_reason', cancelReason);
     handleFieldChange('payment_proof', null); // Clear payment proof when cancelling
-    
-    onChange({ target: { name: 'payment_status', value: INVOICE_STATUS.CANCELLED } });
-    onChange({ target: { name: 'cancel_reason', value: cancelReason } });
-    onChange({ target: { name: 'payment_proof', value: null } });
 
     setShowCancelReasonPrompt(false);
     setPendingStatus(null);
     setTempCancelReason('');
     setPreviousStatus(null);
-  }, [handleFieldChange, onChange]);
+  }, [handleFieldChange]);
 
   // Handle prompt cancellation
   const handlePromptCancel = useCallback(() => {
@@ -357,7 +346,6 @@ const InvoiceForm = ({
     // Revert to previous status if cancelling
     if (previousStatus !== null) {
       handleFieldChange('payment_status', previousStatus);
-      onChange({ target: { name: 'payment_status', value: previousStatus } });
     }
     setShowPaymentProofPrompt(false);
     setShowCancelReasonPrompt(false);

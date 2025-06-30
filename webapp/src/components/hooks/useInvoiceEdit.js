@@ -71,30 +71,11 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
   }, []);
 
   const handleFieldChange = useCallback((field, value) => {
-    // Handle status changes that require prompts
-    if (field === 'payment_status') {
-      const oldStatus = editedData?.payment_status;
-
-      if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
-        setPendingStatus(value);
-        setTempPaymentProof(editedData?.payment_proof || '');
-        setShowPaymentProofPrompt(true);
-        return;
-      }
-
-      if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
-        setPendingStatus(value);
-        setTempCancelReason(editedData?.cancel_reason || '');
-        setShowCancelReasonPrompt(true);
-        return;
-      }
-    }
-
     setEditedData(prev => ({
       ...prev,
       [field]: value
     }));
-  }, [editedData]);
+  }, []);
 
   const handleItemChange = useCallback((index, field, value) => {
     setEditedData(prev => ({
