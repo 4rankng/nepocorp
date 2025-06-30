@@ -52,13 +52,23 @@ func (h *PartnerHandler) GetPartnerByID(c *gin.Context) {
 }
 
 func (h *PartnerHandler) GetAllPartners(c *gin.Context) {
-	partners, err := h.PartnerRepo.GetAllPartners()
+	page, limit := utils.GetPaginationParams(c)
+	offset := (page - 1) * limit
+
+	partners, err := h.PartnerRepo.ListPartners(offset, limit)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Partners retrieved successfully", partners)
+	totalRecords, err := h.PartnerRepo.CountPartners()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to count partners", err.Error())
+		return
+	}
+
+	pagination := utils.CalculatePagination(int(totalRecords), page, limit)
+	utils.ListSuccessResponse(c, "Partners retrieved successfully", partners, pagination)
 }
 
 func (h *PartnerHandler) UpdatePartner(c *gin.Context) {

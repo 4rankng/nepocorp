@@ -51,28 +51,23 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 }
 
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
-	pageStr := c.DefaultQuery("page", "1")
-	pageSizeStr := c.DefaultQuery("pageSize", "10")
+	page, limit := utils.GetPaginationParams(c)
+	offset := (page - 1) * limit
 
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
-		page = 1
-	}
-
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil || pageSize < 1 {
-		pageSize = 10
-	}
-
-	offset := (page - 1) * pageSize
-
-	users, err := h.UserRepo.List(offset, pageSize)
+	users, err := h.UserRepo.List(offset, limit)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Users retrieved successfully", users)
+	totalRecords, err := h.UserRepo.Count()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to count users", err.Error())
+		return
+	}
+
+	pagination := utils.CalculatePagination(int(totalRecords), page, limit)
+	utils.ListSuccessResponse(c, "Users retrieved successfully", users, pagination)
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {

@@ -86,7 +86,7 @@ export const Z_INDEX = {
  * These are automatically generated and injected into the document root
  */
 export const Z_INDEX_CSS_VARS = Object.keys(GENERATED_Z_INDEXES).reduce((acc, layer) => {
-  acc[`--z-index-${layer}`] = GENERATED_Z_INDEXES[layer];
+  acc[`--z-${layer}`] = GENERATED_Z_INDEXES[layer];
   return acc;
 }, {});
 
@@ -112,6 +112,62 @@ export const getNextZIndex = (layerName, offset = 1) => {
  */
 export const shouldUsePortal = (zIndex) => {
   return zIndex >= Z_INDEX.FLOATING;
+};
+
+/**
+ * Helper function to detect z-index context from DOM element
+ * @param {Element} element - DOM element to check
+ * @returns {string|null} - Context type or null
+ */
+export const detectZIndexContext = (element) => {
+  if (!element) return null;
+  
+  const modalParent = element.closest('[data-modal-level]');
+  if (modalParent) {
+    const level = modalParent.getAttribute('data-modal-level');
+    return level === '2' ? 'nested-modal' : 'modal';
+  }
+  return null;
+};
+
+/**
+ * Get context-aware z-index value
+ * @param {string} baseLayer - Base layer name from Z_INDEX_LAYERS
+ * @param {string|null} context - Context type ('modal', 'nested-modal', or null)
+ * @returns {number} - Calculated z-index value
+ */
+export const getContextualZIndex = (baseLayer, context = null) => {
+  const baseValue = GENERATED_Z_INDEXES[baseLayer];
+  
+  if (!baseValue) {
+    console.warn(`Unknown z-index layer: ${baseLayer}`);
+    return 1000; // Fallback
+  }
+  
+  if (!context) return baseValue;
+  
+  // If inside modal, use modal's z-index + offset
+  if (context === 'modal') {
+    return GENERATED_Z_INDEXES.modal + 50;
+  }
+  
+  // If inside nested modal, use nested modal's z-index + offset
+  if (context === 'nested-modal') {
+    return GENERATED_Z_INDEXES['nested-modal'] + 50;
+  }
+  
+  return baseValue;
+};
+
+/**
+ * Calculate z-index at runtime based on DOM context
+ * @param {string} baseLayer - Base layer name
+ * @param {Element} element - DOM element to check context for
+ * @returns {number} - Calculated z-index value
+ */
+export const calculateZIndex = (baseLayer, element) => {
+  const context = detectZIndexContext(element);
+  return getContextualZIndex(baseLayer, context);
 };
 
 /**

@@ -56,7 +56,6 @@ func (h *ExpenseCategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
-
 	// Get current user from context for audit trail
 	if userInfo, exists := c.Get("user"); exists {
 		if user, ok := userInfo.(map[string]interface{}); ok {
@@ -106,7 +105,6 @@ func (h *ExpenseCategoryHandler) Update(c *gin.Context) {
 			utils.ErrorDetail{Code: common.CodeRequiredField, Message: common.ErrExpenseCategoryNameRequired})
 		return
 	}
-
 
 	// Update fields
 	existingCategory.Name = updateData.Name

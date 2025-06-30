@@ -51,13 +51,23 @@ func (h *RouteHandler) GetRouteByID(c *gin.Context) {
 }
 
 func (h *RouteHandler) GetAllRoutes(c *gin.Context) {
-	routes, err := h.RouteRepo.GetAllRoutes()
+	page, limit := utils.GetPaginationParams(c)
+	offset := (page - 1) * limit
+
+	routes, err := h.RouteRepo.ListRoutes(offset, limit)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Routes retrieved successfully", routes)
+	totalRecords, err := h.RouteRepo.CountRoutes()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to count routes", err.Error())
+		return
+	}
+
+	pagination := utils.CalculatePagination(int(totalRecords), page, limit)
+	utils.ListSuccessResponse(c, "Routes retrieved successfully", routes, pagination)
 }
 
 func (h *RouteHandler) UpdateRoute(c *gin.Context) {

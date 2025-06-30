@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { expenseApi } from '@services/api/expenseApi';
-import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
 import { settingsApi } from '@services/api/settingsApi';
 import { VehicleDataContext } from '@/contexts/VehicleDataContext';
+import useExpenseCategories from '@/hooks/useExpenseCategories';
 import LicensePlateSelectionModal from './LicensePlateSelectionModal';
 import ExpenseHeader from './expense/ExpenseHeader';
 import ExpenseBasicInfo from './expense/ExpenseBasicInfo';
@@ -16,13 +16,19 @@ import { Z_INDEX } from '@constants/zIndex';
 
 const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
+  
+  // Use global expense categories hook
+  const { 
+    categories: expenseCategories, 
+    isLoading: isLoadingCategories,
+    fetchCategories
+  } = useExpenseCategories();
+  
   const [expenseData, setExpenseData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(null);
-  const [expenseCategories, setExpenseCategories] = useState([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [taxRate, setTaxRate] = useState(10);
   const [isLoadingPlates, setIsLoadingPlates] = useState(false);
@@ -102,18 +108,9 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
 
   // Fetch expense categories and vehicles when entering edit mode
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchCategoriesIfNeeded = async () => {
       if (isEditing && expenseCategories.length === 0) {
-        setIsLoadingCategories(true);
-        try {
-          const response = await expenseCategoryApi.getAll();
-          const categories = response.data?.data || response.data || [];
-          setExpenseCategories(categories);
-        } catch (err) {
-          console.error('Error fetching expense categories:', err);
-        } finally {
-          setIsLoadingCategories(false);
-        }
+        await fetchCategories();
       }
     };
 
@@ -133,9 +130,9 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       }
     };
 
-    fetchCategories();
+    fetchCategoriesIfNeeded();
     fetchVehicles();
-  }, [isEditing, expenseCategories.length, tractors.length, trailers.length, fetchTractors, fetchTrailers]);
+  }, [isEditing, expenseCategories.length, tractors.length, trailers.length, fetchTractors, fetchTrailers, fetchCategories]);
 
   const handleClose = useCallback(() => {
     setExpenseData(null);

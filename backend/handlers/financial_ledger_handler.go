@@ -52,8 +52,7 @@ func (h *FinancialLedgerHandler) GetTransactionByID(c *gin.Context) {
 }
 
 func (h *FinancialLedgerHandler) GetAllTransactions(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	page, limit := utils.GetPaginationParams(c)
 
 	transactions, total, err := h.FinancialLedgerRepo.GetAllTransactions(page, limit)
 	if err != nil {
@@ -61,15 +60,8 @@ func (h *FinancialLedgerHandler) GetAllTransactions(c *gin.Context) {
 		return
 	}
 
-	response := map[string]interface{}{
-		"data":        transactions,
-		"total":       total,
-		"page":        page,
-		"limit":       limit,
-		"total_pages": (total + int64(limit) - 1) / int64(limit),
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "Transactions retrieved successfully", response)
+	pagination := utils.CalculatePagination(int(total), page, limit)
+	utils.ListSuccessResponse(c, "Transactions retrieved successfully", transactions, pagination)
 }
 
 func (h *FinancialLedgerHandler) UpdateTransaction(c *gin.Context) {

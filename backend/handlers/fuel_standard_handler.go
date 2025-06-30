@@ -51,13 +51,23 @@ func (h *FuelStandardHandler) GetFuelStandardByID(c *gin.Context) {
 }
 
 func (h *FuelStandardHandler) GetAllFuelStandards(c *gin.Context) {
-	fuelStandards, err := h.FuelStandardRepo.GetAllFuelStandards()
+	page, limit := utils.GetPaginationParams(c)
+	offset := (page - 1) * limit
+
+	fuelStandards, err := h.FuelStandardRepo.ListFuelStandards(offset, limit)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Fuel standards retrieved successfully", fuelStandards)
+	totalRecords, err := h.FuelStandardRepo.CountFuelStandards()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to count fuel standards", err.Error())
+		return
+	}
+
+	pagination := utils.CalculatePagination(int(totalRecords), page, limit)
+	utils.ListSuccessResponse(c, "Fuel standards retrieved successfully", fuelStandards, pagination)
 }
 
 func (h *FuelStandardHandler) UpdateFuelStandard(c *gin.Context) {

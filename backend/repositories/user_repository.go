@@ -64,3 +64,9 @@ func (r *UserRepository) GetAllUsers() ([]*models.User, error) {
 	err := r.db.Find(&users).Error
 	return users, err
 }
+
+func (r *UserRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&models.User{}).Count(&count).Error
+	return count, err
+}

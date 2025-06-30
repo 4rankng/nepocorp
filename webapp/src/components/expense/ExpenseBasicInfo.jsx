@@ -18,6 +18,16 @@ const ExpenseBasicInfo = ({
   isLoadingCustomers = false,
   errors = {}
 }) => {
+  console.log('💼 [ExpenseBasicInfo] Rendering with expense categories:', {
+    isEditing,
+    categoriesCount: expenseCategories?.length || 0,
+    isLoadingCategories,
+    categoryNames: expenseCategories?.map(c => c.name) || [],
+    editedData: editedData ? {
+      expense_category_id: editedData.expense_category_id
+    } : null
+  });
+
   return (
     <div className="mb-4">
       <h2 className="text-sm font-semibold text-gray-700 mb-2">Thông tin cơ bản</h2>
@@ -52,16 +62,11 @@ const ExpenseBasicInfo = ({
           )}
         </div>
         <div className="col-span-8">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            {isInvoiceMode ? 'Khách hàng' : 'Nhà cung cấp'}
-            {isEditing && (isInvoiceMode ? !editedData.customer_id : !editedData.vendor_name) && (
-              <span className="text-red-500 ml-1">*</span>
-            )}
-          </label>
           {isEditing ? (
             isInvoiceMode ? (
               <>
                 <Dropdown
+                  label={isInvoiceMode ? 'Khách hàng' : 'Nhà cung cấp'}
                   value={editedData.customer_id}
                   onChange={(value) => onFieldChange('customer_id', value)}
                   options={customers.map(customer => ({
@@ -69,7 +74,7 @@ const ExpenseBasicInfo = ({
                     label: customer.name
                   }))}
                   placeholder="Chọn khách hàng"
-                  isLoading={isLoadingCustomers}
+                  loading={isLoadingCustomers}
                   className={`text-sm ${
                     errors.customer_id ? 'border-red-500' : ''
                   }`}
@@ -105,41 +110,42 @@ const ExpenseBasicInfo = ({
         </div>
 
         <div className="col-span-2">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            {isInvoiceMode ? 'Loại phiếu thu' : 'Loại chi phí'}
-            {isEditing && (isInvoiceMode ? !editedData.invoice_category_id : !editedData.expense_category_id) && (
-              <span className="text-red-500 ml-1">*</span>
-            )}
-          </label>
           {isEditing ? (
             <>
               <Dropdown
+                label={isInvoiceMode ? 'Loại phiếu thu' : 'Loại chi phí'}
+                required={true}
                 value={isInvoiceMode ? editedData.invoice_category_id : editedData.expense_category_id}
                 onChange={(value) => onFieldChange(isInvoiceMode ? 'invoice_category_id' : 'expense_category_id', value)}
-                options={expenseCategories.map(cat => ({
-                  value: cat.id,
-                  label: isInvoiceMode ? getInvoiceCategoryLabel(cat.name) : getExpenseCategoryLabel(cat.name)
-                }))}
+                options={(() => {
+                  const dropdownOptions = expenseCategories.map(cat => ({
+                    value: cat.id,
+                    label: isInvoiceMode ? getInvoiceCategoryLabel(cat.name) : getExpenseCategoryLabel(cat.name)
+                  }));
+                  console.log('💼 [ExpenseBasicInfo] Dropdown options created:', dropdownOptions);
+                  return dropdownOptions;
+                })()}
                 placeholder={isInvoiceMode ? "Chọn loại phiếu thu" : "Chọn loại chi phí"}
-                isLoading={isLoadingCategories}
+                loading={isLoadingCategories}
                 className={`text-sm ${
                   (isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) ? 'border-red-500' : ''
                 }`}
                 usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
+                error={(isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) || null}
               />
-              {(isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) && (
-                <div className="text-red-500 text-xs mt-1">
-                  {isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id}
-                </div>
-              )}
             </>
           ) : (
-            <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-              {isInvoiceMode
-                ? (expenseData.invoice_category?.name ? getInvoiceCategoryLabel(expenseData.invoice_category.name) : '-')
-                : (expenseData.expense_category?.name ? getExpenseCategoryLabel(expenseData.expense_category.name) : '-')
-              }
-            </div>
+            <>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                {isInvoiceMode ? 'Loại phiếu thu' : 'Loại chi phí'}
+              </label>
+              <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
+                {isInvoiceMode
+                  ? (expenseData.invoice_category?.name ? getInvoiceCategoryLabel(expenseData.invoice_category.name) : '-')
+                  : (expenseData.expense_category?.name ? getExpenseCategoryLabel(expenseData.expense_category.name) : '-')
+                }
+              </div>
+            </>
           )}
         </div>
       </div>

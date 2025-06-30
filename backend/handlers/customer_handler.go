@@ -52,13 +52,23 @@ func (h *CustomerHandler) GetCustomerByID(c *gin.Context) {
 }
 
 func (h *CustomerHandler) GetAllCustomers(c *gin.Context) {
-	customers, err := h.CustomerRepo.GetAllCustomers()
+	page, limit := utils.GetPaginationParams(c)
+	offset := (page - 1) * limit
+
+	customers, err := h.CustomerRepo.ListCustomers(offset, limit)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Customers retrieved successfully", customers)
+	totalRecords, err := h.CustomerRepo.CountCustomers()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to count customers", err.Error())
+		return
+	}
+
+	pagination := utils.CalculatePagination(int(totalRecords), page, limit)
+	utils.ListSuccessResponse(c, "Customers retrieved successfully", customers, pagination)
 }
 
 func (h *CustomerHandler) UpdateCustomer(c *gin.Context) {

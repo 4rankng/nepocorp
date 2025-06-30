@@ -61,3 +61,19 @@ func (r *FuelStandardRepository) GetFuelStandardsByLoadCategory(loadCategory str
 	err := r.DB.Where("load_category = ?", loadCategory).Preload("Tractor").Find(&fuelStandards).Error
 	return fuelStandards, err
 }
+
+func (r *FuelStandardRepository) ListFuelStandards(offset, limit int) ([]models.FuelStandard, error) {
+	var fuelStandards []models.FuelStandard
+	query := r.DB.Preload("Tractor")
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+	err := query.Find(&fuelStandards).Error
+	return fuelStandards, err
+}
+
+func (r *FuelStandardRepository) CountFuelStandards() (int64, error) {
+	var count int64
+	err := r.DB.Model(&models.FuelStandard{}).Count(&count).Error
+	return count, err
+}

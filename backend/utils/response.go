@@ -81,7 +81,7 @@ func CalculatePagination(totalRecords, page, limit int) PaginationMeta {
 
 func GetPaginationParams(c *gin.Context) (page, limit int) {
 	page = 1
-	limit = 10
+	limit = 1000 // Default to max limit when not specified
 
 	if p, exists := c.GetQuery("page"); exists {
 		if val, err := strconv.Atoi(p); err == nil && val > 0 {
@@ -92,6 +92,10 @@ func GetPaginationParams(c *gin.Context) (page, limit int) {
 	if l, exists := c.GetQuery("limit"); exists {
 		if val, err := strconv.Atoi(l); err == nil && val > 0 {
 			limit = val
+			// Cap at 1000 for safety
+			if limit > 1000 {
+				limit = 1000
+			}
 		}
 	}
 

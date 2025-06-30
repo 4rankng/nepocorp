@@ -30,10 +30,20 @@ const Dropdown = ({
   portalContainer = null,
   ...props
 }) => {
+  console.log('🔧 [Dropdown] Rendered with:', {
+    label,
+    value,
+    optionsCount: options.length,
+    loading,
+    disabled,
+    placeholder,
+    options: options.slice(0, 3) // Show first 3 options for debugging
+  });
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [dropUp, setDropUp] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
+
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
   const menuRef = useRef(null);
@@ -47,6 +57,19 @@ const Dropdown = ({
       return vietnameseSearch(label, searchTerm);
     });
   }, [options, searchTerm, searchable]);
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('🔧 [Dropdown] isOpen state changed to:', isOpen);
+    if (isOpen) {
+      console.log('🔧 [Dropdown] Opening dropdown with options:', {
+        filteredOptionsCount: filteredOptions.length,
+        loading,
+        usePortal,
+        searchTerm
+      });
+    }
+  }, [isOpen, filteredOptions.length, loading, usePortal, searchTerm]);
 
   // Get display value for the dropdown trigger
   const getDisplayValue = () => {
@@ -187,6 +210,32 @@ const Dropdown = ({
     (!multiple && value)
   );
 
+  // Filter out non-DOM props before spreading to button element
+  const {
+    label: _label,
+    name: _name,
+    value: _value,
+    onChange: _onChange,
+    options: _options,
+    placeholder: _placeholder,
+    searchPlaceholder: _searchPlaceholder,
+    required: _required,
+    disabled: _disabled,
+    loading: _loading,
+    error: _error,
+    helperText: _helperText,
+    className: _className,
+    multiple: _multiple,
+    searchable: _searchable,
+    clearable: _clearable,
+    maxHeight: _maxHeight,
+    noOptionsText: _noOptionsText,
+    loadingText: _loadingText,
+    usePortal: _usePortal,
+    portalContainer: _portalContainer,
+    ...domProps
+  } = props;
+
   return (
     <FormCol className={className}>
       {label && <FormLabel required={required}>{label}</FormLabel>}
@@ -198,12 +247,18 @@ const Dropdown = ({
         <button
           type="button"
           className="dropdown__trigger"
-          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onClick={() => {
+            console.log('🔧 [Dropdown] Button clicked!', { disabled, isOpen, willToggleTo: !isOpen });
+            if (!disabled) {
+              setIsOpen(!isOpen);
+              console.log('🔧 [Dropdown] Setting isOpen to:', !isOpen);
+            }
+          }}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          {...props}
+          {...domProps}
         >
           <span className="dropdown__value">
             {getDisplayValue()}
@@ -244,9 +299,11 @@ const Dropdown = ({
                   top: menuPosition.top,
                   left: menuPosition.left,
                   width: menuPosition.width,
-                  zIndex: Z_INDEX.DROPDOWN,
+                  zIndex: getDropdownZIndex(),
                   minWidth: '200px' // Ensure minimum width for visibility
-                } : {})
+                } : {
+                  zIndex: getDropdownZIndex()
+                })
               }}
             >
             {searchable && (
@@ -331,7 +388,8 @@ Dropdown.propTypes = {
   noOptionsText: PropTypes.string,
   loadingText: PropTypes.string,
   usePortal: PropTypes.bool,
-  portalContainer: PropTypes.instanceOf(Element)
+  portalContainer: PropTypes.instanceOf(Element),
+  zIndex: PropTypes.number
 };
 
 export default Dropdown;

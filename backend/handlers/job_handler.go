@@ -51,13 +51,23 @@ func (h *JobHandler) GetJobByID(c *gin.Context) {
 }
 
 func (h *JobHandler) GetAllJobs(c *gin.Context) {
-	jobs, err := h.JobRepo.GetAllJobs()
+	page, limit := utils.GetPaginationParams(c)
+	offset := (page - 1) * limit
+
+	jobs, err := h.JobRepo.ListJobs(offset, limit)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Jobs retrieved successfully", jobs)
+	totalRecords, err := h.JobRepo.CountJobs()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to count jobs", err.Error())
+		return
+	}
+
+	pagination := utils.CalculatePagination(int(totalRecords), page, limit)
+	utils.ListSuccessResponse(c, "Jobs retrieved successfully", jobs, pagination)
 }
 
 func (h *JobHandler) UpdateJob(c *gin.Context) {

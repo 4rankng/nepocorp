@@ -54,3 +54,19 @@ func (r *JobRepository) GetJobsByStatus(status string) ([]models.Job, error) {
 	err := r.DB.Where("status = ?", status).Preload("Tractor").Preload("Trailer").Preload("Driver").Preload("Customer").Preload("Route").Find(&jobs).Error
 	return jobs, err
 }
+
+func (r *JobRepository) ListJobs(offset, limit int) ([]models.Job, error) {
+	var jobs []models.Job
+	query := r.DB.Preload("Tractor").Preload("Trailer").Preload("Driver").Preload("Customer").Preload("Route")
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+	err := query.Find(&jobs).Error
+	return jobs, err
+}
+
+func (r *JobRepository) CountJobs() (int64, error) {
+	var count int64
+	err := r.DB.Model(&models.Job{}).Count(&count).Error
+	return count, err
+}

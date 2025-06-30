@@ -36,3 +36,19 @@ func (r *CustomerRepository) UpdateCustomer(customer *models.Customer) error {
 func (r *CustomerRepository) DeleteCustomer(id uint) error {
 	return r.DB.Delete(&models.Customer{}, id).Error
 }
+
+func (r *CustomerRepository) ListCustomers(offset, limit int) ([]models.Customer, error) {
+	var customers []models.Customer
+	query := r.DB
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+	err := query.Find(&customers).Error
+	return customers, err
+}
+
+func (r *CustomerRepository) CountCustomers() (int64, error) {
+	var count int64
+	err := r.DB.Model(&models.Customer{}).Count(&count).Error
+	return count, err
+}

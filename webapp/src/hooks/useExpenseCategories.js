@@ -8,12 +8,12 @@ const useExpenseCategories = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 100,
+    limit: 1000,
     total_pages: 1,
     records_count: 0
   });
 
-  const fetchCategories = useCallback(async (page = 1, limit = 100) => {
+  const fetchCategories = useCallback(async (page = 1, limit = 1000) => {
     const cacheKey = cacheManager.generateKey('/expense_category', { page, limit });
     
     // Check cache first
@@ -28,11 +28,12 @@ const useExpenseCategories = () => {
     setError(null);
     try {
       const response = await expenseCategoryApi.getAll(page, limit);
+      
       // Response structure: { status, data: [...], pagination: {...} }
       const data = response.data || [];
       const pagination = response.pagination || {
         page: 1,
-        limit: 100,
+        limit: 1000,
         total_pages: 1,
         records_count: data.length
       };

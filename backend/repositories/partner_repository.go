@@ -36,3 +36,19 @@ func (r *PartnerRepository) UpdatePartner(partner *models.Partner) error {
 func (r *PartnerRepository) DeletePartner(id uint) error {
 	return r.DB.Delete(&models.Partner{}, id).Error
 }
+
+func (r *PartnerRepository) ListPartners(offset, limit int) ([]models.Partner, error) {
+	var partners []models.Partner
+	query := r.DB
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+	err := query.Find(&partners).Error
+	return partners, err
+}
+
+func (r *PartnerRepository) CountPartners() (int64, error) {
+	var count int64
+	err := r.DB.Model(&models.Partner{}).Count(&count).Error
+	return count, err
+}

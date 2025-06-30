@@ -42,3 +42,19 @@ func (r *RouteRepository) GetRouteByName(name string) (*models.Route, error) {
 	err := r.DB.Where("name = ?", name).First(&route).Error
 	return &route, err
 }
+
+func (r *RouteRepository) ListRoutes(offset, limit int) ([]models.Route, error) {
+	var routes []models.Route
+	query := r.DB
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+	err := query.Find(&routes).Error
+	return routes, err
+}
+
+func (r *RouteRepository) CountRoutes() (int64, error) {
+	var count int64
+	err := r.DB.Model(&models.Route{}).Count(&count).Error
+	return count, err
+}
