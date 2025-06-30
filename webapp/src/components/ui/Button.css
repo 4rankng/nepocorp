@@ -87,6 +87,47 @@
   color: #374151;
 }
 
+.btn--info {
+  background: var(--color-info);
+  color: white;
+  border-color: var(--color-info);
+}
+
+.btn--info:hover:not(.btn--disabled):not(.btn--loading) {
+  background: var(--color-info-hover);
+  border-color: var(--color-info-hover);
+}
+
+.btn--warning {
+  background: var(--color-warning);
+  color: white;
+  border-color: var(--color-warning);
+}
+
+.btn--warning:hover:not(.btn--disabled):not(.btn--loading) {
+  background: var(--color-warning-hover);
+  border-color: var(--color-warning-hover);
+}
+
+.btn--link {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: transparent;
+  text-decoration: underline;
+  padding: 4px 8px;
+  min-height: auto;
+}
+
+.btn--link:hover:not(.btn--disabled):not(.btn--loading) {
+  color: var(--color-primary-hover);
+  text-decoration: none;
+  background: transparent;
+}
+
+.btn--link:focus {
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
 /* Button Sizes */
 .btn--small {
   padding: 6px 12px;
@@ -122,6 +163,32 @@
 
 .btn--full-width {
   width: 100%;
+}
+
+.btn--icon-only {
+  padding: 0;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn--icon-only.btn--small {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+}
+
+.btn--icon-only.btn--medium {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+}
+
+.btn--icon-only.btn--large {
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
 }
 
 /* Button Icons */

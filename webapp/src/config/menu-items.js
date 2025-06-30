@@ -2,7 +2,7 @@
 export const getMenuItems = () => {
   return [
     {
-      sectionTitle: 'Tổng quan',
+      sectionTitle: 'Quản lý',
       items: [
         {
           name: 'Tài chính',
@@ -20,16 +20,16 @@ export const getMenuItems = () => {
           href: '/bao-duong',
           icon: 'Tire',
         },
-      ]
-    },
-    {
-      sectionTitle: 'Quản Lý',
-      items: [
                 {
           name: 'Lịch vận chuyển',
-          href: '/lich-van-chuyen',
+          href: '/lich-van-chuchuyen',
           icon: 'Calendar',
         },
+      ]
+    },
+        {
+      sectionTitle: 'Kế toán',
+      items: [
                 {
           name: 'Phiếu chi',
           href: '/phieu-chi',
@@ -40,11 +40,19 @@ export const getMenuItems = () => {
           href: '/phieu-thu',
           icon: 'Banknote',
         },
+      ],
+      },
+    {
+      sectionTitle: 'Thiếp lập',
+      items: [
+
         {
-          name: 'Nhân viên',
-          href: '/nhan-vien',
-          icon: 'Users',
+          name: 'Định mức',
+          href: '/dinh-muc',
+          icon: 'Oil',
         },
+
+
         {
           name: 'Đối tác',
           href: '/doi-tac',
@@ -60,10 +68,10 @@ export const getMenuItems = () => {
           href: '/phuong-tien',
           icon: 'Truck',
         },
-        {
-          name: 'Định mức',
-          href: '/dinh-muc',
-          icon: 'Oil',
+                {
+          name: 'Người dùng',
+          href: '/nhan-vien',
+          icon: 'Users',
         },
       ]
     }

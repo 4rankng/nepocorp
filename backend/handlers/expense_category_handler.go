@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -55,6 +56,25 @@ func (h *ExpenseCategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
+	if category.CategoryKey == "" {
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
+			utils.ErrorDetail{Code: common.CodeRequiredField, Message: "Category key is required"})
+		return
+	}
+
+	// Get current user from context for audit trail
+	if userInfo, exists := c.Get("user"); exists {
+		if user, ok := userInfo.(map[string]interface{}); ok {
+			if username, exists := user["username"]; exists {
+				if name, exists := user["name"]; exists {
+					category.LastUpdatedBy = fmt.Sprintf("%s (%s)", name, username)
+				} else {
+					category.LastUpdatedBy = username.(string)
+				}
+			}
+		}
+	}
+
 	if err := h.repo.Create(&category); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrCreateExpenseCategory,
 			utils.ErrorDetail{Code: common.CodeCreateFailed, Message: err.Error()})
@@ -92,7 +112,32 @@ func (h *ExpenseCategoryHandler) Update(c *gin.Context) {
 		return
 	}
 
+	if updateData.CategoryKey == "" {
+		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
+			utils.ErrorDetail{Code: common.CodeRequiredField, Message: "Category key is required"})
+		return
+	}
+
+	// Update fields
 	existingCategory.Name = updateData.Name
+	existingCategory.CategoryKey = updateData.CategoryKey
+	if updateData.Description != nil {
+		existingCategory.Description = updateData.Description
+	}
+
+	// Get current user from context for audit trail
+	if userInfo, exists := c.Get("user"); exists {
+		if user, ok := userInfo.(map[string]interface{}); ok {
+			if username, exists := user["username"]; exists {
+				if name, exists := user["name"]; exists {
+					existingCategory.LastUpdatedBy = fmt.Sprintf("%s (%s)", name, username)
+				} else {
+					existingCategory.LastUpdatedBy = username.(string)
+				}
+			}
+		}
+	}
+
 	if err := h.repo.Update(existingCategory); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateExpenseCategory,
 			utils.ErrorDetail{Code: common.CodeUpdateFailed, Message: err.Error()})

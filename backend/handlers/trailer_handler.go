@@ -93,7 +93,6 @@ func (h *TrailerHandler) Update(c *gin.Context) {
 	}
 
 	existingTrailer.LicensePlate = updateData.LicensePlate
-	existingTrailer.Description = updateData.Description
 
 	if err := h.repo.Update(existingTrailer); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTrailer,

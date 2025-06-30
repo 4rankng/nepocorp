@@ -210,8 +210,8 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE TABLE IF NOT EXISTS expense_categories (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category_key VARCHAR(100) NOT NULL COMMENT 'Khóa định danh duy nhất cho hệ thống (tiếng Anh, không dấu)',
-    name VARCHAR(255) NOT NULL COMMENT 'Tên hạng mục chi phí bằng tiếng Việt',
-    description TEXT NULL COMMENT 'Mô tả chi tiết về hạng mục chi phí',
+    name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên hạng mục chi phí bằng tiếng Việt',
+    description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT 'Mô tả chi tiết về hạng mục chi phí',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_updated_by VARCHAR(255),

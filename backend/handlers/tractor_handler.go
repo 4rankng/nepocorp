@@ -93,7 +93,6 @@ func (h *TractorHandler) Update(c *gin.Context) {
 	}
 
 	existingTractor.LicensePlate = updateData.LicensePlate
-	existingTractor.Description = updateData.Description
 
 	if err := h.repo.Update(existingTractor); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, common.ErrUpdateTractor,

@@ -4,12 +4,14 @@ import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import ExpenseForm from '@/components/shared/ExpenseForm';
 import ExpenseList from '@/components/shared/ExpenseList';
 import ExpenseViewModal from '@/components/ExpenseViewModal';
+import ExpenseCategoryModal from '@/components/expense/ExpenseCategoryModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import useExpenses from './hooks/useExpenses';
 import useExpenseForm from '@/hooks/useExpenseForm';
 import { expenseApi } from '@services/api/expenseApi';
-import { Snackbar, Alert } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Snackbar, Alert, Box } from '@mui/material';
+import { Add as AddIcon, Category as CategoryIcon } from '@mui/icons-material';
+import Button from '@/components/ui/Button';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
 import FAB from '@/components/FAB';
 
@@ -34,6 +36,7 @@ const QuanLyPhieuChi = () => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [viewingExpenseId, setViewingExpenseId] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, expense: null });
   const [isDeletingExpense, setIsDeletingExpense] = useState(false);
   
@@ -199,6 +202,14 @@ const QuanLyPhieuChi = () => {
     setViewingExpenseId(null);
   }, []);
 
+  const handleOpenCategoryModal = useCallback(() => {
+    setShowCategoryModal(true);
+  }, []);
+
+  const handleCloseCategoryModal = useCallback(() => {
+    setShowCategoryModal(false);
+  }, []);
+
 
   const handleDeleteExpense = useCallback((expense) => {
     setDeleteDialog({ open: true, expense });
@@ -229,6 +240,19 @@ const QuanLyPhieuChi = () => {
 
   return (
     <div className="p-6">
+      {/* Header with Category Management Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <div />
+        <Button
+          variant="outline"
+          icon={<CategoryIcon />}
+          onClick={handleOpenCategoryModal}
+          disabled={showExpenseForm || showInvoiceModal}
+        >
+          Danh mục chi phí
+        </Button>
+      </Box>
+
       {/* Expense Form Modal */}
       {showExpenseForm && (
         <ExpenseForm
@@ -270,8 +294,14 @@ const QuanLyPhieuChi = () => {
         />
       )}
 
+      {/* Expense Category Management Modal */}
+      <ExpenseCategoryModal
+        open={showCategoryModal}
+        onClose={handleCloseCategoryModal}
+      />
+
       {/* FAB Button */}
-      {!showExpenseForm && !showInvoiceModal && (
+      {!showExpenseForm && !showInvoiceModal && !showCategoryModal && (
         <FAB
           onClick={handleAddExpense}
           icon={<AddIcon />}
