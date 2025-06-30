@@ -11,7 +11,9 @@ import ExpenseOptionalSections from '../expense/ExpenseOptionalSections';
 import ExpenseItemsTable from '../expense/ExpenseItemsTable';
 import ExpenseActionButtons from '../expense/ExpenseActionButtons';
 import InvoiceItemEditModal from '../invoice/InvoiceItemEditModal';
-import StatusChangePrompts from '../shared/modals/StatusChangePrompts';
+import PaymentProofModal from '../shared/modals/PaymentProofModal';
+import CancelReasonModal from '../shared/modals/CancelReasonModal';
+import logger from '@services/logger';
 import { prepareInvoiceItemsForUpdate, calculateInvoiceTotal } from '@utils/invoiceHelpers';
 import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 import useInvoiceEdit from '../hooks/useInvoiceEdit';
@@ -196,6 +198,11 @@ const InvoiceForm = ({
       }
 
       if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
+        logger.info('Status change to PAID initiated', { 
+          oldStatus, 
+          newStatus: value,
+          formType: 'invoice' 
+        });
         setPreviousStatus(oldStatus); // Store the current status before changing
         setPendingStatus(value);
         setTempPaymentProof(editedData?.payment_proof || '');
@@ -207,6 +214,11 @@ const InvoiceForm = ({
       }
 
       if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
+        logger.info('Status change to CANCELLED initiated', { 
+          oldStatus, 
+          newStatus: value,
+          formType: 'invoice' 
+        });
         setPreviousStatus(oldStatus); // Store the current status before changing
         setPendingStatus(value);
         setTempCancelReason(editedData?.cancel_reason || '');
@@ -293,49 +305,55 @@ const InvoiceForm = ({
   }, [handleAddItem]);
 
   // Handle payment proof confirmation
-  const handlePaymentProofConfirm = useCallback(() => {
-    if (!tempPaymentProof.trim()) {
-      alert('Vui lòng nhập URL chứng từ thanh toán');
-      return;
-    }
+  const handlePaymentProofConfirm = useCallback((paymentProof) => {
+    logger.info('Payment proof confirmed for invoice', {
+      paymentProof,
+      newStatus: INVOICE_STATUS.PAID,
+      formType: 'invoice'
+    });
 
-    handleFieldChange('payment_status', pendingStatus);
-    handleFieldChange('payment_proof', tempPaymentProof);
+    handleFieldChange('payment_status', INVOICE_STATUS.PAID);
+    handleFieldChange('payment_proof', paymentProof);
     handleFieldChange('cancel_reason', null); // Clear cancel reason when marking as paid
     
-    onChange({ target: { name: 'payment_status', value: pendingStatus } });
-    onChange({ target: { name: 'payment_proof', value: tempPaymentProof } });
+    onChange({ target: { name: 'payment_status', value: INVOICE_STATUS.PAID } });
+    onChange({ target: { name: 'payment_proof', value: paymentProof } });
     onChange({ target: { name: 'cancel_reason', value: null } });
 
     setShowPaymentProofPrompt(false);
     setPendingStatus(null);
     setTempPaymentProof('');
     setPreviousStatus(null);
-  }, [tempPaymentProof, pendingStatus, handleFieldChange, onChange]);
+  }, [handleFieldChange, onChange]);
 
   // Handle cancel reason confirmation
-  const handleCancelReasonConfirm = useCallback(() => {
-    if (!tempCancelReason.trim()) {
-      alert('Vui lòng nhập lý do hủy');
-      return;
-    }
+  const handleCancelReasonConfirm = useCallback((cancelReason) => {
+    logger.info('Cancel reason confirmed for invoice', {
+      cancelReason,
+      newStatus: INVOICE_STATUS.CANCELLED,
+      formType: 'invoice'
+    });
 
-    handleFieldChange('payment_status', pendingStatus);
-    handleFieldChange('cancel_reason', tempCancelReason);
+    handleFieldChange('payment_status', INVOICE_STATUS.CANCELLED);
+    handleFieldChange('cancel_reason', cancelReason);
     handleFieldChange('payment_proof', null); // Clear payment proof when cancelling
     
-    onChange({ target: { name: 'payment_status', value: pendingStatus } });
-    onChange({ target: { name: 'cancel_reason', value: tempCancelReason } });
+    onChange({ target: { name: 'payment_status', value: INVOICE_STATUS.CANCELLED } });
+    onChange({ target: { name: 'cancel_reason', value: cancelReason } });
     onChange({ target: { name: 'payment_proof', value: null } });
 
     setShowCancelReasonPrompt(false);
     setPendingStatus(null);
     setTempCancelReason('');
     setPreviousStatus(null);
-  }, [tempCancelReason, pendingStatus, handleFieldChange, onChange]);
+  }, [handleFieldChange, onChange]);
 
   // Handle prompt cancellation
   const handlePromptCancel = useCallback(() => {
+    logger.info('Status change cancelled', {
+      revertingTo: previousStatus,
+      formType: 'invoice'
+    });
     // Revert to previous status if cancelling
     if (previousStatus !== null) {
       handleFieldChange('payment_status', previousStatus);
@@ -400,18 +418,7 @@ const InvoiceForm = ({
               </div>
             )}
 
-            {/* Status Change Prompts */}
-            <StatusChangePrompts
-              showPaymentProofPrompt={showPaymentProofPrompt}
-              showCancelReasonPrompt={showCancelReasonPrompt}
-              tempPaymentProof={tempPaymentProof}
-              tempCancelReason={tempCancelReason}
-              onPaymentProofChange={setTempPaymentProof}
-              onCancelReasonChange={setTempCancelReason}
-              onPaymentProofConfirm={handlePaymentProofConfirm}
-              onCancelReasonConfirm={handleCancelReasonConfirm}
-              onCancel={handlePromptCancel}
-            />
+            {/* Status change modals are rendered outside the main form */}
 
             <ExpenseBasicInfo
               expenseData={invoiceData}
@@ -489,7 +496,22 @@ const InvoiceForm = ({
         </div>
       )}
 
+      {/* Payment Proof Modal */}
+      <PaymentProofModal
+        open={showPaymentProofPrompt}
+        onClose={handlePromptCancel}
+        onConfirm={handlePaymentProofConfirm}
+        initialValue={tempPaymentProof}
+      />
 
+      {/* Cancel Reason Modal */}
+      <CancelReasonModal
+        open={showCancelReasonPrompt}
+        onClose={handlePromptCancel}
+        onConfirm={handleCancelReasonConfirm}
+        initialValue={tempCancelReason}
+        entityType="phiếu thu"
+      />
     </>
   );
 };

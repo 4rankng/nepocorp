@@ -10,7 +10,9 @@ import ExpenseOptionalSections from '../expense/ExpenseOptionalSections';
 import ExpenseItemsTable from '../expense/ExpenseItemsTable';
 import ExpenseActionButtons from '../expense/ExpenseActionButtons';
 import ExpenseItemEditModal from '../expense/ExpenseItemEditModal';
-import StatusChangePrompts from '../shared/modals/StatusChangePrompts';
+import PaymentProofModal from '../shared/modals/PaymentProofModal';
+import CancelReasonModal from '../shared/modals/CancelReasonModal';
+import logger from '@services/logger';
 import { prepareExpenseItemsForUpdate, calculateExpenseTotal } from '@utils/expenseHelpers';
 import { formatCurrency } from '@utils/format';
 import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
@@ -244,6 +246,11 @@ const ExpenseForm = ({
       }
 
       if (value === PAYMENT_STATUS.PAID && oldStatus !== PAYMENT_STATUS.PAID) {
+        logger.info('Status change to PAID initiated', { 
+          oldStatus, 
+          newStatus: value,
+          formType: 'expense' 
+        });
         console.log('🟢 Setting up PAID prompt');
         setPreviousStatus(oldStatus); // Store the current status before changing
         setPendingStatus(value);
@@ -263,6 +270,11 @@ const ExpenseForm = ({
       }
 
       if (value === PAYMENT_STATUS.CANCELLED && oldStatus !== PAYMENT_STATUS.CANCELLED) {
+        logger.info('Status change to CANCELLED initiated', { 
+          oldStatus, 
+          newStatus: value,
+          formType: 'expense' 
+        });
         console.log('🔴 Setting up CANCELLED prompt');
         setPreviousStatus(oldStatus); // Store the current status before changing
         setPendingStatus(value);
@@ -407,17 +419,18 @@ const ExpenseForm = ({
   }, []);
 
   // Handle payment proof confirmation
-  const handlePaymentProofConfirm = useCallback(() => {
+  const handlePaymentProofConfirm = useCallback((paymentProof) => {
+    logger.info('Payment proof confirmed for expense', {
+      paymentProof,
+      newStatus: PAYMENT_STATUS.PAID,
+      formType: 'expense'
+    });
     console.log('✅ Payment proof confirm clicked');
-    if (!tempPaymentProof.trim()) {
-      alert('Vui lòng nhập URL chứng từ thanh toán');
-      return;
-    }
 
     setEditedData(prev => ({
       ...prev,
-      payment_status: pendingStatus,
-      payment_proof: tempPaymentProof,
+      payment_status: PAYMENT_STATUS.PAID,
+      payment_proof: paymentProof,
       cancel_reason: null // Clear cancel reason when marking as paid
     }));
 
@@ -431,19 +444,20 @@ const ExpenseForm = ({
     setPendingStatus(null);
     setTempPaymentProof('');
     setPreviousStatus(null);
-  }, [tempPaymentProof, pendingStatus]);
+  }, []);
 
   // Handle cancel reason confirmation
-  const handleCancelReasonConfirm = useCallback(() => {
-    if (!tempCancelReason.trim()) {
-      alert('Vui lòng nhập lý do hủy');
-      return;
-    }
+  const handleCancelReasonConfirm = useCallback((cancelReason) => {
+    logger.info('Cancel reason confirmed for expense', {
+      cancelReason,
+      newStatus: PAYMENT_STATUS.CANCELLED,
+      formType: 'expense'
+    });
 
     setEditedData(prev => ({
       ...prev,
-      payment_status: pendingStatus,
-      cancel_reason: tempCancelReason,
+      payment_status: PAYMENT_STATUS.CANCELLED,
+      cancel_reason: cancelReason,
       payment_proof: null // Clear payment proof when cancelling
     }));
 
@@ -457,10 +471,14 @@ const ExpenseForm = ({
     setPendingStatus(null);
     setTempCancelReason('');
     setPreviousStatus(null);
-  }, [tempCancelReason, pendingStatus]);
+  }, []);
 
   // Handle prompt cancellation
   const handlePromptCancel = useCallback(() => {
+    logger.info('Status change cancelled', {
+      revertingTo: previousStatus,
+      formType: 'expense'
+    });
     console.log('❌ Prompt cancelled, reverting to:', previousStatus);
     // Revert to previous status if cancelling
     if (previousStatus !== null) {
@@ -703,18 +721,7 @@ const ExpenseForm = ({
               </div>
             )}
 
-            {/* Status Change Prompts */}
-            <StatusChangePrompts
-              showPaymentProofPrompt={showPaymentProofPrompt}
-              showCancelReasonPrompt={showCancelReasonPrompt}
-              tempPaymentProof={tempPaymentProof}
-              tempCancelReason={tempCancelReason}
-              onPaymentProofChange={setTempPaymentProof}
-              onCancelReasonChange={setTempCancelReason}
-              onPaymentProofConfirm={handlePaymentProofConfirm}
-              onCancelReasonConfirm={handleCancelReasonConfirm}
-              onCancel={handlePromptCancel}
-            />
+            {/* Status change modals are rendered outside the main form */}
 
             <ExpenseBasicInfo
               expenseData={expenseData}
@@ -786,6 +793,23 @@ const ExpenseForm = ({
           taxRate={taxRate}
         />
       )}
+
+      {/* Payment Proof Modal */}
+      <PaymentProofModal
+        open={showPaymentProofPrompt}
+        onClose={handlePromptCancel}
+        onConfirm={handlePaymentProofConfirm}
+        initialValue={tempPaymentProof}
+      />
+
+      {/* Cancel Reason Modal */}
+      <CancelReasonModal
+        open={showCancelReasonPrompt}
+        onClose={handlePromptCancel}
+        onConfirm={handleCancelReasonConfirm}
+        initialValue={tempCancelReason}
+        entityType="phiếu chi"
+      />
     </>
   );
 };
