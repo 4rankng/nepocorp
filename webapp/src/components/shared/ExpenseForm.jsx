@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useMemo, useRef } from 'react';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
 import { settingsApi } from '@services/api/settingsApi';
 import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
@@ -42,6 +42,11 @@ const ExpenseForm = ({
     total: 0
   };
 
+  // Refs for stable references (prevent infinite re-renders)
+  const originalDataRef = useRef(null);
+  const modifiedFieldsRef = useRef(new Set());
+  const isInitializedRef = useRef(false);
+  
   const [editedData, setEditedData] = useState(null);
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
@@ -53,6 +58,7 @@ const ExpenseForm = ({
   const [validationErrors, setValidationErrors] = useState({});
   const [showItemEditModal, setShowItemEditModal] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Memoize calculated total to prevent unnecessary recalculations
   const calculatedTotal = useMemo(() => {
@@ -62,9 +68,9 @@ const ExpenseForm = ({
   // Always in editing mode for add form
   const isEditing = true;
 
-  // Initialize editedData based on mode
+  // Initialize editedData based on mode - prevent infinite re-renders
   useEffect(() => {
-    if (open) {
+    if (open && !isInitializedRef.current) {
       const initialData = isEdit && formData ? {
         ...formData,
         items: formData.items && formData.items.length > 0 
@@ -79,15 +85,39 @@ const ExpenseForm = ({
         items: [],
         remark: ''
       };
+      
+      // Store original data snapshot for change tracking
+      originalDataRef.current = JSON.parse(JSON.stringify(initialData));
+      modifiedFieldsRef.current.clear();
       setEditedData(initialData);
+      setHasChanges(false);
+      isInitializedRef.current = true;
     }
-  }, [open, isEdit, formData, expenseCategoryId, taxRate]);
-
-  // Load settings when modal opens
+  }, [open, isEdit]);
+  
+  // Handle formData updates separately (for edit mode)
   useEffect(() => {
-    const loadSettings = async () => {
-      if (!open) return;
+    if (open && isEdit && formData && isInitializedRef.current) {
+      const newData = {
+        ...formData,
+        items: formData.items && formData.items.length > 0 
+          ? formData.items.map(item => ({ ...item }))
+          : []
+      };
+      
+      // Update original data ref and reset tracking
+      originalDataRef.current = JSON.parse(JSON.stringify(newData));
+      modifiedFieldsRef.current.clear();
+      setEditedData(newData);
+      setHasChanges(false);
+    }
+  }, [open, isEdit, formData?.id]); // Use formData.id to detect actual data changes
 
+  // Load settings when modal opens - separate effect to prevent re-renders
+  useEffect(() => {
+    if (!open) return;
+    
+    const loadSettings = async () => {
       try {
         // Load tax rate
         const cachedTaxRate = localStorage.getItem('taxRate');
@@ -104,28 +134,34 @@ const ExpenseForm = ({
             setTaxRate(10);
           }
         }
-
-        // Load expense categories if not fixed
-        if (!expenseCategoryId) {
-          setIsLoadingCategories(true);
-          try {
-            const response = await expenseCategoryApi.getAllWithoutPagination();
-            const categories = response?.data || response || [];
-            setExpenseCategories(Array.isArray(categories) ? categories : []);
-          } catch (error) {
-            console.warn('Failed to load categories:', error);
-            setExpenseCategories([]);
-          } finally {
-            setIsLoadingCategories(false);
-          }
-        }
       } catch (error) {
-        console.error('Failed to load settings:', error);
+        console.error('Failed to load tax rate:', error);
       }
     };
 
     loadSettings();
-  }, [open, expenseCategoryId]);
+  }, [open]);
+  
+  // Load expense categories - separate effect with stable dependency
+  useEffect(() => {
+    if (!open || expenseCategoryId) return;
+    
+    const loadCategories = async () => {
+      setIsLoadingCategories(true);
+      try {
+        const response = await expenseCategoryApi.getAllWithoutPagination();
+        const categories = response?.data || response || [];
+        setExpenseCategories(Array.isArray(categories) ? categories : []);
+      } catch (error) {
+        console.warn('Failed to load categories:', error);
+        setExpenseCategories([]);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, [open, !!expenseCategoryId]); // Use boolean to stabilize dependency
 
   // Get license plates for dropdown - memoized to prevent re-creation
   const getAllLicensePlates = useMemo(() => {
@@ -162,9 +198,15 @@ const ExpenseForm = ({
   }, [open, onClose, showLicensePlateModal, showItemEditModal]);
 
   const handleClose = useCallback(() => {
+    // Reset all refs to prevent stale data
+    originalDataRef.current = null;
+    modifiedFieldsRef.current.clear();
+    isInitializedRef.current = false;
+    
     setEditedData(null);
     setError(null);
     setValidationErrors({});
+    setHasChanges(false);
     onClose();
   }, [onClose]);
 
@@ -174,6 +216,10 @@ const ExpenseForm = ({
       [field]: value
     }));
     
+    // Track field modification using ref (no re-render)
+    modifiedFieldsRef.current.add(field);
+    setHasChanges(true);
+    
     // Clear validation error for this field when user starts typing
     if (validationErrors[field]) {
       setValidationErrors(prev => {
@@ -182,9 +228,6 @@ const ExpenseForm = ({
         return newErrors;
       });
     }
-    
-    // Don't call onChange immediately to prevent re-renders while typing
-    // Parent will get the updated data when saving
   }, [validationErrors]);
 
   const handleItemChange = useCallback((index, field, value) => {
@@ -194,6 +237,11 @@ const ExpenseForm = ({
         i === index ? { ...item, [field]: value } : item
       )
     }));
+    
+    // Track item modification using ref (no re-render)
+    modifiedFieldsRef.current.add('items');
+    modifiedFieldsRef.current.add(`items.${index}.${field}`);
+    setHasChanges(true);
     
     // Clear validation error for this item field when user starts typing
     const errorKey = `items.${index}.${field}`;
@@ -225,6 +273,10 @@ const ExpenseForm = ({
       ...prev,
       items: prev.items.filter((_, i) => i !== index)
     }));
+    
+    // Track items modification
+    modifiedFieldsRef.current.add('items');
+    setHasChanges(true);
   }, []);
 
   const handleLicensePlateCellClick = useCallback((index) => {
@@ -252,6 +304,10 @@ const ExpenseForm = ({
 
         return { ...prev, items: prefilledItems };
       });
+      
+      // Track items modification
+      modifiedFieldsRef.current.add('items');
+      setHasChanges(true);
       
       // Clear validation errors for license plates when user selects
       setValidationErrors(prev => {
@@ -294,9 +350,54 @@ const ExpenseForm = ({
         items: [...prev.items, itemData]
       }));
     }
+    
+    // Track items modification
+    modifiedFieldsRef.current.add('items');
+    setHasChanges(true);
+    
     setShowItemEditModal(false);
     setEditingItemIndex(null);
   }, [editingItemIndex]);
+
+  // Prepare only modified data for API request
+  const prepareModifiedData = useCallback(() => {
+    if (!originalDataRef.current || !editedData) return editedData;
+    
+    const modifiedData = {};
+    const modifiedFields = modifiedFieldsRef.current;
+    
+    // Check each field for modifications
+    Object.keys(editedData).forEach(field => {
+      if (field === 'items') {
+        // Handle items specially - always send if modified
+        if (modifiedFields.has('items')) {
+          const updatedItems = prepareExpenseItemsForUpdate(editedData.items);
+          const totalAmount = calculateExpenseTotal(updatedItems);
+          modifiedData.items = updatedItems;
+          modifiedData.total = totalAmount;
+        }
+      } else if (modifiedFields.has(field)) {
+        // Include other modified fields
+        const currentValue = editedData[field];
+        const originalValue = originalDataRef.current[field];
+        
+        // Only include if actually different from original
+        if (currentValue !== originalValue) {
+          modifiedData[field] = currentValue;
+        }
+      }
+    });
+    
+    // Always include currency if we have items (backend expects it)
+    if (modifiedData.items) {
+      modifiedData.currency = 'VND';
+    }
+    
+    console.log('💰 Modified fields being sent:', Object.keys(modifiedData));
+    console.log('💰 Full modified data:', JSON.stringify(modifiedData, null, 2));
+    
+    return modifiedData;
+  }, [editedData]);
 
   // Placeholder functions for components that need them but aren't used in add mode
   const handleEditClick = useCallback(() => {}, []);
@@ -366,23 +467,24 @@ const ExpenseForm = ({
     
     setIsSaving(true);
     try {
-      const updatedItems = prepareExpenseItemsForUpdate(editedData.items);
-      const totalAmount = calculateExpenseTotal(updatedItems);
-
-      const saveData = {
-        vendor_name: editedData.vendor_name,
-        expense_category_id: editedData.expense_category_id,
-        payment_status: editedData.payment_status,
-        payment_proof: editedData.payment_proof || null,
-        cancel_reason: editedData.cancel_reason || null,
-        remark: editedData.remark,
-        currency: 'VND',
-        items: updatedItems,
-        total: totalAmount
-      };
-
-      // Debug: Log the payload being sent to API
-      console.log('💰 Expense payload being sent to API:', JSON.stringify(saveData, null, 2));
+      // Use selective data preparation - only send modified fields
+      const saveData = prepareModifiedData();
+      
+      // Fallback to full data if no modifications detected (shouldn't happen)
+      if (Object.keys(saveData).length === 0) {
+        console.warn('No modifications detected, sending full data as fallback');
+        const updatedItems = prepareExpenseItemsForUpdate(editedData.items);
+        const totalAmount = calculateExpenseTotal(updatedItems);
+        saveData.vendor_name = editedData.vendor_name;
+        saveData.expense_category_id = editedData.expense_category_id;
+        saveData.payment_status = editedData.payment_status;
+        saveData.payment_proof = editedData.payment_proof || null;
+        saveData.cancel_reason = editedData.cancel_reason || null;
+        saveData.remark = editedData.remark;
+        saveData.currency = 'VND';
+        saveData.items = updatedItems;
+        saveData.total = totalAmount;
+      }
 
       // Update the parent with final data before saving
       onChange({ target: { name: 'formData', value: saveData } });
@@ -414,7 +516,7 @@ const ExpenseForm = ({
     } finally {
       setIsSaving(false);
     }
-  }, [editedData, onChange, onSave, handleClose, validateForm]);
+  }, [editedData, onChange, onSave, handleClose, validateForm, prepareModifiedData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

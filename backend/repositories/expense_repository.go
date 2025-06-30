@@ -34,6 +34,10 @@ func (r *ExpenseRepository) Update(expense *models.Expense) error {
 	return r.db.Save(expense).Error
 }
 
+func (r *ExpenseRepository) UpdateFields(id uint, updates map[string]interface{}) error {
+	return r.db.Model(&models.Expense{}).Where("id = ?", id).Updates(updates).Error
+}
+
 func (r *ExpenseRepository) Delete(id uint) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// Delete items first (though CASCADE should handle this)
