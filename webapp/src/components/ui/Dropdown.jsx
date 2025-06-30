@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { FormCol, FormLabel, ErrorText, HelperText } from './index';
-import Portal from './Portal';
-import { Z_INDEX } from '@constants/zIndex';
+import { Z_INDEX, getChildZIndex } from '@constants/zIndex';
 import { vietnameseSearch } from '@utils/vietnameseSearch';
 import './Dropdown.css';
 
@@ -26,23 +25,12 @@ const Dropdown = ({
   maxHeight = '300px',
   noOptionsText = 'Không có lựa chọn',
   loadingText = 'Đang tải...',
-  usePortal = false,
-  portalContainer = null,
+  zIndex = null,
   ...props
 }) => {
-  console.log('🔧 [Dropdown] Rendered with:', {
-    label,
-    value,
-    optionsCount: options.length,
-    loading,
-    disabled,
-    placeholder,
-    options: options.slice(0, 3) // Show first 3 options for debugging
-  });
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [dropUp, setDropUp] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
 
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -58,18 +46,6 @@ const Dropdown = ({
     });
   }, [options, searchTerm, searchable]);
 
-  // Debug logging for state changes
-  useEffect(() => {
-    console.log('🔧 [Dropdown] isOpen state changed to:', isOpen);
-    if (isOpen) {
-      console.log('🔧 [Dropdown] Opening dropdown with options:', {
-        filteredOptionsCount: filteredOptions.length,
-        loading,
-        usePortal,
-        searchTerm
-      });
-    }
-  }, [isOpen, filteredOptions.length, loading, usePortal, searchTerm]);
 
   // Get display value for the dropdown trigger
   const getDisplayValue = () => {
@@ -129,9 +105,27 @@ const Dropdown = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Calculate position for portal or regular rendering
+  // Calculate z-index for dropdown menu
+  const getDropdownZIndex = () => {
+    // If custom zIndex prop is provided, use it
+    if (zIndex) {
+      return zIndex;
+    }
+    
+    // Use auto-incrementing z-index from parent (works for modals and other contexts)
+    if (dropdownRef.current) {
+      return getChildZIndex(dropdownRef.current, 1);
+    }
+    
+    // Fallback to default dropdown z-index
+    return Z_INDEX.DROPDOWN;
+  };
+
+  // Calculate position for dropdown
   const calculatePosition = () => {
-    if (!dropdownRef.current) return;
+    if (!dropdownRef.current) {
+      return;
+    }
 
     const rect = dropdownRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
@@ -139,18 +133,11 @@ const Dropdown = ({
     const spaceAbove = rect.top;
     const menuHeight = parseInt(maxHeight, 10) || 300;
 
+
     // Determine if should drop up
     const shouldDropUp = spaceBelow < menuHeight && spaceAbove > spaceBelow;
     setDropUp(shouldDropUp);
 
-    // Calculate position for portal rendering
-    if (usePortal) {
-      setMenuPosition({
-        top: shouldDropUp ? Math.max(rect.top - menuHeight, 10) : rect.bottom + 4,
-        left: Math.max(rect.left, 10),
-        width: rect.width
-      });
-    }
   };
 
   // Focus search input when dropdown opens and calculate position
@@ -173,7 +160,7 @@ const Dropdown = ({
         window.removeEventListener('resize', handlePositionUpdate);
       };
     }
-  }, [isOpen, searchable, maxHeight, usePortal]);
+  }, [isOpen, searchable, maxHeight]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
@@ -231,8 +218,6 @@ const Dropdown = ({
     maxHeight: _maxHeight,
     noOptionsText: _noOptionsText,
     loadingText: _loadingText,
-    usePortal: _usePortal,
-    portalContainer: _portalContainer,
     ...domProps
   } = props;
 
@@ -248,10 +233,8 @@ const Dropdown = ({
           type="button"
           className="dropdown__trigger"
           onClick={() => {
-            console.log('🔧 [Dropdown] Button clicked!', { disabled, isOpen, willToggleTo: !isOpen });
             if (!disabled) {
               setIsOpen(!isOpen);
-              console.log('🔧 [Dropdown] Setting isOpen to:', !isOpen);
             }
           }}
           onKeyDown={handleKeyDown}
@@ -288,24 +271,14 @@ const Dropdown = ({
         </button>
 
         {isOpen && (
-          <Portal enabled={usePortal} container={portalContainer}>
-            <div 
-              ref={menuRef}
-              className={`dropdown__menu ${dropUp ? 'dropdown__menu--dropup' : ''} ${usePortal ? 'dropdown__menu--portal' : ''}`}
-              style={{
-                maxHeight,
-                ...(usePortal ? {
-                  position: 'fixed',
-                  top: menuPosition.top,
-                  left: menuPosition.left,
-                  width: menuPosition.width,
-                  zIndex: getDropdownZIndex(),
-                  minWidth: '200px' // Ensure minimum width for visibility
-                } : {
-                  zIndex: getDropdownZIndex()
-                })
-              }}
-            >
+          <div 
+            ref={menuRef}
+            className={`dropdown__menu ${dropUp ? 'dropdown__menu--dropup' : ''}`}
+            style={{
+              zIndex: getDropdownZIndex(),
+              maxHeight
+            }}
+          >
             {searchable && (
               <div className="dropdown__search">
                 <input
@@ -356,8 +329,7 @@ const Dropdown = ({
                 })
               )}
             </div>
-            </div>
-          </Portal>
+          </div>
         )}
       </div>
 
@@ -387,8 +359,6 @@ Dropdown.propTypes = {
   maxHeight: PropTypes.string,
   noOptionsText: PropTypes.string,
   loadingText: PropTypes.string,
-  usePortal: PropTypes.bool,
-  portalContainer: PropTypes.instanceOf(Element),
   zIndex: PropTypes.number
 };
 

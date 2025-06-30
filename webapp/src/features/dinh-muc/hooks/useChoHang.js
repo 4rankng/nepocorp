@@ -1,7 +1,6 @@
 // webapp/src/features/dinh-muc/hooks/useChoHang.js
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useVehicleData } from '@contexts/VehicleDataContext';
-import logger from '@services/logger';
 // Mock API object returning empty data until backend is integrated
 const dinhMucDauApi = {
   getCount: async () => 0,

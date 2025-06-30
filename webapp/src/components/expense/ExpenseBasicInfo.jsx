@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Dropdown from '@components/ui/Dropdown';
-import { shouldUsePortal, Z_INDEX } from '@constants/zIndex';
+import { Z_INDEX } from '@constants/zIndex';
 import { getExpenseCategoryLabel } from '@constants/expenseCategories';
 import { getInvoiceCategoryLabel } from '@constants/invoiceCategories';
 
@@ -18,15 +18,6 @@ const ExpenseBasicInfo = ({
   isLoadingCustomers = false,
   errors = {}
 }) => {
-  console.log('💼 [ExpenseBasicInfo] Rendering with expense categories:', {
-    isEditing,
-    categoriesCount: expenseCategories?.length || 0,
-    isLoadingCategories,
-    categoryNames: expenseCategories?.map(c => c.name) || [],
-    editedData: editedData ? {
-      expense_category_id: editedData.expense_category_id
-    } : null
-  });
 
   return (
     <div className="mb-4">
@@ -78,14 +69,19 @@ const ExpenseBasicInfo = ({
                   className={`text-sm ${
                     errors.customer_id ? 'border-red-500' : ''
                   }`}
-                  usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
-                />
+                  />
                 {errors.customer_id && (
                   <div className="text-red-500 text-xs mt-1">{errors.customer_id}</div>
                 )}
               </>
             ) : (
               <>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Nhà cung cấp
+                  {!editedData.vendor_name && (
+                    <span className="text-red-500 ml-1">*</span>
+                  )}
+                </label>
                 <input
                   type="text"
                   value={editedData.vendor_name || ''}
@@ -103,9 +99,14 @@ const ExpenseBasicInfo = ({
               </>
             )
           ) : (
-            <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
-              {isInvoiceMode ? (expenseData.customer?.name || '-') : (expenseData.vendor_name || '-')}
-            </div>
+            <>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                {isInvoiceMode ? 'Khách hàng' : 'Nhà cung cấp'}
+              </label>
+              <div className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50">
+                {isInvoiceMode ? (expenseData.customer?.name || '-') : (expenseData.vendor_name || '-')}
+              </div>
+            </>
           )}
         </div>
 
@@ -122,7 +123,6 @@ const ExpenseBasicInfo = ({
                     value: cat.id,
                     label: isInvoiceMode ? getInvoiceCategoryLabel(cat.name) : getExpenseCategoryLabel(cat.name)
                   }));
-                  console.log('💼 [ExpenseBasicInfo] Dropdown options created:', dropdownOptions);
                   return dropdownOptions;
                 })()}
                 placeholder={isInvoiceMode ? "Chọn loại phiếu thu" : "Chọn loại chi phí"}
@@ -130,7 +130,6 @@ const ExpenseBasicInfo = ({
                 className={`text-sm ${
                   (isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) ? 'border-red-500' : ''
                 }`}
-                usePortal={isInModal && shouldUsePortal(Z_INDEX.DROPDOWN)}
                 error={(isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) || null}
               />
             </>

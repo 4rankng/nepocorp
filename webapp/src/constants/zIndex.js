@@ -171,6 +171,66 @@ export const calculateZIndex = (baseLayer, element) => {
 };
 
 /**
+ * Detect parent z-index from DOM element
+ * @param {Element} element - DOM element to check
+ * @returns {number} - Parent z-index value or 0 if not found
+ */
+export const detectParentZIndex = (element) => {
+  if (!element) return 0;
+  
+  // First, check for CSS custom property --parent-z-index
+  const parentVar = getComputedStyle(element).getPropertyValue('--parent-z-index');
+  if (parentVar && parentVar.trim()) {
+    const parsed = parseInt(parentVar.trim());
+    if (!isNaN(parsed)) return parsed;
+  }
+  
+  // Fallback: traverse DOM to find parent with z-index
+  let parent = element.parentElement;
+  while (parent && parent !== document.body) {
+    const computedStyle = getComputedStyle(parent);
+    const zIndex = parseInt(computedStyle.zIndex);
+    
+    // Only consider positive z-index values
+    if (!isNaN(zIndex) && zIndex > 0) {
+      return zIndex;
+    }
+    
+    parent = parent.parentElement;
+  }
+  
+  return 0;
+};
+
+/**
+ * Get child z-index by auto-incrementing from parent
+ * @param {Element} element - DOM element to check parent context
+ * @param {number} offset - Offset to add to parent z-index (default: 1)
+ * @returns {number} - Child z-index value
+ */
+export const getChildZIndex = (element, offset = 1) => {
+  const parentZIndex = detectParentZIndex(element);
+  
+  // If no parent z-index found, return a reasonable default
+  if (parentZIndex === 0) {
+    return Z_INDEX.DROPDOWN; // Fallback to default dropdown z-index
+  }
+  
+  return parentZIndex + offset;
+};
+
+/**
+ * Set parent z-index as CSS custom property on element
+ * @param {Element} element - DOM element to set property on
+ * @param {number} zIndex - Z-index value to set
+ */
+export const setParentZIndex = (element, zIndex) => {
+  if (element && element.style) {
+    element.style.setProperty('--parent-z-index', zIndex.toString());
+  }
+};
+
+/**
  * Inject z-index CSS custom properties into document root
  * Call this function once during app initialization
  */
@@ -205,3 +265,26 @@ if (typeof document !== 'undefined') {
     injectZIndexCSSVars();
   }
 }
+
+/**
+ * Enhanced debug helper with parent z-index detection
+ */
+export const debugZIndexForElement = (element, label = 'Element') => {
+  if (!element) {
+    console.warn(`[Z-Index Debug] ${label}: Element is null/undefined`);
+    return;
+  }
+  
+  const computedStyle = getComputedStyle(element);
+  const elementZIndex = parseInt(computedStyle.zIndex);
+  const parentZIndex = detectParentZIndex(element);
+  const parentVar = computedStyle.getPropertyValue('--parent-z-index');
+  
+  console.group(`🔍 Z-Index Debug: ${label}`);
+  console.log('Element z-index:', isNaN(elementZIndex) ? 'auto' : elementZIndex);
+  console.log('Parent z-index (detected):', parentZIndex);
+  console.log('--parent-z-index CSS var:', parentVar || 'not set');
+  console.log('Suggested child z-index:', getChildZIndex(element));
+  console.log('Element:', element);
+  console.groupEnd();
+};

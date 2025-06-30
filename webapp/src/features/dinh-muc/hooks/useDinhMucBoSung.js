@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { dinhMucBoSungApi } from '@services/api/dinhMucBoSungApi';
 import { useVehicleData } from '@contexts/VehicleDataContext';
-import logger from '@services/logger';
 
 export const useDinhMucBoSung = () => {
   const { tractors, fetchTractors, loading } = useVehicleData();

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Z_INDEX } from '@constants/zIndex';
+import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 
 /**
  * BaseModal - Universal modal foundation component
@@ -82,10 +82,13 @@ const BaseModal = ({
     }
   }, [onClose, disableBackdropClick]);
 
-  // Focus management
+  // Focus management and z-index inheritance setup
   useEffect(() => {
     if (open && modalRef.current) {
       const previousActiveElement = document.activeElement;
+      
+      // Set up z-index inheritance for child components
+      setParentZIndex(modalRef.current, zIndex);
       
       // Focus the modal
       modalRef.current.focus();
@@ -97,7 +100,7 @@ const BaseModal = ({
         }
       };
     }
-  }, [open]);
+  }, [open, zIndex]);
 
   // Body scroll lock
   useEffect(() => {

@@ -12,7 +12,7 @@ import ExpenseItemsTable from './expense/ExpenseItemsTable';
 import ExpenseActionButtons from './expense/ExpenseActionButtons';
 import ExpenseItemEditModal from './expense/ExpenseItemEditModal';
 import { prepareExpenseItemsForUpdate, calculateExpenseTotal } from '@utils/expenseHelpers';
-import { Z_INDEX } from '@constants/zIndex';
+import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 
 const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
@@ -373,7 +373,18 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
-      <div className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col" style={{zIndex: Z_INDEX.MODAL}}>
+      <div 
+        className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col" 
+        style={{
+          zIndex: Z_INDEX.MODAL,
+          '--parent-z-index': Z_INDEX.MODAL
+        }}
+        ref={(el) => {
+          if (el) {
+            setParentZIndex(el, Z_INDEX.MODAL);
+          }
+        }}
+      >
         <ExpenseHeader
           expenseData={expenseData}
           loading={loading}
