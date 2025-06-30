@@ -39,45 +39,44 @@ const Dropdown = ({
   // Filter options based on search term with Vietnamese support
   const filteredOptions = useMemo(() => {
     if (!searchable || !searchTerm.trim()) return options;
-    
+
     return options.filter(option => {
       const label = option.label || option.displayText || option.text || option.name || '';
       return vietnameseSearch(label, searchTerm);
     });
   }, [options, searchTerm, searchable]);
 
-
   // Get display value for the dropdown trigger
   const getDisplayValue = () => {
     if (loading) return loadingText;
-    
+
     if (multiple) {
       if (!value || (Array.isArray(value) && value.length === 0)) {
         return placeholder;
       }
-      const selectedOptions = options.filter(opt => 
+      const selectedOptions = options.filter(opt =>
         Array.isArray(value) ? value.includes(opt.value) : false
       );
-      return selectedOptions.length === 1 
+      return selectedOptions.length === 1
         ? selectedOptions[0].label || selectedOptions[0].displayText || selectedOptions[0].text
         : `${selectedOptions.length} mục đã chọn`;
     } else {
       if (!value) return placeholder;
       const selectedOption = options.find(opt => opt.value === value);
-      return selectedOption 
-        ? (selectedOption.label || selectedOption.displayText || selectedOption.text)
+      return selectedOption
+        ? selectedOption.label || selectedOption.displayText || selectedOption.text
         : placeholder;
     }
   };
 
   // Handle option selection
-  const handleOptionSelect = (optionValue) => {
+  const handleOptionSelect = optionValue => {
     if (multiple) {
       const currentValues = Array.isArray(value) ? value : [];
       const newValues = currentValues.includes(optionValue)
         ? currentValues.filter(v => v !== optionValue)
         : [...currentValues, optionValue];
-      
+
       onChange?.(name ? { target: { name, value: newValues } } : newValues);
     } else {
       onChange?.(name ? { target: { name, value: optionValue } } : optionValue);
@@ -86,7 +85,7 @@ const Dropdown = ({
   };
 
   // Handle clear all selections
-  const handleClear = (e) => {
+  const handleClear = e => {
     e.stopPropagation();
     const newValue = multiple ? [] : '';
     onChange?.(name ? { target: { name, value: newValue } } : newValue);
@@ -94,7 +93,7 @@ const Dropdown = ({
 
   // Handle click outside to close dropdown
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
         setSearchTerm('');
@@ -111,12 +110,12 @@ const Dropdown = ({
     if (zIndex) {
       return zIndex;
     }
-    
+
     // Use auto-incrementing z-index from parent (works for modals and other contexts)
     if (dropdownRef.current) {
       return getChildZIndex(dropdownRef.current, 1);
     }
-    
+
     // Fallback to default dropdown z-index
     return Z_INDEX.DROPDOWN;
   };
@@ -133,11 +132,9 @@ const Dropdown = ({
     const spaceAbove = rect.top;
     const menuHeight = parseInt(maxHeight, 10) || 300;
 
-
     // Determine if should drop up
     const shouldDropUp = spaceBelow < menuHeight && spaceAbove > spaceBelow;
     setDropUp(shouldDropUp);
-
   };
 
   // Focus search input when dropdown opens and calculate position
@@ -147,7 +144,7 @@ const Dropdown = ({
       if (searchable && searchInputRef.current) {
         setTimeout(() => searchInputRef.current?.focus(), 100);
       }
-      
+
       calculatePosition();
 
       // Recalculate position on scroll or resize
@@ -163,7 +160,7 @@ const Dropdown = ({
   }, [isOpen, searchable, maxHeight]);
 
   // Handle keyboard navigation
-  const handleKeyDown = (e) => {
+  const handleKeyDown = e => {
     if (disabled) return;
 
     switch (e.key) {
@@ -192,10 +189,10 @@ const Dropdown = ({
     }
   };
 
-  const shouldShowClear = clearable && !disabled && (
-    (multiple && Array.isArray(value) && value.length > 0) ||
-    (!multiple && value)
-  );
+  const shouldShowClear =
+    clearable &&
+    !disabled &&
+    ((multiple && Array.isArray(value) && value.length > 0) || (!multiple && value));
 
   // Filter out non-DOM props before spreading to button element
   const {
@@ -224,8 +221,8 @@ const Dropdown = ({
   return (
     <FormCol className={className}>
       {label && <FormLabel required={required}>{label}</FormLabel>}
-      
-      <div 
+
+      <div
         ref={dropdownRef}
         className={`dropdown ${disabled ? 'dropdown--disabled' : ''} ${error ? 'dropdown--error' : ''}`}
       >
@@ -233,19 +230,21 @@ const Dropdown = ({
           type="button"
           className="dropdown__trigger"
           style={{
-            ...(value && !multiple && (() => {
-              const selectedOption = options.find(opt => opt.value === value);
-              if (selectedOption?.color) {
-                return { 
-                  border: `1px solid ${selectedOption.color}`,
-                  borderRadius: '4px',
-                  borderColor: selectedOption.color
-                };
-              }
-              return {};
-            })())
+            ...(value &&
+              !multiple &&
+              (() => {
+                const selectedOption = options.find(opt => opt.value === value);
+                if (selectedOption?.color) {
+                  return {
+                    border: `1px solid ${selectedOption.color}`,
+                    borderRadius: '4px',
+                    borderColor: selectedOption.color,
+                  };
+                }
+                return {};
+              })()),
           }}
-          onMouseEnter={(e) => {
+          onMouseEnter={e => {
             if (!disabled && value && !multiple) {
               const selectedOption = options.find(opt => opt.value === value);
               if (selectedOption?.color) {
@@ -253,7 +252,7 @@ const Dropdown = ({
               }
             }
           }}
-          onMouseLeave={(e) => {
+          onMouseLeave={e => {
             if (!disabled && value && !multiple) {
               const selectedOption = options.find(opt => opt.value === value);
               if (selectedOption?.color) {
@@ -266,7 +265,7 @@ const Dropdown = ({
               setIsOpen(!isOpen);
             }
           }}
-          onFocus={(e) => {
+          onFocus={e => {
             if (!disabled && value && !multiple) {
               const selectedOption = options.find(opt => opt.value === value);
               if (selectedOption?.color) {
@@ -275,7 +274,7 @@ const Dropdown = ({
               }
             }
           }}
-          onBlur={(e) => {
+          onBlur={e => {
             if (!disabled && value && !multiple) {
               const selectedOption = options.find(opt => opt.value === value);
               if (selectedOption?.color) {
@@ -290,9 +289,7 @@ const Dropdown = ({
           aria-haspopup="listbox"
           {...domProps}
         >
-          <span className="dropdown__value">
-            {getDisplayValue()}
-          </span>
+          <span className="dropdown__value">{getDisplayValue()}</span>
           <div className="dropdown__icons">
             {shouldShowClear && (
               <span
@@ -301,7 +298,7 @@ const Dropdown = ({
                 aria-label="Xóa lựa chọn"
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => {
+                onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleClear(e);
@@ -311,19 +308,17 @@ const Dropdown = ({
                 ×
               </span>
             )}
-            <span className={`dropdown__arrow ${isOpen ? 'dropdown__arrow--open' : ''}`}>
-              ▼
-            </span>
+            <span className={`dropdown__arrow ${isOpen ? 'dropdown__arrow--open' : ''}`}>▼</span>
           </div>
         </button>
 
         {isOpen && (
-          <div 
+          <div
             ref={menuRef}
             className={`dropdown__menu ${dropUp ? 'dropdown__menu--dropup' : ''}`}
             style={{
               zIndex: getDropdownZIndex(),
-              maxHeight
+              maxHeight,
             }}
           >
             {searchable && (
@@ -334,24 +329,22 @@ const Dropdown = ({
                   className="dropdown__search-input"
                   placeholder={searchPlaceholder}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  onClick={e => e.stopPropagation()}
                 />
               </div>
             )}
 
             <div className="dropdown__options">
               {loading ? (
-                <div className="dropdown__option dropdown__option--disabled">
-                  {loadingText}
-                </div>
+                <div className="dropdown__option dropdown__option--disabled">{loadingText}</div>
               ) : filteredOptions.length === 0 ? (
                 <div className="dropdown__option dropdown__option--disabled">
                   {searchTerm ? `Không tìm thấy "${searchTerm}"` : noOptionsText}
                 </div>
               ) : (
-                filteredOptions.map((option) => {
-                  const isSelected = multiple 
+                filteredOptions.map(option => {
+                  const isSelected = multiple
                     ? Array.isArray(value) && value.includes(option.value)
                     : value === option.value;
 
@@ -359,18 +352,24 @@ const Dropdown = ({
                     <div
                       key={option.value}
                       className={`dropdown__option ${isSelected ? 'dropdown__option--selected' : ''}`}
-                      style={option.color ? { 
-                        border: `1px solid ${option.color}`,
-                        borderRadius: '4px',
-                        margin: '2px 4px',
-                        padding: '6px 8px'
-                      } : {}}
+                      style={
+                        option.color
+                          ? {
+                              border: `1px solid ${option.color}`,
+                              borderRadius: '4px',
+                              margin: '2px 4px',
+                              padding: '6px 8px',
+                            }
+                          : {}
+                      }
                       onClick={() => handleOptionSelect(option.value)}
                       role="option"
                       aria-selected={isSelected}
                     >
                       {multiple && (
-                        <span className={`dropdown__checkbox ${isSelected ? 'dropdown__checkbox--checked' : ''}`}>
+                        <span
+                          className={`dropdown__checkbox ${isSelected ? 'dropdown__checkbox--checked' : ''}`}
+                        >
                           {isSelected && '✓'}
                         </span>
                       )}
@@ -412,7 +411,7 @@ Dropdown.propTypes = {
   maxHeight: PropTypes.string,
   noOptionsText: PropTypes.string,
   loadingText: PropTypes.string,
-  zIndex: PropTypes.number
+  zIndex: PropTypes.number,
 };
 
 export default Dropdown;

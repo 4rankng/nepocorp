@@ -8,24 +8,27 @@ import {
   PeopleAlt as PeopleAltIcon,
   Receipt as ReceiptIcon,
   Warning as WarningIcon,
-  MonetizationOn as MonetizationOnIcon
+  MonetizationOn as MonetizationOnIcon,
 } from '@mui/icons-material';
 import { calculateStatsOverview, calculateGrowthRate } from '@/features/bang-cong-no/utils';
 
-const StatsGrid = ({ 
+const StatsGrid = ({
   transactions = [],
   previousTransactions = [],
   loading = false,
-  title = "Tổng quan tài chính",
+  title = 'Tổng quan tài chính',
   showTitle = true,
   variant = 'default', // 'default', 'compact'
-  sx = {}
+  sx = {},
 }) => {
   const stats = calculateStatsOverview(transactions);
   const previousStats = calculateStatsOverview(previousTransactions);
 
   // Calculate growth rates
-  const receivableGrowth = calculateGrowthRate(stats.totalReceivable, previousStats.totalReceivable);
+  const receivableGrowth = calculateGrowthRate(
+    stats.totalReceivable,
+    previousStats.totalReceivable
+  );
   const payableGrowth = calculateGrowthRate(stats.totalPayable, previousStats.totalPayable);
   const balanceGrowth = calculateGrowthRate(stats.netBalance, previousStats.netBalance);
 
@@ -40,7 +43,7 @@ const StatsGrid = ({
           color: '#e53e3e',
           icon: TrendingUpIcon,
           subtitle: '48 khách hàng có nợ',
-          variant: 'danger'
+          variant: 'danger',
         },
         {
           title: 'Phải thu quá hạn',
@@ -49,7 +52,7 @@ const StatsGrid = ({
           color: '#3182ce',
           icon: WarningIcon,
           subtitle: '67% tổng nợ',
-          variant: 'default'
+          variant: 'default',
         },
         {
           title: 'Thu trong tháng',
@@ -58,7 +61,7 @@ const StatsGrid = ({
           color: '#48bb78',
           icon: TrendingUpIcon,
           subtitle: '↑ 12% so với tháng trước',
-          variant: 'success'
+          variant: 'success',
         },
         {
           title: 'Khách hàng',
@@ -67,8 +70,8 @@ const StatsGrid = ({
           color: '#3182ce',
           icon: PeopleAltIcon,
           subtitle: '4 khách hàng mới',
-          variant: 'default'
-        }
+          variant: 'default',
+        },
       ];
     }
 
@@ -81,7 +84,7 @@ const StatsGrid = ({
         icon: TrendingUpIcon,
         trend: receivableGrowth,
         trendLabel: 'so với kỳ trước',
-        variant: stats.totalReceivable > stats.totalPayable ? 'highlighted' : 'default'
+        variant: stats.totalReceivable > stats.totalPayable ? 'highlighted' : 'default',
       },
       {
         title: 'Tổng phải trả',
@@ -90,7 +93,7 @@ const StatsGrid = ({
         color: '#2e7d32',
         icon: TrendingDownIcon,
         trend: payableGrowth,
-        trendLabel: 'so với kỳ trước'
+        trendLabel: 'so với kỳ trước',
       },
       {
         title: 'Số dư ròng',
@@ -100,8 +103,8 @@ const StatsGrid = ({
         icon: AccountBalanceIcon,
         trend: balanceGrowth,
         trendLabel: stats.netBalance >= 0 ? 'Dương tính' : 'Âm tính',
-        variant: Math.abs(stats.netBalance) > 100000000 ? 'danger' : 'default' // 100M VND threshold
-      }
+        variant: Math.abs(stats.netBalance) > 100000000 ? 'danger' : 'default', // 100M VND threshold
+      },
     ];
 
     if (variant === 'compact') {
@@ -118,7 +121,7 @@ const StatsGrid = ({
         color: '#ff9800',
         icon: WarningIcon,
         subtitle: `${stats.overdueCount} giao dịch`,
-        variant: stats.overdueCount > 10 ? 'danger' : 'default'
+        variant: stats.overdueCount > 10 ? 'danger' : 'default',
       },
       {
         title: 'Giao dịch gần đây',
@@ -126,7 +129,7 @@ const StatsGrid = ({
         type: 'number',
         color: '#9c27b0',
         icon: ReceiptIcon,
-        subtitle: 'Trong tháng qua'
+        subtitle: 'Trong tháng qua',
       },
       {
         title: 'Tổng giao dịch',
@@ -134,8 +137,8 @@ const StatsGrid = ({
         type: 'number',
         color: '#1976d2',
         icon: MonetizationOnIcon,
-        subtitle: 'Tất cả giao dịch'
-      }
+        subtitle: 'Tất cả giao dịch',
+      },
     ];
   };
 
@@ -145,24 +148,32 @@ const StatsGrid = ({
     return (
       <Box sx={{ ...sx }}>
         {showTitle && (
-          <Typography variant="h6" gutterBottom sx={{ 
-            fontWeight: 600,
-            mb: 3,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'
-          }}>
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{
+              fontWeight: 600,
+              mb: 3,
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
+            }}
+          >
             {title}
           </Typography>
         )}
         <Grid container spacing={3}>
-          {Array.from({ length: variant === 'html-demo' ? 4 : variant === 'compact' ? 3 : 6 }).map((_, index) => (
-            <Grid item xs={12} sm={6} md={variant === 'html-demo' ? 3 : variant === 'compact' ? 4 : 2} key={index}>
-              <Skeleton 
-                variant="rectangular" 
-                height={140} 
-                sx={{ borderRadius: 2 }}
-              />
-            </Grid>
-          ))}
+          {Array.from({ length: variant === 'html-demo' ? 4 : variant === 'compact' ? 3 : 6 }).map(
+            (_, index) => (
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={variant === 'html-demo' ? 3 : variant === 'compact' ? 4 : 2}
+                key={index}
+              >
+                <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
+              </Grid>
+            )
+          )}
         </Grid>
       </Box>
     );
@@ -171,23 +182,35 @@ const StatsGrid = ({
   return (
     <Box sx={{ ...sx }}>
       {showTitle && (
-        <Typography variant="h6" gutterBottom sx={{ 
-          fontWeight: 600,
-          mb: 3,
-          color: 'text.primary',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'
-        }}>
+        <Typography
+          variant="h6"
+          gutterBottom
+          sx={{
+            fontWeight: 600,
+            mb: 3,
+            color: 'text.primary',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
+          }}
+        >
           {title}
         </Typography>
       )}
-      
+
       <Grid container spacing={3}>
         {statsConfig.map((stat, index) => (
-          <Grid 
-            item 
-            xs={12} 
-            sm={6} 
-            md={variant === 'html-demo' ? 3 : variant === 'compact' ? 4 : statsConfig.length === 6 ? 2 : 4} 
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={
+              variant === 'html-demo'
+                ? 3
+                : variant === 'compact'
+                  ? 4
+                  : statsConfig.length === 6
+                    ? 2
+                    : 4
+            }
             key={index}
           >
             <StatCard

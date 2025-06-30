@@ -17,13 +17,9 @@ import {
   Alert,
   Divider,
   IconButton,
-  LinearProgress
+  LinearProgress,
 } from '@mui/material';
-import {
-  Close as CloseIcon,
-  Save as SaveIcon,
-  Receipt as ReceiptIcon
-} from '@mui/icons-material';
+import { Close as CloseIcon, Save as SaveIcon, Receipt as ReceiptIcon } from '@mui/icons-material';
 import Dropdown from '@/components/ui/Dropdown';
 import CurrencyDisplay from '@/components/ui/CurrencyDisplay';
 import {
@@ -33,12 +29,12 @@ import {
   validateReferenceNumber,
   validateNotes,
   sanitizeAmount,
-  formatFormAmount
+  formatFormAmount,
 } from '@/features/bang-cong-no/utils';
 import {
   TRANSACTION_TYPE_OPTIONS,
   FORM_MODES,
-  createEmptyTransaction
+  createEmptyTransaction,
 } from '@/features/bang-cong-no/types';
 
 const TransactionModal = ({
@@ -49,7 +45,7 @@ const TransactionModal = ({
   mode = FORM_MODES.CREATE,
   customers = [],
   partners = [],
-  loading = false
+  loading = false,
 }) => {
   const [formData, setFormData] = useState(createEmptyTransaction());
   const [errors, setErrors] = useState({});
@@ -69,7 +65,8 @@ const TransactionModal = ({
 
         setFormData({
           ...transaction,
-          transaction_date: transaction.transaction_date?.split('T')[0] || new Date().toISOString().split('T')[0]
+          transaction_date:
+            transaction.transaction_date?.split('T')[0] || new Date().toISOString().split('T')[0],
         });
 
         setAmountType(debit > 0 ? 'debit' : 'credit');
@@ -87,26 +84,26 @@ const TransactionModal = ({
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear field error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
   };
 
-  const handleAmountChange = (value) => {
+  const handleAmountChange = value => {
     setAmountValue(value);
 
     // Clear amount error when user starts typing
     if (errors.amount) {
       setErrors(prev => ({
         ...prev,
-        amount: undefined
+        amount: undefined,
       }));
     }
   };
@@ -117,13 +114,13 @@ const TransactionModal = ({
       setFormData(prev => ({
         ...prev,
         customer_id: value,
-        partner_id: null
+        partner_id: null,
       }));
     } else {
       setFormData(prev => ({
         ...prev,
         partner_id: value,
-        customer_id: null
+        customer_id: null,
       }));
     }
 
@@ -131,7 +128,7 @@ const TransactionModal = ({
     if (errors.entity) {
       setErrors(prev => ({
         ...prev,
-        entity: undefined
+        entity: undefined,
       }));
     }
   };
@@ -143,7 +140,7 @@ const TransactionModal = ({
     const transactionData = {
       ...formData,
       debit: amountType === 'debit' ? sanitizedAmount : 0,
-      credit: amountType === 'credit' ? sanitizedAmount : 0
+      credit: amountType === 'credit' ? sanitizedAmount : 0,
     };
 
     const validation = validateTransaction(transactionData);
@@ -191,7 +188,7 @@ const TransactionModal = ({
     const transactionData = {
       ...formData,
       debit: amountType === 'debit' ? sanitizedAmount : 0,
-      credit: amountType === 'credit' ? sanitizedAmount : 0
+      credit: amountType === 'credit' ? sanitizedAmount : 0,
     };
 
     try {
@@ -218,13 +215,13 @@ const TransactionModal = ({
   const customerOptions = customers.map(customer => ({
     value: customer.id,
     label: customer.name,
-    displayText: customer.name
+    displayText: customer.name,
   }));
 
   const partnerOptions = partners.map(partner => ({
     value: partner.id,
     label: partner.name,
-    displayText: partner.name
+    displayText: partner.name,
   }));
 
   return (
@@ -234,17 +231,19 @@ const TransactionModal = ({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 2 }
+        sx: { borderRadius: 2 },
       }}
     >
       {loading && <LinearProgress />}
 
-      <DialogTitle sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        pb: 1
-      }}>
+      <DialogTitle
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          pb: 1,
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ReceiptIcon color="primary" />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -275,9 +274,9 @@ const TransactionModal = ({
               <RadioGroup
                 row
                 value={formData.transaction_type}
-                onChange={(e) => handleInputChange('transaction_type', e.target.value)}
+                onChange={e => handleInputChange('transaction_type', e.target.value)}
               >
-                {TRANSACTION_TYPE_OPTIONS.map((option) => (
+                {TRANSACTION_TYPE_OPTIONS.map(option => (
                   <FormControlLabel
                     key={option.value}
                     value={option.value}
@@ -304,7 +303,7 @@ const TransactionModal = ({
             <Dropdown
               label="Khách hàng"
               value={formData.customer_id || ''}
-              onChange={(value) => handleEntityChange('customer_id', value || null)}
+              onChange={value => handleEntityChange('customer_id', value || null)}
               options={customerOptions}
               placeholder="Chọn khách hàng"
               clearable
@@ -318,7 +317,7 @@ const TransactionModal = ({
             <Dropdown
               label="Đối tác"
               value={formData.partner_id || ''}
-              onChange={(value) => handleEntityChange('partner_id', value || null)}
+              onChange={value => handleEntityChange('partner_id', value || null)}
               options={partnerOptions}
               placeholder="Chọn đối tác"
               clearable
@@ -334,7 +333,7 @@ const TransactionModal = ({
               label="Ngày giao dịch"
               type="date"
               value={formData.transaction_date}
-              onChange={(e) => handleInputChange('transaction_date', e.target.value)}
+              onChange={e => handleInputChange('transaction_date', e.target.value)}
               fullWidth
               required
               disabled={isViewing}
@@ -352,11 +351,7 @@ const TransactionModal = ({
               <FormLabel component="legend" sx={{ mb: 1, fontWeight: 500 }}>
                 Loại số tiền *
               </FormLabel>
-              <RadioGroup
-                row
-                value={amountType}
-                onChange={(e) => setAmountType(e.target.value)}
-              >
+              <RadioGroup row value={amountType} onChange={e => setAmountType(e.target.value)}>
                 <FormControlLabel
                   value="debit"
                   control={<Radio size="small" />}
@@ -382,14 +377,14 @@ const TransactionModal = ({
               label="Số tiền"
               type="number"
               value={amountValue}
-              onChange={(e) => handleAmountChange(e.target.value)}
+              onChange={e => handleAmountChange(e.target.value)}
               fullWidth
               required
               disabled={isViewing}
               error={!!errors.amount}
               helperText={errors.amount}
               InputProps={{
-                inputProps: { min: 0, step: 0.01 }
+                inputProps: { min: 0, step: 0.01 },
               }}
             />
 
@@ -409,7 +404,7 @@ const TransactionModal = ({
             <TextField
               label="Số tham chiếu / Diễn giải"
               value={formData.reference_number}
-              onChange={(e) => handleInputChange('reference_number', e.target.value)}
+              onChange={e => handleInputChange('reference_number', e.target.value)}
               fullWidth
               disabled={isViewing}
               error={!!errors.reference_number}
@@ -423,7 +418,7 @@ const TransactionModal = ({
             <TextField
               label="Ghi chú"
               value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
+              onChange={e => handleInputChange('notes', e.target.value)}
               fullWidth
               multiline
               rows={3}
@@ -439,11 +434,7 @@ const TransactionModal = ({
       <Divider />
 
       <DialogActions sx={{ p: 3, gap: 1 }}>
-        <Button
-          onClick={onClose}
-          color="inherit"
-          disabled={loading}
-        >
+        <Button onClick={onClose} color="inherit" disabled={loading}>
           {isViewing ? 'Đóng' : 'Hủy'}
         </Button>
 

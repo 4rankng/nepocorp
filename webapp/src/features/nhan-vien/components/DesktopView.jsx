@@ -22,7 +22,7 @@ const DesktopView = ({
   canEditDelete,
 }) => {
   // Format date to browser timezone
-  const formatDateTime = (dateString) => {
+  const formatDateTime = dateString => {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
@@ -87,7 +87,7 @@ const DesktopView = ({
         label: 'NGÀY TẠO',
         minWidth: 150,
         sortable: true,
-        render: (value) => formatDateTime(value),
+        render: value => formatDateTime(value),
       },
     ],
     []

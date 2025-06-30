@@ -4,7 +4,7 @@ export const partnerApi = {
   // Get all partners with pagination
   getAll: async (page = 1, limit = 100) => {
     const response = await apiClient.get('/partner', {
-      params: { page, limit }
+      params: { page, limit },
     });
     return response;
   },
@@ -12,19 +12,19 @@ export const partnerApi = {
   // Get all partners without pagination
   getAllWithoutPagination: async () => {
     const response = await apiClient.get('/partner', {
-      params: { page: 1, limit: 1000 }
+      params: { page: 1, limit: 1000 },
     });
     return response;
   },
 
   // Get partner by ID
-  getById: async (id) => {
+  getById: async id => {
     const response = await apiClient.get(`/partner/${id}`);
     return response;
   },
 
   // Create new partner
-  create: async (data) => {
+  create: async data => {
     const response = await apiClient.post('/partner', data);
     return response;
   },
@@ -36,7 +36,7 @@ export const partnerApi = {
   },
 
   // Delete partner
-  delete: async (id) => {
+  delete: async id => {
     const response = await apiClient.delete(`/partner/${id}`);
     return response;
   },
@@ -44,8 +44,8 @@ export const partnerApi = {
   // Get count of partners
   getCount: async () => {
     const response = await apiClient.get('/partner', {
-      params: { page: 1, limit: 1 }
+      params: { page: 1, limit: 1 },
     });
     return response.pagination?.records_count || 0;
-  }
+  },
 };

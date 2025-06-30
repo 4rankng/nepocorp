@@ -9,7 +9,7 @@ export const getMenuItems = () => {
           href: '/tai-chinh',
           icon: 'ChartBar',
         },
-                {
+        {
           name: 'Công nợ',
           href: '/bang-cong-no',
           icon: 'Wallet',
@@ -20,17 +20,17 @@ export const getMenuItems = () => {
           href: '/bao-duong',
           icon: 'Tire',
         },
-                {
+        {
           name: 'Lịch vận chuyển',
           href: '/lich-van-chuchuyen',
           icon: 'Calendar',
         },
-      ]
+      ],
     },
-        {
+    {
       sectionTitle: 'Kế toán',
       items: [
-                {
+        {
           name: 'Phiếu chi',
           href: '/phieu-chi',
           icon: 'ShoppingCart',
@@ -41,17 +41,15 @@ export const getMenuItems = () => {
           icon: 'Banknote',
         },
       ],
-      },
+    },
     {
       sectionTitle: 'Thiếp lập',
       items: [
-
         {
           name: 'Định mức',
           href: '/dinh-muc',
           icon: 'Oil',
         },
-
 
         {
           name: 'Đối tác',
@@ -68,12 +66,12 @@ export const getMenuItems = () => {
           href: '/phuong-tien',
           icon: 'Truck',
         },
-                {
+        {
           name: 'Người dùng',
           href: '/nhan-vien',
           icon: 'Users',
         },
-      ]
-    }
+      ],
+    },
   ];
 };

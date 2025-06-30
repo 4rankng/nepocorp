@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { tractorService, trailerService, containerService } from '@api/services';
-import { 
+import {
   VehicleFilters,
   CreateTractorRequest,
   UpdateTractorRequest,
@@ -8,7 +8,7 @@ import {
   UpdateTrailerRequest,
   CreateContainerRequest,
   UpdateContainerRequest,
-  ApiError
+  ApiError,
 } from '@api/types';
 
 // Tractor hooks

@@ -3,12 +3,7 @@ import PropTypes from 'prop-types';
 import { formatDate } from '@utils/format';
 import { INVOICE_STATUS_LABELS } from '@constants/invoice';
 
-const InvoiceFormFields = ({
-  data,
-  isEditing = false,
-  onFieldChange,
-  className = ''
-}) => {
+const InvoiceFormFields = ({ data, isEditing = false, onFieldChange, className = '' }) => {
   const displayData = data || {};
 
   return (
@@ -95,7 +90,7 @@ const InvoiceFormFields = ({
           {isEditing ? (
             <textarea
               value={displayData.remark || ''}
-              onChange={(e) => onFieldChange('remark', e.target.value)}
+              onChange={e => onFieldChange('remark', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded text-sm resize-none focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               rows={3}
               placeholder="Ghi chú thêm..."

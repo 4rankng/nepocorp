@@ -1,6 +1,6 @@
 // Form validation utilities for financial ledger
 
-export const validateTransaction = (transactionData) => {
+export const validateTransaction = transactionData => {
   const errors = {};
 
   // Required fields validation
@@ -39,17 +39,20 @@ export const validateTransaction = (transactionData) => {
 
   // Reference number validation for certain transaction types
   const requiresReference = ['INVOICE', 'PARTNER_INVOICE'];
-  if (requiresReference.includes(transactionData.transaction_type) && !transactionData.reference_number) {
+  if (
+    requiresReference.includes(transactionData.transaction_type) &&
+    !transactionData.reference_number
+  ) {
     errors.reference_number = 'Số tham chiếu là bắt buộc cho loại giao dịch này';
   }
 
   return {
     isValid: Object.keys(errors).length === 0,
-    errors
+    errors,
   };
 };
 
-export const validateAmount = (amount) => {
+export const validateAmount = amount => {
   if (!amount || amount === '') {
     return { isValid: false, error: 'Số tiền là bắt buộc' };
   }
@@ -70,7 +73,7 @@ export const validateAmount = (amount) => {
   return { isValid: true };
 };
 
-export const validateDate = (date) => {
+export const validateDate = date => {
   if (!date) {
     return { isValid: false, error: 'Ngày là bắt buộc' };
   }
@@ -115,7 +118,7 @@ export const validateDateRange = (startDate, endDate) => {
 
   const diffTime = Math.abs(end - start);
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays > 366) {
     return { isValid: false, error: 'Khoảng thời gian không được vượt quá 1 năm' };
   }
@@ -123,7 +126,7 @@ export const validateDateRange = (startDate, endDate) => {
   return { isValid: true };
 };
 
-export const validateReferenceNumber = (refNumber) => {
+export const validateReferenceNumber = refNumber => {
   if (!refNumber || refNumber.trim() === '') {
     return { isValid: false, error: 'Số tham chiếu là bắt buộc' };
   }
@@ -134,13 +137,16 @@ export const validateReferenceNumber = (refNumber) => {
 
   const validPattern = /^[A-Za-z0-9\-_.]+$/;
   if (!validPattern.test(refNumber)) {
-    return { isValid: false, error: 'Số tham chiếu chỉ được chứa chữ cái, số, dấu gạch ngang, gạch dưới và dấu chấm' };
+    return {
+      isValid: false,
+      error: 'Số tham chiếu chỉ được chứa chữ cái, số, dấu gạch ngang, gạch dưới và dấu chấm',
+    };
   }
 
   return { isValid: true };
 };
 
-export const validateNotes = (notes) => {
+export const validateNotes = notes => {
   if (notes && notes.length > 1000) {
     return { isValid: false, error: 'Ghi chú không được vượt quá 1000 ký tự' };
   }
@@ -148,22 +154,22 @@ export const validateNotes = (notes) => {
   return { isValid: true };
 };
 
-export const sanitizeAmount = (amount) => {
+export const sanitizeAmount = amount => {
   if (!amount) return 0;
-  
+
   // Remove all non-numeric characters except decimal point
   const cleaned = amount.toString().replace(/[^\d.]/g, '');
-  
+
   // Handle multiple decimal points
   const parts = cleaned.split('.');
   if (parts.length > 2) {
     return parseFloat(parts[0] + '.' + parts.slice(1).join(''));
   }
-  
+
   return parseFloat(cleaned) || 0;
 };
 
-export const formatFormAmount = (amount) => {
+export const formatFormAmount = amount => {
   if (!amount || amount === 0) return '';
   return amount.toString();
 };

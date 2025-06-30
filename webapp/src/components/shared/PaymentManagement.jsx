@@ -7,7 +7,7 @@ import {
   FormControl,
   ErrorText,
   HelperText,
-  Button
+  Button,
 } from '@components/ui';
 import { PAYMENT_STATUS, PAYMENT_STATUS_LABELS } from '@constants/payment';
 
@@ -22,18 +22,18 @@ const PaymentManagement = ({
 }) => {
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleStatusChange = (event) => {
+  const handleStatusChange = event => {
     const newStatus = event.target.value;
     onPaymentStatusChange(newStatus);
   };
 
-  const handleProofChange = (event) => {
+  const handleProofChange = event => {
     const newProof = event.target.value;
     onPaymentProofChange(newProof);
   };
 
   // File upload handler (placeholder for future implementation)
-  const handleFileUpload = async (event) => {
+  const handleFileUpload = async event => {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -55,7 +55,7 @@ const PaymentManagement = ({
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case PAYMENT_STATUS.DRAFT:
         return '#6b7280'; // gray
@@ -70,7 +70,7 @@ const PaymentManagement = ({
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = status => {
     return (
       <span
         style={{
@@ -84,7 +84,7 @@ const PaymentManagement = ({
           backgroundColor: 'transparent',
           minWidth: '80px',
           textAlign: 'center',
-          marginLeft: '8px'
+          marginLeft: '8px',
         }}
       >
         {PAYMENT_STATUS_LABELS[status]}
@@ -173,38 +173,46 @@ const PaymentManagement = ({
 
       {/* Payment workflow hints */}
       {paymentStatus === PAYMENT_STATUS.DRAFT && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#f3f4f6',
-          borderRadius: '6px',
-          marginTop: '12px'
-        }}>
+        <div
+          style={{
+            padding: '12px',
+            backgroundColor: '#f3f4f6',
+            borderRadius: '6px',
+            marginTop: '12px',
+          }}
+        >
           <HelperText>
-            💡 <strong>Gợi ý:</strong> Sau khi nhập đầy đủ thông tin, chuyển trạng thái thành "Chờ thanh toán" để theo dõi tiến độ.
+            💡 <strong>Gợi ý:</strong> Sau khi nhập đầy đủ thông tin, chuyển trạng thái thành "Chờ
+            thanh toán" để theo dõi tiến độ.
           </HelperText>
         </div>
       )}
 
       {paymentStatus === PAYMENT_STATUS.PENDING && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#fef3c7',
-          borderRadius: '6px',
-          marginTop: '12px'
-        }}>
+        <div
+          style={{
+            padding: '12px',
+            backgroundColor: '#fef3c7',
+            borderRadius: '6px',
+            marginTop: '12px',
+          }}
+        >
           <HelperText>
-            ⏳ <strong>Chờ thanh toán:</strong> Hãy cung cấp URL chứng từ sau khi hoàn tất giao dịch.
+            ⏳ <strong>Chờ thanh toán:</strong> Hãy cung cấp URL chứng từ sau khi hoàn tất giao
+            dịch.
           </HelperText>
         </div>
       )}
 
       {paymentStatus === PAYMENT_STATUS.PAID && !paymentProof && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#fecaca',
-          borderRadius: '6px',
-          marginTop: '12px'
-        }}>
+        <div
+          style={{
+            padding: '12px',
+            backgroundColor: '#fecaca',
+            borderRadius: '6px',
+            marginTop: '12px',
+          }}
+        >
           <HelperText>
             ⚠️ <strong>Thiếu chứng từ:</strong> Vui lòng cung cấp URL chứng từ để hoàn tất hồ sơ.
           </HelperText>
@@ -212,12 +220,14 @@ const PaymentManagement = ({
       )}
 
       {paymentStatus === PAYMENT_STATUS.PAID && paymentProof && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#d1fae5',
-          borderRadius: '6px',
-          marginTop: '12px'
-        }}>
+        <div
+          style={{
+            padding: '12px',
+            backgroundColor: '#d1fae5',
+            borderRadius: '6px',
+            marginTop: '12px',
+          }}
+        >
           <HelperText>
             ✅ <strong>Hoàn tất:</strong> Thanh toán đã được xác nhận và có chứng từ.
           </HelperText>

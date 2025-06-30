@@ -8,7 +8,7 @@ export default function useInvoiceForm({
   onError,
   fetchData,
   isEdit = false,
-  api
+  api,
 }) {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,23 +20,26 @@ export default function useInvoiceForm({
   }, [initialFormData]);
 
   // Handle input changes
-  const handleInputChange = useCallback((field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    // Clear error for this field when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({
+  const handleInputChange = useCallback(
+    (field, value) => {
+      setFormData(prev => ({
         ...prev,
-        [field]: ''
+        [field]: value,
       }));
-    }
-  }, [errors]);
+
+      // Clear error for this field when user starts typing
+      if (errors[field]) {
+        setErrors(prev => ({
+          ...prev,
+          [field]: '',
+        }));
+      }
+    },
+    [errors]
+  );
 
   // Validate form data
-  const validateForm = useCallback((data) => {
+  const validateForm = useCallback(data => {
     const newErrors = {};
 
     // Required fields validation
@@ -77,7 +80,7 @@ export default function useInvoiceForm({
   }, []);
 
   // Transform form data to API format
-  const transformFormDataToAPI = useCallback((data) => {
+  const transformFormDataToAPI = useCallback(data => {
     const transformedData = {
       customer_id: parseInt(data.customer_id),
       invoice_category_id: parseInt(data.invoice_category_id),
@@ -93,7 +96,7 @@ export default function useInvoiceForm({
         quantity: parseInt(item.quantity),
         service_date: item.service_date || null,
         notes: item.notes || '',
-      }))
+      })),
     };
 
     return transformedData;

@@ -98,12 +98,8 @@ const ExcelTable = ({
             <Table>
               <TableHead>
                 <TableRow>
-                  {columns.map((column) => (
-                    <TableCell
-                      key={column.id}
-                      align={column.align || 'left'}
-                      sx={column.headerSx}
-                    >
+                  {columns.map(column => (
+                    <TableCell key={column.id} align={column.align || 'left'} sx={column.headerSx}>
                       {column.label}
                     </TableCell>
                   ))}
@@ -121,9 +117,9 @@ const ExcelTable = ({
                 {isAddingNew && editingId === 'new' && renderNewRow && renderNewRow()}
 
                 {/* Regular data rows */}
-                {computedPaginatedData.map((row) => (
+                {computedPaginatedData.map(row => (
                   <TableRow key={row.id} hover>
-                    {columns.map((column) => (
+                    {columns.map(column => (
                       <TableCell key={`${row.id}-${column.id}`} align={column.align || 'left'}>
                         {editingId === row.id && column.editable ? (
                           column.renderEdit ? (
@@ -131,12 +127,12 @@ const ExcelTable = ({
                           ) : (
                             <TextField
                               value={editedData[column.id] || ''}
-                              onChange={(e) => handleInputChange(column.id, e.target.value)}
+                              onChange={e => handleInputChange(column.id, e.target.value)}
                               size="small"
                               disabled={isSaving}
                               fullWidth
                               variant="outlined"
-                              onKeyDown={(e) => {
+                              onKeyDown={e => {
                                 if (e.key === 'Escape') handleCancelEdit();
                               }}
                               {...column.inputProps}
@@ -256,9 +252,7 @@ const ExcelTable = ({
               rowsPerPage={pagination.pageSize}
               page={pagination.pageIndex}
               onPageChange={(_, newPage) => onPageChange(newPage)}
-              onRowsPerPageChange={(e) =>
-                onRowsPerPageChange(parseInt(e.target.value, 10))
-              }
+              onRowsPerPageChange={e => onRowsPerPageChange(parseInt(e.target.value, 10))}
               labelRowsPerPage="Số hàng mỗi trang:"
               labelDisplayedRows={({ from, to, count }) =>
                 `${from}–${to} trong ${count !== -1 ? count : `nhiều hơn ${to}`}`

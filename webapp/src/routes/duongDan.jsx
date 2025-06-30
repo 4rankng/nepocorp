@@ -7,17 +7,50 @@ import ProtectedRoute from '@components/ProtectedRoute';
 
 // Lazy load components with proper error handling
 const TrangChu = createLazyComponent(() => import('@layouts/TrangChu'), 'TrangChu');
-const BaoCaoTaiChinh = createLazyComponent(() => import('@features/bao-cao/BaoCaoTaiChinh'), 'BaoCaoTaiChinh');
-const QuanLyLichVanChuyen = createLazyComponent(() => import('@features/lich-van-chuyen/QuanLyLichVanChuyen'), 'QuanLyLichVanChuyen');
-const QuanLyNhanVien = createLazyComponent(() => import('@features/nhan-vien/QuanLyNhanVien'), 'QuanLyNhanVien');
-const QuanLyKhachHang = createLazyComponent(() => import('@features/khach-hang/QuanLyKhachHang'), 'QuanLyKhachHang');
-const QuanLyDoiTac = createLazyComponent(() => import('@features/doi-tac/QuanLyDoiTac'), 'QuanLyDoiTac');
-const QuanLyPhuongTien = createLazyComponent(() => import('@features/phuong-tien/QuanLyPhuongTien'), 'QuanLyPhuongTien');
-const QuanLyDinhMuc = createLazyComponent(() => import('@features/dinh-muc/QuanLyDinhMuc'), 'QuanLyDinhMuc');
-const QuanLyBaoDuong = createLazyComponent(() => import('@features/bao-duong/QuanLyBaoDuong'), 'QuanLyBaoDuong');
-const QuanLyPhieuChi = createLazyComponent(() => import('@features/phieu-chi/QuanLyPhieuChi'), 'QuanLyPhieuChi');
-const QuanLyPhieuThu = createLazyComponent(() => import('@features/phieu-thu/QuanLyPhieuThu'), 'QuanLyPhieuThu');
-const QuanLyBangCongNo = createLazyComponent(() => import('@features/bang-cong-no/QuanLyBangCongNo'), 'QuanLyBangCongNo');
+const BaoCaoTaiChinh = createLazyComponent(
+  () => import('@features/bao-cao/BaoCaoTaiChinh'),
+  'BaoCaoTaiChinh'
+);
+const QuanLyLichVanChuyen = createLazyComponent(
+  () => import('@features/lich-van-chuyen/QuanLyLichVanChuyen'),
+  'QuanLyLichVanChuyen'
+);
+const QuanLyNhanVien = createLazyComponent(
+  () => import('@features/nhan-vien/QuanLyNhanVien'),
+  'QuanLyNhanVien'
+);
+const QuanLyKhachHang = createLazyComponent(
+  () => import('@features/khach-hang/QuanLyKhachHang'),
+  'QuanLyKhachHang'
+);
+const QuanLyDoiTac = createLazyComponent(
+  () => import('@features/doi-tac/QuanLyDoiTac'),
+  'QuanLyDoiTac'
+);
+const QuanLyPhuongTien = createLazyComponent(
+  () => import('@features/phuong-tien/QuanLyPhuongTien'),
+  'QuanLyPhuongTien'
+);
+const QuanLyDinhMuc = createLazyComponent(
+  () => import('@features/dinh-muc/QuanLyDinhMuc'),
+  'QuanLyDinhMuc'
+);
+const QuanLyBaoDuong = createLazyComponent(
+  () => import('@features/bao-duong/QuanLyBaoDuong'),
+  'QuanLyBaoDuong'
+);
+const QuanLyPhieuChi = createLazyComponent(
+  () => import('@features/phieu-chi/QuanLyPhieuChi'),
+  'QuanLyPhieuChi'
+);
+const QuanLyPhieuThu = createLazyComponent(
+  () => import('@features/phieu-thu/QuanLyPhieuThu'),
+  'QuanLyPhieuThu'
+);
+const QuanLyBangCongNo = createLazyComponent(
+  () => import('@features/bang-cong-no/QuanLyBangCongNo'),
+  'QuanLyBangCongNo'
+);
 // Future flags for React Router v7
 const routerConfig = {
   future: {
@@ -58,32 +91,56 @@ const router = createBrowserRouter(
       children: [
         {
           path: 'bao-cao',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(BaoCaoTaiChinh, 'Đang tải báo cáo tài chính...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(BaoCaoTaiChinh, 'Đang tải báo cáo tài chính...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         {
           path: 'lich-van-chuyen',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyLichVanChuyen, 'Đang tải lịch vận chuyển...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyLichVanChuyen, 'Đang tải lịch vận chuyển...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         {
           path: 'nhan-vien',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyNhanVien, 'Đang tải quản lý nhân viên...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyNhanVien, 'Đang tải quản lý nhân viên...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         {
           path: 'khach-hang',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyKhachHang, 'Đang tải quản lý khách hàng...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyKhachHang, 'Đang tải quản lý khách hàng...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         {
           path: 'doi-tac',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyDoiTac, 'Đang tải quản lý đối tác...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyDoiTac, 'Đang tải quản lý đối tác...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         {
           path: 'phuong-tien',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyPhuongTien, 'Đang tải quản lý phương tiện...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyPhuongTien, 'Đang tải quản lý phương tiện...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
           children: [
             {
@@ -100,7 +157,11 @@ const router = createBrowserRouter(
         // DinhMuc nested routes
         {
           path: 'dinh-muc',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyDinhMuc, 'Đang tải định mức...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyDinhMuc, 'Đang tải định mức...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
           children: [
             {
@@ -117,25 +178,41 @@ const router = createBrowserRouter(
         // BaoDuong route with tab support
         {
           path: 'bao-duong',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyBaoDuong, 'Đang tải bảo dưỡng...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyBaoDuong, 'Đang tải bảo dưỡng...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         // PhieuChi route
         {
           path: 'phieu-chi',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyPhieuChi, 'Đang tải phiếu chi...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyPhieuChi, 'Đang tải phiếu chi...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         // PhieuThu route
         {
           path: 'phieu-thu',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyPhieuThu, 'Đang tải phiếu thu...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyPhieuThu, 'Đang tải phiếu thu...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         // BangCongNo route
         {
           path: 'bang-cong-no',
-          element: <ProtectedRoute>{withErrorBoundaryAndSuspense(QuanLyBangCongNo, 'Đang tải bảng công nợ...')}</ProtectedRoute>,
+          element: (
+            <ProtectedRoute>
+              {withErrorBoundaryAndSuspense(QuanLyBangCongNo, 'Đang tải bảng công nợ...')}
+            </ProtectedRoute>
+          ),
           errorElement: <ErrorPage />,
         },
         // Keep old routes for backward compatibility

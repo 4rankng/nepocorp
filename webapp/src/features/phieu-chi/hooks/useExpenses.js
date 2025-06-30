@@ -27,41 +27,38 @@ export default function useExpenses() {
   }, []);
 
   // Fetch paginated expenses data
-  const fetchData = useCallback(
-    async (page = 0, pageSize = 10, categoryId = null) => {
-      setIsLoading(true);
-      try {
-        // Note: API is 1-indexed for page number
-        const response = await expenseApi.getAll(page + 1, pageSize, categoryId);
+  const fetchData = useCallback(async (page = 0, pageSize = 10, categoryId = null) => {
+    setIsLoading(true);
+    try {
+      // Note: API is 1-indexed for page number
+      const response = await expenseApi.getAll(page + 1, pageSize, categoryId);
 
-        const data = response.data || [];
-        setExpenses(data);
+      const data = response.data || [];
+      setExpenses(data);
 
-        // Update pagination state from API response
-        const newPagination = {
-          page,
-          pageSize,
-          total: response.pagination?.records_count || 0,
-          totalPages: response.pagination?.total_pages || 1,
-        };
+      // Update pagination state from API response
+      const newPagination = {
+        page,
+        pageSize,
+        total: response.pagination?.records_count || 0,
+        totalPages: response.pagination?.total_pages || 1,
+      };
 
-        setPagination(prev => ({
-          ...prev,
-          ...newPagination,
-        }));
+      setPagination(prev => ({
+        ...prev,
+        ...newPagination,
+      }));
 
-        setError('');
-      } catch (err) {
-        logger.error('Error loading expenses', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu chi phí');
-        setError(errorMessage);
-        setExpenses([]);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+      setError('');
+    } catch (err) {
+      logger.error('Error loading expenses', { error: err });
+      const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu chi phí');
+      setError(errorMessage);
+      setExpenses([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const handlePageChange = useCallback(
     newPage => {
@@ -79,7 +76,7 @@ export default function useExpenses() {
 
   // Create new expense
   const createExpense = useCallback(
-    async (expenseData) => {
+    async expenseData => {
       setIsLoading(true);
       try {
         const response = await expenseApi.create(expenseData);
@@ -125,7 +122,7 @@ export default function useExpenses() {
 
   // Delete expense
   const deleteExpense = useCallback(
-    async (id) => {
+    async id => {
       setIsLoading(true);
       try {
         const response = await expenseApi.delete(id);
@@ -147,23 +144,20 @@ export default function useExpenses() {
   );
 
   // Get expense by ID
-  const getExpenseById = useCallback(
-    async (id) => {
-      setIsLoading(true);
-      try {
-        const response = await expenseApi.getById(id);
-        return response;
-      } catch (err) {
-        logger.error('Error fetching expense by ID', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tải phiếu chi');
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+  const getExpenseById = useCallback(async id => {
+    setIsLoading(true);
+    try {
+      const response = await expenseApi.getById(id);
+      return response;
+    } catch (err) {
+      logger.error('Error fetching expense by ID', { error: err });
+      const errorMessage = extractErrorMessage(err, 'Không thể tải phiếu chi');
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Fetch categories on mount
   useEffect(() => {

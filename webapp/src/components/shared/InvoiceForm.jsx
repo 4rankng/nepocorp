@@ -19,7 +19,6 @@ import { getPaymentStatusColor } from '@utils/expenseHelpers';
 import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 import useInvoiceEdit from '../hooks/useInvoiceEdit';
 
-
 const InvoiceForm = ({
   open,
   isEdit,
@@ -33,15 +32,17 @@ const InvoiceForm = ({
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
 
   // Simulate invoice data structure for add mode
-  const invoiceData = isEdit ? formData : {
-    customer_id: '',
-    invoice_category_id: '',
-    payment_status: INVOICE_STATUS.DRAFT,
-    payment_proof: '',
-    items: [],
-    remark: '',
-    total: 0
-  };
+  const invoiceData = isEdit
+    ? formData
+    : {
+        customer_id: '',
+        invoice_category_id: '',
+        payment_status: INVOICE_STATUS.DRAFT,
+        payment_proof: '',
+        items: [],
+        remark: '',
+        total: 0,
+      };
 
   // Use the hook for state management
   const {
@@ -72,7 +73,7 @@ const InvoiceForm = ({
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
   const [currentLicensePlateIndex, setCurrentLicensePlateIndex] = useState(null);
   const [error, setError] = useState(null);
-  
+
   // Status change prompts
   const [showPaymentProofPrompt, setShowPaymentProofPrompt] = useState(false);
   const [showCancelReasonPrompt, setShowCancelReasonPrompt] = useState(false);
@@ -80,7 +81,6 @@ const InvoiceForm = ({
   const [tempPaymentProof, setTempPaymentProof] = useState('');
   const [tempCancelReason, setTempCancelReason] = useState('');
   const [previousStatus, setPreviousStatus] = useState(null);
-
 
   // Load settings when modal opens
   useEffect(() => {
@@ -142,22 +142,21 @@ const InvoiceForm = ({
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
-      type: 'tractor'
+      type: 'tractor',
     }));
 
     const trailerPlates = trailers.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
-      type: 'trailer'
+      type: 'trailer',
     }));
 
     return [...tractorPlates, ...trailerPlates];
   }, [tractors, trailers]);
 
-
   // Handle ESC key
   useEffect(() => {
-    const handleEscKey = (event) => {
+    const handleEscKey = event => {
       if (event.key === 'Escape' && open && !showLicensePlateModal && !showItemEditModal) {
         onClose();
       }
@@ -183,84 +182,97 @@ const InvoiceForm = ({
   }, [onClose]);
 
   // Override handleFieldChange to also call parent onChange
-  const wrappedHandleFieldChange = useCallback((field, value) => {
-    // Handle status changes that require prompts
-    if (field === 'payment_status') {
-      const oldStatus = editedData?.payment_status;
+  const wrappedHandleFieldChange = useCallback(
+    (field, value) => {
+      // Handle status changes that require prompts
+      if (field === 'payment_status') {
+        const oldStatus = editedData?.payment_status;
 
-      // First, close any existing prompts if changing to a different status
-      if (showPaymentProofPrompt || showCancelReasonPrompt) {
-        setShowPaymentProofPrompt(false);
-        setShowCancelReasonPrompt(false);
-        setPendingStatus(null);
-        setTempPaymentProof('');
-        setTempCancelReason('');
-        setPreviousStatus(null);
+        // First, close any existing prompts if changing to a different status
+        if (showPaymentProofPrompt || showCancelReasonPrompt) {
+          setShowPaymentProofPrompt(false);
+          setShowCancelReasonPrompt(false);
+          setPendingStatus(null);
+          setTempPaymentProof('');
+          setTempCancelReason('');
+          setPreviousStatus(null);
+        }
+
+        if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
+          logger.info('Status change to PAID initiated', {
+            oldStatus,
+            newStatus: value,
+            formType: 'invoice',
+          });
+          setPreviousStatus(oldStatus); // Store the current status before changing
+          setPendingStatus(value);
+          setTempPaymentProof(editedData?.payment_proof || '');
+          setShowPaymentProofPrompt(true);
+          // Update the status immediately for visual feedback
+          handleFieldChange('payment_status', value);
+          return;
+        }
+
+        if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
+          logger.info('Status change to CANCELLED initiated', {
+            oldStatus,
+            newStatus: value,
+            formType: 'invoice',
+          });
+          setPreviousStatus(oldStatus); // Store the current status before changing
+          setPendingStatus(value);
+          setTempCancelReason(editedData?.cancel_reason || '');
+          setShowCancelReasonPrompt(true);
+          // Update the status immediately for visual feedback
+          handleFieldChange('payment_status', value);
+          return;
+        }
       }
 
-      if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
-        logger.info('Status change to PAID initiated', { 
-          oldStatus, 
-          newStatus: value,
-          formType: 'invoice' 
-        });
-        setPreviousStatus(oldStatus); // Store the current status before changing
-        setPendingStatus(value);
-        setTempPaymentProof(editedData?.payment_proof || '');
-        setShowPaymentProofPrompt(true);
-        // Update the status immediately for visual feedback
-        handleFieldChange('payment_status', value);
-        return;
-      }
+      handleFieldChange(field, value);
+    },
+    [
+      handleFieldChange,
+      editedData?.payment_status,
+      editedData?.payment_proof,
+      editedData?.cancel_reason,
+      showPaymentProofPrompt,
+      showCancelReasonPrompt,
+    ]
+  );
 
-      if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
-        logger.info('Status change to CANCELLED initiated', { 
-          oldStatus, 
-          newStatus: value,
-          formType: 'invoice' 
-        });
-        setPreviousStatus(oldStatus); // Store the current status before changing
-        setPendingStatus(value);
-        setTempCancelReason(editedData?.cancel_reason || '');
-        setShowCancelReasonPrompt(true);
-        // Update the status immediately for visual feedback
-        handleFieldChange('payment_status', value);
-        return;
-      }
-    }
-    
-    handleFieldChange(field, value);
-  }, [handleFieldChange, editedData?.payment_status, editedData?.payment_proof, editedData?.cancel_reason, showPaymentProofPrompt, showCancelReasonPrompt]);
-
-  const handleLicensePlateCellClick = useCallback((index) => {
+  const handleLicensePlateCellClick = useCallback(index => {
     setCurrentLicensePlateIndex(index);
     setShowLicensePlateModal(true);
   }, []);
 
-  const handleLicensePlateSelect = useCallback((selectedPlate) => {
-    if (currentLicensePlateIndex !== null) {
-      setEditedData(prev => {
-        const updatedItems = prev.items.map((item, i) => {
-          if (i === currentLicensePlateIndex) {
-            return { ...item, license_plate: selectedPlate };
-          }
-          return item;
-        });
+  const handleLicensePlateSelect = useCallback(
+    selectedPlate => {
+      if (currentLicensePlateIndex !== null) {
+        setEditedData(prev => {
+          const updatedItems = prev.items.map((item, i) => {
+            if (i === currentLicensePlateIndex) {
+              return { ...item, license_plate: selectedPlate };
+            }
+            return item;
+          });
 
-        // Prefill other empty license plate cells
-        const prefilledItems = updatedItems.map(item => {
-          if (!item.license_plate) {
-            return { ...item, license_plate: selectedPlate };
-          }
-          return item;
-        });
+          // Prefill other empty license plate cells
+          const prefilledItems = updatedItems.map(item => {
+            if (!item.license_plate) {
+              return { ...item, license_plate: selectedPlate };
+            }
+            return item;
+          });
 
-        return { ...prev, items: prefilledItems };
-      });
-      setCurrentLicensePlateIndex(null);
-    }
-    setShowLicensePlateModal(false);
-  }, [currentLicensePlateIndex]);
+          return { ...prev, items: prefilledItems };
+        });
+        setCurrentLicensePlateIndex(null);
+      }
+      setShowLicensePlateModal(false);
+    },
+    [currentLicensePlateIndex]
+  );
 
   // Override handleCancelEdit to also close the modal
   const wrappedHandleCancelEdit = useCallback(() => {
@@ -271,7 +283,6 @@ const InvoiceForm = ({
   // Override handleSaveEdit to work with parent form
   const wrappedHandleSaveEdit = useCallback(async () => {
     if (!editedData) return;
-
 
     try {
       const updatedItems = prepareInvoiceItemsForUpdate(editedData.items);
@@ -285,7 +296,7 @@ const InvoiceForm = ({
         cancel_reason: editedData.cancel_reason || null,
         remark: editedData.remark,
         items: updatedItems,
-        total: totalAmount
+        total: totalAmount,
       };
 
       // Update the onChange to reflect final data
@@ -303,46 +314,52 @@ const InvoiceForm = ({
   }, [handleAddItem]);
 
   // Handle payment proof confirmation
-  const handlePaymentProofConfirm = useCallback((paymentProof) => {
-    logger.info('Payment proof confirmed for invoice', {
-      paymentProof,
-      newStatus: INVOICE_STATUS.PAID,
-      formType: 'invoice'
-    });
+  const handlePaymentProofConfirm = useCallback(
+    paymentProof => {
+      logger.info('Payment proof confirmed for invoice', {
+        paymentProof,
+        newStatus: INVOICE_STATUS.PAID,
+        formType: 'invoice',
+      });
 
-    handleFieldChange('payment_status', INVOICE_STATUS.PAID);
-    handleFieldChange('payment_proof', paymentProof);
-    handleFieldChange('cancel_reason', null); // Clear cancel reason when marking as paid
+      handleFieldChange('payment_status', INVOICE_STATUS.PAID);
+      handleFieldChange('payment_proof', paymentProof);
+      handleFieldChange('cancel_reason', null); // Clear cancel reason when marking as paid
 
-    setShowPaymentProofPrompt(false);
-    setPendingStatus(null);
-    setTempPaymentProof('');
-    setPreviousStatus(null);
-  }, [handleFieldChange]);
+      setShowPaymentProofPrompt(false);
+      setPendingStatus(null);
+      setTempPaymentProof('');
+      setPreviousStatus(null);
+    },
+    [handleFieldChange]
+  );
 
   // Handle cancel reason confirmation
-  const handleCancelReasonConfirm = useCallback((cancelReason) => {
-    logger.info('Cancel reason confirmed for invoice', {
-      cancelReason,
-      newStatus: INVOICE_STATUS.CANCELLED,
-      formType: 'invoice'
-    });
+  const handleCancelReasonConfirm = useCallback(
+    cancelReason => {
+      logger.info('Cancel reason confirmed for invoice', {
+        cancelReason,
+        newStatus: INVOICE_STATUS.CANCELLED,
+        formType: 'invoice',
+      });
 
-    handleFieldChange('payment_status', INVOICE_STATUS.CANCELLED);
-    handleFieldChange('cancel_reason', cancelReason);
-    handleFieldChange('payment_proof', null); // Clear payment proof when cancelling
+      handleFieldChange('payment_status', INVOICE_STATUS.CANCELLED);
+      handleFieldChange('cancel_reason', cancelReason);
+      handleFieldChange('payment_proof', null); // Clear payment proof when cancelling
 
-    setShowCancelReasonPrompt(false);
-    setPendingStatus(null);
-    setTempCancelReason('');
-    setPreviousStatus(null);
-  }, [handleFieldChange]);
+      setShowCancelReasonPrompt(false);
+      setPendingStatus(null);
+      setTempCancelReason('');
+      setPreviousStatus(null);
+    },
+    [handleFieldChange]
+  );
 
   // Handle prompt cancellation
   const handlePromptCancel = useCallback(() => {
     logger.info('Status change cancelled', {
       revertingTo: previousStatus,
-      formType: 'invoice'
+      formType: 'invoice',
     });
     // Revert to previous status if cancelling
     if (previousStatus !== null) {
@@ -361,25 +378,28 @@ const InvoiceForm = ({
   // Adapt invoice categories for ExpenseBasicInfo component
   const adaptedInvoiceCategories = invoiceCategories.map(category => ({
     id: category.id,
-    name: category.name
+    name: category.name,
   }));
 
   // Adapt customers data for use in ExpenseBasicInfo
   const adaptedCustomers = customers.map(customer => ({
     id: customer.id,
-    name: `${customer.name} (${customer.tax_code})`
+    name: `${customer.name} (${customer.tax_code})`,
   }));
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
-        <div 
-          className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col" 
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1"
+        style={{ zIndex: Z_INDEX.MODAL_BACKDROP }}
+      >
+        <div
+          className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col"
           style={{
             zIndex: Z_INDEX.MODAL,
-            '--parent-z-index': Z_INDEX.MODAL
+            '--parent-z-index': Z_INDEX.MODAL,
           }}
-          ref={(el) => {
+          ref={el => {
             if (el) {
               setParentZIndex(el, Z_INDEX.MODAL);
             }
@@ -396,7 +416,7 @@ const InvoiceForm = ({
             statusOptions={Object.entries(INVOICE_STATUS).map(([, value]) => ({
               value: value,
               label: INVOICE_STATUS_LABELS[value],
-              color: getPaymentStatusColor(value)
+              color: getPaymentStatusColor(value),
             }))}
           />
 

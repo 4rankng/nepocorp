@@ -4,7 +4,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { formatCurrency } from '@utils/format';
 
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return '-';
   try {
     const date = new Date(dateString);
@@ -15,12 +15,12 @@ const formatDate = (dateString) => {
   }
 };
 
-const calculateItemTotal = (item) => {
+const calculateItemTotal = item => {
   const price = parseFloat(item.price) || 0;
   const quantity = parseFloat(item.quantity) || 0;
   const taxRate = parseFloat(item.tax_rate) || 0;
   const subtotal = price * quantity;
-  const taxAmount = subtotal * taxRate / 100;
+  const taxAmount = (subtotal * taxRate) / 100;
   return subtotal + taxAmount;
 };
 
@@ -31,31 +31,17 @@ const InvoiceItemRow = ({
   onItemChange,
   onDeleteItem,
   onLicensePlateCellClick,
-  onEditItem
+  onEditItem,
 }) => {
   return (
     <tr className="hover:bg-gray-50 border-t">
-      <td className="px-3 py-2 text-xs border-r">
-        {item.license_plate || '-'}
-      </td>
-      <td className="px-3 py-2 text-xs border-r">
-        {item.item_name || '-'}
-      </td>
-      <td className="px-3 py-2 text-xs text-center border-r">
-        {formatDate(item.service_date)}
-      </td>
-      <td className="px-3 py-2 text-xs border-r">
-        {item.notes || '-'}
-      </td>
-      <td className="px-3 py-2 text-xs text-right border-r">
-        {formatCurrency(item.price || 0)}
-      </td>
-      <td className="px-3 py-2 text-xs text-center border-r">
-        {item.quantity || 0}
-      </td>
-      <td className="px-3 py-2 text-xs text-right border-r">
-        {`${item.tax_rate || 0}%`}
-      </td>
+      <td className="px-3 py-2 text-xs border-r">{item.license_plate || '-'}</td>
+      <td className="px-3 py-2 text-xs border-r">{item.item_name || '-'}</td>
+      <td className="px-3 py-2 text-xs text-center border-r">{formatDate(item.service_date)}</td>
+      <td className="px-3 py-2 text-xs border-r">{item.notes || '-'}</td>
+      <td className="px-3 py-2 text-xs text-right border-r">{formatCurrency(item.price || 0)}</td>
+      <td className="px-3 py-2 text-xs text-center border-r">{item.quantity || 0}</td>
+      <td className="px-3 py-2 text-xs text-right border-r">{`${item.tax_rate || 0}%`}</td>
       <td className="px-3 py-2 text-xs text-right font-medium">
         {formatCurrency(item.total || 0)}
       </td>
@@ -90,7 +76,7 @@ InvoiceItemRow.propTypes = {
   onItemChange: PropTypes.func,
   onDeleteItem: PropTypes.func.isRequired,
   onLicensePlateCellClick: PropTypes.func,
-  onEditItem: PropTypes.func.isRequired
+  onEditItem: PropTypes.func.isRequired,
 };
 
 export default InvoiceItemRow;

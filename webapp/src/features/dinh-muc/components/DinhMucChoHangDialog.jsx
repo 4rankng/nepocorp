@@ -69,16 +69,16 @@ const DinhMucChoHangDialog = ({
     setErrors({});
   }, [initialData, open]);
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
 
     // Clear error when field is edited
     if (errors[name]) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
         [name]: '',
       }));
@@ -100,7 +100,7 @@ const DinhMucChoHangDialog = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
 
     if (validateForm()) {

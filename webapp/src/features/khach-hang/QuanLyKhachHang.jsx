@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
-import {
-  Box,
-  Alert,
-  Snackbar,
-  CircularProgress,
-  Typography,
-  Divider,
-} from '@mui/material';
+import { Box, Alert, Snackbar, CircularProgress, Typography, Divider } from '@mui/material';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import EntityForm from '@/components/shared/EntityForm';
 
@@ -191,16 +184,12 @@ const QuanLyKhachHang = () => {
                 <Typography variant="body2" fontWeight={500}>
                   Mã số thuế:
                 </Typography>
-                <Typography variant="body2">
-                  {deleteDialog.data?.tax_code || 'Chưa có'}
-                </Typography>
+                <Typography variant="body2">{deleteDialog.data?.tax_code || 'Chưa có'}</Typography>
 
                 <Typography variant="body2" fontWeight={500}>
                   Địa chỉ:
                 </Typography>
-                <Typography variant="body2">
-                  {deleteDialog.data?.address || 'Chưa có'}
-                </Typography>
+                <Typography variant="body2">{deleteDialog.data?.address || 'Chưa có'}</Typography>
               </Box>
             </Box>
           </Box>

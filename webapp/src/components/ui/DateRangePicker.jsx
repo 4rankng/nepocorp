@@ -1,35 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  TextField,
-  Grid,
-  Chip,
-  Paper,
-  ClickAwayListener
-} from '@mui/material';
+import { Box, Typography, TextField, Grid, Chip, Paper, ClickAwayListener } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
 import Dropdown from './Dropdown';
-import { 
-  DATE_RANGE_PRESETS, 
-  DATE_RANGE_OPTIONS, 
+import {
+  DATE_RANGE_PRESETS,
+  DATE_RANGE_OPTIONS,
   getDateRange,
-  validateDateRange 
+  validateDateRange,
 } from '@/features/bang-cong-no/types';
 
 const DateRangePicker = ({
   startDate,
   endDate,
   onChange,
-  label = "Khoảng thời gian",
-  placeholder = "Chọn khoảng thời gian",
+  label = 'Khoảng thời gian',
+  placeholder = 'Chọn khoảng thời gian',
   disabled = false,
   error = false,
-  helperText = "",
-  sx = {}
+  helperText = '',
+  sx = {},
 }) => {
   const [preset, setPreset] = useState('');
   const [customMode, setCustomMode] = useState(false);
@@ -43,9 +35,9 @@ const DateRangePicker = ({
     setEndDateValue(endDate ? new Date(endDate) : null);
   }, [startDate, endDate]);
 
-  const handlePresetChange = (selectedPreset) => {
+  const handlePresetChange = selectedPreset => {
     setPreset(selectedPreset);
-    
+
     if (selectedPreset === DATE_RANGE_PRESETS.CUSTOM) {
       setCustomMode(true);
       return;
@@ -65,16 +57,13 @@ const DateRangePicker = ({
     if (dateRange) {
       const start = new Date(dateRange.startDate);
       const end = new Date(dateRange.endDate);
-      
+
       setStartDateValue(start);
       setEndDateValue(end);
       setCustomMode(false);
       setValidationError('');
-      
-      onChange(
-        dateRange.startDate,
-        dateRange.endDate
-      );
+
+      onChange(dateRange.startDate, dateRange.endDate);
     }
   };
 
@@ -99,10 +88,7 @@ const DateRangePicker = ({
 
       if (validation.isValid) {
         setValidationError('');
-        onChange(
-          newStartDate.toISOString().split('T')[0],
-          newEndDate.toISOString().split('T')[0]
-        );
+        onChange(newStartDate.toISOString().split('T')[0], newEndDate.toISOString().split('T')[0]);
       } else {
         setValidationError(validation.error);
       }
@@ -126,21 +112,21 @@ const DateRangePicker = ({
 
   const formatDisplayValue = () => {
     if (!startDateValue && !endDateValue) return '';
-    
+
     if (startDateValue && endDateValue) {
       const start = startDateValue.toLocaleDateString('vi-VN');
       const end = endDateValue.toLocaleDateString('vi-VN');
       return start === end ? start : `${start} → ${end}`;
     }
-    
+
     if (startDateValue) {
       return `Từ ${startDateValue.toLocaleDateString('vi-VN')}`;
     }
-    
+
     if (endDateValue) {
       return `Đến ${endDateValue.toLocaleDateString('vi-VN')}`;
     }
-    
+
     return '';
   };
 
@@ -150,7 +136,7 @@ const DateRangePicker = ({
         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
           {label}
         </Typography>
-        
+
         {/* Preset Selector */}
         <Dropdown
           value={preset}
@@ -185,13 +171,13 @@ const DateRangePicker = ({
                 <DatePicker
                   label="Từ ngày"
                   value={startDateValue}
-                  onChange={(date) => handleCustomDateChange('start', date)}
+                  onChange={date => handleCustomDateChange('start', date)}
                   disabled={disabled}
                   slotProps={{
                     textField: {
                       size: 'small',
-                      fullWidth: true
-                    }
+                      fullWidth: true,
+                    },
                   }}
                 />
               </Grid>
@@ -199,14 +185,14 @@ const DateRangePicker = ({
                 <DatePicker
                   label="Đến ngày"
                   value={endDateValue}
-                  onChange={(date) => handleCustomDateChange('end', date)}
+                  onChange={date => handleCustomDateChange('end', date)}
                   disabled={disabled}
                   minDate={startDateValue}
                   slotProps={{
                     textField: {
                       size: 'small',
-                      fullWidth: true
-                    }
+                      fullWidth: true,
+                    },
                   }}
                 />
               </Grid>
@@ -232,8 +218,8 @@ const DateRangePicker = ({
 
         {/* Error Display */}
         {(validationError || helperText) && (
-          <Typography 
-            variant="caption" 
+          <Typography
+            variant="caption"
             color={validationError ? 'error' : 'text.secondary'}
             sx={{ mt: 1, display: 'block' }}
           >

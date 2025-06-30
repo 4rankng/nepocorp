@@ -6,7 +6,7 @@ export const FILTER_TYPES = {
   TRANSACTION_TYPE: 'transaction_type',
   DATE_RANGE: 'date_range',
   AMOUNT_RANGE: 'amount_range',
-  SEARCH: 'search'
+  SEARCH: 'search',
 };
 
 export const DATE_RANGE_PRESETS = {
@@ -20,7 +20,7 @@ export const DATE_RANGE_PRESETS = {
   LAST_QUARTER: 'last_quarter',
   THIS_YEAR: 'this_year',
   LAST_YEAR: 'last_year',
-  CUSTOM: 'custom'
+  CUSTOM: 'custom',
 };
 
 export const DATE_RANGE_LABELS = {
@@ -34,25 +34,25 @@ export const DATE_RANGE_LABELS = {
   [DATE_RANGE_PRESETS.LAST_QUARTER]: 'Quý trước',
   [DATE_RANGE_PRESETS.THIS_YEAR]: 'Năm này',
   [DATE_RANGE_PRESETS.LAST_YEAR]: 'Năm trước',
-  [DATE_RANGE_PRESETS.CUSTOM]: 'Tùy chọn'
+  [DATE_RANGE_PRESETS.CUSTOM]: 'Tùy chọn',
 };
 
 export const DATE_RANGE_OPTIONS = Object.keys(DATE_RANGE_LABELS).map(key => ({
   value: key,
-  label: DATE_RANGE_LABELS[key]
+  label: DATE_RANGE_LABELS[key],
 }));
 
 // Helper function to get date range
-export const getDateRange = (preset) => {
+export const getDateRange = preset => {
   const today = new Date();
-  
+
   switch (preset) {
     case DATE_RANGE_PRESETS.TODAY: {
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
       return {
         startDate: startOfDay.toISOString().split('T')[0],
-        endDate: endOfDay.toISOString().split('T')[0]
+        endDate: endOfDay.toISOString().split('T')[0],
       };
     }
 
@@ -61,7 +61,7 @@ export const getDateRange = (preset) => {
       yesterday.setDate(today.getDate() - 1);
       return {
         startDate: yesterday.toISOString().split('T')[0],
-        endDate: yesterday.toISOString().split('T')[0]
+        endDate: yesterday.toISOString().split('T')[0],
       };
     }
 
@@ -72,7 +72,7 @@ export const getDateRange = (preset) => {
       endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
       return {
         startDate: startOfWeek.toISOString().split('T')[0],
-        endDate: endOfWeek.toISOString().split('T')[0]
+        endDate: endOfWeek.toISOString().split('T')[0],
       };
     }
 
@@ -83,7 +83,7 @@ export const getDateRange = (preset) => {
       lastWeekEnd.setDate(lastWeekStart.getDate() + 6); // Last Sunday
       return {
         startDate: lastWeekStart.toISOString().split('T')[0],
-        endDate: lastWeekEnd.toISOString().split('T')[0]
+        endDate: lastWeekEnd.toISOString().split('T')[0],
       };
     }
 
@@ -92,7 +92,7 @@ export const getDateRange = (preset) => {
       const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       return {
         startDate: startOfMonth.toISOString().split('T')[0],
-        endDate: endOfMonth.toISOString().split('T')[0]
+        endDate: endOfMonth.toISOString().split('T')[0],
       };
     }
 
@@ -101,7 +101,7 @@ export const getDateRange = (preset) => {
       const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
       return {
         startDate: lastMonthStart.toISOString().split('T')[0],
-        endDate: lastMonthEnd.toISOString().split('T')[0]
+        endDate: lastMonthEnd.toISOString().split('T')[0],
       };
     }
 
@@ -110,7 +110,7 @@ export const getDateRange = (preset) => {
       const quarterEnd = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3 + 3, 0);
       return {
         startDate: quarterStart.toISOString().split('T')[0],
-        endDate: quarterEnd.toISOString().split('T')[0]
+        endDate: quarterEnd.toISOString().split('T')[0],
       };
     }
 
@@ -120,7 +120,7 @@ export const getDateRange = (preset) => {
       const lastQuarterEnd = new Date(today.getFullYear(), lastQuarterMonth + 3, 0);
       return {
         startDate: lastQuarterStart.toISOString().split('T')[0],
-        endDate: lastQuarterEnd.toISOString().split('T')[0]
+        endDate: lastQuarterEnd.toISOString().split('T')[0],
       };
     }
 
@@ -129,7 +129,7 @@ export const getDateRange = (preset) => {
       const endOfYear = new Date(today.getFullYear(), 11, 31);
       return {
         startDate: startOfYear.toISOString().split('T')[0],
-        endDate: endOfYear.toISOString().split('T')[0]
+        endDate: endOfYear.toISOString().split('T')[0],
       };
     }
 
@@ -138,7 +138,7 @@ export const getDateRange = (preset) => {
       const lastYearEnd = new Date(today.getFullYear() - 1, 11, 31);
       return {
         startDate: lastYearStart.toISOString().split('T')[0],
-        endDate: lastYearEnd.toISOString().split('T')[0]
+        endDate: lastYearEnd.toISOString().split('T')[0],
       };
     }
 
@@ -156,11 +156,11 @@ export const createEmptyFilters = () => ({
   end_date: null,
   search: '',
   amount_min: null,
-  amount_max: null
+  amount_max: null,
 });
 
 // Filter validation
-export const validateFilters = (filters) => {
+export const validateFilters = filters => {
   const errors = {};
 
   if (filters.start_date && filters.end_date) {
@@ -183,34 +183,34 @@ export const validateFilters = (filters) => {
 
   return {
     isValid: Object.keys(errors).length === 0,
-    errors
+    errors,
   };
 };
 
 // Check if filters are active
-export const hasActiveFilters = (filters) => {
+export const hasActiveFilters = filters => {
   const emptyFilters = createEmptyFilters();
-  
+
   return Object.keys(filters).some(key => {
     const value = filters[key];
     const emptyValue = emptyFilters[key];
-    
+
     if (typeof value === 'string') {
       return value.trim() !== emptyValue;
     }
-    
+
     return value !== emptyValue;
   });
 };
 
 // Count active filters
-export const countActiveFilters = (filters) => {
+export const countActiveFilters = filters => {
   const emptyFilters = createEmptyFilters();
-  
+
   return Object.keys(filters).reduce((count, key) => {
     const value = filters[key];
     const emptyValue = emptyFilters[key];
-    
+
     if (key === 'start_date' || key === 'end_date') {
       // Count date range as one filter
       if (filters.start_date && filters.end_date && count === 0) {
@@ -218,11 +218,11 @@ export const countActiveFilters = (filters) => {
       }
       return count;
     }
-    
+
     if (typeof value === 'string') {
       return value.trim() !== emptyValue ? count + 1 : count;
     }
-    
+
     return value !== emptyValue ? count + 1 : count;
   }, 0);
 };

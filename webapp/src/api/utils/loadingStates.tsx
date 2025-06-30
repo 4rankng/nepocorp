@@ -19,13 +19,13 @@ export const LoadingWrapper: React.FC<LoadingProps> = ({
   loadingComponent,
   errorComponent,
   skeleton = false,
-  skeletonLines = 3
+  skeletonLines = 3,
 }) => {
   if (isLoading) {
     if (loadingComponent) {
       return <>{loadingComponent}</>;
     }
-    
+
     if (skeleton) {
       return (
         <Box>
@@ -35,7 +35,7 @@ export const LoadingWrapper: React.FC<LoadingProps> = ({
         </Box>
       );
     }
-    
+
     return (
       <Box display="flex" justifyContent="center" alignItems="center" p={3}>
         <CircularProgress />
@@ -47,12 +47,10 @@ export const LoadingWrapper: React.FC<LoadingProps> = ({
     if (errorComponent) {
       return <>{errorComponent}</>;
     }
-    
+
     return (
       <Box p={2} textAlign="center">
-        <Typography color="error">
-          An error occurred. Please try again.
-        </Typography>
+        <Typography color="error">An error occurred. Please try again.</Typography>
       </Box>
     );
   }
@@ -61,9 +59,9 @@ export const LoadingWrapper: React.FC<LoadingProps> = ({
 };
 
 // Skeleton loaders for different content types
-export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({ 
-  rows = 5, 
-  columns = 4 
+export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({
+  rows = 5,
+  columns = 4,
 }) => (
   <Box>
     {Array.from({ length: rows }).map((_, rowIndex) => (
@@ -101,14 +99,14 @@ export const FormSkeleton: React.FC = () => (
 // Hook for managing loading states
 export const useLoadingState = (initialState = false) => {
   const [isLoading, setIsLoading] = React.useState(initialState);
-  
+
   const startLoading = React.useCallback(() => setIsLoading(true), []);
   const stopLoading = React.useCallback(() => setIsLoading(false), []);
-  
+
   return {
     isLoading,
     startLoading,
     stopLoading,
-    setIsLoading
+    setIsLoading,
   };
 };

@@ -4,7 +4,7 @@ import { useVehicleData } from '@contexts/VehicleDataContext';
 // Fuel standards API not yet implemented - return empty data
 const dinhMucDauApi = {
   getCount: async () => 0,
-  getVoRongRecords: async () => []
+  getVoRongRecords: async () => [],
 };
 
 /**
@@ -35,7 +35,7 @@ export const useVoRong = () => {
 
   // Process data function to handle grouping only (no filtering/pagination)
   const processVoRongData = useCallback(
-    (voRongDataItems) => {
+    voRongDataItems => {
       // Group by license plate
       const voRongGrouped = voRongDataItems.reduce((acc, item) => {
         const plateKey = item.bien_so_xe || item.bienSoXe;

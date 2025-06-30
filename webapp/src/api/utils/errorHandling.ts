@@ -5,11 +5,11 @@ export class ApiErrorHandler {
     if (this.isApiError(error)) {
       return error.message || 'An error occurred';
     }
-    
+
     if (error instanceof Error) {
       return error.message;
     }
-    
+
     return 'An unexpected error occurred';
   }
 
@@ -50,30 +50,30 @@ export class ApiErrorHandler {
     if (this.isUnauthorized(error)) {
       return 'You are not authorized to perform this action. Please log in again.';
     }
-    
+
     if (this.isNotFound(error)) {
       return 'The requested resource was not found.';
     }
-    
+
     if (this.isBadRequest(error)) {
       return this.getErrorMessage(error);
     }
-    
+
     if (this.isServerError(error)) {
       return 'A server error occurred. Please try again later.';
     }
-    
+
     return this.getErrorMessage(error);
   }
 
   static logError(error: unknown, context?: string): void {
     const errorMessage = this.getErrorMessage(error);
     const errorCode = this.getErrorCode(error);
-    
+
     console.error(`API Error${context ? ` (${context})` : ''}:`, {
       message: errorMessage,
       code: errorCode,
-      error
+      error,
     });
   }
 }
@@ -81,7 +81,7 @@ export class ApiErrorHandler {
 // React Query error boundary handler
 export const handleQueryError = (error: unknown, context?: string) => {
   ApiErrorHandler.logError(error, context);
-  
+
   // You can extend this to show toast notifications, send to error tracking, etc.
   // For now, just log the error
 };

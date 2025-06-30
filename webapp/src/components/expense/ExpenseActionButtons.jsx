@@ -11,7 +11,7 @@ const ExpenseActionButtons = ({
   onCancelEdit,
   onSaveEdit,
   onEditClick,
-  onClose
+  onClose,
 }) => {
   return (
     <div className="px-4 py-3 border-t border-gray-200 flex justify-between items-center">
@@ -72,7 +72,7 @@ ExpenseActionButtons.propTypes = {
   onCancelEdit: PropTypes.func.isRequired,
   onSaveEdit: PropTypes.func.isRequired,
   onEditClick: PropTypes.func.isRequired,
-  onClose: PropTypes.func.isRequired
+  onClose: PropTypes.func.isRequired,
 };
 
 export default React.memo(ExpenseActionButtons);

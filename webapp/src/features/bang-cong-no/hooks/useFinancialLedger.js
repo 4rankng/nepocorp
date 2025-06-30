@@ -9,7 +9,7 @@ export const useFinancialLedger = () => {
     page: 0,
     limit: 50,
     total: 0,
-    totalPages: 0
+    totalPages: 0,
   });
 
   // Current filters
@@ -19,90 +19,104 @@ export const useFinancialLedger = () => {
     transaction_type: null,
     start_date: null,
     end_date: null,
-    search: ''
+    search: '',
   });
 
   // Balance summary
   const [balanceSummary, setBalanceSummary] = useState({
     totalDebit: 0,
     totalCredit: 0,
-    balance: 0
+    balance: 0,
   });
 
   // Fetch transactions with current filters and pagination
-  const fetchTransactions = useCallback(async (page = 0, limit = 50, newFilters = null) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const currentFilters = newFilters || filters;
-      const cleanFilters = {};
-      
-      // Only include non-null/non-empty filters
-      Object.keys(currentFilters).forEach(key => {
-        if (currentFilters[key] !== null && currentFilters[key] !== '') {
-          cleanFilters[key] = currentFilters[key];
-        }
-      });
+  const fetchTransactions = useCallback(
+    async (page = 0, limit = 50, newFilters = null) => {
+      setLoading(true);
+      setError(null);
 
-      const response = await financialLedgerApi.getFiltered(
-        cleanFilters,
-        page + 1, // API uses 1-based pagination
-        limit
-      );
+      try {
+        const currentFilters = newFilters || filters;
+        const cleanFilters = {};
 
-      const data = response.data?.data || response.data || [];
-      const total = response.data?.total || response.data?.pagination?.total || data.length;
-      const totalPages = Math.ceil(total / limit);
+        // Only include non-null/non-empty filters
+        Object.keys(currentFilters).forEach(key => {
+          if (currentFilters[key] !== null && currentFilters[key] !== '') {
+            cleanFilters[key] = currentFilters[key];
+          }
+        });
 
-      setTransactions(data);
-      setPagination({
-        page,
-        limit,
-        total,
-        totalPages
-      });
+        const response = await financialLedgerApi.getFiltered(
+          cleanFilters,
+          page + 1, // API uses 1-based pagination
+          limit
+        );
 
-      // Calculate balance summary
-      const summary = data.reduce((acc, transaction) => {
-        const debit = parseFloat(transaction.debit) || 0;
-        const credit = parseFloat(transaction.credit) || 0;
-        
-        acc.totalDebit += debit;
-        acc.totalCredit += credit;
-        
-        return acc;
-      }, { totalDebit: 0, totalCredit: 0 });
+        const data = response.data?.data || response.data || [];
+        const total = response.data?.total || response.data?.pagination?.total || data.length;
+        const totalPages = Math.ceil(total / limit);
 
-      summary.balance = summary.totalDebit - summary.totalCredit;
-      setBalanceSummary(summary);
+        setTransactions(data);
+        setPagination({
+          page,
+          limit,
+          total,
+          totalPages,
+        });
 
-    } catch (err) {
-      console.error('Error fetching transactions:', err);
-      setError('Không thể tải dữ liệu giao dịch');
-      setTransactions([]);
-      setBalanceSummary({ totalDebit: 0, totalCredit: 0, balance: 0 });
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+        // Calculate balance summary
+        const summary = data.reduce(
+          (acc, transaction) => {
+            const debit = parseFloat(transaction.debit) || 0;
+            const credit = parseFloat(transaction.credit) || 0;
+
+            acc.totalDebit += debit;
+            acc.totalCredit += credit;
+
+            return acc;
+          },
+          { totalDebit: 0, totalCredit: 0 }
+        );
+
+        summary.balance = summary.totalDebit - summary.totalCredit;
+        setBalanceSummary(summary);
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+        setError('Không thể tải dữ liệu giao dịch');
+        setTransactions([]);
+        setBalanceSummary({ totalDebit: 0, totalCredit: 0, balance: 0 });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filters]
+  );
 
   // Handle page change
-  const handlePageChange = useCallback((newPage) => {
-    fetchTransactions(newPage, pagination.limit);
-  }, [fetchTransactions, pagination.limit]);
+  const handlePageChange = useCallback(
+    newPage => {
+      fetchTransactions(newPage, pagination.limit);
+    },
+    [fetchTransactions, pagination.limit]
+  );
 
   // Handle rows per page change
-  const handleRowsPerPageChange = useCallback((newLimit) => {
-    fetchTransactions(0, newLimit);
-  }, [fetchTransactions]);
+  const handleRowsPerPageChange = useCallback(
+    newLimit => {
+      fetchTransactions(0, newLimit);
+    },
+    [fetchTransactions]
+  );
 
   // Update filters
-  const updateFilters = useCallback((newFilters) => {
-    const updatedFilters = { ...filters, ...newFilters };
-    setFilters(updatedFilters);
-    fetchTransactions(0, pagination.limit, updatedFilters);
-  }, [filters, fetchTransactions, pagination.limit]);
+  const updateFilters = useCallback(
+    newFilters => {
+      const updatedFilters = { ...filters, ...newFilters };
+      setFilters(updatedFilters);
+      fetchTransactions(0, pagination.limit, updatedFilters);
+    },
+    [filters, fetchTransactions, pagination.limit]
+  );
 
   // Clear filters
   const clearFilters = useCallback(() => {
@@ -112,62 +126,71 @@ export const useFinancialLedger = () => {
       transaction_type: null,
       start_date: null,
       end_date: null,
-      search: ''
+      search: '',
     };
     setFilters(clearedFilters);
     fetchTransactions(0, pagination.limit, clearedFilters);
   }, [fetchTransactions, pagination.limit]);
 
   // Create transaction
-  const createTransaction = useCallback(async (transactionData) => {
-    try {
-      setLoading(true);
-      await financialLedgerApi.create(transactionData);
-      await fetchTransactions(pagination.page, pagination.limit);
-      return { success: true };
-    } catch (err) {
-      console.error('Error creating transaction:', err);
-      const message = err.response?.data?.message || 'Không thể tạo giao dịch';
-      return { success: false, error: message };
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchTransactions, pagination.page, pagination.limit]);
+  const createTransaction = useCallback(
+    async transactionData => {
+      try {
+        setLoading(true);
+        await financialLedgerApi.create(transactionData);
+        await fetchTransactions(pagination.page, pagination.limit);
+        return { success: true };
+      } catch (err) {
+        console.error('Error creating transaction:', err);
+        const message = err.response?.data?.message || 'Không thể tạo giao dịch';
+        return { success: false, error: message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchTransactions, pagination.page, pagination.limit]
+  );
 
   // Update transaction
-  const updateTransaction = useCallback(async (id, transactionData) => {
-    try {
-      setLoading(true);
-      await financialLedgerApi.update(id, transactionData);
-      await fetchTransactions(pagination.page, pagination.limit);
-      return { success: true };
-    } catch (err) {
-      console.error('Error updating transaction:', err);
-      const message = err.response?.data?.message || 'Không thể cập nhật giao dịch';
-      return { success: false, error: message };
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchTransactions, pagination.page, pagination.limit]);
+  const updateTransaction = useCallback(
+    async (id, transactionData) => {
+      try {
+        setLoading(true);
+        await financialLedgerApi.update(id, transactionData);
+        await fetchTransactions(pagination.page, pagination.limit);
+        return { success: true };
+      } catch (err) {
+        console.error('Error updating transaction:', err);
+        const message = err.response?.data?.message || 'Không thể cập nhật giao dịch';
+        return { success: false, error: message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchTransactions, pagination.page, pagination.limit]
+  );
 
   // Delete transaction
-  const deleteTransaction = useCallback(async (id) => {
-    try {
-      setLoading(true);
-      await financialLedgerApi.delete(id);
-      await fetchTransactions(pagination.page, pagination.limit);
-      return { success: true };
-    } catch (err) {
-      console.error('Error deleting transaction:', err);
-      const message = err.response?.data?.message || 'Không thể xóa giao dịch';
-      return { success: false, error: message };
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchTransactions, pagination.page, pagination.limit]);
+  const deleteTransaction = useCallback(
+    async id => {
+      try {
+        setLoading(true);
+        await financialLedgerApi.delete(id);
+        await fetchTransactions(pagination.page, pagination.limit);
+        return { success: true };
+      } catch (err) {
+        console.error('Error deleting transaction:', err);
+        const message = err.response?.data?.message || 'Không thể xóa giao dịch';
+        return { success: false, error: message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchTransactions, pagination.page, pagination.limit]
+  );
 
   // Get balance for specific customer
-  const getCustomerBalance = useCallback(async (customerId) => {
+  const getCustomerBalance = useCallback(async customerId => {
     try {
       const response = await financialLedgerApi.getCustomerBalance(customerId);
       return response.data;
@@ -178,7 +201,7 @@ export const useFinancialLedger = () => {
   }, []);
 
   // Get balance for specific partner
-  const getPartnerBalance = useCallback(async (partnerId) => {
+  const getPartnerBalance = useCallback(async partnerId => {
     try {
       const response = await financialLedgerApi.getPartnerBalance(partnerId);
       return response.data;
@@ -201,7 +224,7 @@ export const useFinancialLedger = () => {
     pagination: {
       ...pagination,
       onPageChange: handlePageChange,
-      onRowsPerPageChange: handleRowsPerPageChange
+      onRowsPerPageChange: handleRowsPerPageChange,
     },
     filters,
     balanceSummary,
@@ -217,6 +240,6 @@ export const useFinancialLedger = () => {
     getPartnerBalance,
 
     // Utilities
-    refresh: () => fetchTransactions(pagination.page, pagination.limit)
+    refresh: () => fetchTransactions(pagination.page, pagination.limit),
   };
 };

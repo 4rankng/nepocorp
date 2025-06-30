@@ -17,12 +17,7 @@ const DesktopView = ({ customers, loading, error, onEdit, onDelete, onAdd }) => 
         />
       </Paper>
       {/* Floating Action Button */}
-      <FAB
-        onClick={onAdd}
-        icon={<AddIcon />}
-        ariaLabel="Thêm khách hàng"
-        loading={loading}
-      />
+      <FAB onClick={onAdd} icon={<AddIcon />} ariaLabel="Thêm khách hàng" loading={loading} />
     </Box>
   );
 };

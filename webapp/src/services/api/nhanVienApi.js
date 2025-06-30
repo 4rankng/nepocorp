@@ -8,13 +8,13 @@ export const nhanVienApi = {
   },
 
   // Get employee by ID
-  getById: async (id) => {
+  getById: async id => {
     const response = await apiClient.get(`/users/${id}`);
     return response;
   },
 
   // Create new employee
-  create: async (data) => {
+  create: async data => {
     const response = await apiClient.post('/users', data);
     return response;
   },
@@ -26,10 +26,10 @@ export const nhanVienApi = {
   },
 
   // Delete employee
-  delete: async (id) => {
+  delete: async id => {
     const response = await apiClient.delete(`/users/${id}`);
     return response;
-  }
+  },
 };
 
 // Alias functions for compatibility with hook expectations

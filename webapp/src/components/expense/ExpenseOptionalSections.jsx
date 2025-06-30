@@ -1,14 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const ExpenseOptionalSections = ({
-  expenseData,
-  isEditing,
-  editedData,
-  onFieldChange
-}) => {
+const ExpenseOptionalSections = ({ expenseData, isEditing, editedData, onFieldChange }) => {
   const showRemark = expenseData.remark || isEditing;
-  const showCancelReason = (isEditing ? editedData.payment_status === 'CANCELLED' : expenseData.payment_status === 'CANCELLED') ||
+  const showCancelReason =
+    (isEditing
+      ? editedData.payment_status === 'CANCELLED'
+      : expenseData.payment_status === 'CANCELLED') ||
     (expenseData.cancel_reason && !isEditing);
   const showBoth = showRemark && showCancelReason;
 
@@ -23,7 +21,7 @@ const ExpenseOptionalSections = ({
             <input
               type="text"
               value={editedData.remark || ''}
-              onChange={(e) => onFieldChange('remark', e.target.value)}
+              onChange={e => onFieldChange('remark', e.target.value)}
               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Nhập ghi chú"
             />
@@ -41,7 +39,7 @@ const ExpenseOptionalSections = ({
             <input
               type="text"
               value={editedData.cancel_reason || ''}
-              onChange={(e) => onFieldChange('cancel_reason', e.target.value)}
+              onChange={e => onFieldChange('cancel_reason', e.target.value)}
               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Nhập lý do hủy"
             />
@@ -65,7 +63,7 @@ const ExpenseOptionalSections = ({
             <input
               type="text"
               value={editedData.remark || ''}
-              onChange={(e) => onFieldChange('remark', e.target.value)}
+              onChange={e => onFieldChange('remark', e.target.value)}
               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Nhập ghi chú"
             />
@@ -84,7 +82,7 @@ const ExpenseOptionalSections = ({
             <input
               type="text"
               value={editedData.cancel_reason || ''}
-              onChange={(e) => onFieldChange('cancel_reason', e.target.value)}
+              onChange={e => onFieldChange('cancel_reason', e.target.value)}
               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Nhập lý do hủy"
             />
@@ -103,7 +101,7 @@ ExpenseOptionalSections.propTypes = {
   expenseData: PropTypes.object.isRequired,
   isEditing: PropTypes.bool.isRequired,
   editedData: PropTypes.object,
-  onFieldChange: PropTypes.func.isRequired
+  onFieldChange: PropTypes.func.isRequired,
 };
 
 export default React.memo(ExpenseOptionalSections);

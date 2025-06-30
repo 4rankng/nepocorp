@@ -58,13 +58,13 @@
   height: var(--input-height) !important;
 }
 
-.bao-duong-modal .form-control[type="date"] {
+.bao-duong-modal .form-control[type='date'] {
   padding: var(--input-padding-vertical) 4px !important;
   height: var(--input-height) !important;
   font-size: var(--input-font-size) !important;
 }
 
-.bao-duong-modal .form-control[type="number"] {
+.bao-duong-modal .form-control[type='number'] {
   padding: var(--input-padding) !important;
   height: var(--input-height) !important;
   font-size: var(--input-font-size) !important;

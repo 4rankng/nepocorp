@@ -48,7 +48,7 @@ const Portal = ({ children, container = null, enabled = true }) => {
 Portal.propTypes = {
   children: PropTypes.node.isRequired,
   container: PropTypes.instanceOf(Element),
-  enabled: PropTypes.bool
+  enabled: PropTypes.bool,
 };
 
 export default Portal;

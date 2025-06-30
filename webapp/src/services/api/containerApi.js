@@ -4,7 +4,7 @@ export const containerApi = {
   // Get all containers with pagination
   getAll: async (page = 1, limit = 100) => {
     const response = await apiClient.get('/container', {
-      params: { page, limit }
+      params: { page, limit },
     });
     return response;
   },
@@ -12,19 +12,19 @@ export const containerApi = {
   // Get all containers without pagination
   getAllWithoutPagination: async () => {
     const response = await apiClient.get('/container', {
-      params: { page: 1, limit: 1000 }
+      params: { page: 1, limit: 1000 },
     });
     return response;
   },
 
   // Get container by ID
-  getById: async (id) => {
+  getById: async id => {
     const response = await apiClient.get(`/container/${id}`);
     return response;
   },
 
   // Create new container
-  create: async (data) => {
+  create: async data => {
     const response = await apiClient.post('/container', data);
     return response;
   },
@@ -36,7 +36,7 @@ export const containerApi = {
   },
 
   // Delete container
-  delete: async (id) => {
+  delete: async id => {
     const response = await apiClient.delete(`/container/${id}`);
     return response;
   },
@@ -44,8 +44,8 @@ export const containerApi = {
   // Get count of containers
   getCount: async () => {
     const response = await apiClient.get('/container', {
-      params: { page: 1, limit: 1 }
+      params: { page: 1, limit: 1 },
     });
     return response;
-  }
+  },
 };

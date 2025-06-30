@@ -6,14 +6,14 @@ import logger from '@services/logger';
 // Mock API functions returning empty data until backend is integrated
 const updateTuyenDuong = async (_id, data) => ({ id: _id, ...data });
 const tuyenDuongApi = {
-  create: async (data) => ({ id: Date.now(), ...data }),
+  create: async data => ({ id: Date.now(), ...data }),
   update: async (_id, data) => ({ id: _id, ...data }),
-  delete: async (_id) => ({ success: true })
+  delete: async _id => ({ success: true }),
 };
 const _dinhMucDiDuongApi = {
-  create: async (data) => ({ id: Date.now(), ...data }),
+  create: async data => ({ id: Date.now(), ...data }),
   update: async (_id, data) => ({ id: _id, ...data }),
-  delete: async (_id) => ({ success: true })
+  delete: async _id => ({ success: true }),
 };
 
 export const useDinhMucDiDuongLogic = () => {
@@ -85,8 +85,8 @@ export const useDinhMucDiDuongLogic = () => {
   const filteredData = useMemo(() => {
     if (!searchTerm) return tableData;
     return tableData.filter(row =>
-      Object.values(row).some(value =>
-        value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      Object.values(row).some(
+        value => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
   }, [tableData, searchTerm]);
@@ -97,7 +97,7 @@ export const useDinhMucDiDuongLogic = () => {
   }, [filteredData, pagination]);
 
   // Form submission
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     setIsSaving(true);
     try {
       logger.info('Submitting new route with norms', data);
@@ -133,13 +133,12 @@ export const useDinhMucDiDuongLogic = () => {
       }
 
       enqueueSnackbar(editingId ? 'Sửa thành công!' : 'Thêm thành công!', {
-        variant: 'success'
+        variant: 'success',
       });
 
       await fetchAllData();
       setEditingId(null);
       setIsAddingNew(false);
-
     } catch (error) {
       logger.error('Error submitting form:', error);
       enqueueSnackbar('Có lỗi xảy ra, vui lòng thử lại', { variant: 'error' });
@@ -149,7 +148,7 @@ export const useDinhMucDiDuongLogic = () => {
   };
 
   // Delete handlers
-  const handleDeleteClick = (row) => {
+  const handleDeleteClick = row => {
     setItemToDelete(row);
     setIsDeleting(true);
   };
@@ -171,7 +170,7 @@ export const useDinhMucDiDuongLogic = () => {
   };
 
   // Edit handlers
-  const handleEditClick = (row) => {
+  const handleEditClick = row => {
     setEditingId(row.id);
     setEditedData({
       ma_tuyen: row.ma_tuyen,

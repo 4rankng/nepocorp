@@ -11,7 +11,9 @@ The UI system is built around the principle of **consistent design patterns** an
 ### 1. Modal Components
 
 #### `<Modal />`
+
 Basic modal wrapper with overlay and size variants.
+
 ```jsx
 <Modal isOpen={true} onClose={handleClose} size="fullWidth">
   {/* Modal content */}
@@ -19,7 +21,9 @@ Basic modal wrapper with overlay and size variants.
 ```
 
 #### `<FormModal />`
+
 Pre-configured modal specifically for forms, includes ESC key handling and form submission.
+
 ```jsx
 <FormModal
   isOpen={open}
@@ -35,6 +39,7 @@ Pre-configured modal specifically for forms, includes ESC key handling and form 
 ### 2. Form Structure Components
 
 #### Basic Layout
+
 ```jsx
 <FormSections columns={2}>
   <FormSection title="Left Section">
@@ -43,17 +48,17 @@ Pre-configured modal specifically for forms, includes ESC key handling and form 
       <FormCol>{/* Field 2 */}</FormCol>
     </FormRow>
   </FormSection>
-  
-  <FormSection title="Right Section">
-    {/* Content */}
-  </FormSection>
+
+  <FormSection title="Right Section">{/* Content */}</FormSection>
 </FormSections>
 ```
 
 ### 3. Field Components
 
 #### `<SelectField />`
+
 Standardized select dropdown with consistent error handling.
+
 ```jsx
 <SelectField
   label="License Plate"
@@ -62,7 +67,7 @@ Standardized select dropdown with consistent error handling.
   onChange={handleChange}
   options={[
     { value: '51C-001', label: '51C-001 (Đầu kéo)' },
-    { value: '29H-111', label: '29H-111 (Rơ-moóc)' }
+    { value: '29H-111', label: '29H-111 (Rơ-moóc)' },
   ]}
   required
   error={errors.license_plate}
@@ -70,7 +75,9 @@ Standardized select dropdown with consistent error handling.
 ```
 
 #### `<TextField />`
+
 Standard text input with error handling.
+
 ```jsx
 <TextField
   label="Item Name"
@@ -84,7 +91,9 @@ Standard text input with error handling.
 ```
 
 #### `<NumberField />`
+
 Number input with optional currency formatting.
+
 ```jsx
 <NumberField
   label="Price"
@@ -100,7 +109,9 @@ Number input with optional currency formatting.
 ```
 
 #### `<CurrencyDisplay />`
+
 Readonly currency display field.
+
 ```jsx
 <CurrencyDisplay
   label="Total Amount"
@@ -110,7 +121,9 @@ Readonly currency display field.
 ```
 
 #### `<DateField />`
+
 Date input with consistent styling.
+
 ```jsx
 <DateField
   label="Install Date"
@@ -122,7 +135,9 @@ Date input with consistent styling.
 ```
 
 #### `<TextareaField />`
+
 Multi-line text input.
+
 ```jsx
 <TextareaField
   label="Remarks"
@@ -137,7 +152,9 @@ Multi-line text input.
 ### 4. Action Button Components
 
 #### `<FormActionButtons />`
+
 Standard form buttons (Cancel + Save/Submit).
+
 ```jsx
 <FormActionButtons
   onCancel={handleClose}
@@ -148,7 +165,9 @@ Standard form buttons (Cancel + Save/Submit).
 ```
 
 #### `<InvoiceFormActionButtons />`
+
 Form buttons with optional invoice functionality.
+
 ```jsx
 <InvoiceFormActionButtons
   onCancel={handleClose}
@@ -162,7 +181,9 @@ Form buttons with optional invoice functionality.
 ```
 
 #### `<ConfirmActionButtons />`
+
 Confirmation dialog buttons.
+
 ```jsx
 <ConfirmActionButtons
   onCancel={handleCancel}
@@ -190,7 +211,7 @@ import {
   CurrencyDisplay,
   DateField,
   TextareaField,
-  InvoiceFormActionButtons
+  InvoiceFormActionButtons,
 } from '@components/ui';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 
@@ -205,7 +226,7 @@ const MaintenanceDialog = ({
   onSave,
   onInvoiceClick,
   licensePlates,
-  isLoadingPlates
+  isLoadingPlates,
 }) => {
   const [localFormData, setLocalFormData] = useState(formData || {});
 
@@ -213,7 +234,7 @@ const MaintenanceDialog = ({
     setLocalFormData(formData || {});
   }, [formData]);
 
-  const handleInputChange = (event) => {
+  const handleInputChange = event => {
     const { name, value } = event.target;
     const newData = { ...localFormData, [name]: value };
     setLocalFormData(newData);
@@ -228,7 +249,7 @@ const MaintenanceDialog = ({
 
   const licensePlateOptions = licensePlates.map(plate => ({
     value: plate.value,
-    label: plate.displayText
+    label: plate.displayText,
   }));
 
   const actionButtons = (
@@ -265,7 +286,7 @@ const MaintenanceDialog = ({
               loading={isLoadingPlates}
               error={errors.license_plate}
             />
-            
+
             <TextField
               label="Item Name"
               name="item_name"
@@ -284,7 +305,7 @@ const MaintenanceDialog = ({
               onChange={handleInputChange}
               error={errors.vendor_name}
             />
-            
+
             <NumberField
               label="Price"
               name="price"
@@ -307,11 +328,8 @@ const MaintenanceDialog = ({
               required
               error={errors.quantity}
             />
-            
-            <CurrencyDisplay
-              label="Total"
-              value={calculateTotal()}
-            />
+
+            <CurrencyDisplay label="Total" value={calculateTotal()} />
           </FormRow>
 
           <FormRow>
@@ -322,7 +340,7 @@ const MaintenanceDialog = ({
               onChange={handleInputChange}
               error={errors.install_date}
             />
-            
+
             <DateField
               label="Expiry Date"
               name="expiry_date"
@@ -341,9 +359,7 @@ const MaintenanceDialog = ({
           />
         </FormSection>
 
-        <FormSection title="Additional Information">
-          {/* Future expansion area */}
-        </FormSection>
+        <FormSection title="Additional Information">{/* Future expansion area */}</FormSection>
       </FormSections>
     </FormModal>
   );

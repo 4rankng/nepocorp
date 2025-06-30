@@ -18,7 +18,7 @@ const QuanLyPhieuThu = () => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
 
   // Helper functions
-  const formatCurrency = (value) => {
+  const formatCurrency = value => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -26,7 +26,7 @@ const QuanLyPhieuThu = () => {
     }).format(value);
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
@@ -53,17 +53,10 @@ const QuanLyPhieuThu = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  const {
-    invoices,
-    categories,
-    isLoading,
-    error,
-    deleteInvoice,
-    pagination,
-  } = useInvoices();
+  const { invoices, categories, isLoading, error, deleteInvoice, pagination } = useInvoices();
 
   // Transform invoice data for editing (from API format to form format)
-  const transformInvoiceForForm = (invoice) => {
+  const transformInvoiceForForm = invoice => {
     if (!invoice) return null;
 
     return {
@@ -82,14 +75,16 @@ const QuanLyPhieuThu = () => {
         quantity: item.quantity?.toString() || '1',
         service_date: item.service_date ? item.service_date.split('T')[0] : '',
         notes: item.notes || '',
-      })) || [{
-        license_plate: '',
-        item_name: '',
-        price: '',
-        quantity: '1',
-        service_date: '',
-        notes: ''
-      }]
+      })) || [
+        {
+          license_plate: '',
+          item_name: '',
+          price: '',
+          quantity: '1',
+          service_date: '',
+          notes: '',
+        },
+      ],
     };
   };
 
@@ -98,13 +93,13 @@ const QuanLyPhieuThu = () => {
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
       displayText: `${t.license_plate} (Đầu kéo)`,
-      type: 'tractor'
+      type: 'tractor',
     }));
 
     const trailerPlates = trailers.map(t => ({
       value: t.license_plate,
       displayText: `${t.license_plate} (Rơ moóc)`,
-      type: 'trailer'
+      type: 'trailer',
     }));
 
     return [...tractorPlates, ...trailerPlates];
@@ -122,14 +117,16 @@ const QuanLyPhieuThu = () => {
       payment_proof: '',
       remark: '',
       cancel_reason: '',
-      items: [{
-        license_plate: '',
-        item_name: '',
-        price: '',
-        quantity: '1',
-        service_date: '',
-        notes: ''
-      }]
+      items: [
+        {
+          license_plate: '',
+          item_name: '',
+          price: '',
+          quantity: '1',
+          service_date: '',
+          notes: '',
+        },
+      ],
     };
   };
 
@@ -139,21 +136,20 @@ const QuanLyPhieuThu = () => {
   // Single form manager that updates based on editing state
   const formManager = useInvoiceForm({
     initialFormData,
-    onSuccess: (message) => {
+    onSuccess: message => {
       showSnackbar(message, 'success');
       // Only close modal on actual success
       setShowInvoiceForm(false);
       setEditingInvoice(null);
     },
-    onError: (error) => {
+    onError: error => {
       showSnackbar(error.message, 'error');
       // NEVER close modal on errors - user should be able to fix and retry
     },
     fetchData: pagination.onPageChange ? () => pagination.onPageChange(pagination.page) : null,
     isEdit: !!editingInvoice,
-    api: invoiceApi
+    api: invoiceApi,
   });
-
 
   const handleAddInvoice = useCallback(async () => {
     setEditingInvoice(null);
@@ -163,29 +159,32 @@ const QuanLyPhieuThu = () => {
     await fetchTrailers();
   }, [fetchTractors, fetchTrailers]);
 
-  const handleEditInvoice = useCallback(async (invoice) => {
-    try {
-      // Show loading state while fetching full invoice data
-      showSnackbar('Đang tải thông tin phiếu thu...', 'info');
+  const handleEditInvoice = useCallback(
+    async invoice => {
+      try {
+        // Show loading state while fetching full invoice data
+        showSnackbar('Đang tải thông tin phiếu thu...', 'info');
 
-      // Fetch full invoice data including items
-      const response = await invoiceApi.getById(invoice.id);
-      const fullInvoiceData = response.data?.data || response.data || response;
+        // Fetch full invoice data including items
+        const response = await invoiceApi.getById(invoice.id);
+        const fullInvoiceData = response.data?.data || response.data || response;
 
-      // Set the full invoice data for editing
-      setEditingInvoice(fullInvoiceData);
-      setShowInvoiceForm(true);
+        // Set the full invoice data for editing
+        setEditingInvoice(fullInvoiceData);
+        setShowInvoiceForm(true);
 
-      // Ensure vehicle data is loaded
-      await fetchTractors();
-      await fetchTrailers();
-    } catch (error) {
-      console.error('Error fetching invoice details:', error);
-      showSnackbar('Không thể tải thông tin phiếu thu', 'error');
-    }
-  }, [fetchTractors, fetchTrailers, showSnackbar]);
+        // Ensure vehicle data is loaded
+        await fetchTractors();
+        await fetchTrailers();
+      } catch (error) {
+        console.error('Error fetching invoice details:', error);
+        showSnackbar('Không thể tải thông tin phiếu thu', 'error');
+      }
+    },
+    [fetchTractors, fetchTrailers, showSnackbar]
+  );
 
-  const handleViewInvoice = useCallback((invoice) => {
+  const handleViewInvoice = useCallback(invoice => {
     setViewingInvoiceId(invoice.id);
     setShowInvoiceModal(true);
   }, []);
@@ -200,8 +199,7 @@ const QuanLyPhieuThu = () => {
     setViewingInvoiceId(null);
   }, []);
 
-
-  const handleDeleteInvoice = useCallback((invoice) => {
+  const handleDeleteInvoice = useCallback(invoice => {
     setDeleteDialog({ open: true, invoice });
   }, []);
 
@@ -273,11 +271,7 @@ const QuanLyPhieuThu = () => {
 
       {/* FAB Button */}
       {!showInvoiceForm && !showInvoiceModal && (
-        <FAB
-          onClick={handleAddInvoice}
-          icon={<AddIcon />}
-          ariaLabel="Thêm"
-        />
+        <FAB onClick={handleAddInvoice} icon={<AddIcon />} ariaLabel="Thêm" />
       )}
 
       {/* Snackbar for notifications */}
@@ -301,18 +295,29 @@ const QuanLyPhieuThu = () => {
         type="delete"
         title="Xóa phiếu thu"
         message="Bạn có chắc chắn muốn xóa phiếu thu này?"
-        details={deleteDialog.invoice ? {
-          'Khách hàng': deleteDialog.invoice.customer?.name || '-',
-          'Loại phiếu thu': (() => {
-            const category = categories.find(cat => cat.id === deleteDialog.invoice.invoice_category_id);
-            return category ? category.name : '-';
-          })(),
-          'Tổng tiền': formatCurrency(deleteDialog.invoice.total || 0),
-          'Trạng thái': INVOICE_STATUS_LABELS[deleteDialog.invoice.payment_status] || deleteDialog.invoice.payment_status || '-',
-          'Ngày tạo': formatDate(deleteDialog.invoice.created_at),
-          ...(deleteDialog.invoice.remark && { 'Ghi chú': deleteDialog.invoice.remark }),
-          ...(deleteDialog.invoice.cancel_reason && { 'Lý do hủy': deleteDialog.invoice.cancel_reason }),
-        } : null}
+        details={
+          deleteDialog.invoice
+            ? {
+                'Khách hàng': deleteDialog.invoice.customer?.name || '-',
+                'Loại phiếu thu': (() => {
+                  const category = categories.find(
+                    cat => cat.id === deleteDialog.invoice.invoice_category_id
+                  );
+                  return category ? category.name : '-';
+                })(),
+                'Tổng tiền': formatCurrency(deleteDialog.invoice.total || 0),
+                'Trạng thái':
+                  INVOICE_STATUS_LABELS[deleteDialog.invoice.payment_status] ||
+                  deleteDialog.invoice.payment_status ||
+                  '-',
+                'Ngày tạo': formatDate(deleteDialog.invoice.created_at),
+                ...(deleteDialog.invoice.remark && { 'Ghi chú': deleteDialog.invoice.remark }),
+                ...(deleteDialog.invoice.cancel_reason && {
+                  'Lý do hủy': deleteDialog.invoice.cancel_reason,
+                }),
+              }
+            : null
+        }
       />
     </div>
   );

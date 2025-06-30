@@ -4,14 +4,20 @@ import { getInvoiceCategoryLabel } from '@constants/invoiceCategories';
 
 // Test expense categories
 const expenseCategories = [
-  'FUEL', 'ROAD_FEES', 'REPAIRS', 'TIRES', 'DRIVER_SALARY',
-  'PARKING', 'MAINTENANCE', 'INSURANCE', 'REGISTRATION', 'OTHER'
+  'FUEL',
+  'ROAD_FEES',
+  'REPAIRS',
+  'TIRES',
+  'DRIVER_SALARY',
+  'PARKING',
+  'MAINTENANCE',
+  'INSURANCE',
+  'REGISTRATION',
+  'OTHER',
 ];
 
 // Test invoice categories
-const invoiceCategories = [
-  'TRANSPORTATION', 'LOGISTICS_SERVICE', 'PORT_FEES', 'OTHER'
-];
+const invoiceCategories = ['TRANSPORTATION', 'LOGISTICS_SERVICE', 'PORT_FEES', 'OTHER'];
 
 export const testCategoryMappings = () => {
   console.log('=== Expense Category Mappings ===');

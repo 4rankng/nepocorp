@@ -126,8 +126,12 @@
 }
 
 @keyframes fab-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* FAB Icons */
@@ -153,24 +157,24 @@
   .fab--bottom-left {
     bottom: 16px;
   }
-  
+
   .fab--bottom-right {
     right: 16px;
   }
-  
+
   .fab--bottom-left {
     left: 16px;
   }
-  
+
   .fab--top-right,
   .fab--top-left {
     top: 16px;
   }
-  
+
   .fab--top-right {
     right: 16px;
   }
-  
+
   .fab--top-left {
     left: 16px;
   }

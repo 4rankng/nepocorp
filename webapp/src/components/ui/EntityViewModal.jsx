@@ -15,13 +15,13 @@ const EntityViewModal = ({
   onClose,
   size = 'fullScreen',
   className = '',
-  
+
   // Header props
   title,
   subtitle,
   icon,
   headerActions,
-  
+
   // Entity and editing
   entityData = null,
   isEditing = false,
@@ -29,41 +29,41 @@ const EntityViewModal = ({
   onSaveEdit,
   onCancelEdit,
   isSaving = false,
-  
+
   // Status management
   showStatusBadge = false,
   status,
   statusOptions = [],
   onStatusChange,
-  
+
   // Payment proof
   showPaymentProof = false,
   paymentProofUrl = null,
-  
+
   // Content
   children,
   loading = false,
   error = null,
   success = null,
-  
+
   // Footer customization
   showAddButton = false,
   onAddItem,
   addButtonText = 'Thêm hạng mục',
   leftActions,
-  
+
   // Button text customization
   editButtonText = 'Sửa',
   saveButtonText = 'Lưu',
   cancelButtonText = 'Hủy',
   closeButtonText = 'Đóng',
-  
+
   // Advanced
   disableEdit = false,
   customHeader = null,
   customFooter = null,
   bodyPadding = 'default',
-  id
+  id,
 }) => {
   const [localError, setLocalError] = useState(null);
   const [localSuccess, setLocalSuccess] = useState(null);
@@ -133,18 +133,15 @@ const EntityViewModal = ({
           icon={icon}
           actions={headerActions}
           onClose={onClose}
-          
           // Status management
           showStatusBadge={showStatusBadge}
           status={status}
           statusOptions={statusOptions}
           isEditing={isEditing}
           onStatusChange={onStatusChange}
-          
           // Payment proof
           showPaymentProof={showPaymentProof}
           paymentProofUrl={paymentProofUrl}
-          
           // Entity data
           entityData={entityData}
           loading={loading}
@@ -166,26 +163,22 @@ const EntityViewModal = ({
       {customFooter || (
         <ModalFooter
           mode={modalMode}
-          
           // View mode
           onEdit={!disableEdit ? handleEditClick : undefined}
           onClose={onClose}
           editButtonText={editButtonText}
           closeButtonText={closeButtonText}
-          
           // Edit mode
           onSave={handleSaveEdit}
           onCancel={handleCancelEdit}
           isSaving={isSaving}
           saveButtonText={saveButtonText}
           cancelButtonText={cancelButtonText}
-          
           // Left actions
           leftActions={leftActions}
           showAddButton={showAddButton && isEditing}
           onAddItem={onAddItem}
           addButtonText={addButtonText}
-          
           // Disable all actions when loading
           disabled={loading}
         />
@@ -200,13 +193,13 @@ EntityViewModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl', 'fullScreen']),
   className: PropTypes.string,
-  
+
   // Header props
   title: PropTypes.string.isRequired,
   subtitle: PropTypes.string,
   icon: PropTypes.node,
   headerActions: PropTypes.node,
-  
+
   // Entity and editing
   entityData: PropTypes.object,
   isEditing: PropTypes.bool,
@@ -214,41 +207,41 @@ EntityViewModal.propTypes = {
   onSaveEdit: PropTypes.func,
   onCancelEdit: PropTypes.func,
   isSaving: PropTypes.bool,
-  
+
   // Status management
   showStatusBadge: PropTypes.bool,
   status: PropTypes.string,
   statusOptions: PropTypes.array,
   onStatusChange: PropTypes.func,
-  
+
   // Payment proof
   showPaymentProof: PropTypes.bool,
   paymentProofUrl: PropTypes.string,
-  
+
   // Content
   children: PropTypes.node,
   loading: PropTypes.bool,
   error: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
   success: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-  
+
   // Footer customization
   showAddButton: PropTypes.bool,
   onAddItem: PropTypes.func,
   addButtonText: PropTypes.string,
   leftActions: PropTypes.node,
-  
+
   // Button text customization
   editButtonText: PropTypes.string,
   saveButtonText: PropTypes.string,
   cancelButtonText: PropTypes.string,
   closeButtonText: PropTypes.string,
-  
+
   // Advanced
   disableEdit: PropTypes.bool,
   customHeader: PropTypes.node,
   customFooter: PropTypes.node,
   bodyPadding: PropTypes.oneOf(['none', 'sm', 'default', 'lg']),
-  id: PropTypes.string
+  id: PropTypes.string,
 };
 
 export default EntityViewModal;

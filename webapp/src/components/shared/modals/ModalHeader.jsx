@@ -22,7 +22,7 @@ const ModalHeader = ({
     <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
-        
+
         {showStatusBadge && status && !loading && (
           <>
             {isEditing ? (
@@ -37,8 +37,9 @@ const ModalHeader = ({
             ) : (
               <>
                 <StatusBadge status={status} />
-                {showPaymentProof && status === 'PAID' && (
-                  paymentProofUrl ? (
+                {showPaymentProof &&
+                  status === 'PAID' &&
+                  (paymentProofUrl ? (
                     <button
                       onClick={() => window.open(paymentProofUrl, '_blank')}
                       className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
@@ -56,19 +57,15 @@ const ModalHeader = ({
                       <OpenInNewIcon sx={{ fontSize: 14 }} />
                       <span>Chưa có chứng từ</span>
                     </button>
-                  )
-                )}
+                  ))}
                 {extraButtons}
               </>
             )}
           </>
         )}
       </div>
-      
-      <button
-        onClick={onClose}
-        className="text-gray-400 hover:text-gray-600"
-      >
+
+      <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
         <CloseIcon sx={{ fontSize: 20 }} />
       </button>
     </div>

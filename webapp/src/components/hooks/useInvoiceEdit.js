@@ -1,8 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import { invoiceApi } from '@services/api/invoiceApi';
-import { INVOICE_STATUS } from '@constants/invoice';
 
-const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fetchTrailers, isAddMode = false) => {
+const useInvoiceEdit = (
+  invoiceData,
+  invoiceId,
+  onDataRefresh,
+  fetchTractors,
+  fetchTrailers,
+  isAddMode = false
+) => {
   const [isEditing, setIsEditing] = useState(isAddMode);
   const [editedData, setEditedData] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,7 +29,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
     if (isAddMode && invoiceData && !editedData) {
       setEditedData({
         ...invoiceData,
-        items: invoiceData.items?.map(item => ({ ...item })) || []
+        items: invoiceData.items?.map(item => ({ ...item })) || [],
       });
     }
   }, [isAddMode, invoiceData, editedData]);
@@ -35,10 +41,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
 
       setIsLoadingPlates(true);
       try {
-        await Promise.all([
-          fetchTractors(),
-          fetchTrailers()
-        ]);
+        await Promise.all([fetchTractors(), fetchTrailers()]);
       } catch (err) {
         console.error('Error fetching vehicles:', err);
       } finally {
@@ -55,7 +58,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
     setIsEditing(true);
     setEditedData({
       ...invoiceData,
-      items: invoiceData.items?.map(item => ({ ...item })) || []
+      items: invoiceData.items?.map(item => ({ ...item })) || [],
     });
   }, [invoiceData]);
 
@@ -73,16 +76,14 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
   const handleFieldChange = useCallback((field, value) => {
     setEditedData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   }, []);
 
   const handleItemChange = useCallback((index, field, value) => {
     setEditedData(prev => ({
       ...prev,
-      items: prev.items.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      )
+      items: prev.items.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     }));
   }, []);
 
@@ -91,10 +92,10 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
     setShowItemEditModal(true);
   }, []);
 
-  const handleDeleteItem = useCallback((index) => {
+  const handleDeleteItem = useCallback(index => {
     setEditedData(prev => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index)
+      items: prev.items.filter((_, i) => i !== index),
     }));
   }, []);
 
@@ -103,25 +104,26 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
     setEditingItemIndex(null);
   }, []);
 
-  const handleItemSave = useCallback((itemData) => {
-    if (editingItemIndex !== null) {
-      // Edit existing item
-      setEditedData(prev => ({
-        ...prev,
-        items: prev.items.map((item, index) =>
-          index === editingItemIndex ? itemData : item
-        )
-      }));
-    } else {
-      // Add new item
-      setEditedData(prev => ({
-        ...prev,
-        items: [...prev.items, itemData]
-      }));
-    }
-    setShowItemEditModal(false);
-    setEditingItemIndex(null);
-  }, [editingItemIndex]);
+  const handleItemSave = useCallback(
+    itemData => {
+      if (editingItemIndex !== null) {
+        // Edit existing item
+        setEditedData(prev => ({
+          ...prev,
+          items: prev.items.map((item, index) => (index === editingItemIndex ? itemData : item)),
+        }));
+      } else {
+        // Add new item
+        setEditedData(prev => ({
+          ...prev,
+          items: [...prev.items, itemData],
+        }));
+      }
+      setShowItemEditModal(false);
+      setEditingItemIndex(null);
+    },
+    [editingItemIndex]
+  );
 
   // Handle payment proof confirmation
   const handlePaymentProofConfirm = useCallback(() => {
@@ -134,7 +136,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
       ...prev,
       payment_status: pendingStatus,
       payment_proof: tempPaymentProof,
-      cancel_reason: null // Clear cancel reason when marking as paid
+      cancel_reason: null, // Clear cancel reason when marking as paid
     }));
 
     setShowPaymentProofPrompt(false);
@@ -153,7 +155,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
       ...prev,
       payment_status: pendingStatus,
       cancel_reason: tempCancelReason,
-      payment_proof: null // Clear payment proof when cancelling
+      payment_proof: null, // Clear payment proof when cancelling
     }));
 
     setShowCancelReasonPrompt(false);
@@ -178,18 +180,19 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
 
     try {
       // Calculate totals for items
-      const updatedItems = editedData.items?.map(item => {
-        const price = parseFloat(item.price) || 0;
-        const quantity = parseFloat(item.quantity) || 0;
-        const total = price * quantity;
+      const updatedItems =
+        editedData.items?.map(item => {
+          const price = parseFloat(item.price) || 0;
+          const quantity = parseFloat(item.quantity) || 0;
+          const total = price * quantity;
 
-        return {
-          ...item,
-          price,
-          quantity,
-          total
-        };
-      }) || [];
+          return {
+            ...item,
+            price,
+            quantity,
+            total,
+          };
+        }) || [];
 
       const totalAmount = updatedItems.reduce((sum, item) => sum + item.total, 0);
 
@@ -201,7 +204,7 @@ const useInvoiceEdit = (invoiceData, invoiceId, onDataRefresh, fetchTractors, fe
         cancel_reason: editedData.cancel_reason || null,
         remark: editedData.remark,
         items: updatedItems,
-        total: totalAmount
+        total: totalAmount,
       };
 
       await invoiceApi.update(invoiceId, updateData);

@@ -20,7 +20,7 @@ export const useHealthCheck = () => {
 
   useEffect(() => {
     fetchHealth();
-    
+
     const interval = setInterval(fetchHealth, 30000);
     return () => clearInterval(interval);
   }, [fetchHealth]);
@@ -37,11 +37,11 @@ export const useHealthCheck = () => {
 
 export const useApiStatus = () => {
   const { data, isLoading, error } = useHealthCheck();
-  
+
   return {
     isOnline: !error && data?.status === 'success',
     isLoading,
     error,
-    data
+    data,
   };
 };

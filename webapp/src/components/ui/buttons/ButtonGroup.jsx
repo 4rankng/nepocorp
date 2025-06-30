@@ -18,8 +18,10 @@ const ButtonGroup = ({
     `button-group--align-${align}`,
     `button-group--justify-${justify}`,
     wrap && 'button-group--wrap',
-    className
-  ].filter(Boolean).join(' ');
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className={classes} {...props}>

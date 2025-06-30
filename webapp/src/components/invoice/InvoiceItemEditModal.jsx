@@ -6,19 +6,19 @@ import {
   NumberField,
   DateField,
   PercentageField,
-  CurrencyDisplay
+  CurrencyDisplay,
 } from '@/components/ui/FieldComponents';
 import { FormActionButtons } from '@/components/ui/ActionButtons';
 import { FormRow, FormSection } from '@/components/ui';
 import EditIcon from '@mui/icons-material/Edit';
 import LicensePlateSelectionModal from '../LicensePlateSelectionModal';
 
-const calculateInvoiceItemTotal = (item) => {
+const calculateInvoiceItemTotal = item => {
   const price = parseFloat(item.price) || 0;
   const quantity = parseFloat(item.quantity) || 0;
   const taxRate = parseFloat(item.tax_rate) || 0;
   const subtotal = price * quantity;
-  const taxAmount = subtotal * taxRate / 100;
+  const taxAmount = (subtotal * taxRate) / 100;
   return subtotal + taxAmount;
 };
 
@@ -31,7 +31,7 @@ const InvoiceItemEditModal = ({
   licensePlates = [],
   isLoadingPlates = false,
   errors = {},
-  taxRate = 10
+  taxRate = 10,
 }) => {
   // Modal state
   const [formData, setFormData] = useState({
@@ -42,7 +42,7 @@ const InvoiceItemEditModal = ({
     price: 0,
     quantity: 1,
     tax_rate: taxRate,
-    total: 0
+    total: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
@@ -60,7 +60,7 @@ const InvoiceItemEditModal = ({
           price: item.price || 0,
           quantity: item.quantity || 1,
           tax_rate: item.tax_rate || taxRate,
-          total: item.total || 0
+          total: item.total || 0,
         });
       } else {
         // New item
@@ -72,7 +72,7 @@ const InvoiceItemEditModal = ({
           price: 0,
           quantity: 1,
           tax_rate: taxRate,
-          total: 0
+          total: 0,
         });
       }
       setLocalErrors({});
@@ -88,31 +88,37 @@ const InvoiceItemEditModal = ({
   }, [formData.price, formData.quantity, formData.tax_rate]);
 
   // Handle field changes
-  const handleFieldChange = useCallback((field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleFieldChange = useCallback(
+    (field, value) => {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+      }));
 
-    // Clear error for this field
-    if (localErrors[field] || errors[field]) {
-      setLocalErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [localErrors, errors]);
+      // Clear error for this field
+      if (localErrors[field] || errors[field]) {
+        setLocalErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    },
+    [localErrors, errors]
+  );
 
   // Handle license plate selection
   const handleLicensePlateClick = useCallback(() => {
     setShowLicensePlateModal(true);
   }, []);
 
-  const handleLicensePlateSelect = useCallback((selectedPlate) => {
-    handleFieldChange('license_plate', selectedPlate);
-    setShowLicensePlateModal(false);
-  }, [handleFieldChange]);
+  const handleLicensePlateSelect = useCallback(
+    selectedPlate => {
+      handleFieldChange('license_plate', selectedPlate);
+      setShowLicensePlateModal(false);
+    },
+    [handleFieldChange]
+  );
 
   // Validation
   const validateForm = useCallback(() => {
@@ -139,24 +145,27 @@ const InvoiceItemEditModal = ({
   }, [formData]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async e => {
+      e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+      if (!validateForm()) {
+        return;
+      }
 
-    setIsSubmitting(true);
-    try {
-      await onSave(formData);
-      onClose();
-    } catch (error) {
-      console.error('Error saving invoice item:', error);
-      // Handle error - could set error state here
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [formData, validateForm, onSave, onClose]);
+      setIsSubmitting(true);
+      try {
+        await onSave(formData);
+        onClose();
+      } catch (error) {
+        console.error('Error saving invoice item:', error);
+        // Handle error - could set error state here
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [formData, validateForm, onSave, onClose]
+  );
 
   // Handle cancel
   const handleCancel = useCallback(() => {
@@ -168,7 +177,7 @@ const InvoiceItemEditModal = ({
       price: 0,
       quantity: 1,
       tax_rate: taxRate,
-      total: 0
+      total: 0,
     });
     setLocalErrors({});
     onClose();
@@ -176,7 +185,7 @@ const InvoiceItemEditModal = ({
 
   // Custom ESC key handler that prevents event bubbling
   useEffect(() => {
-    const handleEscKey = (event) => {
+    const handleEscKey = event => {
       if (event.key === 'Escape' && isOpen && !showLicensePlateModal) {
         event.stopPropagation(); // Prevent bubbling to parent modal
         handleCancel();
@@ -227,11 +236,7 @@ const InvoiceItemEditModal = ({
                 style={{ minHeight: '43px' }}
               >
                 <span>
-                  {formData.license_plate || (
-                    <span className="text-gray-400">
-                      Chọn biển số xe
-                    </span>
-                  )}
+                  {formData.license_plate || <span className="text-gray-400">Chọn biển số xe</span>}
                 </span>
                 <EditIcon sx={{ fontSize: 16, color: '#6b7280' }} />
               </div>
@@ -244,7 +249,7 @@ const InvoiceItemEditModal = ({
               label="Tên dịch vụ"
               name="item_name"
               value={formData.item_name}
-              onChange={(e) => handleFieldChange('item_name', e.target.value)}
+              onChange={e => handleFieldChange('item_name', e.target.value)}
               placeholder="Nhập tên dịch vụ"
               required
               error={allErrors.item_name}
@@ -256,14 +261,14 @@ const InvoiceItemEditModal = ({
               label="Ngày thực hiện"
               name="service_date"
               value={formData.service_date}
-              onChange={(e) => handleFieldChange('service_date', e.target.value)}
+              onChange={e => handleFieldChange('service_date', e.target.value)}
             />
 
             <TextField
               label="Ghi chú"
               name="notes"
               value={formData.notes}
-              onChange={(e) => handleFieldChange('notes', e.target.value)}
+              onChange={e => handleFieldChange('notes', e.target.value)}
               placeholder="Nhập ghi chú"
             />
           </FormRow>
@@ -275,7 +280,7 @@ const InvoiceItemEditModal = ({
               label="Đơn giá"
               name="price"
               value={formData.price}
-              onChange={(e) => handleFieldChange('price', e.target.value)}
+              onChange={e => handleFieldChange('price', e.target.value)}
               min={0}
               placeholder="Nhập đơn giá"
               required
@@ -288,7 +293,7 @@ const InvoiceItemEditModal = ({
               label="Số lượng"
               name="quantity"
               value={formData.quantity}
-              onChange={(e) => handleFieldChange('quantity', e.target.value)}
+              onChange={e => handleFieldChange('quantity', e.target.value)}
               min={1}
               step={1}
               required
@@ -301,7 +306,7 @@ const InvoiceItemEditModal = ({
               label="Thuế"
               name="tax_rate"
               value={formData.tax_rate}
-              onChange={(e) => handleFieldChange('tax_rate', e.target.value)}
+              onChange={e => handleFieldChange('tax_rate', e.target.value)}
               min={0}
               max={100}
               step={0.1}
@@ -340,7 +345,7 @@ InvoiceItemEditModal.propTypes = {
   licensePlates: PropTypes.array,
   isLoadingPlates: PropTypes.bool,
   errors: PropTypes.object,
-  taxRate: PropTypes.number
+  taxRate: PropTypes.number,
 };
 
 export default InvoiceItemEditModal;

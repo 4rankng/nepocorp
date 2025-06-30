@@ -1,16 +1,6 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Tabs,
-  Tab,
-  Alert,
-  Chip
-} from '@mui/material';
-import {
-  Person as PersonIcon,
-  Business as BusinessIcon
-} from '@mui/icons-material';
+import { Box, Typography, Tabs, Tab, Alert, Chip } from '@mui/material';
+import { Person as PersonIcon, Business as BusinessIcon } from '@mui/icons-material';
 import Dropdown from '@/components/ui/Dropdown';
 
 const CustomerPartnerSelector = ({
@@ -26,27 +16,25 @@ const CustomerPartnerSelector = ({
   label = 'Khách hàng / Đối tác',
   required = false,
   allowBoth = false, // Whether to allow selecting both customer and partner
-  sx = {}
+  sx = {},
 }) => {
-  const [activeTab, setActiveTab] = useState(
-    customerId ? 0 : partnerId ? 1 : 0
-  );
+  const [activeTab, setActiveTab] = useState(customerId ? 0 : partnerId ? 1 : 0);
 
   const customerOptions = customers.map(customer => ({
     value: customer.id,
     label: customer.name,
-    displayText: customer.name
+    displayText: customer.name,
   }));
 
   const partnerOptions = partners.map(partner => ({
     value: partner.id,
     label: partner.name,
-    displayText: partner.name
+    displayText: partner.name,
   }));
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
-    
+
     if (!allowBoth) {
       // Clear the other selection when switching tabs
       if (newValue === 0) {
@@ -57,18 +45,18 @@ const CustomerPartnerSelector = ({
     }
   };
 
-  const handleCustomerChange = (value) => {
+  const handleCustomerChange = value => {
     onCustomerChange && onCustomerChange(value);
-    
+
     if (!allowBoth && value) {
       // Clear partner selection if customer is selected
       onPartnerChange && onPartnerChange(null);
     }
   };
 
-  const handlePartnerChange = (value) => {
+  const handlePartnerChange = value => {
     onPartnerChange && onPartnerChange(value);
-    
+
     if (!allowBoth && value) {
       // Clear customer selection if partner is selected
       onCustomerChange && onCustomerChange(null);
@@ -82,20 +70,20 @@ const CustomerPartnerSelector = ({
         type: 'customer',
         name: customer?.name || 'N/A',
         icon: PersonIcon,
-        color: '#1976d2'
+        color: '#1976d2',
       };
     }
-    
+
     if (partnerId) {
       const partner = partners.find(p => p.id === partnerId);
       return {
         type: 'partner',
         name: partner?.name || 'N/A',
         icon: BusinessIcon,
-        color: '#9c27b0'
+        color: '#9c27b0',
       };
     }
-    
+
     return null;
   };
 
@@ -118,7 +106,7 @@ const CustomerPartnerSelector = ({
             sx={{
               bgcolor: `${selectedEntity.color}10`,
               borderColor: selectedEntity.color,
-              color: selectedEntity.color
+              color: selectedEntity.color,
             }}
             onDelete={() => {
               if (selectedEntity.type === 'customer') {
@@ -136,24 +124,24 @@ const CustomerPartnerSelector = ({
         value={activeTab}
         onChange={handleTabChange}
         variant="fullWidth"
-        sx={{ 
+        sx={{
           mb: 2,
           '& .MuiTab-root': {
             minHeight: 40,
             fontSize: '0.875rem',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'
-          }
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
+          },
         }}
       >
-        <Tab 
-          icon={<PersonIcon fontSize="small" />} 
-          label="Khách hàng" 
+        <Tab
+          icon={<PersonIcon fontSize="small" />}
+          label="Khách hàng"
           iconPosition="start"
           disabled={disabled || (!allowBoth && !!partnerId)}
         />
-        <Tab 
-          icon={<BusinessIcon fontSize="small" />} 
-          label="Đối tác" 
+        <Tab
+          icon={<BusinessIcon fontSize="small" />}
+          label="Đối tác"
           iconPosition="start"
           disabled={disabled || (!allowBoth && !!customerId)}
         />
@@ -226,13 +214,9 @@ const CustomerPartnerSelector = ({
           Vui lòng chọn khách hàng hoặc đối tác
         </Alert>
       )}
-      
+
       {helperText && (
-        <Typography 
-          variant="caption" 
-          color="text.secondary"
-          sx={{ mt: 1, display: 'block' }}
-        >
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
           {helperText}
         </Typography>
       )}

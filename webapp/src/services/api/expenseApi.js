@@ -14,23 +14,23 @@ export const expenseApi = {
   // Get all expenses without pagination (for BaoDuong: category_id = 1)
   getAllWithoutPagination: async (categoryId = 1) => {
     const response = await apiClient.get('/expense', {
-      params: { 
-        page: 1, 
+      params: {
+        page: 1,
         limit: 1000,
-        expense_category_id: categoryId
-      }
+        expense_category_id: categoryId,
+      },
     });
     return response;
   },
 
   // Get expense by ID (includes items)
-  getById: async (id) => {
+  getById: async id => {
     const response = await apiClient.get(`/expense/${id}`);
     return response;
   },
 
   // Create new expense
-  create: async (data) => {
+  create: async data => {
     const response = await apiClient.post('/expense', data);
     return response;
   },
@@ -42,7 +42,7 @@ export const expenseApi = {
   },
 
   // Delete expense
-  delete: async (id) => {
+  delete: async id => {
     const response = await apiClient.delete(`/expense/${id}`);
     return response;
   },
@@ -50,11 +50,11 @@ export const expenseApi = {
   // Get count of expenses (for BaoDuong: category_id = 1)
   getCount: async (categoryId = 1) => {
     const response = await apiClient.get('/expense', {
-      params: { 
-        page: 1, 
+      params: {
+        page: 1,
         limit: 1,
-        expense_category_id: categoryId
-      }
+        expense_category_id: categoryId,
+      },
     });
     return response.pagination?.records_count || 0;
   },
@@ -75,7 +75,7 @@ export const expenseApi = {
   deleteItem: async (expenseId, itemId) => {
     const response = await apiClient.delete(`/expense/${expenseId}/item/${itemId}`);
     return response;
-  }
+  },
 };
 
 // BaoDuong-specific API wrapper with expense_category_id = 1
@@ -91,16 +91,16 @@ export const baoDuongApi = {
   },
 
   // Get BaoDuong expense by ID
-  getById: async (id) => {
+  getById: async id => {
     return expenseApi.getById(id);
   },
 
   // Create new BaoDuong expense (automatically sets expense_category_id = 1)
-  create: async (data) => {
+  create: async data => {
     const expenseData = {
       ...data,
       expense_category_id: 1,
-      currency: data.currency || 'VND'
+      currency: data.currency || 'VND',
     };
     return expenseApi.create(expenseData);
   },
@@ -110,13 +110,13 @@ export const baoDuongApi = {
     const expenseData = {
       ...data,
       expense_category_id: 1,
-      currency: data.currency || 'VND'
+      currency: data.currency || 'VND',
     };
     return expenseApi.update(id, expenseData);
   },
 
   // Delete BaoDuong expense
-  delete: async (id) => {
+  delete: async id => {
     return expenseApi.delete(id);
   },
 
@@ -128,5 +128,5 @@ export const baoDuongApi = {
   // Item management methods
   addItem: expenseApi.addItem,
   updateItem: expenseApi.updateItem,
-  deleteItem: expenseApi.deleteItem
+  deleteItem: expenseApi.deleteItem,
 };

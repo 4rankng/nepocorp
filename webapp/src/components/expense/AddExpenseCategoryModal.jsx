@@ -8,7 +8,7 @@ const AddExpenseCategoryModal = ({ open, onClose, onSuccess }) => {
   const { createCategory } = useExpenseCategories();
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,14 +27,14 @@ const AddExpenseCategoryModal = ({ open, onClose, onSuccess }) => {
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }));
     }
   };
@@ -46,7 +46,7 @@ const AddExpenseCategoryModal = ({ open, onClose, onSuccess }) => {
     try {
       const categoryData = {
         name: formData.name.trim(),
-        description: formData.description.trim() || null
+        description: formData.description.trim() || null,
       };
 
       await createCategory(categoryData);
@@ -104,7 +104,7 @@ const AddExpenseCategoryModal = ({ open, onClose, onSuccess }) => {
         <TextField
           label="Tên danh mục *"
           value={formData.name}
-          onChange={(e) => handleInputChange('name', e.target.value)}
+          onChange={e => handleInputChange('name', e.target.value)}
           error={!!errors.name}
           helperText={errors.name || 'Ví dụ: Nhiên liệu, Bảo dưỡng định kỳ'}
           disabled={isSubmitting}
@@ -116,7 +116,7 @@ const AddExpenseCategoryModal = ({ open, onClose, onSuccess }) => {
         <TextField
           label="Mô tả"
           value={formData.description}
-          onChange={(e) => handleInputChange('description', e.target.value)}
+          onChange={e => handleInputChange('description', e.target.value)}
           multiline
           rows={3}
           fullWidth

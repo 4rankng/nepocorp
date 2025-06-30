@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { FormModal } from '@/components/ui';
-import {
-  TextField,
-} from '@/components/ui/FieldComponents';
+import { TextField } from '@/components/ui/FieldComponents';
 import { FormActionButtons } from '@/components/ui/ActionButtons';
 import { FormRow, FormSection } from '@/components/ui';
 
@@ -51,35 +49,35 @@ const EntityForm = ({
     partner: {
       title: {
         add: 'Thêm đối tác mới',
-        edit: 'Sửa thông tin đối tác'
+        edit: 'Sửa thông tin đối tác',
       },
       submitText: {
         add: 'Thêm',
-        edit: 'Sửa'
+        edit: 'Sửa',
       },
       labels: {
         name: 'Tên đối tác',
         namePlaceholder: 'Nhập tên đối tác',
         addressPlaceholder: 'Nhập địa chỉ đối tác',
-        notesPlaceholder: 'Nhập ghi chú về đối tác'
-      }
+        notesPlaceholder: 'Nhập ghi chú về đối tác',
+      },
     },
     customer: {
       title: {
         add: 'Thêm khách hàng mới',
-        edit: 'Sửa thông tin khách hàng'
+        edit: 'Sửa thông tin khách hàng',
       },
       submitText: {
         add: 'Thêm',
-        edit: 'Sửa'
+        edit: 'Sửa',
       },
       labels: {
         name: 'Tên khách hàng',
         namePlaceholder: 'Nhập tên khách hàng',
         addressPlaceholder: 'Nhập địa chỉ khách hàng',
-        notesPlaceholder: 'Nhập ghi chú về khách hàng'
-      }
-    }
+        notesPlaceholder: 'Nhập ghi chú về khách hàng',
+      },
+    },
   };
 
   const config = entityConfig[entityType] || entityConfig.entity;
@@ -107,21 +105,24 @@ const EntityForm = ({
   }, [open, isEdit, entity, onGetInitialData, includeContactFields, includeNotesField]);
 
   // Handle field changes
-  const handleFieldChange = useCallback((field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleFieldChange = useCallback(
+    (field, value) => {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+      }));
 
-    // Clear error for this field
-    if (localErrors[field]) {
-      setLocalErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [localErrors]);
+      // Clear error for this field
+      if (localErrors[field]) {
+        setLocalErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    },
+    [localErrors]
+  );
 
   // Validation
   const validateForm = useCallback(() => {
@@ -146,7 +147,10 @@ const EntityForm = ({
     // Phone validation if provided
     if (includeContactFields && formData.contact_phone?.trim()) {
       const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-      if (!phoneRegex.test(formData.contact_phone.trim()) || formData.contact_phone.trim().length < 10) {
+      if (
+        !phoneRegex.test(formData.contact_phone.trim()) ||
+        formData.contact_phone.trim().length < 10
+      ) {
         newErrors.contact_phone = 'Số điện thoại không hợp lệ';
       }
     }
@@ -156,35 +160,38 @@ const EntityForm = ({
   }, [formData, config.labels.name, includeContactFields]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async e => {
+      e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+      if (!validateForm()) {
+        return;
+      }
 
-    setIsSubmitting(true);
-    try {
-      // Clean the data before sending
-      const cleanedData = {
-        name: formData.name.trim(),
-        tax_code: formData.tax_code.trim(),
-        address: formData.address?.trim() || '',
-        contact_person: formData.contact_person?.trim() || '',
-        contact_phone: formData.contact_phone?.trim() || '',
-        contact_email: formData.contact_email?.trim() || '',
-        notes: formData.notes?.trim() || '',
-      };
+      setIsSubmitting(true);
+      try {
+        // Clean the data before sending
+        const cleanedData = {
+          name: formData.name.trim(),
+          tax_code: formData.tax_code.trim(),
+          address: formData.address?.trim() || '',
+          contact_person: formData.contact_person?.trim() || '',
+          contact_phone: formData.contact_phone?.trim() || '',
+          contact_email: formData.contact_email?.trim() || '',
+          notes: formData.notes?.trim() || '',
+        };
 
-      await onSave(cleanedData);
-      onClose();
-    } catch (error) {
-      console.error(`Error saving ${entityType}:`, error);
-      // Error handling is done by parent component
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [formData, validateForm, onSave, onClose, entityType, includeContactFields, includeNotesField]);
+        await onSave(cleanedData);
+        onClose();
+      } catch (error) {
+        console.error(`Error saving ${entityType}:`, error);
+        // Error handling is done by parent component
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [formData, validateForm, onSave, onClose, entityType, includeContactFields, includeNotesField]
+  );
 
   // Handle cancel
   const handleCancel = useCallback(() => {
@@ -195,7 +202,7 @@ const EntityForm = ({
 
   // Custom ESC key handler that prevents event bubbling
   useEffect(() => {
-    const handleEscKey = (event) => {
+    const handleEscKey = event => {
       if (event.key === 'Escape' && open) {
         event.stopPropagation(); // Prevent bubbling to parent modal
         handleCancel();
@@ -245,7 +252,7 @@ const EntityForm = ({
             label={config.labels.name}
             name="name"
             value={formData.name}
-            onChange={(e) => handleFieldChange('name', e.target.value)}
+            onChange={e => handleFieldChange('name', e.target.value)}
             placeholder={config.labels.namePlaceholder}
             required
             error={allErrors.name}
@@ -255,7 +262,7 @@ const EntityForm = ({
             label="Mã số thuế"
             name="tax_code"
             value={formData.tax_code}
-            onChange={(e) => handleFieldChange('tax_code', e.target.value)}
+            onChange={e => handleFieldChange('tax_code', e.target.value)}
             placeholder="Nhập mã số thuế"
             required
             error={allErrors.tax_code}
@@ -267,7 +274,7 @@ const EntityForm = ({
             label="Địa chỉ"
             name="address"
             value={formData.address}
-            onChange={(e) => handleFieldChange('address', e.target.value)}
+            onChange={e => handleFieldChange('address', e.target.value)}
             placeholder={config.labels.addressPlaceholder}
             multiline
             rows={3}
@@ -278,7 +285,7 @@ const EntityForm = ({
               label="Ghi chú"
               name="notes"
               value={formData.notes}
-              onChange={(e) => handleFieldChange('notes', e.target.value)}
+              onChange={e => handleFieldChange('notes', e.target.value)}
               placeholder={config.labels.notesPlaceholder}
               multiline
               rows={3}
@@ -294,7 +301,7 @@ const EntityForm = ({
               label="Người liên hệ"
               name="contact_person"
               value={formData.contact_person}
-              onChange={(e) => handleFieldChange('contact_person', e.target.value)}
+              onChange={e => handleFieldChange('contact_person', e.target.value)}
               placeholder="Nhập tên người liên hệ"
             />
 
@@ -302,7 +309,7 @@ const EntityForm = ({
               label="Số điện thoại"
               name="contact_phone"
               value={formData.contact_phone}
-              onChange={(e) => handleFieldChange('contact_phone', e.target.value)}
+              onChange={e => handleFieldChange('contact_phone', e.target.value)}
               placeholder="Nhập số điện thoại"
               error={allErrors.contact_phone}
             />
@@ -313,7 +320,7 @@ const EntityForm = ({
               label="Email"
               name="contact_email"
               value={formData.contact_email}
-              onChange={(e) => handleFieldChange('contact_email', e.target.value)}
+              onChange={e => handleFieldChange('contact_email', e.target.value)}
               placeholder="Nhập địa chỉ email"
               type="email"
               error={allErrors.contact_email}

@@ -1,12 +1,5 @@
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
-  Chip,
-  LinearProgress
-} from '@mui/material';
+import { Card, CardContent, Typography, Box, Chip, LinearProgress } from '@mui/material';
 import CurrencyDisplay from '@/components/ui/CurrencyDisplay';
 
 const StatCard = ({
@@ -21,7 +14,7 @@ const StatCard = ({
   loading = false,
   variant = 'default', // 'default', 'highlighted', 'danger'
   onClick,
-  sx = {}
+  sx = {},
 }) => {
   const getVariantStyles = () => {
     switch (variant) {
@@ -31,8 +24,8 @@ const StatCard = ({
           bgcolor: `${color}05`,
           '&:hover': {
             bgcolor: `${color}10`,
-            boxShadow: 3
-          }
+            boxShadow: 3,
+          },
         };
       case 'danger':
         return {
@@ -40,8 +33,8 @@ const StatCard = ({
           bgcolor: '#d32f2f05',
           '&:hover': {
             bgcolor: '#d32f2f10',
-            boxShadow: 3
-          }
+            boxShadow: 3,
+          },
         };
       default:
         return {
@@ -49,8 +42,8 @@ const StatCard = ({
           boxShadow: 'none',
           '&:hover': {
             boxShadow: 2,
-            borderColor: `${color}60`
-          }
+            borderColor: `${color}60`,
+          },
         };
     }
   };
@@ -74,44 +67,53 @@ const StatCard = ({
     switch (type) {
       case 'currency':
         return (
-          <CurrencyDisplay 
+          <CurrencyDisplay
             amount={value}
             variant="h4"
-            sx={{ 
+            sx={{
               fontWeight: 700,
-              fontFamily: "'SF Mono', Monaco, monospace"
+              fontFamily: "'SF Mono', Monaco, monospace",
             }}
           />
         );
-      
+
       case 'number':
         return (
-          <Typography variant="h4" sx={{ 
-            fontWeight: 700,
-            color: color,
-            fontFamily: "'SF Mono', Monaco, monospace"
-          }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              color: color,
+              fontFamily: "'SF Mono', Monaco, monospace",
+            }}
+          >
             {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
           </Typography>
         );
-      
+
       case 'percentage':
         return (
-          <Typography variant="h4" sx={{ 
-            fontWeight: 700,
-            color: color,
-            fontFamily: "'SF Mono', Monaco, monospace"
-          }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              color: color,
+              fontFamily: "'SF Mono', Monaco, monospace",
+            }}
+          >
             {typeof value === 'number' ? `${value.toFixed(1)}%` : value}
           </Typography>
         );
-      
+
       default:
         return (
-          <Typography variant="h4" sx={{ 
-            fontWeight: 700,
-            color: color
-          }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              color: color,
+            }}
+          >
             {value}
           </Typography>
         );
@@ -119,13 +121,13 @@ const StatCard = ({
   };
 
   return (
-    <Card 
-      sx={{ 
+    <Card
+      sx={{
         height: '100%',
         cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.2s ease-in-out',
         ...getVariantStyles(),
-        ...sx
+        ...sx,
       }}
       onClick={onClick}
     >
@@ -133,22 +135,28 @@ const StatCard = ({
         {/* Header with icon and title */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           {IconComponent && (
-            <Box sx={{ 
-              p: 1.5,
-              borderRadius: 2,
-              bgcolor: `${color}15`,
-              color: color,
-              display: 'flex',
-              mr: 2
-            }}>
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 2,
+                bgcolor: `${color}15`,
+                color: color,
+                display: 'flex',
+                mr: 2,
+              }}
+            >
               <IconComponent fontSize="medium" />
             </Box>
           )}
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ 
-              fontWeight: 500,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'
-            }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontWeight: 500,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
+              }}
+            >
               {title}
             </Typography>
             {subtitle && (
@@ -160,9 +168,7 @@ const StatCard = ({
         </Box>
 
         {/* Main value */}
-        <Box sx={{ mb: trend || trendLabel ? 2 : 0 }}>
-          {renderValue()}
-        </Box>
+        <Box sx={{ mb: trend || trendLabel ? 2 : 0 }}>{renderValue()}</Box>
 
         {/* Trend and additional info */}
         {(trend !== undefined || trendLabel) && (
@@ -176,7 +182,7 @@ const StatCard = ({
                   color: getTrendColor(),
                   fontWeight: 600,
                   fontSize: '0.75rem',
-                  height: 24
+                  height: 24,
                 }}
               />
             )}

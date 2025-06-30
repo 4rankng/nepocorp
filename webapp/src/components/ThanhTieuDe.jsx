@@ -11,19 +11,20 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
-
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
   };
 
   return (
-    <header 
+    <header
       className="h-16 shadow-md fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6"
       style={{
-        background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 25%, #f9f9f9 50%, #fafafa 75%, #ffffff 100%)',
+        background:
+          'linear-gradient(135deg, #ffffff 0%, #fafafa 25%, #f9f9f9 50%, #fafafa 75%, #ffffff 100%)',
         color: '#4b5563',
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         borderBottom: '1px solid #e5e7eb',
       }}
@@ -31,32 +32,29 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
       {/* Left Section - Logo and Company Name */}
       <div className="flex items-center flex-shrink-0">
         {/* Mobile Hamburger Menu */}
-        <SidebarToggle
-          type="mobile"
-          onClick={onSidebarToggle}
-          isOpen={sidebarOpen}
-        />
+        <SidebarToggle type="mobile" onClick={onSidebarToggle} isOpen={sidebarOpen} />
 
         {/* Logo Section */}
         <Link to="/" className="flex items-center gap-3">
-          <div 
+          <div
             className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg"
-            style={{ 
-              background: 'linear-gradient(135deg, #e8e8e8 0%, #c0c0c0 25%, #a8a8a8 50%, #c0c0c0 75%, #e8e8e8 100%)',
+            style={{
+              background:
+                'linear-gradient(135deg, #e8e8e8 0%, #c0c0c0 25%, #a8a8a8 50%, #c0c0c0 75%, #e8e8e8 100%)',
               color: '#2c2c2c',
               border: '1px solid #999999',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7), 0 1px 2px rgba(0,0,0,0.1)',
-              textShadow: '0 1px 0 rgba(255,255,255,0.8)'
+              textShadow: '0 1px 0 rgba(255,255,255,0.8)',
             }}
           >
             N
           </div>
-          <div 
+          <div
             className="text-xl font-semibold"
-            style={{ 
+            style={{
               letterSpacing: '0.5px',
               fontWeight: 600,
-              color: '#4b5563'
+              color: '#4b5563',
             }}
           >
             NePO Transport
@@ -78,19 +76,16 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {/* User Avatar */}
-              <div 
+              <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm"
                 style={{ backgroundColor: '#6b7280' }}
               >
                 {(currentUser.name || 'U')[0].toUpperCase()}
               </div>
-              
+
               {/* User Info - Hidden on small screens */}
               <div className="text-left hidden sm:block">
-                <div 
-                  className="font-medium text-sm"
-                  style={{ fontWeight: 500, color: '#4b5563' }}
-                >
+                <div className="font-medium text-sm" style={{ fontWeight: 500, color: '#4b5563' }}>
                   {currentUser.name}
                 </div>
               </div>
@@ -106,7 +101,8 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
                 tabIndex="-1"
                 style={{
                   borderRadius: '8px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                  boxShadow:
+                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                 }}
               >
                 <button
@@ -144,13 +140,13 @@ const ThanhTieuDe = ({ onSidebarToggle, sidebarOpen }) => {
           </div>
         </div>
       )}
-      
+
       {/* Modals */}
-      <ChangePasswordModal 
+      <ChangePasswordModal
         isOpen={isChangePasswordModalOpen}
         onClose={() => setIsChangePasswordModalOpen(false)}
       />
-      <EditProfileModal 
+      <EditProfileModal
         isOpen={isEditProfileModalOpen}
         onClose={() => setIsEditProfileModalOpen(false)}
       />

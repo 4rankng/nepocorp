@@ -1,4 +1,9 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import { z } from 'zod';
 import { ApiError, ApiResponse } from '@api/types/common.types';
 
@@ -19,7 +24,7 @@ class ApiClient {
       timeout: REQUEST_TIMEOUT,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Accept': 'application/json; charset=utf-8',
+        Accept: 'application/json; charset=utf-8',
       },
     });
 
@@ -27,14 +32,14 @@ class ApiClient {
   }
 
   private processQueue(error: any, token: string | null = null): void {
-    this.failedQueue.forEach((prom) => {
+    this.failedQueue.forEach(prom => {
       if (error) {
         prom.reject(error);
       } else {
         prom.resolve(token);
       }
     });
-    
+
     this.failedQueue = [];
   }
 
@@ -48,7 +53,7 @@ class ApiClient {
         }
         return config;
       },
-      (error) => {
+      error => {
         return Promise.reject(error);
       }
     );
@@ -59,18 +64,20 @@ class ApiClient {
         // Return the response data directly (already in our format)
         return response.data;
       },
-      async (error) => {
+      async error => {
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
           if (this.isRefreshing) {
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
-            }).then(() => {
-              return this.axiosInstance(originalRequest);
-            }).catch(err => {
-              return Promise.reject(err);
-            });
+            })
+              .then(() => {
+                return this.axiosInstance(originalRequest);
+              })
+              .catch(err => {
+                return Promise.reject(err);
+              });
           }
 
           originalRequest._retry = true;
@@ -109,8 +116,8 @@ class ApiClient {
           message: error.response?.data?.message || error.message || 'An error occurred',
           errors: error.response?.data?.errors || {
             code: error.response?.status || 5000,
-            message: error.response?.data?.message || error.message || 'Unknown error'
-          }
+            message: error.response?.data?.message || error.message || 'Unknown error',
+          },
         };
 
         return Promise.reject(apiError);
@@ -120,7 +127,7 @@ class ApiClient {
 
   private async refreshAccessToken(refreshToken: string): Promise<ApiResponse<any>> {
     return this.axiosInstance.post('/auth/refresh', {
-      refresh_token: refreshToken
+      refresh_token: refreshToken,
     });
   }
 
@@ -182,22 +189,40 @@ class ApiClient {
   }
 
   // HTTP methods with validation
-  async getWithValidation<T>(url: string, schema: z.ZodSchema<T>, config?: AxiosRequestConfig): Promise<T> {
+  async getWithValidation<T>(
+    url: string,
+    schema: z.ZodSchema<T>,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.get<T>(url, config);
     return this.validateResponse(response, schema);
   }
 
-  async postWithValidation<T>(url: string, data: any, schema: z.ZodSchema<T>, config?: AxiosRequestConfig): Promise<T> {
+  async postWithValidation<T>(
+    url: string,
+    data: any,
+    schema: z.ZodSchema<T>,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.post<T>(url, data, config);
     return this.validateResponse(response, schema);
   }
 
-  async putWithValidation<T>(url: string, data: any, schema: z.ZodSchema<T>, config?: AxiosRequestConfig): Promise<T> {
+  async putWithValidation<T>(
+    url: string,
+    data: any,
+    schema: z.ZodSchema<T>,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.put<T>(url, data, config);
     return this.validateResponse(response, schema);
   }
 
-  async deleteWithValidation<T>(url: string, schema: z.ZodSchema<T>, config?: AxiosRequestConfig): Promise<T> {
+  async deleteWithValidation<T>(
+    url: string,
+    schema: z.ZodSchema<T>,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.delete<T>(url, config);
     return this.validateResponse(response, schema);
   }

@@ -2,24 +2,24 @@ import React from 'react';
 import { useModalVisibility } from '@hooks/useModalVisibility';
 
 const SidebarToggle = ({
-  type = "desktop", // "desktop" | "mobile"
+  type = 'desktop', // "desktop" | "mobile"
   onClick,
   isCollapsed = false,
   isOpen = false,
   hideOnModal = true,
-  className = "",
+  className = '',
   style = {},
   ariaLabel,
   ...props
 }) => {
   const { hasActiveModal } = useModalVisibility();
-  
+
   // Hide when modal is active (if enabled)
   if (hideOnModal && hasActiveModal) {
     return null;
   }
 
-  if (type === "mobile") {
+  if (type === 'mobile') {
     return (
       <button
         className={`relative md:hidden mr-3 p-2 rounded hover:bg-black/10 focus:outline-none transition-all duration-300 ${className}`}

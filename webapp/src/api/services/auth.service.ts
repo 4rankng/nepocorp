@@ -1,34 +1,34 @@
 import { apiClient } from '@api/client/apiClient';
 import { ApiResponse } from '@api/types';
-import { 
-  LoginRequest, 
-  LoginResponse, 
-  RefreshTokenRequest, 
-  RefreshTokenResponse, 
-  User 
+import {
+  LoginRequest,
+  LoginResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  User,
 } from '@api/types/auth.types';
 
 class AuthService {
   async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
     const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
-    
+
     // Store tokens if login successful
     if (response.status === 'success' && response.data) {
       this.storeTokens(response.data.access_token, response.data.refresh_token);
       this.storeUser(response.data.user);
     }
-    
+
     return response;
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<ApiResponse<RefreshTokenResponse>> {
     const response = await apiClient.post<RefreshTokenResponse>('/auth/refresh', request);
-    
+
     // Update tokens if refresh successful
     if (response.status === 'success' && response.data) {
       this.storeTokens(response.data.access_token, response.data.refresh_token);
     }
-    
+
     return response;
   }
 
@@ -59,7 +59,7 @@ class AuthService {
   getStoredUser(): User | null {
     const userStr = localStorage.getItem('auth');
     if (!userStr) return null;
-    
+
     try {
       return JSON.parse(userStr);
     } catch {

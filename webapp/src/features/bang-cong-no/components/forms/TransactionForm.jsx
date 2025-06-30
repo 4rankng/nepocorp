@@ -10,7 +10,7 @@ import {
   FormLabel,
   RadioGroup,
   FormControlLabel,
-  Radio
+  Radio,
 } from '@mui/material';
 import TransactionTypeSelector from './TransactionTypeSelector';
 import CustomerPartnerSelector from './CustomerPartnerSelector';
@@ -22,12 +22,9 @@ import {
   validateReferenceNumber,
   validateNotes,
   sanitizeAmount,
-  formatFormAmount
+  formatFormAmount,
 } from '@/features/bang-cong-no/utils';
-import {
-  createEmptyTransaction,
-  FORM_MODES
-} from '@/features/bang-cong-no/types';
+import { createEmptyTransaction, FORM_MODES } from '@/features/bang-cong-no/types';
 
 const TransactionForm = ({
   initialData = null,
@@ -37,7 +34,7 @@ const TransactionForm = ({
   onSubmit,
   onChange,
   autoValidate = true,
-  sx = {}
+  sx = {},
 }) => {
   const [formData, setFormData] = useState(createEmptyTransaction());
   const [errors, setErrors] = useState({});
@@ -54,7 +51,8 @@ const TransactionForm = ({
 
       setFormData({
         ...initialData,
-        transaction_date: initialData.transaction_date?.split('T')[0] || new Date().toISOString().split('T')[0]
+        transaction_date:
+          initialData.transaction_date?.split('T')[0] || new Date().toISOString().split('T')[0],
       });
 
       setAmountType(debit > 0 ? 'debit' : 'credit');
@@ -75,7 +73,7 @@ const TransactionForm = ({
       const currentData = {
         ...formData,
         debit: amountType === 'debit' ? sanitizedAmount : 0,
-        credit: amountType === 'credit' ? sanitizedAmount : 0
+        credit: amountType === 'credit' ? sanitizedAmount : 0,
       };
       onChange(currentData, errors);
     }
@@ -84,14 +82,14 @@ const TransactionForm = ({
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear field error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
 
@@ -101,14 +99,14 @@ const TransactionForm = ({
     }
   };
 
-  const handleAmountChange = (value) => {
+  const handleAmountChange = value => {
     setAmountValue(value);
 
     // Clear amount error when user starts typing
     if (errors.amount) {
       setErrors(prev => ({
         ...prev,
-        amount: undefined
+        amount: undefined,
       }));
     }
 
@@ -118,7 +116,7 @@ const TransactionForm = ({
       if (!validation.isValid) {
         setErrors(prev => ({
           ...prev,
-          amount: validation.error
+          amount: validation.error,
         }));
       }
     }
@@ -130,13 +128,13 @@ const TransactionForm = ({
       setFormData(prev => ({
         ...prev,
         customer_id: value,
-        partner_id: null
+        partner_id: null,
       }));
     } else {
       setFormData(prev => ({
         ...prev,
         partner_id: value,
-        customer_id: null
+        customer_id: null,
       }));
     }
 
@@ -144,7 +142,7 @@ const TransactionForm = ({
     if (errors.entity) {
       setErrors(prev => ({
         ...prev,
-        entity: undefined
+        entity: undefined,
       }));
     }
   };
@@ -173,7 +171,7 @@ const TransactionForm = ({
     if (!validation.isValid) {
       setErrors(prev => ({
         ...prev,
-        [field]: validation.error
+        [field]: validation.error,
       }));
     }
   };
@@ -185,7 +183,7 @@ const TransactionForm = ({
     const transactionData = {
       ...formData,
       debit: amountType === 'debit' ? sanitizedAmount : 0,
-      credit: amountType === 'credit' ? sanitizedAmount : 0
+      credit: amountType === 'credit' ? sanitizedAmount : 0,
     };
 
     const validation = validateTransaction(transactionData);
@@ -223,7 +221,7 @@ const TransactionForm = ({
     return validation.isValid;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = event => {
     event.preventDefault();
 
     if (!validateForm()) {
@@ -235,7 +233,7 @@ const TransactionForm = ({
     const transactionData = {
       ...formData,
       debit: amountType === 'debit' ? sanitizedAmount : 0,
-      credit: amountType === 'credit' ? sanitizedAmount : 0
+      credit: amountType === 'credit' ? sanitizedAmount : 0,
     };
 
     onSubmit && onSubmit(transactionData);
@@ -254,7 +252,7 @@ const TransactionForm = ({
         <Grid item xs={12}>
           <TransactionTypeSelector
             value={formData.transaction_type}
-            onChange={(value) => handleInputChange('transaction_type', value)}
+            onChange={value => handleInputChange('transaction_type', value)}
             error={!!errors.transaction_type}
             helperText={errors.transaction_type}
             required
@@ -271,8 +269,8 @@ const TransactionForm = ({
           <CustomerPartnerSelector
             customerId={formData.customer_id}
             partnerId={formData.partner_id}
-            onCustomerChange={(value) => handleEntityChange('customer_id', value)}
-            onPartnerChange={(value) => handleEntityChange('partner_id', value)}
+            onCustomerChange={value => handleEntityChange('customer_id', value)}
+            onPartnerChange={value => handleEntityChange('partner_id', value)}
             customers={customers}
             partners={partners}
             error={!!errors.entity}
@@ -292,7 +290,7 @@ const TransactionForm = ({
             label="Ngày giao dịch"
             type="date"
             value={formData.transaction_date}
-            onChange={(e) => handleInputChange('transaction_date', e.target.value)}
+            onChange={e => handleInputChange('transaction_date', e.target.value)}
             fullWidth
             required
             disabled={isViewing}
@@ -310,11 +308,7 @@ const TransactionForm = ({
               <FormLabel component="legend" sx={{ mb: 1, fontWeight: 500 }}>
                 Loại số tiền *
               </FormLabel>
-              <RadioGroup
-                row
-                value={amountType}
-                onChange={(e) => setAmountType(e.target.value)}
-              >
+              <RadioGroup row value={amountType} onChange={e => setAmountType(e.target.value)}>
                 <FormControlLabel
                   value="debit"
                   control={<Radio size="small" />}
@@ -340,14 +334,14 @@ const TransactionForm = ({
               label="Số tiền"
               type="number"
               value={amountValue}
-              onChange={(e) => handleAmountChange(e.target.value)}
+              onChange={e => handleAmountChange(e.target.value)}
               fullWidth
               required
               disabled={isViewing}
               error={!!errors.amount}
               helperText={errors.amount}
               InputProps={{
-                inputProps: { min: 0, step: 0.01 }
+                inputProps: { min: 0, step: 0.01 },
               }}
             />
 
@@ -368,11 +362,13 @@ const TransactionForm = ({
           <TextField
             label="Số tham chiếu / Diễn giải"
             value={formData.reference_number}
-            onChange={(e) => handleInputChange('reference_number', e.target.value)}
+            onChange={e => handleInputChange('reference_number', e.target.value)}
             fullWidth
             disabled={isViewing}
             error={!!errors.reference_number}
-            helperText={errors.reference_number || 'VD: Phiếu thu số INV-2025-001, Thanh toán TT-001'}
+            helperText={
+              errors.reference_number || 'VD: Phiếu thu số INV-2025-001, Thanh toán TT-001'
+            }
             placeholder="Nhập số tham chiếu hoặc diễn giải"
           />
         </Grid>
@@ -382,7 +378,7 @@ const TransactionForm = ({
           <TextField
             label="Ghi chú"
             value={formData.notes}
-            onChange={(e) => handleInputChange('notes', e.target.value)}
+            onChange={e => handleInputChange('notes', e.target.value)}
             fullWidth
             multiline
             rows={3}

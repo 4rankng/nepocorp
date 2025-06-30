@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 // Mock API object returning empty data until backend is integrated
 const cauHinhApi = {
   getDinhMucBoSung: async () => ({ success: true, data: { value: 0 } }),
-  updateDinhMucBoSung: async (value) => ({ success: true, data: { value } })
+  updateDinhMucBoSung: async value => ({ success: true, data: { value } }),
 };
 /**
  * Hook for managing supplementary fuel standards (định mức bổ sung)

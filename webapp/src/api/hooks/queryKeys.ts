@@ -13,14 +13,16 @@ export const queryKeys = {
     details: () => [...queryKeys.expenses.all(), 'detail'] as const,
     detail: (id: number) => [...queryKeys.expenses.details(), id] as const,
     items: (expenseId: number) => [...queryKeys.expenses.detail(expenseId), 'items'] as const,
-    item: (expenseId: number, itemId: number) => [...queryKeys.expenses.items(expenseId), itemId] as const,
+    item: (expenseId: number, itemId: number) =>
+      [...queryKeys.expenses.items(expenseId), itemId] as const,
   },
 
   // Expense Categories
   expenseCategories: {
     all: () => ['expenseCategories'] as const,
     lists: () => [...queryKeys.expenseCategories.all(), 'list'] as const,
-    list: (filters?: Record<string, any>) => [...queryKeys.expenseCategories.lists(), filters] as const,
+    list: (filters?: Record<string, any>) =>
+      [...queryKeys.expenseCategories.lists(), filters] as const,
     details: () => [...queryKeys.expenseCategories.all(), 'detail'] as const,
     detail: (id: number) => [...queryKeys.expenseCategories.details(), id] as const,
     active: () => [...queryKeys.expenseCategories.all(), 'active'] as const,

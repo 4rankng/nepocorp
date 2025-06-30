@@ -1,14 +1,14 @@
 /**
  * Programmatic Z-Index Management System
- * 
+ *
  * This system eliminates magic numbers by defining all z-index layers in a single,
  * ordered list and programmatically generating the CSS values. This approach provides
  * clarity, maintainability, and confidence when making changes.
- * 
+ *
  * Usage:
  * import { Z_INDEX } from '@constants/zIndex';
  * style={{ zIndex: Z_INDEX.modal }}
- * 
+ *
  * CSS Usage:
  * .modal { z-index: var(--z-index-modal); }
  */
@@ -32,21 +32,21 @@ const makeZIndexes = (layers, multiplier = 100) => {
  * To reorder layers, simply change their position in this array
  */
 const Z_INDEX_LAYERS = [
-  'base',                    // Normal document flow
-  'elevated',                // Slightly elevated elements  
-  'floating',                // Floating elements like tooltips
-  'dropdown',                // Dropdown menus
-  'popover',                 // Popovers and tooltips
-  'modal-backdrop',          // Modal backdrops
-  'modal',                   // Standard modals
-  'nested-modal-backdrop',   // Nested modal backdrops
-  'nested-modal',            // Nested modals (like item edit within invoice)
-  'drawer',                  // Side drawers
-  'snackbar',                // Notification snackbars
-  'toast',                   // Toast notifications
-  'system-modal',            // Critical system modals
-  'loading-overlay',         // Loading overlays
-  'error-overlay'            // Error overlays (highest priority)
+  'base', // Normal document flow
+  'elevated', // Slightly elevated elements
+  'floating', // Floating elements like tooltips
+  'dropdown', // Dropdown menus
+  'popover', // Popovers and tooltips
+  'modal-backdrop', // Modal backdrops
+  'modal', // Standard modals
+  'nested-modal-backdrop', // Nested modal backdrops
+  'nested-modal', // Nested modals (like item edit within invoice)
+  'drawer', // Side drawers
+  'snackbar', // Notification snackbars
+  'toast', // Toast notifications
+  'system-modal', // Critical system modals
+  'loading-overlay', // Loading overlays
+  'error-overlay', // Error overlays (highest priority)
 ];
 
 /**
@@ -76,9 +76,9 @@ export const Z_INDEX = {
   SYSTEM_MODAL: GENERATED_Z_INDEXES['system-modal'],
   LOADING_OVERLAY: GENERATED_Z_INDEXES['loading-overlay'],
   ERROR_OVERLAY: GENERATED_Z_INDEXES['error-overlay'],
-  
+
   // Legacy compatibility
-  MAX: 2147483647
+  MAX: 2147483647,
 };
 
 /**
@@ -110,7 +110,7 @@ export const getNextZIndex = (layerName, offset = 1) => {
  * @param {number} zIndex - Z-index value to check
  * @returns {boolean} - Whether to use portal rendering
  */
-export const shouldUsePortal = (zIndex) => {
+export const shouldUsePortal = zIndex => {
   return zIndex >= Z_INDEX.FLOATING;
 };
 
@@ -119,9 +119,9 @@ export const shouldUsePortal = (zIndex) => {
  * @param {Element} element - DOM element to check
  * @returns {string|null} - Context type or null
  */
-export const detectZIndexContext = (element) => {
+export const detectZIndexContext = element => {
   if (!element) return null;
-  
+
   const modalParent = element.closest('[data-modal-level]');
   if (modalParent) {
     const level = modalParent.getAttribute('data-modal-level');
@@ -138,24 +138,24 @@ export const detectZIndexContext = (element) => {
  */
 export const getContextualZIndex = (baseLayer, context = null) => {
   const baseValue = GENERATED_Z_INDEXES[baseLayer];
-  
+
   if (!baseValue) {
     console.warn(`Unknown z-index layer: ${baseLayer}`);
     return 1000; // Fallback
   }
-  
+
   if (!context) return baseValue;
-  
+
   // If inside modal, use modal's z-index + offset
   if (context === 'modal') {
     return GENERATED_Z_INDEXES.modal + 50;
   }
-  
+
   // If inside nested modal, use nested modal's z-index + offset
   if (context === 'nested-modal') {
     return GENERATED_Z_INDEXES['nested-modal'] + 50;
   }
-  
+
   return baseValue;
 };
 
@@ -175,30 +175,30 @@ export const calculateZIndex = (baseLayer, element) => {
  * @param {Element} element - DOM element to check
  * @returns {number} - Parent z-index value or 0 if not found
  */
-export const detectParentZIndex = (element) => {
+export const detectParentZIndex = element => {
   if (!element) return 0;
-  
+
   // First, check for CSS custom property --parent-z-index
   const parentVar = window.getComputedStyle(element).getPropertyValue('--parent-z-index');
   if (parentVar && parentVar.trim()) {
     const parsed = parseInt(parentVar.trim());
     if (!isNaN(parsed)) return parsed;
   }
-  
+
   // Fallback: traverse DOM to find parent with z-index
   let parent = element.parentElement;
   while (parent && parent !== document.body) {
     const computedStyle = window.getComputedStyle(parent);
     const zIndex = parseInt(computedStyle.zIndex);
-    
+
     // Only consider positive z-index values
     if (!isNaN(zIndex) && zIndex > 0) {
       return zIndex;
     }
-    
+
     parent = parent.parentElement;
   }
-  
+
   return 0;
 };
 
@@ -210,12 +210,12 @@ export const detectParentZIndex = (element) => {
  */
 export const getChildZIndex = (element, offset = 1) => {
   const parentZIndex = detectParentZIndex(element);
-  
+
   // If no parent z-index found, return a reasonable default
   if (parentZIndex === 0) {
     return Z_INDEX.DROPDOWN; // Fallback to default dropdown z-index
   }
-  
+
   return parentZIndex + offset;
 };
 
@@ -238,9 +238,9 @@ export const injectZIndexCSSVars = () => {
   const styleString = Object.entries(Z_INDEX_CSS_VARS)
     .map(([name, value]) => `${name}: ${value};`)
     .join(' ');
-  
+
   document.documentElement.style.cssText += styleString;
-  
+
   console.log('🎨 Z-Index CSS variables injected:', Z_INDEX_CSS_VARS);
 };
 
@@ -274,12 +274,12 @@ export const debugZIndexForElement = (element, label = 'Element') => {
     console.warn(`[Z-Index Debug] ${label}: Element is null/undefined`);
     return;
   }
-  
+
   const computedStyle = window.getComputedStyle(element);
   const elementZIndex = parseInt(computedStyle.zIndex);
   const parentZIndex = detectParentZIndex(element);
   const parentVar = computedStyle.getPropertyValue('--parent-z-index');
-  
+
   console.group(`🔍 Z-Index Debug: ${label}`);
   console.log('Element z-index:', isNaN(elementZIndex) ? 'auto' : elementZIndex);
   console.log('Parent z-index (detected):', parentZIndex);

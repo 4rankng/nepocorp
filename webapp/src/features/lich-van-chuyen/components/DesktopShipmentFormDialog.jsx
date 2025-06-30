@@ -109,9 +109,7 @@ const DesktopShipmentFormDialog = ({
             color: 'primary.main',
           }}
         >
-          {editing
-            ? 'Chỉnh sửa lịch vận chuyển'
-            : 'Tạo lịch vận chuyển mới'}
+          {editing ? 'Chỉnh sửa lịch vận chuyển' : 'Tạo lịch vận chuyển mới'}
         </Typography>
       </DialogTitle>
       <form onSubmit={handleSubmit}>
@@ -158,7 +156,7 @@ const DesktopShipmentFormDialog = ({
                         onChange={onFormChange}
                         InputLabelProps={{ shrink: true, sx: { fontSize: '0.8rem' } }}
                         InputProps={{
-                          sx: { fontSize: '0.8rem', height: '36px' }
+                          sx: { fontSize: '0.8rem', height: '36px' },
                         }}
                         variant="outlined"
                         size="small"
@@ -177,7 +175,7 @@ const DesktopShipmentFormDialog = ({
                         size="small"
                         required
                         InputProps={{
-                          sx: { fontSize: '0.8rem', height: '36px' }
+                          sx: { fontSize: '0.8rem', height: '36px' },
                         }}
                         InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
@@ -195,7 +193,7 @@ const DesktopShipmentFormDialog = ({
                             fontSize: '0.8rem',
                             height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' },
                           }}
                         >
                           <MenuItem value="">
@@ -221,7 +219,7 @@ const DesktopShipmentFormDialog = ({
                             fontSize: '0.8rem',
                             height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' },
                           }}
                         >
                           {trangThaiOptions.map(option => (
@@ -265,7 +263,7 @@ const DesktopShipmentFormDialog = ({
                         size="small"
                         required
                         InputProps={{
-                          sx: { fontSize: '0.8rem', height: '36px' }
+                          sx: { fontSize: '0.8rem', height: '36px' },
                         }}
                         InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
@@ -282,7 +280,7 @@ const DesktopShipmentFormDialog = ({
                         size="small"
                         required
                         InputProps={{
-                          sx: { fontSize: '0.8rem', height: '36px' }
+                          sx: { fontSize: '0.8rem', height: '36px' },
                         }}
                         InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
@@ -326,7 +324,7 @@ const DesktopShipmentFormDialog = ({
                             fontSize: '0.8rem',
                             height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' },
                           }}
                         >
                           <MenuItem value="">
@@ -352,7 +350,7 @@ const DesktopShipmentFormDialog = ({
                             fontSize: '0.8rem',
                             height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' },
                           }}
                         >
                           <MenuItem value="">
@@ -378,7 +376,7 @@ const DesktopShipmentFormDialog = ({
                             fontSize: '0.8rem',
                             height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' },
                           }}
                         >
                           <MenuItem value="">
@@ -404,7 +402,7 @@ const DesktopShipmentFormDialog = ({
                             fontSize: '0.8rem',
                             height: '36px',
                             py: 0,
-                            '& .MuiOutlinedInput-root': { borderRadius: '4px' }
+                            '& .MuiOutlinedInput-root': { borderRadius: '4px' },
                           }}
                         >
                           <MenuItem value="">
@@ -451,7 +449,7 @@ const DesktopShipmentFormDialog = ({
                         InputProps={{
                           inputProps: { min: 0, step: 1000 },
                           endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>,
-                          sx: { fontSize: '0.8rem', height: '36px' }
+                          sx: { fontSize: '0.8rem', height: '36px' },
                         }}
                         variant="outlined"
                         size="small"
@@ -477,7 +475,7 @@ const DesktopShipmentFormDialog = ({
                         InputProps={{
                           inputProps: { min: 0, step: 1000 },
                           endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>,
-                          sx: { fontSize: '0.8rem', height: '36px' }
+                          sx: { fontSize: '0.8rem', height: '36px' },
                         }}
                         variant="outlined"
                         size="small"
@@ -533,7 +531,7 @@ const DesktopShipmentFormDialog = ({
                         variant="outlined"
                         size="small"
                         InputProps={{
-                          sx: { fontSize: '0.8rem', height: '36px' }
+                          sx: { fontSize: '0.8rem', height: '36px' },
                         }}
                         InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}

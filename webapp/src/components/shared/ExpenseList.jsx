@@ -1,10 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import StandardTable from '@/components/StandardTable';
 import { DeleteButton, ViewButton } from '@/components/ActionButtons';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
@@ -17,7 +12,7 @@ const formatCurrency = value => {
   }).format(value);
 };
 
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('vi-VN');
 };
@@ -47,18 +42,17 @@ const ExpenseList = ({
     // Filter by search term
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(expense =>
-        (expense.vendor_name && expense.vendor_name.toLowerCase().includes(search)) ||
-        (expense.remark && expense.remark.toLowerCase().includes(search)) ||
-        (expense.license_plate && expense.license_plate.toLowerCase().includes(search))
+      filtered = filtered.filter(
+        expense =>
+          (expense.vendor_name && expense.vendor_name.toLowerCase().includes(search)) ||
+          (expense.remark && expense.remark.toLowerCase().includes(search)) ||
+          (expense.license_plate && expense.license_plate.toLowerCase().includes(search))
       );
     }
 
     // Filter by category
     if (selectedCategory && selectedCategory !== 'all') {
-      filtered = filtered.filter(expense =>
-        expense.expense_category_id === selectedCategory
-      );
+      filtered = filtered.filter(expense => expense.expense_category_id === selectedCategory);
     }
 
     return filtered;
@@ -72,14 +66,14 @@ const ExpenseList = ({
         label: 'Ngày tạo',
         width: 100,
         sortable: true,
-        render: (value) => formatDate(value),
+        render: value => formatDate(value),
       },
       {
         key: 'expense_category_id',
         label: 'Hạng mục',
         width: 120,
         sortable: true,
-        render: (value) => {
+        render: value => {
           const category = categories.find(cat => cat.id === value);
           return category ? category.name : '-';
         },
@@ -104,23 +98,28 @@ const ExpenseList = ({
         label: 'Tổng tiền',
         width: 120,
         sortable: true,
-        render: (value) => formatCurrency(value),
+        render: value => formatCurrency(value),
       },
       {
         key: 'payment_status',
         label: 'Trạng thái',
         width: 130,
         sortable: true,
-        render: (value) => {
+        render: value => {
           const status = value;
           const label = PAYMENT_STATUS_LABELS[status] || status;
           const getStatusColor = () => {
             switch (status) {
-              case 'DRAFT': return '#6b7280';
-              case 'PENDING': return '#f59e0b';
-              case 'PAID': return '#10b981';
-              case 'CANCELLED': return '#ef4444';
-              default: return '#6b7280';
+              case 'DRAFT':
+                return '#6b7280';
+              case 'PENDING':
+                return '#f59e0b';
+              case 'PAID':
+                return '#10b981';
+              case 'CANCELLED':
+                return '#ef4444';
+              default:
+                return '#6b7280';
             }
           };
 
@@ -149,7 +148,7 @@ const ExpenseList = ({
         label: 'Ghi chú',
         width: 200,
         sortable: false,
-        render: (value) => (
+        render: value => (
           <span title={value}>
             {value ? (value.length > 50 ? `${value.substring(0, 50)}...` : value) : '-'}
           </span>
@@ -168,7 +167,7 @@ const ExpenseList = ({
           // Otherwise just show the user ID or fetch separately
           return value || '-';
         },
-      }
+      },
     ];
 
     return baseColumns;
@@ -213,7 +212,14 @@ const ExpenseList = ({
               backgroundColor: 'background.paper',
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                mb: 1,
+              }}
+            >
               <Typography variant="h6" component="h3">
                 {expense.license_plate}
               </Typography>
@@ -229,9 +235,8 @@ const ExpenseList = ({
 
             {showCategoryColumn && (
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                <strong>Loại chi phí:</strong> {
-                  categories.find(cat => cat.id === expense.expense_category_id)?.name || '-'
-                }
+                <strong>Loại chi phí:</strong>{' '}
+                {categories.find(cat => cat.id === expense.expense_category_id)?.name || '-'}
               </Typography>
             )}
 
@@ -240,7 +245,8 @@ const ExpenseList = ({
             </Typography>
 
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              <strong>Trạng thái:</strong> {PAYMENT_STATUS_LABELS[expense.payment_status] || expense.payment_status}
+              <strong>Trạng thái:</strong>{' '}
+              {PAYMENT_STATUS_LABELS[expense.payment_status] || expense.payment_status}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -271,7 +277,8 @@ const ExpenseList = ({
       data: filteredExpenses,
       loading: loading,
       error: error?.message || (error ? 'Có lỗi xảy ra khi tải dữ liệu' : null),
-      emptyMessage: searchTerm || selectedCategory ? 'Không tìm thấy chi phí phù hợp' : emptyMessage,
+      emptyMessage:
+        searchTerm || selectedCategory ? 'Không tìm thấy chi phí phù hợp' : emptyMessage,
       pagination: !!pagination,
       rowKeyField: 'id',
     };
@@ -287,7 +294,7 @@ const ExpenseList = ({
           pagination.onPageChange(newPage);
         }
       };
-      tableProps.onRowsPerPageChange = (event) => {
+      tableProps.onRowsPerPageChange = event => {
         if (pagination.onRowsPerPageChange) {
           pagination.onRowsPerPageChange(parseInt(event.target.value, 10));
         }
@@ -320,11 +327,7 @@ const ExpenseList = ({
     );
   };
 
-  return (
-    <Box sx={{ width: '100%' }}>
-      {isMobile ? renderMobileView() : renderDesktopView()}
-    </Box>
-  );
+  return <Box sx={{ width: '100%' }}>{isMobile ? renderMobileView() : renderDesktopView()}</Box>;
 };
 
 export default ExpenseList;

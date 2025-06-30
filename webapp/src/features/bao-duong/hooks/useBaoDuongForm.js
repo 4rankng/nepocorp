@@ -22,9 +22,10 @@ const convertLicensePlateToIds = (licensePlate, tractors, trailers) => {
 // Utility function to transform form data to new expense API format
 const transformToExpenseFormat = (formData, vehicleIds) => {
   // Calculate totals
-  const subtotal = formData.items?.reduce((sum, item) => {
-    return sum + (parseFloat(item.price || 0) * parseInt(item.quantity || 0));
-  }, 0) || 0;
+  const subtotal =
+    formData.items?.reduce((sum, item) => {
+      return sum + parseFloat(item.price || 0) * parseInt(item.quantity || 0);
+    }, 0) || 0;
 
   const taxRate = parseFloat(formData.tax_rate || 10); // Default 10%
   const taxAmount = subtotal * (taxRate / 100);
@@ -41,14 +42,15 @@ const transformToExpenseFormat = (formData, vehicleIds) => {
     payment_proof: formData.payment_proof || '',
     remark: formData.remark || '',
     currency: 'VND',
-    items: formData.items?.map(item => ({
-      item_name: item.item_name || '',
-      price: parseInt(item.price || 0),
-      quantity: parseInt(item.quantity || 1),
-      total: parseInt(item.price || 0) * parseInt(item.quantity || 1),
-      install_date: item.install_date ? new Date(item.install_date).toISOString() : null,
-      expiry_date: item.expiry_date ? new Date(item.expiry_date).toISOString() : null,
-    })) || []
+    items:
+      formData.items?.map(item => ({
+        item_name: item.item_name || '',
+        price: parseInt(item.price || 0),
+        quantity: parseInt(item.quantity || 1),
+        total: parseInt(item.price || 0) * parseInt(item.quantity || 1),
+        install_date: item.install_date ? new Date(item.install_date).toISOString() : null,
+        expiry_date: item.expiry_date ? new Date(item.expiry_date).toISOString() : null,
+      })) || [],
   };
 };
 
@@ -143,7 +145,7 @@ export default function useBaoDuongForm({
         logger.error(`License plate ${formData.license_plate} not found in VehicleDataContext`, {
           tractorCount: tractors.length,
           trailerCount: trailers.length,
-          license_plate: formData.license_plate
+          license_plate: formData.license_plate,
         });
         throw new Error(`Không tìm thấy xe với biển số: ${formData.license_plate}`);
       }
@@ -168,7 +170,8 @@ export default function useBaoDuongForm({
 
           const error = new Error(errorMessage);
           error.response = response;
-          error.validationError = response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
+          error.validationError =
+            response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
           throw error;
         }
         onSuccess?.(response?.message || 'Sửa thông tin bảo dưỡng thành công');
@@ -188,7 +191,8 @@ export default function useBaoDuongForm({
 
           const error = new Error(errorMessage);
           error.response = response;
-          error.validationError = response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
+          error.validationError =
+            response?.error?.code === 'VALIDATION_ERROR' || response?.errors?.code === 4001;
           throw error;
         }
         onSuccess?.(response?.message || 'Thêm thông tin bảo dưỡng thành công');

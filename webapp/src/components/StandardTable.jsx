@@ -101,7 +101,7 @@ const StandardTable = ({
 }) => {
   // Get initial rows per page from first option or default to 100
   const initialRowsPerPage = customRowsPerPageOptions?.[0] || 100;
-  
+
   // Internal sort state
   const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
   // Handle sort request

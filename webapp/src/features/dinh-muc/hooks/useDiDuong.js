@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 // Mock API objects returning empty data until backend is integrated
 const dinhMucDiDuongApi = {
   getCount: async () => 0,
-  getRoadNorms: async () => []
+  getRoadNorms: async () => [],
 };
 const tuyenDuongApi = {
   getAll: async () => ({ data: [] }),
-  getAllWithoutPagination: async () => []
+  getAllWithoutPagination: async () => [],
 };
 const containerApi = {
   getAll: async () => ({ data: [] }),
-  getAllWithoutPagination: async () => []
+  getAllWithoutPagination: async () => [],
 };
 import logger from '@services/logger';
 /**

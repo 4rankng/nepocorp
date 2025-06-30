@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { expenseService, expenseCategoryService } from '@api/services';
-import { 
+import {
   ExpenseFilters,
   CreateExpenseRequest,
   UpdateExpenseRequest,
   CreateExpenseItemRequest,
-  UpdateExpenseItemRequest
+  UpdateExpenseItemRequest,
 } from '@api/types';
 
 // Expenses queries
@@ -76,40 +76,47 @@ export const useExpense = (id: number) => {
 
 // Infinite query replacement with pagination state
 export const useInfiniteExpenses = (filters?: ExpenseFilters) => {
-  const [data, setData] = useState<{ pages: any[]; pageParams: number[] }>({ pages: [], pageParams: [] });
+  const [data, setData] = useState<{ pages: any[]; pageParams: number[] }>({
+    pages: [],
+    pageParams: [],
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
 
-  const fetchPage = useCallback(async (pageParam = 1) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await expenseService.getAll({ ...filters, page: pageParam, limit: 10 });
-      const { pagination } = response;
-      
-      setData(prev => ({
-        pages: [...prev.pages, response],
-        pageParams: [...prev.pageParams, pageParam]
-      }));
-      
-      setHasNextPage(pagination && pagination.page < pagination.total_pages);
-      return response;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch expenses'));
-      throw err;
-    } finally {
-      setIsLoading(false);
-      setIsFetchingNextPage(false);
-    }
-  }, [filters]);
+  const fetchPage = useCallback(
+    async (pageParam = 1) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await expenseService.getAll({ ...filters, page: pageParam, limit: 10 });
+        const { pagination } = response;
+
+        setData(prev => ({
+          pages: [...prev.pages, response],
+          pageParams: [...prev.pageParams, pageParam],
+        }));
+
+        setHasNextPage(pagination && pagination.page < pagination.total_pages);
+        return response;
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch expenses'));
+        throw err;
+      } finally {
+        setIsLoading(false);
+        setIsFetchingNextPage(false);
+      }
+    },
+    [filters]
+  );
 
   const fetchNextPage = useCallback(async () => {
     if (!hasNextPage || isFetchingNextPage) return;
-    
+
     setIsFetchingNextPage(true);
-    const nextPageParam = data.pageParams.length > 0 ? data.pageParams[data.pageParams.length - 1] + 1 : 1;
+    const nextPageParam =
+      data.pageParams.length > 0 ? data.pageParams[data.pageParams.length - 1] + 1 : 1;
     await fetchPage(nextPageParam);
   }, [hasNextPage, isFetchingNextPage, data.pageParams, fetchPage]);
 
@@ -289,20 +296,23 @@ export const useCreateExpenseItem = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async ({ expenseId, data }: { expenseId: number; data: CreateExpenseItemRequest }) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await expenseService.createItem(expenseId, data);
-      return response;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to create expense item');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async ({ expenseId, data }: { expenseId: number; data: CreateExpenseItemRequest }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await expenseService.createItem(expenseId, data);
+        return response;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to create expense item');
+        setError(error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     mutate,
@@ -318,20 +328,31 @@ export const useUpdateExpenseItem = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async ({ expenseId, itemId, data }: { expenseId: number; itemId: number; data: UpdateExpenseItemRequest }) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await expenseService.updateItem(expenseId, itemId, data);
-      return response;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to update expense item');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async ({
+      expenseId,
+      itemId,
+      data,
+    }: {
+      expenseId: number;
+      itemId: number;
+      data: UpdateExpenseItemRequest;
+    }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await expenseService.updateItem(expenseId, itemId, data);
+        return response;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to update expense item');
+        setError(error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     mutate,
@@ -347,20 +368,23 @@ export const useDeleteExpenseItem = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async ({ expenseId, itemId }: { expenseId: number; itemId: number }) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await expenseService.deleteItem(expenseId, itemId);
-      return response;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to delete expense item');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async ({ expenseId, itemId }: { expenseId: number; itemId: number }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await expenseService.deleteItem(expenseId, itemId);
+        return response;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to delete expense item');
+        setError(error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     mutate,
@@ -474,20 +498,23 @@ export const useCreateExpenseCategory = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: Partial<{ name: string; description?: string; is_active: boolean }>) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await expenseCategoryService.create(data);
-      return response;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to create expense category');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (data: Partial<{ name: string; description?: string; is_active: boolean }>) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await expenseCategoryService.create(data);
+        return response;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to create expense category');
+        setError(error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     mutate,
@@ -503,20 +530,29 @@ export const useUpdateExpenseCategory = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async ({ id, data }: { id: number; data: Partial<{ name: string; description?: string; is_active: boolean }> }) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await expenseCategoryService.update(id, data);
-      return response;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to update expense category');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<{ name: string; description?: string; is_active: boolean }>;
+    }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await expenseCategoryService.update(id, data);
+        return response;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to update expense category');
+        setError(error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     mutate,

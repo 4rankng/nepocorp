@@ -21,7 +21,7 @@ export {
   FormActions,
   ErrorText,
   HelperText,
-  PriceDisplay
+  PriceDisplay,
 } from './Form';
 
 // Enhanced field components
@@ -32,7 +32,7 @@ export {
   CurrencyDisplay,
   DateField,
   TextareaField,
-  PercentageField
+  PercentageField,
 } from './FieldComponents';
 
 // Dropdown components
@@ -44,7 +44,7 @@ export {
   ConfirmActionButtons,
   DeleteActionButtons,
   InvoiceFormActionButtons,
-  ActionButtonGroup
+  ActionButtonGroup,
 } from './ActionButtons';
 
 // Button components

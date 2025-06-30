@@ -1,7 +1,7 @@
 // Role constants
 export const ROLES = {
   ADMIN: 'admin',
-  DRIVER: 'driver', 
+  DRIVER: 'driver',
   ACCOUNTANT: 'accountant',
   HANDLER: 'handler',
 };

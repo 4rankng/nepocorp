@@ -12,23 +12,26 @@ const CancelReasonModal = ({
   onClose,
   onConfirm,
   initialValue = '',
-  entityType = 'phiếu' // Can be 'phiếu thu' or 'phiếu chi'
+  entityType = 'phiếu', // Can be 'phiếu thu' or 'phiếu chi'
 }) => {
   const [cancelReason, setCancelReason] = useState(initialValue);
   const [error, setError] = useState('');
 
-  const handleInputChange = useCallback((e) => {
+  const handleInputChange = useCallback(e => {
     setCancelReason(e.target.value);
     setError(''); // Clear error when user types
   }, []);
 
-  const validateReason = useCallback((reason) => {
-    if (!reason.trim()) {
-      return `Vui lòng nhập lý do hủy ${entityType}`;
-    }
+  const validateReason = useCallback(
+    reason => {
+      if (!reason.trim()) {
+        return `Vui lòng nhập lý do hủy ${entityType}`;
+      }
 
-    return null;
-  }, [entityType]);
+      return null;
+    },
+    [entityType]
+  );
 
   const handleConfirm = useCallback(() => {
     const validationError = validateReason(cancelReason);
@@ -38,7 +41,7 @@ const CancelReasonModal = ({
     }
 
     logger.info(`${entityType} cancellation reason confirmed`, {
-      cancelReason: cancelReason.trim()
+      cancelReason: cancelReason.trim(),
     });
     onConfirm(cancelReason.trim());
   }, [cancelReason, onConfirm, validateReason, entityType]);
@@ -52,9 +55,9 @@ const CancelReasonModal = ({
 
   // Handle keyboard shortcuts
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (!open) return;
-      
+
       if (e.key === 'Escape') {
         e.preventDefault();
         handleCancel();
@@ -66,12 +69,15 @@ const CancelReasonModal = ({
   }, [open, handleCancel]);
 
   // Handle Enter key on input
-  const handleInputKeyDown = useCallback((e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleConfirm();
-    }
-  }, [handleConfirm]);
+  const handleInputKeyDown = useCallback(
+    e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleConfirm();
+      }
+    },
+    [handleConfirm]
+  );
 
   return (
     <StandardModal
@@ -90,9 +96,7 @@ const CancelReasonModal = ({
       <ModalBody padding="lg" error={error}>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-2">
-              Lý do hủy
-            </label>
+            <label className="block text-xs font-medium text-gray-700 mb-2">Lý do hủy</label>
             <input
               type="text"
               value={cancelReason}
@@ -123,7 +127,7 @@ CancelReasonModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onConfirm: PropTypes.func.isRequired,
   initialValue: PropTypes.string,
-  entityType: PropTypes.string
+  entityType: PropTypes.string,
 };
 
 export default CancelReasonModal;

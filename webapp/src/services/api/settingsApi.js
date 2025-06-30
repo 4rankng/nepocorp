@@ -6,7 +6,7 @@ export const settingsApi = {
    * @param {string} key - The setting key (e.g., 'tax_rate')
    * @returns {Promise} Promise with setting data
    */
-  getSetting: async (key) => {
+  getSetting: async key => {
     const response = await apiClient.get(`/settings/${key}`);
     return response;
   },
@@ -35,9 +35,9 @@ export const settingsApi = {
    * @param {string} value - The new tax rate value
    * @returns {Promise} Promise with updated tax rate data
    */
-  updateTaxRate: async (value) => {
+  updateTaxRate: async value => {
     return settingsApi.updateSetting('tax_rate', value);
-  }
+  },
 };
 
 export default settingsApi;

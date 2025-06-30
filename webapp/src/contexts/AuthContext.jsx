@@ -30,16 +30,16 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       try {
         const response = await authApi.login(username, password);
-        
+
         if (response.status === 'success' && response.data) {
           const user = response.data.user || {
             username,
             id: response.data.id,
             name: response.data.name || username,
             email: response.data.email,
-            role: response.data.role
+            role: response.data.role,
           };
-          
+
           // Store the auth token for API requests
           if (response.data.token) {
             localStorage.setItem('authToken', response.data.token);
@@ -47,20 +47,20 @@ export const AuthProvider = ({ children }) => {
           if (response.data.refresh_token) {
             localStorage.setItem('refreshToken', response.data.refresh_token);
           }
-          
+
           const authData = {
             currentUser: user,
             isAuthenticated: true,
             timestamp: new Date().toISOString(),
           };
-          
+
           setCurrentUser(user);
           setIsAuthenticated(true);
           localStorage.setItem('auth', JSON.stringify(authData));
-          
+
           // Navigate to default page after login
           navigate('/lich-van-chuyen', { replace: true });
-          
+
           return { success: true, message: response.message };
         }
         // Return backend message if login failed but no error was thrown
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       const token = localStorage.getItem('authToken');
       const storedData = getStoredAuthData();
-      
+
       if (token && storedData) {
         try {
           // Verify token by getting profile
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
               isAuthenticated: true,
               timestamp: new Date().toISOString(),
             };
-            
+
             setCurrentUser(user);
             setIsAuthenticated(true);
             localStorage.setItem('auth', JSON.stringify(authData));
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
     };
-    
+
     checkAuth();
   }, []);
 
@@ -129,7 +129,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     }
-    
+
     setCurrentUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('auth');
@@ -137,22 +137,25 @@ export const AuthProvider = ({ children }) => {
   }, [navigate]);
 
   // Update current user function
-  const updateCurrentUser = useCallback((updatedUserData) => {
-    const updatedUser = {
-      ...currentUser,
-      ...updatedUserData
-    };
-    
-    setCurrentUser(updatedUser);
-    
-    // Update localStorage
-    const authData = {
-      currentUser: updatedUser,
-      isAuthenticated: true,
-      timestamp: new Date().toISOString(),
-    };
-    localStorage.setItem('auth', JSON.stringify(authData));
-  }, [currentUser]);
+  const updateCurrentUser = useCallback(
+    updatedUserData => {
+      const updatedUser = {
+        ...currentUser,
+        ...updatedUserData,
+      };
+
+      setCurrentUser(updatedUser);
+
+      // Update localStorage
+      const authData = {
+        currentUser: updatedUser,
+        isAuthenticated: true,
+        timestamp: new Date().toISOString(),
+      };
+      localStorage.setItem('auth', JSON.stringify(authData));
+    },
+    [currentUser]
+  );
 
   // Change password function
   const changePassword = useCallback(async (currentPassword, newPassword) => {
@@ -165,10 +168,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Role checking function
-  const hasAnyRole = useCallback((roles) => {
-    if (!currentUser?.role || !Array.isArray(roles)) return false;
-    return roles.includes(currentUser.role);
-  }, [currentUser?.role]);
+  const hasAnyRole = useCallback(
+    roles => {
+      if (!currentUser?.role || !Array.isArray(roles)) return false;
+      return roles.includes(currentUser.role);
+    },
+    [currentUser?.role]
+  );
 
   const value = {
     currentUser,

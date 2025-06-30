@@ -81,22 +81,26 @@ const DinhMucVoRongDialog = ({
     setErrors({});
   }, [initialData, open]);
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
 
     // Ensure numeric fields contain only numbers
-    if ((name === 'fromKm' || name === 'toKm' || name === 'standard') && value !== '' && isNaN(value)) {
+    if (
+      (name === 'fromKm' || name === 'toKm' || name === 'standard') &&
+      value !== '' &&
+      isNaN(value)
+    ) {
       return;
     }
 
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
 
     // Clear error when field is edited
     if (errors[name]) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
         [name]: '',
       }));
@@ -104,13 +108,13 @@ const DinhMucVoRongDialog = ({
   };
 
   const handlePlateChange = (event, newValue) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       bienSoXe: newValue || '',
     }));
 
     if (errors.bienSoXe) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
         bienSoXe: '',
       }));
@@ -148,7 +152,7 @@ const DinhMucVoRongDialog = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
 
     if (validateForm()) {
@@ -189,7 +193,7 @@ const DinhMucVoRongDialog = ({
                 onChange={handlePlateChange}
                 inputValue={plateInputValue}
                 onInputChange={handlePlateInputChange}
-                renderInput={(params) => (
+                renderInput={params => (
                   <TextField
                     {...params}
                     label="Biển số"

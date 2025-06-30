@@ -110,7 +110,14 @@ export const useUpdateDefaultTaxRate = () => {
     }
   }, []);
 
-  return { mutate, mutateAsync: mutate, isLoading, error, isError: !!error, isSuccess: !isLoading && !error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+  };
 };
 
 export const useCurrency = () => {
@@ -157,7 +164,14 @@ export const useUpdateCurrency = () => {
     }
   }, []);
 
-  return { mutate, mutateAsync: mutate, isLoading, error, isError: !!error, isSuccess: !isLoading && !error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+  };
 };
 
 export const useDateFormat = () => {
@@ -204,7 +218,14 @@ export const useUpdateDateFormat = () => {
     }
   }, []);
 
-  return { mutate, mutateAsync: mutate, isLoading, error, isError: !!error, isSuccess: !isLoading && !error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+  };
 };
 
 export const usePaginationLimit = () => {
@@ -251,5 +272,12 @@ export const useUpdatePaginationLimit = () => {
     }
   }, []);
 
-  return { mutate, mutateAsync: mutate, isLoading, error, isError: !!error, isSuccess: !isLoading && !error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !isLoading && !error,
+  };
 };

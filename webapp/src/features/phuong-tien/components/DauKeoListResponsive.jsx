@@ -14,7 +14,7 @@ import StandardTable from '@/components/StandardTable';
 import { EditButton, DeleteButton, SearchBar } from '@/components';
 import { sanitizeDisplayText } from '@/utils/stringUtils';
 
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleString('vi-VN');
 };
@@ -48,7 +48,8 @@ const DauKeoListResponsive = ({
     const term = searchTerm.toLowerCase();
     return data.filter(
       item =>
-        (item.license_plate && sanitizeDisplayText(item.license_plate).toLowerCase().includes(term)) ||
+        (item.license_plate &&
+          sanitizeDisplayText(item.license_plate).toLowerCase().includes(term)) ||
         (item.description && sanitizeDisplayText(item.description).toLowerCase().includes(term))
     );
   }, [data, searchTerm]);

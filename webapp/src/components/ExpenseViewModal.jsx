@@ -16,14 +16,14 @@ import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 
 const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
-  
+
   // Use global expense categories hook
-  const { 
-    categories: expenseCategories, 
+  const {
+    categories: expenseCategories,
     isLoading: isLoadingCategories,
-    fetchCategories
+    fetchCategories,
   } = useExpenseCategories();
-  
+
   const [expenseData, setExpenseData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -42,13 +42,13 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
-      type: 'tractor'
+      type: 'tractor',
     }));
 
     const trailerPlates = trailers.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
-      type: 'trailer'
+      type: 'trailer',
     }));
 
     return [...tractorPlates, ...trailerPlates];
@@ -118,10 +118,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       if (isEditing && (tractors.length === 0 || trailers.length === 0)) {
         setIsLoadingPlates(true);
         try {
-          await Promise.all([
-            fetchTractors(),
-            fetchTrailers()
-          ]);
+          await Promise.all([fetchTractors(), fetchTrailers()]);
         } catch (err) {
           console.error('Error fetching vehicles:', err);
         } finally {
@@ -132,7 +129,15 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
 
     fetchCategoriesIfNeeded();
     fetchVehicles();
-  }, [isEditing, expenseCategories.length, tractors.length, trailers.length, fetchTractors, fetchTrailers, fetchCategories]);
+  }, [
+    isEditing,
+    expenseCategories.length,
+    tractors.length,
+    trailers.length,
+    fetchTractors,
+    fetchTrailers,
+    fetchCategories,
+  ]);
 
   const handleClose = useCallback(() => {
     setExpenseData(null);
@@ -146,7 +151,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     setIsEditing(true);
     setEditedData({
       ...expenseData,
-      items: expenseData.items.map(item => ({ ...item }))
+      items: expenseData.items.map(item => ({ ...item })),
     });
   }, [expenseData]);
 
@@ -157,7 +162,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
 
   // Handle ESC key to close modal or cancel editing
   useEffect(() => {
-    const handleEscKey = (event) => {
+    const handleEscKey = event => {
       if (event.key === 'Escape' && open && !showLicensePlateModal) {
         if (isEditing) {
           handleCancelEdit();
@@ -226,7 +231,7 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
         cancel_reason: editedData.cancel_reason || null,
         remark: editedData.remark,
         items: updatedItems,
-        total: totalAmount
+        total: totalAmount,
       };
 
       console.log('Calling API update with data:', updateData);
@@ -241,7 +246,6 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       console.log('Success! Closing edit mode...');
       setIsEditing(false);
       setEditedData(null);
-
     } catch (err) {
       console.error('Caught error in handleSaveEdit:', err);
 
@@ -278,7 +282,6 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
       // IMPORTANT: Don't close modal or exit editing mode on error
       // The error will be displayed to the user and they can fix the issues
       return; // Explicitly return to prevent any further execution
-
     } finally {
       console.log('handleSaveEdit finally block');
       setIsSaving(false);
@@ -288,16 +291,14 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
   const handleFieldChange = useCallback((field, value) => {
     setEditedData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   }, []);
 
   const handleItemChange = useCallback((index, field, value) => {
     setEditedData(prev => ({
       ...prev,
-      items: prev.items.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      )
+      items: prev.items.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     }));
   }, []);
 
@@ -306,42 +307,45 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     setShowItemEditModal(true);
   }, []);
 
-  const handleDeleteItem = useCallback((index) => {
+  const handleDeleteItem = useCallback(index => {
     setEditedData(prev => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index)
+      items: prev.items.filter((_, i) => i !== index),
     }));
   }, []);
 
-  const handleLicensePlateCellClick = useCallback((index) => {
+  const handleLicensePlateCellClick = useCallback(index => {
     setCurrentLicensePlateIndex(index);
     setShowLicensePlateModal(true);
   }, []);
 
-  const handleLicensePlateSelect = useCallback((selectedPlate) => {
-    if (currentLicensePlateIndex !== null) {
-      setEditedData(prev => {
-        const updatedItems = prev.items.map((item, i) => {
-          if (i === currentLicensePlateIndex) {
-            return { ...item, license_plate: selectedPlate };
-          }
-          return item;
-        });
+  const handleLicensePlateSelect = useCallback(
+    selectedPlate => {
+      if (currentLicensePlateIndex !== null) {
+        setEditedData(prev => {
+          const updatedItems = prev.items.map((item, i) => {
+            if (i === currentLicensePlateIndex) {
+              return { ...item, license_plate: selectedPlate };
+            }
+            return item;
+          });
 
-        // Prefill other empty license plate cells
-        const prefilledItems = updatedItems.map(item => {
-          if (!item.license_plate) {
-            return { ...item, license_plate: selectedPlate };
-          }
-          return item;
-        });
+          // Prefill other empty license plate cells
+          const prefilledItems = updatedItems.map(item => {
+            if (!item.license_plate) {
+              return { ...item, license_plate: selectedPlate };
+            }
+            return item;
+          });
 
-        return { ...prev, items: prefilledItems };
-      });
-      setCurrentLicensePlateIndex(null);
-    }
-    setShowLicensePlateModal(false);
-  }, [currentLicensePlateIndex]);
+          return { ...prev, items: prefilledItems };
+        });
+        setCurrentLicensePlateIndex(null);
+      }
+      setShowLicensePlateModal(false);
+    },
+    [currentLicensePlateIndex]
+  );
 
   // Handle item edit modal
   const handleItemEditModalClose = useCallback(() => {
@@ -349,37 +353,41 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
     setEditingItemIndex(null);
   }, []);
 
-  const handleItemSave = useCallback((itemData) => {
-    if (editingItemIndex !== null) {
-      // Edit existing item
-      setEditedData(prev => ({
-        ...prev,
-        items: prev.items.map((item, index) =>
-          index === editingItemIndex ? itemData : item
-        )
-      }));
-    } else {
-      // Add new item
-      setEditedData(prev => ({
-        ...prev,
-        items: [...prev.items, itemData]
-      }));
-    }
-    setShowItemEditModal(false);
-    setEditingItemIndex(null);
-  }, [editingItemIndex]);
+  const handleItemSave = useCallback(
+    itemData => {
+      if (editingItemIndex !== null) {
+        // Edit existing item
+        setEditedData(prev => ({
+          ...prev,
+          items: prev.items.map((item, index) => (index === editingItemIndex ? itemData : item)),
+        }));
+      } else {
+        // Add new item
+        setEditedData(prev => ({
+          ...prev,
+          items: [...prev.items, itemData],
+        }));
+      }
+      setShowItemEditModal(false);
+      setEditingItemIndex(null);
+    },
+    [editingItemIndex]
+  );
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
-      <div 
-        className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col" 
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1"
+      style={{ zIndex: Z_INDEX.MODAL_BACKDROP }}
+    >
+      <div
+        className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col"
         style={{
           zIndex: Z_INDEX.MODAL,
-          '--parent-z-index': Z_INDEX.MODAL
+          '--parent-z-index': Z_INDEX.MODAL,
         }}
-        ref={(el) => {
+        ref={el => {
           if (el) {
             setParentZIndex(el, Z_INDEX.MODAL);
           }
@@ -405,19 +413,25 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
           {error && (
             <div
               className="p-4 bg-red-100 border-2 border-red-300 rounded-lg text-red-800 text-sm mb-4 shadow-lg animate-pulse"
-              ref={(el) => {
+              ref={el => {
                 if (el) {
                   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
               }}
             >
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 text-red-600 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
-                <div className="font-medium">
-                  Lỗi: {error}
-                </div>
+                <div className="font-medium">Lỗi: {error}</div>
               </div>
             </div>
           )}

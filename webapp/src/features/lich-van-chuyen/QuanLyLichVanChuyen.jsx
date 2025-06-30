@@ -16,9 +16,9 @@ import { ROLES } from '@/config/roles';
 
 // Temporary empty functions to prevent errors
 const fetchAllLichVanChuyen = async () => ({ success: true, data: { items: [] } });
-const addLichVanChuyen = async (data) => ({ success: true, data: { id: Date.now(), ...data } });
+const addLichVanChuyen = async data => ({ success: true, data: { id: Date.now(), ...data } });
 const editLichVanChuyen = async (id, data) => ({ success: true, data: { id, ...data } });
-const removeLichVanChuyen = async (id) => ({ success: true });
+const removeLichVanChuyen = async id => ({ success: true });
 const fetchAllNhanVien = async () => ({ success: true, data: { items: [] } });
 const fetchAllContainer = async () => ({ success: true, data: { items: [] } });
 const fetchAllKhachHang = async () => ({ success: true, data: { items: [] } });

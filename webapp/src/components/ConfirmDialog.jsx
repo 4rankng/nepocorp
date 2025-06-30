@@ -24,7 +24,7 @@ const ConfirmDialog = ({
 }) => {
   // Handle escape key
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (!disableEscapeKeyDown && e.key === 'Escape' && open && onCancel) {
         e.stopPropagation(); // Prevent bubbling to parent modals
         onCancel();
@@ -43,7 +43,7 @@ const ConfirmDialog = ({
   if (!open) return null;
 
   // Helper function to get payment status styling
-  const getPaymentStatusStyle = (status) => {
+  const getPaymentStatusStyle = status => {
     switch (status) {
       case 'Đã thanh toán':
       case 'PAID':
@@ -66,7 +66,9 @@ const ConfirmDialog = ({
   const renderDetailValue = (key, value) => {
     if (key === 'Trạng thái') {
       return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPaymentStatusStyle(value)}`}>
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPaymentStatusStyle(value)}`}
+        >
           {value}
         </span>
       );
@@ -135,7 +137,10 @@ const ConfirmDialog = ({
           {/* Warning message */}
           {type === 'delete' && (
             <div className="mt-4 flex items-start gap-2">
-              <WarningAmberIcon className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" sx={{ fontSize: 16 }} />
+              <WarningAmberIcon
+                className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0"
+                sx={{ fontSize: 16 }}
+              />
               <p className="text-xs text-gray-600">
                 Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn.
               </p>
@@ -156,9 +161,7 @@ const ConfirmDialog = ({
             onClick={onConfirm}
             disabled={isLoading}
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-              type === 'delete' 
-                ? 'bg-red-600 hover:bg-red-700' 
-                : 'bg-blue-600 hover:bg-blue-700'
+              type === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
             {isLoading ? (

@@ -1,4 +1,4 @@
-export const formatInvoiceDate = (dateString) => {
+export const formatInvoiceDate = dateString => {
   if (!dateString) return '-';
   try {
     const date = new Date(dateString);
@@ -9,7 +9,7 @@ export const formatInvoiceDate = (dateString) => {
   }
 };
 
-export const calculateInvoiceItemTotal = (item) => {
+export const calculateInvoiceItemTotal = item => {
   const price = parseFloat(item.price) || 0;
   const quantity = parseFloat(item.quantity) || 0;
   const taxRate = parseFloat(item.tax_rate) || 0;
@@ -18,11 +18,11 @@ export const calculateInvoiceItemTotal = (item) => {
   return subtotal + taxAmount;
 };
 
-export const calculateInvoiceTotal = (items) => {
+export const calculateInvoiceTotal = items => {
   return items.reduce((sum, item) => sum + calculateInvoiceItemTotal(item), 0);
 };
 
-export const prepareInvoiceItemsForUpdate = (items) => {
+export const prepareInvoiceItemsForUpdate = items => {
   return items.map(item => {
     const price = parseFloat(item.price) || 0;
     const quantity = parseFloat(item.quantity) || 0;
@@ -37,13 +37,13 @@ export const prepareInvoiceItemsForUpdate = (items) => {
       quantity,
       tax_rate: taxRate,
       subtotal,
-      total
+      total,
     };
   });
 };
 
 // Invoice status colors - same as payment status
-export const getInvoiceStatusColor = (status) => {
+export const getInvoiceStatusColor = status => {
   switch (status) {
     case 'PAID':
       return '#10b981';
@@ -59,7 +59,7 @@ export const getInvoiceStatusColor = (status) => {
 };
 
 // Format customer display name
-export const formatCustomerDisplay = (customer) => {
+export const formatCustomerDisplay = customer => {
   if (!customer) return '-';
   if (customer.tax_code) {
     return `${customer.name} (${customer.tax_code})`;
@@ -68,29 +68,29 @@ export const formatCustomerDisplay = (customer) => {
 };
 
 // Format invoice category with Vietnamese label
-export const formatInvoiceCategoryDisplay = (categoryName) => {
+export const formatInvoiceCategoryDisplay = categoryName => {
   const labels = {
-    'TRANSPORTATION': 'Vận chuyển',
-    'LOGISTICS_SERVICE': 'Dịch vụ logistics',
-    'PORT_FEES': 'Phí cảng',
-    'OTHER': 'Khác'
+    TRANSPORTATION: 'Vận chuyển',
+    LOGISTICS_SERVICE: 'Dịch vụ logistics',
+    PORT_FEES: 'Phí cảng',
+    OTHER: 'Khác',
   };
   return labels[categoryName] || categoryName;
 };
 
 // Format expense category with Vietnamese label
-export const formatExpenseCategoryDisplay = (categoryName) => {
+export const formatExpenseCategoryDisplay = categoryName => {
   const labels = {
-    'FUEL': 'Nhiên liệu',
-    'ROAD_FEES': 'Phí đường bộ',
-    'REPAIRS': 'Sửa chữa',
-    'TIRES': 'Lốp xe',
-    'DRIVER_SALARY': 'Lương tài xế',
-    'PARKING': 'Phí đỗ xe',
-    'MAINTENANCE': 'Bảo dưỡng',
-    'INSURANCE': 'Bảo hiểm',
-    'REGISTRATION': 'Đăng kiểm',
-    'OTHER': 'Khác'
+    FUEL: 'Nhiên liệu',
+    ROAD_FEES: 'Phí đường bộ',
+    REPAIRS: 'Sửa chữa',
+    TIRES: 'Lốp xe',
+    DRIVER_SALARY: 'Lương tài xế',
+    PARKING: 'Phí đỗ xe',
+    MAINTENANCE: 'Bảo dưỡng',
+    INSURANCE: 'Bảo hiểm',
+    REGISTRATION: 'Đăng kiểm',
+    OTHER: 'Khác',
   };
   return labels[categoryName] || categoryName;
 };

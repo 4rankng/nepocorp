@@ -39,12 +39,7 @@ const QuanLyBaoDuong = memo(() => {
   // Removed counts state as we're now using maintenance items directly
   const [selectedPlate, setSelectedPlate] = useState('');
   // Vehicle data from context
-  const {
-    tractors,
-    trailers,
-    loading: vehicleLoading,
-    errors: vehicleErrors,
-  } = useVehicleData();
+  const { tractors, trailers, loading: vehicleLoading, errors: vehicleErrors } = useVehicleData();
 
   // Combine license plates from tractors and trailers
   const licensePlates = React.useMemo(() => {
@@ -57,7 +52,7 @@ const QuanLyBaoDuong = memo(() => {
           value: tractor.license_plate,
           license_plate: tractor.license_plate,
           type: 'Đầu kéo',
-          displayText: `${tractor.license_plate} (Đầu kéo)`
+          displayText: `${tractor.license_plate} (Đầu kéo)`,
         });
       }
     });
@@ -69,14 +64,14 @@ const QuanLyBaoDuong = memo(() => {
           value: trailer.license_plate,
           license_plate: trailer.license_plate,
           type: 'Rơ-moóc',
-          displayText: `${trailer.license_plate} (Rơ-moóc)`
+          displayText: `${trailer.license_plate} (Rơ-moóc)`,
         });
       }
     });
 
     // Remove duplicates based on license_plate
-    const uniquePlates = plates.filter((plate, index, self) =>
-      index === self.findIndex(p => p.license_plate === plate.license_plate)
+    const uniquePlates = plates.filter(
+      (plate, index, self) => index === self.findIndex(p => p.license_plate === plate.license_plate)
     );
 
     return uniquePlates;
@@ -122,7 +117,7 @@ const QuanLyBaoDuong = memo(() => {
     }
   }, [vehicleErrors.tractors, vehicleErrors.trailers]);
 
-  const handleInvoiceClick = (maintenanceRecord) => {
+  const handleInvoiceClick = maintenanceRecord => {
     console.log('Invoice button clicked for maintenance record:', maintenanceRecord);
     // Use expense_id from maintenance record to show the related invoice
     const expenseId = maintenanceRecord?.expense_id || maintenanceRecord;
@@ -231,7 +226,10 @@ const QuanLyBaoDuong = memo(() => {
               </MenuItem>
             ) : (
               licensePlates.map(plate => (
-                <MenuItem key={plate.value || plate.license_plate} value={plate.value || plate.license_plate}>
+                <MenuItem
+                  key={plate.value || plate.license_plate}
+                  value={plate.value || plate.license_plate}
+                >
                   {plate.displayText || plate.value || plate.license_plate}
                 </MenuItem>
               ))

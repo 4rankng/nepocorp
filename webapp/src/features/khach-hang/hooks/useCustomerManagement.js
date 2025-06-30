@@ -30,25 +30,22 @@ const useCustomerManagement = () => {
     }
   }, []);
   // Add new customer
-  const addCustomer = useCallback(
-    async customerData => {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await customerApi.create(customerData);
-        const newCustomer = response.data;
-        setCustomers(prev => [...prev, newCustomer]);
-        return { success: true, data: newCustomer };
-      } catch (err) {
-        const errorMessage = err.response?.data?.error || 'Lỗi khi thêm khách hàng';
-        setError(errorMessage);
-        return { success: false, error: errorMessage };
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  const addCustomer = useCallback(async customerData => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await customerApi.create(customerData);
+      const newCustomer = response.data;
+      setCustomers(prev => [...prev, newCustomer]);
+      return { success: true, data: newCustomer };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || 'Lỗi khi thêm khách hàng';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   // Get initial form data
   const getInitialFormData = useCallback(() => {
     return { ...initialFormState };
@@ -60,9 +57,7 @@ const useCustomerManagement = () => {
     try {
       const response = await customerApi.update(id, customerData);
       const updatedCustomer = response.data;
-      setCustomers(prev => prev.map(customer => 
-        customer.id === id ? updatedCustomer : customer
-      ));
+      setCustomers(prev => prev.map(customer => (customer.id === id ? updatedCustomer : customer)));
       return { success: true, data: updatedCustomer };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Lỗi khi sửa khách hàng';

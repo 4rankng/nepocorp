@@ -38,7 +38,7 @@ const ModalFooter = ({
             )}
             {extraButtons}
           </div>
-          
+
           {/* Right side - Cancel and Save */}
           <div className="flex gap-2">
             <button

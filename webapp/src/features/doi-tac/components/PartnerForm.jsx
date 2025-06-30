@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { FormModal } from '@/components/ui';
-import {
-  TextField,
-} from '@/components/ui/FieldComponents';
+import { TextField } from '@/components/ui/FieldComponents';
 import { FormActionButtons } from '@/components/ui/ActionButtons';
 import { FormRow, FormSection } from '@/components/ui';
 
@@ -57,21 +55,24 @@ const PartnerForm = ({
   }, [open, isEdit, partner, onGetInitialData]);
 
   // Handle field changes
-  const handleFieldChange = useCallback((field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleFieldChange = useCallback(
+    (field, value) => {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+      }));
 
-    // Clear error for this field
-    if (localErrors[field]) {
-      setLocalErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [localErrors]);
+      // Clear error for this field
+      if (localErrors[field]) {
+        setLocalErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    },
+    [localErrors]
+  );
 
   // Validation
   const validateForm = useCallback(() => {
@@ -96,7 +97,10 @@ const PartnerForm = ({
     // Phone validation if provided
     if (formData.contact_phone?.trim()) {
       const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-      if (!phoneRegex.test(formData.contact_phone.trim()) || formData.contact_phone.trim().length < 10) {
+      if (
+        !phoneRegex.test(formData.contact_phone.trim()) ||
+        formData.contact_phone.trim().length < 10
+      ) {
         newErrors.contact_phone = 'Số điện thoại không hợp lệ';
       }
     }
@@ -106,36 +110,39 @@ const PartnerForm = ({
   }, [formData]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async e => {
+      e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+      if (!validateForm()) {
+        return;
+      }
 
-    setIsSubmitting(true);
-    try {
-      // Clean the data before sending
-      const cleanedData = {
-        ...formData,
-        ten: formData.ten.trim(),
-        ma_so_thue: formData.ma_so_thue.trim(),
-        dia_chi: formData.dia_chi?.trim() || '',
-        contact_person: formData.contact_person?.trim() || '',
-        contact_phone: formData.contact_phone?.trim() || '',
-        contact_email: formData.contact_email?.trim() || '',
-        notes: formData.notes?.trim() || '',
-      };
+      setIsSubmitting(true);
+      try {
+        // Clean the data before sending
+        const cleanedData = {
+          ...formData,
+          ten: formData.ten.trim(),
+          ma_so_thue: formData.ma_so_thue.trim(),
+          dia_chi: formData.dia_chi?.trim() || '',
+          contact_person: formData.contact_person?.trim() || '',
+          contact_phone: formData.contact_phone?.trim() || '',
+          contact_email: formData.contact_email?.trim() || '',
+          notes: formData.notes?.trim() || '',
+        };
 
-      await onSave(cleanedData);
-      onClose();
-    } catch (error) {
-      console.error('Error saving partner:', error);
-      // Error handling is done by parent component
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [formData, validateForm, onSave, onClose]);
+        await onSave(cleanedData);
+        onClose();
+      } catch (error) {
+        console.error('Error saving partner:', error);
+        // Error handling is done by parent component
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [formData, validateForm, onSave, onClose]
+  );
 
   // Handle cancel
   const handleCancel = useCallback(() => {
@@ -146,7 +153,7 @@ const PartnerForm = ({
 
   // Custom ESC key handler that prevents event bubbling
   useEffect(() => {
-    const handleEscKey = (event) => {
+    const handleEscKey = event => {
       if (event.key === 'Escape' && open) {
         event.stopPropagation(); // Prevent bubbling to parent modal
         handleCancel();
@@ -196,7 +203,7 @@ const PartnerForm = ({
             label="Tên đối tác"
             name="ten"
             value={formData.ten}
-            onChange={(e) => handleFieldChange('ten', e.target.value)}
+            onChange={e => handleFieldChange('ten', e.target.value)}
             placeholder="Nhập tên đối tác"
             required
             error={allErrors.ten}
@@ -206,7 +213,7 @@ const PartnerForm = ({
             label="Mã số thuế"
             name="ma_so_thue"
             value={formData.ma_so_thue}
-            onChange={(e) => handleFieldChange('ma_so_thue', e.target.value)}
+            onChange={e => handleFieldChange('ma_so_thue', e.target.value)}
             placeholder="Nhập mã số thuế"
             required
             error={allErrors.ma_so_thue}
@@ -218,7 +225,7 @@ const PartnerForm = ({
             label="Địa chỉ"
             name="dia_chi"
             value={formData.dia_chi}
-            onChange={(e) => handleFieldChange('dia_chi', e.target.value)}
+            onChange={e => handleFieldChange('dia_chi', e.target.value)}
             placeholder="Nhập địa chỉ đối tác"
             multiline
             rows={3}
@@ -228,7 +235,7 @@ const PartnerForm = ({
             label="Ghi chú"
             name="notes"
             value={formData.notes}
-            onChange={(e) => handleFieldChange('notes', e.target.value)}
+            onChange={e => handleFieldChange('notes', e.target.value)}
             placeholder="Nhập ghi chú về đối tác"
             multiline
             rows={3}
@@ -242,7 +249,7 @@ const PartnerForm = ({
             label="Người liên hệ"
             name="contact_person"
             value={formData.contact_person}
-            onChange={(e) => handleFieldChange('contact_person', e.target.value)}
+            onChange={e => handleFieldChange('contact_person', e.target.value)}
             placeholder="Nhập tên người liên hệ"
           />
 
@@ -250,7 +257,7 @@ const PartnerForm = ({
             label="Số điện thoại"
             name="contact_phone"
             value={formData.contact_phone}
-            onChange={(e) => handleFieldChange('contact_phone', e.target.value)}
+            onChange={e => handleFieldChange('contact_phone', e.target.value)}
             placeholder="Nhập số điện thoại"
             error={allErrors.contact_phone}
           />
@@ -261,7 +268,7 @@ const PartnerForm = ({
             label="Email"
             name="contact_email"
             value={formData.contact_email}
-            onChange={(e) => handleFieldChange('contact_email', e.target.value)}
+            onChange={e => handleFieldChange('contact_email', e.target.value)}
             placeholder="Nhập địa chỉ email"
             type="email"
             error={allErrors.contact_email}
@@ -269,7 +276,6 @@ const PartnerForm = ({
           />
         </FormRow>
       </FormSection>
-
 
       {allErrors.general && (
         <div className="text-red-500 text-sm mt-4 p-3 bg-red-50 rounded-md border border-red-200">

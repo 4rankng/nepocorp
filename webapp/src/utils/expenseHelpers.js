@@ -1,9 +1,9 @@
-export const formatDate = (dateString) => {
+export const formatDate = dateString => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('vi-VN');
 };
 
-export const getPaymentStatusColor = (status) => {
+export const getPaymentStatusColor = status => {
   switch (status) {
     case 'PAID':
       return '#10b981';
@@ -18,7 +18,7 @@ export const getPaymentStatusColor = (status) => {
   }
 };
 
-export const calculateItemTotal = (item) => {
+export const calculateItemTotal = item => {
   const price = parseInt(item.price) || 0;
   const quantity = parseInt(item.quantity) || 0;
   const taxRate = parseFloat(item.tax_rate) || 0;
@@ -27,11 +27,11 @@ export const calculateItemTotal = (item) => {
   return Math.round(subtotal + taxAmount); // Round to integer for VND
 };
 
-export const calculateExpenseTotal = (items) => {
+export const calculateExpenseTotal = items => {
   return items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
 };
 
-export const prepareExpenseItemsForUpdate = (items) => {
+export const prepareExpenseItemsForUpdate = items => {
   return items.map(item => {
     const price = parseInt(item.price) || 0;
     const quantity = parseInt(item.quantity) || 0;

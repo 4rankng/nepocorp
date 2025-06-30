@@ -6,7 +6,7 @@ import { VehicleDataContext } from '@contexts/VehicleDataContext';
 const _transformExpenseToDisplay = (expense, tractors, trailers) => {
   // Find the vehicle by ID to get license plate
   let license_plate = '';
-  
+
   // Add debugging info
   console.log('Transform expense:', {
     expense_id: expense.id,
@@ -15,20 +15,20 @@ const _transformExpenseToDisplay = (expense, tractors, trailers) => {
     tractors_count: tractors?.length || 0,
     trailers_count: trailers?.length || 0,
     first_tractor: tractors?.[0],
-    first_trailer: trailers?.[0]
+    first_trailer: trailers?.[0],
   });
-  
+
   if (expense.tractor_id) {
     // Handle both string and number IDs
     const tractorId = parseInt(expense.tractor_id);
     const tractor = tractors.find(t => parseInt(t.id) === tractorId);
-    
+
     console.log('Tractor lookup:', {
       looking_for: tractorId,
       found: tractor,
-      all_tractor_ids: tractors.map(t => ({ id: t.id, license: t.license_plate }))
+      all_tractor_ids: tractors.map(t => ({ id: t.id, license: t.license_plate })),
     });
-    
+
     if (tractor?.license_plate) {
       license_plate = tractor.license_plate;
     } else {
@@ -39,13 +39,13 @@ const _transformExpenseToDisplay = (expense, tractors, trailers) => {
     // Handle both string and number IDs
     const trailerId = parseInt(expense.trailer_id);
     const trailer = trailers.find(t => parseInt(t.id) === trailerId);
-    
+
     console.log('Trailer lookup:', {
       looking_for: trailerId,
       found: trailer,
-      all_trailer_ids: trailers.map(t => ({ id: t.id, license: t.license_plate }))
+      all_trailer_ids: trailers.map(t => ({ id: t.id, license: t.license_plate })),
     });
-    
+
     if (trailer?.license_plate) {
       license_plate = trailer.license_plate;
     } else {
@@ -76,7 +76,7 @@ const _transformExpenseToDisplay = (expense, tractors, trailers) => {
     currency: expense.currency || 'VND',
     items: expense.items || [],
     // Add original expense data for editing
-    _original: expense
+    _original: expense,
   };
 };
 
@@ -120,10 +120,10 @@ export default function useBaoDuongRecords(baoDuongApi) {
       ).sort((a, b) => (a.value || '').localeCompare(b.value || ''));
 
       setLicensePlates(uniquePlates);
-      
-      logger.info(`Built license plates from context: ${uniquePlates.length} plates`, { 
+
+      logger.info(`Built license plates from context: ${uniquePlates.length} plates`, {
         tractorCount: tractors.length,
-        trailerCount: trailers.length
+        trailerCount: trailers.length,
       });
     } catch (error) {
       logger.error('Error building license plates from context', { error });
@@ -150,7 +150,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
         await fetchAllVehicleData();
       }
     };
-    
+
     initialLoad();
   }, [fetchAllVehicleData]);
 
@@ -169,7 +169,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
           console.log('Vehicle data not loaded, fetching...');
           await fetchAllVehicleData();
         }
-        
+
         // Note: API is 1-indexed for page number
         const recordsRes = await baoDuongApi.getAll(page + 1, pageSize);
 
@@ -177,7 +177,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
           count: recordsRes.data?.length || 0,
           first_record: recordsRes.data?.[0],
           tractors_available: tractors.length,
-          trailers_available: trailers.length
+          trailers_available: trailers.length,
         });
 
         // Use backend data directly without transformation
@@ -228,7 +228,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
           console.log('Vehicle data not loaded, fetching...');
           await fetchAllVehicleData();
         }
-        
+
         const recordsRes = await baoDuongApi.getAll(page + 1, pageSize, { license_plate: bienSo });
         // Use backend data directly without transformation
         setBaoDuongRecords(recordsRes.data || []);

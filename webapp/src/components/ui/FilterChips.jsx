@@ -9,7 +9,7 @@ const FilterChips = ({
   partners = [],
   onRemoveFilter,
   onClearAll,
-  sx = {}
+  sx = {},
 }) => {
   const getFilterChips = () => {
     const chips = [];
@@ -21,7 +21,7 @@ const FilterChips = ({
         key: 'customer',
         label: `KH: ${customer?.name || 'N/A'}`,
         color: 'primary',
-        onDelete: () => onRemoveFilter('customer_id')
+        onDelete: () => onRemoveFilter('customer_id'),
       });
     }
 
@@ -32,18 +32,19 @@ const FilterChips = ({
         key: 'partner',
         label: `ĐT: ${partner?.name || 'N/A'}`,
         color: 'secondary',
-        onDelete: () => onRemoveFilter('partner_id')
+        onDelete: () => onRemoveFilter('partner_id'),
       });
     }
 
     // Transaction type filter
     if (filters.transaction_type) {
-      const typeLabel = TRANSACTION_TYPE_LABELS[filters.transaction_type] || filters.transaction_type;
+      const typeLabel =
+        TRANSACTION_TYPE_LABELS[filters.transaction_type] || filters.transaction_type;
       chips.push({
         key: 'transaction_type',
         label: `Loại: ${typeLabel}`,
         color: 'info',
-        onDelete: () => onRemoveFilter('transaction_type')
+        onDelete: () => onRemoveFilter('transaction_type'),
       });
     }
 
@@ -57,21 +58,21 @@ const FilterChips = ({
         onDelete: () => {
           onRemoveFilter('start_date');
           onRemoveFilter('end_date');
-        }
+        },
       });
     } else if (filters.start_date) {
       chips.push({
         key: 'start_date',
         label: `Từ: ${filters.start_date}`,
         color: 'warning',
-        onDelete: () => onRemoveFilter('start_date')
+        onDelete: () => onRemoveFilter('start_date'),
       });
     } else if (filters.end_date) {
       chips.push({
         key: 'end_date',
         label: `Đến: ${filters.end_date}`,
         color: 'warning',
-        onDelete: () => onRemoveFilter('end_date')
+        onDelete: () => onRemoveFilter('end_date'),
       });
     }
 
@@ -85,7 +86,7 @@ const FilterChips = ({
       } else {
         amountLabel += `≤ ${formatCurrency(filters.amount_max)}`;
       }
-      
+
       chips.push({
         key: 'amount_range',
         label: amountLabel,
@@ -93,7 +94,7 @@ const FilterChips = ({
         onDelete: () => {
           onRemoveFilter('amount_min');
           onRemoveFilter('amount_max');
-        }
+        },
       });
     }
 
@@ -103,7 +104,7 @@ const FilterChips = ({
         key: 'search',
         label: `Tìm kiếm: "${filters.search}"`,
         color: 'default',
-        onDelete: () => onRemoveFilter('search')
+        onDelete: () => onRemoveFilter('search'),
       });
     }
 
@@ -118,18 +119,20 @@ const FilterChips = ({
 
   return (
     <Fade in={filterChips.length > 0}>
-      <Box sx={{ 
-        display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: 1, 
-        alignItems: 'center',
-        ...sx 
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1,
+          alignItems: 'center',
+          ...sx,
+        }}
+      >
         <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
           Bộ lọc đang áp dụng:
         </Typography>
-        
-        {filterChips.map((chip) => (
+
+        {filterChips.map(chip => (
           <Chip
             key={chip.key}
             label={chip.label}
@@ -140,8 +143,8 @@ const FilterChips = ({
             sx={{
               fontSize: '0.75rem',
               '& .MuiChip-deleteIcon': {
-                fontSize: '0.875rem'
-              }
+                fontSize: '0.875rem',
+              },
             }}
           />
         ))}
@@ -155,7 +158,7 @@ const FilterChips = ({
             color="error"
             sx={{
               fontSize: '0.75rem',
-              ml: 1
+              ml: 1,
             }}
           />
         )}

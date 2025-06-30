@@ -31,7 +31,7 @@ const CategoryLabel = ({ categoryName, type = 'auto' }) => {
 
 CategoryLabel.propTypes = {
   categoryName: PropTypes.string,
-  type: PropTypes.oneOf(['expense', 'invoice', 'auto'])
+  type: PropTypes.oneOf(['expense', 'invoice', 'auto']),
 };
 
 export default CategoryLabel;

@@ -6,12 +6,14 @@ export const ApiResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
     status: z.enum(['success', 'error']),
     message: z.string(),
     data: dataSchema,
-    pagination: z.object({
-      page: z.number(),
-      limit: z.number(),
-      total_pages: z.number(),
-      records_count: z.number(),
-    }).optional(),
+    pagination: z
+      .object({
+        page: z.number(),
+        limit: z.number(),
+        total_pages: z.number(),
+        records_count: z.number(),
+      })
+      .optional(),
   });
 
 export const ApiErrorSchema = z.object({

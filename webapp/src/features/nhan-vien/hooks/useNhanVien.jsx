@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { fetchAllNhanVien, addNhanVien, editNhanVien, removeNhanVien } from '../../../services/api/nhanVienApi';
+import {
+  fetchAllNhanVien,
+  addNhanVien,
+  editNhanVien,
+  removeNhanVien,
+} from '../../../services/api/nhanVienApi';
 import { useAuth } from '@contexts/AuthContext';
 // Configuration
 const DEFAULT_PAGE_SIZE = 10;
@@ -46,7 +51,7 @@ const getInitialFormState = () => ({
 });
 const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   const { currentUser, updateCurrentUser } = useAuth();
-  
+
   // State management
   const [employees, setEmployees] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +68,7 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
   const cacheRef = useRef({
     employees: { data: [], timestamp: 0, total: 0 },
   });
-  
+
   // Cache invalidation method
   const invalidateCache = useCallback(() => {
     cacheRef.current.employees.timestamp = 0;
@@ -91,23 +96,23 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
           }));
           return;
         }
-        
+
         const response = await withRetry(() => fetchAllNhanVien(page, size));
-        
+
         if (response.status !== 'success') {
           throw new Error(response.message || 'Failed to fetch employees');
         }
-        
+
         const employeesData = response.data || [];
         const total = response.pagination?.records_count || employeesData.length;
-        
+
         // Update cache
         cacheRef.current.employees = {
           data: employeesData,
           timestamp: now,
           total: total,
         };
-        
+
         setEmployees(employeesData);
         setPagination(prev => ({
           ...prev,
@@ -199,23 +204,25 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
       if (editingEmployee && !userData.password?.trim()) {
         delete userData.password;
       }
-      
+
       let response;
       if (editingEmployee) {
         response = await editNhanVien(editingEmployee.id, userData);
       } else {
         response = await addNhanVien(userData);
       }
-      
+
       if (response.status !== 'success') {
-        throw new Error(response.message || `Failed to ${editingEmployee ? 'update' : 'create'} employee`);
+        throw new Error(
+          response.message || `Failed to ${editingEmployee ? 'update' : 'create'} employee`
+        );
       }
-      
+
       // If editing current user, update the auth context
       if (editingEmployee && currentUser && editingEmployee.id === currentUser.id) {
         updateCurrentUser(response.data);
       }
-      
+
       // Invalidate cache and refresh employee list with fresh data
       invalidateCache();
       await fetchEmployeesData(pagination.page, pagination.pageSize, true);
@@ -236,11 +243,11 @@ const useNhanVien = (initialPage = 1, pageSize = DEFAULT_PAGE_SIZE) => {
       setError('');
       try {
         const response = await removeNhanVien(id);
-        
+
         if (response.status !== 'success') {
           throw new Error(response.message || 'Failed to delete employee');
         }
-        
+
         // Invalidate cache and refresh employee list with fresh data
         invalidateCache();
         await fetchEmployeesData(pagination.page, pagination.pageSize, true);

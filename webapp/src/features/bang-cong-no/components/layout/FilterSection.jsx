@@ -8,19 +8,19 @@ import {
   Collapse,
   Chip,
   Stack,
-  Divider
+  Divider,
 } from '@mui/material';
 import {
   FilterList as FilterListIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import FilterChips from '@/components/ui/FilterChips';
 import { countActiveFilters } from '@/features/bang-cong-no/types';
 
 const FilterSection = ({
-  title = "Bộ lọc",
+  title = 'Bộ lọc',
   filters = {},
   customers = [],
   partners = [],
@@ -32,10 +32,10 @@ const FilterSection = ({
   showExpandButton = true,
   children,
   loading = false,
-  sx = {}
+  sx = {},
 }) => {
   const [internalExpanded, setInternalExpanded] = useState(false);
-  
+
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
   const setExpanded = controlledExpanded !== undefined ? onExpandedChange : setInternalExpanded;
 
@@ -50,44 +50,49 @@ const FilterSection = ({
     onClearFilters && onClearFilters();
   };
 
-  const handleRemoveFilter = (filterKey) => {
+  const handleRemoveFilter = filterKey => {
     onRemoveFilter && onRemoveFilter(filterKey);
   };
 
   return (
     <Paper elevation={1} sx={{ mb: 3, overflow: 'hidden', ...sx }}>
       {/* Filter Header */}
-      <Box sx={{ 
-        p: 2, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        borderBottom: isExpanded || hasActiveFilters ? '1px solid #e0e0e0' : 'none',
-        bgcolor: 'grey.50'
-      }}>
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: isExpanded || hasActiveFilters ? '1px solid #e0e0e0' : 'none',
+          bgcolor: 'grey.50',
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterListIcon color="primary" />
-          <Typography variant="h6" sx={{ 
-            fontWeight: 600,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'
-          }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
+            }}
+          >
             {title}
           </Typography>
           {hasActiveFilters && (
-            <Chip 
+            <Chip
               label={activeFilterCount}
               size="small"
               color="primary"
-              sx={{ 
-                minWidth: 24, 
+              sx={{
+                minWidth: 24,
                 height: 20,
                 fontSize: '0.75rem',
-                fontWeight: 600
+                fontWeight: 600,
               }}
             />
           )}
         </Box>
-        
+
         <Stack direction="row" spacing={1} alignItems="center">
           {hasActiveFilters && (
             <Button
@@ -98,19 +103,15 @@ const FilterSection = ({
               disabled={loading}
               sx={{
                 textTransform: 'none',
-                fontSize: '0.875rem'
+                fontSize: '0.875rem',
               }}
             >
               Xóa bộ lọc
             </Button>
           )}
-          
+
           {showExpandButton && (
-            <IconButton
-              onClick={handleToggleExpanded}
-              size="small"
-              disabled={loading}
-            >
+            <IconButton onClick={handleToggleExpanded} size="small" disabled={loading}>
               {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           )}
@@ -133,14 +134,10 @@ const FilterSection = ({
       {/* Filter Controls */}
       {showExpandButton ? (
         <Collapse in={isExpanded}>
-          <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
-            {children}
-          </Box>
+          <Box sx={{ p: 3, bgcolor: 'background.paper' }}>{children}</Box>
         </Collapse>
       ) : (
-        <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
-          {children}
-        </Box>
+        <Box sx={{ p: 3, bgcolor: 'background.paper' }}>{children}</Box>
       )}
     </Paper>
   );

@@ -9,7 +9,7 @@ export const EXPENSE_CATEGORIES = {
   MAINTENANCE: 'MAINTENANCE',
   INSURANCE: 'INSURANCE',
   REGISTRATION: 'REGISTRATION',
-  OTHER: 'OTHER'
+  OTHER: 'OTHER',
 };
 
 // Vietnamese labels for expense categories
@@ -23,16 +23,16 @@ export const EXPENSE_CATEGORY_LABELS = {
   [EXPENSE_CATEGORIES.MAINTENANCE]: 'Bảo dưỡng',
   [EXPENSE_CATEGORIES.INSURANCE]: 'Bảo hiểm',
   [EXPENSE_CATEGORIES.REGISTRATION]: 'Đăng kiểm',
-  [EXPENSE_CATEGORIES.OTHER]: 'Khác'
+  [EXPENSE_CATEGORIES.OTHER]: 'Khác',
 };
 
 // Helper function to get Vietnamese label for expense category
-export const getExpenseCategoryLabel = (categoryName) => {
+export const getExpenseCategoryLabel = categoryName => {
   return EXPENSE_CATEGORY_LABELS[categoryName] || categoryName;
 };
 
 export default {
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_LABELS,
-  getExpenseCategoryLabel
+  getExpenseCategoryLabel,
 };

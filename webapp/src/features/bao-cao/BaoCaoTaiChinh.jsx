@@ -1,5 +1,17 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
 const BaoCaoTaiChinh = () => {
   // Color palette matching the design
@@ -140,7 +152,7 @@ const BaoCaoTaiChinh = () => {
     },
   };
 
-  const renderCustomizedLabel = (entry) => {
+  const renderCustomizedLabel = entry => {
     return `${entry.value}%`;
   };
 
@@ -167,15 +179,15 @@ const BaoCaoTaiChinh = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Nhỏ (&lt; 5T)</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Trung (5-15T)</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Lớn (&gt; 15T)</span>
             </div>
           </div>
@@ -198,15 +210,15 @@ const BaoCaoTaiChinh = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Nhiên liệu</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Bảo dưỡng</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.yellow}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.yellow }} />
               <span style={styles.legendText}>Lương</span>
             </div>
           </div>
@@ -234,24 +246,24 @@ const BaoCaoTaiChinh = () => {
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-          <div style={{...styles.legend, justifyContent: 'center'}}>
+          <div style={{ ...styles.legend, justifyContent: 'center' }}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Miền Bắc</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Miền Trung</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Miền Nam</span>
             </div>
           </div>
         </div>
 
         {/* Monthly Stacked Bar Chart */}
-        <div style={{...styles.card, ...styles.fullWidth}}>
+        <div style={{ ...styles.card, ...styles.fullWidth }}>
           <h3 style={styles.title}>Báo cáo Tài chính theo Tháng</h3>
           <p style={styles.subtitle}>DOANH THU, CHI PHÍ, LỢI NHUẬN (TỶ VND)</p>
           <ResponsiveContainer width="100%" height={300}>
@@ -267,30 +279,30 @@ const BaoCaoTaiChinh = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Doanh thu</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Chi phí</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.yellow}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.yellow }} />
               <span style={styles.legendText}>Lợi nhuận</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Bảo dưỡng</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.mediumGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.mediumGray }} />
               <span style={styles.legendText}>Nhiên liệu</span>
             </div>
           </div>
         </div>
 
         {/* Route Profit */}
-        <div style={{...styles.card, ...styles.fullWidth}}>
+        <div style={{ ...styles.card, ...styles.fullWidth }}>
           <h3 style={styles.title}>Lợi nhuận theo Tuyến đường</h3>
           <p style={styles.subtitle}>PHÂN LOẠI THEO TẢI TRỌNG XE</p>
           <ResponsiveContainer width="100%" height={200}>
@@ -304,22 +316,22 @@ const BaoCaoTaiChinh = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Xe nhỏ</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Xe trung</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Xe lớn</span>
             </div>
           </div>
         </div>
 
         {/* Customer Revenue */}
-        <div style={{...styles.card, ...styles.fullWidth}}>
+        <div style={{ ...styles.card, ...styles.fullWidth }}>
           <h3 style={styles.title}>Doanh thu theo Khách hàng</h3>
           <p style={styles.subtitle}>PHÂN LOẠI THEO NHÓM KHÁCH HÀNG</p>
           <ResponsiveContainer width="100%" height={200}>
@@ -332,18 +344,18 @@ const BaoCaoTaiChinh = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Hiện tại</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Mới</span>
             </div>
           </div>
         </div>
 
         {/* Average Revenue */}
-        <div style={{...styles.card, ...styles.fullWidth}}>
+        <div style={{ ...styles.card, ...styles.fullWidth }}>
           <h3 style={styles.title}>Doanh thu Trung bình</h3>
           <p style={styles.subtitle}>THEO QUÝ, PHÂN LOẠI TẢI TRỌNG</p>
           <ResponsiveContainer width="100%" height={200}>
@@ -357,15 +369,15 @@ const BaoCaoTaiChinh = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Xe nhỏ</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Xe trung</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Xe lớn</span>
             </div>
           </div>

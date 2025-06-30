@@ -11,7 +11,7 @@ import {
   FormActions,
   ErrorText,
   HelperText,
-  Button
+  Button,
 } from '@components/ui';
 import { useVehicleData } from '@contexts/VehicleDataContext';
 const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = false }) => {
@@ -19,7 +19,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
   const [inputValue, setInputValue] = useState('');
   const [validationError, setValidationError] = useState('');
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
-  const handleSave = (e) => {
+  const handleSave = e => {
     e.preventDefault();
     onSave(data);
   };
@@ -31,34 +31,40 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
     });
   };
 
-  const validateContainerName = useCallback((name) => {
-    if (!name || !name.trim()) {
-      setValidationError('');
-      setShowDuplicateWarning(false);
-      return;
-    }
+  const validateContainerName = useCallback(
+    name => {
+      if (!name || !name.trim()) {
+        setValidationError('');
+        setShowDuplicateWarning(false);
+        return;
+      }
 
-    const exists = checkContainerExists(name);
-    if (exists && !edit) {
-      setShowDuplicateWarning(true);
-      setValidationError('');
-    } else {
-      setShowDuplicateWarning(false);
-      setValidationError('');
-    }
-  }, [checkContainerExists, edit]);
+      const exists = checkContainerExists(name);
+      if (exists && !edit) {
+        setShowDuplicateWarning(true);
+        setValidationError('');
+      } else {
+        setShowDuplicateWarning(false);
+        setValidationError('');
+      }
+    },
+    [checkContainerExists, edit]
+  );
 
-  const handleInputChange = useCallback((value) => {
-    setInputValue(value);
-    handleFieldChange('category', value);
+  const handleInputChange = useCallback(
+    value => {
+      setInputValue(value);
+      handleFieldChange('category', value);
 
-    // Debounced validation
-    const timeoutId = setTimeout(() => {
-      validateContainerName(value);
-    }, 300);
+      // Debounced validation
+      const timeoutId = setTimeout(() => {
+        validateContainerName(value);
+      }, 300);
 
-    return () => clearTimeout(timeoutId);
-  }, [handleFieldChange, validateContainerName]);
+      return () => clearTimeout(timeoutId);
+    },
+    [handleFieldChange, validateContainerName]
+  );
 
   const handleCancel = () => {
     onClose();
@@ -84,7 +90,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
 
   // Handle ESC key press
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape' && open) {
         onClose();
       }
@@ -99,16 +105,9 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
     };
   }, [open, onClose]);
   return (
-    <Modal
-      isOpen={open}
-      onClose={onClose}
-      size="medium"
-      showCloseButton={false}
-    >
+    <Modal isOpen={open} onClose={onClose} size="medium" showCloseButton={false}>
       <FormContainer>
-        <FormHeader
-          title={edit ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'}
-        />
+        <FormHeader title={edit ? 'Chỉnh sửa loại container' : 'Thêm loại container mới'} />
 
         <FormBody onSubmit={handleSave}>
           <FormSection>
@@ -131,17 +130,14 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
                 </HelperText>
               )}
               <HelperText>
-                Nhập tên loại container (ví dụ: 20ft Container, 40ft Container, Tank Container, v.v.)
+                Nhập tên loại container (ví dụ: 20ft Container, 40ft Container, Tank Container,
+                v.v.)
               </HelperText>
             </FormGroup>
           </FormSection>
 
           <FormActions>
-            <Button
-              variant="secondary"
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
+            <Button variant="secondary" onClick={handleCancel} disabled={isLoading}>
               Hủy
             </Button>
             <Button
@@ -150,7 +146,7 @@ const ContainerDialog = ({ open, edit, data, setData, onClose, onSave, isLoading
               loading={isLoading}
               disabled={isLoading || !data?.category}
             >
-              {edit ? 'Sửa' : (showDuplicateWarning ? 'Thêm (Trùng lặp)' : 'Thêm')}
+              {edit ? 'Sửa' : showDuplicateWarning ? 'Thêm (Trùng lặp)' : 'Thêm'}
             </Button>
           </FormActions>
         </FormBody>

@@ -17,12 +17,7 @@ const DesktopView = ({ partners, loading, error, onEdit, onDelete, onAdd }) => {
         />
       </Paper>
       {/* Floating Action Button */}
-      <FAB
-        onClick={onAdd}
-        icon={<AddIcon />}
-        ariaLabel="Thêm đối tác"
-        loading={loading}
-      />
+      <FAB onClick={onAdd} icon={<AddIcon />} ariaLabel="Thêm đối tác" loading={loading} />
     </Box>
   );
 };

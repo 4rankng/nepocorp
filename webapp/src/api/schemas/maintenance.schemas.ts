@@ -32,5 +32,7 @@ export const CreateMaintenanceRequestSchema = z.object({
 export const UpdateMaintenanceRequestSchema = CreateMaintenanceRequestSchema.partial();
 
 // API response schemas
-export const MaintenanceRecordsApiResponseSchema = ApiResponseSchema(z.array(MaintenanceRecordSchema));
+export const MaintenanceRecordsApiResponseSchema = ApiResponseSchema(
+  z.array(MaintenanceRecordSchema)
+);
 export const MaintenanceRecordApiResponseSchema = ApiResponseSchema(MaintenanceRecordSchema);

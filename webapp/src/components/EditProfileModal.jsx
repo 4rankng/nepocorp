@@ -11,7 +11,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     name: '',
     email: '',
     phone: '',
-    address: ''
+    address: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,22 +23,22 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         name: currentUser.name || '',
         email: currentUser.email || '',
         phone: currentUser.phone || '',
-        address: currentUser.address || ''
+        address: currentUser.address || '',
       });
     }
   }, [isOpen, currentUser]);
 
   // Handle input changes
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   // Form validation
-  const validateForm = (data) => {
+  const validateForm = data => {
     const errors = {};
 
     if (!data.username?.trim()) {
@@ -64,9 +64,9 @@ const EditProfileModal = ({ isOpen, onClose }) => {
   };
 
   // Handle form submission
-  const handleSubmit = async (data) => {
+  const handleSubmit = async data => {
     setIsSubmitting(true);
-    
+
     try {
       const response = await authApi.updateProfile(data);
 
@@ -92,7 +92,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         name: currentUser.name || '',
         email: currentUser.email || '',
         phone: currentUser.phone || '',
-        address: currentUser.address || ''
+        address: currentUser.address || '',
       });
     }
     onClose();

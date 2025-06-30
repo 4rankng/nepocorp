@@ -1,23 +1,18 @@
 import React from 'react';
-import { 
-  Chip,
-  IconButton,
-  Tooltip,
-  Box
-} from '@mui/material';
+import { Chip, IconButton, Tooltip, Box } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import StandardTable from '@/components/StandardTable';
-import { 
-  FINANCIAL_LEDGER_COLUMNS, 
+import {
+  FINANCIAL_LEDGER_COLUMNS,
   TRANSACTION_TYPE_LABELS,
-  TRANSACTION_TYPE_COLORS 
+  TRANSACTION_TYPE_COLORS,
 } from '../constants';
 
-const StatementTable = ({ 
+const StatementTable = ({
   transactions = [],
   loading = false,
   error = null,
@@ -26,7 +21,7 @@ const StatementTable = ({
   onEdit = () => {},
   onDelete = () => {},
   showActions = true,
-  variant = 'default'
+  variant = 'default',
 }) => {
   // HTML demo columns configuration - matching the HTML table structure
   const getColumnsConfig = () => {
@@ -40,16 +35,18 @@ const StatementTable = ({
           render: (value, row) => {
             const customerName = row.Customer?.name || row.customer_name || 'Mộc Sương';
             return (
-              <span style={{ 
-                color: '#3182ce', 
-                textDecoration: 'none', 
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}>
+              <span
+                style={{
+                  color: '#3182ce',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
                 {customerName}
               </span>
             );
-          }
+          },
         },
         {
           id: 'balance',
@@ -62,23 +59,27 @@ const StatementTable = ({
             const amount = row.debit || 0;
             const isPositive = amount > 0;
             const isZero = amount === 0;
-            
+
             const color = isZero ? '#718096' : isPositive ? '#e53e3e' : '#48bb78';
-            
+
             return (
-              <span style={{ 
-                color,
-                fontFamily: 'SF Mono, Monaco, monospace',
-                fontWeight: 500
-              }}>
-                {isZero ? '0 đ' : new Intl.NumberFormat('vi-VN', {
-                  style: 'currency',
-                  currency: 'VND',
-                  minimumFractionDigits: 0,
-                }).format(amount)}
+              <span
+                style={{
+                  color,
+                  fontFamily: 'SF Mono, Monaco, monospace',
+                  fontWeight: 500,
+                }}
+              >
+                {isZero
+                  ? '0 đ'
+                  : new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                      minimumFractionDigits: 0,
+                    }).format(amount)}
               </span>
             );
-          }
+          },
         },
         {
           id: 'notes',
@@ -97,7 +98,7 @@ const StatementTable = ({
                     bgcolor: '#fee2e2',
                     color: '#991b1b',
                     fontSize: '0.75rem',
-                    fontWeight: 500
+                    fontWeight: 500,
                   }}
                 />
               );
@@ -110,7 +111,7 @@ const StatementTable = ({
                     bgcolor: '#fee2e2',
                     color: '#991b1b',
                     fontSize: '0.75rem',
-                    fontWeight: 500
+                    fontWeight: 500,
                   }}
                 />
               );
@@ -123,44 +124,48 @@ const StatementTable = ({
                     bgcolor: '#fef3c7',
                     color: '#92400e',
                     fontSize: '0.75rem',
-                    fontWeight: 500
+                    fontWeight: 500,
                   }}
                 />
               );
             }
             return '-';
-          }
+          },
         },
         // Actions column
-        ...(showActions ? [{
-          id: 'actions',
-          label: 'Thao tác',
-          sortable: false,
-          width: '100px',
-          align: 'center',
-          render: (value, row) => (
-            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-              <Tooltip title="Xem chi tiết">
-                <IconButton
-                  size="small"
-                  onClick={() => onView(row)}
-                  sx={{ 
-                    color: '#718096',
-                    bgcolor: '#f7fafc',
-                    border: '1px solid #e2e8f0',
-                    width: 32,
-                    height: 32,
-                    '&:hover': {
-                      bgcolor: '#edf2f7'
-                    }
-                  }}
-                >
-                  <VisibilityIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          )
-        }] : [])
+        ...(showActions
+          ? [
+              {
+                id: 'actions',
+                label: 'Thao tác',
+                sortable: false,
+                width: '100px',
+                align: 'center',
+                render: (value, row) => (
+                  <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                    <Tooltip title="Xem chi tiết">
+                      <IconButton
+                        size="small"
+                        onClick={() => onView(row)}
+                        sx={{
+                          color: '#718096',
+                          bgcolor: '#f7fafc',
+                          border: '1px solid #e2e8f0',
+                          width: 32,
+                          height: 32,
+                          '&:hover': {
+                            bgcolor: '#edf2f7',
+                          },
+                        }}
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                ),
+              },
+            ]
+          : []),
       ];
     }
 
@@ -181,59 +186,63 @@ const StatementTable = ({
                   color: typeColor,
                   border: `1px solid ${typeColor}30`,
                   fontSize: '0.75rem',
-                  fontWeight: 500
+                  fontWeight: 500,
                 }}
               />
             );
           }
-          
+
           // Use original render function if available
           if (col.render) {
             return col.render(value, row);
           }
-          
+
           return value;
-        }
+        },
       })),
       // Actions column
-      ...(showActions ? [{
-        id: 'actions',
-        label: 'Thao tác',
-        sortable: false,
-        width: '120px',
-        align: 'center',
-        render: (value, row) => (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <Tooltip title="Xem chi tiết">
-              <IconButton
-                size="small"
-                onClick={() => onView(row)}
-                sx={{ color: 'primary.main' }}
-              >
-                <VisibilityIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Chỉnh sửa">
-              <IconButton
-                size="small"
-                onClick={() => onEdit(row)}
-                sx={{ color: 'warning.main' }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Xóa">
-              <IconButton
-                size="small"
-                onClick={() => onDelete(row)}
-                sx={{ color: 'error.main' }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )
-      }] : [])
+      ...(showActions
+        ? [
+            {
+              id: 'actions',
+              label: 'Thao tác',
+              sortable: false,
+              width: '120px',
+              align: 'center',
+              render: (value, row) => (
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <Tooltip title="Xem chi tiết">
+                    <IconButton
+                      size="small"
+                      onClick={() => onView(row)}
+                      sx={{ color: 'primary.main' }}
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Chỉnh sửa">
+                    <IconButton
+                      size="small"
+                      onClick={() => onEdit(row)}
+                      sx={{ color: 'warning.main' }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Xóa">
+                    <IconButton
+                      size="small"
+                      onClick={() => onDelete(row)}
+                      sx={{ color: 'error.main' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              ),
+            },
+          ]
+        : []),
     ];
   };
 
@@ -248,7 +257,7 @@ const StatementTable = ({
         { id: 3, customer_name: 'Tân Lập MC', debit: 27330030, notes: 'Nợ T4' },
         { id: 4, customer_name: 'Vista', debit: 25988000, notes: 'Nợ T4' },
         { id: 5, customer_name: 'Vinatea MC', debit: 76640050, notes: 'Nợ T3,4' },
-        { id: 6, customer_name: 'Trà Thu Đan', debit: 240291120, notes: 'Nợ T1,2,3,4' }
+        { id: 6, customer_name: 'Trà Thu Đan', debit: 240291120, notes: 'Nợ T1,2,3,4' },
       ];
     }
     return transactions;
@@ -271,7 +280,7 @@ const StatementTable = ({
           fontWeight: 600,
           color: '#4a5568',
           borderBottom: '1px solid #e2e8f0',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'nowrap',
         },
         '& .MuiTableBody-root .MuiTableRow-root': {
           '&:hover': {
@@ -288,8 +297,8 @@ const StatementTable = ({
         '& .MuiTableFooter-root .MuiTableCell-root': {
           borderBottom: 'none',
           padding: '16px',
-          fontWeight: 600
-        }
+          fontWeight: 600,
+        },
       };
     }
 
@@ -312,7 +321,7 @@ const StatementTable = ({
       },
       '& .MuiTableBody-root .MuiTableCell-root': {
         borderBottom: '1px solid #f3f4f6',
-      }
+      },
     };
   };
 
@@ -331,17 +340,38 @@ const StatementTable = ({
       customRowsPerPageOptions={[25, 50, 100]}
       rowKeyField="id"
       sortable={true}
-      defaultSort={{ key: variant === 'html-demo' ? 'customer_name' : 'transaction_date', direction: 'desc' }}
+      defaultSort={{
+        key: variant === 'html-demo' ? 'customer_name' : 'transaction_date',
+        direction: 'desc',
+      }}
       showSTT={true}
       minHeight="400px"
       sx={getTableStyles()}
-      footer={variant === 'html-demo' ? {
-        content: [
-          { colSpan: 2, content: 'TỔNG CỘNG', align: 'left' },
-          { colSpan: 1, content: <span style={{ color: '#e53e3e', fontFamily: 'SF Mono, Monaco, monospace', fontWeight: 500 }}>723,975,720 đ</span>, align: 'right' },
-          { colSpan: 2, content: '', align: 'left' }
-        ]
-      } : undefined}
+      footer={
+        variant === 'html-demo'
+          ? {
+              content: [
+                { colSpan: 2, content: 'TỔNG CỘNG', align: 'left' },
+                {
+                  colSpan: 1,
+                  content: (
+                    <span
+                      style={{
+                        color: '#e53e3e',
+                        fontFamily: 'SF Mono, Monaco, monospace',
+                        fontWeight: 500,
+                      }}
+                    >
+                      723,975,720 đ
+                    </span>
+                  ),
+                  align: 'right',
+                },
+                { colSpan: 2, content: '', align: 'left' },
+              ],
+            }
+          : undefined
+      }
     />
   );
 };

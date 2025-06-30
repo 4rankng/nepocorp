@@ -4,19 +4,73 @@
 
 // Map of Vietnamese characters to their base characters
 const VIETNAMESE_MAP = {
-  'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a',
-  'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ậ': 'a', 'ẩ': 'a', 'ẫ': 'a',
-  'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ặ': 'a', 'ẳ': 'a', 'ẵ': 'a',
-  'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e',
-  'ê': 'e', 'ề': 'e', 'ế': 'e', 'ệ': 'e', 'ể': 'e', 'ễ': 'e',
-  'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
-  'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o',
-  'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ộ': 'o', 'ổ': 'o', 'ỗ': 'o',
-  'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ợ': 'o', 'ở': 'o', 'ỡ': 'o',
-  'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u',
-  'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
-  'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
-  'đ': 'd'
+  à: 'a',
+  á: 'a',
+  ạ: 'a',
+  ả: 'a',
+  ã: 'a',
+  â: 'a',
+  ầ: 'a',
+  ấ: 'a',
+  ậ: 'a',
+  ẩ: 'a',
+  ẫ: 'a',
+  ă: 'a',
+  ằ: 'a',
+  ắ: 'a',
+  ặ: 'a',
+  ẳ: 'a',
+  ẵ: 'a',
+  è: 'e',
+  é: 'e',
+  ẹ: 'e',
+  ẻ: 'e',
+  ẽ: 'e',
+  ê: 'e',
+  ề: 'e',
+  ế: 'e',
+  ệ: 'e',
+  ể: 'e',
+  ễ: 'e',
+  ì: 'i',
+  í: 'i',
+  ị: 'i',
+  ỉ: 'i',
+  ĩ: 'i',
+  ò: 'o',
+  ó: 'o',
+  ọ: 'o',
+  ỏ: 'o',
+  õ: 'o',
+  ô: 'o',
+  ồ: 'o',
+  ố: 'o',
+  ộ: 'o',
+  ổ: 'o',
+  ỗ: 'o',
+  ơ: 'o',
+  ờ: 'o',
+  ớ: 'o',
+  ợ: 'o',
+  ở: 'o',
+  ỡ: 'o',
+  ù: 'u',
+  ú: 'u',
+  ụ: 'u',
+  ủ: 'u',
+  ũ: 'u',
+  ư: 'u',
+  ừ: 'u',
+  ứ: 'u',
+  ự: 'u',
+  ử: 'u',
+  ữ: 'u',
+  ỳ: 'y',
+  ý: 'y',
+  ỵ: 'y',
+  ỷ: 'y',
+  ỹ: 'y',
+  đ: 'd',
 };
 
 /**
@@ -24,9 +78,9 @@ const VIETNAMESE_MAP = {
  * @param {string} text - Text to normalize
  * @returns {string} - Normalized text
  */
-export const normalizeVietnamese = (text) => {
+export const normalizeVietnamese = text => {
   if (!text || typeof text !== 'string') return '';
-  
+
   return text
     .toLowerCase()
     .split('')
@@ -42,10 +96,10 @@ export const normalizeVietnamese = (text) => {
  */
 export const vietnameseSearch = (text, searchTerm) => {
   if (!text || !searchTerm) return false;
-  
+
   const normalizedText = normalizeVietnamese(text);
   const normalizedSearch = normalizeVietnamese(searchTerm);
-  
+
   return normalizedText.includes(normalizedSearch);
 };
 
@@ -58,12 +112,13 @@ export const vietnameseSearch = (text, searchTerm) => {
  */
 export const filterOptionsVietnamese = (options, searchTerm, labelKey = 'label') => {
   if (!searchTerm.trim()) return options;
-  
+
   return options.filter(option => {
-    const label = typeof labelKey === 'function' 
-      ? labelKey(option)
-      : option[labelKey] || option.displayText || option.text || option.name || '';
-    
+    const label =
+      typeof labelKey === 'function'
+        ? labelKey(option)
+        : option[labelKey] || option.displayText || option.text || option.name || '';
+
     return vietnameseSearch(label, searchTerm);
   });
 };

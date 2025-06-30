@@ -16,21 +16,21 @@ export const VehicleDataProvider = ({ children }) => {
     tractors: false,
     trailers: false,
     containers: false,
-    initial: true
+    initial: true,
   });
   const [errors, setErrors] = useState({
     tractors: null,
     trailers: null,
-    containers: null
+    containers: null,
   });
 
   const cacheTimestamps = useRef({
     tractors: 0,
     trailers: 0,
-    containers: 0
+    containers: 0,
   });
 
-  const isDataStale = useCallback((type) => {
+  const isDataStale = useCallback(type => {
     return Date.now() - cacheTimestamps.current[type] > CACHE_TTL;
   }, []);
 
@@ -38,112 +38,120 @@ export const VehicleDataProvider = ({ children }) => {
     setErrors(prev => ({ ...prev, [type]: error }));
   }, []);
 
-  const clearError = useCallback((type) => {
+  const clearError = useCallback(type => {
     setErrors(prev => ({ ...prev, [type]: null }));
   }, []);
 
-  const fetchTractors = useCallback(async (force = false) => {
-    if (!force && !isDataStale('tractors') && tractors.length > 0) {
-      return tractors;
-    }
-
-    setLoading(prev => ({ ...prev, tractors: true }));
-    clearError('tractors');
-
-    try {
-      const response = await tractorApi.getAllWithoutPagination();
-      
-      if (response && response.status === 'success' && Array.isArray(response.data)) {
-        setTractors(response.data);
-        cacheTimestamps.current.tractors = Date.now();
-        return response.data;
-      } else {
-        console.warn('Unexpected tractor API response structure:', response);
-        throw new Error(response?.message || 'Lỗi khi tải danh sách đầu kéo');
+  const fetchTractors = useCallback(
+    async (force = false) => {
+      if (!force && !isDataStale('tractors') && tractors.length > 0) {
+        return tractors;
       }
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách đầu kéo');
-      setError('tractors', errorMessage);
-      console.error('Error fetching tractors:', error);
-      return [];
-    } finally {
-      setLoading(prev => ({ ...prev, tractors: false }));
-    }
-  }, [tractors, isDataStale, clearError, setError]);
 
-  const fetchTrailers = useCallback(async (force = false) => {
-    if (!force && !isDataStale('trailers') && trailers.length > 0) {
-      return trailers;
-    }
+      setLoading(prev => ({ ...prev, tractors: true }));
+      clearError('tractors');
 
-    setLoading(prev => ({ ...prev, trailers: true }));
-    clearError('trailers');
+      try {
+        const response = await tractorApi.getAllWithoutPagination();
 
-    try {
-      const response = await trailerApi.getAllWithoutPagination();
-      
-      if (response && response.status === 'success' && Array.isArray(response.data)) {
-        setTrailers(response.data);
-        cacheTimestamps.current.trailers = Date.now();
-        return response.data;
-      } else {
-        console.warn('Unexpected trailer API response structure:', response);
-        throw new Error(response?.message || 'Lỗi khi tải danh sách rơ moóc');
+        if (response && response.status === 'success' && Array.isArray(response.data)) {
+          setTractors(response.data);
+          cacheTimestamps.current.tractors = Date.now();
+          return response.data;
+        } else {
+          console.warn('Unexpected tractor API response structure:', response);
+          throw new Error(response?.message || 'Lỗi khi tải danh sách đầu kéo');
+        }
+      } catch (error) {
+        const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách đầu kéo');
+        setError('tractors', errorMessage);
+        console.error('Error fetching tractors:', error);
+        return [];
+      } finally {
+        setLoading(prev => ({ ...prev, tractors: false }));
       }
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách rơ moóc');
-      setError('trailers', errorMessage);
-      console.error('Error fetching trailers:', error);
-      return [];
-    } finally {
-      setLoading(prev => ({ ...prev, trailers: false }));
-    }
-  }, [trailers, isDataStale, clearError, setError]);
+    },
+    [tractors, isDataStale, clearError, setError]
+  );
 
-  const fetchContainers = useCallback(async (force = false) => {
-    if (!force && !isDataStale('containers') && containers.length > 0) {
-      return containers;
-    }
-
-    setLoading(prev => ({ ...prev, containers: true }));
-    clearError('containers');
-
-    try {
-      const response = await containerApi.getAllWithoutPagination();
-      
-      if (response && response.status === 'success' && Array.isArray(response.data)) {
-        setContainers(response.data);
-        cacheTimestamps.current.containers = Date.now();
-        return response.data;
-      } else {
-        console.warn('Unexpected container API response structure:', response);
-        throw new Error(response?.message || 'Lỗi khi tải danh sách container');
+  const fetchTrailers = useCallback(
+    async (force = false) => {
+      if (!force && !isDataStale('trailers') && trailers.length > 0) {
+        return trailers;
       }
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách container');
-      setError('containers', errorMessage);
-      console.error('Error fetching containers:', error);
-      return [];
-    } finally {
-      setLoading(prev => ({ ...prev, containers: false }));
-    }
-  }, [containers, isDataStale, clearError, setError]);
 
-  const fetchAllVehicleData = useCallback(async (force = false) => {
-    setLoading(prev => ({ ...prev, initial: true }));
-    
-    try {
-      await Promise.all([
-        fetchTractors(force),
-        fetchTrailers(force),
-        fetchContainers(force)
-      ]);
-    } catch (error) {
-      console.error('Error fetching all vehicle data:', error);
-    } finally {
-      setLoading(prev => ({ ...prev, initial: false }));
-    }
-  }, [fetchTractors, fetchTrailers, fetchContainers]);
+      setLoading(prev => ({ ...prev, trailers: true }));
+      clearError('trailers');
+
+      try {
+        const response = await trailerApi.getAllWithoutPagination();
+
+        if (response && response.status === 'success' && Array.isArray(response.data)) {
+          setTrailers(response.data);
+          cacheTimestamps.current.trailers = Date.now();
+          return response.data;
+        } else {
+          console.warn('Unexpected trailer API response structure:', response);
+          throw new Error(response?.message || 'Lỗi khi tải danh sách rơ moóc');
+        }
+      } catch (error) {
+        const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách rơ moóc');
+        setError('trailers', errorMessage);
+        console.error('Error fetching trailers:', error);
+        return [];
+      } finally {
+        setLoading(prev => ({ ...prev, trailers: false }));
+      }
+    },
+    [trailers, isDataStale, clearError, setError]
+  );
+
+  const fetchContainers = useCallback(
+    async (force = false) => {
+      if (!force && !isDataStale('containers') && containers.length > 0) {
+        return containers;
+      }
+
+      setLoading(prev => ({ ...prev, containers: true }));
+      clearError('containers');
+
+      try {
+        const response = await containerApi.getAllWithoutPagination();
+
+        if (response && response.status === 'success' && Array.isArray(response.data)) {
+          setContainers(response.data);
+          cacheTimestamps.current.containers = Date.now();
+          return response.data;
+        } else {
+          console.warn('Unexpected container API response structure:', response);
+          throw new Error(response?.message || 'Lỗi khi tải danh sách container');
+        }
+      } catch (error) {
+        const errorMessage = extractErrorMessage(error, 'Lỗi khi tải danh sách container');
+        setError('containers', errorMessage);
+        console.error('Error fetching containers:', error);
+        return [];
+      } finally {
+        setLoading(prev => ({ ...prev, containers: false }));
+      }
+    },
+    [containers, isDataStale, clearError, setError]
+  );
+
+  const fetchAllVehicleData = useCallback(
+    async (force = false) => {
+      setLoading(prev => ({ ...prev, initial: true }));
+
+      try {
+        await Promise.all([fetchTractors(force), fetchTrailers(force), fetchContainers(force)]);
+      } catch (error) {
+        console.error('Error fetching all vehicle data:', error);
+      } finally {
+        setLoading(prev => ({ ...prev, initial: false }));
+      }
+    },
+    [fetchTractors, fetchTrailers, fetchContainers]
+  );
 
   const invalidateCache = useCallback((types = ['tractors', 'trailers', 'containers']) => {
     types.forEach(type => {
@@ -151,27 +159,30 @@ export const VehicleDataProvider = ({ children }) => {
     });
   }, []);
 
-  const refreshCache = useCallback(async (types = ['tractors', 'trailers', 'containers']) => {
-    const results = {};
-    
-    // Fetch data sequentially to ensure state is updated properly
-    if (types.includes('tractors')) {
-      const tractorData = await fetchTractors(true);
-      results.tractors = tractorData;
-    }
-    
-    if (types.includes('trailers')) {
-      const trailerData = await fetchTrailers(true);
-      results.trailers = trailerData;
-    }
-    
-    if (types.includes('containers')) {
-      const containerData = await fetchContainers(true);
-      results.containers = containerData;
-    }
+  const refreshCache = useCallback(
+    async (types = ['tractors', 'trailers', 'containers']) => {
+      const results = {};
 
-    return results;
-  }, [fetchTractors, fetchTrailers, fetchContainers]);
+      // Fetch data sequentially to ensure state is updated properly
+      if (types.includes('tractors')) {
+        const tractorData = await fetchTractors(true);
+        results.tractors = tractorData;
+      }
+
+      if (types.includes('trailers')) {
+        const trailerData = await fetchTrailers(true);
+        results.trailers = trailerData;
+      }
+
+      if (types.includes('containers')) {
+        const containerData = await fetchContainers(true);
+        results.containers = containerData;
+      }
+
+      return results;
+    },
+    [fetchTractors, fetchTrailers, fetchContainers]
+  );
 
   const getContainerNames = useCallback(() => {
     return containers.map(container => container.category).filter(Boolean);
@@ -185,51 +196,50 @@ export const VehicleDataProvider = ({ children }) => {
     return trailers.map(trailer => trailer.name || trailer.license_plate).filter(Boolean);
   }, [trailers]);
 
-  const checkContainerExists = useCallback((name) => {
-    if (!name || !name.trim()) return false;
-    const containerNames = getContainerNames();
-    return containerNames.some(existing => 
-      existing.toLowerCase().trim() === name.toLowerCase().trim()
-    );
-  }, [getContainerNames]);
+  const checkContainerExists = useCallback(
+    name => {
+      if (!name || !name.trim()) return false;
+      const containerNames = getContainerNames();
+      return containerNames.some(
+        existing => existing.toLowerCase().trim() === name.toLowerCase().trim()
+      );
+    },
+    [getContainerNames]
+  );
 
   const value = {
     // Data
     tractors,
     trailers,
     containers,
-    
+
     // Loading states
     loading,
-    
+
     // Errors
     errors,
-    
+
     // Fetch methods
     fetchTractors,
     fetchTrailers,
     fetchContainers,
     fetchAllVehicleData,
-    
+
     // Cache management
     invalidateCache,
     refreshCache,
-    
+
     // Utility methods
     getContainerNames,
     getTractorNames,
     getTrailerNames,
     checkContainerExists,
-    
+
     // Cache status
-    isDataStale
+    isDataStale,
   };
 
-  return (
-    <VehicleDataContext.Provider value={value}>
-      {children}
-    </VehicleDataContext.Provider>
-  );
+  return <VehicleDataContext.Provider value={value}>{children}</VehicleDataContext.Provider>;
 };
 
 export const useVehicleData = () => {

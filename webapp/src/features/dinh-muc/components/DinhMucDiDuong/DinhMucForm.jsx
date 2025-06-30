@@ -2,12 +2,7 @@ import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Box,
-  TextField,
-  Button,
-  CircularProgress,
-} from '@mui/material';
+import { Box, TextField, Button, CircularProgress } from '@mui/material';
 
 // Define validation schema with Zod
 const routeSchema = z.object({
@@ -23,7 +18,7 @@ const DinhMucForm = ({
   onSubmit,
   onCancel,
   isSaving,
-  isEditing = false
+  isEditing = false,
 }) => {
   // Initialize form
   const methods = useForm({
@@ -37,9 +32,13 @@ const DinhMucForm = ({
     mode: 'onChange',
   });
 
-  const { register, handleSubmit, formState: { errors, isValid } } = methods;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = methods;
 
-  const handleFormSubmit = (data) => {
+  const handleFormSubmit = data => {
     onSubmit(data);
   };
 
@@ -75,7 +74,14 @@ const DinhMucForm = ({
 
         {/* Container norms inputs */}
         {containerTypes && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 2 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 2,
+              mb: 2,
+            }}
+          >
             {containerTypes.map(container => (
               <TextField
                 key={container.ma_loai_cont}
@@ -94,11 +100,7 @@ const DinhMucForm = ({
         )}
 
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-          <Button
-            variant="outlined"
-            onClick={onCancel}
-            disabled={isSaving}
-          >
+          <Button variant="outlined" onClick={onCancel} disabled={isSaving}>
             Hủy
           </Button>
           <Button

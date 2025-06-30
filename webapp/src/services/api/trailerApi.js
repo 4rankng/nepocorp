@@ -4,7 +4,7 @@ export const trailerApi = {
   // Get all trailers with pagination
   getAll: async (page = 1, limit = 100) => {
     const response = await apiClient.get('/trailer', {
-      params: { page, limit }
+      params: { page, limit },
     });
     return response;
   },
@@ -12,19 +12,19 @@ export const trailerApi = {
   // Get all trailers without pagination
   getAllWithoutPagination: async () => {
     const response = await apiClient.get('/trailer', {
-      params: { page: 1, limit: 1000 }
+      params: { page: 1, limit: 1000 },
     });
     return response;
   },
 
   // Get trailer by ID
-  getById: async (id) => {
+  getById: async id => {
     const response = await apiClient.get(`/trailer/${id}`);
     return response;
   },
 
   // Create new trailer
-  create: async (data) => {
+  create: async data => {
     const response = await apiClient.post('/trailer', data);
     return response;
   },
@@ -36,7 +36,7 @@ export const trailerApi = {
   },
 
   // Delete trailer
-  delete: async (id) => {
+  delete: async id => {
     const response = await apiClient.delete(`/trailer/${id}`);
     return response;
   },
@@ -44,8 +44,8 @@ export const trailerApi = {
   // Get count of trailers
   getCount: async () => {
     const response = await apiClient.get('/trailer', {
-      params: { page: 1, limit: 1 }
+      params: { page: 1, limit: 1 },
     });
     return response.pagination?.records_count || 0;
-  }
+  },
 };

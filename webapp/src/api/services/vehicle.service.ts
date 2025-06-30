@@ -18,7 +18,7 @@ import {
   UpdateFuelStandardRequest,
   VehicleFilters,
   RouteFilters,
-  FuelStandardFilters
+  FuelStandardFilters,
 } from '@api/types/vehicle.types';
 
 class TractorService extends BaseService<Tractor, CreateTractorRequest, UpdateTractorRequest> {
@@ -26,7 +26,9 @@ class TractorService extends BaseService<Tractor, CreateTractorRequest, UpdateTr
     super('/tractor');
   }
 
-  async getAll(params?: VehicleFilters & { page?: number; limit?: number }): Promise<ApiResponse<Tractor[]>> {
+  async getAll(
+    params?: VehicleFilters & { page?: number; limit?: number }
+  ): Promise<ApiResponse<Tractor[]>> {
     return super.getAll(params);
   }
 
@@ -44,7 +46,9 @@ class TrailerService extends BaseService<Trailer, CreateTrailerRequest, UpdateTr
     super('/trailer');
   }
 
-  async getAll(params?: VehicleFilters & { page?: number; limit?: number }): Promise<ApiResponse<Trailer[]>> {
+  async getAll(
+    params?: VehicleFilters & { page?: number; limit?: number }
+  ): Promise<ApiResponse<Trailer[]>> {
     return super.getAll(params);
   }
 
@@ -57,12 +61,18 @@ class TrailerService extends BaseService<Trailer, CreateTrailerRequest, UpdateTr
   }
 }
 
-class ContainerService extends BaseService<Container, CreateContainerRequest, UpdateContainerRequest> {
+class ContainerService extends BaseService<
+  Container,
+  CreateContainerRequest,
+  UpdateContainerRequest
+> {
   constructor() {
     super('/container');
   }
 
-  async getAll(params?: VehicleFilters & { page?: number; limit?: number }): Promise<ApiResponse<Container[]>> {
+  async getAll(
+    params?: VehicleFilters & { page?: number; limit?: number }
+  ): Promise<ApiResponse<Container[]>> {
     return super.getAll(params);
   }
 
@@ -80,7 +90,9 @@ class RouteService extends BaseService<Route, CreateRouteRequest, UpdateRouteReq
     super('/route');
   }
 
-  async getAll(params?: RouteFilters & { page?: number; limit?: number }): Promise<ApiResponse<Route[]>> {
+  async getAll(
+    params?: RouteFilters & { page?: number; limit?: number }
+  ): Promise<ApiResponse<Route[]>> {
     return super.getAll(params);
   }
 
@@ -93,12 +105,18 @@ class RouteService extends BaseService<Route, CreateRouteRequest, UpdateRouteReq
   }
 }
 
-class FuelStandardService extends BaseService<FuelStandard, CreateFuelStandardRequest, UpdateFuelStandardRequest> {
+class FuelStandardService extends BaseService<
+  FuelStandard,
+  CreateFuelStandardRequest,
+  UpdateFuelStandardRequest
+> {
   constructor() {
     super('/fuel-standard');
   }
 
-  async getAll(params?: FuelStandardFilters & { page?: number; limit?: number }): Promise<ApiResponse<FuelStandard[]>> {
+  async getAll(
+    params?: FuelStandardFilters & { page?: number; limit?: number }
+  ): Promise<ApiResponse<FuelStandard[]>> {
     return super.getAll(params);
   }
 
@@ -106,7 +124,11 @@ class FuelStandardService extends BaseService<FuelStandard, CreateFuelStandardRe
     return this.client.get(`${this.basePath}/tractor/${tractorId}`);
   }
 
-  async getByTractorAndType(tractorId: number, trailerType: string, loadCategory: string): Promise<ApiResponse<FuelStandard>> {
+  async getByTractorAndType(
+    tractorId: number,
+    trailerType: string,
+    loadCategory: string
+  ): Promise<ApiResponse<FuelStandard>> {
     return this.client.get(`${this.basePath}/tractor/${tractorId}/${trailerType}/${loadCategory}`);
   }
 

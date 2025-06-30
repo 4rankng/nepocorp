@@ -12,7 +12,7 @@ import {
   Divider,
   IconButton,
   Paper,
-  Stack
+  Stack,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -22,18 +22,11 @@ import {
   Person as PersonIcon,
   Business as BusinessIcon,
   CalendarToday as CalendarIcon,
-  Notes as NotesIcon
+  Notes as NotesIcon,
 } from '@mui/icons-material';
 import CurrencyDisplay from '@/components/ui/CurrencyDisplay';
-import { 
-  formatDate, 
-  formatDateTime,
-  formatTransactionType 
-} from '@/features/bang-cong-no/utils';
-import { 
-  TRANSACTION_TYPE_COLORS,
-  TRANSACTION_TYPE_LABELS 
-} from '@/features/bang-cong-no/types';
+import { formatDate, formatDateTime, formatTransactionType } from '@/features/bang-cong-no/utils';
+import { TRANSACTION_TYPE_COLORS, TRANSACTION_TYPE_LABELS } from '@/features/bang-cong-no/types';
 
 const TransactionViewModal = ({
   open = false,
@@ -41,7 +34,7 @@ const TransactionViewModal = ({
   onEdit,
   onDelete,
   transaction = null,
-  showActions = true
+  showActions = true,
 }) => {
   if (!transaction) {
     return null;
@@ -63,49 +56,50 @@ const TransactionViewModal = ({
         type: 'Khách hàng',
         name: transaction.customer.name,
         icon: PersonIcon,
-        color: '#1976d2'
+        color: '#1976d2',
       };
     }
-    
+
     if (transaction.partner) {
       return {
         type: 'Đối tác',
         name: transaction.partner.name,
         icon: BusinessIcon,
-        color: '#9c27b0'
+        color: '#9c27b0',
       };
     }
-    
+
     return null;
   };
 
   const getAmountDisplay = () => {
     const debit = parseFloat(transaction.debit) || 0;
     const credit = parseFloat(transaction.credit) || 0;
-    
+
     if (debit > 0) {
       return {
         type: 'Nợ (Debit)',
         amount: debit,
-        color: '#d32f2f'
+        color: '#d32f2f',
       };
     }
-    
+
     if (credit > 0) {
       return {
         type: 'Có (Credit)',
         amount: credit,
-        color: '#2e7d32'
+        color: '#2e7d32',
       };
     }
-    
+
     return null;
   };
 
   const entity = getEntityDisplay();
   const amount = getAmountDisplay();
   const typeColor = TRANSACTION_TYPE_COLORS[transaction.transaction_type] || '#616161';
-  const typeLabel = TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type;
+  const typeLabel =
+    TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type;
 
   return (
     <Dialog
@@ -114,15 +108,17 @@ const TransactionViewModal = ({
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 2 }
+        sx: { borderRadius: 2 },
       }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        pb: 1
-      }}>
+      <DialogTitle
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          pb: 1,
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ReceiptIcon color="primary" />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -150,7 +146,7 @@ const TransactionViewModal = ({
                   bgcolor: `${typeColor}15`,
                   color: typeColor,
                   border: `1px solid ${typeColor}30`,
-                  fontWeight: 500
+                  fontWeight: 500,
                 }}
               />
             </Box>
@@ -159,12 +155,14 @@ const TransactionViewModal = ({
           {/* Entity Information */}
           {entity && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                p: 1.5, 
-                borderRadius: 1, 
-                bgcolor: `${entity.color}15`,
-                display: 'flex'
-              }}>
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: `${entity.color}15`,
+                  display: 'flex',
+                }}
+              >
                 <entity.icon sx={{ color: entity.color, fontSize: 20 }} />
               </Box>
               <Box>
@@ -180,12 +178,14 @@ const TransactionViewModal = ({
 
           {/* Date Information */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ 
-              p: 1.5, 
-              borderRadius: 1, 
-              bgcolor: '#ff980015',
-              display: 'flex'
-            }}>
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: '#ff980015',
+                display: 'flex',
+              }}
+            >
               <CalendarIcon sx={{ color: '#ff9800', fontSize: 20 }} />
             </Box>
             <Box>
@@ -201,23 +201,21 @@ const TransactionViewModal = ({
           {/* Amount Information */}
           {amount && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                p: 1.5, 
-                borderRadius: 1, 
-                bgcolor: `${amount.color}15`,
-                display: 'flex'
-              }}>
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: `${amount.color}15`,
+                  display: 'flex',
+                }}
+              >
                 <ReceiptIcon sx={{ color: amount.color, fontSize: 20 }} />
               </Box>
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   {amount.type}
                 </Typography>
-                <CurrencyDisplay 
-                  amount={amount.amount}
-                  variant="h6"
-                  color={amount.color}
-                />
+                <CurrencyDisplay amount={amount.amount} variant="h6" color={amount.color} />
               </Box>
             </Box>
           )}
@@ -228,12 +226,15 @@ const TransactionViewModal = ({
               <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                 Số tham chiếu / Diễn giải
               </Typography>
-              <Typography variant="body1" sx={{ 
-                p: 2, 
-                bgcolor: 'grey.50', 
-                borderRadius: 1,
-                fontFamily: "'SF Mono', Monaco, monospace"
-              }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  p: 2,
+                  bgcolor: 'grey.50',
+                  borderRadius: 1,
+                  fontFamily: "'SF Mono', Monaco, monospace",
+                }}
+              >
                 {transaction.reference_number}
               </Typography>
             </Box>
@@ -248,12 +249,15 @@ const TransactionViewModal = ({
                   Ghi chú
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ 
-                p: 2, 
-                bgcolor: 'grey.50', 
-                borderRadius: 1,
-                lineHeight: 1.6
-              }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  p: 2,
+                  bgcolor: 'grey.50',
+                  borderRadius: 1,
+                  lineHeight: 1.6,
+                }}
+              >
                 {transaction.notes}
               </Typography>
             </Box>
@@ -266,18 +270,14 @@ const TransactionViewModal = ({
                 <Typography variant="caption" color="text.secondary" display="block">
                   Ngày tạo
                 </Typography>
-                <Typography variant="body2">
-                  {formatDateTime(transaction.created_at)}
-                </Typography>
+                <Typography variant="body2">{formatDateTime(transaction.created_at)}</Typography>
               </Grid>
               {transaction.updated_at && transaction.updated_at !== transaction.created_at && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     Cập nhật lần cuối
                   </Typography>
-                  <Typography variant="body2">
-                    {formatDateTime(transaction.updated_at)}
-                  </Typography>
+                  <Typography variant="body2">{formatDateTime(transaction.updated_at)}</Typography>
                 </Grid>
               )}
             </Grid>
@@ -288,13 +288,10 @@ const TransactionViewModal = ({
       <Divider />
 
       <DialogActions sx={{ p: 3, gap: 1 }}>
-        <Button
-          onClick={onClose}
-          color="inherit"
-        >
+        <Button onClick={onClose} color="inherit">
           Đóng
         </Button>
-        
+
         {showActions && (
           <>
             <Button
@@ -305,7 +302,7 @@ const TransactionViewModal = ({
             >
               Chỉnh sửa
             </Button>
-            
+
             <Button
               onClick={handleDelete}
               variant="outlined"

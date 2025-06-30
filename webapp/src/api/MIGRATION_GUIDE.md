@@ -1,11 +1,13 @@
 # API Integration Migration Guide
 
 ## Overview
+
 This guide helps migrate from the old API integration (`src/services/api/`) to the new TypeScript-based, React Query-powered API system (`src/api/`).
 
 ## Key Changes
 
 ### 1. File Structure
+
 ```
 Old: src/services/api/
 New: src/api/
@@ -18,6 +20,7 @@ New: src/api/
 ```
 
 ### 2. Import Changes
+
 ```typescript
 // Old
 import { authApi } from '@services/api/authApi';
@@ -31,6 +34,7 @@ import { authService } from '@api/services';
 ### 3. Usage Patterns
 
 #### Authentication
+
 ```typescript
 // Old
 const handleLogin = async () => {
@@ -55,6 +59,7 @@ const handleLogin = async () => {
 ```
 
 #### Data Fetching
+
 ```typescript
 // Old
 const [expenses, setExpenses] = useState([]);
@@ -76,17 +81,22 @@ useEffect(() => {
 }, []);
 
 // New
-const { data: expenses, isLoading, error } = useExpenses({
+const {
+  data: expenses,
+  isLoading,
+  error,
+} = useExpenses({
   page: 1,
-  limit: 10
+  limit: 10,
 });
 // Automatic loading states, error handling, caching, refetching
 ```
 
 #### Creating Data
+
 ```typescript
 // Old
-const handleCreateExpense = async (expenseData) => {
+const handleCreateExpense = async expenseData => {
   try {
     await expenseApi.create(expenseData);
     // Manually refetch data
@@ -98,7 +108,7 @@ const handleCreateExpense = async (expenseData) => {
 
 // New
 const createExpenseMutation = useCreateExpense();
-const handleCreateExpense = async (expenseData) => {
+const handleCreateExpense = async expenseData => {
   try {
     await createExpenseMutation.mutateAsync(expenseData);
     // Automatic cache invalidation and UI updates
@@ -111,6 +121,7 @@ const handleCreateExpense = async (expenseData) => {
 ## Migration Steps
 
 ### Step 1: Install Dependencies (Already Done)
+
 - TypeScript
 - React Query
 - Zod schemas
@@ -125,6 +136,7 @@ const handleCreateExpense = async (expenseData) => {
 ### Step 3: Component Migration Examples
 
 #### Simple List Component
+
 ```typescript
 // Old component
 const ExpenseList = () => {
@@ -179,6 +191,7 @@ const ExpenseList = () => {
 ```
 
 #### Form Component with Mutations
+
 ```typescript
 // Old component
 const ExpenseForm = ({ onSuccess }) => {
@@ -253,6 +266,7 @@ const ExpenseForm = ({ onSuccess }) => {
 ### Step 6: Cleanup
 
 After migration is complete:
+
 1. Remove old API files from `src/services/api/`
 2. Update imports throughout the codebase
 3. Remove manual loading/error state management
@@ -261,6 +275,7 @@ After migration is complete:
 ## Common Patterns
 
 ### Pagination
+
 ```typescript
 // Old: Manual pagination
 const [page, setPage] = useState(1);
@@ -271,6 +286,7 @@ const { data, fetchNextPage, hasNextPage } = useInfiniteExpenses(filters);
 ```
 
 ### Real-time Updates
+
 ```typescript
 // Old: Manual polling
 useEffect(() => {
@@ -281,12 +297,16 @@ useEffect(() => {
 }, []);
 
 // New: Built-in refetching
-const { data } = useExpenses({}, {
-  refetchInterval: 30000
-});
+const { data } = useExpenses(
+  {},
+  {
+    refetchInterval: 30000,
+  }
+);
 ```
 
 ### Dependent Queries
+
 ```typescript
 // Old: Nested useEffect
 useEffect(() => {
@@ -302,7 +322,7 @@ useEffect(() => {
 // New: Enabled queries
 const { data: expense } = useExpense(expenseId);
 const { data: tractor } = useTractor(expense?.data?.tractor_id, {
-  enabled: !!expense?.data?.tractor_id
+  enabled: !!expense?.data?.tractor_id,
 });
 ```
 

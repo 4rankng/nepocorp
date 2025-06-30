@@ -7,7 +7,7 @@ import {
   SpeedDialIcon,
   Zoom,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -15,7 +15,7 @@ import {
   Print as PrintIcon,
   Refresh as RefreshIcon,
   Upload as UploadIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { Z_INDEX } from '@constants/zIndex';
 
@@ -26,7 +26,7 @@ const ActionToolbar = ({
   position = 'bottom-right', // 'bottom-right', 'bottom-left', 'top-right', 'top-left'
   visible = true,
   loading = false,
-  sx = {}
+  sx = {},
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -34,7 +34,7 @@ const ActionToolbar = ({
   const getPositionStyles = () => {
     const baseStyles = {
       position: 'fixed',
-      zIndex: Z_INDEX.FLOATING
+      zIndex: Z_INDEX.FLOATING,
     };
 
     switch (position) {
@@ -42,25 +42,25 @@ const ActionToolbar = ({
         return {
           ...baseStyles,
           bottom: 24,
-          left: 24
+          left: 24,
         };
       case 'top-right':
         return {
           ...baseStyles,
           top: 24,
-          right: 24
+          right: 24,
         };
       case 'top-left':
         return {
           ...baseStyles,
           top: 24,
-          left: 24
+          left: 24,
         };
       default: // bottom-right
         return {
           ...baseStyles,
           bottom: 24,
-          right: 24
+          right: 24,
         };
     }
   };
@@ -81,10 +81,10 @@ const ActionToolbar = ({
             boxShadow: 3,
             '&:hover': {
               boxShadow: 6,
-              transform: 'scale(1.05)'
+              transform: 'scale(1.05)',
             },
             transition: 'all 0.2s ease-in-out',
-            ...sx
+            ...sx,
           }}
         >
           {primaryAction.icon ? <primaryAction.icon /> : <AddIcon />}
@@ -94,10 +94,10 @@ const ActionToolbar = ({
   };
 
   const renderSpeedDial = () => {
-    const actions = secondaryActions.map((action) => ({
+    const actions = secondaryActions.map(action => ({
       ...action,
       icon: action.icon ? <action.icon /> : <AddIcon />,
-      name: action.label
+      name: action.label,
     }));
 
     // Add primary action to speed dial if provided
@@ -105,7 +105,7 @@ const ActionToolbar = ({
       actions.unshift({
         icon: primaryAction.icon ? <primaryAction.icon /> : <AddIcon />,
         name: primaryAction.label,
-        onClick: primaryAction.onClick
+        onClick: primaryAction.onClick,
       });
     }
 
@@ -117,20 +117,20 @@ const ActionToolbar = ({
           '& .MuiFab-primary': {
             boxShadow: 3,
             '&:hover': {
-              boxShadow: 6
-            }
+              boxShadow: 6,
+            },
           },
-          ...sx
+          ...sx,
         }}
         icon={<SpeedDialIcon />}
         open={visible}
         direction={position.includes('top') ? 'down' : 'up'}
         FabProps={{
           size: isMobile ? 'medium' : 'large',
-          disabled: loading
+          disabled: loading,
         }}
       >
-        {actions.map((action) => (
+        {actions.map(action => (
           <SpeedDialAction
             key={action.key || action.name}
             icon={action.icon}
@@ -141,9 +141,9 @@ const ActionToolbar = ({
                 bgcolor: action.color ? `${action.color}.main` : 'background.paper',
                 color: action.color ? `${action.color}.contrastText` : 'text.primary',
                 '&:hover': {
-                  bgcolor: action.color ? `${action.color}.dark` : 'grey.100'
-                }
-              }
+                  bgcolor: action.color ? `${action.color}.dark` : 'grey.100',
+                },
+              },
             }}
           />
         ))}
@@ -166,38 +166,38 @@ export const COMMON_ACTIONS = {
     key: 'add',
     icon: AddIcon,
     label: 'Thêm mới',
-    color: 'primary'
+    color: 'primary',
   },
   EXPORT: {
     key: 'export',
     icon: FileDownloadIcon,
     label: 'Xuất Excel',
-    color: 'success'
+    color: 'success',
   },
   PRINT: {
     key: 'print',
     icon: PrintIcon,
     label: 'In',
-    color: 'inherit'
+    color: 'inherit',
   },
   REFRESH: {
     key: 'refresh',
     icon: RefreshIcon,
     label: 'Làm mới',
-    color: 'inherit'
+    color: 'inherit',
   },
   IMPORT: {
     key: 'import',
     icon: UploadIcon,
     label: 'Nhập dữ liệu',
-    color: 'info'
+    color: 'info',
   },
   SETTINGS: {
     key: 'settings',
     icon: SettingsIcon,
     label: 'Cài đặt',
-    color: 'inherit'
-  }
+    color: 'inherit',
+  },
 };
 
 export default ActionToolbar;

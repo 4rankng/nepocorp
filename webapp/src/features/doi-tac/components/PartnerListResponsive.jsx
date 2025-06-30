@@ -76,11 +76,11 @@ const PartnerListResponsive = ({
   };
 
   // Handle notes dialog
-  const handleNotesClick = (partner) => {
+  const handleNotesClick = partner => {
     setNotesDialog({
       open: true,
       notes: partner.notes || 'Không có ghi chú',
-      partnerName: partner.name || 'Đối tác'
+      partnerName: partner.name || 'Đối tác',
     });
   };
 
@@ -109,11 +109,10 @@ const PartnerListResponsive = ({
                 </Typography>
                 {(partner.contact_person || partner.contact_phone || partner.contact_email) && (
                   <Typography variant="body2" color="text.secondary">
-                    <strong>Liên hệ:</strong> {[
-                      partner.contact_person,
-                      partner.contact_phone,
-                      partner.contact_email
-                    ].filter(Boolean).join(' / ')}
+                    <strong>Liên hệ:</strong>{' '}
+                    {[partner.contact_person, partner.contact_phone, partner.contact_email]
+                      .filter(Boolean)
+                      .join(' / ')}
                   </Typography>
                 )}
                 {partner.notes && partner.notes.trim() !== '' && (
@@ -278,27 +277,24 @@ const PartnerListResponsive = ({
       )}
       {/* Content */}
       {!loading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
-      
+
       {/* Notes Dialog */}
-      <Dialog
-        open={notesDialog.open}
-        onClose={handleCloseNotesDialog}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={notesDialog.open} onClose={handleCloseNotesDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <NotesIcon color="primary" />
           Ghi chú - {notesDialog.partnerName}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ 
-            p: 2, 
-            backgroundColor: 'grey.50', 
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'grey.200',
-            minHeight: '100px'
-          }}>
+          <Box
+            sx={{
+              p: 2,
+              backgroundColor: 'grey.50',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'grey.200',
+              minHeight: '100px',
+            }}
+          >
             <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
               {notesDialog.notes}
             </Typography>

@@ -5,9 +5,11 @@ This directory contains reusable components and hooks for expense management acr
 ## Components
 
 ### ExpenseForm
+
 A comprehensive form component for creating and editing expenses.
 
 **Props:**
+
 - `open` (boolean): Whether the modal is open
 - `isEdit` (boolean): Whether in edit mode
 - `isLoading` (boolean): Loading state
@@ -22,6 +24,7 @@ A comprehensive form component for creating and editing expenses.
 - `title` (string, optional): Custom form title
 
 **Usage:**
+
 ```jsx
 import { ExpenseForm } from '@components/shared';
 
@@ -53,15 +56,18 @@ import { ExpenseForm } from '@components/shared';
 ```
 
 ### ExpenseItemManager
+
 Component for managing expense items (add, edit, remove).
 
 **Props:**
+
 - `items` (array): Array of expense items
 - `onChange` (function): Items change handler
 - `errors` (object): Validation errors
 - `showInstallExpiry` (boolean): Whether to show install/expiry date fields
 
 **Usage:**
+
 ```jsx
 import { ExpenseItemManager } from '@components/shared';
 
@@ -70,13 +76,15 @@ import { ExpenseItemManager } from '@components/shared';
   onChange={handleItemsChange}
   errors={errors}
   showInstallExpiry={true} // For maintenance items
-/>
+/>;
 ```
 
 ### ExpenseList
+
 Responsive list/table component for displaying expenses.
 
 **Props:**
+
 - `expenses` (array): Array of expense records
 - `loading` (boolean): Loading state
 - `error` (object): Error state
@@ -91,6 +99,7 @@ Responsive list/table component for displaying expenses.
 - `emptyMessage` (string): Empty state message
 
 **Usage:**
+
 ```jsx
 import { ExpenseList } from '@components/shared';
 
@@ -103,13 +112,15 @@ import { ExpenseList } from '@components/shared';
   pagination={pagination}
   categories={categories}
   showCategoryColumn={true}
-/>
+/>;
 ```
 
 ### PaymentManagement
+
 Component for managing payment status and proof.
 
 **Props:**
+
 - `paymentStatus` (string): Current payment status
 - `paymentProof` (string): Payment proof URL
 - `onPaymentStatusChange` (function): Status change handler
@@ -119,6 +130,7 @@ Component for managing payment status and proof.
 - `showFileUpload` (boolean): Whether to show file upload
 
 **Usage:**
+
 ```jsx
 import { PaymentManagement } from '@components/shared';
 
@@ -129,15 +141,17 @@ import { PaymentManagement } from '@components/shared';
   onPaymentProofChange={handleProofChange}
   errors={errors}
   showFileUpload={true}
-/>
+/>;
 ```
 
 ## Hooks
 
 ### useExpenseForm
+
 A comprehensive hook for expense form management with validation and API integration.
 
 **Parameters:**
+
 - `initialFormData` (object): Initial form state
 - `onSuccess` (function): Success callback
 - `onError` (function): Error callback
@@ -147,6 +161,7 @@ A comprehensive hook for expense form management with validation and API integra
 - `expenseCategoryId` (number, optional): Fixed expense category
 
 **Returns:**
+
 - `formData`: Current form data
 - `setFormData`: Form data setter
 - `errors`: Validation errors
@@ -158,33 +173,28 @@ A comprehensive hook for expense form management with validation and API integra
 - `handleSave`: Save handler
 
 **Usage:**
+
 ```jsx
 import { useExpenseForm } from '@components/shared';
 
-const {
-  formData,
-  setFormData,
-  errors,
-  handleInputChange,
-  handleSave,
-  isLoading
-} = useExpenseForm({
+const { formData, setFormData, errors, handleInputChange, handleSave, isLoading } = useExpenseForm({
   initialFormData,
   isEdit,
   api: expenseApi,
   expenseCategoryId: 1, // For fixed category like BaoDuong
-  onSuccess: (message) => {
+  onSuccess: message => {
     // Handle success
   },
-  onError: (error) => {
+  onError: error => {
     // Handle error
-  }
+  },
 });
 ```
 
 ## Integration with Existing Features
 
 ### BaoDuong Integration
+
 The BaoDuong feature has been updated to use these shared components:
 
 1. **BaoDuongDialog**: Now wraps `ExpenseForm` with `expenseCategoryId={1}`
@@ -192,9 +202,11 @@ The BaoDuong feature has been updated to use these shared components:
 3. **Form Data Structure**: Aligned with generic expense format
 
 ### Creating New Expense Features
+
 To create a new expense feature (e.g., Fuel Expenses):
 
 1. **Create Feature Structure:**
+
 ```
 src/features/fuel-expenses/
 ├── FuelExpenseMain.jsx
@@ -205,6 +217,7 @@ src/features/fuel-expenses/
 ```
 
 2. **Use Shared Components:**
+
 ```jsx
 import { ExpenseForm, ExpenseList, useExpenseForm } from '@components/shared';
 
@@ -232,6 +245,7 @@ const fuelExpenseForm = useExpenseForm({
 ## Data Structure
 
 ### Expense Form Data
+
 ```javascript
 {
   license_plate: '', // License plate
@@ -255,7 +269,9 @@ const fuelExpenseForm = useExpenseForm({
 ```
 
 ### API Integration
+
 The shared components work with the expense API format:
+
 - Uses `convertLicensePlateToIds()` to map license plates to tractor/trailer IDs
 - Transforms form data to expense API format with `transformToExpenseFormat()`
 - Handles validation with `validateExpenseForm()`

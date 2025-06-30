@@ -21,8 +21,8 @@ const PaymentProofButton = ({ paymentProof, disabled = false }) => {
       onClick={() => window.open(paymentProof, '_blank')}
       disabled={disabled}
       className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded transition-colors ${
-        disabled 
-          ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+        disabled
+          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
           : 'bg-blue-600 text-white hover:bg-blue-700'
       }`}
       title="Xem chứng từ thanh toán"
@@ -35,7 +35,7 @@ const PaymentProofButton = ({ paymentProof, disabled = false }) => {
 
 PaymentProofButton.propTypes = {
   paymentProof: PropTypes.string,
-  disabled: PropTypes.bool
+  disabled: PropTypes.bool,
 };
 
 export default PaymentProofButton;

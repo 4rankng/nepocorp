@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  Box, 
+import {
+  Box,
   Typography,
   Button,
   TextField,
@@ -10,29 +10,21 @@ import {
   FormControl,
   InputLabel,
   Paper,
-  Snackbar, 
-  Alert
+  Snackbar,
+  Alert,
 } from '@mui/material';
-import { 
-  Add as AddIcon,
-  Search as SearchIcon
-} from '@mui/icons-material';
+import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Import simplified components
-import {
-  StatsGrid,
-  StatementTable,
-  TransactionModal,
-  TransactionViewModal
-} from './components';
+import { StatsGrid, StatementTable, TransactionModal, TransactionViewModal } from './components';
 
 // Import hooks
 import {
   useFinancialLedger,
   useTransactionModal,
   useCustomersPartners,
-  useTransactionActions
+  useTransactionActions,
 } from './hooks';
 
 const QuanLyBangCongNo = () => {
@@ -58,15 +50,11 @@ const QuanLyBangCongNo = () => {
     createTransaction,
     updateTransaction,
     deleteTransaction,
-    refresh
+    refresh,
   } = useFinancialLedger();
 
   // Customer and partner data
-  const {
-    customers,
-    partners,
-    loading: customersPartnersLoading
-  } = useCustomersPartners();
+  const { customers, partners, loading: customersPartnersLoading } = useCustomersPartners();
 
   // Modal management
   const {
@@ -80,7 +68,7 @@ const QuanLyBangCongNo = () => {
     closeModal,
     closeViewModal,
     handleView,
-    handleEditFromView
+    handleEditFromView,
   } = useTransactionModal();
 
   // Transaction actions
@@ -89,12 +77,12 @@ const QuanLyBangCongNo = () => {
     handleUpdate,
     handleDelete,
     loading: actionLoading,
-    error: actionError
+    error: actionError,
   } = useTransactionActions({
     onCreateTransaction: createTransaction,
     onUpdateTransaction: updateTransaction,
     onDeleteTransaction: deleteTransaction,
-    onRefresh: refresh
+    onRefresh: refresh,
   });
 
   // Snackbar management
@@ -107,58 +95,75 @@ const QuanLyBangCongNo = () => {
   }, []);
 
   // Handle transaction save (create or update)
-  const handleTransactionSave = useCallback(async (transactionData) => {
-    try {
-      let result;
-      
-      if (modalMode === 'create') {
-        result = await handleCreate(transactionData);
-      } else {
-        result = await handleUpdate(modalTransaction.id, transactionData);
+  const handleTransactionSave = useCallback(
+    async transactionData => {
+      try {
+        let result;
+
+        if (modalMode === 'create') {
+          result = await handleCreate(transactionData);
+        } else {
+          result = await handleUpdate(modalTransaction.id, transactionData);
+        }
+
+        if (result.success) {
+          showSnackbar(result.message, 'success');
+          closeModal();
+        } else {
+          showSnackbar(result.error, 'error');
+        }
+      } catch (error) {
+        showSnackbar('Có lỗi xảy ra khi lưu giao dịch', 'error');
       }
+    },
+    [modalMode, modalTransaction, handleCreate, handleUpdate, showSnackbar, closeModal]
+  );
+
+  // Handle transaction delete
+  const handleTransactionDelete = useCallback(
+    async transaction => {
+      const result = await handleDelete(transaction);
 
       if (result.success) {
         showSnackbar(result.message, 'success');
-        closeModal();
-      } else {
+        closeViewModal();
+      } else if (!result.cancelled) {
         showSnackbar(result.error, 'error');
       }
-    } catch (error) {
-      showSnackbar('Có lỗi xảy ra khi lưu giao dịch', 'error');
-    }
-  }, [modalMode, modalTransaction, handleCreate, handleUpdate, showSnackbar, closeModal]);
-
-  // Handle transaction delete
-  const handleTransactionDelete = useCallback(async (transaction) => {
-    const result = await handleDelete(transaction);
-    
-    if (result.success) {
-      showSnackbar(result.message, 'success');
-      closeViewModal();
-    } else if (!result.cancelled) {
-      showSnackbar(result.error, 'error');
-    }
-  }, [handleDelete, showSnackbar, closeViewModal]);
+    },
+    [handleDelete, showSnackbar, closeViewModal]
+  );
 
   // Handle edit transaction
-  const handleEditTransaction = useCallback((transaction) => {
-    openEditModal(transaction);
-  }, [openEditModal]);
+  const handleEditTransaction = useCallback(
+    transaction => {
+      openEditModal(transaction);
+    },
+    [openEditModal]
+  );
 
   // Handle search
-  const handleSearchChange = useCallback((event) => {
+  const handleSearchChange = useCallback(event => {
     setSearchTerm(event.target.value);
   }, []);
 
   // Handle status filter change
-  const handleStatusFilterChange = useCallback((event) => {
+  const handleStatusFilterChange = useCallback(event => {
     setStatusFilter(event.target.value);
   }, []);
 
   // Loading state
   if (!currentUser) {
     return (
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+      <Box
+        sx={{
+          p: 3,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 400,
+        }}
+      >
         <Typography>Đang tải...</Typography>
       </Box>
     );
@@ -172,25 +177,24 @@ const QuanLyBangCongNo = () => {
       </Typography>
 
       {/* Statistics Overview */}
-      <StatsGrid
-        transactions={transactions}
-        loading={loading}
-        variant="html-demo"
-        sx={{ mb: 3 }}
-      />
+      <StatsGrid transactions={transactions} loading={loading} variant="html-demo" sx={{ mb: 3 }} />
 
       {/* Main Card */}
-      <Paper sx={{ borderRadius: 2, boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
+      <Paper
+        sx={{ borderRadius: 2, boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}
+      >
         {/* Header with Search and Add Button */}
-        <Box sx={{ 
-          p: 2, 
-          borderBottom: '1px solid #e2e8f0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2
-        }}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Search Box */}
             <TextField
@@ -206,15 +210,11 @@ const QuanLyBangCongNo = () => {
                 ),
               }}
             />
-            
+
             {/* Status Filter */}
             <FormControl sx={{ minWidth: 150 }}>
               <InputLabel>Trạng thái</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={handleStatusFilterChange}
-                label="Trạng thái"
-              >
+              <Select value={statusFilter} onChange={handleStatusFilterChange} label="Trạng thái">
                 <MenuItem value="all">Tất cả</MenuItem>
                 <MenuItem value="debt">Có nợ</MenuItem>
                 <MenuItem value="paid">Đã thanh toán</MenuItem>
@@ -233,8 +233,8 @@ const QuanLyBangCongNo = () => {
               '&:hover': {
                 bgcolor: '#2c5282',
                 transform: 'translateY(-1px)',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-              }
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              },
             }}
           >
             Thêm Giao Dịch Mới

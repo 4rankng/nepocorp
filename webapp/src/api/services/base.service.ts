@@ -10,9 +10,9 @@ export interface CrudService<T extends BaseEntity, CreateDTO, UpdateDTO> {
   delete(id: number): Promise<ApiResponse<void>>;
 }
 
-export abstract class BaseService<T extends BaseEntity, CreateDTO, UpdateDTO> 
-  implements CrudService<T, CreateDTO, UpdateDTO> {
-  
+export abstract class BaseService<T extends BaseEntity, CreateDTO, UpdateDTO>
+  implements CrudService<T, CreateDTO, UpdateDTO>
+{
   protected constructor(protected readonly resourcePath: string) {}
 
   async getAll(params?: PaginatedRequest & Record<string, any>): Promise<ApiResponse<T[]>> {
@@ -36,14 +36,21 @@ export abstract class BaseService<T extends BaseEntity, CreateDTO, UpdateDTO>
   }
 
   // Additional utility methods
-  protected async getWithFilters(filters: Record<string, any>, config?: AxiosRequestConfig): Promise<ApiResponse<T[]>> {
-    return apiClient.get<T[]>(this.resourcePath, { 
+  protected async getWithFilters(
+    filters: Record<string, any>,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T[]>> {
+    return apiClient.get<T[]>(this.resourcePath, {
       ...config,
-      params: { ...config?.params, ...filters } 
+      params: { ...config?.params, ...filters },
     });
   }
 
-  protected async performAction<R>(id: number, action: string, data?: any): Promise<ApiResponse<R>> {
+  protected async performAction<R>(
+    id: number,
+    action: string,
+    data?: any
+  ): Promise<ApiResponse<R>> {
     return apiClient.post<R>(`${this.resourcePath}/${id}/${action}`, data);
   }
 }

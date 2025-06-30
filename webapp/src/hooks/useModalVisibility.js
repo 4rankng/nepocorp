@@ -6,12 +6,12 @@ export const useModalVisibility = () => {
 
   useEffect(() => {
     // Listen for custom events from any modal components
-    const handleModalOpen = (event) => {
+    const handleModalOpen = event => {
       const modalId = event.detail?.modalId || 'unknown';
       setActiveModals(prev => new Set([...prev, modalId]));
     };
 
-    const handleModalClose = (event) => {
+    const handleModalClose = event => {
       const modalId = event.detail?.modalId || 'unknown';
       setActiveModals(prev => {
         const newSet = new Set(prev);
@@ -37,9 +37,9 @@ export const useModalVisibility = () => {
   const hasActiveModal = activeModals.size > 0;
   const hasActiveProfileModal = hasActiveModal; // Keep for backward compatibility
 
-  return { 
-    hasActiveModal, 
+  return {
+    hasActiveModal,
     hasActiveProfileModal, // Deprecated but kept for compatibility
-    activeModals 
+    activeModals,
   };
 };

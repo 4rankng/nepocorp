@@ -10,10 +10,7 @@ import {
   InputAdornment,
   Divider,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useDinhMucDiDuongLogic } from './useDinhMucDiDuong';
 import DinhMucForm from './DinhMucForm';
 import DinhMucTable from './DinhMucTable';
@@ -61,7 +58,11 @@ const DinhMucDiDuong = () => {
 
   return (
     <Box sx={{ p: 2, maxWidth: '100%', overflow: 'hidden' }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+      <Typography
+        variant="h5"
+        gutterBottom
+        sx={{ fontWeight: 600, color: theme.palette.primary.main }}
+      >
         Định mức đi đường
       </Typography>
 
@@ -73,7 +74,7 @@ const DinhMucDiDuong = () => {
           size="small"
           placeholder="Tìm kiếm..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -86,13 +87,13 @@ const DinhMucDiDuong = () => {
 
         <Fab
           color="primary"
-          size={isMobile ? "medium" : "large"}
+          size={isMobile ? 'medium' : 'large'}
           onClick={handleAddNew}
           sx={{
             boxShadow: theme.shadows[4],
             '&:hover': {
               boxShadow: theme.shadows[6],
-            }
+            },
           }}
         >
           <AddIcon />
@@ -102,7 +103,10 @@ const DinhMucDiDuong = () => {
       {/* Add New Form */}
       {isAddingNew && (
         <Paper sx={{ mb: 3, overflow: 'hidden' }}>
-          <Typography variant="h6" sx={{ p: 2, bgcolor: theme.palette.primary.main, color: 'white' }}>
+          <Typography
+            variant="h6"
+            sx={{ p: 2, bgcolor: theme.palette.primary.main, color: 'white' }}
+          >
             Thêm định mức
           </Typography>
           <DinhMucForm

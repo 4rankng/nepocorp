@@ -7,9 +7,9 @@ import { Z_INDEX } from '@constants/zIndex';
 const FAB = ({
   onClick,
   icon = <AddIcon />,
-  ariaLabel = "Add",
-  color = "primary",
-  size = "large",
+  ariaLabel = 'Add',
+  color = 'primary',
+  size = 'large',
   disabled = false,
   loading = false,
   hideOnModal = true,
@@ -17,7 +17,7 @@ const FAB = ({
   ...props
 }) => {
   const { hasActiveModal } = useModalVisibility();
-  
+
   // Determine if FAB should be visible
   const isVisible = !loading && (!hideOnModal || !hasActiveModal) && !disabled;
 
@@ -42,7 +42,7 @@ const FAB = ({
           transition: 'all 0.2s ease-in-out',
           width: 56,
           height: 56,
-          ...sx
+          ...sx,
         }}
         {...props}
       >

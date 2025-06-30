@@ -40,12 +40,14 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const [tempCancelReason, setTempCancelReason] = useState('');
 
   // Memoized status options to prevent recreation on every render
-  const statusOptions = useMemo(() =>
-    Object.entries(INVOICE_STATUS).map(([, value]) => ({
-      value: value,
-      label: INVOICE_STATUS_LABELS[value],
-      color: getPaymentStatusColor(value)
-    })), []
+  const statusOptions = useMemo(
+    () =>
+      Object.entries(INVOICE_STATUS).map(([, value]) => ({
+        value: value,
+        label: INVOICE_STATUS_LABELS[value],
+        color: getPaymentStatusColor(value),
+      })),
+    []
   );
 
   // Memoized calculated total
@@ -61,13 +63,13 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
-      type: 'tractor'
+      type: 'tractor',
     }));
 
     const trailerPlates = trailers.map(t => ({
       value: t.license_plate,
       label: t.license_plate,
-      type: 'trailer'
+      type: 'trailer',
     }));
 
     return [...tractorPlates, ...trailerPlates];
@@ -104,7 +106,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   useEffect(() => {
     if (isEditing && invoiceCategories.length === 0) {
       setIsLoadingCategories(true);
-      invoiceCategoryApi.getAllWithoutPagination()
+      invoiceCategoryApi
+        .getAllWithoutPagination()
         .then(response => {
           const categories = response.data?.data || response.data || [];
           setInvoiceCategories(categories);
@@ -122,10 +125,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   useEffect(() => {
     if (isEditing && (tractors.length === 0 || trailers.length === 0)) {
       setIsLoadingPlates(true);
-      Promise.all([
-        fetchTractors(),
-        fetchTrailers()
-      ])
+      Promise.all([fetchTractors(), fetchTrailers()])
         .catch(err => {
           console.error('Error fetching vehicles:', err);
         })
@@ -152,7 +152,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     setIsEditing(true);
     setEditedData({
       ...invoiceData,
-      items: invoiceData.items.map(item => ({ ...item }))
+      items: invoiceData.items.map(item => ({ ...item })),
     });
   }, [invoiceData]);
 
@@ -168,7 +168,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
 
   // Handle ESC key to close modal or cancel editing
   useEffect(() => {
-    const handleEscKey = (event) => {
+    const handleEscKey = event => {
       if (event.key === 'Escape' && open && !showLicensePlateModal && !isItemEditModalOpen) {
         if (isEditing) {
           handleCancelEdit();
@@ -187,31 +187,34 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     };
   }, [open, isEditing, handleCancelEdit, handleClose, showLicensePlateModal, isItemEditModalOpen]);
 
-  const handleFieldChange = useCallback((field, value) => {
-    // Handle status changes that require prompts
-    if (field === 'payment_status') {
-      const oldStatus = editedData?.payment_status;
+  const handleFieldChange = useCallback(
+    (field, value) => {
+      // Handle status changes that require prompts
+      if (field === 'payment_status') {
+        const oldStatus = editedData?.payment_status;
 
-      if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
-        setPendingStatus(value);
-        setTempPaymentProof(editedData?.payment_proof || '');
-        setShowPaymentProofPrompt(true);
-        return;
+        if (value === INVOICE_STATUS.PAID && oldStatus !== INVOICE_STATUS.PAID) {
+          setPendingStatus(value);
+          setTempPaymentProof(editedData?.payment_proof || '');
+          setShowPaymentProofPrompt(true);
+          return;
+        }
+
+        if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
+          setPendingStatus(value);
+          setTempCancelReason(editedData?.cancel_reason || '');
+          setShowCancelReasonPrompt(true);
+          return;
+        }
       }
 
-      if (value === INVOICE_STATUS.CANCELLED && oldStatus !== INVOICE_STATUS.CANCELLED) {
-        setPendingStatus(value);
-        setTempCancelReason(editedData?.cancel_reason || '');
-        setShowCancelReasonPrompt(true);
-        return;
-      }
-    }
-
-    setEditedData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  }, [editedData?.payment_status, editedData?.payment_proof, editedData?.cancel_reason]);
+      setEditedData(prev => ({
+        ...prev,
+        [field]: value,
+      }));
+    },
+    [editedData?.payment_status, editedData?.payment_proof, editedData?.cancel_reason]
+  );
 
   // Handle payment proof confirmation
   const handlePaymentProofConfirm = useCallback(() => {
@@ -224,7 +227,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
       ...prev,
       payment_status: pendingStatus,
       payment_proof: tempPaymentProof,
-      cancel_reason: null // Clear cancel reason when marking as paid
+      cancel_reason: null, // Clear cancel reason when marking as paid
     }));
 
     setShowPaymentProofPrompt(false);
@@ -243,7 +246,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
       ...prev,
       payment_status: pendingStatus,
       cancel_reason: tempCancelReason,
-      payment_proof: null // Clear payment proof when cancelling
+      payment_proof: null, // Clear payment proof when cancelling
     }));
 
     setShowCancelReasonPrompt(false);
@@ -276,7 +279,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
         cancel_reason: editedData.cancel_reason || null,
         remark: editedData.remark,
         items: updatedItems,
-        total: totalAmount
+        total: totalAmount,
       };
 
       await invoiceApi.update(invoiceId, updateData);
@@ -296,9 +299,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const handleItemChange = useCallback((index, field, value) => {
     setEditedData(prev => ({
       ...prev,
-      items: prev.items.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      )
+      items: prev.items.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     }));
   }, []);
 
@@ -307,58 +308,64 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     setShowItemEditModal(true);
   }, []);
 
-  const handleDeleteItem = useCallback((index) => {
+  const handleDeleteItem = useCallback(index => {
     setEditedData(prev => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index)
+      items: prev.items.filter((_, i) => i !== index),
     }));
   }, []);
 
-  const handleLicensePlateCellClick = useCallback((index) => {
+  const handleLicensePlateCellClick = useCallback(index => {
     setCurrentLicensePlateIndex(index);
     setShowLicensePlateModal(true);
   }, []);
 
-  const handleLicensePlateSelect = useCallback((selectedPlate) => {
-    if (currentLicensePlateIndex !== null) {
-      setEditedData(prev => {
-        const updatedItems = prev.items.map((item, i) => {
-          if (i === currentLicensePlateIndex) {
-            return { ...item, license_plate: selectedPlate };
-          }
-          return item;
+  const handleLicensePlateSelect = useCallback(
+    selectedPlate => {
+      if (currentLicensePlateIndex !== null) {
+        setEditedData(prev => {
+          const updatedItems = prev.items.map((item, i) => {
+            if (i === currentLicensePlateIndex) {
+              return { ...item, license_plate: selectedPlate };
+            }
+            return item;
+          });
+
+          // Prefill other empty license plate cells
+          const prefilledItems = updatedItems.map(item => {
+            if (!item.license_plate) {
+              return { ...item, license_plate: selectedPlate };
+            }
+            return item;
+          });
+
+          return { ...prev, items: prefilledItems };
         });
+        setCurrentLicensePlateIndex(null);
+      }
+      setShowLicensePlateModal(false);
+    },
+    [currentLicensePlateIndex]
+  );
 
-        // Prefill other empty license plate cells
-        const prefilledItems = updatedItems.map(item => {
-          if (!item.license_plate) {
-            return { ...item, license_plate: selectedPlate };
-          }
-          return item;
-        });
-
-        return { ...prev, items: prefilledItems };
-      });
-      setCurrentLicensePlateIndex(null);
-    }
-    setShowLicensePlateModal(false);
-  }, [currentLicensePlateIndex]);
-
-  const handleEditModalStateChange = useCallback((isOpen) => {
+  const handleEditModalStateChange = useCallback(isOpen => {
     setIsItemEditModalOpen(isOpen);
   }, []);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1" style={{zIndex: Z_INDEX.MODAL_BACKDROP}}>
-      <div 
-        className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col" 
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center p-1"
+      style={{ zIndex: Z_INDEX.MODAL_BACKDROP }}
+    >
+      <div
+        className="bg-white rounded-lg w-full max-w-[98vw] max-h-[98vh] flex flex-col"
         style={{
           zIndex: Z_INDEX.MODAL,
-          '--parent-z-index': Z_INDEX.MODAL
+          '--parent-z-index': Z_INDEX.MODAL,
         }}
-        ref={(el) => {
+        ref={el => {
           if (el) {
             setParentZIndex(el, Z_INDEX.MODAL);
           }

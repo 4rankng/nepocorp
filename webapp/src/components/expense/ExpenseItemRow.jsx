@@ -13,31 +13,17 @@ const ExpenseItemRow = ({
   onDeleteItem,
   onLicensePlateCellClick,
   onEditItem,
-  errors = {}
+  errors = {},
 }) => {
   return (
     <tr className="hover:bg-gray-50 border-t">
-      <td className="px-3 py-2 text-xs border-r">
-        {item.license_plate || '-'}
-      </td>
-      <td className="px-3 py-2 text-xs border-r">
-        {item.item_name || '-'}
-      </td>
-      <td className="px-3 py-2 text-xs text-center border-r">
-        {formatDate(item.install_date)}
-      </td>
-      <td className="px-3 py-2 text-xs text-center border-r">
-        {formatDate(item.expiry_date)}
-      </td>
-      <td className="px-3 py-2 text-xs text-right border-r">
-        {formatCurrency(item.price || 0)}
-      </td>
-      <td className="px-3 py-2 text-xs text-center border-r">
-        {item.quantity || 0}
-      </td>
-      <td className="px-3 py-2 text-xs text-right border-r">
-        {`${item.tax_rate || 0}%`}
-      </td>
+      <td className="px-3 py-2 text-xs border-r">{item.license_plate || '-'}</td>
+      <td className="px-3 py-2 text-xs border-r">{item.item_name || '-'}</td>
+      <td className="px-3 py-2 text-xs text-center border-r">{formatDate(item.install_date)}</td>
+      <td className="px-3 py-2 text-xs text-center border-r">{formatDate(item.expiry_date)}</td>
+      <td className="px-3 py-2 text-xs text-right border-r">{formatCurrency(item.price || 0)}</td>
+      <td className="px-3 py-2 text-xs text-center border-r">{item.quantity || 0}</td>
+      <td className="px-3 py-2 text-xs text-right border-r">{`${item.tax_rate || 0}%`}</td>
       <td className="px-3 py-2 text-xs text-right font-medium">
         {formatCurrency(item.total || 0)}
       </td>
@@ -73,7 +59,7 @@ ExpenseItemRow.propTypes = {
   onDeleteItem: PropTypes.func.isRequired,
   onLicensePlateCellClick: PropTypes.func,
   onEditItem: PropTypes.func.isRequired,
-  errors: PropTypes.object
+  errors: PropTypes.object,
 };
 
 export default ExpenseItemRow;

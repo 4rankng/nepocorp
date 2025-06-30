@@ -26,9 +26,9 @@ import { getChoHangTableColumns } from '../constants/choHangTableColumns';
 import { Z_INDEX } from '@constants/zIndex';
 // Mock API object returning empty data until backend is integrated
 const dinhMucDauApi = {
-  create: async (data) => ({ id: Date.now(), ...data }),
+  create: async data => ({ id: Date.now(), ...data }),
   update: async (id, data) => ({ id, ...data }),
-  delete: async (id) => ({ success: true })
+  delete: async id => ({ success: true }),
 };
 import logger from '@/services/logger';
 

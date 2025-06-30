@@ -1,7 +1,9 @@
 # DIRECTIVES
 
 ## /lich-van-chuyen page
+
 List of filters from left to right:
+
 1. Search Bar
 2. Date Range Picker
 3. Column Selector, to decide which columns to display. This selection will be saved in the local storage for next visits.
@@ -11,6 +13,7 @@ List of filters from left to right:
 ## /bao-cao page
 
 UI Design must be a professional dashboard. List of information to display
+
 1. Timeline of total Revenue vs Total Cost (by date range). Where revenue = cuoc van chuyen charged customer, cost is chi phi per shipment
 2. Timeline of profit (by date range) where profit = total revenue - total cost - expenses (salary, maintainance, insurance, ....)
 3. Total shipments by date range

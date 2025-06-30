@@ -40,7 +40,7 @@ const DinhMucTable = ({
   onInputChange,
   onSubmit,
 }) => {
-  const formatCurrency = (value) => {
+  const formatCurrency = value => {
     if (!value || value === 0) return '0';
     return new Intl.NumberFormat('vi-VN').format(value);
   };
@@ -49,7 +49,7 @@ const DinhMucTable = ({
     setPagination(prev => ({ ...prev, pageIndex: newPage }));
   };
 
-  const handleRowsPerPageChange = (event) => {
+  const handleRowsPerPageChange = event => {
     setPagination(prev => ({
       ...prev,
       pageSize: parseInt(event.target.value, 10),
@@ -105,8 +105,8 @@ const DinhMucTable = ({
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell 
-                  colSpan={4 + (containerTypes?.length || 0)} 
+                <TableCell
+                  colSpan={4 + (containerTypes?.length || 0)}
                   sx={{ textAlign: 'center', py: 4 }}
                 >
                   <Typography variant="body2" color="text.secondary">
@@ -115,9 +115,9 @@ const DinhMucTable = ({
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((row) => {
+              paginatedData.map(row => {
                 const isEditing = editingId === row.id;
-                
+
                 return (
                   <TableRow key={row.id} hover>
                     <TableCell>
@@ -125,7 +125,7 @@ const DinhMucTable = ({
                         <TextField
                           size="small"
                           value={editedData.ma_tuyen || ''}
-                          onChange={(e) => onInputChange('ma_tuyen', e.target.value)}
+                          onChange={e => onInputChange('ma_tuyen', e.target.value)}
                           disabled={isSaving}
                           fullWidth
                         />
@@ -138,7 +138,7 @@ const DinhMucTable = ({
                         <TextField
                           size="small"
                           value={editedData.diem_di || ''}
-                          onChange={(e) => onInputChange('diem_di', e.target.value)}
+                          onChange={e => onInputChange('diem_di', e.target.value)}
                           disabled={isSaving}
                           fullWidth
                         />
@@ -151,7 +151,7 @@ const DinhMucTable = ({
                         <TextField
                           size="small"
                           value={editedData.diem_den || ''}
-                          onChange={(e) => onInputChange('diem_den', e.target.value)}
+                          onChange={e => onInputChange('diem_den', e.target.value)}
                           disabled={isSaving}
                           fullWidth
                         />
@@ -166,7 +166,13 @@ const DinhMucTable = ({
                             size="small"
                             type="number"
                             value={editedData.containerNorms?.[container.ma_loai_cont] || 0}
-                            onChange={(e) => onInputChange('containerNorms', e.target.value, container.ma_loai_cont)}
+                            onChange={e =>
+                              onInputChange(
+                                'containerNorms',
+                                e.target.value,
+                                container.ma_loai_cont
+                              )
+                            }
                             disabled={isSaving}
                             fullWidth
                             inputProps={{ min: 0 }}
@@ -190,11 +196,7 @@ const DinhMucTable = ({
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Hủy">
-                            <IconButton
-                              size="small"
-                              onClick={onCancelEdit}
-                              disabled={isSaving}
-                            >
+                            <IconButton size="small" onClick={onCancelEdit} disabled={isSaving}>
                               <CloseIcon />
                             </IconButton>
                           </Tooltip>
@@ -229,7 +231,7 @@ const DinhMucTable = ({
           </TableBody>
         </Table>
       </TableContainer>
-      
+
       {filteredData.length > 0 && (
         <TablePagination
           component="div"
@@ -240,7 +242,7 @@ const DinhMucTable = ({
           onRowsPerPageChange={handleRowsPerPageChange}
           rowsPerPageOptions={[10, 25, 50, 100]}
           labelRowsPerPage="Số dòng mỗi trang:"
-          labelDisplayedRows={({ from, to, count }) => 
+          labelDisplayedRows={({ from, to, count }) =>
             `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
           }
         />

@@ -8,13 +8,13 @@ export const customerApi = {
   },
 
   // Get customer by ID
-  getById: async (id) => {
+  getById: async id => {
     const response = await apiClient.get(`/customers/${id}`);
     return response;
   },
 
   // Create new customer
-  create: async (data) => {
+  create: async data => {
     const response = await apiClient.post('/customers', data);
     return response;
   },
@@ -26,8 +26,8 @@ export const customerApi = {
   },
 
   // Delete customer
-  delete: async (id) => {
+  delete: async id => {
     const response = await apiClient.delete(`/customers/${id}`);
     return response;
-  }
+  },
 };

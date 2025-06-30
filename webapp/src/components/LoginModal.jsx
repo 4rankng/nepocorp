@@ -31,7 +31,7 @@ const LoginModal = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -49,13 +49,14 @@ const LoginModal = ({ open, onClose }) => {
     } catch (err) {
       // Handle specific error codes from backend
       let userFriendlyMessage = 'Đã xảy ra lỗi khi đăng nhập';
-      
+
       switch (err.code) {
         case 'INVALID_CREDENTIALS':
           userFriendlyMessage = 'Tên đăng nhập hoặc mật khẩu không chính xác';
           break;
         case 'USER_NOT_ACTIVE':
-          userFriendlyMessage = 'Tài khoản của bạn chưa được kích hoạt. Vui lòng liên hệ quản trị viên.';
+          userFriendlyMessage =
+            'Tài khoản của bạn chưa được kích hoạt. Vui lòng liên hệ quản trị viên.';
           break;
         case 'BAD_REQUEST':
           userFriendlyMessage = 'Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại.';
@@ -64,7 +65,7 @@ const LoginModal = ({ open, onClose }) => {
           // Use backend message if available, otherwise fallback
           userFriendlyMessage = err.message || 'Đã xảy ra lỗi khi đăng nhập';
       }
-      
+
       setError(userFriendlyMessage);
     } finally {
       setLoading(false);
@@ -82,16 +83,16 @@ const LoginModal = ({ open, onClose }) => {
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
           borderRadius: 3,
           overflow: 'visible',
-        }
+        },
       }}
     >
       <Paper
@@ -118,24 +119,24 @@ const LoginModal = ({ open, onClose }) => {
               position: 'absolute',
               right: 8,
               top: 8,
-              color: (theme) => theme.palette.grey[500],
+              color: theme => theme.palette.grey[500],
             }}
           >
             <CloseIcon />
           </IconButton>
-          
+
           <DialogContent sx={{ p: 4, pt: 5 }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography 
-                variant="h4" 
-                component="h1" 
-                sx={{ 
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{
                   fontWeight: 700,
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  mb: 1
+                  mb: 1,
                 }}
               >
                 NEPOCORP
@@ -152,12 +153,12 @@ const LoginModal = ({ open, onClose }) => {
                     {error}
                   </Alert>
                 )}
-                
+
                 <TextField
                   fullWidth
                   label="Tên đăng nhập"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={e => setUsername(e.target.value)}
                   disabled={loading}
                   required
                   autoFocus
@@ -181,13 +182,13 @@ const LoginModal = ({ open, onClose }) => {
                     },
                   }}
                 />
-                
+
                 <TextField
                   fullWidth
                   label="Mật khẩu"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   disabled={loading}
                   required
                   placeholder="Nhập mật khẩu"
@@ -202,7 +203,7 @@ const LoginModal = ({ open, onClose }) => {
                         <IconButton
                           aria-label="toggle password visibility"
                           onClick={() => setShowPassword(!showPassword)}
-                          onMouseDown={(e) => e.preventDefault()}
+                          onMouseDown={e => e.preventDefault()}
                           edge="end"
                           disabled={loading}
                         >
@@ -223,13 +224,15 @@ const LoginModal = ({ open, onClose }) => {
                     },
                   }}
                 />
-                
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <FormControlLabel
                     control={
-                      <Checkbox 
+                      <Checkbox
                         checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
+                        onChange={e => setRememberMe(e.target.checked)}
                         disabled={loading}
                         sx={{
                           color: '#667eea',
@@ -242,16 +245,16 @@ const LoginModal = ({ open, onClose }) => {
                     label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
                   />
                 </Box>
-                
+
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
                   size="large"
                   disabled={loading || !username || !password}
-                  sx={{ 
-                    mt: 1, 
-                    mb: 2, 
+                  sx={{
+                    mt: 1,
+                    mb: 2,
                     py: 1.5,
                     borderRadius: 2,
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -266,7 +269,7 @@ const LoginModal = ({ open, onClose }) => {
                     },
                     '&:disabled': {
                       background: 'rgba(0, 0, 0, 0.12)',
-                    }
+                    },
                   }}
                   startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                 >

@@ -1,5 +1,17 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
 const Dashboard = () => {
   // Color palette matching the design
@@ -29,7 +41,6 @@ const Dashboard = () => {
     { name: 'Central', value: 29 },
     { name: 'West', value: 28 },
   ];
-
 
   const monthlyData = [
     { month: 'Jan', lead: 20, qualify: 10, solution: 15, proposal: 20, timeline: 15 },
@@ -136,7 +147,7 @@ const Dashboard = () => {
     },
   };
 
-  const renderCustomizedLabel = (entry) => {
+  const renderCustomizedLabel = entry => {
     return `${entry.value}%`;
   };
 
@@ -163,15 +174,15 @@ const Dashboard = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Small</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Medium</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Large</span>
             </div>
           </div>
@@ -192,15 +203,15 @@ const Dashboard = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Lead</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Qualify</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.yellow}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.yellow }} />
               <span style={styles.legendText}>Solution</span>
             </div>
           </div>
@@ -228,24 +239,24 @@ const Dashboard = () => {
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-          <div style={{...styles.legend, justifyContent: 'center'}}>
+          <div style={{ ...styles.legend, justifyContent: 'center' }}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>East</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Central</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>West</span>
             </div>
           </div>
         </div>
 
         {/* Monthly Stacked Bar Chart */}
-        <div style={{...styles.card, ...styles.fullWidth}}>
+        <div style={{ ...styles.card, ...styles.fullWidth }}>
           <h3 style={styles.title}>Opportunity Count</h3>
           <p style={styles.subtitle}>BY MONTH, SALES STAGE</p>
           <ResponsiveContainer width="100%" height={300}>
@@ -261,30 +272,30 @@ const Dashboard = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Lead</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.yellow}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.yellow }} />
               <span style={styles.legendText}>Qualify</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Solution</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.mediumGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.mediumGray }} />
               <span style={styles.legendText}>Proposal</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Timeline</span>
             </div>
           </div>
         </div>
 
         {/* Region Opportunity Size */}
-        <div style={{...styles.card, ...styles.fullWidth}}>
+        <div style={{ ...styles.card, ...styles.fullWidth }}>
           <h3 style={styles.title}>Opportunity Count</h3>
           <p style={styles.subtitle}>BY REGION, OPPORTUNITY SIZE</p>
           <ResponsiveContainer width="100%" height={200}>
@@ -298,22 +309,22 @@ const Dashboard = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Small</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Medium</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Large</span>
             </div>
           </div>
         </div>
 
         {/* Revenue by Sales Stage */}
-        <div style={{...styles.card, ...styles.fullWidth}}>
+        <div style={{ ...styles.card, ...styles.fullWidth }}>
           <h3 style={styles.title}>Revenue</h3>
           <p style={styles.subtitle}>BY SALES STAGE, PARTNER DRIVEN</p>
           <ResponsiveContainer width="100%" height={200}>
@@ -326,18 +337,18 @@ const Dashboard = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>No</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Yes</span>
             </div>
           </div>
         </div>
 
         {/* Average Revenue */}
-        <div style={{...styles.card, ...styles.fullWidth}}>
+        <div style={{ ...styles.card, ...styles.fullWidth }}>
           <h3 style={styles.title}>Average Revenue</h3>
           <p style={styles.subtitle}>BY PARTNER CENTER, OPPORTUNITY SIZE</p>
           <ResponsiveContainer width="100%" height={200}>
@@ -351,15 +362,15 @@ const Dashboard = () => {
           </ResponsiveContainer>
           <div style={styles.legend}>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.teal}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.teal }} />
               <span style={styles.legendText}>Small</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.darkGray}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.darkGray }} />
               <span style={styles.legendText}>Medium</span>
             </div>
             <div style={styles.legendItem}>
-              <div style={{...styles.legendColor, backgroundColor: colors.coral}} />
+              <div style={{ ...styles.legendColor, backgroundColor: colors.coral }} />
               <span style={styles.legendText}>Large</span>
             </div>
           </div>

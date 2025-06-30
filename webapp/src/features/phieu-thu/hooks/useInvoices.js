@@ -32,7 +32,13 @@ export default function useInvoices() {
       setIsLoading(true);
       try {
         // Note: API is 1-indexed for page number
-        const response = await invoiceApi.getAll(page + 1, pageSize, categoryId, customerId, paymentStatus);
+        const response = await invoiceApi.getAll(
+          page + 1,
+          pageSize,
+          categoryId,
+          customerId,
+          paymentStatus
+        );
 
         const data = response.data || [];
         setInvoices(data);
@@ -79,7 +85,7 @@ export default function useInvoices() {
 
   // Create new invoice
   const createInvoice = useCallback(
-    async (invoiceData) => {
+    async invoiceData => {
       setIsLoading(true);
       try {
         const response = await invoiceApi.create(invoiceData);
@@ -125,7 +131,7 @@ export default function useInvoices() {
 
   // Delete invoice
   const deleteInvoice = useCallback(
-    async (id) => {
+    async id => {
       setIsLoading(true);
       try {
         const response = await invoiceApi.delete(id);
@@ -147,23 +153,20 @@ export default function useInvoices() {
   );
 
   // Get invoice by ID
-  const getInvoiceById = useCallback(
-    async (id) => {
-      setIsLoading(true);
-      try {
-        const response = await invoiceApi.getById(id);
-        return response;
-      } catch (err) {
-        logger.error('Error fetching invoice by ID', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tải phiếu thu');
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+  const getInvoiceById = useCallback(async id => {
+    setIsLoading(true);
+    try {
+      const response = await invoiceApi.getById(id);
+      return response;
+    } catch (err) {
+      logger.error('Error fetching invoice by ID', { error: err });
+      const errorMessage = extractErrorMessage(err, 'Không thể tải phiếu thu');
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Fetch categories on mount
   useEffect(() => {

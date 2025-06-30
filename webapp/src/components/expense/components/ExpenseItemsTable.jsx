@@ -4,17 +4,25 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import Dropdown from '@components/ui/Dropdown';
 
-const formatCurrency = (value) => {
+const formatCurrency = value => {
   return new Intl.NumberFormat('vi-VN').format(value);
 };
 
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('vi-VN');
 };
 
-const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDeleteItem, licensePlateOptions = [], isLoadingPlates = false }) => {
-  const calculateItemTotal = (item) => {
+const ExpenseItemsTable = ({
+  items,
+  isEditing,
+  onItemChange,
+  onAddItem,
+  onDeleteItem,
+  licensePlateOptions = [],
+  isLoadingPlates = false,
+}) => {
+  const calculateItemTotal = item => {
     const price = parseFloat(item.price) || 0;
     const quantity = parseFloat(item.quantity) || 0;
     const taxRate = parseFloat(item.tax_rate) || 0;
@@ -32,16 +40,32 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50">
-              <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Biển số xe</th>
-              <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">Hạng mục</th>
-              <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">Ngày lắp đặt</th>
-              <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">Ngày hết hạn</th>
-              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">Đơn giá (VND)</th>
-              <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-16">SL</th>
-              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">Thuế (%)</th>
+              <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">
+                Biển số xe
+              </th>
+              <th className="text-left px-3 py-2 text-xs font-medium text-gray-700 border-r">
+                Hạng mục
+              </th>
+              <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">
+                Ngày lắp đặt
+              </th>
+              <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r">
+                Ngày hết hạn
+              </th>
+              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r">
+                Đơn giá (VND)
+              </th>
+              <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 border-r w-16">
+                SL
+              </th>
+              <th className="text-right px-3 py-2 text-xs font-medium text-gray-700 border-r w-20">
+                Thuế (%)
+              </th>
               <th className="text-right px-3 py-2 text-xs font-medium text-gray-700">Thành tiền</th>
               {isEditing && (
-                <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 w-20">Thao tác</th>
+                <th className="text-center px-3 py-2 text-xs font-medium text-gray-700 w-20">
+                  Thao tác
+                </th>
               )}
             </tr>
           </thead>
@@ -54,7 +78,7 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                       <div style={{ minWidth: '150px' }}>
                         <Dropdown
                           value={item.license_plate || ''}
-                          onChange={(value) => onItemChange(index, 'license_plate', value)}
+                          onChange={value => onItemChange(index, 'license_plate', value)}
                           options={licensePlateOptions}
                           placeholder="Chọn biển số"
                           searchable={true}
@@ -73,7 +97,7 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                       <input
                         type="text"
                         value={item.item_name || ''}
-                        onChange={(e) => onItemChange(index, 'item_name', e.target.value)}
+                        onChange={e => onItemChange(index, 'item_name', e.target.value)}
                         className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
                       />
                     ) : (
@@ -85,7 +109,7 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                       <input
                         type="date"
                         value={item.install_date ? item.install_date.split('T')[0] : ''}
-                        onChange={(e) => onItemChange(index, 'install_date', e.target.value)}
+                        onChange={e => onItemChange(index, 'install_date', e.target.value)}
                         className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
                       />
                     ) : (
@@ -97,7 +121,7 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                       <input
                         type="date"
                         value={item.expiry_date ? item.expiry_date.split('T')[0] : ''}
-                        onChange={(e) => onItemChange(index, 'expiry_date', e.target.value)}
+                        onChange={e => onItemChange(index, 'expiry_date', e.target.value)}
                         className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
                       />
                     ) : (
@@ -109,7 +133,7 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                       <input
                         type="number"
                         value={item.price || ''}
-                        onChange={(e) => onItemChange(index, 'price', e.target.value)}
+                        onChange={e => onItemChange(index, 'price', e.target.value)}
                         className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-right"
                         min="0"
                       />
@@ -122,7 +146,7 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                       <input
                         type="number"
                         value={item.quantity || ''}
-                        onChange={(e) => onItemChange(index, 'quantity', e.target.value)}
+                        onChange={e => onItemChange(index, 'quantity', e.target.value)}
                         className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-center"
                         min="1"
                       />
@@ -135,7 +159,7 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                       <input
                         type="number"
                         value={item.tax_rate || ''}
-                        onChange={(e) => onItemChange(index, 'tax_rate', e.target.value)}
+                        onChange={e => onItemChange(index, 'tax_rate', e.target.value)}
                         className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-right"
                         min="0"
                         max="100"
@@ -145,11 +169,7 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
                     )}
                   </td>
                   <td className="px-3 py-2 text-xs text-right font-medium">
-                    {formatCurrency(
-                      isEditing 
-                        ? calculateItemTotal(item)
-                        : (item.total || 0)
-                    )}
+                    {formatCurrency(isEditing ? calculateItemTotal(item) : item.total || 0)}
                   </td>
                   {isEditing && (
                     <td className="px-3 py-2 text-center">
@@ -166,7 +186,10 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
               ))
             ) : (
               <tr>
-                <td colSpan={isEditing ? "9" : "8"} className="px-3 py-6 text-center text-gray-500 text-xs">
+                <td
+                  colSpan={isEditing ? '9' : '8'}
+                  className="px-3 py-6 text-center text-gray-500 text-xs"
+                >
                   Không có dữ liệu hạng mục
                 </td>
               </tr>
@@ -175,7 +198,9 @@ const ExpenseItemsTable = ({ items, isEditing, onItemChange, onAddItem, onDelete
           {items && items.length > 0 && (
             <tfoot>
               <tr className="bg-gray-50 font-medium border-t">
-                <td colSpan={isEditing ? "8" : "7"} className="px-3 py-2 text-right text-xs">Tổng cộng:</td>
+                <td colSpan={isEditing ? '8' : '7'} className="px-3 py-2 text-right text-xs">
+                  Tổng cộng:
+                </td>
                 <td className="px-3 py-2 text-right text-sm font-semibold whitespace-nowrap">
                   {formatCurrency(calculateTotal())} ₫
                 </td>

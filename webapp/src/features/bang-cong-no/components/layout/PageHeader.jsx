@@ -8,13 +8,13 @@ import {
   Stack,
   Divider,
   IconButton,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import {
   NavigateNext as NavigateNextIcon,
   Refresh as RefreshIcon,
   FileDownload as FileDownloadIcon,
-  Print as PrintIcon
+  Print as PrintIcon,
 } from '@mui/icons-material';
 
 const PageHeader = ({
@@ -29,22 +29,19 @@ const PageHeader = ({
   onExport,
   onPrint,
   loading = false,
-  sx = {}
+  sx = {},
 }) => {
   const renderBreadcrumbs = () => {
     if (!breadcrumbs || breadcrumbs.length === 0) return null;
 
     return (
-      <Breadcrumbs 
-        separator={<NavigateNextIcon fontSize="small" />}
-        sx={{ mb: 1 }}
-      >
+      <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 1 }}>
         {breadcrumbs.map((crumb, index) => {
           const isLast = index === breadcrumbs.length - 1;
-          
+
           if (isLast || !crumb.href) {
             return (
-              <Typography 
+              <Typography
                 key={index}
                 color={isLast ? 'text.primary' : 'text.secondary'}
                 variant="body2"
@@ -64,7 +61,7 @@ const PageHeader = ({
               underline="hover"
               variant="body2"
               sx={{
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
               }}
             >
               {crumb.label}
@@ -77,7 +74,7 @@ const PageHeader = ({
 
   const renderActions = () => {
     const actionButtons = [...actions];
-    
+
     // Add built-in action buttons
     if (showRefresh) {
       actionButtons.push({
@@ -86,7 +83,7 @@ const PageHeader = ({
         label: 'Làm mới',
         onClick: onRefresh,
         variant: 'outlined',
-        color: 'inherit'
+        color: 'inherit',
       });
     }
 
@@ -97,7 +94,7 @@ const PageHeader = ({
         label: 'Xuất Excel',
         onClick: onExport,
         variant: 'outlined',
-        color: 'success'
+        color: 'success',
       });
     }
 
@@ -108,7 +105,7 @@ const PageHeader = ({
         label: 'In',
         onClick: onPrint,
         variant: 'outlined',
-        color: 'inherit'
+        color: 'inherit',
       });
     }
 
@@ -116,7 +113,7 @@ const PageHeader = ({
 
     return (
       <Stack direction="row" spacing={1} alignItems="center">
-        {actionButtons.map((action) => {
+        {actionButtons.map(action => {
           if (action.type === 'icon') {
             return (
               <Tooltip key={action.key} title={action.label}>
@@ -146,7 +143,7 @@ const PageHeader = ({
                 fontWeight: 500,
                 borderRadius: 2,
                 px: 2.5,
-                ...action.sx
+                ...action.sx,
               }}
             >
               {action.label}
@@ -163,33 +160,35 @@ const PageHeader = ({
       {renderBreadcrumbs()}
 
       {/* Main header content */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start',
-        gap: 2,
-        mb: subtitle ? 1 : 0
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 2,
+          mb: subtitle ? 1 : 0,
+        }}
+      >
         <Box sx={{ flex: 1 }}>
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontWeight: 600, 
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 600,
               color: 'text.primary',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
-              lineHeight: 1.2
+              lineHeight: 1.2,
             }}
           >
             {title}
           </Typography>
-          
+
           {subtitle && (
-            <Typography 
-              variant="body1" 
-              color="text.secondary" 
-              sx={{ 
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{
                 mt: 0.5,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
               }}
             >
               {subtitle}

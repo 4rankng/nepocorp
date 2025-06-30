@@ -2,9 +2,7 @@ import React from 'react';
 import './Form.css';
 
 export const FormContainer = ({ children, className = '' }) => (
-  <div className={`form-container ${className}`}>
-    {children}
-  </div>
+  <div className={`form-container ${className}`}>{children}</div>
 );
 
 export const FormHeader = ({ title, children, className = '' }) => (
@@ -22,11 +20,7 @@ export const FormBody = ({ children, onSubmit, className = '' }) => (
 
 export const FormSections = ({ children, columns = 2, className = '' }) => {
   const gridClass = columns === 1 ? 'form-sections--single' : 'form-sections--double';
-  return (
-    <div className={`form-sections ${gridClass} ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`form-sections ${gridClass} ${className}`}>{children}</div>;
 };
 
 export const FormSection = ({ title, children, className = '' }) => (
@@ -37,21 +31,15 @@ export const FormSection = ({ title, children, className = '' }) => (
 );
 
 export const FormGroup = ({ children, className = '' }) => (
-  <div className={`form-group ${className}`}>
-    {children}
-  </div>
+  <div className={`form-group ${className}`}>{children}</div>
 );
 
 export const FormRow = ({ children, className = '' }) => (
-  <div className={`form-row ${className}`}>
-    {children}
-  </div>
+  <div className={`form-row ${className}`}>{children}</div>
 );
 
 export const FormCol = ({ children, className = '' }) => (
-  <div className={`form-col ${className}`}>
-    {children}
-  </div>
+  <div className={`form-col ${className}`}>{children}</div>
 );
 
 export const FormLabel = ({ children, required = false, htmlFor, className = '' }) => (
@@ -61,7 +49,7 @@ export const FormLabel = ({ children, required = false, htmlFor, className = '' 
   </label>
 );
 
-export const FormControl = ({ 
+export const FormControl = ({
   type = 'text',
   name,
   value,
@@ -76,7 +64,7 @@ export const FormControl = ({
   children,
   className = '',
   id,
-  ...props 
+  ...props
 }) => {
   const baseClasses = `form-control ${error ? 'error' : ''} ${className}`;
 
@@ -133,21 +121,15 @@ export const FormControl = ({
 };
 
 export const InputGroup = ({ children, className = '' }) => (
-  <div className={`input-group ${className}`}>
-    {children}
-  </div>
+  <div className={`input-group ${className}`}>{children}</div>
 );
 
 export const InputAddon = ({ children, position = 'end', className = '' }) => (
-  <span className={`input-addon input-addon--${position} ${className}`}>
-    {children}
-  </span>
+  <span className={`input-addon input-addon--${position} ${className}`}>{children}</span>
 );
 
 export const DateInputWrapper = ({ children, className = '' }) => (
-  <div className={`date-input-wrapper ${className}`}>
-    {children}
-  </div>
+  <div className={`date-input-wrapper ${className}`}>{children}</div>
 );
 
 export const DateIcon = ({ className = '' }) => (
@@ -155,21 +137,15 @@ export const DateIcon = ({ className = '' }) => (
 );
 
 export const FormActions = ({ children, className = '' }) => (
-  <div className={`form-actions ${className}`}>
-    {children}
-  </div>
+  <div className={`form-actions ${className}`}>{children}</div>
 );
 
 export const ErrorText = ({ children, className = '' }) => (
-  <div className={`error-text ${className}`}>
-    {children}
-  </div>
+  <div className={`error-text ${className}`}>{children}</div>
 );
 
 export const HelperText = ({ children, className = '' }) => (
-  <p className={`helper-text ${className}`}>
-    {children}
-  </p>
+  <p className={`helper-text ${className}`}>{children}</p>
 );
 
 export const PriceDisplay = ({ value, className = '', style = {} }) => (

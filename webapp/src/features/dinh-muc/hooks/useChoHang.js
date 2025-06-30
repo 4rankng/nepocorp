@@ -5,7 +5,7 @@ import { useVehicleData } from '@contexts/VehicleDataContext';
 const dinhMucDauApi = {
   getCount: async () => 0,
   getChoHangRecords: async () => [],
-  getAllLicensePlates: async () => []
+  getAllLicensePlates: async () => [],
 };
 
 export const useChoHang = () => {

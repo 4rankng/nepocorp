@@ -7,21 +7,16 @@ import ModalFooter from '@components/ui/ModalFooter';
 import PaymentIcon from '@mui/icons-material/Payment';
 import logger from '@services/logger';
 
-const PaymentProofModal = ({
-  open,
-  onClose,
-  onConfirm,
-  initialValue = ''
-}) => {
+const PaymentProofModal = ({ open, onClose, onConfirm, initialValue = '' }) => {
   const [paymentProof, setPaymentProof] = useState(initialValue);
   const [error, setError] = useState('');
 
-  const handleInputChange = useCallback((e) => {
+  const handleInputChange = useCallback(e => {
     setPaymentProof(e.target.value);
     setError(''); // Clear error when user types
   }, []);
 
-  const validateUrl = useCallback((url) => {
+  const validateUrl = useCallback(url => {
     if (!url.trim()) {
       return 'Vui lòng nhập URL chứng từ thanh toán';
     }
@@ -58,9 +53,9 @@ const PaymentProofModal = ({
 
   // Handle keyboard shortcuts
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (!open) return;
-      
+
       if (e.key === 'Escape') {
         e.preventDefault();
         handleCancel();
@@ -72,19 +67,22 @@ const PaymentProofModal = ({
   }, [open, handleCancel]);
 
   // Handle Enter key on input
-  const handleInputKeyDown = useCallback((e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleConfirm();
-    }
-  }, [handleConfirm]);
+  const handleInputKeyDown = useCallback(
+    e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleConfirm();
+      }
+    },
+    [handleConfirm]
+  );
 
   return (
     <StandardModal
       open={open}
       onClose={handleCancel}
       className="max-w-md"
-      style={{ maxHeight: '400px', maxWidth: '500px'}}
+      style={{ maxHeight: '400px', maxWidth: '500px' }}
     >
       <ModalHeader
         title="Chứng từ thanh toán"
@@ -96,9 +94,7 @@ const PaymentProofModal = ({
       <ModalBody padding="lg" error={error}>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs text-gray-700 mb-2">
-              URL chứng từ
-            </label>
+            <label className="block text-xs text-gray-700 mb-2">URL chứng từ</label>
             <input
               type="url"
               value={paymentProof}
@@ -128,7 +124,7 @@ PaymentProofModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onConfirm: PropTypes.func.isRequired,
-  initialValue: PropTypes.string
+  initialValue: PropTypes.string,
 };
 
 export default PaymentProofModal;

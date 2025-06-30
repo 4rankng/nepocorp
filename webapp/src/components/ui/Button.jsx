@@ -1,7 +1,7 @@
 import React from 'react';
 import './Button.css';
 
-const Button = ({ 
+const Button = ({
   children,
   variant = 'primary',
   size = 'medium',
@@ -18,7 +18,7 @@ const Button = ({
   badge,
   href,
   target,
-  ...props 
+  ...props
 }) => {
   const baseClasses = [
     'btn',
@@ -30,10 +30,12 @@ const Button = ({
     iconOnly && 'btn--icon-only',
     round && 'btn--round',
     badge && 'btn--badge',
-    className
-  ].filter(Boolean).join(' ');
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-  const handleClick = (e) => {
+  const handleClick = e => {
     if (!disabled && !loading && onClick) {
       onClick(e);
     }
@@ -42,16 +44,8 @@ const Button = ({
   // Render as link if href is provided
   if (href) {
     return (
-      <a
-        href={href}
-        target={target}
-        className={baseClasses}
-        onClick={handleClick}
-        {...props}
-      >
-        {loading && (
-          <span className="btn-spinner" />
-        )}
+      <a href={href} target={target} className={baseClasses} onClick={handleClick} {...props}>
+        {loading && <span className="btn-spinner" />}
         {!loading && icon && iconPosition === 'start' && (
           <span className="btn-icon btn-icon--start">{icon}</span>
         )}
@@ -59,9 +53,7 @@ const Button = ({
         {!loading && icon && iconPosition === 'end' && (
           <span className="btn-icon btn-icon--end">{icon}</span>
         )}
-        {badge && (
-          <span className="btn-badge-indicator">{badge}</span>
-        )}
+        {badge && <span className="btn-badge-indicator">{badge}</span>}
       </a>
     );
   }
@@ -74,9 +66,7 @@ const Button = ({
       onClick={handleClick}
       {...props}
     >
-      {loading && (
-        <span className="btn-spinner" />
-      )}
+      {loading && <span className="btn-spinner" />}
       {!loading && icon && iconPosition === 'start' && (
         <span className="btn-icon btn-icon--start">{icon}</span>
       )}
@@ -84,9 +74,7 @@ const Button = ({
       {!loading && icon && iconPosition === 'end' && (
         <span className="btn-icon btn-icon--end">{icon}</span>
       )}
-      {badge && (
-        <span className="btn-badge-indicator">{badge}</span>
-      )}
+      {badge && <span className="btn-badge-indicator">{badge}</span>}
     </button>
   );
 };

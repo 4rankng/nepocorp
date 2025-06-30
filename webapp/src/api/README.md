@@ -143,7 +143,7 @@ const CreateExpense = () => {
   };
 
   return (
-    <button 
+    <button
       onClick={handleCreate}
       disabled={createExpense.isPending}
     >
@@ -156,11 +156,13 @@ const CreateExpense = () => {
 ## 🎯 Available Hooks
 
 ### Authentication
+
 - `useLogin()` - User login
 - `useProfile()` - Get user profile
 - `useLogout()` - User logout
 
 ### Expenses
+
 - `useExpenses(filters)` - List expenses with filters
 - `useExpense(id)` - Get single expense
 - `useCreateExpense()` - Create new expense
@@ -170,6 +172,7 @@ const CreateExpense = () => {
 - `useCreateExpenseItem()` - Create expense item
 
 ### Maintenance
+
 - `useMaintenance(filters)` - List maintenance records
 - `useMaintenanceRecord(id)` - Get single record
 - `useCreateMaintenance()` - Create maintenance record
@@ -178,6 +181,7 @@ const CreateExpense = () => {
 - `useExpiringMaintenance(days)` - Get expiring maintenance
 
 ### Vehicles
+
 - `useTractors(filters)` - List tractors
 - `useTrailers(filters)` - List trailers
 - `useContainers(filters)` - List containers
@@ -187,12 +191,14 @@ const CreateExpense = () => {
 - `useDeleteTractor()` - Delete tractor
 
 ### Settings
+
 - `useSetting(key)` - Get setting by key
 - `useUpdateSetting()` - Update setting
 - `useDefaultTaxRate()` - Get default tax rate
 - `useCurrency()` - Get currency setting
 
 ### Utilities
+
 - `useApiStatus()` - Monitor API connectivity
 - `useHealthCheck()` - API health status
 
@@ -201,12 +207,7 @@ const CreateExpense = () => {
 All hooks are fully typed with TypeScript. Import types as needed:
 
 ```typescript
-import { 
-  CreateExpenseRequest, 
-  Expense, 
-  PaymentStatus,
-  Currency 
-} from '@api/types';
+import { CreateExpenseRequest, Expense, PaymentStatus, Currency } from '@api/types';
 
 const expenseData: CreateExpenseRequest = {
   vendor_name: 'Store',
@@ -228,7 +229,7 @@ const MyComponent = () => {
   if (error) {
     const message = errorHandler.getErrorMessage(error);
     const isAuthError = errorHandler.isUnauthorized(error);
-    
+
     return <div>Error: {message}</div>;
   }
 
@@ -245,8 +246,8 @@ const ExpenseTable = () => {
   const { data, isLoading, error } = useExpenses();
 
   return (
-    <LoadingWrapper 
-      isLoading={isLoading} 
+    <LoadingWrapper
+      isLoading={isLoading}
       error={error}
       loadingComponent={<TableSkeleton rows={5} columns={4} />}
     >
@@ -267,6 +268,7 @@ VITE_API_BASE_URL=http://localhost:8080/api/v1
 ### React Query Configuration
 
 React Query is configured in `src/main.jsx` with:
+
 - 2 retry attempts for failed queries
 - 5-minute stale time
 - 10-minute garbage collection time
@@ -297,7 +299,7 @@ const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }
   });
-  
+
   return ({ children }) => (
     <QueryClientProvider client={queryClient}>
       {children}
@@ -309,7 +311,7 @@ test('useExpenses hook', async () => {
   const { result } = renderHook(() => useExpenses(), {
     wrapper: createWrapper()
   });
-  
+
   // Test hook behavior
 });
 ```
@@ -336,14 +338,17 @@ When adding new API endpoints:
 ## 📋 API Documentation
 
 The backend API follows RESTful conventions with the following base URL:
+
 - Development: `http://localhost:8080/api/v1`
 - Production: Configure via `VITE_API_BASE_URL`
 
 All endpoints require JWT authentication except:
+
 - `POST /auth/login`
 - `POST /auth/refresh`
 
 Response format:
+
 ```json
 {
   "status": "success",

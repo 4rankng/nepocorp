@@ -12,7 +12,7 @@ const StatusChangePrompts = ({
   onCancelReasonChange,
   onPaymentProofConfirm,
   onCancelReasonConfirm,
-  onCancel
+  onCancel,
 }) => {
   return (
     <>
@@ -42,12 +42,12 @@ StatusChangePrompts.propTypes = {
   onCancelReasonChange: PropTypes.func.isRequired,
   onPaymentProofConfirm: PropTypes.func.isRequired,
   onCancelReasonConfirm: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired
+  onCancel: PropTypes.func.isRequired,
 };
 
 StatusChangePrompts.defaultProps = {
   tempPaymentProof: '',
-  tempCancelReason: ''
+  tempCancelReason: '',
 };
 
 export default StatusChangePrompts;

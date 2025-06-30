@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 import { formatCurrency, formatDate } from '@utils/format';
 import Dropdown from '@components/ui/Dropdown';
 
-const InvoiceItemsTable = ({ 
-  items = [], 
-  isEditing = false, 
-  onItemChange, 
+const InvoiceItemsTable = ({
+  items = [],
+  isEditing = false,
+  onItemChange,
   onDeleteItem,
-  licensePlateOptions = [], 
-  isLoadingPlates = false 
+  licensePlateOptions = [],
+  isLoadingPlates = false,
 }) => {
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
@@ -40,7 +40,7 @@ const InvoiceItemsTable = ({
                     {isEditing ? (
                       <Dropdown
                         value={item.license_plate || ''}
-                        onChange={(value) => onItemChange(index, 'license_plate', value)}
+                        onChange={value => onItemChange(index, 'license_plate', value)}
                         options={licensePlateOptions}
                         placeholder="Chọn biển số"
                         searchable={true}
@@ -57,7 +57,7 @@ const InvoiceItemsTable = ({
                       <input
                         type="text"
                         value={item.item_name || ''}
-                        onChange={(e) => onItemChange(index, 'item_name', e.target.value)}
+                        onChange={e => onItemChange(index, 'item_name', e.target.value)}
                         className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:border-blue-500 focus:outline-none"
                         placeholder="Tên dịch vụ"
                       />
@@ -70,7 +70,9 @@ const InvoiceItemsTable = ({
                       <input
                         type="number"
                         value={item.price || ''}
-                        onChange={(e) => onItemChange(index, 'price', parseFloat(e.target.value) || 0)}
+                        onChange={e =>
+                          onItemChange(index, 'price', parseFloat(e.target.value) || 0)
+                        }
                         className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right focus:border-blue-500 focus:outline-none"
                         placeholder="0"
                         min="0"
@@ -84,7 +86,9 @@ const InvoiceItemsTable = ({
                       <input
                         type="number"
                         value={item.quantity || ''}
-                        onChange={(e) => onItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                        onChange={e =>
+                          onItemChange(index, 'quantity', parseFloat(e.target.value) || 0)
+                        }
                         className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right focus:border-blue-500 focus:outline-none"
                         placeholder="1"
                         min="1"
@@ -99,11 +103,13 @@ const InvoiceItemsTable = ({
                       <input
                         type="date"
                         value={item.service_date || ''}
-                        onChange={(e) => onItemChange(index, 'service_date', e.target.value)}
+                        onChange={e => onItemChange(index, 'service_date', e.target.value)}
                         className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:border-blue-500 focus:outline-none"
                       />
+                    ) : item.service_date ? (
+                      formatDate(item.service_date)
                     ) : (
-                      item.service_date ? formatDate(item.service_date) : '-'
+                      '-'
                     )}
                   </td>
                   <td className="border p-3">
@@ -112,7 +118,7 @@ const InvoiceItemsTable = ({
                         <input
                           type="text"
                           value={item.notes || ''}
-                          onChange={(e) => onItemChange(index, 'notes', e.target.value)}
+                          onChange={e => onItemChange(index, 'notes', e.target.value)}
                           className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:border-blue-500 focus:outline-none"
                           placeholder="Ghi chú"
                         />
@@ -143,7 +149,10 @@ const InvoiceItemsTable = ({
               ))
             ) : (
               <tr>
-                <td colSpan={isEditing ? "8" : "7"} className="border p-6 text-center text-gray-500">
+                <td
+                  colSpan={isEditing ? '8' : '7'}
+                  className="border p-6 text-center text-gray-500"
+                >
                   Không có dữ liệu dịch vụ
                 </td>
               </tr>
@@ -152,9 +161,11 @@ const InvoiceItemsTable = ({
           {items && items.length > 0 && (
             <tfoot>
               <tr className="bg-gray-50 font-bold">
-                <td colSpan="4" className="border p-3 text-right">Tổng cộng:</td>
+                <td colSpan="4" className="border p-3 text-right">
+                  Tổng cộng:
+                </td>
                 <td className="border p-3 text-right">{formatCurrency(calculateTotal())}</td>
-                <td colSpan={isEditing ? "3" : "2"} className="border p-3"></td>
+                <td colSpan={isEditing ? '3' : '2'} className="border p-3"></td>
               </tr>
             </tfoot>
           )}

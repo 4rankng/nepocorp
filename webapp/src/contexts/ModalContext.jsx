@@ -5,11 +5,11 @@ const ModalContext = createContext();
 export const ModalProvider = ({ children }) => {
   const [activeModals, setActiveModals] = useState(new Set());
 
-  const registerModal = useCallback((modalId) => {
+  const registerModal = useCallback(modalId => {
     setActiveModals(prev => new Set([...prev, modalId]));
   }, []);
 
-  const unregisterModal = useCallback((modalId) => {
+  const unregisterModal = useCallback(modalId => {
     setActiveModals(prev => {
       const newSet = new Set(prev);
       newSet.delete(modalId);
@@ -26,11 +26,7 @@ export const ModalProvider = ({ children }) => {
     unregisterModal,
   };
 
-  return (
-    <ModalContext.Provider value={value}>
-      {children}
-    </ModalContext.Provider>
-  );
+  return <ModalContext.Provider value={value}>{children}</ModalContext.Provider>;
 };
 
 export const useModal = () => {

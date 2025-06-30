@@ -51,7 +51,11 @@ const DauKeoContent = () => {
       }
       setDialog({ open: false, edit: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: dauKeoHook.error?.errors?.message || dauKeoHook.error?.message || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: dauKeoHook.error?.errors?.message || dauKeoHook.error?.message || 'Có lỗi xảy ra',
+        severity: 'error',
+      });
     }
   };
   const handleDelete = async () => {
@@ -60,7 +64,11 @@ const DauKeoContent = () => {
       setSnackbar({ open: true, message: 'Xóa đầu kéo thành công!', severity: 'success' });
       setDeleteDialog({ open: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: dauKeoHook.error?.errors?.message || dauKeoHook.error?.message || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: dauKeoHook.error?.errors?.message || dauKeoHook.error?.message || 'Có lỗi xảy ra',
+        severity: 'error',
+      });
     }
   };
   return (
@@ -89,7 +97,7 @@ const DauKeoContent = () => {
         open={dialog.open}
         edit={dialog.edit}
         data={dialog.data}
-        setData={(newData) => setDialog({ ...dialog, data: newData })}
+        setData={newData => setDialog({ ...dialog, data: newData })}
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
@@ -169,7 +177,11 @@ const RoMoocContent = () => {
       }
       setDialog({ open: false, edit: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: roMoocHook.error?.errors?.message || roMoocHook.error?.message || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: roMoocHook.error?.errors?.message || roMoocHook.error?.message || 'Có lỗi xảy ra',
+        severity: 'error',
+      });
     }
   };
   const handleDelete = async () => {
@@ -178,7 +190,11 @@ const RoMoocContent = () => {
       setSnackbar({ open: true, message: 'Xóa rơ-mooc thành công!', severity: 'success' });
       setDeleteDialog({ open: false, data: null });
     } catch (error) {
-      setSnackbar({ open: true, message: roMoocHook.error?.errors?.message || roMoocHook.error?.message || 'Có lỗi xảy ra', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: roMoocHook.error?.errors?.message || roMoocHook.error?.message || 'Có lỗi xảy ra',
+        severity: 'error',
+      });
     }
   };
   return (
@@ -207,7 +223,7 @@ const RoMoocContent = () => {
         open={dialog.open}
         edit={dialog.edit}
         data={dialog.data}
-        setData={(newData) => setDialog({ ...dialog, data: newData })}
+        setData={newData => setDialog({ ...dialog, data: newData })}
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
@@ -289,7 +305,8 @@ const ContainerContent = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: containerHook.error?.errors?.message || containerHook.error?.message || 'Có lỗi xảy ra',
+        message:
+          containerHook.error?.errors?.message || containerHook.error?.message || 'Có lỗi xảy ra',
         severity: 'error',
       });
     }
@@ -302,7 +319,8 @@ const ContainerContent = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: containerHook.error?.errors?.message || containerHook.error?.message || 'Có lỗi xảy ra',
+        message:
+          containerHook.error?.errors?.message || containerHook.error?.message || 'Có lỗi xảy ra',
         severity: 'error',
       });
     }
@@ -335,7 +353,7 @@ const ContainerContent = () => {
         open={dialog.open}
         edit={dialog.edit}
         data={dialog.data}
-        setData={(newData) => setDialog({ ...dialog, data: newData })}
+        setData={newData => setDialog({ ...dialog, data: newData })}
         onSave={handleSave}
         onClose={() => setDialog({ open: false, edit: false, data: null })}
       />
@@ -393,7 +411,7 @@ const ContainerContent = () => {
 
 const TuyenDuongContent = () => {
   const theme = useTheme();
-  
+
   return (
     <Box sx={{ p: 3, textAlign: 'center' }}>
       <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -408,7 +426,7 @@ const TuyenDuongContent = () => {
 
 const DinhMucNhienLieuContent = () => {
   const theme = useTheme();
-  
+
   return (
     <Box sx={{ p: 3, textAlign: 'center' }}>
       <Typography variant="h6" color="text.secondary" gutterBottom>

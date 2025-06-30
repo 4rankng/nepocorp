@@ -18,7 +18,7 @@ import {
   WalletIcon,
   CreditCardIcon,
   BanknoteIcon,
-  ShoppingCartIcon
+  ShoppingCartIcon,
 } from '@assets/icons';
 
 // Icon mapping
@@ -55,7 +55,8 @@ const ThanhBen = ({ onNavItemClick, version, onVersionClick }) => {
       style={{
         background: '#ffffff',
         boxShadow: '2px 0 8px rgba(0,0,0,0.05)',
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
       }}
     >
       <nav className="pt-4 flex-1 overflow-y-auto">
@@ -77,7 +78,7 @@ const ThanhBen = ({ onNavItemClick, version, onVersionClick }) => {
 
             {/* Section Items */}
             <div className="space-y-0.1">
-              {section.items.map((item) => {
+              {section.items.map(item => {
                 const IconComponent = iconComponents[item.icon];
                 const isActive = location.pathname.startsWith(item.href);
 
@@ -100,10 +101,7 @@ const ThanhBen = ({ onNavItemClick, version, onVersionClick }) => {
                     {/* Icon */}
                     <span className="mr-3 transition-all duration-300 group-hover:scale-105">
                       {IconComponent && (
-                        <IconComponent
-                          className="w-5 h-5"
-                          style={{ opacity: 0.8 }}
-                        />
+                        <IconComponent className="w-5 h-5" style={{ opacity: 0.8 }} />
                       )}
                     </span>
 
@@ -118,16 +116,14 @@ const ThanhBen = ({ onNavItemClick, version, onVersionClick }) => {
                     >
                       {item.name}
                     </span>
-
                   </NavLink>
                 );
               })}
             </div>
           </div>
         ))}
-
       </nav>
-      
+
       {/* Version text at absolute bottom */}
       {version && (
         <div className="py-4 flex justify-center border-t border-gray-100">

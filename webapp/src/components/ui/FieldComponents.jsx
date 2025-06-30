@@ -1,5 +1,16 @@
 import React from 'react';
-import { FormCol, FormLabel, FormControl, ErrorText, HelperText, PriceDisplay, DateInputWrapper, DateIcon, InputGroup, InputAddon } from './index';
+import {
+  FormCol,
+  FormLabel,
+  FormControl,
+  ErrorText,
+  HelperText,
+  PriceDisplay,
+  DateInputWrapper,
+  DateIcon,
+  InputGroup,
+  InputAddon,
+} from './index';
 
 /**
  * SelectField - Reusable select field with consistent styling
@@ -31,9 +42,7 @@ export const SelectField = ({
       required={required}
       {...props}
     >
-      <option value="">
-        {loading ? 'Đang tải...' : placeholder}
-      </option>
+      <option value="">{loading ? 'Đang tải...' : placeholder}</option>
       {options.map(option => (
         <option key={option.value} value={option.value}>
           {option.label || option.displayText || option.text}
@@ -100,7 +109,7 @@ export const NumberField = ({
   className = '',
   ...props
 }) => {
-  const formatCurrency = (val) => {
+  const formatCurrency = val => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: currency,
@@ -108,7 +117,7 @@ export const NumberField = ({
     }).format(val || 0);
   };
 
-  const displayHelperText = showCurrency 
+  const displayHelperText = showCurrency
     ? `Hiển thị: ${formatCurrency(value)}${helperText ? ` • ${helperText}` : ''}`
     : helperText;
 
@@ -145,7 +154,7 @@ export const CurrencyDisplay = ({
   className = '',
   style = {},
 }) => {
-  const formatCurrency = (val) => {
+  const formatCurrency = val => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: currency,
@@ -162,16 +171,13 @@ export const CurrencyDisplay = ({
     backgroundColor: '#f9fafb',
     fontSize: '1rem',
     fontFamily: 'inherit',
-    ...style
+    ...style,
   };
 
   return (
     <FormCol className={className}>
       <FormLabel>{label}</FormLabel>
-      <PriceDisplay
-        value={formatCurrency(value)}
-        style={displayStyle}
-      />
+      <PriceDisplay value={formatCurrency(value)} style={displayStyle} />
       {helperText && <HelperText>{helperText}</HelperText>}
     </FormCol>
   );

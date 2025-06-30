@@ -22,24 +22,21 @@ export const FormActionButtons = ({
   const defaultSubmitText = isEdit ? 'Sửa' : 'Thêm';
 
   return (
-    <div className={`action-buttons ${className}`} style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '100%'
-    }}>
+    <div
+      className={`action-buttons ${className}`}
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+      }}
+    >
       {/* Left side - Extra buttons */}
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {extraButtons}
-      </div>
+      <div style={{ display: 'flex', gap: '8px' }}>{extraButtons}</div>
 
       {/* Right side - Primary actions */}
       <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-        <Button
-          variant="secondary"
-          onClick={onCancel}
-          disabled={loading || disabled}
-        >
+        <Button variant="secondary" onClick={onCancel} disabled={loading || disabled}>
           {cancelText}
         </Button>
         <Button
@@ -69,16 +66,15 @@ export const ConfirmActionButtons = ({
   confirmVariant = 'primary',
   className = '',
 }) => (
-  <div className={`action-buttons ${className}`} style={{
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '8px'
-  }}>
-    <Button
-      variant="secondary"
-      onClick={onCancel}
-      disabled={loading || disabled}
-    >
+  <div
+    className={`action-buttons ${className}`}
+    style={{
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '8px',
+    }}
+  >
+    <Button variant="secondary" onClick={onCancel} disabled={loading || disabled}>
       {cancelText}
     </Button>
     <Button
@@ -172,7 +168,7 @@ export const ActionButtonGroup = ({
     left: 'flex-start',
     center: 'center',
     right: 'flex-end',
-    'space-between': 'space-between'
+    'space-between': 'space-between',
   }[align];
 
   return (
@@ -182,13 +178,11 @@ export const ActionButtonGroup = ({
         display: 'flex',
         justifyContent,
         gap,
-        alignItems: 'center'
+        alignItems: 'center',
       }}
     >
       {buttons.map((button, index) => (
-        <React.Fragment key={index}>
-          {button}
-        </React.Fragment>
+        <React.Fragment key={index}>{button}</React.Fragment>
       ))}
     </div>
   );

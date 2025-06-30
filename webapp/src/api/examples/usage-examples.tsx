@@ -6,7 +6,7 @@ import {
   useCreateExpense,
   useActiveTractors,
   useMaintenance,
-  useApiStatus
+  useApiStatus,
 } from '@api/hooks';
 import { CreateExpenseRequest, PaymentStatus, Currency } from '@api/types';
 
@@ -19,7 +19,7 @@ export const LoginExample: React.FC = () => {
     try {
       await loginMutation.mutateAsync({
         username: 'admin',
-        password: 'password123'
+        password: 'password123',
       });
     } catch (error) {
       console.error('Login failed:', error);
@@ -31,7 +31,7 @@ export const LoginExample: React.FC = () => {
       <button onClick={handleLogin} disabled={loginMutation.isPending}>
         {loginMutation.isPending ? 'Logging in...' : 'Login'}
       </button>
-      
+
       {profileLoading && <p>Loading profile...</p>}
       {profile?.data && (
         <div>
@@ -45,9 +45,14 @@ export const LoginExample: React.FC = () => {
 
 // Example: Expenses list with pagination
 export const ExpensesExample: React.FC = () => {
-  const { data: expenses, isLoading, error, refetch } = useExpenses({
+  const {
+    data: expenses,
+    isLoading,
+    error,
+    refetch,
+  } = useExpenses({
     page: 1,
-    limit: 10
+    limit: 10,
   });
 
   if (isLoading) return <div>Loading expenses...</div>;
@@ -57,11 +62,13 @@ export const ExpensesExample: React.FC = () => {
     <div>
       <h3>Expenses ({expenses?.pagination?.records_count || 0} total)</h3>
       <button onClick={() => refetch()}>Refresh</button>
-      
-      {expenses?.data?.map((expense) => (
+
+      {expenses?.data?.map(expense => (
         <div key={expense.id} style={{ border: '1px solid #ccc', margin: '8px', padding: '8px' }}>
           <h4>{expense.vendor_name}</h4>
-          <p>Total: {expense.total.toLocaleString()} {expense.currency}</p>
+          <p>
+            Total: {expense.total.toLocaleString()} {expense.currency}
+          </p>
           <p>Status: {expense.payment_status}</p>
           <p>Vehicle: {expense.tractor?.license_plate || expense.trailer?.license_plate}</p>
         </div>
@@ -100,8 +107,8 @@ export const CreateExpenseExample: React.FC = () => {
           quantity: 1,
           tax_rate: 10,
           total: 550000,
-        }
-      ]
+        },
+      ],
     };
 
     try {
@@ -114,10 +121,7 @@ export const CreateExpenseExample: React.FC = () => {
 
   return (
     <div>
-      <button 
-        onClick={handleCreateExpense} 
-        disabled={createExpenseMutation.isPending}
-      >
+      <button onClick={handleCreateExpense} disabled={createExpenseMutation.isPending}>
         {createExpenseMutation.isPending ? 'Creating...' : 'Create Sample Expense'}
       </button>
     </div>
@@ -133,15 +137,13 @@ export const MaintenanceExample: React.FC = () => {
   return (
     <div>
       <h3>Recent Maintenance</h3>
-      {maintenance?.data?.map((record) => (
+      {maintenance?.data?.map(record => (
         <div key={record.id} style={{ border: '1px solid #ccc', margin: '8px', padding: '8px' }}>
           <h4>{record.item_name}</h4>
           <p>Vehicle: {record.license_plate}</p>
           <p>Vendor: {record.vendor_name}</p>
           <p>Install Date: {new Date(record.install_date).toLocaleDateString()}</p>
-          {record.expiry_date && (
-            <p>Expiry: {new Date(record.expiry_date).toLocaleDateString()}</p>
-          )}
+          {record.expiry_date && <p>Expiry: {new Date(record.expiry_date).toLocaleDateString()}</p>}
           <p>Total: {record.total.toLocaleString()} VND</p>
         </div>
       ))}
@@ -154,19 +156,15 @@ export const ApiStatusExample: React.FC = () => {
   const { isOnline, isLoading, error } = useApiStatus();
 
   return (
-    <div style={{ 
-      padding: '8px', 
-      backgroundColor: isOnline ? '#d4edda' : '#f8d7da',
-      border: `1px solid ${isOnline ? '#c3e6cb' : '#f5c6cb'}`,
-      borderRadius: '4px'
-    }}>
-      {isLoading ? (
-        'Checking API status...'
-      ) : isOnline ? (
-        '✅ API is online'
-      ) : (
-        '❌ API is offline'
-      )}
+    <div
+      style={{
+        padding: '8px',
+        backgroundColor: isOnline ? '#d4edda' : '#f8d7da',
+        border: `1px solid ${isOnline ? '#c3e6cb' : '#f5c6cb'}`,
+        borderRadius: '4px',
+      }}
+    >
+      {isLoading ? 'Checking API status...' : isOnline ? '✅ API is online' : '❌ API is offline'}
       {error && <p>Error: {error.message}</p>}
     </div>
   );
@@ -177,11 +175,11 @@ export const DashboardExample: React.FC = () => {
   return (
     <div style={{ padding: '20px' }}>
       <h1>Vehicle Management Dashboard</h1>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <ApiStatusExample />
       </div>
-      
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         <div>
           <ExpensesExample />
@@ -190,7 +188,7 @@ export const DashboardExample: React.FC = () => {
           <MaintenanceExample />
         </div>
       </div>
-      
+
       <div style={{ marginTop: '20px' }}>
         <CreateExpenseExample />
       </div>

@@ -11,35 +11,37 @@ export const useDinhMucBoSung = () => {
   const [selectedPlate, setSelectedPlate] = useState('');
 
   // Load data based on selected plate
-  const loadData = useCallback(async (plate = '') => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Ensure tractor data is loaded from cache
-      await fetchTractors();
+  const loadData = useCallback(
+    async (plate = '') => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Ensure tractor data is loaded from cache
+        await fetchTractors();
 
-      // Load dinhMucBoSung with plate filter if provided
-      let dinhMucData;
-      if (plate) {
-        dinhMucData = await dinhMucBoSungApi.getByBienSo(plate);
-      } else {
-        dinhMucData = await dinhMucBoSungApi.getAll();
+        // Load dinhMucBoSung with plate filter if provided
+        let dinhMucData;
+        if (plate) {
+          dinhMucData = await dinhMucBoSungApi.getByBienSo(plate);
+        } else {
+          dinhMucData = await dinhMucBoSungApi.getAll();
+        }
+
+        // Normalize response shapes
+        const extractedDinhMucData = Array.isArray(dinhMucData)
+          ? dinhMucData
+          : dinhMucData?.data || [];
+
+        setDinhMucBoSungData(extractedDinhMucData);
+        setTuyenDuongList([]);
+      } catch (err) {
+        setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
+      } finally {
+        setIsLoading(false);
       }
-
-      // Normalize response shapes
-      const extractedDinhMucData = Array.isArray(dinhMucData)
-        ? dinhMucData
-        : dinhMucData?.data || [];
-
-      setDinhMucBoSungData(extractedDinhMucData);
-      setTuyenDuongList([]);
-
-    } catch (err) {
-      setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchTractors]);
+    },
+    [fetchTractors]
+  );
 
   // Create new record
   const createRecord = useCallback(async data => {
@@ -89,13 +91,10 @@ export const useDinhMucBoSung = () => {
   }, []);
 
   // Handle plate selection change with client-side filtering
-  const handlePlateChange = useCallback(
-    plate => {
-      setSelectedPlate(plate);
-      // No need to refetch data, filtering will be handled by consuming components
-    },
-    []
-  );
+  const handlePlateChange = useCallback(plate => {
+    setSelectedPlate(plate);
+    // No need to refetch data, filtering will be handled by consuming components
+  }, []);
 
   // Load initial data
   useEffect(() => {

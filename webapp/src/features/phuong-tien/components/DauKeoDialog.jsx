@@ -10,10 +10,10 @@ import {
   FormControl,
   FormActions,
   ErrorText,
-  Button
+  Button,
 } from '@components/ui';
 const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = false }) => {
-  const handleSave = (e) => {
+  const handleSave = e => {
     e.preventDefault();
     onSave(data);
   };
@@ -31,7 +31,7 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
 
   // Handle ESC key press
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape' && open) {
         onClose();
       }
@@ -47,16 +47,9 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
   }, [open, onClose]);
 
   return (
-    <Modal
-      isOpen={open}
-      onClose={onClose}
-      size="medium"
-      showCloseButton={false}
-    >
+    <Modal isOpen={open} onClose={onClose} size="medium" showCloseButton={false}>
       <FormContainer>
-        <FormHeader
-          title={edit ? 'Chỉnh sửa đầu kéo' : 'Thêm đầu kéo mới'}
-        />
+        <FormHeader title={edit ? 'Chỉnh sửa đầu kéo' : 'Thêm đầu kéo mới'} />
 
         <FormBody onSubmit={handleSave}>
           <FormSection>
@@ -87,11 +80,7 @@ const DauKeoDialog = ({ open, edit, data, setData, onClose, onSave, isLoading = 
           </FormSection>
 
           <FormActions>
-            <Button
-              variant="secondary"
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
+            <Button variant="secondary" onClick={handleCancel} disabled={isLoading}>
               Hủy
             </Button>
             <Button

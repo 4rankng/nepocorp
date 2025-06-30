@@ -12,16 +12,16 @@ export const healthApi = {
       return {
         status: 'healthy',
         data: response,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       return {
         status: 'unhealthy',
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
-  }
+  },
 };
 
 export default healthApi;

@@ -9,7 +9,7 @@ import {
   UpdateExpenseRequest,
   CreateExpenseItemRequest,
   UpdateExpenseItemRequest,
-  ExpenseFilters
+  ExpenseFilters,
 } from '@api/types/expense.types';
 
 class ExpenseService extends BaseService<Expense, CreateExpenseRequest, UpdateExpenseRequest> {
@@ -18,7 +18,9 @@ class ExpenseService extends BaseService<Expense, CreateExpenseRequest, UpdateEx
   }
 
   // Override getAll to support expense-specific filters
-  async getAll(params?: ExpenseFilters & { page?: number; limit?: number }): Promise<ApiResponse<Expense[]>> {
+  async getAll(
+    params?: ExpenseFilters & { page?: number; limit?: number }
+  ): Promise<ApiResponse<Expense[]>> {
     return super.getAll(params);
   }
 
@@ -31,11 +33,18 @@ class ExpenseService extends BaseService<Expense, CreateExpenseRequest, UpdateEx
     return apiClient.get<ExpenseItem>(`${this.resourcePath}/${expenseId}/item/${itemId}`);
   }
 
-  async createItem(expenseId: number, data: CreateExpenseItemRequest): Promise<ApiResponse<ExpenseItem>> {
+  async createItem(
+    expenseId: number,
+    data: CreateExpenseItemRequest
+  ): Promise<ApiResponse<ExpenseItem>> {
     return apiClient.post<ExpenseItem>(`${this.resourcePath}/${expenseId}/item`, data);
   }
 
-  async updateItem(expenseId: number, itemId: number, data: UpdateExpenseItemRequest): Promise<ApiResponse<ExpenseItem>> {
+  async updateItem(
+    expenseId: number,
+    itemId: number,
+    data: UpdateExpenseItemRequest
+  ): Promise<ApiResponse<ExpenseItem>> {
     return apiClient.put<ExpenseItem>(`${this.resourcePath}/${expenseId}/item/${itemId}`, data);
   }
 
@@ -56,12 +65,21 @@ class ExpenseService extends BaseService<Expense, CreateExpenseRequest, UpdateEx
     return this.getAll({ expense_category_id: categoryId, page, limit });
   }
 
-  async getByDateRange(startDate: string, endDate: string, page = 1, limit = 100): Promise<ApiResponse<Expense[]>> {
+  async getByDateRange(
+    startDate: string,
+    endDate: string,
+    page = 1,
+    limit = 100
+  ): Promise<ApiResponse<Expense[]>> {
     return this.getAll({ start_date: startDate, end_date: endDate, page, limit });
   }
 }
 
-class ExpenseCategoryService extends BaseService<ExpenseCategory, Partial<ExpenseCategory>, Partial<ExpenseCategory>> {
+class ExpenseCategoryService extends BaseService<
+  ExpenseCategory,
+  Partial<ExpenseCategory>,
+  Partial<ExpenseCategory>
+> {
   constructor() {
     super('/expense_category');
   }

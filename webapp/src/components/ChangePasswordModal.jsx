@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { FormContainer, FormBody, FormGroup, FormLabel, FormControl, FormActions, ErrorText } from '@/components/ui/Form';
+import {
+  FormContainer,
+  FormBody,
+  FormGroup,
+  FormLabel,
+  FormControl,
+  FormActions,
+  ErrorText,
+} from '@/components/ui/Form';
 import { authApi } from '@services/api/authApi';
 
 const ChangePasswordModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,7 +23,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
   // Handle ESC key press and dispatch modal events
   useEffect(() => {
-    const handleKeyDown = (event) => {
+    const handleKeyDown = event => {
       if (event.key === 'Escape' && isOpen && !loading) {
         handleClose();
       }
@@ -24,12 +32,18 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
       // Dispatch custom events when modal opens
-      window.dispatchEvent(new CustomEvent('profileModalOpen', { detail: { modalId: 'changePassword' } }));
+      window.dispatchEvent(
+        new CustomEvent('profileModalOpen', { detail: { modalId: 'changePassword' } })
+      );
       window.dispatchEvent(new CustomEvent('modalOpen', { detail: { modalId: 'changePassword' } }));
     } else {
       // Dispatch custom events when modal closes
-      window.dispatchEvent(new CustomEvent('profileModalClose', { detail: { modalId: 'changePassword' } }));
-      window.dispatchEvent(new CustomEvent('modalClose', { detail: { modalId: 'changePassword' } }));
+      window.dispatchEvent(
+        new CustomEvent('profileModalClose', { detail: { modalId: 'changePassword' } })
+      );
+      window.dispatchEvent(
+        new CustomEvent('modalClose', { detail: { modalId: 'changePassword' } })
+      );
     }
 
     return () => {
@@ -37,11 +51,11 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen, loading]);
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     if (error) setError('');
   };
@@ -66,7 +80,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
     return true;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -75,7 +89,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await authApi.changePassword(formData.currentPassword, formData.newPassword);
-      
+
       if (response.status === 'success') {
         setSuccess(true);
         setTimeout(() => {
@@ -84,7 +98,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
           setFormData({
             currentPassword: '',
             newPassword: '',
-            confirmPassword: ''
+            confirmPassword: '',
           });
         }, 2000);
       } else {
@@ -103,7 +117,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
       setFormData({
         currentPassword: '',
         newPassword: '',
-        confirmPassword: ''
+        confirmPassword: '',
       });
       setError('');
       setSuccess(false);
@@ -111,12 +125,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Đổi mật khẩu"
-      size="medium"
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} title="Đổi mật khẩu" size="medium">
       <FormContainer>
         <FormBody onSubmit={handleSubmit}>
           <FormGroup>
@@ -159,14 +168,16 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
           </FormGroup>
 
           {error && <ErrorText>{error}</ErrorText>}
-          
+
           {success && (
-            <div style={{ 
-              color: '#10b981', 
-              textAlign: 'center', 
-              fontSize: '14px',
-              marginTop: '10px'
-            }}>
+            <div
+              style={{
+                color: '#10b981',
+                textAlign: 'center',
+                fontSize: '14px',
+                marginTop: '10px',
+              }}
+            >
               Đổi mật khẩu thành công!
             </div>
           )}
@@ -184,7 +195,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
                 color: '#6b7280',
                 borderRadius: '6px',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                marginRight: '10px'
+                marginRight: '10px',
               }}
             >
               Hủy
@@ -199,7 +210,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
-                cursor: loading ? 'not-allowed' : 'pointer'
+                cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >
               {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}

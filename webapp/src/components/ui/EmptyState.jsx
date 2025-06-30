@@ -1,17 +1,11 @@
 import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  Button, 
-  Stack,
-  Paper
-} from '@mui/material';
+import { Box, Typography, Button, Stack, Paper } from '@mui/material';
 import {
   Receipt as ReceiptIcon,
   SearchOff as SearchOffIcon,
   Add as AddIcon,
   FilterAlt as FilterAltIcon,
-  Assignment as AssignmentIcon
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 
 const EmptyState = ({
@@ -22,7 +16,7 @@ const EmptyState = ({
   onAction,
   icon: CustomIcon,
   showAction = true,
-  sx = {}
+  sx = {},
 }) => {
   const getDefaultContent = () => {
     switch (type) {
@@ -30,36 +24,39 @@ const EmptyState = ({
         return {
           icon: SearchOffIcon,
           title: 'Không tìm thấy kết quả',
-          description: 'Không có giao dịch nào khớp với từ khóa tìm kiếm của bạn. Hãy thử với từ khóa khác.',
+          description:
+            'Không có giao dịch nào khớp với từ khóa tìm kiếm của bạn. Hãy thử với từ khóa khác.',
           actionLabel: 'Xóa tìm kiếm',
-          iconColor: '#ff9800'
+          iconColor: '#ff9800',
         };
-      
+
       case 'filter':
         return {
           icon: FilterAltIcon,
           title: 'Không có dữ liệu khớp với bộ lọc',
-          description: 'Không có giao dịch nào phù hợp với các bộ lọc đã chọn. Hãy thử điều chỉnh bộ lọc.',
+          description:
+            'Không có giao dịch nào phù hợp với các bộ lọc đã chọn. Hãy thử điều chỉnh bộ lọc.',
           actionLabel: 'Xóa bộ lọc',
-          iconColor: '#2196f3'
+          iconColor: '#2196f3',
         };
-      
+
       case 'transactions':
         return {
           icon: ReceiptIcon,
           title: 'Chưa có giao dịch nào',
-          description: 'Bạn chưa có giao dịch nào trong hệ thống. Hãy thêm giao dịch đầu tiên để bắt đầu.',
+          description:
+            'Bạn chưa có giao dịch nào trong hệ thống. Hãy thêm giao dịch đầu tiên để bắt đầu.',
           actionLabel: 'Thêm giao dịch',
-          iconColor: '#4caf50'
+          iconColor: '#4caf50',
         };
-      
+
       default:
         return {
           icon: AssignmentIcon,
           title: 'Không có dữ liệu',
           description: 'Không có dữ liệu để hiển thị.',
           actionLabel: 'Thêm mới',
-          iconColor: '#9e9e9e'
+          iconColor: '#9e9e9e',
         };
     }
   };
@@ -71,16 +68,16 @@ const EmptyState = ({
   const displayActionLabel = actionLabel || defaultContent.actionLabel;
 
   return (
-    <Paper 
+    <Paper
       elevation={0}
-      sx={{ 
-        p: 6, 
+      sx={{
+        p: 6,
         textAlign: 'center',
         bgcolor: 'grey.50',
         border: '2px dashed',
         borderColor: 'grey.300',
         borderRadius: 2,
-        ...sx 
+        ...sx,
       }}
     >
       <Stack spacing={3} alignItems="center">
@@ -93,29 +90,25 @@ const EmptyState = ({
             bgcolor: `${defaultContent.iconColor}15`,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
           }}
         >
-          <IconComponent 
-            sx={{ 
+          <IconComponent
+            sx={{
               fontSize: 40,
-              color: defaultContent.iconColor
-            }} 
+              color: defaultContent.iconColor,
+            }}
           />
         </Box>
 
         {/* Content */}
         <Stack spacing={1} alignItems="center" maxWidth={400}>
-          <Typography 
-            variant="h6" 
-            color="text.primary"
-            sx={{ fontWeight: 600 }}
-          >
+          <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
             {displayTitle}
           </Typography>
-          
-          <Typography 
-            variant="body2" 
+
+          <Typography
+            variant="body2"
             color="text.secondary"
             sx={{ textAlign: 'center', lineHeight: 1.6 }}
           >
@@ -134,7 +127,7 @@ const EmptyState = ({
               py: 1,
               borderRadius: 2,
               textTransform: 'none',
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             {displayActionLabel}

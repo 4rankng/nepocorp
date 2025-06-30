@@ -16,30 +16,30 @@ const ConfirmModal = ({
   onClose,
   size = 'sm',
   className = '',
-  
+
   // Confirmation props
   title,
   message,
   details = null,
   type = 'warning', // 'warning', 'danger', 'info', 'success'
-  
+
   // Action props
   onConfirm,
   isConfirming = false,
   confirmButtonText = 'Xác nhận',
   cancelButtonText = 'Hủy',
   confirmingText = 'Đang xử lý...',
-  
+
   // Customization
   icon = null,
   showIcon = true,
   showDetails = true,
   customContent = null,
-  
+
   // Advanced
   disableConfirm = false,
   autoCloseOnConfirm = true,
-  id
+  id,
 }) => {
   // Icon configurations
   const iconConfig = {
@@ -47,26 +47,26 @@ const ConfirmModal = ({
       icon: <AlertTriangle className="w-5 h-5 text-yellow-500" />,
       bgColor: 'bg-yellow-50',
       borderColor: 'border-yellow-200',
-      textColor: 'text-yellow-800'
+      textColor: 'text-yellow-800',
     },
     danger: {
       icon: <XCircle className="w-5 h-5 text-red-500" />,
       bgColor: 'bg-red-50',
       borderColor: 'border-red-200',
-      textColor: 'text-red-800'
+      textColor: 'text-red-800',
     },
     info: {
       icon: <Info className="w-5 h-5 text-blue-500" />,
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
-      textColor: 'text-blue-800'
+      textColor: 'text-blue-800',
     },
     success: {
       icon: <CheckCircle className="w-5 h-5 text-green-500" />,
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
-      textColor: 'text-green-800'
-    }
+      textColor: 'text-green-800',
+    },
   };
 
   const config = iconConfig[type] || iconConfig.warning;
@@ -102,16 +102,12 @@ const ConfirmModal = ({
     if (typeof details === 'object') {
       return (
         <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 mt-4`}>
-          <h4 className={`text-sm font-medium ${config.textColor} mb-3`}>
-            Thông tin chi tiết
-          </h4>
+          <h4 className={`text-sm font-medium ${config.textColor} mb-3`}>Thông tin chi tiết</h4>
           <div className="space-y-2">
             {Object.entries(details).map(([key, value]) => (
               <div key={key} className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">{key}:</span>
-                <span className="text-sm text-gray-900 font-medium">
-                  {value || '-'}
-                </span>
+                <span className="text-sm text-gray-900 font-medium">{value || '-'}</span>
               </div>
             ))}
           </div>
@@ -163,9 +159,7 @@ const ConfirmModal = ({
         {customContent || (
           <>
             {/* Main message */}
-            <p className="text-gray-700 mb-2">
-              {message}
-            </p>
+            <p className="text-gray-700 mb-2">{message}</p>
 
             {/* Details */}
             {renderDetails()}
@@ -198,34 +192,30 @@ ConfirmModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl', 'fullScreen']),
   className: PropTypes.string,
-  
+
   // Confirmation props
   title: PropTypes.string.isRequired,
   message: PropTypes.string.isRequired,
-  details: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.object,
-    PropTypes.node
-  ]),
+  details: PropTypes.oneOfType([PropTypes.string, PropTypes.object, PropTypes.node]),
   type: PropTypes.oneOf(['warning', 'danger', 'info', 'success']),
-  
+
   // Action props
   onConfirm: PropTypes.func.isRequired,
   isConfirming: PropTypes.bool,
   confirmButtonText: PropTypes.string,
   cancelButtonText: PropTypes.string,
   confirmingText: PropTypes.string,
-  
+
   // Customization
   icon: PropTypes.node,
   showIcon: PropTypes.bool,
   showDetails: PropTypes.bool,
   customContent: PropTypes.node,
-  
+
   // Advanced
   disableConfirm: PropTypes.bool,
   autoCloseOnConfirm: PropTypes.bool,
-  id: PropTypes.string
+  id: PropTypes.string,
 };
 
 export default ConfirmModal;

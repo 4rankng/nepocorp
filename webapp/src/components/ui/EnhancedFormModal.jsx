@@ -16,45 +16,45 @@ const EnhancedFormModal = ({
   onClose,
   size = 'md',
   className = '',
-  
+
   // Header props
   title,
   subtitle,
   icon,
   headerActions,
-  
+
   // Form handling
   onSubmit,
   isSubmitting = false,
   formData = {},
   errors = {},
-  
+
   // Content
   children,
   loading = false,
-  
+
   // Validation and messages
   validateOnSubmit = true,
   onValidate,
   showSuccessMessage = true,
   successMessage = 'Thành công!',
-  
+
   // Button customization
   submitButtonText = 'Lưu',
   cancelButtonText = 'Hủy',
   submittingText = 'Đang xử lý...',
-  
+
   // Form behavior
   resetOnClose = true,
   resetOnSuccess = false,
   closeOnSuccess = true,
-  
+
   // Advanced
   customHeader = null,
   customFooter = null,
   bodyPadding = 'default',
   disableSubmitOnEnter = false,
-  id
+  id,
 }) => {
   const [localErrors, setLocalErrors] = useState({});
   const [localSuccess, setLocalSuccess] = useState(null);
@@ -70,7 +70,7 @@ const EnhancedFormModal = ({
   }, [open]);
 
   // Handle form submission
-  const handleSubmit = async (event) => {
+  const handleSubmit = async event => {
     if (event) {
       event.preventDefault();
     }
@@ -107,15 +107,18 @@ const EnhancedFormModal = ({
 
       // Close modal if requested
       if (closeOnSuccess) {
-        setTimeout(() => {
-          onClose();
-        }, showSuccessMessage ? 1500 : 0);
+        setTimeout(
+          () => {
+            onClose();
+          },
+          showSuccessMessage ? 1500 : 0
+        );
       }
 
       return result;
     } catch (error) {
       console.error('Form submission error:', error);
-      
+
       // Handle different error formats
       if (error.errors && typeof error.errors === 'object') {
         setLocalErrors(error.errors);
@@ -132,14 +135,14 @@ const EnhancedFormModal = ({
   // Handle cancel/close
   const handleCancel = () => {
     if (isSubmitting || isProcessing) return;
-    
+
     setLocalErrors({});
     setLocalSuccess(null);
-    
+
     if (resetOnClose && typeof resetOnClose === 'function') {
       resetOnClose();
     }
-    
+
     onClose();
   };
 
@@ -147,7 +150,7 @@ const EnhancedFormModal = ({
   useEffect(() => {
     if (disableSubmitOnEnter || !open) return;
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = event => {
       if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
         handleSubmit();
@@ -223,45 +226,45 @@ EnhancedFormModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl', 'fullScreen']),
   className: PropTypes.string,
-  
+
   // Header props
   title: PropTypes.string.isRequired,
   subtitle: PropTypes.string,
   icon: PropTypes.node,
   headerActions: PropTypes.node,
-  
+
   // Form handling
   onSubmit: PropTypes.func.isRequired,
   isSubmitting: PropTypes.bool,
   formData: PropTypes.object,
   errors: PropTypes.object,
-  
+
   // Content
   children: PropTypes.node.isRequired,
   loading: PropTypes.bool,
-  
+
   // Validation and messages
   validateOnSubmit: PropTypes.bool,
   onValidate: PropTypes.func,
   showSuccessMessage: PropTypes.bool,
   successMessage: PropTypes.string,
-  
+
   // Button customization
   submitButtonText: PropTypes.string,
   cancelButtonText: PropTypes.string,
   submittingText: PropTypes.string,
-  
+
   // Form behavior
   resetOnClose: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
   resetOnSuccess: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
   closeOnSuccess: PropTypes.bool,
-  
+
   // Advanced
   customHeader: PropTypes.node,
   customFooter: PropTypes.node,
   bodyPadding: PropTypes.oneOf(['none', 'sm', 'default', 'lg']),
   disableSubmitOnEnter: PropTypes.bool,
-  id: PropTypes.string
+  id: PropTypes.string,
 };
 
 export default EnhancedFormModal;

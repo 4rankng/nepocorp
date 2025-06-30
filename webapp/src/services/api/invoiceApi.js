@@ -2,7 +2,13 @@ import apiClient from './apiClient';
 
 export const invoiceApi = {
   // Get all invoices with pagination (filtered by category if needed)
-  getAll: async (page = 1, limit = 100, categoryId = null, customerId = null, paymentStatus = null) => {
+  getAll: async (
+    page = 1,
+    limit = 100,
+    categoryId = null,
+    customerId = null,
+    paymentStatus = null
+  ) => {
     const params = { page, limit };
     if (categoryId) {
       params.invoice_category_id = categoryId;
@@ -20,23 +26,23 @@ export const invoiceApi = {
   // Get all invoices without pagination
   getAllWithoutPagination: async (categoryId = null) => {
     const response = await apiClient.get('/invoice', {
-      params: { 
-        page: 1, 
+      params: {
+        page: 1,
         limit: 1000,
-        ...(categoryId && { invoice_category_id: categoryId })
-      }
+        ...(categoryId && { invoice_category_id: categoryId }),
+      },
     });
     return response;
   },
 
   // Get invoice by ID (includes items)
-  getById: async (id) => {
+  getById: async id => {
     const response = await apiClient.get(`/invoice/${id}`);
     return response;
   },
 
   // Create new invoice
-  create: async (data) => {
+  create: async data => {
     const response = await apiClient.post('/invoice', data);
     return response;
   },
@@ -48,7 +54,7 @@ export const invoiceApi = {
   },
 
   // Delete invoice
-  delete: async (id) => {
+  delete: async id => {
     const response = await apiClient.delete(`/invoice/${id}`);
     return response;
   },
@@ -56,11 +62,11 @@ export const invoiceApi = {
   // Get count of invoices
   getCount: async (categoryId = null) => {
     const response = await apiClient.get('/invoice', {
-      params: { 
-        page: 1, 
+      params: {
+        page: 1,
         limit: 1,
-        ...(categoryId && { invoice_category_id: categoryId })
-      }
+        ...(categoryId && { invoice_category_id: categoryId }),
+      },
     });
     return response.pagination?.records_count || 0;
   },
@@ -81,5 +87,5 @@ export const invoiceApi = {
   deleteItem: async (invoiceId, itemId) => {
     const response = await apiClient.delete(`/invoice/${invoiceId}/item/${itemId}`);
     return response;
-  }
+  },
 };

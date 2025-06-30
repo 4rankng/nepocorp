@@ -44,12 +44,12 @@ export interface AuditableEntity extends BaseEntity {
 export enum PaymentStatus {
   PENDING = 'PENDING',
   PAID = 'PAID',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 export enum Currency {
   VND = 'VND',
-  USD = 'USD'
+  USD = 'USD',
 }
 
 // Error codes from documentation
@@ -57,5 +57,5 @@ export enum ApiErrorCode {
   BAD_REQUEST = 4001,
   NOT_FOUND = 4004,
   UNAUTHORIZED = 4010,
-  INTERNAL_SERVER_ERROR = 5000
+  INTERNAL_SERVER_ERROR = 5000,
 }

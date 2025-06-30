@@ -6,7 +6,7 @@ import {
   NumberField,
   DateField,
   PercentageField,
-  CurrencyDisplay
+  CurrencyDisplay,
 } from '@/components/ui/FieldComponents';
 import { FormActionButtons } from '@/components/ui/ActionButtons';
 import { FormRow, FormSection } from '@/components/ui';
@@ -23,7 +23,7 @@ const ExpenseItemEditModal = ({
   licensePlates = [],
   isLoadingPlates = false,
   errors = {},
-  taxRate = 10
+  taxRate = 10,
 }) => {
   // Modal state
   const [formData, setFormData] = useState({
@@ -34,7 +34,7 @@ const ExpenseItemEditModal = ({
     price: 0,
     quantity: 1,
     tax_rate: taxRate,
-    total: 0
+    total: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
@@ -52,7 +52,7 @@ const ExpenseItemEditModal = ({
           price: item.price || 0,
           quantity: item.quantity || 1,
           tax_rate: item.tax_rate || taxRate,
-          total: item.total || 0
+          total: item.total || 0,
         });
       } else {
         // New item
@@ -64,7 +64,7 @@ const ExpenseItemEditModal = ({
           price: 0,
           quantity: 1,
           tax_rate: taxRate,
-          total: 0
+          total: 0,
         });
       }
       setLocalErrors({});
@@ -80,31 +80,37 @@ const ExpenseItemEditModal = ({
   }, [formData.price, formData.quantity, formData.tax_rate]);
 
   // Handle field changes
-  const handleFieldChange = useCallback((field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleFieldChange = useCallback(
+    (field, value) => {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+      }));
 
-    // Clear error for this field
-    if (localErrors[field] || errors[field]) {
-      setLocalErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [localErrors, errors]);
+      // Clear error for this field
+      if (localErrors[field] || errors[field]) {
+        setLocalErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    },
+    [localErrors, errors]
+  );
 
   // Handle license plate selection
   const handleLicensePlateClick = useCallback(() => {
     setShowLicensePlateModal(true);
   }, []);
 
-  const handleLicensePlateSelect = useCallback((selectedPlate) => {
-    handleFieldChange('license_plate', selectedPlate);
-    setShowLicensePlateModal(false);
-  }, [handleFieldChange]);
+  const handleLicensePlateSelect = useCallback(
+    selectedPlate => {
+      handleFieldChange('license_plate', selectedPlate);
+      setShowLicensePlateModal(false);
+    },
+    [handleFieldChange]
+  );
 
   // Validation
   const validateForm = useCallback(() => {
@@ -131,24 +137,27 @@ const ExpenseItemEditModal = ({
   }, [formData]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async e => {
+      e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+      if (!validateForm()) {
+        return;
+      }
 
-    setIsSubmitting(true);
-    try {
-      await onSave(formData);
-      onClose();
-    } catch (error) {
-      console.error('Error saving expense item:', error);
-      // Handle error - could set error state here
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [formData, validateForm, onSave, onClose]);
+      setIsSubmitting(true);
+      try {
+        await onSave(formData);
+        onClose();
+      } catch (error) {
+        console.error('Error saving expense item:', error);
+        // Handle error - could set error state here
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [formData, validateForm, onSave, onClose]
+  );
 
   // Handle cancel
   const handleCancel = useCallback(() => {
@@ -160,7 +169,7 @@ const ExpenseItemEditModal = ({
       price: 0,
       quantity: 1,
       tax_rate: taxRate,
-      total: 0
+      total: 0,
     });
     setLocalErrors({});
     onClose();
@@ -168,7 +177,7 @@ const ExpenseItemEditModal = ({
 
   // Custom ESC key handler that prevents event bubbling
   useEffect(() => {
-    const handleEscKey = (event) => {
+    const handleEscKey = event => {
       if (event.key === 'Escape' && isOpen && !showLicensePlateModal) {
         event.stopPropagation(); // Prevent bubbling to parent modal
         handleCancel();
@@ -219,11 +228,7 @@ const ExpenseItemEditModal = ({
                 style={{ minHeight: '43px' }}
               >
                 <span>
-                  {formData.license_plate || (
-                    <span className="text-gray-400">
-                      Chọn biển số xe
-                    </span>
-                  )}
+                  {formData.license_plate || <span className="text-gray-400">Chọn biển số xe</span>}
                 </span>
                 <EditIcon sx={{ fontSize: 16, color: '#6b7280' }} />
               </div>
@@ -236,7 +241,7 @@ const ExpenseItemEditModal = ({
               label="Tên hạng mục"
               name="item_name"
               value={formData.item_name}
-              onChange={(e) => handleFieldChange('item_name', e.target.value)}
+              onChange={e => handleFieldChange('item_name', e.target.value)}
               placeholder="Nhập tên hạng mục"
               required
               error={allErrors.item_name}
@@ -248,14 +253,14 @@ const ExpenseItemEditModal = ({
               label="Ngày lắp đặt"
               name="install_date"
               value={formData.install_date}
-              onChange={(e) => handleFieldChange('install_date', e.target.value)}
+              onChange={e => handleFieldChange('install_date', e.target.value)}
             />
 
             <DateField
               label="Ngày hết hạn"
               name="expiry_date"
               value={formData.expiry_date}
-              onChange={(e) => handleFieldChange('expiry_date', e.target.value)}
+              onChange={e => handleFieldChange('expiry_date', e.target.value)}
             />
           </FormRow>
         </FormSection>
@@ -266,7 +271,7 @@ const ExpenseItemEditModal = ({
               label="Đơn giá"
               name="price"
               value={formData.price}
-              onChange={(e) => handleFieldChange('price', e.target.value)}
+              onChange={e => handleFieldChange('price', e.target.value)}
               min={0}
               placeholder="Nhập đơn giá"
               required
@@ -279,7 +284,7 @@ const ExpenseItemEditModal = ({
               label="Số lượng"
               name="quantity"
               value={formData.quantity}
-              onChange={(e) => handleFieldChange('quantity', e.target.value)}
+              onChange={e => handleFieldChange('quantity', e.target.value)}
               min={1}
               step={1}
               required
@@ -292,7 +297,7 @@ const ExpenseItemEditModal = ({
               label="Thuế"
               name="tax_rate"
               value={formData.tax_rate}
-              onChange={(e) => handleFieldChange('tax_rate', e.target.value)}
+              onChange={e => handleFieldChange('tax_rate', e.target.value)}
               min={0}
               max={100}
               step={0.1}
@@ -331,7 +336,7 @@ ExpenseItemEditModal.propTypes = {
   licensePlates: PropTypes.array,
   isLoadingPlates: PropTypes.bool,
   errors: PropTypes.object,
-  taxRate: PropTypes.number
+  taxRate: PropTypes.number,
 };
 
 export default ExpenseItemEditModal;

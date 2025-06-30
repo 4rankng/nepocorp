@@ -35,10 +35,8 @@ const TrangChu = () => {
     setSidebarOpen(false);
   };
 
-
   return (
     <div className="min-h-screen w-full bg-white overflow-x-hidden">
-
       {/* Changelog Dialog */}
       <ChangelogDialog
         open={changelogOpen}
@@ -47,17 +45,11 @@ const TrangChu = () => {
       />
 
       {/* Login Modal */}
-      <LoginModal
-        open={loginModalOpen}
-        onClose={() => setLoginModalOpen(false)}
-      />
+      <LoginModal open={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
 
       {/* Banner/Header only visible when authenticated */}
       {currentUser && (
-        <ThanhTieuDe 
-          onSidebarToggle={handleSidebarToggle} 
-          sidebarOpen={sidebarOpen}
-        />
+        <ThanhTieuDe onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
       )}
 
       {/* If not authenticated, show landing page with login button */}
@@ -94,11 +86,7 @@ const TrangChu = () => {
             >
               NEPOCORP
             </Typography>
-            <Typography
-              variant="h5"
-              color="text.secondary"
-              sx={{ mb: 4 }}
-            >
+            <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
               Hệ thống quản lý vận tải
             </Typography>
             <Button
@@ -134,7 +122,11 @@ const TrangChu = () => {
               desktopSidebarCollapsed ? '-translate-x-full' : 'translate-x-0'
             }`}
           >
-            <ThanhBen onNavItemClick={handleSidebarClose} version={packageJson.version} onVersionClick={() => setChangelogOpen(true)} />
+            <ThanhBen
+              onNavItemClick={handleSidebarClose}
+              version={packageJson.version}
+              onVersionClick={() => setChangelogOpen(true)}
+            />
           </div>
 
           {/* Desktop Sidebar Toggle Button */}
@@ -165,7 +157,11 @@ const TrangChu = () => {
                 sidebarOpen ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
-              <ThanhBen onNavItemClick={handleSidebarClose} version={packageJson.version} onVersionClick={() => setChangelogOpen(true)} />
+              <ThanhBen
+                onNavItemClick={handleSidebarClose}
+                version={packageJson.version}
+                onVersionClick={() => setChangelogOpen(true)}
+              />
             </div>
           </div>
 
@@ -176,14 +172,14 @@ const TrangChu = () => {
             }`}
             style={{
               backgroundColor: '#f0f2f5',
-              minHeight: 'calc(100vh - 64px)'
+              minHeight: 'calc(100vh - 64px)',
             }}
           >
             <div
               className="p-8 w-full relative"
               style={{
                 backgroundColor: '#ffffff',
-                minHeight: 'calc(100vh - 64px)'
+                minHeight: 'calc(100vh - 64px)',
               }}
             >
               <Outlet />

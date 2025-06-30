@@ -14,62 +14,62 @@ export default function useMaintenanceRecords() {
     totalPages: 1,
   });
 
-
   // Fetch paginated maintenance items data
-  const fetchData = useCallback(
-    async (page = 0, pageSize = 100) => {
-      setIsLoading(true);
-      try {
-        // Note: API is 1-indexed for page number
-        const response = await maintenanceApi.getAll(page + 1, pageSize);
+  const fetchData = useCallback(async (page = 0, pageSize = 100) => {
+    setIsLoading(true);
+    try {
+      // Note: API is 1-indexed for page number
+      const response = await maintenanceApi.getAll(page + 1, pageSize);
 
-        console.log('Fetched maintenance data:', {
-          count: response.data?.length || 0,
-          first_record: response.data?.[0],
-          pagination: response.pagination
+      console.log('Fetched maintenance data:', {
+        count: response.data?.length || 0,
+        first_record: response.data?.[0],
+        pagination: response.pagination,
+      });
+
+      // Detailed debugging for date fields
+      if (response.data?.[0]) {
+        console.log('First record date fields:', {
+          install_date: response.data[0].install_date,
+          expiry_date: response.data[0].expiry_date,
+          install_date_type: typeof response.data[0].install_date,
+          expiry_date_type: typeof response.data[0].expiry_date,
+          install_date_parsed: response.data[0].install_date
+            ? new Date(response.data[0].install_date)
+            : '-',
+          expiry_date_parsed: response.data[0].expiry_date
+            ? new Date(response.data[0].expiry_date)
+            : '-',
         });
-
-        // Detailed debugging for date fields
-        if (response.data?.[0]) {
-          console.log('First record date fields:', {
-            install_date: response.data[0].install_date,
-            expiry_date: response.data[0].expiry_date,
-            install_date_type: typeof response.data[0].install_date,
-            expiry_date_type: typeof response.data[0].expiry_date,
-            install_date_parsed: response.data[0].install_date ? new Date(response.data[0].install_date) : '-',
-            expiry_date_parsed: response.data[0].expiry_date ? new Date(response.data[0].expiry_date) : '-'
-          });
-        }
-
-        // Use backend data directly without transformation
-        const data = response.data || [];
-        setMaintenanceRecords(data);
-
-        // Update pagination state from API response
-        const newPagination = {
-          page,
-          pageSize,
-          total: response.pagination?.records_count || 0,
-          totalPages: response.pagination?.total_pages || 1,
-        };
-
-        setPagination(prev => ({
-          ...prev,
-          ...newPagination,
-        }));
-
-        setError('');
-      } catch (err) {
-        logger.error('Error loading maintenance records', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu bảo dưỡng');
-        setError(errorMessage);
-        setMaintenanceRecords([]);
-      } finally {
-        setIsLoading(false);
       }
-    },
-    []
-  );
+
+      // Use backend data directly without transformation
+      const data = response.data || [];
+      setMaintenanceRecords(data);
+
+      // Update pagination state from API response
+      const newPagination = {
+        page,
+        pageSize,
+        total: response.pagination?.records_count || 0,
+        totalPages: response.pagination?.total_pages || 1,
+      };
+
+      setPagination(prev => ({
+        ...prev,
+        ...newPagination,
+      }));
+
+      setError('');
+    } catch (err) {
+      logger.error('Error loading maintenance records', { error: err });
+      const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu bảo dưỡng');
+      setError(errorMessage);
+      setMaintenanceRecords([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const handlePageChange = useCallback(
     newPage => {
@@ -86,43 +86,36 @@ export default function useMaintenanceRecords() {
   );
 
   // Fetch by license plate
-  const fetchByLicensePlate = useCallback(
-    async (licensePlate, page = 0, pageSize = 100) => {
-      setIsLoading(true);
-      try {
-        const response = await maintenanceApi.getByLicensePlate(
-          licensePlate,
-          page + 1,
-          pageSize
-        );
+  const fetchByLicensePlate = useCallback(async (licensePlate, page = 0, pageSize = 100) => {
+    setIsLoading(true);
+    try {
+      const response = await maintenanceApi.getByLicensePlate(licensePlate, page + 1, pageSize);
 
-        const data = response.data || [];
-        setMaintenanceRecords(data);
+      const data = response.data || [];
+      setMaintenanceRecords(data);
 
-        setPagination(prev => ({
-          ...prev,
-          page,
-          pageSize,
-          total: response.pagination?.records_count || 0,
-          totalPages: response.pagination?.total_pages || 1,
-        }));
+      setPagination(prev => ({
+        ...prev,
+        page,
+        pageSize,
+        total: response.pagination?.records_count || 0,
+        totalPages: response.pagination?.total_pages || 1,
+      }));
 
-        setError('');
-      } catch (err) {
-        logger.error('Error loading maintenance records by license plate', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu bảo dưỡng');
-        setError(errorMessage);
-        setMaintenanceRecords([]);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+      setError('');
+    } catch (err) {
+      logger.error('Error loading maintenance records by license plate', { error: err });
+      const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu bảo dưỡng');
+      setError(errorMessage);
+      setMaintenanceRecords([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Create new maintenance record
   const createMaintenance = useCallback(
-    async (maintenanceData) => {
+    async maintenanceData => {
       setIsLoading(true);
       try {
         const response = await maintenanceApi.create(maintenanceData);
@@ -168,7 +161,7 @@ export default function useMaintenanceRecords() {
 
   // Delete maintenance record
   const deleteMaintenance = useCallback(
-    async (id) => {
+    async id => {
       setIsLoading(true);
       try {
         const response = await maintenanceApi.delete(id);
@@ -190,23 +183,20 @@ export default function useMaintenanceRecords() {
   );
 
   // Get maintenance record by ID
-  const getMaintenanceById = useCallback(
-    async (id) => {
-      setIsLoading(true);
-      try {
-        const response = await maintenanceApi.getById(id);
-        return response;
-      } catch (err) {
-        logger.error('Error fetching maintenance record by ID', { error: err });
-        const errorMessage = extractErrorMessage(err, 'Không thể tải bản ghi bảo dưỡng');
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+  const getMaintenanceById = useCallback(async id => {
+    setIsLoading(true);
+    try {
+      const response = await maintenanceApi.getById(id);
+      return response;
+    } catch (err) {
+      logger.error('Error fetching maintenance record by ID', { error: err });
+      const errorMessage = extractErrorMessage(err, 'Không thể tải bản ghi bảo dưỡng');
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   return {
     maintenanceRecords,

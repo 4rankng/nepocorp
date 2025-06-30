@@ -8,7 +8,7 @@ export const formatCurrency = (value, options = {}) => {
     locale = 'vi-VN',
     minimumFractionDigits = 0,
     maximumFractionDigits = 2,
-    showSymbol = true
+    showSymbol = true,
   } = options;
 
   if (value === null || value === undefined || isNaN(value)) {
@@ -49,7 +49,7 @@ export const formatDate = (date, format = 'dd/MM/yyyy') => {
   }
 };
 
-export const formatDateTime = (date) => {
+export const formatDateTime = date => {
   if (!date) return '';
 
   const d = new Date(date);
@@ -60,18 +60,18 @@ export const formatDateTime = (date) => {
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 };
 
-export const formatTransactionType = (type) => {
+export const formatTransactionType = type => {
   const typeLabels = {
-    'INVOICE': 'Phiếu thu',
-    'PAYMENT_RECEIVED': 'Thanh toán nhận',
-    'PARTNER_PAYMENT': 'Thanh toán đối tác',
-    'PARTNER_INVOICE': 'Phiếu thu đối tác',
-    'OPENING_BALANCE': 'Số dư đầu kỳ',
-    'ADJUSTMENT': 'Điều chỉnh'
+    INVOICE: 'Phiếu thu',
+    PAYMENT_RECEIVED: 'Thanh toán nhận',
+    PARTNER_PAYMENT: 'Thanh toán đối tác',
+    PARTNER_INVOICE: 'Phiếu thu đối tác',
+    OPENING_BALANCE: 'Số dư đầu kỳ',
+    ADJUSTMENT: 'Điều chỉnh',
   };
 
   return typeLabels[type] || type;
@@ -82,7 +82,7 @@ export const formatAmount = (debit, credit) => {
     return {
       amount: formatCurrency(debit),
       type: 'debit',
-      color: '#d32f2f'
+      color: '#d32f2f',
     };
   }
 
@@ -90,18 +90,18 @@ export const formatAmount = (debit, credit) => {
     return {
       amount: formatCurrency(credit),
       type: 'credit',
-      color: '#2e7d32'
+      color: '#2e7d32',
     };
   }
 
   return {
     amount: formatCurrency(0),
     type: 'zero',
-    color: '#616161'
+    color: '#616161',
   };
 };
 
-export const formatBalance = (balance) => {
+export const formatBalance = balance => {
   const absBalance = Math.abs(balance);
   const color = balance > 0 ? '#d32f2f' : balance < 0 ? '#2e7d32' : '#616161';
   const label = balance > 0 ? 'Nợ' : balance < 0 ? 'Có' : 'Cân bằng';
@@ -112,7 +112,7 @@ export const formatBalance = (balance) => {
     color,
     isPositive: balance > 0,
     isNegative: balance < 0,
-    isZero: balance === 0
+    isZero: balance === 0,
   };
 };
 
@@ -132,6 +132,6 @@ export const formatNumber = (value, decimals = 0) => {
 
   return new Intl.NumberFormat('vi-VN', {
     minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
+    maximumFractionDigits: decimals,
   }).format(value);
 };

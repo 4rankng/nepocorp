@@ -47,7 +47,6 @@ export {
   // Navigation icons
   ChartBarIcon,
   UsersIcon,
-
   ChainLinkIcon,
   BriefcaseIcon,
   TruckIcon,

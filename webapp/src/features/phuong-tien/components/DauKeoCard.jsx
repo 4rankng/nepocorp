@@ -3,7 +3,7 @@ import { Card, CardContent, Box, Typography, Chip } from '@mui/material';
 import { EditButton, DeleteButton } from '@/components/ActionButtons';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 
-const formatDate = (dateString) => {
+const formatDate = dateString => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleString('vi-VN');
 };

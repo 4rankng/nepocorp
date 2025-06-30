@@ -41,8 +41,7 @@ const formatDate = (value, row, index) => {
   }
 };
 
-
-export const getBaoDuongTableColumns = (onInvoiceClick) => {
+export const getBaoDuongTableColumns = onInvoiceClick => {
   return [
     {
       key: 'license_plate',
@@ -96,7 +95,7 @@ export const getBaoDuongTableColumns = (onInvoiceClick) => {
     {
       key: 'tax_rate',
       label: 'Thuế (%)',
-      render: (value) => value ? `${value}%` : '0%',
+      render: value => (value ? `${value}%` : '0%'),
       align: 'right',
       sortable: true,
       minWidth: 80,
@@ -120,7 +119,7 @@ export const getBaoDuongTableColumns = (onInvoiceClick) => {
       render: (value, row) => (
         <InvoiceButton
           size="small"
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             onInvoiceClick(row);
           }}

@@ -20,7 +20,7 @@ const QuanLyPhieuChi = () => {
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
 
   // Helper functions
-  const formatCurrency = (value) => {
+  const formatCurrency = value => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -28,7 +28,7 @@ const QuanLyPhieuChi = () => {
     }).format(value);
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
@@ -68,7 +68,7 @@ const QuanLyPhieuChi = () => {
   } = useExpenses();
 
   // Transform expense data for editing (from API format to form format)
-  const transformExpenseForForm = (expense) => {
+  const transformExpenseForForm = expense => {
     if (!expense) return null;
 
     return {
@@ -86,13 +86,15 @@ const QuanLyPhieuChi = () => {
         quantity: item.quantity?.toString() || '1',
         install_date: item.install_date ? item.install_date.split('T')[0] : '',
         expiry_date: item.expiry_date ? item.expiry_date.split('T')[0] : '',
-      })) || [{
-        item_name: '',
-        price: '',
-        quantity: '1',
-        install_date: '',
-        expiry_date: ''
-      }]
+      })) || [
+        {
+          item_name: '',
+          price: '',
+          quantity: '1',
+          install_date: '',
+          expiry_date: '',
+        },
+      ],
     };
   };
 
@@ -101,13 +103,13 @@ const QuanLyPhieuChi = () => {
     const tractorPlates = tractors.map(t => ({
       value: t.license_plate,
       displayText: `${t.license_plate} (Đầu kéo)`,
-      type: 'tractor'
+      type: 'tractor',
     }));
 
     const trailerPlates = trailers.map(t => ({
       value: t.license_plate,
       displayText: `${t.license_plate} (Rơ moóc)`,
-      type: 'trailer'
+      type: 'trailer',
     }));
 
     return [...tractorPlates, ...trailerPlates];
@@ -125,13 +127,15 @@ const QuanLyPhieuChi = () => {
       payment_status: 'DRAFT',
       payment_proof: '',
       remark: '',
-      items: [{
-        item_name: '',
-        price: '',
-        quantity: '1',
-        install_date: '',
-        expiry_date: ''
-      }]
+      items: [
+        {
+          item_name: '',
+          price: '',
+          quantity: '1',
+          install_date: '',
+          expiry_date: '',
+        },
+      ],
     };
   };
 
@@ -141,21 +145,20 @@ const QuanLyPhieuChi = () => {
   // Single form manager that updates based on editing state
   const formManager = useExpenseForm({
     initialFormData,
-    onSuccess: (message) => {
+    onSuccess: message => {
       showSnackbar(message, 'success');
       // Only close modal on actual success
       setShowExpenseForm(false);
       setEditingExpense(null);
     },
-    onError: (error) => {
+    onError: error => {
       showSnackbar(error.message, 'error');
       // NEVER close modal on errors - user should be able to fix and retry
     },
     fetchData: pagination.onPageChange ? () => pagination.onPageChange(pagination.page) : null,
     isEdit: !!editingExpense,
-    api: expenseApi
+    api: expenseApi,
   });
-
 
   const handleAddExpense = useCallback(async () => {
     setEditingExpense(null);
@@ -165,29 +168,32 @@ const QuanLyPhieuChi = () => {
     await fetchTrailers();
   }, [fetchTractors, fetchTrailers]);
 
-  const handleEditExpense = useCallback(async (expense) => {
-    try {
-      // Show loading state while fetching full expense data
-      showSnackbar('Đang tải thông tin phiếu chi...', 'info');
+  const handleEditExpense = useCallback(
+    async expense => {
+      try {
+        // Show loading state while fetching full expense data
+        showSnackbar('Đang tải thông tin phiếu chi...', 'info');
 
-      // Fetch full expense data including items
-      const response = await expenseApi.getById(expense.id);
-      const fullExpenseData = response.data?.data || response.data || response;
+        // Fetch full expense data including items
+        const response = await expenseApi.getById(expense.id);
+        const fullExpenseData = response.data?.data || response.data || response;
 
-      // Set the full expense data for editing
-      setEditingExpense(fullExpenseData);
-      setShowExpenseForm(true);
+        // Set the full expense data for editing
+        setEditingExpense(fullExpenseData);
+        setShowExpenseForm(true);
 
-      // Ensure vehicle data is loaded
-      await fetchTractors();
-      await fetchTrailers();
-    } catch (error) {
-      console.error('Error fetching expense details:', error);
-      showSnackbar('Không thể tải thông tin phiếu chi', 'error');
-    }
-  }, [fetchTractors, fetchTrailers, showSnackbar]);
+        // Ensure vehicle data is loaded
+        await fetchTractors();
+        await fetchTrailers();
+      } catch (error) {
+        console.error('Error fetching expense details:', error);
+        showSnackbar('Không thể tải thông tin phiếu chi', 'error');
+      }
+    },
+    [fetchTractors, fetchTrailers, showSnackbar]
+  );
 
-  const handleViewExpense = useCallback((expense) => {
+  const handleViewExpense = useCallback(expense => {
     setViewingExpenseId(expense.id);
     setShowInvoiceModal(true);
   }, []);
@@ -210,8 +216,7 @@ const QuanLyPhieuChi = () => {
     setShowCategoryModal(false);
   }, []);
 
-
-  const handleDeleteExpense = useCallback((expense) => {
+  const handleDeleteExpense = useCallback(expense => {
     setDeleteDialog({ open: true, expense });
   }, []);
 
@@ -295,18 +300,11 @@ const QuanLyPhieuChi = () => {
       )}
 
       {/* Expense Category Management Modal */}
-      <ExpenseCategoryModal
-        open={showCategoryModal}
-        onClose={handleCloseCategoryModal}
-      />
+      <ExpenseCategoryModal open={showCategoryModal} onClose={handleCloseCategoryModal} />
 
       {/* FAB Button */}
       {!showExpenseForm && !showInvoiceModal && !showCategoryModal && (
-        <FAB
-          onClick={handleAddExpense}
-          icon={<AddIcon />}
-          ariaLabel="Thêm"
-        />
+        <FAB onClick={handleAddExpense} icon={<AddIcon />} ariaLabel="Thêm" />
       )}
 
       {/* Snackbar for notifications */}
@@ -330,17 +328,26 @@ const QuanLyPhieuChi = () => {
         type="delete"
         title="Xóa phiếu chi"
         message="Bạn có chắc chắn muốn xóa phiếu chi này?"
-        details={deleteDialog.expense ? {
-          'Nhà cung cấp': deleteDialog.expense.vendor_name || '-',
-          'Loại chi phí': (() => {
-            const category = categories.find(cat => cat.id === deleteDialog.expense.expense_category_id);
-            return category ? category.name : '-';
-          })(),
-          'Tổng tiền': formatCurrency(deleteDialog.expense.total || 0),
-          'Trạng thái': PAYMENT_STATUS_LABELS[deleteDialog.expense.payment_status] || deleteDialog.expense.payment_status || '-',
-          'Ngày tạo': formatDate(deleteDialog.expense.created_at),
-          ...(deleteDialog.expense.remark && { 'Ghi chú': deleteDialog.expense.remark }),
-        } : null}
+        details={
+          deleteDialog.expense
+            ? {
+                'Nhà cung cấp': deleteDialog.expense.vendor_name || '-',
+                'Loại chi phí': (() => {
+                  const category = categories.find(
+                    cat => cat.id === deleteDialog.expense.expense_category_id
+                  );
+                  return category ? category.name : '-';
+                })(),
+                'Tổng tiền': formatCurrency(deleteDialog.expense.total || 0),
+                'Trạng thái':
+                  PAYMENT_STATUS_LABELS[deleteDialog.expense.payment_status] ||
+                  deleteDialog.expense.payment_status ||
+                  '-',
+                'Ngày tạo': formatDate(deleteDialog.expense.created_at),
+                ...(deleteDialog.expense.remark && { 'Ghi chú': deleteDialog.expense.remark }),
+              }
+            : null
+        }
       />
     </div>
   );

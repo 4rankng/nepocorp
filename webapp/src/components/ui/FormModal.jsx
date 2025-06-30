@@ -22,7 +22,7 @@ const FormModal = ({
 }) => {
   // Handle ESC key to close modal (following ExpenseForm pattern)
   useEffect(() => {
-    const handleEscKey = (event) => {
+    const handleEscKey = event => {
       if (event.key === 'Escape' && isOpen && enableEscClose) {
         onClose();
       }
@@ -37,7 +37,7 @@ const FormModal = ({
     };
   }, [isOpen, onClose, enableEscClose]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
     if (onSubmit && !loading) {
       onSubmit(e);

@@ -96,11 +96,7 @@ export const CustomerListExample = () => {
       <Typography variant="h6" gutterBottom>
         Example: Standalone Customer List
       </Typography>
-      <CustomerList
-        customers={mockCustomers}
-        onEdit={customer => {}}
-        onDelete={customer => {}}
-      />
+      <CustomerList customers={mockCustomers} onEdit={customer => {}} onDelete={customer => {}} />
     </Box>
   );
 };

@@ -14,13 +14,13 @@ export const invoiceCategoryApi = {
   },
 
   // Get invoice category by ID
-  getById: async (id) => {
+  getById: async id => {
     const response = await apiClient.get(`/invoice_category/${id}`);
     return response;
   },
 
   // Create new invoice category
-  create: async (data) => {
+  create: async data => {
     const response = await apiClient.post('/invoice_category', data);
     return response;
   },
@@ -32,8 +32,8 @@ export const invoiceCategoryApi = {
   },
 
   // Delete invoice category
-  delete: async (id) => {
+  delete: async id => {
     const response = await apiClient.delete(`/invoice_category/${id}`);
     return response;
-  }
+  },
 };

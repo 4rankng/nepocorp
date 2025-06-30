@@ -1,30 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Paper,
-  Grid,
-  Typography,
-  Button,
-  Box,
-  Chip,
-  Collapse,
-  IconButton
-} from '@mui/material';
+import { Paper, Grid, Typography, Button, Box, Chip, Collapse, IconButton } from '@mui/material';
 import {
   FilterList as FilterListIcon,
   Clear as ClearIcon,
   ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import Dropdown from '@/components/ui/Dropdown';
 import { FILTER_OPTIONS, getDateRange } from '../constants';
 
-const StatementFilters = ({ 
-  filters, 
-  onFiltersChange, 
+const StatementFilters = ({
+  filters,
+  onFiltersChange,
   onClearFilters,
   customers = [],
   partners = [],
-  loading = false 
+  loading = false,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [dateRange, setDateRange] = useState('');
@@ -35,29 +26,29 @@ const StatementFilters = ({
   const customerOptions = customers.map(customer => ({
     value: customer.id,
     label: customer.name,
-    displayText: customer.name
+    displayText: customer.name,
   }));
 
   const partnerOptions = partners.map(partner => ({
     value: partner.id,
     label: partner.name,
-    displayText: partner.name
+    displayText: partner.name,
   }));
 
   // Handle date range change
-  const handleDateRangeChange = (range) => {
+  const handleDateRangeChange = range => {
     setDateRange(range);
-    
+
     if (range === 'custom') {
       // For custom range, user will set dates manually
       return;
     }
-    
+
     if (range === '') {
       // Clear date filter
       onFiltersChange({
         start_date: null,
-        end_date: null
+        end_date: null,
       });
       setCustomDateStart('');
       setCustomDateEnd('');
@@ -68,7 +59,7 @@ const StatementFilters = ({
     if (dateRangeData) {
       onFiltersChange({
         start_date: dateRangeData.startDate,
-        end_date: dateRangeData.endDate
+        end_date: dateRangeData.endDate,
       });
     }
   };
@@ -80,7 +71,7 @@ const StatementFilters = ({
       if (value && customDateEnd) {
         onFiltersChange({
           start_date: value,
-          end_date: customDateEnd
+          end_date: customDateEnd,
         });
       }
     } else {
@@ -88,7 +79,7 @@ const StatementFilters = ({
       if (customDateStart && value) {
         onFiltersChange({
           start_date: customDateStart,
-          end_date: value
+          end_date: value,
         });
       }
     }
@@ -116,34 +107,34 @@ const StatementFilters = ({
   // Get active filter chips
   const getActiveFilters = () => {
     const chips = [];
-    
+
     if (filters.customer_id) {
       const customer = customers.find(c => c.id === filters.customer_id);
       chips.push({
         key: 'customer',
         label: `KH: ${customer?.name || 'N/A'}`,
-        onDelete: () => onFiltersChange({ customer_id: null })
+        onDelete: () => onFiltersChange({ customer_id: null }),
       });
     }
-    
+
     if (filters.partner_id) {
       const partner = partners.find(p => p.id === filters.partner_id);
       chips.push({
         key: 'partner',
         label: `ĐT: ${partner?.name || 'N/A'}`,
-        onDelete: () => onFiltersChange({ partner_id: null })
+        onDelete: () => onFiltersChange({ partner_id: null }),
       });
     }
-    
+
     if (filters.transaction_type) {
       const type = FILTER_OPTIONS.TRANSACTION_TYPES.find(t => t.value === filters.transaction_type);
       chips.push({
         key: 'type',
         label: type?.label || filters.transaction_type,
-        onDelete: () => onFiltersChange({ transaction_type: null })
+        onDelete: () => onFiltersChange({ transaction_type: null }),
       });
     }
-    
+
     if (filters.start_date && filters.end_date) {
       chips.push({
         key: 'date',
@@ -153,10 +144,10 @@ const StatementFilters = ({
           setCustomDateStart('');
           setCustomDateEnd('');
           onFiltersChange({ start_date: null, end_date: null });
-        }
+        },
       });
     }
-    
+
     return chips;
   };
 
@@ -166,20 +157,22 @@ const StatementFilters = ({
   return (
     <Paper elevation={1} sx={{ mb: 3 }}>
       {/* Filter Header */}
-      <Box sx={{ 
-        p: 2, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        borderBottom: expanded ? '1px solid #e0e0e0' : 'none'
-      }}>
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: expanded ? '1px solid #e0e0e0' : 'none',
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterListIcon color="primary" />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Bộ lọc
           </Typography>
           {activeFilterCount > 0 && (
-            <Chip 
+            <Chip
               label={activeFilterCount}
               size="small"
               color="primary"
@@ -187,22 +180,14 @@ const StatementFilters = ({
             />
           )}
         </Box>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {activeFilterCount > 0 && (
-            <Button
-              startIcon={<ClearIcon />}
-              onClick={handleClearAll}
-              size="small"
-              color="inherit"
-            >
+            <Button startIcon={<ClearIcon />} onClick={handleClearAll} size="small" color="inherit">
               Xóa bộ lọc
             </Button>
           )}
-          <IconButton
-            onClick={() => setExpanded(!expanded)}
-            size="small"
-          >
+          <IconButton onClick={() => setExpanded(!expanded)} size="small">
             {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </IconButton>
         </Box>
@@ -212,7 +197,7 @@ const StatementFilters = ({
       {activeFilters.length > 0 && (
         <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #e0e0e0' }}>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {activeFilters.map((filter) => (
+            {activeFilters.map(filter => (
               <Chip
                 key={filter.key}
                 label={filter.label}
@@ -235,7 +220,7 @@ const StatementFilters = ({
               <Dropdown
                 label="Khách hàng"
                 value={filters.customer_id || ''}
-                onChange={(value) => onFiltersChange({ customer_id: value || null })}
+                onChange={value => onFiltersChange({ customer_id: value || null })}
                 options={customerOptions}
                 placeholder="Chọn khách hàng"
                 clearable
@@ -249,7 +234,7 @@ const StatementFilters = ({
               <Dropdown
                 label="Đối tác"
                 value={filters.partner_id || ''}
-                onChange={(value) => onFiltersChange({ partner_id: value || null })}
+                onChange={value => onFiltersChange({ partner_id: value || null })}
                 options={partnerOptions}
                 placeholder="Chọn đối tác"
                 clearable
@@ -263,7 +248,7 @@ const StatementFilters = ({
               <Dropdown
                 label="Loại giao dịch"
                 value={filters.transaction_type || ''}
-                onChange={(value) => onFiltersChange({ transaction_type: value || null })}
+                onChange={value => onFiltersChange({ transaction_type: value || null })}
                 options={FILTER_OPTIONS.TRANSACTION_TYPES}
                 placeholder="Chọn loại giao dịch"
                 clearable
@@ -297,13 +282,13 @@ const StatementFilters = ({
                     <input
                       type="date"
                       value={customDateStart}
-                      onChange={(e) => handleCustomDateChange('start', e.target.value)}
+                      onChange={e => handleCustomDateChange('start', e.target.value)}
                       style={{
                         width: '100%',
                         padding: '10px',
                         border: '1px solid #ccc',
                         borderRadius: '4px',
-                        fontSize: '14px'
+                        fontSize: '14px',
                       }}
                       disabled={loading}
                     />
@@ -317,13 +302,13 @@ const StatementFilters = ({
                     <input
                       type="date"
                       value={customDateEnd}
-                      onChange={(e) => handleCustomDateChange('end', e.target.value)}
+                      onChange={e => handleCustomDateChange('end', e.target.value)}
                       style={{
                         width: '100%',
                         padding: '10px',
                         border: '1px solid #ccc',
                         borderRadius: '4px',
-                        fontSize: '14px'
+                        fontSize: '14px',
                       }}
                       disabled={loading}
                     />

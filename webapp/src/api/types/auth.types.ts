@@ -32,5 +32,5 @@ export interface User extends BaseEntity {
 export enum UserRole {
   ADMIN = 'admin',
   USER = 'user',
-  VIEWER = 'viewer'
+  VIEWER = 'viewer',
 }

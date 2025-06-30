@@ -1,7 +1,9 @@
 # Data Models Documentation
 
 ## Chi phí
+
 bao_duong
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - bien_so // bao_duong.bien_so = dau_keo.bien_so OR bao_duong.bien_so = ro_mooc.bien_so
 - item_name: 'Lop xe'
@@ -11,12 +13,13 @@ bao_duong
 - so_luong: 2,
 - don_gia: 100000,
 - currency: 'VND',
-- tong_tien // bao_duong.tong_tien = bao_duong.so_luong * bao_duong.don_gia
+- tong_tien // bao_duong.tong_tien = bao_duong.so_luong \* bao_duong.don_gia
 - ghi_chu
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
 chi_phi
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - dau_keo // chi_phi.dau_keo = dau_keo.bien_so, allow null
 - ro_mooc // chi_phi.ro_mooc = ro_mooc.bien_so, allow null
@@ -29,9 +32,10 @@ chi_phi
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
-
 ## Cấu hình
+
 cau_hinh
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - key
 - value
@@ -39,7 +43,9 @@ cau_hinh
 - updated_at: '2023-05-20T10:00:00Z',
 
 ## Phương tiện
+
 container
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - ma_so: '20DC',
 - phan_loai: '20in',
@@ -47,25 +53,29 @@ container
 - updated_at: '2023-05-20T10:00:00Z',
 
 dau_keo
+
 - id
-- bien_so:  '16C-111.22',
+- bien_so: '16C-111.22',
 - lai_xe // dau_keo.lai_xe = nhan_vien.ma_so
 - mo_ta
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
 ro_mooc
+
 - id // mysql auto increment eg 1, 2, 3, ...
-- bien_so:  '16C-111.22',
+- bien_so: '16C-111.22',
 - mo_ta
 - created_at: '2023-01-15T08:30:00Z',
 - updated_at: '2023-05-20T10:00:00Z',
 
 ## Định Mức
+
 dinh_muc_km
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - bien_so // dinh_muc_km.bien_so = dau_keo.bien_so
-- phan_loai //  'km_hang' OR 'km_vo'
+- phan_loai // 'km_hang' OR 'km_vo'
 - tu_km
 - den_km
 - l_km
@@ -74,6 +84,7 @@ dinh_muc_km
 - updated_at: '2023-05-20T10:00:00Z',
 
 dinh_muc_bo_sung
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - bien_so // dinh_muc_bo_sung.bien_so = dau_keo.bien_so
 - ma_tuyen: 'TD001', // dinh_muc_bo_sung.ma_tuyen = tuyen_duong.ma_so
@@ -82,7 +93,9 @@ dinh_muc_bo_sung
 - updated_at: '2023-05-20T10:00:00Z',
 
 ## Nhân sự
+
 doi_tac
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - ma_dinh_danh: 'DT001',
 - ten: 'Công ty TNHH Vận Tải Minh Phát',
@@ -92,6 +105,7 @@ doi_tac
 - updated_at: '2023-05-20T10:00:00Z',
 
 khach_hang
+
 - id // mysql auto increment eg 1, 2, 3, ... 1,
 - ma_dinh_danh: 'MDD001',
 - ten: 'Công ty TNHH An Phát',
@@ -101,6 +115,7 @@ khach_hang
 - updated_at: '2023-05-20T10:00:00Z',
 
 nhan_vien
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - ma_so: 'QL001',
 - ho_ten: 'Trần Văn Quản',
@@ -112,7 +127,9 @@ nhan_vien
 - updated_at: '2024-05-01T10:00:00Z',
 
 ## Lịch Vận Chuyển
+
 lich_van_chuyen
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - ma_chuyen: 'MC001', // lich_van_chuyen.ma_chuyen = tuyen_duong.ma_so, allow null
 - ngay_di: '2024-05-28',
@@ -139,6 +156,7 @@ lich_van_chuyen
 - updated_at: '2024-05-01T10:00:00Z',
 
 tuyen_duong
+
 - id // mysql auto increment eg 1, 2, 3, ...
 - ma_so: 'TD001',
 - diem_di

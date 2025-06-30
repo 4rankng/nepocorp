@@ -21,7 +21,7 @@ const BaseModal = ({
   id,
   'aria-labelledby': ariaLabelledBy,
   'aria-describedby': ariaDescribedBy,
-  role = 'dialog'
+  role = 'dialog',
 }) => {
   const modalRef = useRef(null);
   const backdropRef = useRef(null);
@@ -29,25 +29,26 @@ const BaseModal = ({
   // Size configurations matching existing patterns
   const sizeConfig = {
     sm: 'w-full max-w-md',
-    md: 'w-full max-w-2xl', 
+    md: 'w-full max-w-2xl',
     lg: 'w-full max-w-4xl',
     xl: 'w-full max-w-6xl',
-    fullScreen: 'w-full max-w-[98vw] max-h-[98vh]'
+    fullScreen: 'w-full max-w-[98vw] max-h-[98vh]',
   };
 
   // Handle ESC key
   useEffect(() => {
-    const handleKeyDown = (event) => {
+    const handleKeyDown = event => {
       if (event.key === 'Escape' && open && !disableEscapeKeyDown) {
         // Check if this is the topmost modal by comparing z-index
         const allModals = document.querySelectorAll('[data-modal]');
         let isTopmost = true;
-        
+
         if (allModals.length > 1) {
           const currentModal = modalRef.current;
           if (currentModal) {
-            const currentZIndex = parseInt(getComputedStyle(currentModal.parentElement).zIndex) || 0;
-            
+            const currentZIndex =
+              parseInt(getComputedStyle(currentModal.parentElement).zIndex) || 0;
+
             for (const modal of allModals) {
               if (modal !== currentModal.parentElement) {
                 const modalZIndex = parseInt(getComputedStyle(modal).zIndex) || 0;
@@ -59,7 +60,7 @@ const BaseModal = ({
             }
           }
         }
-        
+
         if (isTopmost) {
           onClose(event, 'escapeKeyDown');
         }
@@ -76,23 +77,26 @@ const BaseModal = ({
   }, [open, onClose, disableEscapeKeyDown]);
 
   // Handle backdrop click
-  const handleBackdropClick = useCallback((event) => {
-    if (event.target === backdropRef.current && !disableBackdropClick) {
-      onClose(event, 'backdropClick');
-    }
-  }, [onClose, disableBackdropClick]);
+  const handleBackdropClick = useCallback(
+    event => {
+      if (event.target === backdropRef.current && !disableBackdropClick) {
+        onClose(event, 'backdropClick');
+      }
+    },
+    [onClose, disableBackdropClick]
+  );
 
   // Focus management and z-index inheritance setup
   useEffect(() => {
     if (open && modalRef.current) {
       const previousActiveElement = document.activeElement;
-      
+
       // Set up z-index inheritance for child components
       setParentZIndex(modalRef.current, zIndex);
-      
+
       // Focus the modal
       modalRef.current.focus();
-      
+
       return () => {
         // Restore focus when modal closes
         if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
@@ -107,7 +111,7 @@ const BaseModal = ({
     if (open) {
       const originalStyle = window.getComputedStyle(document.body).overflow;
       document.body.style.overflow = 'hidden';
-      
+
       return () => {
         document.body.style.overflow = originalStyle;
       };
@@ -141,7 +145,7 @@ const BaseModal = ({
         ref={modalRef}
         className={modalClasses}
         style={{ zIndex, ...style }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         role={role}
         aria-modal="true"
         aria-labelledby={ariaLabelledBy}
@@ -170,7 +174,7 @@ BaseModal.propTypes = {
   id: PropTypes.string,
   'aria-labelledby': PropTypes.string,
   'aria-describedby': PropTypes.string,
-  role: PropTypes.string
+  role: PropTypes.string,
 };
 
 export default BaseModal;

@@ -77,11 +77,11 @@ const CustomerListResponsive = ({
   };
 
   // Handle notes dialog
-  const handleNotesClick = (customer) => {
+  const handleNotesClick = customer => {
     setNotesDialog({
       open: true,
       notes: customer.notes || 'Không có ghi chú',
-      customerName: customer.name || 'Khách hàng'
+      customerName: customer.name || 'Khách hàng',
     });
   };
 
@@ -110,11 +110,10 @@ const CustomerListResponsive = ({
                 </Typography>
                 {(customer.contact_person || customer.contact_phone || customer.contact_email) && (
                   <Typography variant="body2" color="text.secondary">
-                    <strong>Liên hệ:</strong> {[
-                      customer.contact_person,
-                      customer.contact_phone,
-                      customer.contact_email
-                    ].filter(Boolean).join(' / ')}
+                    <strong>Liên hệ:</strong>{' '}
+                    {[customer.contact_person, customer.contact_phone, customer.contact_email]
+                      .filter(Boolean)
+                      .join(' / ')}
                   </Typography>
                 )}
                 {customer.notes && customer.notes.trim() !== '' && (
@@ -155,7 +154,7 @@ const CustomerListResponsive = ({
       )}
     </Box>
   );
-  
+
   // Define columns for StandardTable
   const columns = [
     {
@@ -256,7 +255,7 @@ const CustomerListResponsive = ({
       showSTT={true}
     />
   );
-  
+
   return (
     <Box>
       {/* Search Bar */}
@@ -281,27 +280,24 @@ const CustomerListResponsive = ({
       )}
       {/* Content */}
       {!loading && !error && <>{isMobile ? renderMobileView() : renderDesktopView()}</>}
-      
+
       {/* Notes Dialog */}
-      <Dialog
-        open={notesDialog.open}
-        onClose={handleCloseNotesDialog}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={notesDialog.open} onClose={handleCloseNotesDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <NotesIcon color="primary" />
           Ghi chú - {notesDialog.customerName}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ 
-            p: 2, 
-            backgroundColor: 'grey.50', 
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'grey.200',
-            minHeight: '100px'
-          }}>
+          <Box
+            sx={{
+              p: 2,
+              backgroundColor: 'grey.50',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'grey.200',
+              minHeight: '100px',
+            }}
+          >
             <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
               {notesDialog.notes}
             </Typography>
