@@ -84,7 +84,7 @@ export const useInfiniteMaintenance = (filters?: MaintenanceFilters) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await maintenanceService.getAll({ ...filters, page: pageParam, limit: 10 });
+      const response = await maintenanceService.getAll({ ...filters, page: pageParam, limit: 100 });
       const { pagination } = response;
       
       setData(prev => ({
@@ -129,7 +129,7 @@ export const useInfiniteMaintenance = (filters?: MaintenanceFilters) => {
 };
 
 // Specialized queries
-export const useMaintenanceByLicensePlate = (licensePlate: string, page = 1, limit = 10) => {
+export const useMaintenanceByLicensePlate = (licensePlate: string, page = 1, limit = 100) => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -162,7 +162,7 @@ export const useMaintenanceByLicensePlate = (licensePlate: string, page = 1, lim
   };
 };
 
-export const useMaintenanceByVendor = (vendorName: string, page = 1, limit = 10) => {
+export const useMaintenanceByVendor = (vendorName: string, page = 1, limit = 100) => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -195,7 +195,7 @@ export const useMaintenanceByVendor = (vendorName: string, page = 1, limit = 10)
   };
 };
 
-export const useMaintenanceByDateRange = (startDate: string, endDate: string, page = 1, limit = 10) => {
+export const useMaintenanceByDateRange = (startDate: string, endDate: string, page = 1, limit = 100) => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

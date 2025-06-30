@@ -10,7 +10,7 @@ export const useDauKeo = () => {
   const [pagination, setPagination] = useState(null);
 
   // Fetch all tractors
-  const fetchAll = useCallback(async (page = 1, limit = 10) => {
+  const fetchAll = useCallback(async (page = 1, limit = 100) => {
     setLoading(true);
     setError('');
     try {

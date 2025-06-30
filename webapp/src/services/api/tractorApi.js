@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 export const tractorApi = {
   // Get all tractors with pagination
-  getAll: async (page = 1, limit = 10) => {
+  getAll: async (page = 1, limit = 100) => {
     const response = await apiClient.get('/tractor', {
       params: { page, limit }
     });

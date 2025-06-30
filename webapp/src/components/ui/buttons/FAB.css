@@ -1,0 +1,177 @@
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.fab:hover:not(.fab--disabled):not(.fab--loading) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.fab:active:not(.fab--disabled):not(.fab--loading) {
+  transform: translateY(0);
+}
+
+/* FAB Positions */
+.fab--bottom-right {
+  bottom: 24px;
+  right: 24px;
+}
+
+.fab--bottom-left {
+  bottom: 24px;
+  left: 24px;
+}
+
+.fab--top-right {
+  top: 24px;
+  right: 24px;
+}
+
+.fab--top-left {
+  top: 24px;
+  left: 24px;
+}
+
+/* FAB Sizes */
+.fab--small {
+  width: 40px;
+  height: 40px;
+}
+
+.fab--medium {
+  width: 56px;
+  height: 56px;
+}
+
+.fab--large {
+  width: 72px;
+  height: 72px;
+}
+
+/* FAB Variants */
+.fab--primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.fab--primary:hover:not(.fab--disabled):not(.fab--loading) {
+  background-color: #2563eb;
+}
+
+.fab--secondary {
+  background-color: #6b7280;
+  color: white;
+}
+
+.fab--secondary:hover:not(.fab--disabled):not(.fab--loading) {
+  background-color: #374151;
+}
+
+.fab--success {
+  background-color: #10b981;
+  color: white;
+}
+
+.fab--success:hover:not(.fab--disabled):not(.fab--loading) {
+  background-color: #059669;
+}
+
+.fab--danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+.fab--danger:hover:not(.fab--disabled):not(.fab--loading) {
+  background-color: #dc2626;
+}
+
+.fab--warning {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.fab--warning:hover:not(.fab--disabled):not(.fab--loading) {
+  background-color: #d97706;
+}
+
+/* FAB States */
+.fab--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.fab--loading {
+  cursor: not-allowed;
+}
+
+/* FAB Loading Spinner */
+.fab-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: fab-spin 1s linear infinite;
+}
+
+@keyframes fab-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* FAB Icons */
+.fab svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.fab--small svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fab--large svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .fab--bottom-right,
+  .fab--bottom-left {
+    bottom: 16px;
+  }
+  
+  .fab--bottom-right {
+    right: 16px;
+  }
+  
+  .fab--bottom-left {
+    left: 16px;
+  }
+  
+  .fab--top-right,
+  .fab--top-left {
+    top: 16px;
+  }
+  
+  .fab--top-right {
+    right: 16px;
+  }
+  
+  .fab--top-left {
+    left: 16px;
+  }
+}

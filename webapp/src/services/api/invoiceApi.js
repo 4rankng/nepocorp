@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 export const invoiceApi = {
   // Get all invoices with pagination (filtered by category if needed)
-  getAll: async (page = 1, limit = 10, categoryId = null, customerId = null, paymentStatus = null) => {
+  getAll: async (page = 1, limit = 100, categoryId = null, customerId = null, paymentStatus = null) => {
     const params = { page, limit };
     if (categoryId) {
       params.invoice_category_id = categoryId;

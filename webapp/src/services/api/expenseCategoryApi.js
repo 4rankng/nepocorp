@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 export const expenseCategoryApi = {
   // Get all expense categories with pagination
-  getAll: async (page = 1, limit = 10) => {
+  getAll: async (page = 1, limit = 100) => {
     const response = await apiClient.get('/expense_category', {
       params: { page, limit }
     });

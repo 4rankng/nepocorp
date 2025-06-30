@@ -11,14 +11,14 @@ import useExpenseForm from '@/hooks/useExpenseForm';
 import { expenseApi } from '@services/api/expenseApi';
 import { Snackbar, Alert, Box } from '@mui/material';
 import { Add as AddIcon, Category as CategoryIcon } from '@mui/icons-material';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/buttons';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
 import FAB from '@/components/FAB';
 
 const QuanLyPhieuChi = () => {
   const { currentUser } = useAuth();
   const { tractors, trailers, fetchTractors, fetchTrailers } = useContext(VehicleDataContext);
-  
+
   // Helper functions
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -27,7 +27,7 @@ const QuanLyPhieuChi = () => {
       minimumFractionDigits: 0,
     }).format(value);
   };
-  
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -39,7 +39,7 @@ const QuanLyPhieuChi = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, expense: null });
   const [isDeletingExpense, setIsDeletingExpense] = useState(false);
-  
+
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -55,7 +55,7 @@ const QuanLyPhieuChi = () => {
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
-  
+
   const {
     expenses,
     categories,
@@ -70,7 +70,7 @@ const QuanLyPhieuChi = () => {
   // Transform expense data for editing (from API format to form format)
   const transformExpenseForForm = (expense) => {
     if (!expense) return null;
-    
+
     return {
       id: expense.id,
       license_plate: expense.license_plate || '',
@@ -103,13 +103,13 @@ const QuanLyPhieuChi = () => {
       displayText: `${t.license_plate} (Đầu kéo)`,
       type: 'tractor'
     }));
-    
+
     const trailerPlates = trailers.map(t => ({
       value: t.license_plate,
       displayText: `${t.license_plate} (Rơ moóc)`,
       type: 'trailer'
     }));
-    
+
     return [...tractorPlates, ...trailerPlates];
   };
 
@@ -137,7 +137,7 @@ const QuanLyPhieuChi = () => {
 
   // Memoize the initial form data to prevent unnecessary recreations
   const initialFormData = useMemo(() => getInitialFormData(), [editingExpense]);
-  
+
   // Single form manager that updates based on editing state
   const formManager = useExpenseForm({
     initialFormData,
@@ -169,15 +169,15 @@ const QuanLyPhieuChi = () => {
     try {
       // Show loading state while fetching full expense data
       showSnackbar('Đang tải thông tin phiếu chi...', 'info');
-      
+
       // Fetch full expense data including items
       const response = await expenseApi.getById(expense.id);
       const fullExpenseData = response.data?.data || response.data || response;
-      
+
       // Set the full expense data for editing
       setEditingExpense(fullExpenseData);
       setShowExpenseForm(true);
-      
+
       // Ensure vehicle data is loaded
       await fetchTractors();
       await fetchTrailers();
@@ -221,7 +221,7 @@ const QuanLyPhieuChi = () => {
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteDialog.expense) return;
-    
+
     setIsDeletingExpense(true);
     try {
       await deleteExpense(deleteDialog.expense.id);
@@ -239,12 +239,12 @@ const QuanLyPhieuChi = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="pb-20">
       {/* Header with Category Management Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <div />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
         <Button
-          variant="outline"
+          variant="secondary"
+          size="small"
           icon={<CategoryIcon />}
           onClick={handleOpenCategoryModal}
           disabled={showExpenseForm || showInvoiceModal}

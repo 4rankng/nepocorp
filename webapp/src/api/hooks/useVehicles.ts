@@ -77,7 +77,7 @@ export const useTractor = (id: number) => {
   };
 };
 
-export const useActiveTractors = (page = 1, limit = 10) => {
+export const useActiveTractors = (page = 1, limit = 100) => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -262,7 +262,7 @@ export const useTrailer = (id: number) => {
   };
 };
 
-export const useActiveTrailers = (page = 1, limit = 10) => {
+export const useActiveTrailers = (page = 1, limit = 100) => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -447,7 +447,7 @@ export const useContainer = (id: number) => {
   };
 };
 
-export const useActiveContainers = (page = 1, limit = 10) => {
+export const useActiveContainers = (page = 1, limit = 100) => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

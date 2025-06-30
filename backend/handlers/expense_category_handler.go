@@ -56,11 +56,6 @@ func (h *ExpenseCategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if category.CategoryKey == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
-			utils.ErrorDetail{Code: common.CodeRequiredField, Message: "Category key is required"})
-		return
-	}
 
 	// Get current user from context for audit trail
 	if userInfo, exists := c.Get("user"); exists {
@@ -112,15 +107,9 @@ func (h *ExpenseCategoryHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if updateData.CategoryKey == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, common.ErrInvalidInput,
-			utils.ErrorDetail{Code: common.CodeRequiredField, Message: "Category key is required"})
-		return
-	}
 
 	// Update fields
 	existingCategory.Name = updateData.Name
-	existingCategory.CategoryKey = updateData.CategoryKey
 	if updateData.Description != nil {
 		existingCategory.Description = updateData.Description
 	}

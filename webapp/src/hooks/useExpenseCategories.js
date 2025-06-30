@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { expenseCategoryApi } from '@services/api/expenseCategoryApi';
+import { cacheManager } from '@utils/cacheManager';
 
 const useExpenseCategories = () => {
   const [categories, setCategories] = useState([]);
@@ -7,12 +8,22 @@ const useExpenseCategories = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 100,
     total_pages: 1,
     records_count: 0
   });
 
-  const fetchCategories = useCallback(async (page = 1, limit = 10) => {
+  const fetchCategories = useCallback(async (page = 1, limit = 100) => {
+    const cacheKey = cacheManager.generateKey('/expense_category', { page, limit });
+    
+    // Check cache first
+    const cachedData = cacheManager.get(cacheKey);
+    if (cachedData) {
+      setCategories(cachedData.data);
+      setPagination(cachedData.pagination);
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     try {
@@ -21,10 +32,13 @@ const useExpenseCategories = () => {
       const data = response.data || [];
       const pagination = response.pagination || {
         page: 1,
-        limit: 10,
+        limit: 100,
         total_pages: 1,
         records_count: data.length
       };
+      
+      // Cache the response
+      cacheManager.set(cacheKey, { data, pagination });
       
       setCategories(data);
       setPagination(pagination);
@@ -43,6 +57,9 @@ const useExpenseCategories = () => {
     try {
       const response = await expenseCategoryApi.create(categoryData);
       const newCategory = response.data || response;
+      
+      // Invalidate cache after creation
+      cacheManager.invalidate('/expense_category');
       
       // Refresh the list after creation
       await fetchCategories(pagination.page, pagination.limit);
@@ -63,6 +80,9 @@ const useExpenseCategories = () => {
     try {
       const response = await expenseCategoryApi.update(id, categoryData);
       const updatedCategory = response.data || response;
+      
+      // Invalidate cache after update
+      cacheManager.invalidate('/expense_category');
       
       // Update the category in the local state
       setCategories(prevCategories => 
@@ -86,6 +106,9 @@ const useExpenseCategories = () => {
     setError(null);
     try {
       await expenseCategoryApi.delete(id);
+      
+      // Invalidate cache after deletion
+      cacheManager.invalidate('/expense_category');
       
       // Remove the category from local state
       setCategories(prevCategories => 

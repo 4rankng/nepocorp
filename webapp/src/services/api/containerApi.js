@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 export const containerApi = {
   // Get all containers with pagination
-  getAll: async (page = 1, limit = 10) => {
+  getAll: async (page = 1, limit = 100) => {
     const response = await apiClient.get('/container', {
       params: { page, limit }
     });

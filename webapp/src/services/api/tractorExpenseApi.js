@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 export const tractorExpenseApi = {
   // Get all tractor expenses with pagination
-  getAll: async (page = 1, limit = 10) => {
+  getAll: async (page = 1, limit = 100) => {
     const response = await apiClient.get('/tractor_expense', {
       params: { page, limit }
     });

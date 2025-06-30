@@ -18,19 +18,19 @@ class MaintenanceService extends BaseService<MaintenanceRecord, CreateMaintenanc
   }
 
   // Convenience methods for common queries
-  async getByLicensePlate(licensePlate: string, page = 1, limit = 10): Promise<ApiResponse<MaintenanceRecord[]>> {
+  async getByLicensePlate(licensePlate: string, page = 1, limit = 100): Promise<ApiResponse<MaintenanceRecord[]>> {
     return this.getAll({ license_plate: licensePlate, page, limit });
   }
 
-  async getByVendor(vendorName: string, page = 1, limit = 10): Promise<ApiResponse<MaintenanceRecord[]>> {
+  async getByVendor(vendorName: string, page = 1, limit = 100): Promise<ApiResponse<MaintenanceRecord[]>> {
     return this.getAll({ vendor_name: vendorName, page, limit });
   }
 
-  async getByItemName(itemName: string, page = 1, limit = 10): Promise<ApiResponse<MaintenanceRecord[]>> {
+  async getByItemName(itemName: string, page = 1, limit = 100): Promise<ApiResponse<MaintenanceRecord[]>> {
     return this.getAll({ item_name: itemName, page, limit });
   }
 
-  async getByDateRange(startDate: string, endDate: string, page = 1, limit = 10): Promise<ApiResponse<MaintenanceRecord[]>> {
+  async getByDateRange(startDate: string, endDate: string, page = 1, limit = 100): Promise<ApiResponse<MaintenanceRecord[]>> {
     return this.getAll({ start_date: startDate, end_date: endDate, page, limit });
   }
 

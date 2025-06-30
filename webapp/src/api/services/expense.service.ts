@@ -44,19 +44,19 @@ class ExpenseService extends BaseService<Expense, CreateExpenseRequest, UpdateEx
   }
 
   // Convenience methods
-  async getByTractor(tractorId: number, page = 1, limit = 10): Promise<ApiResponse<Expense[]>> {
+  async getByTractor(tractorId: number, page = 1, limit = 100): Promise<ApiResponse<Expense[]>> {
     return this.getAll({ tractor_id: tractorId, page, limit });
   }
 
-  async getByTrailer(trailerId: number, page = 1, limit = 10): Promise<ApiResponse<Expense[]>> {
+  async getByTrailer(trailerId: number, page = 1, limit = 100): Promise<ApiResponse<Expense[]>> {
     return this.getAll({ trailer_id: trailerId, page, limit });
   }
 
-  async getByCategory(categoryId: number, page = 1, limit = 10): Promise<ApiResponse<Expense[]>> {
+  async getByCategory(categoryId: number, page = 1, limit = 100): Promise<ApiResponse<Expense[]>> {
     return this.getAll({ expense_category_id: categoryId, page, limit });
   }
 
-  async getByDateRange(startDate: string, endDate: string, page = 1, limit = 10): Promise<ApiResponse<Expense[]>> {
+  async getByDateRange(startDate: string, endDate: string, page = 1, limit = 100): Promise<ApiResponse<Expense[]>> {
     return this.getAll({ start_date: startDate, end_date: endDate, page, limit });
   }
 }

@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 export const maintenanceApi = {
   // Get all maintenance records with pagination and optional filters
-  getAll: async (page = 1, limit = 10, filters = {}) => {
+  getAll: async (page = 1, limit = 100, filters = {}) => {
     const params = { page, limit, ...filters };
     const response = await apiClient.get('/maintenance', { params });
     return response;
@@ -33,7 +33,7 @@ export const maintenanceApi = {
   },
 
   // Get maintenance records by license plate
-  getByLicensePlate: async (licensePlate, page = 1, limit = 10) => {
+  getByLicensePlate: async (licensePlate, page = 1, limit = 100) => {
     const response = await apiClient.get('/maintenance', { 
       params: { page, limit, license_plate: licensePlate }
     });
@@ -41,7 +41,7 @@ export const maintenanceApi = {
   },
 
   // Get maintenance records with vendor filter
-  getByVendor: async (vendorName, page = 1, limit = 10) => {
+  getByVendor: async (vendorName, page = 1, limit = 100) => {
     const response = await apiClient.get('/maintenance', {
       params: { page, limit, vendor_name: vendorName }
     });
@@ -49,7 +49,7 @@ export const maintenanceApi = {
   },
 
   // Get maintenance records with date range filter
-  getByDateRange: async (startDate, endDate, page = 1, limit = 10) => {
+  getByDateRange: async (startDate, endDate, page = 1, limit = 100) => {
     const response = await apiClient.get('/maintenance', {
       params: { 
         page, 
@@ -62,7 +62,7 @@ export const maintenanceApi = {
   },
 
   // Get maintenance records with item name filter
-  getByItemName: async (itemName, page = 1, limit = 10) => {
+  getByItemName: async (itemName, page = 1, limit = 100) => {
     const response = await apiClient.get('/maintenance', {
       params: { page, limit, item_name: itemName }
     });

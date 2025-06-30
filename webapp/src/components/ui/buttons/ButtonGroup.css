@@ -1,0 +1,92 @@
+/* Button Group Styles */
+.button-group {
+  display: flex;
+  align-items: center;
+}
+
+.button-group--horizontal {
+  flex-direction: row;
+}
+
+.button-group--vertical {
+  flex-direction: column;
+}
+
+.button-group--wrap {
+  flex-wrap: wrap;
+}
+
+/* Gap sizes */
+.button-group--gap-none {
+  gap: 0;
+}
+
+.button-group--gap-small {
+  gap: 8px;
+}
+
+.button-group--gap-medium {
+  gap: 12px;
+}
+
+.button-group--gap-large {
+  gap: 16px;
+}
+
+.button-group--gap-xl {
+  gap: 20px;
+}
+
+/* Alignment */
+.button-group--align-start {
+  align-items: flex-start;
+}
+
+.button-group--align-center {
+  align-items: center;
+}
+
+.button-group--align-end {
+  align-items: flex-end;
+}
+
+.button-group--align-stretch {
+  align-items: stretch;
+}
+
+/* Justification */
+.button-group--justify-start {
+  justify-content: flex-start;
+}
+
+.button-group--justify-center {
+  justify-content: center;
+}
+
+.button-group--justify-end {
+  justify-content: flex-end;
+}
+
+.button-group--justify-between {
+  justify-content: space-between;
+}
+
+.button-group--justify-around {
+  justify-content: space-around;
+}
+
+.button-group--justify-evenly {
+  justify-content: space-evenly;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .button-group--horizontal {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .button-group--horizontal .btn {
+    width: 100%;
+  }
+}

@@ -12,7 +12,7 @@ export const useContainer = () => {
   const [pagination, setPagination] = useState(null);
 
   // Fetch all containers
-  const fetchAll = useCallback(async (page = 1, limit = 10) => {
+  const fetchAll = useCallback(async (page = 1, limit = 100) => {
     setLoading(true);
     setError('');
     try {

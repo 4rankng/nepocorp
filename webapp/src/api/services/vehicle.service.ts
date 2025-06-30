@@ -30,7 +30,7 @@ class TractorService extends BaseService<Tractor, CreateTractorRequest, UpdateTr
     return super.getAll(params);
   }
 
-  async getActive(page = 1, limit = 10): Promise<ApiResponse<Tractor[]>> {
+  async getActive(page = 1, limit = 100): Promise<ApiResponse<Tractor[]>> {
     return this.getAll({ is_active: true, page, limit });
   }
 
@@ -48,7 +48,7 @@ class TrailerService extends BaseService<Trailer, CreateTrailerRequest, UpdateTr
     return super.getAll(params);
   }
 
-  async getActive(page = 1, limit = 10): Promise<ApiResponse<Trailer[]>> {
+  async getActive(page = 1, limit = 100): Promise<ApiResponse<Trailer[]>> {
     return this.getAll({ is_active: true, page, limit });
   }
 
@@ -66,7 +66,7 @@ class ContainerService extends BaseService<Container, CreateContainerRequest, Up
     return super.getAll(params);
   }
 
-  async getActive(page = 1, limit = 10): Promise<ApiResponse<Container[]>> {
+  async getActive(page = 1, limit = 100): Promise<ApiResponse<Container[]>> {
     return this.getAll({ is_active: true, page, limit });
   }
 

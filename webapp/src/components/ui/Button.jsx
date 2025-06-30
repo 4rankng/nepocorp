@@ -14,6 +14,8 @@ const Button = ({
   iconPosition = 'start',
   fullWidth = false,
   iconOnly = false,
+  round = false,
+  badge,
   href,
   target,
   ...props 
@@ -26,6 +28,8 @@ const Button = ({
     disabled && 'btn--disabled',
     loading && 'btn--loading',
     iconOnly && 'btn--icon-only',
+    round && 'btn--round',
+    badge && 'btn--badge',
     className
   ].filter(Boolean).join(' ');
 
@@ -55,6 +59,9 @@ const Button = ({
         {!loading && icon && iconPosition === 'end' && (
           <span className="btn-icon btn-icon--end">{icon}</span>
         )}
+        {badge && (
+          <span className="btn-badge-indicator">{badge}</span>
+        )}
       </a>
     );
   }
@@ -76,6 +83,9 @@ const Button = ({
       {!iconOnly && <span className="btn-content">{children}</span>}
       {!loading && icon && iconPosition === 'end' && (
         <span className="btn-icon btn-icon--end">{icon}</span>
+      )}
+      {badge && (
+        <span className="btn-badge-indicator">{badge}</span>
       )}
     </button>
   );

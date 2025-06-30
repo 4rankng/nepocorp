@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 export const expenseApi = {
   // Get all expenses with pagination (filtered by category if needed)
-  getAll: async (page = 1, limit = 10, categoryId = null) => {
+  getAll: async (page = 1, limit = 100, categoryId = null) => {
     const params = { page, limit };
     if (categoryId) {
       params.expense_category_id = categoryId;
@@ -81,7 +81,7 @@ export const expenseApi = {
 // BaoDuong-specific API wrapper with expense_category_id = 1
 export const baoDuongApi = {
   // Get all BaoDuong expenses (category_id = 1)
-  getAll: async (page = 1, limit = 10) => {
+  getAll: async (page = 1, limit = 100) => {
     return expenseApi.getAll(page, limit, 1);
   },
 
