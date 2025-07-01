@@ -19,14 +19,6 @@ const (
 	ErrExpenseCategoryNotFound     = "Không tìm thấy danh mục chi phí"
 	ErrExpenseCategoryNameRequired = "Trường 'tên' là bắt buộc và không được để trống"
 
-	// Containers errors
-	ErrFetchContainers           = "Lỗi khi lấy danh sách container"
-	ErrCountContainers           = "Lỗi khi đếm số container"
-	ErrCreateContainer           = "Lỗi khi tạo container"
-	ErrUpdateContainer           = "Lỗi khi sửa container"
-	ErrDeleteContainer           = "Lỗi khi xóa container"
-	ErrContainerNotFound         = "Không tìm thấy container"
-	ErrContainerCategoryRequired = "Trường 'danh mục' là bắt buộc và không được để trống"
 
 	// Tractors errors
 	ErrFetchTractors               = "Lỗi khi lấy danh sách đầu kéo"

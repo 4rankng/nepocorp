@@ -11,11 +11,6 @@ const (
 	MsgExpenseCategoryUpdated     = "Sửa danh mục chi phí thành công"
 	MsgExpenseCategoryDeleted     = "Xóa danh mục chi phí thành công"
 
-	// Containers
-	MsgContainersRetrieved = "Lấy danh sách container thành công"
-	MsgContainerCreated    = "Tạo container thành công"
-	MsgContainerUpdated    = "Sửa container thành công"
-	MsgContainerDeleted    = "Xóa container thành công"
 
 	// Tractors
 	MsgTractorsRetrieved = "Lấy danh sách đầu kéo thành công"

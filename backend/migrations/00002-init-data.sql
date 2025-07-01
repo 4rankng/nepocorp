@@ -136,13 +136,6 @@ INSERT IGNORE INTO partners (id, name, tax_code, address) VALUES
 (4, 'Tổng công ty Cảng Hải Phòng', '0444555666', '321 Lạch Tray, Ngô Quyền, Hải Phòng'),
 (5, 'Công ty CP Logistics Vũng Tàu', '0555666777', '654 Thùy Vân, Vũng Tàu');
 
--- Insert mock containers
-INSERT IGNORE INTO containers (id, category, last_updated_by) VALUES
-(1, '20ft', 'system'),
-(2, '40ft', 'system'),
-(3, '40ft-HC', 'system'),
-(4, '45ft', 'system'),
-(5, 'Tank', 'system');
 
 -- ================================================================
 -- III. VEHICLE MANAGEMENT TABLES

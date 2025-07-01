@@ -22,7 +22,6 @@ func Setup(
 	userHandler *handlers.UserHandler,
 	userRepo *repositories.UserRepository,
 	expenseCategoryHandler *handlers.ExpenseCategoryHandler,
-	containerHandler *handlers.ContainerHandler,
 	tractorHandler *handlers.TractorHandler,
 	trailerHandler *handlers.TrailerHandler,
 	expenseHandler *handlers.ExpenseHandler,
@@ -91,11 +90,6 @@ func Setup(
 			protected.PUT("/expense_category/:id", expenseCategoryHandler.Update)
 			protected.DELETE("/expense_category/:id", expenseCategoryHandler.Delete)
 
-			// Containers
-			protected.GET("/container", containerHandler.List)
-			protected.POST("/container", containerHandler.Create)
-			protected.PUT("/container/:id", containerHandler.Update)
-			protected.DELETE("/container/:id", containerHandler.Delete)
 
 			// Tractors
 			protected.GET("/tractor", tractorHandler.List)

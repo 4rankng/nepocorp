@@ -74,7 +74,6 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	activityLogRepo := repositories.NewActivityLogRepository(db)
 	expenseCategoryRepo := repositories.NewExpenseCategoryRepository(db)
-	containerRepo := repositories.NewContainerRepository(db)
 	tractorRepo := repositories.NewTractorRepository(db)
 	trailerRepo := repositories.NewTrailerRepository(db)
 	expenseRepo := repositories.NewExpenseRepository(db)
@@ -98,7 +97,6 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userRepo, cfg, logger)
 	userHandler := handlers.NewUserHandler(userRepo)
 	expenseCategoryHandler := handlers.NewExpenseCategoryHandler(expenseCategoryRepo)
-	containerHandler := handlers.NewContainerHandler(containerRepo)
 	tractorHandler := handlers.NewTractorHandler(tractorRepo)
 	trailerHandler := handlers.NewTrailerHandler(trailerRepo)
 	expenseHandler := handlers.NewExpenseHandler(expenseRepo, expenseCategoryRepo)
@@ -129,7 +127,7 @@ func main() {
 
 	// Initialize routes
 	routes.Setup(r, cfg, db, healthHandler, authHandler, userHandler, userRepo, expenseCategoryHandler,
-		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, activityLogHandler, logger)
+		tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, activityLogHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -190,7 +188,6 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 		&models.User{},
 		&models.ActivityLog{},
 		&models.ExpenseCategory{},
-		&models.Container{},
 		&models.Tractor{},
 		&models.Trailer{},
 		&models.Expense{},
