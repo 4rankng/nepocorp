@@ -90,7 +90,7 @@ export default function useBaoDuongRecords(baoDuongApi) {
   const [error, setError] = useState('');
   const [pagination, setPagination] = useState({
     page: 0,
-    pageSize: 10,
+    pageSize: 100,
     total: 0,
     totalPages: 1,
   });

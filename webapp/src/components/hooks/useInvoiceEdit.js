@@ -23,6 +23,8 @@ const useInvoiceEdit = (
   const [pendingStatus, setPendingStatus] = useState(null);
   const [tempPaymentProof, setTempPaymentProof] = useState('');
   const [tempCancelReason, setTempCancelReason] = useState('');
+  const [paymentProofError, setPaymentProofError] = useState('');
+  const [cancelReasonError, setCancelReasonError] = useState('');
 
   // Initialize for add mode
   useEffect(() => {
@@ -71,6 +73,8 @@ const useInvoiceEdit = (
     setPendingStatus(null);
     setTempPaymentProof('');
     setTempCancelReason('');
+    setPaymentProofError('');
+    setCancelReasonError('');
   }, []);
 
   const handleFieldChange = useCallback((field, value) => {
@@ -128,7 +132,7 @@ const useInvoiceEdit = (
   // Handle payment proof confirmation
   const handlePaymentProofConfirm = useCallback(() => {
     if (!tempPaymentProof.trim()) {
-      alert('Vui lòng nhập URL chứng từ thanh toán');
+      setPaymentProofError('Vui lòng nhập URL chứng từ thanh toán');
       return;
     }
 
@@ -142,12 +146,13 @@ const useInvoiceEdit = (
     setShowPaymentProofPrompt(false);
     setPendingStatus(null);
     setTempPaymentProof('');
+    setPaymentProofError('');
   }, [tempPaymentProof, pendingStatus]);
 
   // Handle cancel reason confirmation
   const handleCancelReasonConfirm = useCallback(() => {
     if (!tempCancelReason.trim()) {
-      alert('Vui lòng nhập lý do hủy');
+      setCancelReasonError('Vui lòng nhập lý do hủy');
       return;
     }
 
@@ -161,6 +166,7 @@ const useInvoiceEdit = (
     setShowCancelReasonPrompt(false);
     setPendingStatus(null);
     setTempCancelReason('');
+    setCancelReasonError('');
   }, [tempCancelReason, pendingStatus]);
 
   // Handle prompt cancellation
@@ -170,6 +176,8 @@ const useInvoiceEdit = (
     setPendingStatus(null);
     setTempPaymentProof('');
     setTempCancelReason('');
+    setPaymentProofError('');
+    setCancelReasonError('');
   }, []);
 
   const handleSaveEdit = useCallback(async () => {
@@ -245,10 +253,18 @@ const useInvoiceEdit = (
     handlePaymentProofConfirm,
     handleCancelReasonConfirm,
     handlePromptCancel,
-    setTempPaymentProof,
-    setTempCancelReason,
+    setTempPaymentProof: value => {
+      setTempPaymentProof(value);
+      if (paymentProofError) setPaymentProofError('');
+    },
+    setTempCancelReason: value => {
+      setTempCancelReason(value);
+      if (cancelReasonError) setCancelReasonError('');
+    },
     setEditingItemIndex,
     setShowItemEditModal,
+    paymentProofError,
+    cancelReasonError,
   };
 };
 

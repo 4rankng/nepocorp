@@ -13,6 +13,7 @@ const StatusChangePrompts = ({
   onPaymentProofConfirm,
   onCancelReasonConfirm,
   onCancel,
+  entityType = "phiếu chi",
 }) => {
   return (
     <>
@@ -27,7 +28,7 @@ const StatusChangePrompts = ({
         onClose={onCancel}
         onConfirm={onCancelReasonConfirm}
         initialValue={tempCancelReason}
-        entityType="phiếu chi"
+        entityType={entityType}
       />
     </>
   );
@@ -43,6 +44,7 @@ StatusChangePrompts.propTypes = {
   onPaymentProofConfirm: PropTypes.func.isRequired,
   onCancelReasonConfirm: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
+  entityType: PropTypes.string,
 };
 
 StatusChangePrompts.defaultProps = {

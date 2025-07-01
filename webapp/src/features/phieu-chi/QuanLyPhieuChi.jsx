@@ -10,7 +10,7 @@ import useExpenses from './hooks/useExpenses';
 import useExpenseForm from '@/hooks/useExpenseForm';
 import { expenseApi } from '@services/api/expenseApi';
 import { Snackbar, Alert, Box } from '@mui/material';
-import { Add as AddIcon, Category as CategoryIcon } from '@mui/icons-material';
+import { Add as AddIcon, Category as CategoryIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { Button } from '@/components/ui/buttons';
 import { PAYMENT_STATUS_LABELS } from '@constants/payment';
 import FAB from '@/components/FAB';
@@ -61,6 +61,7 @@ const QuanLyPhieuChi = () => {
     categories,
     isLoading,
     error,
+    fetchData,
     deleteExpense,
     updateExpense,
     createExpense,
@@ -239,14 +240,32 @@ const QuanLyPhieuChi = () => {
     }
   }, [deleteDialog.expense, deleteExpense, showSnackbar, handleDeleteClose]);
 
+  const handleRefresh = useCallback(async () => {
+    try {
+      await fetchData(pagination.page, pagination.pageSize);
+      showSnackbar('Dữ liệu đã được cập nhật', 'success');
+    } catch (error) {
+      showSnackbar('Không thể tải lại dữ liệu', 'error');
+    }
+  }, [fetchData, pagination.page, pagination.pageSize, showSnackbar]);
+
   if (!currentUser) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="pb-20">
-      {/* Header with Category Management Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
+      {/* Header with Category Management and Refresh Buttons */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}>
+        <Button
+          variant="secondary"
+          size="small"
+          icon={<RefreshIcon />}
+          onClick={handleRefresh}
+          disabled={isLoading}
+        >
+          Làm mới
+        </Button>
         <Button
           variant="secondary"
           size="small"

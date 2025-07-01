@@ -67,26 +67,31 @@ export const useTransactionActions = ({
     [onUpdateTransaction, onRefresh]
   );
 
-  // Delete transaction with confirmation
+  // Delete transaction - returns confirmation data for parent to handle
   const handleDelete = useCallback(
-    async transaction => {
-      const confirmMessage = `Bạn có chắc chắn muốn xóa giao dịch này?
+    transaction => {
+      // Return the transaction and confirmation details for parent component to handle
+      return {
+        needsConfirmation: true,
+        transaction,
+        confirmationDetails: {
+          'Loại': transaction.transaction_type,
+          'Ngày': new Date(transaction.transaction_date).toLocaleDateString('vi-VN'),
+          'Số tiền': `${transaction.debit > 0 ? transaction.debit : transaction.credit} VND`
+        }
+      };
+    },
+    []
+  );
 
-Loại: ${transaction.transaction_type}
-Ngày: ${new Date(transaction.transaction_date).toLocaleDateString('vi-VN')}
-Số tiền: ${transaction.debit > 0 ? transaction.debit : transaction.credit} VND
-
-Hành động này không thể hoàn tác.`;
-
-      if (!window.confirm(confirmMessage)) {
-        return { success: false, cancelled: true };
-      }
-
+  // Confirm delete - called after user confirms in dialog
+  const confirmDelete = useCallback(
+    async transactionId => {
       try {
         setLoading(true);
         setError(null);
 
-        const result = await onDeleteTransaction(transaction.id);
+        const result = await onDeleteTransaction(transactionId);
 
         if (result.success) {
           // Refresh data after successful deletion
@@ -108,17 +113,22 @@ Hành động này không thể hoàn tác.`;
     [onDeleteTransaction, onRefresh]
   );
 
-  // Batch delete transactions
+  // Batch delete transactions - returns confirmation data for parent to handle
   const handleBatchDelete = useCallback(
+    transactions => {
+      // Return the transactions and confirmation details for parent component to handle
+      return {
+        needsConfirmation: true,
+        transactions,
+        count: transactions.length
+      };
+    },
+    []
+  );
+
+  // Confirm batch delete - called after user confirms in dialog
+  const confirmBatchDelete = useCallback(
     async transactions => {
-      const confirmMessage = `Bạn có chắc chắn muốn xóa ${transactions.length} giao dịch đã chọn?
-
-Hành động này không thể hoàn tác.`;
-
-      if (!window.confirm(confirmMessage)) {
-        return { success: false, cancelled: true };
-      }
-
       try {
         setLoading(true);
         setError(null);
@@ -212,7 +222,9 @@ Hành động này không thể hoàn tác.`;
     handleCreate,
     handleUpdate,
     handleDelete,
+    confirmDelete,
     handleBatchDelete,
+    confirmBatchDelete,
     handleDuplicate,
     clearError,
 

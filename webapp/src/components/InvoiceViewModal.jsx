@@ -240,42 +240,36 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   );
 
   // Handle payment proof confirmation
-  const handlePaymentProofConfirm = useCallback(() => {
-    if (!tempPaymentProof.trim()) {
-      alert('Vui lòng nhập URL chứng từ thanh toán');
-      return;
-    }
-
+  const handlePaymentProofConfirm = useCallback((paymentProofUrl) => {
+    // The PaymentProofModal handles its own validation
+    // so we just need to update the data when confirmed
     setEditedData(prev => ({
       ...prev,
       payment_status: pendingStatus,
-      payment_proof: tempPaymentProof,
+      payment_proof: paymentProofUrl,
       cancel_reason: null, // Clear cancel reason when marking as paid
     }));
 
     setShowPaymentProofPrompt(false);
     setPendingStatus(null);
     setTempPaymentProof('');
-  }, [tempPaymentProof, pendingStatus]);
+  }, [pendingStatus]);
 
   // Handle cancel reason confirmation
-  const handleCancelReasonConfirm = useCallback(() => {
-    if (!tempCancelReason.trim()) {
-      alert('Vui lòng nhập lý do hủy');
-      return;
-    }
-
+  const handleCancelReasonConfirm = useCallback((cancelReasonText) => {
+    // The CancelReasonModal handles its own validation
+    // so we just need to update the data when confirmed
     setEditedData(prev => ({
       ...prev,
       payment_status: pendingStatus,
-      cancel_reason: tempCancelReason,
+      cancel_reason: cancelReasonText,
       payment_proof: null, // Clear payment proof when cancelling
     }));
 
     setShowCancelReasonPrompt(false);
     setPendingStatus(null);
     setTempCancelReason('');
-  }, [tempCancelReason, pendingStatus]);
+  }, [pendingStatus]);
 
   // Handle prompt cancellation
   const handlePromptCancel = useCallback(() => {
@@ -430,6 +424,7 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
             onPaymentProofConfirm={handlePaymentProofConfirm}
             onCancelReasonConfirm={handleCancelReasonConfirm}
             onCancel={handlePromptCancel}
+            entityType="phiếu thu"
           />
 
           {invoiceData && !loading && (

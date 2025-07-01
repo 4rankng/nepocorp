@@ -303,11 +303,13 @@ CREATE TABLE IF NOT EXISTS maintenance (
 -- Create invoice_categories table
 CREATE TABLE IF NOT EXISTS invoice_categories (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên hạng mục hóa đơn bằng tiếng Việt',
+    description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT 'Mô tả chi tiết về hạng mục hóa đơn',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    last_updated_by VARCHAR(255),
+    UNIQUE KEY uk_invoice_categories_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ các hạng mục hóa đơn';
 
 -- Create invoices table
 CREATE TABLE IF NOT EXISTS invoices (

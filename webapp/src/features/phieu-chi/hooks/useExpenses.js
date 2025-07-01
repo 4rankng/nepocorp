@@ -9,9 +9,10 @@ export default function useExpenses() {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lastFetchTime, setLastFetchTime] = useState(null);
   const [pagination, setPagination] = useState({
     page: 0,
-    pageSize: 10,
+    pageSize: 100,
     total: 0,
     totalPages: 1,
   });
@@ -26,8 +27,14 @@ export default function useExpenses() {
     }
   }, []);
 
+  // Check if data is stale (older than 5 minutes)
+  const isDataStale = useCallback(() => {
+    if (!lastFetchTime) return true;
+    return Date.now() - lastFetchTime > 5 * 60 * 1000; // 5 minutes
+  }, [lastFetchTime]);
+
   // Fetch paginated expenses data
-  const fetchData = useCallback(async (page = 0, pageSize = 10, categoryId = null) => {
+  const fetchData = useCallback(async (page = 0, pageSize = 100, categoryId = null) => {
     setIsLoading(true);
     try {
       // Note: API is 1-indexed for page number
@@ -50,6 +57,7 @@ export default function useExpenses() {
       }));
 
       setError('');
+      setLastFetchTime(Date.now()); // Update last fetch time
     } catch (err) {
       logger.error('Error loading expenses', { error: err });
       const errorMessage = extractErrorMessage(err, 'Không thể tải dữ liệu chi phí');
@@ -73,6 +81,11 @@ export default function useExpenses() {
     },
     [fetchData]
   );
+
+  // Fetch all expenses (up to 1000)
+  const fetchAll = useCallback(() => {
+    return fetchData(0, 1000);
+  }, [fetchData]);
 
   // Create new expense
   const createExpense = useCallback(
@@ -164,10 +177,12 @@ export default function useExpenses() {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Fetch initial data on mount
+  // Fetch initial data on mount or when data is stale
   useEffect(() => {
-    fetchData(0, 10);
-  }, []);
+    if (isDataStale()) {
+      fetchData(0, 100);
+    }
+  }, [isDataStale]);
 
   return {
     expenses,
@@ -176,10 +191,12 @@ export default function useExpenses() {
     isLoading,
     error,
     fetchData,
+    fetchAll,
     createExpense,
     updateExpense,
     deleteExpense,
     getExpenseById,
+    isDataStale,
     pagination: {
       ...pagination,
       onPageChange: handlePageChange,

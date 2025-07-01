@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // Import simplified components
 import { StatsGrid, StatementTable, TransactionModal, TransactionViewModal } from './components';
+import ConfirmDialog from '@components/ConfirmDialog';
 
 // Import hooks
 import {
@@ -36,6 +37,8 @@ const QuanLyBangCongNo = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, transaction: null });
+  const [batchDeleteDialog, setBatchDeleteDialog] = useState({ open: false, transactions: [] });
 
   // Main financial ledger hook
   const {
@@ -76,6 +79,9 @@ const QuanLyBangCongNo = () => {
     handleCreate,
     handleUpdate,
     handleDelete,
+    confirmDelete,
+    handleBatchDelete,
+    confirmBatchDelete,
     loading: actionLoading,
     error: actionError,
   } = useTransactionActions({
@@ -119,20 +125,56 @@ const QuanLyBangCongNo = () => {
     [modalMode, modalTransaction, handleCreate, handleUpdate, showSnackbar, closeModal]
   );
 
-  // Handle transaction delete
+  // Handle transaction delete - opens confirmation dialog
   const handleTransactionDelete = useCallback(
-    async transaction => {
-      const result = await handleDelete(transaction);
-
-      if (result.success) {
-        showSnackbar(result.message, 'success');
-        closeViewModal();
-      } else if (!result.cancelled) {
-        showSnackbar(result.error, 'error');
+    transaction => {
+      const result = handleDelete(transaction);
+      if (result.needsConfirmation) {
+        setDeleteDialog({ open: true, transaction: result.transaction });
       }
     },
-    [handleDelete, showSnackbar, closeViewModal]
+    [handleDelete]
   );
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteDialog.transaction) return;
+
+    const result = await confirmDelete(deleteDialog.transaction.id);
+    
+    if (result.success) {
+      showSnackbar(result.message, 'success');
+      setDeleteDialog({ open: false, transaction: null });
+      closeViewModal();
+    } else {
+      showSnackbar(result.error, 'error');
+    }
+  }, [deleteDialog.transaction, confirmDelete, showSnackbar, closeViewModal]);
+
+  // Handle batch delete - opens confirmation dialog
+  const handleTransactionBatchDelete = useCallback(
+    transactions => {
+      const result = handleBatchDelete(transactions);
+      if (result.needsConfirmation) {
+        setBatchDeleteDialog({ open: true, transactions: result.transactions });
+      }
+    },
+    [handleBatchDelete]
+  );
+
+  // Handle batch delete confirmation
+  const handleBatchDeleteConfirm = useCallback(async () => {
+    if (!batchDeleteDialog.transactions || batchDeleteDialog.transactions.length === 0) return;
+
+    const result = await confirmBatchDelete(batchDeleteDialog.transactions);
+    
+    if (result.success) {
+      showSnackbar(result.message, 'success');
+      setBatchDeleteDialog({ open: false, transactions: [] });
+    } else {
+      showSnackbar(result.error, 'error');
+    }
+  }, [batchDeleteDialog.transactions, confirmBatchDelete, showSnackbar]);
 
   // Handle edit transaction
   const handleEditTransaction = useCallback(
@@ -302,6 +344,38 @@ const QuanLyBangCongNo = () => {
           </Alert>
         </Snackbar>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onCancel={() => setDeleteDialog({ open: false, transaction: null })}
+        onConfirm={handleDeleteConfirm}
+        isLoading={actionLoading}
+        type="delete"
+        title="Xóa giao dịch"
+        message="Bạn có chắc chắn muốn xóa giao dịch này?"
+        details={
+          deleteDialog.transaction
+            ? {
+                'Loại': deleteDialog.transaction.transaction_type,
+                'Ngày': new Date(deleteDialog.transaction.transaction_date).toLocaleDateString('vi-VN'),
+                'Số tiền': `${deleteDialog.transaction.debit > 0 ? deleteDialog.transaction.debit : deleteDialog.transaction.credit} VND`
+              }
+            : null
+        }
+      />
+
+      {/* Batch Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={batchDeleteDialog.open}
+        onCancel={() => setBatchDeleteDialog({ open: false, transactions: [] })}
+        onConfirm={handleBatchDeleteConfirm}
+        isLoading={actionLoading}
+        type="delete"
+        title="Xóa nhiều giao dịch"
+        message={`Bạn có chắc chắn muốn xóa ${batchDeleteDialog.transactions.length} giao dịch đã chọn?`}
+        details={null}
+      />
     </Box>
   );
 };

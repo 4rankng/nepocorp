@@ -4,14 +4,16 @@ import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import InvoiceForm from '@/components/shared/InvoiceForm';
 import InvoiceList from '@/components/shared/InvoiceList';
 import InvoiceViewModal from '@/components/InvoiceViewModal';
+import InvoiceCategoryModal from '@/components/invoice/InvoiceCategoryModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import useInvoices from './hooks/useInvoices';
 import useInvoiceForm from '@/hooks/useInvoiceForm';
 import { invoiceApi } from '@services/api/invoiceApi';
-import { Snackbar, Alert } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Snackbar, Alert, Box } from '@mui/material';
+import { Add as AddIcon, Category as CategoryIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { INVOICE_STATUS_LABELS } from '@constants/invoice';
 import FAB from '@/components/FAB';
+import { Button } from '@/components/ui/buttons';
 
 const QuanLyPhieuThu = () => {
   const { currentUser } = useAuth();
@@ -34,6 +36,7 @@ const QuanLyPhieuThu = () => {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [viewingInvoiceId, setViewingInvoiceId] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, invoice: null });
   const [isDeletingInvoice, setIsDeletingInvoice] = useState(false);
 
@@ -53,7 +56,7 @@ const QuanLyPhieuThu = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  const { invoices, categories, isLoading, error, deleteInvoice, pagination } = useInvoices();
+  const { invoices, categories, isLoading, error, fetchData, deleteInvoice, pagination } = useInvoices();
 
   // Transform invoice data for editing (from API format to form format)
   const transformInvoiceForForm = invoice => {
@@ -199,6 +202,14 @@ const QuanLyPhieuThu = () => {
     setViewingInvoiceId(null);
   }, []);
 
+  const handleOpenCategoryModal = useCallback(() => {
+    setShowCategoryModal(true);
+  }, []);
+
+  const handleCloseCategoryModal = useCallback(() => {
+    setShowCategoryModal(false);
+  }, []);
+
   const handleDeleteInvoice = useCallback(invoice => {
     setDeleteDialog({ open: true, invoice });
   }, []);
@@ -222,12 +233,43 @@ const QuanLyPhieuThu = () => {
     }
   }, [deleteDialog.invoice, deleteInvoice, showSnackbar, handleDeleteClose]);
 
+  const handleRefresh = useCallback(async () => {
+    try {
+      await fetchData(pagination.page, pagination.pageSize);
+      showSnackbar('Dữ liệu đã được cập nhật', 'success');
+    } catch (error) {
+      showSnackbar('Không thể tải lại dữ liệu', 'error');
+    }
+  }, [fetchData, pagination.page, pagination.pageSize, showSnackbar]);
+
   if (!currentUser) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="p-6">
+    <div className="pb-20">
+      {/* Header with Category Management and Refresh Buttons */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}>
+        <Button
+          variant="secondary"
+          size="small"
+          icon={<RefreshIcon />}
+          onClick={handleRefresh}
+          disabled={isLoading}
+        >
+          Làm mới
+        </Button>
+        <Button
+          variant="secondary"
+          size="small"
+          icon={<CategoryIcon />}
+          onClick={handleOpenCategoryModal}
+          disabled={showInvoiceForm || showInvoiceModal}
+        >
+          Danh mục phiếu thu
+        </Button>
+      </Box>
+
       {/* Invoice Form Modal */}
       {showInvoiceForm && (
         <InvoiceForm
@@ -269,8 +311,11 @@ const QuanLyPhieuThu = () => {
         />
       )}
 
+      {/* Invoice Category Management Modal */}
+      <InvoiceCategoryModal open={showCategoryModal} onClose={handleCloseCategoryModal} />
+
       {/* FAB Button */}
-      {!showInvoiceForm && !showInvoiceModal && (
+      {!showInvoiceForm && !showInvoiceModal && !showCategoryModal && (
         <FAB onClick={handleAddInvoice} icon={<AddIcon />} ariaLabel="Thêm" />
       )}
 
