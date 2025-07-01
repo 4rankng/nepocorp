@@ -127,16 +127,7 @@ INSERT IGNORE INTO settings (id, `key`, `value`, last_updated_by) VALUES
 (6, 'fuel_price_default', '25000', 'Administrator (@admin)'),
 (7, 'insurance_renewal_reminder_days', '60', 'Administrator (@admin)');
 
--- Insert mock activity logs
-INSERT IGNORE INTO activity_logs (id, user_id, action, resource, resource_id, ip_address, user_agent, request_data, response_status) VALUES
-(1, 1, 'LOGIN', 'auth', '1', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', '{"username": "admin"}', 200),
-(2, 1, 'CREATE', 'tractors', '1', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', '{"license_plate": "51A-12345"}', 201),
-(3, 2, 'LOGIN', 'auth', '2', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', '{"username": "manager1"}', 200),
-(4, 2, 'CREATE', 'jobs', '1', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', '{"job_date": "2024-01-15"}', 201),
-(5, 3, 'LOGIN', 'auth', '3', '192.168.1.102', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15', '{"username": "driver1"}', 200),
-(6, 2, 'UPDATE', 'expenses', '1', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', '{"payment_status": "PAID"}', 200),
-(7, 1, 'DELETE', 'settings', '8', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', '{"key": "test_setting"}', 200),
-(8, 4, 'LOGIN', 'auth', '4', '192.168.1.103', 'Mozilla/5.0 (Android 12; Mobile) AppleWebKit/537.36', '{"username": "driver2"}', 200);
+-- Activity logs will be populated automatically when users interact with the system
 
 -- Insert mock customers
 INSERT IGNORE INTO customers (id, name, tax_code, address, contact_person, contact_phone, contact_email, notes) VALUES

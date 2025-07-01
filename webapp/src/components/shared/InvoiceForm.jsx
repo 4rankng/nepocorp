@@ -5,11 +5,11 @@ import { invoiceCategoryApi } from '@services/api/invoiceCategoryApi';
 import { customerApi } from '@services/api/customerApi';
 import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import LicensePlateSelectionModal from '../LicensePlateSelectionModal';
-import ExpenseHeader from '../expense/ExpenseHeader';
-import ExpenseBasicInfo from '../expense/ExpenseBasicInfo';
+import InvoiceHeader from '../invoice/InvoiceHeader';
+import InvoiceBasicInfo from '../invoice/InvoiceBasicInfo';
 import ExpenseOptionalSections from '../expense/ExpenseOptionalSections';
 import ExpenseItemsTable from '../expense/ExpenseItemsTable';
-import ExpenseActionButtons from '../expense/ExpenseActionButtons';
+import InvoiceActionButtons from '../invoice/InvoiceActionButtons';
 import InvoiceItemEditModal from '../invoice/InvoiceItemEditModal';
 import PaymentProofModal from '../shared/modals/PaymentProofModal';
 import CancelReasonModal from '../shared/modals/CancelReasonModal';
@@ -405,8 +405,8 @@ const InvoiceForm = ({
             }
           }}
         >
-          <ExpenseHeader
-            expenseData={invoiceData}
+          <InvoiceHeader
+            invoiceData={invoiceData}
             loading={false}
             isEditing={isEditing}
             editedData={editedData}
@@ -430,16 +430,14 @@ const InvoiceForm = ({
 
             {/* Status change modals are rendered outside the main form */}
 
-            <ExpenseBasicInfo
-              expenseData={invoiceData}
+            <InvoiceBasicInfo
+              invoiceData={invoiceData}
               isEditing={isEditing}
               editedData={editedData}
               onFieldChange={wrappedHandleFieldChange}
-              expenseCategories={adaptedInvoiceCategories}
+              invoiceCategories={invoiceCategories}
               isLoadingCategories={isLoadingCategories}
-              isInModal={true}
-              isInvoiceMode={true}
-              customers={adaptedCustomers}
+              customers={customers}
               isLoadingCustomers={isLoadingCustomers}
             />
 
@@ -468,10 +466,10 @@ const InvoiceForm = ({
             />
           </div>
 
-          <ExpenseActionButtons
+          <InvoiceActionButtons
             isEditing={isEditing}
             isSaving={isSaving}
-            expenseData={invoiceData}
+            invoiceData={invoiceData}
             onAddItem={wrappedHandleAddItem}
             onCancelEdit={wrappedHandleCancelEdit}
             onSaveEdit={wrappedHandleSaveEdit}

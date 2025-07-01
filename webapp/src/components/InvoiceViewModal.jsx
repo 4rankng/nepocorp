@@ -2,14 +2,15 @@ import React, { useState, useEffect, useCallback, useContext, useMemo } from 're
 import PropTypes from 'prop-types';
 import { invoiceApi } from '@services/api/invoiceApi';
 import { invoiceCategoryApi } from '@services/api/invoiceCategoryApi';
+import { customerApi } from '@services/api/customerApi';
 import { INVOICE_STATUS, INVOICE_STATUS_LABELS } from '@constants/invoice';
 import { VehicleDataContext } from '@/contexts/VehicleDataContext';
 import LicensePlateSelectionModal from './LicensePlateSelectionModal';
-import ExpenseHeader from './expense/ExpenseHeader';
-import ExpenseBasicInfo from './expense/ExpenseBasicInfo';
+import InvoiceHeader from './invoice/InvoiceHeader';
+import InvoiceBasicInfo from './invoice/InvoiceBasicInfo';
 import ExpenseOptionalSections from './expense/ExpenseOptionalSections';
 import ExpenseItemsTable from './expense/ExpenseItemsTable';
-import ExpenseActionButtons from './expense/ExpenseActionButtons';
+import InvoiceActionButtons from './invoice/InvoiceActionButtons';
 import StatusChangePrompts from '@components/shared/modals/StatusChangePrompts';
 import { Z_INDEX, setParentZIndex } from '@constants/zIndex';
 import { prepareInvoiceItemsForUpdate, calculateInvoiceTotal } from '@utils/invoiceHelpers';
@@ -24,6 +25,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
   const [editedData, setEditedData] = useState(null);
   const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [customers, setCustomers] = useState([]);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingPlates, setIsLoadingPlates] = useState(false);
   const [showLicensePlateModal, setShowLicensePlateModal] = useState(false);
@@ -102,24 +105,44 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
     }
   }, [open, invoiceId, fetchInvoiceData]);
 
-  // Fetch invoice categories when entering edit mode
+  // Fetch invoice categories and customers when entering edit mode
   useEffect(() => {
-    if (isEditing && invoiceCategories.length === 0) {
-      setIsLoadingCategories(true);
-      invoiceCategoryApi
-        .getAllWithoutPagination()
-        .then(response => {
-          const categories = response.data?.data || response.data || [];
-          setInvoiceCategories(categories);
-        })
-        .catch(err => {
-          console.error('Error fetching invoice categories:', err);
-        })
-        .finally(() => {
-          setIsLoadingCategories(false);
-        });
+    if (isEditing) {
+      // Load categories
+      if (invoiceCategories.length === 0) {
+        setIsLoadingCategories(true);
+        invoiceCategoryApi
+          .getAllWithoutPagination()
+          .then(response => {
+            const categories = response.data?.data || response.data || [];
+            setInvoiceCategories(categories);
+          })
+          .catch(err => {
+            console.error('Error fetching invoice categories:', err);
+          })
+          .finally(() => {
+            setIsLoadingCategories(false);
+          });
+      }
+
+      // Load customers
+      if (customers.length === 0) {
+        setIsLoadingCustomers(true);
+        customerApi
+          .getAll()
+          .then(response => {
+            const customerList = response.data?.data || response.data || [];
+            setCustomers(customerList);
+          })
+          .catch(err => {
+            console.error('Error fetching customers:', err);
+          })
+          .finally(() => {
+            setIsLoadingCustomers(false);
+          });
+      }
     }
-  }, [isEditing, invoiceCategories.length]);
+  }, [isEditing, invoiceCategories.length, customers.length]);
 
   // Fetch vehicles when entering edit mode
   useEffect(() => {
@@ -371,8 +394,8 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
           }
         }}
       >
-        <ExpenseHeader
-          expenseData={invoiceData}
+        <InvoiceHeader
+          invoiceData={invoiceData}
           loading={loading}
           isEditing={isEditing}
           editedData={editedData}
@@ -411,14 +434,15 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
 
           {invoiceData && !loading && (
             <>
-              <ExpenseBasicInfo
-                expenseData={invoiceData}
+              <InvoiceBasicInfo
+                invoiceData={invoiceData}
                 isEditing={isEditing}
                 editedData={editedData}
                 onFieldChange={handleFieldChange}
-                expenseCategories={invoiceCategories}
+                invoiceCategories={invoiceCategories}
                 isLoadingCategories={isLoadingCategories}
-                isInModal={true}
+                customers={customers}
+                isLoadingCustomers={isLoadingCustomers}
               />
 
               <ExpenseOptionalSections
@@ -447,10 +471,10 @@ const InvoiceViewModal = ({ open, onClose, invoiceId }) => {
           )}
         </div>
 
-        <ExpenseActionButtons
+        <InvoiceActionButtons
           isEditing={isEditing}
           isSaving={isSaving}
-          expenseData={invoiceData}
+          invoiceData={invoiceData}
           onAddItem={handleAddItem}
           onCancelEdit={handleCancelEdit}
           onSaveEdit={handleSaveEdit}
