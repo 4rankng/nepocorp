@@ -47,20 +47,20 @@ const InvoiceItemRow = ({
       </td>
       {isEditing && (
         <td className="px-3 py-2 text-center">
-          <div className="flex items-center justify-center gap-1">
+          <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => onEditItem(index)}
-              className="text-blue-600 hover:text-blue-800 p-1"
+              className="text-blue-600 hover:text-blue-800 p-1.5 rounded hover:bg-blue-50 transition-colors"
               title="Sửa dịch vụ"
             >
-              <EditIcon sx={{ fontSize: 16 }} />
+              <EditIcon sx={{ fontSize: 20 }} />
             </button>
             <button
               onClick={() => onDeleteItem(index)}
-              className="text-red-600 hover:text-red-800 p-1"
+              className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-50 transition-colors"
               title="Xóa dịch vụ"
             >
-              <DeleteIcon sx={{ fontSize: 16 }} />
+              <DeleteIcon sx={{ fontSize: 20 }} />
             </button>
           </div>
         </td>

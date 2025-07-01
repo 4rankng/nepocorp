@@ -61,21 +61,23 @@ const ExpenseBasicInfo = ({
           {isEditing ? (
             isInvoiceMode ? (
               <>
-                <Dropdown
-                  label={isInvoiceMode ? 'Khách hàng' : 'Nhà cung cấp'}
-                  value={editedData.customer_id}
-                  onChange={value => onFieldChange('customer_id', value)}
-                  options={customers.map(customer => ({
-                    value: customer.id,
-                    label: customer.name,
-                  }))}
-                  placeholder="Chọn khách hàng"
-                  loading={isLoadingCustomers}
-                  className={`text-sm ${errors.customer_id ? 'border-red-500' : ''}`}
-                />
-                {errors.customer_id && (
-                  <div className="text-red-500 text-xs mt-1">{errors.customer_id}</div>
-                )}
+                <div className="[&_.form-label]:text-xs [&_.dropdown__trigger]:text-sm [&_.dropdown__option]:text-sm">
+                  <Dropdown
+                    label={isInvoiceMode ? 'Khách hàng' : 'Nhà cung cấp'}
+                    value={editedData.customer_id}
+                    onChange={value => onFieldChange('customer_id', value)}
+                    options={customers.map(customer => ({
+                      value: customer.id,
+                      label: customer.name,
+                    }))}
+                    placeholder="Chọn khách hàng"
+                    loading={isLoadingCustomers}
+                    className={`text-sm ${errors.customer_id ? 'border-red-500' : ''}`}
+                  />
+                  {errors.customer_id && (
+                    <div className="text-red-500 text-xs mt-1">{errors.customer_id}</div>
+                  )}
+                </div>
               </>
             ) : (
               <>
@@ -114,38 +116,40 @@ const ExpenseBasicInfo = ({
         <div className="col-span-2">
           {isEditing ? (
             <>
-              <Dropdown
-                label={isInvoiceMode ? 'Loại phiếu thu' : 'Loại chi phí'}
-                required={true}
-                value={
-                  isInvoiceMode ? editedData.invoice_category_id : editedData.expense_category_id
-                }
-                onChange={value =>
-                  onFieldChange(
-                    isInvoiceMode ? 'invoice_category_id' : 'expense_category_id',
-                    value
-                  )
-                }
-                options={(() => {
-                  const dropdownOptions = expenseCategories.map(cat => ({
-                    value: cat.id,
-                    label: isInvoiceMode
-                      ? getInvoiceCategoryLabel(cat.name)
-                      : getExpenseCategoryLabel(cat.name),
-                  }));
-                  return dropdownOptions;
-                })()}
-                placeholder={isInvoiceMode ? 'Chọn loại phiếu thu' : 'Chọn loại chi phí'}
-                loading={isLoadingCategories}
-                className={`text-sm ${
-                  (isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id)
-                    ? 'border-red-500'
-                    : ''
-                }`}
-                error={
-                  (isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) || null
-                }
-              />
+              <div className="[&_.form-label]:text-xs [&_.dropdown__trigger]:text-sm [&_.dropdown__option]:text-sm">
+                <Dropdown
+                  label={isInvoiceMode ? 'Loại phiếu thu' : 'Loại chi phí'}
+                  required={true}
+                  value={
+                    isInvoiceMode ? editedData.invoice_category_id : editedData.expense_category_id
+                  }
+                  onChange={value =>
+                    onFieldChange(
+                      isInvoiceMode ? 'invoice_category_id' : 'expense_category_id',
+                      value
+                    )
+                  }
+                  options={(() => {
+                    const dropdownOptions = expenseCategories.map(cat => ({
+                      value: cat.id,
+                      label: isInvoiceMode
+                        ? getInvoiceCategoryLabel(cat.name)
+                        : getExpenseCategoryLabel(cat.name),
+                    }));
+                    return dropdownOptions;
+                  })()}
+                  placeholder={isInvoiceMode ? 'Chọn loại phiếu thu' : 'Chọn loại chi phí'}
+                  loading={isLoadingCategories}
+                  className={`text-sm ${
+                    (isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id)
+                      ? 'border-red-500'
+                      : ''
+                  }`}
+                  error={
+                    (isInvoiceMode ? errors.invoice_category_id : errors.expense_category_id) || null
+                  }
+                />
+              </div>
             </>
           ) : (
             <>

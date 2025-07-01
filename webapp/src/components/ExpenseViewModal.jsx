@@ -465,6 +465,9 @@ const ExpenseViewModal = ({ open, onClose, expenseId }) => {
                 onDeleteItem={handleDeleteItem}
                 onLicensePlateCellClick={handleLicensePlateCellClick}
                 total={expenseData.total}
+                licensePlates={getAllLicensePlates()}
+                isLoadingPlates={isLoadingPlates}
+                taxRate={taxRate}
               />
             </>
           )}
