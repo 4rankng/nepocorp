@@ -84,7 +84,6 @@ func main() {
 	partnerRepo := repositories.NewPartnerRepository(db)
 	invoiceCategoryRepo := repositories.NewInvoiceCategoryRepository(db)
 	invoiceRepo := repositories.NewInvoiceRepository(db)
-	routeRepo := repositories.NewRouteRepository(db)
 	jobRepo := repositories.NewJobRepository(db)
 	financialLedgerRepo := repositories.NewFinancialLedgerRepository(db)
 	fuelStandardRepo := repositories.NewFuelStandardRepository(db)
@@ -109,7 +108,6 @@ func main() {
 	partnerHandler := handlers.NewPartnerHandler(partnerRepo)
 	invoiceCategoryHandler := handlers.NewInvoiceCategoryHandler(invoiceCategoryRepo)
 	invoiceHandler := handlers.NewInvoiceHandler(invoiceRepo, invoiceCategoryRepo)
-	routeHandler := handlers.NewRouteHandler(routeRepo)
 	jobHandler := handlers.NewJobHandler(jobRepo)
 	financialLedgerHandler := handlers.NewFinancialLedgerHandler(financialLedgerRepo)
 	fuelStandardHandler := handlers.NewFuelStandardHandler(fuelStandardRepo)
@@ -131,7 +129,7 @@ func main() {
 
 	// Initialize routes
 	routes.Setup(r, cfg, db, healthHandler, authHandler, userHandler, userRepo, expenseCategoryHandler,
-		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, routeHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, activityLogHandler, logger)
+		containerHandler, tractorHandler, trailerHandler, expenseHandler, maintenanceHandler, settingHandler, customerHandler, partnerHandler, invoiceCategoryHandler, invoiceHandler, jobHandler, financialLedgerHandler, fuelStandardHandler, activityLogHandler, logger)
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -207,7 +205,6 @@ func initDB(cfg *config.Config) (*gorm.DB, error) {
 		&models.FinancialLedger{},
 		&models.FuelStandard{},
 		&models.Job{},
-		&models.Route{},
 	); err != nil {
 		return nil, err
 	}

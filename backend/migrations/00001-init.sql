@@ -8,6 +8,10 @@ SET NAMES 'utf8mb4';
 SET CHARACTER SET utf8mb4;
 SET collation_connection = 'utf8mb4_unicode_ci';
 
+
+
+
+
 -- ================================================================
 -- I. CORE SYSTEM TABLES
 -- ================================================================
@@ -22,7 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     UNIQUE INDEX idx_username (username),
     UNIQUE INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -51,11 +55,17 @@ CREATE TABLE IF NOT EXISTS settings (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `key` VARCHAR(255) NOT NULL UNIQUE,
     `value` TEXT NOT NULL,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_key (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO settings (id, `key`, `value`, last_updated_by) VALUES
+(1, 'tax_rate', '10', 'system'),
+(2, 'company_name', 'CÔNG TY TNHH NEPO', 'system'),
+(3, 'company_address', 'Số 26/63/36 đường Vạn Mỹ, phường Vạn Mỹ, quận Ngô Quyền, thành phố Hải Phòng', 'system'),
+
 
 -- ================================================================
 -- II. MASTER DATA TABLES
@@ -73,7 +83,7 @@ CREATE TABLE IF NOT EXISTS customers (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     UNIQUE INDEX idx_customers_tax_code (tax_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -89,7 +99,7 @@ CREATE TABLE IF NOT EXISTS partners (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     UNIQUE INDEX idx_partners_tax_code (tax_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -135,7 +145,7 @@ CREATE TABLE IF NOT EXISTS trailers (
     license_plate VARCHAR(50) NOT NULL,
 
     -- Core Asset Details
-    type VARCHAR(255) COMMENT 'Trailer type, critical for job pricing eg 20FT, 40FT',
+    type VARCHAR(255) COMMENT 'eg 20FT, 40FT',
     make VARCHAR(100) NULL COMMENT 'Manufacturer of the trailer',
     model VARCHAR(100) NULL COMMENT 'Model of the trailer',
     year_of_manufacture YEAR NULL,
@@ -147,35 +157,56 @@ CREATE TABLE IF NOT EXISTS trailers (
     last_updated_by VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create routes table for standard pricing
-CREATE TABLE IF NOT EXISTS routes (
+
+
+CREATE TABLE IF NOT EXISTS fuel_by_km (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    trailer_type VARCHAR(255) NOT NULL,
-    base_fee DECIMAL(15, 2) DEFAULT 0.00,
-    surcharge DECIMAL(15, 2) DEFAULT 0.00,
-    discount DECIMAL(15, 2) DEFAULT 0.00,
-    is_two_way_combined BOOLEAN DEFAULT FALSE,
-    notes TEXT NULL,
+    tractor_license_plate VARCHAR(255) NOT NULL,
+    trailer_license_plate VARCHAR(255) NOT NULL,
+    weight_category VARCHAR(255) NOT NULL COMMENT 'eg hàng + vỏ trên 20t, hàng + vỏ dưới 20t',
+    load_condition VARCHAR(255) NOT NULL COMMENT 'eg vỏ rỗng, hàng, 50% hàng + 50% vỏ',
+    l_100km DECIMAL(10, 2) NOT NULL COMMENT 'Lít nhiên liệu tiêu thụ trên 100km',
+    remark VARCHAR(255) NULL COMMENT 'Any additional notes or remarks',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255)
+    last_updated_by VARCHAR(255) DEFAULT 'system',
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create fuel consumption standards
-CREATE TABLE IF NOT EXISTS fuel_standards (
+INSERT INTO fuel_by_km (tractor_license_plate, trailer_license_plate, weight_category, load_condition, l_100km) VALUES
+('15C-136.31', '15R067.95', 'hàng + vỏ trên 20t', '50% hàng + 50% vỏ', 34),
+('15C-136.31', '15R067.95', 'hàng + vỏ dưới 20t', '50% hàng + 50% vỏ', 32),
+('15C-136.31', '15R067.95', 'hàng + vỏ trên 20t', 'vỏ rỗng', 25),
+('15C-136.31', '15R067.95', 'hàng + vỏ dưới 20t', 'vỏ rỗng', 25),
+('15C-136.31', '15R067.95', 'hàng + vỏ trên 20t', 'hàng', 43),
+('15C-136.31', '15R067.95', 'hàng + vỏ dưới 20t', 'hàng', 39),
+('15C-139.82', '15R070.51', 'hàng + vỏ trên 20t', '50% hàng + 50% vỏ', 34),
+('15C-139.82', '15R070.51', 'hàng + vỏ dưới 20t', '50% hàng + 50% vỏ', 32),
+('15C-139.82', '15R070.51', 'hàng + vỏ trên 20t', 'vỏ rỗng', 25),
+('15C-139.82', '15R070.51', 'hàng + vỏ dưới 20t', 'vỏ rỗng', 25),
+('15C-139.82', '15R070.51', 'hàng + vỏ trên 20t', 'hàng', 43),
+('15C-139.82', '15R070.51', 'hàng + vỏ dưới 20t', 'hàng', 39),
+('15C-119.57', '15R-050.37', 'hàng + vỏ trên 20t', '50% hàng + 50% vỏ', 36),
+('15C-119.57', '15R-050.37', 'hàng + vỏ dưới 20t', '50% hàng + 50% vỏ', 34),
+('15C-119.57', '15R-050.37', 'hàng + vỏ trên 20t', 'vỏ rỗng', 27),
+('15C-119.57', '15R-050.37', 'hàng + vỏ dưới 20t', 'vỏ rỗng', 27),
+('15C-119.57', '15R-050.37', 'hàng + vỏ trên 20t', 'hàng', 45),
+('15C-119.57', '15R-050.37', 'hàng + vỏ dưới 20t', 'hàng', 41),
+('15C-070.63', '15R-128.07', 'hàng + vỏ trên 20t', '50% hàng + 50% vỏ', 33),
+('15C-070.63', '15R-128.07', 'hàng + vỏ dưới 20t', '50% hàng + 50% vỏ', 31),
+('15C-070.63', '15R-128.07', 'hàng + vỏ trên 20t', 'vỏ rỗng', 24),
+('15C-070.63', '15R-128.07', 'hàng + vỏ dưới 20t', 'vỏ rỗng', 24),
+('15C-070.63', '15R-128.07', 'hàng + vỏ trên 20t', 'hàng', 42),
+('15C-070.63', '15R-128.07', 'hàng + vỏ dưới 20t', 'hàng', 38);
+
+CREATE TABLE IF NOT EXISTS fuel_by_route (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tractor_id BIGINT UNSIGNED NOT NULL,
-    trailer_type VARCHAR(255) NOT NULL,
-    load_category ENUM('under_20t', 'over_20t', 'empty') NOT NULL,
-    consumption_rate DECIMAL(5, 2) NOT NULL,
-    surcharge_rate_mountain DECIMAL(5, 2) DEFAULT 0.00,
-    notes TEXT NULL,
+    trailer_id BIGINT UNSIGNED NOT NULL,
+    l DECIMAL(10, 2) NOT NULL COMMENT 'Lít nhiên liệu tiêu thụ bổ sung cho mỗi chuyến đi',
+    remark VARCHAR(255) NULL COMMENT 'Any additional notes or remarks',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
-    FOREIGN KEY (tractor_id) REFERENCES tractors(id),
-    UNIQUE KEY uk_fuel_standard (tractor_id, trailer_type, load_category)
+    last_updated_by VARCHAR(255) DEFAULT 'system',
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
@@ -190,7 +221,6 @@ CREATE TABLE IF NOT EXISTS jobs (
     trailer_id BIGINT UNSIGNED NULL,
     user_id_driver BIGINT UNSIGNED NULL,
     customer_id BIGINT UNSIGNED NULL,
-    route_id BIGINT UNSIGNED NULL,
     container_number VARCHAR(50) NULL,
     description TEXT NOT NULL,
     distance_km INT UNSIGNED NULL,
@@ -198,12 +228,11 @@ CREATE TABLE IF NOT EXISTS jobs (
     status ENUM('DRAFT', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED') DEFAULT 'PLANNED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     FOREIGN KEY (tractor_id) REFERENCES tractors(id),
     FOREIGN KEY (trailer_id) REFERENCES trailers(id),
     FOREIGN KEY (user_id_driver) REFERENCES users(id),
     FOREIGN KEY (customer_id) REFERENCES customers(id),
-    FOREIGN KEY (route_id) REFERENCES routes(id),
     INDEX idx_job_date (job_date),
     INDEX idx_tractor_id (tractor_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -217,7 +246,7 @@ CREATE TABLE IF NOT EXISTS expense_categories (
     description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT 'Mô tả chi tiết về hạng mục chi phí',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     UNIQUE KEY uk_expense_categories_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ các hạng mục chi phí vận tải (đã đơn giản hóa)';
 
@@ -240,7 +269,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     description TEXT NULL,
     cancel_reason TEXT,
     created_by BIGINT UNSIGNED NOT NULL,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE SET NULL,
@@ -268,7 +297,7 @@ CREATE TABLE IF NOT EXISTS expense_items (
     expiry_date DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     FOREIGN KEY (expense_id) REFERENCES expenses(id) ON DELETE CASCADE,
     INDEX idx_expense_id (expense_id),
     INDEX idx_license_plate (license_plate)
@@ -289,7 +318,7 @@ CREATE TABLE IF NOT EXISTS maintenance (
     expiry_date DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     INDEX idx_expense_id (expense_id),
     INDEX idx_license_plate (license_plate),
     INDEX idx_vendor_name (vendor_name),
@@ -307,7 +336,7 @@ CREATE TABLE IF NOT EXISTS invoice_categories (
     description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT 'Mô tả chi tiết về hạng mục hóa đơn',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     UNIQUE KEY uk_invoice_categories_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ các hạng mục hóa đơn';
 
@@ -323,7 +352,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     remark TEXT,
     cancel_reason TEXT,
     created_by BIGINT UNSIGNED NOT NULL,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT,
@@ -350,7 +379,7 @@ CREATE TABLE IF NOT EXISTS invoice_items (
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
     INDEX idx_invoice_id (invoice_id),
     INDEX idx_license_plate (license_plate),
@@ -375,7 +404,7 @@ CREATE TABLE IF NOT EXISTS financial_ledgers (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_updated_by VARCHAR(255),
+    last_updated_by VARCHAR(255) DEFAULT 'system',
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (partner_id) REFERENCES partners(id),
     FOREIGN KEY (job_id) REFERENCES jobs(id),

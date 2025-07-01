@@ -32,7 +32,6 @@ func Setup(
 	partnerHandler *handlers.PartnerHandler,
 	invoiceCategoryHandler *handlers.InvoiceCategoryHandler,
 	invoiceHandler *handlers.InvoiceHandler,
-	routeHandler *handlers.RouteHandler,
 	jobHandler *handlers.JobHandler,
 	financialLedgerHandler *handlers.FinancialLedgerHandler,
 	fuelStandardHandler *handlers.FuelStandardHandler,
@@ -166,12 +165,6 @@ func Setup(
 			protected.PUT("/invoice/:id/item/:itemId", invoiceHandler.UpdateItem)
 			protected.DELETE("/invoice/:id/item/:itemId", invoiceHandler.DeleteItem)
 
-			// Routes
-			protected.GET("/route", routeHandler.GetAllRoutes)
-			protected.POST("/route", routeHandler.CreateRoute)
-			protected.GET("/route/:id", routeHandler.GetRouteByID)
-			protected.PUT("/route/:id", routeHandler.UpdateRoute)
-			protected.DELETE("/route/:id", routeHandler.DeleteRoute)
 
 			// Jobs
 			protected.GET("/job", jobHandler.GetAllJobs)

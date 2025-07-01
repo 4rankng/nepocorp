@@ -11,7 +11,6 @@ type Job struct {
 	TrailerID       *uint     `json:"trailer_id"`
 	UserIDDriver    *uint     `json:"user_id_driver"`
 	CustomerID      *uint     `json:"customer_id"`
-	RouteID         *uint     `json:"route_id"`
 	ContainerNumber string    `gorm:"type:varchar(50)" json:"container_number"`
 	Description     string    `gorm:"type:text;not null" json:"description"`
 	DistanceKm      *uint     `json:"distance_km"`
@@ -26,5 +25,4 @@ type Job struct {
 	Trailer  *Trailer  `gorm:"foreignKey:TrailerID" json:"trailer,omitempty"`
 	Driver   *User     `gorm:"foreignKey:UserIDDriver" json:"driver,omitempty"`
 	Customer *Customer `gorm:"foreignKey:CustomerID" json:"customer,omitempty"`
-	Route    *Route    `gorm:"foreignKey:RouteID" json:"route,omitempty"`
 }

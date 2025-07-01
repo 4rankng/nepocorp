@@ -33,7 +33,7 @@ Retrieve all expenses with pagination and filtering.
       "remark": "Thay lốp xe định kỳ",
       "cancel_reason": "",
       "created_by": 1,
-      "last_updated_by": "Administrator (@admin)",
+      "last_updated_by": "system",
       "created_at": "2024-06-24T10:00:00Z",
       "updated_at": "2024-06-24T10:00:00Z",
       "expense_category": {
@@ -112,7 +112,7 @@ Create a new expense with items.
     "remark": "Thay lốp xe định kỳ",
     "cancel_reason": "",
     "created_by": 1,
-    "last_updated_by": "Administrator (@admin)",
+    "last_updated_by": "system",
     "created_at": "2024-06-24T10:00:00Z",
     "updated_at": "2024-06-24T10:00:00Z",
     "items": [
@@ -159,7 +159,7 @@ Retrieve a single expense with all its items.
     "remark": "Bảo dưỡng định kỳ",
     "cancel_reason": "",
     "created_by": 1,
-    "last_updated_by": "Administrator (@admin)",
+    "last_updated_by": "system",
     "created_at": "2024-06-24T10:00:00Z",
     "updated_at": "2024-06-24T10:00:00Z",
     "expense_category": {
@@ -253,7 +253,7 @@ Update an existing expense.
     "remark": "Đã thanh toán và hoàn thành bảo dưỡng",
     "cancel_reason": "",
     "created_by": 1,
-    "last_updated_by": "Administrator (@admin)",
+    "last_updated_by": "system",
     "created_at": "2024-06-24T10:00:00Z",
     "updated_at": "2024-06-24T10:15:00Z"
   }
@@ -350,7 +350,7 @@ Delete an expense and all its items.
       "name": "Nguyễn Văn A",
       "role": "manager",
       "is_active": true,
-      "last_updated_by": "Administrator (@admin)"
+      "last_updated_by": "system"
     },
     "items": [
       {

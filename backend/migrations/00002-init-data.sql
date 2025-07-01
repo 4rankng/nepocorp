@@ -32,7 +32,6 @@ INSERT IGNORE INTO customers (name, tax_code) VALUES
 ('Mr. Huy Vietsun', 'MST-HUY-VS-027');
 
 -- 3. Thêm các Tuyến đường và Bảng giá chuẩn (giữ nguyên từ lần trước)
--- (Script INSERT cho bảng 'routes' có thể được thêm vào đây nếu cần)
 
 
 
@@ -103,29 +102,21 @@ SET @hash_salt = '{{HASH_SALT}}';      -- Replace with actual HASH_SALT from .en
 INSERT IGNORE INTO users (id, username, email, password, name, role, last_updated_by) VALUES
 (1, 'admin', 'admin@nepocorp.com',
    HEX(SHA2(CONCAT('admin', @hash_salt, @hash_secret), 256)),
-   'Administrator', 'admin', 'Administrator (@admin)'),
+   'Administrator', 'admin', 'system'),
 (2, 'manager1', 'manager1@nepocorp.com',
    HEX(SHA2(CONCAT('manager', @hash_salt, @hash_secret), 256)),
-   'Nguyễn Văn A', 'manager', 'Administrator (@admin)'),
+   'Nguyễn Văn A', 'manager', 'system'),
 (3, 'driver1', 'driver1@nepocorp.com',
    HEX(SHA2(CONCAT('driver', @hash_salt, @hash_secret), 256)),
-   'Trần Văn B', 'driver', 'Administrator (@admin)'),
+   'Trần Văn B', 'driver', 'system'),
 (4, 'driver2', 'driver2@nepocorp.com',
    HEX(SHA2(CONCAT('driver', @hash_salt, @hash_secret), 256)),
-   'Lê Thị C', 'driver', 'Administrator (@admin)'),
+   'Lê Thị C', 'driver', 'system'),
 (5, 'mechanic1', 'mechanic1@nepocorp.com',
    HEX(SHA2(CONCAT('mechanic', @hash_salt, @hash_secret), 256)),
-   'Phạm Văn D', 'mechanic', 'Administrator (@admin)');
+   'Phạm Văn D', 'mechanic', 'system');
 
 -- Insert mock settings
-INSERT IGNORE INTO settings (id, `key`, `value`, last_updated_by) VALUES
-(1, 'tax_rate', '10', 'Administrator (@admin)'),
-(2, 'company_name', 'Nepo Corporation', 'Administrator (@admin)'),
-(3, 'company_address', '123 Đường ABC, Quận 1, TP.HCM', 'Administrator (@admin)'),
-(4, 'company_phone', '028-1234-5678', 'Administrator (@admin)'),
-(5, 'maintenance_reminder_days', '30', 'Administrator (@admin)'),
-(6, 'fuel_price_default', '25000', 'Administrator (@admin)'),
-(7, 'insurance_renewal_reminder_days', '60', 'Administrator (@admin)');
 
 -- Activity logs will be populated automatically when users interact with the system
 
@@ -147,11 +138,11 @@ INSERT IGNORE INTO partners (id, name, tax_code, address) VALUES
 
 -- Insert mock containers
 INSERT IGNORE INTO containers (id, category, last_updated_by) VALUES
-(1, '20ft', 'Administrator (@admin)'),
-(2, '40ft', 'Administrator (@admin)'),
-(3, '40ft-HC', 'Administrator (@admin)'),
-(4, '45ft', 'Administrator (@admin)'),
-(5, 'Tank', 'Administrator (@admin)');
+(1, '20ft', 'system'),
+(2, '40ft', 'system'),
+(3, '40ft-HC', 'system'),
+(4, '45ft', 'system'),
+(5, 'Tank', 'system');
 
 -- ================================================================
 -- III. VEHICLE MANAGEMENT TABLES
@@ -159,32 +150,20 @@ INSERT IGNORE INTO containers (id, category, last_updated_by) VALUES
 
 -- Insert mock tractors
 INSERT IGNORE INTO tractors (id, license_plate, make, model, year_of_manufacture, inspection_due_date, road_fee_due_date, insurance_policy_number, insurance_expiry_date, remark, last_updated_by) VALUES
-(1, '51A-12345', 'Hyundai', 'HD1000', 2020, '2024-03-15', '2024-12-31', 'INS-HD1000-2024', '2024-12-31', 'Xe đầu kéo Hyundai HD1000 2020, Euro 5 Diesel', 'Administrator (@admin)'),
-(2, '51B-67890', 'Hino', '700 Series', 2019, '2024-08-20', '2024-12-31', 'INS-HINO700-2024', '2024-12-31', 'Xe đầu kéo Hino 700 Series 2019, Euro 4 Diesel', 'Administrator (@admin)'),
-(3, '51C-11111', 'Isuzu', 'Giga', 2021, '2024-01-10', '2024-12-31', 'INS-GIGA-2024', '2024-12-31', 'Xe đầu kéo Isuzu Giga 2021, Euro 5 Diesel', 'Administrator (@admin)'),
-(4, '51D-22222', 'Mitsubishi', 'Fuso', 2018, '2024-12-05', '2024-12-31', 'INS-FUSO-2024', '2024-12-31', 'Xe đầu kéo Mitsubishi Fuso 2018, Euro 4 Diesel', 'Administrator (@admin)'),
-(5, '51E-33333', 'Daewoo', 'Prima', 2022, '2024-05-25', '2024-12-31', 'INS-PRIMA-2024', '2024-12-31', 'Xe đầu kéo Daewoo Prima 2022, Euro 5 Diesel', 'Administrator (@admin)');
+(1, '51A-12345', 'Hyundai', 'HD1000', 2020, '2024-03-15', '2024-12-31', 'INS-HD1000-2024', '2024-12-31', 'Xe đầu kéo Hyundai HD1000 2020, Euro 5 Diesel', 'system'),
+(2, '51B-67890', 'Hino', '700 Series', 2019, '2024-08-20', '2024-12-31', 'INS-HINO700-2024', '2024-12-31', 'Xe đầu kéo Hino 700 Series 2019, Euro 4 Diesel', 'system'),
+(3, '51C-11111', 'Isuzu', 'Giga', 2021, '2024-01-10', '2024-12-31', 'INS-GIGA-2024', '2024-12-31', 'Xe đầu kéo Isuzu Giga 2021, Euro 5 Diesel', 'system'),
+(4, '51D-22222', 'Mitsubishi', 'Fuso', 2018, '2024-12-05', '2024-12-31', 'INS-FUSO-2024', '2024-12-31', 'Xe đầu kéo Mitsubishi Fuso 2018, Euro 4 Diesel', 'system'),
+(5, '51E-33333', 'Daewoo', 'Prima', 2022, '2024-05-25', '2024-12-31', 'INS-PRIMA-2024', '2024-12-31', 'Xe đầu kéo Daewoo Prima 2022, Euro 5 Diesel', 'system');
 
 -- Insert mock trailers
 INSERT IGNORE INTO trailers (id, license_plate, type, make, model, year_of_manufacture, remark, last_updated_by) VALUES
-(1, '51R-11111', '40FT', 'Doosung', 'Container 40ft', 2020, 'Rơ moóc container 40ft Doosung', 'Administrator (@admin)'),
-(2, '51R-22222', '20FT', 'Cimc', 'Container 20ft', 2019, 'Rơ moóc container 20ft Cimc', 'Administrator (@admin)'),
-(3, '51R-33333', '45FT', 'Hyundai', 'Flatbed 45ft', 2021, 'Rơ moóc sàn 45ft Hyundai', 'Administrator (@admin)'),
-(4, '51R-44444', 'TANK', 'Daehan', 'Tank 30m3', 2018, 'Rơ moóc tank chở xăng 30m3', 'Administrator (@admin)'),
-(5, '51R-55555', '40FT', 'Hyundai', 'Box 40ft', 2022, 'Rơ moóc thùng kín 40ft', 'Administrator (@admin)');
+(1, '51R-11111', '40FT', 'Doosung', 'Container 40ft', 2020, 'Rơ moóc container 40ft Doosung', 'system'),
+(2, '51R-22222', '20FT', 'Cimc', 'Container 20ft', 2019, 'Rơ moóc container 20ft Cimc', 'system'),
+(3, '51R-33333', '45FT', 'Hyundai', 'Flatbed 45ft', 2021, 'Rơ moóc sàn 45ft Hyundai', 'system'),
+(4, '51R-44444', 'TANK', 'Daehan', 'Tank 30m3', 2018, 'Rơ moóc tank chở xăng 30m3', 'system'),
+(5, '51R-55555', '40FT', 'Hyundai', 'Box 40ft', 2022, 'Rơ moóc thùng kín 40ft', 'system');
 
--- Insert mock routes
-INSERT IGNORE INTO routes (id, name, trailer_type, base_fee, surcharge, discount, is_two_way_combined, notes) VALUES
-(1, 'TP.HCM - Hà Nội (40FT)', '40FT', 15000000.00, 500000.00, 0.00, TRUE, 'Tuyến đường chính Bắc Nam - Container 40ft'),
-(2, 'TP.HCM - Hà Nội (20FT)', '20FT', 12000000.00, 500000.00, 0.00, TRUE, 'Tuyến đường chính Bắc Nam - Container 20ft'),
-(3, 'TP.HCM - Đà Nẵng (40FT)', '40FT', 8000000.00, 300000.00, 200000.00, FALSE, 'Tuyến miền Trung phổ biến - Container 40ft'),
-(4, 'TP.HCM - Đà Nẵng (20FT)', '20FT', 6500000.00, 300000.00, 200000.00, FALSE, 'Tuyến miền Trung phổ biến - Container 20ft'),
-(5, 'TP.HCM - Cần Thơ (40FT)', '40FT', 3000000.00, 100000.00, 0.00, FALSE, 'Tuyến ngắn đồng bằng sông Cửu Long - Container 40ft'),
-(6, 'TP.HCM - Cần Thơ (20FT)', '20FT', 2500000.00, 100000.00, 0.00, FALSE, 'Tuyến ngắn đồng bằng sông Cửu Long - Container 20ft'),
-(7, 'TP.HCM - Vũng Tàu (40FT)', '40FT', 2000000.00, 50000.00, 100000.00, FALSE, 'Tuyến cảng Vũng Tàu - Container 40ft'),
-(8, 'TP.HCM - Vũng Tàu (20FT)', '20FT', 1800000.00, 50000.00, 100000.00, FALSE, 'Tuyến cảng Vũng Tàu - Container 20ft'),
-(9, 'Cát Lái - Tân Cảng (40FT)', '40FT', 1500000.00, 0.00, 0.00, FALSE, 'Tuyến nội thành cảng - Container 40ft'),
-(10, 'Cát Lái - Tân Cảng (20FT)', '20FT', 1200000.00, 0.00, 0.00, FALSE, 'Tuyến nội thành cảng - Container 20ft');
 
 -- Insert mock fuel standards
 INSERT IGNORE INTO fuel_standards (id, tractor_id, trailer_type, load_category, consumption_rate, surcharge_rate_mountain, notes) VALUES
@@ -204,12 +183,12 @@ INSERT IGNORE INTO fuel_standards (id, tractor_id, trailer_type, load_category, 
 -- ================================================================
 
 -- Insert mock jobs
-INSERT IGNORE INTO jobs (id, job_date, tractor_id, trailer_id, user_id_driver, customer_id, route_id, container_number, description, distance_km, revenue, status) VALUES
-(1, '2024-01-15', 1, 1, 3, 1, 1, 'TCLU1234567', 'Vận chuyển container 40ft từ Cát Lái đi Hà Nội', 1720, 15000000.00, 'COMPLETED'),
-(2, '2024-01-20', 2, 2, 4, 2, 2, 'MSKU9876543', 'Vận chuyển container 20ft từ TP.HCM đi Đà Nẵng', 950, 6500000.00, 'COMPLETED'),
-(3, '2024-02-01', 3, 3, 3, 3, 3, 'HLBU5555555', 'Vận chuyển hàng sàn từ TP.HCM đi Cần Thơ', 170, 3000000.00, 'COMPLETED'),
-(4, '2024-02-10', 4, 4, 4, 4, 4, 'TANK001', 'Vận chuyển xăng từ TP.HCM đi Vũng Tàu', 125, 2000000.00, 'IN_PROGRESS'),
-(5, '2024-02-15', 5, 5, 3, 5, 5, 'CSVU7777777', 'Vận chuyển container 40ft nội thành', 45, 1500000.00, 'PLANNED'),
+INSERT IGNORE INTO jobs (id, job_date, tractor_id, trailer_id, user_id_driver, customer_id, container_number, description, distance_km, revenue, status) VALUES
+(1, '2024-01-15', 1, 1, 3, 1, 'TCLU1234567', 'Vận chuyển container 40ft từ Cát Lái đi Hà Nội', 1720, 15000000.00, 'COMPLETED'),
+(2, '2024-01-20', 2, 2, 4, 2, 'MSKU9876543', 'Vận chuyển container 20ft từ TP.HCM đi Đà Nẵng', 950, 6500000.00, 'COMPLETED'),
+(3, '2024-02-01', 3, 3, 3, 3, 'HLBU5555555', 'Vận chuyển hàng sàn từ TP.HCM đi Cần Thơ', 170, 3000000.00, 'COMPLETED'),
+(4, '2024-02-10', 4, 4, 4, 4, 'TANK001', 'Vận chuyển xăng từ TP.HCM đi Vũng Tàu', 125, 2000000.00, 'IN_PROGRESS'),
+(5, '2024-02-15', 5, 5, 3, 5, 'CSVU7777777', 'Vận chuyển container 40ft nội thành', 45, 1500000.00, 'PLANNED'),
 (6, '2024-02-20', 1, 1, 4, 1, 1, 'TCLU2468135', 'Vận chuyển container 40ft rỗng về TP.HCM', 1720, 12000000.00, 'PLANNED'),
 (7, '2024-02-25', 2, 2, 3, 2, 2, 'MSKU1357924', 'Vận chuyển container 20ft có hàng', 950, 8000000.00, 'DRAFT'),
 (8, '2024-03-01', 3, 1, 4, 3, 1, 'HLBU8888888', 'Vận chuyển container 40ft xuất khẩu', 1720, 15500000.00, 'DRAFT');
@@ -256,12 +235,12 @@ INSERT IGNORE INTO expense_categories (name, description, last_updated_by) VALUE
 INSERT IGNORE INTO expenses (id, expense_date, job_id, tractor_id, vendor_name, expense_category_id, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
 (1, '2024-01-15', 1, 1, 'Garage Minh Tuấn', (SELECT id FROM expense_categories WHERE name = 'Bảo dưỡng định kỳ'), 2200000, 'PAID', 'VND', 'Bảo dưỡng định kỳ 10,000km', 2, 'Nguyễn Văn A (@manager1)'),
 (2, '2024-02-01', 2, 2, 'Xưởng Hùng Vương', (SELECT id FROM expense_categories WHERE name = 'Bảo dưỡng định kỳ'), 1650000, 'PENDING', 'VND', 'Thay dầu và lọc', 2, 'Nguyễn Văn A (@manager1)'),
-(3, '2024-01-01', NULL, 3, 'Bảo hiểm PTI', (SELECT id FROM expense_categories WHERE name = 'Bảo hiểm'), 5000000, 'PAID', 'VND', 'Bảo hiểm xe 1 năm', 1, 'Administrator (@admin)'),
+(3, '2024-01-01', NULL, 3, 'Bảo hiểm PTI', (SELECT id FROM expense_categories WHERE name = 'Bảo hiểm'), 5000000, 'PAID', 'VND', 'Bảo hiểm xe 1 năm', 1, 'system'),
 (4, '2024-02-10', 4, 1, 'Cửa hàng phụ tùng ABC', (SELECT id FROM expense_categories WHERE name = 'Sửa chữa chung'), 880000, 'DRAFT', 'VND', 'Thay phanh trước', 3, 'Trần Văn B (@driver1)'),
 (5, '2024-01-20', NULL, 4, 'Garage Thành Đạt', (SELECT id FROM expense_categories WHERE name = 'Sửa chữa chung'), 3300000, 'PAID', 'VND', 'Sửa chữa động cơ', 2, 'Nguyễn Văn A (@manager1)'),
 (6, '2024-02-05', NULL, 1, 'Xưởng Hoàng Gia', (SELECT id FROM expense_categories WHERE name = 'Bảo dưỡng định kỳ'), 1320000, 'PAID', 'VND', 'Bảo dưỡng hệ thống phanh', 2, 'Nguyễn Văn A (@manager1)'),
 (7, '2024-02-15', 3, 2, 'Garage Việt Nam', (SELECT id FROM expense_categories WHERE name = 'Lốp xe'), 990000, 'PENDING', 'VND', 'Thay lốp xe', 2, 'Nguyễn Văn A (@manager1)'),
-(8, '2024-01-01', NULL, 3, 'Bảo hiểm Bảo Việt', (SELECT id FROM expense_categories WHERE name = 'Bảo hiểm'), 3000000, 'PAID', 'VND', 'Bảo hiểm rơ moóc', 1, 'Administrator (@admin)'),
+(8, '2024-01-01', NULL, 3, 'Bảo hiểm Bảo Việt', (SELECT id FROM expense_categories WHERE name = 'Bảo hiểm'), 3000000, 'PAID', 'VND', 'Bảo hiểm rơ moóc', 1, 'system'),
 (9, '2024-02-20', 5, 4, 'Cửa hàng Minh Châu', (SELECT id FROM expense_categories WHERE name = 'Sửa chữa chung'), 660000, 'DRAFT', 'VND', 'Thay van an toàn', 3, 'Trần Văn B (@driver1)'),
 (10, '2024-01-25', NULL, 5, 'Xưởng sơn Tấn Phát', (SELECT id FROM expense_categories WHERE name = 'Bảo dưỡng định kỳ'), 2750000, 'PAID', 'VND', 'Sơn lại thùng xe', 2, 'Nguyễn Văn A (@manager1)');
 
@@ -323,11 +302,11 @@ INSERT IGNORE INTO maintenance (id, expense_id, license_plate, vendor_name, item
 
 -- Insert mock invoice categories
 INSERT IGNORE INTO invoice_categories (id, name, last_updated_by) VALUES
-(1, 'Vận chuyển Container', 'Administrator (@admin)'),
-(2, 'Dịch vụ Logistics', 'Administrator (@admin)'),
-(3, 'Phí Cảng & Xếp dỡ', 'Administrator (@admin)'),
-(4, 'Phụ thu Nhiên liệu', 'Administrator (@admin)'),
-(5, 'Dịch vụ Khác', 'Administrator (@admin)');
+(1, 'Vận chuyển Container', 'system'),
+(2, 'Dịch vụ Logistics', 'system'),
+(3, 'Phí Cảng & Xếp dỡ', 'system'),
+(4, 'Phụ thu Nhiên liệu', 'system'),
+(5, 'Dịch vụ Khác', 'system');
 
 -- Insert mock invoices
 INSERT IGNORE INTO invoices (id, customer_id, invoice_category_id, total, payment_status, currency, remark, created_by, last_updated_by) VALUES
@@ -413,7 +392,6 @@ INSERT IGNORE INTO financial_ledgers (id, transaction_date, customer_id, partner
 -- Containers: 5 different types
 -- Tractors: 5 vehicles with full details
 -- Trailers: 5 trailers with specifications
--- Routes: 5 standard routes with pricing
 -- Fuel Standards: 10 fuel consumption standards
 -- Jobs: 8 transport jobs with different statuses
 -- Expense Categories: 10 categories
