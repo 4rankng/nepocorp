@@ -1,0 +1,397 @@
+QUY TRÌNH VẬN HÀNH HÀNG NGÀY
+&amp; Đề xuất hệ thống web quản lý
+Công ty TNHH NEPO — Vận tải container
+Hải Phòng → Các tỉnh miền Bắc
+Tài liệu phục vụ xây dựng hệ thống web quản lý
+Phiên bản: Tháng 5/2026
+4 xe đầu kéo | 38+ tuyến đường | 44+ khách hàng
+MỤC LỤC
+1. TỔNG QUAN QUY TRÌNH VẬN HÀNH1
+2. NHẬN ĐƠN HÀNG &amp; PHÂN XE1
+2.1. Cách làm hiện tại1
+2.2. Vấn đề2
+2.3. Giải pháp web2
+3. GHI NHẬN CHUYẾN ĐI &amp; CHI PHÍ2
+3.1. Cách làm hiện tại2
+3.2. Vấn đề3
+3.3. Giải pháp web3
+4. KIỂM SOÁT NHIÊN LIỆU3
+4.1. Cách làm hiện tại3
+4.2. Vấn đề4
+4.3. Giải pháp web4
+5. TÍNH TIỀN ĐI ĐƯỜNG4
+5.1. Cách làm hiện tại4
+5.2. Vấn đề5
+5.3. Giải pháp web5
+6. THEO DÕI DOANH THU &amp; CHI PHÍ5
+6.1. Cách làm hiện tại5
+6.2. Vấn đề5
+6.3. Giải pháp web6
+7. QUẢN LÝ CÔNG NỢ PHẢI THU6
+7.1. Cách làm hiện tại6
+7.2. Vấn đề6
+7.3. Giải pháp web7
+8. PHÂN CHIA LỢI NHUẬN7
+8.1. Cách làm hiện tại7
+8.2. Vấn đề7
+8.3. Giải pháp web7
+9. QUY ĐỊNH KỶ LUẬT &amp; AN TOÀN8
+9.1. Các quy định hiện tại8
+9.2. Giải pháp web8
+10. TỔNG HỢP HỆ THỐNG WEB8
+10.1. Kiến trúc module8
+10.2. Phân quyền người dùng9
+10.3. Lợi ích tổng hợp9
+(Nhấp chuột phải vào mục lục → “Update Field” để cập nhật số trang)
+1. TỔNG QUAN QUY TRÌNH VẬN HÀNH
+Công ty TNHH NEPO (Hải Phòng) vận hành 4 xe đầu kéo container trên 38+ tuyến đường từ Hải Phòng đến các tỉnh miền Bắc, phục vụ 44+ khách hàng. Mỗi ngày, các xe chạy trung bình 3.000+ km, phát sinh 15-25 chuyến vận chuyển với doanh thu khoảng 20 triệu VNĐ/ngày. Toàn bộ quy trình hiện đang được ghi nhận thủ công trên Excel, gồm 7 file riêng biệt với hàng trăm sheet, dẫn đến khó khăn trong việc tổng hợp, tìm kiếm và cảnh báo kịp thời.
+Tài liệu này mô tả các quy trình vận hành thực tế hàng ngày và cách hệ thống web sẽ giải quyết từng điểm nghẽn. Mỗi quy trình được trình bày theo cấu trúc: cách làm hiện tại → vấn đề → giải pháp web.
+Quy trình
+Người thực hiện
+Tần suất
+Công cụ hiện tại
+Nhận đơn &amp; Phân xe
+Quản lý
+10-25 lần/ngày
+Điện thoại, Zalo
+Ghi nhận chuyến đi
+Lái xe + Kế toán
+Mỗi chuyến
+Excel (7 file, 300+ sheet)
+Kiểm soát nhiên liệu
+Lái xe + Kế toán
+Mỗi chuyến
+Excel + đối chiếu thủ công
+Tính tiền đi đường
+Kế toán
+Mỗi chuyến
+Tra bảng định mức Excel
+Theo dõi doanh thu - chi phí
+Kế toán
+Hàng ngày
+4 file Excel, mỗi xe 1 file
+Quản lý công nợ
+Kế toán + Quản lý
+Hàng tuần
+1 file Excel 50 sheet
+Phân chia lợi nhuận
+Quản lý
+Hàng tháng
+Tính thủ công từ Excel
+Bảng 1: Tổng quan các quy trình vận hành hàng ngày
+2. NHẬN ĐƠN HÀNG &amp; PHÂN XE
+2.1. Cách làm hiện tại
+Khách hàng gọi điện hoặc nhắn Zalo cho quản lý thông báo chuyến hàng: tuyến đường, loại container (20'/40'), loại hàng (chè, Vietsun, hàng chung), số container và thời gian lấy hàng. Quản lý ghi nhận thủ công và phân xe dựa trên trí nhớ: xe nào đang rỗi, xe nào phù hợp loại rơ-mooc, xe nào đang ở gần điểm lấy hàng. Không có hệ thống ghi nhận đơn hàng chính thức, mọi thứ được truyền miệng hoặc qua tin nhắn.
+Sau khi phân xe, quản lý gọi điện cho lái xe thông báo lịch trình. Lái xe không có cách nào xem lịch trình của mình trực tuyến, phải ghi chú vào sổ hoặc nhớ. Khi có thay đổi chuyến (khách hàng hủy, đổi tuyến, thêm chuyến), quản lý phải gọi lại từng lái xe để thông báo, dẫn đến trùng lịch hoặc bỏ lỡ chuyến.
+2.2. Vấn đề
+Không có hệ thống ghi đơn hàng: dễ quên chuyến, khó kiểm tra lịch sử
+Phân xe bằng trí nhớ: không biết chính xác xe nào đang rỗi, đang ở đâu
+Lái xe không xem được lịch trình: phải gọi điện hỏi mỗi lần
+Thay đổi chuyến chậm: phải gọi điện từng người, dễ trùng lịch
+2.3. Giải pháp web
+Web: Trang 'Nhận đơn': Quản lý nhập đơn hàng với tuyến đường, loại container, khách hàng, thời gian. Hệ thống tự động gợi ý xe phù hợp dựa trên trạng thái rỗi/bận và loại rơ-mooc. Lái xe nhìn thấy lịch trình trên điện thoại, không cần gọi điện hỏi. Khi thay đổi chuyến, lái xe nhận thông báo push ngay lập tức.
+Tính năng web
+Mô tả
+Form nhập đơn hàng
+Chọn khách hàng, tuyến đường, loại cont, thời gian lấy hàng
+Gợi ý phân xe tự động
+Hiển thị xe rỗi + phù hợp loại rơ-mooc + gần vị trí nhất
+Lịch trình lái xe
+Lái xe xem chuyến hôm nay/tuần này trên điện thoại
+Thông báo thay đổi
+Push notification khi đổi chuyến, hủy chuyến, thêm chuyến
+Lịch sử đơn hàng
+Tìm kiếm đơn hàng theo khách hàng, xe, ngày, tuyến
+Bảng 2: Tính năng web cho nhận đơn &amp; phân xe
+3. GHI NHẬN CHUYẾN ĐI &amp; CHI PHÍ
+3.1. Cách làm hiện tại
+Sau mỗi chuyến đi, lái xe báo kế toán các thông tin: số km chạy, số lít dầu đổ, tuyến đường đi, số container, nội dung công việc (trả hàng Vietsun, đóng hàng chè, v.v.). Kế toán nhập thủ công vào file Excel của từng xe, mỗi xe 1 file với mỗi tháng 1 sheet. Với 4 xe, đó là 4 file riêng biệt, 48 sheet/năm cần nhập liệu. Mỗi dòng trong Excel có 17 cột dữ liệu cần điền, bao gồm các công thức tính tự động (chi phí dầu = lít x 18.730, tổng chi phí = dầu + đi đường + lương + sửa chữa + lốp + dầu máy, LN gộp = doanh thu - tổng chi phí).
+Vấn đề lớn nhất là độ trễ thông tin: lái xe thường báo cuối ngày hoặc cuối tuần, không phải ngay sau mỗi chuyến. Kế toán phải nhớ hoặc ghi chú riêng rồi mới nhập vào Excel, dẫn đến sai sót, nhập trùng hoặc thiếu dữ liệu. Nếu cần tra cứu một chuyến cụ thể (ví dụ: xe nào chạy tuyến Lai Châu tuần trước), phải mở đúng file xe đúng sheet tháng để tìm.
+3.2. Vấn đề
+4 file Excel riêng biệt, 48 sheet/năm: khó tổng hợp, khó tìm kiếm
+Nhập liệu thủ công 17 cột/dòng: tốn thời gian, dễ sai sót
+Độ trễ thông tin: lái xe báo cuối ngày, không thời gian thực
+Không có cảnh báo tự động khi thiếu dữ liệu hoặc bất thường
+3.3. Giải pháp web
+Web: Trang 'Ghi chuyến': Lái xe hoặc kế toán nhập chuyến đi ngay trên điện thoại, chỉ cần điền 5-6 trường chính (xe, tuyến, km, dầu, diễn giải). Hệ thống tự động tính: chi phí dầu, mức TTBQ, tiền đi đường, tổng chi phí và LN gộp. Cảnh báo ngay nếu mức TTBQ vượt định mức hoặc thiếu hóa đơn dầu.
+Trường nhập
+Ai nhập
+Tự động tính
+Xe (chọn từ danh sách)
+Lái xe / Kế toán
+—
+Ngày (mặc định hôm nay)
+Tự động
+—
+Tuyến đường (chọn từ danh sách)
+Người nhập
+Tiền đi đường, phí cầu đường
+Số km
+Người nhập
+Mức TTBQ
+Số lít dầu
+Người nhập
+Chi phí dầu = lít x 18.730
+Diễn giải
+Người nhập
+—
+Số container
+Người nhập
+—
+Cước vận chuyển
+Kế toán
+—
+Tổng chi phí / LN gộp
+Tự động
+= dầu + đi đường + lương + sửa chữa + lốp + dầu máy
+Bảng 3: Các trường nhập liệu chuyến đi trên web
+4. KIỂM SOÁT NHIÊN LIỆU
+4.1. Cách làm hiện tại
+Sau mỗi chuyến, lái xe báo số lít dầu đổ và số km chạy. Kế toán nhập vào Excel và tính mức tiêu thụ bình quân (TTBQ = lít dầu / km x 100). Sau đó đối chiếu với bảng định mức theo xe và loại tải (hàng nặng &gt;20t, hàng nhẹ &lt;20t, vỏ rỗng, hỗn hợp). Tuyến miền núi (Mộc Châu, Sơn La) được cộng thêm 2-3 lít/100km. Nếu vượt định mức, phải đòi giải trình. Tuy nhiên, việc này thường chỉ làm vào cuối tháng khi tổng hợp, không phải ngay lập tức.
+Xe
+Loại RM
+Hỗn hợp &gt;20t
+Hỗn hợp &lt;20t
+Vỏ rỗng
+Hàng &gt;20t
+Hàng &lt;20t
+Bổ sung núi
+15C-136.31
+40'
+34
+32
+25
+43
+39
++3
+15C-139.82
+40'
+34
+32
+25
+43
+39
++3
+15C-180.99
+40'
+36
+34
+27
+45
+41
++2
+15C-070.63
+20'
+33
+31
+24
+42
+38
++3
+Bảng 4: Định mức nhiên liệu (Lít/100km) theo xe và loại tải
+4.2. Vấn đề
+Chỉ kiểm tra vượt mức vào cuối tháng, không cảnh báo ngay lập tức
+Phải nhớ định mức của từng xe + loại tải + tuyến núi: dễ nhầm lẫn
+Không có hệ thống phát hiện dầu rò rỉ, lái xe lấy dầu riêng
+Thiếu hóa đơn dầu chỉ phát hiện khi kiểm tra thủ công
+4.3. Giải pháp web
+Web: Khi nhập chuyến đi, hệ thống tự động tính mức TTBQ và so sánh với định mức theo xe + loại tải + tuyến đường. Nếu vượt mức, hiển thị cảnh báo đỏ ngay lập tức. Dashboard hiển thị xu hướng nhiên liệu theo tuần/tháng để phát hiện bất thường sớm. Cảnh báo nếu chuyến đi thiếu hóa đơn dầu.
+5. TÍNH TIỀN ĐI ĐƯỜNG
+5.1. Cách làm hiện tại
+Kế toán tra bảng định mức tiền đi đường (38 tuyến) để tính phụ cấp cho lái xe theo từng chuyến. Công thức: Tiền thực tế = Tiền chuẩn - Giảm vé QL5 + Tăng vé theo lệnh - (Số trạm x 55.000). Nếu chuyến về có hàng: cộng thêm 300.000 VNđ. Riêng chuyến chè không điều chỉnh thêm, lái xe phải chụp ảnh container + seal. Mỗi xe có mức khác nhau cho rơ-mooc 20' và 40'. Hiện tại, kế toán phải mở file định mức riêng để tra cứu mỗi lần.
+Tuyến đường
+RM 40' (VNĐ)
+RM 20' (VNĐ)
+Ghi chú
+HP → Hà Nội / Hưng Yên
+1.150.000
+—
+Trừ vé QL5
+HP → Bắc Ninh / Bắc Giang
+790.000
+—
+Trừ vé QL5
+HP → Mộc Châu, Sơn La
+2.920.000
+—
+Tuyến núi +3L dầu
+HP → Sa Pa
+5.960.000
+—
+Tuyến núi xa
+HP → Ma Lù Thàng, Lai Châu
+6.960.000
+—
+Tuyến núi cực đoạn
+HP → Nội thành (&lt;20km)
+200.000
+—
+Chuyến ngắn
+Bảng 5: Mức tiền đi đường theo tuyến (trích chọn)
+5.2. Vấn đề
+Phải mở file định mức riêng để tra cứu mỗi chuyến: chậm, dễ nhầm
+38 tuyến đường + điều chỉnh vé cầu: tính thủ công phức tạp
+Không tự động phân biệt 20'/40' khi tính tiền
+Không có cách kiểm tra lái xe có chụp ảnh container/seal cho chuyến chè
+5.3. Giải pháp web
+Web: Khi chọn tuyến đường + loại rơ-mooc, hệ thống tự động tính tiền đi đường bao gồm điều chỉnh vé cầu. Chuyến chè tự động yêu cầu upload ảnh container + seal trước khi đóng chuyến. Quản lý kiểm duyệt ảnh ngay trên hệ thống thay vì đợi gửi qua Zalo.
+6. THEO DÕI DOANH THU &amp; CHI PHÍ
+6.1. Cách làm hiện tại
+Mỗi xe có 1 file Excel với 1 sheet/tháng, ghi chi tiết từng chuyến (17 cột dữ liệu). Cuối tháng, tính tổng: km, doanh thu, chi phí (dầu, đi đường, lương lx, sửa chữa, lốp, dầu máy), LN gộp và LN lũy kế. Để biết tổng cả 4 xe, phải mở 4 file và cộng thủ công. Nếu muốn xem biểu đồ xu hướng doanh thu 6 tháng, phải copy dữ liệu từ 6 sheet của từng xe và vẽ chart thủ công. Cơ cấu chi phí: dầu ~49%, đi đường ~22%, lương lx ~17%, còn lại ~12%.
+6.2. Vấn đề
+4 file riêng biệt: không cách nào xem tổng hợp tất cả xe nhanh chóng
+Không có biểu đồ tự động: phải vẽ chart thủ công mỗi khi cần
+Không có so sánh giữa các xe, giữa các tháng, giữa các tuyến
+Phải đợi cuối tháng mới biết kết quả, không có báo cáo giữa kỳ
+6.3. Giải pháp web
+Web: Dashboard tổng hợp hiển thị doanh thu, chi phí, LN gộp của tất cả xe trên 1 màn hình, cập nhật thời gian thực. Biểu đồ tự động: xu hướng doanh thu theo tháng, so sánh hiệu quả giữa xe, cơ cấu chi phí pie chart, top tuyến đường sinh lời nhất. Báo cáo P&amp;L xuất PDF/Excel với 1 click.
+Báo cáo web
+Nội dung
+Giá trị
+P&amp;L hàng tháng
+DT, CP, LN gộp theo xe + tổng
+Thay thế tổng hợp 4 file Excel
+Xu hướng 6-12 tháng
+Biểu đồ DT, CP, LN theo tháng
+Không có trong Excel hiện tại
+So sánh xe
+Biên LN, km, TTBQ bên nhau
+Mới: phải copy dữ liệu thủ công
+Top tuyến / khách hàng
+Tuyến sinh lời nhất, KH doanh thu cao nhất
+Mới: phải lọc Excel thủ công
+Bảng 6: Các báo cáo tự động trên web
+7. QUẢN LÝ CÔNG NỢ PHẢI THU
+7.1. Cách làm hiện tại
+1 file Excel với 50 sheet: 1 sheet dữ liệu nguồn, 1 sheet tổng hợp, 47 sheet chi tiết theo khách hàng. Mỗi sheet KH ghi: số dư đầu kỳ, phát sinh nợ (khi xuất hóa đơn cước), phát sinh có (khi KH thanh toán), số dư cuối kỳ. Running balance tính tự động từng dòng. Tổng công nợ hiện tại ~1,887 tỉ VNđ với 44+ KH. Top nợ: Nitoda 678 triệu, Tân Việt Hưng 256 triệu, Trà Thu Đan 240 triệu, Vietsun 175 triệu. Công nợ được phân loại theo tháng quá hạn: nợ T1, T2, T3, T4.
+7.2. Vấn đề
+50 sheet: cực khó điều hướng, tìm kiếm và tổng hợp
+Không có cảnh báo quá hạn tự động: phải nhớ kiểm tra thủ công
+Không có biểu đồ tuổi nợ: khó nhìn thấy rủi ro tập trung
+Quá trình đôn đốc nợ chỉ bằng điện thoại: không có lịch sử theo dõi
+71% công nợ tập trung vào 4 KH: rủi ro cao nhưng không được highlight
+7.3. Giải pháp web
+Web: Trang 'Công nợ': danh sách KH với số dư, tuổi nợ (màu đỏ/vàng/xanh), biểu đồ tuổi nợ. Cảnh báo tự động khi KH quá hạn 30/60/90 ngày. Ghi nhận lịch sử đôn đốc (gọi điện, gửi email, công văn). Tự động phân loại nợ theo tháng (T1-T4). 1 click xuất báo cáo công nợ gửi KH.
+Tính năng web
+Mô tả
+Thay thế
+Bảng công nợ tổng hợp
+Tất cả KH + số dư + tuổi nợ trên 1 trang
+Thay 50 sheet Excel
+Cảnh báo quá hạn
+Tự động đỏ/vàng khi &gt;30/60/90 ngày
+Mới: hiện không có
+Biểu đồ tuổi nợ
+Pie chart cơ cấu nợ, bar chart tuổi nợ
+Mới: hiện không có
+Lịch sử đôn đốc
+Ghi nhận mỗi lần gọi/nhắc KH
+Mới: hiện chỉ gọi điện thoại
+Chi tiết KH
+Click KH → xem từng giao dịch nợ/có
+Thay 47 sheet chi tiết
+Xuất báo cáo nợ
+PDF/Excel gửi cho KH
+Mới: hiện không có
+Bảng 7: Tính năng web quản lý công nợ
+8. PHÂN CHIA LỢI NHUẬN
+8.1. Cách làm hiện tại
+Cuối mỗi tháng, tính LN gộp từng xe = DT - Tổng CP. Tổng LN gộp cả 4 xe trừ phí quản lý (24 triệu VNđ/tháng) = LN ròng lũy kế. Phân chia theo tỷ lệ vốn góp: Ông Thưởng 29,55%, Ông Phụng 70,45%. Hiện tại việc này làm hoàn toàn thủ công: mở 4 file Excel, lấy số LN gộp của từng xe, cộng lại, trừ phí QL, nhân tỷ lệ. Mỗi tháng mất khoảng 30-60 phút để tính toán và kiểm tra chéo.
+8.2. Vấn đề
+Tính thủ công từ 4 file: mất thời gian, dễ sai sót
+Không có báo cáo LN tự động cho đối tác
+Khó theo dõi xu hướng LN theo tháng/năm
+8.3. Giải pháp web
+Web: Trang 'Lợi nhuận': tự động tính LN gộp, LN ròng, phân chia theo tỷ lệ vốn góp. Mỗi đối tác đăng nhập xem báo cáo LN của mình bất cứ lúc nào. Biểu đồ xu hướng LN theo tháng, so sánh với tháng trước, kế hoạch vs thực tế.
+9. QUY ĐỊNH KỶ LUẬT &amp; AN TOÀN
+9.1. Các quy định hiện tại
+Công ty có các quy định kỷ luật được ghi rõ trong bảng định mức nhiên liệu nhưng hiện không có hệ thống theo dõi vi phạm. Mọi việc xử lý kỷ luật đều làm thủ công qua trò chuyện miệng, không có hệ thống ghi nhận. Điều này dẫn đến việc khó theo dõi số lần vi phạm của từng lái xe (nhiều quy định chỉ phạt từ lần thứ 3).
+Vi phạm
+Xử lý
+Theo dõi hiện tại
+Không nộp hóa đơn dầu
+Phạt 100.000 VNĐ/lần
+Ghi nhớ miệng
+Tắt GPS &gt;1h (từ lần 3)
+Phạt 500.000 VNĐ/lần
+Không theo dõi số lần
+Lái &gt;4h không đổi ca (từ lần 3)
+Phạt 500.000 VNĐ/lần
+Không theo dõi số lần
+Vi phạm an toàn GT
+Phạt 500K hoặc sa thải
+Không ghi nhận
+Dùng chất kích thích
+Sa thải ngay
+Không ghi nhận
+Bảng 8: Quy định kỷ luật và hạn chế theo dõi hiện tại
+9.2. Giải pháp web
+Web: Hệ thống tự động ghi nhận vi phạm: thiếu hóa đơn dầu → cảnh báo và tự động trừ tiền phạt vào lương. Dashboard lái xe hiển thị số lần vi phạm, mức phạt tích lũy. Quản lý xem được lịch sử kỷ luật của từng lái xe trên 1 trang. Tích hợp GPS tracking: tự động cảnh báo khi xe tắt GPS hoặc dừng quá lâu.
+10. TỔNG HỢP HỆ THỐNG WEB
+10.1. Kiến trúc module
+Module
+Thay thế quy trình
+Người dùng chính
+Giá trị chính
+Nhận đơn &amp; Phân xe
+Gọi điện + Zalo
+Quản lý
+Không bỏ lỡ chuyến, tối ưu xe
+Ghi chuyến đi
+4 file Excel 300+ sheet
+Lái xe + Kế toán
+Nhập nhanh, không sai sót
+Kiểm soát nhiên liệu
+Tra Excel thủ công
+Kế toán
+Cảnh báo ngay vượt mức
+Tiền đi đường
+Tra bảng 38 tuyến
+Kế toán
+Tự động tính chính xác
+Doanh thu &amp; Chi phí
+Tổng hợp 4 file
+Quản lý + Kế toán
+Dashboard thời gian thực
+Công nợ phải thu
+50 sheet Excel
+Kế toán + Quản lý
+Cảnh báo quá hạn
+Phân chia LN
+Tính thủ công
+Quản lý
+Tự động, minh bạch
+Kỷ luật &amp; An toàn
+Ghi nhớ miệng
+Quản lý
+Theo dõi số lần, tự động phạt
+Bảng 9: Tổng hợp các module web và giá trị mang lại
+10.2. Phân quyền người dùng
+Vai trò
+Nhận đơn
+Ghi chuyến
+Công nợ
+Báo cáo
+Cấu hình
+Quản lý (Đối tác)
+Đầy đủ
+Đầy đủ
+Đầy đủ
+Đầy đủ
+Đầy đủ
+Kế toán
+Xem
+Nhập &amp; Xem
+Đầy Đủ
+Xem
+Không
+Lái xe
+Xem xe mình
+Nhập km/dầu
+Không
+Xem lương mình
+Không
+Bảng 10: Phân quyền người dùng
+10.3. Lợi ích tổng hợp
+Chuyển đổi từ 7 file Excel với 300+ sheet sang 1 nền tảng web duy nhất mang lại 3 lợi ích chính. Thứ nhất, tiết kiệm thời gian: kế toán không còn phải mở 4 file để tổng hợp, không phải tra bảng định mức thủ công, không phải vẽ chart bằng tay. Ước tính tiết kiệm 2-3 giờ/ngày cho kế toán và 1 giờ/ngày cho quản lý. Thứ hai, giảm sai sót: tự động tính toán thay vì nhập công thức Excel, cảnh báo ngay thay vì phát hiện muộn. Thứ ba, ra quyết định nhanh hơn: dashboard thời gian thực thay vì đợi cuối tháng mới có báo cáo.
+Web: MVP (phiên bản đầu tiên) nên ưu tiên 3 module: (1) Ghi chuyến đi — thay thế việc nhập Excel lớn nhất, (2) Dashboard doanh thu - chi phí — giá trị nhìn thấy ngay lập tức, (3) Công nợ phải thu — rủi ro tài chính lớn nhất cần kiểm soát. Các module còn lại có thể thêm vào theo từng giai đoạn.
