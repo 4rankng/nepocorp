@@ -39,17 +39,17 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ## 4. QUY TẮC NGHIỆP VỤ CỐT LÕI (BUSINESS RULES)
 
-### 4.1 Đơn hàng & Chuyến đi
+### 4.1 Chuyến đi (Trips)
 
-* **Hệ thống quản lý thông qua hai khái niệm chính:** `Order` (Đơn hàng/Yêu cầu tổng thể từ khách hàng) và `Trip` (Chuyến xe thực tế).
-* **Mối quan hệ:** 1 **Order** có thể cần đến **Nhiều (N) Trips** để hoàn thành (Ví dụ: một đơn hàng lớn cần nhiều chuyến xe để vận chuyển hết).
+* **Trip (Chuyến xe)** là đơn vị vận hành cốt lõi — mỗi chuyến là một lần xe chạy độc lập. Khách hàng và tuyến đường được chọn trực tiếp trên Trip.
+* **Customer Reference (Tham chiếu KH):** Trường tùy chọn trên Trip để nhóm các chuyến phục vụ cùng một yêu cầu của khách hàng. Khái niệm Order/Đơn hàng chính thức được hoãn sang hậu MVP.
 * **Trạng thái chuyến đi (5 trạng thái):**
     1. **Mới tạo**: Quản lý tạo thông tin cơ bản. Kế toán nhập các số liệu dự kiến (km, dầu, vé).
     2. **Đang chạy**: Tài xế đã xuất phát. Kế toán có thể cập nhật số liệu bất kỳ lúc nào.
     3. **Hoàn thành**: Xe đã về. Kế toán nhập/đối chiếu số liệu thực tế cuối cùng (đăng ảnh chuyến chè nếu có). Vẫn có thể sửa nếu gõ sai.
     4. **Đã chốt**: Khóa sổ, hệ thống tạo bản ghi Sổ cái (Ledger). Cấm sửa đổi.
     5. **Đã hủy**: Chuyến xe bị hủy bỏ giữa chừng, lưu lại lịch sử.
-* **Quy trình nhập liệu:** Quản lý tạo chuyến -> Kế toán điền số dự kiến -> Xe chạy -> Xe về, kế toán chốt số thực tế -> Quản lý/Kế toán trưởng chốt sổ.
+* **Quy trình nhập liệu:** Quản lý tạo chuyến -> Kế toán điền số dự kiến -> Xe chạy -> Xe về, kế toán chốt số thực tế -> Quản lý/Kế toán khóa chuyến (Đã chốt).
 
 ### 4.2 Doanh thu & Bảng giá
 
@@ -98,12 +98,11 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
   * **Đầu vào (CapTableHistory)**: Theo dõi lịch sử thay đổi tỷ lệ cổ phần (VD hiện tại: Ông Thương 29.55%, Ông Phụng 70.45%).
   * **Đầu ra (Distribution Snapshot)**: Khi phân chia (theo quý/năm), hệ thống tính toán dựa trên tỷ lệ lịch sử hiện hành và khóa chết kết quả thành các bản ghi phân bổ (distributions) bất biến. Báo cáo năm chỉ cần `SUM` các bản ghi này.
 
-### 4.9 Chốt dữ liệu & Chốt tháng (Data Locking & Monthly Close)
+### 4.9 Khóa chuyến đi & Điều chỉnh (Trip Locking & Corrections)
 
-* Các chuyến đi được quản lý/kế toán trưởng kiểm tra và **khóa (Đã chốt) theo từng chuyến** (trip-by-trip) khi dữ liệu đã chính xác, thay vì đợi đến cuối tháng mới khóa toàn bộ.
+* Chuyến đi được quản lý/kế toán kiểm tra và **khóa (Đã chốt) theo từng chuyến** (trip-by-trip) khi dữ liệu đã chính xác. Không có cơ chế "chốt tháng" — từng chuyến là commit point duy nhất.
 * Khi một chuyến chuyển sang "Đã chốt", hệ thống sinh ra bản ghi bất biến trong Sổ cái (Ledger).
 * Dashboard hiển thị lợi nhuận cộng dồn của các chuyến `Đang chạy`, `Hoàn thành` và `Đã chốt`.
-* Kế toán thực hiện rà soát cuối tháng dựa trên các chuyến đã chốt.
 * **Nghiệp vụ sửa lỗi:** Số liệu đã chốt không thể sửa đổi quá khứ. Tuân thủ chuẩn kế toán Việt Nam, nếu sai sót phải xuất **Hóa đơn điều chỉnh** (Adjustment E-Invoice) ở kỳ hiện tại kèm biên bản thỏa thuận. Số âm cho điều chỉnh giảm (Credit Note), số dương cho điều chỉnh tăng (Debit Note).
 
 ### 4.10 Công nợ phải thu & Kiến trúc Sổ cái (Ledger)
@@ -149,19 +148,17 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 4. **[Kế toán]** Tôi muốn thêm ghi chú/diễn giải cho chuyến đi.
 
 ### MODULE 3: KIỂM SOÁT NHIÊN LIỆU & TIỀN ĐI ĐƯỜNG
-1. **[Hệ thống]** Tự động tính TTBQ và đối chiếu định mức theo xe, loại tải, tuyến đường.
-2. **[Quản lý/Kế toán]** Tôi muốn nhận cảnh báo đỏ ngay lập tức nếu TTBQ vượt định mức.
+1. **[Hệ thống]** Tự động tính TTBQ (liters/km × 100) và hiển thị trên chi tiết chuyến đi. Đối chiếu định mức và cảnh báo hoãn sang giai đoạn sau.
 
 ### MODULE 4: THEO DÕI DOANH THU & CHI PHÍ
 1. **[Quản lý]** Tôi muốn xem Dashboard tổng hợp hiển thị doanh thu, chi phí, và lợi nhuận gộp của tất cả xe theo thời gian thực.
 2. **[Quản lý]** Tôi muốn xem biểu đồ xu hướng doanh thu theo tháng, cơ cấu chi phí (pie chart) và top tuyến đường sinh lời.
 3. **[Quản lý]** Tôi muốn xuất báo cáo P&L ra PDF/Excel chỉ với 1 click.
-4. **[Quản lý]** Tôi muốn thực hiện "Chốt tháng" để khóa số liệu tháng đã kiểm tra.
 
 ### MODULE 5: QUẢN LÝ CÔNG NỢ PHẢI THU
 1. **[Kế toán/Quản lý]** Tôi muốn xem danh sách khách hàng cùng số dư và tuổi nợ mã hóa màu (Đỏ/Vàng/Xanh).
 2. **[Kế toán/Quản lý]** Tôi muốn nhận cảnh báo tự động khi khách hàng quá hạn 30/60/90 ngày.
-3. **[Kế toán]** Tôi muốn ghi nhận thanh toán (toàn bộ hoặc một phần) vào tổng số dư của khách hàng. Hệ thống tự động áp dụng FIFO (trừ các chuyến cũ nhất trước).
+3. **[Kế toán]** Tôi muốn ghi nhận thanh toán (toàn bộ hoặc một phần) vào tổng số dư của khách hàng. Hệ thống gợi ý FIFO (chuyến cũ nhất trước), nhưng tôi có thể chọn chuyến cụ thể để thanh toán.
 4. **[Kế toán]** Tôi muốn xuất sao kê công nợ cho khách hàng.
 5. **[Kế toán]** Tôi muốn ghi nhận lịch sử đôn đốc nợ (gọi điện, email) trực tiếp trên hồ sơ khách hàng.
 
@@ -212,7 +209,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | :--- | :--- | :--- | :--- |
 | Khách hàng | Select | Có | Từ danh mục |
 | Tuyến đường | Select | Có | Từ danh mục |
-| Loại container/rơ-mooc | Select (20ft/40ft) | Có | |
+| Rơ-mooc | Select | Có | Chọn rơ-mooc cụ thể từ danh mục (loại 20ft/40ft tự suy ra) |
 | Xe đầu kéo | Select | Có | Từ danh mục |
 | Lái xe | Select | Có | Theo xe được phân công |
 | Ngày xuất phát | Date | Có | |
@@ -223,13 +220,13 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | :--- | :--- | :--- | :--- |
 | Số km thực tế | Number | Có | |
 | Số lít dầu | Number | Có | Hệ thống tự nhân với đơn giá |
-| Loại tải (hàng/vỏ) | Select | Có | Dùng để chọn định mức TTBQ |
+| Loại tải (hàng/vỏ) | Select | Có | Dùng để chọn định mức TTBQ. Loại rơ-mooc tự suy ra từ trailer đã chọn |
 | Giảm vé QL5 | Number | Không | Mặc định 0 |
 | Tăng vé theo lệnh | Number | Không | Mặc định 0 |
 | Số trạm | Number | Không | Mặc định 0, nhân với 55.000 |
 | Chuyến về có hàng | Checkbox | Không | Nếu tích → + 300.000 VNĐ tiền đi đường |
 | Lương sản lượng | Number | Có | Thu nhập lái xe cho chuyến này |
-| Doanh thu | Number | Có | Tra từ bảng giá, có thể ghi đè |
+| Doanh thu | Number | Có | Tự động tra từ bảng giá khi tạo chuyến (Customer × Route). Kế toán có thể ghi đè; hệ thống ghi nhận giá gốc, giá ghi đè, người thay đổi và thời điểm. |
 | Ghi chú/diễn giải | Text | Không | |
 | Ảnh Container & Seal | Upload | Chỉ cho chuyến chè | Bắt buộc nếu loại hàng = chè |
 
@@ -241,5 +238,3 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Tiền đi đường thực tế | Tiền chuẩn - Giảm vé + Tăng vé - (Số trạm × 55.000) [+ 300.000 nếu về có hàng] |
 | Tổng chi phí | Chi phí dầu + Tiền đi đường + Lương sản lượng |
 | Lợi nhuận gộp | Doanh thu - Tổng chi phí |
-| TTBQ | Số lít dầu / km × 100 |
-| Định mức đối chiếu | Theo loại tải + tuyến đường (tự tra) |
