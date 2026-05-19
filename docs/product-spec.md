@@ -136,8 +136,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### MODULE 1: NHẬN ĐƠN HÀNG & PHÂN XE (ORDER & DISPATCH)
 1. **[Quản lý]** Tôi muốn tạo chuyến đi mới với: khách hàng, tuyến đường, loại container/rơ-mooc, xe đầu kéo, lái xe, ngày xuất phát → trạng thái "Mới tạo".
-2. **[Quản lý]** Tôi muốn hệ thống tự động gợi ý xe dựa trên trạng thái rỗi/bận và loại rơ-mooc phù hợp.
-3. **[Quản lý]** Tôi muốn chuyển trạng thái chuyến đi (Mới tạo → Đang chạy → Hoàn thành → Đã chốt).
+2. **[Quản lý]** Tôi muốn chuyển trạng thái chuyến đi (Mới tạo → Đang chạy → Hoàn thành → Đã chốt).
 4. **[Lái xe]** Tôi muốn xem lịch trình chuyến đi của mình trên điện thoại (chỉ xem).
 5. **[Lái xe]** Tôi muốn xem số dầu được cấp cho chuyến đi trên điện thoại (chỉ xem).
 
@@ -153,19 +152,16 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 ### MODULE 4: THEO DÕI DOANH THU & CHI PHÍ
 1. **[Quản lý]** Tôi muốn xem Dashboard tổng hợp hiển thị doanh thu, chi phí, và lợi nhuận gộp của tất cả xe theo thời gian thực.
 2. **[Quản lý]** Tôi muốn xem biểu đồ xu hướng doanh thu theo tháng, cơ cấu chi phí (pie chart) và top tuyến đường sinh lời.
-3. **[Quản lý]** Tôi muốn xuất báo cáo P&L ra PDF/Excel chỉ với 1 click.
 
 ### MODULE 5: QUẢN LÝ CÔNG NỢ PHẢI THU
 1. **[Kế toán/Quản lý]** Tôi muốn xem danh sách khách hàng cùng số dư và tuổi nợ mã hóa màu (Đỏ/Vàng/Xanh).
 2. **[Kế toán/Quản lý]** Tôi muốn nhận cảnh báo tự động khi khách hàng quá hạn 30/60/90 ngày.
 3. **[Kế toán]** Tôi muốn ghi nhận thanh toán (toàn bộ hoặc một phần) vào tổng số dư của khách hàng. Hệ thống gợi ý FIFO (chuyến cũ nhất trước), nhưng tôi có thể chọn chuyến cụ thể để thanh toán.
 4. **[Kế toán]** Tôi muốn xuất sao kê công nợ cho khách hàng.
-5. **[Kế toán]** Tôi muốn ghi nhận lịch sử đôn đốc nợ (gọi điện, email) trực tiếp trên hồ sơ khách hàng.
 
 ### MODULE 6: PHÂN CHIA LỢI NHUẬN
 1. **[Quản lý]** Tôi muốn hệ thống tự động tính lợi nhuận ròng (= Tổng LN gộp - Phí quản lý + Thu nhập khác) và phân bổ theo tỷ lệ vốn góp.
 2. **[Quản lý]** Tôi muốn cấu hình cổ đông: thêm/đổi/rút cổ phần và điều chỉnh tỷ lệ.
-3. **[Đối tác]** Tôi muốn đăng nhập để xem báo cáo lợi nhuận cá nhân và biểu đồ xu hướng lợi nhuận.
 
 ### MODULE 7: KỶ LUẬT
 1. **[Kế toán]** Tôi muốn ghi nhận vi phạm dựa trên danh mục có sẵn hoặc nhập lý do mới (hệ thống kiểm tra trùng lặp) và ghi số tiền phạt.
@@ -191,13 +187,15 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | 2 | **Tuyến đường** | Tên tuyến, khoảng cách, định mức đèo đốc (nếu có) | 38+ tuyến |
 | 3 | **Bảng giá** | Giá cố định theo Khách hàng × Tuyến đường | ~44×38 = 1.672 dòng |
 | 4 | **Xe đầu kéo** | Biển số, trạng thái | 4 xe |
-| 5 | **Lái xe** | Tên, xe được phân công, liên hệ | Nhiều lái xe/xe |
-| 6 | **Tiền đi đường chuẩn** | Tiền chuẩn theo Tuyến đường × Loại rơ-mooc | ~38×2 = 76 dòng |
-| 7 | **Định mức nhiên liệu** | Định mức hàng (43L), vỏ (25L), bổ sung (3L), đèo đốc theo tuyến | Cố định + theo tuyến |
-| 8 | **Đơn giá nhiên liệu** | Đơn giá 1 lít dầu (hiện tại 18.730 VNĐ) | 1 giá, có thể cập nhật |
-| 9 | **Cổ đông & Tỷ lệ vốn** | Tên, tỷ lệ %, ngày hiệu lực | Ông Thương 29.55%, Ông Phụng 70.45% |
-| 10 | **Danh mục kỷ luật** | Lý do vi phạm + số tiền phạt mặc định | VD: "Thiếu hóa đơn dầu - 100.000đ" |
-| 11 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán) | Các cột: ID, date, txn_type, credit, debit, balance |
+| 5 | **Rơ-mooc** | Biển số, loại (20ft/40ft), trạng thái | Theo thực tế |
+| 6 | **Lái xe** | Tên, xe được phân công, liên hệ, lương cơ bản | Nhiều lái xe/xe |
+| 7 | **Loại hàng hóa** | Tên loại, có yêu cầu upload ảnh không | VD: Chè (yêu cầu ảnh) |
+| 8 | **Tiền đi đường chuẩn** | Tiền chuẩn theo Tuyến đường × Loại rơ-mooc | ~38×2 = 76 dòng |
+| 9 | **Định mức nhiên liệu** | Định mức hàng/vỏ (cấu hình được), bổ sung/chuyến, đèo đốc theo tuyến | Cấu hình + theo tuyến |
+| 10 | **Đơn giá nhiên liệu** | Đơn giá 1 lít dầu (hiện tại 18.730 VNĐ) | 1 giá, có thể cập nhật |
+| 11 | **Cổ đông & Tỷ lệ vốn** | Tên, tỷ lệ %, ngày hiệu lực | Ông Thương 29.55%, Ông Phụng 70.45% |
+| 12 | **Danh mục kỷ luật** | Lý do vi phạm + số tiền phạt mặc định | VD: "Thiếu hóa đơn dầu - 100.000đ" |
+| 13 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán) | Các cột: ID, date, txn_type, credit, debit, balance |
 
 ---
 
@@ -212,15 +210,17 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Rơ-mooc | Select | Có | Chọn rơ-mooc cụ thể từ danh mục (loại 20ft/40ft tự suy ra) |
 | Xe đầu kéo | Select | Có | Từ danh mục |
 | Lái xe | Select | Có | Theo xe được phân công |
+| Loại hàng hóa | Select | Có | Từ danh mục (VD: Chè, Container rỗng, Hàng tổng hợp...) |
 | Ngày xuất phát | Date | Có | |
 
 ### Pha 2 — Kế toán nhập số liệu thực tế (trạng thái: Hoàn thành)
 
 | Trường | Loại | Bắt buộc | Ghi chú |
 | :--- | :--- | :--- | :--- |
-| Số km thực tế | Number | Có | |
-| Số lít dầu | Number | Có | Hệ thống tự nhân với đơn giá |
-| Loại tải (hàng/vỏ) | Select | Có | Dùng để chọn định mức TTBQ. Loại rơ-mooc tự suy ra từ trailer đã chọn |
+| **Các chặng (Trip Legs)** | Dynamic rows | Có | Kế toán nhập từng chặng: điểm đi, điểm đến, số km, loại tải (hàng/vỏ). Hệ thống tự tính L dầu mỗi chặng theo định mức. |
+| Chế độ nhập nhiên liệu | Select (AUTO / KHOÁN) | Có | AUTO: tổng L dầu từ các chặng. KHOÁN: nhập tổng L dầu bằng tay (ghi đè). |
+| Dầu bổ sung | Number | Không | L dầu thêm do xe hỏng, đi sửa... (cộng thêm vào cả 2 chế độ) |
+| Lý do bổ sung | Text | Không | Bắt buộc nếu có dầu bổ sung |
 | Giảm vé QL5 | Number | Không | Mặc định 0 |
 | Tăng vé theo lệnh | Number | Không | Mặc định 0 |
 | Số trạm | Number | Không | Mặc định 0, nhân với 55.000 |
@@ -234,7 +234,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 | Trường | Công thức |
 | :--- | :--- |
-| Chi phí dầu | Số lít × Đơn giá cấu hình |
+| Tổng L dầu | AUTO: tổng L từ các chặng + bổ sung. KHOÁN: L nhập tay + bổ sung. |
+| Chi phí dầu | Tổng L dầu × Đơn giá cấu hình |
 | Tiền đi đường thực tế | Tiền chuẩn - Giảm vé + Tăng vé - (Số trạm × 55.000) [+ 300.000 nếu về có hàng] |
 | Tổng chi phí | Chi phí dầu + Tiền đi đường + Lương sản lượng |
 | Lợi nhuận gộp | Doanh thu - Tổng chi phí |

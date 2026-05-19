@@ -31,34 +31,39 @@ The system requires the following complete list of tables to support all feature
 ### 3.1 Catalog & Configuration
 1.  **`Users`**: Login credentials for all system users (Managers, Accountants, Drivers). (Columns: `id`, `email`, `password_hash`, `role`, `status`). Role determines access level; employment/profile data lives in role-specific tables.
 2.  **`Drivers`**: Employment profile for drivers. (Columns: `id`, `user_id` FK → Users, `name`, `phone`, `assigned_truck_id` FK → Trucks (nullable), `base_salary`, `status`). Separated from `Users` so historical data persists after a driver leaves and their login is deactivated.
-2.  **`Customers`**: Company clients. (Columns: `id`, `name`, `contact_info`).
-3.  **`Trucks`**: Vehicle assets. (Columns: `id`, `license_plate`, `status`).
-4.  **`Trailers`**: Individual physical trailer units. (Columns: `id`, `license_plate`, `type` e.g., 20ft/40ft, `status`, + standard audit columns). Extensible with additional attributes as requirements evolve.
-5.  **`Routes`**: Destinations. (Columns: `id`, `name`, `distance_km`, `is_mountain`, `fixed_fuel_allowance`).
-6.  **`PricingTables`**: Revenue lookups. (Columns: `id`, `customer_id`, `route_id`, `price`).
-7.  **`RoadAllowances`**: Base toll allowances. (Columns: `id`, `route_id`, `trailer_type`, `base_amount`).
-8.  **`FuelConfig`**: Global fuel settings. (Columns: `id`, `loaded_norm`, `empty_norm`, `supplement`, `unit_price`).
-9.  **`PenaltyReasons`**: Standardized infraction list. (Columns: `id`, `reason_text`, `default_amount`).
+3.  **`Customers`**: Company clients. (Columns: `id`, `name`, `contact_info`).
+4.  **`Trucks`**: Vehicle assets. (Columns: `id`, `license_plate`, `status`).
+5.  **`Trailers`**: Individual physical trailer units. (Columns: `id`, `license_plate`, `type` e.g., 20ft/40ft, `status`, + standard audit columns). Extensible with additional attributes as requirements evolve.
+6.  **`Routes`**: Destinations. (Columns: `id`, `name`, `distance_km`, `is_mountain`, `fixed_fuel_allowance`).
+7.  **`CargoTypes`**: Types of cargo. (Columns: `id`, `name`, `requires_photos` boolean). E.g., "Chè" with `requires_photos = true`.
+8.  **`PricingTables`**: Revenue lookups. (Columns: `id`, `customer_id`, `route_id`, `price`).
+9.  **`RoadAllowances`**: Base toll allowances. (Columns: `id`, `route_id`, `trailer_type`, `base_amount`).
+10. **`FuelConfig`**: Configurable fuel norms and unit price. (Columns: `id`, `loaded_norm` L/100km, `empty_norm` L/100km, `supplement` L/trip, `unit_price` VNĐ/L). Norms are configurable — not hardcoded.
+11. **`PenaltyReasons`**: Standardized infraction list. (Columns: `id`, `reason_text`, `default_amount`).
 
 ### 3.2 Operations (Trips)
-10. **`Trips`**: The core operational unit — standalone trips with optional grouping via `customer_reference`. Orders deferred to post-MVP.
-    *   *Columns:* `id`, `customer_id`, `customer_reference` (optional text field for grouping related trips), `truck_id`, `driver_id` FK → Drivers, `route_id`, `trailer_id` FK → Trailers, `status` (CREATED, IN_TRANSIT, COMPLETED, LOCKED, CANCELED), `departure_date`.
-    *   *Metrics:* `fuel_liters`, `fuel_price_applied`, `actual_km`, `tolls_discount`, `tolls_addition`, `tolls_stations`, `has_return_cargo`, `driver_salary`.
-    *   *Calculated:* `total_fuel_cost`, `total_road_allowance`, `total_cost`, `revenue`, `gross_profit`.
+12. **`Trips`**: The core operational unit — standalone trips with optional grouping via `customer_reference`. Orders deferred to post-MVP.
+    *   *Columns:* `id`, `customer_id`, `customer_reference` (optional text field for grouping related trips), `truck_id`, `driver_id` FK → Drivers, `route_id`, `trailer_id` FK → Trailers, `cargo_type_id` FK → CargoTypes, `status` (CREATED, IN_TRANSIT, COMPLETED, LOCKED, CANCELED), `departure_date`.
+    *   *Fuel entry:* `fuel_mode` (AUTO / FLAT_RATE), `fuel_liters_override` (manual total liters for FLAT_RATE mode), `fuel_supplement_liters` (additional liters for breakdowns/repairs), `fuel_supplement_reason`, `fuel_price_applied`.
+    *   *Road allowance:* `tolls_discount`, `tolls_addition`, `tolls_stations`, `has_return_cargo`.
+    *   *Other:* `driver_salary` (trip income/lương sản lượng).
+    *   *Calculated:* `fuel_liters` (sum of legs for AUTO, or override for FLAT_RATE, + supplement), `total_fuel_cost`, `total_road_allowance`, `total_cost`, `revenue`, `gross_profit`.
     *   *Revenue override:* `revenue_original`, `revenue_overridden_by`, `revenue_overridden_at` (nullable, only set when accountant overrides the auto-looked-up price).
     *   *Media:* `photo_urls` (JSONB array of URLs, for special cargo photos like Container & Seal).
+13. **`TripLegs`**: Individual legs within a trip for fuel norm calculation. A trip with one loaded leg and one empty leg has two rows.
+    *   *Columns:* `id`, `trip_id` FK → Trips, `sequence` (order of legs), `origin` (text), `destination` (text), `km` (distance), `loading_type` (HANG/VO — loaded/empty), `calculated_liters` (auto: km × configured norm / 100).
 
 ### 3.3 Financials
-12. **`Ledger`**: Immutable financial transactions.
+14. **`Ledger`**: Immutable financial transactions.
     *   *Columns:* `id`, `timestamp`, `txn_type` (TRIP_REVENUE, PAYMENT_RECEIVED, PENALTY, MANAGEMENT_FEE, ADJUSTMENT), `txn_id`, `receipt_id`, `entity_type` (VARCHAR), `entity_id`, `credit`, `debit`, `balance`, `note`.
-13. **`Penalties`**: Record of driver infractions. (Columns: `id`, `driver_id`, `trip_id` (nullable), `reason_id`, `amount`, `date`).
-14. **`CapTableHistory`**: Partner equity percentages. (Columns: `id`, `partner_name`, `percentage`, `effective_date`).
-15. **`Distributions`**: Snapshot payouts for profit sharing. (Columns: `id`, `quarter`, `year`, `partner_name`, `amount`).
-16. **`ManagementFees`**: Monthly overhead costs. (Columns: `id`, `month`, `year`, `amount`).
+15. **`Penalties`**: Record of driver infractions. (Columns: `id`, `driver_id`, `trip_id` (nullable), `reason_id`, `amount`, `date`).
+16. **`CapTableHistory`**: Partner equity percentages. (Columns: `id`, `partner_name`, `percentage`, `effective_date`).
+17. **`Distributions`**: Snapshot payouts for profit sharing. (Columns: `id`, `quarter`, `year`, `partner_name`, `amount`).
+18. **`ManagementFees`**: Monthly overhead costs. (Columns: `id`, `month`, `year`, `amount`).
 
 ### 3.4 System Audit
-17. **`AuditLogs`**: Event-driven tracking of user intentions.
-    *   *Columns:* `id`, `timestamp`, `user_id`, `event_type` (e.g., `TRIP_DISPATCHED`, `LEDGER_ADJUSTMENT`, `FUEL_CONFIG_UPDATED`), `entity_type` (VARCHAR), `entity_id` (Integer), `payload` (JSONB - stores the delta or relevant data), `ip_address`.
+19. **`AuditLogs`**: Human-readable activity log in Vietnamese.
+    *   *Columns:* `id`, `timestamp`, `user_id`, `message` (Vietnamese natural language, e.g., "Kế toán Lan khóa chuyến xe #123 — tuyến Hải Phòng → Hà Nội"), `entity_type` (VARCHAR), `entity_id` (Integer), `payload` (JSONB - stores structured data for display), `ip_address`.
 
 ---
 
@@ -108,15 +113,12 @@ The backend will expose the following RESTful endpoints:
 *   `GET /api/reports/pnl` - Generate Profit & Loss report.
 *   `POST /api/reports/distribute-profit` - Execute quarterly profit sharing calculation based on `CapTableHistory`.
 
-### 4.7 Audit Logging (Event-Driven)
-*   **Architecture**: Node.js `EventEmitter` is used internally.
-*   **Concept**: We log by **intention** (Domain Events) rather than raw database `UPDATE` or `INSERT` actions. A single intention (e.g., `POST /api/trips/:id/lock`) might update multiple tables, but it emits only one semantic event (e.g., `TRIP_LOCKED`).
-*   **Workflow**:
-    1. Controller performs business logic (e.g., locking a trip, writing to Ledger).
-    2. Controller emits `eventEmitter.emit('TRIP_LOCKED', { userId, tripId, payload })`.
-    3. An async listener catches the event and writes a single row to the `AuditLogs` table without blocking the API response.
+### 4.7 Audit Logging (Middleware-based)
+*   **Architecture**: Simple Express middleware logs all mutation API calls (POST, PUT, DELETE, PATCH) to the `AuditLogs` table synchronously.
+*   **Message Format**: Each log row contains a `message` field with a natural Vietnamese sentence — no English or technical jargon. E.g., "Kế toán Lan khóa chuyến xe #123 — tuyến Hải Phòng → Hà Nội", "Quản lý Tuấn tạo chuyến xe mới cho xe 30A-67890".
+*   **Concept**: Each mutation API call = one AuditLog row. One intention (e.g., `POST /api/trips/:id/lock`) produces one log entry regardless of how many tables it touches.
 *   **API Endpoint**:
-    *   `GET /api/audit-logs` - View system-wide event history (Director/Admin only).
+    *   `GET /api/audit-logs` - View system-wide event history (Admin only).
 
 ---
 
