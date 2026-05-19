@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#F7F3EA" />
+<title>NEPO Driver — Wireframe</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  /* ---------- Tokens ---------- */
+  :root {
+    --bg: #F7F8FA;
+    --bg-2: #EEF0F4;
+    --surface: #FFFFFF;
+    --surface-2: #F7F8FA;
+    --surface-3: #EFF1F5;
+    --ink: #0A0A0A;
+    --ink-2: #535963;
+    --ink-3: #8B919B;
+    --ink-4: #BABDC3;
+    --line: #EAECEF;
+    --line-2: #D6D9DE;
+
+    --accent: #00B14F;
+    --accent-2: #008B3E;
+    --accent-soft: #E6F7EE;
+    --accent-ink: #004D22;
+
+    --success: #00B14F;
+    --success-soft: #E6F7EE;
+    --warning: #F5A623;
+    --warning-soft: #FFF4E0;
+    --danger: #E32434;
+    --danger-soft: #FFEAEC;
+    --info: #1E5BB8;
+    --info-soft: #DCE9FC;
+
+    --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    --r-sm: 10px;
+    --r: 16px;
+    --r-lg: 22px;
+    --r-xl: 30px;
+
+    --sh-sm: 0 1px 2px rgba(10, 10, 10, 0.04);
+    --sh: 0 4px 14px rgba(10, 10, 10, 0.06), 0 1px 2px rgba(10, 10, 10, 0.03);
+    --sh-lg: 0 14px 44px rgba(10, 10, 10, 0.09), 0 4px 12px rgba(10, 10, 10, 0.04);
+    --sh-phone: 0 40px 80px -20px rgba(10, 10, 10, 0.28), 0 20px 40px -10px rgba(10, 10, 10, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  }
+
+  /* ---------- Base ---------- */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body);
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; border: none; background: none; padding: 0; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  input, textarea { font: inherit; color: inherit; }
+  img, svg { display: block; max-width: 100%; }
+
+  /* ---------- Desktop showcase ---------- */
+  .stage {
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: 1fr;
+    background:
+      radial-gradient(900px 600px at 85% -10%, rgba(0, 177, 79, 0.08), transparent 60%),
+      radial-gradient(800px 500px at -10% 80%, rgba(30, 91, 184, 0.06), transparent 60%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  }
+  .stage__inner {
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(20px, 4vw, 56px) clamp(16px, 4vw, 56px);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(24px, 4vw, 48px);
+    align-items: start;
+  }
+  @media (min-width: 1024px) {
+    .stage__inner { grid-template-columns: 1fr auto 1fr; }
+  }
+
+  /* showcase chrome (hidden on mobile, the app goes fullscreen) */
+  .showcase-left, .showcase-right {
+    display: none;
+  }
+  @media (min-width: 1024px) {
+    .showcase-left, .showcase-right {
+      display: flex;
+      flex-direction: column;
+      padding-top: 60px;
+    }
+    .showcase-right { padding-top: 100px; }
+  }
+
+  .meta { display: flex; flex-direction: column; gap: 20px; }
+  .meta__brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .meta__brand .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .meta__title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 4.4vw, 64px);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    font-weight: 600;
+    margin: 0;
+  }
+  .meta__title em {
+    font-style: normal;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+  }
+  .meta__lede {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 38ch;
+    margin: 0;
+  }
+  .meta__tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-2);
+    width: fit-content;
+    box-shadow: var(--sh-sm);
+  }
+  .meta__tag .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--success);
+    position: relative;
+  }
+  .meta__tag .pulse::after {
+    content: ''; position: absolute; inset: -3px; border-radius: 50%;
+    background: var(--success); opacity: 0.3;
+    animation: pulse 2s infinite;
+  }
+
+  .legend { display: flex; flex-direction: column; gap: 14px; }
+  .legend__item {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    box-shadow: var(--sh-sm);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .legend__item:hover { transform: translateY(-2px); box-shadow: var(--sh); }
+  .legend__num {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .legend__text { font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+  .legend__text strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Phone frame ---------- */
+  .phone-wrap {
+    display: grid;
+    place-items: center;
+    position: relative;
+  }
+  .phone {
+    width: 100%;
+    max-width: 100%;
+    background: var(--surface);
+    overflow: hidden;
+    position: relative;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (min-width: 768px) {
+    .phone {
+      width: 390px;
+      height: 844px;
+      min-height: 844px;
+      border-radius: 48px;
+      box-shadow: var(--sh-phone);
+      border: 10px solid #18181B;
+      background-clip: padding-box;
+    }
+  }
+
+  /* iOS-style status bar — desktop only */
+  .statusbar {
+    display: none;
+    padding: 14px 28px 6px;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+    background: #005A2D;
+    color: #fff;
+  }
+  @media (min-width: 768px) {
+    .statusbar { display: flex; }
+  }
+  .statusbar__icons { display: flex; gap: 6px; align-items: center; color: #fff; }
+  .notch {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .notch {
+      display: block;
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 32px;
+      background: #18181B;
+      border-radius: 0 0 18px 18px;
+      z-index: 30;
+    }
+  }
+
+  /* ---------- App shell ---------- */
+  .app {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app__header {
+    padding: 14px 20px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #005A2D;
+    color: #fff;
+    z-index: 5;
+    flex-shrink: 0;
+  }
+  .header-greet {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.25;
+  }
+  .header-greet__hello {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .header-greet__name {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .header-greet__date {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .header-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+  .app__header .icon-btn {
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .app__header .icon-btn:hover,
+  .app__header .icon-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
+  .app__header .icon-btn .badge {
+    background: var(--danger);
+    color: #fff;
+    border-color: #005A2D;
+  }
+  .app__header .avatar {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+  }
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--ink-2);
+    position: relative;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .icon-btn:hover, .icon-btn:active { background: var(--surface-3); color: var(--ink); }
+  .icon-btn .badge {
+    position: absolute;
+    top: 6px; right: 6px;
+    min-width: 16px; height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    display: grid; place-items: center;
+    border: 2px solid var(--surface);
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4DC678, #008B3E);
+    color: #fff;
+    display: grid; place-items: center;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.02em;
+  }
+
+  /* ---------- Screens (scroll container) ---------- */
+  .app__main {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    background: var(--surface);
+  }
+  .screen {
+    display: none;
+    padding: 18px 20px 100px;
+    animation: screenIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .screen.is-active { display: block; }
+  @keyframes screenIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* staggered fade in for children of active screen */
+  .screen.is-active > * {
+    animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .screen.is-active > *:nth-child(1) { animation-delay: 0.04s; }
+  .screen.is-active > *:nth-child(2) { animation-delay: 0.09s; }
+  .screen.is-active > *:nth-child(3) { animation-delay: 0.14s; }
+  .screen.is-active > *:nth-child(4) { animation-delay: 0.19s; }
+  .screen.is-active > *:nth-child(5) { animation-delay: 0.24s; }
+  .screen.is-active > *:nth-child(6) { animation-delay: 0.29s; }
+  .screen.is-active > *:nth-child(7) { animation-delay: 0.34s; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- Common UI atoms ---------- */
+  .h-greet {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 18px;
+  }
+  .h-greet__hello {
+    font-size: 13px;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .h-greet__name {
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+  .h-greet__date {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    text-align: right;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.4;
+  }
+
+  .section-title {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 24px 0 12px;
+  }
+  .section-title h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+  }
+  .section-title a {
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 16px;
+    box-shadow: var(--sh-sm);
+  }
+
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--font-body);
+  }
+  .badge-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge-pill--live { background: var(--success-soft); color: var(--success); }
+  .badge-pill--live .dot { background: var(--success); animation: pulse 2s infinite; }
+  .badge-pill--warn { background: var(--warning-soft); color: var(--warning); }
+  .badge-pill--warn .dot { background: var(--warning); }
+  .badge-pill--danger { background: var(--danger-soft); color: var(--danger); }
+  .badge-pill--danger .dot { background: var(--danger); }
+  .badge-pill--info { background: var(--info-soft); color: var(--info); }
+  .badge-pill--neutral { background: var(--surface-3); color: var(--ink-2); }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.5; }
+  }
+
+  /* ============================================================
+     SCREEN 1 — HOME
+     ============================================================ */
+
+  .active-trip {
+    position: relative;
+    background:
+      radial-gradient(120% 80% at 100% 0%, rgba(0, 177, 79, 0.14), transparent 60%),
+      linear-gradient(180deg, #1A1F23 0%, #14181B 100%);
+    color: #fff;
+    border-radius: var(--r-lg);
+    padding: 20px;
+    overflow: hidden;
+    box-shadow: var(--sh);
+  }
+  .active-trip::after {
+    content: '';
+    position: absolute;
+    right: -30px; bottom: -30px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 177, 79, 0.20), transparent 70%);
+    pointer-events: none;
+  }
+  .active-trip__top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 18px;
+  }
+  .active-trip__vehicle {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 6px;
+    letter-spacing: 0.02em;
+  }
+  .active-trip__route {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+  }
+  .active-trip__route .arrow {
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .active-trip__meta {
+    display: flex; gap: 14px;
+    margin-bottom: 18px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+  }
+  .active-trip__meta span { display: flex; align-items: center; gap: 6px; }
+  .progress {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress__bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #4DC678);
+    border-radius: 99px;
+    width: 64%;
+    transition: width 0.6s ease;
+    box-shadow: 0 0 12px rgba(0, 177, 79, 0.5);
+  }
+  .progress__label {
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 18px;
+  }
+  .btn-primary {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: var(--r);
+    font-weight: 600;
+    font-size: 15px;
+    transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 6px 16px -4px rgba(0, 177, 79, 0.35);
+  }
+  .btn-primary:hover { background: var(--accent-2); }
+  .btn-primary:active { transform: translateY(1px); box-shadow: 0 2px 8px -2px rgba(0, 177, 79, 0.35); }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 14px 12px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .stat:hover { transform: translateY(-1px); box-shadow: var(--sh); }
+  .stat__label {
+    font-size: 10.5px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .stat__value {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .stat__unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-left: 2px;
+    font-weight: 500;
+  }
+
+  .next-trip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .next-trip:hover { transform: translateY(-1px); box-shadow: var(--sh); border-color: var(--line-2); }
+  .next-trip__time {
+    flex-shrink: 0;
+    width: 56px;
+    text-align: center;
+  }
+  .next-trip__hour {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .next-trip__period {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .next-trip__divider {
+    width: 1px;
+    height: 44px;
+    background: var(--line);
+  }
+  .next-trip__info { flex: 1; min-width: 0; }
+  .next-trip__route {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .next-trip__meta {
+    font-size: 12px;
+    color: var(--ink-3);
+    display: flex;
+    gap: 10px;
+  }
+
+  /* ============================================================
+     SCREEN 2 — TRIPS / LỊCH TRÌNH
+     ============================================================ */
+
+  .date-pills {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-left: -20px; margin-right: -20px;
+    padding-left: 20px; padding-right: 20px;
+    scrollbar-width: none;
+  }
+  .date-pills::-webkit-scrollbar { display: none; }
+  .date-pill {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    text-align: center;
+    min-width: 64px;
+    transition: all 0.15s ease;
+  }
+  .date-pill:hover { border-color: var(--line-2); }
+  .date-pill.is-active {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+  .date-pill__day {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.6;
+    margin-bottom: 2px;
+  }
+  .date-pill__num {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .date-pill.is-active .date-pill__day { opacity: 0.8; }
+
+  .trip-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .trip-card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--sh);
+    border-color: var(--line-2);
+  }
+  .trip-card.is-current {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 50%);
+  }
+  .trip-card.is-current::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+  .trip-card__top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .trip-card__time {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .trip-card__route {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .trip-card__route svg { color: var(--ink-3); flex-shrink: 0; }
+  .trip-card__bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+    margin-top: 8px;
+  }
+  .trip-card__customer {
+    font-size: 12.5px;
+    color: var(--ink-2);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .trip-card__cargo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* ============================================================
+     SCREEN 3 — BÁO CÁO CHUYẾN
+     ============================================================ */
+
+  .report-context {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 20px;
+    display: flex; gap: 12px; align-items: center;
+  }
+  .report-context__icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--accent);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .report-context__route {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+  .report-context__vehicle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+
+  .field {
+    margin-bottom: 14px;
+  }
+  .field__label {
+    display: block;
+    font-size: 11.5px;
+    color: var(--ink-2);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .field__label .req { color: var(--accent); }
+  .field__input,
+  .field__textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--ink);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .field__textarea {
+    font-family: var(--font-body);
+    resize: none;
+    min-height: 80px;
+  }
+  .field__input:focus,
+  .field__textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .field__row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .field__hint {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--ink-3);
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* Live TTBQ calculation card */
+  .ttbq {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-bottom: 14px;
+    transition: all 0.25s ease;
+  }
+  .ttbq.is-ok { border-color: #BBE5C9; background: linear-gradient(180deg, #F0FAF4 0%, var(--surface) 100%); }
+  .ttbq.is-warn { border-color: #F4D89D; background: linear-gradient(180deg, var(--warning-soft) 0%, var(--surface) 100%); }
+  .ttbq.is-danger { border-color: #F5B7B7; background: linear-gradient(180deg, var(--danger-soft) 0%, var(--surface) 100%); }
+  .ttbq__top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .ttbq__label {
+    font-size: 11.5px;
+    color: var(--ink-2);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .ttbq__status {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .ttbq.is-ok .ttbq__status { color: var(--success); }
+  .ttbq.is-warn .ttbq__status { color: var(--warning); }
+  .ttbq.is-danger .ttbq__status { color: var(--danger); }
+  .ttbq__values {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .ttbq__value {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .ttbq__unit {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+  .ttbq__limit {
+    margin-left: auto;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+  .ttbq__limit strong { color: var(--ink-2); }
+
+  /* Tea cargo photo upload */
+  .tea-section {
+    margin-top: 22px;
+    padding: 16px;
+    background: var(--accent-soft);
+    border-radius: var(--r);
+    border: 1px dashed var(--accent);
+  }
+  .tea-section__head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .tea-section__head h4 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--accent-ink);
+  }
+  .tea-section__hint {
+    font-size: 12px;
+    color: var(--accent-ink);
+    margin: 0 0 14px;
+    opacity: 0.8;
+  }
+  .photo-uploads {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .photo-upload {
+    aspect-ratio: 4 / 3;
+    background: var(--surface);
+    border: 1.5px dashed var(--line-2);
+    border-radius: var(--r);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    color: var(--ink-3);
+    text-align: center;
+    padding: 12px;
+  }
+  .photo-upload:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--surface);
+    transform: translateY(-1px);
+  }
+  .photo-upload__icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    display: grid; place-items: center;
+    transition: background 0.18s ease;
+  }
+  .photo-upload:hover .photo-upload__icon { background: var(--accent-soft); }
+  .photo-upload__label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ============================================================
+     SCREEN 4 — THU NHẬP
+     ============================================================ */
+
+  .income-hero {
+    background: linear-gradient(180deg, #FBF8F1 0%, var(--surface) 100%);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 22px;
+    margin-bottom: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .income-hero::after {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, var(--accent-soft), transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .income-hero__label {
+    font-size: 11.5px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .income-hero__value {
+    font-family: var(--font-display);
+    font-size: 42px;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+  }
+  .income-hero__currency {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--ink-3);
+    margin-left: 4px;
+    font-weight: 500;
+  }
+  .income-hero__trend {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--success);
+    font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+    position: relative; z-index: 1;
+  }
+
+  .breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .breakdown__row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+  }
+  .breakdown__row--negative {
+    background: var(--danger-soft);
+    border-color: #F5C2C2;
+  }
+  .breakdown__label {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .breakdown__icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--surface-3);
+    display: grid; place-items: center;
+    color: var(--ink-2);
+    flex-shrink: 0;
+  }
+  .breakdown__row--negative .breakdown__icon { background: rgba(185, 28, 28, 0.1); color: var(--danger); }
+  .breakdown__value {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .breakdown__row--negative .breakdown__value { color: var(--danger); }
+
+  .penalty {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    margin-bottom: 8px;
+  }
+  .penalty__icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .penalty__body { flex: 1; }
+  .penalty__title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .penalty__meta {
+    font-size: 12px;
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+  }
+  .penalty__amount {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--danger);
+  }
+
+  /* ============================================================
+     SCREEN 5 — THÔNG BÁO
+     ============================================================ */
+
+  .notif {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    margin-bottom: 8px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .notif:hover { transform: translateY(-1px); box-shadow: var(--sh); border-color: var(--line-2); }
+  .notif.is-unread { background: linear-gradient(180deg, #FBF6EB 0%, var(--surface) 100%); }
+  .notif.is-unread::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 18px;
+  }
+  .notif__icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .notif__icon--info { background: var(--info-soft); color: var(--info); }
+  .notif__icon--warn { background: var(--warning-soft); color: var(--warning); }
+  .notif__icon--danger { background: var(--danger-soft); color: var(--danger); }
+  .notif__icon--success { background: var(--success-soft); color: var(--success); }
+  .notif__body { flex: 1; min-width: 0; }
+  .notif__title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    line-height: 1.3;
+  }
+  .notif__desc {
+    font-size: 12.5px;
+    color: var(--ink-2);
+    line-height: 1.4;
+    margin-bottom: 4px;
+  }
+  .notif__time {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .notif-group-label {
+    font-family: var(--font-display);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+    font-weight: 600;
+    margin: 16px 0 10px;
+  }
+
+  /* ============================================================
+     BOTTOM NAVIGATION
+     ============================================================ */
+
+  .bottom-nav {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border-top: 1px solid var(--line);
+    padding: 8px 8px 18px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    position: relative;
+    z-index: 20;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+  }
+  .bottom-nav.is-hidden {
+    transform: translateY(110%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  @media (min-width: 768px) {
+    .bottom-nav { padding-bottom: 10px; }
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 4px;
+    border-radius: 12px;
+    color: var(--ink-3);
+    transition: color 0.15s ease, background 0.15s ease;
+    position: relative;
+  }
+  .nav-item:hover { color: var(--ink-2); }
+  .nav-item.is-active {
+    color: var(--ink);
+  }
+  .nav-item.is-active .nav-item__dot {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .nav-item__icon { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .nav-item.is-active .nav-item__icon { transform: translateY(-2px); }
+  .nav-item__label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .nav-item__dot {
+    position: absolute;
+    top: 4px;
+    width: 4px; height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .nav-item .nav-badge {
+    position: absolute;
+    top: 4px; right: calc(50% - 18px);
+    min-width: 14px; height: 14px;
+    padding: 0 4px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    display: grid; place-items: center;
+    border: 2px solid rgba(255,255,255,0.95);
+  }
+
+  /* ============================================================
+     UTILITIES
+     ============================================================ */
+
+  .truck-icon { color: var(--accent); }
+  .num { font-family: var(--font-mono); }
+
+  /* SR-only */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* hide on mobile only */
+  @media (max-width: 767px) {
+    .stage { background: var(--surface); }
+    .stage__inner { padding: 0; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="stage__inner">
+
+    <!-- LEFT SHOWCASE COLUMN (desktop only) -->
+    <aside class="showcase-left" aria-hidden="true">
+      <div class="meta">
+        <div class="meta__brand">
+          <span class="dot"></span>
+          NEPO Logistics
+        </div>
+        <h1 class="meta__title">Mọi chuyến đi,<br/><em>trong lòng bàn tay.</em></h1>
+        <p class="meta__lede">
+          Ứng dụng tài xế NEPO — số hoá lịch trình, báo cáo chuyến đi và theo dõi thu nhập. Thiết kế cho người lái xe đầu kéo container đường dài.
+        </p>
+        <div class="meta__tag">
+          <span class="pulse"></span>
+          Wireframe v1 · Tháng 5 / 2026
+        </div>
+      </div>
+    </aside>
+
+    <!-- PHONE FRAME -->
+    <div class="phone-wrap">
+      <div class="phone" role="application" aria-label="NEPO Driver App">
+        <span class="notch" aria-hidden="true"></span>
+
+        <!-- iOS-style status bar (desktop only) -->
+        <div class="statusbar" aria-hidden="true">
+          <span class="num">9:41</span>
+          <div class="statusbar__icons">
+            <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path d="M1 8.5h2v2H1zm4-2h2v4H5zm4-3h2v7H9zm4-3h2v10h-2z" fill="currentColor"/></svg>
+            <svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M7 2.5a6 6 0 014.2 1.8l-.7.7A5 5 0 007 3.5a5 5 0 00-3.5 1.4l-.7-.6A6 6 0 017 2.5zM7 0a8.5 8.5 0 016 2.5l-.7.7A7.5 7.5 0 007 1a7.5 7.5 0 00-5.3 2.2l-.7-.7A8.5 8.5 0 017 0zm0 4.5a3.5 3.5 0 012.5 1l-.7.7A2.5 2.5 0 007 5.5a2.5 2.5 0 00-1.8.7l-.7-.7A3.5 3.5 0 017 4.5zm0 2a1.5 1.5 0 011 .4l-1 1-1-1A1.5 1.5 0 017 6.5z" fill="currentColor"/></svg>
+            <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2.5" stroke="currentColor"/><rect x="22" y="3.5" width="1.5" height="4" rx="0.5" fill="currentColor"/><rect x="2" y="2" width="15" height="7" rx="1" fill="currentColor"/></svg>
+          </div>
+        </div>
+
+        <div class="app">
+
+          <!-- ───────── APP HEADER ───────── -->
+          <header class="app__header">
+            <div class="header-greet">
+              <div class="header-greet__hello">Xin chào,</div>
+              <div class="header-greet__name">Anh Thương 👋</div>
+              <div class="header-greet__date">Thứ Hai · 18 Tháng 5, 2026</div>
+            </div>
+            <div class="header-actions">
+              <button class="icon-btn" aria-label="Thông báo" data-nav="notifs">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                <span class="badge">3</span>
+              </button>
+              <div class="avatar" aria-label="Hồ sơ tài xế">TH</div>
+            </div>
+          </header>
+
+          <!-- ───────── SCREENS ───────── -->
+          <main class="app__main">
+
+            <!-- ━━━━━━━━━━━━━ SCREEN 1: HOME ━━━━━━━━━━━━━ -->
+            <section class="screen is-active" id="screen-home" data-screen="home">
+
+              <!-- Active trip card -->
+              <div class="active-trip">
+                <div class="active-trip__top">
+                  <div>
+                    <span class="badge-pill badge-pill--live"><span class="dot"></span>Đang vận chuyển</span>
+                    <div class="active-trip__vehicle">29H–12345 · Rơ-mooc 40ft</div>
+                  </div>
+                  <button class="icon-btn" style="color: rgba(255,255,255,0.6);" aria-label="Bản đồ">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-6-3-6 3V5l6-3 6 3 6-3v14z"/><path d="M9 2v14"/><path d="M15 6v14"/></svg>
+                  </button>
+                </div>
+
+                <div class="active-trip__route">
+                  <span>Hải Phòng</span>
+                  <svg class="arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+                  <span>Hà Nội</span>
+                </div>
+
+                <div class="active-trip__meta">
+                  <span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Đi 2h 14p
+                  </span>
+                  <span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Còn 42 km
+                  </span>
+                  <span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    KH: Vinh Phát Co.
+                  </span>
+                </div>
+
+                <div class="progress" role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100">
+                  <div class="progress__bar" id="progressBar"></div>
+                </div>
+                <div class="progress__label">
+                  <span>64% hoàn thành</span>
+                  <span>ETA 11:25</span>
+                </div>
+
+                <button class="btn-primary" data-nav="report">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                  Báo cáo chuyến đi
+                </button>
+              </div>
+
+              <!-- Today's stats -->
+              <div class="section-title">
+                <h3>Hôm nay</h3>
+                <a href="#" data-nav="trips">Lịch trình →</a>
+              </div>
+              <div class="stat-grid">
+                <div class="stat">
+                  <div class="stat__label">Chuyến</div>
+                  <div class="stat__value">2<span class="stat__unit">/3</span></div>
+                </div>
+                <div class="stat">
+                  <div class="stat__label">Km</div>
+                  <div class="stat__value">248</div>
+                </div>
+                <div class="stat">
+                  <div class="stat__label">Dầu</div>
+                  <div class="stat__value">87<span class="stat__unit">L</span></div>
+                </div>
+              </div>
+
+              <!-- Next trip -->
+              <div class="section-title">
+                <h3>Chuyến tiếp theo</h3>
+              </div>
+              <div class="next-trip" data-nav="trips" role="button" tabindex="0">
+                <div class="next-trip__time">
+                  <div class="next-trip__hour">14:30</div>
+                  <div class="next-trip__period">Chiều</div>
+                </div>
+                <div class="next-trip__divider"></div>
+                <div class="next-trip__info">
+                  <div class="next-trip__route">Hà Nội → Hải Dương</div>
+                  <div class="next-trip__meta">
+                    <span>20ft</span>
+                    <span>·</span>
+                    <span>Đông Á Logistics</span>
+                  </div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ink-3);"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+
+            </section>
+
+            <!-- ━━━━━━━━━━━━━ SCREEN 2: TRIPS ━━━━━━━━━━━━━ -->
+            <section class="screen" id="screen-trips" data-screen="trips">
+
+              <div class="h-greet">
+                <div>
+                  <div class="h-greet__hello">Lịch trình</div>
+                  <h1 class="h-greet__name">3 chuyến</h1>
+                </div>
+                <div class="h-greet__date">Tuần này<br/>5 chuyến</div>
+              </div>
+
+              <div class="date-pills">
+                <button class="date-pill is-active">
+                  <div class="date-pill__day">T2</div>
+                  <div class="date-pill__num">18</div>
+                </button>
+                <button class="date-pill">
+                  <div class="date-pill__day">T3</div>
+                  <div class="date-pill__num">19</div>
+                </button>
+                <button class="date-pill">
+                  <div class="date-pill__day">T4</div>
+                  <div class="date-pill__num">20</div>
+                </button>
+                <button class="date-pill">
+                  <div class="date-pill__day">T5</div>
+                  <div class="date-pill__num">21</div>
+                </button>
+                <button class="date-pill">
+                  <div class="date-pill__day">T6</div>
+                  <div class="date-pill__num">22</div>
+                </button>
+                <button class="date-pill">
+                  <div class="date-pill__day">T7</div>
+                  <div class="date-pill__num">23</div>
+                </button>
+                <button class="date-pill">
+                  <div class="date-pill__day">CN</div>
+                  <div class="date-pill__num">24</div>
+                </button>
+              </div>
+
+              <!-- Completed trip -->
+              <div class="trip-card">
+                <div class="trip-card__top">
+                  <span class="trip-card__time">06:15 — 08:42</span>
+                  <span class="badge-pill badge-pill--neutral">Hoàn thành</span>
+                </div>
+                <div class="trip-card__route">
+                  <span>Hải Phòng</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+                  <span>Bắc Ninh</span>
+                </div>
+                <div class="trip-card__bottom">
+                  <span class="trip-card__customer">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Hoàng Long Co.
+                  </span>
+                  <span class="trip-card__cargo">40ft · Vỏ rỗng</span>
+                </div>
+              </div>
+
+              <!-- Current trip -->
+              <div class="trip-card is-current" data-nav="home">
+                <div class="trip-card__top">
+                  <span class="trip-card__time">09:11 — ETA 11:25</span>
+                  <span class="badge-pill badge-pill--live"><span class="dot"></span>Đang chạy</span>
+                </div>
+                <div class="trip-card__route">
+                  <span>Hải Phòng</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+                  <span>Hà Nội</span>
+                </div>
+                <div class="trip-card__bottom">
+                  <span class="trip-card__customer">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Vinh Phát Co.
+                  </span>
+                  <span class="trip-card__cargo">40ft · Hàng &lt;20t</span>
+                </div>
+              </div>
+
+              <!-- Tea cargo trip -->
+              <div class="trip-card">
+                <div class="trip-card__top">
+                  <span class="trip-card__time">14:30 — 17:00</span>
+                  <span class="badge-pill badge-pill--warn"><span class="dot"></span>Chè · Bắt buộc ảnh</span>
+                </div>
+                <div class="trip-card__route">
+                  <span>Hà Nội</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+                  <span>Hải Dương</span>
+                </div>
+                <div class="trip-card__bottom">
+                  <span class="trip-card__customer">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Đông Á Logistics
+                  </span>
+                  <span class="trip-card__cargo">20ft · Chè 🍃</span>
+                </div>
+              </div>
+
+            </section>
+
+            <!-- ━━━━━━━━━━━━━ SCREEN 3: REPORT ━━━━━━━━━━━━━ -->
+            <section class="screen" id="screen-report" data-screen="report">
+
+              <div class="h-greet">
+                <div>
+                  <div class="h-greet__hello">Báo cáo</div>
+                  <h1 class="h-greet__name">Đóng chuyến</h1>
+                </div>
+                <button class="icon-btn" data-nav="home" aria-label="Đóng">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+
+              <div class="report-context">
+                <div class="report-context__icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </div>
+                <div>
+                  <div class="report-context__route">Hải Phòng → Hà Nội</div>
+                  <div class="report-context__vehicle">29H–12345 · 40ft · Vinh Phát Co.</div>
+                </div>
+              </div>
+
+              <div class="field__row">
+                <div class="field">
+                  <label class="field__label" for="km">Số Km <span class="req">*</span></label>
+                  <input id="km" class="field__input" type="number" value="124" inputmode="numeric" />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="fuel">Lít dầu <span class="req">*</span></label>
+                  <input id="fuel" class="field__input" type="number" value="48" inputmode="decimal" step="0.1" />
+                </div>
+              </div>
+
+              <!-- Live TTBQ -->
+              <div class="ttbq is-warn" id="ttbqCard">
+                <div class="ttbq__top">
+                  <span class="ttbq__label">TTBQ (tiêu thụ bình quân)</span>
+                  <span class="ttbq__status" id="ttbqStatus">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Vượt mức 5%
+                  </span>
+                </div>
+                <div class="ttbq__values">
+                  <span class="ttbq__value" id="ttbqValue">38.7</span>
+                  <span class="ttbq__unit">L / 100km</span>
+                  <span class="ttbq__limit">Định mức<br/><strong>36.5 L</strong></span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="notes">Diễn giải</label>
+                <textarea id="notes" class="field__textarea" placeholder="VD: Tắc đường QL5, dừng nghỉ 20 phút tại trạm Hưng Yên..."></textarea>
+              </div>
+
+              <!-- Tea cargo section -->
+              <div class="tea-section">
+                <div class="tea-section__head">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-ink);"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+                  <h4>Chuyến hàng chè</h4>
+                  <span class="badge-pill badge-pill--warn" style="margin-left: auto;">Bắt buộc</span>
+                </div>
+                <p class="tea-section__hint">Vui lòng chụp ảnh container và seal trước khi đóng chuyến.</p>
+
+                <div class="photo-uploads">
+                  <button class="photo-upload" aria-label="Tải ảnh container">
+                    <div class="photo-upload__icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    </div>
+                    <span class="photo-upload__label">Ảnh container</span>
+                  </button>
+                  <button class="photo-upload" aria-label="Tải ảnh seal">
+                    <div class="photo-upload__icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <span class="photo-upload__label">Ảnh seal</span>
+                  </button>
+                </div>
+              </div>
+
+              <div style="margin-top: 22px;">
+                <button class="btn-primary">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Đóng chuyến đi
+                </button>
+              </div>
+
+            </section>
+
+            <!-- ━━━━━━━━━━━━━ SCREEN 4: INCOME ━━━━━━━━━━━━━ -->
+            <section class="screen" id="screen-wallet" data-screen="wallet">
+
+              <div class="h-greet">
+                <div>
+                  <div class="h-greet__hello">Thu nhập</div>
+                  <h1 class="h-greet__name">Tháng 5/2026</h1>
+                </div>
+                <button class="icon-btn" aria-label="Chọn tháng">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </button>
+              </div>
+
+              <div class="income-hero">
+                <div class="income-hero__label">Tổng thu nhập tạm tính</div>
+                <div class="income-hero__value">12.840.000<span class="income-hero__currency"> ₫</span></div>
+                <div class="income-hero__trend">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                  +8.2% so với tháng trước
+                </div>
+              </div>
+
+              <div class="section-title">
+                <h3>Cơ cấu</h3>
+              </div>
+              <div class="breakdown">
+                <div class="breakdown__row">
+                  <span class="breakdown__label">
+                    <span class="breakdown__icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    </span>
+                    Lương cứng
+                  </span>
+                  <span class="breakdown__value">8.000.000 ₫</span>
+                </div>
+                <div class="breakdown__row">
+                  <span class="breakdown__label">
+                    <span class="breakdown__icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </span>
+                    Tiền đi đường <span style="font-family: var(--font-mono); font-size: 11px; color: var(--ink-3);">· 22 chuyến</span>
+                  </span>
+                  <span class="breakdown__value">5.140.000 ₫</span>
+                </div>
+                <div class="breakdown__row breakdown__row--negative">
+                  <span class="breakdown__label">
+                    <span class="breakdown__icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </span>
+                    Trừ phạt
+                  </span>
+                  <span class="breakdown__value">−300.000 ₫</span>
+                </div>
+              </div>
+
+              <div class="section-title">
+                <h3>Kỷ luật · 2 vi phạm</h3>
+                <a href="#">Xem tất cả</a>
+              </div>
+
+              <div class="penalty">
+                <div class="penalty__icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+                </div>
+                <div class="penalty__body">
+                  <div class="penalty__title">Thiếu hoá đơn dầu</div>
+                  <div class="penalty__meta">10 · 05 · 2026 — Chuyến HP-HN</div>
+                </div>
+                <div class="penalty__amount">−100K</div>
+              </div>
+
+              <div class="penalty">
+                <div class="penalty__icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                </div>
+                <div class="penalty__body">
+                  <div class="penalty__title">Tắt GPS 1h 30p</div>
+                  <div class="penalty__meta">03 · 05 · 2026 — Lần thứ 3 trong tháng</div>
+                </div>
+                <div class="penalty__amount">−500K</div>
+              </div>
+
+            </section>
+
+            <!-- ━━━━━━━━━━━━━ SCREEN 5: NOTIFICATIONS ━━━━━━━━━━━━━ -->
+            <section class="screen" id="screen-notifs" data-screen="notifs">
+
+              <div class="h-greet">
+                <div>
+                  <div class="h-greet__hello">Thông báo</div>
+                  <h1 class="h-greet__name">3 chưa đọc</h1>
+                </div>
+                <button class="icon-btn" aria-label="Đánh dấu đã đọc">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+              </div>
+
+              <div class="notif-group-label">Hôm nay</div>
+
+              <div class="notif is-unread">
+                <div class="notif__icon notif__icon--warn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="notif__body">
+                  <div class="notif__title">TTBQ vượt định mức</div>
+                  <div class="notif__desc">Chuyến HP-HN sáng nay tiêu hao 38.7 L/100km, vượt 5% định mức xe 29H-12345.</div>
+                  <div class="notif__time">9 phút trước</div>
+                </div>
+              </div>
+
+              <div class="notif is-unread">
+                <div class="notif__icon notif__icon--info">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="notif__body">
+                  <div class="notif__title">Thay đổi lịch trình chiều</div>
+                  <div class="notif__desc">Chuyến 14:30 Hà Nội → Hải Dương đã đổi loại hàng sang <strong>Chè</strong>. Yêu cầu ảnh container & seal.</div>
+                  <div class="notif__time">1 giờ trước</div>
+                </div>
+              </div>
+
+              <div class="notif is-unread">
+                <div class="notif__icon notif__icon--success">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
+                </div>
+                <div class="notif__body">
+                  <div class="notif__title">Đã duyệt chuyến HP-BN</div>
+                  <div class="notif__desc">Kế toán đã xác nhận báo cáo chuyến 06:15. Tiền đi đường +650.000 ₫.</div>
+                  <div class="notif__time">3 giờ trước</div>
+                </div>
+              </div>
+
+              <div class="notif-group-label">Tuần trước</div>
+
+              <div class="notif">
+                <div class="notif__icon notif__icon--danger">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
+                <div class="notif__body">
+                  <div class="notif__title">Phạt 500.000 ₫</div>
+                  <div class="notif__desc">Vi phạm: Tắt GPS &gt;1h, lần 3 trong tháng. Đã trừ vào lương T5/2026.</div>
+                  <div class="notif__time">12 · 05 · 2026</div>
+                </div>
+              </div>
+
+              <div class="notif">
+                <div class="notif__icon notif__icon--info">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </div>
+                <div class="notif__body">
+                  <div class="notif__title">Cập nhật định mức nhiên liệu</div>
+                  <div class="notif__desc">Định mức xe 29H-12345 tuyến núi tăng từ 38L lên 40L/100km.</div>
+                  <div class="notif__time">10 · 05 · 2026</div>
+                </div>
+              </div>
+
+            </section>
+
+          </main>
+
+          <!-- ───────── BOTTOM NAV ───────── -->
+          <nav class="bottom-nav" role="tablist" aria-label="Điều hướng chính">
+            <button class="nav-item is-active" data-nav="home" role="tab" aria-selected="true">
+              <span class="nav-item__dot"></span>
+              <svg class="nav-item__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span class="nav-item__label">Trang chủ</span>
+            </button>
+            <button class="nav-item" data-nav="trips" role="tab" aria-selected="false">
+              <span class="nav-item__dot"></span>
+              <svg class="nav-item__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="nav-item__label">Lịch trình</span>
+            </button>
+            <button class="nav-item" data-nav="report" role="tab" aria-selected="false">
+              <span class="nav-item__dot"></span>
+              <svg class="nav-item__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+              <span class="nav-item__label">Báo cáo</span>
+            </button>
+            <button class="nav-item" data-nav="wallet" role="tab" aria-selected="false">
+              <span class="nav-item__dot"></span>
+              <svg class="nav-item__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+              <span class="nav-item__label">Thu nhập</span>
+            </button>
+            <button class="nav-item" data-nav="notifs" role="tab" aria-selected="false">
+              <span class="nav-item__dot"></span>
+              <span class="nav-badge">3</span>
+              <svg class="nav-item__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span class="nav-item__label">Thông báo</span>
+            </button>
+          </nav>
+
+        </div><!-- /.app -->
+      </div><!-- /.phone -->
+    </div><!-- /.phone-wrap -->
+
+    <!-- RIGHT SHOWCASE COLUMN (desktop only) -->
+    <aside class="showcase-right" aria-hidden="true">
+      <div class="legend">
+        <div class="legend__item">
+          <span class="legend__num">1</span>
+          <span class="legend__text"><strong>Active trip card</strong> tóm tắt chuyến đang chạy với progress, ETA và CTA "Báo cáo chuyến".</span>
+        </div>
+        <div class="legend__item">
+          <span class="legend__num">2</span>
+          <span class="legend__text"><strong>Báo cáo</strong> tự động tính TTBQ trực tiếp khi nhập km/dầu, cảnh báo đỏ nếu vượt định mức.</span>
+        </div>
+        <div class="legend__item">
+          <span class="legend__num">3</span>
+          <span class="legend__text"><strong>Chuyến chè</strong> bắt buộc upload ảnh container & seal trước khi đóng chuyến.</span>
+        </div>
+        <div class="legend__item">
+          <span class="legend__num">4</span>
+          <span class="legend__text"><strong>Thu nhập</strong> minh bạch — lương, tiền đi đường, phạt — cập nhật theo thời gian thực.</span>
+        </div>
+        <div class="legend__item">
+          <span class="legend__num">5</span>
+          <span class="legend__text"><strong>Push notification</strong> cho thay đổi lịch trình, cảnh báo TTBQ, và vi phạm kỷ luật.</span>
+        </div>
+      </div>
+    </aside>
+
+  </div><!-- /.stage__inner -->
+</div><!-- /.stage -->
+
+<script>
+  // ────────── Tab navigation ──────────
+  const navButtons = document.querySelectorAll('[data-nav]');
+  const screens = document.querySelectorAll('.screen');
+  const navItems = document.querySelectorAll('.bottom-nav .nav-item');
+
+  function showScreen(name) {
+    screens.forEach(s => s.classList.toggle('is-active', s.dataset.screen === name));
+    navItems.forEach(n => {
+      const isActive = n.dataset.nav === name;
+      n.classList.toggle('is-active', isActive);
+      n.setAttribute('aria-selected', String(isActive));
+    });
+    // scroll main to top on screen change
+    document.querySelector('.app__main').scrollTop = 0;
+    // always reveal nav on screen change
+    const nav = document.querySelector('.bottom-nav');
+    if (nav) nav.classList.remove('is-hidden');
+  }
+
+  navButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = btn.dataset.nav;
+      if (target) showScreen(target);
+    });
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const target = btn.dataset.nav;
+        if (target) showScreen(target);
+      }
+    });
+  });
+
+  // ────────── Live TTBQ calculation ──────────
+  const kmInput = document.getElementById('km');
+  const fuelInput = document.getElementById('fuel');
+  const ttbqCard = document.getElementById('ttbqCard');
+  const ttbqValue = document.getElementById('ttbqValue');
+  const ttbqStatus = document.getElementById('ttbqStatus');
+  const LIMIT = 36.5;
+
+  function recalcTTBQ() {
+    const km = parseFloat(kmInput.value) || 0;
+    const fuel = parseFloat(fuelInput.value) || 0;
+    if (km <= 0 || fuel <= 0) {
+      ttbqValue.textContent = '—';
+      ttbqCard.className = 'ttbq';
+      return;
+    }
+    const ttbq = (fuel / km) * 100;
+    ttbqValue.textContent = ttbq.toFixed(1);
+
+    const pct = ((ttbq - LIMIT) / LIMIT) * 100;
+    ttbqCard.classList.remove('is-ok', 'is-warn', 'is-danger');
+    if (pct <= 0) {
+      ttbqCard.classList.add('is-ok');
+      ttbqStatus.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Trong định mức';
+    } else if (pct <= 7) {
+      ttbqCard.classList.add('is-warn');
+      ttbqStatus.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Vượt mức ' + pct.toFixed(0) + '%';
+    } else {
+      ttbqCard.classList.add('is-danger');
+      ttbqStatus.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Vượt mức ' + pct.toFixed(0) + '%';
+    }
+  }
+  kmInput && kmInput.addEventListener('input', recalcTTBQ);
+  fuelInput && fuelInput.addEventListener('input', recalcTTBQ);
+
+  // ────────── Date pill toggle ──────────
+  document.querySelectorAll('.date-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.date-pill').forEach(x => x.classList.remove('is-active'));
+      p.classList.add('is-active');
+    });
+  });
+
+  // ────────── Photo upload feedback ──────────
+  document.querySelectorAll('.photo-upload').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.style.transform = 'scale(0.97)';
+      setTimeout(() => { btn.style.transform = ''; }, 120);
+    });
+  });
+
+  // ────────── Progress bar animation on home view ──────────
+  window.addEventListener('load', () => {
+    const bar = document.getElementById('progressBar');
+    if (bar) {
+      bar.style.width = '0%';
+      requestAnimationFrame(() => {
+        setTimeout(() => { bar.style.width = '64%'; }, 200);
+      });
+    }
+  });
+
+  // ────────── Auto-hide bottom nav on scroll ──────────
+  (function() {
+    const main = document.querySelector('.app__main');
+    const nav = document.querySelector('.bottom-nav');
+    if (!main || !nav) return;
+
+    let lastY = 0;
+    let ticking = false;
+    const THRESHOLD = 6;          // px before reacting (ignore tiny jitter)
+    const SHOW_AT_TOP = 24;       // always show within this distance from top
+
+    function onScroll() {
+      const y = main.scrollTop;
+      const delta = y - lastY;
+
+      if (y <= SHOW_AT_TOP) {
+        nav.classList.remove('is-hidden');
+      } else if (delta > THRESHOLD) {
+        // scrolling down → hide
+        nav.classList.add('is-hidden');
+      } else if (delta < -THRESHOLD) {
+        // scrolling up → show
+        nav.classList.remove('is-hidden');
+      }
+      lastY = y;
+      ticking = false;
+    }
+
+    main.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(onScroll);
+        ticking = true;
+      }
+    }, { passive: true });
+  })();
+</script>
+
+</body>
+</html>
