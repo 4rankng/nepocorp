@@ -1,19 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Compass, 
-  Truck, 
-  User, 
-  Search, 
-  ArrowRight, 
-  Clock, 
-  CheckCircle2, 
+import {
+  Compass,
+  CheckCircle2,
   AlertTriangle,
   Play,
-  Plus
+  Plus,
+  Map
 } from 'lucide-react';
-import { api, ApiError } from '../lib/api';
-import { PageHeader, Card, Badge, KPI } from '../components/UI';
+import { api } from '../lib/api';
+import { PageHeader, Card } from '../components/UI';
 import { formatDate } from '../lib/format';
 import { TripStatus } from '@nepocorp/shared';
 
@@ -28,21 +24,6 @@ interface Truck {
   id: number;
   license_plate: string;
   status: string;
-}
-
-interface RouteType {
-  id: number;
-  name: string;
-}
-
-interface Trailer {
-  id: number;
-  license_plate: string;
-}
-
-interface CargoType {
-  id: number;
-  name: string;
 }
 
 interface TripDetail {
@@ -68,48 +49,28 @@ export default function DispatchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Options
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [trucks, setTrucks] = useState<Truck[]>([]);
-  const [routes, setRoutes] = useState<RouteType[]>([]);
-  const [trailers, setTrailers] = useState<Trailer[]>([]);
-  const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
 
   // Trips data
   const [pendingTrips, setPendingTrips] = useState<TripDetail[]>([]);
   const [activeTrips, setActiveTrips] = useState<TripDetail[]>([]);
 
-  // Search/Filters
-  const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [
-        driversRes,
-        trucksRes,
-        routesRes,
-        trailersRes,
-        cargoRes,
-        pendingRes,
-        activeRes
-      ] = await Promise.all([
+      const [driversRes, trucksRes, pendingRes, activeRes] = await Promise.all([
         api.get<{ items: Driver[] }>('/drivers?limit=100'),
         api.get<{ items: Truck[] }>('/trucks?limit=100'),
-        api.get<{ items: RouteType[] }>('/routes?limit=100'),
-        api.get<{ items: Trailer[] }>('/trailers?limit=100'),
-        api.get<{ items: CargoType[] }>('/cargo-types?limit=100'),
         api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
         api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.IN_TRANSIT}&limit=100`)
       ]);
 
       setDrivers(driversRes.items || []);
       setTrucks(trucksRes.items || []);
-      setRoutes(routesRes.items || []);
-      setTrailers(trailersRes.items || []);
-      setCargoTypes(cargoRes.items || []);
       setPendingTrips(pendingRes.items || []);
       setActiveTrips(activeRes.items || []);
     } catch (err) {
@@ -131,7 +92,7 @@ export default function DispatchPage() {
     }
     setActionLoading(tripId);
     try {
-      await api.post(`/trips/${tripId}/dispatch`);
+      await api.post(`/trips/${tripId}/dispatch`, {});
       // Reload trips data
       const [pendingRes, activeRes] = await Promise.all([
         api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
@@ -156,19 +117,6 @@ export default function DispatchPage() {
     return drivers.find(d => d.assigned_truck_id === truckId);
   };
 
-  // Filter trucks by search
-  const filteredTrucks = trucks.filter(truck => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    const activeTrip = getActiveTripForTruck(truck.id);
-    const defDriver = getDefaultDriverForTruck(truck.id);
-    return (
-      truck.license_plate.toLowerCase().includes(q) ||
-      (activeTrip && activeTrip.driverName.toLowerCase().includes(q)) ||
-      (defDriver && defDriver.name.toLowerCase().includes(q))
-    );
-  });
-
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
@@ -177,23 +125,27 @@ export default function DispatchPage() {
     );
   }
 
-  const idleTruckCount = trucks.length - activeTrips.length;
-
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
       {/* Header */}
-      <PageHeader 
-        title="Điều vận & Phân xe" 
-        description="Theo dõi hoạt động thời gian thực của đội xe và xuất phát các lệnh vận chuyển."
+      <PageHeader
+        title="Phân xe"
+        description={<>{activeTrips.length} xe đang vận hành · <strong style={{ color: 'var(--warning)' }}>{pendingTrips.length} đơn hàng chờ phân</strong></>}
         action={
-          <button 
-            className="btn btn-primary"
-            onClick={() => navigate('/trips/new')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-          >
-            <Plus size={16} />
-            Tạo chuyến đi mới
-          </button>
+          <div className="page-actions">
+            <button className="btn btn--secondary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Map size={14} />
+              Xem bản đồ
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={() => navigate('/trips/new')}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+            >
+              <Plus size={14} />
+              Tạo đơn mới
+            </button>
+          </div>
         }
       />
 
@@ -203,111 +155,84 @@ export default function DispatchPage() {
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-        <KPI 
-          label="Tổng đội xe" 
-          value={trucks.length} 
-          unit="đầu xe"
-          icon={Truck}
-          variant="default"
-        />
-        <KPI 
-          label="Đang di chuyển" 
-          value={activeTrips.length} 
-          unit="xe hoạt động"
-          icon={Compass}
-          variant="accent"
-          meta={<span style={{ color: 'var(--brand)', fontWeight: 600 }}>Tỷ lệ: {trucks.length ? Math.round((activeTrips.length / trucks.length) * 100) : 0}%</span>}
-        />
-        <KPI 
-          label="Sẵn sàng lệnh" 
-          value={idleTruckCount} 
-          unit="xe rảnh"
-          icon={CheckCircle2}
-          variant="success"
-          meta="Đang đỗ tại bãi xe"
-        />
-        <KPI 
-          label="Chờ khởi hành" 
-          value={pendingTrips.length} 
-          unit="đơn hàng"
-          icon={Clock}
-          variant="warn"
-          meta="Cần duyệt xuất phát"
-        />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 28 }}>
-        {/* Left / Main: Fleet Board */}
+      <div>
+        {/* Fleet Board */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Trạng thái đội xe (Thời gian thực)</h2>
-            <div className="search-box" style={{ position: 'relative', width: 260 }}>
-              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)' }} />
-              <input 
-                className="input" 
-                style={{ paddingLeft: 30, height: 32, fontSize: 13 }}
-                placeholder="Tìm biển số hoặc tài xế..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 600, margin: '24px 0 12px' }}>
+            Trạng thái đội xe
+          </h3>
 
           <div className="fleet-board">
-            {filteredTrucks.map(truck => {
+            {trucks.map(truck => {
               const activeTrip = getActiveTripForTruck(truck.id);
               const defDriver = getDefaultDriverForTruck(truck.id);
+
+              if (truck.status === 'MAINTENANCE') {
+                // Maintenance style card
+                return (
+                  <div key={truck.id} className="vstatus">
+                    <div className="vstatus__head">
+                      <div>
+                        <span className="vstatus__plate" style={{ background: 'var(--warning-soft)', color: 'var(--warning)', border: '1px solid var(--warning)' }}>{truck.license_plate}</span>
+                        <div className="vstatus__driver" style={{ marginTop: 8 }}>
+                          {defDriver ? defDriver.name : <span style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>Chưa có tài xế</span>}
+                        </div>
+                        <div className="vstatus__meta">Bảo dưỡng định kỳ</div>
+                      </div>
+                      <div className="vstatus__route-icon" style={{ background: 'var(--warning-soft)', color: 'var(--warning)' }}>
+                        <AlertTriangle size={18} />
+                      </div>
+                    </div>
+                    <div className="vstatus__body">
+                      <span className="pill pill--warn" style={{ marginBottom: 8, display: 'inline-flex' }}><span className="dot"></span>Bảo dưỡng</span>
+                      <div>Trạng thái: <strong>Đang sửa chữa / bảo dưỡng</strong></div>
+                      <div style={{ color: 'var(--fg-3)', marginTop: 4 }}>Không khả dụng điều vận lúc này</div>
+                    </div>
+                  </div>
+                );
+              }
 
               if (activeTrip) {
                 // Transit style card
                 return (
-                  <div key={truck.id} className="vstatus" style={{ borderLeft: '3px solid var(--brand)' }} onClick={() => navigate(`/trips/${activeTrip.id}`)}>
+                  <div key={truck.id} className="vstatus" onClick={() => navigate(`/trips/${activeTrip.id}`)} style={{ cursor: 'pointer' }}>
                     <div className="vstatus__head">
-                      <div className="vstatus__plate">{truck.license_plate}</div>
-                      <div className="vstatus__route-icon">
-                        <Compass size={16} style={{ color: 'var(--brand)' }} />
+                      <div>
+                        <span className="vstatus__plate">{truck.license_plate}</span>
+                        <div className="vstatus__driver" style={{ marginTop: 8 }}>{activeTrip.driverName}</div>
+                        <div className="vstatus__meta">Xe chạy chặng · Khởi hành {formatDate(activeTrip.departureDate)}</div>
+                      </div>
+                      <div className="vstatus__route-icon" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                        <Compass size={18} />
                       </div>
                     </div>
-                    <div className="vstatus__driver" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <User size={13} style={{ color: 'var(--fg-3)' }} />
-                      {activeTrip.driverName}
-                    </div>
-                    <div className="vstatus__meta">Khởi hành: {formatDate(activeTrip.departureDate)}</div>
-                    
                     <div className="vstatus__body">
+                      <span className="pill pill--success" style={{ marginBottom: 8, display: 'inline-flex' }}><span className="dot"></span>Đang chạy</span>
                       <div>Tuyến: <strong>{activeTrip.routeName}</strong></div>
                       <div style={{ marginTop: 4 }}>Khách hàng: <strong>{activeTrip.customerName}</strong></div>
-                      
-                      <div className="vstatus__progress">
-                        <div className="vstatus__progress-bar" style={{ width: '65%' }}></div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--fg-3)', marginTop: 4 }}>
-                        <span>Đang di chuyển</span>
-                        <span>65%</span>
-                      </div>
                     </div>
                   </div>
                 );
               } else {
                 // Available style card
                 return (
-                  <div key={truck.id} className="vstatus" style={{ borderLeft: '3px solid var(--success)' }}>
+                  <div key={truck.id} className="vstatus">
                     <div className="vstatus__head">
-                      <div className="vstatus__plate" style={{ background: 'var(--bg-3)', color: 'var(--fg-1)', border: '1px solid var(--border-2)' }}>{truck.license_plate}</div>
+                      <div>
+                        <span className="vstatus__plate" style={{ background: 'var(--surface-3)', color: 'var(--ink)', border: '1px solid var(--line-2)' }}>{truck.license_plate}</span>
+                        <div className="vstatus__driver" style={{ marginTop: 8 }}>
+                          {defDriver ? defDriver.name : <span style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>Chưa giao tài xế</span>}
+                        </div>
+                        <div className="vstatus__meta">Sẵn sàng nhận lệnh điều xe</div>
+                      </div>
                       <div className="vstatus__route-icon" style={{ background: 'var(--success-soft)', color: 'var(--success)' }}>
-                        <CheckCircle2 size={16} />
+                        <CheckCircle2 size={18} />
                       </div>
                     </div>
-                    <div className="vstatus__driver" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <User size={13} style={{ color: 'var(--fg-3)' }} />
-                      {defDriver ? defDriver.name : <span style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>Chưa có tài xế phụ trách</span>}
-                    </div>
-                    <div className="vstatus__meta">Trạng thái: Sẵn sàng lệnh</div>
-                    
-                    <div className="vstatus__body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontStyle: 'italic', minHeight: 60 }}>
-                      Đang ở bãi, chờ lệnh xuất phát...
+                    <div className="vstatus__body">
+                      <span className="pill pill--success" style={{ marginBottom: 8, display: 'inline-flex' }}><span className="dot"></span>Sẵn sàng</span>
+                      <div>Bãi đỗ: <strong>Long Biên, Hà Nội</strong></div>
+                      <div style={{ color: 'var(--fg-3)', marginTop: 4 }}>Đang đỗ tại bãi, chờ lệnh xuất phát</div>
                     </div>
                   </div>
                 );
@@ -316,9 +241,14 @@ export default function DispatchPage() {
           </div>
         </div>
 
-        {/* Right / Bottom: Pending Order Queue */}
-        <div style={{ marginTop: 12 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Đơn hàng chờ khởi hành ({pendingTrips.length})</h2>
+        {/* Pending Order Queue */}
+        <div style={{ marginTop: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 600, margin: 0 }}>
+              Đơn hàng chờ phân · {pendingTrips.length}
+            </h3>
+            <a href="#" style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Lịch sử →</a>
+          </div>
           
           {pendingTrips.length === 0 ? (
             <Card style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--fg-3)' }}>
@@ -327,38 +257,41 @@ export default function DispatchPage() {
               <p style={{ margin: '4px 0 0', fontSize: 12 }}>Tất cả các chuyến đi đã xuất phát hoặc chưa tạo.</p>
             </Card>
           ) : (
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {pendingTrips.map(trip => (
                 <div key={trip.id} className="order-card">
-                  <div className="order-card__id">#{trip.id}</div>
+                  <span className="order-card__id">#{trip.id}</span>
                   
                   <div className="order-card__main">
-                    <div className="order-card__route" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>{trip.routeName}</span>
-                      <ArrowRight size={14} style={{ color: 'var(--fg-3)' }} />
-                      <span style={{ color: 'var(--fg-3)', fontSize: 13, fontWeight: 400 }}>{trip.customerName}</span>
-                    </div>
+                    <div className="order-card__route">{trip.routeName}</div>
                     <div className="order-card__meta">
-                      <span>Tài xế: <strong>{trip.driverName}</strong></span>
-                      <span>•</span>
+                      <span><strong>{trip.customerName}</strong></span>
+                      <span>·</span>
                       <span>Xe: <strong>{trip.truckPlate}</strong></span>
+                      <span>·</span>
+                      <span>Tài xế: <strong>{trip.driverName}</strong></span>
                       {trip.customerReference && (
                         <>
-                          <span>•</span>
+                          <span>·</span>
                           <span>Mã KH: <strong>{trip.customerReference}</strong></span>
                         </>
                       )}
                     </div>
                   </div>
 
-                  <div className="order-card__time">
-                    <div>{formatDate(trip.departureDate)}</div>
-                    <div className="order-card__time-label">Ngày xuất phát</div>
+                  <div className="order-card__suggest">
+                    Đề xuất xe: <strong>{trip.truckPlate}</strong><br />
+                    Tài xế: {trip.driverName}
                   </div>
 
                   <div>
+                    <div className="order-card__time">{formatDate(trip.departureDate)}</div>
+                    <div className="order-card__time-label">Ngày xuất phát</div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
                     <button 
-                      className="btn btn-sm btn-primary"
+                      className="btn btn--primary btn--sm"
                       style={{ display: 'flex', alignItems: 'center', gap: 6, height: 34 }}
                       onClick={() => handleDispatch(trip.id)}
                       disabled={actionLoading === trip.id}

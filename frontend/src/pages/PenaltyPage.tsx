@@ -48,8 +48,8 @@ export default function PenaltyPage() {
     setListLoading(true);
     setListError(null);
     try {
-      const data = await api.get<PenaltyRow[]>('/penalties');
-      setPenalties(data);
+      const data = await api.get<PenaltyRow[] | { items: PenaltyRow[] }>('/penalties');
+      setPenalties(Array.isArray(data) ? data : (data as any).items ?? []);
     } catch (e: any) {
       setListError(e.message || 'Không thể tải danh sách phạt');
     } finally {
@@ -59,15 +59,16 @@ export default function PenaltyPage() {
 
   const fetchDrivers = useCallback(async () => {
     try {
-      const data = await api.get<Driver[]>('/drivers');
-      setDrivers(data.filter(d => d.status === 'ACTIVE'));
+      const data = await api.get<any>('/drivers');
+      const arr: Driver[] = Array.isArray(data) ? data : (data.items ?? []);
+      setDrivers(arr.filter(d => d.status === 'ACTIVE'));
     } catch { /* silent */ }
   }, []);
 
   const fetchReasons = useCallback(async () => {
     try {
-      const data = await api.get<PenaltyReason[]>('/penalty-reasons');
-      setReasons(data);
+      const data = await api.get<any>('/penalty-reasons');
+      setReasons(Array.isArray(data) ? data : (data.items ?? []));
     } catch { /* silent */ }
   }, []);
 
@@ -149,17 +150,17 @@ export default function PenaltyPage() {
     <div className="fade-up" style={{ paddingBottom: 40 }}>
       {/* Page Header */}
       <PageHeader 
-        title="Kỷ luật & GPS" 
+        title="Kỷ luật" 
         description="Quản lý lỗi nghiệp vụ, biên bản xử phạt và khấu trừ trực tiếp vào bảng lương tài xế."
         action={
-          <button className="btn btn-secondary btn-sm" onClick={fetchPenalties} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36 }}>
+          <button className="btn btn--secondary btn--sm" onClick={fetchPenalties} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36 }}>
             <RefreshCw size={14} /> Tải lại
           </button>
         }
       />
 
       {/* KPI Stats */}
-      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
+      <div className="kpi-grid">
         <KPI 
           label="Tổng tiền khấu trừ" 
           value={formatCurrency(totalPenaltyAmount)} 
@@ -218,8 +219,8 @@ export default function PenaltyPage() {
                 <p style={{ fontSize: 12, margin: 0 }}>Không tìm thấy biên bản xử phạt trong cơ sở dữ liệu.</p>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="tt-table">
+              <div className="table-scroll">
+                <table>
                   <thead>
                     <tr>
                       <th style={{ paddingLeft: 20 }}>Tài xế</th>
@@ -359,7 +360,7 @@ export default function PenaltyPage() {
               </FormGroup>
 
               <button
-                className="btn btn-primary"
+                className="btn btn--primary"
                 style={{ width: '100%', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 40 }}
                 disabled={submitting || !formDriverId || !formAmount || !formDate}
                 onClick={handleSubmit}

@@ -4,9 +4,8 @@ import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@nepocorp/shared';
 import type { CustomerStatement, LedgerEntry } from '@nepocorp/shared';
-import {
-  ArrowLeft, AlertTriangle, Wallet, X, Plus, FileText,
-} from 'lucide-react';
+import { AlertTriangle, Wallet, X, Plus } from 'lucide-react';
+import { PageHeader, Panel, KPI } from '../components/UI';
 
 // ── Txn type labels ─────────────────────────────────────────────────────────
 
@@ -108,12 +107,10 @@ export default function DebtDetailPage() {
   if (error || !statement) {
     return (
       <div>
-        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/debt')} style={{ marginBottom: 16 }}>
-          <ArrowLeft size={14} /> Quay lại
-        </button>
-        <div className="card-shell" style={{ padding: 24, color: 'var(--danger)' }}>
-          {error || 'Không tìm thấy dữ liệu'}
-        </div>
+        <PageHeader title="Sổ kế toán" onBack={() => navigate('/debt')} />
+        <Panel>
+          <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error || 'Không tìm thấy dữ liệu'}</p>
+        </Panel>
       </div>
     );
   }
@@ -122,25 +119,21 @@ export default function DebtDetailPage() {
 
   return (
     <div>
-      {/* Back button */}
-      <button className="btn btn-ghost btn-sm" onClick={() => navigate('/debt')} style={{ marginBottom: 12 }}>
-        <ArrowLeft size={14} /> Quay lại
-      </button>
-
-      <div className="page-header">
-        <div>
-          <h1>{customer.name}</h1>
-          <p>{customer.contact_info || 'Không có thông tin liên hệ'}</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => setShowPayment(true)}>
-          <Wallet size={15} />
-          Ghi nhận thanh toán
-        </button>
-      </div>
+      <PageHeader
+        title={customer.name}
+        description={customer.contact_info || 'Không có thông tin liên hệ'}
+        action={
+          <button className="btn btn--primary" onClick={() => setShowPayment(true)}>
+            <Wallet size={15} />
+            Ghi nhận thanh toán
+          </button>
+        }
+        onBack={() => navigate('/debt')}
+      />
 
       {/* Total outstanding */}
       <div
-        className="card-shell fade-up"
+        className="panel fade-up"
         style={{
           padding: '20px 24px',
           marginBottom: 16,
@@ -179,50 +172,39 @@ export default function DebtDetailPage() {
 
       {/* Aging buckets */}
       <div className="kpi-grid fade-up" style={{ marginBottom: 20 }}>
-        {agingBuckets.map((bucket, i) => (
-          <div key={i} className="stat-card" style={{ padding: '14px 16px 14px' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', marginBottom: 6 }}>
-              {bucket.range}
-            </div>
-            <div
-              className="typo-mono"
-              style={{
-                fontSize: 17,
-                fontWeight: 700,
-                color: bucket.amount > 0 ? 'var(--danger)' : 'var(--fg-1)',
-              }}
-            >
-              {formatCurrency(bucket.amount)}
-            </div>
-          </div>
-        ))}
-        {agingBuckets.length === 0 && (
-          <>
-            <AgingPlaceholder range="0-30 ngày" />
-            <AgingPlaceholder range="31-60 ngày" />
-            <AgingPlaceholder range="61-90 ngày" />
-            <AgingPlaceholder range="90+ ngày" />
-          </>
-        )}
+        {agingBuckets.length > 0
+          ? agingBuckets.map((bucket, i) => (
+              <KPI
+                key={i}
+                label={bucket.range}
+                value={formatCurrency(bucket.amount)}
+                variant={bucket.amount > 0 ? 'danger' : 'default'}
+              />
+            ))
+          : (
+            <>
+              <AgingPlaceholder range="0-30 ngày" />
+              <AgingPlaceholder range="31-60 ngày" />
+              <AgingPlaceholder range="61-90 ngày" />
+              <AgingPlaceholder range="90+ ngày" />
+            </>
+          )
+        }
       </div>
 
       {/* Ledger table */}
-      <div className="card-shell fade-up-2">
-        <div className="card-header">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FileText size={15} style={{ color: 'var(--fg-3)' }} />
-            Sổ kế toán
-          </h3>
-          <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>
-            {ledgerRows.length} giao dịch
-          </span>
-        </div>
+      <Panel
+        title="Sổ kế toán"
+        subtitle={`${ledgerRows.length} giao dịch`}
+        style={{ marginTop: 20 }}
+        flush
+      >
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
             <thead>
               <tr>
                 <th>Ngày</th>
-                <th>Loai giao dịch</th>
+                <th>Loại giao dịch</th>
                 <th style={{ textAlign: 'right' }}>Nợ</th>
                 <th style={{ textAlign: 'right' }}>Có</th>
                 <th style={{ textAlign: 'right' }}>Số dư</th>
@@ -236,14 +218,14 @@ export default function DebtDetailPage() {
               {ledgerRows.length === 0 && (
                 <tr>
                   <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>
-                    Khong co giao dịch
+                    Không có giao dịch
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
 
       {/* ── Payment Modal ──────────────────────────────────────────────────── */}
       {showPayment && (
@@ -257,83 +239,81 @@ export default function DebtDetailPage() {
           }}
           onClick={() => setShowPayment(false)}
         >
-          <div
-            className="card-shell"
-            style={{ width: '100%', maxWidth: 520, maxHeight: '90vh', overflow: 'auto' }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="card-header">
-              <h3>Ghi nhận thanh toán</h3>
-              <button className="icon-btn" onClick={() => setShowPayment(false)}>
+          <div style={{ width: '100%', maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+          <Panel
+            title="Ghi nhận thanh toán"
+            action={
+              <button className="btn btn--ghost btn--icon btn--sm" onClick={() => setShowPayment(false)}>
                 <X size={16} />
               </button>
+            }
+            style={{ maxHeight: '90vh', overflow: 'auto' }}
+          >
+            {submitError && (
+              <div style={{
+                padding: '10px 14px', marginBottom: 14,
+                background: 'var(--danger-soft)', color: 'var(--danger-text)',
+                borderRadius: 'var(--radius-md)', fontSize: 13,
+              }}>
+                {submitError}
+              </div>
+            )}
+
+            {/* Receipt ID */}
+            <div className="field">
+              <label>Mã phiếu thu</label>
+              <input
+                className="input"
+                placeholder="VD: PT-001"
+                value={receiptId}
+                onChange={e => setReceiptId(e.target.value)}
+              />
             </div>
-            <div style={{ padding: 20 }}>
-              {submitError && (
-                <div style={{
-                  padding: '10px 14px', marginBottom: 14,
-                  background: 'var(--danger-soft)', color: 'var(--danger-text)',
-                  borderRadius: 'var(--radius-md)', fontSize: 13,
-                }}>
-                  {submitError}
+
+            {/* Trip payments */}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-1)', marginBottom: 8 }}>
+                Thanh toán theo lệnh
+              </label>
+              {paymentTrips.map((p, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <input
+                    className="input"
+                    type="number"
+                    placeholder="ID lệnh"
+                    value={p.trip_id || ''}
+                    onChange={e => updatePaymentRow(i, 'trip_id', e.target.value)}
+                    style={{ width: 120 }}
+                  />
+                  <input
+                    className="input"
+                    type="number"
+                    placeholder="Số tiền"
+                    value={p.amount}
+                    onChange={e => updatePaymentRow(i, 'amount', e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  {paymentTrips.length > 1 && (
+                    <button className="btn btn--ghost btn--icon btn--sm" onClick={() => removePaymentRow(i)}>
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
-              )}
-
-              {/* Receipt ID */}
-              <div className="field">
-                <label>Mã phiếu thu</label>
-                <input
-                  className="input"
-                  placeholder="VD: PT-001"
-                  value={receiptId}
-                  onChange={e => setReceiptId(e.target.value)}
-                />
-              </div>
-
-              {/* Trip payments */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-1)', marginBottom: 8 }}>
-                  Thanh toán theo lệnh
-                </label>
-                {paymentTrips.map((p, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <input
-                      className="input"
-                      type="number"
-                      placeholder="ID lệnh"
-                      value={p.trip_id || ''}
-                      onChange={e => updatePaymentRow(i, 'trip_id', e.target.value)}
-                      style={{ width: 120 }}
-                    />
-                    <input
-                      className="input"
-                      type="number"
-                      placeholder="Số tiền"
-                      value={p.amount}
-                      onChange={e => updatePaymentRow(i, 'amount', e.target.value)}
-                      style={{ flex: 1 }}
-                    />
-                    {paymentTrips.length > 1 && (
-                      <button className="icon-btn" onClick={() => removePaymentRow(i)}>
-                        <X size={14} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button className="btn btn-ghost btn-sm" onClick={addPaymentRow} style={{ marginTop: 4 }}>
-                  <Plus size={14} /> Thêm lệnh
-                </button>
-              </div>
-
-              <button
-                className="btn btn-primary"
-                style={{ width: '100%', marginTop: 8 }}
-                disabled={submitting || !receiptId.trim()}
-                onClick={handleSubmitPayment}
-              >
-                {submitting ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+              ))}
+              <button className="btn btn--ghost btn--sm" onClick={addPaymentRow} style={{ marginTop: 4 }}>
+                <Plus size={14} /> Thêm lệnh
               </button>
             </div>
+
+            <button
+              className="btn btn--primary"
+              style={{ width: '100%', marginTop: 8 }}
+              disabled={submitting || !receiptId.trim()}
+              onClick={handleSubmitPayment}
+            >
+              {submitting ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+            </button>
+          </Panel>
           </div>
         </div>
       )}
@@ -367,14 +347,5 @@ function LedgerRow({ row }: { row: LedgerEntry }) {
 }
 
 function AgingPlaceholder({ range }: { range: string }) {
-  return (
-    <div className="stat-card" style={{ padding: '14px 16px 14px' }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', marginBottom: 6 }}>
-        {range}
-      </div>
-      <div className="typo-mono" style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg-1)' }}>
-        —
-      </div>
-    </div>
-  );
+  return <KPI label={range} value="—" />;
 }

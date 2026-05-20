@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save, Trash2, Plus, Image as ImageIcon, X } from 'lucide-react';
+import { Loader2, Save, Trash2, Plus, Image as ImageIcon, X } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
+import { PageHeader } from '../components/UI';
 import { FuelMode, LoadingType, TripStatus } from '@nepocorp/shared';
 import type { TripDetail, TripLeg } from '@nepocorp/shared';
 
@@ -253,24 +254,11 @@ export default function TripEditPage() {
 
   return (
     <div className="fade-up">
-      {/* Header */}
-      <div className="page-header" style={{ marginBottom: 24 }}>
-        <div>
-          <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              className="btn btn-ghost btn-icon btn-sm"
-              onClick={() => navigate(`/trips/${trip.id}`)}
-              aria-label="Quay lại"
-            >
-              <ArrowLeft size={16} />
-            </button>
-            Cập nhật số liệu lệnh #{trip.id}
-          </h1>
-          <p style={{ marginLeft: 46 }}>
-            {trip.customer?.name} &middot; {trip.route?.name}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={`Cập nhật số liệu lệnh #${trip.id}`}
+        description={`${trip.customer?.name ?? ''} · ${trip.route?.name ?? ''}`}
+        onBack={() => navigate(`/trips/${trip.id}`)}
+      />
 
       {error && (
         <div style={{
@@ -289,12 +277,12 @@ export default function TripEditPage() {
       <form onSubmit={handleSubmit}>
         <div className="row-2" style={{ alignItems: 'stretch' }}>
           {/* Left panel - Legs list */}
-          <div className="card-shell" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
+          <div className="panel" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <span className="typo-eyebrow">Hành trình chi tiết (Chặng đường)</span>
               <button
                 type="button"
-                className="btn btn-ghost btn-sm"
+                className="btn btn--ghost btn--sm"
                 onClick={handleAddLeg}
                 style={{ color: 'var(--brand)', fontWeight: 600 }}
               >
@@ -372,7 +360,7 @@ export default function TripEditPage() {
                         {legs.length > 1 && (
                           <button
                             type="button"
-                            className="icon-btn text-danger"
+                            className="btn btn--ghost btn--icon btn--sm"
                             onClick={() => handleRemoveLeg(idx)}
                             aria-label="Xóa chặng"
                           >
@@ -402,7 +390,7 @@ export default function TripEditPage() {
           </div>
 
           {/* Right panel - Financials / Fuel / Photos */}
-          <div className="card-shell" style={{ padding: '20px 24px' }}>
+          <div className="panel" style={{ padding: '20px 24px' }}>
             {/* Fuel section */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ marginBottom: 12 }}><span className="typo-eyebrow">Định mức & Bổ sung dầu</span></div>
@@ -650,7 +638,7 @@ export default function TripEditPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
           <button
             type="submit"
-            className="btn btn-primary btn-lg"
+            className="btn btn--primary"
             disabled={submitting || uploading}
           >
             {submitting ? (
@@ -661,7 +649,7 @@ export default function TripEditPage() {
           </button>
           <button
             type="button"
-            className="btn btn-secondary btn-lg"
+            className="btn btn--secondary"
             onClick={() => navigate(`/trips/${trip.id}`)}
             disabled={submitting}
           >

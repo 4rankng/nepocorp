@@ -10,7 +10,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
-import { PageHeader, Card, KPI } from '../components/UI';
+import { PageHeader, Card, KPI, FormGroup } from '../components/UI';
 import { formatCurrency as formatVND } from '../lib/format';
 
 interface PnlReport {
@@ -63,19 +63,26 @@ export default function ProfitPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    let pnlOk = false;
+    let capOk = false;
     try {
-      const [pnlRes, capRes] = await Promise.all([
-        api.get<PnlReport>(`/reports/pnl?month=${selectedMonth}&year=${selectedYear}`),
-        api.get<{ items: CapTableEntry[] }>('/cap-table?limit=50')
-      ]);
+      const pnlRes = await api.get<PnlReport>(`/reports/pnl?month=${selectedMonth}&year=${selectedYear}`);
       setReport(pnlRes);
-      setCapTable(capRes.items || []);
+      pnlOk = true;
     } catch (err) {
       console.error(err);
-      setError('Không thể tải báo cáo phân chia lợi nhuận.');
-    } finally {
-      setLoading(false);
     }
+    try {
+      const capRes = await api.get<{ items: CapTableEntry[] }>('/cap-table?limit=50');
+      setCapTable(Array.isArray(capRes) ? capRes : (capRes.items || []));
+      capOk = true;
+    } catch (err) {
+      console.error(err);
+    }
+    if (!pnlOk && !capOk) {
+      setError('Không thể tải báo cáo phân chia lợi nhuận.');
+    }
+    setLoading(false);
   }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
@@ -152,7 +159,7 @@ export default function ProfitPage() {
                 ))}
               </select>
             </div>
-            <button className="btn btn-secondary" onClick={loadData} style={{ height: 36 }}>Tải lại</button>
+            <button className="btn btn--secondary" onClick={loadData} style={{ height: 36 }}>Tải lại</button>
           </div>
         }
       />
@@ -264,7 +271,7 @@ export default function ProfitPage() {
                 </div>
                 <div>
                   <button 
-                    className="btn btn-primary"
+                    className="btn btn--primary"
                     style={{ height: 40, marginTop: 18, display: 'flex', alignItems: 'center', gap: 8 }}
                     onClick={handleDistributeProfit}
                     disabled={distributing}

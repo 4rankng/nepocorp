@@ -5,6 +5,7 @@ import { formatCurrency, formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardStats, TripDetail } from '@nepocorp/shared';
 import { TripStatus } from '@nepocorp/shared';
+import { Panel } from '../components/UI';
 
 /* -------------------------------------------------------------------------- */
 /*  Interfaces                                                                */
@@ -256,15 +257,11 @@ export default function DashboardPage() {
       <div className="dash-grid">
         
         {/* Left Column: 12-Month Line Chart */}
-        <div className="panel">
-          <div className="panel__head">
-            <div>
-              <h2 className="panel__title">Doanh thu &amp; Lợi nhuận gộp · 12 tháng</h2>
-              <div className="panel__subtitle">Tăng trưởng đều — đỉnh tại T{currentMonth} / {currentYear}</div>
-            </div>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigate('/finance'); }} style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>Xem P&amp;L →</a>
-          </div>
-          <div className="panel__body">
+        <Panel
+          title="Doanh thu & Lợi nhuận gộp · 12 tháng"
+          subtitle={`Tăng trưởng đều — đỉnh tại T${currentMonth} / ${currentYear}`}
+          action={<a href="#" onClick={(e) => { e.preventDefault(); navigate('/finance'); }} style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>Xem P&L →</a>}
+        >
 
             <div className="chart-legend">
               <div className="chart-legend__item">
@@ -280,9 +277,9 @@ export default function DashboardPage() {
             <svg className="linechart" viewBox="0 0 700 220" preserveAspectRatio="none" role="img" aria-label="Biểu đồ doanh thu và lợi nhuận 12 tháng" style={{ overflow: 'visible' }}>
               {/* grid lines */}
               <line className="linechart__grid" x1="40" y1="20" x2="680" y2="20" strokeDasharray="2 4"/>
-              <line className="linechart__grid" x1="40" y1="62" x2="680" y2="62" stroke-dasharray="2 4"/>
-              <line className="linechart__grid" x1="40" y1="105" x2="680" y2="105" stroke-dasharray="2 4"/>
-              <line className="linechart__grid" x1="40" y1="148" x2="680" y2="148" stroke-dasharray="2 4"/>
+              <line className="linechart__grid" x1="40" y1="62" x2="680" y2="62" strokeDasharray="2 4"/>
+              <line className="linechart__grid" x1="40" y1="105" x2="680" y2="105" strokeDasharray="2 4"/>
+              <line className="linechart__grid" x1="40" y1="148" x2="680" y2="148" strokeDasharray="2 4"/>
               <line className="linechart__grid" x1="40" y1="190" x2="680" y2="190"/>
 
               {/* Y axis labels */}
@@ -328,18 +325,13 @@ export default function DashboardPage() {
                 </text>
               </g>
             </svg>
-          </div>
-        </div>
+        </Panel>
 
         {/* Right Column: Cost Breakdown Donut Chart fallback */}
-        <div className="panel">
-          <div className="panel__head">
-            <div>
-              <h2 className="panel__title">Cơ cấu chi phí T{currentMonth}</h2>
-              <div className="panel__subtitle">Tổng {formattedCosts}{costsUnit}</div>
-            </div>
-          </div>
-          <div className="panel__body">
+        <Panel
+          title={`Cơ cấu chi phí T${currentMonth}`}
+          subtitle={`Tổng ${formattedCosts}${costsUnit}`}
+        >
             <div className="aging" style={{ gap: 18 }}>
               <div 
                 className="aging__donut" 
@@ -394,23 +386,18 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+        </Panel>
 
       </div>
 
       {/* Row 2: Fleet and Routes Performance */}
       <div className="dash-grid">
-        
+
         {/* Vehicle Profitability */}
-        <div className="panel">
-          <div className="panel__head">
-            <div>
-              <h2 className="panel__title">Lợi nhuận theo xe · T{currentMonth}</h2>
-              <div className="panel__subtitle">Biên lợi nhuận gộp từng đầu kéo</div>
-            </div>
-          </div>
-          <div className="panel__body">
+        <Panel
+          title={`Lợi nhuận theo xe · T${currentMonth}`}
+          subtitle="Biên lợi nhuận gộp từng đầu kéo"
+        >
             <div className="stack" style={{ gap: 6 }}>
               {displayTrucks.map((t: any, idx: number) => {
                 const pctWidth = Math.max(8, Math.min(100, (t.profit / maxTruckProfit) * 100));
@@ -432,19 +419,14 @@ export default function DashboardPage() {
                 );
               })}
             </div>
-          </div>
-        </div>
+        </Panel>
 
         {/* Top Profitable Routes */}
-        <div className="panel">
-          <div className="panel__head">
-            <div>
-              <h2 className="panel__title">Top tuyến sinh lời · T{currentMonth}</h2>
-              <div className="panel__subtitle">Theo tổng lợi nhuận gộp</div>
-            </div>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigate('/routes'); }} style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>Tất cả →</a>
-          </div>
-          <div className="panel__body">
+        <Panel
+          title={`Top tuyến sinh lời · T${currentMonth}`}
+          subtitle="Theo tổng lợi nhuận gộp"
+          action={<a href="#" onClick={(e) => { e.preventDefault(); navigate('/routes'); }} style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>Tất cả →</a>}
+        >
             <div className="toplist">
               {displayRoutes.map((r: any, idx: number) => (
                 <div key={idx} className="toplist__row">
@@ -460,20 +442,16 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
+        </Panel>
 
       </div>
 
       {/* Row 3: Action Alerts ("Cần chú ý") */}
-      <div className="panel">
-        <div className="panel__head">
-          <div>
-            <h2 className="panel__title">Cần chú ý</h2>
-            <div className="panel__subtitle">Vấn đề cần quyết định của giám đốc</div>
-          </div>
-        </div>
-        <div className="panel__body panel__body--flush">
+      <Panel
+        title="Cần chú ý"
+        subtitle="Vấn đề cần quyết định của giám đốc"
+        flush
+      >
           
           {/* Huang Long debt alert */}
           <div className="todo" onClick={() => navigate('/debt')}>
@@ -485,18 +463,6 @@ export default function DashboardPage() {
               <div className="todo__meta"><span>Đề xuất KT: chuyển công ty thu hồi nợ</span></div>
             </div>
             <button className="btn btn--secondary btn--sm">Quyết định</button>
-          </div>
-
-          {/* GPS speed violation alert */}
-          <div className="todo" onClick={() => navigate('/penalties')}>
-            <div className="todo__icon todo__icon--danger">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <div className="todo__body">
-              <div className="todo__title"><strong>Anh Đức</strong> (30A-67890) — vi phạm GPS lần 4 trong tháng, tổng phạt 1.5M ₫</div>
-              <div className="todo__meta"><span>Quy định: lần 3+ sa thải có điều kiện</span></div>
-            </div>
-            <button className="btn btn--secondary btn--sm">Xem hồ sơ</button>
           </div>
 
           {/* Pending Dispatches */}
@@ -523,8 +489,7 @@ export default function DashboardPage() {
             <button className="btn btn--primary btn--sm">Xem & xác nhận</button>
           </div>
 
-        </div>
-      </div>
+      </Panel>
 
     </div>
   );

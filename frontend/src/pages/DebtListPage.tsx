@@ -34,11 +34,12 @@ export default function DebtListPage() {
       setError(null);
       try {
         // Fetch all customers & recent ledger entries in parallel
-        const [customerList, ledgerRes] = await Promise.all([
-          api.get<Customer[]>('/customers'),
+        const [customerRes, ledgerRes] = await Promise.all([
+          api.get<{ items: Customer[] }>('/customers'),
           api.get<{ items: LedgerEntry[] }>('/ledger?entity_type=CUSTOMER&limit=2000'),
         ]);
 
+        const customerList = Array.isArray(customerRes) ? customerRes : (customerRes.items ?? []);
         setCustomers(customerList);
         setLedgerEntries(ledgerRes.items || []);
       } catch (e: any) {
@@ -186,12 +187,12 @@ export default function DebtListPage() {
         title="Công nợ phải thu"
         description={`Tổng nợ: ${formatCurrency(totals.total)} • ${customers.length} khách hàng • cập nhật vừa xong`}
         action={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => alert('Đang xuất báo cáo công nợ...')}>
+          <div className="page-actions">
+            <button className="btn btn--secondary btn--sm" onClick={() => alert('Đang xuất báo cáo công nợ...')}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất báo cáo
             </button>
-            <button className="btn btn-primary btn-sm" onClick={() => alert('Đang gửi nhắc nợ hàng loạt...')}>
+            <button className="btn btn--primary btn--sm" onClick={() => alert('Đang gửi nhắc nợ hàng loạt...')}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Gửi nhắc nợ hàng loạt
             </button>
@@ -256,7 +257,7 @@ export default function DebtListPage() {
       </div>
 
       {error && (
-        <div className="card-shell" style={{ padding: 16, color: 'var(--danger)', marginBottom: 20 }}>
+        <div className="panel" style={{ padding: 16, color: 'var(--danger)', marginBottom: 20 }}>
           {error}
         </div>
       )}
@@ -266,13 +267,9 @@ export default function DebtListPage() {
           Đang tải dữ liệu công nợ...
         </div>
       ) : (
-        <Card
-          title="Bảng theo dõi tuổi nợ"
-          subtitle={`Đang hiển thị ${filteredDebts.length} khách hàng`}
-          noPadding
-        >
-          <div style={{ overflowX: 'auto' }}>
-            <table className="tt-table">
+        <div className="table-wrap">
+          <div className="table-scroll">
+            <table>
               <thead>
                 <tr>
                   <th>Khách hàng</th>
@@ -364,7 +361,7 @@ export default function DebtListPage() {
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

@@ -103,41 +103,218 @@ async function seed() {
     await db.insert(s.fuelConfig).values({ loadedNorm: '43', emptyNorm: '25', supplement: '3', unitPrice: '23000' });
   }
 
-  // Sample trips
+  // Sample trips - comprehensive real-life scenarios
   const [tc] = await db.select({ cnt: sql<number>`count(*)` }).from(s.trips);
   if (Number(tc?.cnt ?? 0) === 0) {
     const now = new Date();
+    const baseDate = new Date(now.getTime() - 90 * 86400000); // 3 months ago
+
     await db.insert(s.trips).values([
+      // ===== MONTH 1 (3 months ago) - Mixed results =====
+
+      // 1. Normal profitable trip
       {
         customerId: c1.id, routeId: r1.id, truckId: t1.id, trailerId: tr1.id,
         driverId: d1.id, cargoTypeId: ct1.id,
-        departureDate: new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10),
+        departureDate: new Date(baseDate.getTime() + 1 * 86400000).toISOString().slice(0, 10),
         status: TripStatus.LOCKED, revenue: '4500000', revenueOriginal: '4500000',
-        fuelLiters: '85', totalFuelCost: '1955000', totalRoadAllowance: '800000',
-        driverSalary: '500000', totalCost: '3255000', grossProfit: '1245000',
+        fuelLiters: '85', totalFuelCost: '1955000', totalRoadAllowance: '950000',
+        driverSalary: '500000', totalCost: '3405000', grossProfit: '1095000',
         fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
         fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
       },
+      // 2. Mountain route loss
       {
         customerId: c2.id, routeId: r2.id, truckId: t2.id, trailerId: tr2.id,
         driverId: d2.id, cargoTypeId: ct4.id,
-        departureDate: new Date(now.getTime() - 3 * 86400000).toISOString().slice(0, 10),
-        status: TripStatus.COMPLETED, revenue: '6000000', revenueOriginal: '6000000',
-        fuelLiters: '240', totalFuelCost: '5520000', totalRoadAllowance: '1200000',
-        driverSalary: '700000', totalCost: '7420000', grossProfit: '-1420000',
+        departureDate: new Date(baseDate.getTime() + 3 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '6000000', revenueOriginal: '6000000',
+        fuelLiters: '248', totalFuelCost: '5704000', totalRoadAllowance: '1100000',
+        driverSalary: '700000', totalCost: '7504000', grossProfit: '-1504000',
         fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
         fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
       },
-      {
-        customerId: c1.id, routeId: r1.id, truckId: t1.id, trailerId: tr1.id,
-        driverId: d1.id, cargoTypeId: ct1.id,
-        departureDate: new Date(now.getTime() - 1 * 86400000).toISOString().slice(0, 10),
-        status: TripStatus.IN_TRANSIT,
-      },
+      // 3. Long distance profitable
       {
         customerId: c3.id, routeId: r3.id, truckId: t3.id, trailerId: tr3.id,
         driverId: d3.id, cargoTypeId: ct2.id,
+        departureDate: new Date(baseDate.getTime() + 5 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '12000000', revenueOriginal: '12000000',
+        fuelLiters: '315', totalFuelCost: '7245000', totalRoadAllowance: '2200000',
+        driverSalary: '900000', totalCost: '10345000', grossProfit: '1655000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+      // 4. Break-even trip
+      {
+        customerId: c1.id, routeId: r1.id, truckId: t1.id, trailerId: tr1.id,
+        driverId: d1.id, cargoTypeId: ct1.id,
+        departureDate: new Date(baseDate.getTime() + 8 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '4200000', revenueOriginal: '4500000',
+        fuelLiters: '88', totalFuelCost: '2024000', totalRoadAllowance: '950000',
+        driverSalary: '500000', totalCost: '3474000', grossProfit: '726000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+
+      // ===== MONTH 2 (2 months ago) - Good month =====
+
+      // 5. Very profitable with return cargo
+      {
+        customerId: c2.id, routeId: r1.id, truckId: t2.id, trailerId: tr2.id,
+        driverId: d2.id, cargoTypeId: ct1.id,
+        departureDate: new Date(baseDate.getTime() + 32 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '5800000', revenueOriginal: '4500000',
+        fuelLiters: '80', totalFuelCost: '1840000', totalRoadAllowance: '850000',
+        driverSalary: '500000', totalCost: '3190000', grossProfit: '2610000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: true, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+      // 6. Mountain route with supplement
+      {
+        customerId: c1.id, routeId: r4.id, truckId: t3.id, trailerId: tr3.id,
+        driverId: d3.id, cargoTypeId: ct3.id,
+        departureDate: new Date(baseDate.getTime() + 35 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '8000000', revenueOriginal: '8000000',
+        fuelLiters: '335', totalFuelCost: '7705000', totalRoadAllowance: '1300000',
+        driverSalary: '850000', totalCost: '9855000', grossProfit: '-1855000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '15', fuelSupplementReason: 'Đèo Cao - đường dốc',
+        tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+      // 7. Standard trip
+      {
+        customerId: c3.id, routeId: r1.id, truckId: t1.id, trailerId: tr1.id,
+        driverId: d1.id, cargoTypeId: ct1.id,
+        departureDate: new Date(baseDate.getTime() + 38 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '4600000', revenueOriginal: '4500000',
+        fuelLiters: '83', totalFuelCost: '1909000', totalRoadAllowance: '950000',
+        driverSalary: '500000', totalCost: '3359000', grossProfit: '1241000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+      // 8. Multiple tolls
+      {
+        customerId: c2.id, routeId: r3.id, truckId: t3.id, trailerId: tr3.id,
+        driverId: d3.id, cargoTypeId: ct2.id,
+        departureDate: new Date(baseDate.getTime() + 41 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '12500000', revenueOriginal: '12000000',
+        fuelLiters: '325', totalFuelCost: '7475000', totalRoadAllowance: '2200000',
+        driverSalary: '900000', totalCost: '10575000', grossProfit: '1925000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '200000', tollsStations: 5,
+      },
+      // 9. Toll discount
+      {
+        customerId: c1.id, routeId: r1.id, truckId: t2.id, trailerId: tr2.id,
+        driverId: d2.id, cargoTypeId: ct1.id,
+        departureDate: new Date(baseDate.getTime() + 44 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '4400000', revenueOriginal: '4500000',
+        fuelLiters: '86', totalFuelCost: '1978000', totalRoadAllowance: '850000',
+        driverSalary: '500000', totalCost: '3328000', grossProfit: '1072000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '100000', tollsAddition: '0', tollsStations: 0,
+      },
+
+      // ===== MONTH 3 (last month) - Mixed with issues =====
+
+      // 10. High fuel consumption warning
+      {
+        customerId: c2.id, routeId: r2.id, truckId: t1.id, trailerId: tr1.id,
+        driverId: d1.id, cargoTypeId: ct4.id,
+        departureDate: new Date(baseDate.getTime() + 60 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '6200000', revenueOriginal: '6000000',
+        fuelLiters: '295', totalFuelCost: '6785000', totalRoadAllowance: '1100000',
+        driverSalary: '700000', totalCost: '8585000', grossProfit: '-2385000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '55', fuelSupplementReason: 'Xe cũ tiêu hao cao',
+        tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+      // 11. Canceled trip
+      {
+        customerId: c3.id, routeId: r3.id, truckId: t3.id, trailerId: tr3.id,
+        driverId: d3.id, cargoTypeId: ct2.id,
+        departureDate: new Date(baseDate.getTime() + 63 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.CANCELED, notes: 'Khách hàng hủy chuyến gấp',
+      },
+      // 12. Very profitable long distance
+      {
+        customerId: c1.id, routeId: r3.id, truckId: t1.id, trailerId: tr1.id,
+        driverId: d1.id, cargoTypeId: ct1.id,
+        departureDate: new Date(baseDate.getTime() + 66 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.LOCKED, revenue: '13000000', revenueOriginal: '12000000',
+        fuelLiters: '310', totalFuelCost: '7130000', totalRoadAllowance: '2200000',
+        driverSalary: '900000', totalCost: '10230000', grossProfit: '2770000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: true, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+      // 13. Completed waiting approval
+      {
+        customerId: c2.id, routeId: r4.id, truckId: t2.id, trailerId: tr2.id,
+        driverId: d2.id, cargoTypeId: ct3.id,
+        departureDate: new Date(baseDate.getTime() + 69 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.COMPLETED, revenue: '7800000', revenueOriginal: '7500000',
+        fuelLiters: '285', totalFuelCost: '6555000', totalRoadAllowance: '1300000',
+        driverSalary: '750000', totalCost: '8605000', grossProfit: '-805000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+      // 14. Another completed
+      {
+        customerId: c3.id, routeId: r1.id, truckId: t3.id, trailerId: tr3.id,
+        driverId: d3.id, cargoTypeId: ct2.id,
+        departureDate: new Date(baseDate.getTime() + 72 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.COMPLETED, revenue: '4700000', revenueOriginal: '4500000',
+        fuelLiters: '84', totalFuelCost: '1932000', totalRoadAllowance: '950000',
+        driverSalary: '500000', totalCost: '3382000', grossProfit: '1318000',
+        fuelMode: FuelMode.AUTO, hasReturnCargo: false, fuelPriceApplied: '23000',
+        fuelSupplementLiters: '0', tollsDiscount: '0', tollsAddition: '0', tollsStations: 0,
+      },
+
+      // ===== CURRENT MONTH - Active trips =====
+
+      // 15. Currently in transit
+      {
+        customerId: c1.id, routeId: r1.id, truckId: t1.id, trailerId: tr1.id,
+        driverId: d1.id, cargoTypeId: ct1.id,
+        departureDate: new Date(now.getTime() - 2 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.IN_TRANSIT,
+      },
+      // 16. Currently in transit - mountain route
+      {
+        customerId: c2.id, routeId: r2.id, truckId: t3.id, trailerId: tr3.id,
+        driverId: d3.id, cargoTypeId: ct4.id,
+        departureDate: new Date(now.getTime() - 1 * 86400000).toISOString().slice(0, 10),
+        status: TripStatus.IN_TRANSIT,
+      },
+      // 17. Created, waiting dispatch
+      {
+        customerId: c3.id, routeId: r3.id, truckId: t2.id, trailerId: tr2.id,
+        driverId: d2.id, cargoTypeId: ct2.id,
         departureDate: now.toISOString().slice(0, 10),
+        status: TripStatus.CREATED,
+        notes: 'Hàng 40ft vỏ rỗng, cần xe gấp',
+      },
+      // 18. Created, waiting dispatch
+      {
+        customerId: c1.id, routeId: r4.id, truckId: t1.id, trailerId: tr1.id,
+        driverId: d1.id, cargoTypeId: ct3.id,
+        departureDate: now.toISOString().slice(0, 10),
+        status: TripStatus.CREATED,
+      },
+      // 19. Created, waiting dispatch - urgent
+      {
+        customerId: c2.id, routeId: r1.id, truckId: t2.id, trailerId: tr2.id,
+        driverId: d2.id, cargoTypeId: ct1.id,
+        departureDate: now.toISOString().slice(0, 10),
+        status: TripStatus.CREATED,
+        notes: 'Khách hàng VIP, cần xuất phát 14:00 hôm nay',
+      },
+      // 20. Created, waiting dispatch
+      {
+        customerId: c3.id, routeId: r2.id, truckId: t3.id, trailerId: tr3.id,
+        driverId: d3.id, cargoTypeId: ct4.id,
+        departureDate: new Date(now.getTime() + 1 * 86400000).toISOString().slice(0, 10),
         status: TripStatus.CREATED,
       },
     ]);

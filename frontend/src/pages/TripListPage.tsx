@@ -4,34 +4,24 @@ import { api } from '../lib/api';
 import { formatCurrency } from '../lib/format';
 import { TripStatus } from '@nepocorp/shared';
 import type { TripDetail } from '@nepocorp/shared';
+import { PageHeader, StatusPill } from '../components/UI';
 
 
-/* -------------------------------------------------------------------------- */
-/*  Status Badge - Translates exactly to wireframe classes                    */
-/* -------------------------------------------------------------------------- */
+const TRIP_STATUS_LABEL: Record<TripStatus, string> = {
+  [TripStatus.CREATED]: 'Lên lịch',
+  [TripStatus.IN_TRANSIT]: 'Đang chạy',
+  [TripStatus.COMPLETED]: 'Chờ duyệt',
+  [TripStatus.LOCKED]: 'Đã chốt',
+  [TripStatus.CANCELED]: 'Đã huỷ',
+};
 
-function statusBadge(status: TripStatus) {
-  const map: Record<TripStatus, string> = {
-    [TripStatus.CREATED]: 'pill',
-    [TripStatus.IN_TRANSIT]: 'pill pill--info',
-    [TripStatus.COMPLETED]: 'pill pill--warn',
-    [TripStatus.LOCKED]: 'pill pill--success',
-    [TripStatus.CANCELED]: 'pill pill--danger',
-  };
-  const labelMap: Record<TripStatus, string> = {
-    [TripStatus.CREATED]: 'Lên lịch',
-    [TripStatus.IN_TRANSIT]: 'Đang chạy',
-    [TripStatus.COMPLETED]: 'Chờ duyệt',
-    [TripStatus.LOCKED]: 'Đã chốt',
-    [TripStatus.CANCELED]: 'Đã huỷ',
-  };
-  return (
-    <span className={map[status] || 'pill'}>
-      <span className="dot"></span>
-      {labelMap[status] || status}
-    </span>
-  );
-}
+const TRIP_STATUS_VARIANT: Record<TripStatus, 'neutral' | 'info' | 'warn' | 'success' | 'danger'> = {
+  [TripStatus.CREATED]: 'neutral',
+  [TripStatus.IN_TRANSIT]: 'info',
+  [TripStatus.COMPLETED]: 'warn',
+  [TripStatus.LOCKED]: 'success',
+  [TripStatus.CANCELED]: 'danger',
+};
 
 export default function TripListPage() {
   const navigate = useNavigate();
@@ -104,25 +94,22 @@ export default function TripListPage() {
 
   return (
     <div className="fade-up">
-      {/* Header closely matching wireframe */}
-      <header className="page-header">
-        <div>
-          <h1 className="page-title">Sổ chuyến đi</h1>
-          <p className="page-subtitle">
-            {totalCount} chuyến trong tháng này · <strong style={{ color: 'var(--warning)' }}>{completedCount} chờ xác nhận</strong> · <strong style={{ color: 'var(--danger)' }}>{warningCount} cảnh báo tiêu hao</strong>
-          </p>
-        </div>
-        <div className="page-actions">
-          <button className="btn btn--secondary" onClick={handleExport}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Xuất Excel
-          </button>
-          <button className="btn btn--primary" onClick={() => navigate('/trips/new')}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Thêm chuyến
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title="Sổ chuyến đi"
+        description={<>{totalCount} chuyến trong tháng này · <strong style={{ color: 'var(--warning)' }}>{completedCount} chờ xác nhận</strong> · <strong style={{ color: 'var(--danger)' }}>{warningCount} cảnh báo tiêu hao</strong></>}
+        action={
+          <div className="page-actions">
+            <button className="btn btn--secondary" onClick={handleExport}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Xuất Excel
+            </button>
+            <button className="btn btn--primary" onClick={() => navigate('/trips/new')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Thêm chuyến
+            </button>
+          </div>
+        }
+      />
 
       {/* Toolbar exactly matching wireframe structure */}
       <div className="toolbar">
@@ -146,7 +133,7 @@ export default function TripListPage() {
         </button>
 
         {/* Month Selector Dropdown styled as filter pill */}
-        <select 
+        <select
           className="filter-pill"
           value={monthYearFilter}
           onChange={(e) => setMonthYearFilter(e.target.value)}
@@ -158,7 +145,7 @@ export default function TripListPage() {
         </select>
 
         {/* Truck/Plate Dropdown styled as filter pill */}
-        <select 
+        <select
           className="filter-pill"
           value={truckFilter}
           onChange={(e) => setTruckFilter(e.target.value)}
@@ -275,7 +262,7 @@ export default function TripListPage() {
                         )}
                       </td>
                       <td className="num big">{formatCurrency(trip.road_allowance ?? 0).replace(' ₫', '')}</td>
-                      <td>{statusBadge(trip.status)}</td>
+                      <td><StatusPill variant={TRIP_STATUS_VARIANT[trip.status] ?? 'neutral'}>{TRIP_STATUS_LABEL[trip.status] ?? trip.status}</StatusPill></td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <div className="row-actions">
                           <button 

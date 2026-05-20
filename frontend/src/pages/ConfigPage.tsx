@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, Truck, Container, MapPin, Package, DollarSign, Route,
   AlertTriangle, UserCheck, Fuel, Plus, Pencil, Trash2, X,
-  Search, Save, Loader2, Mountain, ArrowLeft, Building, ShieldAlert,
+  Search, Save, Loader2, Mountain, Building,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { PageHeader, Panel, StatusPill } from '../components/UI';
 import { formatCurrency } from '../lib/format';
 import type {
   Customer, Truck as TruckType, Trailer, Route as RouteType,
@@ -77,9 +78,6 @@ const TRAILER_TYPE_LABELS: Record<string, string> = {
   [TrailerType.FT20]: '20ft', [TrailerType.FT40]: '40ft',
 };
 
-function badgeCls(status: string) {
-  return status === 'ACTIVE' ? 'badge-success' : status === 'MAINTENANCE' ? 'badge-warning' : 'badge-neutral';
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -109,11 +107,11 @@ function FormActions({ saving, onsave, oncancel, isedit }: {
 }) {
   return (
     <div style={{ display: 'flex', gap: 6, paddingBottom: 4 }}>
-      <button className="btn btn-primary btn-sm" disabled={saving} onClick={onsave}>
+      <button className="btn btn--primary btn--sm" disabled={saving} onClick={onsave}>
         {saving ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
         {isedit ? 'Cập nhật' : 'Thêm'}
       </button>
-      <button className="btn btn-ghost btn-sm" onClick={oncancel}>
+      <button className="btn btn--ghost btn--sm" onClick={oncancel}>
         <X size={12} /> Hủy
       </button>
     </div>
@@ -125,8 +123,8 @@ function ActionBtns({ id, deleting, onedit, ondelete }: {
 }) {
   return (
     <div style={{ display: 'flex', gap: 4 }}>
-      <button className="btn btn-ghost btn-sm btn-icon" title="Sửa" onClick={onedit}><Pencil size={13} /></button>
-      <button className="btn btn-ghost btn-sm btn-icon" title="Xóa" disabled={deleting === id} onClick={ondelete}>
+      <button className="btn btn--ghost btn--sm btn--icon" title="Sửa" onClick={onedit}><Pencil size={13} /></button>
+      <button className="btn btn--ghost btn--sm btn--icon" title="Xóa" disabled={deleting === id} onClick={ondelete}>
         {deleting === id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} style={{ color: 'var(--danger)' }} />}
       </button>
     </div>
@@ -326,7 +324,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
           </div>
         )}
         <div style={{ flex: 1 }} />
-        <button className="btn btn-primary btn-sm" onClick={() => setShowAddForm(true)}>
+        <button className="btn btn--primary btn--sm" onClick={() => setShowAddForm(true)}>
           <Plus size={14} /> Thêm mới
         </button>
       </div>
@@ -358,7 +356,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
   function renderCustomers() {
     const cols = 4;
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -382,7 +380,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -451,7 +449,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderDrivers() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -466,20 +464,20 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
                   <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{d.name}</td>
                   <td>{d.phone || '—'}</td>
                   <td style={{ fontFamily: 'var(--font-mono)' }}>{d.assigned_truck_id ? (truckMap.get(d.assigned_truck_id) || `#${d.assigned_truck_id}`) : '—'}</td>
-                  <td><span className={`badge ${badgeCls(d.status)}`}>{DRIVER_STATUS_LABELS[d.status] || d.status}</span></td>
+                  <td><StatusPill variant={d.status === 'ACTIVE' ? 'success' : 'danger'}>{DRIVER_STATUS_LABELS[d.status] || d.status}</StatusPill></td>
                   <td><ActionBtns id={d.id} deleting={deleting} onedit={() => setEditingId(d.id)} ondelete={() => doDelete('/drivers', d.id)} /></td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
   function renderTrucks() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -492,14 +490,14 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
                 : <tr key={t.id}>
                   <td className="num">{i + 1}</td>
                   <td style={{ fontWeight: 600, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)' }}>{t.license_plate}</td>
-                  <td><span className={`badge ${badgeCls(t.status)}`}>{TRUCK_STATUS_LABELS[t.status] || t.status}</span></td>
+                  <td><StatusPill variant={t.status === 'ACTIVE' ? 'success' : t.status === 'MAINTENANCE' ? 'warn' : 'neutral'}>{TRUCK_STATUS_LABELS[t.status] || t.status}</StatusPill></td>
                   <td><ActionBtns id={t.id} deleting={deleting} onedit={() => setEditingId(t.id)} ondelete={() => doDelete('/trucks', t.id)} /></td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -527,7 +525,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderTrailers() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -547,7 +545,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -582,7 +580,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderRoutes() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -596,7 +594,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
                   <td className="num">{i + 1}</td>
                   <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{r.name}</td>
                   <td className="num">{r.distance_km != null ? `${r.distance_km} km` : '—'}</td>
-                  <td>{r.is_mountain ? <span className="badge badge-warning">Có</span> : '—'}</td>
+                  <td>{r.is_mountain ? <StatusPill variant="warn">Có</StatusPill> : '—'}</td>
                   <td className="num">{r.fixed_fuel_allowance || '—'}</td>
                   <td><ActionBtns id={r.id} deleting={deleting} onedit={() => setEditingId(r.id)} ondelete={() => doDelete('/routes', r.id)} /></td>
                 </tr>
@@ -604,7 +602,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -624,7 +622,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderCargoTypes() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -643,7 +641,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -687,7 +685,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderPricingTables() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -708,7 +706,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -747,7 +745,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderRoadAllowances() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -768,7 +766,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -792,7 +790,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderPenaltyReasons() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -812,7 +810,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -850,43 +848,39 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
     };
 
     return (
-      <div className="card-shell fade-up">
-        <div className="card-header" style={{ borderBottom: '1px solid var(--border-2)', padding: '16px 20px' }}>
-          <div>
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Cấu hình tính nhiên liệu</h3>
-            <p style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>Thông số dùng để tính toán chi phí nhiên liệu cho mỗi chuyến</p>
+      <Panel
+        title="Cấu hình tính nhiên liệu"
+        subtitle="Thông số dùng để tính toán chi phí nhiên liệu cho mỗi chuyến"
+        className="fade-up"
+      >
+        <div className="row-2" style={{ marginBottom: 16 }}>
+          <div className="field">
+            <label>Định mức có tải (lít/100km)</label>
+            <input className="input" type="number" step="0.1" value={form.loadedNorm} onChange={e => setForm(f => ({ ...f, loadedNorm: e.target.value }))} placeholder="VD: 35" />
+          </div>
+          <div className="field">
+            <label>Định mức xe không (lít/100km)</label>
+            <input className="input" type="number" step="0.1" value={form.emptyNorm} onChange={e => setForm(f => ({ ...f, emptyNorm: e.target.value }))} placeholder="VD: 22" />
           </div>
         </div>
-        <div style={{ padding: '20px 24px 24px' }}>
-          <div className="row-2" style={{ marginBottom: 16 }}>
-            <div className="field">
-              <label>Định mức có tải (lít/100km)</label>
-              <input className="input" type="number" step="0.1" value={form.loadedNorm} onChange={e => setForm(f => ({ ...f, loadedNorm: e.target.value }))} placeholder="VD: 35" />
-            </div>
-            <div className="field">
-              <label>Định mức xe không (lít/100km)</label>
-              <input className="input" type="number" step="0.1" value={form.emptyNorm} onChange={e => setForm(f => ({ ...f, emptyNorm: e.target.value }))} placeholder="VD: 22" />
-            </div>
+        <div className="row-2" style={{ marginBottom: 20 }}>
+          <div className="field">
+            <label>Bổ sung mặc định (lít)</label>
+            <input className="input" type="number" step="0.1" value={form.supplement} onChange={e => setForm(f => ({ ...f, supplement: e.target.value }))} placeholder="VD: 3" />
+            <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>Số lít bổ sung thêm mặc định cho mỗi chuyến</p>
           </div>
-          <div className="row-2" style={{ marginBottom: 20 }}>
-            <div className="field">
-              <label>Bổ sung mặc định (lít)</label>
-              <input className="input" type="number" step="0.1" value={form.supplement} onChange={e => setForm(f => ({ ...f, supplement: e.target.value }))} placeholder="VD: 3" />
-              <p className="field-help" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>Số lít bổ sung thêm mặc định cho mỗi chuyến</p>
-            </div>
-            <div className="field">
-              <label>Đơn giá nhiên liệu hiện hành (VNĐ/lít)</label>
-              <input className="input" type="number" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="VD: 23000" />
-            </div>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <button className="btn btn-primary" disabled={fuelSaving || !form.loadedNorm || !form.emptyNorm || !form.unitPrice} onClick={handleSave}>
-              {fuelSaving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-              Lưu cấu hình
-            </button>
+          <div className="field">
+            <label>Đơn giá nhiên liệu hiện hành (VNĐ/lít)</label>
+            <input className="input" type="number" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="VD: 23000" />
           </div>
         </div>
-      </div>
+        <div style={{ marginTop: 8 }}>
+          <button className="btn btn--primary" disabled={fuelSaving || !form.loadedNorm || !form.emptyNorm || !form.unitPrice} onClick={handleSave}>
+            {fuelSaving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            Lưu cấu hình
+          </button>
+        </div>
+      </Panel>
     );
   }
 
@@ -924,7 +918,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderCapTable() {
     return (
-      <div className="card-shell fade-up">
+      <Panel flush className="fade-up">
         {renderToolbar()}
         <div style={{ overflowX: 'auto' }}>
           <table className="tt-table">
@@ -953,7 +947,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
     );
   }
 
@@ -961,16 +955,20 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
   function renderTabContent() {
     if (loading) return (
-      <div className="card-shell" style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
-        <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-        <p style={{ fontSize: 13 }}>Đang tải dữ liệu...</p>
-      </div>
+      <Panel>
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
+          <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
+          <p style={{ fontSize: 13 }}>Đang tải dữ liệu...</p>
+        </div>
+      </Panel>
     );
     if (error) return (
-      <div className="card-shell" style={{ padding: 24, textAlign: 'center', color: 'var(--danger)' }}>
-        <p style={{ fontSize: 14, fontWeight: 500 }}>⚠️ {error}</p>
-        <button className="btn btn-sm btn-secondary" style={{ marginTop: 12 }} onClick={() => fetchTabData(activeTab)}>Thử lại</button>
-      </div>
+      <Panel>
+        <div style={{ textAlign: 'center', color: 'var(--danger)' }}>
+          <p style={{ fontSize: 14, fontWeight: 500 }}>⚠️ {error}</p>
+          <button className="btn btn--secondary btn--sm" style={{ marginTop: 12 }} onClick={() => fetchTabData(activeTab)}>Thử lại</button>
+        </div>
+      </Panel>
     );
     switch (activeTab) {
       case 'customers': return renderCustomers();
@@ -1098,13 +1096,10 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
 
       {activeTab === 'menu' ? (
         <div className="fade-up">
-          {/* Main Menu Header */}
-          <div className="page-header" style={{ marginBottom: 28 }}>
-            <div>
-              <h1>Cấu hình hệ thống</h1>
-              <p>Quản lý định mức, quy tắc tính toán, người dùng &amp; tích hợp hệ thống</p>
-            </div>
-          </div>
+          <PageHeader
+            title="Cấu hình hệ thống"
+            description="Quản lý định mức, quy tắc tính toán, người dùng & tích hợp hệ thống"
+          />
 
           {/* Grid of setting-cards matching the wireframe */}
           <div className="settings-grid">
@@ -1137,7 +1132,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
                 <AlertTriangle size={20} />
               </div>
               <h3 className="setting-card__title">Quy tắc kỷ luật &amp; phạt</h3>
-              <p className="setting-card__desc">Thiếu hoá đơn dầu (100K), tắt GPS &gt;1h (500K từ lần 3), vi phạm ATGT (500K / sa thải).</p>
+              <p className="setting-card__desc">Thiếu hoá đơn dầu (100K), vi phạm ATGT (500K / sa thải).</p>
               <div className="setting-card__foot">
                 <span className="setting-card__status"><span className="dot"></span>4 quy tắc hoạt động</span>
                 <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
@@ -1153,18 +1148,6 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
               <div className="setting-card__foot">
                 <span className="setting-card__status"><span className="dot"></span>Thông tin nhân sự</span>
                 <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
-              </div>
-            </button>
-
-            <button className="setting-card" onClick={() => alert('GPS đã được kết nối tự động hệ thống định vị Vinasco')}>
-              <div className="setting-card__icon">
-                <MapPin size={20} />
-              </div>
-              <h3 className="setting-card__title">Tích hợp định vị GPS</h3>
-              <p className="setting-card__desc">Kết nối thiết bị định vị để tự động theo dõi tốc độ, thời gian lái xe và cảnh báo vi phạm hành trình.</p>
-              <div className="setting-card__foot">
-                <span className="setting-card__status"><span className="dot"></span>Vinasco · Đã kết nối</span>
-                <span className="setting-card__action">Cấu hình <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
               </div>
             </button>
 
@@ -1256,21 +1239,18 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
       ) : (
         <div className="fade-up">
           {/* Sub-view Detail Header with back navigation and dropdown switcher */}
-          <div className="page-header" style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {!forceTab && (
                   <button
-                    className="btn btn-ghost btn-icon btn-sm"
+                    className="btn btn--ghost btn--icon btn--sm"
                     onClick={() => selectSection('menu')}
                     aria-label="Quay lại danh mục cấu hình"
-                    style={{ marginRight: 6 }}
                   >
-                    <ArrowLeft size={16} />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                   </button>
                 )}
-                
-                {/* Clean Dropdown Switcher to quickly jump tabs */}
                 <select
                   value={activeTab}
                   onChange={(e) => selectSection(e.target.value as TabKey)}
@@ -1294,7 +1274,7 @@ export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
                   ))}
                 </select>
               </div>
-              <p style={{ marginLeft: forceTab ? 0 : 46, marginTop: 4 }}>{currentTab?.description}</p>
+              <p style={{ marginLeft: forceTab ? 0 : 46, marginTop: 4, fontSize: 13, color: 'var(--fg-3)' }}>{currentTab?.description}</p>
             </div>
           </div>
 

@@ -35,8 +35,8 @@ class ApiClient {
 
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: 'Loi ket noi' }));
-      throw new ApiError(res.status, error.error || 'Loi khong xac dinh');
+      const error = await res.json().catch(() => ({ error: 'Lỗi kết nối' }));
+      throw new ApiError(res.status, error.error || 'Lỗi không xác định');
     }
     return res.json();
   }

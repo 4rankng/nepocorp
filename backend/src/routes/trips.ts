@@ -52,23 +52,39 @@ router.get('/', async (req: Request, res: Response) => {
       totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
       hasReturnCargo: s.trips.hasReturnCargo, notes: s.trips.notes,
       createdAt: s.trips.createdAt,
-      // Joined fields
+      // Joined fields - include nested objects for frontend compatibility
       customerName: s.customers.name,
       driverName: s.drivers.name,
       truckPlate: s.trucks.licensePlate,
       routeName: s.routes.name,
+      routeDistance: s.routes.distanceKm,
+      trailerLicensePlate: s.trailers.licensePlate,
     }).from(s.trips)
       .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
       .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
       .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
       .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id))
       .where(and(...conditions))
       .orderBy(desc(s.trips.departureDate), desc(s.trips.id))
       .limit(limit).offset((page - 1) * limit);
 
     const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(s.trips).where(and(...conditions));
 
-    res.json({ items, total: Number(countRow?.count ?? 0), page, pageSize: limit });
+    // Transform to match frontend expectations
+    const transformedItems = items.map(item => ({
+      ...item,
+      departure_date: item.departureDate,
+      fuel_consumption: item.fuelLiters,
+      road_allowance: item.totalRoadAllowance,
+      trailer_type: item.trailerLicensePlate || '40ft',
+      customer: item.customerName ? { id: item.customerId, name: item.customerName } : null,
+      driver: item.driverName ? { id: item.driverId, name: item.driverName } : null,
+      truck: item.truckPlate ? { id: item.truckId, license_plate: item.truckPlate } : null,
+      route: item.routeName ? { id: item.routeId, name: item.routeName, distance: item.routeDistance } : null,
+    }));
+
+    res.json({ items: transformedItems, total: Number(countRow?.count ?? 0), page, pageSize: limit });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Lỗi máy chủ' });
   }
@@ -90,11 +106,60 @@ router.post('/', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async 
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
-    const [trip] = await db.select().from(s.trips).where(and(eq(s.trips.id, id), isNull(s.trips.deletedAt))).limit(1);
+    const [trip] = await db.select({
+      id: s.trips.id, customerId: s.trips.customerId, customerReference: s.trips.customerReference,
+      truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
+      trailerId: s.trips.trailerId, cargoTypeId: s.trips.cargoTypeId,
+      status: s.trips.status, departureDate: s.trips.departureDate,
+      fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
+      fuelLitersOverride: s.trips.fuelLitersOverride, fuelSupplementLiters: s.trips.fuelSupplementLiters,
+      fuelSupplementReason: s.trips.fuelSupplementReason, fuelPriceApplied: s.trips.fuelPriceApplied,
+      tollsDiscount: s.trips.tollsDiscount, tollsAddition: s.trips.tollsAddition, tollsStations: s.trips.tollsStations,
+      totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
+      totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
+      revenueOriginal: s.trips.revenueOriginal, revenueOverriddenBy: s.trips.revenueOverriddenBy,
+      revenueOverriddenAt: s.trips.revenueOverriddenAt, hasReturnCargo: s.trips.hasReturnCargo,
+      driverSalary: s.trips.driverSalary, photoUrls: s.trips.photoUrls, notes: s.trips.notes,
+      createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt, deletedAt: s.trips.deletedAt,
+      // Joined fields
+      customerName: s.customers.name,
+      driverName: s.drivers.name,
+      truckPlate: s.trucks.licensePlate,
+      routeName: s.routes.name,
+      routeDistance: s.routes.distanceKm,
+      trailerLicensePlate: s.trailers.licensePlate,
+      trailerType: s.trailers.type,
+    }).from(s.trips)
+      .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+      .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
+      .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+      .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id))
+      .where(and(eq(s.trips.id, id), isNull(s.trips.deletedAt))).limit(1);
     if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
 
     const legs = await db.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, id)).orderBy(s.tripLegs.sequence);
-    res.json({ ...trip, legs });
+
+    // Transform to match frontend expectations
+    const transformedTrip = {
+      ...trip,
+      departure_date: trip.departureDate,
+      fuel_mode: trip.fuelMode,
+      fuel_liters: trip.fuelLiters,
+      total_road_allowance: trip.totalRoadAllowance,
+      driver_salary: trip.driverSalary,
+      total_cost: trip.totalCost,
+      gross_profit: trip.grossProfit,
+      customer_reference: trip.customerReference,
+      customer: trip.customerName ? { id: trip.customerId, name: trip.customerName } : null,
+      driver: trip.driverName ? { id: trip.driverId, name: trip.driverName } : null,
+      truck: trip.truckPlate ? { id: trip.truckId, license_plate: trip.truckPlate } : null,
+      route: trip.routeName ? { id: trip.routeId, name: trip.routeName, distance: trip.routeDistance } : null,
+      trailer: trip.trailerLicensePlate ? { id: trip.trailerId, license_plate: trip.trailerLicensePlate, type: trip.trailerType } : null,
+      legs,
+    };
+
+    res.json(transformedTrip);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

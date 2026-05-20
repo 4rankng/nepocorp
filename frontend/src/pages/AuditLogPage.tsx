@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ScrollText, Search, User } from 'lucide-react';
+import { Search, User } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
+import { PageHeader, Panel } from '../components/UI';
 
 interface AuditEntry {
   id: number;
@@ -51,23 +52,20 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1>Nhật ký hệ thống</h1>
-          <p>Lịch sử thao tác của người dùng</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Nhật ký hệ thống"
+        description="Lịch sử thao tác của người dùng"
+      />
 
-      <div className="card-shell">
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12, alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)' }} />
+      <Panel flush>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-2)', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div className="toolbar__search" style={{ flex: 1 }}>
+            <Search size={14} />
             <input
               type="text"
               placeholder="Tìm theo nội dung, email, đường dẫn..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ paddingLeft: 32, width: '100%' }}
             />
           </div>
           <span style={{ color: 'var(--fg-3)', fontSize: 13 }}>{total} bản ghi</span>
@@ -134,7 +132,7 @@ export default function AuditLogPage() {
         {totalPages > 1 && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button
-              className="btn-secondary"
+              className="btn btn--secondary btn--sm"
               disabled={page <= 1}
               onClick={() => setPage(p => p - 1)}
             >
@@ -144,7 +142,7 @@ export default function AuditLogPage() {
               Trang {page} / {totalPages}
             </span>
             <button
-              className="btn-secondary"
+              className="btn btn--secondary btn--sm"
               disabled={page >= totalPages}
               onClick={() => setPage(p => p + 1)}
             >
@@ -152,7 +150,7 @@ export default function AuditLogPage() {
             </button>
           </div>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

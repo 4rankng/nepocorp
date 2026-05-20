@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
+import { PageHeader, Panel, KPI } from '../components/UI';
 
 interface EarningsSummary {
   baseSalary: string;
@@ -36,14 +37,16 @@ export default function DriverEarningsPage() {
   }, []);
 
   if (loading) return (
-    <div className="card-shell" style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)' }}>
-      <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
-      <p style={{ marginTop: 8 }}>Đang tải dữ liệu thu nhập...</p>
-    </div>
+    <Panel>
+      <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
+        <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
+        <p style={{ marginTop: 8 }}>Đang tải dữ liệu thu nhập...</p>
+      </div>
+    </Panel>
   );
 
   if (error) return (
-    <div className="card-shell" style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div>
+    <Panel><div style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div></Panel>
   );
 
   if (!earnings) return null;
@@ -56,15 +59,10 @@ export default function DriverEarningsPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1>Thu nhập</h1>
-          <p>Tổng hợp thu nhập và khấu trừ</p>
-        </div>
-      </div>
+      <PageHeader title="Thu nhập" description="Tổng hợp thu nhập và khấu trừ" />
 
       {/* Net income hero card */}
-      <div className="card-shell fade-up" style={{
+      <div className="panel fade-up" style={{
         marginBottom: 12,
         overflow: 'hidden',
         border: isPositive ? '1px solid var(--success)' : '1px solid var(--danger)',
@@ -109,56 +107,23 @@ export default function DriverEarningsPage() {
 
       {/* Breakdown cards */}
       <div className="kpi-grid fade-up-2">
-        <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'var(--info-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Wallet size={14} style={{ color: 'var(--info)' }} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Lương cơ bản</span>
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', marginTop: 'auto', paddingBottom: 12 }}>
-            {formatCurrency(earnings.baseSalary)}
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'var(--brand-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <DollarSign size={14} style={{ color: 'var(--brand)' }} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Thu nhập sản lượng</span>
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', marginTop: 'auto', paddingBottom: 12 }}>
-            {formatCurrency(earnings.tripIncome)}
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'var(--danger-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <TrendingDown size={14} style={{ color: 'var(--danger)' }} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Khấu trừ</span>
-          </div>
-          <div style={{
-            fontSize: 20, fontWeight: 700,
-            color: penaltyNum > 0 ? 'var(--danger-text)' : 'var(--fg-1)',
-            fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
-            marginTop: 'auto', paddingBottom: 12,
-          }}>
-            {penaltyNum > 0 ? '-' : ''}{formatCurrency(earnings.penalties)}
-          </div>
-        </div>
+        <KPI label="Lương cơ bản" value={formatCurrency(earnings.baseSalary)} icon={Wallet} />
+        <KPI label="Thu nhập sản lượng" value={formatCurrency(earnings.tripIncome)} icon={DollarSign} variant="success" />
+        <KPI
+          label="Khấu trừ"
+          value={penaltyNum > 0 ? `-${formatCurrency(earnings.penalties)}` : '0 ₫'}
+          icon={TrendingDown}
+          variant={penaltyNum > 0 ? 'danger' : 'default'}
+        />
       </div>
 
       {/* Penalties list */}
-      <div className="card-shell fade-up-2" style={{ marginTop: 16 }}>
-        <div className="card-header">
-          <div>
-            <h3>Lịch sử khấu trừ</h3>
-            <p>{penalties.length} khoản khấu trừ</p>
-          </div>
-        </div>
+      <Panel
+        title="Lịch sử khấu trừ"
+        subtitle={`${penalties.length} khoản khấu trừ`}
+        style={{ marginTop: 16 }}
+        flush
+      >
         {penalties.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
             <AlertTriangle size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
@@ -195,7 +160,7 @@ export default function DriverEarningsPage() {
             </table>
           </div>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Route, Truck, Calendar, ArrowRight, Loader2, MapPin } from 'lucide-react';
+import { Truck, Calendar, ArrowRight, Loader2, MapPin } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@nepocorp/shared';
+import { PageHeader, Panel, StatusPill } from '../components/UI';
 
 interface TripSummary {
   id: number;
@@ -15,14 +16,13 @@ interface TripSummary {
   truckPlate: string | null;
 }
 
-function statusBadgeClass(status: TripStatus): string {
+function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
   switch (status) {
-    case 'CREATED': return 'badge-info';
-    case 'IN_TRANSIT': return 'badge-brand';
-    case 'COMPLETED': return 'badge-success';
-    case 'LOCKED': return 'badge-neutral';
-    case 'CANCELED': return 'badge-danger';
-    default: return 'badge-neutral';
+    case 'IN_TRANSIT': return 'info';
+    case 'COMPLETED': return 'warn';
+    case 'LOCKED': return 'success';
+    case 'CANCELED': return 'danger';
+    default: return 'neutral';
   }
 }
 
@@ -41,24 +41,21 @@ export default function DriverTripsPage() {
   }, []);
 
   if (loading) return (
-    <div className="card-shell" style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)' }}>
-      <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
-      <p style={{ marginTop: 8 }}>Đang tải danh sách lệnh...</p>
-    </div>
+    <Panel>
+      <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
+        <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
+        <p style={{ marginTop: 8 }}>Đang tải danh sách lệnh...</p>
+      </div>
+    </Panel>
   );
 
   if (error) return (
-    <div className="card-shell" style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div>
+    <Panel><div style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div></Panel>
   );
 
   if (trips.length === 0) return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1>Lệnh của tôi</h1>
-          <p>Danh sách lệnh vận chuyển đã nhận</p>
-        </div>
-      </div>
+      <PageHeader title="Lệnh của tôi" description="Danh sách lệnh vận chuyển đã nhận" />
       <div className="empty-state">
         <img src="/assets/illustrations/empty-trips.svg" alt="No trips" />
         <h3 className="empty-state-title">Chưa có lệnh vận chuyển nào</h3>
@@ -71,18 +68,13 @@ export default function DriverTripsPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1>Lệnh của tôi</h1>
-          <p>Danh sách lệnh vận chuyển đã nhận ({trips.length} lệnh)</p>
-        </div>
-      </div>
+      <PageHeader title="Lệnh của tôi" description={`Danh sách lệnh vận chuyển đã nhận (${trips.length} lệnh)`} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {trips.map((trip, idx) => (
           <div
             key={trip.id}
-            className="card-shell fade-up"
+            className="panel fade-up"
             style={{
               cursor: 'pointer',
               transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
@@ -114,9 +106,9 @@ export default function DriverTripsPage() {
                   <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--fg-1)' }}>
                     {trip.routeName || 'Tuyến không xác định'}
                   </span>
-                  <span className={`badge ${statusBadgeClass(trip.status)}`}>
+                  <StatusPill variant={tripStatusVariant(trip.status)}>
                     {TRIP_STATUS_LABELS[trip.status] || trip.status}
-                  </span>
+                  </StatusPill>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: 'var(--fg-3)' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>

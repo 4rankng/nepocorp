@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, isNull, sql, like, or, and, desc } from 'drizzle-orm';
+import { eq, isNull, sql, like, and, desc } from 'drizzle-orm';
 import { authMiddleware, requireRoles } from '../middleware/auth';
 import { Role } from '@nepocorp/shared';
 import {
@@ -15,8 +15,6 @@ import type { Request, Response } from 'express';
 const router = Router();
 router.use(authMiddleware);
 
-type AsyncHandler = (req: Request, res: Response) => Promise<void>;
-
 function crud<T extends { id: unknown }>(
   table: any,
   createSchema: any,
@@ -28,22 +26,27 @@ function crud<T extends { id: unknown }>(
     ? requireRoles(Role.ADMIN)
     : requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT);
 
+  const hasSoftDelete = 'deletedAt' in table;
+
   sub.get('/', async (req: Request, res: Response) => {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
     const search = req.query.search as string;
 
-    let conditions = [isNull(table.deletedAt)];
+    const conditions = [];
+    if (hasSoftDelete) conditions.push(isNull(table.deletedAt));
     if (search && searchableField) {
       conditions.push(like(table[searchableField], `%${search}%`));
     }
 
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
     const items = await db.select().from(table)
-      .where(and(...conditions))
+      .where(where)
       .limit(limit).offset((page - 1) * limit);
 
     const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(table)
-      .where(and(...conditions));
+      .where(where);
 
     res.json({ items, total: Number(countRow?.count ?? 0), page, pageSize: limit });
   });
@@ -56,7 +59,9 @@ function crud<T extends { id: unknown }>(
 
   sub.get('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
-    const [item] = await db.select().from(table).where(and(eq(table.id, id), isNull(table.deletedAt))).limit(1);
+    const conditions = [eq(table.id, id)];
+    if (hasSoftDelete) conditions.push(isNull(table.deletedAt));
+    const [item] = await db.select().from(table).where(and(...conditions)).limit(1);
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     res.json(item);
   });
@@ -71,6 +76,7 @@ function crud<T extends { id: unknown }>(
 
   sub.delete('/:id', requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
+    if (!hasSoftDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
     const [item] = await db.update(table).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(table.id, id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     res.json({ ok: true });

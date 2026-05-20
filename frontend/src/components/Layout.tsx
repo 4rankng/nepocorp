@@ -11,13 +11,9 @@ import {
   ScrollText,
   Route,
   DollarSign,
-  Menu,
   LogOut,
   User,
   ChevronRight,
-  Bell,
-  Search,
-  ChevronDown,
   Compass,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -42,7 +38,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard, section: 'operations' },
         { key: 'dispatch', label: 'Phân xe', path: '/dispatch', icon: Compass, section: 'operations', count: dispatchCount },
         { key: 'trips', label: 'Sổ chuyến đi', path: '/trips', icon: Truck, section: 'operations' },
-        { key: 'penalties', label: 'Kỷ luật & GPS', path: '/penalties', icon: AlertTriangle, section: 'operations', count: penaltiesCount },
+        { key: 'penalties', label: 'Kỷ luật', path: '/penalties', icon: AlertTriangle, section: 'operations', count: penaltiesCount },
         
         { key: 'finance', label: 'Báo cáo lãi lỗ', path: '/finance', icon: Wallet, section: 'financials' },
         { key: 'profit', label: 'Lợi nhuận & phân chia', path: '/profit', icon: DollarSign, section: 'financials' },
@@ -51,9 +47,9 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'admin' },
         { key: 'routes', label: 'Tuyến đường', path: '/routes', icon: Route, section: 'admin' },
         { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'admin' },
-        ...(role === 'ADMIN' ? [
-          { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'admin' },
-          { key: 'audit-logs', label: 'Nhật ký hệ thống', path: '/audit-logs', icon: ScrollText, section: 'admin' },
+        ...(role === 'ADMIN' || role === 'MANAGER' ? [
+          { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'admin' as const },
+          { key: 'audit-logs', label: 'Nhật ký hệ thống', path: '/audit-logs', icon: ScrollText, section: 'admin' as const },
         ] : []),
       ];
     case 'DRIVER':
@@ -84,7 +80,7 @@ function getPageTitle(pathname: string): string {
   if (pathname === '/finance') return 'Báo cáo lãi lỗ';
   if (pathname.startsWith('/profit')) return 'Lợi nhuận & Phân chia';
   if (pathname.startsWith('/debt')) return 'Công nợ phải thu';
-  if (pathname === '/penalties' || pathname === '/my-penalties') return 'Kỷ luật & GPS';
+  if (pathname === '/penalties' || pathname === '/my-penalties') return 'Kỷ luật';
   if (pathname.startsWith('/customers')) return 'Khách hàng';
   if (pathname.startsWith('/routes')) return 'Tuyến đường';
   if (pathname.startsWith('/config')) return 'Cấu hình hệ thống';
@@ -147,12 +143,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     return (
       <div key={sectionName}>
-        <div className="sidebar-section-label" style={{ padding: '16px 16px 6px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.35)' }}>
-          {label}
-        </div>
+        <div className="sidebar-section-label">{label}</div>
         {items.map(item => {
           const IconC = item.icon;
           const isActive = item.key === activeKey;
+          const isDanger = item.key === 'penalties';
           return (
             <button
               key={item.key}
@@ -161,23 +156,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             >
               <IconC size={16} />
               <span className="sidebar-item-label">{item.label}</span>
-              
+
               {item.count !== undefined && (
-                <span style={{ 
-                  marginLeft: 'auto', 
-                  marginRight: isActive ? 6 : 0, 
-                  background: item.key === 'penalties' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)', 
-                  color: item.key === 'penalties' ? '#F87171' : '#34D399', 
-                  fontSize: 10, 
-                  fontWeight: 700, 
-                  padding: '2px 6px', 
-                  borderRadius: 99,
-                  lineHeight: 1
-                }}>
+                <span
+                  className={`nav-item__badge${isDanger ? ' nav-item__badge--danger' : ''}`}
+                  style={{ marginLeft: 'auto' }}
+                >
                   {item.count}
                 </span>
               )}
-              {isActive && item.count === undefined && <ChevronRight size={12} style={{ marginLeft: 'auto' }} />}
+              {isActive && item.count === undefined && (
+                <ChevronRight size={12} style={{ marginLeft: 'auto', opacity: 0.6 }} />
+              )}
             </button>
           );
         })}
@@ -221,35 +211,38 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <div className="app-main">
         <header className="topbar">
-          <div className="topbar-left">
-            <button
-              className="icon-btn"
-              aria-label="Menu"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              style={{ display: undefined }}
-            >
-              <Menu size={16} />
-            </button>
-            <h2 className="topbar-title">{pageTitle}</h2>
+          <button
+            className="topbar__toggle"
+            aria-label="Ẩn / hiện menu"
+            title="Ẩn / hiện menu (⌘B)"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+
+          <nav className="topbar__breadcrumb" aria-label="Breadcrumb">
+            <span>NEPO</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+            <strong>{pageTitle}</strong>
+          </nav>
+
+          <div className="topbar__search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="Tìm chuyến đi, khách hàng, xe..." />
+            <kbd>⌘ K</kbd>
           </div>
 
-          <div className="topbar-actions">
-            <div className="topbar-search">
-              <Search size={13} />
-              <input type="text" placeholder="Tìm khách hàng, lệnh, container..." />
-              <span className="kbd">Cmd+K</span>
+          <div className="topbar__actions">
+            <div className="date-chip">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Tháng {new Date().getMonth() + 1} · <strong>{new Date().toLocaleDateString('vi-VN')}</strong></span>
             </div>
-
-            <div className="topbar-divider" />
-
-            <button className="icon-btn" aria-label="Thông báo">
-              <Bell size={16} />
+            <button className="icon-btn" aria-label="Trợ giúp">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </button>
-
-            <button className="user-btn">
-              <span className="user-avatar"><User size={16} /></span>
-              <span className="role">{getRoleLabel(user.role)}</span>
-              <ChevronDown size={12} style={{ color: 'var(--fg-3)' }} />
+            <button className="icon-btn" aria-label="Thông báo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span className="badge">5</span>
             </button>
           </div>
         </header>

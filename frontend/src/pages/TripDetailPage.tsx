@@ -12,17 +12,7 @@ import {
   TripStatus, TRIP_STATUS_LABELS,
   FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
 } from '@nepocorp/shared';
-
-function statusBadgeClass(status: TripStatus): string {
-  switch (status) {
-    case TripStatus.CREATED: return 'badge badge-neutral';
-    case TripStatus.IN_TRANSIT: return 'badge badge-info';
-    case TripStatus.COMPLETED: return 'badge badge-success';
-    case TripStatus.LOCKED: return 'badge badge-brand';
-    case TripStatus.CANCELED: return 'badge badge-danger';
-    default: return 'badge badge-outline';
-  }
-}
+import { Panel, StatusPill } from '../components/UI';
 
 function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
   return (
@@ -91,20 +81,10 @@ export default function TripDetailPage() {
   if (error && !trip) {
     return (
       <div className="fade-up">
-        <div className="page-header">
-          <div>
-            <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => navigate('/trips')} aria-label="Quay lại">
-                <ArrowLeft size={16} />
-              </button>
-              Loi
-            </h1>
-          </div>
-        </div>
-        <div className="card-shell" style={{ padding: 24 }}>
-          <p style={{ color: 'var(--danger-text)', fontSize: 14 }}>{error}</p>
-          <button className="btn btn-secondary btn-sm" style={{ marginTop: 12 }} onClick={loadTrip}>Thử lại</button>
-        </div>
+        <Panel>
+          <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error}</p>
+          <button className="btn btn--secondary btn--sm" style={{ marginTop: 12 }} onClick={loadTrip}>Thử lại</button>
+        </Panel>
       </div>
     );
   }
@@ -122,13 +102,18 @@ export default function TripDetailPage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--fg-1)', margin: 0 }}>
-            <button className="btn btn-ghost btn-icon btn-sm" onClick={() => navigate('/trips')} aria-label="Quay lại">
+            <button className="btn btn--ghost btn--icon btn--sm" onClick={() => navigate('/trips')} aria-label="Quay lại">
               <ArrowLeft size={16} />
             </button>
             Lệnh #{trip.id}
-            <span className={statusBadgeClass(trip.status)}>
+            <StatusPill variant={
+              trip.status === TripStatus.CANCELED ? 'danger' :
+              trip.status === TripStatus.LOCKED ? 'success' :
+              trip.status === TripStatus.COMPLETED ? 'warn' :
+              trip.status === TripStatus.IN_TRANSIT ? 'info' : 'neutral'
+            }>
               {TRIP_STATUS_LABELS[trip.status]}
-            </span>
+            </StatusPill>
           </h1>
           <p style={{ marginTop: 4, fontSize: 13, color: 'var(--fg-3)', marginLeft: 46 }}>
             {trip.customer?.name ?? '—'} &middot; {trip.route?.name ?? '—'}
@@ -138,7 +123,7 @@ export default function TripDetailPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {canDispatch && (
             <button
-              className="btn btn-primary btn-sm"
+              className="btn btn--primary btn--sm"
               disabled={actionLoading}
               onClick={() => handleAction('dispatch', () => api.post(`/trips/${trip.id}/dispatch`, {}))}
             >
@@ -148,7 +133,7 @@ export default function TripDetailPage() {
           )}
           {trip.status === TripStatus.IN_TRANSIT && (
             <button
-              className="btn btn-primary btn-sm"
+              className="btn btn--primary btn--sm"
               onClick={() => navigate(`/trips/${trip.id}/edit`)}
             >
               <Pencil size={14} />
@@ -157,7 +142,7 @@ export default function TripDetailPage() {
           )}
           {canLock && (
             <button
-              className="btn btn-primary btn-sm"
+              className="btn btn--primary btn--sm"
               disabled={actionLoading}
               onClick={() => handleAction('lock', () => api.post(`/trips/${trip.id}/lock`, {}))}
             >
@@ -167,7 +152,7 @@ export default function TripDetailPage() {
           )}
           {canEdit && (
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn--secondary btn--sm"
               onClick={() => navigate(`/trips/${trip.id}/edit`)}
             >
               <Pencil size={14} />
@@ -176,7 +161,7 @@ export default function TripDetailPage() {
           )}
           {canCancel && (
             <button
-              className="btn btn-destructive btn-sm"
+              className="btn btn--danger btn--sm"
               disabled={actionLoading}
               onClick={() => {
                 if (confirm('Bạn có chắc muốn hủy chuyến này?')) {
@@ -208,17 +193,15 @@ export default function TripDetailPage() {
 
       {/* Info grid */}
       <div className="row-2 section-gap">
-        <div className="card-shell" style={{ padding: '16px 20px' }}>
-          <div style={{ marginBottom: 8 }}><span className="typo-eyebrow">Thông tin cơ bản</span></div>
-          {infoRow(<Truck size={16} />, 'Xe dau', trip.truck?.license_plate)}
-          {infoRow(<User size={16} />, 'Tai xe', trip.driver?.name)}
+        <Panel title="Thông tin cơ bản">
+          {infoRow(<Truck size={16} />, 'Xe đầu', trip.truck?.license_plate)}
+          {infoRow(<User size={16} />, 'Tài xế', trip.driver?.name)}
           {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailer ? `${trip.trailer.license_plate} (${trip.trailer.type})` : null)}
           {infoRow(<Calendar size={16} />, 'Ngày khởi hành', formatDate(trip.departure_date))}
           {infoRow(<FileText size={16} />, 'Mã tham chiếu', trip.customer_reference)}
-        </div>
+        </Panel>
 
-        <div className="card-shell" style={{ padding: '16px 20px' }}>
-          <div style={{ marginBottom: 8 }}><span className="typo-eyebrow">Tài chính</span></div>
+        <Panel title="Tài chính">
           {infoRow(<Banknote size={16} />, 'Doanh thu', formatCurrency(trip.revenue))}
           {infoRow(<Banknote size={16} />, 'Tổng chi phí', formatCurrency(trip.total_cost))}
           {infoRow(
@@ -232,20 +215,19 @@ export default function TripDetailPage() {
           {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuel_liters ? `${Number(trip.fuel_liters).toLocaleString('vi-VN')} lit` : '—')}
           {infoRow(<MapPin size={16} />, 'Tiền đường', formatCurrency(trip.total_road_allowance))}
           {infoRow(<User size={16} />, 'Lương tài xế', formatCurrency(trip.driver_salary))}
-        </div>
+        </Panel>
       </div>
 
       {/* Trip legs */}
       {trip.legs && trip.legs.length > 0 && (
-        <div className="card-shell section-gap">
-          <div className="card-header">
-            <div>
-              <h3>Hành trình</h3>
-              <p>{trip.legs.length} chặng đường</p>
-            </div>
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="tt-table">
+        <Panel
+          title="Hành trình"
+          subtitle={`${trip.legs.length} chặng đường`}
+          style={{ marginTop: 20 }}
+          flush
+        >
+          <div className="table-scroll">
+            <table>
               <thead>
                 <tr>
                   <th>#</th>
@@ -270,15 +252,14 @@ export default function TripDetailPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Notes */}
       {trip.notes && (
-        <div className="card-shell section-gap" style={{ padding: '16px 20px' }}>
-          <div style={{ marginBottom: 8 }}><span className="typo-eyebrow">Ghi chú</span></div>
-          <p className="typo-body" style={{ whiteSpace: 'pre-wrap' }}>{trip.notes}</p>
-        </div>
+        <Panel title="Ghi chú" style={{ marginTop: 20 }}>
+          <p style={{ whiteSpace: 'pre-wrap', fontSize: 14, color: 'var(--fg-2)', margin: 0 }}>{trip.notes}</p>
+        </Panel>
       )}
 
       {/* Photos */}
@@ -303,7 +284,7 @@ export default function TripDetailPage() {
               >
                 <img
                   src={url}
-                  alt={`Anh ${i + 1}`}
+                  alt={`Ảnh ${i + 1}`}
                   loading="lazy"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />

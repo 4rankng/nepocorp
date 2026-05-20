@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatNumber } from '../lib/format';
 import { CalendarDays } from 'lucide-react';
+import { PageHeader, Panel } from '../components/UI';
 
 interface PnlTruck {
   plate: string;
@@ -107,27 +108,26 @@ export default function FinancePage() {
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
-      {/* Header matching wireframe */}
-      <header className="page-header">
-        <div>
-          <h1 className="page-title">Báo cáo lãi lỗ</h1>
-          <p className="page-subtitle">Báo cáo kết quả kinh doanh Tháng {month} / {year} · so sánh với Tháng {month} / {year - 1}</p>
-        </div>
-        <div className="page-actions">
-          <div className="date-chip" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg-2)', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
-            <CalendarDays size={14} style={{ color: 'var(--brand)' }} />
-            <span>Tháng {month} · <strong>{year}</strong></span>
+      <PageHeader
+        title="Báo cáo lãi lỗ"
+        description={`Báo cáo kết quả kinh doanh Tháng ${month} / ${year} · so sánh với Tháng ${month} / ${year - 1}`}
+        action={
+          <div className="page-actions">
+            <div className="date-chip" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg-2)', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+              <CalendarDays size={14} style={{ color: 'var(--brand)' }} />
+              <span>Tháng {month} · <strong>{year}</strong></span>
+            </div>
+            <button className="btn btn--secondary" onClick={() => alert('Xuất PDF...')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Xuất PDF
+            </button>
+            <button className="btn btn--primary" onClick={() => alert('Xuất Excel...')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Xuất Excel
+            </button>
           </div>
-          <button className="btn btn--secondary" onClick={() => alert('Xuất PDF...')}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Xuất PDF
-          </button>
-          <button className="btn btn--primary" onClick={() => alert('Xuất Excel...')}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Xuất Excel
-          </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* Period Selection Bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -342,42 +342,39 @@ export default function FinancePage() {
 
           {/* Per-truck breakdown table */}
           {report?.trucks && report.trucks.length > 0 && (
-            <div className="panel" style={{ marginTop: 20 }}>
-              <div className="panel__head">
-                <div>
-                  <h3 className="panel__title">Phân tích lãi gộp theo phương tiện</h3>
-                  <p className="panel__subtitle">Hiệu suất vận tải chi tiết của {report.trucks.length} đầu xe</p>
-                </div>
-              </div>
-              <div className="panel__body panel__body--flush">
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="tt-table">
-                    <thead>
-                      <tr>
-                        <th>Biển số xe</th>
-                        <th className="num">Lệnh</th>
-                        <th className="num">Doanh thu chặng</th>
-                        <th className="num">Tổng chi phí</th>
-                        <th className="num">Lợi nhuận gộp</th>
+            <Panel
+              title="Phân tích lãi gộp theo phương tiện"
+              subtitle={`Hiệu suất vận tải chi tiết của ${report.trucks.length} đầu xe`}
+              style={{ marginTop: 20 }}
+              flush
+            >
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Biển số xe</th>
+                      <th className="num">Lệnh</th>
+                      <th className="num">Doanh thu chặng</th>
+                      <th className="num">Tổng chi phí</th>
+                      <th className="num">Lợi nhuận gộp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.trucks.map(t => (
+                      <tr key={t.plate}>
+                        <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{t.plate}</td>
+                        <td className="num">{t.trips}</td>
+                        <td className="num">{formatRawNumber(t.revenue)}</td>
+                        <td className="num">{formatRawNumber(t.costs)}</td>
+                        <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
+                          {formatRawNumber(t.profit)}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {report.trucks.map(t => (
-                        <tr key={t.plate}>
-                          <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{t.plate}</td>
-                          <td className="num">{t.trips}</td>
-                          <td className="num">{formatRawNumber(t.revenue)}</td>
-                          <td className="num">{formatRawNumber(t.costs)}</td>
-                          <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
-                            {formatRawNumber(t.profit)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
+            </Panel>
           )}
         </>
       )}

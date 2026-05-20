@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
 import type { Customer, Route, Truck, Trailer, Driver, CargoType } from '@nepocorp/shared';
+import { PageHeader, Panel } from '../components/UI';
 
 interface SelectOption {
   id: number;
@@ -39,20 +40,21 @@ export default function TripCreatePage() {
     setLoadingOptions(true);
     try {
       const [custRes, routeRes, truckRes, trailerRes, driverRes, cargoRes] = await Promise.all([
-        api.get<Customer[]>('/customers'),
-        api.get<Route[]>('/routes'),
-        api.get<Truck[]>('/trucks'),
-        api.get<Trailer[]>('/trailers'),
-        api.get<Driver[]>('/drivers'),
-        api.get<CargoType[]>('/cargo-types'),
+        api.get<any>('/customers'),
+        api.get<any>('/routes'),
+        api.get<any>('/trucks'),
+        api.get<any>('/trailers'),
+        api.get<any>('/drivers'),
+        api.get<any>('/cargo-types'),
       ]);
 
-      setCustomers(custRes.map(c => ({ id: c.id, label: c.name })));
-      setRoutes(routeRes.map(r => ({ id: r.id, label: `${r.name}${r.distance_km ? ` (${r.distance_km} km)` : ''}` })));
-      setTrucks(truckRes.map(t => ({ id: t.id, label: t.license_plate })));
-      setTrailers(trailerRes.map(t => ({ id: t.id, label: `${t.license_plate} (${t.type})` })));
-      setDrivers(driverRes.map(d => ({ id: d.id, label: d.name })));
-      setCargoTypes(cargoRes.map(c => ({ id: c.id, label: c.name })));
+      const unwrap = (d: any) => Array.isArray(d) ? d : (d.items ?? []);
+      setCustomers(unwrap(custRes).map((c: any) => ({ id: c.id, label: c.name })));
+      setRoutes(unwrap(routeRes).map((r: any) => ({ id: r.id, label: `${r.name}${r.distance_km ? ` (${r.distance_km} km)` : ''}` })));
+      setTrucks(unwrap(truckRes).map((t: any) => ({ id: t.id, label: t.license_plate })));
+      setTrailers(unwrap(trailerRes).map((t: any) => ({ id: t.id, label: `${t.license_plate} (${t.type})` })));
+      setDrivers(unwrap(driverRes).map((d: any) => ({ id: d.id, label: d.name })));
+      setCargoTypes(unwrap(cargoRes).map((c: any) => ({ id: c.id, label: c.name })));
     } catch {
       setError('Không thể tải dữ liệu. Vui lòng thử lại.');
     } finally {
@@ -139,32 +141,18 @@ export default function TripCreatePage() {
 
   return (
     <div className="fade-up">
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              className="btn btn-ghost btn-icon btn-sm"
-              onClick={() => navigate('/trips')}
-              aria-label="Quay lại"
-            >
-              <ArrowLeft size={16} />
-            </button>
-            Tạo lệnh vận chuyển mới
-          </h1>
-          <p style={{ marginLeft: 46 }}>Nhập thông tin để tạo lệnh vận chuyển</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Tạo lệnh vận chuyển mới"
+        description="Nhập thông tin để tạo lệnh vận chuyển"
+        onBack={() => navigate('/trips')}
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="row-2">
           {/* Left column */}
-          <div className="card-shell" style={{ padding: '20px 24px' }}>
-            <div style={{ marginBottom: 16 }}>
-              <span className="typo-eyebrow">Thông tin chính</span>
-            </div>
-            {renderSelect('customer', 'Khach hang', customerId, setCustomerId, customers, 'Chọn khách hàng')}
-            {renderSelect('route', 'Tuyen duong', routeId, setRouteId, routes, 'Chọn tuyến đường')}
+          <Panel title="Thông tin chính">
+            {renderSelect('customer', 'Khách hàng', customerId, setCustomerId, customers, 'Chọn khách hàng')}
+            {renderSelect('route', 'Tuyến đường', routeId, setRouteId, routes, 'Chọn tuyến đường')}
             {renderSelect('cargo-type', 'Loại hàng', cargoTypeId, setCargoTypeId, cargoTypes, 'Chọn loại hàng')}
 
             <div className="field">
@@ -181,16 +169,13 @@ export default function TripCreatePage() {
                 maxLength={50}
               />
             </div>
-          </div>
+          </Panel>
 
           {/* Right column */}
-          <div className="card-shell" style={{ padding: '20px 24px' }}>
-            <div style={{ marginBottom: 16 }}>
-              <span className="typo-eyebrow">Phương tiện & tài xế</span>
-            </div>
+          <Panel title="Phương tiện & tài xế">
             {renderSelect('truck', 'Xe đầu', truckId, setTruckId, trucks, 'Chọn xe đầu')}
             {renderSelect('trailer', 'Rơ moóc', trailerId, setTrailerId, trailers, 'Chọn rơ moóc')}
-            {renderSelect('driver', 'Tai xe', driverId, setDriverId, drivers, 'Chọn tài xế')}
+            {renderSelect('driver', 'Tài xế', driverId, setDriverId, drivers, 'Chọn tài xế')}
 
             <div className="field">
               <label htmlFor="departure-date">
@@ -206,7 +191,7 @@ export default function TripCreatePage() {
                 required
               />
             </div>
-          </div>
+          </Panel>
         </div>
 
         {/* Error */}
@@ -228,21 +213,21 @@ export default function TripCreatePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
             type="submit"
-            className="btn btn-primary btn-lg"
+            className="btn btn--primary"
             disabled={submitting || loadingOptions}
           >
             {submitting
               ? <><Loader2 size={16} className="spin" /> Đang tạo...</>
-              : <><Save size={16} /> Tao lenh</>
+              : <><Save size={16} /> Tạo lệnh</>
             }
           </button>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn--secondary"
             onClick={() => navigate('/trips')}
             disabled={submitting}
           >
-            Huy
+            Huỷ
           </button>
         </div>
       </form>

@@ -85,7 +85,7 @@ export default function LoginPage() {
           )}
 
           <button
-            className="btn btn-primary btn-lg login-submit"
+            className="btn btn--primary btn--lg login-submit"
             type="submit"
             disabled={!username || !password || submitting}
           >
