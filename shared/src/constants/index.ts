@@ -54,6 +54,11 @@ export enum TrailerStatus {
   INACTIVE = 'INACTIVE',
 }
 
+export enum CustomerStatus {
+  ACTIVE = 'ACTIVE',
+  LOCKED = 'LOCKED',
+}
+
 export const TRIP_STATUS_LABELS: Record<TripStatus, string> = {
   [TripStatus.CREATED]: 'Mới tạo',
   [TripStatus.IN_TRANSIT]: 'Đang chạy',

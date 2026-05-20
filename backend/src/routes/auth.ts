@@ -3,9 +3,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../db';
 import { users, drivers } from '../db/schema';
-import { eq, isNull, or } from 'drizzle-orm';
+import { eq, isNull, or, sql } from 'drizzle-orm';
 import { config } from '../config';
-import { loginSchema } from '@nepocorp/shared';
+import { loginSchema, createUserSchema, updateUserSchema } from '@nepocorp/shared';
 import { authMiddleware, requireRoles } from '../middleware/auth';
 import { Role } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
@@ -65,13 +65,63 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-router.get('/users', authMiddleware, requireRoles(Role.ADMIN), async (_req: Request, res: Response) => {
+const USER_FIELDS = {
+  id: users.id, username: users.username, email: users.email, phone: users.phone,
+  role: users.role, status: users.status, createdAt: users.createdAt,
+};
+
+router.get('/users', authMiddleware, requireRoles(Role.ADMIN, Role.MANAGER), async (_req: Request, res: Response) => {
   try {
-    const items = await db.select({
-      id: users.id, username: users.username, email: users.email, phone: users.phone, role: users.role, status: users.status,
-      createdAt: users.createdAt,
-    }).from(users).where(isNull(users.deletedAt));
+    const items = await db.select(USER_FIELDS).from(users).where(isNull(users.deletedAt));
     res.json({ items, total: items.length });
+  } catch {
+    res.status(500).json({ error: 'Lỗi máy chủ' });
+  }
+});
+
+router.post('/users', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+  try {
+    const data = createUserSchema.parse(req.body);
+    const passwordHash = await bcrypt.hash(data.password, 10);
+    const [created] = await db.insert(users).values({
+      username: data.username,
+      email: data.email,
+      phone: data.phone,
+      passwordHash,
+      role: data.role,
+      status: data.status ?? 'ACTIVE',
+    }).returning(USER_FIELDS);
+    res.status(201).json(created);
+  } catch (err: any) {
+    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
+    if (err.code === '23505') return res.status(409).json({ error: 'Username, email hoặc số điện thoại đã tồn tại' });
+    res.status(500).json({ error: 'Lỗi máy chủ' });
+  }
+});
+
+router.patch('/users/:id', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const data = updateUserSchema.parse(req.body);
+    const updates: Record<string, unknown> = { updatedAt: sql`now()` };
+    if (data.role !== undefined) updates.role = data.role;
+    if (data.status !== undefined) updates.status = data.status;
+    if (data.password) updates.passwordHash = await bcrypt.hash(data.password, 10);
+    const [updated] = await db.update(users).set(updates).where(eq(users.id, id)).returning(USER_FIELDS);
+    if (!updated) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+    res.json(updated);
+  } catch (err: any) {
+    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
+    res.status(500).json({ error: 'Lỗi máy chủ' });
+  }
+});
+
+router.delete('/users/:id', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (id === req.user!.userId) return res.status(400).json({ error: 'Không thể xóa tài khoản đang đăng nhập' });
+    await db.update(users).set({ deletedAt: sql`now()`, status: 'INACTIVE' }).where(eq(users.id, id));
+    res.json({ success: true });
   } catch {
     res.status(500).json({ error: 'Lỗi máy chủ' });
   }

@@ -15,6 +15,8 @@ import { roadAllowances } from './road-allowances';
 import { penaltyReasons } from './penalties';
 import { fuelConfig } from './fuel-config';
 import { trips } from './trips';
+import { capTableHistory } from './cap-table';
+import { managementFees } from './management-fees';
 
 async function getOrCreate(table: any, uniqueKey: string, value: any, data: Record<string, unknown>) {
   const [existing] = await db.select().from(table).where(eq(table[uniqueKey], value)).limit(1);
@@ -154,6 +156,20 @@ async function seed() {
         ...t.data,
       }))
     );
+  }
+
+  // Check if cap table history exists
+  const [ctc] = await db.select({ cnt: sql<number>`count(*)` }).from(s.capTableHistory);
+  if (Number(ctc?.cnt ?? 0) === 0) {
+    console.log('📊 Seeding cap table history...');
+    await db.insert(s.capTableHistory).values(capTableHistory);
+  }
+
+  // Check if management fees exist
+  const [mfc] = await db.select({ cnt: sql<number>`count(*)` }).from(s.managementFees);
+  if (Number(mfc?.cnt ?? 0) === 0) {
+    console.log('💼 Seeding management fees...');
+    await db.insert(s.managementFees).values(managementFees);
   }
 
   console.log('✅ Seed complete!');

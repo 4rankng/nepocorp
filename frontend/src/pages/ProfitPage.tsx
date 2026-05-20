@@ -138,20 +138,20 @@ export default function ProfitPage() {
         action={
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 6 }}>
-              <select 
-                className="input" 
-                style={{ width: 100, height: 36 }}
-                value={selectedMonth} 
+              <select
+                className="input"
+                style={{ width: 115, height: 36 }}
+                value={selectedMonth}
                 onChange={e => setSelectedMonth(Number(e.target.value))}
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
                 ))}
               </select>
-              <select 
-                className="input" 
-                style={{ width: 100, height: 36 }}
-                value={selectedYear} 
+              <select
+                className="input"
+                style={{ width: 125, height: 36 }}
+                value={selectedYear}
                 onChange={e => setSelectedYear(Number(e.target.value))}
               >
                 {[2024, 2025, 2026, 2027].map(y => (

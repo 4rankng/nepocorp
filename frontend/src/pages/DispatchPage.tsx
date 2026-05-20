@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Play,
   Plus,
-  Map
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { PageHeader, Card } from '../components/UI';
@@ -133,10 +132,6 @@ export default function DispatchPage() {
         description={<>{activeTrips.length} xe đang vận hành · <strong style={{ color: 'var(--warning)' }}>{pendingTrips.length} đơn hàng chờ phân</strong></>}
         action={
           <div className="page-actions">
-            <button className="btn btn--secondary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Map size={14} />
-              Xem bản đồ
-            </button>
             <button
               className="btn btn--primary"
               onClick={() => navigate('/trips/new')}
@@ -245,7 +240,7 @@ export default function DispatchPage() {
         <div style={{ marginTop: 28 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 600, margin: 0 }}>
-              Đơn hàng chờ phân · {pendingTrips.length}
+              Đơn hàng · {pendingTrips.length}
             </h3>
             <a href="#" style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Lịch sử →</a>
           </div>

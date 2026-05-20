@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, TrailerStatus,
+  TrailerType, TruckStatus, DriverStatus, TrailerStatus, CustomerStatus,
 } from '../constants';
 
 const positiveNum = z.coerce.number().positive();
@@ -82,11 +82,33 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+export const createUserSchema = z.object({
+  username: z.string().min(2).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().min(6).optional(),
+  password: z.string().min(6),
+  role: z.nativeEnum(Role),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
+}).refine(data => data.username || data.email || data.phone, {
+  message: 'Phải cung cấp ít nhất một trong: username, email, hoặc số điện thoại',
+});
+
+export const updateUserSchema = z.object({
+  role: z.nativeEnum(Role).optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  password: z.string().min(6).optional(),
+});
+
 // ─── CRUD ────────────────────────────────────────────────────────────────────
 
 export const customerSchema = z.object({
   name: z.string().min(1),
+  tax_code: z.string().optional(),
+  contact_person: z.string().optional(),
+  phone: z.string().optional(),
   contact_info: z.string().optional(),
+  credit_limit: nonNegNum.optional(),
+  status: z.nativeEnum(CustomerStatus).optional().default(CustomerStatus.ACTIVE),
 });
 
 export const truckSchema = z.object({
@@ -164,6 +186,8 @@ export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type CreatePenaltyInput = z.infer<typeof createPenaltySchema>;
 export type CreateAdjustmentInput = z.infer<typeof createAdjustmentSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type CustomerInput = z.infer<typeof customerSchema>;
 export type TruckInput = z.infer<typeof truckSchema>;
 export type TrailerInput = z.infer<typeof trailerSchema>;

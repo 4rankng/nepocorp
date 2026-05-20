@@ -45,7 +45,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'debt', label: 'Công nợ phải thu', path: '/debt', icon: Receipt, section: 'financials' },
         
         { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'admin' },
-        { key: 'routes', label: 'Tuyến đường', path: '/routes', icon: Route, section: 'admin' },
+        { key: 'routes', label: 'Tuyến đường', path: '/config/routes', icon: Route, section: 'admin' },
         { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'admin' },
         ...(role === 'ADMIN' || role === 'MANAGER' ? [
           { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'admin' as const },
@@ -83,7 +83,8 @@ function getPageTitle(pathname: string): string {
   if (pathname === '/penalties' || pathname === '/my-penalties') return 'Kỷ luật';
   if (pathname.startsWith('/customers')) return 'Khách hàng';
   if (pathname.startsWith('/routes')) return 'Tuyến đường';
-  if (pathname.startsWith('/config')) return 'Cấu hình hệ thống';
+  if (pathname === '/config') return 'Cấu hình hệ thống';
+  if (pathname.startsWith('/config')) return 'Cấu hình';
   if (pathname === '/users') return 'Người dùng';
   if (pathname === '/audit-logs') return 'Nhật ký hệ thống';
   if (pathname === '/my-trips') return 'Lệnh của tôi';
@@ -147,7 +148,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const handleNavigate = (path: string) => {
     navigate(path);
-    setSidebarOpen(false);
   };
 
   const renderNavSection = (label: string, sectionName: 'operations' | 'financials' | 'admin') => {

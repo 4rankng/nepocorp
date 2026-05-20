@@ -1,6 +1,6 @@
 import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, TrailerStatus,
+  TrailerType, TruckStatus, DriverStatus, TrailerStatus, CustomerStatus,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -33,7 +33,12 @@ export interface Driver {
 export interface Customer {
   id: number;
   name: string;
+  tax_code: string | null;
+  contact_person: string | null;
+  phone: string | null;
   contact_info: string | null;
+  credit_limit: string | null;
+  status: CustomerStatus;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

@@ -260,7 +260,7 @@ export default function DashboardPage() {
         <Panel
           title="Doanh thu & Lợi nhuận gộp · 12 tháng"
           subtitle={`Tăng trưởng đều — đỉnh tại T${currentMonth} / ${currentYear}`}
-          action={<a href="#" onClick={(e) => { e.preventDefault(); navigate('/finance'); }} style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>Xem P&L →</a>}
+          action={<a href="#" onClick={(e) => { e.preventDefault(); navigate('/finance'); }} style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>Xem báo cáo →</a>}
         >
 
             <div className="chart-legend">

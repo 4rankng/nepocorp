@@ -12,11 +12,25 @@ import DebtListPage from './pages/DebtListPage';
 import DebtDetailPage from './pages/DebtDetailPage';
 import PenaltyPage from './pages/PenaltyPage';
 import ConfigPage from './pages/ConfigPage';
+import CustomersPage from './pages/CustomersPage';
 import AuditLogPage from './pages/AuditLogPage';
 import DriverTripsPage from './pages/DriverTripsPage';
 import DriverEarningsPage from './pages/DriverEarningsPage';
 import DispatchPage from './pages/DispatchPage';
 import ProfitPage from './pages/ProfitPage';
+import UsersPage from './pages/UsersPage';
+// Config section pages
+import TrucksConfigPage from './pages/config/TrucksConfigPage';
+import TrailersConfigPage from './pages/config/TrailersConfigPage';
+import RoutesConfigPage from './pages/config/RoutesConfigPage';
+import CargoTypesConfigPage from './pages/config/CargoTypesConfigPage';
+import PricingTablesConfigPage from './pages/config/PricingTablesConfigPage';
+import RoadAllowancesConfigPage from './pages/config/RoadAllowancesConfigPage';
+import PenaltyReasonsConfigPage from './pages/config/PenaltyReasonsConfigPage';
+import DriversConfigPage from './pages/config/DriversConfigPage';
+import FuelConfigPage from './pages/config/FuelConfigPage';
+import CapTableConfigPage from './pages/config/CapTableConfigPage';
+import CustomersConfigPage from './pages/config/CustomersConfigPage';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -39,10 +53,21 @@ function AppRoutes() {
         <Route path="/debt/:id" element={<DebtDetailPage />} />
         <Route path="/penalties" element={<PenaltyPage />} />
         <Route path="/my-penalties" element={<PenaltyPage />} />
-        <Route path="/customers" element={<ConfigPage forceTab="customers" />} />
-        <Route path="/routes" element={<ConfigPage forceTab="routes" />} />
-        <Route path="/config/*" element={<ConfigPage />} />
-        <Route path="/users" element={<div className="page-header"><div><h1>Người dùng</h1><p>Quản lý tài khoản người dùng</p></div></div>} />
+        <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/routes" element={<Navigate to="/config/routes" replace />} />
+        <Route path="/config" element={<ConfigPage />} />
+        <Route path="/config/trucks" element={<TrucksConfigPage />} />
+        <Route path="/config/trailers" element={<TrailersConfigPage />} />
+        <Route path="/config/routes" element={<RoutesConfigPage />} />
+        <Route path="/config/cargo-types" element={<CargoTypesConfigPage />} />
+        <Route path="/config/pricing-tables" element={<PricingTablesConfigPage />} />
+        <Route path="/config/road-allowances" element={<RoadAllowancesConfigPage />} />
+        <Route path="/config/penalty-reasons" element={<PenaltyReasonsConfigPage />} />
+        <Route path="/config/drivers" element={<DriversConfigPage />} />
+        <Route path="/config/fuel" element={<FuelConfigPage />} />
+        <Route path="/config/cap-table" element={<CapTableConfigPage />} />
+        <Route path="/config/customers" element={<CustomersConfigPage />} />
+        <Route path="/users" element={<UsersPage />} />
         <Route path="/audit-logs" element={<AuditLogPage />} />
         <Route path="/my-trips" element={<DriverTripsPage />} />
         <Route path="/my-earnings" element={<DriverEarningsPage />} />

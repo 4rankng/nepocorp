@@ -1,6 +1,6 @@
 export {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, TrailerStatus,
+  TrailerType, TruckStatus, DriverStatus, TrailerStatus, CustomerStatus,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
 } from './constants';
 
@@ -17,7 +17,7 @@ export type {
 export {
   tripLegSchema, createTripSchema, updateTripFiguresSchema,
   createPaymentSchema, createPenaltySchema, createAdjustmentSchema,
-  loginSchema,
+  loginSchema, createUserSchema, updateUserSchema,
   customerSchema, truckSchema, trailerSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
   fuelConfigSchema, penaltyReasonSchema, driverSchema,
@@ -31,4 +31,5 @@ export type {
   CargoTypeInput, PricingTableInput, RoadAllowanceInput,
   FuelConfigInput, PenaltyReasonInput, DriverInput,
   ManagementFeeInput, CapTableInput,
+  CreateUserInput, UpdateUserInput,
 } from './schemas';

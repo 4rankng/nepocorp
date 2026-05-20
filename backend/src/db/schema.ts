@@ -13,6 +13,7 @@ export const trailerTypeEnum = pgEnum('trailer_type', ['20FT', '40FT']);
 export const truckStatusEnum = pgEnum('truck_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
 export const driverStatusEnum = pgEnum('driver_status', ['ACTIVE', 'INACTIVE']);
 export const trailerStatusEnum = pgEnum('trailer_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
+export const customerStatusEnum = pgEnum('customer_status', ['ACTIVE', 'LOCKED']);
 
 // ─── Config tables ───────────────────────────────────────────────────────────
 
@@ -54,7 +55,12 @@ export const drivers = pgTable('drivers', {
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
+  taxCode: varchar('tax_code', { length: 20 }),
+  contactPerson: varchar('contact_person', { length: 255 }),
+  phone: varchar('phone', { length: 20 }),
   contactInfo: text('contact_info'),
+  creditLimit: numeric('credit_limit', { precision: 15, scale: 0 }),
+  status: customerStatusEnum('status').default('ACTIVE'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

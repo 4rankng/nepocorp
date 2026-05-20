@@ -3,8 +3,8 @@ import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import type { Driver, PenaltyReason } from '@nepocorp/shared';
 import type { CreatePenaltyRequest } from '@nepocorp/shared';
-import { AlertOctagon, Plus, FileWarning, RefreshCw, User, ClipboardList, ShieldAlert, Award } from 'lucide-react';
-import { PageHeader, Card, FormGroup, KPI } from '../components/UI';
+import { AlertOctagon, ShieldCheck, AlertTriangle, User, Save, Loader2, X } from 'lucide-react';
+import { Card, FormGroup } from '../components/UI';
 
 interface PenaltyRow {
   id: number;
@@ -22,16 +22,14 @@ interface PenaltyRow {
 }
 
 export default function PenaltyPage() {
-  // List state
   const [penalties, setPenalties] = useState<PenaltyRow[]>([]);
   const [listLoading, setListLoading] = useState(true);
-  const [listError, setListError] = useState<string | null>(null);
 
-  // Dropdown data
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [reasons, setReasons] = useState<PenaltyReason[]>([]);
 
   // Form state
+  const [showForm, setShowForm] = useState(false);
   const [formDriverId, setFormDriverId] = useState('');
   const [formTripId, setFormTripId] = useState('');
   const [formReasonId, setFormReasonId] = useState('');
@@ -46,47 +44,32 @@ export default function PenaltyPage() {
 
   const fetchPenalties = useCallback(async () => {
     setListLoading(true);
-    setListError(null);
     try {
       const data = await api.get<PenaltyRow[] | { items: PenaltyRow[] }>('/penalties');
       setPenalties(Array.isArray(data) ? data : (data as any).items ?? []);
-    } catch (e: any) {
-      setListError(e.message || 'Không thể tải danh sách phạt');
-    } finally {
+    } catch { /* silent */ } finally {
       setListLoading(false);
     }
   }, []);
 
-  const fetchDrivers = useCallback(async () => {
-    try {
-      const data = await api.get<any>('/drivers');
-      const arr: Driver[] = Array.isArray(data) ? data : (data.items ?? []);
-      setDrivers(arr.filter(d => d.status === 'ACTIVE'));
-    } catch { /* silent */ }
-  }, []);
-
-  const fetchReasons = useCallback(async () => {
-    try {
-      const data = await api.get<any>('/penalty-reasons');
-      setReasons(Array.isArray(data) ? data : (data.items ?? []));
-    } catch { /* silent */ }
-  }, []);
-
   useEffect(() => {
     fetchPenalties();
-    fetchDrivers();
-    fetchReasons();
-  }, [fetchPenalties, fetchDrivers, fetchReasons]);
+    api.get<any>('/drivers').then(d => {
+      const arr: Driver[] = Array.isArray(d) ? d : (d.items ?? []);
+      setDrivers(arr.filter(x => x.status === 'ACTIVE'));
+    }).catch(() => {});
+    api.get<any>('/penalty-reasons').then(d => {
+      setReasons(Array.isArray(d) ? d : (d.items ?? []));
+    }).catch(() => {});
+  }, [fetchPenalties]);
 
   // ── Form submit ──────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
     if (!formDriverId || !formAmount || !formDate) return;
-
     setSubmitting(true);
     setSubmitError(null);
     setSubmitSuccess(false);
-
     const body: CreatePenaltyRequest = {
       driver_id: Number(formDriverId),
       amount: parseFloat(formAmount),
@@ -95,17 +78,13 @@ export default function PenaltyPage() {
     if (formTripId) body.trip_id = Number(formTripId);
     if (formReasonId) body.reason_id = Number(formReasonId);
     if (formCustomReason) body.custom_reason = formCustomReason;
-
     try {
       await api.post('/penalties', body);
       setSubmitSuccess(true);
-      // Reset form
-      setFormDriverId('');
-      setFormTripId('');
-      setFormReasonId('');
-      setFormCustomReason('');
-      setFormAmount('');
+      setFormDriverId(''); setFormTripId(''); setFormReasonId('');
+      setFormCustomReason(''); setFormAmount('');
       setFormDate(new Date().toISOString().slice(0, 10));
+      setShowForm(false);
       fetchPenalties();
     } catch (e: any) {
       setSubmitError(e.message || 'Lỗi khi tạo phạt');
@@ -114,264 +93,261 @@ export default function PenaltyPage() {
     }
   };
 
-  // When reason changes, prefill amount from default
   const handleReasonChange = (reasonId: string) => {
     setFormReasonId(reasonId);
     if (reasonId) {
       const reason = reasons.find(r => r.id === Number(reasonId));
-      if (reason?.default_amount) {
-        setFormAmount(reason.default_amount);
-      }
+      if (reason?.default_amount) setFormAmount(reason.default_amount);
     }
   };
 
-  // ── Stats Calculations ───────────────────────────────────────────────────
+  // ── Derived stats ────────────────────────────────────────────────────────
 
-  const totalPenaltyAmount = penalties.reduce((s, p) => s + parseFloat(p.amount), 0);
-  const totalIncidents = penalties.length;
-  
-  // Find highest penalized driver
-  const driverPenaltyTotals: Record<string, number> = {};
-  penalties.forEach(p => {
-    const name = p.driverName || `Tài xế #${p.driver_id}`;
-    driverPenaltyTotals[name] = (driverPenaltyTotals[name] || 0) + parseFloat(p.amount);
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthLabel = `T${now.getMonth() + 1}`;
+
+  const monthPenalties = penalties.filter(p => (p.date || '').startsWith(thisMonth));
+  const totalMonthAmount = monthPenalties.reduce((s, p) => s + parseFloat(p.amount), 0);
+  const incidentCount = monthPenalties.length;
+
+  // Drivers with NO penalty this month
+  const penalizedDriverIds = new Set(monthPenalties.map(p => p.driver_id));
+  const safeDrivers = drivers.filter(d => !penalizedDriverIds.has(d.id));
+  const safeCount = safeDrivers.length;
+
+  // Per-driver stats for scorecards
+  const driverStatsMap = new Map<number, { name: string; count: number; total: number }>();
+  drivers.forEach(d => driverStatsMap.set(d.id, { name: d.name, count: 0, total: 0 }));
+  monthPenalties.forEach(p => {
+    const s = driverStatsMap.get(p.driver_id) || { name: '—', count: 0, total: 0 };
+    s.count++;
+    s.total += parseFloat(p.amount);
+    driverStatsMap.set(p.driver_id, s);
   });
-  
-  let maxPenalizedDriver = '—';
-  let maxAmount = 0;
-  Object.entries(driverPenaltyTotals).forEach(([name, amt]) => {
-    if (amt > maxAmount) {
-      maxAmount = amt;
-      maxPenalizedDriver = name;
-    }
-  });
+
+  // Sort drivers: most penalized first
+  const driverScoreCards = Array.from(driverStatsMap.values()).sort((a, b) => b.total - a.total);
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
-      {/* Page Header */}
-      <PageHeader 
-        title="Kỷ luật" 
-        description="Quản lý lỗi nghiệp vụ, biên bản xử phạt và khấu trừ trực tiếp vào bảng lương tài xế."
-        action={
-          <button className="btn btn--secondary btn--sm" onClick={fetchPenalties} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36 }}>
-            <RefreshCw size={14} /> Tải lại
-          </button>
-        }
-      />
 
-      {/* KPI Stats */}
-      <div className="kpi-grid">
-        <KPI 
-          label="Tổng tiền khấu trừ" 
-          value={formatCurrency(totalPenaltyAmount)} 
-          icon={ClipboardList}
-          variant="danger"
-          meta="Ghi nhận vào Thu nhập khác"
-        />
-        <KPI 
-          label="Số vụ vi phạm" 
-          value={totalIncidents} 
-          unit="vụ"
-          icon={ShieldAlert}
-          variant="warn"
-          meta="Lỗi vi phạm kỷ luật tháng"
-        />
-        <KPI 
-          label="Bị phạt nhiều nhất" 
-          value={maxPenalizedDriver} 
-          icon={User}
-          variant="default"
-          meta={maxAmount > 0 ? `Tổng phạt: ${formatCurrency(maxAmount)}` : 'Chưa có vi phạm'}
-        />
-        <KPI 
-          label="Đối tượng khấu trừ" 
-          value="100%" 
-          unit="Tài xế"
-          icon={Award}
-          variant="success"
-          meta="Trừ trực tiếp lương cứng"
-        />
+      {/* ── Page header ──────────────────────────────────────────────────── */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Kỷ luật</h1>
+          <p className="page-subtitle">
+            Quản lý vi phạm nghiệp vụ và khấu trừ trực tiếp vào bảng lương tài xế
+          </p>
+        </div>
+        <div className="page-actions">
+          <button className="btn btn--primary" onClick={() => setShowForm(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertOctagon size={14} />
+            Lập biên bản
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 24, alignItems: 'start' }}>
-        {/* ── Left: Penalty list ──────────────────────────────────────────── */}
-        <div>
-          <Card 
-            title="Sổ biên bản vi phạm" 
-            subtitle="Danh sách chi tiết các sự cố nghiệp vụ phát sinh"
-            noPadding
-          >
-            {listError && (
-              <div style={{ padding: '16px 20px', color: 'var(--danger)', fontSize: 13, borderBottom: '1px solid var(--border-2)', background: 'var(--danger-soft)' }}>
-                {listError}
-              </div>
-            )}
-
-            {listLoading ? (
-              <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
-                <div className="spin" style={{ display: 'inline-block', width: 24, height: 24, border: '3px solid var(--border-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }}></div>
-                <div style={{ marginTop: 8, fontSize: 12 }}>Đang tải danh sách...</div>
-              </div>
-            ) : penalties.length === 0 ? (
-              <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--fg-3)' }}>
-                <FileWarning size={36} style={{ color: 'var(--fg-3)', marginBottom: 12, margin: '0 auto' }} />
-                <h4 style={{ color: 'var(--fg-1)', fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>Chưa có khoản phạt nào</h4>
-                <p style={{ fontSize: 12, margin: 0 }}>Không tìm thấy biên bản xử phạt trong cơ sở dữ liệu.</p>
-              </div>
-            ) : (
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th style={{ paddingLeft: 20 }}>Tài xế</th>
-                      <th>Mã lệnh</th>
-                      <th>Lý do vi phạm</th>
-                      <th style={{ textAlign: 'right' }}>Số tiền phạt</th>
-                      <th style={{ paddingRight: 20 }}>Ngày ghi nhận</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {penalties.map(p => (
-                      <tr key={p.id}>
-                        <td style={{ fontWeight: 600, color: 'var(--fg-1)', paddingLeft: 20 }}>
-                          {p.driverName || `#${p.driver_id}`}
-                        </td>
-                        <td style={{ color: 'var(--fg-3)' }}>
-                          {p.trip_id ? (
-                            <a href={`/trips/${p.trip_id}`} style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 500 }}>
-                              #{p.trip_id}
-                            </a>
-                          ) : '—'}
-                        </td>
-                        <td>
-                          <span style={{ color: 'var(--fg-2)' }}>
-                            {p.reasonText || p.custom_reason || '—'}
-                          </span>
-                        </td>
-                        <td className="num" style={{ color: 'var(--danger)', fontWeight: 600 }}>
-                          -{formatCurrency(Number(p.amount))}
-                        </td>
-                        <td style={{ whiteSpace: 'nowrap', paddingRight: 20, color: 'var(--fg-3)' }}>{formatDate(p.date)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
+      {/* ── KPI grid (3 cards, no GPS) ────────────────────────────────────── */}
+      <div className="kpi-grid" style={{ marginBottom: 24 }}>
+        <div className="kpi kpi--danger">
+          <div className="kpi__top">
+            <span className="kpi__label">Vi phạm {monthLabel}</span>
+            <div className="kpi__icon"><AlertTriangle size={18} /></div>
+          </div>
+          <div className="kpi__value">{incidentCount}<span className="kpi__value-unit"> vụ</span></div>
+          <div className="kpi__meta">Kỷ luật trong tháng</div>
         </div>
+        <div className="kpi kpi--warn">
+          <div className="kpi__top">
+            <span className="kpi__label">Tổng phạt {monthLabel}</span>
+            <div className="kpi__icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+          </div>
+          <div className="kpi__value" style={{ fontSize: totalMonthAmount > 9999999 ? 20 : 28 }}>{formatCurrency(totalMonthAmount)}</div>
+          <div className="kpi__meta">Khấu trừ vào bảng lương</div>
+        </div>
+        <div className="kpi kpi--success">
+          <div className="kpi__top">
+            <span className="kpi__label">Lái xe an toàn</span>
+            <div className="kpi__icon"><ShieldCheck size={18} /></div>
+          </div>
+          <div className="kpi__value">{safeCount}<span className="kpi__value-unit">/{drivers.length}</span></div>
+          <div className="kpi__meta kpi__meta--up">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            Không vi phạm {monthLabel}
+          </div>
+        </div>
+      </div>
 
-        {/* ── Right: Create penalty form ──────────────────────────────────── */}
-        <div>
-          <Card 
-            title="Lập biên bản kỷ luật" 
-            subtitle="Nhập thông tin lỗi vi phạm nghiệp vụ để khấu trừ trực tiếp"
-          >
-            {submitError && (
-              <div style={{
-                padding: '10px 14px', marginBottom: 16,
-                background: 'var(--danger-soft)', color: 'var(--danger)',
-                borderRadius: 'var(--radius-md)', fontSize: 12.5,
-              }}>
-                {submitError}
-              </div>
-            )}
-            {submitSuccess && (
-              <div style={{
-                padding: '10px 14px', marginBottom: 16,
-                background: 'var(--success-soft)', color: 'var(--success)',
-                borderRadius: 'var(--radius-md)', fontSize: 12.5,
-              }}>
-                Đã ghi nhận biên bản xử phạt tài xế thành công!
-              </div>
-            )}
+      {/* ── Inline form (slide-in) ────────────────────────────────────────── */}
+      {showForm && (
+        <div style={{ background: 'var(--brand-soft)', border: '1px solid var(--brand-line, var(--line-2))', borderRadius: 12, padding: '20px 24px', marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Lập biên bản kỷ luật</h3>
+            <button className="btn btn--ghost btn--sm btn--icon" onClick={() => setShowForm(false)}><X size={14} /></button>
+          </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Driver */}
-              <FormGroup label="Tài xế vi phạm *">
-                <select
-                  className="input"
-                  value={formDriverId}
-                  onChange={e => setFormDriverId(e.target.value)}
-                >
-                  <option value="">-- Chọn tài xế --</option>
-                  {drivers.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-              </FormGroup>
+          {submitError && (
+            <div style={{ padding: '10px 14px', marginBottom: 16, background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8, fontSize: 12.5 }}>
+              {submitError}
+            </div>
+          )}
 
-              {/* Trip ID */}
-              <FormGroup label="Liên kết chuyến đi (Mã lệnh - tùy chọn)">
-                <input
-                  className="input"
-                  type="number"
-                  placeholder="VD: 1045"
-                  value={formTripId}
-                  onChange={e => setFormTripId(e.target.value)}
-                />
-              </FormGroup>
-
-              {/* Reason */}
-              <FormGroup label="Lỗi nghiệp vụ (Danh mục)">
-                <select
-                  className="input"
-                  value={formReasonId}
-                  onChange={e => handleReasonChange(e.target.value)}
-                >
-                  <option value="">-- Chọn lý do định mức --</option>
-                  {reasons.map(r => (
-                    <option key={r.id} value={r.id}>
-                      {r.reason_text} ({formatCurrency(Number(r.default_amount))})
-                    </option>
-                  ))}
-                </select>
-              </FormGroup>
-
-              {/* Custom reason */}
-              <FormGroup label="Lý do chi tiết khác">
-                <input
-                  className="input"
-                  placeholder="Ghi cụ thể lỗi vi phạm phát sinh"
-                  value={formCustomReason}
-                  onChange={e => setFormCustomReason(e.target.value)}
-                />
-              </FormGroup>
-
-              {/* Amount */}
-              <FormGroup label="Số tiền khấu trừ (VND) *">
-                <input
-                  className="input"
-                  type="number"
-                  placeholder="0"
-                  value={formAmount}
-                  onChange={e => setFormAmount(e.target.value)}
-                />
-              </FormGroup>
-
-              {/* Date */}
-              <FormGroup label="Ngày vi phạm *">
-                <input
-                  className="input"
-                  type="date"
-                  value={formDate}
-                  onChange={e => setFormDate(e.target.value)}
-                />
-              </FormGroup>
-
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, alignItems: 'end' }}>
+            <FormGroup label="Tài xế vi phạm *">
+              <select className="input" value={formDriverId} onChange={e => setFormDriverId(e.target.value)}>
+                <option value="">-- Chọn tài xế --</option>
+                {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </FormGroup>
+            <FormGroup label="Mã lệnh (tùy chọn)">
+              <input className="input" type="number" placeholder="VD: 1045" value={formTripId} onChange={e => setFormTripId(e.target.value)} />
+            </FormGroup>
+            <FormGroup label="Lý do danh mục">
+              <select className="input" value={formReasonId} onChange={e => handleReasonChange(e.target.value)}>
+                <option value="">-- Chọn danh mục --</option>
+                {reasons.map(r => <option key={r.id} value={r.id}>{r.reason_text} ({formatCurrency(Number(r.default_amount))})</option>)}
+              </select>
+            </FormGroup>
+            <FormGroup label="Lý do chi tiết khác">
+              <input className="input" placeholder="Mô tả lỗi phát sinh..." value={formCustomReason} onChange={e => setFormCustomReason(e.target.value)} />
+            </FormGroup>
+            <FormGroup label="Số tiền khấu trừ (VND) *">
+              <input className="input" type="number" placeholder="0" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
+            </FormGroup>
+            <FormGroup label="Ngày vi phạm *">
+              <input className="input" type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
+            </FormGroup>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingBottom: 1 }}>
               <button
                 className="btn btn--primary"
-                style={{ width: '100%', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 40 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 disabled={submitting || !formDriverId || !formAmount || !formDate}
                 onClick={handleSubmit}
               >
-                <AlertOctagon size={15} />
-                {submitting ? 'Đang xử lý...' : 'Xác nhận xử phạt'}
+                {submitting ? <Loader2 size={13} className="spin" /> : <Save size={13} />}
+                Xác nhận
               </button>
+              <button className="btn btn--ghost" onClick={() => setShowForm(false)}>Hủy</button>
             </div>
-          </Card>
+          </div>
         </div>
+      )}
+
+      {submitSuccess && (
+        <div style={{ padding: '12px 16px', background: 'var(--success-soft)', color: 'var(--success)', borderRadius: 8, marginBottom: 20, fontSize: 13 }}>
+          ✓ Đã ghi nhận biên bản xử phạt thành công.
+        </div>
+      )}
+
+      {/* ── Driver scorecards ─────────────────────────────────────────────── */}
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 600, margin: '0 0 12px' }}>
+        Bảng điểm tài xế — {monthLabel}
+      </h3>
+      <div className="fleet-board" style={{ marginBottom: 32 }}>
+        {driverScoreCards.length === 0 && (
+          <div style={{ gridColumn: '1/-1', padding: '32px 24px', textAlign: 'center', color: 'var(--ink-3)' }}>
+            Chưa có dữ liệu tài xế
+          </div>
+        )}
+        {driverScoreCards.map(ds => {
+          const isSafe = ds.count === 0;
+          return (
+            <div key={ds.name} className="vstatus">
+              <div className="vstatus__head">
+                <div>
+                  <span className="vstatus__plate" style={isSafe
+                    ? { background: 'var(--success-soft)', color: 'var(--success)', border: '1px solid var(--success)' }
+                    : { background: 'var(--danger-soft)', color: 'var(--danger)', border: '1px solid var(--danger)' }
+                  }>{ds.name.split(' ').pop()}</span>
+                  <div className="vstatus__driver" style={{ marginTop: 8 }}>{ds.name}</div>
+                  <div className="vstatus__meta">{isSafe ? 'Không vi phạm' : `${ds.count} vi phạm tháng này`}</div>
+                </div>
+                <div className="vstatus__route-icon" style={isSafe
+                  ? { background: 'var(--success-soft)', color: 'var(--success)' }
+                  : { background: 'var(--danger-soft)', color: 'var(--danger)' }
+                }>
+                  {isSafe ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
+                </div>
+              </div>
+              <div className="vstatus__body">
+                {isSafe
+                  ? <span className="pill pill--success" style={{ marginBottom: 8, display: 'inline-flex' }}><span className="dot" />An toàn</span>
+                  : <span className="pill pill--danger" style={{ marginBottom: 8, display: 'inline-flex' }}><span className="dot" />Vi phạm</span>
+                }
+                <div>Khấu trừ: <strong style={{ color: ds.total > 0 ? 'var(--danger)' : 'inherit' }}>{ds.total > 0 ? `-${formatCurrency(ds.total)}` : '—'}</strong></div>
+                <div style={{ marginTop: 4, color: 'var(--ink-3)' }}>{isSafe ? 'Giữ nguyên lương' : 'Trừ trực tiếp lương'}</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {/* ── Violations feed ───────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 600, margin: 0 }}>
+          Sổ biên bản vi phạm · {penalties.length}
+        </h3>
+      </div>
+
+      {listLoading ? (
+        <div style={{ padding: 48, textAlign: 'center' }}>
+          <div className="spin" style={{ display: 'inline-block', width: 24, height: 24, border: '3px solid var(--line-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }} />
+        </div>
+      ) : penalties.length === 0 ? (
+        <Card style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)' }}>
+          <ShieldCheck size={32} style={{ color: 'var(--success)', margin: '0 auto 12px' }} />
+          <p style={{ margin: 0, fontWeight: 600, color: 'var(--ink-2)' }}>Chưa có biên bản vi phạm nào</p>
+          <p style={{ margin: '4px 0 0', fontSize: 12 }}>Tất cả tài xế đang chấp hành tốt nội quy.</p>
+        </Card>
+      ) : (
+        <div className="table-wrap">
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tài xế</th>
+                  <th>Mã lệnh</th>
+                  <th>Lý do vi phạm</th>
+                  <th className="num">Số tiền phạt</th>
+                  <th>Ngày ghi nhận</th>
+                </tr>
+              </thead>
+              <tbody>
+                {penalties.map(p => (
+                  <tr key={p.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--danger-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', flexShrink: 0 }}>
+                          <User size={13} />
+                        </div>
+                        <div className="row-strong">{p.driverName || 'Tài xế'}</div>
+                      </div>
+                    </td>
+                    <td>
+                      {p.trip_id
+                        ? <a href={`/trips/${p.trip_id}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: 12 }}>#{p.trip_id}</a>
+                        : <span style={{ color: 'var(--ink-3)' }}>—</span>}
+                    </td>
+                    <td style={{ color: 'var(--ink-2)', maxWidth: 240 }}>
+                      {p.reasonText || p.custom_reason || '—'}
+                    </td>
+                    <td className="num">
+                      <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(Number(p.amount))}</strong>
+                    </td>
+                    <td style={{ color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{formatDate(p.date)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="table-foot">
+            <span>Đang hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{penalties.length}</strong> biên bản</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

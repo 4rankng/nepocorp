@@ -15,6 +15,13 @@
       "when": 1779248608255,
       "tag": "0001_magical_wrecking_crew",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779258760606,
+      "tag": "0002_dapper_centennial",
+      "breakpoints": true
     }
   ]
 }
