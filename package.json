@@ -1,0 +1,9 @@
+{
+  "name": "nepocorp",
+  "private": true,
+  "scripts": {
+    "dev": "make dev",
+    "setup": "make setup",
+    "build": "cd shared && npx tsc && cd ../backend && npx tsc && cd ../frontend && npx vite build"
+  }
+}

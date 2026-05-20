@@ -1,0 +1,21 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@nepocorp/shared': path.resolve(__dirname, '../shared/src'),
+    },
+  },
+  server: {
+    port: 7173,
+    proxy: {
+      '/api': 'http://localhost:3090',
+      '/uploads': 'http://localhost:3090',
+    },
+  },
+});
