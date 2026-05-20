@@ -301,7 +301,7 @@ export default function DebtListPage() {
                           {d.customer.name}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 16 }}>
-                          Khách hàng ID #{d.customer.id}
+                          Nợ quá hạn
                         </div>
                       </td>
 

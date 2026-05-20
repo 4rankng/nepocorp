@@ -226,7 +226,7 @@ export default function TripListPage() {
                         <div className="checkbox"></div>
                       </td>
                       <td>
-                        <div className="row-strong">CT-{trip.id}</div>
+                        <div className="row-strong">{trip.customer?.name ?? '—'}</div>
                         <div className="row-meta">
                           {trip.departure_date ? new Date(trip.departure_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '—'}
                         </div>

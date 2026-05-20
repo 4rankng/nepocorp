@@ -266,6 +266,95 @@ img { display: block; }
   grid-template-rows: 100vh;
   height: 100vh;
   overflow: hidden;
+  transition: grid-template-columns 240ms var(--ease);
+}
+
+/* Desktop sidebar toggle (1024px and above) */
+@media (min-width: 1024px) {
+  .app.sidebar-closed {
+    grid-template-columns: 48px 1fr;
+  }
+
+  .app.sidebar-closed .sidebar {
+    width: 48px;
+    min-width: 48px;
+  }
+
+  /* Hide only text/meta elements when sidebar is collapsed */
+  .app.sidebar-closed .sidebar-brand-meta {
+    display: none;
+  }
+
+  .app.sidebar-closed .sidebar-brand {
+    justify-content: center;
+    padding: 14px 4px 12px;
+  }
+
+  .app.sidebar-closed .sidebar-brand-logo {
+    margin: 0;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+  }
+
+  /* Collapsed nav: show icons only */
+  .app.sidebar-closed .sidebar-nav {
+    padding: 8px 4px;
+  }
+
+  .app.sidebar-closed .sidebar-section-label {
+    display: none;
+  }
+
+  .app.sidebar-closed .sidebar-item {
+    padding: 10px 0;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .app.sidebar-closed .sidebar-item-label {
+    display: none;
+  }
+
+  /* Hide text label, badge, and chevron in collapsed mode */
+  .app.sidebar-closed .sidebar-item > *:not(svg) {
+    display: none;
+  }
+  /* Chevron is also an SVG — hide any svg that isn't the first (main icon) */
+  .app.sidebar-closed .sidebar-item > svg:not(:first-child) {
+    display: none;
+  }
+  /* Hide the left accent bar — it bleeds outside the narrow rail */
+  .app.sidebar-closed .sidebar-item::before {
+    display: none;
+  }
+
+  /* Collapsed footer: show only avatar */
+  .app.sidebar-closed .sidebar-footer {
+    padding: 8px 4px;
+  }
+
+  .app.sidebar-closed .sidebar-user {
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .app.sidebar-closed .sidebar-user .meta,
+  .app.sidebar-closed .sidebar-user > svg:last-child {
+    display: none;
+  }
+
+  .app:not(.sidebar-closed) .sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+  }
+
+  .sidebar {
+    transition: width 240ms var(--ease), min-width 240ms var(--ease);
+  }
+
+  .sidebar-brand {
+    transition: padding 240ms var(--ease);
+  }
 }
 .app-main {
   display: flex;
@@ -304,6 +393,34 @@ img { display: block; }
   gap: 12px;
   border-bottom: 1px solid var(--sb-line);
   flex-shrink: 0;
+  position: relative;
+}
+
+.sidebar-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--sb-text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 80px;
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--sb-text);
+}
+
+.sidebar-toggle-btn:active {
+  transform: translateX(-50%) scale(0.95);
 }
 .sidebar-brand-logo {
   width: 40px;

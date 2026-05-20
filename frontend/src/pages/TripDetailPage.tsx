@@ -105,7 +105,7 @@ export default function TripDetailPage() {
             <button className="btn btn--ghost btn--icon btn--sm" onClick={() => navigate('/trips')} aria-label="Quay lại">
               <ArrowLeft size={16} />
             </button>
-            Lệnh #{trip.id}
+            Lệnh vận chuyển
             <StatusPill variant={
               trip.status === TripStatus.CANCELED ? 'danger' :
               trip.status === TripStatus.LOCKED ? 'success' :

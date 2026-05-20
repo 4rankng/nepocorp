@@ -255,7 +255,7 @@ export default function TripEditPage() {
   return (
     <div className="fade-up">
       <PageHeader
-        title={`Cập nhật số liệu lệnh #${trip.id}`}
+        title="Cập nhật số liệu lệnh vận chuyển"
         description={`${trip.customer?.name ?? ''} · ${trip.route?.name ?? ''}`}
         onBack={() => navigate(`/trips/${trip.id}`)}
       />

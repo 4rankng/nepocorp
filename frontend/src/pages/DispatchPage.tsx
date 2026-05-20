@@ -260,13 +260,11 @@ export default function DispatchPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {pendingTrips.map(trip => (
                 <div key={trip.id} className="order-card">
-                  <span className="order-card__id">#{trip.id}</span>
-                  
+                  <span className="order-card__id">{trip.routeName}</span>
+
                   <div className="order-card__main">
-                    <div className="order-card__route">{trip.routeName}</div>
+                    <div className="order-card__route">{trip.customerName}</div>
                     <div className="order-card__meta">
-                      <span><strong>{trip.customerName}</strong></span>
-                      <span>·</span>
                       <span>Xe: <strong>{trip.truckPlate}</strong></span>
                       <span>·</span>
                       <span>Tài xế: <strong>{trip.driverName}</strong></span>
@@ -280,8 +278,7 @@ export default function DispatchPage() {
                   </div>
 
                   <div className="order-card__suggest">
-                    Đề xuất xe: <strong>{trip.truckPlate}</strong><br />
-                    Tài xế: {trip.driverName}
+                    Đề xuất xe: <strong>{trip.truckPlate}</strong> · Tài xế: {trip.driverName}
                   </div>
 
                   <div>

@@ -95,7 +95,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Keyboard shortcut for sidebar toggle (⌘B / Ctrl+B)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        setSidebarOpen(!sidebarOpen);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
 
   // Live badge counts
   const [dispatchCount, setDispatchCount] = useState<number | undefined>(undefined);
@@ -153,6 +166,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               key={item.key}
               className={`sidebar-item ${isActive ? 'active' : ''}`}
               onClick={() => handleNavigate(item.path)}
+              title={item.label}
             >
               <IconC size={16} />
               <span className="sidebar-item-label">{item.label}</span>
@@ -176,7 +190,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="app">
+    <div className={`app ${!sidebarOpen ? 'sidebar-closed' : ''}`}>
       <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
