@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import TripListPage from './pages/TripListPage';
 import TripCreatePage from './pages/TripCreatePage';
 import TripDetailPage from './pages/TripDetailPage';
+import TripEditPage from './pages/TripEditPage';
 import FinancePage from './pages/FinancePage';
 import DebtListPage from './pages/DebtListPage';
 import DebtDetailPage from './pages/DebtDetailPage';
@@ -14,6 +15,8 @@ import ConfigPage from './pages/ConfigPage';
 import AuditLogPage from './pages/AuditLogPage';
 import DriverTripsPage from './pages/DriverTripsPage';
 import DriverEarningsPage from './pages/DriverEarningsPage';
+import DispatchPage from './pages/DispatchPage';
+import ProfitPage from './pages/ProfitPage';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -25,14 +28,19 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dispatch" element={<DispatchPage />} />
         <Route path="/trips" element={<TripListPage />} />
         <Route path="/trips/new" element={<TripCreatePage />} />
         <Route path="/trips/:id" element={<TripDetailPage />} />
+        <Route path="/trips/:id/edit" element={<TripEditPage />} />
         <Route path="/finance" element={<FinancePage />} />
+        <Route path="/profit" element={<ProfitPage />} />
         <Route path="/debt" element={<DebtListPage />} />
         <Route path="/debt/:id" element={<DebtDetailPage />} />
         <Route path="/penalties" element={<PenaltyPage />} />
         <Route path="/my-penalties" element={<PenaltyPage />} />
+        <Route path="/customers" element={<ConfigPage forceTab="customers" />} />
+        <Route path="/routes" element={<ConfigPage forceTab="routes" />} />
         <Route path="/config/*" element={<ConfigPage />} />
         <Route path="/users" element={<div className="page-header"><div><h1>Người dùng</h1><p>Quản lý tài khoản người dùng</p></div></div>} />
         <Route path="/audit-logs" element={<AuditLogPage />} />

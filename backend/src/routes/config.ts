@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, isNull, sql, like, or, and } from 'drizzle-orm';
+import { eq, isNull, sql, like, or, and, desc } from 'drizzle-orm';
 import { authMiddleware, requireRoles } from '../middleware/auth';
 import { Role } from '@nepocorp/shared';
 import {
@@ -153,6 +153,47 @@ router.put('/fuel-config', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
   } else {
     const [created] = await db.insert(s.fuelConfig).values(values).returning();
     res.status(201).json(created);
+  }
+});
+
+// ─── Audit logs ──────────────────────────────────────────────────────────────
+router.get('/audit-logs', requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+
+    const items = await db.select({
+      id: s.auditLogs.id,
+      timestamp: s.auditLogs.timestamp,
+      userId: s.auditLogs.userId,
+      userEmail: s.users.email,
+      message: s.auditLogs.message,
+      payload: s.auditLogs.payload,
+      ipAddress: s.auditLogs.ipAddress,
+    }).from(s.auditLogs)
+      .leftJoin(s.users, eq(s.auditLogs.userId, s.users.id))
+      .orderBy(desc(s.auditLogs.id))
+      .limit(limit).offset((page - 1) * limit);
+
+    const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(s.auditLogs);
+
+    res.json({
+      items: items.map(i => ({
+        id: i.id,
+        userId: i.userId,
+        userEmail: i.userEmail || '',
+        action: (i.payload as any)?.event || '',
+        method: (i.payload as any)?.method || '',
+        path: (i.payload as any)?.path || '',
+        message: i.message,
+        timestamp: i.timestamp,
+      })),
+      total: Number(countRow?.count ?? 0),
+      page,
+      pageSize: limit,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

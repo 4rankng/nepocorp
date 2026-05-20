@@ -2,42 +2,69 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, Truck, Container, MapPin, Package, DollarSign, Route,
   AlertTriangle, UserCheck, Fuel, Plus, Pencil, Trash2, X,
-  Search, Save, Loader2, Mountain,
+  Search, Save, Loader2, Mountain, ArrowLeft, Building, ShieldAlert,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatCurrency } from '../lib/format';
 import type {
   Customer, Truck as TruckType, Trailer, Route as RouteType,
   CargoType, PricingTable, RoadAllowance, FuelConfig,
-  PenaltyReason, Driver, PaginatedResponse,
+  PenaltyReason, Driver, CapTableHistory, PaginatedResponse,
 } from '@nepocorp/shared';
 import { TrailerType } from '@nepocorp/shared';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type TabKey =
+  | 'menu'
   | 'customers' | 'trucks' | 'trailers' | 'routes'
   | 'cargoTypes' | 'pricingTables' | 'roadAllowances'
-  | 'penaltyReasons' | 'drivers' | 'fuelConfig';
+  | 'penaltyReasons' | 'drivers' | 'fuelConfig' | 'capTable';
 
 interface TabDef {
   key: TabKey;
   label: string;
+  description: string;
   icon: React.ElementType;
   searchable?: boolean;
 }
 
 const TABS: TabDef[] = [
-  { key: 'customers', label: 'Khách hàng', icon: Users, searchable: true },
-  { key: 'trucks', label: 'Xe đầu kéo', icon: Truck, searchable: true },
-  { key: 'trailers', label: 'Rơ-moóc', icon: Container, searchable: true },
-  { key: 'routes', label: 'Tuyến đường', icon: MapPin, searchable: true },
-  { key: 'cargoTypes', label: 'Loại hàng', icon: Package },
-  { key: 'pricingTables', label: 'Bảng giá', icon: DollarSign },
-  { key: 'roadAllowances', label: 'Tiền đi đường', icon: Route },
-  { key: 'penaltyReasons', label: 'Lý do phạt', icon: AlertTriangle },
-  { key: 'drivers', label: 'Tài xế', icon: UserCheck },
-  { key: 'fuelConfig', label: 'Nhiên liệu', icon: Fuel },
+  { key: 'customers', label: 'Khách hàng', description: 'Danh mục đối tác khách hàng và thông tin liên hệ', icon: Users, searchable: true },
+  { key: 'trucks', label: 'Xe đầu kéo', description: 'Danh sách xe đầu kéo và trạng thái hoạt động', icon: Truck, searchable: true },
+  { key: 'trailers', label: 'Rơ-moóc', description: 'Danh mục rơ-moóc loại 20FT và 40FT', icon: Container, searchable: true },
+  { key: 'routes', label: 'Tuyến đường', description: 'Danh sách các tuyến đường vận hành và cự ly', icon: MapPin, searchable: true },
+  { key: 'cargoTypes', label: 'Loại hàng hóa', description: 'Phân loại hàng hóa (Chè, nông sản, vỏ rỗng...)', icon: Package },
+  { key: 'pricingTables', label: 'Bảng giá cước', description: 'Đơn giá thỏa thuận theo Khách hàng × Tuyến đường', icon: DollarSign },
+  { key: 'roadAllowances', label: 'Tiền đi đường', description: 'Định mức tiền dọc đường theo Tuyến × Loại rơ-moóc', icon: Route },
+  { key: 'penaltyReasons', label: 'Lý do phạt', description: 'Danh mục lỗi vi phạm tài xế và mức phạt mặc định', icon: AlertTriangle },
+  { key: 'drivers', label: 'Tài xế', description: 'Danh sách tài xế, lương cơ bản và xe phụ trách', icon: UserCheck },
+  { key: 'fuelConfig', label: 'Định mức dầu', description: 'Tham số định mức tiêu hao nhiên liệu & đơn giá dầu', icon: Fuel },
+  { key: 'capTable', label: 'Tỷ lệ cổ phần (Cap Table)', description: 'Lịch sử tỷ lệ góp vốn cổ đông công ty', icon: Building },
+];
+
+// Group definitions for the main control center menu
+const CONFIG_GROUPS = [
+  {
+    title: 'Đội xe & Nhân sự (Fleet & Crew)',
+    description: 'Quản lý thông tin tài xế vận hành, đầu kéo và rơ-moóc kéo.',
+    items: ['drivers', 'trucks', 'trailers'] as TabKey[],
+  },
+  {
+    title: 'Khách hàng & Tuyến đường (Directory)',
+    description: 'Danh mục các đối tác, tuyến đường và loại hàng hóa.',
+    items: ['customers', 'routes', 'cargoTypes'] as TabKey[],
+  },
+  {
+    title: 'Giá cước & Định mức (Tariffs & Fuel)',
+    description: 'Thiết lập định mức chi phí đi đường, dầu định mức và giá cước.',
+    items: ['pricingTables', 'roadAllowances', 'fuelConfig'] as TabKey[],
+  },
+  {
+    title: 'Quản trị & Cổ phần (Governance)',
+    description: 'Chính sách xử phạt vi phạm và cơ cấu sở hữu cổ đông.',
+    items: ['penaltyReasons', 'capTable'] as TabKey[],
+  },
 ];
 
 const TRUCK_STATUS_LABELS: Record<string, string> = {
@@ -87,7 +114,7 @@ function FormActions({ saving, onsave, oncancel, isedit }: {
         {isedit ? 'Cập nhật' : 'Thêm'}
       </button>
       <button className="btn btn-ghost btn-sm" onClick={oncancel}>
-        <X size={12} /> Huy
+        <X size={12} /> Hủy
       </button>
     </div>
   );
@@ -108,8 +135,15 @@ function ActionBtns({ id, deleting, onedit, ondelete }: {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function ConfigPage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('customers');
+export default function ConfigPage({ forceTab }: { forceTab?: TabKey }) {
+  const [activeTab, setActiveTab] = useState<TabKey>(forceTab || 'menu');
+
+  useEffect(() => {
+    if (forceTab) {
+      setActiveTab(forceTab);
+    }
+  }, [forceTab]);
+
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +158,7 @@ export default function ConfigPage() {
   const [penaltyReasons, setPenaltyReasons] = useState<PenaltyReason[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [fuelConfig, setFuelConfig] = useState<FuelConfig | null>(null);
+  const [capTable, setCapTable] = useState<CapTableHistory[]>([]);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -138,6 +173,7 @@ export default function ConfigPage() {
   const currentTab = TABS.find(t => t.key === activeTab)!;
 
   const fetchTabData = useCallback(async (tabKey: TabKey) => {
+    if (tabKey === 'menu') return;
     setLoading(true);
     setError(null);
     setEditingId(null);
@@ -222,6 +258,11 @@ export default function ConfigPage() {
           setFuelConfig(r);
           break;
         }
+        case 'capTable': {
+          const r = await api.get<PaginatedResponse<CapTableHistory>>('/cap-table');
+          setCapTable(r.items || []);
+          break;
+        }
       }
     } catch {
       setError('Không thể tải dữ liệu');
@@ -230,13 +271,13 @@ export default function ConfigPage() {
     }
   }, [search]);
 
-  useEffect(() => { fetchTabData(activeTab); }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchTabData(activeTab); }, [activeTab, fetchTabData]);
 
   useEffect(() => {
-    if (!currentTab.searchable) return;
+    if (activeTab === 'menu' || !currentTab?.searchable) return;
     const t = setTimeout(() => fetchTabData(activeTab), 300);
     return () => clearTimeout(t);
-  }, [search, activeTab, currentTab.searchable, fetchTabData]);
+  }, [search, activeTab, currentTab?.searchable, fetchTabData]);
 
   async function doCreate(path: string, body: Record<string, unknown>) {
     setSaving(true);
@@ -264,8 +305,10 @@ export default function ConfigPage() {
     } catch (e: any) { setError(e?.message || 'Lỗi xóa'); } finally { setDeleting(null); }
   }
 
-  function switchTab(key: TabKey) {
-    setActiveTab(key); setSearch(''); setError(null);
+  function selectSection(key: TabKey) {
+    setActiveTab(key);
+    setSearch('');
+    setError(null);
   }
 
   function cancelForm() { setShowAddForm(false); setEditingId(null); }
@@ -275,16 +318,16 @@ export default function ConfigPage() {
   function renderToolbar() {
     if (activeTab === 'fuelConfig') return null;
     return (
-      <div className="toolbar">
-        {currentTab.searchable && (
-          <div className="topbar-search" style={{ width: 220 }}>
-            <Search size={13} />
-            <input type="text" placeholder="Tìm kiếm..." value={search} onChange={e => setSearch(e.target.value)} />
+      <div className="toolbar" style={{ borderBottom: 'none', padding: '16px 20px 8px' }}>
+        {currentTab?.searchable && (
+          <div className="input-icon" style={{ width: 240 }}>
+            <Search size={14} style={{ color: 'var(--fg-3)' }} />
+            <input className="input" type="text" placeholder="Tìm kiếm..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         )}
         <div style={{ flex: 1 }} />
         <button className="btn btn-primary btn-sm" onClick={() => setShowAddForm(true)}>
-          <Plus size={14} /> Them moi
+          <Plus size={14} /> Thêm mới
         </button>
       </div>
     );
@@ -303,7 +346,7 @@ export default function ConfigPage() {
           </Field>
         </div>
         <div style={{ flex: 2, minWidth: 180 }}>
-          <Field label="Lien he">
+          <Field label="Liên hệ">
             <input className="input" value={contactInfo} onChange={e => setContactInfo(e.target.value)} placeholder="SĐT, email..." />
           </Field>
         </div>
@@ -351,10 +394,10 @@ export default function ConfigPage() {
     return (
       <InlineForm colSpan={4}>
         <div style={{ flex: 2, minWidth: 160 }}>
-          <Field label="Bien so"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51C-12345" /></Field>
+          <Field label="Biển số"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51C-12345" /></Field>
         </div>
         <div style={{ flex: 1, minWidth: 140 }}>
-          <Field label="Trang thai">
+          <Field label="Trạng thái">
             <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
               {Object.entries(TRUCK_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
@@ -362,6 +405,75 @@ export default function ConfigPage() {
         </div>
         <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ license_plate: plate.trim(), status }); }} />
       </InlineForm>
+    );
+  }
+
+  // ─── Driver Form ─────────────────────────────────────────────────────────
+
+  function DriverForm({ item, onsave, oncancel }: { item?: Driver; onsave: (d: Record<string, unknown>) => void; oncancel: () => void }) {
+    const [name, setName] = useState(item?.name || '');
+    const [phone, setPhone] = useState(item?.phone || '');
+    const [baseSalary, setBaseSalary] = useState(item?.base_salary || '');
+    const [truckId, setTruckId] = useState(item?.assigned_truck_id || 0);
+    const [status, setStatus] = useState(item?.status || 'ACTIVE');
+    const [tl, setTl] = useState<TruckType[]>([]);
+    useEffect(() => { api.get<PaginatedResponse<TruckType>>('/trucks').then(r => setTl(r.items)); }, []);
+    return (
+      <InlineForm colSpan={6}>
+        <div style={{ flex: 2, minWidth: 150 }}>
+          <Field label="Tên tài xế"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Họ và tên" /></Field>
+        </div>
+        <div style={{ flex: 1, minWidth: 130 }}>
+          <Field label="SĐT"><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." /></Field>
+        </div>
+        <div style={{ flex: 1, minWidth: 130 }}>
+          <Field label="Lương CB"><input className="input" type="number" value={baseSalary} onChange={e => setBaseSalary(e.target.value)} placeholder="0" /></Field>
+        </div>
+        <div style={{ flex: 1, minWidth: 130 }}>
+          <Field label="Xe phân công">
+            <select className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
+              <option value={0}>-- Chưa phân --</option>
+              {tl.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.license_plate}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div style={{ flex: 1, minWidth: 120 }}>
+          <Field label="Trạng thái">
+            <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
+              {Object.entries(DRIVER_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </Field>
+        </div>
+        <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!name.trim()) return; onsave({ name: name.trim(), phone: phone.trim() || undefined, base_salary: baseSalary ? Number(baseSalary) : undefined, assigned_truck_id: truckId || null, status }); }} />
+      </InlineForm>
+    );
+  }
+
+  function renderDrivers() {
+    return (
+      <div className="card-shell fade-up">
+        {renderToolbar()}
+        <div style={{ overflowX: 'auto' }}>
+          <table className="tt-table">
+            <thead><tr><th style={{ width: 40 }}>#</th><th>Tên tài xế</th><th>SĐT</th><th>Xe phân công</th><th>Trạng thái</th><th style={{ width: 100 }}>Thao tác</th></tr></thead>
+            <tbody>
+              {showAddForm && !editingId && <DriverForm onsave={d => doCreate('/drivers', d)} oncancel={cancelForm} />}
+              {drivers.length === 0 && !showAddForm && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>}
+              {drivers.map((d, i) => editingId === d.id
+                ? <DriverForm key={`edit-${d.id}`} item={d} onsave={dd => doUpdate('/drivers', d.id, dd)} oncancel={cancelForm} />
+                : <tr key={d.id}>
+                  <td className="num">{i + 1}</td>
+                  <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{d.name}</td>
+                  <td>{d.phone || '—'}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)' }}>{d.assigned_truck_id ? (truckMap.get(d.assigned_truck_id) || `#${d.assigned_truck_id}`) : '—'}</td>
+                  <td><span className={`badge ${badgeCls(d.status)}`}>{DRIVER_STATUS_LABELS[d.status] || d.status}</span></td>
+                  <td><ActionBtns id={d.id} deleting={deleting} onedit={() => setEditingId(d.id)} ondelete={() => doDelete('/drivers', d.id)} /></td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
   }
 
@@ -399,10 +511,10 @@ export default function ConfigPage() {
     return (
       <InlineForm colSpan={4}>
         <div style={{ flex: 2, minWidth: 160 }}>
-          <Field label="Bien so"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51R-56789" /></Field>
+          <Field label="Biển số"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51R-56789" /></Field>
         </div>
         <div style={{ flex: 1, minWidth: 120 }}>
-          <Field label="Loai">
+          <Field label="Loại">
             <select className="input" value={type} onChange={e => setType(e.target.value as TrailerType)}>
               {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
@@ -449,14 +561,14 @@ export default function ConfigPage() {
     return (
       <InlineForm colSpan={6}>
         <div style={{ flex: 2, minWidth: 160 }}>
-          <Field label="Tên tuyến"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="VD: TP.HCM - Binh Duong" /></Field>
+          <Field label="Tên tuyến"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="VD: TP.HCM - Bình Dương" /></Field>
         </div>
         <div style={{ flex: 1, minWidth: 100 }}>
           <Field label="Khoảng cách (km)"><input className="input" type="number" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0" /></Field>
         </div>
         <div style={{ flex: 1, minWidth: 120, paddingBottom: 4 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
-            <input type="checkbox" checked={isMountain} onChange={e => setIsMountain(e.target.checked)} />
+            <input type="checkbox" checked={isMountain} onChange={e => setIsMountain(e.target.checked)} style={{ width: 15, height: 15 }} />
             <Mountain size={14} /> Leo núi
           </label>
         </div>
@@ -550,7 +662,7 @@ export default function ConfigPage() {
     return (
       <InlineForm colSpan={5}>
         <div style={{ flex: 2, minWidth: 180 }}>
-          <Field label="Khach hang">
+          <Field label="Khách hàng">
             <select className="input" value={customerId} onChange={e => setCustomerId(Number(e.target.value))}>
               <option value={0}>-- Chọn --</option>
               {cl.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -558,7 +670,7 @@ export default function ConfigPage() {
           </Field>
         </div>
         <div style={{ flex: 2, minWidth: 180 }}>
-          <Field label="Tuyen duong">
+          <Field label="Tuyến đường">
             <select className="input" value={routeId} onChange={e => setRouteId(Number(e.target.value))}>
               <option value={0}>-- Chọn --</option>
               {rl.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -566,7 +678,7 @@ export default function ConfigPage() {
           </Field>
         </div>
         <div style={{ flex: 1, minWidth: 120 }}>
-          <Field label="Gia (VND)"><input className="input" type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" /></Field>
+          <Field label="Giá (VNĐ)"><input className="input" type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" /></Field>
         </div>
         <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!customerId || !routeId || !price) return; onsave({ customer_id: customerId, route_id: routeId, price: Number(price) }); }} />
       </InlineForm>
@@ -611,7 +723,7 @@ export default function ConfigPage() {
     return (
       <InlineForm colSpan={5}>
         <div style={{ flex: 2, minWidth: 180 }}>
-          <Field label="Tuyen duong">
+          <Field label="Tuyến đường">
             <select className="input" value={routeId} onChange={e => setRouteId(Number(e.target.value))}>
               <option value={0}>-- Chọn --</option>
               {rl.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -619,14 +731,14 @@ export default function ConfigPage() {
           </Field>
         </div>
         <div style={{ flex: 1, minWidth: 120 }}>
-          <Field label="Loai ro-mooc">
+          <Field label="Loại rơ-moóc">
             <select className="input" value={trailerType} onChange={e => setTrailerType(e.target.value as TrailerType)}>
               {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </Field>
         </div>
         <div style={{ flex: 1, minWidth: 120 }}>
-          <Field label="Muc co ban (VND)"><input className="input" type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)} placeholder="0" /></Field>
+          <Field label="Mức cơ bản (VNĐ)"><input className="input" type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)} placeholder="0" /></Field>
         </div>
         <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!routeId || !baseAmount) return; onsave({ route_id: routeId, trailer_type: trailerType, base_amount: Number(baseAmount) }); }} />
       </InlineForm>
@@ -668,10 +780,10 @@ export default function ConfigPage() {
     return (
       <InlineForm colSpan={4}>
         <div style={{ flex: 3, minWidth: 200 }}>
-          <Field label="Ly do phat"><input className="input" value={reason} onChange={e => setReason(e.target.value)} placeholder="Mô tả lý do..." /></Field>
+          <Field label="Lý do phạt"><input className="input" value={reason} onChange={e => setReason(e.target.value)} placeholder="Mô tả lý do..." /></Field>
         </div>
         <div style={{ flex: 1, minWidth: 140 }}>
-          <Field label="Muc mac dinh (VND)"><input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
+          <Field label="Mức mặc định (VNĐ)"><input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
         </div>
         <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!reason.trim()) return; onsave({ reason_text: reason.trim(), default_amount: Number(amount) || 0 }); }} />
       </InlineForm>
@@ -704,75 +816,6 @@ export default function ConfigPage() {
     );
   }
 
-  // ─── Driver Form ─────────────────────────────────────────────────────────
-
-  function DriverForm({ item, onsave, oncancel }: { item?: Driver; onsave: (d: Record<string, unknown>) => void; oncancel: () => void }) {
-    const [name, setName] = useState(item?.name || '');
-    const [phone, setPhone] = useState(item?.phone || '');
-    const [baseSalary, setBaseSalary] = useState(item?.base_salary || '');
-    const [truckId, setTruckId] = useState(item?.assigned_truck_id || 0);
-    const [status, setStatus] = useState(item?.status || 'ACTIVE');
-    const [tl, setTl] = useState<TruckType[]>([]);
-    useEffect(() => { api.get<PaginatedResponse<TruckType>>('/trucks').then(r => setTl(r.items)); }, []);
-    return (
-      <InlineForm colSpan={6}>
-        <div style={{ flex: 2, minWidth: 150 }}>
-          <Field label="Tên tài xế"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Họ và tên" /></Field>
-        </div>
-        <div style={{ flex: 1, minWidth: 130 }}>
-          <Field label="SDT"><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." /></Field>
-        </div>
-        <div style={{ flex: 1, minWidth: 130 }}>
-          <Field label="Lương CB"><input className="input" type="number" value={baseSalary} onChange={e => setBaseSalary(e.target.value)} placeholder="0" /></Field>
-        </div>
-        <div style={{ flex: 1, minWidth: 130 }}>
-          <Field label="Xe phân công">
-            <select className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
-              <option value={0}>-- Chưa phân --</option>
-              {tl.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.license_plate}</option>)}
-            </select>
-          </Field>
-        </div>
-        <div style={{ flex: 1, minWidth: 120 }}>
-          <Field label="Trang thai">
-            <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
-              {Object.entries(DRIVER_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </Field>
-        </div>
-        <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!name.trim()) return; onsave({ name: name.trim(), phone: phone.trim() || undefined, base_salary: baseSalary ? Number(baseSalary) : undefined, assigned_truck_id: truckId || null, status }); }} />
-      </InlineForm>
-    );
-  }
-
-  function renderDrivers() {
-    return (
-      <div className="card-shell fade-up">
-        {renderToolbar()}
-        <div style={{ overflowX: 'auto' }}>
-          <table className="tt-table">
-            <thead><tr><th style={{ width: 40 }}>#</th><th>Ten</th><th>SĐT</th><th>Xe phân công</th><th>Trạng thái</th><th style={{ width: 100 }}>Thao tác</th></tr></thead>
-            <tbody>
-              {showAddForm && !editingId && <DriverForm onsave={d => doCreate('/drivers', d)} oncancel={cancelForm} />}
-              {drivers.length === 0 && !showAddForm && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>}
-              {drivers.map((d, i) => editingId === d.id
-                ? <DriverForm key={`edit-${d.id}`} item={d} onsave={dd => doUpdate('/drivers', d.id, dd)} oncancel={cancelForm} />
-                : <tr key={d.id}>
-                  <td className="num">{i + 1}</td>
-                  <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{d.name}</td>
-                  <td>{d.phone || '—'}</td>
-                  <td style={{ fontFamily: 'var(--font-mono)' }}>{d.assigned_truck_id ? (truckMap.get(d.assigned_truck_id) || `#${d.assigned_truck_id}`) : '—'}</td>
-                  <td><span className={`badge ${badgeCls(d.status)}`}>{DRIVER_STATUS_LABELS[d.status] || d.status}</span></td>
-                  <td><ActionBtns id={d.id} deleting={deleting} onedit={() => setEditingId(d.id)} ondelete={() => doDelete('/drivers', d.id)} /></td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
   // ─── Fuel Config ─────────────────────────────────────────────────────────
 
   function FuelConfigForm() {
@@ -783,7 +826,12 @@ export default function ConfigPage() {
     useEffect(() => {
       if (fuelConfig && !init) {
         const fc = fuelConfig as any;
-        setForm({ loadedNorm: fc.loadedNorm ?? fc.loaded_norm, emptyNorm: fc.emptyNorm ?? fc.empty_norm, supplement: fc.supplement, unitPrice: fc.unitPrice ?? fc.unit_price });
+        setForm({
+          loadedNorm: fc.loadedNorm ?? fc.loaded_norm ?? '',
+          emptyNorm: fc.emptyNorm ?? fc.empty_norm ?? '',
+          supplement: fc.supplement ?? '0',
+          unitPrice: fc.unitPrice ?? fc.unit_price ?? '',
+        });
         setInit(true);
       }
     }, [fuelConfig, init]);
@@ -792,8 +840,10 @@ export default function ConfigPage() {
       setFuelSaving(true);
       try {
         await api.put('/fuel-config', {
-          loaded_norm: Number(form.loadedNorm), empty_norm: Number(form.emptyNorm),
-          supplement: Number(form.supplement) || 0, unit_price: Number(form.unitPrice),
+          loaded_norm: Number(form.loadedNorm),
+          empty_norm: Number(form.emptyNorm),
+          supplement: Number(form.supplement) || 0,
+          unit_price: Number(form.unitPrice),
         });
         await fetchTabData('fuelConfig');
       } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setFuelSaving(false); }
@@ -801,31 +851,31 @@ export default function ConfigPage() {
 
     return (
       <div className="card-shell fade-up">
-        <div className="card-header">
+        <div className="card-header" style={{ borderBottom: '1px solid var(--border-2)', padding: '16px 20px' }}>
           <div>
-            <h3>Cấu hình tính nhiên liệu</h3>
-            <p>Thông số dùng để tính toán chi phí nhiên liệu cho mỗi lệnh</p>
+            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Cấu hình tính nhiên liệu</h3>
+            <p style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>Thông số dùng để tính toán chi phí nhiên liệu cho mỗi chuyến</p>
           </div>
         </div>
         <div style={{ padding: '20px 24px 24px' }}>
-          <div className="row-2">
+          <div className="row-2" style={{ marginBottom: 16 }}>
             <div className="field">
-              <label>Định mức có tải (lit/100km)</label>
+              <label>Định mức có tải (lít/100km)</label>
               <input className="input" type="number" step="0.1" value={form.loadedNorm} onChange={e => setForm(f => ({ ...f, loadedNorm: e.target.value }))} placeholder="VD: 35" />
             </div>
             <div className="field">
-              <label>Định mức xe không (lit/100km)</label>
+              <label>Định mức xe không (lít/100km)</label>
               <input className="input" type="number" step="0.1" value={form.emptyNorm} onChange={e => setForm(f => ({ ...f, emptyNorm: e.target.value }))} placeholder="VD: 22" />
             </div>
           </div>
-          <div className="row-2">
+          <div className="row-2" style={{ marginBottom: 20 }}>
             <div className="field">
-              <label>Bổ sung thêm (lit)</label>
+              <label>Bổ sung mặc định (lít)</label>
               <input className="input" type="number" step="0.1" value={form.supplement} onChange={e => setForm(f => ({ ...f, supplement: e.target.value }))} placeholder="VD: 3" />
-              <p className="field-help">Số lít bổ sung thêm cho mỗi chuyến</p>
+              <p className="field-help" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>Số lít bổ sung thêm mặc định cho mỗi chuyến</p>
             </div>
             <div className="field">
-              <label>Đơn giá nhiên liệu (VND/lit)</label>
+              <label>Đơn giá nhiên liệu hiện hành (VNĐ/lít)</label>
               <input className="input" type="number" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="VD: 23000" />
             </div>
           </div>
@@ -840,19 +890,86 @@ export default function ConfigPage() {
     );
   }
 
-  // ─── Tab content router ──────────────────────────────────────────────────
+  // ─── Cap Table Form ──────────────────────────────────────────────────────
+
+  function CapTableForm({ item, onsave, oncancel }: { item?: CapTableHistory; onsave: (d: Record<string, unknown>) => void; oncancel: () => void }) {
+    const [partnerName, setPartnerName] = useState(item?.partner_name || '');
+    const [percentage, setPercentage] = useState(item?.percentage || '');
+    const [effectiveDate, setEffectiveDate] = useState(item ? item.effective_date.split('T')[0] : '');
+
+    return (
+      <InlineForm colSpan={5}>
+        <div style={{ flex: 2, minWidth: 180 }}>
+          <Field label="Tên cổ đông">
+            <input className="input" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="Nhập tên cổ đông..." />
+          </Field>
+        </div>
+        <div style={{ flex: 1, minWidth: 100 }}>
+          <Field label="Tỷ lệ cổ phần (%)">
+            <input className="input" type="number" step="0.01" value={percentage} onChange={e => setPercentage(e.target.value)} placeholder="0.00" />
+          </Field>
+        </div>
+        <div style={{ flex: 1.5, minWidth: 150 }}>
+          <Field label="Ngày hiệu lực">
+            <input className="input" type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} />
+          </Field>
+        </div>
+        <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
+          if (!partnerName.trim() || !percentage || !effectiveDate) return;
+          onsave({ partner_name: partnerName.trim(), percentage: Number(percentage), effective_date: effectiveDate });
+        }} />
+      </InlineForm>
+    );
+  }
+
+  function renderCapTable() {
+    return (
+      <div className="card-shell fade-up">
+        {renderToolbar()}
+        <div style={{ overflowX: 'auto' }}>
+          <table className="tt-table">
+            <thead>
+              <tr>
+                <th style={{ width: 40 }}>#</th>
+                <th>Tên cổ đông</th>
+                <th className="num">Tỷ lệ (%)</th>
+                <th>Ngày hiệu lực</th>
+                <th style={{ width: 100 }}>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {showAddForm && !editingId && <CapTableForm onsave={d => doCreate('/cap-table', d)} oncancel={cancelForm} />}
+              {capTable.length === 0 && !showAddForm && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>}
+              {capTable.map((ct, i) => editingId === ct.id
+                ? <CapTableForm key={`edit-${ct.id}`} item={ct} onsave={d => doUpdate('/cap-table', ct.id, d)} oncancel={cancelForm} />
+                : <tr key={ct.id}>
+                  <td className="num">{i + 1}</td>
+                  <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{ct.partner_name}</td>
+                  <td className="num" style={{ fontWeight: 600, color: 'var(--brand)' }}>{Number(ct.percentage).toFixed(2)}%</td>
+                  <td>{ct.effective_date ? new Date(ct.effective_date).toLocaleDateString('vi-VN') : '—'}</td>
+                  <td><ActionBtns id={ct.id} deleting={deleting} onedit={() => setEditingId(ct.id)} ondelete={() => doDelete('/cap-table', ct.id)} /></td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Tab Content Router ──────────────────────────────────────────────────
 
   function renderTabContent() {
     if (loading) return (
-      <div className="card-shell" style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)' }}>
-        <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
-        <p style={{ marginTop: 8 }}>Đang tải...</p>
+      <div className="card-shell" style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
+        <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
+        <p style={{ fontSize: 13 }}>Đang tải dữ liệu...</p>
       </div>
     );
     if (error) return (
-      <div className="card-shell" style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>
-        {error}
-        <button className="btn btn-sm btn-secondary" style={{ marginLeft: 12 }} onClick={() => fetchTabData(activeTab)}>Thử lại</button>
+      <div className="card-shell" style={{ padding: 24, textAlign: 'center', color: 'var(--danger)' }}>
+        <p style={{ fontSize: 14, fontWeight: 500 }}>⚠️ {error}</p>
+        <button className="btn btn-sm btn-secondary" style={{ marginTop: 12 }} onClick={() => fetchTabData(activeTab)}>Thử lại</button>
       </div>
     );
     switch (activeTab) {
@@ -866,6 +983,8 @@ export default function ConfigPage() {
       case 'penaltyReasons': return renderPenaltyReasons();
       case 'drivers': return renderDrivers();
       case 'fuelConfig': return <FuelConfigForm />;
+      case 'capTable': return renderCapTable();
+      default: return null;
     }
   }
 
@@ -873,34 +992,316 @@ export default function ConfigPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1>Cấu hình hệ thống</h1>
-          <p>Quản lý khách hàng, xe, tuyến đường, bảng giá và tham số</p>
-        </div>
-      </div>
+      <style>{`
+        /* Control Center Grid Styles */
+        .config-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+          gap: 20px;
+          margin-top: 10px;
+        }
+        .config-group-card {
+          background: var(--bg-2);
+          border: 1px solid var(--border-1);
+          border-radius: var(--radius-lg);
+          padding: 20px;
+          box-shadow: var(--shadow-card);
+          transition: all 0.25s var(--ease);
+          display: flex;
+          flex-direction: column;
+        }
+        .config-group-card:hover {
+          box-shadow: var(--shadow-elevated);
+          border-color: rgba(5, 150, 105, 0.15);
+          transform: translateY(-2px);
+        }
+        .config-group-title {
+          font-size: 14.5px;
+          font-weight: 700;
+          color: var(--fg-1);
+          margin-bottom: 6px;
+          border-bottom: 1px solid var(--border-2);
+          padding-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .config-group-desc {
+          font-size: 11.5px;
+          color: var(--fg-3);
+          margin-bottom: 16px;
+          line-height: 1.45;
+          flex: 1;
+        }
+        .config-items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .config-item-button {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 14px;
+          background: var(--bg-1);
+          border: 1px solid var(--border-2);
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          text-align: left;
+          transition: all var(--t-fast);
+          color: var(--fg-2);
+        }
+        .config-item-button:hover {
+          background: var(--brand-soft);
+          border-color: var(--brand);
+          color: var(--brand);
+        }
+        .config-item-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border-radius: var(--radius-sm);
+          background: var(--bg-2);
+          color: var(--fg-2);
+          border: 1px solid var(--border-2);
+          flex-shrink: 0;
+          transition: all var(--t-fast);
+        }
+        .config-item-button:hover .config-item-icon {
+          background: var(--brand-soft);
+          color: var(--brand);
+          border-color: var(--brand);
+        }
+        .config-item-info {
+          flex: 1;
+          min-width: 0;
+        }
+        .config-item-name {
+          font-size: 13.5px;
+          font-weight: 600;
+          display: block;
+        }
+        .config-item-desc {
+          font-size: 11px;
+          color: var(--fg-3);
+          display: block;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-top: 1px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 0.8s linear infinite; }
+      `}</style>
 
-      <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--border-1)', marginBottom: 16, overflowX: 'auto' }}>
-        {TABS.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button key={tab.key} onClick={() => switchTab(tab.key)} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 14px',
-              fontSize: 13, fontWeight: isActive ? 600 : 500,
-              color: isActive ? 'var(--brand)' : 'var(--fg-2)',
-              background: 'transparent', border: 'none',
-              borderBottom: isActive ? '2px solid var(--brand)' : '2px solid transparent',
-              cursor: 'pointer', whiteSpace: 'nowrap',
-              transition: 'color 120ms var(--ease), border-color 120ms var(--ease)',
-            }}>
-              <Icon size={14} /> {tab.label}
+      {activeTab === 'menu' ? (
+        <div className="fade-up">
+          {/* Main Menu Header */}
+          <div className="page-header" style={{ marginBottom: 28 }}>
+            <div>
+              <h1>Cấu hình hệ thống</h1>
+              <p>Quản lý định mức, quy tắc tính toán, người dùng &amp; tích hợp hệ thống</p>
+            </div>
+          </div>
+
+          {/* Grid of setting-cards matching the wireframe */}
+          <div className="settings-grid">
+            <button className="setting-card" onClick={() => selectSection('fuelConfig')}>
+              <div className="setting-card__icon">
+                <Fuel size={20} />
+              </div>
+              <h3 className="setting-card__title">Định mức nhiên liệu</h3>
+              <p className="setting-card__desc">Định mức tiêu hao theo xe, loại tải (vỏ rỗng, &lt;20t, &gt;20t) và loại tuyến (đồng bằng / núi).</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Cơ bản + Phụ trội</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
             </button>
-          );
-        })}
-      </div>
 
-      {renderTabContent()}
+            <button className="setting-card" onClick={() => selectSection('roadAllowances')}>
+              <div className="setting-card__icon">
+                <Route size={20} />
+              </div>
+              <h3 className="setting-card__title">Tiền đi đường</h3>
+              <p className="setting-card__desc">Tiền chuẩn theo tuyến × loại rơ-mooc. Quy tắc: − vé QL5, + chuyến về có hàng (300K), − 55K/trạm.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Tự động theo rơ-moóc</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('penaltyReasons')}>
+              <div className="setting-card__icon">
+                <AlertTriangle size={20} />
+              </div>
+              <h3 className="setting-card__title">Quy tắc kỷ luật &amp; phạt</h3>
+              <p className="setting-card__desc">Thiếu hoá đơn dầu (100K), tắt GPS &gt;1h (500K từ lần 3), vi phạm ATGT (500K / sa thải).</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>4 quy tắc hoạt động</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('drivers')}>
+              <div className="setting-card__icon">
+                <UserCheck size={20} />
+              </div>
+              <h3 className="setting-card__title">Người dùng &amp; tài xế</h3>
+              <p className="setting-card__desc">Quản lý tài khoản lái xe, lương cơ bản, xe phụ trách và thông tin hồ sơ liên hệ.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Thông tin nhân sự</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => alert('GPS đã được kết nối tự động hệ thống định vị Vinasco')}>
+              <div className="setting-card__icon">
+                <MapPin size={20} />
+              </div>
+              <h3 className="setting-card__title">Tích hợp định vị GPS</h3>
+              <p className="setting-card__desc">Kết nối thiết bị định vị để tự động theo dõi tốc độ, thời gian lái xe và cảnh báo vi phạm hành trình.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Vinasco · Đã kết nối</span>
+                <span className="setting-card__action">Cấu hình <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('capTable')}>
+              <div className="setting-card__icon">
+                <Building size={20} />
+              </div>
+              <h3 className="setting-card__title">Thông tin công ty &amp; Cổ phần</h3>
+              <p className="setting-card__desc">Mã số thuế, địa chỉ, người đại diện, tỷ lệ vốn góp giữa các đối tác cổ đông (Phụng 70.45% · Thương 29.55%).</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Cty TNHH NEPO</span>
+                <span className="setting-card__action">Xem <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('customers')}>
+              <div className="setting-card__icon">
+                <Users size={20} />
+              </div>
+              <h3 className="setting-card__title">Khách hàng &amp; Đối tác</h3>
+              <p className="setting-card__desc">Danh mục đối tác vận chuyển hàng hóa, thông tin liên hệ và mã số thuế phục vụ công nợ.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Khách hàng FCL</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('routes')}>
+              <div className="setting-card__icon">
+                <MapPin size={20} />
+              </div>
+              <h3 className="setting-card__title">Tuyến đường &amp; Cự ly</h3>
+              <p className="setting-card__desc">Danh sách các tuyến chặng, số trạm thu phí BOT, quãng đường di chuyển chuẩn.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Danh mục tuyến chặng</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('trucks')}>
+              <div className="setting-card__icon">
+                <Truck size={20} />
+              </div>
+              <h3 className="setting-card__title">Xe đầu kéo</h3>
+              <p className="setting-card__desc">Biển số các đầu kéo kéo container đang vận hành, định mức mặc định và lịch bảo dưỡng đầu xe.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Phương tiện</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('trailers')}>
+              <div className="setting-card__icon">
+                <Container size={20} />
+              </div>
+              <h3 className="setting-card__title">Danh mục Rơ-moóc</h3>
+              <p className="setting-card__desc">Thiết lập các loại sơ mi rơ-moóc (20FT, 40FT) phục vụ tính tiền đi đường theo loại vỏ rơ-moóc.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Thiết bị kéo</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('cargoTypes')}>
+              <div className="setting-card__icon">
+                <Package size={20} />
+              </div>
+              <h3 className="setting-card__title">Loại hàng hóa</h3>
+              <p className="setting-card__desc">Bảng quy chuẩn loại hàng hóa vận chuyển ảnh hưởng đến việc phân xe chặng.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Hàng hóa</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+
+            <button className="setting-card" onClick={() => selectSection('pricingTables')}>
+              <div className="setting-card__icon">
+                <DollarSign size={20} />
+              </div>
+              <h3 className="setting-card__title">Bảng giá cước</h3>
+              <p className="setting-card__desc">Bảng giá cước chi tiết thỏa thuận với từng đối tác khách hàng trên mỗi tuyến.</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status"><span className="dot"></span>Đơn giá chặng</span>
+                <span className="setting-card__action">Sửa <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </div>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="fade-up">
+          {/* Sub-view Detail Header with back navigation and dropdown switcher */}
+          <div className="page-header" style={{ marginBottom: 20 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {!forceTab && (
+                  <button
+                    className="btn btn-ghost btn-icon btn-sm"
+                    onClick={() => selectSection('menu')}
+                    aria-label="Quay lại danh mục cấu hình"
+                    style={{ marginRight: 6 }}
+                  >
+                    <ArrowLeft size={16} />
+                  </button>
+                )}
+                
+                {/* Clean Dropdown Switcher to quickly jump tabs */}
+                <select
+                  value={activeTab}
+                  onChange={(e) => selectSection(e.target.value as TabKey)}
+                  style={{
+                    background: 'var(--bg-1)',
+                    border: '1px solid var(--border-1)',
+                    borderRadius: '6px',
+                    padding: '4px 12px',
+                    fontSize: '18px',
+                    fontWeight: 700,
+                    fontFamily: 'var(--ff-sans)',
+                    color: 'var(--fg-1)',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  {TABS.map((t) => (
+                    <option key={t.key} value={t.key}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p style={{ marginLeft: forceTab ? 0 : 46, marginTop: 4 }}>{currentTab?.description}</p>
+            </div>
+          </div>
+
+          {/* Sub-view table content */}
+          {renderTabContent()}
+        </div>
+      )}
     </div>
   );
 }

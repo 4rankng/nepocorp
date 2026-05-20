@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,15 +12,16 @@ import {
   Route,
   DollarSign,
   Menu,
-  X,
   LogOut,
   User,
   ChevronRight,
   Bell,
   Search,
   ChevronDown,
+  Compass,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { api } from '../lib/api';
 import type { Role } from '@nepocorp/shared';
 
 interface NavItem {
@@ -28,34 +29,38 @@ interface NavItem {
   label: string;
   path: string;
   icon: React.ElementType;
-  section?: 'main' | 'admin';
+  section?: 'operations' | 'financials' | 'admin';
   count?: number;
 }
 
-function getNavItems(role: Role): NavItem[] {
+function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number): NavItem[] {
   switch (role) {
     case 'MANAGER':
     case 'ACCOUNTANT':
-      return [
-        { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard, section: 'main' },
-        { key: 'trips', label: 'Lệnh vận chuyển', path: '/trips', icon: Truck, section: 'main' },
-        { key: 'finance', label: 'Tài chính', path: '/finance', icon: Wallet, section: 'main' },
-        { key: 'debt', label: 'Công nợ', path: '/debt', icon: Receipt, section: 'main' },
-        { key: 'penalties', label: 'Phạt', path: '/penalties', icon: AlertTriangle, section: 'main' },
-        { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'admin' },
-      ];
     case 'ADMIN':
       return [
-        { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard, section: 'main' },
-        { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'main' },
+        { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard, section: 'operations' },
+        { key: 'dispatch', label: 'Phân xe', path: '/dispatch', icon: Compass, section: 'operations', count: dispatchCount },
+        { key: 'trips', label: 'Sổ chuyến đi', path: '/trips', icon: Truck, section: 'operations' },
+        { key: 'penalties', label: 'Kỷ luật & GPS', path: '/penalties', icon: AlertTriangle, section: 'operations', count: penaltiesCount },
+        
+        { key: 'finance', label: 'Báo cáo lãi lỗ', path: '/finance', icon: Wallet, section: 'financials' },
+        { key: 'profit', label: 'Lợi nhuận & phân chia', path: '/profit', icon: DollarSign, section: 'financials' },
+        { key: 'debt', label: 'Công nợ phải thu', path: '/debt', icon: Receipt, section: 'financials' },
+        
+        { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'admin' },
+        { key: 'routes', label: 'Tuyến đường', path: '/routes', icon: Route, section: 'admin' },
         { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'admin' },
-        { key: 'audit-logs', label: 'Nhật ký', path: '/audit-logs', icon: ScrollText, section: 'admin' },
+        ...(role === 'ADMIN' ? [
+          { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'admin' },
+          { key: 'audit-logs', label: 'Nhật ký hệ thống', path: '/audit-logs', icon: ScrollText, section: 'admin' },
+        ] : []),
       ];
     case 'DRIVER':
       return [
-        { key: 'my-trips', label: 'Lệnh của tôi', path: '/my-trips', icon: Route, section: 'main' },
-        { key: 'my-earnings', label: 'Thu nhập', path: '/my-earnings', icon: DollarSign, section: 'main' },
-        { key: 'my-penalties', label: 'Phạt', path: '/my-penalties', icon: AlertTriangle, section: 'main' },
+        { key: 'my-trips', label: 'Lệnh của tôi', path: '/my-trips', icon: Route, section: 'operations' },
+        { key: 'my-earnings', label: 'Thu nhập', path: '/my-earnings', icon: DollarSign, section: 'operations' },
+        { key: 'my-penalties', label: 'Phạt', path: '/my-penalties', icon: AlertTriangle, section: 'operations' },
       ];
     default:
       return [];
@@ -74,11 +79,15 @@ function getRoleLabel(role: Role): string {
 
 function getPageTitle(pathname: string): string {
   if (pathname === '/dashboard') return 'Tổng quan';
+  if (pathname.startsWith('/dispatch')) return 'Điều vận & Phân xe';
   if (pathname.startsWith('/trips')) return 'Lệnh vận chuyển';
-  if (pathname === '/finance') return 'Tài chính';
-  if (pathname.startsWith('/debt')) return 'Công nợ';
-  if (pathname === '/penalties' || pathname === '/my-penalties') return 'Phat';
-  if (pathname.startsWith('/config')) return 'Cấu hình';
+  if (pathname === '/finance') return 'Báo cáo lãi lỗ';
+  if (pathname.startsWith('/profit')) return 'Lợi nhuận & Phân chia';
+  if (pathname.startsWith('/debt')) return 'Công nợ phải thu';
+  if (pathname === '/penalties' || pathname === '/my-penalties') return 'Kỷ luật & GPS';
+  if (pathname.startsWith('/customers')) return 'Khách hàng';
+  if (pathname.startsWith('/routes')) return 'Tuyến đường';
+  if (pathname.startsWith('/config')) return 'Cấu hình hệ thống';
   if (pathname === '/users') return 'Người dùng';
   if (pathname === '/audit-logs') return 'Nhật ký hệ thống';
   if (pathname === '/my-trips') return 'Lệnh của tôi';
@@ -92,15 +101,88 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Live badge counts
+  const [dispatchCount, setDispatchCount] = useState<number | undefined>(undefined);
+  const [penaltiesCount, setPenaltiesCount] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!user || user.role === 'DRIVER') return;
+
+    // Load unassigned/pending trips count
+    api.get<{ total: number }>('/trips?status=CREATED&limit=1')
+      .then(res => {
+        setDispatchCount(res.total > 0 ? res.total : undefined);
+      })
+      .catch(() => {});
+
+    // Load active penalties count for current month
+    api.get<any[]>('/penalties')
+      .then(res => {
+        const now = new Date();
+        const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const count = res.filter((p: any) => p.date && p.date.startsWith(thisMonthStr)).length;
+        setPenaltiesCount(count > 0 ? count : undefined);
+      })
+      .catch(() => {});
+  }, [user, location.pathname]); // Reload counts on page changes or user login
+
   if (!user) return null;
 
-  const navItems = getNavItems(user.role);
-  const activeKey = navItems.find(item => location.pathname.startsWith(item.path))?.key || '';
+  const navItems = getNavItems(user.role, dispatchCount, penaltiesCount);
+  // Match active item by closest path match
+  const activeKey = navItems
+    .filter(item => location.pathname.startsWith(item.path))
+    .sort((a, b) => b.path.length - a.path.length)[0]?.key || '';
+    
   const pageTitle = getPageTitle(location.pathname);
 
   const handleNavigate = (path: string) => {
     navigate(path);
     setSidebarOpen(false);
+  };
+
+  const renderNavSection = (label: string, sectionName: 'operations' | 'financials' | 'admin') => {
+    const items = navItems.filter(i => i.section === sectionName);
+    if (items.length === 0) return null;
+
+    return (
+      <div key={sectionName}>
+        <div className="sidebar-section-label" style={{ padding: '16px 16px 6px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.35)' }}>
+          {label}
+        </div>
+        {items.map(item => {
+          const IconC = item.icon;
+          const isActive = item.key === activeKey;
+          return (
+            <button
+              key={item.key}
+              className={`sidebar-item ${isActive ? 'active' : ''}`}
+              onClick={() => handleNavigate(item.path)}
+            >
+              <IconC size={16} />
+              <span className="sidebar-item-label">{item.label}</span>
+              
+              {item.count !== undefined && (
+                <span style={{ 
+                  marginLeft: 'auto', 
+                  marginRight: isActive ? 6 : 0, 
+                  background: item.key === 'penalties' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)', 
+                  color: item.key === 'penalties' ? '#F87171' : '#34D399', 
+                  fontSize: 10, 
+                  fontWeight: 700, 
+                  padding: '2px 6px', 
+                  borderRadius: 99,
+                  lineHeight: 1
+                }}>
+                  {item.count}
+                </span>
+              )}
+              {isActive && item.count === undefined && <ChevronRight size={12} style={{ marginLeft: 'auto' }} />}
+            </button>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -113,51 +195,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="sidebar-brand-meta">
             <strong>NEPOCORP</strong>
-            <span>LOGISTICS</span>
+            <span>Logistics System</span>
           </div>
         </div>
 
         <nav className="sidebar-nav">
-          <div className="sidebar-section-label">Điều hành</div>
-          {navItems.filter(i => i.section !== 'admin').map(item => {
-            const IconC = item.icon;
-            const isActive = item.key === activeKey;
-            return (
-              <button
-                key={item.key}
-                className={`sidebar-item ${isActive ? 'active' : ''}`}
-                onClick={() => handleNavigate(item.path)}
-              >
-                <IconC size={16} />
-                <span className="sidebar-item-label">{item.label}</span>
-                {isActive && <ChevronRight size={12} />}
-                {!isActive && item.count != null && (
-                  <span className="sidebar-item-trail">{item.count}</span>
-                )}
-              </button>
-            );
-          })}
-
-          {navItems.some(i => i.section === 'admin') && (
-            <>
-              <div className="sidebar-section-label" style={{ paddingTop: 22 }}>Thiết lập</div>
-              {navItems.filter(i => i.section === 'admin').map(item => {
-                const IconC = item.icon;
-                const isActive = item.key === activeKey;
-                return (
-                  <button
-                    key={item.key}
-                    className={`sidebar-item ${isActive ? 'active' : ''}`}
-                    onClick={() => handleNavigate(item.path)}
-                  >
-                    <IconC size={16} />
-                    <span className="sidebar-item-label">{item.label}</span>
-                    {isActive && <ChevronRight size={12} />}
-                  </button>
-                );
-              })}
-            </>
-          )}
+          {renderNavSection('Vận hành', 'operations')}
+          {renderNavSection('Tài chính', 'financials')}
+          {renderNavSection('Danh mục', 'admin')}
         </nav>
 
         <div className="sidebar-footer">

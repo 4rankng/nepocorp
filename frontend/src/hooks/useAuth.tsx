@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      api.get<AuthUser>('/users/me').then(setUser).catch(() => {
+      api.get<AuthUser>('/auth/me').then(setUser).catch(() => {
         api.clearToken();
         setUser(null);
       });
