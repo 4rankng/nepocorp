@@ -15,6 +15,7 @@ import {
   User,
   ChevronRight,
   Compass,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
@@ -37,6 +38,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
       return [
         { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard, section: 'operations' },
         { key: 'dispatch', label: 'Phân xe', path: '/dispatch', icon: Compass, section: 'operations', count: dispatchCount },
+        { key: 'fleet', label: 'Đội xe & Nhân sự', path: '/fleet', icon: Layers, section: 'operations' },
         { key: 'trips', label: 'Sổ chuyến đi', path: '/trips', icon: Truck, section: 'operations' },
         { key: 'penalties', label: 'Kỷ luật', path: '/penalties', icon: AlertTriangle, section: 'operations', count: penaltiesCount },
         
@@ -76,6 +78,7 @@ function getRoleLabel(role: Role): string {
 function getPageTitle(pathname: string): string {
   if (pathname === '/dashboard') return 'Tổng quan';
   if (pathname.startsWith('/dispatch')) return 'Điều vận & Phân xe';
+  if (pathname.startsWith('/fleet')) return 'Đội xe & Nhân sự';
   if (pathname.startsWith('/trips')) return 'Lệnh vận chuyển';
   if (pathname === '/finance') return 'Báo cáo lãi lỗ';
   if (pathname.startsWith('/profit')) return 'Lợi nhuận & Phân chia';

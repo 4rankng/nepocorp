@@ -1,0 +1,19 @@
+/* ============================================================================
+ * Base
+ * ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv11";
+}
+button { font: inherit; cursor: pointer; }
+input, select, textarea { font: inherit; }
+img { display: block; }
+::selection { background: var(--accent-soft); color: var(--accent-ink); }

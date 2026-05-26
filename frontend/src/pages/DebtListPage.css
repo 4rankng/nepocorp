@@ -1,0 +1,49 @@
+/* ============================================================================
+ * Aging buckets (AR)
+ * ========================================================================== */
+.aging-buckets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+@media (max-width: 900px) { .aging-buckets { grid-template-columns: repeat(2, 1fr); } }
+
+.bucket {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.bucket:hover { transform: translateY(-2px); box-shadow: var(--sh-sm); border-color: var(--line-2); }
+.bucket__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.bucket__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.bucket__dot--ok { background: var(--accent); }
+.bucket__dot--t1 { background: var(--warning); }
+.bucket__dot--t2 { background: #D97706; }
+.bucket__dot--t3 { background: #DD5A1F; }
+.bucket__dot--t4 { background: var(--danger); }
+
+.bucket__value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+.bucket__count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }

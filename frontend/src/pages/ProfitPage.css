@@ -1,0 +1,113 @@
+/* ============================================================================
+ * Profit Hero + Partner cards + Calc breakdown
+ * ========================================================================== */
+.profit-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .profit-layout { grid-template-columns: 1fr; }
+}
+
+.profit-hero {
+  background: linear-gradient(135deg, #005A2D 0%, #00813F 100%);
+  color: #fff;
+  border-radius: 18px;
+  padding: 32px;
+  margin-bottom: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.profit-hero::after {
+  content: '';
+  position: absolute;
+  right: -60px; top: -60px;
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.profit-hero__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+.profit-hero__value {
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+.profit-hero__currency {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: 6px;
+  font-weight: 500;
+}
+.profit-hero__sub {
+  margin-top: 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  position: relative;
+  z-index: 1;
+}
+
+.partner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .partner-grid { grid-template-columns: 1fr; } }
+
+.partner-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.partner-card--primary { border-color: var(--accent); }
+.partner-card__head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.partner-card__info { flex: 1; min-width: 0; }
+.partner-card__avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.partner-card__avatar--phung { background: linear-gradient(135deg, #4DC678, #008B3E); }
+.partner-card__avatar--thuong { background: linear-gradient(135deg, #6E9DCB, #3D6FA3); }
+.partner-card__name { font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 2px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.partner-card__role { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.partner-card__pct { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--accent); letter-spacing: -0.02em; }
+.partner-card__amount { font-family: var(--font-display); font-size: 32px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; margin-bottom: 6px; color: var(--ink); }
+.partner-card__amount-label { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 8px; }
+
+.calc-breakdown { background: #fff; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.calc-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 22px; border-bottom: 1px solid var(--line); }
+.calc-row:last-child { border-bottom: none; }
+.calc-row--total { background: var(--surface-2); font-weight: 700; }
+.calc-row--final {
+  background: linear-gradient(180deg, var(--accent-soft), #fff);
+  border-top: 2px solid var(--accent);
+}
+.calc-row__label { font-size: 14px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.calc-row__label--bold { color: var(--ink); font-weight: 600; }
+.calc-row__op { font-family: var(--font-mono); font-weight: 700; color: var(--ink-3); width: 16px; display: inline-block; text-align: center; flex-shrink: 0; }
+.calc-row__value { font-family: var(--font-display); font-size: 16px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; flex-shrink: 0; }
+.calc-row__value--neg { color: var(--danger); }
+.calc-row__value--positive { color: var(--accent); }
+.calc-row--final .calc-row__value { font-size: 22px; color: var(--accent); }

@@ -21,6 +21,7 @@ import DriverPenaltyPage from './pages/DriverPenaltyPage';
 import DispatchPage from './pages/DispatchPage';
 import ProfitPage from './pages/ProfitPage';
 import UsersPage from './pages/UsersPage';
+import FleetPage from './pages/FleetPage';
 // Config section pages
 import TrucksConfigPage from './pages/config/TrucksConfigPage';
 import TrailersConfigPage from './pages/config/TrailersConfigPage';
@@ -46,6 +47,7 @@ function AppRoutes() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dispatch" element={<DispatchPage />} />
+        <Route path="/fleet" element={<FleetPage />} />
         <Route path="/trips" element={<TripListPage />} />
         <Route path="/trips/new" element={<TripCreatePage />} />
         <Route path="/trips/:id" element={<TripDetailPage />} />
