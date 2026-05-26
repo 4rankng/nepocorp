@@ -126,7 +126,7 @@ export default function FinancePage() {
     : [];
 
   return (
-    <div className="fade-up" style={{ paddingBottom: 40 }}>
+    <div className="fade-up-1" style={{ paddingBottom: 40 }}>
       <PageHeader
         title="Báo cáo lãi lỗ"
         description={`Báo cáo kết quả kinh doanh Tháng ${month} / ${year} · so sánh với Tháng ${month} / ${year - 1}`}
@@ -165,7 +165,7 @@ export default function FinancePage() {
       />
 
       {/* Period Selection Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, rowGap: 8, marginBottom: 20 }}>
+      <div className="fade-up-2" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, rowGap: 8, marginBottom: 20 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>Chọn kỳ báo cáo:</span>
         <select
           className="input"
@@ -207,7 +207,7 @@ export default function FinancePage() {
       ) : (
         <>
           {/* P&L Table with real data */}
-          <div className="pnl-table" style={{ marginBottom: 24 }}>
+          <div className="pnl-table fade-up-3" style={{ marginBottom: 24 }}>
             <div className="pnl-head">
               <div>Khoản mục</div>
               <div className="pnl-head__amount">Tháng {month} / {year}</div>
