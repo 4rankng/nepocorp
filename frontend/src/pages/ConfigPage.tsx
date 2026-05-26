@@ -127,6 +127,16 @@ export default function ConfigPage() {
             <span className="setting-card__action">Sửa {CHEVRON}</span>
           </div>
         </button>
+
+        <button className="setting-card" onClick={() => navigate('/config/management-fees')}>
+          <div className="setting-card__icon"><Building size={20} /></div>
+          <h3 className="setting-card__title">Phí quản lý</h3>
+          <p className="setting-card__desc">Cấu hình phí quản lý vận hành theo tháng/năm dùng cho báo cáo lãi lỗ.</p>
+          <div className="setting-card__foot">
+            <span className="setting-card__status"><span className="dot"></span>Chi phí cố định</span>
+            <span className="setting-card__action">Sửa {CHEVRON}</span>
+          </div>
+        </button>
       </div>
     </div>
   );

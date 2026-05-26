@@ -127,37 +127,40 @@ export default function DriverEarningsPage() {
         {penalties.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
             <AlertTriangle size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
-            <p>Chua co khoản khấu trừ nao</p>
+            <p>Chưa có khoản khấu trừ nào</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="tt-table">
-              <thead>
-                <tr>
-                  <th style={{ width: 40 }}>#</th>
-                  <th>Ngày</th>
-                  <th>Lý do</th>
-                  <th style={{ textAlign: 'right' }}>Số tiền</th>
-                </tr>
-              </thead>
-              <tbody>
-                {penalties.map((p, i) => (
-                  <tr key={p.id}>
-                    <td className="num">{i + 1}</td>
-                    <td>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <Calendar size={12} style={{ color: 'var(--fg-3)' }} />
-                        {formatDate(p.date)}
-                      </span>
-                    </td>
-                    <td>{p.reasonText || p.customReason || '—'}</td>
-                    <td className="num" style={{ color: 'var(--danger-text)', fontWeight: 600 }}>
-                      -{formatCurrency(p.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {penalties.map((p, i) => (
+              <div
+                key={p.id}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '12px 20px',
+                  borderBottom: i < penalties.length - 1 ? '1px solid var(--border-1)' : 'none',
+                }}
+              >
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                  background: 'var(--danger-soft)', color: 'var(--danger)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <AlertTriangle size={14} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-1)' }}>
+                    {p.reasonText || p.customReason || 'Vi phạm nội quy'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Calendar size={11} />
+                    {formatDate(p.date)}
+                  </div>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--danger)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  -{formatCurrency(p.amount)}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Panel>

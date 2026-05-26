@@ -10,7 +10,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
-import { PageHeader, Card, KPI, FormGroup } from '../components/UI';
+import { PageHeader, Card, KPI, FormGroup, useConfirm } from '../components/UI';
 import { formatCurrency as formatVND } from '../lib/format';
 
 interface PnlReport {
@@ -42,6 +42,7 @@ interface DistributionResult {
 }
 
 export default function ProfitPage() {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,7 +92,7 @@ export default function ProfitPage() {
 
   // Action: Distribute profit
   const handleDistributeProfit = async () => {
-    if (!window.confirm(`Xác nhận chốt & phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}?`)) {
+    if (!await confirm(`Xác nhận chốt & phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}?`)) {
       return;
     }
 
@@ -136,7 +137,7 @@ export default function ProfitPage() {
         title="Lợi nhuận & Phân chia" 
         description="Báo cáo phân bổ lợi nhuận ròng giữa các đối tác góp vốn."
         action={
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 6 }}>
               <select
                 className="input"
@@ -175,7 +176,7 @@ export default function ProfitPage() {
           <div className="spin" style={{ width: 32, height: 32, border: '4px solid var(--border-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }}></div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 24, alignItems: 'start' }}>
+        <div className="profit-layout">
           
           {/* Left Column: Monthly Profit Hero & Shareholder cards */}
           <div>
@@ -198,7 +199,8 @@ export default function ProfitPage() {
             
             <div className="partner-grid">
               {activeCapTable.map((partner, i) => {
-                const isPhung = partner.partnerName.includes('Phụng');
+                const maxPct = Math.max(...activeCapTable.map(p => p.percentage));
+                const isPhung = partner.percentage === maxPct;
                 const avatarChar = partner.partnerName.charAt(partner.partnerName.lastIndexOf(' ') + 1) || partner.partnerName.charAt(0);
                 const partnerShare = Math.round(netProfit * partner.percentage / 100);
 
@@ -208,31 +210,34 @@ export default function ProfitPage() {
                       <div className={`partner-card__avatar ${isPhung ? 'partner-card__avatar--phung' : 'partner-card__avatar--thuong'}`}>
                         {avatarChar}
                       </div>
-                      <div>
+                      <div className="partner-card__info">
                         <div className="partner-card__name">
                           {partner.partnerName}
-                          {isPhung && (
-                            <span style={{ 
-                              display: 'inline-block', 
-                              marginLeft: 8, 
-                              padding: '2px 8px', 
-                              background: 'var(--brand-soft)', 
-                              color: 'var(--brand)', 
-                              borderRadius: 99, 
-                              fontSize: 9, 
-                              fontWeight: 700, 
-                              textTransform: 'uppercase', 
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'nowrap' }}>
+                          {isPhung ? (
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '2px 7px',
+                              background: 'var(--brand-soft)',
+                              color: 'var(--brand)',
+                              borderRadius: 99,
+                              fontSize: 9,
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
                               letterSpacing: '0.06em',
-                              verticalAlign: 'middle'
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
                             }}>
                               Đối tác chính
                             </span>
+                          ) : (
+                            <span className="partner-card__role">Đối tác góp vốn</span>
                           )}
+                          <div className="partner-card__pct" style={{ marginLeft: 'auto', fontSize: 16 }}>
+                            {partner.percentage}%
+                          </div>
                         </div>
-                        <div className="partner-card__role">Đối tác góp vốn</div>
-                      </div>
-                      <div className="partner-card__pct">
-                        {partner.percentage}%
                       </div>
                     </div>
                     <div className="partner-card__amount-label">Phần lợi nhuận tháng {selectedMonth}</div>
@@ -361,6 +366,7 @@ export default function ProfitPage() {
           
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

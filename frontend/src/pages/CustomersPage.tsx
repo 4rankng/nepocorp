@@ -241,8 +241,58 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Customer table */}
-      <div className="table-wrap">
+      {/* ── Mobile card list (≤640px) ──────────────────────────────────── */}
+      <div className="mobile-only mobile-table-wrap">
+        <div className="m-card-list">
+          {loading ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải...</div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
+          ) : (
+            filtered.map(c => (
+              <div key={c.id} className="m-card">
+                <div className="m-card__top">
+                  <span className="m-card__title">
+                    <span className={`risk-dot risk-dot--${riskDot(0, Number((c as any).creditLimit || c.credit_limit || 0))}`} />
+                    {c.name}
+                  </span>
+                  <StatusPill variant={c.status === CustomerStatus.ACTIVE ? 'success' : 'danger'}>
+                    {STATUS_LABELS[c.status] || c.status}
+                  </StatusPill>
+                </div>
+                {((c as any).taxCode || c.tax_code) && (
+                  <div className="m-card__meta" style={{ fontFamily: 'var(--font-mono)' }}>
+                    MST {(c as any).taxCode || c.tax_code}
+                  </div>
+                )}
+                {((c as any).contactPerson || c.contact_person || c.phone) && (
+                  <div className="m-card__meta">
+                    {(c as any).contactPerson || c.contact_person}
+                    {c.phone && <><span className="m-card__meta-sep">·</span>{c.phone}</>}
+                  </div>
+                )}
+                {((c as any).creditLimit || c.credit_limit) && (
+                  <div className="m-card__row">
+                    <span className="m-card__row-label">Hạn mức tín dụng</span>
+                    <span className="m-card__row-value">{formatCurrency((c as any).creditLimit || c.credit_limit)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                  <button className="btn btn--ghost btn--sm" onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
+                    Sửa
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <div className="table-foot">
+          <span>Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> khách hàng</span>
+        </div>
+      </div>
+
+      {/* ── Desktop table (>640px) ──────────────────────────────────────── */}
+      <div className="desktop-only table-wrap">
         <div className="table-scroll">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 900 }}>
             <thead>

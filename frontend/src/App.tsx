@@ -15,7 +15,9 @@ import ConfigPage from './pages/ConfigPage';
 import CustomersPage from './pages/CustomersPage';
 import AuditLogPage from './pages/AuditLogPage';
 import DriverTripsPage from './pages/DriverTripsPage';
+import DriverTripDetailPage from './pages/DriverTripDetailPage';
 import DriverEarningsPage from './pages/DriverEarningsPage';
+import DriverPenaltyPage from './pages/DriverPenaltyPage';
 import DispatchPage from './pages/DispatchPage';
 import ProfitPage from './pages/ProfitPage';
 import UsersPage from './pages/UsersPage';
@@ -31,6 +33,7 @@ import DriversConfigPage from './pages/config/DriversConfigPage';
 import FuelConfigPage from './pages/config/FuelConfigPage';
 import CapTableConfigPage from './pages/config/CapTableConfigPage';
 import CustomersConfigPage from './pages/config/CustomersConfigPage';
+import ManagementFeesConfigPage from './pages/config/ManagementFeesConfigPage';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -52,7 +55,7 @@ function AppRoutes() {
         <Route path="/debt" element={<DebtListPage />} />
         <Route path="/debt/:id" element={<DebtDetailPage />} />
         <Route path="/penalties" element={<PenaltyPage />} />
-        <Route path="/my-penalties" element={<PenaltyPage />} />
+        <Route path="/my-penalties" element={<DriverPenaltyPage />} />
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/routes" element={<Navigate to="/config/routes" replace />} />
         <Route path="/config" element={<ConfigPage />} />
@@ -67,9 +70,11 @@ function AppRoutes() {
         <Route path="/config/fuel" element={<FuelConfigPage />} />
         <Route path="/config/cap-table" element={<CapTableConfigPage />} />
         <Route path="/config/customers" element={<CustomersConfigPage />} />
+        <Route path="/config/management-fees" element={<ManagementFeesConfigPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/audit-logs" element={<AuditLogPage />} />
         <Route path="/my-trips" element={<DriverTripsPage />} />
+        <Route path="/my-trips/:id" element={<DriverTripDetailPage />} />
         <Route path="/my-earnings" element={<DriverEarningsPage />} />
       </Routes>
     </Layout>

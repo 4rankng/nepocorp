@@ -31,6 +31,7 @@ export default function PenaltyPage() {
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [formDriverId, setFormDriverId] = useState('');
+  const [listMonthFilter, setListMonthFilter] = useState('');
   const [formTripId, setFormTripId] = useState('');
   const [formReasonId, setFormReasonId] = useState('');
   const [formCustomReason, setFormCustomReason] = useState('');
@@ -128,6 +129,11 @@ export default function PenaltyPage() {
 
   // Sort drivers: most penalized first
   const driverScoreCards = Array.from(driverStatsMap.values()).sort((a, b) => b.total - a.total);
+
+  // Filtered penalties for the list
+  const filteredPenalties = listMonthFilter
+    ? penalties.filter(p => (p.date || '').startsWith(listMonthFilter))
+    : penalties;
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
@@ -242,61 +248,100 @@ export default function PenaltyPage() {
         </div>
       )}
 
-      {/* ── Driver scorecards ─────────────────────────────────────────────── */}
-      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 600, margin: '0 0 12px' }}>
-        Bảng điểm tài xế — {monthLabel}
-      </h3>
-      <div className="fleet-board" style={{ marginBottom: 32 }}>
-        {driverScoreCards.length === 0 && (
-          <div style={{ gridColumn: '1/-1', padding: '32px 24px', textAlign: 'center', color: 'var(--ink-3)' }}>
+      {/* ── Driver scorecards (compact list) ─────────────────────────────── */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line-2)', borderRadius: 12, marginBottom: 28, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--line-2)' }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 600 }}>
+            Bảng điểm tài xế — {monthLabel}
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{driverScoreCards.length} tài xế</span>
+        </div>
+        {driverScoreCards.length === 0 ? (
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
             Chưa có dữ liệu tài xế
           </div>
+        ) : (
+          driverScoreCards.map((ds, idx) => {
+            const isSafe = ds.count === 0;
+            const initial = ds.name.split(' ').pop()?.[0]?.toUpperCase() || '?';
+            return (
+              <div key={ds.name} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 16px',
+                borderBottom: idx < driverScoreCards.length - 1 ? '1px solid var(--line-3)' : 'none',
+                background: !isSafe ? 'var(--danger-soft, #fff5f5)' : 'transparent',
+              }}>
+                {/* Avatar */}
+                <div style={{
+                  width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                  background: isSafe ? 'var(--success-soft)' : 'var(--danger-soft)',
+                  color: isSafe ? 'var(--success)' : 'var(--danger)',
+                  border: `1.5px solid ${isSafe ? 'var(--success)' : 'var(--danger)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-display)',
+                }}>
+                  {initial}
+                </div>
+
+                {/* Name */}
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--ink)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {ds.name}
+                  {ds.count > 0 && (
+                    <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400, color: 'var(--danger)' }}>
+                      {ds.count} vi phạm
+                    </span>
+                  )}
+                </div>
+
+                {/* Status pill */}
+                {isSafe ? (
+                  <span className="pill pill--success" style={{ flexShrink: 0, fontSize: 11 }}>
+                    <ShieldCheck size={10} style={{ marginRight: 3 }} />An toàn
+                  </span>
+                ) : (
+                  <span className="pill pill--danger" style={{ flexShrink: 0, fontSize: 11 }}>
+                    <AlertTriangle size={10} style={{ marginRight: 3 }} />Vi phạm
+                  </span>
+                )}
+
+                {/* Deduction amount */}
+                <div style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: ds.total > 0 ? 'var(--danger)' : 'var(--ink-3)', minWidth: 60, textAlign: 'right' }}>
+                  {ds.total > 0 ? `-${formatCurrency(ds.total)}` : '—'}
+                </div>
+              </div>
+            );
+          })
         )}
-        {driverScoreCards.map(ds => {
-          const isSafe = ds.count === 0;
-          return (
-            <div key={ds.name} className="vstatus">
-              <div className="vstatus__head">
-                <div>
-                  <span className="vstatus__plate" style={isSafe
-                    ? { background: 'var(--success-soft)', color: 'var(--success)', border: '1px solid var(--success)' }
-                    : { background: 'var(--danger-soft)', color: 'var(--danger)', border: '1px solid var(--danger)' }
-                  }>{ds.name.split(' ').pop()}</span>
-                  <div className="vstatus__driver" style={{ marginTop: 8 }}>{ds.name}</div>
-                  <div className="vstatus__meta">{isSafe ? 'Không vi phạm' : `${ds.count} vi phạm tháng này`}</div>
-                </div>
-                <div className="vstatus__route-icon" style={isSafe
-                  ? { background: 'var(--success-soft)', color: 'var(--success)' }
-                  : { background: 'var(--danger-soft)', color: 'var(--danger)' }
-                }>
-                  {isSafe ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
-                </div>
-              </div>
-              <div className="vstatus__body">
-                {isSafe
-                  ? <span className="pill pill--success" style={{ marginBottom: 8, display: 'inline-flex' }}><span className="dot" />An toàn</span>
-                  : <span className="pill pill--danger" style={{ marginBottom: 8, display: 'inline-flex' }}><span className="dot" />Vi phạm</span>
-                }
-                <div>Khấu trừ: <strong style={{ color: ds.total > 0 ? 'var(--danger)' : 'inherit' }}>{ds.total > 0 ? `-${formatCurrency(ds.total)}` : '—'}</strong></div>
-                <div style={{ marginTop: 4, color: 'var(--ink-3)' }}>{isSafe ? 'Giữ nguyên lương' : 'Trừ trực tiếp lương'}</div>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       {/* ── Violations feed ───────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 600, margin: 0 }}>
-          Sổ biên bản vi phạm · {penalties.length}
+          Sổ biên bản vi phạm · {filteredPenalties.length}
         </h3>
+        <select
+          className="input"
+          style={{ width: 150, height: 28, fontSize: 12 }}
+          value={listMonthFilter}
+          onChange={e => setListMonthFilter(e.target.value)}
+        >
+          <option value="">Tất cả thời gian</option>
+          {Array.from({ length: 12 }, (_, i) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            return <option key={value} value={value}>Tháng {d.getMonth() + 1}/{d.getFullYear()}</option>;
+          })}
+        </select>
       </div>
 
       {listLoading ? (
         <div style={{ padding: 48, textAlign: 'center' }}>
           <div className="spin" style={{ display: 'inline-block', width: 24, height: 24, border: '3px solid var(--line-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }} />
         </div>
-      ) : penalties.length === 0 ? (
+      ) : filteredPenalties.length === 0 ? (
         <Card style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)' }}>
           <ShieldCheck size={32} style={{ color: 'var(--success)', margin: '0 auto 12px' }} />
           <p style={{ margin: 0, fontWeight: 600, color: 'var(--ink-2)' }}>Chưa có biên bản vi phạm nào</p>
@@ -316,7 +361,7 @@ export default function PenaltyPage() {
                 </tr>
               </thead>
               <tbody>
-                {penalties.map(p => (
+                {filteredPenalties.map(p => (
                   <tr key={p.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

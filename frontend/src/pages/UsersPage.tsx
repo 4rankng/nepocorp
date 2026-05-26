@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { Role, ROLE_LABELS } from '@nepocorp/shared';
 import { useAuth } from '../hooks/useAuth';
+import { useConfirm } from '../components/UI';
 
 interface UserRow {
   id: number;
@@ -29,6 +30,7 @@ type FilterKey = 'all' | Role;
 
 export default function UsersPage() {
   const { user: me } = useAuth();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const isAdmin = me?.role === Role.ADMIN;
 
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -144,7 +146,7 @@ export default function UsersPage() {
   };
 
   const doDelete = async (id: number) => {
-    if (!window.confirm('Xóa tài khoản này? Thao tác không thể hoàn tác.')) return;
+    if (!await confirm('Xóa tài khoản này? Thao tác không thể hoàn tác.', { variant: 'danger', confirmLabel: 'Xóa' })) return;
     setDeleting(id);
     try {
       await api.delete(`/auth/users/${id}`);
@@ -329,7 +331,72 @@ export default function UsersPage() {
           <div className="spin" style={{ width: 28, height: 28, border: '3px solid var(--line-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }} />
         </div>
       ) : (
-        <div className="table-wrap">
+        <>
+        {/* ── Mobile card list (≤640px) ──────────────────────────────────── */}
+        <div className="mobile-only mobile-table-wrap">
+          <div className="m-card-list">
+            {filtered.length === 0 ? (
+              <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Không tìm thấy tài khoản nào</div>
+            ) : (
+              filtered.map(u => {
+                const pill = ROLE_PILL[u.role] || { cls: 'pill pill--neutral', label: u.role };
+                const isMe = u.id === me?.userId;
+                return (
+                  <div key={u.id} className="m-card" style={{ cursor: 'default' }}>
+                    <div className="m-card__top">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                          background: u.role === 'ADMIN' ? 'var(--danger-soft)' : u.role === 'DRIVER' ? 'var(--success-soft)' : 'var(--warning-soft)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 13, fontWeight: 700,
+                          color: u.role === 'ADMIN' ? 'var(--danger)' : u.role === 'DRIVER' ? 'var(--success)' : 'var(--warning)',
+                        }}>
+                          {(u.username || u.email || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
+                            {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--brand)', fontWeight: 500 }}>(bạn)</span>}
+                          </div>
+                          {u.email && <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{u.email}</div>}
+                        </div>
+                      </div>
+                      <span className={pill.cls} style={{ flexShrink: 0 }}><span className="dot" />{pill.label}</span>
+                    </div>
+                    <div className="m-card__row" style={{ marginTop: 6 }}>
+                      <span className="m-card__row-label">Trạng thái</span>
+                      {u.status === 'ACTIVE'
+                        ? <span className="pill pill--success" style={{ fontSize: 11 }}><span className="dot" />Hoạt động</span>
+                        : <span className="pill pill--danger" style={{ fontSize: 11 }}><span className="dot" />Bị khoá</span>}
+                    </div>
+                    <div className="m-card__row">
+                      <span className="m-card__row-label">Ngày tạo</span>
+                      <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{formatDate(u.createdAt)}</span>
+                    </div>
+                    {isAdmin && (
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 8 }}>
+                        <button className="btn btn--ghost btn--sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => openEdit(u)}>
+                          <Pencil size={12} /> Sửa
+                        </button>
+                        <button className="btn btn--ghost btn--sm" style={{ display: 'flex', alignItems: 'center', gap: 4, color: isMe ? 'var(--ink-3)' : 'var(--danger)' }}
+                          disabled={!!deleting || isMe} onClick={() => !isMe && doDelete(u.id)}>
+                          {deleting === u.id ? <Loader2 size={12} className="spin" /> : <Trash2 size={12} />} Xoá
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <div className="table-foot">
+            <span>Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> / <strong style={{ fontFamily: 'var(--font-mono)' }}>{total}</strong> tài khoản</span>
+          </div>
+        </div>
+
+        {/* ── Desktop table (>640px) ──────────────────────────────────────── */}
+        <div className="desktop-only table-wrap">
           <div className="table-scroll">
             <table>
               <thead>
@@ -486,6 +553,7 @@ export default function UsersPage() {
             </span>
           </div>
         </div>
+        </>
       )}
 
       {/* Reset-password hint for non-admin viewers */}
@@ -495,6 +563,7 @@ export default function UsersPage() {
           Chỉ quản trị viên mới có thể tạo, sửa hoặc xóa tài khoản.
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

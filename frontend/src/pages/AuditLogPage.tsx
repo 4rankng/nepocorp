@@ -82,6 +82,7 @@ export default function AuditLogPage() {
             </p>
           </div>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -95,10 +96,10 @@ export default function AuditLogPage() {
             <tbody>
               {filtered.map(entry => (
                 <tr key={entry.id}>
-                  <td style={{ fontSize: 13, color: 'var(--fg-2)' }}>
+                  <td style={{ fontSize: 13, color: 'var(--fg-2)', whiteSpace: 'nowrap' }}>
                     {formatDate(entry.timestamp)}
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                         <User size={12} />
@@ -106,7 +107,7 @@ export default function AuditLogPage() {
                       <span style={{ fontSize: 13 }}>{entry.userEmail}</span>
                     </div>
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <span style={{
                       fontSize: 11,
                       fontWeight: 600,
@@ -119,7 +120,7 @@ export default function AuditLogPage() {
                       {entry.method}
                     </span>
                   </td>
-                  <td style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--fg-2)' }}>
+                  <td style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--fg-2)', whiteSpace: 'nowrap' }}>
                     {entry.path}
                   </td>
                   <td style={{ fontSize: 13 }}>{entry.message}</td>
@@ -127,6 +128,7 @@ export default function AuditLogPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
 
         {totalPages > 1 && (

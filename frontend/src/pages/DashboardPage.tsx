@@ -179,7 +179,7 @@ export default function DashboardPage() {
       {/* Header Banner closely matching wireframe */}
       <header className="page-header">
         <div>
-          <h1 className="page-title">Chào buổi sáng, <em>{user?.name || 'Ông Phụng'}</em></h1>
+          <h1 className="page-title">Chào buổi sáng, <em>{user?.name || user?.username || 'bạn'}</em></h1>
           <p className="page-subtitle">
             Tháng {currentMonth} / {currentYear} đang hoạt động — doanh thu dự kiến <strong style={{ color: 'var(--success)' }}>+8.2% MoM</strong>. Lợi nhuận ròng dự kiến <strong>{formatCurrency(netProfit)}</strong> sau phí quản lý.
           </p>

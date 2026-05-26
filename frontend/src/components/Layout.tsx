@@ -96,7 +96,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
 
   // Keyboard shortcut for sidebar toggle (⌘B / Ctrl+B)
   useEffect(() => {
@@ -147,6 +147,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pageTitle = getPageTitle(location.pathname);
 
   const handleNavigate = (path: string) => {
+    // Auto-close sidebar on mobile after navigation
+    if (window.innerWidth < 1024) setSidebarOpen(false);
     navigate(path);
   };
 

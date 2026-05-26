@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatCompact } from '../lib/format';
+import { downloadCSV } from '../lib/csv';
 import type { Customer, LedgerEntry } from '@nepocorp/shared';
 import { Search, ChevronRight, Users, Wallet, AlertCircle } from 'lucide-react';
 import { KPI, PageHeader, Card } from '../components/UI';
@@ -57,7 +58,7 @@ export default function DebtListPage() {
 
     return customers.map(c => {
       // Filter ledger entries for this customer
-      const cLedger = ledgerEntries.filter(entry => entry.entityType === 'CUSTOMER' && entry.entityId === c.id);
+      const cLedger = ledgerEntries.filter(entry => entry.entity_type === 'CUSTOMER' && entry.entity_id === c.id);
 
       // Latest entry balance represents total outstanding
       const latestRow = cLedger[0];
@@ -67,7 +68,7 @@ export default function DebtListPage() {
       const aging = { current: 0, d30: 0, d60: 0, over90: 0 };
       let maxOverdueDays = 0;
 
-      const revenueEntries = cLedger.filter(entry => entry.txnType === 'TRIP_REVENUE');
+      const revenueEntries = cLedger.filter(entry => entry.txn_type === 'TRIP_REVENUE');
 
       for (const entry of revenueEntries) {
         if (!entry.timestamp) continue;
@@ -188,7 +189,19 @@ export default function DebtListPage() {
         description={`Tổng nợ: ${formatCurrency(totals.total)} • ${customers.length} khách hàng • cập nhật vừa xong`}
         action={
           <div className="page-actions">
-            <button className="btn btn--secondary btn--sm" onClick={() => alert('Đang xuất báo cáo công nợ...')}>
+            <button className="btn btn--secondary btn--sm" onClick={() => {
+              const headers = ['Khách hàng', 'Tổng nợ', 'Trong hạn', '31-60 ngày', '61-90 ngày', 'Trên 90 ngày', 'Rủi ro'];
+              const rows = filteredDebts.map(d => [
+                d.customer.name,
+                d.totalOutstanding,
+                d.aging.current,
+                d.aging.d30,
+                d.aging.d60,
+                d.aging.over90,
+                d.riskClass,
+              ]);
+              downloadCSV(`cong-no-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+            }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất báo cáo
             </button>
@@ -267,7 +280,62 @@ export default function DebtListPage() {
           Đang tải dữ liệu công nợ...
         </div>
       ) : (
-        <div className="table-wrap">
+        <>
+        {/* ── Mobile card list (≤640px) ──────────────────────────────────── */}
+        <div className="mobile-only mobile-table-wrap">
+          <div className="m-card-list">
+            {filteredDebts.length === 0 ? (
+              <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
+                Không tìm thấy dữ liệu.
+              </div>
+            ) : (
+              filteredDebts.map(d => {
+                const totalAging = d.aging.current + d.aging.d30 + d.aging.d60 + d.aging.over90;
+                const pctCurrent = totalAging > 0 ? (d.aging.current / totalAging) * 100 : 100;
+                const pct30     = totalAging > 0 ? (d.aging.d30    / totalAging) * 100 : 0;
+                const pct60     = totalAging > 0 ? (d.aging.d60    / totalAging) * 100 : 0;
+                const pct90     = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
+                return (
+                  <div key={d.customer.id} className="m-card" onClick={() => navigate(`/debt/${d.customer.id}`)}>
+                    <div className="m-card__top">
+                      <span className="m-card__title">
+                        <span className={`risk-dot risk-dot--${d.riskClass}`} />
+                        {d.customer.name}
+                      </span>
+                      <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value`} style={{ fontSize: 13.5 }}>
+                        {formatCurrency(d.totalOutstanding)}
+                      </span>
+                    </div>
+                    {d.customer.contact_info && (
+                      <div className="m-card__meta">{d.customer.contact_info}</div>
+                    )}
+                    {d.totalOutstanding > 0 && (
+                      <>
+                        <div className="aging-bar" style={{ height: 5, borderRadius: 3, overflow: 'hidden', display: 'flex', marginTop: 8, marginBottom: 4 }}>
+                          <div className="aging-bar__seg aging-bar__seg--ok"  style={{ width: `${pctCurrent}%` }} />
+                          <div className="aging-bar__seg aging-bar__seg--t1"  style={{ width: `${pct30}%` }} />
+                          <div className="aging-bar__seg aging-bar__seg--t2"  style={{ width: `${pct60}%` }} />
+                          <div className="aging-bar__seg aging-bar__seg--t4"  style={{ width: `${pct90}%` }} />
+                        </div>
+                        {d.maxOverdueDays > 0 && (
+                          <div className="m-card__row">
+                            <span className="m-card__row-label">Quá hạn lớn nhất</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
+                              {d.maxOverdueDays} ngày
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* ── Desktop table (>640px) ──────────────────────────────────────── */}
+        <div className="desktop-only table-wrap">
           <div className="table-scroll">
             <table>
               <thead>
@@ -362,6 +430,7 @@ export default function DebtListPage() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

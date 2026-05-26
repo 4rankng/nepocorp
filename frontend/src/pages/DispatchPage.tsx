@@ -6,9 +6,12 @@ import {
   AlertTriangle,
   Play,
   Plus,
+  Pencil,
+  X,
+  Check,
 } from 'lucide-react';
 import { api } from '../lib/api';
-import { PageHeader, Card } from '../components/UI';
+import { PageHeader, Card, useConfirm } from '../components/UI';
 import { formatDate } from '../lib/format';
 import { TripStatus } from '@nepocorp/shared';
 
@@ -21,7 +24,7 @@ interface Driver {
 
 interface Truck {
   id: number;
-  license_plate: string;
+  licensePlate: string;
   status: string;
 }
 
@@ -43,8 +46,17 @@ interface TripDetail {
   notes?: string;
 }
 
+// Inline reassign form state for a single trip
+interface ReassignState {
+  truckId: string;
+  driverId: string;
+  loading: boolean;
+  error: string;
+}
+
 export default function DispatchPage() {
   const navigate = useNavigate();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +68,15 @@ export default function DispatchPage() {
   const [activeTrips, setActiveTrips] = useState<TripDetail[]>([]);
 
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  // Reassign state: tripId -> form state (null = not open)
+  const [reassignOpen, setReassignOpen] = useState<number | null>(null);
+  const [reassignState, setReassignState] = useState<ReassignState>({
+    truckId: '',
+    driverId: '',
+    loading: false,
+    error: '',
+  });
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -86,13 +107,12 @@ export default function DispatchPage() {
 
   // Dispatch trigger
   const handleDispatch = async (tripId: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xuất phát chuyến đi này? Trạng thái sẽ chuyển thành Đang chạy.')) {
+    if (!await confirm('Bạn có chắc chắn muốn xuất phát chuyến đi này? Trạng thái sẽ chuyển thành Đang chạy.')) {
       return;
     }
     setActionLoading(tripId);
     try {
       await api.post(`/trips/${tripId}/dispatch`, {});
-      // Reload trips data
       const [pendingRes, activeRes] = await Promise.all([
         api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
         api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.IN_TRANSIT}&limit=100`)
@@ -106,6 +126,43 @@ export default function DispatchPage() {
     }
   };
 
+  // Open reassign panel for a trip
+  const openReassign = (trip: TripDetail) => {
+    setReassignOpen(trip.id);
+    setReassignState({
+      truckId: String(trip.truckId),
+      driverId: String(trip.driverId),
+      loading: false,
+      error: '',
+    });
+  };
+
+  const closeReassign = () => {
+    setReassignOpen(null);
+    setReassignState({ truckId: '', driverId: '', loading: false, error: '' });
+  };
+
+  // Save reassignment
+  const handleReassign = async (tripId: number) => {
+    if (!reassignState.truckId || !reassignState.driverId) {
+      setReassignState(s => ({ ...s, error: 'Vui lòng chọn xe và tài xế' }));
+      return;
+    }
+    setReassignState(s => ({ ...s, loading: true, error: '' }));
+    try {
+      await api.patch(`/trips/${tripId}/reassign`, {
+        truck_id: Number(reassignState.truckId),
+        driver_id: Number(reassignState.driverId),
+      });
+      // Reload pending trips
+      const pendingRes = await api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`);
+      setPendingTrips(pendingRes.items || []);
+      closeReassign();
+    } catch (err: any) {
+      setReassignState(s => ({ ...s, loading: false, error: err.message || 'Lỗi khi cập nhật' }));
+    }
+  };
+
   // Find active trip for truck
   const getActiveTripForTruck = (truckId: number) => {
     return activeTrips.find(t => t.truckId === truckId);
@@ -114,6 +171,16 @@ export default function DispatchPage() {
   // Find default driver for truck
   const getDefaultDriverForTruck = (truckId: number) => {
     return drivers.find(d => d.assigned_truck_id === truckId);
+  };
+
+  const selectStyle: React.CSSProperties = {
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23A1A1AA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 4.5 3 3 3-3'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 10px center',
+    paddingRight: 28,
+    flex: 1,
+    minWidth: 0,
   };
 
   if (loading) {
@@ -135,7 +202,6 @@ export default function DispatchPage() {
             <button
               className="btn btn--primary"
               onClick={() => navigate('/trips/new')}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
             >
               <Plus size={14} />
               Tạo đơn mới
@@ -163,12 +229,11 @@ export default function DispatchPage() {
               const defDriver = getDefaultDriverForTruck(truck.id);
 
               if (truck.status === 'MAINTENANCE') {
-                // Maintenance style card
                 return (
                   <div key={truck.id} className="vstatus">
                     <div className="vstatus__head">
                       <div>
-                        <span className="vstatus__plate" style={{ background: 'var(--warning-soft)', color: 'var(--warning)', border: '1px solid var(--warning)' }}>{truck.license_plate}</span>
+                        <span className="vstatus__plate" style={{ background: 'var(--warning-soft)', color: 'var(--warning)', border: '1px solid var(--warning)' }}>{truck.licensePlate}</span>
                         <div className="vstatus__driver" style={{ marginTop: 8 }}>
                           {defDriver ? defDriver.name : <span style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>Chưa có tài xế</span>}
                         </div>
@@ -188,12 +253,11 @@ export default function DispatchPage() {
               }
 
               if (activeTrip) {
-                // Transit style card
                 return (
                   <div key={truck.id} className="vstatus" onClick={() => navigate(`/trips/${activeTrip.id}`)} style={{ cursor: 'pointer' }}>
                     <div className="vstatus__head">
                       <div>
-                        <span className="vstatus__plate">{truck.license_plate}</span>
+                        <span className="vstatus__plate">{truck.licensePlate}</span>
                         <div className="vstatus__driver" style={{ marginTop: 8 }}>{activeTrip.driverName}</div>
                         <div className="vstatus__meta">Xe chạy chặng · Khởi hành {formatDate(activeTrip.departureDate)}</div>
                       </div>
@@ -209,12 +273,11 @@ export default function DispatchPage() {
                   </div>
                 );
               } else {
-                // Available style card
                 return (
                   <div key={truck.id} className="vstatus">
                     <div className="vstatus__head">
                       <div>
-                        <span className="vstatus__plate" style={{ background: 'var(--surface-3)', color: 'var(--ink)', border: '1px solid var(--line-2)' }}>{truck.license_plate}</span>
+                        <span className="vstatus__plate" style={{ background: 'var(--surface-3)', color: 'var(--ink)', border: '1px solid var(--line-2)' }}>{truck.licensePlate}</span>
                         <div className="vstatus__driver" style={{ marginTop: 8 }}>
                           {defDriver ? defDriver.name : <span style={{ color: 'var(--fg-3)', fontStyle: 'italic' }}>Chưa giao tài xế</span>}
                         </div>
@@ -244,7 +307,7 @@ export default function DispatchPage() {
             </h3>
             <a href="#" style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Lịch sử →</a>
           </div>
-          
+
           {pendingTrips.length === 0 ? (
             <Card style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--fg-3)' }}>
               <CheckCircle2 size={32} style={{ color: 'var(--success)', marginBottom: 12, margin: '0 auto' }} />
@@ -272,9 +335,85 @@ export default function DispatchPage() {
                     </div>
                   </div>
 
-                  <div className="order-card__suggest">
-                    Đề xuất xe: <strong>{trip.truckPlate}</strong> · Tài xế: {trip.driverName}
-                  </div>
+                  {/* Inline reassign panel */}
+                  {reassignOpen === trip.id ? (
+                    <div style={{
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--line-2)',
+                      borderRadius: 8,
+                      padding: '12px 14px',
+                      marginTop: 4,
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 8 }}>
+                        Đổi xe / tài xế
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <select
+                          className="input"
+                          style={{ ...selectStyle, fontSize: 13, padding: '6px 28px 6px 10px', height: 34 }}
+                          value={reassignState.truckId}
+                          onChange={e => setReassignState(s => ({ ...s, truckId: e.target.value }))}
+                          disabled={reassignState.loading}
+                        >
+                          <option value="">Chọn xe đầu</option>
+                          {trucks.filter(t => t.status !== 'MAINTENANCE').map(t => (
+                            <option key={t.id} value={t.id}>{t.licensePlate}</option>
+                          ))}
+                        </select>
+                        <select
+                          className="input"
+                          style={{ ...selectStyle, fontSize: 13, padding: '6px 28px 6px 10px', height: 34 }}
+                          value={reassignState.driverId}
+                          onChange={e => setReassignState(s => ({ ...s, driverId: e.target.value }))}
+                          disabled={reassignState.loading}
+                        >
+                          <option value="">Chọn tài xế</option>
+                          {drivers.map(d => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {reassignState.error && (
+                        <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
+                          {reassignState.error}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                        <button
+                          className="btn btn--primary btn--sm"
+                          onClick={() => handleReassign(trip.id)}
+                          disabled={reassignState.loading}
+                        >
+                          {reassignState.loading
+                            ? <div className="spin" style={{ width: 11, height: 11, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                            : <Check size={13} />
+                          }
+                          Lưu
+                        </button>
+                        <button
+                          className="btn btn--secondary btn--sm"
+                          onClick={closeReassign}
+                          disabled={reassignState.loading}
+                        >
+                          <X size={13} />
+                          Hủy
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="order-card__suggest" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                      <span>Đề xuất xe: <strong>{trip.truckPlate}</strong> · Tài xế: {trip.driverName}</span>
+                      <button
+                        className="btn btn--secondary btn--sm"
+                        onClick={() => openReassign(trip)}
+                        disabled={actionLoading === trip.id}
+                        title="Đổi xe / tài xế"
+                      >
+                        <Pencil size={12} />
+                        Đổi
+                      </button>
+                    </div>
+                  )}
 
                   <div>
                     <div className="order-card__time">{formatDate(trip.departureDate)}</div>
@@ -282,11 +421,10 @@ export default function DispatchPage() {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <button 
+                    <button
                       className="btn btn--primary btn--sm"
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, height: 34 }}
                       onClick={() => handleDispatch(trip.id)}
-                      disabled={actionLoading === trip.id}
+                      disabled={actionLoading === trip.id || reassignOpen === trip.id}
                     >
                       {actionLoading === trip.id ? (
                         <div className="spin" style={{ width: 12, height: 12, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
@@ -302,6 +440,7 @@ export default function DispatchPage() {
           )}
         </div>
       </div>
+      {confirmDialog}
     </div>
   );
 }

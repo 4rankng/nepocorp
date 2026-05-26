@@ -286,6 +286,20 @@ export async function lockTrip(tripId: number, userId: number) {
   });
 }
 
+export async function reassignTrip(tripId: number, data: { truck_id: number; driver_id: number }) {
+  const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
+  if (!trip) throw new Error('Không tìm thấy chuyến đi');
+  if (trip.status !== TripStatus.CREATED) throw new Error('Chỉ có thể đổi tài xế/xe cho chuyến chưa xuất phát');
+
+  const [updated] = await db.update(s.trips).set({
+    truckId: data.truck_id,
+    driverId: data.driver_id,
+    updatedAt: new Date(),
+  }).where(eq(s.trips.id, tripId)).returning();
+
+  return updated;
+}
+
 export async function cancelTrip(tripId: number) {
   const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
   if (!trip) throw new Error('Không tìm thấy chuyến đi');

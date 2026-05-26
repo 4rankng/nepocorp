@@ -1,5 +1,53 @@
-import React, { useEffect } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, ArrowLeft, HelpCircle, X } from 'lucide-react';
+
+/* ─── Global confirm shortcuts ──────────────────────────────────────────────
+ * Canonical keyboard pattern for any dialog/modal/drawer that asks the user
+ * to confirm or cancel something:
+ *   - Enter  → triggers the primary/confirm action (if provided)
+ *   - Escape → triggers the cancel/close action
+ *
+ * Used by ConfirmDialog, Modal, Drawer below. Also exported so any one-off
+ * custom dialog elsewhere in the app can opt-in by calling this hook.
+ *
+ * Listener is only attached while `isOpen` is true. Enter is suppressed when
+ * focus is inside a <textarea> or contenteditable element so multi-line
+ * editing still works naturally.
+ * -------------------------------------------------------------------------- */
+export function useConfirmShortcuts(opts: {
+  isOpen: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+}) {
+  const { isOpen, onConfirm, onCancel } = opts;
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onCancel) {
+        e.preventDefault();
+        onCancel();
+        return;
+      }
+      if (e.key === 'Enter' && onConfirm) {
+        // Don't hijack Enter inside multi-line editors or when Shift/IME compose.
+        const target = e.target as HTMLElement | null;
+        if (e.shiftKey || e.isComposing) return;
+        if (target) {
+          const tag = target.tagName;
+          if (tag === 'TEXTAREA') return;
+          if (target.isContentEditable) return;
+          // Don't double-trigger when focus is on a <button> — let the button's
+          // native click handler run instead.
+          if (tag === 'BUTTON') return;
+        }
+        e.preventDefault();
+        onConfirm();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isOpen, onConfirm, onCancel]);
+}
 
 /* ─── KPI Metric Card ───────────────────────────────────────────────────── */
 
@@ -282,9 +330,15 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /**
+   * Optional primary action. When provided, pressing Enter while the modal is
+   * open triggers it (e.g. "Save", "Confirm"). ESC always closes the modal.
+   */
+  onConfirm?: () => void;
 }
 
-export function Modal({ isOpen, title, onClose, children, footer }: ModalProps) {
+export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: ModalProps) {
+  useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   if (!isOpen) return null;
   return (
     <div
@@ -367,18 +421,15 @@ interface DrawerProps {
   subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /**
+   * Optional primary action. When provided, pressing Enter while the drawer
+   * is open triggers it. ESC always closes the drawer.
+   */
+  onConfirm?: () => void;
 }
 
-export function Drawer({ isOpen, onClose, title, subtitle, children, footer }: DrawerProps) {
-  // ESC closes
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [isOpen, onClose]);
+export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onConfirm }: DrawerProps) {
+  useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
 
   return (
     <>
@@ -493,4 +544,155 @@ export function DataTable<T extends { id?: number | string }>({
       </div>
     </div>
   );
+}
+
+/* ─── ConfirmDialog ──────────────────────────────────────────────────────── */
+
+interface ConfirmDialogProps {
+  isOpen: boolean;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: 'danger' | 'primary';
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export function ConfirmDialog({
+  isOpen,
+  message,
+  confirmLabel = 'Xác nhận',
+  cancelLabel = 'Hủy',
+  variant = 'primary',
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  // Enter → confirm, Escape → cancel (global pattern, see useConfirmShortcuts).
+  useConfirmShortcuts({ isOpen, onConfirm, onCancel });
+
+  if (!isOpen) return null;
+
+  const Icon = variant === 'danger' ? AlertTriangle : HelpCircle;
+  const iconColor = variant === 'danger' ? 'var(--danger)' : 'var(--accent)';
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(10,10,10,0.45)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1100,
+        padding: 16,
+      }}
+      onClick={onCancel}
+    >
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--line)',
+          borderRadius: 16,
+          boxShadow: 'var(--sh-lg)',
+          width: '100%',
+          maxWidth: 400,
+          padding: '28px 28px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+          <div style={{
+            flexShrink: 0,
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: variant === 'danger' ? 'var(--danger-soft, #FEF2F2)' : 'var(--accent-soft)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Icon size={20} color={iconColor} />
+          </div>
+          <p style={{
+            margin: 0,
+            fontSize: 14,
+            lineHeight: 1.55,
+            color: 'var(--ink)',
+            fontWeight: 500,
+            paddingTop: 9,
+          }}>
+            {message}
+          </p>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button className="btn btn--secondary btn--sm" onClick={onCancel}>
+            {cancelLabel}
+          </button>
+          <button
+            className={`btn btn--${variant === 'danger' ? 'danger' : 'primary'} btn--sm`}
+            onClick={onConfirm}
+            autoFocus
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── useConfirm hook ────────────────────────────────────────────────────── */
+
+interface ConfirmOptions {
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: 'danger' | 'primary';
+}
+
+interface ConfirmState extends ConfirmOptions {
+  message: string;
+  resolve: (value: boolean) => void;
+}
+
+export function useConfirm() {
+  const [state, setState] = useState<ConfirmState | null>(null);
+  const resolveRef = useRef<((v: boolean) => void) | null>(null);
+
+  const confirm = (message: string, options?: ConfirmOptions): Promise<boolean> =>
+    new Promise((resolve) => {
+      resolveRef.current = resolve;
+      setState({ message, resolve, ...options });
+    });
+
+  const handleConfirm = () => {
+    state?.resolve(true);
+    setState(null);
+  };
+
+  const handleCancel = () => {
+    state?.resolve(false);
+    setState(null);
+  };
+
+  const dialog = state ? (
+    <ConfirmDialog
+      isOpen
+      message={state.message}
+      confirmLabel={state.confirmLabel}
+      cancelLabel={state.cancelLabel}
+      variant={state.variant}
+      onConfirm={handleConfirm}
+      onCancel={handleCancel}
+    />
+  ) : null;
+
+  return { confirm, dialog };
 }

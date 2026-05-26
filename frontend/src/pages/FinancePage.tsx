@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatNumber } from '../lib/format';
+import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
+import type { CapTableHistory, PaginatedResponse } from '@nepocorp/shared';
 
 interface PnlTruck {
   plate: string;
@@ -25,22 +27,38 @@ interface PnlReport {
   trucks: PnlTruck[];
 }
 
+interface TripCosts {
+  total_fuel_cost: string | null;
+  total_road_allowance: string | null;
+  driver_salary: string | null;
+}
+
 const MONTHS = [
   'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4',
   'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8',
   'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
 ];
 
-const YEARS = [2024, 2025, 2026];
+const YEARS = [2024, 2025, 2026, 2027];
 
 function now() {
   const d = new Date();
   return { month: d.getMonth() + 1, year: d.getFullYear() };
 }
 
-// Format numbers as dot-separated digits (e.g. 1.080.000.000) for standard accountant layout
 function formatRawNumber(num: number): string {
   return Math.round(num).toLocaleString('vi-VN');
+}
+
+function yoyPct(current: number, previous: number): string {
+  if (!previous) return current > 0 ? '+∞' : '—';
+  const pct = ((current - previous) / previous * 100).toFixed(1);
+  return `${Number(pct) >= 0 ? '+' : ''}${pct}%`;
+}
+
+function yoyClass(current: number, previous: number): string {
+  if (!previous) return '';
+  return current >= previous ? 'pnl-row__pct--up' : 'pnl-row__pct--down';
 }
 
 export default function FinancePage() {
@@ -49,6 +67,9 @@ export default function FinancePage() {
   const [month, setMonth] = useState(cm);
   const [year, setYear] = useState(cy);
   const [report, setReport] = useState<PnlReport | null>(null);
+  const [prevReport, setPrevReport] = useState<PnlReport | null>(null);
+  const [tripCosts, setTripCosts] = useState<TripCosts[]>([]);
+  const [capTable, setCapTable] = useState<CapTableHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,8 +77,16 @@ export default function FinancePage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year}`);
+      const [data, prev, tripsRes, capRes] = await Promise.all([
+        api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year}`),
+        api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year - 1}`).catch(() => null as PnlReport | null),
+        api.get<PaginatedResponse<TripCosts>>('/trips?status=LOCKED&limit=500').catch(() => ({ items: [], total: 0, page: 1, pageSize: 0 })),
+        api.get<PaginatedResponse<CapTableHistory>>('/cap-table').catch(() => ({ items: [], total: 0, page: 1, pageSize: 0 })),
+      ]);
       setReport(data);
+      setPrevReport(prev);
+      setTripCosts(tripsRes.items || []);
+      setCapTable(capRes.items || []);
     } catch (e: any) {
       setError(e.message || 'Không thể tải báo cáo');
     } finally {
@@ -69,42 +98,32 @@ export default function FinancePage() {
     fetchReport();
   }, [fetchReport]);
 
-  // Derived financials with YoY comparisons
+  // Real cost breakdown from locked trips
+  const fuelCost = tripCosts.reduce((s, t) => s + parseFloat(t.total_fuel_cost || '0'), 0);
+  const roadCost = tripCosts.reduce((s, t) => s + parseFloat(t.total_road_allowance || '0'), 0);
+  const driverCost = tripCosts.reduce((s, t) => s + parseFloat(t.driver_salary || '0'), 0);
+
   const totalRevenue = report?.totalRevenue ?? 0;
   const otherRevenue = report?.otherIncome ?? 0;
   const transRevenue = Math.max(0, totalRevenue - otherRevenue);
-
   const totalCosts = report?.totalCosts ?? 0;
-  const fuelCost = Math.round(totalCosts * 0.38);
-  const roadCost = Math.round(totalCosts * 0.18);
-  const driverCost = Math.round(totalCosts * 0.22);
-  const maintCost = Math.round(totalCosts * 0.07);
-  const directOtherCost = Math.max(0, totalCosts - (fuelCost + roadCost + driverCost + maintCost));
-
   const grossProfit = report?.grossProfit ?? (totalRevenue - totalCosts);
-  const mgmtFee = report?.managementFee ?? 24000000;
-  const officeCost = 58000000; // admin overhead
-  const totalOpCost = mgmtFee + officeCost;
+  const mgmtFee = report?.managementFee ?? 0;
+  const netProfit = report?.netProfit ?? (grossProfit - mgmtFee + otherRevenue);
 
-  const netProfit = report?.netProfit ?? (grossProfit - totalOpCost);
+  // Prior period for YoY
+  const totalRevenueLY = prevReport?.totalRevenue ?? 0;
+  const otherRevenueLY = prevReport?.otherIncome ?? 0;
+  const transRevenueLY = Math.max(0, totalRevenueLY - otherRevenueLY);
+  const totalCostsLY = prevReport?.totalCosts ?? 0;
+  const grossProfitLY = prevReport?.grossProfit ?? (totalRevenueLY - totalCostsLY);
+  const mgmtFeeLY = prevReport?.managementFee ?? 0;
+  const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
 
-  // YoY multipliers to generate realistic last year metrics
-  const totalRevenueLY = Math.round(totalRevenue * 0.88);
-  const otherRevenueLY = Math.round(otherRevenue * 0.86);
-  const transRevenueLY = totalRevenueLY - otherRevenueLY;
-
-  const totalCostsLY = Math.round(totalCosts * 0.90);
-  const fuelCostLY = Math.round(fuelCost * 0.91);
-  const roadCostLY = Math.round(roadCost * 0.91);
-  const driverCostLY = Math.round(driverCost * 0.95);
-  const maintCostLY = Math.round(maintCost * 0.66);
-  const directOtherCostLY = totalCostsLY - (fuelCostLY + roadCostLY + driverCostLY + maintCostLY);
-
-  const grossProfitLY = totalRevenueLY - totalCostsLY;
-  const mgmtFeeLY = mgmtFee;
-  const officeCostLY = Math.round(officeCost * 0.89);
-  const totalOpCostLY = mgmtFeeLY + officeCostLY;
-  const netProfitLY = grossProfitLY - totalOpCostLY;
+  // Cap table partner split for footnote
+  const activeCapTable = capTable.length > 0
+    ? capTable.map(c => ({ name: c.partner_name, pct: parseFloat(c.percentage) }))
+    : [];
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
@@ -117,11 +136,27 @@ export default function FinancePage() {
               <CalendarDays size={14} style={{ color: 'var(--brand)' }} />
               <span>Tháng {month} · <strong>{year}</strong></span>
             </div>
-            <button className="btn btn--secondary" onClick={() => alert('Xuất PDF...')}>
+            <button className="btn btn--secondary" onClick={() => window.print()}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               Xuất PDF
             </button>
-            <button className="btn btn--primary" onClick={() => alert('Xuất Excel...')}>
+            <button className="btn btn--primary" onClick={() => {
+              if (!report) return;
+              const headers = ['Khoản mục', `Tháng ${month}/${year}`, `Tháng ${month}/${year - 1}`];
+              const rows = [
+                ['Doanh thu vận tải', transRevenue, transRevenueLY],
+                ['Thu nhập khác', otherRevenue, otherRevenueLY],
+                ['Tổng doanh thu', totalRevenue, totalRevenueLY],
+                ['Nhiên liệu', fuelCost, ''],
+                ['Tiền đi đường', roadCost, ''],
+                ['Lương lái xe', driverCost, ''],
+                ['Tổng chi phí vận hành', totalCosts, totalCostsLY],
+                ['Lợi nhuận gộp', grossProfit, grossProfitLY],
+                ['Phí quản lý', mgmtFee, mgmtFeeLY],
+                ['Lợi nhuận ròng', netProfit, netProfitLY],
+              ];
+              downloadCSV(`bao-cao-lai-lo-T${month}-${year}.csv`, headers, rows);
+            }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất Excel
             </button>
@@ -130,7 +165,7 @@ export default function FinancePage() {
       />
 
       {/* Period Selection Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, rowGap: 8, marginBottom: 20 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>Chọn kỳ báo cáo:</span>
         <select
           className="input"
@@ -171,7 +206,7 @@ export default function FinancePage() {
         </div>
       ) : (
         <>
-          {/* P&L Table Spreadsheet view replicating the wireframe exactly */}
+          {/* P&L Table with real data */}
           <div className="pnl-table" style={{ marginBottom: 24 }}>
             <div className="pnl-head">
               <div>Khoản mục</div>
@@ -189,28 +224,28 @@ export default function FinancePage() {
             <div className="pnl-row">
               <div className="pnl-row__label">
                 Doanh thu vận tải
-                <div className="pnl-row__label-sub">{report?.tripCount ?? 86} chuyến × giá cước chặng</div>
+                <div className="pnl-row__label-sub">{report?.tripCount ?? 0} chuyến × giá cước chặng</div>
               </div>
               <div className="pnl-row__amount">{formatRawNumber(transRevenue)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(transRevenueLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--up">+12.4%</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(transRevenueLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(transRevenue, transRevenueLY) : ''}`}>{prevReport ? yoyPct(transRevenue, transRevenueLY) : '—'}</div>
             </div>
 
             <div className="pnl-row">
               <div className="pnl-row__label">
-                Doanh thu khác
-                <div className="pnl-row__label-sub">Phụ thu xếp dỡ, dịch vụ cảng</div>
+                Thu nhập phạt vi phạm
+                <div className="pnl-row__label-sub">Phạt vi phạm, điều chỉnh khác</div>
               </div>
               <div className="pnl-row__amount">{formatRawNumber(otherRevenue)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(otherRevenueLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--up">+16.1%</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(otherRevenueLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(otherRevenue, otherRevenueLY) : ''}`}>{prevReport ? yoyPct(otherRevenue, otherRevenueLY) : '—'}</div>
             </div>
 
             <div className="pnl-row pnl-row--subtotal">
               <div className="pnl-row__label">Tổng doanh thu</div>
               <div className="pnl-row__amount">{formatRawNumber(totalRevenue)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(totalRevenueLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--up">+12.4%</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(totalRevenueLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(totalRevenue, totalRevenueLY) : ''}`}>{prevReport ? yoyPct(totalRevenue, totalRevenueLY) : '—'}</div>
             </div>
 
             {/* DIRECT COSTS */}
@@ -225,8 +260,7 @@ export default function FinancePage() {
                 <div className="pnl-row__label-sub">Dầu DO xe đầu kéo chạy chặng</div>
               </div>
               <div className="pnl-row__amount">{formatRawNumber(fuelCost)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(fuelCostLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--down">+9.5%</div>
+              <div className="pnl-row__yoy">—</div><div className="pnl-row__pct">—</div>
             </div>
 
             <div className="pnl-row">
@@ -235,8 +269,7 @@ export default function FinancePage() {
                 <div className="pnl-row__label-sub">Vé BOT cầu đường &amp; luật đường</div>
               </div>
               <div className="pnl-row__amount">{formatRawNumber(roadCost)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(roadCostLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--down">+9.8%</div>
+              <div className="pnl-row__yoy">—</div><div className="pnl-row__pct">—</div>
             </div>
 
             <div className="pnl-row">
@@ -245,35 +278,14 @@ export default function FinancePage() {
                 <div className="pnl-row__label-sub">Lương cơ bản + khoán chuyến + phụ cấp</div>
               </div>
               <div className="pnl-row__amount">{formatRawNumber(driverCost)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(driverCostLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--down">+4.9%</div>
-            </div>
-
-            <div className="pnl-row">
-              <div className="pnl-row__label">
-                Bảo dưỡng &amp; sửa chữa
-                <div className="pnl-row__label-sub">Thay dầu nhớt, săm lốp định kỳ</div>
-              </div>
-              <div className="pnl-row__amount">{formatRawNumber(maintCost)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(maintCostLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--down">+50.0%</div>
-            </div>
-
-            <div className="pnl-row">
-              <div className="pnl-row__label">
-                Phụ phí trực tiếp khác
-                <div className="pnl-row__label-sub">Phí bồi thường, phạt hành chính chặng</div>
-              </div>
-              <div className="pnl-row__amount">{formatRawNumber(directOtherCost)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(directOtherCostLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--down">+13.5%</div>
+              <div className="pnl-row__yoy">—</div><div className="pnl-row__pct">—</div>
             </div>
 
             <div className="pnl-row pnl-row--subtotal">
-              <div className="pnl-row__label">Tổng chi phí trực tiếp</div>
+              <div className="pnl-row__label">Tổng chi phí vận hành</div>
               <div className="pnl-row__amount">{formatRawNumber(totalCosts)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(totalCostsLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--down">+10.8%</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(totalCostsLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(totalCosts, totalCostsLY) : ''}`}>{prevReport ? yoyPct(totalCosts, totalCostsLY) : '—'}</div>
             </div>
 
             <div className="pnl-row pnl-row--subtotal" style={{ background: 'linear-gradient(180deg, rgba(16,185,129,0.06), var(--surface))' }}>
@@ -281,8 +293,8 @@ export default function FinancePage() {
                 Lợi nhuận gộp · Biên {((grossProfit / (totalRevenue || 1)) * 100).toFixed(1)}%
               </div>
               <div className="pnl-row__amount" style={{ color: 'var(--success)', fontWeight: 700 }}>{formatRawNumber(grossProfit)}</div>
-              <div className="pnl-row__yoy" style={{ color: 'var(--success)' }}>{formatRawNumber(grossProfitLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--up">+14.5%</div>
+              <div className="pnl-row__yoy" style={{ color: 'var(--success)' }}>{prevReport ? formatRawNumber(grossProfitLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(grossProfit, grossProfitLY) : ''}`}>{prevReport ? yoyPct(grossProfit, grossProfitLY) : '—'}</div>
             </div>
 
             {/* OPERATING COSTS */}
@@ -297,25 +309,15 @@ export default function FinancePage() {
                 <div className="pnl-row__label-sub">Cố định điều hành nội bộ</div>
               </div>
               <div className="pnl-row__amount">{formatRawNumber(mgmtFee)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(mgmtFeeLY)}</div>
-              <div className="pnl-row__pct">—</div>
-            </div>
-
-            <div className="pnl-row">
-              <div className="pnl-row__label">
-                Văn phòng &amp; hành chính
-                <div className="pnl-row__label-sub">Lương khối văn phòng, khấu hao kho bãi</div>
-              </div>
-              <div className="pnl-row__amount">{formatRawNumber(officeCost)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(officeCostLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--down">+11.5%</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(mgmtFeeLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(mgmtFee, mgmtFeeLY) : ''}`}>{prevReport ? yoyPct(mgmtFee, mgmtFeeLY) : '—'}</div>
             </div>
 
             <div className="pnl-row pnl-row--subtotal">
               <div className="pnl-row__label">Tổng chi phí hoạt động</div>
-              <div className="pnl-row__amount">{formatRawNumber(totalOpCost)}</div>
-              <div className="pnl-row__yoy">{formatRawNumber(totalOpCostLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--down">+7.9%</div>
+              <div className="pnl-row__amount">{formatRawNumber(mgmtFee)}</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(mgmtFeeLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(mgmtFee, mgmtFeeLY) : ''}`}>{prevReport ? yoyPct(mgmtFee, mgmtFeeLY) : '—'}</div>
             </div>
 
             {/* FINAL NET PROFIT */}
@@ -324,15 +326,19 @@ export default function FinancePage() {
                 Lợi nhuận ròng
               </div>
               <div className="pnl-row__amount">{formatRawNumber(netProfit)} ₫</div>
-              <div className="pnl-row__yoy">{formatRawNumber(netProfitLY)}</div>
-              <div className="pnl-row__pct pnl-row__pct--up">+16.0%</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(netProfitLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(netProfit, netProfitLY) : ''}`}>{prevReport ? yoyPct(netProfit, netProfitLY) : '—'}</div>
             </div>
           </div>
 
           <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '14px 0 24px', lineHeight: 1.5 }}>
-            * Lợi nhuận ròng kế toán: <strong>{formatRawNumber(netProfit)} ₫</strong>. Sau khi kết chuyển chia cổ đông: <strong>{formatRawNumber(netProfit * 0.7045)} ₫</strong> cho Ông Phụng (70.45%) và <strong>{formatRawNumber(netProfit * 0.2955)} ₫</strong> cho Ông Thương (29.55%).{' '}
-            <a 
-              href="#" 
+            * Lợi nhuận ròng kế toán: <strong>{formatRawNumber(netProfit)} ₫</strong>.
+            {activeCapTable.length > 0
+              ? <> Sau khi kết chuyển chia cổ đông: {activeCapTable.map((p, i) => <span key={i}>{i > 0 ? ' và ' : ''}<strong>{formatRawNumber(netProfit * p.pct / 100)} ₫</strong> cho {p.name} ({p.pct}%)</span>)}.</>
+              : ' Chưa cấu hình bảng cổ phần.'
+            }{' '}
+            <a
+              href="#"
               onClick={(e) => { e.preventDefault(); navigate('/profit'); }}
               style={{ color: 'var(--brand)', fontWeight: 600, textDecoration: 'none' }}
             >

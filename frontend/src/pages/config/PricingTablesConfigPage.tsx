@@ -82,7 +82,7 @@ export default function PricingTablesConfigPage() {
           <div style={{ flex: 1 }} />
           <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}><Plus size={14} /> Thêm mới</button>
         </div>
-        <div style={{ overflowX: 'auto' }}>
+        <div className="table-scroll">
           <table className="tt-table">
             <thead><tr><th style={{ width: 40 }}>#</th><th>Khách hàng</th><th>Tuyến đường</th><th>Giá</th><th style={{ width: 100 }}>Thao tác</th></tr></thead>
             <tbody>

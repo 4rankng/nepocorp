@@ -4,7 +4,7 @@ import { Loader2, Save, Trash2, Plus, Image as ImageIcon, X } from 'lucide-react
 import { api, ApiError } from '../lib/api';
 import { PageHeader } from '../components/UI';
 import { FuelMode, LoadingType, TripStatus } from '@nepocorp/shared';
-import type { TripDetail, TripLeg } from '@nepocorp/shared';
+import type { TripDetail, TripLeg, PricingTable, PaginatedResponse } from '@nepocorp/shared';
 
 interface FormLeg {
   id: string; // client-side unique id for React keys
@@ -39,6 +39,7 @@ export default function TripEditPage() {
   const [revenue, setRevenue] = useState('');
   const [notes, setNotes] = useState('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
 
   // Load existing trip details
   const loadTrip = useCallback(async () => {
@@ -62,6 +63,20 @@ export default function TripEditPage() {
       setRevenue(data.revenue ? String(data.revenue) : '');
       setNotes(data.notes || '');
       setPhotoUrls(data.photo_urls || []);
+
+      // Lookup suggested price from pricing table
+      if (data.customer_id && data.route_id) {
+        try {
+          const ptRes = await api.get<PaginatedResponse<PricingTable>>('/pricing-tables');
+          const match = (ptRes.items || []).find(
+            (pt: PricingTable) => pt.customer_id === data.customer_id && pt.route_id === data.route_id
+          );
+          if (match) {
+            setSuggestedPrice(Number(match.price));
+            if (!data.revenue) setRevenue(String(match.price));
+          }
+        } catch { /* pricing table lookup is best-effort */ }
+      }
 
       // If legs are present, map them; otherwise, start with a blank leg
       if (data.legs && data.legs.length > 0) {
@@ -290,88 +305,93 @@ export default function TripEditPage() {
               </button>
             </div>
 
-            <div style={{ overflowX: 'auto', flex: 1, marginBottom: 16 }}>
-              <table className="tt-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 40 }}>#</th>
-                    <th>Điểm đi</th>
-                    <th>Điểm đến</th>
-                    <th style={{ width: 90 }}>Cự ly (Km)</th>
-                    <th style={{ width: 120 }}>Tải trọng</th>
-                    <th style={{ width: 40 }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {legs.map((leg, idx) => (
-                    <tr key={leg.id}>
-                      <td style={{ verticalAlign: 'middle', fontWeight: 600, color: 'var(--fg-3)' }}>{leg.sequence}</td>
-                      <td>
-                        <input
-                          className="input"
-                          style={{ padding: '6px 10px', fontSize: 13 }}
-                          placeholder="Điểm đi"
-                          value={leg.origin}
-                          onChange={e => handleUpdateLeg(idx, 'origin', e.target.value)}
-                          required
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="input"
-                          style={{ padding: '6px 10px', fontSize: 13 }}
-                          placeholder="Điểm đến"
-                          value={leg.destination}
-                          onChange={e => handleUpdateLeg(idx, 'destination', e.target.value)}
-                          required
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="input"
-                          type="number"
-                          style={{ padding: '6px 10px', fontSize: 13 }}
-                          placeholder="Km"
-                          value={leg.km}
-                          onChange={e => handleUpdateLeg(idx, 'km', e.target.value)}
-                          required
-                        />
-                      </td>
-                      <td>
-                        <select
-                          className="input"
-                          style={{
-                            padding: '6px 10px',
-                            fontSize: 13,
-                            appearance: 'none',
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23A1A1AA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 4.5 3 3 3-3'/%3E%3C/svg%3E")`,
-                            backgroundRepeat: 'no-repeat',
-                            backgroundPosition: 'right 8px center',
-                            paddingRight: 24,
-                          }}
-                          value={leg.loading_type}
-                          onChange={e => handleUpdateLeg(idx, 'loading_type', e.target.value as LoadingType)}
-                        >
-                          <option value={LoadingType.HANG}>Có hàng</option>
-                          <option value={LoadingType.VO}>Vỏ rỗng</option>
-                        </select>
-                      </td>
-                      <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
-                        {legs.length > 1 && (
-                          <button
-                            type="button"
-                            className="btn btn--ghost btn--icon btn--sm"
-                            onClick={() => handleRemoveLeg(idx)}
-                            aria-label="Xóa chặng"
-                          >
-                            <Trash2 size={15} style={{ color: 'var(--danger)' }} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+              {legs.map((leg, idx) => (
+                <div
+                  key={leg.id}
+                  style={{
+                    background: 'var(--bg-1)',
+                    border: '1px solid var(--border-2)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '12px 14px',
+                  }}
+                >
+                  {/* Row header: sequence badge + delete */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      fontSize: 12, fontWeight: 700, color: 'var(--brand)',
+                    }}>
+                      <span style={{
+                        width: 22, height: 22, borderRadius: '50%',
+                        background: 'var(--brand-soft)', color: 'var(--brand)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 11, fontWeight: 700, flexShrink: 0,
+                      }}>{leg.sequence}</span>
+                      Chặng {leg.sequence}
+                    </div>
+                    {legs.length > 1 && (
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--icon btn--sm"
+                        onClick={() => handleRemoveLeg(idx)}
+                        aria-label="Xóa chặng"
+                      >
+                        <Trash2 size={15} style={{ color: 'var(--danger)' }} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Origin → Destination row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                    <input
+                      className="input"
+                      style={{ padding: '7px 10px', fontSize: 13 }}
+                      placeholder="Điểm đi"
+                      value={leg.origin}
+                      onChange={e => handleUpdateLeg(idx, 'origin', e.target.value)}
+                      required
+                    />
+                    <span style={{ color: 'var(--fg-3)', fontSize: 14, fontWeight: 600, textAlign: 'center' }}>→</span>
+                    <input
+                      className="input"
+                      style={{ padding: '7px 10px', fontSize: 13 }}
+                      placeholder="Điểm đến"
+                      value={leg.destination}
+                      onChange={e => handleUpdateLeg(idx, 'destination', e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {/* Km + Loading type row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Cự ly (Km)</div>
+                      <input
+                        className="input"
+                        type="number"
+                        style={{ padding: '7px 10px', fontSize: 13 }}
+                        placeholder="Km"
+                        value={leg.km}
+                        onChange={e => handleUpdateLeg(idx, 'km', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Tải trọng</div>
+                      <select
+                        className="input"
+                        style={{ padding: '7px 10px', fontSize: 13 }}
+                        value={leg.loading_type}
+                        onChange={e => handleUpdateLeg(idx, 'loading_type', e.target.value as LoadingType)}
+                      >
+                        <option value={LoadingType.HANG}>Có hàng</option>
+                        <option value={LoadingType.VO}>Vỏ rỗng</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div style={{
@@ -522,6 +542,16 @@ export default function TripEditPage() {
                     value={revenue}
                     onChange={e => setRevenue(e.target.value)}
                   />
+                  {suggestedPrice !== null && (
+                    <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+                      Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString('vi-VN')} VNĐ
+                      {revenue && Number(revenue) !== suggestedPrice && (
+                        <span style={{ color: 'var(--warning)', marginLeft: 8 }}>
+                          Giá đã điều chỉnh so với bảng giá
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -530,7 +560,7 @@ export default function TripEditPage() {
             <div style={{ marginBottom: 20 }}>
               <div style={{ marginBottom: 12 }}><span className="typo-eyebrow">Xác thực chè & Ảnh đính kèm</span></div>
 
-              {trip.cargo_type?.name?.toLowerCase().includes('chè') || trip.cargo_type?.name?.toLowerCase().includes('che') ? (
+              {trip.cargoType?.requires_photos ? (
                 <div style={{
                   padding: '8px 12px',
                   background: 'var(--warning-soft)',

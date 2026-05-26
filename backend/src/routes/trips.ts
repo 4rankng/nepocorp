@@ -234,4 +234,19 @@ router.post('/:id/cancel', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
   }
 });
 
+// Reassign truck/driver (only for CREATED trips)
+router.patch('/:id/reassign', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    const { truck_id, driver_id } = req.body;
+    if (!truck_id || !driver_id) {
+      return res.status(400).json({ error: 'truck_id và driver_id là bắt buộc' });
+    }
+    const trip = await tripService.reassignTrip(id, { truck_id: Number(truck_id), driver_id: Number(driver_id) });
+    res.json(trip);
+  } catch (err: any) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
 export default router;

@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@nepocorp/shared';
 import type { CustomerStatement, LedgerEntry } from '@nepocorp/shared';
-import { AlertTriangle, Wallet, X, Plus } from 'lucide-react';
+import { AlertTriangle, Wallet, X, Download } from 'lucide-react';
 import { PageHeader, Panel, KPI } from '../components/UI';
 
 // ── Txn type labels ─────────────────────────────────────────────────────────
@@ -30,9 +30,8 @@ export default function DebtDetailPage() {
   // Payment modal state
   const [showPayment, setShowPayment] = useState(false);
   const [receiptId, setReceiptId] = useState('');
-  const [paymentTrips, setPaymentTrips] = useState<{ trip_id: number; amount: string }[]>([
-    { trip_id: 0, amount: '' },
-  ]);
+  const [selectedTripIds, setSelectedTripIds] = useState<Set<number>>(new Set());
+  const [paymentAmounts, setPaymentAmounts] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -56,9 +55,12 @@ export default function DebtDetailPage() {
 
   const handleSubmitPayment = async () => {
     if (!id || !receiptId.trim()) return;
-    const payments = paymentTrips
-      .filter(p => p.trip_id > 0 && p.amount && parseFloat(p.amount) > 0)
-      .map(p => ({ trip_id: p.trip_id, amount: parseFloat(p.amount) }));
+    const payments = Array.from(selectedTripIds)
+      .map(tripId => ({
+        trip_id: tripId,
+        amount: parseFloat(paymentAmounts[tripId] || '0'),
+      }))
+      .filter(p => p.amount > 0);
     if (payments.length === 0) return;
 
     setSubmitting(true);
@@ -71,7 +73,8 @@ export default function DebtDetailPage() {
       });
       setShowPayment(false);
       setReceiptId('');
-      setPaymentTrips([{ trip_id: 0, amount: '' }]);
+      setSelectedTripIds(new Set());
+      setPaymentAmounts({});
       fetchStatement();
     } catch (e: any) {
       setSubmitError(e.message || 'Lỗi khi ghi nhận thanh toán');
@@ -80,21 +83,38 @@ export default function DebtDetailPage() {
     }
   };
 
-  const addPaymentRow = () => {
-    setPaymentTrips(prev => [...prev, { trip_id: 0, amount: '' }]);
-  };
-
-  const updatePaymentRow = (idx: number, field: 'trip_id' | 'amount', val: string) => {
-    setPaymentTrips(prev => prev.map((p, i) =>
-      i === idx ? { ...p, [field]: field === 'trip_id' ? Number(val) : val } : p
-    ));
-  };
-
-  const removePaymentRow = (idx: number) => {
-    setPaymentTrips(prev => prev.filter((_, i) => i !== idx));
+  const closePaymentModal = () => {
+    setShowPayment(false);
+    setSelectedTripIds(new Set());
+    setPaymentAmounts({});
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
+
+  const unpaidTrips = useMemo(() => {
+    if (!statement) return [];
+    const revenueEntries = statement.ledgerRows
+      .filter(r => r.txn_type === 'TRIP_REVENUE' && Number(r.debit) > 0)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    const byTrip = new Map<number, { tripId: number; date: string; outstanding: number; note: string }>();
+    for (const entry of revenueEntries) {
+      if (!entry.txn_id) continue;
+      const existing = byTrip.get(entry.txn_id);
+      const amount = Number(entry.debit);
+      if (existing) {
+        existing.outstanding += amount;
+      } else {
+        byTrip.set(entry.txn_id, {
+          tripId: entry.txn_id,
+          date: entry.timestamp.slice(0, 10),
+          outstanding: amount,
+          note: entry.note || '',
+        });
+      }
+    }
+    return Array.from(byTrip.values());
+  }, [statement]);
 
   if (loading) {
     return (
@@ -123,10 +143,19 @@ export default function DebtDetailPage() {
         title={customer.name}
         description={customer.contact_info || 'Không có thông tin liên hệ'}
         action={
-          <button className="btn btn--primary" onClick={() => setShowPayment(true)}>
-            <Wallet size={15} />
-            Ghi nhận thanh toán
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => window.open(`/api/ledger/customers/${id}/statement/export`, '_blank')}
+            >
+              <Download size={14} />
+              Xuất sao kê
+            </button>
+            <button className="btn btn--primary" onClick={() => setShowPayment(true)}>
+              <Wallet size={15} />
+              Ghi nhận thanh toán
+            </button>
+          </div>
         }
         onBack={() => navigate('/debt')}
       />
@@ -199,7 +228,7 @@ export default function DebtDetailPage() {
         style={{ marginTop: 20 }}
         flush
       >
-        <div style={{ overflowX: 'auto' }}>
+        <div className="table-scroll">
           <table className="tt-table">
             <thead>
               <tr>
@@ -237,13 +266,13 @@ export default function DebtDetailPage() {
             zIndex: 'var(--z-modal)' as any,
             padding: 24,
           }}
-          onClick={() => setShowPayment(false)}
+          onClick={closePaymentModal}
         >
           <div style={{ width: '100%', maxWidth: 520 }} onClick={e => e.stopPropagation()}>
           <Panel
             title="Ghi nhận thanh toán"
             action={
-              <button className="btn btn--ghost btn--icon btn--sm" onClick={() => setShowPayment(false)}>
+              <button className="btn btn--ghost btn--icon btn--sm" onClick={closePaymentModal}>
                 <X size={16} />
               </button>
             }
@@ -275,34 +304,63 @@ export default function DebtDetailPage() {
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-1)', marginBottom: 8 }}>
                 Thanh toán theo lệnh
               </label>
-              {paymentTrips.map((p, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                  <input
-                    className="input"
-                    type="number"
-                    placeholder="ID lệnh"
-                    value={p.trip_id || ''}
-                    onChange={e => updatePaymentRow(i, 'trip_id', e.target.value)}
-                    style={{ width: 120 }}
-                  />
-                  <input
-                    className="input"
-                    type="number"
-                    placeholder="Số tiền"
-                    value={p.amount}
-                    onChange={e => updatePaymentRow(i, 'amount', e.target.value)}
-                    style={{ flex: 1 }}
-                  />
-                  {paymentTrips.length > 1 && (
-                    <button className="btn btn--ghost btn--icon btn--sm" onClick={() => removePaymentRow(i)}>
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button className="btn btn--ghost btn--sm" onClick={addPaymentRow} style={{ marginTop: 4 }}>
-                <Plus size={14} /> Thêm lệnh
-              </button>
+              {unpaidTrips.length === 0 ? (
+                <p style={{ fontSize: 13, color: 'var(--fg-3)', textAlign: 'center', padding: 12 }}>
+                  Không tìm thấy chuyến chưa thanh toán.
+                </p>
+              ) : (
+                unpaidTrips.map(trip => {
+                  const isSelected = selectedTripIds.has(trip.tripId);
+                  return (
+                    <div key={trip.tripId} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
+                      padding: '6px 8px',
+                      background: isSelected ? 'var(--brand-soft)' : 'var(--bg-2)',
+                      borderRadius: 6,
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {
+                          setSelectedTripIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(trip.tripId)) next.delete(trip.tripId);
+                            else next.add(trip.tripId);
+                            return next;
+                          });
+                          if (!isSelected) {
+                            setPaymentAmounts(prev => ({ ...prev, [trip.tripId]: String(trip.outstanding) }));
+                          } else {
+                            setPaymentAmounts(prev => {
+                              const next = { ...prev };
+                              delete next[trip.tripId];
+                              return next;
+                            });
+                          }
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{trip.note || `Chuyến #${trip.tripId}`}</div>
+                        <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>{new Date(trip.date).toLocaleDateString('vi-VN')}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--danger)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {formatCurrency(trip.outstanding)}
+                      </div>
+                      {isSelected && (
+                        <input
+                          className="input"
+                          type="number"
+                          placeholder="Số tiền"
+                          value={paymentAmounts[trip.tripId] || ''}
+                          onChange={e => setPaymentAmounts(prev => ({ ...prev, [trip.tripId]: e.target.value }))}
+                          style={{ width: 120, fontSize: 12 }}
+                        />
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             <button

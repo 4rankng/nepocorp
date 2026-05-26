@@ -12,7 +12,7 @@ import {
   TripStatus, TRIP_STATUS_LABELS,
   FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
 } from '@nepocorp/shared';
-import { Panel, StatusPill } from '../components/UI';
+import { Panel, StatusPill, useConfirm } from '../components/UI';
 
 function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
   return (
@@ -29,6 +29,7 @@ function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,10 +92,11 @@ export default function TripDetailPage() {
 
   if (!trip) return null;
 
-  const canEdit = trip.status === TripStatus.CREATED || trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED;
+  const canEdit = trip.status === TripStatus.CREATED || trip.status === TripStatus.COMPLETED;
   const canCancel = trip.status !== TripStatus.LOCKED && trip.status !== TripStatus.CANCELED;
   const canDispatch = trip.status === TripStatus.CREATED;
   const canLock = trip.status === TripStatus.COMPLETED;
+  const needsPhotos = !!trip.cargoType?.requires_photos && (!trip.photo_urls || trip.photo_urls.length === 0);
 
   return (
     <div className="fade-up">
@@ -141,14 +143,22 @@ export default function TripDetailPage() {
             </button>
           )}
           {canLock && (
-            <button
-              className="btn btn--primary btn--sm"
-              disabled={actionLoading}
-              onClick={() => handleAction('lock', () => api.post(`/trips/${trip.id}/lock`, {}))}
-            >
-              {actionLoading ? <Loader2 size={14} className="spin" /> : <Lock size={14} />}
-              Chốt chuyến
-            </button>
+            <>
+              <button
+                className="btn btn--primary btn--sm"
+                disabled={actionLoading || needsPhotos}
+                title={needsPhotos ? 'Hàng hóa yêu cầu ảnh xác thực. Vui lòng tải ảnh lên trước khi chốt.' : undefined}
+                onClick={() => handleAction('lock', () => api.post(`/trips/${trip.id}/lock`, {}))}
+              >
+                {actionLoading ? <Loader2 size={14} className="spin" /> : <Lock size={14} />}
+                Chốt chuyến
+              </button>
+              {needsPhotos && (
+                <span style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  Cần ảnh xác thực trước khi chốt
+                </span>
+              )}
+            </>
           )}
           {canEdit && (
             <button
@@ -163,8 +173,8 @@ export default function TripDetailPage() {
             <button
               className="btn btn--danger btn--sm"
               disabled={actionLoading}
-              onClick={() => {
-                if (confirm('Bạn có chắc muốn hủy chuyến này?')) {
+              onClick={async () => {
+                if (await confirm('Bạn có chắc muốn hủy chuyến này?', { variant: 'danger', confirmLabel: 'Hủy chuyến' })) {
                   handleAction('cancel', () => api.post(`/trips/${trip.id}/cancel`, {}));
                 }
               }}
@@ -203,6 +213,15 @@ export default function TripDetailPage() {
 
         <Panel title="Tài chính">
           {infoRow(<Banknote size={16} />, 'Doanh thu', formatCurrency(trip.revenue))}
+          {trip.revenue_original && trip.revenue && Number(trip.revenue) !== Number(trip.revenue_original) && (
+            infoRow(
+              <Banknote size={16} />,
+              'Giá gốc (trước điều chỉnh)',
+              <span style={{ textDecoration: 'line-through', color: 'var(--fg-3)' }}>
+                {formatCurrency(trip.revenue_original)}
+              </span>,
+            )
+          )}
           {infoRow(<Banknote size={16} />, 'Tổng chi phí', formatCurrency(trip.total_cost))}
           {infoRow(
             <Banknote size={16} />,
@@ -212,8 +231,40 @@ export default function TripDetailPage() {
             </span>,
           )}
           {infoRow(<Fuel size={16} />, 'Chế độ nhiên liệu', FUEL_MODE_LABELS[trip.fuel_mode])}
-          {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuel_liters ? `${Number(trip.fuel_liters).toLocaleString('vi-VN')} lit` : '—')}
+          {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuel_liters ? `${Number(trip.fuel_liters).toLocaleString('vi-VN')} lít` : '—')}
+          {(() => {
+            // TTBQ = (total liters / total km) × 100 — spec Module 3.1
+            const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
+            const totalLiters = Number(trip.fuel_liters) || 0;
+            if (totalKm > 0 && totalLiters > 0) {
+              const ttbq = (totalLiters / totalKm) * 100;
+              return infoRow(<Fuel size={16} />, 'TTBQ (L/100km)', `${ttbq.toFixed(1)} L/100km`);
+            }
+            return null;
+          })()}
           {infoRow(<MapPin size={16} />, 'Tiền đường', formatCurrency(trip.total_road_allowance))}
+          {/* Road allowance breakdown — shown when any adjustments exist */}
+          {(Number(trip.tolls_discount) > 0 || Number(trip.tolls_addition) > 0 || Number(trip.tolls_stations) > 0 || trip.has_return_cargo) && (
+            <div style={{ padding: '6px 0 10px', borderBottom: '1px solid var(--border-1)' }}>
+              <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Chi tiết tiền đường
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--fg-2)', display: 'flex', flexDirection: 'column', gap: 3, paddingLeft: 12 }}>
+                {Number(trip.tolls_discount) > 0 && (
+                  <span>Giảm vé QL5: <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(trip.tolls_discount)}</strong></span>
+                )}
+                {Number(trip.tolls_addition) > 0 && (
+                  <span>Tăng vé theo lệnh: <strong style={{ color: 'var(--success)' }}>+{formatCurrency(trip.tolls_addition)}</strong></span>
+                )}
+                {Number(trip.tolls_stations) > 0 && (
+                  <span>Số trạm: <strong>{trip.tolls_stations} trạm × 55.000 = -{formatCurrency(Number(trip.tolls_stations) * 55000)}</strong></span>
+                )}
+                {trip.has_return_cargo && (
+                  <span>Chuyến về có hàng: <strong style={{ color: 'var(--success)' }}>+300.000 ₫</strong></span>
+                )}
+              </div>
+            </div>
+          )}
           {infoRow(<User size={16} />, 'Lương tài xế', formatCurrency(trip.driver_salary))}
         </Panel>
       </div>
@@ -306,6 +357,7 @@ export default function TripDetailPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .spin { animation: spin 0.8s linear infinite; }
       `}</style>
+      {confirmDialog}
     </div>
   );
 }

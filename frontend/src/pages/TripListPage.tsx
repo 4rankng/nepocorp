@@ -2,18 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency } from '../lib/format';
-import { TripStatus } from '@nepocorp/shared';
+import { downloadCSV } from '../lib/csv';
+import { TripStatus, TRIP_STATUS_LABELS } from '@nepocorp/shared';
 import type { TripDetail } from '@nepocorp/shared';
 import { PageHeader, StatusPill } from '../components/UI';
-
-
-const TRIP_STATUS_LABEL: Record<TripStatus, string> = {
-  [TripStatus.CREATED]: 'Lên lịch',
-  [TripStatus.IN_TRANSIT]: 'Đang chạy',
-  [TripStatus.COMPLETED]: 'Chờ duyệt',
-  [TripStatus.LOCKED]: 'Đã chốt',
-  [TripStatus.CANCELED]: 'Đã huỷ',
-};
 
 const TRIP_STATUS_VARIANT: Record<TripStatus, 'neutral' | 'info' | 'warn' | 'success' | 'danger'> = {
   [TripStatus.CREATED]: 'neutral',
@@ -48,15 +40,25 @@ export default function TripListPage() {
   }, []);
 
   const handleExport = () => {
-    alert('Đang xuất Excel sổ chuyến đi...');
+    const headers = ['ID', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'Doanh thu', 'Trạng thái'];
+    const rows = filteredTrips.map(t => [
+      t.id,
+      t.customer?.name ?? '',
+      t.route?.name ?? '',
+      t.truck?.license_plate ?? '',
+      t.departure_date ?? '',
+      t.revenue ?? '',
+      TRIP_STATUS_LABELS[t.status],
+    ]);
+    downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
   };
 
   // Perform client-side filtering to mimic advanced search bar immediately
   const filteredTrips = trips.filter((trip) => {
     if (statusFilter === 'WARNING') {
       // Warnings means missing fuel receipt or abnormally high consumption
-      const distance = Number(trip.route?.distance ?? 120);
-      const fuel = trip.fuel_consumption ? Number(trip.fuel_consumption) : null;
+      const distance = Number(trip.route?.distance_km ?? 120);
+      const fuel = trip.fuel_liters ? Number(trip.fuel_liters) : null;
       const cons = fuel ? (fuel / distance) * 100 : 0;
       return !fuel || cons > 37;
     }
@@ -86,8 +88,8 @@ export default function TripListPage() {
   
   // Calculate warning trips
   const warningCount = trips.filter(t => {
-    const distance = Number(t.route?.distance ?? 120);
-    const fuel = t.fuel_consumption ? Number(t.fuel_consumption) : null;
+    const distance = Number(t.route?.distance_km ?? 120);
+    const fuel = t.fuel_liters ? Number(t.fuel_liters) : null;
     const cons = fuel ? (fuel / distance) * 100 : 0;
     return !fuel || cons > 37;
   }).length;
@@ -140,8 +142,12 @@ export default function TripListPage() {
           style={{ background: 'var(--bg-2)', border: 'none', padding: '0 8px', height: 28, borderRadius: 99, fontSize: 12, fontWeight: 500, color: 'var(--fg-1)', cursor: 'pointer' }}
         >
           <option value="">Tất cả thời gian</option>
-          <option value="2026-05">Tháng 5/2026</option>
-          <option value="2026-06">Tháng 6/2026</option>
+          {Array.from({ length: 12 }, (_, i) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            return <option key={value} value={value}>Tháng {d.getMonth() + 1}/{d.getFullYear()}</option>;
+          })}
         </select>
 
         {/* Truck/Plate Dropdown styled as filter pill */}
@@ -169,8 +175,69 @@ export default function TripListPage() {
         </div>
       </div>
 
-      {/* Table Wrap matching wireframe class */}
-      <div className="table-wrap">
+      {/* ── Mobile card list (≤640px) ────────────────────────────────────── */}
+      <div className="mobile-only mobile-table-wrap">
+        <div className="m-card-list">
+          {loading ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
+              Đang tải...
+            </div>
+          ) : filteredTrips.length === 0 ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
+              Không tìm thấy chuyến đi nào.
+            </div>
+          ) : (
+            filteredTrips.map(trip => {
+              const distance = Number(trip.route?.distance_km ?? 124);
+              const fuel = trip.fuel_liters ? Number(trip.fuel_liters) : null;
+              const cons = fuel ? (fuel / distance) * 100 : 0;
+              const consClass = cons > 40 ? 'danger' : cons > 36 ? 'warn' : 'ok';
+              const fillPct = cons > 40 ? 100 : cons > 36 ? Math.round((cons / 40) * 100) : Math.round((cons / 40) * 80);
+              return (
+                <div key={trip.id} className="m-card" onClick={() => navigate(`/trips/${trip.id}`)}>
+                  <div className="m-card__top">
+                    <span className="m-card__title">{trip.customer?.name ?? '—'}</span>
+                    <StatusPill variant={TRIP_STATUS_VARIANT[trip.status] ?? 'neutral'}>{TRIP_STATUS_LABELS[trip.status]}</StatusPill>
+                  </div>
+                  <div className="m-card__meta">
+                    <span className="plate" style={{ fontSize: 11 }}>{trip.truck?.license_plate ?? '—'}</span>
+                    <span className="m-card__meta-sep">·</span>
+                    <span>{trip.departure_date ? new Date(trip.departure_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '—'}</span>
+                    <span className="m-card__meta-sep">·</span>
+                    <span>{trip.route?.name ?? '—'}</span>
+                  </div>
+                  <div className="m-card__row">
+                    <span className="m-card__row-label">Tiền đi đường</span>
+                    <span className="m-card__row-value">{formatCurrency(Number(trip.total_road_allowance ?? 0)).replace(' ₫', '')} ₫</span>
+                  </div>
+                  {fuel ? (
+                    <div className="m-card__fuel">
+                      <span style={{ color: 'var(--ink-3)', minWidth: 60 }}>TTBQ</span>
+                      <div className="m-card__fuel-bar">
+                        <div className={`m-card__fuel-fill m-card__fuel-fill--${consClass}`} style={{ width: `${fillPct}%` }} />
+                      </div>
+                      <span style={{ fontWeight: 600, color: consClass === 'ok' ? 'var(--success)' : consClass === 'warn' ? 'var(--warning)' : 'var(--danger)', minWidth: 54, textAlign: 'right' }}>
+                        {cons.toFixed(1)} L
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="m-card__row">
+                      <span className="m-card__row-label">Nhiên liệu</span>
+                      <span style={{ fontSize: 12, color: 'var(--warning)', fontWeight: 600 }}>⚠ Thiếu hoá đơn</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+        <div className="table-foot">
+          <span>Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filteredTrips.length}</strong> chuyến</span>
+        </div>
+      </div>
+
+      {/* ── Desktop table (>640px) ───────────────────────────────────────── */}
+      <div className="desktop-only table-wrap">
         <div className="table-scroll">
           <table>
             <thead>
@@ -202,8 +269,8 @@ export default function TripListPage() {
                 </tr>
               ) : (
                 filteredTrips.map((trip) => {
-                  const distance = Number(trip.route?.distance ?? 124);
-                  const fuel = trip.fuel_consumption ? Number(trip.fuel_consumption) : null;
+                  const distance = Number(trip.route?.distance_km ?? 124);
+                  const fuel = trip.fuel_liters ? Number(trip.fuel_liters) : null;
                   const cons = fuel ? (fuel / distance) * 100 : 0;
                   
                   let consClass = 'ttbq-cell--ok';
@@ -237,7 +304,7 @@ export default function TripListPage() {
                       <td>
                         <div className="row-strong">{trip.route?.name ?? '—'}</div>
                         <div className="row-meta">
-                          {trip.customer?.name ?? '—'} · {trip.trailer_type || '40ft'}
+                          {trip.customer?.name ?? '—'} · {trip.trailer?.type || '40ft'}
                         </div>
                       </td>
                       <td className="num">{distance}</td>
@@ -261,8 +328,8 @@ export default function TripListPage() {
                           '—'
                         )}
                       </td>
-                      <td className="num big">{formatCurrency(trip.road_allowance ?? 0).replace(' ₫', '')}</td>
-                      <td><StatusPill variant={TRIP_STATUS_VARIANT[trip.status] ?? 'neutral'}>{TRIP_STATUS_LABEL[trip.status] ?? trip.status}</StatusPill></td>
+                      <td className="num big">{formatCurrency(Number(trip.total_road_allowance ?? 0)).replace(' ₫', '')}</td>
+                      <td><StatusPill variant={TRIP_STATUS_VARIANT[trip.status] ?? 'neutral'}>{TRIP_STATUS_LABELS[trip.status]}</StatusPill></td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <div className="row-actions">
                           <button 
