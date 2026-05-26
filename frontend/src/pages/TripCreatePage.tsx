@@ -7,11 +7,15 @@ import {
   Trash2,
   Image as ImageIcon,
   X,
+  Route,
+  Fuel,
+  DollarSign,
+  Camera,
 } from "lucide-react";
 import { api, ApiError } from "../lib/api";
 import { FuelMode, LoadingType } from "@nepocorp/shared";
 import type { PricingTable, PaginatedResponse } from "@nepocorp/shared";
-import { PageHeader, Panel } from "../components/UI";
+import { PageHeader, Panel, Btn } from "../components/UI";
 
 interface SelectOption {
   id: number;
@@ -30,7 +34,7 @@ interface FormLeg {
 export default function TripCreatePage() {
   const navigate = useNavigate();
 
-  // Form state
+  // Required fields
   const [customerId, setCustomerId] = useState("");
   const [routeId, setRouteId] = useState("");
   const [truckId, setTruckId] = useState("");
@@ -39,6 +43,8 @@ export default function TripCreatePage() {
   const [cargoTypeId, setCargoTypeId] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [customerReference, setCustomerReference] = useState("");
+
+  // Optional fields
   const [legs, setLegs] = useState<FormLeg[]>([]);
   const [fuelMode, setFuelMode] = useState<FuelMode>(FuelMode.AUTO);
   const [fuelLitersOverride, setFuelLitersOverride] = useState("");
@@ -438,6 +444,8 @@ export default function TripCreatePage() {
     </div>
   );
 
+  const totalKm = legs.reduce((acc, curr) => acc + (Number(curr.km) || 0), 0);
+
   return (
     <div className="fade-up">
       <PageHeader
@@ -447,8 +455,8 @@ export default function TripCreatePage() {
       />
 
       <form onSubmit={handleSubmit}>
-        <div className="row-2">
-          {/* Left column */}
+        {/* ── Required fields ── */}
+        <div className="row-2 fade-up-2">
           <Panel title="Thông tin chính">
             {renderSelect(
               "customer",
@@ -478,13 +486,7 @@ export default function TripCreatePage() {
             <div className="field">
               <label htmlFor="customer-ref">
                 Mã tham chiếu khách hàng
-                <span
-                  style={{
-                    color: "var(--fg-3)",
-                    fontWeight: 400,
-                    marginLeft: 6,
-                  }}
-                >
+                <span className="text-muted" style={{ fontWeight: 400, marginLeft: 6 }}>
                   (không bắt buộc)
                 </span>
               </label>
@@ -499,32 +501,10 @@ export default function TripCreatePage() {
             </div>
           </Panel>
 
-          {/* Right column */}
           <Panel title="Phương tiện & tài xế">
-            {renderSelect(
-              "truck",
-              "Xe đầu",
-              truckId,
-              setTruckId,
-              trucks,
-              "Chọn xe đầu",
-            )}
-            {renderSelect(
-              "trailer",
-              "Rơ moóc",
-              trailerId,
-              setTrailerId,
-              trailers,
-              "Chọn rơ moóc",
-            )}
-            {renderSelect(
-              "driver",
-              "Tài xế",
-              driverId,
-              setDriverId,
-              drivers,
-              "Chọn tài xế",
-            )}
+            {renderSelect("truck", "Xe đầu", truckId, setTruckId, trucks, "Chọn xe đầu")}
+            {renderSelect("trailer", "Rơ moóc", trailerId, setTrailerId, trailers, "Chọn rơ moóc")}
+            {renderSelect("driver", "Tài xế", driverId, setDriverId, drivers, "Chọn tài xế")}
 
             <div className="field">
               <label htmlFor="departure-date">
@@ -543,238 +523,108 @@ export default function TripCreatePage() {
           </Panel>
         </div>
 
-        <Panel title="Thông tin bổ sung - có thể bỏ qua">
-          <div style={{ color: "var(--fg-2)", fontSize: 13 }}>
-            Bạn có thể nhập hành trình chi tiết, dầu, vé đường, tài chính và ảnh
-            ngay khi tạo lệnh.
-          </div>
+        {/* ── Divider hint ── */}
+        <p className="form-section-hint">
+          Các mục dưới đây là tùy chọn — bạn có thể điền ngay hoặc bổ sung sau khi tạo lệnh.
+        </p>
+
+        {/* ── Legs section ── */}
+        <Panel
+          title="Hành trình chi tiết"
+          subtitle="Khai báo các chặng đường, cự ly và tải trọng"
+          action={
+            <Btn variant="ghost" size="sm" icon={<Plus size={14} />} onClick={handleAddLeg}>
+              Thêm chặng
+            </Btn>
+          }
+          className="fade-up-3"
+        >
+          {legs.length === 0 ? (
+            <div className="form-empty">
+              Chưa có chặng nào. Bấm "Thêm chặng" để khai báo hành trình.
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                {legs.map((leg, idx) => (
+                  <div key={leg.id} className="leg-card">
+                    <div className="leg-card__head">
+                      <div className="leg-card__label">
+                        <span className="leg-card__seq">{leg.sequence}</span>
+                        Chặng {leg.sequence}
+                      </div>
+                      {legs.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--icon btn--sm"
+                          onClick={() => handleRemoveLeg(idx)}
+                          aria-label="Xóa chặng"
+                        >
+                          <Trash2 size={15} style={{ color: "var(--danger)" }} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="leg-card__route">
+                      <input
+                        className="input input--sm"
+                        placeholder="Điểm đi"
+                        value={leg.origin}
+                        onChange={(e) => handleUpdateLeg(idx, "origin", e.target.value)}
+                      />
+                      <span className="leg-card__arrow">→</span>
+                      <input
+                        className="input input--sm"
+                        placeholder="Điểm đến"
+                        value={leg.destination}
+                        onChange={(e) => handleUpdateLeg(idx, "destination", e.target.value)}
+                      />
+                    </div>
+
+                    <div className="leg-card__fields">
+                      <div>
+                        <div className="leg-card__mini-label">Cự ly (Km)</div>
+                        <input
+                          className="input input--sm"
+                          type="number"
+                          placeholder="Km"
+                          value={leg.km}
+                          onChange={(e) => handleUpdateLeg(idx, "km", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <div className="leg-card__mini-label">Tải trọng</div>
+                        <select
+                          className="input input--sm"
+                          value={leg.loading_type}
+                          onChange={(e) =>
+                            handleUpdateLeg(idx, "loading_type", e.target.value as LoadingType)
+                          }
+                        >
+                          <option value={LoadingType.HANG}>Có hàng</option>
+                          <option value={LoadingType.VO}>Vỏ rỗng</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="form-summary">
+                <span>
+                  Tổng số chặng: <strong>{legs.length}</strong>
+                </span>
+                <span>
+                  Tổng cự ly: <strong>{totalKm.toLocaleString("vi-VN")} Km</strong>
+                </span>
+              </div>
+            </>
+          )}
         </Panel>
 
-        <Panel title="Hành trình chi tiết">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <span className="typo-eyebrow">Chặng đường</span>
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={handleAddLeg}
-              style={{ color: "var(--brand)", fontWeight: 600 }}
-            >
-              <Plus size={14} /> Thêm chặng
-            </button>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-              marginBottom: 16,
-            }}
-          >
-            {legs.length === 0 && (
-              <div style={{ color: "var(--fg-3)", fontSize: 13 }}>
-                Chưa có chặng nào. Bấm "Thêm chặng" để khai báo hành trình.
-              </div>
-            )}
-            {legs.map((leg, idx) => (
-              <div
-                key={leg.id}
-                style={{
-                  background: "var(--bg-1)",
-                  border: "1px solid var(--border-2)",
-                  borderRadius: "var(--radius-md)",
-                  padding: "12px 14px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 10,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: "var(--brand)",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: "50%",
-                        background: "var(--brand-soft)",
-                        color: "var(--brand)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {leg.sequence}
-                    </span>
-                    Chặng {leg.sequence}
-                  </div>
-                  {legs.length > 1 && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--icon btn--sm"
-                      onClick={() => handleRemoveLeg(idx)}
-                      aria-label="Xóa chặng"
-                    >
-                      <Trash2 size={15} style={{ color: "var(--danger)" }} />
-                    </button>
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto 1fr",
-                    gap: 8,
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                >
-                  <input
-                    className="input"
-                    style={{ padding: "7px 10px", fontSize: 13 }}
-                    placeholder="Điểm đi"
-                    value={leg.origin}
-                    onChange={(e) =>
-                      handleUpdateLeg(idx, "origin", e.target.value)
-                    }
-                  />
-                  <span
-                    style={{
-                      color: "var(--fg-3)",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      textAlign: "center",
-                    }}
-                  >
-                    →
-                  </span>
-                  <input
-                    className="input"
-                    style={{ padding: "7px 10px", fontSize: 13 }}
-                    placeholder="Điểm đến"
-                    value={leg.destination}
-                    onChange={(e) =>
-                      handleUpdateLeg(idx, "destination", e.target.value)
-                    }
-                  />
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "var(--fg-3)",
-                        fontWeight: 600,
-                        marginBottom: 4,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      Cự ly (Km)
-                    </div>
-                    <input
-                      className="input"
-                      type="number"
-                      style={{ padding: "7px 10px", fontSize: 13 }}
-                      placeholder="Km"
-                      value={leg.km}
-                      onChange={(e) =>
-                        handleUpdateLeg(idx, "km", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "var(--fg-3)",
-                        fontWeight: 600,
-                        marginBottom: 4,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      Tải trọng
-                    </div>
-                    <select
-                      className="input"
-                      style={{ padding: "7px 10px", fontSize: 13 }}
-                      value={leg.loading_type}
-                      onChange={(e) =>
-                        handleUpdateLeg(
-                          idx,
-                          "loading_type",
-                          e.target.value as LoadingType,
-                        )
-                      }
-                    >
-                      <option value={LoadingType.HANG}>Có hàng</option>
-                      <option value={LoadingType.VO}>Vỏ rỗng</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div
-            style={{
-              background: "var(--bg-1)",
-              padding: "12px 16px",
-              borderRadius: "var(--radius-md)",
-              fontSize: 13,
-              display: "flex",
-              justifyContent: "space-between",
-              color: "var(--fg-2)",
-              border: "1px solid var(--border-2)",
-            }}
-          >
-            <span>
-              Tổng số chặng: <strong>{legs.length}</strong>
-            </span>
-            <span>
-              Tổng cự ly:{" "}
-              <strong>
-                {legs
-                  .reduce((acc, curr) => acc + (Number(curr.km) || 0), 0)
-                  .toLocaleString("vi-VN")}{" "}
-                Km
-              </strong>
-            </span>
-          </div>
-        </Panel>
-
-        <div className="row-2">
-          <Panel title="Nhiên liệu">
+        {/* ── Fuel + Tolls ── */}
+        <div className="row-2 fade-up-4">
+          <Panel title="Nhiên liệu" subtitle="Định mức tiêu thụ và bổ sung">
             <div className="field">
               <label>Chế độ dầu</label>
               <select
@@ -783,12 +633,8 @@ export default function TripCreatePage() {
                 value={fuelMode}
                 onChange={(e) => setFuelMode(e.target.value as FuelMode)}
               >
-                <option value={FuelMode.AUTO}>
-                  Tự động (Định mức x Km chặng)
-                </option>
-                <option value={FuelMode.FLAT_RATE}>
-                  Khoán (Nhập thủ công)
-                </option>
+                <option value={FuelMode.AUTO}>Tự động (Định mức × Km chặng)</option>
+                <option value={FuelMode.FLAT_RATE}>Khoán (Nhập thủ công)</option>
               </select>
             </div>
 
@@ -833,7 +679,7 @@ export default function TripCreatePage() {
             </div>
           </Panel>
 
-          <Panel title="Vé đường & tài chính">
+          <Panel title="Vé đường & tài chính" subtitle="Chi phí đường bộ và doanh thu">
             <div className="row-2">
               <div className="field">
                 <label>Tăng vé theo lệnh (VNĐ)</label>
@@ -868,34 +714,12 @@ export default function TripCreatePage() {
                   onChange={(e) => setTollsStations(e.target.value)}
                 />
               </div>
-              <div
-                className="field"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  height: "100%",
-                  paddingTop: 18,
-                }}
-              >
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    cursor: "pointer",
-                    userSelect: "none",
-                  }}
-                >
+              <div className="field" style={{ display: "flex", alignItems: "center", height: "100%", paddingTop: 18 }}>
+                <label className="checkbox">
                   <input
                     type="checkbox"
                     checked={hasReturnCargo}
                     onChange={(e) => setHasReturnCargo(e.target.checked)}
-                    style={{
-                      width: 16,
-                      height: 16,
-                      accentColor: "var(--brand)",
-                      cursor: "pointer",
-                    }}
                   />
                   <span>Chuyến về có hàng (+300k)</span>
                 </label>
@@ -923,11 +747,8 @@ export default function TripCreatePage() {
                   onChange={(e) => setRevenue(e.target.value)}
                 />
                 {suggestedPrice !== null && (
-                  <div
-                    style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}
-                  >
-                    Giá gợi ý từ bảng giá:{" "}
-                    {Number(suggestedPrice).toLocaleString("vi-VN")} VNĐ
+                  <div className="field-help">
+                    Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString("vi-VN")} VNĐ
                   </div>
                 )}
               </div>
@@ -935,73 +756,23 @@ export default function TripCreatePage() {
           </Panel>
         </div>
 
-        <Panel title="Hình ảnh & ghi chú">
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-              marginBottom: 12,
-            }}
-          >
+        {/* ── Photos & Notes ── */}
+        <Panel title="Hình ảnh & ghi chú" subtitle="Ảnh đính kèm và ghi chú chuyến đi" className="fade-up-5">
+          <div className="photo-grid">
             {photoUrls.map((url, i) => (
-              <div
-                key={i}
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: "var(--radius-md)",
-                  border: "1px solid var(--border-1)",
-                  position: "relative",
-                  overflow: "hidden",
-                  background: "var(--bg-3)",
-                }}
-              >
-                <img
-                  src={url}
-                  alt={`Preview ${i + 1}`}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
+              <div key={i} className="photo-thumb">
+                <img src={url} alt={`Preview ${i + 1}`} />
                 <button
                   type="button"
+                  className="photo-thumb__remove"
                   onClick={() => handleRemovePhoto(i)}
-                  style={{
-                    position: "absolute",
-                    top: 2,
-                    right: 2,
-                    width: 18,
-                    height: 18,
-                    background: "rgba(0,0,0,0.5)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                  }}
                 >
                   <X size={10} />
                 </button>
               </div>
             ))}
 
-            <label
-              style={{
-                width: 72,
-                height: 72,
-                border: "1px dashed var(--fg-3)",
-                borderRadius: "var(--radius-md)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: uploading ? "default" : "pointer",
-                color: "var(--fg-3)",
-                transition: "all 0.2s",
-                background: "var(--bg-2)",
-              }}
-            >
+            <label className="photo-upload">
               {uploading ? (
                 <Loader2 size={18} className="spin" />
               ) : (
@@ -1033,54 +804,27 @@ export default function TripCreatePage() {
           </div>
         </Panel>
 
-        {error && (
-          <div
-            style={{
-              padding: "10px 14px",
-              background: "var(--danger-soft)",
-              color: "var(--danger-text)",
-              borderRadius: "var(--radius-md)",
-              fontSize: 13,
-              marginBottom: 16,
-              border: "1px solid rgba(220,38,38,0.12)",
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {/* ── Error ── */}
+        {error && <div className="form-alert form-alert--danger">{error}</div>}
 
-        {/* Actions */}
+        {/* ── Actions ── */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button
-            type="submit"
-            className="btn btn--primary"
+          <Btn
+            variant="primary"
+            icon={submitting ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
             disabled={submitting || loadingOptions || uploading}
           >
-            {submitting ? (
-              <>
-                <Loader2 size={16} className="spin" /> Đang tạo...
-              </>
-            ) : (
-              <>
-                <Save size={16} /> Tạo lệnh
-              </>
-            )}
-          </button>
-          <button
-            type="button"
-            className="btn btn--secondary"
+            {submitting ? "Đang tạo..." : "Tạo lệnh"}
+          </Btn>
+          <Btn
+            variant="secondary"
             onClick={() => navigate("/trips")}
             disabled={submitting}
           >
             Huỷ
-          </button>
+          </Btn>
         </div>
       </form>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spin { animation: spin 0.8s linear infinite; }
-      `}</style>
     </div>
   );
 }

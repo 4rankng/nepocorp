@@ -55,6 +55,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 * **Doanh thu** được xác định bằng bảng tra cố định theo **Khách hàng × Tuyến đường** (cùng tuyến đường có thể có giá khác nhau cho từng khách hàng).
 * Bảng giá hiện tại cố định; variable pricing có thể xem xét sau.
+* **Phân biệt Tuyến đường vs. Chặng chi tiết:** Tuyến đường (Route) là khái niệm tổng quát (VD: "Hải Phòng - Hà Nội") dùng làm khóa tra **bảng giá** và **tiền đi đường chuẩn**. Các chặng chi tiết (Trip Legs: cảng → nhà máy A → kho B...) là dữ liệu bổ sung nhập trong quá trình thực hiện chuyến để tính **định mức nhiên liệu** chính xác theo từng đoạn. *(Pete xác nhận 19/5: "Chính xác")*
 
 ### 4.3 Chi phí nhiên liệu
 
@@ -63,8 +64,13 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * **Định mức nhiên liệu:**
     * Hàng (đầy): 43L/100km
     * Vỏ (chạy không): 25L/100km
-    * Bổ sung cố định: + 3L/chuyến (áp dụng cho tuyến thường)
-    * Tuyến đèo đốc: định mức cố định theo tuyến (lưu trong bảng Tuyến đường, hệ thống tự tra). Định mức đèo đốc này áp dụng cho toàn bộ cả chuyến đi và về (không phân biệt có hàng hay chạy vỏ) và thay thế hoàn toàn công thức tính theo km cũng như +3L bổ sung. VD: Mộc Châu 240L, Sơn La 320L, Lai Châu 365L.
+    * Bổ sung cố định: +3L/chuyến (áp dụng cho tuyến thường)
+    * Tuyến đèo đốc: định mức cố định **tổng cả chuyến** theo tuyến (lưu trong bảng Tuyến đường, hệ thống tự tra). Thay thế hoàn toàn công thức tính theo km và +3L bổ sung. VD: Mộc Châu 240L, Sơn La 320L, Lai Châu 365L.
+* **Mô hình chặng (Trip Legs) áp dụng cho cả tuyến đèo đốc:** Kế toán vẫn nhập chi tiết từng chặng (điểm đi, điểm đến, km, loại tải) để lưu lịch sử vận hành. Tuy nhiên, hệ thống sử dụng **định mức cố định theo tuyến** (không tính theo km chặng) để ra số L dầu. *(Pete xác nhận 19/5: "Vẫn áp dụng em ạ, và vẫn có lựa chọn bổ sung")*
+* **3 chế độ nhập dầu (áp dụng cả tuyến đèo đốc):**
+    1. **AUTO:** Hệ thống tự tính L dầu từ km từng chặng × định mức (hàng/vỏ), hoặc dùng định mức cố định nếu là tuyến đèo đốc.
+    2. **KHOÁN (FLAT_RATE):** Kế toán nhập thủ công tổng L dầu, ghi đè toàn bộ tính toán tự động.
+    3. **Bổ sung (Supplement):** L dầu cộng thêm do xe hỏng, đi sửa,... — cộng vào kết quả của cả 2 chế độ trên.
 
 ### 4.4 Tiền đi đường (Road Allowance)
 
@@ -89,7 +95,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 * **Lợi nhuận gộp (Gross Profit):** = Doanh thu - Tổng chi phí. Tính theo từng xe, theo tháng.
 * **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe - Phí quản lý + Thu nhập khác.
-* **Phí quản lý:** 24.000.000 VNĐ/tháng cho toàn công ty. Kế toán nhập thủ công.
+* **Phí quản lý:** Khoản cố định hàng tháng cho toàn công ty. Kế toán nhập thủ công. *(Mức cụ thể do Giám đốc ấn định — tạm thời placeholder 24.000.000 VNĐ/tháng; sẽ xác nhận chính thức sau.)*
 * **Thu nhập khác (Other Income):** Ghi nhận doanh thu phạt kỷ luật. Lương tài xế ghi nhận đầy đủ, không trừ phạt.
 
 ### 4.8 Phân chia lợi nhuận
@@ -120,15 +126,17 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * Kế toán có thể nhập lý do mới; hệ thống kiểm tra trùng lặp khi nhập.
 * Phạt kỷ luật là khoản **thu nhập khác** của công ty, đồng thời là khoản trừ lương tài xế.
 
-### 4.12 Chuyến chè (Special Cargo: Tea)
+### 4.12 Ảnh xác nhận chuyến (Cargo Photo Evidence)
 
-* Bắt buộc upload ảnh Container & Seal khi đóng chuyến. Kế toán thực hiện upload.
-* Không điều chỉnh thêm tiền đi đường.
+* **Tất cả loại hàng hóa** đều yêu cầu upload ảnh khi hoàn thành chuyến. Kế toán thực hiện upload. *(Pete xác nhận: "tất cả đều yêu cầu chụp ảnh")*
+* Trường `requires_photos` trên bảng **Loại hàng hóa** vẫn giữ để cấu hình mức độ bắt buộc theo từng loại hàng trong tương lai.
+* **Chuyến chè (Special Cargo: Tea):** Đặc biệt yêu cầu ảnh Container **và** Seal (niêm phong). Không điều chỉnh thêm tiền đi đường.
 
 ### 4.13 Đội xe & Nhân sự
 
 * 1 xe có thể có nhiều lái xe được phân công.
 * Rơ-mooc (trailer) có thể thay đổi theo chuyến — cùng 1 xe có thể kéo rơ-mooc 20ft chuyến này, 40ft chuyến sau.
+* **Đa container:** 1 chuyến xe có thể chở nhiều container (VD: 2 container 20ft). *(Pete xác nhận: "có thể 1 chuyến chạy 2 cont 20'")*
 
 ---
 
@@ -228,7 +236,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Lương sản lượng | Number | Có | Thu nhập lái xe cho chuyến này |
 | Doanh thu | Number | Có | Tự động tra từ bảng giá khi tạo chuyến (Customer × Route). Kế toán có thể ghi đè; hệ thống ghi nhận giá gốc, giá ghi đè, người thay đổi và thời điểm. |
 | Ghi chú/diễn giải | Text | Không | |
-| Ảnh Container & Seal | Upload | Chỉ cho chuyến chè | Bắt buộc nếu loại hàng = chè |
+| Ảnh xác nhận hàng hóa | Upload | Có (tất cả) | Bắt buộc cho tất cả loại hàng khi hoàn thành chuyến. Chuyến chè bắt buộc có ảnh Container **và** Seal. |
 
 ### Tự động tính toán (read-only)
 
