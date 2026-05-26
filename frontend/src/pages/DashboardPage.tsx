@@ -254,7 +254,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Two-Column Analytics Grid */}
-      <div className="dash-grid">
+      <div className="dash-grid fade-up-2">
         
         {/* Left Column: 12-Month Line Chart */}
         <Panel
