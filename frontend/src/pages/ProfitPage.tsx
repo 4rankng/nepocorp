@@ -26,9 +26,9 @@ interface PnlReport {
 
 interface CapTableEntry {
   id: number;
-  partnerName: string;
+  partner_name: string;
   percentage: string;
-  effectiveDate: string;
+  effective_date: string;
 }
 
 interface DistributionResult {
@@ -36,7 +36,7 @@ interface DistributionResult {
   year: number;
   netProfit: number;
   distributions: Array<{
-    partnerName: string;
+    partner_name: string;
     amount: string;
   }>;
 }
@@ -115,15 +115,15 @@ export default function ProfitPage() {
   // Get active cap table (default if empty)
   const getDisplayCapTable = () => {
     if (capTable && capTable.length > 0) {
-      return capTable.map(c => ({
-        partnerName: c.partnerName,
-        percentage: parseFloat(c.percentage)
+      return capTable.filter(c => c.partner_name).map(c => ({
+        partner_name: c.partner_name,
+        percentage: parseFloat(c.percentage) || 0
       }));
     }
     // Wireframe default fallbacks
     return [
-      { partnerName: 'Ông Phụng', percentage: 70.45 },
-      { partnerName: 'Ông Thương', percentage: 29.55 }
+      { partner_name: 'Ông Phụng', percentage: 70.45 },
+      { partner_name: 'Ông Thương', percentage: 29.55 }
     ];
   };
 
@@ -201,7 +201,7 @@ export default function ProfitPage() {
               {activeCapTable.map((partner, i) => {
                 const maxPct = Math.max(...activeCapTable.map(p => p.percentage));
                 const isPhung = partner.percentage === maxPct;
-                const avatarChar = partner.partnerName.charAt(partner.partnerName.lastIndexOf(' ') + 1) || partner.partnerName.charAt(0);
+                const avatarChar = partner.partner_name.charAt(partner.partner_name.lastIndexOf(' ') + 1) || partner.partner_name.charAt(0);
                 const partnerShare = Math.round(netProfit * partner.percentage / 100);
 
                 return (
@@ -212,7 +212,7 @@ export default function ProfitPage() {
                       </div>
                       <div className="partner-card__info">
                         <div className="partner-card__name">
-                          {partner.partnerName}
+                          {partner.partner_name}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'nowrap' }}>
                           {isPhung ? (
@@ -301,7 +301,7 @@ export default function ProfitPage() {
                     <tbody>
                       {distResult.distributions.map((d, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
-                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
+                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partner_name}</td>
                           <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
                         </tr>
                       ))}
