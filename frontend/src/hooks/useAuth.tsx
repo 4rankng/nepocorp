@@ -20,8 +20,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>(null!);
 
-const IS_DEMO = !window.location.hostname.includes('localhost') || !!localStorage.getItem('demo_mode');
-
 const DEMO_USERS: Record<string, { user: AuthUser; password: string }> = {
   giamdoc: { password: 'admin123', user: { userId: 1, username: 'giamdoc', email: 'giamdoc@nepocorp.vn', phone: null, role: Role.ADMIN, name: 'Giám đốc' } },
   ketoan: { password: 'admin123', user: { userId: 2, username: 'ketoan', email: 'ketoan@nepocorp.vn', phone: null, role: Role.ACCOUNTANT, name: 'Kế toán' } },
@@ -39,30 +37,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem('demo_user');
-    if (IS_DEMO && stored) {
-      try { setUser(JSON.parse(stored)); return; } catch { /* ignore */ }
-    }
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.get<AuthUser>('/auth/me').then(setUser).catch(() => {
-        api.clearToken();
-        setUser(null);
-      });
+    if (stored) {
+      try { setUser(JSON.parse(stored)); } catch { /* ignore */ }
     }
   }, []);
 
   const login = useCallback(async (identifier: string, password: string) => {
-    if (IS_DEMO) {
-      const demoUser = demoLogin(identifier, password);
-      if (demoUser) {
-        localStorage.setItem('demo_user', JSON.stringify(demoUser));
-        setUser(demoUser);
-        return;
-      }
+    const demoUser = demoLogin(identifier, password);
+    if (demoUser) {
+      localStorage.setItem('demo_user', JSON.stringify(demoUser));
+      setUser(demoUser);
+      return;
     }
-    const res = await api.post<{ token: string; user: AuthUser }>('/auth/login', { identifier, password });
-    api.setToken(res.token);
-    setUser(res.user);
+    throw new Error('Sai tên đăng nhập hoặc mật khẩu');
   }, []);
 
   const logout = useCallback(() => {

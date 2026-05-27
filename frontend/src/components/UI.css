@@ -642,12 +642,10 @@ tbody tr:last-child td { border-bottom: none; }
   position: fixed;
   inset: 0;
   background: rgba(10, 10, 10, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s var(--ease);
-  z-index: 50;
+  z-index: var(--z-overlay);
 }
 .drawer-overlay.is-open { opacity: 1; pointer-events: auto; }
 .drawer {
@@ -660,13 +658,19 @@ tbody tr:last-child td { border-bottom: none; }
   background: #fff;
   box-shadow: var(--sh-drawer);
   transform: translateX(100%);
-  transition: transform 0.32s var(--ease-drawer);
-  z-index: 51;
+  visibility: hidden;
+  /* hide immediately on open, delay hide until after slide-out finishes */
+  transition: transform 0.32s var(--ease-drawer), visibility 0s 0.32s;
+  z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-.drawer.is-open { transform: translateX(0); }
+.drawer.is-open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.32s var(--ease-drawer), visibility 0s 0s;
+}
 .drawer__head {
   padding: 22px 24px 16px;
   border-bottom: 1px solid var(--line);

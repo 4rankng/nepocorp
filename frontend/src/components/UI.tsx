@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, ArrowLeft, HelpCircle, X } from 'lucide-react';
 
 /* ─── Global confirm shortcuts ──────────────────────────────────────────────
@@ -431,7 +432,7 @@ interface DrawerProps {
 export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onConfirm }: DrawerProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
 
-  return (
+  return createPortal(
     <>
       <div
         className={`drawer-overlay${isOpen ? ' is-open' : ''}`}
@@ -461,7 +462,8 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onC
         <div className="drawer__body">{children}</div>
         {footer && <div className="drawer__foot">{footer}</div>}
       </aside>
-    </>
+    </>,
+    document.body,
   );
 }
 
