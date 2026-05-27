@@ -14,9 +14,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function CapTableForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: CapTableHistory; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
-  const [partnerName, setPartnerName] = useState(item?.partner_name || '');
+  const [partnerName, setPartnerName] = useState(item?.partnerName || '');
   const [percentage, setPercentage] = useState(item?.percentage || '');
-  const [effectiveDate, setEffectiveDate] = useState(item ? item.effective_date.split('T')[0] : '');
+  const [effectiveDate, setEffectiveDate] = useState(item ? item.effectiveDate.split('T')[0] : '');
   return (
     <InlineForm colSpan={5}>
       <div style={{ flex: 2, minWidth: 180 }}>
@@ -30,7 +30,7 @@ function CapTableForm({ saving, item, onsave, oncancel }: {
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
         if (!partnerName.trim() || !percentage || !effectiveDate) return;
-        onsave({ partner_name: partnerName.trim(), percentage: Number(percentage), effective_date: effectiveDate });
+        onsave({ partnerName: partnerName.trim(), percentage: Number(percentage), effectiveDate });
       }} />
     </InlineForm>
   );
@@ -66,9 +66,9 @@ export default function CapTableConfigPage() {
                 ? <CapTableForm key={`edit-${ct.id}`} saving={crud.saving} item={ct} onsave={d => crud.doUpdate(ct.id, d)} oncancel={crud.cancelForm} />
                 : <tr key={ct.id}>
                   <td className="num">{i + 1}</td>
-                  <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{ct.partner_name}</td>
+                  <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{ct.partnerName}</td>
                   <td className="num" style={{ fontWeight: 600, color: 'var(--brand)' }}>{Number(ct.percentage).toFixed(2)}%</td>
-                  <td>{ct.effective_date ? new Date(ct.effective_date).toLocaleDateString('vi-VN') : '—'}</td>
+                  <td>{ct.effectiveDate ? new Date(ct.effectiveDate).toLocaleDateString('vi-VN') : '—'}</td>
                   <td><ActionBtns id={ct.id} deleting={crud.deleting} onedit={() => crud.setEditingId(ct.id)} ondelete={() => crud.doDelete(ct.id)} /></td>
                 </tr>
               )}

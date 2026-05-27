@@ -205,7 +205,7 @@ class MockApiClient {
         quarter: body?.quarter ?? 1,
         year: body?.year ?? 2025,
         netProfit: 10000000,
-        distributions: demoCapTable.map(p => ({ partnerName: p.partner_name, amount: String(Math.round(10000000 * parseFloat(p.percentage) / 100)) })),
+        distributions: demoCapTable.map(p => ({ partnerName: p.partnerName, amount: String(Math.round(10000000 * parseFloat(p.percentage) / 100)) })),
       };
     }
 

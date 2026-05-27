@@ -189,9 +189,9 @@ export const demoPenalties: Penalty[] = [
 // ─── Cap Table ───────────────────────────────────────────────────────────────
 
 export const demoCapTable: CapTableHistory[] = [
-  { id: 1, partner_name: 'Nguyễn Văn A', percentage: '40', effective_date: '2025-01-01', created_at: '2025-01-01T08:00:00Z', updated_at: '2025-01-01T08:00:00Z' },
-  { id: 2, partner_name: 'Trần Thị B', percentage: '35', effective_date: '2025-01-01', created_at: '2025-01-01T08:00:00Z', updated_at: '2025-01-01T08:00:00Z' },
-  { id: 3, partner_name: 'Lê Văn C', percentage: '25', effective_date: '2025-01-01', created_at: '2025-01-01T08:00:00Z', updated_at: '2025-01-01T08:00:00Z' },
+  { id: 1, partnerName: 'Nguyễn Văn A', percentage: '40', effectiveDate: '2025-01-01', createdAt: '2025-01-01T08:00:00Z', updatedAt: '2025-01-01T08:00:00Z' },
+  { id: 2, partnerName: 'Trần Thị B', percentage: '35', effectiveDate: '2025-01-01', createdAt: '2025-01-01T08:00:00Z', updatedAt: '2025-01-01T08:00:00Z' },
+  { id: 3, partnerName: 'Lê Văn C', percentage: '25', effectiveDate: '2025-01-01', createdAt: '2025-01-01T08:00:00Z', updatedAt: '2025-01-01T08:00:00Z' },
 ];
 
 // ─── Management Fees ─────────────────────────────────────────────────────────

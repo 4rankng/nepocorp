@@ -12,6 +12,7 @@ import {
 import { api, ApiError } from '../lib/api';
 import { PageHeader, Card, KPI, FormGroup, useConfirm } from '../components/UI';
 import { formatCurrency as formatVND } from '../lib/format';
+import type { CapTableHistory } from '@nepocorp/shared';
 
 interface PnlReport {
   period: { month: number; year: number };
@@ -24,19 +25,12 @@ interface PnlReport {
   tripCount: number;
 }
 
-interface CapTableEntry {
-  id: number;
-  partner_name: string;
-  percentage: string;
-  effective_date: string;
-}
-
 interface DistributionResult {
   quarter: number;
   year: number;
   netProfit: number;
   distributions: Array<{
-    partner_name: string;
+    partnerName: string;
     amount: string;
   }>;
 }
@@ -59,7 +53,7 @@ export default function ProfitPage() {
 
   // Data
   const [report, setReport] = useState<PnlReport | null>(null);
-  const [capTable, setCapTable] = useState<CapTableEntry[]>([]);
+  const [capTable, setCapTable] = useState<CapTableHistory[]>([]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -74,7 +68,7 @@ export default function ProfitPage() {
       console.error(err);
     }
     try {
-      const capRes = await api.get<{ items: CapTableEntry[] }>('/cap-table?limit=50');
+      const capRes = await api.get<{ items: CapTableHistory[] }>('/cap-table?limit=50');
       setCapTable(Array.isArray(capRes) ? capRes : (capRes.items || []));
       capOk = true;
     } catch (err) {
@@ -115,15 +109,15 @@ export default function ProfitPage() {
   // Get active cap table (default if empty)
   const getDisplayCapTable = () => {
     if (capTable && capTable.length > 0) {
-      return capTable.filter(c => c.partner_name).map(c => ({
-        partner_name: c.partner_name,
+      return capTable.filter(c => c.partnerName).map(c => ({
+        partnerName: c.partnerName,
         percentage: parseFloat(c.percentage) || 0
       }));
     }
     // Wireframe default fallbacks
     return [
-      { partner_name: 'Ông Phụng', percentage: 70.45 },
-      { partner_name: 'Ông Thương', percentage: 29.55 }
+      { partnerName: 'Ông Phụng', percentage: 70.45 },
+      { partnerName: 'Ông Thương', percentage: 29.55 }
     ];
   };
 
@@ -201,7 +195,7 @@ export default function ProfitPage() {
               {activeCapTable.map((partner, i) => {
                 const maxPct = Math.max(...activeCapTable.map(p => p.percentage));
                 const isPhung = partner.percentage === maxPct;
-                const avatarChar = partner.partner_name.charAt(partner.partner_name.lastIndexOf(' ') + 1) || partner.partner_name.charAt(0);
+                const avatarChar = partner.partnerName.charAt(partner.partnerName.lastIndexOf(' ') + 1) || partner.partnerName.charAt(0);
                 const partnerShare = Math.round(netProfit * partner.percentage / 100);
 
                 return (
@@ -212,7 +206,7 @@ export default function ProfitPage() {
                       </div>
                       <div className="partner-card__info">
                         <div className="partner-card__name">
-                          {partner.partner_name}
+                          {partner.partnerName}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'nowrap' }}>
                           {isPhung ? (
@@ -301,7 +295,7 @@ export default function ProfitPage() {
                     <tbody>
                       {distResult.distributions.map((d, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
-                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partner_name}</td>
+                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
                           <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
                         </tr>
                       ))}

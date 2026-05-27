@@ -122,7 +122,7 @@ export default function FinancePage() {
 
   // Cap table partner split for footnote
   const activeCapTable = capTable.length > 0
-    ? capTable.map(c => ({ name: c.partner_name, pct: parseFloat(c.percentage) }))
+    ? capTable.map(c => ({ name: c.partnerName, pct: parseFloat(c.percentage) }))
     : [];
 
   return (
