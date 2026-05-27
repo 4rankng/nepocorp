@@ -21,8 +21,8 @@ export default function TripCreatePage() {
   const options = useTripOptions();
   const form = useTripForm(options);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    const tripId = await form.handleSubmit(e);
+  const handleSubmit = async () => {
+    const tripId = await form.handleSubmit();
     if (tripId) {
       navigate(`/trips/${tripId}`);
     }

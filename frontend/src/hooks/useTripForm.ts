@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { api, ApiError } from "../lib/api";
 import { FuelMode, LoadingType } from "@nepocorp/shared";
+export type { FuelMode } from "@nepocorp/shared";
 import type { PricingTable } from "@nepocorp/shared";
 import type { TripOptions, RouteOption } from "./useTripOptions";
 
@@ -93,7 +94,7 @@ export interface UseTripFormReturn {
   uploading: boolean;
   error: string;
   setError: (v: string) => void;
-  handleSubmit: (e: React.FormEvent) => Promise<number | undefined>;
+  handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
 }
 
 export function useTripForm(options: TripOptions): UseTripFormReturn {
@@ -342,8 +343,8 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
   );
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent): Promise<number | undefined> => {
-      e.preventDefault();
+    async (e?: React.FormEvent): Promise<number | undefined> => {
+      e?.preventDefault();
       setError("");
 
       if (requiredFieldsFilled < 7) {

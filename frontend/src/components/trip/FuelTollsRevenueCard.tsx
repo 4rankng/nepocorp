@@ -4,7 +4,7 @@ import { FuelModeToggle } from './FuelModeToggle';
 import { InputWithPrefix } from './InputWithPrefix';
 import { CheckboxCard } from './CheckboxCard';
 import { SectionDivider } from './SectionDivider';
-import type { FuelMode } from '../../hooks/useTripForm';
+import type { FuelMode } from '@nepocorp/shared';
 
 interface FuelTollsRevenueCardProps {
   fuelMode: FuelMode; onFuelModeChange: (v: FuelMode) => void;
