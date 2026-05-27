@@ -1,0 +1,268 @@
+/* ─── FleetPage — single-page fleet dashboard ─── */
+
+.fleet-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Two-column layout for trucks + trailers */
+.fleet-page .fleet-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Card header with icon + count pill */
+.fleet-page .fleet-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.fleet-page .fleet-card-lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fleet-page .fleet-card-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(0, 177, 79, 0.15);
+  flex-shrink: 0;
+}
+
+.fleet-page .fleet-card-icon.alt {
+  background: var(--surface-3);
+  color: var(--ink-2);
+  border-color: var(--line-2);
+}
+
+.fleet-page .fleet-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fleet-page .count-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+}
+
+.fleet-page .fleet-card-sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+
+.fleet-page .fleet-card-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Plate tag prefix (VN / RM) */
+.fleet-page .fleet-plate {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.fleet-page .fleet-plate-tag {
+  background: var(--ink);
+  color: #fff;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  margin-right: 6px;
+}
+
+/* Driver avatar initials */
+.fleet-page .fleet-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.fleet-page .fleet-assigned {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fleet-page .fleet-assigned .name {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.fleet-page .fleet-unassigned {
+  color: var(--ink-3);
+  font-style: italic;
+  font-size: 12.5px;
+}
+
+/* Trailer type chip */
+.fleet-page .fleet-type-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.fleet-page .fleet-type-chip.ft40 {
+  background: #EFF6FF;
+  color: var(--info);
+  border-color: #DBEAFE;
+}
+
+.fleet-page .fleet-type-chip.ft20 {
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  border-color: rgba(0, 177, 79, 0.15);
+}
+
+/* Truck+trailer pair display */
+.fleet-page .fleet-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.fleet-page .fleet-pair .arrow {
+  color: var(--ink-3);
+}
+
+/* Phone display */
+.fleet-page .fleet-phone {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-2);
+  letter-spacing: 0.3px;
+}
+
+/* Salary display */
+.fleet-page .fleet-salary {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.fleet-page .fleet-salary .unit {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+.fleet-page .fleet-salary.empty {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* Mini search in drivers card */
+.fleet-page .fleet-mini-search {
+  position: relative;
+  width: 220px;
+}
+
+.fleet-page .fleet-mini-search input {
+  width: 100%;
+  padding: 7px 10px 7px 32px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.fleet-page .fleet-mini-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.fleet-page .fleet-mini-search svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+}
+
+/* Table footer legend */
+.fleet-page .fleet-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fleet-page .fleet-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.fleet-page .fleet-legend-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Responsive */
+@media (max-width: 1180px) {
+  .fleet-page .fleet-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .fleet-page .fleet-mini-search {
+    width: 140px;
+  }
+}

@@ -1,29 +1,84 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Truck, Container, UserCheck, Plus } from 'lucide-react';
+import {
+  Truck, Container, UserCheck, Plus, Search,
+  Download, Filter, CheckCircle,
+} from 'lucide-react';
 import { api } from '../lib/api';
-import { PageHeader, Panel, StatusPill } from '../components/UI';
+import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
 import { InlineForm, FormActions, ActionBtns } from '../components/config';
 import { useCRUD } from '../hooks/useCRUD';
 import { TrailerType } from '@nepocorp/shared';
 import type { Truck as TruckType, Trailer, Driver, PaginatedResponse } from '@nepocorp/shared';
 
-// ─── Shared helpers ────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const TRUCK_STATUS: Record<string, string> = {
+  ACTIVE: 'Hoạt động', MAINTENANCE: 'Bảo trì', INACTIVE: 'Ngưng',
+};
+const DRIVER_STATUS: Record<string, string> = {
+  ACTIVE: 'Hoạt động', INACTIVE: 'Ngưng',
+};
+const TRAILER_TYPE_LABELS: Record<string, string> = {
+  [TrailerType.FT20]: '20FT', [TrailerType.FT40]: '40FT',
+};
+
+const AVATAR_COLORS = [
+  { bg: '#E6F7EE', fg: '#005A2D' },
+  { bg: '#E0F2FE', fg: '#0369A1' },
+  { bg: '#FCE7F3', fg: '#BE185D' },
+  { bg: '#FEF3C7', fg: '#B45309' },
+  { bg: '#EDE9FE', fg: '#6D28D9' },
+  { bg: '#FEE2E2', fg: '#DC2626' },
+  { bg: '#CCFBF1', fg: '#0F766E' },
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="field"><label>{label}</label>{children}</div>;
 }
 
-const TRUCK_STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Hoạt động', MAINTENANCE: 'Bảo trì', INACTIVE: 'Ngưng',
-};
-const DRIVER_STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Hoạt động', INACTIVE: 'Ngưng',
-};
-const TRAILER_TYPE_LABELS: Record<string, string> = {
-  [TrailerType.FT20]: '20ft', [TrailerType.FT40]: '40ft',
-};
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
 
-// ─── Trucks tab ────────────────────────────────────────────────────────────────
+function avatarColor(name: string) {
+  const idx = [...name].reduce((s, c) => s + c.charCodeAt(0), 0) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[idx];
+}
+
+function AvatarInitials({ name }: { name: string }) {
+  const c = avatarColor(name);
+  return (
+    <span className="fleet-avatar" style={{ background: c.bg, color: c.fg }}>
+      {getInitials(name)}
+    </span>
+  );
+}
+
+function Plate({ plate, tag }: { plate: string; tag: string }) {
+  return (
+    <span className="fleet-plate">
+      <span className="fleet-plate-tag">{tag}</span>
+      {plate}
+    </span>
+  );
+}
+
+function TypeChip({ type }: { type: string }) {
+  const cls = type === TrailerType.FT40 ? 'ft40' : 'ft20';
+  return <span className={`fleet-type-chip ${cls}`}>{TRAILER_TYPE_LABELS[type] || type}</span>;
+}
+
+function StatusDot({ status }: { status: string }) {
+  const variant = status === 'ACTIVE' ? 'success' : status === 'MAINTENANCE' ? 'warn' : 'neutral';
+  const label = TRUCK_STATUS[status] || DRIVER_STATUS[status] || status;
+  return <StatusPill variant={variant} dot>{label}</StatusPill>;
+}
+
+// ─── Forms ────────────────────────────────────────────────────────────────────
 
 function TruckForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: TruckType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
@@ -31,14 +86,14 @@ function TruckForm({ saving, item, onsave, oncancel }: {
   const [plate, setPlate] = useState(item?.license_plate || '');
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
   return (
-    <InlineForm colSpan={4}>
+    <InlineForm colSpan={5}>
       <div style={{ flex: 2, minWidth: 160 }}>
         <Field label="Biển số"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51C-12345" /></Field>
       </div>
       <div style={{ flex: 1, minWidth: 140 }}>
         <Field label="Trạng thái">
           <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
-            {Object.entries(TRUCK_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </Field>
       </div>
@@ -47,46 +102,6 @@ function TruckForm({ saving, item, onsave, oncancel }: {
   );
 }
 
-function TrucksTab() {
-  const [trucks, setTrucks] = useState<TruckType[]>([]);
-  const refresh = useCallback(async () => {
-    const r = await api.get<PaginatedResponse<TruckType>>('/trucks');
-    setTrucks(r.items);
-  }, []);
-  const crud = useCRUD('/trucks', refresh);
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return (
-    <Panel flush>
-      <div className="toolbar" style={{ borderBottom: 'none', padding: '16px 20px 8px' }}>
-        <div style={{ flex: 1 }} />
-        <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}><Plus size={14} /> Thêm xe</button>
-      </div>
-      <div className="table-scroll">
-        <table className="tt-table">
-          <thead><tr><th style={{ width: 40 }}>#</th><th>Biển số</th><th>Trạng thái</th><th style={{ width: 100 }}>Thao tác</th></tr></thead>
-          <tbody>
-            {crud.showAddForm && !crud.editingId && <TruckForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />}
-            {trucks.length === 0 && !crud.showAddForm && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>}
-            {trucks.map((t, i) => crud.editingId === t.id
-              ? <TruckForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
-              : <tr key={t.id}>
-                <td className="num">{i + 1}</td>
-                <td style={{ fontWeight: 600, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)' }}>{t.license_plate}</td>
-                <td><StatusPill variant={t.status === 'ACTIVE' ? 'success' : t.status === 'MAINTENANCE' ? 'warn' : 'neutral'}>{TRUCK_STATUS_LABELS[t.status] || t.status}</StatusPill></td>
-                <td><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
-    </Panel>
-  );
-}
-
-// ─── Trailers tab ──────────────────────────────────────────────────────────────
-
 function TrailerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: Trailer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
@@ -94,7 +109,7 @@ function TrailerForm({ saving, item, onsave, oncancel }: {
   const [type, setType] = useState<string>(item?.type || TrailerType.FT40);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
   return (
-    <InlineForm colSpan={5}>
+    <InlineForm colSpan={6}>
       <div style={{ flex: 2, minWidth: 160 }}>
         <Field label="Biển số"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51R-56789" /></Field>
       </div>
@@ -119,60 +134,17 @@ function TrailerForm({ saving, item, onsave, oncancel }: {
   );
 }
 
-function TrailersTab() {
-  const [trailers, setTrailers] = useState<Trailer[]>([]);
-  const refresh = useCallback(async () => {
-    const r = await api.get<PaginatedResponse<Trailer>>('/trailers');
-    setTrailers(r.items);
-  }, []);
-  const crud = useCRUD('/trailers', refresh);
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return (
-    <Panel flush>
-      <div className="toolbar" style={{ borderBottom: 'none', padding: '16px 20px 8px' }}>
-        <div style={{ flex: 1 }} />
-        <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}><Plus size={14} /> Thêm rơ-moóc</button>
-      </div>
-      <div className="table-scroll">
-        <table className="tt-table">
-          <thead><tr><th style={{ width: 40 }}>#</th><th>Biển số</th><th>Loại</th><th>Trạng thái</th><th style={{ width: 100 }}>Thao tác</th></tr></thead>
-          <tbody>
-            {crud.showAddForm && !crud.editingId && <TrailerForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />}
-            {trailers.length === 0 && !crud.showAddForm && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>}
-            {trailers.map((t, i) => crud.editingId === t.id
-              ? <TrailerForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
-              : <tr key={t.id}>
-                <td className="num">{i + 1}</td>
-                <td style={{ fontWeight: 600, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)' }}>{t.license_plate}</td>
-                <td><span className="badge badge-outline">{TRAILER_TYPE_LABELS[t.type] || t.type}</span></td>
-                <td><StatusPill variant={t.status === 'ACTIVE' ? 'success' : t.status === 'MAINTENANCE' ? 'warn' : 'neutral'}>{t.status === 'ACTIVE' ? 'Hoạt động' : t.status === 'MAINTENANCE' ? 'Bảo trì' : 'Ngưng'}</StatusPill></td>
-                <td><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
-    </Panel>
-  );
-}
-
-// ─── Drivers tab ───────────────────────────────────────────────────────────────
-
-function DriverForm({ saving, item, onsave, oncancel }: {
-  saving: boolean; item?: Driver; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+function DriverForm({ saving, item, trucks, onsave, oncancel }: {
+  saving: boolean; item?: Driver; trucks: TruckType[]; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
   const [name, setName] = useState(item?.name || '');
   const [phone, setPhone] = useState(item?.phone || '');
   const [baseSalary, setBaseSalary] = useState<string | number>(item?.base_salary || '');
   const [truckId, setTruckId] = useState<number>(item?.assigned_truck_id || 0);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
-  const [trucks, setTrucks] = useState<TruckType[]>([]);
-  useEffect(() => { api.get<PaginatedResponse<TruckType>>('/trucks').then(r => setTrucks(r.items)); }, []);
 
   return (
-    <InlineForm colSpan={6}>
+    <InlineForm colSpan={7}>
       <div style={{ flex: 2, minWidth: 150 }}>
         <Field label="Tên tài xế"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Họ và tên" /></Field>
       </div>
@@ -193,7 +165,7 @@ function DriverForm({ saving, item, onsave, oncancel }: {
       <div style={{ flex: 1, minWidth: 120 }}>
         <Field label="Trạng thái">
           <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
-            {Object.entries(DRIVER_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </Field>
       </div>
@@ -205,141 +177,411 @@ function DriverForm({ saving, item, onsave, oncancel }: {
   );
 }
 
-function DriversTab() {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [truckMap, setTruckMap] = useState<Map<number, string>>(new Map());
+// ─── Card Components ─────────────────────────────────────────────────────────
 
-  const refresh = useCallback(async () => {
-    const [d, t] = await Promise.all([
-      api.get<{ items: Driver[]; total: number }>('/drivers'),
-      api.get<PaginatedResponse<TruckType>>('/trucks'),
-    ]);
-    setDrivers(d.items);
-    const m = new Map<number, string>();
-    t.items.forEach(tk => m.set(tk.id, tk.license_plate));
-    setTruckMap(m);
-  }, []);
-
-  const crud = useCRUD('/drivers', refresh);
-  useEffect(() => { refresh(); }, [refresh]);
+function TruckCard({ trucks, driverByTruck, crud }: {
+  trucks: TruckType[];
+  driverByTruck: Map<number, Driver>;
+  crud: ReturnType<typeof useCRUD>;
+}) {
+  const active = trucks.filter(t => t.status === 'ACTIVE').length;
+  const maint = trucks.filter(t => t.status === 'MAINTENANCE').length;
 
   return (
     <Panel flush>
-      <div className="toolbar" style={{ borderBottom: 'none', padding: '16px 20px 8px' }}>
-        <div style={{ flex: 1 }} />
-        <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}><Plus size={14} /> Thêm tài xế</button>
+      <div className="fleet-card-head">
+        <div className="fleet-card-lead">
+          <div className="fleet-card-icon">
+            <Truck size={18} />
+          </div>
+          <div>
+            <div className="fleet-card-title">
+              Xe đầu kéo <span className="count-pill">{trucks.length}</span>
+            </div>
+            <div className="fleet-card-sub">Quản lý đầu kéo và trạng thái hoạt động</div>
+          </div>
+        </div>
+        <div className="fleet-card-tools">
+          <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
+            <Plus size={13} /> Thêm xe
+          </button>
+        </div>
       </div>
       <div className="table-scroll">
         <table className="tt-table">
           <thead>
             <tr>
-              <th style={{ width: 40 }}>#</th>
-              <th>Tên tài xế</th>
-              <th>SĐT</th>
-              <th>Xe phân công</th>
-              <th>Lương CB</th>
-              <th>Trạng thái</th>
-              <th style={{ width: 100 }}>Thao tác</th>
+              <th className="num">#</th>
+              <th>Biển số</th>
+              <th>Tài xế gán</th>
+              <th className="center">Trạng thái</th>
+              <th className="actions">Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {crud.showAddForm && !crud.editingId && <DriverForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />}
-            {drivers.length === 0 && !crud.showAddForm && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>}
-            {drivers.map((d, i) => crud.editingId === d.id
-              ? <DriverForm key={`edit-${d.id}`} saving={crud.saving} item={d} onsave={dd => crud.doUpdate(d.id, dd)} oncancel={crud.cancelForm} />
-              : <tr key={d.id}>
-                <td className="num">{i + 1}</td>
-                <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{d.name}</td>
-                <td>{d.phone || '—'}</td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-                  {d.assigned_truck_id ? (truckMap.get(d.assigned_truck_id) || '—') : <span style={{ color: 'var(--fg-3)' }}>Chưa phân</span>}
-                </td>
-                <td style={{ fontSize: 13 }}>
-                  {d.base_salary ? Number(d.base_salary).toLocaleString('vi-VN') + ' ₫' : '—'}
-                </td>
-                <td><StatusPill variant={d.status === 'ACTIVE' ? 'success' : 'danger'}>{DRIVER_STATUS_LABELS[d.status] || d.status}</StatusPill></td>
-                <td><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
-              </tr>
+            {crud.showAddForm && !crud.editingId && (
+              <TruckForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />
+            )}
+            {trucks.length === 0 && !crud.showAddForm && (
+              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
+            )}
+            {trucks.map((t, i) => crud.editingId === t.id
+              ? <TruckForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
+              : (
+                <tr key={t.id}>
+                  <td className="num">{i + 1}</td>
+                  <td><Plate plate={t.license_plate} tag="VN" /></td>
+                  <td>
+                    {driverByTruck.has(t.id)
+                      ? (
+                        <span className="fleet-assigned">
+                          <AvatarInitials name={driverByTruck.get(t.id)!.name} />
+                          <span className="name">{driverByTruck.get(t.id)!.name}</span>
+                        </span>
+                      )
+                      : <span className="fleet-unassigned">— Chưa phân —</span>
+                    }
+                  </td>
+                  <td style={{ textAlign: 'center' }}><StatusDot status={t.status} /></td>
+                  <td><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
+                </tr>
+              ),
             )}
           </tbody>
         </table>
+      </div>
+      <div className="table-foot">
+        <div className="fleet-legend">
+          <span className="fleet-legend-item">
+            <span className="fleet-legend-swatch" style={{ background: 'var(--success)' }} /> Hoạt động
+          </span>
+          <span className="fleet-legend-item">
+            <span className="fleet-legend-swatch" style={{ background: 'var(--warning)' }} /> Bảo trì
+          </span>
+        </div>
+        <span>Hoạt động {active} · Bảo trì {maint}</span>
       </div>
       {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
     </Panel>
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-
-type TabKey = 'trucks' | 'trailers' | 'drivers';
-
-const TABS: { key: TabKey; label: string; icon: React.ElementType; desc: string }[] = [
-  { key: 'trucks',   label: 'Xe đầu kéo', icon: Truck,     desc: 'Quản lý đầu kéo và trạng thái hoạt động' },
-  { key: 'trailers', label: 'Rơ-moóc',    icon: Container, desc: 'Danh mục sơ mi rơ-moóc (20ft / 40ft)' },
-  { key: 'drivers',  label: 'Tài xế',     icon: UserCheck, desc: 'Nhân sự lái xe, lương cơ bản và phân công xe' },
-];
-
-export default function FleetPage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('trucks');
-  const activeTabMeta = TABS.find(t => t.key === activeTab)!;
+function TrailerCard({ trailers, crud }: {
+  trailers: Trailer[];
+  crud: ReturnType<typeof useCRUD>;
+}) {
+  const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
+  const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
 
   return (
-    <div className="fade-up">
+    <Panel flush>
+      <div className="fleet-card-head">
+        <div className="fleet-card-lead">
+          <div className="fleet-card-icon alt">
+            <Container size={18} />
+          </div>
+          <div>
+            <div className="fleet-card-title">
+              Rơ-moóc <span className="count-pill">{trailers.length}</span>
+            </div>
+            <div className="fleet-card-sub">Danh mục sơ mi rơ-moóc (20ft / 40ft)</div>
+          </div>
+        </div>
+        <div className="fleet-card-tools">
+          <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
+            <Plus size={13} /> Thêm rơ-moóc
+          </button>
+        </div>
+      </div>
+      <div className="table-scroll">
+        <table className="tt-table">
+          <thead>
+            <tr>
+              <th className="num">#</th>
+              <th>Biển số</th>
+              <th className="center">Loại</th>
+              <th>Ghép với</th>
+              <th className="center">Trạng thái</th>
+              <th className="actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {crud.showAddForm && !crud.editingId && (
+              <TrailerForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />
+            )}
+            {trailers.length === 0 && !crud.showAddForm && (
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
+            )}
+            {trailers.map((t, i) => crud.editingId === t.id
+              ? <TrailerForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
+              : (
+                <tr key={t.id}>
+                  <td className="num">{i + 1}</td>
+                  <td><Plate plate={t.license_plate} tag="RM" /></td>
+                  <td style={{ textAlign: 'center' }}><TypeChip type={t.type} /></td>
+                  <td><span className="fleet-unassigned">—</span></td>
+                  <td style={{ textAlign: 'center' }}><StatusDot status={t.status} /></td>
+                  <td><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
+                </tr>
+              ),
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="table-foot">
+        <div className="fleet-legend">
+          <span className="fleet-legend-item">
+            <span className="fleet-legend-swatch" style={{ background: 'var(--info)' }} /> 40FT
+          </span>
+          <span className="fleet-legend-item">
+            <span className="fleet-legend-swatch" style={{ background: 'var(--accent)' }} /> 20FT
+          </span>
+        </div>
+        <span>{ft40}×40FT · {ft20}×20FT</span>
+      </div>
+      {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
+    </Panel>
+  );
+}
+
+function DriverCard({ drivers, truckMap, crud }: {
+  drivers: Driver[];
+  truckMap: Map<number, TruckType>;
+  crud: ReturnType<typeof useCRUD>;
+}) {
+  const totalSalary = drivers.reduce((s, d) => s + (d.base_salary ? Number(d.base_salary) : 0), 0);
+  const unassigned = drivers.filter(d => !d.assigned_truck_id).length;
+
+  return (
+    <Panel flush>
+      <div className="fleet-card-head">
+        <div className="fleet-card-lead">
+          <div className="fleet-card-icon">
+            <UserCheck size={18} />
+          </div>
+          <div>
+            <div className="fleet-card-title">
+              Tài xế <span className="count-pill">{drivers.length}</span>
+            </div>
+            <div className="fleet-card-sub">Nhân sự lái xe, lương cơ bản và phân công xe</div>
+          </div>
+        </div>
+        <div className="fleet-card-tools">
+          <div className="fleet-mini-search">
+            <Search size={14} />
+            <input type="text" placeholder="Tìm tên hoặc SĐT…" />
+          </div>
+          <Btn variant="ghost" size="sm" icon={<Filter size={13} />}>Lọc</Btn>
+          <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
+            <Plus size={13} /> Thêm tài xế
+          </button>
+        </div>
+      </div>
+      <div className="table-scroll">
+        <table className="tt-table">
+          <thead>
+            <tr>
+              <th className="num">#</th>
+              <th>Tên tài xế</th>
+              <th>SĐT</th>
+              <th>Xe phân công</th>
+              <th>Lương CB</th>
+              <th className="center">Trạng thái</th>
+              <th className="actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {crud.showAddForm && !crud.editingId && (
+              <DriverForm saving={crud.saving} trucks={[...truckMap.values()]} onsave={crud.doCreate} oncancel={crud.cancelForm} />
+            )}
+            {drivers.length === 0 && !crud.showAddForm && (
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
+            )}
+            {drivers.map((d, i) => crud.editingId === d.id
+              ? <DriverForm key={`edit-${d.id}`} saving={crud.saving} item={d} trucks={[...truckMap.values()]} onsave={dd => crud.doUpdate(d.id, dd)} oncancel={crud.cancelForm} />
+              : (
+                <tr key={d.id}>
+                  <td className="num">{i + 1}</td>
+                  <td>
+                    <span className="fleet-assigned">
+                      <AvatarInitials name={d.name} />
+                      <span className="name">{d.name}</span>
+                    </span>
+                  </td>
+                  <td><span className="fleet-phone">{d.phone || '—'}</span></td>
+                  <td>
+                    {d.assigned_truck_id && truckMap.has(d.assigned_truck_id)
+                      ? (
+                        <span className="fleet-pair">
+                          {truckMap.get(d.assigned_truck_id)!.license_plate}
+                        </span>
+                      )
+                      : <span className="fleet-unassigned">— Chưa phân —</span>
+                    }
+                  </td>
+                  <td>
+                    {d.base_salary
+                      ? <span className="fleet-salary">{Number(d.base_salary).toLocaleString('vi-VN')}<span className="unit">VNĐ</span></span>
+                      : <span className="fleet-salary empty">—</span>
+                    }
+                  </td>
+                  <td style={{ textAlign: 'center' }}><StatusDot status={d.status} /></td>
+                  <td><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
+                </tr>
+              ),
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="table-foot">
+        <div className="fleet-legend">
+          <span>Tổng quỹ lương: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{totalSalary.toLocaleString('vi-VN')} VNĐ</strong></span>
+          {unassigned > 0 && (
+            <>
+              <span style={{ opacity: 0.5 }}>·</span>
+              <span>{unassigned} tài xế chưa được phân xe</span>
+            </>
+          )}
+        </div>
+        <span>Hiển thị {drivers.length}/{drivers.length}</span>
+      </div>
+      {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
+    </Panel>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
+
+export default function FleetPage() {
+  const [trucks, setTrucks] = useState<TruckType[]>([]);
+  const [trailers, setTrailers] = useState<Trailer[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+
+  const refreshAll = useCallback(async () => {
+    const [t, tr, d] = await Promise.all([
+      api.get<PaginatedResponse<TruckType>>('/trucks'),
+      api.get<PaginatedResponse<Trailer>>('/trailers'),
+      api.get<PaginatedResponse<Driver>>('/drivers'),
+    ]);
+    setTrucks(t.items);
+    setTrailers(tr.items);
+    setDrivers(d.items);
+  }, []);
+
+  const truckCrud = useCRUD('/trucks', refreshAll);
+  const trailerCrud = useCRUD('/trailers', refreshAll);
+  const driverCrud = useCRUD('/drivers', refreshAll);
+
+  useEffect(() => { refreshAll(); }, [refreshAll]);
+
+  // Cross-reference maps
+  const truckMap = new Map<number, TruckType>();
+  trucks.forEach(t => truckMap.set(t.id, t));
+
+  const driverByTruck = new Map<number, Driver>();
+  drivers.forEach(d => { if (d.assigned_truck_id) driverByTruck.set(d.assigned_truck_id, d); });
+
+  // KPI computations
+  const activeTrucks = trucks.filter(t => t.status === 'ACTIVE').length;
+  const maintTrucks = trucks.filter(t => t.status === 'MAINTENANCE').length;
+  const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
+  const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
+  const maintTrailers = trailers.filter(t => t.status === 'MAINTENANCE').length;
+  const assignedDrivers = drivers.filter(d => d.assigned_truck_id).length;
+  const readyToRun = trucks.filter(t =>
+    t.status === 'ACTIVE' && driverByTruck.has(t.id),
+  ).length;
+
+  return (
+    <div className="fleet-page fade-up">
       <PageHeader
-        title="Đội xe & Nhân sự"
-        description="Quản lý xe đầu kéo, rơ-moóc và tài xế"
+        title="Đội xe"
+        description="Quản lý xe đầu kéo, rơ-moóc và tài xế trong một trang"
+        action={
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn variant="secondary" size="sm" icon={<Download size={14} />}>Xuất Excel</Btn>
+            <Btn variant="secondary" size="sm" icon={<Filter size={14} />}>Lọc nâng cao</Btn>
+          </div>
+        }
       />
 
-      {/* Tab bar */}
-      <div style={{
-        display: 'flex',
-        gap: 4,
-        marginBottom: 20,
-        background: 'var(--bg-2)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 4,
-        border: '1px solid var(--border-1)',
-        width: 'fit-content',
-      }}>
-        {TABS.map(tab => {
-          const Icon = tab.icon;
-          const isActive = tab.key === activeTab;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 18px',
-                borderRadius: 'var(--radius-md)',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: isActive ? 600 : 400,
-                background: isActive ? 'var(--bg-0)' : 'transparent',
-                color: isActive ? 'var(--fg-1)' : 'var(--fg-3)',
-                boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Icon size={15} style={{ color: isActive ? 'var(--brand)' : 'var(--fg-3)' }} />
-              {tab.label}
-            </button>
-          );
-        })}
+      {/* KPI Strip */}
+      <div className="kpi-grid">
+        <KPI
+          label="Xe đầu kéo"
+          value={trucks.length}
+          unit="xe"
+          icon={Truck}
+          variant="success"
+          meta={
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />
+              <span style={{ color: 'var(--success)', fontWeight: 600 }}>{activeTrucks} hoạt động</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' }} />
+              <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{maintTrucks} bảo trì</span>
+            </span>
+          }
+        />
+        <KPI
+          label="Rơ-moóc"
+          value={trailers.length}
+          unit="moóc"
+          icon={Container}
+          variant="info"
+          meta={
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>{ft40}×40FT</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>{ft20}×20FT</span>
+              {maintTrailers > 0 && (
+                <>
+                  <span style={{ opacity: 0.4 }}>·</span>
+                  <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{maintTrailers} bảo trì</span>
+                </>
+              )}
+            </span>
+          }
+        />
+        <KPI
+          label="Tài xế"
+          value={drivers.length}
+          unit="người"
+          icon={UserCheck}
+          variant="warn"
+          meta={
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />
+              <span style={{ color: 'var(--success)', fontWeight: 600 }}>{drivers.length} đang làm</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>{assignedDrivers} đã phân xe</span>
+            </span>
+          }
+        />
+        <KPI
+          label="Sẵn sàng chạy"
+          value={readyToRun}
+          unit={`/ ${activeTrucks + maintTrucks || trucks.length} đầu kéo`}
+          icon={CheckCircle}
+          variant="default"
+          meta={
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Đủ xe + tài xế</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{activeTrucks - readyToRun} cần phân xế</span>
+            </span>
+          }
+        />
       </div>
 
-      {/* Active tab description */}
-      <p style={{ fontSize: 13, color: 'var(--fg-3)', marginBottom: 16, marginTop: -8 }}>
-        {activeTabMeta.desc}
-      </p>
+      {/* Trucks + Trailers side by side */}
+      <div className="fleet-two-col">
+        <TruckCard trucks={trucks} driverByTruck={driverByTruck} crud={truckCrud} />
+        <TrailerCard trailers={trailers} crud={trailerCrud} />
+      </div>
 
-      {/* Tab content */}
-      {activeTab === 'trucks'   && <TrucksTab />}
-      {activeTab === 'trailers' && <TrailersTab />}
-      {activeTab === 'drivers'  && <DriversTab />}
+      {/* Drivers full width */}
+      <DriverCard drivers={drivers} truckMap={truckMap} crud={driverCrud} />
     </div>
   );
 }

@@ -1,0 +1,47 @@
+import React from 'react';
+import { Clock, DollarSign, Users } from 'lucide-react';
+
+interface TripSummaryCardProps {
+  revenue: number;
+  fuelCost: number;
+  tollCost: number;
+  driverSalary: number;
+  profit: number;
+  tollStations: number;
+}
+
+function fmt(v: number) {
+  return Math.abs(v).toLocaleString('vi-VN');
+}
+
+export function TripSummaryCard({ revenue, fuelCost, tollCost, driverSalary, profit, tollStations }: TripSummaryCardProps) {
+  return (
+    <div className="tc-summary-card">
+      <h3 className="tc-summary-card__label">Ước tính lệnh</h3>
+      <div className="tc-summary-card__big mono">
+        {fmt(revenue)}
+        <span className="tc-summary-card__currency">VNĐ</span>
+      </div>
+      <div className="tc-summary-card__mini">Doanh thu chuyến · chưa trừ chi phí</div>
+
+      <div className="tc-summary-rows">
+        <div className="tc-summary-row">
+          <span className="tc-summary-row__lbl"><Clock size={12} /> Nhiên liệu (ước)</span>
+          <span className="tc-summary-row__val tc-summary-row__val--neg">−{fmt(fuelCost)}</span>
+        </div>
+        <div className="tc-summary-row">
+          <span className="tc-summary-row__lbl"><DollarSign size={12} /> Vé đường ({tollStations} trạm)</span>
+          <span className="tc-summary-row__val tc-summary-row__val--neg">−{fmt(tollCost)}</span>
+        </div>
+        <div className="tc-summary-row">
+          <span className="tc-summary-row__lbl"><Users size={12} /> Lương tài xế</span>
+          <span className="tc-summary-row__val tc-summary-row__val--neg">−{fmt(driverSalary)}</span>
+        </div>
+        <div className="tc-summary-row tc-summary-row--total">
+          <span className="tc-summary-row__lbl" style={{ color: 'rgba(255,255,255,0.85)' }}>Lợi nhuận dự kiến</span>
+          <span className="tc-summary-row__val tc-summary-row__val--pos">+{fmt(profit)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -38,7 +38,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
       return [
         { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard, section: 'operations' },
         { key: 'dispatch', label: 'Phân xe', path: '/dispatch', icon: Compass, section: 'operations', count: dispatchCount },
-        { key: 'fleet', label: 'Đội xe & Nhân sự', path: '/fleet', icon: Layers, section: 'operations' },
+        { key: 'fleet', label: 'Đội xe', path: '/fleet', icon: Layers, section: 'admin' },
         { key: 'trips', label: 'Sổ chuyến đi', path: '/trips', icon: Truck, section: 'operations' },
         { key: 'penalties', label: 'Kỷ luật', path: '/penalties', icon: AlertTriangle, section: 'operations', count: penaltiesCount },
         
@@ -51,7 +51,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'admin' },
         ...(role === 'ADMIN' || role === 'MANAGER' ? [
           { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'admin' as const },
-          { key: 'audit-logs', label: 'Nhật ký hệ thống', path: '/audit-logs', icon: ScrollText, section: 'admin' as const },
+          { key: 'audit-logs', label: 'Nhật ký người dùng', path: '/audit-logs', icon: ScrollText, section: 'admin' as const },
         ] : []),
       ];
     case 'DRIVER':
@@ -78,7 +78,7 @@ function getRoleLabel(role: Role): string {
 function getPageTitle(pathname: string): string {
   if (pathname === '/dashboard') return 'Tổng quan';
   if (pathname.startsWith('/dispatch')) return 'Điều vận & Phân xe';
-  if (pathname.startsWith('/fleet')) return 'Đội xe & Nhân sự';
+  if (pathname.startsWith('/fleet')) return 'Đội xe';
   if (pathname.startsWith('/trips')) return 'Lệnh vận chuyển';
   if (pathname === '/finance') return 'Báo cáo lãi lỗ';
   if (pathname.startsWith('/profit')) return 'Lợi nhuận & Phân chia';
@@ -89,7 +89,7 @@ function getPageTitle(pathname: string): string {
   if (pathname === '/config') return 'Cấu hình hệ thống';
   if (pathname.startsWith('/config')) return 'Cấu hình';
   if (pathname === '/users') return 'Người dùng';
-  if (pathname === '/audit-logs') return 'Nhật ký hệ thống';
+  if (pathname === '/audit-logs') return 'Nhật ký người dùng';
   if (pathname === '/my-trips') return 'Lệnh của tôi';
   if (pathname === '/my-earnings') return 'Thu nhập';
   return 'NEPO';
