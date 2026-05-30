@@ -2,18 +2,17 @@ import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, sql, gte } from 'drizzle-orm';
-import { authMiddleware, requireRoles } from '../middleware/auth';
+// auth + Casbin applied at mount point in index.ts
 import { Role, TxnType, TripStatus } from '@nepocorp/shared';
 import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
 
 const router = Router();
-router.use(authMiddleware);
 
 // ─── Ledger ──────────────────────────────────────────────────────────────────
 
-router.get('/ledger', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.get('/ledger', async (req: Request, res: Response) => {
   try {
     const entityType = req.query.entity_type as string;
     const entityId = req.query.entity_id as string;
@@ -40,7 +39,7 @@ router.get('/ledger', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), a
 
 // ─── Customer statement ──────────────────────────────────────────────────────
 
-router.get('/ledger/customers/:id/statement', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.get('/ledger/customers/:id/statement', async (req: Request, res: Response) => {
   try {
     const customerId = parseInt(req.params.id as string);
     const [customer] = await db.select().from(s.customers).where(eq(s.customers.id, customerId)).limit(1);
@@ -84,7 +83,7 @@ router.get('/ledger/customers/:id/statement', requireRoles(Role.ADMIN, Role.MANA
 
 // ─── Record payment ──────────────────────────────────────────────────────────
 
-router.post('/payments/receive', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.post('/payments/receive', async (req: Request, res: Response) => {
   try {
     const data = createPaymentSchema.parse(req.body);
 
@@ -123,7 +122,7 @@ router.post('/payments/receive', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACC
 
 // ─── Adjustment ──────────────────────────────────────────────────────────────
 
-router.post('/adjustments', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.post('/adjustments', async (req: Request, res: Response) => {
   try {
     const data = createAdjustmentSchema.parse(req.body);
 
@@ -187,7 +186,7 @@ router.get('/penalties', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/penalties', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.post('/penalties', async (req: Request, res: Response) => {
   try {
     const data = createPenaltySchema.parse(req.body);
 
@@ -265,7 +264,7 @@ router.get('/reports/dashboard', async (_req: Request, res: Response) => {
 
 // ─── P&L report ──────────────────────────────────────────────────────────────
 
-router.get('/reports/pnl', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.get('/reports/pnl', async (req: Request, res: Response) => {
   try {
     const month = parseInt(req.query.month as string);
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
@@ -295,9 +294,23 @@ router.get('/reports/pnl', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
     const [fee] = fees.filter(f => f.month === m && f.year === year);
     const managementFee = fee ? parseFloat(fee.amount) : 0;
 
-    // Penalties as other income
+    // Penalties as other income — scope to the SAME period as trips above.
+    // Without this filter the sum was every penalty ever recorded, which made
+    // net profit explode past gross profit on the dashboard (the carryover
+    // ledger leaked into the current month's bottom line).
+    let penaltyDateFilter;
+    if (month) {
+      const start = `${year}-${String(month).padStart(2, '0')}-01`;
+      const endMonth = month === 12 ? 1 : month + 1;
+      const endYear = month === 12 ? year + 1 : year;
+      const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`;
+      penaltyDateFilter = and(gte(s.penalties.date, start), sql`${s.penalties.date} < ${end}`);
+    } else {
+      penaltyDateFilter = gte(s.penalties.date, `${year}-01-01`);
+    }
     const penaltyRows = await db.select({ total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)` })
-      .from(s.penalties).where(isNull(s.penalties.deletedAt));
+      .from(s.penalties)
+      .where(and(isNull(s.penalties.deletedAt), penaltyDateFilter));
     const otherIncome = parseFloat(penaltyRows[0]?.total || '0');
 
     const netProfit = grossProfit - managementFee + otherIncome;
@@ -332,7 +345,11 @@ router.get('/reports/pnl', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
 });
 
 // Profit distribution
-router.post('/reports/distribute-profit', requireRoles(Role.ADMIN, Role.MANAGER), async (req: Request, res: Response) => {
+router.post('/reports/distribute-profit', async (req: Request, res: Response) => {
+  // Casbin gives ACCOUNTANT financial write, but profit distribution is ADMIN/MANAGER only
+  if (req.user!.role === Role.ACCOUNTANT) {
+    return res.status(403).json({ error: 'Không có quyền truy cập' });
+  }
   try {
     const { quarter, year } = req.body;
     if (!quarter || !year) return res.status(400).json({ error: 'Cần nhập quý và năm' });

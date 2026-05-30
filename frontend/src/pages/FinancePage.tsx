@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatNumber } from '../lib/format';
@@ -10,6 +10,33 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts';
 import type { CapTableHistory, PaginatedResponse } from '@nepocorp/shared';
+
+// Manual ResizeObserver-based width measurement. Used as a workaround for
+// recharts ResponsiveContainer mis-measuring (rendering 14×14 SVGs) when its
+// parent is a flex/grid item — the auto-measure runs before the layout pass
+// so it reads zero width, then never re-measures.
+function useObservedWidth() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Initial synchronous measurement — ResizeObserver doesn't always fire
+    // its first callback before paint, leaving the chart unmounted on
+    // initial render. Measure once now so charts appear immediately.
+    const initial = Math.round(el.getBoundingClientRect().width);
+    if (initial > 0) setWidth(initial);
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = Math.round(entry.contentRect.width);
+        if (w > 0) setWidth(w);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
 
 interface PnlTruck {
   plate: string;
@@ -133,10 +160,30 @@ export default function FinancePage() {
   const mgmtFeeLY = prevReport?.managementFee ?? 0;
   const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
 
-  // Cap table partner split for footnote
-  const activeCapTable = capTable.length > 0
-    ? capTable.map(c => ({ name: c.partnerName, pct: parseFloat(c.percentage) }))
-    : [];
+  // Cap table partner split for footnote.
+  // The cap-table table is a *history* — each row is a snapshot of the
+  // ownership distribution at a given `effectiveDate`. We must only use the
+  // latest snapshot (and within that snapshot, dedupe per partner — taking
+  // the most recently created row per name), otherwise the footnote
+  // repeats the same partner once per historical entry.
+  const activeCapTable = (() => {
+    if (!capTable.length) return [];
+    // Pick the latest effectiveDate that has been reached today
+    const today = new Date().toISOString().slice(0, 10);
+    const reached = capTable.filter(c => c.effectiveDate <= today);
+    const pool = reached.length > 0 ? reached : capTable;
+    const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
+    const snapshot = pool.filter(c => c.effectiveDate === latestDate);
+    // Dedupe by partner name — keep the most recently created entry
+    const byName = new Map<string, typeof snapshot[number]>();
+    for (const row of snapshot) {
+      const prev = byName.get(row.partnerName);
+      if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) {
+        byName.set(row.partnerName, row);
+      }
+    }
+    return Array.from(byName.values()).map(c => ({ name: c.partnerName, pct: parseFloat(c.percentage) }));
+  })();
 
   const compactNum = (v: number) => {
     if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}tỷ`;
@@ -160,6 +207,11 @@ export default function FinancePage() {
     .sort((a, b) => b.profit - a.profit)
     .slice(0, 5)
     .map(t => ({ name: t.plate, 'LN gộp': t.profit }));
+
+  // Chart container refs — workaround for recharts ResponsiveContainer
+  // mis-measuring inside flex/grid (rendered 14×14 SVGs leaving panels blank).
+  const [revenueChartRef, revenueChartWidth] = useObservedWidth();
+  const [pieChartRef, pieChartWidth] = useObservedWidth();
 
   return (
     <div className="fade-up-1" style={{ paddingBottom: 40 }}>
@@ -237,17 +289,35 @@ export default function FinancePage() {
       )}
 
       {/* ── Charts ──────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)', gap: 16, marginBottom: 24 }} className="fade-up-3">
+      {/* Switched from `display: grid` with `minmax(0,2fr) minmax(0,1fr)` to
+          flex — recharts ResponsiveContainer was failing to measure the cell
+          width (rendering SVGs at 14×14 instead of the full available width)
+          when inside the grid track. Flex children with explicit `flex: 2`
+          and `flex: 1` give recharts a stable parent box to measure against. */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3">
         {/* Revenue trend */}
-        <div className="panel" style={{ padding: '16px 20px' }}>
+        <div className="panel" style={{ padding: '16px 20px', flex: '2 1 400px', minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
             Xu hướng doanh thu {year}
           </div>
           {yearlyLoading ? (
             <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
+          ) : revenueChartData.every(d => d['Doanh thu'] === 0 && d['LN gộp'] === 0) ? (
+            // Empty-state — was showing an empty axis with no bars at all,
+            // which read as a broken chart. Now we render a clear placeholder
+            // so the director knows it's "no data yet" not "chart is broken".
+            <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 4 }}>
+              <div style={{ fontSize: 24, opacity: 0.4 }}>📊</div>
+              <div>Chưa có lệnh chốt sổ trong năm {year}</div>
+              <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh để xem xu hướng doanh thu hàng tháng</div>
+            </div>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={revenueChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            // Manual width via ResizeObserver — recharts ResponsiveContainer
+            // mis-measures inside flex/grid (renders 14×14). Initial state of
+            // 600 ensures the chart paints something on first render before
+            // the observer fires; the observer then refines.
+            <div ref={revenueChartRef} style={{ width: '100%', height: 200 }}>
+              <BarChart width={revenueChartWidth || 600} height={200} data={revenueChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis tickFormatter={compactNum} tick={{ fontSize: 11 }} width={44} />
                 <Tooltip formatter={(v: any) => `${formatRawNumber(Number(v))} ₫`} />
@@ -255,36 +325,49 @@ export default function FinancePage() {
                 <Bar dataKey="Doanh thu" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={20} />
                 <Bar dataKey="LN gộp" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={20} />
               </BarChart>
-            </ResponsiveContainer>
+            </div>
           )}
         </div>
 
         {/* Cost pie */}
-        <div className="panel" style={{ padding: '16px 20px' }}>
+        <div className="panel" style={{ padding: '16px 20px', flex: '1 1 280px', minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
             Cơ cấu chi phí T{month}/{year}
           </div>
           {loading ? (
             <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
           ) : costPieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
+            <div ref={pieChartRef} style={{ width: '100%', height: 200 }}>
+              <PieChart width={pieChartWidth || 280} height={200}>
                 <Pie data={costPieData} dataKey="value" cx="50%" cy="45%" outerRadius={68} label={false}>
                   {costPieData.map((e, i) => <Cell key={i} fill={e.fill} />)}
                 </Pie>
                 <Tooltip formatter={(v: any) => `${formatRawNumber(Number(v))} ₫`} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
-            </ResponsiveContainer>
+            </div>
           ) : (
-            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
-              Chưa có dữ liệu chi phí
+            <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 4 }}>
+              <div style={{ fontSize: 24, opacity: 0.4 }}>🥧</div>
+              <div>Chưa có dữ liệu chi phí</div>
+              <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh có chi tiết nhiên liệu/đường để xem cơ cấu</div>
             </div>
           )}
         </div>
       </div>
 
       {/* Top trucks */}
+      {!loading && topTrucks.length === 0 && (
+        <div className="panel fade-up-3" style={{ padding: '16px 20px', marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
+            Top xe theo lợi nhuận – T{month}/{year}
+          </div>
+          <div style={{ height: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 4 }}>
+            <div style={{ fontSize: 24, opacity: 0.4 }}>🚚</div>
+            <div>Chưa có xe nào có lệnh chốt sổ trong tháng này</div>
+          </div>
+        </div>
+      )}
       {!loading && topTrucks.length > 0 && (
         <div className="panel fade-up-3" style={{ padding: '16px 20px', marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>

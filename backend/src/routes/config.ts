@@ -2,8 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, isNull, sql, like, and, desc, lte } from 'drizzle-orm';
-import { authMiddleware, requireRoles } from '../middleware/auth';
-import { Role } from '@nepocorp/shared';
+// auth + Casbin applied at mount point in index.ts
 import {
   customerSchema, truckSchema, trailerSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
@@ -13,18 +12,13 @@ import {
 import type { Request, Response } from 'express';
 
 const router = Router();
-router.use(authMiddleware);
 
 function crud<T extends { id: unknown }>(
   table: any,
   createSchema: any,
-  { requireAdmin = false, searchableField }: { requireAdmin?: boolean; searchableField?: string } = {}
+  { searchableField }: { searchableField?: string } = {}
 ) {
   const sub = Router();
-
-  const canWrite = requireAdmin
-    ? requireRoles(Role.ADMIN)
-    : requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT);
 
   const hasSoftDelete = 'deletedAt' in table;
 
@@ -51,7 +45,7 @@ function crud<T extends { id: unknown }>(
     res.json({ items, total: Number(countRow?.count ?? 0), page, pageSize: limit });
   });
 
-  sub.post('/', canWrite, async (req: Request, res: Response) => {
+  sub.post('/', async (req: Request, res: Response) => {
     const data = createSchema.parse(req.body);
     const [item] = await db.insert(table).values(data).returning();
     res.status(201).json(item);
@@ -66,7 +60,7 @@ function crud<T extends { id: unknown }>(
     res.json(item);
   });
 
-  sub.put('/:id', canWrite, async (req: Request, res: Response) => {
+  sub.put('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     const data = createSchema.partial().parse(req.body);
     const [item] = await db.update(table).set({ ...data, updatedAt: new Date() }).where(eq(table.id, id)).returning();
@@ -74,7 +68,7 @@ function crud<T extends { id: unknown }>(
     res.json(item);
   });
 
-  sub.delete('/:id', requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+  sub.delete('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     if (!hasSoftDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
     const [item] = await db.update(table).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(table.id, id)).returning();
@@ -107,7 +101,7 @@ router.get('/catalogs/bootstrap', async (_req: Request, res: Response) => {
   }
 });
 
-router.get('/pricing', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.get('/pricing', async (req: Request, res: Response) => {
   try {
     const customerId = parseInt(req.query.customerId as string);
     const routeId = parseInt(req.query.routeId as string);
@@ -149,7 +143,6 @@ router.use('/cap-table', crud(s.capTableHistory, capTableSchema));
 // Drivers - special handling (includes user_id)
 router.use('/drivers', (() => {
   const sub = Router();
-  const canWrite = requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT);
 
   sub.get('/', async (req: Request, res: Response) => {
     const items = await db.select({
@@ -161,7 +154,7 @@ router.use('/drivers', (() => {
     res.json({ items, total: items.length });
   });
 
-  sub.post('/', canWrite, async (req: Request, res: Response) => {
+  sub.post('/', async (req: Request, res: Response) => {
     const data = driverSchema.parse(req.body);
     const [item] = await db.insert(s.drivers).values(data).returning();
     res.status(201).json(item);
@@ -174,7 +167,7 @@ router.use('/drivers', (() => {
     res.json(item);
   });
 
-  sub.put('/:id', canWrite, async (req: Request, res: Response) => {
+  sub.put('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     const data = driverSchema.partial().parse(req.body);
     const [item] = await db.update(s.drivers).set({ ...data, updatedAt: new Date() }).where(eq(s.drivers.id, id)).returning();
@@ -192,7 +185,7 @@ router.get('/fuel-config', async (_req: Request, res: Response) => {
   res.json(row);
 });
 
-router.put('/fuel-config', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.put('/fuel-config', async (req: Request, res: Response) => {
   const data = fuelConfigSchema.parse(req.body);
   const values = {
     loadedNorm: String(data.loaded_norm),
@@ -212,7 +205,7 @@ router.put('/fuel-config', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
 });
 
 // ─── Audit logs ──────────────────────────────────────────────────────────────
-router.get('/audit-logs', requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+router.get('/audit-logs', async (req: Request, res: Response) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, parseInt(req.query.limit as string) || 50);

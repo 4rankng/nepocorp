@@ -1,10 +1,25 @@
 import { TripStatus, FuelMode } from '@nepocorp/shared';
 
-// Helper to create date relative to now
+// Helper to create date relative to now.
+//
+// The trip seed lays out 716 lines of trips with `daysFromNow` values from 1
+// to roughly 90. Previously we mapped daysFromNow=1 to "90 days ago" which
+// pushed many of the later trips into FUTURE months (June+), leaving the
+// current month visibly empty on the dashboard and P&L charts ("Ghi nhận 1
+// lệnh chốt sổ" for May).
+//
+// New mapping: daysFromNow=1 → ~120 days ago, daysFromNow=90 → today. Trips
+// stay anchored in the recent past so the current month shows real activity
+// and future months stay empty (as they should — these are completed trips,
+// not forecasts).
 const date = (daysFromNow: number) => {
   const now = new Date();
-  const baseDate = new Date(now.getTime() - 90 * 86400000); // 3 months ago
-  return new Date(baseDate.getTime() + daysFromNow * 86400000).toISOString().slice(0, 10);
+  // Spread the 90 seed days across the last 120 calendar days (roughly the
+  // last 4 months). The final trips land on "today" rather than 30 days from
+  // now, so the current-month KPIs reflect real seeded volume.
+  const baseDate = new Date(now.getTime() - 120 * 86400000);
+  const spreadDays = Math.round((daysFromNow / 90) * 120);
+  return new Date(baseDate.getTime() + spreadDays * 86400000).toISOString().slice(0, 10);
 };
 
 export const trips = [

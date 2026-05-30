@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
-import type { DashboardStats, TripDetail } from '@nepocorp/shared';
-import { TripStatus } from '@nepocorp/shared';
+import type { DashboardStats, TripDetail, Role } from '@nepocorp/shared';
+import { TripStatus, ROLE_LABELS } from '@nepocorp/shared';
 import { Panel } from '../components/UI';
 
 /* -------------------------------------------------------------------------- */
@@ -36,13 +36,32 @@ interface PnlReport {
   trucks: PnlTruck[];
 }
 
+interface CustomerLite { id: number; name: string }
+interface LedgerEntryLite {
+  entity_type?: string;
+  entity_id?: number;
+  entityType?: string;
+  entityId?: number;
+  debit?: string | number;
+  credit?: string | number;
+  balance?: string | number;
+  txn_id?: number | null;
+  txnId?: number | null;
+  created_at?: string;
+  createdAt?: string;
+}
+interface CapTableLite { partner_name?: string; partnerName?: string; percentage: string }
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
   const [stats, setStats] = useState<ExtendedDashboardStats | null>(null);
   const [pnlReport, setPnlReport] = useState<PnlReport | null>(null);
+  const [prevPnlReport, setPrevPnlReport] = useState<PnlReport | null>(null);
   const [allTrips, setAllTrips] = useState<TripDetail[]>([]);
+  const [topOverdueCustomer, setTopOverdueCustomer] = useState<{ name: string; balance: number; days: number } | null>(null);
+  const [topShareholder, setTopShareholder] = useState<{ name: string; percentage: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const now = new Date();
@@ -51,15 +70,65 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setLoading(true);
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
     Promise.all([
       api.get<ExtendedDashboardStats>('/reports/dashboard'),
       api.get<PnlReport>(`/reports/pnl?month=${currentMonth}&year=${currentYear}`),
       api.get<{ items: TripDetail[]; total: number }>('/trips?limit=100'),
+      // Customer + ledger to compute real top-overdue customer (replaces the
+      // hardcoded "Hoàng Long Co. 185M" alert that didn't match real data).
+      api.get<{ items: CustomerLite[] }>('/customers').catch(() => ({ items: [] as CustomerLite[] })),
+      api.get<{ items: LedgerEntryLite[] }>('/ledger?entity_type=CUSTOMER&limit=2000').catch(() => ({ items: [] as LedgerEntryLite[] })),
+      // Cap table for the real top shareholder (replaces hardcoded 70.45% Ông Phụng).
+      api.get<{ items: CapTableLite[] }>('/cap-table').catch(() => ({ items: [] as CapTableLite[] })),
+      // Previous month P&L — used to compute real MoM percentages (was hardcoded +8.2% / +6.4% / +12.4%).
+      api.get<PnlReport>(`/reports/pnl?month=${prevMonth}&year=${prevYear}`).catch(() => null as PnlReport | null),
     ])
-      .then(([dashboardData, pnlData, tripsData]) => {
+      .then(([dashboardData, pnlData, tripsData, customersRes, ledgerRes, capRes, prevPnlData]) => {
         setStats(dashboardData);
         setPnlReport(pnlData);
+        setPrevPnlReport(prevPnlData);
         setAllTrips(tripsData.items);
+
+        // Compute top overdue customer from the ledger.
+        const customerById = new Map<number, string>();
+        (customersRes.items ?? []).forEach(c => customerById.set(c.id, c.name));
+        // Latest-balance per customer (FIFO ledger — last row's balance is current debt).
+        const lastByCustomer = new Map<number, { balance: number; date: string }>();
+        const oldestUnpaidByCustomer = new Map<number, string>();
+        (ledgerRes.items ?? []).forEach(e => {
+          const entityType = e.entity_type || e.entityType;
+          const entityId = e.entity_id ?? e.entityId;
+          if (entityType !== 'CUSTOMER' || entityId == null) return;
+          const balance = parseFloat(String(e.balance ?? '0'));
+          const date = e.created_at || e.createdAt || '';
+          const prev = lastByCustomer.get(entityId);
+          if (!prev || date > prev.date) lastByCustomer.set(entityId, { balance, date });
+          // Track oldest unpaid debit (txn_id set, debit > 0) for aging.
+          const debit = parseFloat(String(e.debit ?? '0'));
+          if (debit > 0 && date) {
+            const oldest = oldestUnpaidByCustomer.get(entityId);
+            if (!oldest || date < oldest) oldestUnpaidByCustomer.set(entityId, date);
+          }
+        });
+        let topCust: { name: string; balance: number; days: number } | null = null;
+        lastByCustomer.forEach(({ balance }, id) => {
+          if (balance <= 0) return;
+          const name = customerById.get(id) || `KH #${id}`;
+          const oldestDate = oldestUnpaidByCustomer.get(id);
+          const days = oldestDate ? Math.max(0, Math.floor((Date.now() - new Date(oldestDate).getTime()) / 86400000)) : 0;
+          if (!topCust || balance > topCust.balance) {
+            topCust = { name, balance, days };
+          }
+        });
+        setTopOverdueCustomer(topCust);
+
+        // Pick the largest shareholder by percentage.
+        const cap = (capRes.items ?? [])
+          .map(c => ({ name: c.partner_name || c.partnerName || '—', percentage: parseFloat(c.percentage) || 0 }))
+          .sort((a, b) => b.percentage - a.percentage);
+        setTopShareholder(cap[0] || null);
       })
       .catch((err) => {
         console.error('Error fetching dashboard analytical logs:', err);
@@ -93,8 +162,20 @@ export default function DashboardPage() {
   const revenue = stats?.revenue ?? 0;
   const costs = stats?.costs ?? 0;
   const grossProfit = stats?.grossProfit ?? 0;
-  const netProfit = pnlReport?.netProfit ?? (grossProfit - (pnlReport?.managementFee ?? 24000000) + (pnlReport?.otherIncome ?? 0));
+  // Use the period's grossProfit as the anchor and apply the pnl report's
+  // managementFee / otherIncome on top. We deliberately don't blindly trust
+  // pnlReport.netProfit — previously the backend was summing all-time
+  // penalties into otherIncome, which made netProfit > grossProfit (a
+  // logical impossibility that destroyed the dashboard's credibility). The
+  // backend now scopes penalties by month, but we still derive locally so
+  // any future regression on the API side can't break the math here.
+  const managementFee = pnlReport?.managementFee ?? 0;
+  const otherIncome = pnlReport?.otherIncome ?? 0;
+  const netProfit = grossProfit - managementFee + otherIncome;
   
+  const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+  const currentMonthTrips = allTrips.filter(t => t.departure_date?.startsWith(currentMonthStr));
+
   const createdTripsCount = allTrips.filter((t) => t.status === TripStatus.CREATED).length;
 
   // Sorting trucks by profit for performance card
@@ -104,7 +185,7 @@ export default function DashboardPage() {
 
   // Sorting routes by profit
   const routeMap = new Map<string, { name: string; trips: number; profit: number }>();
-  allTrips.forEach((t) => {
+  currentMonthTrips.forEach((t) => {
     if (!t.route || !t.route.name) return;
     const name = t.route.name;
     const profVal = parseFloat(t.gross_profit as string || '0');
@@ -161,13 +242,30 @@ export default function DashboardPage() {
     : `${Math.round(grossProfit / 1000000)}`;
   const grossUnit = grossProfit >= 1000000000 ? ' tỷ ₫' : ' triệu ₫';
 
-  const formattedNet = netProfit >= 1000000000 
-    ? `${(netProfit / 1000000000).toFixed(2)}` 
+  const formattedNet = netProfit >= 1000000000
+    ? `${(netProfit / 1000000000).toFixed(2)}`
     : `${Math.round(netProfit / 1000000)}`;
   const netUnit = netProfit >= 1000000000 ? ' tỷ ₫' : ' triệu ₫';
 
+  // Real MoM percentages (was hardcoded +8.2% / +6.4% / +12.4%). When the
+  // previous month has no data, fall back to "—" rather than a fake number.
+  const prevRevenue = prevPnlReport?.totalRevenue ?? 0;
+  const prevCosts = prevPnlReport?.totalCosts ?? 0;
+  const prevGross = prevPnlReport?.grossProfit ?? 0;
+  const fmtMoM = (current: number, previous: number): string => {
+    if (!previous) return '—';
+    const pct = ((current - previous) / previous) * 100;
+    return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
+  };
+  const revenueMoM = fmtMoM(revenue, prevRevenue);
+  const costsMoM = fmtMoM(costs, prevCosts);
+  const grossMoM = fmtMoM(grossProfit, prevGross);
+  const isRevUp = revenue >= prevRevenue;
+  const isCostUp = costs > prevCosts;
+  const isGrossUp = grossProfit >= prevGross;
+
   // Cost breakdown from real locked trip data
-  const lockedTrips = allTrips.filter(t => t.status === TripStatus.LOCKED);
+  const lockedTrips = currentMonthTrips.filter(t => t.status === TripStatus.LOCKED);
   const realFuelCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).total_fuel_cost || '0'), 0);
   const realRoadCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).total_road_allowance || '0'), 0);
   const realDriverCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).driver_salary || '0'), 0);
@@ -199,9 +297,17 @@ export default function DashboardPage() {
       {/* Header Banner closely matching wireframe */}
       <header className="page-header">
         <div>
-          <h1 className="page-title">Chào buổi sáng, <em>{user?.name || user?.username || 'bạn'}</em></h1>
+          <h1 className="page-title">Chào buổi sáng, <em>{user?.name || (user?.role && ROLE_LABELS[user.role as Role]) || user?.username || 'bạn'}</em></h1>
           <p className="page-subtitle">
-            Tháng {currentMonth} / {currentYear} đang hoạt động — doanh thu dự kiến <strong style={{ color: 'var(--success)' }}>+8.2% MoM</strong>. Lợi nhuận ròng dự kiến <strong>{formatCurrency(netProfit)}</strong> sau phí quản lý.
+            Tháng {currentMonth} / {currentYear} đang hoạt động — doanh thu{' '}
+            {prevPnlReport ? (
+              <>
+                <strong style={{ color: isRevUp ? 'var(--success)' : 'var(--danger)' }}>{revenueMoM} MoM</strong>
+              </>
+            ) : (
+              <strong>chưa đủ dữ liệu so sánh</strong>
+            )}
+            . Lợi nhuận ròng dự kiến <strong>{formatCurrency(netProfit)}</strong> sau phí quản lý.
           </p>
         </div>
         <div className="page-actions">
@@ -226,9 +332,16 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="kpi__value">{formattedRevenue}<span className="kpi__value-unit">{revenueUnit}</span></div>
-          <div className="kpi__meta kpi__meta--up">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            <strong>+8.2%</strong> so với tháng trước
+          <div className={`kpi__meta ${prevPnlReport ? (isRevUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
+            {prevPnlReport && (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                {isRevUp
+                  ? <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>
+                  : <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>
+                }
+              </svg>
+            )}
+            <strong>{revenueMoM}</strong> so với tháng trước
           </div>
         </div>
 
@@ -241,7 +354,10 @@ export default function DashboardPage() {
           </div>
           <div className="kpi__value">{formattedCosts}<span className="kpi__value-unit">{costsUnit}</span></div>
           <div className="kpi__meta">
-            {((costs / (revenue || 1)) * 100).toFixed(1)}% doanh thu · <span style={{ color: 'var(--warning)', fontWeight: 600 }}>+6.4% MoM</span>
+            {((costs / (revenue || 1)) * 100).toFixed(1)}% doanh thu
+            {prevPnlReport && (
+              <> · <span style={{ color: isCostUp ? 'var(--warning)' : 'var(--success)', fontWeight: 600 }}>{costsMoM} MoM</span></>
+            )}
           </div>
         </div>
 
@@ -253,9 +369,16 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="kpi__value">{formattedGross}<span className="kpi__value-unit">{grossUnit}</span></div>
-          <div className="kpi__meta kpi__meta--up">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            <strong>+12.4%</strong> · biên {((grossProfit / (revenue || 1)) * 100).toFixed(1)}%
+          <div className={`kpi__meta ${prevPnlReport ? (isGrossUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
+            {prevPnlReport && (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                {isGrossUp
+                  ? <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>
+                  : <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>
+                }
+              </svg>
+            )}
+            <strong>{grossMoM}</strong> · biên {((grossProfit / (revenue || 1)) * 100).toFixed(1)}%
           </div>
         </div>
 
@@ -475,37 +598,98 @@ export default function DashboardPage() {
         flush
       >
           
-          {/* Huang Long debt alert */}
-          <div className="todo" onClick={() => navigate('/debt')}>
-            <div className="todo__icon todo__icon--danger">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {/* Top overdue customer — now driven by real ledger data, was
+              hardcoded to "Hoàng Long Co. nợ 185M ₫ quá hạn 92 ngày" which
+              didn't exist in the DB. Falls back to the original placeholder
+              copy only if there's literally no outstanding debt in the system. */}
+          {topOverdueCustomer ? (
+            <div className="todo" onClick={() => navigate('/debt')}>
+              <div className={`todo__icon ${topOverdueCustomer.days >= 60 ? 'todo__icon--danger' : 'todo__icon--warn'}`}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div className="todo__body">
+                <div className="todo__title">
+                  <strong>{topOverdueCustomer.name}</strong> nợ {formatCurrency(topOverdueCustomer.balance)}
+                  {topOverdueCustomer.days > 0 && <> — quá hạn {topOverdueCustomer.days} ngày</>}
+                </div>
+                <div className="todo__meta">
+                  <span>
+                    {topOverdueCustomer.days >= 90 ? 'Đề xuất KT: chuyển công ty thu hồi nợ' : topOverdueCustomer.days >= 30 ? 'Cảnh báo công nợ quá hạn' : 'Theo dõi công nợ'}
+                  </span>
+                </div>
+              </div>
+              <button className="btn btn--secondary btn--sm">Quyết định</button>
             </div>
-            <div className="todo__body">
-              <div className="todo__title"><strong>Hoàng Long Co.</strong> nợ 185M ₫ — quá hạn 92 ngày, đã gửi 3 lần đôn đốc</div>
-              <div className="todo__meta"><span>Đề xuất KT: chuyển công ty thu hồi nợ</span></div>
+          ) : (
+            <div className="todo" onClick={() => navigate('/debt')}>
+              <div className="todo__icon todo__icon--info">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
+              </div>
+              <div className="todo__body">
+                <div className="todo__title">Không có công nợ quá hạn</div>
+                <div className="todo__meta"><span>Toàn bộ khách hàng đã thanh toán đúng hạn</span></div>
+              </div>
             </div>
-            <button className="btn btn--secondary btn--sm">Quyết định</button>
-          </div>
+          )}
 
-          {/* Pending Dispatches */}
-          <div className="todo" onClick={() => navigate('/dispatch')}>
-            <div className="todo__icon todo__icon--warn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          {/* Pending Dispatches — customer-name preview is now derived from
+              the actual CREATED trips, not hardcoded "Vinh Phát · Đông Á …". */}
+          {createdTripsCount > 0 ? (
+            (() => {
+              const pendingCustomers = allTrips
+                .filter(t => t.status === TripStatus.CREATED)
+                .map(t => t.customer?.name || '—')
+                .filter((n): n is string => !!n);
+              // Group by name, keep count
+              const counts = new Map<string, number>();
+              pendingCustomers.forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
+              const previewParts: string[] = [];
+              for (const [name, count] of counts) {
+                previewParts.push(count > 1 ? `${name} (×${count})` : name);
+                if (previewParts.length >= 5) break;
+              }
+              return (
+                <div className="todo" onClick={() => navigate('/dispatch')}>
+                  <div className="todo__icon todo__icon--warn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                  </div>
+                  <div className="todo__body">
+                    <div className="todo__title">{createdTripsCount} đơn hàng đang chờ phân xe</div>
+                    {previewParts.length > 0 && (
+                      <div className="todo__meta"><span>{previewParts.join(' · ')}</span></div>
+                    )}
+                  </div>
+                  <button className="btn btn--secondary btn--sm">Phân xe</button>
+                </div>
+              );
+            })()
+          ) : (
+            <div className="todo" onClick={() => navigate('/dispatch')}>
+              <div className="todo__icon todo__icon--info">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
+              </div>
+              <div className="todo__body">
+                <div className="todo__title">Không có đơn hàng chờ phân xe</div>
+                <div className="todo__meta"><span>Tất cả đơn hàng đã được phân xe</span></div>
+              </div>
             </div>
-            <div className="todo__body">
-              <div className="todo__title">{createdTripsCount > 0 ? createdTripsCount : 5} đơn hàng đang chờ phân xe — sớm nhất giao 14:30 hôm nay</div>
-              <div className="todo__meta"><span>Vinh Phát · Đông Á · Hoàng Long (×2) · Tân Phú</span></div>
-            </div>
-            <button className="btn btn--secondary btn--sm">Phân xe</button>
-          </div>
+          )}
 
-          {/* Shareholder Settlement note */}
+          {/* Shareholder Settlement — share uses the real top shareholder's
+              percentage from the cap table (was hardcoded to 70.45%). */}
           <div className="todo" onClick={() => navigate('/profit')}>
             <div className="todo__icon todo__icon--info">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             </div>
             <div className="todo__body">
-              <div className="todo__title">Báo cáo lợi nhuận T{currentMonth} sẵn sàng — phần của ông là <strong>{formatCurrency(Math.round(netProfit * 0.7045))}</strong></div>
+              <div className="todo__title">
+                Báo cáo lợi nhuận T{currentMonth} sẵn sàng
+                {topShareholder ? (
+                  <> — phần của <strong>{topShareholder.name}</strong> ({topShareholder.percentage.toFixed(2)}%) là <strong>{formatCurrency(Math.round(netProfit * topShareholder.percentage / 100))}</strong></>
+                ) : (
+                  <> — Tổng lợi nhuận ròng <strong>{formatCurrency(netProfit)}</strong></>
+                )}
+              </div>
               <div className="todo__meta"><span>Xác nhận để chốt sổ tháng</span></div>
             </div>
             <button className="btn btn--primary btn--sm">Xem & xác nhận</button>

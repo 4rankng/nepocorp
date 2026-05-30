@@ -12,45 +12,7 @@ import {
   Panel, Btn, Drawer, FormGroup,
 } from '../components/UI';
 
-// ─── Mock data for design review ──────────────────────────────────────────────
-
-const USE_MOCK = true;
-
-const MOCK_TRUCKS: Truck[] = [
-  { id: 1, license_plate: '29C-345.67', status: TruckStatus.ACTIVE, created_at: '2022-03-10', updated_at: '2026-01-15', deleted_at: null },
-  { id: 2, license_plate: '29C-123.45', status: TruckStatus.ACTIVE, created_at: '2022-06-20', updated_at: '2026-02-01', deleted_at: null },
-  { id: 3, license_plate: '29C-456.78', status: TruckStatus.ACTIVE, created_at: '2023-05-15', updated_at: '2026-03-10', deleted_at: null },
-  { id: 4, license_plate: '29C-234.56', status: TruckStatus.ACTIVE, created_at: '2024-01-08', updated_at: '2026-04-02', deleted_at: null },
-];
-
-const MOCK_DRIVERS: Driver[] = [
-  { id: 1, user_id: 101, name: 'Trần Thị Thương', phone: '0901234567', assigned_truck_id: 1, base_salary: '12000000', status: DriverStatus.ACTIVE, created_at: '2022-02-15', updated_at: '2026-05-01', deleted_at: null },
-  { id: 2, user_id: 102, name: 'Phạm Đức Minh', phone: '0902345678', assigned_truck_id: 2, base_salary: '11000000', status: DriverStatus.ACTIVE, created_at: '2022-08-10', updated_at: '2026-05-01', deleted_at: null },
-  { id: 3, user_id: 103, name: 'Vũ Minh Đức', phone: '0903456789', assigned_truck_id: 3, base_salary: '10500000', status: DriverStatus.ACTIVE, created_at: '2023-06-20', updated_at: '2026-05-01', deleted_at: null },
-  { id: 4, user_id: 104, name: 'Hoàng Nam', phone: '0904567890', assigned_truck_id: 4, base_salary: '10000000', status: DriverStatus.ACTIVE, created_at: '2024-01-15', updated_at: '2026-05-01', deleted_at: null },
-  { id: 5, user_id: 105, name: 'Nguyễn Văn Hùng', phone: '0905678901', assigned_truck_id: null, base_salary: '9500000', status: DriverStatus.ACTIVE, created_at: '2024-08-22', updated_at: '2026-05-01', deleted_at: null },
-  { id: 6, user_id: 106, name: 'Lê Văn Tài', phone: '0906789012', assigned_truck_id: null, base_salary: '9000000', status: DriverStatus.ACTIVE, created_at: '2025-03-10', updated_at: '2026-05-01', deleted_at: null },
-  { id: 7, user_id: 107, name: 'Lê Anh Bình', phone: '0907890123', assigned_truck_id: null, base_salary: '8500000', status: DriverStatus.ACTIVE, created_at: '2026-01-20', updated_at: '2026-05-01', deleted_at: null },
-];
-
-const MOCK_REASONS: PenaltyReason[] = [
-  { id: 1, reason_text: 'Chậm giờ giao hàng', default_amount: '200000', created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null },
-  { id: 2, reason_text: 'Sai khai báo nhiên liệu', default_amount: '500000', created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null },
-  { id: 3, reason_text: 'Đi sai tuyến điều phối', default_amount: '500000', created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null },
-  { id: 4, reason_text: 'Hư hỏng xe do bất cẩn', default_amount: '1000000', created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null },
-  { id: 5, reason_text: 'Vi phạm an toàn lao động', default_amount: '1500000', created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null },
-  { id: 6, reason_text: 'Bỏ chuyến không lý do', default_amount: '2000000', created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null },
-];
-
-// Penalties from previous months so the scoreboard has variety but current month is clean
-const MOCK_PENALTIES: PenaltyRow[] = [
-  { id: 1, driver_id: 5, trip_id: 201, reason_id: 1, custom_reason: null, amount: '200000', date: '2026-04-18', created_at: '2026-04-18', updated_at: '2026-04-18', deleted_at: null, driverName: 'Nguyễn Văn Hùng', reasonText: 'Chậm giờ giao hàng' },
-  { id: 2, driver_id: 5, trip_id: 215, reason_id: 3, custom_reason: null, amount: '500000', date: '2026-03-22', created_at: '2026-03-22', updated_at: '2026-03-22', deleted_at: null, driverName: 'Nguyễn Văn Hùng', reasonText: 'Đi sai tuyến điều phối' },
-  { id: 3, driver_id: 6, trip_id: 198, reason_id: 2, custom_reason: null, amount: '500000', date: '2026-04-05', created_at: '2026-04-05', updated_at: '2026-04-05', deleted_at: null, driverName: 'Lê Văn Tài', reasonText: 'Sai khai báo nhiên liệu' },
-  { id: 4, driver_id: 7, trip_id: null, reason_id: 5, custom_reason: null, amount: '1500000', date: '2026-04-28', created_at: '2026-04-28', updated_at: '2026-04-28', deleted_at: null, driverName: 'Lê Anh Bình', reasonText: 'Vi phạm an toàn lao động' },
-  { id: 5, driver_id: 4, trip_id: 180, reason_id: 1, custom_reason: null, amount: '200000', date: '2026-02-14', created_at: '2026-02-14', updated_at: '2026-02-14', deleted_at: null, driverName: 'Hoàng Nam', reasonText: 'Chậm giờ giao hàng' },
-  { id: 6, driver_id: 3, trip_id: 165, reason_id: 4, custom_reason: 'Lốp nổ do không kiểm tra', amount: '1000000', date: '2026-01-20', created_at: '2026-01-20', updated_at: '2026-01-20', deleted_at: null, driverName: 'Vũ Minh Đức', reasonText: 'Hư hỏng xe do bất cẩn' },
-];
+// ─── API normalisers (backend returns camelCase from Drizzle) ─────────────────
 
 // ─── API normalisers (backend returns camelCase from Drizzle) ─────────────────
 
@@ -228,13 +190,6 @@ function PenaltyFormDrawer({
     if (formReasonId) body.reason_id = Number(formReasonId);
     if (formCustomReason) body.custom_reason = formCustomReason;
     try {
-      if (USE_MOCK) {
-        // Simulate API delay
-        await new Promise(r => setTimeout(r, 500));
-        onCreated();
-        onClose();
-        return;
-      }
       await api.post('/penalties', body);
       onCreated();
       onClose();
@@ -376,7 +331,6 @@ export default function PenaltyPage() {
   const fetchPenalties = useCallback(async () => {
     setListLoading(true);
     try {
-      if (USE_MOCK) { setPenalties(MOCK_PENALTIES); return; }
       const data = await api.get<any>('/penalties');
       const raw: any[] = Array.isArray(data) ? data : (data as any).items ?? [];
       setPenalties(raw.map(normalizePenalty));
@@ -387,12 +341,6 @@ export default function PenaltyPage() {
 
   useEffect(() => {
     fetchPenalties();
-    if (USE_MOCK) {
-      setDrivers(MOCK_DRIVERS);
-      setReasons(MOCK_REASONS);
-      setTrucks(MOCK_TRUCKS);
-      return;
-    }
     Promise.all([
       api.get<any>('/drivers'),
       api.get<any>('/penalty-reasons'),

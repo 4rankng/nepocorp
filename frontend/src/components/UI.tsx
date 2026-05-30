@@ -555,7 +555,7 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: 'danger' | 'primary';
+  variant?: 'danger' | 'primary' | 'warning';
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -574,8 +574,8 @@ export function ConfirmDialog({
 
   if (!isOpen) return null;
 
-  const Icon = variant === 'danger' ? AlertTriangle : HelpCircle;
-  const iconColor = variant === 'danger' ? 'var(--danger)' : 'var(--accent)';
+  const Icon = variant === 'danger' || variant === 'warning' ? AlertTriangle : HelpCircle;
+  const iconColor = variant === 'danger' ? 'var(--danger)' : variant === 'warning' ? 'var(--warning)' : 'var(--accent)';
 
   return (
     <div
@@ -656,7 +656,7 @@ export function ConfirmDialog({
 interface ConfirmOptions {
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: 'danger' | 'primary';
+  variant?: 'danger' | 'primary' | 'warning';
 }
 
 interface ConfirmState extends ConfirmOptions {

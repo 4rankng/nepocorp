@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc } from 'drizzle-orm';
-import { Role, TripStatus, FuelMode } from '@nepocorp/shared';
+import { Role, TripStatus, FuelMode, TxnType, LoadingType } from '@nepocorp/shared';
 import * as tripService from '../services/trip.service';
 import { LedgerService } from '../services/ledger.service';
 import { config } from '../config';
@@ -17,14 +17,15 @@ import configRoutes from '../routes/config';
 import tripRoutes from '../routes/trips';
 import financialRoutes from '../routes/financial';
 import driverRoutes from '../routes/driver';
+import { authMiddleware } from '../middleware/auth';
 
 const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
-app.use('/api', configRoutes);
-app.use('/api/trips', tripRoutes);
-app.use('/api', financialRoutes);
-app.use('/api/driver/me', driverRoutes);
+app.use('/api', authMiddleware, configRoutes);
+app.use('/api/trips', authMiddleware, tripRoutes);
+app.use('/api', authMiddleware, financialRoutes);
+app.use('/api/driver/me', authMiddleware, driverRoutes);
 
 let server: http.Server;
 let baseUrl: string;
@@ -153,7 +154,7 @@ test('T4.3 — Lock Atomicity: Forced mid-transaction failure triggers full roll
     await db.transaction(async (tx) => {
       // Post a valid ledger entry inside transaction
       await LedgerService.postEntry(tx, {
-        txnType: 'TRIP_REVENUE',
+        txnType: TxnType.TRIP_REVENUE,
         entityType: 'CUSTOMER',
         entityId: customerId,
         debit: 1234567,
@@ -193,7 +194,7 @@ test('T4.1 — Ledger Parallel balance integrity for the same customer', async (
     Array.from({ length: parallelCount }).map(() =>
       db.transaction(async (tx) => {
         await LedgerService.postEntry(tx, {
-          txnType: 'TRIP_REVENUE',
+          txnType: TxnType.TRIP_REVENUE,
           entityType: 'CUSTOMER',
           entityId: customerId,
           debit: postAmount,
@@ -277,9 +278,8 @@ test('T4.4 — Rate Snapshotting:applied values are preserved when configuration
 
   // 3. Update the trip figures to trigger totals recalculation
   await tripService.updateTripFigures(trip.id, {
-    version: trip.version,
     fuel_mode: FuelMode.AUTO,
-    legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: 'HANG' }],
+    legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: LoadingType.HANG }],
     fuel_supplement_liters: 0,
     tolls_discount: 0,
     tolls_addition: 0,

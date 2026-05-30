@@ -2,14 +2,12 @@ import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc, gte, lte } from 'drizzle-orm';
-import { authMiddleware, requireRoles } from '../middleware/auth';
-import { Role, TripStatus } from '@nepocorp/shared';
+import { TripStatus } from '@nepocorp/shared';
 import { createTripSchema, updateTripFiguresSchema } from '@nepocorp/shared';
 import * as tripService from '../services/trip.service';
 import type { Request, Response } from 'express';
 
 const router = Router();
-router.use(authMiddleware);
 
 async function checkOptimisticLock(tripId: number, expectedUpdatedAt: string | undefined): Promise<void> {
   if (!expectedUpdatedAt) return;
@@ -50,7 +48,7 @@ router.get('/', async (req: Request, res: Response) => {
       fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
       totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
       totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
-      hasReturnCargo: s.trips.hasReturnCargo, notes: s.trips.notes,
+      hasReturnCargo: s.trips.hasReturnCargo, driverSalary: s.trips.driverSalary, notes: s.trips.notes,
       createdAt: s.trips.createdAt,
       // Joined fields - include nested objects for frontend compatibility
       customerName: s.customers.name,
@@ -75,13 +73,22 @@ router.get('/', async (req: Request, res: Response) => {
     const transformedItems = items.map(item => ({
       ...item,
       departure_date: item.departureDate,
+      fuel_mode: item.fuelMode,
       fuel_consumption: item.fuelLiters,
+      fuel_liters: item.fuelLiters,
+      total_fuel_cost: item.totalFuelCost,
       road_allowance: item.totalRoadAllowance,
+      total_road_allowance: item.totalRoadAllowance,
+      driver_salary: item.driverSalary,
+      total_cost: item.totalCost,
+      gross_profit: item.grossProfit,
+      customer_reference: item.customerReference,
+      has_return_cargo: item.hasReturnCargo,
       trailer_type: item.trailerLicensePlate || '40ft',
       customer: item.customerName ? { id: item.customerId, name: item.customerName } : null,
       driver: item.driverName ? { id: item.driverId, name: item.driverName } : null,
       truck: item.truckPlate ? { id: item.truckId, license_plate: item.truckPlate } : null,
-      route: item.routeName ? { id: item.routeId, name: item.routeName, distance: item.routeDistance } : null,
+      route: item.routeName ? { id: item.routeId, name: item.routeName, distance: item.routeDistance, distance_km: item.routeDistance } : null,
     }));
 
     res.json({ items: transformedItems, total: Number(countRow?.count ?? 0), page, pageSize: limit });
@@ -91,7 +98,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create trip
-router.post('/', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const data = createTripSchema.parse(req.body);
     const trip = await tripService.createTrip(data);
@@ -154,15 +161,17 @@ router.get('/:id', async (req: Request, res: Response) => {
       departure_date: trip.departureDate,
       fuel_mode: trip.fuelMode,
       fuel_liters: trip.fuelLiters,
+      total_fuel_cost: trip.totalFuelCost,
       total_road_allowance: trip.totalRoadAllowance,
       driver_salary: trip.driverSalary,
       total_cost: trip.totalCost,
       gross_profit: trip.grossProfit,
       customer_reference: trip.customerReference,
+      has_return_cargo: trip.hasReturnCargo,
       customer: trip.customerName ? { id: trip.customerId, name: trip.customerName } : null,
       driver: trip.driverName ? { id: trip.driverId, name: trip.driverName } : null,
       truck: trip.truckPlate ? { id: trip.truckId, license_plate: trip.truckPlate } : null,
-      route: trip.routeName ? { id: trip.routeId, name: trip.routeName, distance: trip.routeDistance } : null,
+      route: trip.routeName ? { id: trip.routeId, name: trip.routeName, distance: trip.routeDistance, distance_km: trip.routeDistance } : null,
       trailer: trip.trailerLicensePlate ? { id: trip.trailerId, license_plate: trip.trailerLicensePlate, type: trip.trailerType } : null,
       legs,
       photoUrls,
@@ -175,7 +184,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // Update pre-departure figures
-router.put('/:id/pre-departure', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.put('/:id/pre-departure', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     const data = updateTripFiguresSchema.parse(req.body);
@@ -192,7 +201,7 @@ router.put('/:id/pre-departure', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACC
 });
 
 // Update actuals
-router.put('/:id/actuals', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.put('/:id/actuals', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     const data = updateTripFiguresSchema.parse(req.body);
@@ -216,7 +225,7 @@ router.put('/:id/actuals', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
 });
 
 // Dispatch trip
-router.post('/:id/dispatch', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.post('/:id/dispatch', async (req: Request, res: Response) => {
   try {
     const trip = await tripService.transitionTripStatus(
       parseInt(req.params.id as string),
@@ -231,7 +240,7 @@ router.post('/:id/dispatch', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNT
 });
 
 // Lock trip
-router.post('/:id/lock', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.post('/:id/lock', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     const confirmZeroRevenue = req.body.confirmZeroRevenue === true;
@@ -249,7 +258,7 @@ router.post('/:id/lock', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT)
 });
 
 // Cancel trip
-router.post('/:id/cancel', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.post('/:id/cancel', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     const trip = await tripService.transitionTripStatus(
@@ -265,7 +274,7 @@ router.post('/:id/cancel', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
 });
 
 // Reassign truck/driver (only for CREATED trips)
-router.patch('/:id/reassign', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+router.patch('/:id/reassign', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     const { truck_id, driver_id } = req.body;

@@ -61,7 +61,7 @@ export default function ConfigPage() {
         <button className="setting-card" onClick={() => navigate('/config/cap-table')}>
           <div className="setting-card__icon"><Building size={20} /></div>
           <h3 className="setting-card__title">Thông tin công ty &amp; Cổ phần</h3>
-          <p className="setting-card__desc">Mã số thuế, địa chỉ, người đại diện, tỷ lệ vốn góp giữa các đối tác cổ đông (Phụng 70.45% · Thương 29.55%).</p>
+          <p className="setting-card__desc">Mã số thuế, địa chỉ, người đại diện và tỷ lệ vốn góp giữa các đối tác cổ đông.</p>
           <div className="setting-card__foot">
             <span className="setting-card__status"><span className="dot"></span>Cty TNHH NEPO</span>
             <span className="setting-card__action">Xem {CHEVRON}</span>

@@ -1,37 +1,40 @@
-import {
-  demoDrivers, demoTrucks, demoTrailers, demoCustomers, demoRoutes,
-  demoCargoTypes, demoPricingTables, demoRoadAllowances, demoFuelConfig,
-  demoPenaltyReasons, demoTrips, demoPenalties, demoCapTable,
-  demoManagementFees, demoLedgerEntries, demoDashboardStats,
-  makePnlReport, demoUsers, demoEarningsSummary, demoDriverPenalties,
-  demoDriverTrips, demoDriverTripDetail, demoCustomerStatement, demoAuditLogs,
-} from './demo-data';
-import { TripStatus } from '@nepocorp/shared';
-
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
   }
 }
 
-function paginated<T>(items: T[], page = 1, pageSize = 20) {
-  const start = (page - 1) * pageSize;
-  return { items: items.slice(start, start + pageSize), total: items.length, page, pageSize };
+const API_BASE = '/api';
+
+// The backend returns objects in camelCase (licensePlate, assignedTruckId,
+// departureDate, …) but most of the frontend was written against snake_case
+// fields (license_plate, assigned_truck_id, departure_date, …). The mismatch
+// was rendering plate-tag pills with no plate text on /fleet (only "VN" / "RM"
+// visible) and similar holes elsewhere.
+//
+// Rather than rewriting every component, normalize responses once at the API
+// boundary: for every camelCase key, also expose a snake_case alias on the
+// same object. New code can use either form, legacy code keeps working.
+function addSnakeCaseAliases(value: any): any {
+  if (Array.isArray(value)) {
+    for (const item of value) addSnakeCaseAliases(item);
+    return value;
+  }
+  if (value && typeof value === 'object') {
+    for (const key of Object.keys(value)) {
+      const v = (value as any)[key];
+      if (v && typeof v === 'object') addSnakeCaseAliases(v);
+      // Convert camelCase → snake_case alias (idempotent).
+      if (/[a-z][A-Z]/.test(key)) {
+        const snake = key.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
+        if (!(snake in value)) (value as any)[snake] = v;
+      }
+    }
+  }
+  return value;
 }
 
-function parsePath(path: string) {
-  const [pathname, search] = path.split('?');
-  const params = new URLSearchParams(search || '');
-  return { pathname, params };
-}
-
-function filterByStatus<T extends { status: string }>(items: T[], params: URLSearchParams): T[] {
-  const status = params.get('status');
-  if (!status) return items;
-  return items.filter(i => i.status === status);
-}
-
-class MockApiClient {
+class ApiClient {
   private token: string | null = null;
 
   constructor() {
@@ -48,213 +51,31 @@ class MockApiClient {
     localStorage.removeItem('token');
   }
 
-  private async request<T>(path: string, options?: RequestInit): Promise<T> {
-    // Small delay to simulate network
-    await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
-
-    const { pathname, params } = parsePath(path);
-    const method = (options?.method || 'GET').toUpperCase();
-    const body = options?.body ? JSON.parse(options.body as string) : undefined;
-
-    // Route matching
-    const result = this.route(method, pathname, params, body);
-    return result as T;
-  }
-
-  private route(method: string, pathname: string, params: URLSearchParams, body?: any): any {
-    // ─── Auth ────────────────────────────────────────────────────────
-    if (pathname === '/auth/login') {
-      return { token: 'demo-token-123', user: demoUsers.find(u => u.role === body?.identifier) ?? demoUsers[0] };
-    }
-    if (pathname === '/auth/me') {
-      const stored = localStorage.getItem('demo_user');
-      if (stored) return JSON.parse(stored);
-      return demoUsers[0];
-    }
-    if (pathname === '/auth/users') {
-      if (method === 'POST') return { id: Date.now(), ...body, createdAt: new Date().toISOString() };
-      return { items: demoUsers };
-    }
-    if (pathname.match(/^\/auth\/users\/\d+$/)) {
-      const id = parseInt(pathname.split('/').pop()!);
-      if (method === 'DELETE') return {};
-      return { id, ...body };
+  private async request<T>(path: string, options?: RequestInit & { expectedUpdatedAt?: string }): Promise<T> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      ...(options?.headers as Record<string, string> || {}),
+    };
+    if (options?.expectedUpdatedAt) {
+      headers['If-Unmodified-Since'] = options.expectedUpdatedAt;
     }
 
-    // ─── Drivers ─────────────────────────────────────────────────────
-    if (pathname === '/drivers') {
-      return { items: demoDrivers, total: demoDrivers.length };
+    const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Lỗi kết nối' }));
+      throw new ApiError(res.status, error.error || 'Lỗi không xác định');
     }
-    if (pathname === '/driver/me/trips') {
-      return { items: demoDriverTrips };
-    }
-    if (pathname === '/driver/me/earnings') {
-      return demoEarningsSummary;
-    }
-    if (pathname === '/driver/me/penalties') {
-      return { items: demoDriverPenalties };
-    }
-    if (pathname.match(/^\/driver\/me\/trips\/\d+$/)) {
-      const id = parseInt(pathname.split('/').pop()!);
-      return demoDriverTripDetail(id);
-    }
-
-    // ─── Trucks ──────────────────────────────────────────────────────
-    if (pathname === '/trucks') {
-      return paginated(demoTrucks, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Trailers ────────────────────────────────────────────────────
-    if (pathname === '/trailers') {
-      return paginated(demoTrailers, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Customers ───────────────────────────────────────────────────
-    if (pathname === '/customers') {
-      let items = demoCustomers;
-      const search = params.get('search');
-      if (search) items = items.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-      return paginated(items, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Routes ──────────────────────────────────────────────────────
-    if (pathname === '/routes') {
-      return paginated(demoRoutes, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Cargo Types ─────────────────────────────────────────────────
-    if (pathname === '/cargo-types') {
-      return paginated(demoCargoTypes, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Pricing Tables ──────────────────────────────────────────────
-    if (pathname === '/pricing-tables') {
-      return paginated(demoPricingTables, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Road Allowances ─────────────────────────────────────────────
-    if (pathname === '/road-allowances') {
-      return paginated(demoRoadAllowances, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Fuel Config ─────────────────────────────────────────────────
-    if (pathname === '/fuel-config') {
-      return demoFuelConfig;
-    }
-
-    // ─── Penalty Reasons ─────────────────────────────────────────────
-    if (pathname === '/penalty-reasons') {
-      return paginated(demoPenaltyReasons, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Penalties ───────────────────────────────────────────────────
-    if (pathname === '/penalties') {
-      if (method === 'POST') return { id: Date.now(), ...body };
-      return { items: demoPenalties };
-    }
-
-    // ─── Cap Table ───────────────────────────────────────────────────
-    if (pathname === '/cap-table') {
-      return paginated(demoCapTable, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Management Fees ─────────────────────────────────────────────
-    if (pathname === '/management-fees') {
-      return paginated(demoManagementFees, parseInt(params.get('page') || '1'), parseInt(params.get('pageSize') || '20'));
-    }
-
-    // ─── Trips ───────────────────────────────────────────────────────
-    if (pathname === '/trips') {
-      let items = [...demoTrips];
-      const status = params.get('status');
-      if (status) items = items.filter(t => t.status === status);
-      const limit = parseInt(params.get('limit') || '100');
-      return { items: items.slice(0, limit), total: items.length };
-    }
-    if (pathname.match(/^\/trips\/\d+$/)) {
-      const id = parseInt(pathname.split('/').pop()!);
-      return demoTrips.find(t => t.id === id) ?? null;
-    }
-    if (pathname.match(/^\/trips\/\d+\/dispatch$/)) {
-      return {};
-    }
-    if (pathname.match(/^\/trips\/\d+\/lock$/)) {
-      return {};
-    }
-    if (pathname.match(/^\/trips\/\d+\/cancel$/)) {
-      return {};
-    }
-    if (pathname.match(/^\/trips\/\d+\/reassign$/)) {
-      return {};
-    }
-    if (pathname.match(/^\/trips\/\d+\/pre-departure$/)) {
-      return {};
-    }
-    if (pathname.match(/^\/trips\/\d+\/adjustment$/)) {
-      return { id: Date.now(), trip_id: parseInt(pathname.split('/')[2]), amount: body?.amount ?? 0, note: body?.note ?? '', signed_agreement_ref: body?.signed_agreement_ref ?? '', created_at: new Date().toISOString() };
-    }
-    if (pathname.match(/^\/trips\/\d+\/adjustments$/)) {
-      return { items: [] };
-    }
-
-    // ─── Reports ─────────────────────────────────────────────────────
-    if (pathname === '/reports/dashboard') {
-      return demoDashboardStats;
-    }
-    if (pathname === '/reports/pnl') {
-      const month = parseInt(params.get('month') || '5');
-      const year = parseInt(params.get('year') || '2025');
-      return makePnlReport(month, year);
-    }
-    if (pathname === '/reports/distribute-profit') {
-      return {
-        quarter: body?.quarter ?? 1,
-        year: body?.year ?? 2025,
-        netProfit: 10000000,
-        distributions: demoCapTable.map(p => ({ partnerName: p.partnerName, amount: String(Math.round(10000000 * parseFloat(p.percentage) / 100)) })),
-      };
-    }
-
-    // ─── Ledger ──────────────────────────────────────────────────────
-    if (pathname === '/ledger') {
-      return { items: demoLedgerEntries, total: demoLedgerEntries.length };
-    }
-    if (pathname.match(/^\/ledger\/customers\/\d+\/statement$/)) {
-      const id = parseInt(pathname.split('/')[3]);
-      return demoCustomerStatement(id);
-    }
-
-    // ─── Payments ────────────────────────────────────────────────────
-    if (pathname === '/payments/receive') {
-      return {};
-    }
-
-    // ─── Audit Logs ──────────────────────────────────────────────────
-    if (pathname === '/audit-logs') {
-      const category = params.get('category');
-      const search = params.get('search')?.toLowerCase() ?? '';
-      const page = parseInt(params.get('page') || '1');
-      const pageSize = parseInt(params.get('pageSize') || '10');
-      let items = demoAuditLogs;
-      if (category) items = items.filter((e: any) => e.category === category);
-      if (search) items = items.filter((e: any) =>
-        e.message.toLowerCase().includes(search) ||
-        e.userName.toLowerCase().includes(search) ||
-        e.action.toLowerCase().includes(search)
-      );
-      return paginated(items, page, pageSize);
-    }
-
-    // ─── Fallback ────────────────────────────────────────────────────
-    return { items: [], total: 0 };
+    const data = await res.json();
+    return addSnakeCaseAliases(data);
   }
 
   get<T>(path: string) { return this.request<T>(path); }
   post<T>(path: string, body: unknown, opts?: { expectedUpdatedAt?: string }) {
-    return this.request<T>(path, { method: 'POST', body: JSON.stringify(body) });
+    return this.request<T>(path, { method: 'POST', body: JSON.stringify(body), ...opts });
   }
   put<T>(path: string, body: unknown, opts?: { expectedUpdatedAt?: string }) {
-    return this.request<T>(path, { method: 'PUT', body: JSON.stringify(body) });
+    return this.request<T>(path, { method: 'PUT', body: JSON.stringify(body), ...opts });
   }
   patch<T>(path: string, body: unknown) {
     return this.request<T>(path, { method: 'PATCH', body: JSON.stringify(body) });
@@ -262,4 +83,4 @@ class MockApiClient {
   delete<T>(path: string) { return this.request<T>(path, { method: 'DELETE' }); }
 }
 
-export const api = new MockApiClient();
+export const api = new ApiClient();

@@ -6,8 +6,8 @@ import { users, drivers } from '../db/schema';
 import { eq, isNull, or, sql } from 'drizzle-orm';
 import { config } from '../config';
 import { loginSchema, createUserSchema, updateUserSchema } from '@nepocorp/shared';
-import { authMiddleware, requireRoles } from '../middleware/auth';
-import { Role } from '@nepocorp/shared';
+import { authMiddleware } from '../middleware/auth';
+import { casbinAuthz } from '../middleware/casbin';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -70,7 +70,7 @@ const USER_FIELDS = {
   role: users.role, status: users.status, createdAt: users.createdAt,
 };
 
-router.get('/users', authMiddleware, requireRoles(Role.ADMIN, Role.MANAGER), async (_req: Request, res: Response) => {
+router.get('/users', authMiddleware, casbinAuthz('users'), async (_req: Request, res: Response) => {
   try {
     const items = await db.select(USER_FIELDS).from(users).where(isNull(users.deletedAt));
     res.json({ items, total: items.length });
@@ -79,7 +79,7 @@ router.get('/users', authMiddleware, requireRoles(Role.ADMIN, Role.MANAGER), asy
   }
 });
 
-router.post('/users', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+router.post('/users', authMiddleware, casbinAuthz('users'), async (req: Request, res: Response) => {
   try {
     const data = createUserSchema.parse(req.body);
     const passwordHash = await bcrypt.hash(data.password, 10);
@@ -99,7 +99,7 @@ router.post('/users', authMiddleware, requireRoles(Role.ADMIN), async (req: Requ
   }
 });
 
-router.patch('/users/:id', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+router.patch('/users/:id', authMiddleware, casbinAuthz('users'), async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const data = updateUserSchema.parse(req.body);
@@ -116,7 +116,7 @@ router.patch('/users/:id', authMiddleware, requireRoles(Role.ADMIN), async (req:
   }
 });
 
-router.delete('/users/:id', authMiddleware, requireRoles(Role.ADMIN), async (req: Request, res: Response) => {
+router.delete('/users/:id', authMiddleware, casbinAuthz('users'), async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     if (id === req.user!.userId) return res.status(400).json({ error: 'Không thể xóa tài khoản đang đăng nhập' });

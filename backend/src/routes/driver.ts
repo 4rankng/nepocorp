@@ -2,13 +2,10 @@ import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, sql } from 'drizzle-orm';
-import { authMiddleware, requireRoles } from '../middleware/auth';
-import { Role } from '@nepocorp/shared';
+// auth + Casbin applied at mount point in index.ts
 import type { Request, Response } from 'express';
 
 const router = Router();
-router.use(authMiddleware);
-router.use(requireRoles(Role.DRIVER));
 
 // Get driver ID from auth user
 async function getDriverId(req: Request): Promise<number> {

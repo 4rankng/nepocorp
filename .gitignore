@@ -39,3 +39,7 @@ out/
 .fusebox/
 .dynamodb/
 .tern-port
+# AI tool directories
+.claude/
+.crush/
+.opencode/

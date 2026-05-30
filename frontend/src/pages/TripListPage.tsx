@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -286,7 +286,7 @@ export default function TripListPage() {
         </div>
       )
     }),
-    columnHelper.accessor('customer.name', {
+    columnHelper.accessor((row) => row.customer?.name ?? '', {
       id: 'trip',
       header: 'Chuyến · Mã',
       cell: ({ row }) => {
@@ -303,7 +303,7 @@ export default function TripListPage() {
         );
       }
     }),
-    columnHelper.accessor('truck.license_plate', {
+    columnHelper.accessor((row) => row.truck?.license_plate ?? '', {
       id: 'truck',
       header: 'Xe',
       cell: ({ row }) => {
@@ -317,7 +317,7 @@ export default function TripListPage() {
         );
       }
     }),
-    columnHelper.accessor('route.name', {
+    columnHelper.accessor((row) => row.route?.name ?? '', {
       id: 'route',
       header: 'Tuyến · Khách hàng',
       cell: ({ row }) => {

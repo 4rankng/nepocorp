@@ -7,7 +7,7 @@ import sharp from 'sharp';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and } from 'drizzle-orm';
-import { authMiddleware, requireRoles } from '../middleware/auth';
+// auth + Casbin applied at mount point in index.ts
 import { Role } from '@nepocorp/shared';
 import { storageService } from '../services/storage.service';
 import { config } from '../config';
@@ -49,9 +49,8 @@ const upload = multer({
 });
 
 const uploadRouter = Router();
-uploadRouter.use(authMiddleware);
 
-uploadRouter.post('/', upload.single('file'), requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+uploadRouter.post('/', upload.single('file'), async (req: Request, res: Response) => {
   try {
     const file = req.file;
     const tripId = parseInt(req.body.trip_id);
@@ -85,8 +84,7 @@ uploadRouter.post('/', upload.single('file'), requireRoles(Role.ADMIN, Role.MANA
       // For JPEG/PNG/WebP: strip EXIF + downscale if needed
       const pipeline = sharp(file.buffer)
         .rotate()
-        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
-        .withMetadata(false); // strip all EXIF/metadata
+        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true });
 
       if (mime === 'image/jpeg') {
         processedBuffer = await pipeline.jpeg({ quality: 85 }).toBuffer();
@@ -128,11 +126,10 @@ uploadRouter.post('/', upload.single('file'), requireRoles(Role.ADMIN, Role.MANA
 
 // Authenticated Photos serving Router
 const photosRouter = Router();
-photosRouter.use(authMiddleware);
 
-photosRouter.get('/*', async (req: Request, res: Response) => {
+photosRouter.get('/{*path}', async (req: Request, res: Response) => {
   try {
-    const rawKey = req.params[0];
+    const rawKey = typeof req.params.path === 'string' ? req.params.path : Array.isArray(req.params.path) ? req.params.path.join('/') : '';
     const key = decodeURIComponent(rawKey);
 
     // Parse trip ID

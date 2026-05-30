@@ -8,4 +8,5 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   uploadDir: process.env.UPLOAD_DIR || './uploads',
   nodeEnv: process.env.NODE_ENV || 'development',
+  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
 };

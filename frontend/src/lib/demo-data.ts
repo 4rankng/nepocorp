@@ -215,15 +215,28 @@ export const demoLedgerEntries: LedgerEntry[] = [
 ];
 
 // ─── Dashboard Stats ─────────────────────────────────────────────────────────
+// Source of truth for "current month" headline figures. The P&L report mock
+// below reconciles to these numbers when asked for the current month, so the
+// dashboard and Báo cáo lãi lỗ stop telling the director two different stories
+// about the same period.
+
+const CURRENT_MONTH = new Date().getMonth() + 1;
+const CURRENT_YEAR = new Date().getFullYear();
+
+const DASHBOARD_REVENUE = 116_500_000;
+const DASHBOARD_COSTS = 66_405_000;
+const DASHBOARD_MGMT_FEE = 5_000_000;
+const DASHBOARD_OTHER_INCOME = 1_000_000;
+const DASHBOARD_TRIP_COUNT = 23;
 
 export const demoDashboardStats = {
-  revenue: 32500000,
-  costs: 18600000,
-  grossProfit: 13900000,
-  tripCount: 15,
+  revenue: DASHBOARD_REVENUE,
+  costs: DASHBOARD_COSTS,
+  grossProfit: DASHBOARD_REVENUE - DASHBOARD_COSTS,
+  tripCount: DASHBOARD_TRIP_COUNT,
   completedTrips: 3,
   inTransitTrips: 2,
-  pendingPayments: 8500000,
+  pendingPayments: 8_500_000,
   totalTrucks: 8,
   totalDrivers: 8,
 };
@@ -231,18 +244,37 @@ export const demoDashboardStats = {
 // ─── PnL Report ──────────────────────────────────────────────────────────────
 
 export function makePnlReport(month: number, year: number) {
-  const seed = (month * 7 + year * 13) % 100;
-  const totalRevenue = 80000000 + seed * 500000;
-  const totalCosts = Math.round(totalRevenue * 0.57);
+  // For the current month, mirror the dashboard headline numbers exactly so
+  // the two views agree. For historical months, generate plausible seeded
+  // values that scale around the current-month baseline.
+  const isCurrent = month === CURRENT_MONTH && year === CURRENT_YEAR;
+
+  let totalRevenue: number;
+  let totalCosts: number;
+  let tripCount: number;
+  if (isCurrent) {
+    totalRevenue = DASHBOARD_REVENUE;
+    totalCosts = DASHBOARD_COSTS;
+    tripCount = DASHBOARD_TRIP_COUNT;
+  } else {
+    const seed = (month * 7 + year * 13) % 100;
+    // Plausible monthly drift ±20% of the baseline revenue.
+    const scale = 0.8 + (seed / 100) * 0.4;
+    totalRevenue = Math.round(DASHBOARD_REVENUE * scale);
+    totalCosts = Math.round(totalRevenue * 0.57);
+    tripCount = 20 + (seed % 10);
+  }
+
   const grossProfit = totalRevenue - totalCosts;
-  const managementFee = 5000000;
-  const otherIncome = 1000000;
+  const managementFee = DASHBOARD_MGMT_FEE;
+  const otherIncome = DASHBOARD_OTHER_INCOME;
   const netProfit = grossProfit - managementFee + otherIncome;
+
   return {
     period: { month, year },
     totalRevenue, totalCosts, grossProfit,
     managementFee, otherIncome, netProfit,
-    tripCount: 20 + (seed % 10),
+    tripCount,
     trucks: demoTrucks.filter(t => t.status === TruckStatus.ACTIVE).map((t, i) => ({
       plate: t.license_plate,
       revenue: Math.round((totalRevenue / 6) * (0.8 + i * 0.1)),

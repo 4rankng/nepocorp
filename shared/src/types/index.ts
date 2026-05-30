@@ -157,6 +157,15 @@ export interface Trip {
   revenue_overridden_at: string | null;
   photo_urls: string[] | null;
   notes: string | null;
+  trip_code: string | null;
+  version: number;
+  created_by: number | null;
+  road_allowance_base_applied: string | null;
+  fuel_loaded_norm_applied: string | null;
+  fuel_empty_norm_applied: string | null;
+  fuel_fixed_allowance_applied: string | null;
+  toll_per_station_applied: string | null;
+  return_cargo_bonus_applied: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
