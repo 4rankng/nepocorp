@@ -1,20 +1,20 @@
 import React from 'react';
 import { Clock, DollarSign, Users } from 'lucide-react';
-
-interface TripSummaryCardProps {
-  revenue: number;
-  fuelCost: number;
-  tollCost: number;
-  driverSalary: number;
-  profit: number;
-  tollStations: number;
-}
+import { useTripFormContext } from '../../hooks/useTripFormContext';
 
 function fmt(v: number) {
   return Math.abs(v).toLocaleString('vi-VN');
 }
 
-export function TripSummaryCard({ revenue, fuelCost, tollCost, driverSalary, profit, tollStations }: TripSummaryCardProps) {
+export function TripSummaryCard() {
+  const form = useTripFormContext();
+  const revenue = Number(form.revenue) || 0;
+  const fuelCost = form.estimatedFuelCost;
+  const tollCost = form.estimatedTollCost;
+  const driverSalary = Number(form.driverSalary) || 0;
+  const profit = form.estimatedProfit;
+  const tollStations = Number(form.tollsStations) || 0;
+
   return (
     <div className="tc-summary-card">
       <h3 className="tc-summary-card__label">Ước tính lệnh</h3>

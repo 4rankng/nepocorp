@@ -1,15 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Truck, Container, UserCheck, Plus, Search,
   Download, Filter, CheckCircle,
 } from 'lucide-react';
-import { api } from '../lib/api';
+import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
 import { InlineForm, FormActions, ActionBtns } from '../components/config';
 import { useCRUD } from '../hooks/useCRUD';
+import { useFleetData } from '../hooks/useFleetData';
 import { TrailerType } from '@nepocorp/shared';
-import type { Truck as TruckType, Trailer, Driver, PaginatedResponse } from '@nepocorp/shared';
+import type { Truck as TruckType, Trailer, Driver } from '@nepocorp/shared';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -23,35 +25,14 @@ const TRAILER_TYPE_LABELS: Record<string, string> = {
   [TrailerType.FT20]: '20FT', [TrailerType.FT40]: '40FT',
 };
 
-const AVATAR_COLORS = [
-  { bg: '#E6F7EE', fg: '#005A2D' },
-  { bg: '#E0F2FE', fg: '#0369A1' },
-  { bg: '#FCE7F3', fg: '#BE185D' },
-  { bg: '#FEF3C7', fg: '#B45309' },
-  { bg: '#EDE9FE', fg: '#6D28D9' },
-  { bg: '#FEE2E2', fg: '#DC2626' },
-  { bg: '#CCFBF1', fg: '#0F766E' },
-];
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="field"><label>{label}</label>{children}</div>;
 }
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
-
-function avatarColor(name: string) {
-  const idx = [...name].reduce((s, c) => s + c.charCodeAt(0), 0) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[idx];
-}
-
 function AvatarInitials({ name }: { name: string }) {
-  const c = avatarColor(name);
+  const c = avatarColorByName(name);
   return (
     <span className="fleet-avatar" style={{ background: c.bg, color: c.fg }}>
       {getInitials(name)}
@@ -459,26 +440,19 @@ function DriverCard({ drivers, truckMap, crud }: {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function FleetPage() {
-  const [trucks, setTrucks] = useState<TruckType[]>([]);
-  const [trailers, setTrailers] = useState<Trailer[]>([]);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const queryClient = useQueryClient();
+  const { data: fleetData } = useFleetData();
+  const trucks = fleetData?.trucks ?? [];
+  const trailers = fleetData?.trailers ?? [];
+  const drivers = fleetData?.drivers ?? [];
 
-  const refreshAll = useCallback(async () => {
-    const [t, tr, d] = await Promise.all([
-      api.get<PaginatedResponse<TruckType>>('/trucks'),
-      api.get<PaginatedResponse<Trailer>>('/trailers'),
-      api.get<PaginatedResponse<Driver>>('/drivers'),
-    ]);
-    setTrucks(t.items);
-    setTrailers(tr.items);
-    setDrivers(d.items);
-  }, []);
+  const invalidateFleet = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['fleet'] });
+  }, [queryClient]);
 
-  const truckCrud = useCRUD('/trucks', refreshAll);
-  const trailerCrud = useCRUD('/trailers', refreshAll);
-  const driverCrud = useCRUD('/drivers', refreshAll);
-
-  useEffect(() => { refreshAll(); }, [refreshAll]);
+  const truckCrud = useCRUD('/trucks', invalidateFleet);
+  const trailerCrud = useCRUD('/trailers', invalidateFleet);
+  const driverCrud = useCRUD('/drivers', invalidateFleet);
 
   // Cross-reference maps
   const truckMap = new Map<number, TruckType>();

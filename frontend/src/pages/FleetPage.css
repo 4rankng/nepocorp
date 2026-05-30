@@ -255,7 +255,11 @@
 }
 
 /* Responsive */
-@media (max-width: 1180px) {
+/* Stack trucks/trailers panels earlier — at 2-column on viewports under
+   ~1400px the embedded tables become narrow enough that the "Trạng thái"
+   and "Thao tác" columns clip off the right edge (table-scroll's
+   overflow-x: auto fires but users miss the hidden columns). */
+@media (max-width: 1400px) {
   .fleet-page .fleet-two-col {
     grid-template-columns: 1fr;
   }

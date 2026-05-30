@@ -1,23 +1,20 @@
 import React from 'react';
 import { Upload, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { CardSection } from './CardSection';
+import { useTripFormContext } from '../../hooks/useTripFormContext';
 
 interface ImagesNotesCardProps {
-  notes: string;
-  onNotesChange: (v: string) => void;
-  photoUrls: string[];
-  uploading: boolean;
-  onUpload: (files: FileList) => Promise<void>;
-  onRemovePhoto: (idx: number) => void;
-  /** Render as a click-to-expand section (used on the create-trip flow where this is optional). */
   collapsible?: boolean;
   defaultCollapsed?: boolean;
 }
 
-export function ImagesNotesCard({ notes, onNotesChange, photoUrls, uploading, onUpload, onRemovePhoto, collapsible, defaultCollapsed }: ImagesNotesCardProps) {
+export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCardProps) {
+  const form = useTripFormContext();
+  const { notes, setNotes, photoUrls, uploading, uploadPhotos, removePhoto } = form;
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onUpload(e.target.files);
+      uploadPhotos(e.target.files);
       e.target.value = '';
     }
   };
@@ -40,7 +37,7 @@ export function ImagesNotesCard({ notes, onNotesChange, photoUrls, uploading, on
             rows={7}
             placeholder="Ghi chú chi tiết chuyến đi, các lưu ý đặc biệt, yêu cầu của khách hàng…"
             value={notes}
-            onChange={(e) => onNotesChange(e.target.value)}
+            onChange={(e) => setNotes(e.target.value)}
           />
         </div>
         <div className="field">
@@ -50,7 +47,7 @@ export function ImagesNotesCard({ notes, onNotesChange, photoUrls, uploading, on
               {photoUrls.map((url, i) => (
                 <div key={i} className="photo-thumb">
                   <img src={url} alt={`Preview ${i + 1}`} />
-                  <button type="button" className="photo-thumb__remove" onClick={() => onRemovePhoto(i)}>
+                  <button type="button" className="photo-thumb__remove" onClick={() => removePhoto(i)}>
                     <X size={10} />
                   </button>
                 </div>

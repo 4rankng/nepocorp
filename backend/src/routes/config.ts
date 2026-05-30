@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, isNull, sql, like, and, desc, lte } from 'drizzle-orm';
+import { eq, isNull, sql, and, desc } from 'drizzle-orm';
 // auth + Casbin applied at mount point in index.ts
 import {
   customerSchema, truckSchema, trailerSchema, routeSchema,
@@ -10,111 +10,21 @@ import {
   managementFeeSchema, capTableSchema,
 } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
+import { createCrudRouter, getBootstrapData, getPricing } from '../services/config.service';
 
 const router = Router();
 
-// Zod schemas (defined in @nepocorp/shared) use snake_case field names
-// (license_plate, contact_info, …) but the drizzle column definitions
-// use camelCase (licensePlate, contactInfo, …). Without this conversion,
-// `db.insert(table).values({license_plate: '...'})` produced
-// "null value in column license_plate of relation trucks violates …" because
-// drizzle saw an unknown field and inserted the actual column as null.
-function snakeToCamelKeys<T extends Record<string, any>>(input: T): Record<string, any> {
-  const out: Record<string, any> = {};
-  for (const [k, v] of Object.entries(input)) {
-    const camel = k.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
-    out[camel] = v;
-  }
-  return out;
-}
-
-function crud<T extends { id: unknown }>(
-  table: any,
-  createSchema: any,
-  { searchableField }: { searchableField?: string } = {}
-) {
-  const sub = Router();
-
-  const hasSoftDelete = 'deletedAt' in table;
-
-  sub.get('/', async (req: Request, res: Response) => {
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
-    const search = req.query.search as string;
-
-    const conditions = [];
-    if (hasSoftDelete) conditions.push(isNull(table.deletedAt));
-    if (search && searchableField) {
-      conditions.push(like(table[searchableField], `%${search}%`));
-    }
-
-    const where = conditions.length > 0 ? and(...conditions) : undefined;
-
-    const items = await db.select().from(table)
-      .where(where)
-      .limit(limit).offset((page - 1) * limit);
-
-    const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(table)
-      .where(where);
-
-    res.json({ items, total: Number(countRow?.count ?? 0), page, pageSize: limit });
-  });
-
-  sub.post('/', async (req: Request, res: Response) => {
-    const data = createSchema.parse(req.body);
-    const [item] = await db.insert(table).values(snakeToCamelKeys(data)).returning();
-    res.status(201).json(item);
-  });
-
-  sub.get('/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string);
-    const conditions = [eq(table.id, id)];
-    if (hasSoftDelete) conditions.push(isNull(table.deletedAt));
-    const [item] = await db.select().from(table).where(and(...conditions)).limit(1);
-    if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
-    res.json(item);
-  });
-
-  sub.put('/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string);
-    const data = createSchema.partial().parse(req.body);
-    const [item] = await db.update(table).set({ ...snakeToCamelKeys(data), updatedAt: new Date() }).where(eq(table.id, id)).returning();
-    if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
-    res.json(item);
-  });
-
-  sub.delete('/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string);
-    if (!hasSoftDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
-    const [item] = await db.update(table).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(table.id, id)).returning();
-    if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
-    res.json({ ok: true });
-  });
-
-  return sub;
-}
+// ─── Bootstrap ────────────────────────────────────────────────────────────────
 
 router.get('/catalogs/bootstrap', async (_req: Request, res: Response) => {
   try {
-    const customersList = await db.select().from(s.customers).where(isNull(s.customers.deletedAt));
-    const trucksList = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
-    const driversList = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
-    const trailersList = await db.select().from(s.trailers).where(isNull(s.trailers.deletedAt));
-    const routesList = await db.select().from(s.routes).where(isNull(s.routes.deletedAt));
-    const cargoTypesList = await db.select().from(s.cargoTypes).where(isNull(s.cargoTypes.deletedAt));
-
-    res.json({
-      customers: customersList.filter(c => c.status === 'ACTIVE'),
-      trucks: trucksList.filter(t => t.status === 'ACTIVE'),
-      drivers: driversList.filter(d => d.status === 'ACTIVE'),
-      trailers: trailersList.filter(t => t.status === 'ACTIVE'),
-      routes: routesList,
-      cargoTypes: cargoTypesList,
-    });
+    res.json(await getBootstrapData());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ─── Pricing lookup ──────────────────────────────────────────────────────────
 
 router.get('/pricing', async (req: Request, res: Response) => {
   try {
@@ -126,40 +36,30 @@ router.get('/pricing', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'customerId và routeId là bắt buộc' });
     }
 
-    const [pricing] = await db.select()
-      .from(s.pricingTables)
-      .where(and(
-        eq(s.pricingTables.customerId, customerId),
-        eq(s.pricingTables.routeId, routeId),
-        lte(s.pricingTables.effectiveDate, date),
-        isNull(s.pricingTables.deletedAt)
-      ))
-      .orderBy(desc(s.pricingTables.effectiveDate))
-      .limit(1);
-
-    res.json({ price: pricing ? Number(pricing.price) : 0 });
+    res.json(await getPricing(customerId, routeId, date));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Mount CRUD routes
-router.use('/customers', crud(s.customers, customerSchema, { searchableField: 'name' }));
-router.use('/trucks', crud(s.trucks, truckSchema, { searchableField: 'licensePlate' }));
-router.use('/trailers', crud(s.trailers, trailerSchema, { searchableField: 'licensePlate' }));
-router.use('/routes', crud(s.routes, routeSchema, { searchableField: 'name' }));
-router.use('/cargo-types', crud(s.cargoTypes, cargoTypeSchema));
-router.use('/pricing-tables', crud(s.pricingTables, pricingTableSchema));
-router.use('/road-allowances', crud(s.roadAllowances, roadAllowanceSchema));
-router.use('/penalty-reasons', crud(s.penaltyReasons, penaltyReasonSchema));
-router.use('/management-fees', crud(s.managementFees, managementFeeSchema));
-router.use('/cap-table', crud(s.capTableHistory, capTableSchema));
+// ─── CRUD routes ─────────────────────────────────────────────────────────────
 
-// Drivers - special handling (includes user_id)
+router.use('/customers', createCrudRouter(s.customers, customerSchema, { searchableField: 'name' }));
+router.use('/trucks', createCrudRouter(s.trucks, truckSchema, { searchableField: 'licensePlate' }));
+router.use('/trailers', createCrudRouter(s.trailers, trailerSchema, { searchableField: 'licensePlate' }));
+router.use('/routes', createCrudRouter(s.routes, routeSchema, { searchableField: 'name' }));
+router.use('/cargo-types', createCrudRouter(s.cargoTypes, cargoTypeSchema));
+router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSchema));
+router.use('/road-allowances', createCrudRouter(s.roadAllowances, roadAllowanceSchema));
+router.use('/penalty-reasons', createCrudRouter(s.penaltyReasons, penaltyReasonSchema));
+router.use('/management-fees', createCrudRouter(s.managementFees, managementFeeSchema));
+router.use('/cap-table', createCrudRouter(s.capTableHistory, capTableSchema));
+
+// Drivers — special handling (includes user_id)
 router.use('/drivers', (() => {
   const sub = Router();
 
-  sub.get('/', async (req: Request, res: Response) => {
+  sub.get('/', async (_req: Request, res: Response) => {
     const items = await db.select({
       id: s.drivers.id, userId: s.drivers.userId, name: s.drivers.name,
       phone: s.drivers.phone, assignedTruckId: s.drivers.assignedTruckId,
@@ -193,7 +93,7 @@ router.use('/drivers', (() => {
   return sub;
 })());
 
-// Fuel config - singleton GET/PUT
+// Fuel config — singleton GET/PUT
 router.get('/fuel-config', async (_req: Request, res: Response) => {
   const [row] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
   if (!row) return res.json(null);

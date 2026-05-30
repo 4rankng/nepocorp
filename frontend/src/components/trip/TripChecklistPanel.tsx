@@ -1,10 +1,6 @@
 import React from 'react';
 import { Check } from 'lucide-react';
-import type { CompletionStatus } from '../../hooks/useTripForm';
-
-interface TripChecklistPanelProps {
-  completionStatus: CompletionStatus;
-}
+import { useTripFormContext } from '../../hooks/useTripFormContext';
 
 function stateClass(done: boolean, active: boolean): string {
   if (done) return 'tc-check-item--done';
@@ -12,10 +8,11 @@ function stateClass(done: boolean, active: boolean): string {
   return '';
 }
 
-export function TripChecklistPanel({ completionStatus }: TripChecklistPanelProps) {
-  const { mainInfo, journey, fuelRevenue, images } = completionStatus;
+export function TripChecklistPanel() {
+  const form = useTripFormContext();
+  const { mainInfo, journey, fuelRevenue, images } = form.completionStatus;
   const items = [
-    { name: 'Thông tin chính', done: mainInfo >= 7, active: mainInfo > 0, badge: mainInfo >= 7 ? '8/8' : `${mainInfo}/8`, badgeClass: mainInfo >= 7 },
+    { name: 'Thông tin chính', done: mainInfo >= 7, active: mainInfo > 0, badge: mainInfo >= 7 ? '✓' : `${mainInfo}/7`, badgeClass: mainInfo >= 7 },
     { name: 'Hành trình chi tiết', done: journey >= 1, active: journey > 0, badge: journey >= 1 ? `${journey} chặng` : '0 chặng', badgeClass: journey >= 1 },
     { name: 'Nhiên liệu & doanh thu', done: fuelRevenue >= 5, active: fuelRevenue > 0, badge: `${fuelRevenue}/8`, badgeClass: fuelRevenue >= 5 },
     { name: 'Hình ảnh & ghi chú', done: images >= 1, active: images > 0, badge: images === 0 ? '—' : `${images}/2`, badgeClass: images >= 1 },

@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
+import { getInitials } from '../lib/avatar';
 import { formatCurrency, formatDate } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { Driver, PenaltyReason, Truck } from '@nepocorp/shared';
@@ -9,46 +11,12 @@ import { TruckStatus, DriverStatus } from '@nepocorp/shared';
 import {
   Shield, ShieldCheck, Download, Plus, Eye, FileText,
   Zap, Trophy, Clock, Save, Loader2, X, Users, AlertTriangle,
+  DollarSign,
 } from 'lucide-react';
 import {
-  Panel, Btn, Drawer, FormGroup,
+  Panel, Btn, Drawer, FormGroup, KPI,
 } from '../components/UI';
-
-// ─── API normalisers (backend returns camelCase from Drizzle) ─────────────────
-
-// ─── API normalisers (backend returns camelCase from Drizzle) ─────────────────
-
-function normalizeDriver(d: any): Driver {
-  return {
-    id: d.id,
-    user_id: d.userId ?? d.user_id,
-    name: d.name,
-    phone: d.phone ?? null,
-    assigned_truck_id: d.assignedTruckId ?? d.assigned_truck_id ?? null,
-    base_salary: d.baseSalary ?? d.base_salary ?? null,
-    status: d.status,
-    created_at: d.createdAt ?? d.created_at ?? '',
-    updated_at: d.updatedAt ?? d.updated_at ?? '',
-    deleted_at: d.deletedAt ?? d.deleted_at ?? null,
-  };
-}
-
-function normalizePenalty(p: any): PenaltyRow {
-  return {
-    id: p.id,
-    driver_id: p.driverId ?? p.driver_id,
-    trip_id: p.tripId ?? p.trip_id ?? null,
-    reason_id: p.reasonId ?? p.reason_id ?? null,
-    custom_reason: p.customReason ?? p.custom_reason ?? null,
-    amount: p.amount,
-    date: p.date ?? '',
-    created_at: p.createdAt ?? p.created_at ?? '',
-    updated_at: p.updatedAt ?? p.updated_at ?? '',
-    deleted_at: p.deletedAt ?? p.deleted_at ?? null,
-    driverName: p.driverName,
-    reasonText: p.reasonText,
-  };
-}
+import { usePenalties, usePenaltyCatalogs, type PenaltyRow } from '../hooks/usePenalties';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,12 +29,6 @@ const AVATAR_COLORS = [
   { bg: '#FEE2E2', color: '#DC2626' },
   { bg: '#CCFBF1', color: '#0F766E' },
 ];
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return parts[parts.length - 2][0] + parts[parts.length - 1][0];
-  return name.slice(0, 2).toUpperCase();
-}
 
 function getAvatarColor(id: number) {
   return AVATAR_COLORS[id % AVATAR_COLORS.length];
@@ -122,23 +84,6 @@ function computeStreak(driverId: number, penalties: PenaltyRow[], createdAt: str
   const lastViolation = new Date(driverPenalties[0].date);
   const now = new Date();
   return Math.max(0, Math.floor((now.getTime() - lastViolation.getTime()) / 86400000));
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface PenaltyRow {
-  id: number;
-  driver_id: number;
-  trip_id: number | null;
-  reason_id: number | null;
-  custom_reason: string | null;
-  amount: string;
-  date: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  driverName?: string;
-  reasonText?: string;
 }
 
 // ─── PenaltyFormDrawer ────────────────────────────────────────────────────────
@@ -305,11 +250,13 @@ function SeverityIcon({ severity }: { severity: Severity }) {
 
 export default function PenaltyPage() {
   const navigate = useNavigate();
-  const [penalties, setPenalties] = useState<PenaltyRow[]>([]);
-  const [listLoading, setListLoading] = useState(true);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [reasons, setReasons] = useState<PenaltyReason[]>([]);
-  const [trucks, setTrucks] = useState<Truck[]>([]);
+  const queryClient = useQueryClient();
+  const { data: penaltiesData, isLoading: listLoading } = usePenalties();
+  const { data: catalogsData } = usePenaltyCatalogs();
+  const penalties: PenaltyRow[] = penaltiesData ?? [];
+  const drivers = catalogsData?.drivers ?? [];
+  const reasons = catalogsData?.reasons ?? [];
+  const trucks = catalogsData?.trucks ?? [];
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [preselectedDriver, setPreselectedDriver] = useState<number | undefined>();
@@ -317,7 +264,6 @@ export default function PenaltyPage() {
   const [logFilter, setLogFilter] = useState<'all' | 'pending' | 'deducted'>('all');
   const [logDriverFilter, setLogDriverFilter] = useState<number | null>(null);
 
-  // Month selector for KPI summary (FE-08)
   const nowDate = new Date();
   const [selMonth, setSelMonth] = useState(nowDate.getMonth() + 1);
   const [selYear, setSelYear] = useState(nowDate.getFullYear());
@@ -330,32 +276,9 @@ export default function PenaltyPage() {
     setSelMonth(m); setSelYear(y);
   };
 
-  // ── Data loading ─────────────────────────────────────────────────────────────
-
-  const fetchPenalties = useCallback(async () => {
-    setListLoading(true);
-    try {
-      const data = await api.get<any>('/penalties');
-      const raw: any[] = Array.isArray(data) ? data : (data as any).items ?? [];
-      setPenalties(raw.map(normalizePenalty));
-    } catch { /* silent */ } finally {
-      setListLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPenalties();
-    Promise.all([
-      api.get<any>('/drivers'),
-      api.get<any>('/penalty-reasons'),
-      api.get<any>('/trucks'),
-    ]).then(([d, r, t]) => {
-      const rawDrivers: any[] = Array.isArray(d) ? d : d.items ?? [];
-      setDrivers(rawDrivers.map(normalizeDriver).filter((x: Driver) => x.status === 'ACTIVE'));
-      setReasons(Array.isArray(r) ? r : r.items ?? []);
-      setTrucks(Array.isArray(t) ? t : t.items ?? []);
-    }).catch(() => {});
-  }, [fetchPenalties]);
+  const handlePenaltyCreated = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['penalties'] });
+  }, [queryClient]);
 
   // ── Cross-reference maps ─────────────────────────────────────────────────────
 
@@ -495,54 +418,58 @@ export default function PenaltyPage() {
 
       {/* ── KPI strip (4 cards) ──────────────────────────────────────────── */}
       <div className="kpi-grid">
-        <div className="kpi kpi--success">
-          <div className="kpi__top">
-            <span className="kpi__label">Vi phạm {monthLabel}</span>
-            <div className="kpi__icon"><Shield size={18} /></div>
-          </div>
-          <div className="kpi__value">{incidentCount}<span className="kpi__value-unit"> vụ</span></div>
-          <div className="penalty-kpi-meta">
-            <span className="dot" />
-            <span className="pos">{monthComparison || 'Không có so sánh'}</span>
-          </div>
-        </div>
-        <div className="kpi">
-          <div className="kpi__top">
-            <span className="kpi__label">Tổng phạt {monthLabel}</span>
-            <div className="kpi__icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-          </div>
-          <div className="kpi__value" style={{ fontSize: totalMonthAmount > 9999999 ? 20 : 28 }}>{formatCurrency(totalMonthAmount)}</div>
-          <div className="penalty-kpi-meta">
-            <span>Khấu trừ vào bảng lương</span>
-            <span className="sep">·</span>
-            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>YTD {formatCurrency(ytdTotal)}</span>
-          </div>
-        </div>
-        <div className="kpi kpi--info">
-          <div className="kpi__top">
-            <span className="kpi__label">Lái xe đạt chuẩn</span>
-            <div className="kpi__icon"><Users size={18} /></div>
-          </div>
-          <div className="kpi__value">{safeCount}<span className="kpi__value-unit">/{drivers.length} tài xế</span></div>
-          <div className="penalty-kpi-meta">
-            <span className="dot" />
-            <span className="pos">{drivers.length > 0 ? Math.round(safeCount / drivers.length * 100) : 0}% toàn đội</span>
-            <span className="sep">·</span>
-            <span>{drivers.length - safeCount} cần nhắc nhở</span>
-          </div>
-        </div>
-        <div className="kpi kpi--warn">
-          <div className="kpi__top">
-            <span className="kpi__label">Chuỗi an toàn</span>
-            <div className="kpi__icon"><Zap size={18} /></div>
-          </div>
-          <div className="kpi__value">{longestStreak}<span className="kpi__value-unit"> ngày</span></div>
-          <div className="penalty-kpi-meta">
-            <span>{streakLeader} dẫn đầu</span>
-          </div>
-        </div>
+        <KPI
+          label={`Vi phạm ${monthLabel}`}
+          value={incidentCount}
+          unit="vụ"
+          icon={Shield}
+          variant="success"
+          meta={
+            <span className="penalty-kpi-meta">
+              <span className="dot" />
+              <span className="pos">{monthComparison || 'Không có so sánh'}</span>
+            </span>
+          }
+        />
+        <KPI
+          label={`Tổng phạt ${monthLabel}`}
+          value={formatCurrency(totalMonthAmount)}
+          icon={DollarSign}
+          meta={
+            <span className="penalty-kpi-meta">
+              <span>Khấu trừ vào bảng lương</span>
+              <span className="sep">·</span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>YTD {formatCurrency(ytdTotal)}</span>
+            </span>
+          }
+        />
+        <KPI
+          label="Lái xe đạt chuẩn"
+          value={safeCount}
+          unit={`/${drivers.length} tài xế`}
+          icon={Users}
+          variant="info"
+          meta={
+            <span className="penalty-kpi-meta">
+              <span className="dot" />
+              <span className="pos">{drivers.length > 0 ? Math.round(safeCount / drivers.length * 100) : 0}% toàn đội</span>
+              <span className="sep">·</span>
+              <span>{drivers.length - safeCount} cần nhắc nhở</span>
+            </span>
+          }
+        />
+        <KPI
+          label="Chuỗi an toàn"
+          value={longestStreak}
+          unit="ngày"
+          icon={Zap}
+          variant="warn"
+          meta={
+            <span className="penalty-kpi-meta">
+              <span>{streakLeader} dẫn đầu</span>
+            </span>
+          }
+        />
       </div>
 
       {/* ── Driver scoreboard ────────────────────────────────────────────── */}
@@ -859,7 +786,7 @@ export default function PenaltyPage() {
         onClose={() => { setDrawerOpen(false); setPreselectedDriver(undefined); }}
         drivers={drivers}
         reasons={reasons}
-        onCreated={fetchPenalties}
+        onCreated={handlePenaltyCreated}
         preselectedDriverId={preselectedDriver}
       />
     </div>

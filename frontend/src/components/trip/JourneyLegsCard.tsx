@@ -2,19 +2,16 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { CardSection } from './CardSection';
 import { JourneyLegRow } from './JourneyLegRow';
-import type { FormLeg } from '../../hooks/useTripForm';
+import { useTripFormContext } from '../../hooks/useTripFormContext';
 
 interface JourneyLegsCardProps {
-  legs: FormLeg[];
-  addLeg: () => void;
-  removeLeg: (idx: number) => void;
-  updateLeg: (idx: number, field: keyof FormLeg, value: string) => void;
-  /** Render as a click-to-expand section (used on the create-trip flow where this is optional). */
   collapsible?: boolean;
   defaultCollapsed?: boolean;
 }
 
-export function JourneyLegsCard({ legs, addLeg, removeLeg, updateLeg, collapsible, defaultCollapsed }: JourneyLegsCardProps) {
+export function JourneyLegsCard({ collapsible, defaultCollapsed }: JourneyLegsCardProps) {
+  const form = useTripFormContext();
+  const { legs, addLeg, removeLeg, updateLeg } = form;
   const totalKm = legs.reduce((sum, leg) => sum + (Number(leg.km) || 0), 0);
 
   return (

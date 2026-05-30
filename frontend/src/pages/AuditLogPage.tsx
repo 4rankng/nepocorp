@@ -1,41 +1,14 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { api } from '../lib/api';
+import { useState, useMemo, useEffect } from 'react';
+import { getInitials } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import {
-  Search,
-  Activity,
-  Users,
-  Clock,
-  TrendingUp,
-  Download,
-  FileText,
-  Truck,
-  Settings,
-  DollarSign,
-  LogIn,
-  ChevronLeft,
-  ChevronRight,
+  Search, Activity, Users, Clock, TrendingUp, Download, FileText,
+  Truck, Settings, DollarSign, LogIn, ChevronLeft, ChevronRight,
 } from 'lucide-react';
-import { Panel } from '../components/UI';
+import { Panel, KPI } from '../components/UI';
+import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditLogs';
 
 // ─── Types ──────────────────────────────────────────────────────────────
-
-// The backend's snake_case serializer middleware converts response keys
-// camelCase → snake_case, so audit log entries arrive with `user_email`
-// (not `userEmail`). Keep both forms in the type — older code that uses
-// camelCase still typechecks, and the runtime reads `user_email` first.
-interface AuditEntry {
-  id: number;
-  timestamp: string;
-  user_email?: string;
-  user_name?: string;
-  userEmail?: string;
-  userName?: string;
-  action: string;
-  method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
-  message: string;
-  category?: 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
-}
 
 // Normalized entry with guaranteed non-optional fields.
 type NormalizedEntry = AuditEntry & { userEmail: string; userName: string; category: NonNullable<AuditEntry['category']> };
@@ -60,8 +33,6 @@ function normalizeEntry(e: any): NormalizedEntry {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────
-
-type Category = 'all' | 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
 
 const CATEGORIES: { key: Category; label: string; icon: React.ElementType }[] = [
   { key: 'all',     label: 'Tất cả',    icon: FileText },
@@ -117,13 +88,6 @@ function formatExactTime(iso: string): string {
   });
 }
 
-function getUserInitials(name: string): string {
-  if (!name) return '??';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
-
 function avatarColor(str: string): string {
   return `avatar-ring--${str.length % 5 + 1}`;
 }
@@ -154,24 +118,12 @@ export default function AuditLogPage() {
   const [filter, setFilter] = useState<Category>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [entries, setEntries] = useState<NormalizedEntry[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
-      if (filter !== 'all') params.set('category', filter);
-      if (search.trim()) params.set('search', search.trim());
-      const res = await api.get<{ items: AuditEntry[]; total: number }>(`/audit-logs?${params}`);
-      setEntries((res.items || []).map(normalizeEntry));
-      setTotal(res.total);
-    } catch { setEntries([]); setTotal(0); }
-    finally { setLoading(false); }
-  }, [filter, search, page]);
+  const { data, isLoading: loading } = useAuditLogs(page, PAGE_SIZE, filter, search);
+  const rawEntries: AuditEntry[] = data?.items ?? [];
+  const entries = useMemo(() => rawEntries.map(normalizeEntry), [rawEntries]);
+  const total = data?.total ?? 0;
 
-  useEffect(() => { fetchLogs(); }, [fetchLogs]);
   useEffect(() => { setPage(1); }, [filter, search]);
 
   const paged = entries;
@@ -225,52 +177,43 @@ export default function AuditLogPage() {
 
       {/* ── KPI Strip ── */}
       <div className="kpi-grid">
-        <div className="kpi">
-          <div className="kpi__top">
-            <span className="kpi__label">Hành động hôm nay</span>
-            <div className="kpi__icon">
-              <Activity size={18} />
+        <KPI
+          label="Hành động hôm nay"
+          value={todayCount}
+          unit="sự kiện"
+          icon={Activity}
+          meta={
+            <div className="kpi__meta kpi__meta--up">
+              <TrendingUp size={11} />
+              <strong>+12%</strong> so với hôm qua
             </div>
-          </div>
-          <div className="kpi__value">{todayCount}<span className="kpi__value-unit">sự kiện</span></div>
-          <div className="kpi__meta kpi__meta--up">
-            <TrendingUp size={11} />
-            <strong>+12%</strong> so với hôm qua
-          </div>
-        </div>
+          }
+        />
 
-        <div className="kpi kpi--info">
-          <div className="kpi__top">
-            <span className="kpi__label">Người dùng hoạt động</span>
-            <div className="kpi__icon">
-              <Users size={18} />
-            </div>
-          </div>
-          <div className="kpi__value">{uniqueUsers}<span className="kpi__value-unit">người</span></div>
-          <div className="kpi__meta">Trong 24 giờ qua</div>
-        </div>
+        <KPI
+          label="Người dùng hoạt động"
+          value={uniqueUsers}
+          unit="người"
+          icon={Users}
+          variant="info"
+          meta="Trong 24 giờ qua"
+        />
 
-        <div className="kpi kpi--accent">
-          <div className="kpi__top">
-            <span className="kpi__label">Phổ biến nhất</span>
-            <div className="kpi__icon">
-              <TrendingUp size={18} />
-            </div>
-          </div>
-          <div className="kpi__value">{topCategory.count}<span className="kpi__value-unit">{topCategory.label}</span></div>
-          <div className="kpi__meta">Chiếm {Math.round((topCategory.count / todayCount) * 100)}% tổng hoạt động</div>
-        </div>
+        <KPI
+          label="Phổ biến nhất"
+          value={topCategory.count}
+          unit={topCategory.label}
+          icon={TrendingUp}
+          variant="accent"
+          meta={`Chiếm ${todayCount > 0 ? Math.round((topCategory.count / todayCount) * 100) : 0}% tổng hoạt động`}
+        />
 
-        <div className="kpi">
-          <div className="kpi__top">
-            <span className="kpi__label">Hoạt động gần nhất</span>
-            <div className="kpi__icon">
-              <Clock size={18} />
-            </div>
-          </div>
-          <div className="kpi__value" style={{ fontSize: 22 }}>{entries[0] ? formatTime(entries[0].timestamp) : '—'}</div>
-          <div className="kpi__meta">{entries[0]?.message.slice(0, 40) ?? 'Đang tải...'}…</div>
-        </div>
+        <KPI
+          label="Hoạt động gần nhất"
+          value={entries[0] ? formatTime(entries[0].timestamp) : '—'}
+          icon={Clock}
+          meta={`${entries[0]?.message.slice(0, 40) ?? 'Đang tải...'}…`}
+        />
       </div>
 
       {/* ── Filter Bar ── */}
@@ -337,7 +280,7 @@ export default function AuditLogPage() {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div className={`avatar-ring ${avatarColor(entry.userName || entry.userEmail)}`}>
-                          {getUserInitials(entry.userName || entry.userEmail)}
+                          {getInitials(entry.userName || entry.userEmail)}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

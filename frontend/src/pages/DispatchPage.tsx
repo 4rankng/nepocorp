@@ -23,6 +23,9 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { getInitials } from '../lib/avatar';
+import { formatDayMonth } from '../lib/date';
+import { splitRoute } from '../lib/route';
 import { useConfirm } from '../components/UI';
 import { useDispatchData, normalizeTrip } from '../hooks/useQueries';
 import type { NormalizedTrip } from '../hooks/useQueries';
@@ -53,33 +56,9 @@ const VN_WEEKDAYS = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Th�
 const VN_MONTHS = ['tháng 1', 'tháng 2', 'tháng 3', 'tháng 4', 'tháng 5', 'tháng 6', 'tháng 7', 'tháng 8', 'tháng 9', 'tháng 10', 'tháng 11', 'tháng 12'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
 function avatarColorClass(id: number): string {
   return `da-${(id % 5) + 1}`;
-}
-
-function splitRoute(routeName: string): { from: string; to: string } | null {
-  if (!routeName) return null;
-  const separators = ['→', '⇒', '->', ' - ', ' – ', '>'];
-  for (const sep of separators) {
-    if (routeName.includes(sep)) {
-      const [from, to] = routeName.split(sep).map((s) => s.trim());
-      if (from && to) return { from, to };
-    }
-  }
-  return null;
-}
-
-function formatDayMonth(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return `${d.getDate()}/${d.getMonth() + 1}`;
 }
 
 function formatFullDate(d: Date): string {
@@ -90,16 +69,7 @@ function isUrgent(iso: string, now: Date = new Date()): boolean {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return false;
   const diffMs = d.getTime() - now.getTime();
-  return diffMs < 36 * 60 * 60 * 1000;
-}
-
-// ─── Normalisers (API returns nested snake_case; page expects flat camelCase) ──
-function normalizeTruck(t: any): Truck {
-  return {
-    id: t.id,
-    licensePlate: t.license_plate ?? t.licensePlate ?? '',
-    status: t.status ?? '',
-  };
+  return diffMs > 0 && diffMs < 36 * 60 * 60 * 1000;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
@@ -109,7 +79,11 @@ export default function DispatchPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data, isLoading: loading, error: queryError } = useDispatchData();
   const drivers = (data?.drivers ?? []) as Driver[];
-  const trucks = (data?.trucks ?? []).map(normalizeTruck);
+  const trucks = (data?.trucks ?? []).map((t: any) => ({
+    id: t.id,
+    licensePlate: t.license_plate ?? t.licensePlate ?? '',
+    status: t.status ?? '',
+  }));
   const pendingTrips: NormalizedTrip[] = data?.pendingTrips ?? [];
   const activeTrips: NormalizedTrip[] = data?.activeTrips ?? [];
   const error = queryError ? 'Không thể tải dữ liệu điều vận. Vui lòng tải lại trang.' : null;
