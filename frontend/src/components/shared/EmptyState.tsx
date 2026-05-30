@@ -13,12 +13,12 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon: Icon = Inbox, title, description, action, className = '' }: EmptyStateProps) {
   return (
-    <div className={`empty-state ${className}`}>
-      <div className="empty-state__icon"><Icon size={24} /></div>
-      <div className="empty-state__title">{title}</div>
-      {description && <div className="empty-state__desc">{description}</div>}
+    <div className={`empty-state-panel ${className}`}>
+      <div className="empty-state-panel__icon"><Icon size={24} /></div>
+      <div className="empty-state-panel__title">{title}</div>
+      {description && <div className="empty-state-panel__desc">{description}</div>}
       {action && (
-        <div className="empty-state__action">
+        <div className="empty-state-panel__action">
           <Btn variant="secondary" onClick={action.onClick}>{action.label}</Btn>
         </div>
       )}

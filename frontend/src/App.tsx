@@ -64,59 +64,67 @@ function AppRoutes() {
   const adminOnly = (el: ReactElement) => (isDriver ? <Navigate to={driverHome} replace /> : el);
   const driverOnly = (el: ReactElement) => (isDriver ? el : <Navigate to={adminHome} replace />);
 
+  // Wrap each page in its own ErrorBoundary so a crash in one route
+  // doesn't block navigation to other routes.
+  const page = (el: ReactElement) => (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        {el}
+      </Suspense>
+    </ErrorBoundary>
+  );
+
   return (
     <ToastProvider>
       <Layout>
-        <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           <Route path="/" element={<Navigate to={isDriver ? driverHome : adminHome} replace />} />
           <Route
             path="/dashboard"
-            element={isDriver ? <Navigate to={driverHome} replace /> : <DashboardPage />}
+            element={isDriver ? <Navigate to={driverHome} replace /> : page(<DashboardPage />)}
           />
-          <Route path="/dispatch" element={adminOnly(<DispatchPage />)} />
-          <Route path="/fleet" element={adminOnly(<FleetPage />)} />
-          <Route path="/trips" element={adminOnly(<TripListPage />)} />
-          <Route path="/trips/new" element={adminOnly(<TripCreatePage />)} />
-          <Route path="/trips/:id" element={adminOnly(<TripDetailPage />)} />
-          <Route path="/trips/:id/edit" element={adminOnly(<TripEditPage />)} />
-          <Route path="/finance" element={adminOnly(<FinancePage />)} />
-          <Route path="/profit" element={adminOnly(<ProfitPage />)} />
-          <Route path="/debt" element={adminOnly(<DebtListPage />)} />
-          <Route path="/debt/:id" element={adminOnly(<DebtDetailPage />)} />
-          <Route path="/penalties" element={adminOnly(<PenaltyPage />)} />
-          <Route path="/my-penalties" element={driverOnly(<DriverPenaltyPage />)} />
-          <Route path="/customers" element={adminOnly(<CustomersPage />)} />
+          <Route path="/dispatch" element={adminOnly(page(<DispatchPage />))} />
+          <Route path="/fleet" element={adminOnly(page(<FleetPage />))} />
+          <Route path="/trips" element={adminOnly(page(<TripListPage />))} />
+          <Route path="/trips/new" element={adminOnly(page(<TripCreatePage />))} />
+          <Route path="/trips/:id" element={adminOnly(page(<TripDetailPage />))} />
+          <Route path="/trips/:id/edit" element={adminOnly(page(<TripEditPage />))} />
+          <Route path="/finance" element={adminOnly(page(<FinancePage />))} />
+          <Route path="/profit" element={adminOnly(page(<ProfitPage />))} />
+          <Route path="/debt" element={adminOnly(page(<DebtListPage />))} />
+          <Route path="/debt/:id" element={adminOnly(page(<DebtDetailPage />))} />
+          <Route path="/penalties" element={adminOnly(page(<PenaltyPage />))} />
+          <Route path="/my-penalties" element={driverOnly(page(<DriverPenaltyPage />))} />
+          <Route path="/customers" element={adminOnly(page(<CustomersPage />))} />
           <Route path="/routes" element={<Navigate to="/config/routes" replace />} />
           <Route path="/trucks" element={<Navigate to="/fleet" replace />} />
           <Route path="/drivers" element={<Navigate to="/fleet" replace />} />
           <Route path="/trailers" element={<Navigate to="/fleet" replace />} />
-          <Route path="/config" element={adminOnly(<ConfigPage />)} />
-          <Route path="/config/trucks" element={adminOnly(<TrucksConfigPage />)} />
-          <Route path="/config/trailers" element={adminOnly(<TrailersConfigPage />)} />
-          <Route path="/config/routes" element={adminOnly(<RoutesConfigPage />)} />
-          <Route path="/config/cargo-types" element={adminOnly(<CargoTypesConfigPage />)} />
-          <Route path="/config/pricing-tables" element={adminOnly(<PricingTablesConfigPage />)} />
-          <Route path="/config/road-allowances" element={adminOnly(<RoadAllowancesConfigPage />)} />
-          <Route path="/config/penalty-reasons" element={adminOnly(<PenaltyReasonsConfigPage />)} />
-          <Route path="/config/drivers" element={adminOnly(<DriversConfigPage />)} />
-          <Route path="/config/fuel" element={adminOnly(<FuelConfigPage />)} />
-          <Route path="/config/cap-table" element={adminOnly(<CapTableConfigPage />)} />
-          <Route path="/config/customers" element={adminOnly(<CustomersConfigPage />)} />
-          <Route path="/config/management-fees" element={adminOnly(<ManagementFeesConfigPage />)} />
-          <Route path="/users" element={adminOnly(<UsersPage />)} />
-          <Route path="/audit-logs" element={adminOnly(<AuditLogPage />)} />
-          <Route path="/my-trips" element={driverOnly(<DriverTripsPage />)} />
-          <Route path="/my-trips/:id" element={driverOnly(<DriverTripDetailPage />)} />
-          <Route path="/my-earnings" element={driverOnly(<DriverEarningsPage />)} />
+          <Route path="/config" element={adminOnly(page(<ConfigPage />))} />
+          <Route path="/config/trucks" element={adminOnly(page(<TrucksConfigPage />))} />
+          <Route path="/config/trailers" element={adminOnly(page(<TrailersConfigPage />))} />
+          <Route path="/config/routes" element={adminOnly(page(<RoutesConfigPage />))} />
+          <Route path="/config/cargo-types" element={adminOnly(page(<CargoTypesConfigPage />))} />
+          <Route path="/config/pricing-tables" element={adminOnly(page(<PricingTablesConfigPage />))} />
+          <Route path="/config/road-allowances" element={adminOnly(page(<RoadAllowancesConfigPage />))} />
+          <Route path="/config/penalty-reasons" element={adminOnly(page(<PenaltyReasonsConfigPage />))} />
+          <Route path="/config/drivers" element={adminOnly(page(<DriversConfigPage />))} />
+          <Route path="/config/fuel" element={adminOnly(page(<FuelConfigPage />))} />
+          <Route path="/config/cap-table" element={adminOnly(page(<CapTableConfigPage />))} />
+          <Route path="/config/customers" element={adminOnly(page(<CustomersConfigPage />))} />
+          <Route path="/config/management-fees" element={adminOnly(page(<ManagementFeesConfigPage />))} />
+          <Route path="/users" element={adminOnly(page(<UsersPage />))} />
+          <Route path="/audit-logs" element={adminOnly(page(<AuditLogPage />))} />
+          <Route path="/my-trips" element={driverOnly(page(<DriverTripsPage />))} />
+          <Route path="/my-trips/:id" element={driverOnly(page(<DriverTripDetailPage />))} />
+          <Route path="/my-earnings" element={driverOnly(page(<DriverEarningsPage />))} />
           <Route
             path="*"
             element={<Navigate to={isDriver ? driverHome : adminHome} replace />}
           />
             </Routes>
           </Suspense>
-        </ErrorBoundary>
       </Layout>
     </ToastProvider>
   );

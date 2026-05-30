@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import './Toast.css';
 
@@ -42,6 +42,7 @@ const EXIT_MS = 300;
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastEntry[]>([]);
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const exitTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const counter = useRef(0);
 
   const dismiss = useCallback((id: string) => {
@@ -49,7 +50,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const timer = timers.current.get(id);
     if (timer) clearTimeout(timer);
     timers.current.delete(id);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), EXIT_MS);
+    const exitTimer = setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), EXIT_MS);
+    exitTimers.current.set(id, exitTimer);
   }, []);
 
   const addToast = useCallback((options: ToastOptions): string => {
@@ -59,6 +61,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     timers.current.set(id, setTimeout(() => dismiss(id), duration));
     return id;
   }, [dismiss]);
+
+  // Clean up all timers on unmount
+  useEffect(() => {
+    return () => {
+      for (const t of timers.current.values()) clearTimeout(t);
+      for (const t of exitTimers.current.values()) clearTimeout(t);
+    };
+  }, []);
 
   return (
     <ToastContext.Provider value={{ toast: addToast, dismiss }}>
