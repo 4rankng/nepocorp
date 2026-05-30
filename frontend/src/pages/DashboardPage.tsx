@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatNumber, formatCompact } from '../lib/format';
@@ -6,6 +7,13 @@ import { useAuth } from '../hooks/useAuth';
 import type { DashboardStats, TripDetail, Role } from '@nepocorp/shared';
 import { TripStatus, ROLE_LABELS } from '@nepocorp/shared';
 import { Panel } from '../components/UI';
+import {
+  useDashboardStats,
+  usePnlReport,
+  useMonthlyTrips,
+  useCreatedTrips,
+  useYearlyPnl,
+} from '../hooks/useQueries';
 
 /* -------------------------------------------------------------------------- */
 /*  Interfaces                                                                */
@@ -44,93 +52,39 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [stats, setStats] = useState<ExtendedDashboardStats | null>(null);
-  const [pnlReport, setPnlReport] = useState<PnlReport | null>(null);
-  const [prevPnlReport, setPrevPnlReport] = useState<PnlReport | null>(null);
-  const [allTrips, setAllTrips] = useState<TripDetail[]>([]);
-  const [createdTrips, setCreatedTrips] = useState<TripDetail[]>([]);
-  const [topOverdueCustomer, setTopOverdueCustomer] = useState<{ name: string; balance: number; days: number } | null>(null);
-  const [topShareholder, setTopShareholder] = useState<{ name: string; percentage: number } | null>(null);
-  const [receivablesSummary, setReceivablesSummary] = useState<{
-    buckets: Array<{ range: string; label: string; count: number; amount: number }>;
-    totalOutstanding: number; totalCustomers: number; overdueCustomers: number;
-  } | null>(null);
-  // 12-month revenue/profit history — previously the line chart was a hardcoded
-  // SVG path with fixed coordinates which displayed the same growth curve
-  // regardless of real data. We now drive it from per-month P&L reports.
-  const [yearlySeries, setYearlySeries] = useState<{ revenue: number; grossProfit: number }[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  useEffect(() => {
-    setLoading(true);
-    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-    const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-    // Last day of the current month (inclusive). Without this upper bound,
-    // /trips?date_from=monthStart pulled in trips dated for future months
-    // which then surfaced in the dashboard cost donut and made the breakdown
-    // disagree with the dashboard endpoint's correctly-month-bounded total.
-    const nextMonthNum = currentMonth === 12 ? 1 : currentMonth + 1;
-    const nextYearNum = currentMonth === 12 ? currentYear + 1 : currentYear;
-    const monthEnd = new Date(`${nextYearNum}-${String(nextMonthNum).padStart(2, '0')}-01`);
-    monthEnd.setUTCDate(monthEnd.getUTCDate() - 1);
-    const monthEndStr = monthEnd.toISOString().slice(0, 10);
-    Promise.all([
-      api.get<ExtendedDashboardStats>('/reports/dashboard'),
-      api.get<PnlReport>(`/reports/pnl?month=${currentMonth}&year=${currentYear}`),
-      // Current-month trips for chart data (server-side date filter)
-      api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&date_from=${monthStart}&date_to=${monthEndStr}`),
-      // All CREATED trips regardless of date (dispatch alerts must not miss prior-month trips)
-      api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&status=CREATED`).catch(() => ({ items: [] as TripDetail[], total: 0 })),
-      api.get<PnlReport>(`/reports/pnl?month=${prevMonth}&year=${prevYear}`).catch(() => null as PnlReport | null),
-      api.get<{
-        buckets: Array<{ range: string; label: string; count: number; amount: number }>;
-        totalOutstanding: number; totalCustomers: number; overdueCustomers: number;
-      }>('/reports/receivables-summary').catch(() => null),
-    ])
-      .then(([dashboardData, pnlData, tripsData, createdTripsData, prevPnlData, receivablesData]) => {
-        setStats(dashboardData);
-        setPnlReport(pnlData);
-        setPrevPnlReport(prevPnlData);
-        setAllTrips(tripsData.items);
-        setCreatedTrips(createdTripsData.items);
-        // Overdue customer and top shareholder now computed server-side
-        setTopOverdueCustomer(dashboardData.topOverdueCustomer ?? null);
-        setTopShareholder(dashboardData.topShareholder ?? null);
-        if (receivablesData) setReceivablesSummary(receivablesData);
-      })
-      .catch((err) => {
-        console.error('Error fetching dashboard analytical logs:', err);
-      })
-      .finally(() => setLoading(false));
-  }, [currentMonth, currentYear]);
+  /* ---- TanStack Query hooks ---- */
+  const { data: stats, isLoading: loading } = useDashboardStats() as any;
+  const { data: pnlReport } = usePnlReport(currentMonth, currentYear) as any;
+  const { data: prevPnlReport } = useQuery<PnlReport | null>({
+    queryKey: ['pnl', currentMonth, currentYear - 1],
+    queryFn: () => api.get<PnlReport>(`/reports/pnl?month=${currentMonth}&year=${currentYear - 1}`).catch(() => null),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: allTrips = [] } = useMonthlyTrips(currentYear, currentMonth) as any;
+  const { data: createdTrips = [] } = useCreatedTrips() as any;
+  const { data: receivablesSummary } = useQuery({
+    queryKey: ['receivables-summary'],
+    queryFn: () => api.get<{
+      buckets: Array<{ range: string; label: string; count: number; amount: number }>;
+      totalOutstanding: number; totalCustomers: number; overdueCustomers: number;
+    }>('/reports/receivables-summary').catch(() => null),
+    staleTime: 2 * 60 * 1000,
+  });
+  const { data: yearlySeriesRaw = [] } = useYearlyPnl(currentYear);
+  const yearlySeries = useMemo(
+    () => yearlySeriesRaw.map(r => ({
+      revenue: Number(r?.totalRevenue ?? 0),
+      grossProfit: Number(r?.grossProfit ?? 0),
+    })),
+    [yearlySeriesRaw],
+  );
 
-  // Fetch trailing 12-month P&L for the trend chart. Anchored at the current
-  // month so the line ends on the latest data point and reads left-to-right
-  // as the prior year. Failures fall back to zero for that month so a single
-  // 500 doesn't blank the whole chart.
-  useEffect(() => {
-    const months: Array<{ m: number; y: number }> = [];
-    for (let i = 11; i >= 0; i--) {
-      const offsetMonth = currentMonth - i;
-      let m = offsetMonth;
-      let y = currentYear;
-      while (m <= 0) { m += 12; y -= 1; }
-      months.push({ m, y });
-    }
-    Promise.all(
-      months.map(({ m, y }) =>
-        api
-          .get<PnlReport>(`/reports/pnl?month=${m}&year=${y}`)
-          .then((r) => ({ revenue: Number(r?.totalRevenue ?? 0), grossProfit: Number(r?.grossProfit ?? 0) }))
-          .catch(() => ({ revenue: 0, grossProfit: 0 }))
-      )
-    ).then(setYearlySeries);
-  }, [currentMonth, currentYear]);
+  const topOverdueCustomer = stats?.topOverdueCustomer ?? null;
+  const topShareholder = stats?.topShareholder ?? null;
 
   // Loading skeleton matching wireframe spacing
   if (loading) {

@@ -1,11 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { api } from '../lib/api';
 import { formatCurrency, formatCompact } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { Customer, LedgerEntry } from '@nepocorp/shared';
 import { Search, ChevronRight, Users, Wallet, AlertCircle } from 'lucide-react';
 import { KPI, PageHeader, Card } from '../components/UI';
+import { useCustomerDebts } from '../hooks/useQueries';
 
 interface CustomerDebtInfo {
   customer: Customer;
@@ -23,10 +23,10 @@ interface CustomerDebtInfo {
 export default function DebtListPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading: loading, error: queryError } = useCustomerDebts();
+  const customers = data?.customers ?? [];
+  const ledgerEntries = data?.ledgerEntries ?? [];
+  const error = queryError ? (queryError as any).message : null;
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk'>(
     searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
@@ -38,59 +38,32 @@ export default function DebtListPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      setError(null);
-      try {
-        // Fetch all customers & recent ledger entries in parallel
-        const [customerRes, ledgerRes] = await Promise.all([
-          api.get<{ items: Customer[] }>('/customers'),
-          api.get<{ items: LedgerEntry[] }>('/ledger?entity_type=CUSTOMER&limit=2000'),
-        ]);
-
-        const customerList = Array.isArray(customerRes) ? customerRes : (customerRes.items ?? []);
-        setCustomers(customerList);
-        setLedgerEntries(ledgerRes.items || []);
-      } catch (e: any) {
-        setError(e.message || 'Không thể tải danh sách công nợ.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
-  // Compute debt figures and aging details for all customers.
-  //
-  // We previously summed gross TRIP_REVENUE entries into age buckets without
-  // subtracting payments, so the buckets total disagreed with totalOutstanding
-  // ("TRONG HẠN 52tr" when the customer's open balance is 49.6M because
-  // they had already paid 2.4M). Apply payments FIFO against the oldest
-  // open invoice — the bucket totals now reconcile to totalOutstanding.
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
     const now = new Date();
+    const ledgerByCustomer = new Map<number, LedgerEntry[]>();
+    for (const entry of ledgerEntries) {
+      if (entry.entity_type === 'CUSTOMER') {
+        const list = ledgerByCustomer.get(entry.entity_id);
+        if (list) list.push(entry);
+        else ledgerByCustomer.set(entry.entity_id, [entry]);
+      }
+    }
 
     return customers.map(c => {
-      // Filter ledger entries for this customer
-      const cLedger = ledgerEntries.filter(entry => entry.entity_type === 'CUSTOMER' && entry.entity_id === c.id);
+      const cLedger = ledgerByCustomer.get(c.id) ?? [];
 
-      // Latest entry balance (rows arrive newest-first) is the open balance.
       const latestRow = cLedger[0];
       const totalOutstanding = latestRow ? parseFloat(latestRow.balance) : 0;
 
       const aging = { current: 0, d30: 0, d60: 0, over90: 0 };
       let maxOverdueDays = 0;
 
-      // Walk ledger oldest → newest so we can FIFO-allocate payments against
-      // the oldest unpaid revenue rows.
       const chronological = [...cLedger].sort((a, b) => {
         const at = a.timestamp ? new Date(a.timestamp).getTime() : 0;
         const bt = b.timestamp ? new Date(b.timestamp).getTime() : 0;
         return at - bt;
       });
 
-      // Open invoices (debit lots): {timestamp, openAmount}
       const openInvoices: Array<{ ts: string; open: number }> = [];
       for (const entry of chronological) {
         const debit = parseFloat(entry.debit || '0');
@@ -99,7 +72,6 @@ export default function DebtListPage() {
           openInvoices.push({ ts: entry.timestamp, open: debit });
         }
         if (credit > 0) {
-          // Apply payment FIFO against oldest open invoices
           let remaining = credit;
           for (const inv of openInvoices) {
             if (remaining <= 0) break;
@@ -111,7 +83,6 @@ export default function DebtListPage() {
         }
       }
 
-      // Bucket the remaining open amounts by age.
       for (const inv of openInvoices) {
         if (inv.open <= 0) continue;
         const ageInDays = Math.floor((now.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24));
@@ -122,7 +93,6 @@ export default function DebtListPage() {
         if (ageInDays > maxOverdueDays) maxOverdueDays = ageInDays;
       }
 
-      // Classify credit risk
       let riskClass: 'high' | 'med' | 'low' = 'low';
       if (totalOutstanding > 0) {
         if (aging.over90 > 0 || totalOutstanding > 100000000) {
@@ -142,7 +112,6 @@ export default function DebtListPage() {
     });
   }, [customers, ledgerEntries]);
 
-  // Aggregate bucket totals for top KPI summary
   const totals = useMemo(() => {
     const sum = {
       total: 0,
@@ -190,18 +159,15 @@ export default function DebtListPage() {
     return sum;
   }, [customerDebts]);
 
-  // Filter list by search query and filter selection
   const filteredDebts = useMemo(() => {
     let result = customerDebts;
 
-    // Filter mode
     if (filterMode === 'overdue') {
       result = result.filter(d => d.maxOverdueDays > 30 && d.totalOutstanding > 0);
     } else if (filterMode === 'high-risk') {
       result = result.filter(d => d.riskClass === 'high' && d.totalOutstanding > 0);
     }
 
-    // Search query
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       result = result.filter(d =>
@@ -399,7 +365,6 @@ export default function DebtListPage() {
               </thead>
               <tbody>
                 {filteredDebts.map(d => {
-                  // Calculate segments width for the aging bar
                   const totalAging = d.aging.current + d.aging.d30 + d.aging.d60 + d.aging.over90;
                   const pctCurrent = totalAging > 0 ? (d.aging.current / totalAging) * 100 : 100;
                   const pct30 = totalAging > 0 ? (d.aging.d30 / totalAging) * 100 : 0;

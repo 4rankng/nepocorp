@@ -18,7 +18,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { api } from '../lib/api';
+import { useBadgeCounts } from '../hooks/useQueries';
 import type { Role } from '@nepocorp/shared';
 
 interface NavItem {
@@ -90,9 +90,6 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/config')) return 'Cấu hình';
   if (pathname === '/users') return 'Người dùng';
   if (pathname === '/audit-logs') return 'Nhật ký người dùng';
-  // Driver routes — startsWith catches the detail pages too
-  // (e.g. /my-trips/:id) so the breadcrumb doesn't fall through to a
-  // duplicated "NEPO > NEPO" placeholder.
   if (pathname.startsWith('/my-trips')) return 'Lệnh của tôi';
   if (pathname.startsWith('/my-earnings')) return 'Thu nhập';
   return 'NEPO';
@@ -104,7 +101,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
 
-  // Keyboard shortcut for sidebar toggle (⌘B / Ctrl+B)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
@@ -117,35 +113,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [sidebarOpen]);
 
-  // Live badge counts
-  const [dispatchCount, setDispatchCount] = useState<number | undefined>(undefined);
-  const [penaltiesCount, setPenaltiesCount] = useState<number | undefined>(undefined);
-
-  useEffect(() => {
-    if (!user || user.role === 'DRIVER') return;
-
-    // Load unassigned/pending trips count
-    api.get<{ total: number }>('/trips?status=CREATED&limit=1')
-      .then(res => {
-        setDispatchCount(res.total > 0 ? res.total : undefined);
-      })
-      .catch(() => {});
-
-    // Load active penalties count for current month
-    api.get<any[]>('/penalties')
-      .then(res => {
-        const now = new Date();
-        const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const count = res.filter((p: any) => p.date && p.date.startsWith(thisMonthStr)).length;
-        setPenaltiesCount(count > 0 ? count : undefined);
-      })
-      .catch(() => {});
-  }, [user, location.pathname]); // Reload counts on page changes or user login
+  const { data: badgeData } = useBadgeCounts();
+  const dispatchCount = badgeData?.dispatchCount;
+  const penaltiesCount = badgeData?.penaltiesCount;
 
   if (!user) return null;
 
   const navItems = getNavItems(user.role, dispatchCount, penaltiesCount);
-  // Match active item by closest path match
   const activeKey = navItems
     .filter(item => location.pathname.startsWith(item.path))
     .sort((a, b) => b.path.length - a.path.length)[0]?.key || '';
@@ -153,7 +127,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pageTitle = getPageTitle(location.pathname);
 
   const handleNavigate = (path: string) => {
-    // Auto-close sidebar on mobile after navigation
     if (window.innerWidth < 1024) setSidebarOpen(false);
     navigate(path);
   };

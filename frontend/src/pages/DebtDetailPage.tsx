@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -6,6 +6,7 @@ import { TxnType } from '@nepocorp/shared';
 import type { CustomerStatement, LedgerEntry, UnpaidTrip } from '@nepocorp/shared';
 import { AlertTriangle, Wallet, X, Download, ListOrdered } from 'lucide-react';
 import { PageHeader, Panel, KPI } from '../components/UI';
+import { useCustomerStatement } from '../hooks/useQueries';
 
 // ── Txn type labels ─────────────────────────────────────────────────────────
 
@@ -23,9 +24,8 @@ const TXN_LABELS: Record<string, string> = {
 export default function DebtDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [statement, setStatement] = useState<CustomerStatement | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id);
+  const error = queryError ? (queryError as any).message : null;
 
   // Payment modal state
   const [showPayment, setShowPayment] = useState(false);
@@ -34,22 +34,6 @@ export default function DebtDetailPage() {
   const [paymentAmounts, setPaymentAmounts] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const fetchStatement = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await api.get<CustomerStatement>(`/ledger/customers/${id}/statement`);
-      setStatement(data);
-    } catch (e: any) {
-      setError(e.message || 'Không thể tải sổ kế toán');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => { fetchStatement(); }, [fetchStatement]);
 
   // ── Payment submit ───────────────────────────────────────────────────────
 
@@ -75,7 +59,7 @@ export default function DebtDetailPage() {
       setReceiptId('');
       setSelectedTripIds(new Set());
       setPaymentAmounts({});
-      fetchStatement();
+      refetch();
     } catch (e: any) {
       setSubmitError(e.message || 'Lỗi khi ghi nhận thanh toán');
     } finally {

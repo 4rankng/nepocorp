@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Play,
@@ -23,7 +24,8 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useConfirm } from '../components/UI';
-import { TripStatus } from '@nepocorp/shared';
+import { useDispatchData, normalizeTrip } from '../hooks/useQueries';
+import type { NormalizedTrip } from '../hooks/useQueries';
 
 interface Driver {
   id: number;
@@ -36,25 +38,6 @@ interface Truck {
   id: number;
   licensePlate: string;
   status: string;
-}
-
-interface TripDetail {
-  id: number;
-  tripCode?: string;
-  customerId: number;
-  customerName: string;
-  customerReference?: string;
-  truckId: number;
-  truckPlate: string;
-  driverId: number;
-  driverName: string;
-  routeId: number;
-  routeName: string;
-  trailerId: number;
-  cargoTypeId: number;
-  status: TripStatus;
-  departureDate: string;
-  notes?: string;
 }
 
 interface ReassignState {
@@ -74,7 +57,6 @@ function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  // Vietnamese names: take last two words' first letter ("Lê Văn Tài" → "LT" from first + last)
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
@@ -84,7 +66,6 @@ function avatarColorClass(id: number): string {
 
 function splitRoute(routeName: string): { from: string; to: string } | null {
   if (!routeName) return null;
-  // Try common separators: → ⇒ -> > –
   const separators = ['→', '⇒', '->', ' - ', ' – ', '>'];
   for (const sep of separators) {
     if (routeName.includes(sep)) {
@@ -109,7 +90,6 @@ function isUrgent(iso: string, now: Date = new Date()): boolean {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return false;
   const diffMs = d.getTime() - now.getTime();
-  // Urgent if departure is within 36 hours
   return diffMs < 36 * 60 * 60 * 1000;
 }
 
@@ -122,42 +102,21 @@ function normalizeTruck(t: any): Truck {
   };
 }
 
-function normalizeTrip(t: any): TripDetail {
-  return {
-    id: t.id,
-    customerId: t.customer_id ?? t.customerId ?? 0,
-    customerName: t.customer?.name ?? t.customerName ?? '',
-    customerReference: t.customer_reference ?? t.customerReference,
-    truckId: t.truck_id ?? t.truckId ?? 0,
-    truckPlate: t.truck?.license_plate ?? t.truckPlate ?? '',
-    driverId: t.driver_id ?? t.driverId ?? 0,
-    driverName: t.driver?.name ?? t.driverName ?? '',
-    routeId: t.route_id ?? t.routeId ?? 0,
-    routeName: t.route?.name ?? t.routeName ?? '',
-    trailerId: t.trailer_id ?? t.trailerId ?? 0,
-    cargoTypeId: t.cargo_type_id ?? t.cargoTypeId ?? 0,
-    status: t.status,
-    departureDate: t.departure_date ?? t.departureDate ?? '',
-    notes: t.notes,
-  };
-}
-
 // ─── Component ────────────────────────────────────────────────────────────
 export default function DispatchPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [trucks, setTrucks] = useState<Truck[]>([]);
-  const [pendingTrips, setPendingTrips] = useState<TripDetail[]>([]);
-  const [activeTrips, setActiveTrips] = useState<TripDetail[]>([]);
+  const { data, isLoading: loading, error: queryError } = useDispatchData();
+  const drivers = (data?.drivers ?? []) as Driver[];
+  const trucks = (data?.trucks ?? []).map(normalizeTruck);
+  const pendingTrips: NormalizedTrip[] = data?.pendingTrips ?? [];
+  const activeTrips: NormalizedTrip[] = data?.activeTrips ?? [];
+  const error = queryError ? 'Không thể tải dữ liệu điều vận. Vui lòng tải lại trang.' : null;
 
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [dispatching, setDispatching] = useState(false);
   const [fleetFilter, setFleetFilter] = useState<FleetFilter>('all');
-  // Toast queue — supports multiple simultaneous toasts (e.g. success + refresh warning)
   const [toasts, setToasts] = useState<Array<{ id: number; kind: 'success' | 'error'; text: string }>>([]);
   const addToast = useCallback((kind: 'success' | 'error', text: string) => {
     const id = Date.now() + Math.random();
@@ -165,7 +124,6 @@ export default function DispatchPage() {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
   }, []);
 
-  // Reassign state: tripId -> form state (null = not open)
   const [reassignOpen, setReassignOpen] = useState<number | null>(null);
   const [reassignState, setReassignState] = useState<ReassignState>({
     truckId: '',
@@ -173,33 +131,6 @@ export default function DispatchPage() {
     loading: false,
     error: '',
   });
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [driversRes, trucksRes, pendingRes, activeRes] = await Promise.all([
-        api.get<{ items: Driver[] }>('/drivers?limit=100'),
-        api.get<{ items: Truck[] }>('/trucks?limit=100'),
-        api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
-        api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.IN_TRANSIT}&limit=100`),
-      ]);
-
-      setDrivers(driversRes.items || []);
-      setTrucks((trucksRes.items || []).map(normalizeTruck));
-      setPendingTrips((pendingRes.items || []).map(normalizeTrip));
-      setActiveTrips((activeRes.items || []).map(normalizeTrip));
-    } catch (err) {
-      console.error(err);
-      setError('Không thể tải dữ liệu điều vận. Vui lòng tải lại trang.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   // ── Trip dispatch ─────────────────────────────────────────────────────
   const handleDispatch = async (tripId: number) => {
@@ -213,18 +144,7 @@ export default function DispatchPage() {
       await api.post(`/trips/${tripId}/dispatch`, {});
       const code = trip?.tripCode || `#${tripId}`;
       addToast('success', `Đã xuất phát chuyến ${code}`);
-      // Refresh data separately — failure here does NOT mask dispatch success
-      try {
-        const [pendingRes, activeRes] = await Promise.all([
-          api.get<{ items: any[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
-          api.get<{ items: any[] }>(`/trips?status=${TripStatus.IN_TRANSIT}&limit=100`),
-        ]);
-        setPendingTrips((pendingRes.items || []).map(normalizeTrip));
-        setActiveTrips((activeRes.items || []).map(normalizeTrip));
-      } catch {
-        // Dispatch succeeded — stale list is acceptable, user can reload
-        addToast('error', 'Đã xuất phát nhưng không thể tải lại danh sách. Vui lòng tải lại trang.');
-      }
+      await queryClient.invalidateQueries({ queryKey: ['dispatch'] });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi khởi hành chuyến đi.';
       addToast('error', msg);
@@ -235,7 +155,7 @@ export default function DispatchPage() {
   };
 
   // ── Reassign flow ─────────────────────────────────────────────────────
-  const openReassign = (trip: TripDetail) => {
+  const openReassign = (trip: NormalizedTrip) => {
     setReassignOpen(trip.id);
     setReassignState({
       truckId: String(trip.truckId),
@@ -261,8 +181,7 @@ export default function DispatchPage() {
         truck_id: Number(reassignState.truckId),
         driver_id: Number(reassignState.driverId),
       });
-      const pendingRes = await api.get<{ items: any[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`);
-      setPendingTrips((pendingRes.items || []).map(normalizeTrip));
+      await queryClient.invalidateQueries({ queryKey: ['dispatch'] });
       closeReassign();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi cập nhật';
@@ -343,10 +262,6 @@ export default function DispatchPage() {
 
   return (
     <div className="dispatch-page fade-up-1" style={{ paddingBottom: 40 }}>
-      {/* Portal the toast out of the dispatch-page wrapper — its
-          .fade-up-1 animation uses CSS `transform`, which establishes a new
-          containing block and breaks `position: fixed` so the toast was
-          rendering far below the viewport. Mount on document.body instead. */}
       {toasts.length > 0 && createPortal(
         <div style={{
           position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
@@ -431,11 +346,6 @@ export default function DispatchPage() {
             <div className="metric-delta delta-flat">— xe đăng ký</div>
           </div>
           <div className="metric">
-            {/* Renamed from "Đang chạy" — the value counts unique trucks with
-                at least one IN_TRANSIT trip (i.e. how many trucks are
-                physically moving), not how many trips are running. The old
-                label caused confusion when users dispatched a new trip and
-                expected this number to tick up. */}
             <div className="metric-label">Xe đang chạy</div>
             <div className="metric-value d-mono">{fleetCounts.running}<span className="metric-value-unit">/{fleetCounts.all}</span></div>
             <div className="metric-delta delta-up">

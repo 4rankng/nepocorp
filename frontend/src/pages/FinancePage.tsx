@@ -1,17 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
-import { useObservedWidth } from '../hooks/useObservedWidth';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell,
-} from 'recharts';
-import type { CapTableHistory, PaginatedResponse } from '@nepocorp/shared';
+import { usePnlReport, useYearlyPnl, useTripCosts, useCapTable } from '../hooks/useQueries';
 
 interface PnlTruck {
   plate: string;
@@ -31,12 +27,6 @@ interface PnlReport {
   netProfit: number;
   tripCount: number;
   trucks: PnlTruck[];
-}
-
-interface TripCosts {
-  total_fuel_cost: string | null;
-  total_road_allowance: string | null;
-  driver_salary: string | null;
 }
 
 const MONTHS = [
@@ -72,60 +62,26 @@ export default function FinancePage() {
   const { month: cm, year: cy } = now();
   const [month, setMonth] = useState(cm);
   const [year, setYear] = useState(cy);
-  const [report, setReport] = useState<PnlReport | null>(null);
-  const [prevReport, setPrevReport] = useState<PnlReport | null>(null);
-  const [tripCosts, setTripCosts] = useState<TripCosts[]>([]);
-  const [capTable, setCapTable] = useState<CapTableHistory[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [yearlyData, setYearlyData] = useState<(PnlReport | null)[]>([]);
-  const [yearlyLoading, setYearlyLoading] = useState(false);
 
-  const fetchReport = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Bound the LOCKED trip pull to the selected month — previously this
-      // pulled every locked trip, so the "Cơ cấu chi phí T5" donut showed
-      // all-time fuel (66.7M) when the May P&L was 17.5M.
-      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-      const nextMonthN = month === 12 ? 1 : month + 1;
-      const nextYearN = month === 12 ? year + 1 : year;
-      const monthEndDate = new Date(`${nextYearN}-${String(nextMonthN).padStart(2, '0')}-01`);
-      monthEndDate.setUTCDate(monthEndDate.getUTCDate() - 1);
-      const monthEnd = monthEndDate.toISOString().slice(0, 10);
-      const [data, prev, tripsRes, capRes] = await Promise.all([
-        api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year}`),
-        api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year - 1}`).catch(() => null as PnlReport | null),
-        api.get<PaginatedResponse<TripCosts>>(`/trips?status=LOCKED&limit=500&date_from=${monthStart}&date_to=${monthEnd}`).catch(() => ({ items: [], total: 0, page: 1, pageSize: 0 })),
-        api.get<PaginatedResponse<CapTableHistory>>('/cap-table').catch(() => ({ items: [], total: 0, page: 1, pageSize: 0 })),
-      ]);
-      setReport(data);
-      setPrevReport(prev);
-      setTripCosts(tripsRes.items || []);
-      setCapTable(capRes.items || []);
-    } catch (e: any) {
-      setError(e.message || 'Không thể tải báo cáo');
-    } finally {
-      setLoading(false);
-    }
-  }, [month, year]);
+  const { data: reportRaw, isLoading: loading, error: queryError } = usePnlReport(month, year);
+  const report = reportRaw as unknown as PnlReport | undefined;
 
-  useEffect(() => { fetchReport(); }, [fetchReport]);
+  const { data: prevYearReportRaw } = useQuery<PnlReport | null>({
+    queryKey: ['pnl', month, year - 1],
+    queryFn: () => api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year - 1}`).catch(() => null),
+    staleTime: 5 * 60 * 1000,
+  });
+  const prevReport = prevYearReportRaw as unknown as PnlReport | null | undefined;
 
-  useEffect(() => {
-    setYearlyLoading(true);
-    Promise.all(
-      Array.from({ length: 12 }, (_, i) =>
-        api.get<PnlReport>(`/reports/pnl?month=${i + 1}&year=${year}`).catch(() => null)
-      )
-    ).then(setYearlyData).finally(() => setYearlyLoading(false));
-  }, [year]);
+  const { data: tripCostsRaw = [] } = useTripCosts(month, year);
+  const { data: capTableRaw = [] } = useCapTable();
+  const { data: yearlyData = [], isLoading: yearlyLoading } = useYearlyPnl(year);
 
-  // Real cost breakdown from locked trips
-  const fuelCost = tripCosts.reduce((s, t) => s + parseFloat(t.total_fuel_cost || '0'), 0);
-  const roadCost = tripCosts.reduce((s, t) => s + parseFloat(t.total_road_allowance || '0'), 0);
-  const driverCost = tripCosts.reduce((s, t) => s + parseFloat(t.driver_salary || '0'), 0);
+  const error = queryError ? (queryError as any).message || 'Không thể tải báo cáo' : null;
+
+  const fuelCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).total_fuel_cost || '0'), 0);
+  const roadCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).total_road_allowance || '0'), 0);
+  const driverCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).driver_salary || '0'), 0);
 
   const totalRevenue = report?.totalRevenue ?? 0;
   const otherRevenue = report?.otherIncome ?? 0;
@@ -135,7 +91,6 @@ export default function FinancePage() {
   const mgmtFee = report?.managementFee ?? 0;
   const netProfit = report?.netProfit ?? (grossProfit - mgmtFee + otherRevenue);
 
-  // Prior period for YoY
   const totalRevenueLY = prevReport?.totalRevenue ?? 0;
   const otherRevenueLY = prevReport?.otherIncome ?? 0;
   const transRevenueLY = Math.max(0, totalRevenueLY - otherRevenueLY);
@@ -144,8 +99,7 @@ export default function FinancePage() {
   const mgmtFeeLY = prevReport?.managementFee ?? 0;
   const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
 
-  // Cap table partner split for footnote.
-  const activeCapTable = getActiveCapTable(capTable, [])
+  const activeCapTable = getActiveCapTable(capTableRaw, [])
     .map(c => ({ name: c.partnerName, pct: c.percentage }));
 
   const compactNum = (v: number) => {
@@ -170,11 +124,6 @@ export default function FinancePage() {
     .sort((a, b) => b.profit - a.profit)
     .slice(0, 5)
     .map(t => ({ name: t.plate, 'LN gộp': t.profit }));
-
-  // Chart container refs — workaround for recharts ResponsiveContainer
-  // mis-measuring inside flex/grid (rendered 14×14 SVGs leaving panels blank).
-  const [revenueChartRef, revenueChartWidth] = useObservedWidth();
-  const [pieChartRef, pieChartWidth] = useObservedWidth();
 
   return (
     <div className="fade-up-1" style={{ paddingBottom: 40 }}>
@@ -252,11 +201,6 @@ export default function FinancePage() {
       )}
 
       {/* ── Charts ──────────────────────────────────────────────────── */}
-      {/* Switched from `display: grid` with `minmax(0,2fr) minmax(0,1fr)` to
-          flex — recharts ResponsiveContainer was failing to measure the cell
-          width (rendering SVGs at 14×14 instead of the full available width)
-          when inside the grid track. Flex children with explicit `flex: 2`
-          and `flex: 1` give recharts a stable parent box to measure against. */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3">
         {/* Revenue trend */}
         <div className="panel" style={{ padding: '16px 20px', flex: '2 1 400px', minWidth: 0 }}>
@@ -266,24 +210,15 @@ export default function FinancePage() {
           {yearlyLoading ? (
             <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
           ) : revenueChartData.every(d => d['Doanh thu'] === 0 && d['LN gộp'] === 0) ? (
-            // Empty-state — was showing an empty axis with no bars at all,
-            // which read as a broken chart. Now we render a clear placeholder
-            // so the director knows it's "no data yet" not "chart is broken".
             <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 4 }}>
               <div style={{ fontSize: 24, opacity: 0.4 }}>📊</div>
               <div>Chưa có lệnh chốt sổ trong năm {year}</div>
               <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh để xem xu hướng doanh thu hàng tháng</div>
             </div>
           ) : (
-            // Hand-drawn SVG bar chart — recharts was leaving bar containers
-            // empty regardless of data (paths never rendered) inside a flex
-            // child, even after switching to ResponsiveContainer. The dashboard
-            // already uses a hand-drawn linechart pattern for the same
-            // reason; this is the bar equivalent so the chart renders
-            // deterministically.
-            <div ref={revenueChartRef} style={{ width: '100%', height: 220 }}>
+            <div style={{ width: '100%', height: 220 }}>
               {(() => {
-                const w = Math.max(revenueChartWidth || 600, 320);
+                const w = 600;
                 const h = 220;
                 const padL = 44, padR = 8, padT = 8, padB = 36;
                 const plotW = w - padL - padR, plotH = h - padT - padB;
@@ -294,10 +229,9 @@ export default function FinancePage() {
                 const niceMax = Math.ceil(max / 10_000_000) * 10_000_000;
                 const xStep = plotW / revenueChartData.length;
                 const barW = Math.min(16, (xStep - 6) / 2);
-                const yFor = (v: number) => padT + plotH - (v / niceMax) * plotH;
                 const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => niceMax * t);
                 return (
-                  <svg width={w} height={h} role="img" aria-label="Xu hướng doanh thu">
+                  <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Xu hướng doanh thu">
                     {ticks.map((tv, i) => {
                       const y = padT + plotH - (tv / niceMax) * plotH;
                       return (
@@ -336,9 +270,7 @@ export default function FinancePage() {
           {loading ? (
             <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
           ) : costPieData.length > 0 ? (
-            // Hand-drawn donut + legend (same reason as the bar chart above —
-            // recharts PieChart left empty containers inside this flex panel).
-            <div ref={pieChartRef} style={{ width: '100%', height: 200, display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: '100%', height: 200, display: 'flex', alignItems: 'center', gap: 16 }}>
               {(() => {
                 const total = costPieData.reduce((s, d) => s + d.value, 0) || 1;
                 const cx = 90, cy = 90, rOuter = 70, rInner = 42;
@@ -401,14 +333,24 @@ export default function FinancePage() {
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
             Top xe theo lợi nhuận – T{month}/{year}
           </div>
-          <ResponsiveContainer width="100%" height={Math.max(160, topTrucks.length * 44)}>
-            <BarChart layout="vertical" data={topTrucks} margin={{ top: 0, right: 16, left: 8, bottom: 0 }}>
-              <XAxis type="number" tickFormatter={compactNum} tick={{ fontSize: 11 }} />
-              <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(v: any) => `${formatRawNumber(Number(v))} ₫`} />
-              <Bar dataKey="LN gộp" fill="#6366f1" radius={[0, 3, 3, 0]} maxBarSize={18} />
-            </BarChart>
-          </ResponsiveContainer>
+          {(() => {
+            const maxProfit = Math.max(...topTrucks.map(t => t['LN gộp']), 1);
+            const svgH = Math.max(120, topTrucks.length * 36);
+            return (
+              <svg width="100%" height={svgH} viewBox={`0 0 400 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
+                {topTrucks.map((t, i) => {
+                  const w = (t['LN gộp'] / maxProfit) * 250;
+                  return (
+                    <g key={i} transform={`translate(0, ${i * 36})`}>
+                      <text x={0} y={16} fontSize={12} fill="var(--fg-2)">{t.name}</text>
+                      <rect x={90} y={4} width={w} height={20} fill="#6366f1" rx={3} />
+                      <text x={90 + w + 8} y={19} fontSize={11} fill="var(--fg-2)">{formatRawNumber(t['LN gộp'])} ₫</text>
+                    </g>
+                  );
+                })}
+              </svg>
+            );
+          })()}
         </div>
       )}
 
