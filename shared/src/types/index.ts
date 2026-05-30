@@ -344,7 +344,6 @@ export interface DashboardStats {
   tripCount: number;
   completedTrips: number;
   inTransitTrips: number;
-  pendingPayments: number;
 }
 
 export interface AgingBucket {

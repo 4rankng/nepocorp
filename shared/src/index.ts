@@ -2,6 +2,7 @@ export {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, DriverStatus, TrailerStatus, CustomerStatus,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
+  CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS,
 } from './constants';
 
 export type {

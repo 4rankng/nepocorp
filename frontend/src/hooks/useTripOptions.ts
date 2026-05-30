@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { tripClient } from "../api/tripClient";
 import { api } from "../lib/api";
 import type { PricingTable, PaginatedResponse } from "@nepocorp/shared";
 
@@ -26,84 +27,53 @@ export interface TripOptions {
 const unwrap = (d: unknown) =>
   Array.isArray(d) ? d : (d as any)?.items ?? [];
 
-export function useTripOptions(): TripOptions {
-  const [customers, setCustomers] = useState<SelectOption[]>([]);
-  const [routes, setRoutes] = useState<RouteOption[]>([]);
-  const [trucks, setTrucks] = useState<SelectOption[]>([]);
-  const [trailers, setTrailers] = useState<SelectOption[]>([]);
-  const [drivers, setDrivers] = useState<SelectOption[]>([]);
-  const [cargoTypes, setCargoTypes] = useState<SelectOption[]>([]);
-  const [pricingTables, setPricingTables] = useState<PricingTable[]>([]);
-  const [loading, setLoading] = useState(true);
+interface CatalogData {
+  customers: Array<{ id: number; name: string; contact_person: string | null; phone: string | null }>;
+  trucks: Array<{ id: number; license_plate: string }>;
+  drivers: Array<{ id: number; name: string; assigned_truck_id: number | null }>;
+  trailers: Array<{ id: number; license_plate: string; type: string }>;
+  routes: Array<{ id: number; name: string; distance_km: number | null; is_mountain: boolean; fixed_fuel_allowance: string | null }>;
+  cargoTypes: Array<{ id: number; name: string; requires_photos: boolean }>;
+}
 
-  const loadOptions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [
-        custRes,
-        routeRes,
-        truckRes,
-        trailerRes,
-        driverRes,
-        cargoRes,
-        pricingRes,
-      ] = await Promise.all([
-        api.get<unknown>("/customers"),
-        api.get<unknown>("/routes"),
-        api.get<unknown>("/trucks"),
-        api.get<unknown>("/trailers"),
-        api.get<unknown>("/drivers"),
-        api.get<unknown>("/cargo-types"),
+export function useTripOptions(): TripOptions {
+  const { data, isLoading } = useQuery({
+    queryKey: ["trip-options"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const [catalog, pricingRes] = await Promise.all([
+        tripClient.getBootstrap() as Promise<CatalogData>,
         api.get<PaginatedResponse<PricingTable>>("/pricing-tables"),
       ]);
 
-      setCustomers(
-        unwrap(custRes).map((c: any) => ({ id: c.id, label: c.name })),
-      );
-      const routeItems = unwrap(routeRes);
-      setRoutes(
-        routeItems.map((r: any) => ({
+      return {
+        customers: catalog.customers.map((c) => ({ id: c.id, label: c.name })),
+        routes: catalog.routes.map((r) => ({
           id: r.id,
           label: `${r.name}${r.distance_km ? ` (${r.distance_km} km)` : ""}`,
           name: r.name,
-          distance_km: r.distance_km,
+          distance_km: r.distance_km ?? undefined,
         })),
-      );
-      setTrucks(
-        unwrap(truckRes).map((t: any) => ({ id: t.id, label: t.license_plate })),
-      );
-      setTrailers(
-        unwrap(trailerRes).map((t: any) => ({
+        trucks: catalog.trucks.map((t) => ({ id: t.id, label: t.license_plate })),
+        trailers: catalog.trailers.map((t) => ({
           id: t.id,
           label: `${t.license_plate} (${t.type})`,
         })),
-      );
-      setDrivers(
-        unwrap(driverRes).map((d: any) => ({ id: d.id, label: d.name })),
-      );
-      setCargoTypes(
-        unwrap(cargoRes).map((c: any) => ({ id: c.id, label: c.name })),
-      );
-      setPricingTables(pricingRes.items ?? []);
-    } catch {
-      // Empty arrays on failure — page shows loading placeholders
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadOptions();
-  }, [loadOptions]);
+        drivers: catalog.drivers.map((d) => ({ id: d.id, label: d.name })),
+        cargoTypes: catalog.cargoTypes.map((c) => ({ id: c.id, label: c.name })),
+        pricingTables: pricingRes.items ?? [],
+      };
+    },
+  });
 
   return {
-    customers,
-    routes,
-    trucks,
-    trailers,
-    drivers,
-    cargoTypes,
-    pricingTables,
-    loading,
+    customers: data?.customers ?? [],
+    routes: data?.routes ?? [],
+    trucks: data?.trucks ?? [],
+    trailers: data?.trailers ?? [],
+    drivers: data?.drivers ?? [],
+    cargoTypes: data?.cargoTypes ?? [],
+    pricingTables: data?.pricingTables ?? [],
+    loading: isLoading,
   };
 }

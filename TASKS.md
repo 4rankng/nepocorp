@@ -390,8 +390,8 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 **I want to** ensure all frontend API calls match backend endpoints,
 **So that** no silent failures occur in production.
 
-- [ ] **T-E.2.1:** Audit all `api.get/post/put/delete` calls across frontend for path correctness
-- [ ] **T-E.2.2:** Ensure frontend uses shared constants for API paths where possible
+- [x] **T-E.2.1:** Audit all `api.get/post/put/delete` calls across frontend for path correctness
+- [x] **T-E.2.2:** Ensure frontend uses shared constants for API paths where possible
 - [ ] **T-E.2.3:** Verify all 96+ API calls return expected response shapes
 
 ---
