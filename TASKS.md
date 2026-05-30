@@ -322,10 +322,10 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 
 **Status:** Not implemented. DebtDetailPage shows data but has no export.
 
-- [ ] **T-B.3.1:** Add backend endpoint `GET /ledger/customers/:id/statement/export?format=pdf|xlsx` that generates downloadable file
-- [ ] **T-B.3.2:** Add "Xuất sao kê" button to DebtDetailPage with PDF/Excel format selector
-- [ ] **T-B.3.3:** PDF template: company header, customer info, trip-by-trip ledger with running balance, aging summary at bottom
-- [ ] **T-B.3.4:** Excel export with same data in tabular format, auto-column-widths, conditional formatting for overdue rows
+- [x] **T-B.3.1:** Add backend endpoint `GET /ledger/customers/:id/statement/export?format=pdf|xlsx` that generates downloadable file
+- [x] **T-B.3.2:** Add "Xuất sao kê" button to DebtDetailPage with PDF/Excel format selector
+- [x] **T-B.3.3:** PDF template: company header, customer info, trip-by-trip ledger with running balance, aging summary at bottom
+- [x] **T-B.3.4:** Excel export with same data in tabular format, auto-column-widths, conditional formatting for overdue rows
 
 ---
 
