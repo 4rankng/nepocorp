@@ -26,6 +26,7 @@ import { formatCurrency } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { TripStatus, TRIP_STATUS_LABELS } from '@nepocorp/shared';
 import type { TripDetail } from '@nepocorp/shared';
+import { useFuelConfig } from '../hooks/useQueries';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 type StatusFilter = '' | TripStatus;
@@ -43,8 +44,8 @@ const VN_MONTHS = [
   'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
 ];
 
-// Threshold for "warn" consumption (L/100km). Mirrors wireframe's 8.5 baseline.
-const CONS_WARN_THRESHOLD = 8.5;
+// Default threshold for "warn" consumption (L/100km) — overridden by fuel config when loaded
+const DEFAULT_WARN_THRESHOLD = 8.5;
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -96,6 +97,12 @@ export default function TripListPage() {
     queryFn: () => tripClient.listTrips({ limit: 500 }),
   });
   const trips = data?.items || [];
+  const { data: fuelConfig } = useFuelConfig();
+
+  // Dynamic threshold from fuel_config — fallback to default
+  const warnThreshold = fuelConfig
+    ? Number(fuelConfig.warning_threshold) || DEFAULT_WARN_THRESHOLD
+    : DEFAULT_WARN_THRESHOLD;
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
   const [monthYearFilter, setMonthYearFilter] = useState<string>('');
@@ -383,10 +390,10 @@ export default function TripListPage() {
             ) : cons ? (
               <>
                 <div className="cons-main">{cons.liters.toFixed(0)} L</div>
-                <div className={`cons-rate ${cons.per100 > CONS_WARN_THRESHOLD ? 'warn' : 'ok'}`}>
+                <div className={`cons-rate ${cons.per100 > warnThreshold ? 'warn' : 'ok'}`}>
                   {cons.per100.toFixed(1).replace('.', ',')} L/100km
-                  {cons.per100 > CONS_WARN_THRESHOLD && (
-                    <> · vượt {Math.round(((cons.per100 - CONS_WARN_THRESHOLD) / CONS_WARN_THRESHOLD) * 100)}%</>
+                  {cons.per100 > warnThreshold && (
+                    <> · vượt {Math.round(((cons.per100 - warnThreshold) / warnThreshold) * 100)}%</>
                   )}
                 </div>
               </>
@@ -548,8 +555,8 @@ export default function TripListPage() {
               {heroSummary.fuel.toLocaleString('vi-VN', { maximumFractionDigits: 0 })}
               <span className="metric-unit">L</span>
             </div>
-            <div className={`metric-delta ${heroSummary.avgPer100 > CONS_WARN_THRESHOLD ? 'delta-warn' : 'delta-flat'}`}>
-              TB {heroSummary.avgPer100.toFixed(1).replace('.', ',')} L/100km · ngưỡng {CONS_WARN_THRESHOLD.toString().replace('.', ',')}
+            <div className={`metric-delta ${heroSummary.avgPer100 > warnThreshold ? 'delta-warn' : 'delta-flat'}`}>
+              TB {heroSummary.avgPer100.toFixed(1).replace('.', ',')} L/100km · ngưỡng {warnThreshold.toFixed(1).replace('.', ',')}
             </div>
           </div>
           <div className="metric">
@@ -761,7 +768,7 @@ export default function TripListPage() {
                       {isCanceled ? (
                         <span className="val empty">—</span>
                       ) : cons ? (
-                        <span className={`val${cons.per100 > CONS_WARN_THRESHOLD ? ' warn' : ''}`}>
+                        <span className={`val${cons.per100 > warnThreshold ? ' warn' : ''}`}>
                           {cons.per100.toFixed(1).replace('.', ',')} L/100km
                         </span>
                       ) : (

@@ -185,6 +185,8 @@ export const fuelConfigSchema = z.object({
   empty_norm: positiveNumeric,
   supplement: nonNegNumeric.optional().default(3),
   unit_price: positiveNumeric,
+  warning_threshold: nonNegNumeric.optional().default(37),
+  critical_threshold: nonNegNumeric.optional().default(40),
 });
 
 export const penaltyReasonSchema = z.object({

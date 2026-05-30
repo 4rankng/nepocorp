@@ -3,4 +3,6 @@ export const fuelConfig = {
   emptyNorm: '25',
   supplement: '3',
   unitPrice: '23000',
+  warningThreshold: '37',
+  criticalThreshold: '40',
 };

@@ -109,6 +109,8 @@ export interface FuelConfig {
   empty_norm: string;
   supplement: string;
   unit_price: string;
+  warning_threshold: string;
+  critical_threshold: string;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

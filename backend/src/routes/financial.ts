@@ -45,17 +45,45 @@ async function getCustomerStatementData(customerId: number): Promise<CustomerSta
   const ledgerRows = await LedgerService.getEntriesByEntity('CUSTOMER', customerId);
   const totalOutstanding = ledgerRows.length > 0 ? parseFloat(ledgerRows[0].balance) : 0;
 
+  // FIFO aging — apply payments against the oldest open invoice first so the
+  // aging bucket totals reconcile to `totalOutstanding`. The naive
+  // "sum gross TRIP_REVENUE by age" approach showed "0-30 NGÀY: 53M" when
+  // the customer's open balance was 50.6M (because 2.4M of payments weren't
+  // subtracted from the buckets).
   const now = new Date();
   const aging = { current: 0, d30: 0, d60: 0, d90: 0, over90: 0 };
-  const revenueEntries = ledgerRows.filter((r: any) => r.txnType === TxnType.TRIP_REVENUE);
-  for (const entry of revenueEntries) {
-    const age = (now.getTime() - new Date(entry.timestamp!).getTime()) / (1000 * 60 * 60 * 24);
-    const amount = parseFloat(entry.debit ?? '0');
-    if (age <= 30) aging.current += amount;
-    else if (age <= 60) aging.d30 += amount;
-    else if (age <= 90) aging.d60 += amount;
-    else aging.over90 += amount;
+  const chronological = [...ledgerRows].sort((a: any, b: any) => {
+    const at = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const bt = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return at - bt;
+  });
+  const openInvoices: Array<{ ts: string; open: number }> = [];
+  for (const entry of chronological as any[]) {
+    const debit = parseFloat(entry.debit ?? '0');
+    const credit = parseFloat(entry.credit ?? '0');
+    if (debit > 0 && entry.timestamp) {
+      openInvoices.push({ ts: entry.timestamp, open: debit });
+    }
+    if (credit > 0) {
+      let remaining = credit;
+      for (const inv of openInvoices) {
+        if (remaining <= 0) break;
+        if (inv.open <= 0) continue;
+        const apply = Math.min(inv.open, remaining);
+        inv.open -= apply;
+        remaining -= apply;
+      }
+    }
   }
+  for (const inv of openInvoices) {
+    if (inv.open <= 0) continue;
+    const age = (now.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24);
+    if (age <= 30) aging.current += inv.open;
+    else if (age <= 60) aging.d30 += inv.open;
+    else if (age <= 90) aging.d60 += inv.open;
+    else aging.over90 += inv.open;
+  }
+  const revenueEntries = ledgerRows.filter((r: any) => r.txnType === TxnType.TRIP_REVENUE);
 
   const paymentCredits = ledgerRows
     .filter((r: any) => r.txnType === TxnType.PAYMENT_RECEIVED)

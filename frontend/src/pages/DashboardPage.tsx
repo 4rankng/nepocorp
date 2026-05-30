@@ -13,6 +13,7 @@ import {
   useMonthlyTrips,
   useCreatedTrips,
   useYearlyPnl,
+  useFuelConfig,
 } from '../hooks/useQueries';
 
 /* -------------------------------------------------------------------------- */
@@ -66,6 +67,7 @@ export default function DashboardPage() {
   });
   const { data: allTrips = [] } = useMonthlyTrips(currentYear, currentMonth) as any;
   const { data: createdTrips = [] } = useCreatedTrips() as any;
+  const { data: fuelConfig } = useFuelConfig();
   const { data: receivablesSummary } = useQuery({
     queryKey: ['receivables-summary'],
     queryFn: () => api.get<{
@@ -142,6 +144,32 @@ export default function DashboardPage() {
   // createdTrips is a separate fetch (no date filter) so dispatch alerts
   // don't miss prior-month undispatched trips
   const createdTripsCount = createdTrips.length;
+
+  // Fuel overconsumption — trips this month with TTBQ above configured thresholds
+  const fuelWarnings = useMemo(() => {
+    if (!fuelConfig || allTrips.length === 0) return [];
+    const warnThreshold = Number(fuelConfig.warning_threshold) || 0;
+    const critThreshold = Number(fuelConfig.critical_threshold) || 0;
+    if (!warnThreshold) return [];
+    const flagged: Array<{ tripId: number; code: string; driver: string; ttbq: number; critical: boolean }> = [];
+    for (const t of allTrips) {
+      const trip: TripDetail = t;
+      const totalKm = trip.legs?.reduce((s: number, l: any) => s + Number(l.km), 0) ?? 0;
+      const totalLiters = Number(trip.fuel_liters) || 0;
+      if (totalKm <= 0 || totalLiters <= 0) continue;
+      const ttbq = (totalLiters / totalKm) * 100;
+      if (ttbq > warnThreshold) {
+        flagged.push({
+          tripId: trip.id,
+          code: trip.trip_code ?? `#${trip.id}`,
+          driver: trip.driver?.name ?? '—',
+          ttbq,
+          critical: critThreshold > 0 && ttbq > critThreshold,
+        });
+      }
+    }
+    return flagged.sort((a, b) => b.ttbq - a.ttbq).slice(0, 5);
+  }, [fuelConfig, allTrips]);
 
   // Sorting trucks by profit for performance card
   const sortedTrucks = pnlReport?.trucks
@@ -687,6 +715,28 @@ export default function DashboardPage() {
                 <div className="todo__title">Không có đơn hàng chờ phân xe</div>
                 <div className="todo__meta"><span>Tất cả đơn hàng đã được phân xe</span></div>
               </div>
+            </div>
+          )}
+
+          {/* Fuel overconsumption alerts — trips with TTBQ above thresholds */}
+          {fuelWarnings.length > 0 && (
+            <div className="todo" onClick={() => navigate('/trips')}>
+              <div className={`todo__icon ${fuelWarnings.some(w => w.critical) ? 'todo__icon--danger' : 'todo__icon--warn'}`}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </div>
+              <div className="todo__body">
+                <div className="todo__title">
+                  <strong>{fuelWarnings.length} chuyến</strong> vượt ngưỡng tiêu hao nhiên liệu
+                </div>
+                <div className="todo__meta">
+                  <span>
+                    {fuelWarnings.map(w =>
+                      `${w.code} (${w.driver}: ${w.ttbq.toFixed(1).replace('.', ',')} L/100km${w.critical ? ' 🔴' : ' ⚠️'})`
+                    ).join(' · ')}
+                  </span>
+                </div>
+              </div>
+              <button className="btn btn--secondary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/trips'); }}>Xem chuyến</button>
             </div>
           )}
 

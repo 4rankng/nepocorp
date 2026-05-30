@@ -129,6 +129,8 @@ export const fuelConfig = pgTable('fuel_config', {
   emptyNorm: numeric('empty_norm', { precision: 6, scale: 2 }).notNull(),
   supplement: numeric('supplement', { precision: 6, scale: 2 }).default('3'),
   unitPrice: numeric('unit_price', { precision: 10, scale: 0 }).notNull(),
+  warningThreshold: numeric('warning_threshold', { precision: 6, scale: 2 }).default('37'),
+  criticalThreshold: numeric('critical_threshold', { precision: 6, scale: 2 }).default('40'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

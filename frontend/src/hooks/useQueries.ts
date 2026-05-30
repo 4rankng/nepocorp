@@ -10,6 +10,7 @@ import type {
   DashboardStats,
   Truck as TruckType,
   Driver as DriverType,
+  FuelConfig,
 } from '@nepocorp/shared';
 import { TRIPS, REPORTS, CONFIG, FINANCIAL } from '@nepocorp/shared';
 
@@ -251,5 +252,13 @@ export function useTrucksAndDrivers() {
         drivers: driversRes.items,
       };
     },
+  });
+}
+
+export function useFuelConfig() {
+  return useQuery<FuelConfig | null>({
+    queryKey: ['fuel-config'],
+    queryFn: () => api.get<FuelConfig | null>(CONFIG.FUEL_CONFIG),
+    staleTime: 10 * 60 * 1000,
   });
 }

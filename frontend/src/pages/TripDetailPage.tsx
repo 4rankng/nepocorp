@@ -13,7 +13,7 @@ import {
   FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
 } from '@nepocorp/shared';
 import { Panel, StatusPill, useConfirm, Drawer } from '../components/UI';
-import { useTripDetail, useTripAdjustments, useTrucksAndDrivers } from '../hooks/useQueries';
+import { useTripDetail, useTripAdjustments, useTrucksAndDrivers, useFuelConfig } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '../components/shared';
 
@@ -38,6 +38,7 @@ export default function TripDetailPage() {
   const { data: trip, isLoading: loading, error: queryError, refetch: refetchTrip } = useTripDetail(id);
   const error = queryError ? 'Không thể tải thông tin lệnh vận chuyển.' : '';
   const { data: adjustments = [] } = useTripAdjustments(trip?.id ?? 0);
+  const { data: fuelConfig } = useFuelConfig();
 
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -349,7 +350,16 @@ export default function TripDetailPage() {
             const totalLiters = Number(trip.fuel_liters) || 0;
             if (totalKm > 0 && totalLiters > 0) {
               const ttbq = (totalLiters / totalKm) * 100;
-              return infoRow(<Fuel size={16} />, 'TTBQ (L/100km)', `${ttbq.toFixed(1)} L/100km`);
+              const warnThreshold = fuelConfig ? Number(fuelConfig.warning_threshold) : 0;
+              const critThreshold = fuelConfig ? Number(fuelConfig.critical_threshold) : 0;
+              let badge: React.ReactNode = null;
+              if (critThreshold > 0 && ttbq > critThreshold) {
+                badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--danger)', fontWeight: 600 }}>🔴 Vượt ngưỡng nghiêm trọng ({critThreshold.toFixed(1)})</span>;
+              } else if (warnThreshold > 0 && ttbq > warnThreshold) {
+                const overPct = Math.round(((ttbq - warnThreshold) / warnThreshold) * 100);
+                badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--warning)', fontWeight: 600 }}>⚠️ Vượt ngưỡng {overPct}%</span>;
+              }
+              return infoRow(<Fuel size={16} />, 'TTBQ (L/100km)', <>{ttbq.toFixed(1).replace('.', ',')} L/100km{badge}</>);
             }
             return null;
           })()}
