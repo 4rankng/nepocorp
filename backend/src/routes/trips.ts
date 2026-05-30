@@ -82,6 +82,7 @@ router.get('/', async (req: Request, res: Response) => {
       routeName: s.routes.name,
       routeDistance: s.routes.distanceKm,
       trailerLicensePlate: s.trailers.licensePlate,
+      trailerType: s.trailers.type,
     }).from(s.trips)
       .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
       .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
@@ -97,7 +98,7 @@ router.get('/', async (req: Request, res: Response) => {
     // Transform to match frontend expectations
     const transformedItems = items.map(item => ({
       ...transformTripRow(item),
-      trailer_type: item.trailerLicensePlate || '40ft',
+      trailer_type: item.trailerType || '40FT',
     }));
 
     res.json({ items: transformedItems, total: Number(countRow?.count ?? 0), page, pageSize: limit });

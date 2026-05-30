@@ -48,6 +48,7 @@ export default function DashboardPage() {
   const [pnlReport, setPnlReport] = useState<PnlReport | null>(null);
   const [prevPnlReport, setPrevPnlReport] = useState<PnlReport | null>(null);
   const [allTrips, setAllTrips] = useState<TripDetail[]>([]);
+  const [createdTrips, setCreatedTrips] = useState<TripDetail[]>([]);
   const [topOverdueCustomer, setTopOverdueCustomer] = useState<{ name: string; balance: number; days: number } | null>(null);
   const [topShareholder, setTopShareholder] = useState<{ name: string; percentage: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,19 +61,22 @@ export default function DashboardPage() {
     setLoading(true);
     const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
     const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-    // Server-side date filtering — only fetch current-month trips
     const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
     Promise.all([
       api.get<ExtendedDashboardStats>('/reports/dashboard'),
       api.get<PnlReport>(`/reports/pnl?month=${currentMonth}&year=${currentYear}`),
+      // Current-month trips for chart data (server-side date filter)
       api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&date_from=${monthStart}`),
+      // All CREATED trips regardless of date (dispatch alerts must not miss prior-month trips)
+      api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&status=CREATED`).catch(() => ({ items: [] as TripDetail[], total: 0 })),
       api.get<PnlReport>(`/reports/pnl?month=${prevMonth}&year=${prevYear}`).catch(() => null as PnlReport | null),
     ])
-      .then(([dashboardData, pnlData, tripsData, prevPnlData]) => {
+      .then(([dashboardData, pnlData, tripsData, createdTripsData, prevPnlData]) => {
         setStats(dashboardData);
         setPnlReport(pnlData);
         setPrevPnlReport(prevPnlData);
         setAllTrips(tripsData.items);
+        setCreatedTrips(createdTripsData.items);
         // Overdue customer and top shareholder now computed server-side
         setTopOverdueCustomer(dashboardData.topOverdueCustomer ?? null);
         setTopShareholder(dashboardData.topShareholder ?? null);
@@ -120,10 +124,12 @@ export default function DashboardPage() {
   const otherIncome = pnlReport?.otherIncome ?? 0;
   const netProfit = grossProfit - managementFee + otherIncome;
 
-  // Trips are now date-filtered server-side — allTrips IS current-month trips
+  // allTrips is date-filtered server-side to current month for chart data
   const currentMonthTrips = allTrips;
 
-  const createdTripsCount = allTrips.filter((t) => t.status === TripStatus.CREATED).length;
+  // createdTrips is a separate fetch (no date filter) so dispatch alerts
+  // don't miss prior-month undispatched trips
+  const createdTripsCount = createdTrips.length;
 
   // Sorting trucks by profit for performance card
   const sortedTrucks = pnlReport?.trucks
@@ -154,28 +160,32 @@ export default function DashboardPage() {
 
   const maxTruckProfit = Math.max(...displayTrucks.map(t => t.profit), 1);
 
+  // Avg revenue per trip from PnL report — used for route margin denominator
+  const avgRevenuePerTrip = pnlReport?.tripCount ? pnlReport.totalRevenue / pnlReport.tripCount : 0;
+
   const displayRoutes = sortedRoutes.map(r => ({
     name: r.name,
     trips: r.trips,
     profit: r.profit,
-    meta: `${r.trips} chuyến · biên ${Math.round((r.profit / (r.trips * 12000000 || 1)) * 100)}%`
+    meta: r.trips > 0 && avgRevenuePerTrip > 0
+      ? `${r.trips} chuyến · biên ${Math.round((r.profit / (r.trips * avgRevenuePerTrip)) * 100)}%`
+      : `${r.trips} chuyến`,
   }));
 
   // Helper formatting for KPI values — uses shared formatCompact
   const fmtKpi = (v: number) => {
     const s = formatCompact(v);
-    // formatCompact returns "1.1 ty" / "820.5 tr" / "550.3k" — adjust suffix
     return s.replace(/ ty$/, ' tỷ').replace(/ tr$/, ' triệu');
   };
-  const fmtKpiUnit = (v: number) => v >= 1_000_000_000 ? ' ₫' : ' ₫';
+  const KPI_SUFFIX = ' ₫';
   const formattedRevenue = fmtKpi(revenue);
-  const revenueUnit = fmtKpiUnit(revenue);
+  const revenueUnit = KPI_SUFFIX;
   const formattedCosts = fmtKpi(costs);
-  const costsUnit = fmtKpiUnit(costs);
+  const costsUnit = KPI_SUFFIX;
   const formattedGross = fmtKpi(grossProfit);
-  const grossUnit = fmtKpiUnit(grossProfit);
+  const grossUnit = KPI_SUFFIX;
   const formattedNet = fmtKpi(netProfit);
-  const netUnit = fmtKpiUnit(netProfit);
+  const netUnit = KPI_SUFFIX;
 
   // MoM percentages computed from actual P&L data
   // previous month has no data, fall back to "—" rather than a fake number.
@@ -571,8 +581,7 @@ export default function DashboardPage() {
           {/* Pending Dispatches — customer names from actual CREATED trips */}
           {createdTripsCount > 0 ? (
             (() => {
-              const pendingCustomers = allTrips
-                .filter(t => t.status === TripStatus.CREATED)
+              const pendingCustomers = createdTrips
                 .map(t => t.customer?.name || '—')
                 .filter((n): n is string => !!n);
               // Group by name, keep count

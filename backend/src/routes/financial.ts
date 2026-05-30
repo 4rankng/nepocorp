@@ -247,28 +247,38 @@ router.get('/reports/dashboard', async (_req: Request, res: Response) => {
     const now = new Date();
     const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-    const [stats] = await db.select({
-      revenue: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.revenue}::numeric else 0 end), 0)`,
-      costs: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
-      tripCount: sql<number>`count(*)`,
-      completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
-      inTransitTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'IN_TRANSIT')`,
-      lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
-    }).from(s.trips).where(and(isNull(s.trips.deletedAt), gte(s.trips.departureDate, monthStart)));
-
-    const [truckCount] = await db.select({ count: sql<number>`count(*)` }).from(s.trucks).where(isNull(s.trucks.deletedAt));
-    const [driverCount] = await db.select({ count: sql<number>`count(*)` }).from(s.drivers).where(isNull(s.drivers.deletedAt));
-
-    // Top overdue customer — latest-balance per customer from FIFO ledger
-    const ledgerRows = await db.select({
-      entityType: s.ledger.entityType,
-      entityId: s.ledger.entityId,
-      debit: s.ledger.debit,
-      balance: s.ledger.balance,
-      createdAt: s.ledger.timestamp,
-    }).from(s.ledger)
-      .where(eq(s.ledger.entityType, 'CUSTOMER'))
-      .orderBy(desc(s.ledger.id));
+    // Run all independent queries in parallel
+    const [
+      [stats],
+      [truckCount],
+      [driverCount],
+      ledgerRows,
+      capRows,
+    ] = await Promise.all([
+      db.select({
+        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.revenue}::numeric else 0 end), 0)`,
+        costs: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
+        tripCount: sql<number>`count(*)`,
+        completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
+        inTransitTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'IN_TRANSIT')`,
+        lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
+      }).from(s.trips).where(and(isNull(s.trips.deletedAt), gte(s.trips.departureDate, monthStart))),
+      db.select({ count: sql<number>`count(*)` }).from(s.trucks).where(isNull(s.trucks.deletedAt)),
+      db.select({ count: sql<number>`count(*)` }).from(s.drivers).where(isNull(s.drivers.deletedAt)),
+      // Top overdue customer — latest-balance per customer from FIFO ledger
+      db.select({
+        entityType: s.ledger.entityType,
+        entityId: s.ledger.entityId,
+        debit: s.ledger.debit,
+        balance: s.ledger.balance,
+        createdAt: s.ledger.timestamp,
+      }).from(s.ledger)
+        .where(eq(s.ledger.entityType, 'CUSTOMER'))
+        .orderBy(desc(s.ledger.id)),
+      // Top shareholder from cap table
+      db.select().from(s.capTableHistory)
+        .orderBy(desc(s.capTableHistory.effectiveDate)),
+    ]);
 
     const lastByCustomer = new Map<number, { balance: number; date: string }>();
     const oldestUnpaidByCustomer = new Map<number, string>();
@@ -310,9 +320,7 @@ router.get('/reports/dashboard', async (_req: Request, res: Response) => {
       }
     }
 
-    // Top shareholder from cap table
-    const capRows = await db.select().from(s.capTableHistory)
-      .orderBy(desc(s.capTableHistory.effectiveDate));
+    // Top shareholder from cap table (capRows fetched above in Promise.all)
     let topShareholder: { name: string; percentage: number } | null = null;
     if (capRows.length > 0) {
       const today = new Date().toISOString().slice(0, 10);
@@ -391,7 +399,10 @@ router.get('/reports/pnl', async (req: Request, res: Response) => {
     // Per-truck breakdown — pre-load all needed truck plates in one query
     const truckIds = [...new Set(trips.map(t => t.truckId).filter(Boolean))];
     const truckRows = truckIds.length > 0
-      ? await db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate }).from(s.trucks).where(sql`${s.trucks.id} = ANY(${truckIds})`)
+      // See dashboard endpoint for why we build IN-list manually rather than
+      // using ANY(${array}) — drizzle/postgres-js can't bind a JS array as a
+      // postgres array, so it tried to encode the first numeric id and failed.
+      ? await db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate }).from(s.trucks).where(sql`${s.trucks.id} IN (${sql.join(truckIds.map(id => sql`${id}`), sql`, `)})`)
       : [];
     const plateById = new Map(truckRows.map(t => [t.id, t.licensePlate]));
 
