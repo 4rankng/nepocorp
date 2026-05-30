@@ -100,45 +100,14 @@ export interface UseTripFormReturn {
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
 }
 
-export function useTripForm(options: TripOptions): UseTripFormReturn {
-  // Required fields
-  const [customerId, setCustomerId] = useState("");
-  const [routeId, setRouteId] = useState("");
-  const [truckId, setTruckId] = useState("");
-  const [trailerId, setTrailerId] = useState("");
-  const [driverId, setDriverId] = useState("");
-  const [cargoTypeId, setCargoTypeId] = useState("");
-  const [departureDate, setDepartureDate] = useState("");
-  const [customerReference, setCustomerReference] = useState("");
+// ─── Sub-hook: Leg management ────────────────────────────────────────────
 
-  // Legs
+function useTripLegs(routes: RouteOption[], routeId: string) {
   const [legs, setLegs] = useState<FormLeg[]>([]);
 
-  // Fuel & financials
-  const [fuelMode, setFuelMode] = useState<FuelMode>(FuelMode.AUTO);
-  const [fuelLitersOverride, setFuelLitersOverride] = useState("");
-  const [fuelSupplementLiters, setFuelSupplementLiters] = useState("");
-  const [fuelSupplementReason, setFuelSupplementReason] = useState("");
-  const [tollsDiscount, setTollsDiscount] = useState("");
-  const [tollsAddition, setTollsAddition] = useState("");
-  const [tollsStations, setTollsStations] = useState("");
-  const [hasReturnCargo, setHasReturnCargo] = useState(false);
-  const [driverSalary, setDriverSalary] = useState("");
-  const [revenue, setRevenue] = useState("");
-
-  // Attachments
-  const [notes, setNotes] = useState("");
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-
-  // UI
-  const [submitting, setSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
-
-  // Auto-create first leg from route name
   const selectedRoute = useMemo(
-    () => options.routes.find((r) => r.id === Number(routeId)),
-    [options.routes, routeId],
+    () => routes.find((r) => r.id === Number(routeId)),
+    [routes, routeId],
   );
 
   useEffect(() => {
@@ -156,35 +125,6 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     ]);
   }, [selectedRoute, legs.length]);
 
-  // Suggested price from pricing table (fetched on-demand)
-  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!customerId || !routeId) {
-      setSuggestedPrice(null);
-      return;
-    }
-    const fetchSuggestedPrice = async () => {
-      try {
-        const res = await tripClient.getPricing(
-          Number(customerId),
-          Number(routeId),
-          departureDate || undefined
-        );
-        setSuggestedPrice(res.price);
-        // Auto-fill revenue from suggested price if not overridden
-        setRevenue((prev) => {
-          if (!prev || prev === "0") return String(res.price);
-          return prev;
-        });
-      } catch (err) {
-        console.error("Error fetching live pricing suggestion:", err);
-      }
-    };
-    fetchSuggestedPrice();
-  }, [customerId, routeId, departureDate]);
-
-  // Leg actions
   const addLeg = useCallback(() => {
     setLegs((prev) => {
       const lastLeg = prev[prev.length - 1];
@@ -238,7 +178,15 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     [legs],
   );
 
-  // Photo upload — one file per request to match new backend API
+  return { legs, setLegs, addLeg, removeLeg, updateLeg };
+}
+
+// ─── Sub-hook: Photo upload ──────────────────────────────────────────────
+
+function useTripUpload(onError: (msg: string) => void) {
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+
   const uploadPhotos = useCallback(async (files: FileList, tripId?: number, type: 'CONTAINER' | 'SEAL' | 'OTHER' = 'OTHER') => {
     setUploading(true);
     try {
@@ -261,15 +209,83 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
         setPhotoUrls((prev) => [...prev, result.url]);
       }
     } catch (err: any) {
-      setError(err.message || "Lỗi khi tải ảnh.");
+      onError(err.message || "Lỗi khi tải ảnh.");
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [onError]);
 
   const removePhoto = useCallback((idx: number) => {
     setPhotoUrls((prev) => prev.filter((_, i) => i !== idx));
   }, []);
+
+  return { photoUrls, uploading, uploadPhotos, removePhoto };
+}
+
+// ─── Main hook ───────────────────────────────────────────────────────────
+
+export function useTripForm(options: TripOptions): UseTripFormReturn {
+  // Required fields
+  const [customerId, setCustomerId] = useState("");
+  const [routeId, setRouteId] = useState("");
+  const [truckId, setTruckId] = useState("");
+  const [trailerId, setTrailerId] = useState("");
+  const [driverId, setDriverId] = useState("");
+  const [cargoTypeId, setCargoTypeId] = useState("");
+  const [departureDate, setDepartureDate] = useState("");
+  const [customerReference, setCustomerReference] = useState("");
+
+  // Legs sub-hook
+  const { legs, addLeg, removeLeg, updateLeg } = useTripLegs(options.routes, routeId);
+
+  // Fuel & financials
+  const [fuelMode, setFuelMode] = useState<FuelMode>(FuelMode.AUTO);
+  const [fuelLitersOverride, setFuelLitersOverride] = useState("");
+  const [fuelSupplementLiters, setFuelSupplementLiters] = useState("");
+  const [fuelSupplementReason, setFuelSupplementReason] = useState("");
+  const [tollsDiscount, setTollsDiscount] = useState("");
+  const [tollsAddition, setTollsAddition] = useState("");
+  const [tollsStations, setTollsStations] = useState("");
+  const [hasReturnCargo, setHasReturnCargo] = useState(false);
+  const [driverSalary, setDriverSalary] = useState("");
+  const [revenue, setRevenue] = useState("");
+
+  // Attachments
+  const [notes, setNotes] = useState("");
+
+  // UI
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  // Upload sub-hook
+  const { photoUrls, uploading, uploadPhotos, removePhoto } = useTripUpload(setError);
+
+  // Suggested price from pricing table (fetched on-demand)
+  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!customerId || !routeId) {
+      setSuggestedPrice(null);
+      return;
+    }
+    const fetchSuggestedPrice = async () => {
+      try {
+        const res = await tripClient.getPricing(
+          Number(customerId),
+          Number(routeId),
+          departureDate || undefined
+        );
+        setSuggestedPrice(res.price);
+        setRevenue((prev) => {
+          if (!prev || prev === "0") return String(res.price);
+          return prev;
+        });
+      } catch (err) {
+        console.error("Error fetching live pricing suggestion:", err);
+      }
+    };
+    fetchSuggestedPrice();
+  }, [customerId, routeId, departureDate]);
 
   // Derived calculations
   const estimatedFuelCost = useMemo(() => {
@@ -356,7 +372,6 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     return count;
   }, [completionStatus]);
 
-  // Submit
   const hasOptionalData = useMemo(
     () =>
       legs.some((l) => l.km.trim() !== "") ||

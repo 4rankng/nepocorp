@@ -74,14 +74,27 @@ export default function DashboardPage() {
     }>('/reports/receivables-summary').catch(() => null),
     staleTime: 2 * 60 * 1000,
   });
-  const { data: yearlySeriesRaw = [] } = useYearlyPnl(currentYear);
-  const yearlySeries = useMemo(
-    () => yearlySeriesRaw.map(r => ({
-      revenue: Number(r?.totalRevenue ?? 0),
-      grossProfit: Number(r?.grossProfit ?? 0),
-    })),
-    [yearlySeriesRaw],
-  );
+  // We need the trailing 12 months ending at the current month, not the
+  // calendar year Jan-Dec. Fetch both this year and last year, then take
+  // the trailing slice — otherwise the chart's X-axis labels (T6/2025 →
+  // T5/2026) didn't match the data (which was Jan-Dec 2026), so the last
+  // point's tooltip read "T5/2026 0M đ" when May 2026 actually had 17.5M.
+  const { data: thisYearRaw = [] } = useYearlyPnl(currentYear);
+  const { data: lastYearRaw = [] } = useYearlyPnl(currentYear - 1);
+  const yearlySeries = useMemo(() => {
+    const out: Array<{ revenue: number; grossProfit: number }> = [];
+    for (let i = 11; i >= 0; i--) {
+      let m = currentMonth - i;
+      let yArr = thisYearRaw;
+      while (m <= 0) { m += 12; yArr = lastYearRaw; }
+      const r: any = yArr[m - 1];
+      out.push({
+        revenue: Number(r?.totalRevenue ?? 0),
+        grossProfit: Number(r?.grossProfit ?? 0),
+      });
+    }
+    return out;
+  }, [thisYearRaw, lastYearRaw, currentMonth]);
 
   const topOverdueCustomer = stats?.topOverdueCustomer ?? null;
   const topShareholder = stats?.topShareholder ?? null;
@@ -193,7 +206,10 @@ export default function DashboardPage() {
   const prevGross = prevPnlReport?.grossProfit ?? 0;
   const fmtMoM = (current: number, previous: number | undefined | null): string => {
     if (previous == null) return '—';
-    if (previous === 0) return current > 0 ? '+∞' : '0%';
+    // Display "Mới" (new) instead of "+∞" when prior month has no data —
+    // infinity isn't a useful figure for a director glancing at the
+    // dashboard, and reads as a rendering bug.
+    if (previous === 0) return current > 0 ? 'Mới' : '0%';
     const pct = ((current - previous) / previous) * 100;
     return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
   };

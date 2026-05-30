@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -102,7 +102,9 @@ export default function TripListPage() {
   const [truckFilter, setTruckFilter] = useState<string>('');
   const [customerFilter, setCustomerFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const selectedRef = useRef<Set<number>>(new Set());
+  const [selectedVersion, setSelectedVersion] = useState(0);
+  const selected = selectedRef.current;
 
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
@@ -154,6 +156,8 @@ export default function TripListPage() {
     const start = (safePage - 1) * pageSize;
     return filteredTrips.slice(start, start + pageSize);
   }, [filteredTrips, safePage, pageSize]);
+  const pageRangeRef = useRef<TripDetail[]>([]);
+  pageRangeRef.current = pageRange;
 
   // ── Hero metrics (current month) ──────────────────────────────────────
   const now = new Date();
@@ -238,28 +242,23 @@ export default function TripListPage() {
     downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
   };
 
-  const toggleSelected = (id: number) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const toggleSelected = useCallback((id: number) => {
+    const next = selectedRef.current;
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedVersion(v => v + 1);
+  }, []);
 
-  const toggleSelectAll = () => {
-    const visibleIds = pageRange.map((t) => t.id);
-    const allSelected = visibleIds.every((id) => selected.has(id));
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allSelected) visibleIds.forEach((id) => next.delete(id));
-      else visibleIds.forEach((id) => next.add(id));
-      return next;
-    });
-  };
+  const toggleSelectAll = useCallback(() => {
+    const visibleIds = pageRangeRef.current.map((t) => t.id);
+    const allSelected = visibleIds.every((id) => selectedRef.current.has(id));
+    const next = selectedRef.current;
+    if (allSelected) visibleIds.forEach((id) => next.delete(id));
+    else visibleIds.forEach((id) => next.add(id));
+    setSelectedVersion(v => v + 1);
+  }, []);
 
   const allVisibleSelected =
-    pageRange.length > 0 && pageRange.every((t) => selected.has(t.id));
+    pageRange.length > 0 && pageRange.every((t) => selectedRef.current.has(t.id));
 
   const columnHelper = createColumnHelper<TripDetail>();
 
@@ -469,7 +468,7 @@ export default function TripListPage() {
         );
       }
     })
-  ], [allVisibleSelected, selected, toggleSelectAll, toggleSelected, navigate]);
+  ], [selectedVersion, navigate]);
 
   const tableInstance = useReactTable({
     data: pageRange,

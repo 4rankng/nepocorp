@@ -1,34 +1,25 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, Save } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
 import { PageHeader, useConfirm } from '../components/UI';
 import { FuelMode, LoadingType, TripStatus } from '@nepocorp/shared';
-import type { TripDetail, TripLeg, PricingTable, PaginatedResponse } from '@nepocorp/shared';
+import type { TripDetail, PricingTable, PaginatedResponse } from '@nepocorp/shared';
 import { calculateDistanceKm } from '../lib/maps';
 import { TripLegFields } from '../components/TripForm/TripLegFields';
 import { FuelConfigurator } from '../components/TripForm/FuelConfigurator';
 import { AllowanceConfigurator } from '../components/TripForm/AllowanceConfigurator';
 import { TotalsPanel } from '../components/TripForm/TotalsPanel';
 import { PhotoUploader } from '../components/TripForm/PhotoUploader';
+import type { FormLeg } from '../hooks/useTripForm';
 
-
-interface FormLeg {
-  id: string; // client-side unique id for React keys
-  sequence: number;
-  origin: string;
-  destination: string;
-  km: string;
-  loading_type: LoadingType;
-}
 
 export default function TripEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { confirm, dialog: confirmDialog } = useConfirm();
 
-  const [trip, setTrip] = useState<TripDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: trip, isLoading: loading, refetch: refetchTrip } = useTripDetail(id);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -49,74 +40,57 @@ export default function TripEditPage() {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
 
-  // Load existing trip details
-  const loadTrip = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setError('');
-    try {
-      const data = await api.get<TripDetail>(`/trips/${id}`);
-      setTrip(data);
+  useEffect(() => {
+    if (!trip) return;
+    setFuelMode(trip.fuel_mode);
+    setFuelLitersOverride(trip.fuel_liters_override ? String(trip.fuel_liters_override) : '');
+    setFuelSupplementLiters(trip.fuel_supplement_liters ? String(trip.fuel_supplement_liters) : '');
+    setFuelSupplementReason(trip.fuel_supplement_reason || '');
+    setTollsDiscount(trip.tolls_discount ? String(trip.tolls_discount) : '');
+    setTollsAddition(trip.tolls_addition ? String(trip.tolls_addition) : '');
+    setTollsStations(trip.tolls_stations ? String(trip.tolls_stations) : '');
+    setHasReturnCargo(!!trip.has_return_cargo);
+    setDriverSalary(trip.driver_salary ? String(trip.driver_salary) : '');
+    setRevenue(trip.revenue ? String(trip.revenue) : '');
+    setNotes(trip.notes || '');
+    setPhotoUrls(trip.photo_urls || []);
 
-      // Pre-fill form fields
-      setFuelMode(data.fuel_mode);
-      setFuelLitersOverride(data.fuel_liters_override ? String(data.fuel_liters_override) : '');
-      setFuelSupplementLiters(data.fuel_supplement_liters ? String(data.fuel_supplement_liters) : '');
-      setFuelSupplementReason(data.fuel_supplement_reason || '');
-      setTollsDiscount(data.tolls_discount ? String(data.tolls_discount) : '');
-      setTollsAddition(data.tolls_addition ? String(data.tolls_addition) : '');
-      setTollsStations(data.tolls_stations ? String(data.tolls_stations) : '');
-      setHasReturnCargo(!!data.has_return_cargo);
-      setDriverSalary(data.driver_salary ? String(data.driver_salary) : '');
-      setRevenue(data.revenue ? String(data.revenue) : '');
-      setNotes(data.notes || '');
-      setPhotoUrls(data.photo_urls || []);
-
-      // Lookup suggested price from pricing table
-      if (data.customer_id && data.route_id) {
+    if (trip.customer_id && trip.route_id) {
+      (async () => {
         try {
           const ptRes = await api.get<PaginatedResponse<PricingTable>>('/pricing-tables');
           const match = (ptRes.items || []).find(
-            (pt: PricingTable) => pt.customer_id === data.customer_id && pt.route_id === data.route_id
+            (pt: PricingTable) => pt.customer_id === trip.customer_id && pt.route_id === trip.route_id
           );
           if (match) {
             setSuggestedPrice(Number(match.price));
-            if (!data.revenue) setRevenue(String(match.price));
+            if (!trip.revenue) setRevenue(String(match.price));
           }
         } catch { /* pricing table lookup is best-effort */ }
-      }
-
-      // If legs are present, map them; otherwise, start with a blank leg
-      if (data.legs && data.legs.length > 0) {
-        setLegs(data.legs.map(leg => ({
-          id: String(leg.id || Math.random()),
-          sequence: leg.sequence,
-          origin: leg.origin,
-          destination: leg.destination,
-          km: String(leg.km),
-          loading_type: leg.loading_type,
-        })));
-      } else {
-        // Build initial blank leg using route names if possible
-        setLegs([{
-          id: Math.random().toString(),
-          sequence: 1,
-          origin: data.route?.name.split('→')[0]?.trim() || '',
-          destination: data.route?.name.split('→')[1]?.trim() || '',
-          km: '',
-          loading_type: LoadingType.HANG,
-        }]);
-      }
-    } catch {
-      setError('Không thể tải thông tin lệnh vận chuyển.');
-    } finally {
-      setLoading(false);
+      })();
     }
-  }, [id]);
 
-  useEffect(() => { loadTrip(); }, [loadTrip]);
+    if (trip.legs && trip.legs.length > 0) {
+      setLegs(trip.legs.map(leg => ({
+        id: String(leg.id || Math.random()),
+        sequence: leg.sequence,
+        origin: leg.origin,
+        destination: leg.destination,
+        km: String(leg.km),
+        loading_type: leg.loading_type,
+      })));
+    } else {
+      setLegs([{
+        id: Math.random().toString(),
+        sequence: 1,
+        origin: trip.route?.name.split('→')[0]?.trim() || '',
+        destination: trip.route?.name.split('→')[1]?.trim() || '',
+        km: '',
+        loading_type: LoadingType.HANG,
+      }]);
+    }
+  }, [trip]);
 
-  // Add a leg
   const handleAddLeg = () => {
     setLegs(prev => {
       const nextSequence = prev.length + 1;
@@ -135,11 +109,9 @@ export default function TripEditPage() {
     });
   };
 
-  // Remove a leg
   const handleRemoveLeg = (idx: number) => {
     setLegs(prev => {
       const filtered = prev.filter((_, i) => i !== idx);
-      // Re-index sequences
       return filtered.map((leg, i) => ({
         ...leg,
         sequence: i + 1,
@@ -147,7 +119,6 @@ export default function TripEditPage() {
     });
   };
 
-  // Update a leg field
   const handleUpdateLeg = async (idx: number, field: keyof FormLeg, value: string) => {
     setLegs(prev => prev.map((leg, i) => {
       if (i === idx) {
@@ -175,7 +146,6 @@ export default function TripEditPage() {
     }
   };
 
-  // Helper to map flat photo URL strings to typed photo objects
   const mapUrlsToPhotos = (urls: string[]) => {
     return urls.map(url => {
       let type: 'CONTAINER' | 'SEAL' | 'OTHER' = 'OTHER';
@@ -189,7 +159,6 @@ export default function TripEditPage() {
     });
   };
 
-  // Direct photo uploader supporting specific photo type
   const handlePhotoUpload = async (files: FileList, type: 'CONTAINER' | 'SEAL' | 'OTHER') => {
     if (!files || files.length === 0 || !trip) return;
     const file = files[0];
@@ -214,7 +183,6 @@ export default function TripEditPage() {
       }
 
       const result = await response.json();
-      // Result returns `{ url: string, storageKey: string }`
       setPhotoUrls(prev => [...prev, result.url]);
     } catch (err: any) {
       setError(err.message || 'Lỗi khi tải ảnh. Vui lòng thử lại.');
@@ -223,20 +191,16 @@ export default function TripEditPage() {
     }
   };
 
-
-  // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!trip) return;
     setError('');
 
-    // Check legs presence
     if (legs.length === 0) {
       setError('Cần có ít nhất 1 chặng đường.');
       return;
     }
 
-    // Check leg fields
     for (const leg of legs) {
       if (!leg.origin.trim() || !leg.destination.trim() || !leg.km || isNaN(Number(leg.km)) || Number(leg.km) <= 0) {
         setError(`Chặng số ${leg.sequence} thông tin chưa hợp lệ (Km phải là số lớn hơn 0).`);
@@ -244,7 +208,6 @@ export default function TripEditPage() {
       }
     }
 
-    // Check supplement reason
     const supplementNum = Number(fuelSupplementLiters);
     if (supplementNum > 0 && !fuelSupplementReason.trim()) {
       setError('Vui lòng điền lý do bổ sung dầu.');
@@ -275,8 +238,6 @@ export default function TripEditPage() {
         notes: notes.trim() || undefined,
       };
 
-      // Determine endpoint based on trip status
-      // If CREATED, we hit /pre-departure. Otherwise (IN_TRANSIT / COMPLETED), we hit /actuals
       const endpoint = trip.status === TripStatus.CREATED ? `/trips/${trip.id}/pre-departure` : `/trips/${trip.id}/actuals`;
       await api.put(endpoint, payload);
 
@@ -284,7 +245,7 @@ export default function TripEditPage() {
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 409) {
         if (await confirm("Có người khác đã cập nhật chuyến này. Tải lại?")) {
-          loadTrip();
+          refetchTrip();
         } else {
           setError("Xung đột phiên bản: số liệu của bạn đã cũ so với hệ thống.");
         }
@@ -301,9 +262,8 @@ export default function TripEditPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
-        <Loader2 size={20} className="spin" />
+        <Spinner size={20} />
         <span style={{ fontSize: 14 }}>Đang tải dữ liệu...</span>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
       </div>
     );
   }
@@ -435,10 +395,6 @@ export default function TripEditPage() {
         </div>
       </form>
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spin { animation: spin 0.8s linear infinite; }
-      `}</style>
       {confirmDialog}
     </div>
   );

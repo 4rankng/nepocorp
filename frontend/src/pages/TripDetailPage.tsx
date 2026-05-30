@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, Play, Pencil, Lock, XCircle,
@@ -13,7 +13,9 @@ import {
   FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
 } from '@nepocorp/shared';
 import { Panel, StatusPill, useConfirm, Drawer } from '../components/UI';
-import type { Truck as TruckType, Driver as DriverType, PaginatedResponse } from '@nepocorp/shared';
+import { useTripDetail, useTripAdjustments, useTrucksAndDrivers } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+import { Spinner } from '../components/shared';
 
 function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
   return (
@@ -31,16 +33,20 @@ export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { confirm, dialog: confirmDialog } = useConfirm();
+  const queryClient = useQueryClient();
 
-  const [trip, setTrip] = useState<TripDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: trip, isLoading: loading, error: queryError, refetch: refetchTrip } = useTripDetail(id);
+  const error = queryError ? 'Không thể tải thông tin lệnh vận chuyển.' : '';
+  const { data: adjustments = [] } = useTripAdjustments(trip?.id ?? 0);
+
   const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
 
   // Reassign modal state
   const [showReassign, setShowReassign] = useState(false);
-  const [reassignTrucks, setReassignTrucks] = useState<TruckType[]>([]);
-  const [reassignDrivers, setReassignDrivers] = useState<DriverType[]>([]);
+  const { data: trucksDriversData } = useTrucksAndDrivers();
+  const reassignTrucks = trucksDriversData?.trucks ?? [];
+  const reassignDrivers = trucksDriversData?.drivers ?? [];
   const [reassignTruckId, setReassignTruckId] = useState('');
   const [reassignDriverId, setReassignDriverId] = useState('');
   const [reassignLoading, setReassignLoading] = useState(false);
@@ -53,34 +59,11 @@ export default function TripDetailPage() {
   const [adjustRef, setAdjustRef] = useState('');
   const [adjustSubmitting, setAdjustSubmitting] = useState(false);
   const [adjustError, setAdjustError] = useState('');
-  const [adjustments, setAdjustments] = useState<any[]>([]);
 
-  const loadTrip = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setError('');
-    try {
-      const data = await api.get<TripDetail>(`/trips/${id}`);
-      setTrip(data);
-    } catch {
-      setError('Không thể tải thông tin lệnh vận chuyển.');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => { loadTrip(); }, [loadTrip]);
-
-  const openReassign = async () => {
+  const openReassign = () => {
     setReassignError('');
     setReassignTruckId(String(trip?.truck_id ?? ''));
     setReassignDriverId(String(trip?.driver_id ?? ''));
-    const [truckRes, driverRes] = await Promise.all([
-      api.get<PaginatedResponse<TruckType>>('/trucks?pageSize=50'),
-      api.get<PaginatedResponse<DriverType>>('/drivers'),
-    ]);
-    setReassignTrucks(truckRes.items);
-    setReassignDrivers(driverRes.items);
     setShowReassign(true);
   };
 
@@ -94,7 +77,7 @@ export default function TripDetailPage() {
         driver_id: Number(reassignDriverId),
       });
       setShowReassign(false);
-      await loadTrip();
+      await refetchTrip();
     } catch (e: any) {
       setReassignError(e.message || 'Lỗi khi phân xe lại');
     } finally {
@@ -102,16 +85,12 @@ export default function TripDetailPage() {
     }
   };
 
-  const openAdjust = async () => {
+  const openAdjust = () => {
     setAdjustAmount('');
     setAdjustNote('');
     setAdjustRef('');
     setAdjustError('');
     setShowAdjust(true);
-    try {
-      const res = await api.get<{ items: any[] }>(`/trips/${id}/adjustments`);
-      setAdjustments(res.items ?? []);
-    } catch { setAdjustments([]); }
   };
 
   const handleAdjustSubmit = async () => {
@@ -124,8 +103,8 @@ export default function TripDetailPage() {
         note: adjustNote.trim(),
         signed_agreement_ref: adjustRef.trim(),
       });
-      const res = await api.get<{ items: any[] }>(`/trips/${id}/adjustments`);
-      setAdjustments(res.items ?? []);
+      await queryClient.invalidateQueries({ queryKey: ['trip-adjustments'] });
+      await refetchTrip();
       setAdjustAmount('');
       setAdjustNote('');
       setAdjustRef('');
@@ -138,15 +117,15 @@ export default function TripDetailPage() {
 
   const handleAction = async (action: string, method: () => Promise<unknown>) => {
     setActionLoading(true);
-    setError('');
+    setActionError('');
     try {
       await method();
-      await loadTrip();
+      await refetchTrip();
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message);
+        setActionError(err.message);
       } else {
-        setError('Có lỗi xảy ra. Vui lòng thử lại.');
+        setActionError('Có lỗi xảy ra. Vui lòng thử lại.');
       }
     } finally {
       setActionLoading(false);
@@ -156,13 +135,12 @@ export default function TripDetailPage() {
   const handleLockClick = async () => {
     if (!trip) return;
     setActionLoading(true);
-    setError('');
+    setActionError('');
     try {
       await api.post(`/trips/${trip.id}/lock`, {});
-      await loadTrip();
+      await refetchTrip();
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 422) {
-        // Zero-revenue lock confirmation dialog (T3.15)
         const isConfirmed = await confirm('Doanh thu chuyến đi này bằng 0 VNĐ. Bạn có chắc chắn muốn chốt doanh thu bằng 0?', {
           variant: 'warning',
           confirmLabel: 'Xác nhận chốt',
@@ -172,17 +150,17 @@ export default function TripDetailPage() {
           setActionLoading(true);
           try {
             await api.post(`/trips/${trip.id}/lock`, { confirmZeroRevenue: true });
-            await loadTrip();
+            await refetchTrip();
           } catch (retryErr: any) {
-            setError(retryErr.message || 'Lỗi khi chốt chuyến đi.');
+            setActionError(retryErr.message || 'Lỗi khi chốt chuyến đi.');
           } finally {
             setActionLoading(false);
           }
         }
       } else if (err instanceof ApiError) {
-        setError(err.message);
+        setActionError(err.message);
       } else {
-        setError(err.message || 'Có lỗi xảy ra khi chốt chuyến đi.');
+        setActionError(err.message || 'Có lỗi xảy ra khi chốt chuyến đi.');
       }
     } finally {
       setActionLoading(false);
@@ -192,9 +170,8 @@ export default function TripDetailPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
-        <Loader2 size={20} className="spin" />
+        <Spinner size={20} />
         <span style={{ fontSize: 14 }}>Đang tải dữ liệu...</span>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
       </div>
     );
   }
@@ -204,7 +181,7 @@ export default function TripDetailPage() {
       <div className="fade-up">
         <Panel>
           <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error}</p>
-          <button className="btn btn--secondary btn--sm" style={{ marginTop: 12 }} onClick={loadTrip}>Thử lại</button>
+          <button className="btn btn--secondary btn--sm" style={{ marginTop: 12 }} onClick={() => refetchTrip()}>Thử lại</button>
         </Panel>
       </div>
     );
@@ -212,6 +189,7 @@ export default function TripDetailPage() {
 
   if (!trip) return null;
 
+  const displayError = actionError || error;
   const canEdit = trip.status === TripStatus.CREATED || trip.status === TripStatus.COMPLETED;
   const canCancel = trip.status !== TripStatus.LOCKED && trip.status !== TripStatus.CANCELED;
   const canDispatch = trip.status === TripStatus.CREATED;
@@ -321,7 +299,7 @@ export default function TripDetailPage() {
       </div>
 
       {/* Error bar */}
-      {error && (
+      {displayError && (
         <div style={{
           padding: '10px 14px',
           background: 'var(--danger-soft)',
@@ -331,7 +309,7 @@ export default function TripDetailPage() {
           marginBottom: 16,
           border: '1px solid rgba(220,38,38,0.12)',
         }}>
-          {error}
+          {displayError}
         </div>
       )}
 
@@ -367,7 +345,6 @@ export default function TripDetailPage() {
           {infoRow(<Fuel size={16} />, 'Chế độ nhiên liệu', FUEL_MODE_LABELS[trip.fuel_mode])}
           {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuel_liters ? `${Number(trip.fuel_liters).toLocaleString('vi-VN')} lít` : '—')}
           {(() => {
-            // TTBQ = (total liters / total km) × 100 — spec Module 3.1
             const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
             const totalLiters = Number(trip.fuel_liters) || 0;
             if (totalKm > 0 && totalLiters > 0) {
@@ -377,7 +354,6 @@ export default function TripDetailPage() {
             return null;
           })()}
           {infoRow(<MapPin size={16} />, 'Tiền đường', formatCurrency(trip.total_road_allowance))}
-          {/* Road allowance breakdown — shown when any adjustments exist */}
           {(Number(trip.tolls_discount) > 0 || Number(trip.tolls_addition) > 0 || Number(trip.tolls_stations) > 0 || trip.has_return_cargo) && (
             <div style={{ padding: '6px 0 10px', borderBottom: '1px solid var(--border-1)' }}>
               <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -479,7 +455,6 @@ export default function TripDetailPage() {
         </div>
       )}
 
-      {/* Empty photo placeholder when no content sections */}
       {!trip.notes && (!trip.photo_urls || trip.photo_urls.length === 0) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 12, marginTop: 4 }}>
           <ImageIcon size={14} />
@@ -596,10 +571,6 @@ export default function TripDetailPage() {
         )}
       </Drawer>
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spin { animation: spin 0.8s linear infinite; }
-      `}</style>
       {confirmDialog}
     </div>
   );
