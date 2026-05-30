@@ -51,6 +51,10 @@ export default function DashboardPage() {
   const [createdTrips, setCreatedTrips] = useState<TripDetail[]>([]);
   const [topOverdueCustomer, setTopOverdueCustomer] = useState<{ name: string; balance: number; days: number } | null>(null);
   const [topShareholder, setTopShareholder] = useState<{ name: string; percentage: number } | null>(null);
+  const [receivablesSummary, setReceivablesSummary] = useState<{
+    buckets: Array<{ range: string; label: string; count: number; amount: number }>;
+    totalOutstanding: number; totalCustomers: number; overdueCustomers: number;
+  } | null>(null);
   // 12-month revenue/profit history — previously the line chart was a hardcoded
   // SVG path with fixed coordinates which displayed the same growth curve
   // regardless of real data. We now drive it from per-month P&L reports.
@@ -83,8 +87,12 @@ export default function DashboardPage() {
       // All CREATED trips regardless of date (dispatch alerts must not miss prior-month trips)
       api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&status=CREATED`).catch(() => ({ items: [] as TripDetail[], total: 0 })),
       api.get<PnlReport>(`/reports/pnl?month=${prevMonth}&year=${prevYear}`).catch(() => null as PnlReport | null),
+      api.get<{
+        buckets: Array<{ range: string; label: string; count: number; amount: number }>;
+        totalOutstanding: number; totalCustomers: number; overdueCustomers: number;
+      }>('/reports/receivables-summary').catch(() => null),
     ])
-      .then(([dashboardData, pnlData, tripsData, createdTripsData, prevPnlData]) => {
+      .then(([dashboardData, pnlData, tripsData, createdTripsData, prevPnlData, receivablesData]) => {
         setStats(dashboardData);
         setPnlReport(pnlData);
         setPrevPnlReport(prevPnlData);
@@ -93,6 +101,7 @@ export default function DashboardPage() {
         // Overdue customer and top shareholder now computed server-side
         setTopOverdueCustomer(dashboardData.topOverdueCustomer ?? null);
         setTopShareholder(dashboardData.topShareholder ?? null);
+        if (receivablesData) setReceivablesSummary(receivablesData);
       })
       .catch((err) => {
         console.error('Error fetching dashboard analytical logs:', err);
@@ -644,6 +653,29 @@ export default function DashboardPage() {
                 <div className="todo__title">Không có công nợ quá hạn</div>
                 <div className="todo__meta"><span>Toàn bộ khách hàng đã thanh toán đúng hạn</span></div>
               </div>
+            </div>
+          )}
+
+          {/* Overdue summary — from receivables-summary endpoint (T-B.2.2) */}
+          {receivablesSummary && receivablesSummary.overdueCustomers > 0 && (
+            <div className="todo" onClick={() => navigate('/debt?filter=overdue')}>
+              <div className="todo__icon todo__icon--danger">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div className="todo__body">
+                <div className="todo__title">
+                  <strong>{receivablesSummary.overdueCustomers} khách hàng</strong> quá hạn — tổng {formatCurrency(receivablesSummary.totalOutstanding)}
+                </div>
+                <div className="todo__meta">
+                  <span>
+                    {receivablesSummary.buckets
+                      .filter(b => b.count > 0 && b.range !== '0-30')
+                      .map(b => `${b.count} KH ${b.label} (${formatCompact(b.amount)} ₫)`)
+                      .join(' · ')}
+                  </span>
+                </div>
+              </div>
+              <button className="btn btn--secondary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/debt?filter=overdue'); }}>Xem công nợ</button>
             </div>
           )}
 

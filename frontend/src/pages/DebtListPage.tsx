@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatCompact } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
@@ -22,12 +22,15 @@ interface CustomerDebtInfo {
 
 export default function DebtListPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk'>(
+    searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
+  );
   const [toast, setToast] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
   useEffect(() => {
     if (!toast) return;

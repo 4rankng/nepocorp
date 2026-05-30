@@ -298,10 +298,10 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 
 **Status:** DebtDetailPage supports payment recording and trip-specific allocation. Missing FIFO suggestion.
 
-- [ ] **T-B.1.1:** Add backend endpoint or modify existing `GET /ledger/customers/:id/statement` to return unpaid trips sorted by date (oldest first) with outstanding amounts
-- [ ] **T-B.1.2:** In DebtDetailPage payment modal, add "Gợi ý FIFO" button that auto-fills payment amounts starting from oldest unpaid trip
-- [ ] **T-B.1.3:** Allow accountant to override FIFO suggestions — select specific trips and enter custom amounts
-- [ ] **T-B.1.4:** Show running total: "Đã phân bổ: X / Y VNĐ" as accountant fills in amounts
+- [x] **T-B.1.1:** Add backend endpoint or modify existing `GET /ledger/customers/:id/statement` to return unpaid trips sorted by date (oldest first) with outstanding amounts
+- [x] **T-B.1.2:** In DebtDetailPage payment modal, add "Gợi ý FIFO" button that auto-fills payment amounts starting from oldest unpaid trip
+- [x] **T-B.1.3:** Allow accountant to override FIFO suggestions — select specific trips and enter custom amounts
+- [x] **T-B.1.4:** Show running total: "Đã phân bổ: X / Y VNĐ" as accountant fills in amounts
 
 ### US-B.2: Overdue customer alerts
 **As a** quản lý,
