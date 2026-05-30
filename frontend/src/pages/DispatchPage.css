@@ -369,7 +369,9 @@
 
 .dispatch-page .orders-head {
   display: grid;
-  grid-template-columns: 96px 1fr 1.3fr 1.4fr 132px;
+  /* date / route / customer / vehicle&driver / action — bumped vehicle&driver
+     from 1.6fr → 2.2fr so the driver name has room (was clipping to 1 letter). */
+  grid-template-columns: 90px 1fr 1.6fr 2.2fr 140px;
   padding: 12px 20px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
@@ -384,7 +386,8 @@
 
 .dispatch-page .order-row {
   display: grid;
-  grid-template-columns: 96px 1fr 1.3fr 1.4fr 132px;
+  /* Keep in sync with .orders-head — see comment there. */
+  grid-template-columns: 90px 1fr 1.6fr 2.2fr 140px;
   padding: 16px 20px;
   gap: 16px;
   align-items: center;
@@ -440,52 +443,63 @@
 .dispatch-page .o-customer .info { min-width: 0; }
 .dispatch-page .o-customer .name {
   font-weight: 600; font-size: 13.5px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   color: var(--ink);
+  word-break: break-word;
 }
 .dispatch-page .o-customer .meta {
   font-size: 11.5px; color: var(--ink-3);
 }
 
-.dispatch-page .o-assign { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dispatch-page .o-assign { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* Stacked layout: plate chip on top, driver name on a second row.
+   Was: single-row green pill with [plate-chip][driver-name] horizontal — the
+   driver name had ~70px to live in and was clipping to one letter ("N", "T").
+   Lost the heavy green border too; it read as an input focus state. */
 .dispatch-page .assign-card {
-  display: flex; align-items: center; gap: 9px;
-  padding: 7px 10px;
-  background: var(--d-green-50);
-  border: 1px solid #BFE9CE;
-  border-radius: 9px;
+  display: flex; flex-direction: column;
+  align-items: flex-start; gap: 4px;
   min-width: 0; flex: 1;
+  /* No background or border — the cell is the container. */
 }
 .dispatch-page .assign-card .ap {
+  display: inline-block;
   font-family: var(--font-mono);
-  font-weight: 700; font-size: 11px;
-  background: var(--ink); color: #fff;
-  padding: 2px 6px; border-radius: 4px;
-  flex-shrink: 0;
+  font-weight: 700; font-size: 12px;
+  background: var(--d-green-50);
+  color: var(--d-green-800);
+  border: 1px solid #BFE9CE;
+  padding: 2px 8px; border-radius: 6px;
+  letter-spacing: 0.04em;
+  max-width: 100%;
 }
-.dispatch-page .assign-card .ai { font-size: 12px; line-height: 1.25; min-width: 0; flex: 1; }
+.dispatch-page .assign-card .ai { font-size: 12.5px; line-height: 1.25; min-width: 0; max-width: 100%; }
 .dispatch-page .assign-card .dn {
   font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: var(--ink);
+  max-width: 100%;
 }
 .dispatch-page .assign-card .lb {
   font-size: 10px; letter-spacing: 0.8px;
-  color: var(--d-green-700); font-weight: 600;
+  color: var(--ink-3); font-weight: 600;
   text-transform: uppercase;
 }
 .dispatch-page .swap-btn {
-  width: 30px; height: 30px;
-  display: grid; place-items: center;
+  height: 30px;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 0 10px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   cursor: pointer;
-  color: var(--ink-3);
-  transition: color 120ms ease, border-color 120ms ease;
+  color: var(--ink-2);
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font-body);
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
   flex-shrink: 0;
+  white-space: nowrap;
 }
-.dispatch-page .swap-btn:hover { color: var(--ink); border-color: var(--ink-2); }
+.dispatch-page .swap-btn:hover { color: var(--ink); border-color: var(--ink-2); background: var(--surface-2); }
 .dispatch-page .swap-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Inline reassign editor (replaces .assign-card when active) */

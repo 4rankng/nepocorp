@@ -12,20 +12,29 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div className="field"><label>{label}</label>{children}</div>;
 }
 
-function PenaltyReasonForm({ saving, item, onsave, oncancel }: {
+function PenaltyReasonForm({ saving, item, onsave, oncancel, existingReasons }: {
   saving: boolean; item?: PenaltyReason; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+  existingReasons: PenaltyReason[];
 }) {
   const [reason, setReason] = useState(item?.reason_text || '');
   const [amount, setAmount] = useState(item?.default_amount || '');
+  const isDuplicate = reason.trim().length > 0 && existingReasons.some(r =>
+    r.id !== item?.id &&
+    r.reason_text.trim().toLowerCase() === reason.trim().toLowerCase()
+  );
   return (
     <InlineForm colSpan={4}>
       <div style={{ flex: 3, minWidth: 200 }}>
-        <Field label="Lý do phạt"><input className="input" value={reason} onChange={e => setReason(e.target.value)} placeholder="Mô tả lý do..." /></Field>
+        <Field label="Lý do phạt">
+          <input className="input" value={reason} onChange={e => setReason(e.target.value)} placeholder="Mô tả lý do..."
+            style={isDuplicate ? { borderColor: 'var(--danger)' } : undefined} />
+          {isDuplicate && <span style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, display: 'block' }}>Lý do này đã tồn tại trong danh mục.</span>}
+        </Field>
       </div>
       <div style={{ flex: 1, minWidth: 140 }}>
         <Field label="Mức mặc định (VNĐ)"><input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!reason.trim()) return; onsave({ reason_text: reason.trim(), default_amount: Number(amount) || 0 }); }} />
+      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!reason.trim() || isDuplicate) return; onsave({ reason_text: reason.trim(), default_amount: Number(amount) || 0 }); }} />
     </InlineForm>
   );
 }
@@ -54,10 +63,10 @@ export default function PenaltyReasonsConfigPage() {
           <table className="tt-table">
             <thead><tr><th style={{ width: 40 }}>#</th><th>Lý do</th><th>Mức mặc định</th><th style={{ width: 100 }}>Thao tác</th></tr></thead>
             <tbody>
-              {crud.showAddForm && !crud.editingId && <PenaltyReasonForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />}
+              {crud.showAddForm && !crud.editingId && <PenaltyReasonForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} existingReasons={penaltyReasons} />}
               {penaltyReasons.length === 0 && !crud.showAddForm && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>}
               {penaltyReasons.map((pr, i) => crud.editingId === pr.id
-                ? <PenaltyReasonForm key={`edit-${pr.id}`} saving={crud.saving} item={pr} onsave={d => crud.doUpdate(pr.id, d)} oncancel={crud.cancelForm} />
+                ? <PenaltyReasonForm key={`edit-${pr.id}`} saving={crud.saving} item={pr} onsave={d => crud.doUpdate(pr.id, d)} oncancel={crud.cancelForm} existingReasons={penaltyReasons} />
                 : <tr key={pr.id}>
                   <td className="num">{i + 1}</td>
                   <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{pr.reason_text}</td>

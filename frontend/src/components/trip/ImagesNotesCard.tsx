@@ -9,9 +9,12 @@ interface ImagesNotesCardProps {
   uploading: boolean;
   onUpload: (files: FileList) => Promise<void>;
   onRemovePhoto: (idx: number) => void;
+  /** Render as a click-to-expand section (used on the create-trip flow where this is optional). */
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
 }
 
-export function ImagesNotesCard({ notes, onNotesChange, photoUrls, uploading, onUpload, onRemovePhoto }: ImagesNotesCardProps) {
+export function ImagesNotesCard({ notes, onNotesChange, photoUrls, uploading, onUpload, onRemovePhoto, collapsible, defaultCollapsed }: ImagesNotesCardProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       onUpload(e.target.files);
@@ -20,7 +23,14 @@ export function ImagesNotesCard({ notes, onNotesChange, photoUrls, uploading, on
   };
 
   return (
-    <CardSection number={4} title="Hình ảnh & ghi chú" subtitle="Ảnh đính kèm và lưu ý chuyến đi" badge="optional">
+    <CardSection
+      number={4}
+      title="Hình ảnh & ghi chú"
+      subtitle="Ảnh đính kèm và lưu ý chuyến đi"
+      badge="optional"
+      collapsible={collapsible}
+      defaultCollapsed={defaultCollapsed}
+    >
       <div className="tc-form-row tc-form-row--split-3-2">
         <div className="field">
           <label>Ghi chú chuyến đi</label>

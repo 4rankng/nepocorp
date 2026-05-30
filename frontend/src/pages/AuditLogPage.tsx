@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { api } from '../lib/api';
 import {
   Search,
   Activity,
@@ -170,41 +171,46 @@ export default function AuditLogPage() {
   const [filter, setFilter] = useState<Category>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const filtered = useMemo(() => {
-    let list = MOCK_ENTRIES;
-    if (filter !== 'all') list = list.filter(e => e.category === filter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(e =>
-        e.message.toLowerCase().includes(q) ||
-        e.userEmail.toLowerCase().includes(q) ||
-        e.action.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [filter, search]);
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+      if (filter !== 'all') params.set('category', filter);
+      if (search.trim()) params.set('search', search.trim());
+      const res = await api.get<{ items: AuditEntry[]; total: number }>(`/audit-logs?${params}`);
+      setEntries(res.items);
+      setTotal(res.total);
+    } catch { setEntries([]); setTotal(0); }
+    finally { setLoading(false); }
+  }, [filter, search, page]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => { setPage(1); }, [filter, search]);
 
-  // KPI counts from all data (unfiltered)
-  const todayCount = MOCK_ENTRIES.length;
-  const uniqueUsers = new Set(MOCK_ENTRIES.map(e => e.userEmail)).size;
+  const paged = entries;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  // KPI counts from all entries (server-filtered, approximate from MOCK_ENTRIES for KPIs)
+  const todayCount = total;
+  const uniqueUsers = new Set(entries.map(e => e.userEmail)).size;
   const topCategory = (() => {
     const counts: Record<string, number> = {};
-    MOCK_ENTRIES.forEach(e => { counts[e.category] = (counts[e.category] || 0) + 1; });
+    entries.forEach(e => { counts[e.category] = (counts[e.category] || 0) + 1; });
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const labels: Record<string, string> = { trip: 'Chuyến đi', config: 'Cấu hình', finance: 'Tài chính', auth: 'Xác thực', penalty: 'Kỷ luật' };
     return { label: labels[sorted[0]?.[0] || 'trip'], count: sorted[0]?.[1] || 0 };
   })();
 
-  // Category counts for pills
+  // Category counts (from current page only in API mode)
   const catCounts = useMemo(() => {
-    const m: Record<string, number> = { all: MOCK_ENTRIES.length };
-    MOCK_ENTRIES.forEach(e => { m[e.category] = (m[e.category] || 0) + 1; });
+    const m: Record<string, number> = { all: total };
+    entries.forEach(e => { m[e.category] = (m[e.category] || 0) + 1; });
     return m;
-  }, []);
+  }, [entries, total]);
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
@@ -269,8 +275,8 @@ export default function AuditLogPage() {
               <Clock size={18} />
             </div>
           </div>
-          <div className="kpi__value" style={{ fontSize: 22 }}>{formatTime(MOCK_ENTRIES[0]?.timestamp || '')}</div>
-          <div className="kpi__meta">{MOCK_ENTRIES[0]?.message.slice(0, 40)}…</div>
+          <div className="kpi__value" style={{ fontSize: 22 }}>{entries[0] ? formatTime(entries[0].timestamp) : '—'}</div>
+          <div className="kpi__meta">{entries[0]?.message.slice(0, 40) ?? 'Đang tải...'}…</div>
         </div>
       </div>
 
@@ -403,7 +409,7 @@ export default function AuditLogPage() {
                 Xác thực
               </span>
             </div>
-            <span>Hiển thị {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}</span>
+            <span>Hiển thị {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} / {total}</span>
           </div>
         )}
       </Panel>

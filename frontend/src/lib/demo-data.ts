@@ -307,6 +307,35 @@ export const demoDriverTripDetail = (tripId: number) => {
 
 // ─── Customer Statement ─────────────────────────────────────────────────────
 
+function ts(hoursAgo: number, minutesAgo = 0): string {
+  const d = new Date('2026-05-30T10:00:00Z');
+  d.setHours(d.getHours() - hoursAgo, d.getMinutes() - minutesAgo, 0, 0);
+  return d.toISOString();
+}
+
+export const demoAuditLogs = [
+  { id: 1,  timestamp: ts(0, 12), userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'TRIP_DISPATCHED',           method: 'PUT',    message: 'Xuất phát chuyến xe #42 — HP → HN',                                     category: 'trip' },
+  { id: 2,  timestamp: ts(0, 25), userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'PAYMENT_RECEIVED',           method: 'POST',   message: 'Ghi nhận thanh toán 15.000.000₫ từ Công ty ABC',                        category: 'finance' },
+  { id: 3,  timestamp: ts(0, 40), userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_CREATED',               method: 'POST',   message: 'Tạo lệnh vận chuyển mới — Khách: Công ty XYZ, Tuyến: HP → QN',          category: 'trip' },
+  { id: 4,  timestamp: ts(0, 55), userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_UPDATED',             method: 'PUT',    message: 'Cập nhật xe đầu kéo 29C-567.89 → trạng thái Bảo trì',                  category: 'config' },
+  { id: 5,  timestamp: ts(1, 10), userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'TRIP_LOCKED',                method: 'PUT',    message: 'Khóa chuyến #38 — HP → NB, doanh thu 8.500.000₫',                      category: 'trip' },
+  { id: 6,  timestamp: ts(1, 30), userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'ADJUSTMENT_CREATED',         method: 'POST',   message: 'Tạo hóa đơn điều chỉnh +2.300.000₫ — Công ty DEF',                     category: 'finance' },
+  { id: 7,  timestamp: ts(1, 45), userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_UPDATED_ACTUALS',       method: 'PUT',    message: 'Cập nhật số liệu thực tế chuyến #41 — KM thực: 186, dầu: 52L',         category: 'trip' },
+  { id: 8,  timestamp: ts(2, 5),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_CREATED',             method: 'POST',   message: 'Thêm tuyến đường mới: Hải Phòng → Thái Nguyên (214 km)',               category: 'config' },
+  { id: 9,  timestamp: ts(2, 20), userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'PENALTY_CREATED',            method: 'POST',   message: 'Ghi kỷ luật tài xế Hoàng Nam — Vượt tốc độ, phạt 500.000₫',            category: 'penalty' },
+  { id: 10, timestamp: ts(2, 35), userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'TRIP_COMPLETED',             method: 'PUT',    message: 'Hoàn thành chuyến #39 — HP → HN, doanh thu 6.200.000₫',               category: 'trip' },
+  { id: 11, timestamp: ts(2, 50), userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_UPDATED_PRE_DEPARTURE', method: 'PUT',    message: 'Cập nhật số liệu trước xuất phát chuyến #43 — thêm 3 legs',            category: 'trip' },
+  { id: 12, timestamp: ts(3, 15), userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_DELETED',             method: 'DELETE', message: 'Xóa loại hàng hóa "Cát đen" khỏi danh mục',                             category: 'config' },
+  { id: 13, timestamp: ts(3, 30), userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'PAYMENT_RECEIVED',           method: 'POST',   message: 'Ghi nhận thanh toán 8.700.000₫ từ Công ty GHI',                         category: 'finance' },
+  { id: 14, timestamp: ts(3, 45), userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'TRIP_DISPATCHED',            method: 'PUT',    message: 'Xuất phát chuyến xe #44 — QN → HP',                                     category: 'trip' },
+  { id: 15, timestamp: ts(4, 0),  userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'PENALTY_CREATED',            method: 'POST',   message: 'Ghi kỷ luật tài xế Trần Nam — Không xuất trình hóa đơn dầu',            category: 'penalty' },
+  { id: 16, timestamp: ts(5, 0),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'CONFIG_UPDATED',             method: 'PUT',    message: 'Cập nhật đơn giá nhiên liệu 18.730 → 19.200 đ/lít',                    category: 'config' },
+  { id: 17, timestamp: ts(6, 0),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'TRIP_CREATED',               method: 'POST',   message: 'Tạo lệnh vận chuyển mới — Khách: Cảng Xanh, Tuyến: HP → Mộc Châu',    category: 'trip' },
+  { id: 18, timestamp: ts(7, 0),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'TRIP_LOCKED',                method: 'PUT',    message: 'Khóa chuyến #35 — HP → Sơn La, doanh thu 12.500.000₫',                 category: 'trip' },
+  { id: 19, timestamp: ts(8, 0),  userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'ADJUSTMENT_CREATED',         method: 'POST',   message: 'Điều chỉnh giảm chuyến #32 — sai đơn giá, -800.000₫',                  category: 'finance' },
+  { id: 20, timestamp: ts(9, 0),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'LOGIN',                      method: 'POST',   message: 'Đăng nhập thành công từ IP 192.168.1.15',                               category: 'auth' },
+];
+
 export function demoCustomerStatement(customerId: number) {
   const customer = demoCustomers.find(c => c.id === customerId) ?? demoCustomers[0];
   const entries = demoLedgerEntries.filter(e => e.entity_type === 'CUSTOMER' && e.entity_id === customerId);

@@ -5,6 +5,10 @@ import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from 'recharts';
 import type { CapTableHistory, PaginatedResponse } from '@nepocorp/shared';
 
 interface PnlTruck {
@@ -72,6 +76,8 @@ export default function FinancePage() {
   const [capTable, setCapTable] = useState<CapTableHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [yearlyData, setYearlyData] = useState<(PnlReport | null)[]>([]);
+  const [yearlyLoading, setYearlyLoading] = useState(false);
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -94,9 +100,16 @@ export default function FinancePage() {
     }
   }, [month, year]);
 
+  useEffect(() => { fetchReport(); }, [fetchReport]);
+
   useEffect(() => {
-    fetchReport();
-  }, [fetchReport]);
+    setYearlyLoading(true);
+    Promise.all(
+      Array.from({ length: 12 }, (_, i) =>
+        api.get<PnlReport>(`/reports/pnl?month=${i + 1}&year=${year}`).catch(() => null)
+      )
+    ).then(setYearlyData).finally(() => setYearlyLoading(false));
+  }, [year]);
 
   // Real cost breakdown from locked trips
   const fuelCost = tripCosts.reduce((s, t) => s + parseFloat(t.total_fuel_cost || '0'), 0);
@@ -124,6 +137,29 @@ export default function FinancePage() {
   const activeCapTable = capTable.length > 0
     ? capTable.map(c => ({ name: c.partnerName, pct: parseFloat(c.percentage) }))
     : [];
+
+  const compactNum = (v: number) => {
+    if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}tỷ`;
+    if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(1)}tr`;
+    return `${(v / 1e3).toFixed(0)}k`;
+  };
+
+  const revenueChartData = yearlyData.map((r, i) => ({
+    name: `T${i + 1}`,
+    'Doanh thu': r?.totalRevenue ?? 0,
+    'LN gộp': r?.grossProfit ?? 0,
+  }));
+
+  const costPieData = [
+    { name: 'Nhiên liệu', value: fuelCost, fill: '#3b82f6' },
+    { name: 'Tiền đường', value: roadCost, fill: '#f59e0b' },
+    { name: 'Lương lái xe', value: driverCost, fill: '#10b981' },
+  ].filter(d => d.value > 0);
+
+  const topTrucks = [...(report?.trucks ?? [])]
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 5)
+    .map(t => ({ name: t.plate, 'LN gộp': t.profit }));
 
   return (
     <div className="fade-up-1" style={{ paddingBottom: 40 }}>
@@ -197,6 +233,71 @@ export default function FinancePage() {
       {error && (
         <div style={{ padding: '12px 20px', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 8, color: 'var(--danger)', marginBottom: 20 }}>
           {error}
+        </div>
+      )}
+
+      {/* ── Charts ──────────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)', gap: 16, marginBottom: 24 }} className="fade-up-3">
+        {/* Revenue trend */}
+        <div className="panel" style={{ padding: '16px 20px' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
+            Xu hướng doanh thu {year}
+          </div>
+          {yearlyLoading ? (
+            <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={revenueChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tickFormatter={compactNum} tick={{ fontSize: 11 }} width={44} />
+                <Tooltip formatter={(v: any) => `${formatRawNumber(Number(v))} ₫`} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Doanh thu" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={20} />
+                <Bar dataKey="LN gộp" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Cost pie */}
+        <div className="panel" style={{ padding: '16px 20px' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
+            Cơ cấu chi phí T{month}/{year}
+          </div>
+          {loading ? (
+            <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
+          ) : costPieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={costPieData} dataKey="value" cx="50%" cy="45%" outerRadius={68} label={false}>
+                  {costPieData.map((e, i) => <Cell key={i} fill={e.fill} />)}
+                </Pie>
+                <Tooltip formatter={(v: any) => `${formatRawNumber(Number(v))} ₫`} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+              Chưa có dữ liệu chi phí
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Top trucks */}
+      {!loading && topTrucks.length > 0 && (
+        <div className="panel fade-up-3" style={{ padding: '16px 20px', marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
+            Top xe theo lợi nhuận – T{month}/{year}
+          </div>
+          <ResponsiveContainer width="100%" height={Math.max(160, topTrucks.length * 44)}>
+            <BarChart layout="vertical" data={topTrucks} margin={{ top: 0, right: 16, left: 8, bottom: 0 }}>
+              <XAxis type="number" tickFormatter={compactNum} tick={{ fontSize: 11 }} />
+              <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
+              <Tooltip formatter={(v: any) => `${formatRawNumber(Number(v))} ₫`} />
+              <Bar dataKey="LN gộp" fill="#6366f1" radius={[0, 3, 3, 0]} maxBarSize={18} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
 

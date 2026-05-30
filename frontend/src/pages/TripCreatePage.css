@@ -84,7 +84,6 @@
   background: var(--surface);
   border: 1px solid var(--border-1);
   border-radius: var(--r-lg);
-  overflow: hidden;
   margin-bottom: 16px;
 }
 .tc-card-head {
@@ -134,6 +133,37 @@
 }
 .tc-card-action:hover { background: color-mix(in srgb, var(--accent) 25%, transparent); }
 .tc-card-body { padding: 20px; }
+
+/* ── Collapsible section variant ───────────────────────────────────────── */
+/* When `collapsible` is true on CardSection, the head becomes a full-width
+   button. The chevron rotates 180° in the open state. When collapsed, the
+   bottom border on the head is dropped so the card reads as a single pill,
+   not a chopped-off card waiting for content. */
+.tc-card.is-collapsible .tc-card-head-btn {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.tc-card.is-collapsible .tc-card-head-btn:hover {
+  background: var(--bg-2, #F7F5F1);
+}
+.tc-card.is-collapsible .tc-card-head-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.tc-card.is-collapsed .tc-card-head { border-bottom: none; }
+.tc-card-chev {
+  color: var(--fg-3);
+  transition: transform 200ms ease, color 120ms ease;
+  flex-shrink: 0;
+}
+.tc-card-chev.is-open { transform: rotate(180deg); color: var(--fg-2); }
+.tc-card.is-collapsible .tc-card-head-btn:hover .tc-card-chev { color: var(--fg-1); }
 
 /* Badges */
 .tc-badge-required {

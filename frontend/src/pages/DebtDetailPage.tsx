@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@nepocorp/shared';
 import type { CustomerStatement, LedgerEntry } from '@nepocorp/shared';
-import { AlertTriangle, Wallet, X, Download } from 'lucide-react';
+import { AlertTriangle, Wallet, X, Download, ListOrdered } from 'lucide-react';
 import { PageHeader, Panel, KPI } from '../components/UI';
 
 // ── Txn type labels ─────────────────────────────────────────────────────────
@@ -301,15 +301,34 @@ export default function DebtDetailPage() {
 
             {/* Trip payments */}
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-1)', marginBottom: 8 }}>
-                Thanh toán theo lệnh
-              </label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-1)' }}>
+                  Thanh toán theo lệnh
+                  <span style={{ fontWeight: 400, color: 'var(--fg-3)', marginLeft: 6, fontSize: 11 }}>sắp xếp cũ nhất trước (FIFO)</span>
+                </label>
+                {unpaidTrips.length > 0 && (
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    style={{ fontSize: 11, padding: '3px 10px', gap: 4 }}
+                    onClick={() => {
+                      const newSelected = new Set(unpaidTrips.map(t => t.tripId));
+                      setSelectedTripIds(newSelected);
+                      const amounts: Record<number, string> = {};
+                      unpaidTrips.forEach(t => { amounts[t.tripId] = String(t.outstanding); });
+                      setPaymentAmounts(amounts);
+                    }}
+                  >
+                    <ListOrdered size={12} />
+                    Chọn tất cả (FIFO)
+                  </button>
+                )}
+              </div>
               {unpaidTrips.length === 0 ? (
                 <p style={{ fontSize: 13, color: 'var(--fg-3)', textAlign: 'center', padding: 12 }}>
                   Không tìm thấy chuyến chưa thanh toán.
                 </p>
               ) : (
-                unpaidTrips.map(trip => {
+                unpaidTrips.map((trip, idx) => {
                   const isSelected = selectedTripIds.has(trip.tripId);
                   return (
                     <div key={trip.tripId} style={{
@@ -318,6 +337,14 @@ export default function DebtDetailPage() {
                       background: isSelected ? 'var(--brand-soft)' : 'var(--bg-2)',
                       borderRadius: 6,
                     }}>
+                      <span style={{
+                        flexShrink: 0, fontSize: 10, fontWeight: 700,
+                        color: 'var(--brand)', background: 'var(--brand-soft)',
+                        border: '1px solid var(--brand)',
+                        borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap',
+                      }}>
+                        {idx === 0 ? '#1 cũ nhất' : `#${idx + 1}`}
+                      </span>
                       <input
                         type="checkbox"
                         checked={isSelected}

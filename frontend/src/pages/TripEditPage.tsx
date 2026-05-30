@@ -5,6 +5,8 @@ import { api, ApiError } from '../lib/api';
 import { PageHeader } from '../components/UI';
 import { FuelMode, LoadingType, TripStatus } from '@nepocorp/shared';
 import type { TripDetail, TripLeg, PricingTable, PaginatedResponse } from '@nepocorp/shared';
+import { LocationAutocomplete } from '../components/LocationAutocomplete';
+import { calculateDistanceKm } from '../lib/maps';
 
 interface FormLeg {
   id: string; // client-side unique id for React keys
@@ -140,13 +142,31 @@ export default function TripEditPage() {
   };
 
   // Update a leg field
-  const handleUpdateLeg = (idx: number, field: keyof FormLeg, value: string) => {
+  const handleUpdateLeg = async (idx: number, field: keyof FormLeg, value: string) => {
     setLegs(prev => prev.map((leg, i) => {
       if (i === idx) {
         return { ...leg, [field]: value };
       }
       return leg;
     }));
+
+    if (field === 'origin' || field === 'destination') {
+      const currentLeg = legs[idx];
+      const origin = field === 'origin' ? value : currentLeg.origin;
+      const destination = field === 'destination' ? value : currentLeg.destination;
+
+      if (origin && destination) {
+        const km = await calculateDistanceKm(origin, destination);
+        if (km !== null) {
+          setLegs(prev => prev.map((leg, i) => {
+            if (i === idx) {
+              return { ...leg, km: String(km) };
+            }
+            return leg;
+          }));
+        }
+      }
+    }
   };
 
   // Direct photo uploader
@@ -344,21 +364,21 @@ export default function TripEditPage() {
 
                   {/* Origin → Destination row */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                    <input
+                    <LocationAutocomplete
                       className="input"
                       style={{ padding: '7px 10px', fontSize: 13 }}
                       placeholder="Điểm đi"
                       value={leg.origin}
-                      onChange={e => handleUpdateLeg(idx, 'origin', e.target.value)}
+                      onChange={val => handleUpdateLeg(idx, 'origin', val)}
                       required
                     />
                     <span style={{ color: 'var(--fg-3)', fontSize: 14, fontWeight: 600, textAlign: 'center' }}>→</span>
-                    <input
+                    <LocationAutocomplete
                       className="input"
                       style={{ padding: '7px 10px', fontSize: 13 }}
                       placeholder="Điểm đến"
                       value={leg.destination}
-                      onChange={e => handleUpdateLeg(idx, 'destination', e.target.value)}
+                      onChange={val => handleUpdateLeg(idx, 'destination', val)}
                       required
                     />
                   </div>

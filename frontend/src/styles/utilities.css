@@ -130,9 +130,6 @@
   line-height: 1.3;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .m-card__badge { flex-shrink: 0; }
 

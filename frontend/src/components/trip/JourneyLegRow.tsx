@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import type { FormLeg } from '../../hooks/useTripForm';
+import { LocationAutocomplete } from '../LocationAutocomplete';
 
 interface JourneyLegRowProps {
   leg: FormLeg;
@@ -24,9 +25,21 @@ export function JourneyLegRow({ leg, onRemove, onUpdate, canRemove }: JourneyLeg
         )}
       </div>
       <div className="leg-card__route">
-        <input className="input input--sm" placeholder="Điểm đi" value={leg.origin} onChange={(e) => onUpdate('origin', e.target.value)} />
+        <LocationAutocomplete
+          className="input input--sm"
+          placeholder="Điểm đi"
+          value={leg.origin}
+          onChange={(val) => onUpdate('origin', val)}
+          required
+        />
         <span className="leg-card__arrow">→</span>
-        <input className="input input--sm" placeholder="Điểm đến" value={leg.destination} onChange={(e) => onUpdate('destination', e.target.value)} />
+        <LocationAutocomplete
+          className="input input--sm"
+          placeholder="Điểm đến"
+          value={leg.destination}
+          onChange={(val) => onUpdate('destination', val)}
+          required
+        />
       </div>
       <div className="leg-card__fields">
         <div>

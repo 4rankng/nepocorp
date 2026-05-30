@@ -111,6 +111,35 @@ function isUrgent(iso: string, now: Date = new Date()): boolean {
   return diffMs < 36 * 60 * 60 * 1000;
 }
 
+// ─── Normalisers (API returns nested snake_case; page expects flat camelCase) ──
+function normalizeTruck(t: any): Truck {
+  return {
+    id: t.id,
+    licensePlate: t.license_plate ?? t.licensePlate ?? '',
+    status: t.status ?? '',
+  };
+}
+
+function normalizeTrip(t: any): TripDetail {
+  return {
+    id: t.id,
+    customerId: t.customer_id ?? t.customerId ?? 0,
+    customerName: t.customer?.name ?? t.customerName ?? '',
+    customerReference: t.customer_reference ?? t.customerReference,
+    truckId: t.truck_id ?? t.truckId ?? 0,
+    truckPlate: t.truck?.license_plate ?? t.truckPlate ?? '',
+    driverId: t.driver_id ?? t.driverId ?? 0,
+    driverName: t.driver?.name ?? t.driverName ?? '',
+    routeId: t.route_id ?? t.routeId ?? 0,
+    routeName: t.route?.name ?? t.routeName ?? '',
+    trailerId: t.trailer_id ?? t.trailerId ?? 0,
+    cargoTypeId: t.cargo_type_id ?? t.cargoTypeId ?? 0,
+    status: t.status,
+    departureDate: t.departure_date ?? t.departureDate ?? '',
+    notes: t.notes,
+  };
+}
+
 // ─── Component ────────────────────────────────────────────────────────────
 export default function DispatchPage() {
   const navigate = useNavigate();
@@ -147,9 +176,9 @@ export default function DispatchPage() {
       ]);
 
       setDrivers(driversRes.items || []);
-      setTrucks(trucksRes.items || []);
-      setPendingTrips(pendingRes.items || []);
-      setActiveTrips(activeRes.items || []);
+      setTrucks((trucksRes.items || []).map(normalizeTruck));
+      setPendingTrips((pendingRes.items || []).map(normalizeTrip));
+      setActiveTrips((activeRes.items || []).map(normalizeTrip));
     } catch (err) {
       console.error(err);
       setError('Không thể tải dữ liệu điều vận. Vui lòng tải lại trang.');
@@ -171,11 +200,11 @@ export default function DispatchPage() {
     try {
       await api.post(`/trips/${tripId}/dispatch`, {});
       const [pendingRes, activeRes] = await Promise.all([
-        api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
-        api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.IN_TRANSIT}&limit=100`),
+        api.get<{ items: any[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
+        api.get<{ items: any[] }>(`/trips?status=${TripStatus.IN_TRANSIT}&limit=100`),
       ]);
-      setPendingTrips(pendingRes.items || []);
-      setActiveTrips(activeRes.items || []);
+      setPendingTrips((pendingRes.items || []).map(normalizeTrip));
+      setActiveTrips((activeRes.items || []).map(normalizeTrip));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi khởi hành chuyến đi.';
       alert(msg);
@@ -211,8 +240,8 @@ export default function DispatchPage() {
         truck_id: Number(reassignState.truckId),
         driver_id: Number(reassignState.driverId),
       });
-      const pendingRes = await api.get<{ items: TripDetail[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`);
-      setPendingTrips(pendingRes.items || []);
+      const pendingRes = await api.get<{ items: any[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`);
+      setPendingTrips((pendingRes.items || []).map(normalizeTrip));
       closeReassign();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi cập nhật';
@@ -714,10 +743,13 @@ export default function DispatchPage() {
                   ) : (
                     <>
                       <div className="assign-card">
-                        <span className="ap">{trip.truckPlate}</span>
+                        <span className="ap">
+                          {trip.truckPlate || '—'}
+                        </span>
                         <div className="ai">
-                          <div className="dn">{trip.driverName}</div>
-                          <div className="lb">Đề xuất hệ thống</div>
+                          <div className="dn">
+                            {trip.driverName || <span style={{ color: 'var(--fg-3)', fontWeight: 400 }}>Chưa phân tài xế</span>}
+                          </div>
                         </div>
                       </div>
                       <button
@@ -727,7 +759,8 @@ export default function DispatchPage() {
                         onClick={() => openReassign(trip)}
                         disabled={actionLoading === trip.id}
                       >
-                        <RefreshCw size={13} />
+                        <RefreshCw size={12} />
+                        Đổi xe
                       </button>
                     </>
                   )}

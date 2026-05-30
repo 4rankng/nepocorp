@@ -18,11 +18,21 @@ interface FuelTollsRevenueCardProps {
   driverSalary: string; onDriverSalaryChange: (v: string) => void;
   revenue: string; onRevenueChange: (v: string) => void;
   suggestedPrice: number | null;
+  /** Render as a click-to-expand section (used on the create-trip flow where this is optional). */
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
 }
 
 export function FuelTollsRevenueCard(props: FuelTollsRevenueCardProps) {
   return (
-    <CardSection number={3} title="Nhiên liệu, vé đường & doanh thu" subtitle="Định mức, chi phí đường bộ và doanh thu chuyến" badge="optional">
+    <CardSection
+      number={3}
+      title="Nhiên liệu, vé đường & doanh thu"
+      subtitle="Định mức, chi phí đường bộ và doanh thu chuyến"
+      badge="optional"
+      collapsible={props.collapsible}
+      defaultCollapsed={props.defaultCollapsed}
+    >
       <div className="field" style={{ marginBottom: 8 }}>
         <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--fg-2)' }}>Chế độ tính dầu</label>
       </div>

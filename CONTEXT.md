@@ -17,7 +17,7 @@
   - **Phase 3**: The trip is "Đang chạy". The accountant can update these figures at any time.
   - **Phase 4**: Driver returns. Accountant finalizes these numbers and moves it to "Hoàn thành".
   - **Phase 5**: Verified and locked as "Đã chốt" (trip-by-trip).
-- **Special Cargo (Chuyến chè)**: A specific type of cargo (tea) requiring mandatory photo evidence (Container & Seal) for closure.
+- **Cargo Photo Evidence**: All trips require at least one photo uploaded before the trip can be locked ("Đã chốt"). The `CargoType.requires_photos` boolean is a forward-looking configuration field reserved for future per-type enforcement; it does not gate the current lock flow. Tea cargo ("Chuyến chè") has no special photo requirements beyond this universal rule.
 
 ### Financials
 - **Ledger Architecture (Sổ cái)**: All financial balances (Customer debt, Driver salaries/penalties, Vendor payables) are tracked via a centralized immutable Ledger table.

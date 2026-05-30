@@ -166,13 +166,33 @@ export default function DashboardPage() {
     : `${Math.round(netProfit / 1000000)}`;
   const netUnit = netProfit >= 1000000000 ? ' tỷ ₫' : ' triệu ₫';
 
-  // Donut chart dynamic segments matching wireframe styling
-  const fuelCost = Math.round(costs * 0.38);
-  const driverCost = Math.round(costs * 0.22);
-  const roadCost = Math.round(costs * 0.18);
-  const mgmtCost = Math.round(costs * 0.12);
-  const maintCost = Math.round(costs * 0.07);
-  const otherCost = Math.max(0, costs - (fuelCost + driverCost + roadCost + mgmtCost + maintCost));
+  // Cost breakdown from real locked trip data
+  const lockedTrips = allTrips.filter(t => t.status === TripStatus.LOCKED);
+  const realFuelCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).total_fuel_cost || '0'), 0);
+  const realRoadCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).total_road_allowance || '0'), 0);
+  const realDriverCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).driver_salary || '0'), 0);
+  const mgmtCost = pnlReport?.managementFee ?? 24000000;
+  // Prefer real data; fall back to proportional estimate when no locked trips yet
+  const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
+  const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.38);
+  const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.18);
+  const driverCost = hasRealCosts ? realDriverCost : Math.round(costs * 0.22);
+  const maintCost  = Math.round(costs * 0.07);
+  const otherCost  = Math.max(0, costs - fuelCost - roadCost - driverCost - mgmtCost - maintCost);
+
+  const totalPie = fuelCost + driverCost + roadCost + mgmtCost + maintCost + otherCost || 1;
+  const p = (v: number) => Math.round((v / totalPie) * 100);
+  const fuelPct   = p(fuelCost);
+  const driverPct = p(driverCost);
+  const roadPct   = p(roadCost);
+  const mgmtPct   = p(mgmtCost);
+  const maintPct  = p(maintCost);
+  const otherPct  = Math.max(0, 100 - fuelPct - driverPct - roadPct - mgmtPct - maintPct);
+  const c1 = fuelPct;
+  const c2 = c1 + driverPct;
+  const c3 = c2 + roadPct;
+  const c4 = c3 + mgmtPct;
+  const c5 = c4 + maintPct;
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
@@ -336,7 +356,7 @@ export default function DashboardPage() {
               <div 
                 className="aging__donut" 
                 style={{ 
-                  background: 'conic-gradient(var(--brand) 0% 38%, var(--info) 38% 60%, var(--warning) 60% 78%, #E07D2E 78% 90%, var(--danger) 90% 97%, var(--fg-3) 97% 100%)',
+                  background: `conic-gradient(var(--brand) 0% ${c1}%, var(--info) ${c1}% ${c2}%, var(--warning) ${c2}% ${c3}%, #E07D2E ${c3}% ${c4}%, var(--danger) ${c4}% ${c5}%, var(--fg-3) ${c5}% 100%)`,
                   ['--bg-2' as any]: '#ffffff'
                 }}
               >
@@ -352,38 +372,40 @@ export default function DashboardPage() {
                   <span className="aging__dot" style={{ background: 'var(--brand)' }}></span>
                   <span className="aging__row-label">Nhiên liệu</span>
                   <span className="aging__row-value">{Math.round(fuelCost / 1000000)}M</span>
-                  <span className="aging__row-pct">38%</span>
+                  <span className="aging__row-pct">{fuelPct}%</span>
                 </div>
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--info)' }}></span>
                   <span className="aging__row-label">Lương lái xe</span>
                   <span className="aging__row-value">{Math.round(driverCost / 1000000)}M</span>
-                  <span className="aging__row-pct">22%</span>
+                  <span className="aging__row-pct">{driverPct}%</span>
                 </div>
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--warning)' }}></span>
                   <span className="aging__row-label">Tiền đi đường</span>
                   <span className="aging__row-value">{Math.round(roadCost / 1000000)}M</span>
-                  <span className="aging__row-pct">18%</span>
+                  <span className="aging__row-pct">{roadPct}%</span>
                 </div>
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: '#E07D2E' }}></span>
                   <span className="aging__row-label">Phí quản lý</span>
                   <span className="aging__row-value">{Math.round(mgmtCost / 1000000)}M</span>
-                  <span className="aging__row-pct">12%</span>
+                  <span className="aging__row-pct">{mgmtPct}%</span>
                 </div>
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--danger)' }}></span>
                   <span className="aging__row-label">Bảo dưỡng</span>
                   <span className="aging__row-value">{Math.round(maintCost / 1000000)}M</span>
-                  <span className="aging__row-pct">7%</span>
+                  <span className="aging__row-pct">{maintPct}%</span>
                 </div>
+                {otherPct > 0 && (
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--fg-3)' }}></span>
                   <span className="aging__row-label">Khác</span>
                   <span className="aging__row-value">{Math.round(otherCost / 1000000)}M</span>
-                  <span className="aging__row-pct">3%</span>
+                  <span className="aging__row-pct">{otherPct}%</span>
                 </div>
+                )}
               </div>
             </div>
         </Panel>

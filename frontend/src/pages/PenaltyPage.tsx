@@ -297,6 +297,26 @@ function PenaltyFormDrawer({
         </FormGroup>
         <FormGroup label="Lý do chi tiết khác">
           <input className="input" placeholder="Mô tả lỗi phát sinh..." value={formCustomReason} onChange={e => setFormCustomReason(e.target.value)} />
+          {formCustomReason.length > 5 && (() => {
+            const q = formCustomReason.toLowerCase();
+            const match = reasons.find(r =>
+              r.reason_text.toLowerCase().includes(q) || q.includes(r.reason_text.toLowerCase())
+            );
+            if (!match) return null;
+            return (
+              <div style={{ fontSize: 11, color: 'var(--brand)', marginTop: 4 }}>
+                Đã có lý do tương tự:{' '}
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--brand)', fontWeight: 600, padding: 0, fontSize: 11, textDecoration: 'underline' }}
+                  onClick={() => { setFormCustomReason(match.reason_text); if (match.default_amount) setFormAmount(match.default_amount); }}
+                >
+                  "{match.reason_text}"
+                </button>
+                {' '}— dùng lý do này?
+              </div>
+            );
+          })()}
         </FormGroup>
         <FormGroup label="Số tiền khấu trừ (VND) *">
           <input className="input" type="number" placeholder="0" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
@@ -337,6 +357,19 @@ export default function PenaltyPage() {
   const [preselectedDriver, setPreselectedDriver] = useState<number | undefined>();
   const [scoreFilter, setScoreFilter] = useState<'7d' | '30d' | '90d' | 'ytd'>('90d');
   const [logFilter, setLogFilter] = useState<'all' | 'pending' | 'deducted'>('all');
+
+  // Month selector for KPI summary (FE-08)
+  const nowDate = new Date();
+  const [selMonth, setSelMonth] = useState(nowDate.getMonth() + 1);
+  const [selYear, setSelYear] = useState(nowDate.getFullYear());
+  const goMonth = (delta: number) => {
+    let m = selMonth + delta;
+    let y = selYear;
+    if (m > 12) { m = 1; y++; }
+    if (m < 1) { m = 12; y--; }
+    if (y > nowDate.getFullYear() || (y === nowDate.getFullYear() && m > nowDate.getMonth() + 1)) return;
+    setSelMonth(m); setSelYear(y);
+  };
 
   // ── Data loading ─────────────────────────────────────────────────────────────
 
@@ -380,18 +413,18 @@ export default function PenaltyPage() {
   // ── Derived stats ────────────────────────────────────────────────────────────
 
   const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const monthLabel = `T${now.getMonth() + 1}`;
+  const thisMonth = `${selYear}-${String(selMonth).padStart(2, '0')}`;
+  const monthLabel = `T${selMonth}/${selYear}`;
 
   const monthPenalties = penalties.filter(p => (p.date || '').startsWith(thisMonth));
   const totalMonthAmount = monthPenalties.reduce((s, p) => s + parseFloat(p.amount), 0);
   const incidentCount = monthPenalties.length;
 
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevMonthKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonthDate = new Date(selYear, selMonth - 2, 1);
+  const prevMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
   const prevMonthCount = penalties.filter(p => (p.date || '').startsWith(prevMonthKey)).length;
   const monthComparison = prevMonthCount > 0
-    ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với T${prevMonth.getMonth() + 1}`
+    ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với T${prevMonthDate.getMonth() + 1}`
     : incidentCount === 0 ? 'Tháng sạch' : '';
 
   const penalizedDriverIds = new Set(monthPenalties.map(p => p.driver_id));
@@ -469,6 +502,25 @@ export default function PenaltyPage() {
             Lập biên bản
           </Btn>
         </div>
+      </div>
+
+      {/* ── Month selector ──────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, marginTop: -4 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-3)' }}>Kỳ thống kê:</span>
+        <button className="btn btn--ghost btn--icon btn--sm" onClick={() => goMonth(-1)} aria-label="Tháng trước">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-1)', minWidth: 90, textAlign: 'center' }}>
+          Tháng {selMonth} / {selYear}
+        </span>
+        <button
+          className="btn btn--ghost btn--icon btn--sm"
+          onClick={() => goMonth(1)}
+          disabled={selYear === nowDate.getFullYear() && selMonth >= nowDate.getMonth() + 1}
+          aria-label="Tháng sau"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
 
       {/* ── KPI strip (4 cards) ──────────────────────────────────────────── */}

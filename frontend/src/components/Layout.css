@@ -373,13 +373,13 @@
 .sidebar-user .meta { line-height: 1.25; min-width: 0; flex: 1; overflow: hidden; }
 .sidebar-user .meta .name {
   font-size: 13px; font-weight: 600; color: #fff;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  word-break: break-word;
 }
 .sidebar-user .meta .role {
   font-size: 11px;
   color: var(--sb-text-muted);
   font-family: var(--font-mono);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  word-break: break-word;
 }
 
 /* ============================================================================

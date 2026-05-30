@@ -90,8 +90,8 @@
 }
 .partner-card__avatar--phung { background: linear-gradient(135deg, #4DC678, #008B3E); }
 .partner-card__avatar--thuong { background: linear-gradient(135deg, #6E9DCB, #3D6FA3); }
-.partner-card__name { font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 2px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.partner-card__role { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.partner-card__name { font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 2px; color: var(--ink); }
+.partner-card__role { font-size: 12px; color: var(--ink-3); }
 .partner-card__pct { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--accent); letter-spacing: -0.02em; }
 .partner-card__amount { font-family: var(--font-display); font-size: 32px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; margin-bottom: 6px; color: var(--ink); }
 .partner-card__amount-label { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 8px; }

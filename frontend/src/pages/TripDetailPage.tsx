@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, Play, Pencil, Lock, XCircle,
   Truck, User, MapPin, Calendar, FileText, Fuel, Banknote,
-  Route as RouteIcon, Image as ImageIcon,
+  Route as RouteIcon, Image as ImageIcon, Shuffle, FilePen, X,
 } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -12,7 +12,8 @@ import {
   TripStatus, TRIP_STATUS_LABELS,
   FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
 } from '@nepocorp/shared';
-import { Panel, StatusPill, useConfirm } from '../components/UI';
+import { Panel, StatusPill, useConfirm, Drawer } from '../components/UI';
+import type { Truck as TruckType, Driver as DriverType, PaginatedResponse } from '@nepocorp/shared';
 
 function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
   return (
@@ -36,6 +37,24 @@ export default function TripDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Reassign modal state
+  const [showReassign, setShowReassign] = useState(false);
+  const [reassignTrucks, setReassignTrucks] = useState<TruckType[]>([]);
+  const [reassignDrivers, setReassignDrivers] = useState<DriverType[]>([]);
+  const [reassignTruckId, setReassignTruckId] = useState('');
+  const [reassignDriverId, setReassignDriverId] = useState('');
+  const [reassignLoading, setReassignLoading] = useState(false);
+  const [reassignError, setReassignError] = useState('');
+
+  // Adjustment drawer state
+  const [showAdjust, setShowAdjust] = useState(false);
+  const [adjustAmount, setAdjustAmount] = useState('');
+  const [adjustNote, setAdjustNote] = useState('');
+  const [adjustRef, setAdjustRef] = useState('');
+  const [adjustSubmitting, setAdjustSubmitting] = useState(false);
+  const [adjustError, setAdjustError] = useState('');
+  const [adjustments, setAdjustments] = useState<any[]>([]);
+
   const loadTrip = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -51,6 +70,71 @@ export default function TripDetailPage() {
   }, [id]);
 
   useEffect(() => { loadTrip(); }, [loadTrip]);
+
+  const openReassign = async () => {
+    setReassignError('');
+    setReassignTruckId(String(trip?.truck_id ?? ''));
+    setReassignDriverId(String(trip?.driver_id ?? ''));
+    const [truckRes, driverRes] = await Promise.all([
+      api.get<PaginatedResponse<TruckType>>('/trucks?pageSize=50'),
+      api.get<PaginatedResponse<DriverType>>('/drivers'),
+    ]);
+    setReassignTrucks(truckRes.items);
+    setReassignDrivers(driverRes.items);
+    setShowReassign(true);
+  };
+
+  const handleReassign = async () => {
+    if (!id || !reassignTruckId || !reassignDriverId) return;
+    setReassignLoading(true);
+    setReassignError('');
+    try {
+      await api.post(`/trips/${id}/reassign`, {
+        truck_id: Number(reassignTruckId),
+        driver_id: Number(reassignDriverId),
+      });
+      setShowReassign(false);
+      await loadTrip();
+    } catch (e: any) {
+      setReassignError(e.message || 'Lỗi khi phân xe lại');
+    } finally {
+      setReassignLoading(false);
+    }
+  };
+
+  const openAdjust = async () => {
+    setAdjustAmount('');
+    setAdjustNote('');
+    setAdjustRef('');
+    setAdjustError('');
+    setShowAdjust(true);
+    try {
+      const res = await api.get<{ items: any[] }>(`/trips/${id}/adjustments`);
+      setAdjustments(res.items ?? []);
+    } catch { setAdjustments([]); }
+  };
+
+  const handleAdjustSubmit = async () => {
+    if (!id || !adjustNote.trim() || !adjustRef.trim() || adjustAmount === '') return;
+    setAdjustSubmitting(true);
+    setAdjustError('');
+    try {
+      await api.post(`/trips/${id}/adjustment`, {
+        amount: Number(adjustAmount),
+        note: adjustNote.trim(),
+        signed_agreement_ref: adjustRef.trim(),
+      });
+      const res = await api.get<{ items: any[] }>(`/trips/${id}/adjustments`);
+      setAdjustments(res.items ?? []);
+      setAdjustAmount('');
+      setAdjustNote('');
+      setAdjustRef('');
+    } catch (e: any) {
+      setAdjustError(e.message || 'Lỗi khi tạo điều chỉnh');
+    } finally {
+      setAdjustSubmitting(false);
+    }
+  };
 
   const handleAction = async (action: string, method: () => Promise<unknown>) => {
     setActionLoading(true);
@@ -96,7 +180,9 @@ export default function TripDetailPage() {
   const canCancel = trip.status !== TripStatus.LOCKED && trip.status !== TripStatus.CANCELED;
   const canDispatch = trip.status === TripStatus.CREATED;
   const canLock = trip.status === TripStatus.COMPLETED;
-  const needsPhotos = !!trip.cargoType?.requires_photos && (!trip.photo_urls || trip.photo_urls.length === 0);
+  const canReassign = trip.status === TripStatus.CREATED;
+  const canAdjust = trip.status === TripStatus.LOCKED;
+  const needsPhotos = !trip.photo_urls || trip.photo_urls.length === 0;
 
   return (
     <div className="fade-up">
@@ -147,7 +233,7 @@ export default function TripDetailPage() {
               <button
                 className="btn btn--primary btn--sm"
                 disabled={actionLoading || needsPhotos}
-                title={needsPhotos ? 'Hàng hóa yêu cầu ảnh xác thực. Vui lòng tải ảnh lên trước khi chốt.' : undefined}
+                title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi chốt.' : undefined}
                 onClick={() => handleAction('lock', () => api.post(`/trips/${trip.id}/lock`, {}))}
               >
                 {actionLoading ? <Loader2 size={14} className="spin" /> : <Lock size={14} />}
@@ -155,7 +241,7 @@ export default function TripDetailPage() {
               </button>
               {needsPhotos && (
                 <span style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                  Cần ảnh xác thực trước khi chốt
+                  Chưa có ảnh — cần ít nhất 1 ảnh để chốt
                 </span>
               )}
             </>
@@ -167,6 +253,18 @@ export default function TripDetailPage() {
             >
               <Pencil size={14} />
               Chỉnh sửa
+            </button>
+          )}
+          {canReassign && (
+            <button className="btn btn--secondary btn--sm" onClick={openReassign}>
+              <Shuffle size={14} />
+              Phân xe lại
+            </button>
+          )}
+          {canAdjust && (
+            <button className="btn btn--secondary btn--sm" onClick={openAdjust}>
+              <FilePen size={14} />
+              Điều chỉnh
             </button>
           )}
           {canCancel && (
@@ -352,6 +450,115 @@ export default function TripDetailPage() {
           Chưa có ảnh hoặc ghi chú
         </div>
       )}
+
+      {/* Adjustments history */}
+      {canAdjust && adjustments.length > 0 && (
+        <Panel title="Lịch sử điều chỉnh" style={{ marginTop: 20 }} flush>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th className="num">Số tiền</th>
+                  <th>Lý do</th>
+                  <th>Biên bản</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adjustments.map((a: any) => (
+                  <tr key={a.id}>
+                    <td style={{ whiteSpace: 'nowrap' }}>{formatDate(a.created_at)}</td>
+                    <td className="num" style={{ color: Number(a.amount) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+                      {Number(a.amount) > 0 ? '+' : ''}{formatCurrency(a.amount)}
+                    </td>
+                    <td>{a.note}</td>
+                    <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{a.signed_agreement_ref}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      )}
+
+      {/* Reassign Modal */}
+      {showReassign && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(9,9,11,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--z-modal)' as any, padding: 24 }}
+          onClick={() => setShowReassign(false)}>
+          <div style={{ width: '100%', maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+            <Panel title="Phân xe lại" action={
+              <button className="btn btn--ghost btn--icon btn--sm" onClick={() => setShowReassign(false)}><X size={16} /></button>
+            }>
+              {reassignError && <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 13 }}>{reassignError}</div>}
+              <div className="field">
+                <label>Xe đầu kéo</label>
+                <select className="input" value={reassignTruckId} onChange={e => setReassignTruckId(e.target.value)}>
+                  <option value="">-- Chọn xe --</option>
+                  {reassignTrucks.map(t => <option key={t.id} value={t.id}>{t.license_plate}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label>Tài xế</label>
+                <select className="input" value={reassignDriverId} onChange={e => setReassignDriverId(e.target.value)}>
+                  <option value="">-- Chọn tài xế --</option>
+                  {reassignDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+              <button
+                className="btn btn--primary"
+                style={{ width: '100%', marginTop: 8 }}
+                disabled={reassignLoading || !reassignTruckId || !reassignDriverId}
+                onClick={handleReassign}
+              >
+                {reassignLoading ? <Loader2 size={14} className="spin" /> : <Shuffle size={14} />}
+                Xác nhận phân xe lại
+              </button>
+            </Panel>
+          </div>
+        </div>
+      )}
+
+      {/* Adjustment Drawer */}
+      <Drawer isOpen={showAdjust} onClose={() => setShowAdjust(false)} title="Hóa đơn điều chỉnh">
+        <p style={{ fontSize: 12, color: 'var(--fg-3)', marginBottom: 16, lineHeight: 1.5 }}>
+          Số âm = Giảm doanh thu (Credit Note) · Số dương = Tăng doanh thu (Debit Note)
+        </p>
+        {adjustError && <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 13 }}>{adjustError}</div>}
+        <div className="field">
+          <label>Số tiền điều chỉnh (VNĐ) *</label>
+          <input className="input" type="number" placeholder="VD: -500000 hoặc 300000" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Lý do điều chỉnh *</label>
+          <textarea className="input" rows={3} placeholder="Mô tả lý do..." value={adjustNote} onChange={e => setAdjustNote(e.target.value)} style={{ resize: 'vertical' }} />
+        </div>
+        <div className="field">
+          <label>Mã biên bản thỏa thuận *</label>
+          <input className="input" placeholder="VD: BB-2026-001" value={adjustRef} onChange={e => setAdjustRef(e.target.value)} />
+        </div>
+        <button
+          className="btn btn--primary"
+          style={{ width: '100%', marginTop: 4 }}
+          disabled={adjustSubmitting || !adjustNote.trim() || !adjustRef.trim() || adjustAmount === ''}
+          onClick={handleAdjustSubmit}
+        >
+          {adjustSubmitting ? <Loader2 size={14} className="spin" /> : <FilePen size={14} />}
+          Xác nhận phát hành
+        </button>
+        {adjustments.length > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Đã phát hành</div>
+            {adjustments.map((a: any, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-2)', fontSize: 13 }}>
+                <span style={{ color: 'var(--fg-2)' }}>{a.note}</span>
+                <span style={{ fontWeight: 600, color: Number(a.amount) >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  {Number(a.amount) > 0 ? '+' : ''}{formatCurrency(a.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Drawer>
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

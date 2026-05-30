@@ -11,7 +11,7 @@
 
 .hbar-row {
   display: grid;
-  grid-template-columns: 90px 1fr 100px;
+  grid-template-columns: 130px 1fr 100px;
   align-items: center;
   gap: 12px;
   padding: 12px 0;
@@ -24,7 +24,7 @@
   font-weight: 600;
   color: var(--ink);
 }
-.hbar-row__label-sub { font-size: 11px; color: var(--ink-3); font-weight: 400; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar-row__label-sub { font-size: 11px; color: var(--ink-3); font-weight: 400; margin-top: 2px; }
 .hbar-row__track {
   background: var(--surface-3);
   border-radius: 8px;
@@ -70,9 +70,8 @@
 .toplist__body { min-width: 0; }
 .toplist__title {
   font-weight: 600; font-size: 13px; color: var(--ink); margin-bottom: 2px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.toplist__meta { font-size: 11px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toplist__meta { font-size: 11px; color: var(--ink-3); }
 .toplist__value { font-weight: 700; font-size: 13px; color: var(--ink); text-align: right; font-family: var(--font-mono); }
 .toplist__value-sub { font-size: 10px; color: var(--ink-3); text-align: right; margin-top: 2px; font-family: var(--font-mono); }
 

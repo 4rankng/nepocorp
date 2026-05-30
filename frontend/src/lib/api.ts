@@ -4,7 +4,7 @@ import {
   demoPenaltyReasons, demoTrips, demoPenalties, demoCapTable,
   demoManagementFees, demoLedgerEntries, demoDashboardStats,
   makePnlReport, demoUsers, demoEarningsSummary, demoDriverPenalties,
-  demoDriverTrips, demoDriverTripDetail, demoCustomerStatement,
+  demoDriverTrips, demoDriverTripDetail, demoCustomerStatement, demoAuditLogs,
 } from './demo-data';
 import { TripStatus } from '@nepocorp/shared';
 
@@ -190,6 +190,12 @@ class MockApiClient {
     if (pathname.match(/^\/trips\/\d+\/pre-departure$/)) {
       return {};
     }
+    if (pathname.match(/^\/trips\/\d+\/adjustment$/)) {
+      return { id: Date.now(), trip_id: parseInt(pathname.split('/')[2]), amount: body?.amount ?? 0, note: body?.note ?? '', signed_agreement_ref: body?.signed_agreement_ref ?? '', created_at: new Date().toISOString() };
+    }
+    if (pathname.match(/^\/trips\/\d+\/adjustments$/)) {
+      return { items: [] };
+    }
 
     // ─── Reports ─────────────────────────────────────────────────────
     if (pathname === '/reports/dashboard') {
@@ -221,6 +227,22 @@ class MockApiClient {
     // ─── Payments ────────────────────────────────────────────────────
     if (pathname === '/payments/receive') {
       return {};
+    }
+
+    // ─── Audit Logs ──────────────────────────────────────────────────
+    if (pathname === '/audit-logs') {
+      const category = params.get('category');
+      const search = params.get('search')?.toLowerCase() ?? '';
+      const page = parseInt(params.get('page') || '1');
+      const pageSize = parseInt(params.get('pageSize') || '10');
+      let items = demoAuditLogs;
+      if (category) items = items.filter((e: any) => e.category === category);
+      if (search) items = items.filter((e: any) =>
+        e.message.toLowerCase().includes(search) ||
+        e.userName.toLowerCase().includes(search) ||
+        e.action.toLowerCase().includes(search)
+      );
+      return paginated(items, page, pageSize);
     }
 
     // ─── Fallback ────────────────────────────────────────────────────

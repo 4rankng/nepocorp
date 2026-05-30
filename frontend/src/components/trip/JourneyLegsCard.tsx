@@ -9,9 +9,12 @@ interface JourneyLegsCardProps {
   addLeg: () => void;
   removeLeg: (idx: number) => void;
   updateLeg: (idx: number, field: keyof FormLeg, value: string) => void;
+  /** Render as a click-to-expand section (used on the create-trip flow where this is optional). */
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
 }
 
-export function JourneyLegsCard({ legs, addLeg, removeLeg, updateLeg }: JourneyLegsCardProps) {
+export function JourneyLegsCard({ legs, addLeg, removeLeg, updateLeg, collapsible, defaultCollapsed }: JourneyLegsCardProps) {
   const totalKm = legs.reduce((sum, leg) => sum + (Number(leg.km) || 0), 0);
 
   return (
@@ -21,6 +24,8 @@ export function JourneyLegsCard({ legs, addLeg, removeLeg, updateLeg }: JourneyL
       subtitle="Khai báo các chặng đường, cự ly và tải trọng"
       badge="optional"
       action={{ label: 'Thêm chặng', icon: <Plus size={14} />, onClick: addLeg }}
+      collapsible={collapsible}
+      defaultCollapsed={defaultCollapsed}
     >
       {legs.length === 0 ? (
         <div className="tc-journey-empty">

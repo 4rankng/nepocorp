@@ -65,7 +65,10 @@ export default function TripCreatePage() {
 
           <SectionDivider label="Các mục dưới đây là tùy chọn — có thể bổ sung sau khi tạo lệnh" />
 
+          {/* Sections 2–4 are all "optional" on create — collapsed by default so
+              the form opens lean, click the chevron/header to expand any one. */}
           <JourneyLegsCard
+            collapsible defaultCollapsed
             legs={form.legs}
             addLeg={form.addLeg}
             removeLeg={form.removeLeg}
@@ -73,6 +76,7 @@ export default function TripCreatePage() {
           />
 
           <FuelTollsRevenueCard
+            collapsible defaultCollapsed
             fuelMode={form.fuelMode} onFuelModeChange={form.setFuelMode}
             fuelLitersOverride={form.fuelLitersOverride} onFuelLitersOverrideChange={form.setFuelLitersOverride}
             fuelSupplementLiters={form.fuelSupplementLiters} onFuelSupplementLitersChange={form.setFuelSupplementLiters}
@@ -87,6 +91,7 @@ export default function TripCreatePage() {
           />
 
           <ImagesNotesCard
+            collapsible defaultCollapsed
             notes={form.notes}
             onNotesChange={form.setNotes}
             photoUrls={form.photoUrls}

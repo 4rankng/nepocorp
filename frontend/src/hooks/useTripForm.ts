@@ -4,6 +4,7 @@ import { FuelMode, LoadingType } from "@nepocorp/shared";
 export type { FuelMode } from "@nepocorp/shared";
 import type { PricingTable } from "@nepocorp/shared";
 import type { TripOptions, RouteOption } from "./useTripOptions";
+import { calculateDistanceKm } from "../lib/maps";
 
 const FUEL_PRICE_PER_LITER = 25000;
 const LOADED_RATE = 43; // L/100km
@@ -198,12 +199,31 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
   }, []);
 
   const updateLeg = useCallback(
-    (idx: number, field: keyof FormLeg, value: string) => {
+    async (idx: number, field: keyof FormLeg, value: string) => {
       setLegs((prev) =>
         prev.map((leg, i) => (i === idx ? { ...leg, [field]: value } : leg)),
       );
+
+      if (field === 'origin' || field === 'destination') {
+        const currentLeg = legs[idx];
+        if (!currentLeg) return;
+        const origin = field === 'origin' ? value : currentLeg.origin;
+        const destination = field === 'destination' ? value : currentLeg.destination;
+
+        if (origin && destination) {
+          const km = await calculateDistanceKm(origin, destination);
+          if (km !== null) {
+            setLegs(prev => prev.map((leg, i) => {
+              if (i === idx) {
+                return { ...leg, km: String(km) };
+              }
+              return leg;
+            }));
+          }
+        }
+      }
     },
-    [],
+    [legs],
   );
 
   // Photo upload
