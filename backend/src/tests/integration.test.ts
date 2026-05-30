@@ -18,14 +18,17 @@ import tripRoutes from '../routes/trips';
 import financialRoutes from '../routes/financial';
 import driverRoutes from '../routes/driver';
 import { authMiddleware } from '../middleware/auth';
+import { casbinAuthz } from '../middleware/casbin';
+import { initEnforcer } from '../casbin/enforcer';
 
 const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
-app.use('/api', authMiddleware, configRoutes);
-app.use('/api/trips', authMiddleware, tripRoutes);
-app.use('/api', authMiddleware, financialRoutes);
-app.use('/api/driver/me', authMiddleware, driverRoutes);
+// Apply same auth chain as production: authMiddleware + casbinAuthz
+app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
+app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
+app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
+app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRoutes);
 
 let server: http.Server;
 let baseUrl: string;
@@ -42,6 +45,9 @@ let cargoTypeId: number;
 let driverUserId: number;
 
 before(async () => {
+  // Initialize Casbin enforcer before tests (required by casbinAuthz middleware)
+  await initEnforcer();
+
   // Start server on a dynamic random port
   await new Promise<void>((resolve) => {
     server = http.createServer(app);

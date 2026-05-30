@@ -9,6 +9,31 @@ import type { Request, Response } from 'express';
 
 const router = Router();
 
+/** Shared transform: camelCase DB row → snake_case + nested objects for frontend */
+function transformTripRow(item: Record<string, any>, extras?: { legs?: any[]; photoUrls?: string[] }) {
+  return {
+    ...item,
+    departure_date: item.departureDate,
+    fuel_mode: item.fuelMode,
+    fuel_consumption: item.fuelLiters,
+    fuel_liters: item.fuelLiters,
+    total_fuel_cost: item.totalFuelCost,
+    road_allowance: item.totalRoadAllowance,
+    total_road_allowance: item.totalRoadAllowance,
+    driver_salary: item.driverSalary,
+    total_cost: item.totalCost,
+    gross_profit: item.grossProfit,
+    customer_reference: item.customerReference,
+    has_return_cargo: item.hasReturnCargo,
+    customer: item.customerName ? { id: item.customerId, name: item.customerName } : null,
+    driver: item.driverName ? { id: item.driverId, name: item.driverName } : null,
+    truck: item.truckPlate ? { id: item.truckId, license_plate: item.truckPlate } : null,
+    route: item.routeName ? { id: item.routeId, name: item.routeName, distance: item.routeDistance, distance_km: item.routeDistance } : null,
+    trailer: item.trailerLicensePlate ? { id: item.trailerId, license_plate: item.trailerLicensePlate, type: item.trailerType } : null,
+    ...extras,
+  };
+}
+
 async function checkOptimisticLock(tripId: number, expectedUpdatedAt: string | undefined): Promise<void> {
   if (!expectedUpdatedAt) return;
   const [trip] = await db.select({ updatedAt: s.trips.updatedAt }).from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
@@ -71,24 +96,8 @@ router.get('/', async (req: Request, res: Response) => {
 
     // Transform to match frontend expectations
     const transformedItems = items.map(item => ({
-      ...item,
-      departure_date: item.departureDate,
-      fuel_mode: item.fuelMode,
-      fuel_consumption: item.fuelLiters,
-      fuel_liters: item.fuelLiters,
-      total_fuel_cost: item.totalFuelCost,
-      road_allowance: item.totalRoadAllowance,
-      total_road_allowance: item.totalRoadAllowance,
-      driver_salary: item.driverSalary,
-      total_cost: item.totalCost,
-      gross_profit: item.grossProfit,
-      customer_reference: item.customerReference,
-      has_return_cargo: item.hasReturnCargo,
+      ...transformTripRow(item),
       trailer_type: item.trailerLicensePlate || '40ft',
-      customer: item.customerName ? { id: item.customerId, name: item.customerName } : null,
-      driver: item.driverName ? { id: item.driverId, name: item.driverName } : null,
-      truck: item.truckPlate ? { id: item.truckId, license_plate: item.truckPlate } : null,
-      route: item.routeName ? { id: item.routeId, name: item.routeName, distance: item.routeDistance, distance_km: item.routeDistance } : null,
     }));
 
     res.json({ items: transformedItems, total: Number(countRow?.count ?? 0), page, pageSize: limit });
@@ -156,26 +165,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
 
     // Transform to match frontend expectations
-    const transformedTrip = {
-      ...trip,
-      departure_date: trip.departureDate,
-      fuel_mode: trip.fuelMode,
-      fuel_liters: trip.fuelLiters,
-      total_fuel_cost: trip.totalFuelCost,
-      total_road_allowance: trip.totalRoadAllowance,
-      driver_salary: trip.driverSalary,
-      total_cost: trip.totalCost,
-      gross_profit: trip.grossProfit,
-      customer_reference: trip.customerReference,
-      has_return_cargo: trip.hasReturnCargo,
-      customer: trip.customerName ? { id: trip.customerId, name: trip.customerName } : null,
-      driver: trip.driverName ? { id: trip.driverId, name: trip.driverName } : null,
-      truck: trip.truckPlate ? { id: trip.truckId, license_plate: trip.truckPlate } : null,
-      route: trip.routeName ? { id: trip.routeId, name: trip.routeName, distance: trip.routeDistance, distance_km: trip.routeDistance } : null,
-      trailer: trip.trailerLicensePlate ? { id: trip.trailerId, license_plate: trip.trailerLicensePlate, type: trip.trailerType } : null,
-      legs,
-      photoUrls,
-    };
+    const transformedTrip = transformTripRow(trip, { legs, photoUrls });
 
     res.json(transformedTrip);
   } catch (err: any) {

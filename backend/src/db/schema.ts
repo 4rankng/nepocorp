@@ -1,6 +1,6 @@
 import {
   pgTable, serial, varchar, text, integer, boolean, timestamp,
-  jsonb, numeric, date, pgEnum, uniqueIndex,
+  jsonb, numeric, date, pgEnum, uniqueIndex, index,
 } from 'drizzle-orm/pg-core';
 
 // Enums
@@ -233,7 +233,9 @@ export const penalties = pgTable('penalties', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (table) => [
+  index('penalties_date_idx').on(table.date),
+]);
 
 export const capTableHistory = pgTable('cap_table_history', {
   id: serial('id').primaryKey(),

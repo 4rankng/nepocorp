@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { formatCurrency, formatNumber } from '../lib/format';
+import { formatCurrency, formatNumber, formatCompact } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardStats, TripDetail, Role } from '@nepocorp/shared';
 import { TripStatus, ROLE_LABELS } from '@nepocorp/shared';
@@ -14,6 +14,8 @@ import { Panel } from '../components/UI';
 interface ExtendedDashboardStats extends DashboardStats {
   totalTrucks?: number;
   totalDrivers?: number;
+  topOverdueCustomer?: { name: string; balance: number; days: number } | null;
+  topShareholder?: { name: string; percentage: number } | null;
 }
 
 interface PnlTruck {
@@ -37,25 +39,11 @@ interface PnlReport {
 }
 
 interface CustomerLite { id: number; name: string }
-interface LedgerEntryLite {
-  entity_type?: string;
-  entity_id?: number;
-  entityType?: string;
-  entityId?: number;
-  debit?: string | number;
-  credit?: string | number;
-  balance?: string | number;
-  txn_id?: number | null;
-  txnId?: number | null;
-  created_at?: string;
-  createdAt?: string;
-}
-interface CapTableLite { partner_name?: string; partnerName?: string; percentage: string }
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [stats, setStats] = useState<ExtendedDashboardStats | null>(null);
   const [pnlReport, setPnlReport] = useState<PnlReport | null>(null);
   const [prevPnlReport, setPrevPnlReport] = useState<PnlReport | null>(null);
@@ -72,63 +60,22 @@ export default function DashboardPage() {
     setLoading(true);
     const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
     const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+    // Server-side date filtering — only fetch current-month trips
+    const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
     Promise.all([
       api.get<ExtendedDashboardStats>('/reports/dashboard'),
       api.get<PnlReport>(`/reports/pnl?month=${currentMonth}&year=${currentYear}`),
-      api.get<{ items: TripDetail[]; total: number }>('/trips?limit=100'),
-      // Customer + ledger to compute real top-overdue customer (replaces the
-      // hardcoded "Hoàng Long Co. 185M" alert that didn't match real data).
-      api.get<{ items: CustomerLite[] }>('/customers').catch(() => ({ items: [] as CustomerLite[] })),
-      api.get<{ items: LedgerEntryLite[] }>('/ledger?entity_type=CUSTOMER&limit=2000').catch(() => ({ items: [] as LedgerEntryLite[] })),
-      // Cap table for the real top shareholder (replaces hardcoded 70.45% Ông Phụng).
-      api.get<{ items: CapTableLite[] }>('/cap-table').catch(() => ({ items: [] as CapTableLite[] })),
-      // Previous month P&L — used to compute real MoM percentages (was hardcoded +8.2% / +6.4% / +12.4%).
+      api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&date_from=${monthStart}`),
       api.get<PnlReport>(`/reports/pnl?month=${prevMonth}&year=${prevYear}`).catch(() => null as PnlReport | null),
     ])
-      .then(([dashboardData, pnlData, tripsData, customersRes, ledgerRes, capRes, prevPnlData]) => {
+      .then(([dashboardData, pnlData, tripsData, prevPnlData]) => {
         setStats(dashboardData);
         setPnlReport(pnlData);
         setPrevPnlReport(prevPnlData);
         setAllTrips(tripsData.items);
-
-        // Compute top overdue customer from the ledger.
-        const customerById = new Map<number, string>();
-        (customersRes.items ?? []).forEach(c => customerById.set(c.id, c.name));
-        // Latest-balance per customer (FIFO ledger — last row's balance is current debt).
-        const lastByCustomer = new Map<number, { balance: number; date: string }>();
-        const oldestUnpaidByCustomer = new Map<number, string>();
-        (ledgerRes.items ?? []).forEach(e => {
-          const entityType = e.entity_type || e.entityType;
-          const entityId = e.entity_id ?? e.entityId;
-          if (entityType !== 'CUSTOMER' || entityId == null) return;
-          const balance = parseFloat(String(e.balance ?? '0'));
-          const date = e.created_at || e.createdAt || '';
-          const prev = lastByCustomer.get(entityId);
-          if (!prev || date > prev.date) lastByCustomer.set(entityId, { balance, date });
-          // Track oldest unpaid debit (txn_id set, debit > 0) for aging.
-          const debit = parseFloat(String(e.debit ?? '0'));
-          if (debit > 0 && date) {
-            const oldest = oldestUnpaidByCustomer.get(entityId);
-            if (!oldest || date < oldest) oldestUnpaidByCustomer.set(entityId, date);
-          }
-        });
-        let topCust: { name: string; balance: number; days: number } | null = null;
-        lastByCustomer.forEach(({ balance }, id) => {
-          if (balance <= 0) return;
-          const name = customerById.get(id) || `KH #${id}`;
-          const oldestDate = oldestUnpaidByCustomer.get(id);
-          const days = oldestDate ? Math.max(0, Math.floor((Date.now() - new Date(oldestDate).getTime()) / 86400000)) : 0;
-          if (!topCust || balance > topCust.balance) {
-            topCust = { name, balance, days };
-          }
-        });
-        setTopOverdueCustomer(topCust);
-
-        // Pick the largest shareholder by percentage.
-        const cap = (capRes.items ?? [])
-          .map(c => ({ name: c.partner_name || c.partnerName || '—', percentage: parseFloat(c.percentage) || 0 }))
-          .sort((a, b) => b.percentage - a.percentage);
-        setTopShareholder(cap[0] || null);
+        // Overdue customer and top shareholder now computed server-side
+        setTopOverdueCustomer(dashboardData.topOverdueCustomer ?? null);
+        setTopShareholder(dashboardData.topShareholder ?? null);
       })
       .catch((err) => {
         console.error('Error fetching dashboard analytical logs:', err);
@@ -172,9 +119,9 @@ export default function DashboardPage() {
   const managementFee = pnlReport?.managementFee ?? 0;
   const otherIncome = pnlReport?.otherIncome ?? 0;
   const netProfit = grossProfit - managementFee + otherIncome;
-  
-  const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-  const currentMonthTrips = allTrips.filter(t => t.departure_date?.startsWith(currentMonthStr));
+
+  // Trips are now date-filtered server-side — allTrips IS current-month trips
+  const currentMonthTrips = allTrips;
 
   const createdTripsCount = allTrips.filter((t) => t.status === TripStatus.CREATED).length;
 
@@ -198,56 +145,39 @@ export default function DashboardPage() {
     .sort((a, b) => b.profit - a.profit)
     .slice(0, 5);
 
-  // Dynamic Fallbacks to look filled and identical to wireframe if database is empty/fresh
-  const displayTrucks = sortedTrucks.length >= 2 ? sortedTrucks.map(t => ({
+  const displayTrucks = sortedTrucks.map(t => ({
     plate: t.plate,
     trips: t.trips,
     profit: t.profit,
     driver: `Đầu kéo · ${t.trips} chuyến`
-  })) : [
-    { plate: '29C-44521', trips: 18, profit: 112000000, driver: 'Anh Hùng' },
-    { plate: '29H-12345', trips: 14, profit: 105000000, driver: 'Anh Thương' },
-    { plate: '29H-22910', trips: 16, profit: 99000000, driver: 'Anh Bình' },
-    { plate: '30A-67890', trips: 12, profit: 78000000, driver: 'Anh Đức · ⚠ vượt định mức' },
-  ];
+  }));
 
   const maxTruckProfit = Math.max(...displayTrucks.map(t => t.profit), 1);
 
-  const displayRoutes = sortedRoutes.length >= 2 ? sortedRoutes.map((r, idx) => ({
+  const displayRoutes = sortedRoutes.map(r => ({
     name: r.name,
     trips: r.trips,
     profit: r.profit,
     meta: `${r.trips} chuyến · biên ${Math.round((r.profit / (r.trips * 12000000 || 1)) * 100)}%`
-  })) : [
-    { name: 'Hải Phòng → Hà Nội', trips: 28, profit: 156000000, meta: '28 chuyến · 124 km · biên 42%' },
-    { name: 'Hà Nội → Lạng Sơn', trips: 8, profit: 92000000, meta: '8 chuyến · 168 km · tuyến núi · biên 48%' },
-    { name: 'Hải Phòng → Thái Nguyên', trips: 6, profit: 84000000, meta: '6 chuyến · 214 km · tuyến núi · biên 45%' },
-    { name: 'Hà Nội → Quảng Ninh', trips: 9, profit: 76000000, meta: '9 chuyến · 156 km · biên 38%' },
-    { name: 'Hải Phòng → Bắc Ninh', trips: 14, profit: 68000000, meta: '14 chuyến · 98 km · biên 28%' },
-  ];
+  }));
 
-  // Helper formatting for KPI values
-  const formattedRevenue = revenue >= 1000000000 
-    ? `${(revenue / 1000000000).toFixed(2)}` 
-    : `${Math.round(revenue / 1000000)}`;
-  const revenueUnit = revenue >= 1000000000 ? ' tỷ ₫' : ' triệu ₫';
+  // Helper formatting for KPI values — uses shared formatCompact
+  const fmtKpi = (v: number) => {
+    const s = formatCompact(v);
+    // formatCompact returns "1.1 ty" / "820.5 tr" / "550.3k" — adjust suffix
+    return s.replace(/ ty$/, ' tỷ').replace(/ tr$/, ' triệu');
+  };
+  const fmtKpiUnit = (v: number) => v >= 1_000_000_000 ? ' ₫' : ' ₫';
+  const formattedRevenue = fmtKpi(revenue);
+  const revenueUnit = fmtKpiUnit(revenue);
+  const formattedCosts = fmtKpi(costs);
+  const costsUnit = fmtKpiUnit(costs);
+  const formattedGross = fmtKpi(grossProfit);
+  const grossUnit = fmtKpiUnit(grossProfit);
+  const formattedNet = fmtKpi(netProfit);
+  const netUnit = fmtKpiUnit(netProfit);
 
-  const formattedCosts = costs >= 1000000000 
-    ? `${(costs / 1000000000).toFixed(2)}` 
-    : `${Math.round(costs / 1000000)}`;
-  const costsUnit = costs >= 1000000000 ? ' tỷ ₫' : ' triệu ₫';
-
-  const formattedGross = grossProfit >= 1000000000 
-    ? `${(grossProfit / 1000000000).toFixed(2)}` 
-    : `${Math.round(grossProfit / 1000000)}`;
-  const grossUnit = grossProfit >= 1000000000 ? ' tỷ ₫' : ' triệu ₫';
-
-  const formattedNet = netProfit >= 1000000000
-    ? `${(netProfit / 1000000000).toFixed(2)}`
-    : `${Math.round(netProfit / 1000000)}`;
-  const netUnit = netProfit >= 1000000000 ? ' tỷ ₫' : ' triệu ₫';
-
-  // Real MoM percentages (was hardcoded +8.2% / +6.4% / +12.4%). When the
+  // MoM percentages computed from actual P&L data
   // previous month has no data, fall back to "—" rather than a fake number.
   const prevRevenue = prevPnlReport?.totalRevenue ?? 0;
   const prevCosts = prevPnlReport?.totalCosts ?? 0;
@@ -545,7 +475,11 @@ export default function DashboardPage() {
           subtitle="Biên lợi nhuận gộp từng đầu kéo"
         >
             <div className="stack" style={{ gap: 6 }}>
-              {displayTrucks.map((t: any, idx: number) => {
+              {displayTrucks.length === 0 ? (
+                <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+                  Chưa có dữ liệu xe tháng này
+                </div>
+              ) : displayTrucks.map((t: any, idx: number) => {
                 const pctWidth = Math.max(8, Math.min(100, (t.profit / maxTruckProfit) * 100));
                 let barClass = 'hbar-row__bar';
                 if (t.profit < 80000000) {
@@ -574,7 +508,11 @@ export default function DashboardPage() {
           action={<a href="#" onClick={(e) => { e.preventDefault(); navigate('/routes'); }} style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>Tất cả →</a>}
         >
             <div className="toplist">
-              {displayRoutes.map((r: any, idx: number) => (
+              {displayRoutes.length === 0 ? (
+                <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+                  Chưa có dữ liệu tuyến đường tháng này
+                </div>
+              ) : displayRoutes.map((r: any, idx: number) => (
                 <div key={idx} className="toplist__row">
                   <div className={`toplist__rank ${idx < 3 ? 'toplist__rank--top' : ''}`}>{idx + 1}</div>
                   <div className="toplist__body">
@@ -599,10 +537,7 @@ export default function DashboardPage() {
         flush
       >
           
-          {/* Top overdue customer — now driven by real ledger data, was
-              hardcoded to "Hoàng Long Co. nợ 185M ₫ quá hạn 92 ngày" which
-              didn't exist in the DB. Falls back to the original placeholder
-              copy only if there's literally no outstanding debt in the system. */}
+          {/* Top overdue customer — driven by real ledger data */}
           {topOverdueCustomer ? (
             <div className="todo" onClick={() => navigate('/debt')}>
               <div className={`todo__icon ${topOverdueCustomer.days >= 60 ? 'todo__icon--danger' : 'todo__icon--warn'}`}>
@@ -633,8 +568,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Pending Dispatches — customer-name preview is now derived from
-              the actual CREATED trips, not hardcoded "Vinh Phát · Đông Á …". */}
+          {/* Pending Dispatches — customer names from actual CREATED trips */}
           {createdTripsCount > 0 ? (
             (() => {
               const pendingCustomers = allTrips
@@ -676,8 +610,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Shareholder Settlement — share uses the real top shareholder's
-              percentage from the cap table (was hardcoded to 70.45%). */}
+          {/* Shareholder Settlement — share uses real cap table percentage */}
           <div className="todo" onClick={() => navigate('/profit')}>
             <div className="todo__icon todo__icon--info">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>

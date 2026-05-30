@@ -259,6 +259,80 @@ router.get('/reports/dashboard', async (_req: Request, res: Response) => {
     const [truckCount] = await db.select({ count: sql<number>`count(*)` }).from(s.trucks).where(isNull(s.trucks.deletedAt));
     const [driverCount] = await db.select({ count: sql<number>`count(*)` }).from(s.drivers).where(isNull(s.drivers.deletedAt));
 
+    // Top overdue customer — latest-balance per customer from FIFO ledger
+    const ledgerRows = await db.select({
+      entityType: s.ledger.entityType,
+      entityId: s.ledger.entityId,
+      debit: s.ledger.debit,
+      balance: s.ledger.balance,
+      createdAt: s.ledger.timestamp,
+    }).from(s.ledger)
+      .where(eq(s.ledger.entityType, 'CUSTOMER'))
+      .orderBy(desc(s.ledger.id));
+
+    const lastByCustomer = new Map<number, { balance: number; date: string }>();
+    const oldestUnpaidByCustomer = new Map<number, string>();
+    for (const row of ledgerRows) {
+      const entityId = row.entityId;
+      const balance = parseFloat(row.balance || '0');
+      const date = row.createdAt ? new Date(row.createdAt).toISOString().slice(0, 10) : '';
+      const prev = lastByCustomer.get(entityId);
+      if (!prev || date > prev.date) lastByCustomer.set(entityId, { balance, date });
+      const debit = parseFloat(row.debit || '0');
+      if (debit > 0 && date) {
+        const oldest = oldestUnpaidByCustomer.get(entityId);
+        if (!oldest || date < oldest) oldestUnpaidByCustomer.set(entityId, date);
+      }
+    }
+
+    let topOverdueCustomer: { name: string; balance: number; days: number } | null = null;
+    if (lastByCustomer.size > 0) {
+      // Load customer names for debtors. We previously used `id = ANY(${array})`
+      // here, but drizzle's sql template adapter cannot serialise a JS array
+      // through postgres-js the way Postgres expects (it tried to encode the
+      // first element as text and bubbled up "The \"string\" argument must be
+      // of type string ... Received type number (1)" when the first debtor id
+      // was 1). Build the IN-list manually so each id is a separately-bound
+      // parameter.
+      const debtorIds = [...lastByCustomer.entries()].filter(([, v]) => v.balance > 0).map(([id]) => id);
+      if (debtorIds.length > 0) {
+        const customers = await db.select({ id: s.customers.id, name: s.customers.name })
+          .from(s.customers).where(sql`${s.customers.id} IN (${sql.join(debtorIds.map(id => sql`${id}`), sql`, `)})`);
+        const nameById = new Map(customers.map(c => [c.id, c.name]));
+        for (const [id, { balance }] of lastByCustomer) {
+          if (balance <= 0) continue;
+          if (!topOverdueCustomer || balance > topOverdueCustomer.balance) {
+            const oldestDate = oldestUnpaidByCustomer.get(id);
+            const days = oldestDate ? Math.max(0, Math.floor((Date.now() - new Date(oldestDate).getTime()) / 86400000)) : 0;
+            topOverdueCustomer = { name: nameById.get(id) || `KH #${id}`, balance, days };
+          }
+        }
+      }
+    }
+
+    // Top shareholder from cap table
+    const capRows = await db.select().from(s.capTableHistory)
+      .orderBy(desc(s.capTableHistory.effectiveDate));
+    let topShareholder: { name: string; percentage: number } | null = null;
+    if (capRows.length > 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      const reached = capRows.filter(c => c.partnerName && c.effectiveDate <= today);
+      const pool = reached.length > 0 ? reached : capRows.filter(c => c.partnerName);
+      if (pool.length > 0) {
+        const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
+        const snapshot = pool.filter(c => c.effectiveDate === latestDate);
+        const byName = new Map<string, typeof snapshot[number]>();
+        for (const row of snapshot) {
+          const prev = byName.get(row.partnerName);
+          if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
+        }
+        const sorted = Array.from(byName.values())
+          .map(c => ({ name: c.partnerName, percentage: parseFloat(c.percentage) || 0 }))
+          .sort((a, b) => b.percentage - a.percentage);
+        topShareholder = sorted[0] || null;
+      }
+    }
+
     res.json({
       revenue: parseFloat(stats?.revenue || '0'),
       costs: parseFloat(stats?.costs || '0'),
@@ -268,6 +342,8 @@ router.get('/reports/dashboard', async (_req: Request, res: Response) => {
       inTransitTrips: Number(stats?.inTransitTrips || 0),
       totalTrucks: Number(truckCount?.count || 0),
       totalDrivers: Number(driverCount?.count || 0),
+      topOverdueCustomer,
+      topShareholder,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -360,10 +436,10 @@ router.post('/reports/distribute-profit', async (req: Request, res: Response) =>
       .orderBy(desc(s.capTableHistory.effectiveDate));
 
     // Get net profit for the quarter (simplified - sum of locked trips in quarter)
-    const qStart = `${year}-${String((quarter - 1) * 3 + 1).padStart(2, '0')}-01`;
-    const qEndMonth = quarter * 3 + 1;
-    const qEndYear = qEndMonth > 12 ? year + 1 : year;
-    const qEnd = `${qEndYear}-${String(qEndMonth > 12 ? qEndMonth - 12 : qEndMonth).padStart(2, '0')}-01`;
+    const qStartMonth = (quarter - 1) * 3 + 1;
+    const qEndMonth = quarter * 3;
+    const { start: qStart } = monthDateRange(year, qStartMonth);
+    const { end: qEnd } = monthDateRange(year, qEndMonth);
 
     const trips = await db.select().from(s.trips).where(
       and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), gte(s.trips.departureDate, qStart), sql`${s.trips.departureDate} < ${qEnd}`)

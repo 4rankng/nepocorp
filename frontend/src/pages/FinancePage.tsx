@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
@@ -6,38 +6,12 @@ import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
+import { useObservedWidth } from '../hooks/useObservedWidth';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts';
 import type { CapTableHistory, PaginatedResponse } from '@nepocorp/shared';
-
-// Manual ResizeObserver-based width measurement. Used as a workaround for
-// recharts ResponsiveContainer mis-measuring (rendering 14×14 SVGs) when its
-// parent is a flex/grid item — the auto-measure runs before the layout pass
-// so it reads zero width, then never re-measures.
-function useObservedWidth() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // Initial synchronous measurement — ResizeObserver doesn't always fire
-    // its first callback before paint, leaving the chart unmounted on
-    // initial render. Measure once now so charts appear immediately.
-    const initial = Math.round(el.getBoundingClientRect().width);
-    if (initial > 0) setWidth(initial);
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const w = Math.round(entry.contentRect.width);
-        if (w > 0) setWidth(w);
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  return [ref, width] as const;
-}
 
 interface PnlTruck {
   plate: string;
@@ -78,8 +52,8 @@ function now() {
   return { month: d.getMonth() + 1, year: d.getFullYear() };
 }
 
-function formatRawNumber(num: number): string {
-  return Math.round(num).toLocaleString('vi-VN');
+function formatRawNumber(num: number | string | null): string {
+  return formatNumber(num);
 }
 
 function yoyPct(current: number, previous: number): string {
