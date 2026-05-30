@@ -252,8 +252,9 @@ export default function DashboardPage() {
   const prevRevenue = prevPnlReport?.totalRevenue ?? 0;
   const prevCosts = prevPnlReport?.totalCosts ?? 0;
   const prevGross = prevPnlReport?.grossProfit ?? 0;
-  const fmtMoM = (current: number, previous: number): string => {
-    if (!previous) return '—';
+  const fmtMoM = (current: number, previous: number | undefined | null): string => {
+    if (previous == null) return '—';
+    if (previous === 0) return current > 0 ? '+∞' : '0%';
     const pct = ((current - previous) / previous) * 100;
     return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
   };

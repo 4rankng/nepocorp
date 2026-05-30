@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
@@ -161,29 +162,8 @@ export default function FinancePage() {
   const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
 
   // Cap table partner split for footnote.
-  // The cap-table table is a *history* — each row is a snapshot of the
-  // ownership distribution at a given `effectiveDate`. We must only use the
-  // latest snapshot (and within that snapshot, dedupe per partner — taking
-  // the most recently created row per name), otherwise the footnote
-  // repeats the same partner once per historical entry.
-  const activeCapTable = (() => {
-    if (!capTable.length) return [];
-    // Pick the latest effectiveDate that has been reached today
-    const today = new Date().toISOString().slice(0, 10);
-    const reached = capTable.filter(c => c.effectiveDate <= today);
-    const pool = reached.length > 0 ? reached : capTable;
-    const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
-    const snapshot = pool.filter(c => c.effectiveDate === latestDate);
-    // Dedupe by partner name — keep the most recently created entry
-    const byName = new Map<string, typeof snapshot[number]>();
-    for (const row of snapshot) {
-      const prev = byName.get(row.partnerName);
-      if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) {
-        byName.set(row.partnerName, row);
-      }
-    }
-    return Array.from(byName.values()).map(c => ({ name: c.partnerName, pct: parseFloat(c.percentage) }));
-  })();
+  const activeCapTable = getActiveCapTable(capTable, [])
+    .map(c => ({ name: c.partnerName, pct: c.percentage }));
 
   const compactNum = (v: number) => {
     if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}tỷ`;

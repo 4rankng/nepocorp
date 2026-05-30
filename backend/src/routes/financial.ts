@@ -10,6 +10,18 @@ import { LedgerService } from '../services/ledger.service';
 
 const router = Router();
 
+/** Build a [start, exclusive_end) date range for a given month/year. */
+function monthDateRange(year: number, month?: number) {
+  if (month) {
+    const start = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endMonth = month === 12 ? 1 : month + 1;
+    const endYear = month === 12 ? year + 1 : year;
+    const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`;
+    return { start, end };
+  }
+  return { start: `${year}-01-01`, end: `${year + 1}-01-01` };
+}
+
 // ─── Ledger ──────────────────────────────────────────────────────────────────
 
 router.get('/ledger', async (req: Request, res: Response) => {
@@ -269,16 +281,10 @@ router.get('/reports/pnl', async (req: Request, res: Response) => {
     const month = parseInt(req.query.month as string);
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
 
-    let dateFilter;
-    if (month) {
-      const start = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endMonth = month === 12 ? 1 : month + 1;
-      const endYear = month === 12 ? year + 1 : year;
-      const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`;
-      dateFilter = and(gte(s.trips.departureDate, start), sql`${s.trips.departureDate} < ${end}`);
-    } else {
-      dateFilter = gte(s.trips.departureDate, `${year}-01-01`);
-    }
+    const { start: tripStart, end: tripEnd } = monthDateRange(year, month);
+    const dateFilter = month
+      ? and(gte(s.trips.departureDate, tripStart), sql`${s.trips.departureDate} < ${tripEnd}`)
+      : gte(s.trips.departureDate, tripStart);
 
     const trips = await db.select().from(s.trips).where(
       and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), dateFilter)
@@ -295,19 +301,10 @@ router.get('/reports/pnl', async (req: Request, res: Response) => {
     const managementFee = fee ? parseFloat(fee.amount) : 0;
 
     // Penalties as other income — scope to the SAME period as trips above.
-    // Without this filter the sum was every penalty ever recorded, which made
-    // net profit explode past gross profit on the dashboard (the carryover
-    // ledger leaked into the current month's bottom line).
-    let penaltyDateFilter;
-    if (month) {
-      const start = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endMonth = month === 12 ? 1 : month + 1;
-      const endYear = month === 12 ? year + 1 : year;
-      const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`;
-      penaltyDateFilter = and(gte(s.penalties.date, start), sql`${s.penalties.date} < ${end}`);
-    } else {
-      penaltyDateFilter = gte(s.penalties.date, `${year}-01-01`);
-    }
+    const { start: penStart, end: penEnd } = monthDateRange(year, month);
+    const penaltyDateFilter = month
+      ? and(gte(s.penalties.date, penStart), sql`${s.penalties.date} < ${penEnd}`)
+      : gte(s.penalties.date, penStart);
     const penaltyRows = await db.select({ total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)` })
       .from(s.penalties)
       .where(and(isNull(s.penalties.deletedAt), penaltyDateFilter));
@@ -315,12 +312,16 @@ router.get('/reports/pnl', async (req: Request, res: Response) => {
 
     const netProfit = grossProfit - managementFee + otherIncome;
 
-    // Per-truck breakdown
+    // Per-truck breakdown — pre-load all needed truck plates in one query
+    const truckIds = [...new Set(trips.map(t => t.truckId).filter(Boolean))];
+    const truckRows = truckIds.length > 0
+      ? await db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate }).from(s.trucks).where(sql`${s.trucks.id} = ANY(${truckIds})`)
+      : [];
+    const plateById = new Map(truckRows.map(t => [t.id, t.licensePlate]));
+
     const byTruck = new Map<number, { plate: string; revenue: number; costs: number; profit: number; trips: number }>();
     for (const trip of trips) {
-      // Get truck plate
-      const [truck] = await db.select({ licensePlate: s.trucks.licensePlate }).from(s.trucks).where(eq(s.trucks.id, trip.truckId)).limit(1);
-      const existing = byTruck.get(trip.truckId) || { plate: truck?.licensePlate || '', revenue: 0, costs: 0, profit: 0, trips: 0 };
+      const existing = byTruck.get(trip.truckId) || { plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0 };
       existing.revenue += parseFloat(trip.revenue || '0');
       existing.costs += parseFloat(trip.totalCost || '0');
       existing.profit += parseFloat(trip.grossProfit || '0');
@@ -346,11 +347,11 @@ router.get('/reports/pnl', async (req: Request, res: Response) => {
 
 // Profit distribution
 router.post('/reports/distribute-profit', async (req: Request, res: Response) => {
-  // Casbin gives ACCOUNTANT financial write, but profit distribution is ADMIN/MANAGER only
-  if (req.user!.role === Role.ACCOUNTANT) {
-    return res.status(403).json({ error: 'Không có quyền truy cập' });
-  }
   try {
+    // Casbin gives ACCOUNTANT financial write, but profit distribution is ADMIN/MANAGER only
+    if (!req.user || req.user.role === Role.ACCOUNTANT) {
+      return res.status(403).json({ error: 'Không có quyền truy cập' });
+    }
     const { quarter, year } = req.body;
     if (!quarter || !year) return res.status(400).json({ error: 'Cần nhập quý và năm' });
 

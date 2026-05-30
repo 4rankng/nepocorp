@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc, gte, lte } from 'drizzle-orm';
-import { TripStatus } from '@nepocorp/shared';
-import { createTripSchema, updateTripFiguresSchema } from '@nepocorp/shared';
+import { TripStatus, TxnType } from '@nepocorp/shared';
+import { createTripSchema, updateTripFiguresSchema, createAdjustmentSchema } from '@nepocorp/shared';
 import * as tripService from '../services/trip.service';
 import type { Request, Response } from 'express';
 
@@ -285,6 +285,56 @@ router.patch('/:id/reassign', async (req: Request, res: Response) => {
     res.json(trip);
   } catch (err: any) {
     res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+// Get adjustments for a specific trip
+router.get('/:id/adjustments', async (req: Request, res: Response) => {
+  try {
+    const tripId = parseInt(req.params.id as string);
+    const rows = await db.select().from(s.ledger)
+      .where(and(eq(s.ledger.txnType, TxnType.ADJUSTMENT), eq(s.ledger.txnId, tripId)))
+      .orderBy(desc(s.ledger.id));
+    res.json({ items: rows });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create adjustment for a specific trip
+router.post('/:id/adjustment', async (req: Request, res: Response) => {
+  try {
+    const tripId = parseInt(req.params.id as string);
+    const data = createAdjustmentSchema.parse({ ...req.body, trip_id: tripId });
+
+    const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
+    if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+
+    await db.transaction(async (tx) => {
+      const [lastEntry] = await tx.select().from(s.ledger)
+        .where(and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, trip.customerId)))
+        .orderBy(desc(s.ledger.id)).limit(1);
+
+      const prevBalance = parseFloat(lastEntry?.balance || '0');
+      const isDebit = data.amount > 0;
+      const newBalance = prevBalance + data.amount;
+
+      await tx.insert(s.ledger).values({
+        txnType: TxnType.ADJUSTMENT,
+        txnId: tripId,
+        entityType: 'CUSTOMER',
+        entityId: trip.customerId,
+        debit: isDebit ? String(data.amount) : '0',
+        credit: isDebit ? '0' : String(Math.abs(data.amount)),
+        balance: String(newBalance),
+        note: `${data.note} (HĐ: ${data.signed_agreement_ref})`,
+      });
+    });
+
+    res.status(201).json({ ok: true });
+  } catch (err: any) {
+    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
+    res.status(500).json({ error: err.message });
   }
 });
 

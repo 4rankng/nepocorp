@@ -10,6 +10,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
+import { getActiveCapTable } from '../lib/cap-table';
 import { PageHeader, Card, KPI, FormGroup, useConfirm } from '../components/UI';
 import { formatCurrency as formatVND } from '../lib/format';
 import type { CapTableHistory } from '@nepocorp/shared';
@@ -107,36 +108,10 @@ export default function ProfitPage() {
   };
 
   // Get active cap table (default if empty).
-  // cap_table_history is a *history* (multiple rows per effective_date,
-  // and the seed/admin UI can add duplicate per-partner entries). We must
-  // pick the latest snapshot date that's been reached, then dedupe to the
-  // most recent entry per partner. Without this, the page would list the
-  // same partner once per historical record (e.g. "Ông Thương 100%"
-  // repeated 5 times).
   const getDisplayCapTable = () => {
     if (capTable && capTable.length > 0) {
-      const today = new Date().toISOString().slice(0, 10);
-      const reached = capTable.filter(c => c.partnerName && c.effectiveDate <= today);
-      const pool = reached.length > 0 ? reached : capTable.filter(c => c.partnerName);
-      if (pool.length === 0) {
-        return [
-          { partnerName: 'Ông Phụng', percentage: 70.45 },
-          { partnerName: 'Ông Thương', percentage: 29.55 }
-        ];
-      }
-      const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
-      const snapshot = pool.filter(c => c.effectiveDate === latestDate);
-      const byName = new Map<string, typeof snapshot[number]>();
-      for (const row of snapshot) {
-        const prev = byName.get(row.partnerName);
-        if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) {
-          byName.set(row.partnerName, row);
-        }
-      }
-      return Array.from(byName.values()).map(c => ({
-        partnerName: c.partnerName,
-        percentage: parseFloat(c.percentage) || 0
-      }));
+      const result = getActiveCapTable(capTable);
+      if (result.length > 0) return result;
     }
     // Wireframe default fallbacks
     return [

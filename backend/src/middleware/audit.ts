@@ -50,13 +50,21 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
     return next();
   }
 
+  // Snapshot the full request path now. By the time `res.end` runs (after
+  // routing), Express has stripped the mount prefix off `req.url`/`req.path`
+  // — so `req.path` would be `/` for a `POST /api/trips`, which made
+  // `extractEntityType` return null and audit messages came out as
+  // "tạo unknown mới" instead of "tạo lệnh vận chuyển mới".
+  // `req.originalUrl` is preserved through routing and is the right source.
+  const fullPath = (req.originalUrl || req.url || '').split('?')[0];
+
   const originalEnd = res.end;
 
   res.end = function (...args: any[]) {
     if (res.statusCode < 400 && req.user) {
-      const event = resolveAuditEvent(req.method, req.path);
-      const entityType = extractEntityType(req.path);
-      const entityId = extractEntityId(req.path, req.body as Record<string, unknown>);
+      const event = resolveAuditEvent(req.method, fullPath);
+      const entityType = extractEntityType(fullPath);
+      const entityId = extractEntityId(fullPath, req.body as Record<string, unknown>);
 
       emitAudit({
         event,
@@ -68,7 +76,7 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
         ipAddress: req.ip,
         metadata: {
           method: req.method,
-          path: req.path,
+          path: fullPath,
           body: sanitizeBody(req.body as Record<string, unknown>),
         },
       });

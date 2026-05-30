@@ -1,4 +1,5 @@
 p, ADMIN, *, *
+p, ADMIN, audit_logs, read
 p, MANAGER, trips, read
 p, MANAGER, trips, write
 p, MANAGER, config, read
@@ -6,6 +7,7 @@ p, MANAGER, config, write
 p, MANAGER, financial, read
 p, MANAGER, financial, write
 p, MANAGER, users, read
+p, MANAGER, audit_logs, read
 p, MANAGER, maps, read
 p, MANAGER, upload, write
 p, MANAGER, photos, read
@@ -15,6 +17,7 @@ p, ACCOUNTANT, config, read
 p, ACCOUNTANT, config, write
 p, ACCOUNTANT, financial, read
 p, ACCOUNTANT, financial, write
+p, ACCOUNTANT, audit_logs, read
 p, ACCOUNTANT, maps, read
 p, ACCOUNTANT, upload, write
 p, ACCOUNTANT, photos, read

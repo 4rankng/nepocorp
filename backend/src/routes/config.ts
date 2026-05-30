@@ -204,11 +204,12 @@ router.put('/fuel-config', async (req: Request, res: Response) => {
   }
 });
 
-// ─── Audit logs ──────────────────────────────────────────────────────────────
-router.get('/audit-logs', async (req: Request, res: Response) => {
+// ─── Audit logs (mounted separately with ADMIN-only Casbin resource) ────────
+export const auditLogRouter = Router();
+auditLogRouter.get('/', async (_req: Request, res: Response) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+    const page = Math.max(1, parseInt(_req.query.page as string) || 1);
+    const limit = Math.min(100, parseInt(_req.query.limit as string) || 50);
 
     const items = await db.select({
       id: s.auditLogs.id,

@@ -9,7 +9,7 @@ import { auditLogMiddleware } from './middleware/audit';
 import { globalErrorHandler } from './middleware/errorHandler';
 import { initAuditService } from './services/audit.service';
 import authRoutes from './routes/auth';
-import configRoutes from './routes/config';
+import configRoutes, { auditLogRouter } from './routes/config';
 import tripRoutes from './routes/trips';
 import financialRoutes from './routes/financial';
 import driverRoutes from './routes/driver';
@@ -45,6 +45,7 @@ app.use('/api/photos', authMiddleware, casbinAuthz('photos'), photosRouter);
 app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
 app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
+app.use('/api/audit-logs', authMiddleware, casbinAuthz('audit_logs'), auditLogRouter);
 app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 
 // ── Global error handler (MUST be last) ────────────────────────────────────

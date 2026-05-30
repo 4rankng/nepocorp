@@ -7,7 +7,6 @@ import {
   Clock,
   TrendingUp,
   Download,
-  Filter,
   FileText,
   Truck,
   Settings,
@@ -30,54 +29,6 @@ interface AuditEntry {
   message: string;
   category: 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
 }
-
-// ─── Mock data ──────────────────────────────────────────────────────────
-
-const USERS = [
-  { email: 'giamdoc@nepo.vn', name: 'Nguyễn Văn Giám', initials: 'NG' },
-  { email: 'ketoan@nepo.vn', name: 'Trần Thị Lan', initials: 'TL' },
-  { email: 'vanhanh@nepo.vn', name: 'Phạm Đức Minh', initials: 'PM' },
-  { email: 'admin@nepo.vn', name: 'Lê Quang Admin', initials: 'LA' },
-];
-
-function ts(hoursAgo: number, minutesAgo = 0): string {
-  const d = new Date();
-  d.setHours(d.getHours() - hoursAgo, d.getMinutes() - minutesAgo, 0, 0);
-  return d.toISOString();
-}
-
-const MOCK_ENTRIES: AuditEntry[] = [
-  { id: 1,  timestamp: ts(0, 12),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'TRIP_DISPATCHED',           method: 'PUT',    message: 'Xuất phát chuyến xe #42 — HP → HN',                                     category: 'trip' },
-  { id: 2,  timestamp: ts(0, 25),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'PAYMENT_RECEIVED',           method: 'POST',   message: 'Ghi nhận thanh toán 15.000.000₫ từ Công ty ABC',                        category: 'finance' },
-  { id: 3,  timestamp: ts(0, 40),  userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_CREATED',               method: 'POST',   message: 'Tạo lệnh vận chuyển mới — Khách: Công ty XYZ, Tuyến: HP → QN',          category: 'trip' },
-  { id: 4,  timestamp: ts(0, 55),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_UPDATED',             method: 'PUT',    message: 'Cập nhật xe đầu kéo 29C-567.89 → trạng thái Bảo trì',                  category: 'config' },
-  { id: 5,  timestamp: ts(1, 10),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'TRIP_LOCKED',                method: 'PUT',    message: 'Khóa chuyến #38 — HP → NB, doanh thu 8.500.000₫',                      category: 'trip' },
-  { id: 6,  timestamp: ts(1, 30),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'ADJUSTMENT_CREATED',         method: 'POST',   message: 'Tạo hóa đơn điều chỉnh +2.300.000₫ — Công ty DEF',                     category: 'finance' },
-  { id: 7,  timestamp: ts(1, 45),  userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_UPDATED_ACTUALS',       method: 'PUT',    message: 'Cập nhật số liệu thực tế chuyến #41 — KM thực: 186, dầu: 52L',         category: 'trip' },
-  { id: 8,  timestamp: ts(2, 5),   userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_CREATED',             method: 'POST',   message: 'Thêm tuyến đường mới: Hải Phòng → Thái Nguyên (214 km)',               category: 'config' },
-  { id: 9,  timestamp: ts(2, 20),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'PENALTY_CREATED',            method: 'POST',   message: 'Ghi kỷ luật tài xế Hoàng Nam — Vượt tốc độ, phạt 500.000₫',            category: 'penalty' },
-  { id: 10, timestamp: ts(2, 35),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'TRIP_COMPLETED',             method: 'PUT',    message: 'Hoàn thành chuyến #39 — HP → HN, doanh thu 6.200.000₫',               category: 'trip' },
-  { id: 11, timestamp: ts(2, 50),  userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_UPDATED_PRE_DEPARTURE', method: 'PUT',    message: 'Cập nhật số liệu trước xuất phát chuyến #43 — thêm 3 legs',            category: 'trip' },
-  { id: 12, timestamp: ts(3, 15),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_DELETED',             method: 'DELETE', message: 'Xóa loại hàng hóa "Cát đen" khỏi danh mục',                             category: 'config' },
-  { id: 13, timestamp: ts(3, 30),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'USER_LOGIN',                 method: 'POST',   message: 'Đăng nhập hệ thống',                                                    category: 'auth' },
-  { id: 14, timestamp: ts(3, 45),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'USER_LOGIN',                 method: 'POST',   message: 'Đăng nhập hệ thống',                                                    category: 'auth' },
-  { id: 15, timestamp: ts(4, 0),   userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_CANCELED',              method: 'PUT',    message: 'Hủy chuyến #37 — Khách hủy đơn, tuyến HP → BN',                        category: 'trip' },
-  { id: 16, timestamp: ts(4, 20),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_CREATED',             method: 'POST',   message: 'Thêm lý do kỷ luật: "Sử dụng điện thoại khi lái xe"',                  category: 'config' },
-  { id: 17, timestamp: ts(4, 40),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'DRIVER_SALARY_RECORDED',     method: 'POST',   message: 'Ghi lương tài xế Lê Văn Tài — 8.500.000₫ (tháng 5)',                  category: 'finance' },
-  { id: 18, timestamp: ts(5, 10),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'PAYMENT_RECEIVED',           method: 'POST',   message: 'Ghi nhận thanh toán 22.000.000₫ từ Công ty GHI',                       category: 'finance' },
-  { id: 19, timestamp: ts(5, 30),  userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_DISPATCHED',            method: 'PUT',    message: 'Xuất phát chuyến #40 — xe 29C-234.56, tài xế Hoàng Nam',               category: 'trip' },
-  { id: 20, timestamp: ts(5, 50),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_UPDATED',             method: 'PUT',    message: 'Cập nhật bảng giá tuyến HP → HN cho Công ty ABC → 7.800.000₫/chuyến',  category: 'config' },
-  { id: 21, timestamp: ts(6, 15),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'TRIP_CREATED',               method: 'POST',   message: 'Tạo lệnh vận chuyển — Khách: Công ty JKL, Tuyến: HN → LS',            category: 'trip' },
-  { id: 22, timestamp: ts(6, 35),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'USER_LOGOUT',                method: 'POST',   message: 'Đăng xuất hệ thống',                                                    category: 'auth' },
-  { id: 23, timestamp: ts(7, 0),   userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'TRIP_LOCKED',                method: 'PUT',    message: 'Khóa chuyến #36 — HN → QN, doanh thu 9.100.000₫',                      category: 'trip' },
-  { id: 24, timestamp: ts(7, 20),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'ENTITY_CREATED',             method: 'POST',   message: 'Thêm tài xế mới: Nguyễn Văn Hùng — SĐT 0954 321 098',                  category: 'config' },
-  { id: 25, timestamp: ts(7, 45),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'PENALTY_CREATED',            method: 'POST',   message: 'Ghi kỷ luật tài xế Vũ Đức — Đi trễ 3 lần, phạt 300.000₫',             category: 'penalty' },
-  { id: 26, timestamp: ts(8, 10),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'TRIP_COMPLETED',             method: 'PUT',    message: 'Hoàn thành chuyến #35 — HP → HP (nội thành), doanh thu 3.400.000₫',    category: 'trip' },
-  { id: 27, timestamp: ts(8, 30),  userEmail: 'vanhanh@nepo.vn',  userName: 'Phạm Đức Minh',   action: 'ENTITY_UPDATED',             method: 'PUT',    message: 'Cập nhật tiền đi đường tuyến HP → TN (núi) → 1.850.000₫/chuyến',      category: 'config' },
-  { id: 28, timestamp: ts(8, 50),  userEmail: 'admin@nepo.vn',    userName: 'Lê Quang Admin',   action: 'USER_LOGIN',                 method: 'POST',   message: 'Đăng nhập hệ thống',                                                    category: 'auth' },
-  { id: 29, timestamp: ts(9, 15),  userEmail: 'giamdoc@nepo.vn',  userName: 'Nguyễn Văn Giám', action: 'PAYMENT_RECEIVED',           method: 'POST',   message: 'Ghi nhận thanh toán 18.500.000₫ từ Công ty MNO',                       category: 'finance' },
-  { id: 30, timestamp: ts(9, 40),  userEmail: 'ketoan@nepo.vn',   userName: 'Trần Thị Lan',    action: 'TRIP_DISPATCHED',            method: 'PUT',    message: 'Xuất phát chuyến #34 — xe 29C-345.67, tài xế Trần Thương',             category: 'trip' },
-];
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
@@ -109,6 +60,12 @@ const ACTION_LABELS: Record<string, string> = {
   ENTITY_DELETED: 'Xóa',
   USER_LOGIN: 'Đăng nhập',
   USER_LOGOUT: 'Đăng xuất',
+  // Status transitions audited from the trips service write a raw
+  // STATUS_CHANGED action — these were leaking the uppercase enum value
+  // straight into the UI instead of a Vietnamese label.
+  STATUS_CHANGED: 'Đổi trạng thái',
+  TRIP_REASSIGNED: 'Đổi xe / tài xế',
+  PROFIT_DISTRIBUTED: 'Chia lợi nhuận',
 };
 
 function formatTime(iso: string): string {
@@ -130,19 +87,15 @@ function formatExactTime(iso: string): string {
   });
 }
 
-function getUserInitials(email: string): string {
-  const u = USERS.find(u => u.email === email);
-  return u?.initials || email.slice(0, 2).toUpperCase();
+function getUserInitials(name: string): string {
+  if (!name) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
 }
 
-function getUserName(email: string): string {
-  const u = USERS.find(u => u.email === email);
-  return u?.name || email;
-}
-
-function avatarColor(email: string): string {
-  const idx = USERS.findIndex(u => u.email === email);
-  return `avatar-ring--${(idx >= 0 ? idx : email.length) % 5 + 1}`;
+function avatarColor(str: string): string {
+  return `avatar-ring--${str.length % 5 + 1}`;
 }
 
 function categoryDotClass(c: string): string {
@@ -194,7 +147,7 @@ export default function AuditLogPage() {
   const paged = entries;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  // KPI counts from all entries (server-filtered, approximate from MOCK_ENTRIES for KPIs)
+  // KPI counts from all entries (server-filtered)
   const todayCount = total;
   const uniqueUsers = new Set(entries.map(e => e.userEmail)).size;
   const topCategory = (() => {
@@ -343,12 +296,12 @@ export default function AuditLogPage() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div className={`avatar-ring ${avatarColor(entry.userEmail)}`}>
-                          {getUserInitials(entry.userEmail)}
+                        <div className={`avatar-ring ${avatarColor(entry.userName || entry.userEmail)}`}>
+                          {getUserInitials(entry.userName || entry.userEmail)}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {getUserName(entry.userEmail)}
+                            {entry.userName || entry.userEmail}
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
                             {entry.userEmail}

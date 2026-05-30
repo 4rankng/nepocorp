@@ -81,10 +81,11 @@ uploadRouter.post('/', upload.single('file'), async (req: Request, res: Response
         .toBuffer();
       ext = '.jpg';
     } else {
-      // For JPEG/PNG/WebP: strip EXIF + downscale if needed
+      // For JPEG/PNG/WebP: strip EXIF metadata (GPS, camera info, etc.) + downscale
       const pipeline = sharp(file.buffer)
         .rotate()
-        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true });
+        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+        .withMetadata({ orientation: undefined });
 
       if (mime === 'image/jpeg') {
         processedBuffer = await pipeline.jpeg({ quality: 85 }).toBuffer();
