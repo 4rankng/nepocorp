@@ -22,18 +22,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>(null!);
 
+/** Decode JWT payload without a library — returns null if malformed or expired. */
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    // exp is in seconds since epoch
+    return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
+  } catch {
+    return true; // malformed token → treat as expired
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState<boolean>(() => !!localStorage.getItem('token'));
+  // Only show loading spinner if token exists AND is not already expired
+  const [loading, setLoading] = useState<boolean>(() => {
+    const token = localStorage.getItem('token');
+    return !!token && !isTokenExpired(token);
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && !isTokenExpired(token)) {
       api.get<AuthUser>('/auth/me').then(setUser).catch(() => {
         api.clearToken();
         setUser(null);
       }).finally(() => setLoading(false));
     } else {
+      if (token) api.clearToken(); // remove expired token
       setLoading(false);
     }
   }, []);

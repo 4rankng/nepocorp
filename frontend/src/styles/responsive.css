@@ -1,0 +1,106 @@
+/* ============================================================================
+ * Responsive overrides — MUST be imported LAST in index.css so these rules
+ * win over per-page / per-component stylesheets in the cascade.
+ *
+ * The previous setup had mobile @media rules in utilities.css imported BEFORE
+ * UI.css. UI.css's `.kpi-grid { grid-template-columns: repeat(4, 1fr); }` then
+ * silently clobbered the mobile rule because both selectors had the same
+ * specificity and the later one wins. Result: 4-col KPI grid on phones,
+ * overflowing horizontally off the viewport. All mobile-only overrides now
+ * live here so source order can never beat them again.
+ * ========================================================================== */
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * TABLET (< 1024px) — sidebar collapses behind hamburger, KPI grid → 2 col
+ * ────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .row-2 { grid-template-columns: 1fr; }
+  .row-3 { grid-template-columns: 1fr; }
+  .page-title { font-size: 26px; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * PHONE (< 640px) — KPI grid drops further, topbar tightens,
+ * page padding shrinks, page header stacks
+ * ────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* KPI grid: keep 2-col so cards stay scannable side-by-side */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+
+  /* Topbar: lose breadcrumb prefix + date text + search input */
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-search,
+  .topbar__search { display: none; }
+  .date-chip span { display: none; }
+  .topbar__breadcrumb { font-size: 13px; }
+  .topbar__breadcrumb > span:first-child,
+  .topbar__breadcrumb > svg { display: none; }
+
+  /* Page title slightly smaller on phones */
+  .page-title { font-size: 22px; }
+  .page-subtitle { font-size: 12.5px; }
+  .app-body, .content { padding: 16px 12px 32px; }
+
+  /* Page header: stack title above actions on mobile */
+  .page-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .page-header .page-actions { flex-wrap: wrap; width: 100%; }
+  .page-actions .btn { flex: 1; min-width: 0; justify-content: center; }
+
+  /* KPI cards: tighter padding so labels fit without 3-line wrapping */
+  .kpi { padding: 12px; }
+  .kpi__top { margin-bottom: 8px; gap: 2px; }
+  .kpi__label { font-size: 9.5px; letter-spacing: 0.04em; line-height: 1.35; }
+  .kpi__icon { width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; }
+  .kpi__icon svg { width: 12px !important; height: 12px !important; }
+  .kpi__value { font-size: 22px; }
+  .kpi__value-unit { font-size: 12px; }
+  .kpi__meta { font-size: 10px; gap: 4px; flex-wrap: wrap; }
+
+  /* Filter pills bar: horizontal scroll instead of multi-row wrap when search
+     input is in the same row. The toolbar__search is hidden on phone (above)
+     so the pills get the full row; we also let the wrap stay if pills are
+     numerous. */
+  .filter-pill { font-size: 12px; padding: 6px 10px; }
+  .filter-pill svg { width: 12px; height: 12px; }
+  .filter-pill__count { font-size: 10px; padding: 1px 5px; }
+
+  /* Toolbar search: when shown on its own row in mobile, take full width */
+  .toolbar__search { min-width: 0 !important; width: 100%; }
+
+  /* Profit/Distribution page: stack accounting breakdown under the hero
+     instead of side-by-side */
+  .profit-layout { grid-template-columns: 1fr !important; }
+
+  /* Dashboard grid: single column */
+  .dash-grid { grid-template-columns: 1fr !important; }
+
+  /* Generic 2-col panel rows */
+  .row-2 { grid-template-columns: 1fr; }
+
+  /* Tables: horizontal scroll wrap to prevent layout overflow */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-scroll table { min-width: 600px; }
+
+  /* Modal full-screen on small viewports */
+  .modal__content,
+  .drawer__content { max-width: 100%; border-radius: 12px 12px 0 0; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * NARROW PHONE (< 420px) — KPI grid finally goes to single column so
+ * Vietnamese labels like "HÀNH ĐỘNG HÔM NAY" don't wrap awkwardly
+ * ────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 420px) {
+  .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+  .kpi { padding: 14px 16px; }
+  .kpi__label { font-size: 10.5px; }
+  .kpi__value { font-size: 24px; }
+  .page-title { font-size: 20px; }
+
+  /* Aging buckets / debt page */
+  .aging-buckets { grid-template-columns: 1fr !important; }
+
+  /* Fleet two-col stays stacked */
+  .fleet-page .fleet-two-col { grid-template-columns: 1fr !important; }
+}

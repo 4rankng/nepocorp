@@ -20,7 +20,7 @@ export { parseThreshold } from './types';
 export {
   tripLegSchema, createTripSchema, updateTripFiguresSchema,
   createPaymentSchema, createPenaltySchema, createAdjustmentSchema,
-  loginSchema, createUserSchema, updateUserSchema,
+  loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema,
   customerSchema, truckSchema, trailerSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
   fuelConfigSchema, penaltyReasonSchema, driverSchema,

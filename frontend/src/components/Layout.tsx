@@ -21,6 +21,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useClickOutside } from '../hooks/useClickOutside';
 import { api } from '../lib/api';
 import { Modal, FormGroup } from './UI';
 import { useBadgeCounts } from '../hooks/useQueries';
@@ -131,26 +132,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!userMenuOpen) return;
-    const handleDismiss = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent) {
-        if (e.key === 'Escape') { setUserMenuOpen(false); return; }
-        return;
-      }
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleDismiss);
-    document.addEventListener('keydown', handleDismiss);
-    return () => {
-      document.removeEventListener('mousedown', handleDismiss);
-      document.removeEventListener('keydown', handleDismiss);
-    };
-  }, [userMenuOpen]);
-
   const toggleUserMenu = useCallback(() => setUserMenuOpen(v => !v), []);
+  const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
+
+  useClickOutside(userMenuRef, closeUserMenu, { escapeKey: true, enabled: userMenuOpen });
 
   const openProfileModal = () => {
     if (!user) return;
