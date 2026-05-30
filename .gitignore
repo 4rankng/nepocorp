@@ -43,3 +43,6 @@ out/
 .claude/
 .crush/
 .opencode/
+
+# Session state (never commit)
+HANDOFF.md
