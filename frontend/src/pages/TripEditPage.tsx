@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, Save } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
 import { PageHeader, useConfirm } from '../components/UI';
+import { Spinner } from '../components/shared';
+import { useTripDetail } from '../hooks/useQueries';
 import { FuelMode, LoadingType, TripStatus } from '@nepocorp/shared';
 import type { TripDetail, PricingTable, PaginatedResponse } from '@nepocorp/shared';
 import { calculateDistanceKm } from '../lib/maps';
@@ -71,7 +73,7 @@ export default function TripEditPage() {
     }
 
     if (trip.legs && trip.legs.length > 0) {
-      setLegs(trip.legs.map(leg => ({
+      setLegs(trip.legs.map((leg: any) => ({
         id: String(leg.id || Math.random()),
         sequence: leg.sequence,
         origin: leg.origin,
