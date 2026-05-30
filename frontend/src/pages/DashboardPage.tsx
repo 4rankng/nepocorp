@@ -101,6 +101,33 @@ export default function DashboardPage() {
   const topOverdueCustomer = stats?.topOverdueCustomer ?? null;
   const topShareholder = stats?.topShareholder ?? null;
 
+  // Fuel overconsumption — trips this month with TTBQ above configured thresholds
+  // (must be called before any conditional returns to satisfy Rules of Hooks)
+  const fuelWarnings = useMemo(() => {
+    if (!fuelConfig || allTrips.length === 0) return [];
+    const warnThreshold = Number(fuelConfig.warning_threshold) || 0;
+    const critThreshold = Number(fuelConfig.critical_threshold) || 0;
+    if (!warnThreshold) return [];
+    const flagged: Array<{ tripId: number; code: string; driver: string; ttbq: number; critical: boolean }> = [];
+    for (const t of allTrips) {
+      const trip: TripDetail = t;
+      const totalKm = trip.legs?.reduce((s: number, l: any) => s + Number(l.km), 0) ?? 0;
+      const totalLiters = Number(trip.fuel_liters) || 0;
+      if (totalKm <= 0 || totalLiters <= 0) continue;
+      const ttbq = (totalLiters / totalKm) * 100;
+      if (ttbq > warnThreshold) {
+        flagged.push({
+          tripId: trip.id,
+          code: trip.trip_code ?? `#${trip.id}`,
+          driver: trip.driver?.name ?? '—',
+          ttbq,
+          critical: critThreshold > 0 && ttbq > critThreshold,
+        });
+      }
+    }
+    return flagged.sort((a, b) => b.ttbq - a.ttbq).slice(0, 5);
+  }, [fuelConfig, allTrips]);
+
   // Loading skeleton matching wireframe spacing
   if (loading) {
     return (
@@ -127,49 +154,12 @@ export default function DashboardPage() {
   const revenue = stats?.revenue ?? 0;
   const costs = stats?.costs ?? 0;
   const grossProfit = stats?.grossProfit ?? 0;
-  // Use the period's grossProfit as the anchor and apply the pnl report's
-  // managementFee / otherIncome on top. We deliberately don't blindly trust
-  // pnlReport.netProfit — previously the backend was summing all-time
-  // penalties into otherIncome, which made netProfit > grossProfit (a
-  // logical impossibility that destroyed the dashboard's credibility). The
-  // backend now scopes penalties by month, but we still derive locally so
-  // any future regression on the API side can't break the math here.
   const managementFee = pnlReport?.managementFee ?? 0;
   const otherIncome = pnlReport?.otherIncome ?? 0;
   const netProfit = grossProfit - managementFee + otherIncome;
 
-  // allTrips is date-filtered server-side to current month for chart data
   const currentMonthTrips = allTrips;
-
-  // createdTrips is a separate fetch (no date filter) so dispatch alerts
-  // don't miss prior-month undispatched trips
   const createdTripsCount = createdTrips.length;
-
-  // Fuel overconsumption — trips this month with TTBQ above configured thresholds
-  const fuelWarnings = useMemo(() => {
-    if (!fuelConfig || allTrips.length === 0) return [];
-    const warnThreshold = Number(fuelConfig.warning_threshold) || 0;
-    const critThreshold = Number(fuelConfig.critical_threshold) || 0;
-    if (!warnThreshold) return [];
-    const flagged: Array<{ tripId: number; code: string; driver: string; ttbq: number; critical: boolean }> = [];
-    for (const t of allTrips) {
-      const trip: TripDetail = t;
-      const totalKm = trip.legs?.reduce((s: number, l: any) => s + Number(l.km), 0) ?? 0;
-      const totalLiters = Number(trip.fuel_liters) || 0;
-      if (totalKm <= 0 || totalLiters <= 0) continue;
-      const ttbq = (totalLiters / totalKm) * 100;
-      if (ttbq > warnThreshold) {
-        flagged.push({
-          tripId: trip.id,
-          code: trip.trip_code ?? `#${trip.id}`,
-          driver: trip.driver?.name ?? '—',
-          ttbq,
-          critical: critThreshold > 0 && ttbq > critThreshold,
-        });
-      }
-    }
-    return flagged.sort((a, b) => b.ttbq - a.ttbq).slice(0, 5);
-  }, [fuelConfig, allTrips]);
 
   // Sorting trucks by profit for performance card
   const sortedTrucks = pnlReport?.trucks

@@ -205,6 +205,61 @@ export async function distributeProfit(quarter: number, year: number) {
 
   return { quarter, year, netProfit, distributions };
 }
+
+/**
+ * Preview profit distribution without persisting.
+ * Same logic as distributeProfit but returns the calculation without inserting.
+ */
+export async function previewDistribution(quarter: number, year: number) {
+  const capEntries = await db.select().from(s.capTableHistory)
+    .orderBy(desc(s.capTableHistory.effectiveDate));
+
+  const qStartMonth = (quarter - 1) * 3 + 1;
+  const qEndMonth = quarter * 3;
+  const { start: qStart } = monthDateRange(year, qStartMonth);
+  const { end: qEnd } = monthDateRange(year, qEndMonth);
+
+  const trips = await db.select().from(s.trips).where(
+    and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), gte(s.trips.departureDate, qStart), sql`${s.trips.departureDate} < ${qEnd}`)
+  );
+
+  const netProfit = trips.reduce((sum, t) => sum + parseFloat(t.grossProfit || '0'), 0);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const cutoff = qEnd > today ? today : qEnd;
+  const reached = capEntries.filter(c => c.effectiveDate <= cutoff);
+  const pool = reached.length > 0 ? reached : capEntries;
+  const activePartners: Array<{ partnerName: string; percentage: string }> = [];
+  if (pool.length > 0) {
+    const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
+    const snapshot = pool.filter(c => c.effectiveDate === latestDate);
+    const byName = new Map<string, typeof snapshot[number]>();
+    for (const row of snapshot) {
+      const prev = byName.get(row.partnerName);
+      if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
+    }
+    for (const row of byName.values()) activePartners.push({ partnerName: row.partnerName, percentage: row.percentage });
+  }
+
+  const distributions = activePartners.map(entry => ({
+    quarter,
+    year,
+    partnerName: entry.partnerName,
+    percentage: entry.percentage,
+    amount: String(Math.round(netProfit * parseFloat(entry.percentage) / 100)),
+  }));
+
+  return { quarter, year, netProfit, tripCount: trips.length, distributions };
+}
+
+/**
+ * Fetch historical distribution records, grouped by quarter/year.
+ */
+export async function getDistributionHistory() {
+  const rows = await db.select().from(s.distributions)
+    .orderBy(desc(s.distributions.year), desc(s.distributions.quarter), desc(s.distributions.id));
+  return rows;
+}
 /**
  * Receivables summary: aggregate customer outstanding balances bucketed by aging.
  * Uses FIFO allocation — payments are applied against the oldest open debits first —

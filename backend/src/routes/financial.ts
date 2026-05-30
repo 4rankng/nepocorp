@@ -3,12 +3,12 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 // auth + Casbin applied at mount point in index.ts
-import { Role, TxnType } from '@nepocorp/shared';
+import { Role, TxnType, computeFifoAging } from '@nepocorp/shared';
 import { requireRoles } from '../middleware/casbin';
 import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
-import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary } from '../services/reporting.service';
+import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../services/reporting.service';
 
 const router = Router();
 
@@ -51,42 +51,18 @@ async function getCustomerStatementData(customerId: number): Promise<CustomerSta
   // the customer's open balance was 50.6M (because 2.4M of payments weren't
   // subtracted from the buckets).
   const now = new Date();
-  const aging = { current: 0, d30: 0, d60: 0, d90: 0, over90: 0 };
-  const chronological = [...ledgerRows].sort((a: any, b: any) => {
-    const at = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-    const bt = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-    return at - bt;
-  });
-  const openInvoices: Array<{ ts: string; open: number }> = [];
-  for (const entry of chronological as any[]) {
-    const debit = parseFloat(entry.debit ?? '0');
-    const credit = parseFloat(entry.credit ?? '0');
-    if (debit > 0 && entry.timestamp) {
-      openInvoices.push({ ts: entry.timestamp, open: debit });
-    }
-    if (credit > 0) {
-      let remaining = credit;
-      for (const inv of openInvoices) {
-        if (remaining <= 0) break;
-        if (inv.open <= 0) continue;
-        const apply = Math.min(inv.open, remaining);
-        inv.open -= apply;
-        remaining -= apply;
-      }
-    }
-  }
-  for (const inv of openInvoices) {
-    if (inv.open <= 0) continue;
-    const age = (now.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24);
-    if (age <= 30) aging.current += inv.open;
-    else if (age <= 60) aging.d30 += inv.open;
-    else if (age <= 90) aging.d60 += inv.open;
-    else aging.over90 += inv.open;
-  }
+  const { aging, openInvoices } = computeFifoAging(
+    ledgerRows.map((r: any) => ({
+      timestamp: r.timestamp,
+      debit: r.debit ?? '0',
+      credit: r.credit ?? '0',
+    })),
+    now,
+  );
   const revenueEntries = ledgerRows.filter((r: any) => r.txnType === TxnType.TRIP_REVENUE);
 
-  const paymentCredits = ledgerRows
-    .filter((r: any) => r.txnType === TxnType.PAYMENT_RECEIVED)
+  const allCredits = ledgerRows
+    .filter((r: any) => parseFloat(r.credit ?? '0') > 0)
     .reduce((sum: number, r: any) => sum + parseFloat(r.credit ?? '0'), 0);
 
   const tripDebits = new Map<number, { tripId: number; date: string; outstanding: number; note: string }>();
@@ -106,7 +82,7 @@ async function getCustomerStatementData(customerId: number): Promise<CustomerSta
     }
   }
 
-  let remainingCredit = paymentCredits;
+  let remainingCredit = allCredits;
   const unpaidTrips = Array.from(tripDebits.values())
     .sort((a, b) => a.date.localeCompare(b.date))
     .map(trip => {
@@ -439,6 +415,26 @@ router.get('/reports/receivables-summary', async (_req: Request, res: Response) 
 });
 
 // Profit distribution — ADMIN/MANAGER only (stricter than Casbin 'financial' resource)
+router.get('/reports/distribution-history', requireRoles(Role.ADMIN, Role.MANAGER), async (_req: Request, res: Response) => {
+  try {
+    const rows = await getDistributionHistory();
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/reports/distribute-profit/preview', requireRoles(Role.ADMIN, Role.MANAGER), async (req: Request, res: Response) => {
+  try {
+    const { quarter, year } = req.body;
+    if (!quarter || !year) return res.status(400).json({ error: 'Cần nhập quý và năm' });
+    const result = await previewDistribution(quarter, year);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/reports/distribute-profit', requireRoles(Role.ADMIN, Role.MANAGER), async (req: Request, res: Response) => {
   try {
     const { quarter, year } = req.body;

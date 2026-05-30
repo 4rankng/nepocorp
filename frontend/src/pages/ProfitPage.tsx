@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  DollarSign, 
-  Calendar, 
-  TrendingUp, 
+import {
+  DollarSign,
+  Calendar,
+  TrendingUp,
   ArrowRightLeft,
   Briefcase,
   Users,
   Percent,
-  CheckSquare
+  CheckSquare,
+  Eye
 } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
@@ -30,10 +31,21 @@ interface DistributionResult {
   quarter: number;
   year: number;
   netProfit: number;
+  tripCount?: number;
   distributions: Array<{
     partnerName: string;
+    percentage?: string;
     amount: string;
   }>;
+}
+
+interface DistributionRecord {
+  id: number;
+  quarter: number;
+  year: number;
+  partner_name: string;
+  amount: string;
+  created_at: string;
 }
 
 export default function ProfitPage() {
@@ -51,6 +63,9 @@ export default function ProfitPage() {
   const [distQuarterYear, setDistQuarterYear] = useState<number>(now.getFullYear());
   const [distributing, setDistributing] = useState(false);
   const [distResult, setDistResult] = useState<DistributionResult | null>(null);
+  const [preview, setPreview] = useState<DistributionResult | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [history, setHistory] = useState<DistributionRecord[]>([]);
 
   // Data
   const [report, setReport] = useState<PnlReport | null>(null);
@@ -84,6 +99,11 @@ export default function ProfitPage() {
     if (!pnlOk && !capOk) {
       setError('Không thể tải báo cáo phân chia lợi nhuận.');
     }
+    // Load distribution history
+    try {
+      const histRes = await api.get<DistributionRecord[]>('/reports/distribution-history');
+      setHistory(Array.isArray(histRes) ? histRes : []);
+    } catch { /* non-critical */ }
     setLoading(false);
   }, [selectedMonth, selectedYear]);
 
@@ -91,9 +111,26 @@ export default function ProfitPage() {
     loadData();
   }, [loadData]);
 
+  // Action: Preview distribution
+  const handlePreview = async () => {
+    setPreviewing(true);
+    setPreview(null);
+    try {
+      const res = await api.post<DistributionResult>('/reports/distribute-profit/preview', {
+        quarter: selectedQuarter,
+        year: distQuarterYear,
+      });
+      setPreview(res);
+    } catch (err: any) {
+      setToast({ kind: 'error', text: err.message || 'Lỗi khi xem trước phân phối.' });
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
   // Action: Distribute profit
   const handleDistributeProfit = async () => {
-    if (!await confirm(`Xác nhận chốt & phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}?`)) {
+    if (!await confirm(`Xác nhận chốt & phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}? Hành động này không thể hoàn tác.`)) {
       return;
     }
 
@@ -105,7 +142,13 @@ export default function ProfitPage() {
         year: distQuarterYear
       });
       setDistResult(res);
+      setPreview(null);
       setToast({ kind: 'success', text: 'Đã thực hiện chốt phân chia lợi nhuận thành công!' });
+      // Reload history
+      try {
+        const histRes = await api.get<DistributionRecord[]>('/reports/distribution-history');
+        setHistory(Array.isArray(histRes) ? histRes : []);
+      } catch { /* non-critical */ }
     } catch (err: any) {
       setToast({ kind: 'error', text: err.message || 'Lỗi khi phân chia lợi nhuận.' });
     } finally {
@@ -271,30 +314,39 @@ export default function ProfitPage() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <FormGroup label="Chọn Quý">
-                    <select 
-                      className="input" 
+                    <select
+                      className="input"
                       style={{ width: 120 }}
-                      value={selectedQuarter} 
-                      onChange={e => setSelectedQuarter(Number(e.target.value))}
+                      value={selectedQuarter}
+                      onChange={e => { setSelectedQuarter(Number(e.target.value)); setPreview(null); }}
                     >
                       {[1, 2, 3, 4].map(q => <option key={q} value={q}>Quý {q}</option>)}
                     </select>
                   </FormGroup>
                   <FormGroup label="Năm quyết toán">
-                    <select 
-                      className="input" 
+                    <select
+                      className="input"
                       style={{ width: 120 }}
-                      value={distQuarterYear} 
-                      onChange={e => setDistQuarterYear(Number(e.target.value))}
+                      value={distQuarterYear}
+                      onChange={e => { setDistQuarterYear(Number(e.target.value)); setPreview(null); }}
                     >
                       {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>Năm {y}</option>)}
                     </select>
                   </FormGroup>
                 </div>
-                <div>
-                  <button 
+                <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+                  <button
+                    className="btn btn--secondary"
+                    style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8 }}
+                    onClick={handlePreview}
+                    disabled={previewing}
+                  >
+                    <Eye size={16} />
+                    {previewing ? 'Đang tính...' : 'Xem trước'}
+                  </button>
+                  <button
                     className="btn btn--primary"
-                    style={{ height: 40, marginTop: 18, display: 'flex', alignItems: 'center', gap: 8 }}
+                    style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8 }}
                     onClick={handleDistributeProfit}
                     disabled={distributing}
                   >
@@ -304,9 +356,38 @@ export default function ProfitPage() {
                 </div>
               </div>
 
+              {/* Preview before execution */}
+              {preview && !distResult && (
+                <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--fg-1)' }}>📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}</h4>
+                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>
+                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến</strong>: <strong>{formatVND(preview.netProfit)}</strong>
+                  </p>
+                  <table style={{ width: '100%', fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
+                        <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
+                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Tỷ lệ</th>
+                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền nhận</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.distributions.map((d, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
+                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)' }}>{d.percentage ?? '—'}%</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Confirmed execution result (immutable record) */}
               {distResult && (
                 <div style={{ marginTop: 16, padding: 16, background: 'var(--brand-soft)', borderRadius: 8, border: '1px dashed var(--brand)' }}>
-                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--brand)' }}>Kết quả chốt sổ Quý {distResult.quarter} / {distResult.year}</h4>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--brand)' }}>✅ Đã chốt sổ Quý {distResult.quarter} / {distResult.year}</h4>
                   <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>Tổng lợi nhuận ròng phân phối: <strong>{formatVND(distResult.netProfit)}</strong></p>
                   <table style={{ width: '100%', fontSize: 12.5 }}>
                     <thead>
@@ -324,9 +405,38 @@ export default function ProfitPage() {
                       ))}
                     </tbody>
                   </table>
+                  <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--fg-3)' }}>Bản ghi không thể thay đổi. Xem chi tiết trong Lịch sử phân phối bên dưới.</p>
                 </div>
               )}
             </Card>
+
+            {/* Historical Distribution View */}
+            {history.length > 0 && (
+              <Card style={{ marginTop: 16 }} title="Lịch sử phân phối" subtitle="Các lần chốt phân chia lợi nhuận đã thực hiện">
+                <div className="table-scroll">
+                  <table style={{ width: '100%', fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
+                        <th style={{ textAlign: 'left', paddingBottom: 6 }}>Kỳ</th>
+                        <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
+                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền</th>
+                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Ngày chốt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map((d) => (
+                        <tr key={d.id} style={{ borderBottom: '1px solid var(--border-3)' }}>
+                          <td style={{ padding: '6px 0', fontWeight: 600 }}>Q{d.quarter}/{d.year}</td>
+                          <td style={{ padding: '6px 0' }}>{d.partner_name}</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 600 }}>{formatVND(Number(d.amount))}</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)', fontSize: 11 }}>{new Date(d.created_at).toLocaleDateString('vi-VN')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
           </div>
 
           {/* Right Column: Operating breakdown */}

@@ -45,7 +45,7 @@ const VN_MONTHS = [
 ];
 
 // Default threshold for "warn" consumption (L/100km) — overridden by fuel config when loaded
-const DEFAULT_WARN_THRESHOLD = 8.5;
+const DEFAULT_WARN_THRESHOLD = 37;
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ export default function TripListPage() {
 
   // Dynamic threshold from fuel_config — fallback to default
   const warnThreshold = fuelConfig
-    ? Number(fuelConfig.warning_threshold) || DEFAULT_WARN_THRESHOLD
+    ? Number(fuelConfig.warning_threshold) ?? DEFAULT_WARN_THRESHOLD
     : DEFAULT_WARN_THRESHOLD;
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
