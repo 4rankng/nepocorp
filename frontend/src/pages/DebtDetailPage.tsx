@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@nepocorp/shared';
-import type { CustomerStatement, LedgerEntry } from '@nepocorp/shared';
+import type { CustomerStatement, LedgerEntry, UnpaidTrip } from '@nepocorp/shared';
 import { AlertTriangle, Wallet, X, Download, ListOrdered } from 'lucide-react';
 import { PageHeader, Panel, KPI } from '../components/UI';
 
@@ -91,30 +91,14 @@ export default function DebtDetailPage() {
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  const unpaidTrips = useMemo(() => {
-    if (!statement) return [];
-    const revenueEntries = statement.ledgerRows
-      .filter(r => r.txn_type === 'TRIP_REVENUE' && Number(r.debit) > 0)
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  // Unpaid trips from backend (FIFO-sorted, credits already applied)
+  const unpaidTrips = useMemo(() => statement?.unpaidTrips ?? [], [statement]);
 
-    const byTrip = new Map<number, { tripId: number; date: string; outstanding: number; note: string }>();
-    for (const entry of revenueEntries) {
-      if (!entry.txn_id) continue;
-      const existing = byTrip.get(entry.txn_id);
-      const amount = Number(entry.debit);
-      if (existing) {
-        existing.outstanding += amount;
-      } else {
-        byTrip.set(entry.txn_id, {
-          tripId: entry.txn_id,
-          date: entry.timestamp.slice(0, 10),
-          outstanding: amount,
-          note: entry.note || '',
-        });
-      }
-    }
-    return Array.from(byTrip.values());
-  }, [statement]);
+  // Running total for payment modal
+  const allocatedTotal = useMemo(() => {
+    return Array.from(selectedTripIds)
+      .reduce((sum, tripId) => sum + parseFloat(paymentAmounts[tripId] || '0'), 0);
+  }, [selectedTripIds, paymentAmounts]);
 
   if (loading) {
     return (
@@ -389,6 +373,25 @@ export default function DebtDetailPage() {
                 })
               )}
             </div>
+
+            {/* Running total */}
+            {selectedTripIds.size > 0 && (
+              <div style={{
+                padding: '10px 14px', marginTop: 8,
+                background: allocatedTotal > totalOutstanding ? 'var(--danger-soft)' : 'var(--brand-soft)',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                fontSize: 13, fontWeight: 600,
+              }}>
+                <span style={{ color: 'var(--fg-2)' }}>
+                  Đã phân bổ: <span className="typo-mono">{formatCurrency(allocatedTotal)}</span>
+                  <span style={{ fontWeight: 400, color: 'var(--fg-3)' }}> / {formatCurrency(totalOutstanding)}</span>
+                </span>
+                {allocatedTotal > totalOutstanding && (
+                  <span style={{ color: 'var(--danger)', fontSize: 11 }}>Vượt quá công nợ</span>
+                )}
+              </div>
+            )}
 
             <button
               className="btn btn--primary"

@@ -12,7 +12,7 @@ export type {
   CapTableHistory, Distribution, ManagementFee, AuditLog,
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
-  LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket,
+  LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket, UnpaidTrip,
 } from './types';
 
 export {

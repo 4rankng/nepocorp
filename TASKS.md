@@ -392,7 +392,7 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 
 - [x] **T-E.2.1:** Audit all `api.get/post/put/delete` calls across frontend for path correctness
 - [x] **T-E.2.2:** Ensure frontend uses shared constants for API paths where possible
-- [ ] **T-E.2.3:** Verify all 96+ API calls return expected response shapes
+- [x] **T-E.2.3:** Verify all 96+ API calls return expected response shapes
 
 ---
 

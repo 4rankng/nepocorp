@@ -351,9 +351,17 @@ export interface AgingBucket {
   amount: number;
 }
 
+export interface UnpaidTrip {
+  tripId: number;
+  date: string;
+  outstanding: number;
+  note: string;
+}
+
 export interface CustomerStatement {
   customer: Pick<Customer, 'id' | 'name' | 'contact_info'>;
   ledgerRows: LedgerEntry[];
   agingBuckets: AgingBucket[];
   totalOutstanding: number;
+  unpaidTrips: UnpaidTrip[];
 }

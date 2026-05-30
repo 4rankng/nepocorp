@@ -54,10 +54,47 @@ router.get('/ledger/customers/:id/statement', async (req: Request, res: Response
       else aging.over90 += amount;
     }
 
+    // Unpaid trips sorted oldest first (FIFO) — for payment allocation
+    const paymentCredits = ledgerRows
+      .filter(r => r.txnType === TxnType.PAYMENT_RECEIVED)
+      .reduce((sum, r) => sum + parseFloat(r.credit ?? '0'), 0);
+
+    const tripDebits = new Map<number, { tripId: number; date: string; outstanding: number; note: string }>();
+    for (const entry of revenueEntries) {
+      if (!entry.txnId) continue;
+      const amount = parseFloat(entry.debit ?? '0');
+      const existing = tripDebits.get(entry.txnId);
+      if (existing) {
+        existing.outstanding += amount;
+      } else {
+        tripDebits.set(entry.txnId, {
+          tripId: entry.txnId,
+          date: entry.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 10) : '',
+          outstanding: amount,
+          note: entry.note || '',
+        });
+      }
+    }
+
+    // Apply credits FIFO against oldest trips
+    let remainingCredit = paymentCredits;
+    const unpaidTrips = Array.from(tripDebits.values())
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(trip => {
+        if (remainingCredit > 0) {
+          const apply = Math.min(remainingCredit, trip.outstanding);
+          trip.outstanding -= apply;
+          remainingCredit -= apply;
+        }
+        return trip;
+      })
+      .filter(t => t.outstanding > 0);
+
     res.json({
       customer: { id: customer.id, name: customer.name, contact_info: customer.contactInfo },
       ledgerRows,
       totalOutstanding,
+      unpaidTrips,
       agingBuckets: [
         { range: '0-30 ngày', amount: aging.current },
         { range: '31-60 ngày', amount: aging.d30 },
