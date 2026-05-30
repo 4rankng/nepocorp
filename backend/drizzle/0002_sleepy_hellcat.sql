@@ -1,0 +1,1 @@
+CREATE INDEX "penalties_date_idx" ON "penalties" USING btree ("date");

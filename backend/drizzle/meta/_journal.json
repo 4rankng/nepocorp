@@ -15,6 +15,13 @@
       "when": 1780143600000,
       "tag": "0001_ledger_immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780162258132,
+      "tag": "0002_sleepy_hellcat",
+      "breakpoints": true
     }
   ]
 }
