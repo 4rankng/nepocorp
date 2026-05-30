@@ -311,9 +311,9 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 **Status:** Backend `GET /ledger/customers/:id/statement` returns aging data. No dashboard alerts.
 
 - [x] **T-B.2.1:** Add overdue summary endpoint: `GET /reports/receivables-summary` returning counts/amounts for 30/60/90+ day buckets
-- [ ] **T-B.2.2:** Add alerts widget to DashboardPage showing: "X khách hàng quá hạn 30 ngày (Y VNĐ), Z khách hàng quá hạn 60 ngày (W VNĐ)"
-- [ ] **T-B.2.3:** Color-code customers in DebtListPage: green (< 30d), yellow (30-60d), red (60-90d), dark red (90d+)
-- [ ] **T-B.2.4:** Click alert to navigate to DebtListPage filtered by overdue status
+- [x] **T-B.2.2:** Add alerts widget to DashboardPage showing: "X khách hàng quá hạn 30 ngày (Y VNĐ), Z khách hàng quá hạn 60 ngày (W VNĐ)"
+- [x] **T-B.2.3:** Color-code customers in DebtListPage: green (< 30d), yellow (30-60d), red (60-90d), dark red (90d+)
+- [x] **T-B.2.4:** Click alert to navigate to DebtListPage filtered by overdue status
 
 ### US-B.3: Export customer statement
 **As a** kế toán,

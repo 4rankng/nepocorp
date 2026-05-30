@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@nepocorp/shared';
 import type { CustomerStatement, LedgerEntry, UnpaidTrip } from '@nepocorp/shared';
-import { AlertTriangle, Wallet, X, Download, ListOrdered } from 'lucide-react';
+import { AlertTriangle, Wallet, X, Download, ListOrdered, FileSpreadsheet, FileText } from 'lucide-react';
 import { PageHeader, Panel, KPI } from '../components/UI';
 import { useCustomerStatement } from '../hooks/useQueries';
 
@@ -34,6 +34,7 @@ export default function DebtDetailPage() {
   const [paymentAmounts, setPaymentAmounts] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // ── Payment submit ───────────────────────────────────────────────────────
 
@@ -112,13 +113,42 @@ export default function DebtDetailPage() {
         description={customer.contact_info || 'Không có thông tin liên hệ'}
         action={
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              className="btn btn--secondary"
-              onClick={() => window.open(`/api/ledger/customers/${id}/statement/export`, '_blank')}
-            >
-              <Download size={14} />
-              Xuất sao kê
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                className="btn btn--secondary"
+                onClick={() => setShowExportMenu(v => !v)}
+              >
+                <Download size={14} />
+                Xuất sao kê
+              </button>
+              {showExportMenu && (
+                <div style={{
+                  position: 'absolute', right: 0, top: '100%', marginTop: 4,
+                  background: 'var(--bg-1)', border: '1px solid var(--border)',
+                  borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                  zIndex: 50, minWidth: 180, overflow: 'hidden',
+                }}>
+                  <button
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
+                    onClick={() => { setShowExportMenu(false); window.open(`/api/ledger/customers/${id}/statement/export?format=xlsx`, '_blank'); }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <FileSpreadsheet size={14} style={{ color: '#16a34a' }} />
+                    Excel (.xlsx)
+                  </button>
+                  <button
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
+                    onClick={() => { setShowExportMenu(false); window.open(`/api/ledger/customers/${id}/statement/export?format=pdf`, '_blank'); }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <FileText size={14} style={{ color: '#dc2626' }} />
+                    PDF (In)
+                  </button>
+                </div>
+              )}
+            </div>
             <button className="btn btn--primary" onClick={() => setShowPayment(true)}>
               <Wallet size={15} />
               Ghi nhận thanh toán

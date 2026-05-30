@@ -141,6 +141,7 @@ export function useTripDetail(id: string | undefined) {
 export function useTripAdjustments(id: number) {
   return useQuery({
     queryKey: ['trip-adjustments', id],
+    enabled: id > 0,
     queryFn: () => api.get<{ items: any[] }>(TRIPS.ADJUSTMENTS(id)),
     select: (data) => data.items,
   });

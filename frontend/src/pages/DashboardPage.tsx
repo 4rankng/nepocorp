@@ -137,7 +137,7 @@ export default function DashboardPage() {
 
   // Sorting routes by profit
   const routeMap = new Map<string, { name: string; trips: number; profit: number }>();
-  currentMonthTrips.forEach((t) => {
+  currentMonthTrips.forEach((t: TripDetail) => {
     if (!t.route || !t.route.name) return;
     const name = t.route.name;
     const profVal = parseFloat(t.gross_profit as string || '0');
@@ -213,10 +213,10 @@ export default function DashboardPage() {
   // centre label (40M from `costs`). Show only data we actually have, and
   // bucket the unallocated remainder as "Khác" so the legend ALWAYS sums to
   // the centre figure.
-  const lockedTrips = currentMonthTrips.filter(t => t.status === TripStatus.LOCKED);
-  const realFuelCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).total_fuel_cost || '0'), 0);
-  const realRoadCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).total_road_allowance || '0'), 0);
-  const realDriverCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).driver_salary || '0'), 0);
+  const lockedTrips = currentMonthTrips.filter((t: TripDetail) => t.status === TripStatus.LOCKED);
+  const realFuelCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).total_fuel_cost || '0'), 0);
+  const realRoadCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).total_road_allowance || '0'), 0);
+  const realDriverCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driver_salary || '0'), 0);
   const mgmtCost = pnlReport?.managementFee ?? 0;
   const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
   // When we have real per-trip costs, use them directly. When we don't, use
@@ -637,11 +637,11 @@ export default function DashboardPage() {
           {createdTripsCount > 0 ? (
             (() => {
               const pendingCustomers = createdTrips
-                .map(t => t.customer?.name || '—')
-                .filter((n): n is string => !!n);
+                .map((t: TripDetail) => t.customer?.name || '—')
+                .filter((n: string): n is string => !!n);
               // Group by name, keep count
               const counts = new Map<string, number>();
-              pendingCustomers.forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
+              pendingCustomers.forEach((n: string) => counts.set(n, (counts.get(n) || 0) + 1));
               const previewParts: string[] = [];
               for (const [name, count] of counts) {
                 previewParts.push(count > 1 ? `${name} (×${count})` : name);
