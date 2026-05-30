@@ -18,3 +18,8 @@
 @import "./pages/AuditLogPage.css";
 @import "./pages/FleetPage.css";
 @import "./pages/PenaltyPage.css";
+
+/* Responsive overrides MUST be imported last — they win the cascade against
+   per-component / per-page rules that would otherwise clobber the mobile
+   media queries. See styles/responsive.css for the reasoning. */
+@import "./styles/responsive.css";

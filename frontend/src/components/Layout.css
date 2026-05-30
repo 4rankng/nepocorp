@@ -84,6 +84,14 @@
     display: none;
   }
 
+  .app.sidebar-closed .sidebar-user-dropdown {
+    display: none;
+  }
+
+  .app.sidebar-closed .sidebar-user-chevron {
+    display: none;
+  }
+
   .app:not(.sidebar-closed) .sidebar {
     width: var(--sidebar-w);
     min-width: var(--sidebar-w);
@@ -346,6 +354,7 @@
   padding: 12px;
   border-top: 1px solid var(--sb-line);
   flex-shrink: 0;
+  position: relative;
 }
 .sidebar-user {
   display: flex;
@@ -380,6 +389,91 @@
   color: var(--sb-text-muted);
   font-family: var(--font-mono);
   word-break: break-word;
+}
+
+/* ---- User dropdown menu ---- */
+.sidebar-user-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  right: 12px;
+  margin-bottom: 4px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  padding: 6px;
+  z-index: 100;
+  animation: dropdownUp 150ms ease-out;
+}
+
+@keyframes dropdownUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidebar-user-dropdown-header {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-user-dropdown-header .name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #1a1a2e);
+}
+
+.sidebar-user-dropdown-header .role {
+  font-size: 11px;
+  color: var(--ink-3, #888);
+  font-family: var(--font-mono, monospace);
+}
+
+.sidebar-user-dropdown-divider {
+  height: 1px;
+  background: var(--line, #e5e5e5);
+  margin: 4px 8px;
+}
+
+.sidebar-user-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--danger, #dc2626);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: background 120ms ease;
+}
+
+.sidebar-user-dropdown-item:hover {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.sidebar-user-dropdown-item svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sidebar-user-dropdown-item--neutral {
+  color: var(--ink, #1a1a2e);
+}
+
+.sidebar-user-dropdown-item--neutral:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* ============================================================================

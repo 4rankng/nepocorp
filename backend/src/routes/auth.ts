@@ -5,7 +5,7 @@ import { db } from '../db';
 import { users, drivers } from '../db/schema';
 import { eq, isNull, or, sql } from 'drizzle-orm';
 import { config } from '../config';
-import { loginSchema, createUserSchema, updateUserSchema } from '@nepocorp/shared';
+import { loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@nepocorp/shared';
 import { authMiddleware } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
 import type { Request, Response } from 'express';
@@ -123,6 +123,52 @@ router.delete('/users/:id', authMiddleware, casbinAuthz('users'), async (req: Re
     await db.update(users).set({ deletedAt: sql`now()`, status: 'INACTIVE' }).where(eq(users.id, id));
     res.json({ success: true });
   } catch {
+    res.status(500).json({ error: 'Lỗi máy chủ' });
+  }
+});
+
+router.patch('/me', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const data = updateProfileSchema.parse(req.body);
+    const updates: Record<string, unknown> = { updatedAt: sql`now()` };
+    if (data.username !== undefined) updates.username = data.username;
+    if (data.email !== undefined) updates.email = data.email || null;
+    if (data.phone !== undefined) updates.phone = data.phone || null;
+
+    const [updated] = await db.update(users).set(updates)
+      .where(eq(users.id, userId))
+      .returning(USER_FIELDS);
+
+    if (!updated) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+    res.json(updated);
+  } catch (err: any) {
+    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
+    if (err.code === '23505') return res.status(409).json({ error: 'Username, email hoặc số điện thoại đã tồn tại' });
+    res.status(500).json({ error: 'Lỗi máy chủ' });
+  }
+});
+
+router.post('/change-password', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+
+    const [user] = await db.select({ passwordHash: users.passwordHash })
+      .from(users).where(eq(users.id, userId)).limit(1);
+
+    if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) return res.status(401).json({ error: 'Mật khẩu hiện tại không đúng' });
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await db.update(users).set({ passwordHash, updatedAt: sql`now()` })
+      .where(eq(users.id, userId));
+
+    res.json({ success: true });
+  } catch (err: any) {
+    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
     res.status(500).json({ error: 'Lỗi máy chủ' });
   }
 });

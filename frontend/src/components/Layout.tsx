@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -13,11 +13,16 @@ import {
   DollarSign,
   LogOut,
   User,
+  UserCog,
+  KeyRound,
   ChevronRight,
+  ChevronUp,
   Compass,
   Layers,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { api } from '../lib/api';
+import { Modal, FormGroup } from './UI';
 import { useBadgeCounts } from '../hooks/useQueries';
 import type { Role } from '@nepocorp/shared';
 
@@ -95,23 +100,132 @@ function getPageTitle(pathname: string): string {
   return 'NEPO';
 }
 
+const errorBoxStyle: React.CSSProperties = {
+  padding: '10px 14px',
+  background: '#FEF2F2',
+  borderRadius: 8,
+  color: 'var(--danger)',
+  fontSize: 13,
+  marginBottom: 16,
+};
+
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Close user menu when sidebar collapses to avoid invisible open state
+  useEffect(() => {
+    if (!sidebarOpen) setUserMenuOpen(false);
+  }, [sidebarOpen]);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({ email: '', phone: '', username: '' });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const handleDismiss = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) {
+        if (e.key === 'Escape') { setUserMenuOpen(false); return; }
+        return;
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleDismiss);
+    document.addEventListener('keydown', handleDismiss);
+    return () => {
+      document.removeEventListener('mousedown', handleDismiss);
+      document.removeEventListener('keydown', handleDismiss);
+    };
+  }, [userMenuOpen]);
+
+  const toggleUserMenu = useCallback(() => setUserMenuOpen(v => !v), []);
+
+  const openProfileModal = () => {
+    if (!user) return;
+    setProfileForm({ email: user.email || '', phone: user.phone || '', username: user.username || '' });
+    setProfileError(null);
+    setProfileModalOpen(true);
+    setUserMenuOpen(false);
+  };
+
+  const openPasswordModal = () => {
+    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setPasswordError(null);
+    setPasswordModalOpen(true);
+    setUserMenuOpen(false);
+  };
+
+  const handleSaveProfile = async () => {
+    if (profileSaving) return; // guard re-entry (Enter key + button)
+    setProfileSaving(true);
+    setProfileError(null);
+    try {
+      const updated = await api.patch<{ email: string; phone: string; username: string }>('/auth/me', profileForm);
+      updateUser({ email: updated.email, phone: updated.phone, username: updated.username });
+      setProfileModalOpen(false);
+    } catch (err: any) {
+      setProfileError(err?.message || 'Không thể lưu thông tin.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordSaving) return; // guard re-entry
+    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+      setPasswordError('Vui lòng nhập đầy đủ thông tin.');
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
+      return;
+    }
+    if (passwordForm.newPassword.length > 128) {
+      setPasswordError('Mật khẩu quá dài (tối đa 128 ký tự).');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    setPasswordSaving(true);
+    setPasswordError(null);
+    try {
+      await api.post('/auth/change-password', {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordModalOpen(false);
+    } catch (err: any) {
+      setPasswordError(err?.message || 'Không thể đổi mật khẩu.');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
         e.preventDefault();
-        setSidebarOpen(!sidebarOpen);
+        setSidebarOpen(v => !v);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [sidebarOpen]);
+  }, []);
 
   const { data: badgeData } = useBadgeCounts();
   const dispatchCount = badgeData?.dispatchCount;
@@ -190,19 +304,151 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {renderNavSection('Danh mục', 'admin')}
         </nav>
 
-        <div className="sidebar-footer">
-          <button className="sidebar-user" onClick={logout}>
+        <div className="sidebar-footer" ref={userMenuRef}>
+          <button className="sidebar-user" onClick={toggleUserMenu}>
             <div className="avatar">
               <User size={18} />
             </div>
             <div className="meta">
               <div className="name">{user.name || getRoleLabel(user.role)}</div>
-              <div className="role">{user.email}</div>
+              <div className="role">{user.email || user.username || getRoleLabel(user.role)}</div>
             </div>
-            <LogOut size={14} />
+            <ChevronUp size={14} className="sidebar-user-chevron" />
           </button>
+          {userMenuOpen && (
+            <div className="sidebar-user-dropdown">
+              <div className="sidebar-user-dropdown-header">
+                <div className="name">{user.name || getRoleLabel(user.role)}</div>
+                <div className="role">{getRoleLabel(user.role)}</div>
+              </div>
+              <div className="sidebar-user-dropdown-divider" />
+              <button
+                className="sidebar-user-dropdown-item sidebar-user-dropdown-item--neutral"
+                onClick={openProfileModal}
+              >
+                <UserCog size={16} />
+                Thông tin cá nhân
+              </button>
+              <button
+                className="sidebar-user-dropdown-item sidebar-user-dropdown-item--neutral"
+                onClick={openPasswordModal}
+              >
+                <KeyRound size={16} />
+                Đổi mật khẩu
+              </button>
+              <div className="sidebar-user-dropdown-divider" />
+              <button
+                className="sidebar-user-dropdown-item"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  logout();
+                }}
+              >
+                <LogOut size={16} />
+                Đăng xuất
+              </button>
+            </div>
+          )}
         </div>
       </aside>
+
+      <Modal
+        isOpen={profileModalOpen}
+        title="Thông tin cá nhân"
+        onClose={() => { if (!profileSaving) setProfileModalOpen(false); }}
+        onConfirm={handleSaveProfile}
+        footer={
+          <>
+            <button className="btn btn--secondary btn--sm" onClick={() => setProfileModalOpen(false)}>Hủy</button>
+            <button className="btn btn--primary btn--sm" onClick={handleSaveProfile} disabled={profileSaving}>
+              {profileSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            </button>
+          </>
+        }
+      >
+        {profileError && (
+          <div style={errorBoxStyle}>
+            {profileError}
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <FormGroup label="Tên đăng nhập">
+            <input
+              className="input"
+              value={profileForm.username}
+              onChange={e => setProfileForm(f => ({ ...f, username: e.target.value }))}
+              placeholder="username"
+            />
+          </FormGroup>
+          <FormGroup label="Email">
+            <input
+              className="input"
+              type="email"
+              value={profileForm.email}
+              onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))}
+              placeholder="email@example.com"
+            />
+          </FormGroup>
+          <FormGroup label="Số điện thoại">
+            <input
+              className="input"
+              value={profileForm.phone}
+              onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))}
+              placeholder="0912345678"
+            />
+          </FormGroup>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={passwordModalOpen}
+        title="Đổi mật khẩu"
+        onClose={() => { if (!passwordSaving) setPasswordModalOpen(false); }}
+        onConfirm={handleChangePassword}
+        footer={
+          <>
+            <button className="btn btn--secondary btn--sm" onClick={() => setPasswordModalOpen(false)}>Hủy</button>
+            <button className="btn btn--primary btn--sm" onClick={handleChangePassword} disabled={passwordSaving}>
+              {passwordSaving ? 'Đang lưu...' : 'Đổi mật khẩu'}
+            </button>
+          </>
+        }
+      >
+        {passwordError && (
+          <div style={errorBoxStyle}>
+            {passwordError}
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <FormGroup label="Mật khẩu hiện tại">
+            <input
+              className="input"
+              type="password"
+              value={passwordForm.currentPassword}
+              onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
+              placeholder="Nhập mật khẩu hiện tại"
+            />
+          </FormGroup>
+          <FormGroup label="Mật khẩu mới">
+            <input
+              className="input"
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+              placeholder="Ít nhất 6 ký tự"
+            />
+          </FormGroup>
+          <FormGroup label="Xác nhận mật khẩu mới">
+            <input
+              className="input"
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+              placeholder="Nhập lại mật khẩu mới"
+            />
+          </FormGroup>
+        </div>
+      </Modal>
 
       <div className="app-main">
         <header className="topbar">

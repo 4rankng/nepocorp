@@ -59,9 +59,11 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
   const tripOutstanding = new Map<number, { tripId: number; date: string; outstanding: number; note: string }>();
   for (const inv of openInvoices) {
     if (inv.open <= 0) continue;
-    // inv.ts may be a Date object (Drizzle returns Date for timestamp columns)
-    // — normalise to ISO string so it matches the tsToTripId map keys.
-    const tsKey = inv.ts instanceof Date ? inv.ts.toISOString() : String(inv.ts);
+    // inv.ts is typed as string in shared types, but Drizzle may hand back a
+    // Date for timestamp columns — coerce to ISO so it matches map keys.
+    const tsRaw: unknown = inv.ts;
+    if (tsRaw == null) continue; // skip entries with null/undefined timestamp
+    const tsKey = tsRaw instanceof Date ? tsRaw.toISOString() : String(tsRaw);
     const tripId = tsToTripId.get(tsKey) ?? 0;
     if (!tripId) continue;
     const existing = tripOutstanding.get(tripId);

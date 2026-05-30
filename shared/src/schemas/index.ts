@@ -133,6 +133,19 @@ export const updateUserSchema = z.object({
   password: z.string().min(6).optional(),
 });
 
+export const updateProfileSchema = z.object({
+  username: z.string().min(1, 'Tên đăng nhập không được để trống').max(100).optional(),
+  email: z.string().email('Email không hợp lệ').or(z.literal('')).optional(),
+  phone: z.string().min(6, 'Số điện thoại quá ngắn').or(z.literal('')).optional(),
+}).refine(data => data.username || data.email || data.phone, {
+  message: 'Phải cung cấp ít nhất một trong: username, email, hoặc số điện thoại',
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
+  newPassword: z.string().min(6, 'Mật khẩu mới phải có ít nhất 6 ký tự').max(128, 'Mật khẩu quá dài'),
+});
+
 // ─── CRUD ────────────────────────────────────────────────────────────────────
 
 export const customerSchema = z.object({

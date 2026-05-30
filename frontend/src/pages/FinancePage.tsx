@@ -204,8 +204,18 @@ export default function FinancePage() {
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3">
         {/* Revenue trend */}
         <div className="panel" style={{ padding: '16px 20px', flex: '2 1 400px', minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
-            Xu hướng doanh thu {year}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>
+              Xu hướng doanh thu {year}
+            </div>
+            <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: 'var(--fg-2)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 10, height: 10, background: '#3b82f6', borderRadius: 2, display: 'inline-block' }} /> Doanh thu
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 10, height: 10, background: '#10b981', borderRadius: 2, display: 'inline-block' }} /> LN gộp
+              </span>
+            </div>
           </div>
           {yearlyLoading ? (
             <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
@@ -336,15 +346,32 @@ export default function FinancePage() {
           {(() => {
             const maxProfit = Math.max(...topTrucks.map(t => t['LN gộp']), 1);
             const svgH = Math.max(120, topTrucks.length * 36);
+            // Reserve right-side gutter for the value label so it never gets
+            // clipped at the viewBox edge. plateW (90) + barTrackW + gap + valW (90)
+            // must fit in viewBox 400.
+            const plateW = 90;
+            const valW = 90;
+            const gap = 8;
+            const barTrackW = 400 - plateW - valW - gap;
+            const valX = plateW + barTrackW + gap;
             return (
               <svg width="100%" height={svgH} viewBox={`0 0 400 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
                 {topTrucks.map((t, i) => {
-                  const w = (t['LN gộp'] / maxProfit) * 250;
+                  const raw = (t['LN gộp'] / maxProfit) * barTrackW;
+                  const w = Math.max(0, raw);
+                  const labelOverlapsBar = plateW + w > valX - 50;
                   return (
                     <g key={i} transform={`translate(0, ${i * 36})`}>
                       <text x={0} y={16} fontSize={12} fill="var(--fg-2)">{t.name}</text>
-                      <rect x={90} y={4} width={w} height={20} fill="#6366f1" rx={3} />
-                      <text x={90 + w + 8} y={19} fontSize={11} fill="var(--fg-2)">{formatRawNumber(t['LN gộp'])} ₫</text>
+                      <rect x={plateW} y={4} width={w} height={20} fill="#6366f1" rx={3} />
+                      <text
+                        x={labelOverlapsBar ? plateW + w - 6 : plateW + w + 6}
+                        y={19}
+                        fontSize={11}
+                        fill={labelOverlapsBar ? '#fff' : 'var(--fg-2)'}
+                        textAnchor={labelOverlapsBar ? 'end' : 'start'}
+                        fontWeight={labelOverlapsBar ? 600 : 400}
+                      >{formatRawNumber(t['LN gộp'])} ₫</text>
                     </g>
                   );
                 })}
