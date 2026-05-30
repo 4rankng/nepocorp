@@ -614,6 +614,50 @@ export default function DashboardPage() {
             </div>
         </Panel>
 
+        {/* Fleet Status Overview */}
+        <Panel
+          title="Tình trạng đội xe"
+          subtitle={`${stats?.totalTrucks ?? 0} đầu kéo · ${stats?.totalDrivers ?? 0} tài xế`}
+        >
+          {(() => {
+            const fleet: Record<string, number> = (stats as any)?.fleetStatus ?? {};
+            const active = fleet['ACTIVE'] ?? 0;
+            const maintenance = fleet['MAINTENANCE'] ?? 0;
+            const inactive = fleet['INACTIVE'] ?? 0;
+            const inTransit = stats?.inTransitTrips ?? 0;
+            const total = active + maintenance + inactive || 1;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--success)' }}>{active}</div>
+                    <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Hoạt động</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--warning)' }}>{maintenance}</div>
+                    <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Bảo dưỡng</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--fg-3)' }}>{inactive}</div>
+                    <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Ngừng</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--brand)' }}>{inTransit}</div>
+                    <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Đang chạy</div>
+                  </div>
+                </div>
+                {/* Utilization bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+                    <div style={{ width: `${(active / total) * 100}%`, height: '100%', borderRadius: 3, background: 'var(--success)' }} />
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>{Math.round((active / total) * 100)}% sử dụng</span>
+                </div>
+              </div>
+            );
+          })()}
+        </Panel>
+
       </div>
 
       {/* Row 3: Action Alerts ("Cần chú ý") */}

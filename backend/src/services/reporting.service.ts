@@ -31,6 +31,7 @@ export async function getDashboardStats() {
     [stats],
     [truckCount],
     [driverCount],
+    truckStatusCounts,
     ledgerRows,
     capRows,
   ] = await Promise.all([
@@ -48,6 +49,10 @@ export async function getDashboardStats() {
     )),
     db.select({ count: sql<number>`count(*)` }).from(s.trucks).where(isNull(s.trucks.deletedAt)),
     db.select({ count: sql<number>`count(*)` }).from(s.drivers).where(isNull(s.drivers.deletedAt)),
+    db.select({
+      status: s.trucks.status,
+      count: sql<number>`count(*)`,
+    }).from(s.trucks).where(isNull(s.trucks.deletedAt)).groupBy(s.trucks.status),
     db.select({
       entityType: s.ledger.entityType,
       entityId: s.ledger.entityId,
@@ -76,6 +81,9 @@ export async function getDashboardStats() {
     inTransitTrips: Number(stats?.inTransitTrips || 0),
     totalTrucks: Number(truckCount?.count || 0),
     totalDrivers: Number(driverCount?.count || 0),
+    fleetStatus: Object.fromEntries(
+      truckStatusCounts.map((r: any) => [r.status, Number(r.count)])
+    ) as Record<string, number>,
     topOverdueCustomer,
     topShareholder,
   };
