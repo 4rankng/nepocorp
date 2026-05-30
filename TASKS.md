@@ -281,11 +281,11 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 
 **Status:** TripListPage has hardcoded thresholds (37/40 L/100km). Need configurable thresholds from `fuel_config`.
 
-- [ ] **T-A.1.1:** Add `warning_threshold` and `critical_threshold` fields to `fuel_config` table and schema
-- [ ] **T-A.1.2:** Add threshold configuration UI in ConfigPage fuel-config tab
-- [ ] **T-A.1.3:** Update TripListPage and TripDetailPage to use configured thresholds instead of hardcoded 37/40 values
-- [ ] **T-A.1.4:** Show TTBQ comparison against norm in TripDetailPage: "TTBQ: 42.5 L/100km (Định mức: 43 L/100km — ✅ Trong định mức)"
-- [ ] **T-A.1.5:** Add fuel warning indicator on DashboardPage for recent trips exceeding norms
+- [x] **T-A.1.1:** Add `warning_threshold` and `critical_threshold` fields to `fuel_config` table and schema
+- [x] **T-A.1.2:** Add threshold configuration UI in ConfigPage fuel-config tab
+- [x] **T-A.1.3:** Update TripListPage and TripDetailPage to use configured thresholds instead of hardcoded 37/40 values
+- [x] **T-A.1.4:** Show TTBQ comparison against norm in TripDetailPage: "TTBQ: 42.5 L/100km (Định mức: 43 L/100km — ✅ Trong định mức)"
+- [x] **T-A.1.5:** Add fuel warning indicator on DashboardPage for recent trips exceeding norms
 
 ---
 
@@ -338,11 +338,11 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 
 **Status:** DashboardPage exists with KPIs and charts.
 
-- [ ] **T-C.1.1:** Verify dashboard data matches backend `GET /reports/dashboard` endpoint
-- [ ] **T-C.1.2:** Add monthly revenue trend line chart
-- [ ] **T-C.1.3:** Add cost breakdown pie chart (fuel vs road allowance vs driver salary)
-- [ ] **T-C.1.4:** Add top 5 profitable routes table
-- [ ] **T-C.1.5:** Add fleet status overview (trucks in transit, available, maintenance)
+- [x] **T-C.1.1:** Verify dashboard data matches backend `GET /reports/dashboard` endpoint
+- [x] **T-C.1.2:** Add monthly revenue trend line chart
+- [x] **T-C.1.3:** Add cost breakdown pie chart (fuel vs road allowance vs driver salary)
+- [x] **T-C.1.4:** Add top 5 profitable routes table
+- [x] **T-C.1.5:** Add fleet status overview (trucks in transit, available, maintenance)
 
 ### US-C.2: P&L report with drill-down
 **As a** quản lý,
@@ -351,10 +351,10 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 
 **Status:** FinancePage calls `GET /reports/pnl`. Needs drill-down capability.
 
-- [ ] **T-C.2.1:** In FinancePage, make monthly rows clickable to show trip-level breakdown
-- [ ] **T-C.2.2:** Drill-down shows: per-trip revenue, cost components, gross profit
-- [ ] **T-C.2.3:** Add export button for P&L report (Excel)
-- [ ] **T-C.2.4:** Add year-over-year comparison view
+- [x] **T-C.2.1:** In FinancePage, make monthly rows clickable to show trip-level breakdown
+- [x] **T-C.2.2:** Drill-down shows: per-trip revenue, cost components, gross profit
+- [x] **T-C.2.3:** Add export button for P&L report (Excel)
+- [x] **T-C.2.4:** Add year-over-year comparison view
 
 ---
 
@@ -367,10 +367,10 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 
 **Status:** ProfitPage and backend endpoint exist. Cap table management in ConfigPage.
 
-- [ ] **T-D.1.1:** Verify distribution calculation uses correct cap table history percentages for the period
-- [ ] **T-D.1.2:** Show distribution preview before execution: "Q1/2026 — Ông Thương: X VNĐ (29.55%), Ông Phụng: Y VNĐ (70.45%)"
-- [ ] **T-D.1.3:** After execution, show immutable distribution records with confirmation
-- [ ] **T-D.1.4:** Add historical distribution view: list all past distributions by quarter/year
+- [x] **T-D.1.1:** Verify distribution calculation uses correct cap table history percentages for the period
+- [x] **T-D.1.2:** Show distribution preview before execution: "Q1/2026 — Ông Thương: X VNĐ (29.55%), Ông Phụng: Y VNĐ (70.45%)"
+- [x] **T-D.1.3:** After execution, show immutable distribution records with confirmation
+- [x] **T-D.1.4:** Add historical distribution view: list all past distributions by quarter/year
 
 ---
 

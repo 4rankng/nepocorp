@@ -6,6 +6,7 @@ import type { Customer, LedgerEntry } from '@nepocorp/shared';
 import { Search, ChevronRight, Users, Wallet, AlertCircle } from 'lucide-react';
 import { KPI, PageHeader, Card } from '../components/UI';
 import { useCustomerDebts } from '../hooks/useQueries';
+import { computeFifoAging } from '@nepocorp/shared';
 
 interface CustomerDebtInfo {
   customer: Customer;
@@ -55,42 +56,22 @@ export default function DebtListPage() {
       const latestRow = cLedger[0];
       const totalOutstanding = latestRow ? parseFloat(latestRow.balance) : 0;
 
-      const aging = { current: 0, d30: 0, d60: 0, over90: 0 };
       let maxOverdueDays = 0;
 
-      const chronological = [...cLedger].sort((a, b) => {
-        const at = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const bt = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return at - bt;
-      });
-
-      const openInvoices: Array<{ ts: string; open: number }> = [];
-      for (const entry of chronological) {
-        const debit = parseFloat(entry.debit || '0');
-        const credit = parseFloat(entry.credit || '0');
-        if (debit > 0 && entry.timestamp) {
-          openInvoices.push({ ts: entry.timestamp, open: debit });
-        }
-        if (credit > 0) {
-          let remaining = credit;
-          for (const inv of openInvoices) {
-            if (remaining <= 0) break;
-            if (inv.open <= 0) continue;
-            const apply = Math.min(inv.open, remaining);
-            inv.open -= apply;
-            remaining -= apply;
-          }
-        }
-      }
+      const { aging, openInvoices } = computeFifoAging(
+        cLedger.map(e => ({
+          timestamp: e.timestamp,
+          debit: e.debit || '0',
+          credit: e.credit || '0',
+        })),
+        now,
+      );
 
       for (const inv of openInvoices) {
-        if (inv.open <= 0) continue;
-        const ageInDays = Math.floor((now.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24));
-        if (ageInDays <= 30) aging.current += inv.open;
-        else if (ageInDays <= 60) aging.d30 += inv.open;
-        else if (ageInDays <= 90) aging.d60 += inv.open;
-        else aging.over90 += inv.open;
-        if (ageInDays > maxOverdueDays) maxOverdueDays = ageInDays;
+        if (inv.open > 0) {
+          const ageInDays = Math.floor((now.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24));
+          if (ageInDays > maxOverdueDays) maxOverdueDays = ageInDays;
+        }
       }
 
       let riskClass: 'high' | 'med' | 'low' = 'low';

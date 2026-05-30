@@ -207,6 +207,8 @@ router.put('/fuel-config', async (req: Request, res: Response) => {
     emptyNorm: String(data.empty_norm),
     supplement: String(data.supplement ?? 0),
     unitPrice: String(data.unit_price),
+    warningThreshold: String(data.warning_threshold),
+    criticalThreshold: String(data.critical_threshold),
     updatedAt: new Date(),
   };
   const [existing] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);

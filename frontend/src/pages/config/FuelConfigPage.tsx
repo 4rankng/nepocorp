@@ -40,8 +40,8 @@ export default function FuelConfigPage() {
         empty_norm: Number(form.emptyNorm),
         supplement: Number(form.supplement) || 0,
         unit_price: Number(form.unitPrice),
-        warning_threshold: Number(form.warningThreshold) || 37,
-        critical_threshold: Number(form.criticalThreshold) || 40,
+        warning_threshold: form.warningThreshold ? Number(form.warningThreshold) : 37,
+        critical_threshold: form.criticalThreshold ? Number(form.criticalThreshold) : 40,
       });
     } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
   };

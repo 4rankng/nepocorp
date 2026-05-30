@@ -75,6 +75,7 @@ const CATEGORIES: { key: Category; label: string; icon: React.ElementType }[] = 
 const ACTION_LABELS: Record<string, string> = {
   TRIP_CREATED: 'Tạo chuyến',
   TRIP_DISPATCHED: 'Xuất phát',
+  TRIP_UPDATED: 'Cập nhật chuyến',
   TRIP_UPDATED_PRE_DEPARTURE: 'Cập nhật trước KH',
   TRIP_UPDATED_ACTUALS: 'Cập nhật thực tế',
   TRIP_COMPLETED: 'Hoàn thành',

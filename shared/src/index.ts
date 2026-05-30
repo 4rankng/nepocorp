@@ -38,4 +38,6 @@ export type {
 export { round2dp } from './calculations/round';
 export { computeTripTotals } from './calculations/tripTotals';
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
+export { computeFifoAging } from './calculations/fifoAging';
+export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';
 
