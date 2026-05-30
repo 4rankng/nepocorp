@@ -217,7 +217,7 @@ router.get('/reports/receivables-summary', async (_req: Request, res: Response) 
   try {
     res.json(await getReceivablesSummary());
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 

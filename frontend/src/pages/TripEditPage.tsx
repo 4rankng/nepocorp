@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, Save } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
-import { PageHeader } from '../components/UI';
+import { PageHeader, useConfirm } from '../components/UI';
 import { FuelMode, LoadingType, TripStatus } from '@nepocorp/shared';
 import type { TripDetail, TripLeg, PricingTable, PaginatedResponse } from '@nepocorp/shared';
 import { calculateDistanceKm } from '../lib/maps';
@@ -25,6 +25,7 @@ interface FormLeg {
 export default function TripEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -282,7 +283,7 @@ export default function TripEditPage() {
       navigate(`/trips/${trip.id}`);
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 409) {
-        if (window.confirm("Có người khác đã cập nhật chuyến này. Tải lại?")) {
+        if (await confirm("Có người khác đã cập nhật chuyến này. Tải lại?")) {
           loadTrip();
         } else {
           setError("Xung đột phiên bản: số liệu của bạn đã cũ so với hệ thống.");
@@ -438,6 +439,7 @@ export default function TripEditPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .spin { animation: spin 0.8s linear infinite; }
       `}</style>
+      {confirmDialog}
     </div>
   );
 }

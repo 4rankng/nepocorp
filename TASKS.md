@@ -81,7 +81,7 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
   - File: `backend/src/db/schema.ts`. New table per §4.3 (`type` enum CONTAINER/SEAL/OTHER, `storageKey`, `uploadedBy`, `uploadedAt`). Remove `photoUrls` jsonb from `trips`. Add `effectiveDate` to `pricing_tables` (§4.4).
   - Epic ref: §4.3, §4.4.
 
-- [ ] **T1.11 — Generate + run Drizzle migration** · `S` · BE · dep: T1.6–T1.10
+- [x] **T1.11 — Generate + run Drizzle migration** · `S` · BE · dep: T1.6–T1.10
   - Run `pnpm db:generate && pnpm db:migrate`. Review generated SQL for data-loss on `photoUrls` drop / `tripCode` backfill.
   - Done when: migration applies cleanly to a fresh dev DB; seed still runs.
 

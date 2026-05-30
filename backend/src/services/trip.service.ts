@@ -303,6 +303,11 @@ export async function transitionTripStatus(
       // at a time. Without this guard the dispatch page's "Đang chạy" stat
       // stays at 3 even after dispatching more, because it counts unique
       // trucks (not trips) — so the user gets no visible feedback.
+      //
+      // Advisory lock serializes concurrent dispatches for the same truck —
+      // without it, two READ COMMITTED transactions could both see 0 IN_TRANSIT
+      // rows and both proceed (phantom-read race).
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${trip.truckId})`);
       const [busyTruck] = await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode })
         .from(s.trips)
         .where(and(

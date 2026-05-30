@@ -89,7 +89,7 @@ export default function TripDetailPage() {
     setReassignLoading(true);
     setReassignError('');
     try {
-      await api.post(`/trips/${id}/reassign`, {
+      await api.patch(`/trips/${id}/reassign`, {
         truck_id: Number(reassignTruckId),
         driver_id: Number(reassignDriverId),
       });

@@ -54,6 +54,13 @@ export default function UsersPage() {
   const [showAddPw, setShowAddPw]   = useState(false);
   const [addError, setAddError]     = useState<string | null>(null);
 
+  const [toast, setToast] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   // Edit form state
   const [editRole, setEditRole]     = useState<Role>(Role.DRIVER);
   const [editStatus, setEditStatus] = useState('ACTIVE');
@@ -152,7 +159,7 @@ export default function UsersPage() {
       await api.delete(`/auth/users/${id}`);
       load();
     } catch (e: any) {
-      alert(e.message || 'Lỗi khi xóa');
+      setToast({ kind: 'error', text: e.message || 'Lỗi khi xóa' });
     } finally {
       setDeleting(null);
     }
@@ -168,6 +175,24 @@ export default function UsersPage() {
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
+      {toast && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
+            minWidth: 280, maxWidth: 480,
+            padding: '12px 16px', borderRadius: 8,
+            background: toast.kind === 'success' ? 'var(--accent)' : 'var(--danger)',
+            color: '#fff', fontSize: 13, fontWeight: 600,
+            boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}
+          onClick={() => setToast(null)}
+        >
+          <span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} />
+          <span style={{ flex: 1 }}>{toast.text}</span>
+        </div>
+      )}
 
       {/* Page header */}
       <div className="page-header">

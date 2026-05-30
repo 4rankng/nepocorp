@@ -201,6 +201,7 @@ export async function distributeProfit(quarter: number, year: number) {
  * Receivables summary: aggregate customer outstanding balances bucketed by aging.
  * Uses FIFO allocation — payments are applied against the oldest open debits first —
  * so bucket totals reconcile to total outstanding.
+ * Handles prepayments by carrying forward unapplied credits against future debits.
  */
 export async function getReceivablesSummary() {
   // Fetch all CUSTOMER ledger entries, oldest first (for FIFO)
@@ -238,18 +239,28 @@ export async function getReceivablesSummary() {
 
   let totalOutstanding = 0;
   let totalCustomers = 0;
-  let overdueCustomers = 0;
 
   for (const [, entries] of byCustomer) {
-    // FIFO: walk chronological entries, maintain open invoices list
-    const openInvoices: Array<{ timestamp: string; open: number }> = [];
+    // FIFO: walk chronological entries, maintain open invoices list.
+    // Track unapplied credits (prepayments) to offset against future debits.
+    const openInvoices: Array<{ epochMs: number; open: number }> = [];
+    let unappliedCredit = 0;
 
     for (const entry of entries) {
       if (entry.debit > 0 && entry.timestamp) {
-        openInvoices.push({
-          timestamp: new Date(entry.timestamp).toISOString().slice(0, 10),
-          open: entry.debit,
-        });
+        let debitRemaining = entry.debit;
+        // Offset against any carried-forward prepayment first
+        if (unappliedCredit > 0) {
+          const apply = Math.min(unappliedCredit, debitRemaining);
+          unappliedCredit -= apply;
+          debitRemaining -= apply;
+        }
+        if (debitRemaining > 0) {
+          openInvoices.push({
+            epochMs: entry.timestamp.getTime(),
+            open: debitRemaining,
+          });
+        }
       }
       if (entry.credit > 0) {
         // Apply payment FIFO against oldest open invoices
@@ -261,6 +272,10 @@ export async function getReceivablesSummary() {
           inv.open -= apply;
           remaining -= apply;
         }
+        // Carry forward any unapplied credit (e.g. prepayments)
+        if (remaining > 0) {
+          unappliedCredit += remaining;
+        }
       }
     }
 
@@ -271,7 +286,9 @@ export async function getReceivablesSummary() {
     for (const inv of openInvoices) {
       if (inv.open <= 0) continue;
       customerOutstanding += inv.open;
-      const ageInDays = Math.floor((now - new Date(inv.timestamp).getTime()) / DAY_MS);
+      // Use epoch ms directly — avoids timezone bias from
+      // toISOString().slice(0,10) → new Date(YYYY-MM-DD) UTC midnight
+      const ageInDays = Math.floor((now - inv.epochMs) / DAY_MS);
       if (ageInDays > customerMaxDays) customerMaxDays = ageInDays;
 
       if (ageInDays <= 30) {
@@ -289,16 +306,12 @@ export async function getReceivablesSummary() {
       totalCustomers++;
       totalOutstanding += customerOutstanding;
 
-      // A customer is in a bucket if they have any open amount in that range or older
       if (customerMaxDays > 90) {
         buckets[3].count++;
-        overdueCustomers++;
       } else if (customerMaxDays > 60) {
         buckets[2].count++;
-        overdueCustomers++;
       } else if (customerMaxDays > 30) {
         buckets[1].count++;
-        overdueCustomers++;
       } else {
         buckets[0].count++;
       }
@@ -309,7 +322,7 @@ export async function getReceivablesSummary() {
     buckets,
     totalOutstanding,
     totalCustomers,
-    overdueCustomers,
+    overdueCustomers: totalCustomers - buckets[0].count,
   };
 }
 

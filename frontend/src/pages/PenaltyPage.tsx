@@ -315,6 +315,7 @@ export default function PenaltyPage() {
   const [preselectedDriver, setPreselectedDriver] = useState<number | undefined>();
   const [scoreFilter, setScoreFilter] = useState<'7d' | '30d' | '90d' | 'ytd'>('90d');
   const [logFilter, setLogFilter] = useState<'all' | 'pending' | 'deducted'>('all');
+  const [logDriverFilter, setLogDriverFilter] = useState<number | null>(null);
 
   // Month selector for KPI summary (FE-08)
   const nowDate = new Date();
@@ -423,7 +424,9 @@ export default function PenaltyPage() {
 
   // ── Violation log filtering ──────────────────────────────────────────────────
 
-  const filteredPenalties = penalties; // status filter is future work; show all for now
+  const filteredPenalties = logDriverFilter
+    ? penalties.filter(p => p.driver_id === logDriverFilter)
+    : penalties; // status filter is future work; show all for now
 
   // ── Open drawer helpers ──────────────────────────────────────────────────────
 
@@ -639,7 +642,7 @@ export default function PenaltyPage() {
                         <span className={`penalty-grade ${gradeClass}`}>{d.grade}</span>
                       </td>
                       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button className="penalty-row-act" aria-label="Xem chi tiết">
+                        <button className="penalty-row-act" aria-label="Xem chi tiết" onClick={() => setLogDriverFilter(d.id)}>
                           <Eye size={14} />
                         </button>
                         <button className="penalty-row-act primary" aria-label="Lập biên bản" onClick={() => openDrawer(d.id)}>
@@ -681,6 +684,22 @@ export default function PenaltyPage() {
                   <span className="count-pill">{filteredPenalties.length}</span>
                 </div>
                 <div className="penalty-card-sub">Lịch sử biên bản đã lập và khấu trừ lương</div>
+                {logDriverFilter && (() => {
+                  const drv = drivers.find(dr => dr.id === logDriverFilter);
+                  return drv ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                      <span style={{ fontSize: 11, color: 'var(--brand)', fontWeight: 600 }}>
+                        Lọc theo: {drv.name}
+                      </span>
+                      <button
+                        style={{ fontSize: 10, color: 'var(--fg-3)', background: 'var(--bg-2)', border: 'none', borderRadius: 4, padding: '1px 6px', cursor: 'pointer' }}
+                        onClick={() => setLogDriverFilter(null)}
+                      >
+                        ✕ Xóa lọc
+                      </button>
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
             <div className="penalty-head-tools">

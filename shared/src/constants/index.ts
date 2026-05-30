@@ -83,3 +83,5 @@ export const LOADING_TYPE_LABELS: Record<LoadingType, string> = {
   [LoadingType.HANG]: 'Hàng',
   [LoadingType.VO]: 'Vỏ',
 };
+
+export * from './api-paths';

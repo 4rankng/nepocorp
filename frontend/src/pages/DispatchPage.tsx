@@ -40,6 +40,7 @@ interface Truck {
 
 interface TripDetail {
   id: number;
+  tripCode?: string;
   customerId: number;
   customerName: string;
   customerReference?: string;
@@ -154,15 +155,15 @@ export default function DispatchPage() {
   const [activeTrips, setActiveTrips] = useState<TripDetail[]>([]);
 
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [dispatching, setDispatching] = useState(false);
   const [fleetFilter, setFleetFilter] = useState<FleetFilter>('all');
-  // Toast for dispatch success/error — replaces silent state-update +
-  // blocking alert() so users see what happened.
-  const [toast, setToast] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4500);
-    return () => clearTimeout(t);
-  }, [toast]);
+  // Toast queue — supports multiple simultaneous toasts (e.g. success + refresh warning)
+  const [toasts, setToasts] = useState<Array<{ id: number; kind: 'success' | 'error'; text: string }>>([]);
+  const addToast = useCallback((kind: 'success' | 'error', text: string) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, kind, text }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+  }, []);
 
   // Reassign state: tripId -> form state (null = not open)
   const [reassignOpen, setReassignOpen] = useState<number | null>(null);
@@ -206,29 +207,30 @@ export default function DispatchPage() {
     if (!(await confirm('Bạn có chắc chắn muốn xuất phát chuyến đi này? Trạng thái sẽ chuyển thành Đang chạy.'))) {
       return;
     }
+    setDispatching(true);
     setActionLoading(tripId);
     try {
       await api.post(`/trips/${tripId}/dispatch`, {});
-      const [pendingRes, activeRes] = await Promise.all([
-        api.get<{ items: any[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
-        api.get<{ items: any[] }>(`/trips?status=${TripStatus.IN_TRANSIT}&limit=100`),
-      ]);
-      setPendingTrips((pendingRes.items || []).map(normalizeTrip));
-      setActiveTrips((activeRes.items || []).map(normalizeTrip));
-      // Success toast — was previously silent on success, so users (per
-      // bug report) thought the click did nothing because the "Đang chạy"
-      // truck count didn't change (it counts trucks, not trips).
-      const code = (trip as any)?.trip_code || (trip as any)?.tripCode || `#${tripId}`;
-      setToast({ kind: 'success', text: `Đã xuất phát chuyến ${code}` });
+      const code = trip?.tripCode || `#${tripId}`;
+      addToast('success', `Đã xuất phát chuyến ${code}`);
+      // Refresh data separately — failure here does NOT mask dispatch success
+      try {
+        const [pendingRes, activeRes] = await Promise.all([
+          api.get<{ items: any[] }>(`/trips?status=${TripStatus.CREATED}&limit=100`),
+          api.get<{ items: any[] }>(`/trips?status=${TripStatus.IN_TRANSIT}&limit=100`),
+        ]);
+        setPendingTrips((pendingRes.items || []).map(normalizeTrip));
+        setActiveTrips((activeRes.items || []).map(normalizeTrip));
+      } catch {
+        // Dispatch succeeded — stale list is acceptable, user can reload
+        addToast('error', 'Đã xuất phát nhưng không thể tải lại danh sách. Vui lòng tải lại trang.');
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi khởi hành chuyến đi.';
-      // Surface the error as a toast instead of a blocking alert() —
-      // backend now rejects with 409 "Xe đã đang chạy chuyến X" when a
-      // truck is already on another IN_TRANSIT trip; the user needs to see
-      // that, not dismiss a system alert.
-      setToast({ kind: 'error', text: msg });
+      addToast('error', msg);
     } finally {
       setActionLoading(null);
+      setDispatching(false);
     }
   };
 
@@ -345,22 +347,30 @@ export default function DispatchPage() {
           .fade-up-1 animation uses CSS `transform`, which establishes a new
           containing block and breaks `position: fixed` so the toast was
           rendering far below the viewport. Mount on document.body instead. */}
-      {toast && createPortal(
-        <div
-          role="status"
-          style={{
-            position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
-            minWidth: 280, maxWidth: 480,
-            padding: '12px 16px', borderRadius: 8,
-            background: toast.kind === 'success' ? 'var(--accent)' : 'var(--danger)',
-            color: '#fff', fontSize: 13, fontWeight: 600,
-            boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
-            display: 'flex', alignItems: 'center', gap: 10,
-          }}
-          onClick={() => setToast(null)}
-        >
-          <span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} />
-          <span style={{ flex: 1 }}>{toast.text}</span>
+      {toasts.length > 0 && createPortal(
+        <div style={{
+          position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          {toasts.map(t => (
+            <div
+              key={t.id}
+              role="status"
+              style={{
+                minWidth: 280, maxWidth: 480,
+                padding: '12px 16px', borderRadius: 8,
+                background: t.kind === 'success' ? 'var(--accent)' : 'var(--danger)',
+                color: '#fff', fontSize: 13, fontWeight: 600,
+                boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
+                display: 'flex', alignItems: 'center', gap: 10,
+                cursor: 'pointer',
+              }}
+              onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
+            >
+              <span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} />
+              <span style={{ flex: 1 }}>{t.text}</span>
+            </div>
+          ))}
         </div>,
         document.body,
       )}
@@ -804,7 +814,7 @@ export default function DispatchPage() {
                         className="swap-btn"
                         title="Đổi xe / tài xế"
                         onClick={() => openReassign(trip)}
-                        disabled={actionLoading === trip.id}
+                        disabled={dispatching || actionLoading === trip.id}
                       >
                         <RefreshCw size={12} />
                         Đổi xe
@@ -818,7 +828,7 @@ export default function DispatchPage() {
                     type="button"
                     className="dispatch-btn"
                     onClick={() => handleDispatch(trip.id)}
-                    disabled={actionLoading === trip.id || editing}
+                    disabled={dispatching || actionLoading === trip.id || editing}
                   >
                     {actionLoading === trip.id ? (
                       <div

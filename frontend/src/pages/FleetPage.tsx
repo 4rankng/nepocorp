@@ -350,8 +350,13 @@ function DriverCard({ drivers, truckMap, crud }: {
   truckMap: Map<number, TruckType>;
   crud: ReturnType<typeof useCRUD>;
 }) {
+  const [driverSearch, setDriverSearch] = useState('');
   const totalSalary = drivers.reduce((s, d) => s + (d.base_salary ? Number(d.base_salary) : 0), 0);
   const unassigned = drivers.filter(d => !d.assigned_truck_id).length;
+  const q = driverSearch.trim().toLowerCase();
+  const filteredDrivers = q
+    ? drivers.filter(d => d.name.toLowerCase().includes(q) || (d.phone && d.phone.includes(q)))
+    : drivers;
 
   return (
     <Panel flush>
@@ -370,9 +375,9 @@ function DriverCard({ drivers, truckMap, crud }: {
         <div className="fleet-card-tools">
           <div className="fleet-mini-search">
             <Search size={14} />
-            <input type="text" placeholder="Tìm tên hoặc SĐT…" />
+            <input type="text" placeholder="Tìm tên hoặc SĐT…" value={driverSearch} onChange={e => setDriverSearch(e.target.value)} />
           </div>
-          <Btn variant="ghost" size="sm" icon={<Filter size={13} />}>Lọc</Btn>
+          <Btn variant="ghost" size="sm" icon={<Filter size={13} />} disabled title="Sắp ra mắt">Lọc</Btn>
           <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
             <Plus size={13} /> Thêm tài xế
           </button>
@@ -398,7 +403,7 @@ function DriverCard({ drivers, truckMap, crud }: {
             {drivers.length === 0 && !crud.showAddForm && (
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
             )}
-            {drivers.map((d, i) => crud.editingId === d.id
+            {filteredDrivers.map((d, i) => crud.editingId === d.id
               ? <DriverForm key={`edit-${d.id}`} saving={crud.saving} item={d} trucks={[...truckMap.values()]} onsave={dd => crud.doUpdate(d.id, dd)} oncancel={crud.cancelForm} />
               : (
                 <tr key={d.id}>
@@ -444,7 +449,7 @@ function DriverCard({ drivers, truckMap, crud }: {
             </>
           )}
         </div>
-        <span>Hiển thị {drivers.length}/{drivers.length}</span>
+        <span>Hiển thị {filteredDrivers.length}/{drivers.length}</span>
       </div>
       {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
     </Panel>
@@ -508,7 +513,7 @@ export default function FleetPage() {
               ];
               downloadCSV(`doi-xe-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
             }}>Xuất Excel</Btn>
-            <Btn variant="secondary" size="sm" icon={<Filter size={14} />}>Lọc nâng cao</Btn>
+            <Btn variant="secondary" size="sm" icon={<Filter size={14} />} disabled title="Sắp ra mắt">Lọc nâng cao</Btn>
           </div>
         }
       />
