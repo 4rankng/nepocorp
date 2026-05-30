@@ -165,7 +165,26 @@ export async function distributeProfit(quarter: number, year: number) {
 
   const netProfit = trips.reduce((sum, t) => sum + parseFloat(t.grossProfit || '0'), 0);
 
-  const distributions = capEntries.map(entry => ({
+  // capTableHistory is a *history* — pick the latest snapshot date that's
+  // been reached by the quarter end, then dedupe per partner so a partner
+  // doesn't get paid 6× because the seed/admin UI added duplicate rows.
+  const today = new Date().toISOString().slice(0, 10);
+  const cutoff = qEnd > today ? today : qEnd;
+  const reached = capEntries.filter(c => c.effectiveDate <= cutoff);
+  const pool = reached.length > 0 ? reached : capEntries;
+  const activePartners: Array<{ partnerName: string; percentage: string }> = [];
+  if (pool.length > 0) {
+    const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
+    const snapshot = pool.filter(c => c.effectiveDate === latestDate);
+    const byName = new Map<string, typeof snapshot[number]>();
+    for (const row of snapshot) {
+      const prev = byName.get(row.partnerName);
+      if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
+    }
+    for (const row of byName.values()) activePartners.push({ partnerName: row.partnerName, percentage: row.percentage });
+  }
+
+  const distributions = activePartners.map(entry => ({
     quarter,
     year,
     partnerName: entry.partnerName,

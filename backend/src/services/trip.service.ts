@@ -438,6 +438,17 @@ export async function reassignTrip(tripId: number, data: { truck_id: number; dri
   if (!trip) throw new Error('Không tìm thấy chuyến đi');
   if (trip.status !== TripStatus.CREATED) throw new Error('Chỉ có thể đổi tài xế/xe cho chuyến chưa xuất phát');
 
+  // Validate truck/driver exist before attempting the update — otherwise the
+  // raw postgres FK constraint error ("insert or update on table trips
+  // violates foreign key constraint trips_truck_id_trucks_id_fk") leaks into
+  // the UI as an unfriendly red banner. Catch the bad id at the API edge.
+  const [truck] = await db.select({ id: s.trucks.id }).from(s.trucks)
+    .where(and(eq(s.trucks.id, data.truck_id), isNull(s.trucks.deletedAt))).limit(1);
+  if (!truck) throw new Error('Xe đầu kéo không tồn tại hoặc đã bị xóa');
+  const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
+    .where(and(eq(s.drivers.id, data.driver_id), isNull(s.drivers.deletedAt))).limit(1);
+  if (!driver) throw new Error('Tài xế không tồn tại hoặc đã bị xóa');
+
   const [updated] = await db.update(s.trips).set({
     truckId: data.truck_id,
     driverId: data.driver_id,

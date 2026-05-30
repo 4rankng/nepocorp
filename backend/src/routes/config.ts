@@ -13,6 +13,21 @@ import type { Request, Response } from 'express';
 
 const router = Router();
 
+// Zod schemas (defined in @nepocorp/shared) use snake_case field names
+// (license_plate, contact_info, …) but the drizzle column definitions
+// use camelCase (licensePlate, contactInfo, …). Without this conversion,
+// `db.insert(table).values({license_plate: '...'})` produced
+// "null value in column license_plate of relation trucks violates …" because
+// drizzle saw an unknown field and inserted the actual column as null.
+function snakeToCamelKeys<T extends Record<string, any>>(input: T): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(input)) {
+    const camel = k.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
+    out[camel] = v;
+  }
+  return out;
+}
+
 function crud<T extends { id: unknown }>(
   table: any,
   createSchema: any,
@@ -47,7 +62,7 @@ function crud<T extends { id: unknown }>(
 
   sub.post('/', async (req: Request, res: Response) => {
     const data = createSchema.parse(req.body);
-    const [item] = await db.insert(table).values(data).returning();
+    const [item] = await db.insert(table).values(snakeToCamelKeys(data)).returning();
     res.status(201).json(item);
   });
 
@@ -63,7 +78,7 @@ function crud<T extends { id: unknown }>(
   sub.put('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     const data = createSchema.partial().parse(req.body);
-    const [item] = await db.update(table).set({ ...data, updatedAt: new Date() }).where(eq(table.id, id)).returning();
+    const [item] = await db.update(table).set({ ...snakeToCamelKeys(data), updatedAt: new Date() }).where(eq(table.id, id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     res.json(item);
   });

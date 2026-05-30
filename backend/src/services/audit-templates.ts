@@ -20,6 +20,10 @@ const ENTITY_LABELS: Record<string, string> = {
   payments: 'thanh toán',
   penalties: 'kỷ luật',
   adjustments: 'điều chỉnh',
+  // /api/reports/distribute-profit, /api/reports/pnl → "reports"
+  reports: 'báo cáo',
+  auth: 'tài khoản',
+  users: 'tài khoản',
 };
 
 interface TemplateContext {

@@ -1,0 +1,279 @@
+# Cấu hình hệ thống
+
+> Tài liệu QA testing & Hướng dẫn sử dụng — Quản lý cấu hình toàn hệ thống
+> **Route:** `/config` (hub) + 12 sub-pages
+> **Roles:** ADMIN (CRUD), MANAGER (view + limited edit), ACCOUNTANT (view only), DRIVER (no access)
+
+---
+
+## 1. Tổng quan
+
+### 1.1 Mô tả
+
+Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 12 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
+
+### 1.2 12 Sub-pages
+
+| # | Tên | Route | Mô tả |
+|---|-----|-------|-------|
+| 1 | Định mức nhiên liệu | `/config/fuel` | Tiêu hao NL theo loại xe + tuyến |
+| 2 | Tiền đi đường | `/config/road-allowances` | Phụ cấp đường theo tuyến × loại xe |
+| 3 | Quy tắc kỷ luật & phạt | `/config/penalty-reasons` | Danh mục lý do phạt |
+| 4 | Người dùng & Tài xế | `/config/drivers` | CRUD người dùng + hồ sơ tài xế |
+| 5 | Thông tin công ty & Cổ phần | `/config/cap-table` | Cổ đông, tỷ lệ chia lợi nhuận |
+| 6 | Khách hàng & Đối tác | `/config/customers` | CRUD khách hàng (xem 08-KHACH_HANG.md) |
+| 7 | Tuyến đường & Cự ly | `/config/routes` | Tuyến đường, khoảng cách |
+| 8 | Xe đầu kéo | `/config/trucks` | Biển số, trạng thái, định mức |
+| 9 | Danh mục Rơ-moóc | `/config/trailers` | Loại rơ-moóc (20FT, 40FT...) |
+| 10 | Loại hàng hóa | `/config/cargo-types` | Phân loại hàng hóa |
+| 11 | Bảng giá cước | `/config/pricing-tables` | Giá cước theo tuyến × loại hàng |
+| 12 | Phí quản lý | `/config/management-fees` | Tỷ lệ phí QL trừ P&L |
+
+### 1.3 Phân quyền
+
+| Role | Xem | Tạo | Sửa | Xóa |
+|------|:---:|:---:|:---:|:---:|
+| ADMIN | ✅ | ✅ | ✅ | ✅ |
+| MANAGER | ✅ | ❌ | ✅ (giới hạn) | ❌ |
+| ACCOUNTANT | ✅ | ❌ | ❌ | ❌ |
+| DRIVER | ❌ | ❌ | ❌ | ❌ |
+
+### 1.4 API Endpoints
+
+Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/v1/drivers/*` + `/api/v1/config/*`.
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET/POST/PUT/DELETE | `/catalog/fuel-norms[/:id]` | CRUD định mức NL |
+| GET/POST/PUT/DELETE | `/catalog/road-allowances[/:id]` | CRUD tiền đi đường |
+| GET/POST/PUT/DELETE | `/catalog/penalty-reasons[/:id]` | CRUD lý do phạt |
+| GET/POST/PUT/DELETE | `/catalog/cargo-types[/:id]` | CRUD loại hàng |
+| GET/POST/PUT/DELETE | `/catalog/pricing-tables[/:id]` | CRUD bảng giá cước |
+| GET/POST/PUT/DELETE | `/catalog/management-fees[/:id]` | CRUD phí quản lý |
+| GET/POST/PUT/DELETE | `/catalog/route-configs[/:id]` | CRUD tuyến đường |
+| GET/POST/PUT/DELETE | `/catalog/trailers[/:id]` | CRUD rơ-moóc |
+| GET/POST/PUT/DELETE | `/fleet/trucks[/:id]` | CRUD xe đầu kéo |
+| GET/POST/PUT/DELETE | `/drivers[/:id]` | CRUD tài xế |
+| GET/PUT | `/config/cap-table` | Xem/cập nhật cổ phần |
+
+---
+
+## 2. Hướng dẫn sử dụng
+
+### 2.1 Hub `/config`
+
+12 thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ 12. MANAGER ẩn Cổ phần. ACCOUNTANT chỉ xem. DRIVER không thấy menu.
+
+### 2.2 Định mức nhiên liệu `/config/fuel`
+
+**Trường:** Loại xe (bắt buộc), Tuyến đường (bắt buộc), Định mức L/100km (>0), Ghi chú.
+
+**Ràng buộc:** Cặp (loại xe + tuyến) duy nhất. Không xóa khi đang dùng trong chuyến.
+
+### 2.3 Tiền đi đường `/config/road-allowances`
+
+**Trường:** Tuyến đường (bắt buộc), Loại xe (bắt buộc), Số tiền phụ cấp (>=0), Ghi chú.
+
+**Ràng buộc:** Không xóa khi đang dùng trong chuyến.
+
+### 2.4 Quy tắc kỷ luật & phạt `/config/penalty-reasons`
+
+**Trường:** Tên lý do (bắt buộc, duy nhất), Số tiền phạt (>=0), Mô tả, Trạng thái (active/inactive).
+
+### 2.5 Người dùng & Tài xế `/config/drivers`
+
+**Trường:** Họ tên (bắt buộc), SĐT (bắt buộc, duy nhất), Email (duy nhất), Vai trò, Mật khẩu (bắt buộc khi tạo), Biển số xe mặc định (DRIVER), Trạng thái.
+
+**Đặc biệt:** Không xóa user có chuyến → deactivate. Xe gắn phải ACTIVE.
+
+### 2.6 Cổ phần `/config/cap-table`
+
+**Trường:** Tên cổ đông (bắt buộc), Số cổ phần (>0), Ghi chú. Tỷ lệ tự tính.
+
+**Ràng buộc:** Tổng tỷ lệ tất cả cổ đông = 100%.
+
+### 2.7 Khách hàng → xem **08-KHACH_HANG.md**
+
+### 2.8 Tuyến đường `/config/routes`
+
+**Trường:** Tên tuyến (bắt buộc, duy nhất), Điểm đi, Điểm đến, Cự ly km (>0), Ghi chú.
+
+**Ràng buộc:** Không xóa khi dùng trong bảng giá hoặc chuyến đi.
+
+### 2.9 Xe đầu kéo `/config/trucks`
+
+**Trường:** Biển số (bắt buộc, duy nhất), Loại xe, Năm SX, Tải trọng, Trạng thái (ACTIVE/MAINTENANCE/INACTIVE).
+
+**Ràng buộc:** Không xóa khi gán chuyến đi. ACTIVE mới xuất hiện dropdown.
+
+### 2.10 Rơ-moóc `/config/trailers`
+
+**Trường:** Biển số (bắt buộc, duy nhất), Loại (FLATBED/TANKER/CONTAINER/DUMP/OTHER), Tải trọng, Trạng thái.
+
+### 2.11 Loại hàng hóa `/config/cargo-types`
+
+**Trường:** Tên loại (bắt buộc, duy nhất), Mô tả, Mã, Trạng thái.
+
+### 2.12 Bảng giá cước `/config/pricing-tables`
+
+**Trường:** Tuyến (bắt buộc), Loại hàng (bắt buộc), Đơn giá (>0), Đơn vị (per_trip/per_ton/per_km).
+
+**Ràng buộc:** Bộ 3 (tuyến + loại hàng + đơn vị) duy nhất.
+
+### 2.13 Phí quản lý `/config/management-fees`
+
+**Trường:** Tên phí (bắt buộc, duy nhất), Tỷ lệ % (0 < x <= 100), Mô tả, Trạng thái.
+
+---
+
+## 3. Luồng nghiệp vụ
+
+### 3.1 Sơ đồ phụ thuộc
+
+```
+Tuyến đường ─────────┐
+                      ├──→ Bảng giá cước ──→ Chuyến đi
+Loại hàng hóa ───────┘                    │
+Xe đầu kéo ─────────────────────────────→ Chuyến đi
+Rơ-moóc ────────────────────────────────→ Chuyến đi
+Tài xế ─────────────────────────────────→ Chuyến đi
+Khách hàng ─────────────────────────────→ Chuyến đi
+
+Tuyến + Xe ──→ Định mức NL ──→ Tính chi phí
+Tuyến + Xe ──→ Tiền đi đường ──→ Tính chi phí
+Cổ phần ────→ Phân bổ lợi nhuận
+Phí QL ─────→ Trừ P&L
+```
+
+### 3.2 Thứ tự thiết lập
+
+1. Cổ phần → 2. Người dùng → 3. Khách hàng → 4. Loại hàng → 5. Tuyến đường → 6. Xe đầu kéo → 7. Rơ-moóc → 8. Bảng giá cước → 9. Định mức NL → 10. Tiền đi đường → 11. Lý do phạt → 12. Phí quản lý
+
+---
+
+## 4. Bảng tra cứu
+
+### 4.1 Trạng thái xe / rơ-moóc
+
+| Giá | Ý nghĩa | Dropdown tạo chuyến |
+|-----|---------|-------------------|
+| ACTIVE | Đang hoạt động | ✅ Có |
+| MAINTENANCE | Đang bảo dưỡng | ❌ Không |
+| INACTIVE | Ngừng hoạt động | ❌ Không |
+
+### 4.2 Loại rơ-moóc
+
+| Giá | Mô tả |
+|-----|-------|
+| FLATBED | Xe ben / tải thùng |
+| TANKER | Xe bồn |
+| CONTAINER | Xe container |
+| DUMP | Xe đổ |
+| OTHER | Khác |
+
+### 4.3 Đơn vị giá cước
+
+| Giá | Mô tả |
+|-----|-------|
+| per_trip | Theo chuyến |
+| per_ton | Theo tấn |
+| per_km | Theo km |
+
+---
+
+## 5. QA Test Checklist
+
+### 5.1 Hub Page (TC-CH-001 → TC-CH-004)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-001 | 12 thẻ trên hub | ADMIN | Mở `/config` | Hiển thị đúng 12 thẻ có icon + tên + số lượng | High |
+| TC-CH-002 | Click thẻ → sub-page | ADMIN | Click "Định mức NL" | Chuyển đến `/config/fuel` | High |
+| TC-CH-003 | DRIVER không thấy menu | DRIVER | Kiểm tra sidebar | Không thấy "Cấu hình" | High |
+| TC-CH-004 | ACCOUNTANT chỉ xem | ACCOUNTANT | Vào sub-page bất kỳ | Không có nút Tạo/Sửa/Xóa | High |
+
+### 5.2 Định mức NL (TC-CH-005 → TC-CH-007)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-005 | Tạo định mức | ADMIN, `/config/fuel` | Chọn xe + tuyến, nhập 25 L/100km → Lưu | Tạo thành công | High |
+| TC-CH-006 | Thiếu trường bắt buộc | ADMIN, `/config/fuel` | Để trống định mức → Lưu | Lỗi validation | High |
+| TC-CH-007 | Xóa khi đang dùng | Định mức có trong chuyến | Click xóa → Xác nhận | Lỗi: đang sử dụng | High |
+
+### 5.3 Tiền đi đường (TC-CH-008 → TC-CH-009)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-008 | Tạo phụ cấp | ADMIN | Chọn tuyến + xe, nhập 500000 → Lưu | Tạo thành công | High |
+| TC-CH-009 | Số tiền âm | ADMIN | Nhập -100000 → Lưu | Lỗi validation: >= 0 | Medium |
+
+### 5.4 Lý do phạt (TC-CH-010 → TC-CH-011)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-010 | Tạo lý do phạt | ADMIN | Nhập "Đi muộn", 200000 → Lưu | Tạo thành công | High |
+| TC-CH-011 | Trùng tên lý do | Có "Đi muộn" | Tạo lại "Đi muộn" → Lưu | Lỗi trùng lặp | High |
+
+### 5.5 Người dùng & Tài xế (TC-CH-012 → TC-CH-014)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-012 | Tạo tài xế | ADMIN | Nhập họ tên, SĐT, role DRIVER → Lưu | Tạo thành công | High |
+| TC-CH-013 | Trùng SĐT | Có SĐT 0901234567 | Tạo mới cùng SĐT → Lưu | Lỗi trùng lặp | High |
+| TC-CH-014 | Deactivate thay vì xóa | Tài xế có chuyến | Click deactivate | Trạng thái → inactive, không xóa | High |
+
+### 5.6 Cổ phần (TC-CH-015 → TC-CH-016)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-015 | Thêm cổ đông | ADMIN | Nhập tên + 1000 cổ phần → Lưu | Tạo thành công, tỷ lệ tự cập nhật | High |
+| TC-CH-016 | Tổng tỷ lệ = 100% | 2 cổ đông 60%+40% | Xóa 1 cổ đông | Cảnh báo tổng ≠ 100% | High |
+
+### 5.7 Tuyến đường (TC-CH-017 → TC-CH-018)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-017 | Tạo tuyến | ADMIN | Nhập "HCM-ĐN", 850km → Lưu | Tạo thành công | High |
+| TC-CH-018 | Xóa tuyến đang dùng | Tuyến có trong bảng giá | Click xóa → Xác nhận | Lỗi: đang sử dụng | High |
+
+### 5.8 Xe đầu kéo (TC-CH-019 → TC-CH-020)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-019 | Tạo xe | ADMIN | Nhập "60C-12345", ACTIVE → Lưu | Tạo thành công | High |
+| TC-CH-020 | Trùng biển số | Có "60C-12345" | Tạo mới cùng BS → Lưu | Lỗi trùng lặp | High |
+
+### 5.9 Rơ-moóc (TC-CH-021 → TC-CH-022)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-021 | Tạo rơ-moóc | ADMIN | Nhập BS + loại CONTAINER → Lưu | Tạo thành công | High |
+| TC-CH-022 | Lọc theo loại | Nhiều loại RM | Chọn filter TANKER | Chỉ hiện RM loại TANKER | Medium |
+
+### 5.10 Loại hàng hóa (TC-CH-023 → TC-CH-024)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-023 | Tạo loại hàng | ADMIN | Nhập "Cát xây dựng" → Lưu | Tạo thành công | High |
+| TC-CH-024 | Trùng tên loại hàng | Có "Cát xây dựng" | Tạo lại → Lưu | Lỗi trùng lặp | High |
+
+### 5.11 Bảng giá cước (TC-CH-025 → TC-CH-026)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-025 | Tạo bảng giá | Có tuyến + loại hàng | Chọn tuyến + hàng, giá 5M, per_trip → Lưu | Tạo thành công | High |
+| TC-CH-026 | Trùng bộ 3 | Có giá (Tuyến A, Hàng X, per_trip) | Tạo cùng bộ 3 → Lưu | Lỗi trùng lặp | High |
+
+### 5.12 Phí quản lý (TC-CH-027 → TC-CH-028)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-027 | Tạo phí QL | ADMIN | Nhập "Phí QL chung", 5% → Lưu | Tạo thành công | High |
+| TC-CH-028 | Tỷ lệ > 100% | ADMIN | Nhập 150% → Lưu | Lỗi validation | High |
+
+### 5.13 Phân quyền xuyên suốt (TC-CH-029 → TC-CH-030)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-029 | MANAGER không xóa | MANAGER | Vào sub-page bất kỳ | Nút xóa bị ẩn/vô hiệu | High |
+| TC-CH-030 | ACCOUNTANT chỉ đọc | ACCOUNTANT | Vào sub-page bất kỳ | Không có nút Tạo/Sửa/Xóa | High |

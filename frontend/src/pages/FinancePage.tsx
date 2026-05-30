@@ -85,10 +85,19 @@ export default function FinancePage() {
     setLoading(true);
     setError(null);
     try {
+      // Bound the LOCKED trip pull to the selected month — previously this
+      // pulled every locked trip, so the "Cơ cấu chi phí T5" donut showed
+      // all-time fuel (66.7M) when the May P&L was 17.5M.
+      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+      const nextMonthN = month === 12 ? 1 : month + 1;
+      const nextYearN = month === 12 ? year + 1 : year;
+      const monthEndDate = new Date(`${nextYearN}-${String(nextMonthN).padStart(2, '0')}-01`);
+      monthEndDate.setUTCDate(monthEndDate.getUTCDate() - 1);
+      const monthEnd = monthEndDate.toISOString().slice(0, 10);
       const [data, prev, tripsRes, capRes] = await Promise.all([
         api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year}`),
         api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year - 1}`).catch(() => null as PnlReport | null),
-        api.get<PaginatedResponse<TripCosts>>('/trips?status=LOCKED&limit=500').catch(() => ({ items: [], total: 0, page: 1, pageSize: 0 })),
+        api.get<PaginatedResponse<TripCosts>>(`/trips?status=LOCKED&limit=500&date_from=${monthStart}&date_to=${monthEnd}`).catch(() => ({ items: [], total: 0, page: 1, pageSize: 0 })),
         api.get<PaginatedResponse<CapTableHistory>>('/cap-table').catch(() => ({ items: [], total: 0, page: 1, pageSize: 0 })),
       ]);
       setReport(data);
@@ -266,19 +275,55 @@ export default function FinancePage() {
               <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh để xem xu hướng doanh thu hàng tháng</div>
             </div>
           ) : (
-            // Manual width via ResizeObserver — recharts ResponsiveContainer
-            // mis-measures inside flex/grid (renders 14×14). Initial state of
-            // 600 ensures the chart paints something on first render before
-            // the observer fires; the observer then refines.
-            <div ref={revenueChartRef} style={{ width: '100%', height: 200 }}>
-              <BarChart width={revenueChartWidth || 600} height={200} data={revenueChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={compactNum} tick={{ fontSize: 11 }} width={44} />
-                <Tooltip formatter={(v: any) => `${formatRawNumber(Number(v))} ₫`} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="Doanh thu" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={20} />
-                <Bar dataKey="LN gộp" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={20} />
-              </BarChart>
+            // Hand-drawn SVG bar chart — recharts was leaving bar containers
+            // empty regardless of data (paths never rendered) inside a flex
+            // child, even after switching to ResponsiveContainer. The dashboard
+            // already uses a hand-drawn linechart pattern for the same
+            // reason; this is the bar equivalent so the chart renders
+            // deterministically.
+            <div ref={revenueChartRef} style={{ width: '100%', height: 220 }}>
+              {(() => {
+                const w = Math.max(revenueChartWidth || 600, 320);
+                const h = 220;
+                const padL = 44, padR = 8, padT = 8, padB = 36;
+                const plotW = w - padL - padR, plotH = h - padT - padB;
+                const max = Math.max(
+                  1,
+                  ...revenueChartData.flatMap((d) => [d['Doanh thu'] as number, d['LN gộp'] as number]),
+                );
+                const niceMax = Math.ceil(max / 10_000_000) * 10_000_000;
+                const xStep = plotW / revenueChartData.length;
+                const barW = Math.min(16, (xStep - 6) / 2);
+                const yFor = (v: number) => padT + plotH - (v / niceMax) * plotH;
+                const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => niceMax * t);
+                return (
+                  <svg width={w} height={h} role="img" aria-label="Xu hướng doanh thu">
+                    {ticks.map((tv, i) => {
+                      const y = padT + plotH - (tv / niceMax) * plotH;
+                      return (
+                        <g key={i}>
+                          <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="var(--line)" strokeDasharray={i === 0 ? undefined : '2 4'} />
+                          <text x={padL - 6} y={y + 4} textAnchor="end" fontSize="11" fill="var(--fg-3)">{compactNum(tv)}</text>
+                        </g>
+                      );
+                    })}
+                    {revenueChartData.map((d, i) => {
+                      const cx = padL + i * xStep + xStep / 2;
+                      const rev = d['Doanh thu'] as number;
+                      const gp = d['LN gộp'] as number;
+                      const revH = (rev / niceMax) * plotH;
+                      const gpH = (gp / niceMax) * plotH;
+                      return (
+                        <g key={i}>
+                          <rect x={cx - barW - 1} y={padT + plotH - revH} width={barW} height={revH} fill="#3b82f6" rx={2} />
+                          <rect x={cx + 1} y={padT + plotH - gpH} width={barW} height={gpH} fill="#10b981" rx={2} />
+                          <text x={cx} y={h - padB + 16} textAnchor="middle" fontSize="11" fill="var(--fg-3)">{d.name as string}</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -291,14 +336,43 @@ export default function FinancePage() {
           {loading ? (
             <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
           ) : costPieData.length > 0 ? (
-            <div ref={pieChartRef} style={{ width: '100%', height: 200 }}>
-              <PieChart width={pieChartWidth || 280} height={200}>
-                <Pie data={costPieData} dataKey="value" cx="50%" cy="45%" outerRadius={68} label={false}>
-                  {costPieData.map((e, i) => <Cell key={i} fill={e.fill} />)}
-                </Pie>
-                <Tooltip formatter={(v: any) => `${formatRawNumber(Number(v))} ₫`} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
+            // Hand-drawn donut + legend (same reason as the bar chart above —
+            // recharts PieChart left empty containers inside this flex panel).
+            <div ref={pieChartRef} style={{ width: '100%', height: 200, display: 'flex', alignItems: 'center', gap: 16 }}>
+              {(() => {
+                const total = costPieData.reduce((s, d) => s + d.value, 0) || 1;
+                const cx = 90, cy = 90, rOuter = 70, rInner = 42;
+                let start = -Math.PI / 2;
+                const arcs = costPieData.map((d) => {
+                  const angle = (d.value / total) * Math.PI * 2;
+                  const end = start + angle;
+                  const x1 = cx + rOuter * Math.cos(start), y1 = cy + rOuter * Math.sin(start);
+                  const x2 = cx + rOuter * Math.cos(end), y2 = cy + rOuter * Math.sin(end);
+                  const x3 = cx + rInner * Math.cos(end), y3 = cy + rInner * Math.sin(end);
+                  const x4 = cx + rInner * Math.cos(start), y4 = cy + rInner * Math.sin(start);
+                  const large = angle > Math.PI ? 1 : 0;
+                  const path = `M ${x1} ${y1} A ${rOuter} ${rOuter} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${rInner} ${rInner} 0 ${large} 0 ${x4} ${y4} Z`;
+                  start = end;
+                  return { path, fill: d.fill, name: d.name, value: d.value, pct: (d.value / total) * 100 };
+                });
+                return (
+                  <>
+                    <svg width={180} height={180} role="img" aria-label="Cơ cấu chi phí">
+                      {arcs.map((a, i) => <path key={i} d={a.path} fill={a.fill} />)}
+                    </svg>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+                      {arcs.map((a, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ width: 10, height: 10, background: a.fill, borderRadius: 2, flexShrink: 0 }} />
+                          <span style={{ flex: 1 }}>{a.name}</span>
+                          <span style={{ fontWeight: 600 }}>{formatRawNumber(a.value)} ₫</span>
+                          <span style={{ color: 'var(--fg-3)' }}>{a.pct.toFixed(0)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           ) : (
             <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 4 }}>

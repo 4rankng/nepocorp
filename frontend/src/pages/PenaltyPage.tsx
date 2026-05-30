@@ -402,10 +402,16 @@ export default function PenaltyPage() {
       ? truckMap.get(d.assigned_truck_id)!.license_plate
       : null;
     return { ...d, streakDays, violationsInPeriod, fineYTD, grade, truckPlate };
-  }).sort((a, b) => b.streakDays - a.streakDays);
+  }).sort((a, b) => b.streakDays - a.streakDays || a.violationsInPeriod - b.violationsInPeriod);
 
   const longestStreak = driverDetails.reduce((max, d) => Math.max(max, d.streakDays), 0);
-  const streakLeader = driverDetails.find(d => d.streakDays === longestStreak)?.name || '—';
+  // When streaks are tied (e.g. all drivers freshly hired = 0 days), break the
+  // tie by fewest 90-day violations so a driver who *has* a recent violation
+  // isn't crowned safety leader.
+  const streakLeader = driverDetails.length > 0
+    ? [...driverDetails]
+        .sort((a, b) => b.streakDays - a.streakDays || a.violationsInPeriod - b.violationsInPeriod)[0]?.name || '—'
+    : '—';
   const avgStreak = driverDetails.length > 0
     ? Math.round(driverDetails.reduce((s, d) => s + d.streakDays, 0) / driverDetails.length)
     : 0;
