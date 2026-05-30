@@ -7,7 +7,7 @@ import {
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
-import { InlineForm, FormActions, ActionBtns } from '../components/config';
+import { InlineForm, FormActions, ActionBtns, Field } from '../components/config';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
 import { TrailerType } from '@nepocorp/shared';
@@ -26,10 +26,6 @@ const TRAILER_TYPE_LABELS: Record<string, string> = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="field"><label>{label}</label>{children}</div>;
-}
 
 function AvatarInitials({ name }: { name: string }) {
   const c = avatarColorByName(name);

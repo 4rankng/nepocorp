@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { getInitials } from '../lib/avatar';
+import { getInitials, avatarColorById } from '../lib/avatar';
 import { formatCurrency, formatDate } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { Driver, PenaltyReason, Truck } from '@nepocorp/shared';
@@ -19,20 +19,6 @@ import {
 import { usePenalties, usePenaltyCatalogs, type PenaltyRow } from '../hooks/usePenalties';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const AVATAR_COLORS = [
-  { bg: 'var(--accent-soft)', color: 'var(--accent-2)' },
-  { bg: '#E0F2FE', color: '#0369A1' },
-  { bg: '#FCE7F3', color: '#BE185D' },
-  { bg: '#FEF3C7', color: '#92400E' },
-  { bg: '#EDE9FE', color: '#6D28D9' },
-  { bg: '#FEE2E2', color: '#DC2626' },
-  { bg: '#CCFBF1', color: '#0F766E' },
-];
-
-function getAvatarColor(id: number) {
-  return AVATAR_COLORS[id % AVATAR_COLORS.length];
-}
 
 type Severity = 'light' | 'med' | 'heavy' | 'critical';
 
@@ -518,7 +504,7 @@ export default function PenaltyPage() {
               <tbody>
                 {driverDetails.map((d, idx) => {
                   const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
-                  const ac = getAvatarColor(d.id);
+                  const ac = avatarColorById(d.id);
                   const streakPct = Math.min(100, (d.streakDays / 180) * 100);
                   const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'bad';
                   const moneyClass = d.fineYTD === 0 ? 'zero' : '';
@@ -530,7 +516,7 @@ export default function PenaltyPage() {
                       </td>
                       <td>
                         <span className="penalty-driver-cell">
-                          <span className="penalty-driver-mini" style={{ background: ac.bg, color: ac.color }}>
+                          <span className="penalty-driver-mini" style={{ background: ac.bg, color: ac.fg }}>
                             {getInitials(d.name)}
                           </span>
                           <span className="penalty-driver-info">

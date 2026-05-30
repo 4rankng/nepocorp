@@ -44,6 +44,9 @@ export function CrudTable<T extends { id: number }>({
 }: CrudTableProps<T>) {
   const navigate = useNavigate();
 
+  // NOTE: fetches with no page/limit params — backend defaults to limit=50.
+  // Config tables are small (< 50 rows) so this is fine for now.
+  // If any table grows beyond 50 items, add pagination controls here.
   const { data, refetch } = useQuery({
     queryKey: [endpoint],
     queryFn: async () => {

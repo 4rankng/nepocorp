@@ -59,7 +59,10 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
   const tripOutstanding = new Map<number, { tripId: number; date: string; outstanding: number; note: string }>();
   for (const inv of openInvoices) {
     if (inv.open <= 0) continue;
-    const tripId = tsToTripId.get(inv.ts) ?? 0;
+    // inv.ts may be a Date object (Drizzle returns Date for timestamp columns)
+    // — normalise to ISO string so it matches the tsToTripId map keys.
+    const tsKey = inv.ts instanceof Date ? inv.ts.toISOString() : String(inv.ts);
+    const tripId = tsToTripId.get(tsKey) ?? 0;
     if (!tripId) continue;
     const existing = tripOutstanding.get(tripId);
     if (existing) {
@@ -67,7 +70,7 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
     } else {
       tripOutstanding.set(tripId, {
         tripId,
-        date: inv.ts.slice(0, 10),
+        date: tsKey.slice(0, 10),
         outstanding: inv.open,
         note: tripNotes.get(tripId) || '',
       });
