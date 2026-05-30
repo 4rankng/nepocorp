@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -154,6 +155,14 @@ export default function DispatchPage() {
 
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [fleetFilter, setFleetFilter] = useState<FleetFilter>('all');
+  // Toast for dispatch success/error — replaces silent state-update +
+  // blocking alert() so users see what happened.
+  const [toast, setToast] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   // Reassign state: tripId -> form state (null = not open)
   const [reassignOpen, setReassignOpen] = useState<number | null>(null);
@@ -193,6 +202,7 @@ export default function DispatchPage() {
 
   // ── Trip dispatch ─────────────────────────────────────────────────────
   const handleDispatch = async (tripId: number) => {
+    const trip = pendingTrips.find((t) => t.id === tripId);
     if (!(await confirm('Bạn có chắc chắn muốn xuất phát chuyến đi này? Trạng thái sẽ chuyển thành Đang chạy.'))) {
       return;
     }
@@ -205,9 +215,18 @@ export default function DispatchPage() {
       ]);
       setPendingTrips((pendingRes.items || []).map(normalizeTrip));
       setActiveTrips((activeRes.items || []).map(normalizeTrip));
+      // Success toast — was previously silent on success, so users (per
+      // bug report) thought the click did nothing because the "Đang chạy"
+      // truck count didn't change (it counts trucks, not trips).
+      const code = (trip as any)?.trip_code || (trip as any)?.tripCode || `#${tripId}`;
+      setToast({ kind: 'success', text: `Đã xuất phát chuyến ${code}` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi khởi hành chuyến đi.';
-      alert(msg);
+      // Surface the error as a toast instead of a blocking alert() —
+      // backend now rejects with 409 "Xe đã đang chạy chuyến X" when a
+      // truck is already on another IN_TRANSIT trip; the user needs to see
+      // that, not dismiss a system alert.
+      setToast({ kind: 'error', text: msg });
     } finally {
       setActionLoading(null);
     }
@@ -322,6 +341,29 @@ export default function DispatchPage() {
 
   return (
     <div className="dispatch-page fade-up-1" style={{ paddingBottom: 40 }}>
+      {/* Portal the toast out of the dispatch-page wrapper — its
+          .fade-up-1 animation uses CSS `transform`, which establishes a new
+          containing block and breaks `position: fixed` so the toast was
+          rendering far below the viewport. Mount on document.body instead. */}
+      {toast && createPortal(
+        <div
+          role="status"
+          style={{
+            position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
+            minWidth: 280, maxWidth: 480,
+            padding: '12px 16px', borderRadius: 8,
+            background: toast.kind === 'success' ? 'var(--accent)' : 'var(--danger)',
+            color: '#fff', fontSize: 13, fontWeight: 600,
+            boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}
+          onClick={() => setToast(null)}
+        >
+          <span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} />
+          <span style={{ flex: 1 }}>{toast.text}</span>
+        </div>,
+        document.body,
+      )}
       {error && (
         <div
           style={{
@@ -379,8 +421,13 @@ export default function DispatchPage() {
             <div className="metric-delta delta-flat">— xe đăng ký</div>
           </div>
           <div className="metric">
-            <div className="metric-label">Đang chạy</div>
-            <div className="metric-value d-mono">{fleetCounts.running}</div>
+            {/* Renamed from "Đang chạy" — the value counts unique trucks with
+                at least one IN_TRANSIT trip (i.e. how many trucks are
+                physically moving), not how many trips are running. The old
+                label caused confusion when users dispatched a new trip and
+                expected this number to tick up. */}
+            <div className="metric-label">Xe đang chạy</div>
+            <div className="metric-value d-mono">{fleetCounts.running}<span className="metric-value-unit">/{fleetCounts.all}</span></div>
             <div className="metric-delta delta-up">
               <TrendingUp size={10} strokeWidth={2.5} />
               hoạt động
@@ -798,7 +845,7 @@ export default function DispatchPage() {
         {pendingTrips.length > 0 && (
           <div className="orders-foot">
             <span>Hiển thị {pendingTrips.length} đơn hàng</span>
-            <a href="#" onClick={(e) => e.preventDefault()}>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigate('/trips'); }}>
               Lịch sử điều vận →
             </a>
           </div>

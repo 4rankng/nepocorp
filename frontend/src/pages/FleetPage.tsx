@@ -4,6 +4,7 @@ import {
   Download, Filter, CheckCircle,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
 import { InlineForm, FormActions, ActionBtns } from '../components/config';
 import { useCRUD } from '../hooks/useCRUD';
@@ -499,7 +500,14 @@ export default function FleetPage() {
         description="Quản lý xe đầu kéo, rơ-moóc và tài xế trong một trang"
         action={
           <div style={{ display: 'flex', gap: 8 }}>
-            <Btn variant="secondary" size="sm" icon={<Download size={14} />}>Xuất Excel</Btn>
+            <Btn variant="secondary" size="sm" icon={<Download size={14} />} onClick={() => {
+              const headers = ['Loại', 'Biển số', 'Trạng thái', 'Tài xế gán'];
+              const rows = [
+                ...trucks.map(t => ['Xe đầu kéo', t.license_plate, TRUCK_STATUS[t.status] || t.status, driverByTruck.has(t.id) ? driverByTruck.get(t.id)!.name : '—']),
+                ...trailers.map(t => ['Rơ-moóc', t.license_plate, t.status === 'ACTIVE' ? 'Hoạt động' : t.status, '—']),
+              ];
+              downloadCSV(`doi-xe-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+            }}>Xuất Excel</Btn>
             <Btn variant="secondary" size="sm" icon={<Filter size={14} />}>Lọc nâng cao</Btn>
           </div>
         }

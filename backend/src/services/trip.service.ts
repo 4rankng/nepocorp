@@ -298,6 +298,25 @@ export async function transitionTripStatus(
       if (currentStatus !== TripStatus.CREATED && currentStatus !== TripStatus.COMPLETED) {
         throw new Error('Chỉ có thể xuất phát chuyến đi ở trạng thái Mới tạo hoặc Hoàn thành');
       }
+      // Block dispatching a second trip on a truck that is already running
+      // another trip — physically a truck can only be on one IN_TRANSIT trip
+      // at a time. Without this guard the dispatch page's "Đang chạy" stat
+      // stays at 3 even after dispatching more, because it counts unique
+      // trucks (not trips) — so the user gets no visible feedback.
+      const [busyTruck] = await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode })
+        .from(s.trips)
+        .where(and(
+          eq(s.trips.truckId, trip.truckId),
+          eq(s.trips.status, TripStatus.IN_TRANSIT),
+          isNull(s.trips.deletedAt),
+        ))
+        .limit(1);
+      if (busyTruck && busyTruck.id !== tripId) {
+        throw Object.assign(
+          new Error(`Xe đã đang chạy chuyến ${busyTruck.tripCode || '#' + busyTruck.id}. Vui lòng hoàn thành chuyến đó trước.`),
+          { status: 409 }
+        );
+      }
     } else if (targetStatus === TripStatus.COMPLETED) {
       if (currentStatus !== TripStatus.IN_TRANSIT) {
         throw new Error('Chỉ có thể hoàn thành chuyến đi đang chạy');

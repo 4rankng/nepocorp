@@ -8,7 +8,7 @@ import { requireRoles } from '../middleware/casbin';
 import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
-import { getDashboardStats, getPnlReport, distributeProfit } from '../services/reporting.service';
+import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary } from '../services/reporting.service';
 
 const router = Router();
 
@@ -206,6 +206,16 @@ router.get('/reports/pnl', async (req: Request, res: Response) => {
     const month = parseInt(req.query.month as string);
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
     res.json(await getPnlReport(month, year));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Receivables summary ──────────────────────────────────────────────────────
+
+router.get('/reports/receivables-summary', async (_req: Request, res: Response) => {
+  try {
+    res.json(await getReceivablesSummary());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

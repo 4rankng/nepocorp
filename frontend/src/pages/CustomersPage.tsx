@@ -4,6 +4,7 @@ import {
   MoreHorizontal, Pencil, Trash2, X, Save, Loader2,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, FilterPill, StatusPill } from '../components/UI';
 import { formatCurrency } from '../lib/format';
 import type { Customer, PaginatedResponse } from '@nepocorp/shared';
@@ -180,7 +181,18 @@ export default function CustomersPage() {
         description={`${total} khách hàng đang quản lý`}
         action={
           <>
-            <button className="btn btn--secondary">
+            <button className="btn btn--secondary" onClick={() => {
+              const headers = ['Tên KH', 'MST', 'Người liên hệ', 'Điện thoại', 'Hạn mức TD', 'Trạng thái'];
+              const rows = filtered.map(c => [
+                c.name,
+                (c as any).tax_code || (c as any).taxCode || '',
+                (c as any).contact_person || (c as any).contactPerson || '',
+                c.phone || '',
+                (c as any).credit_limit || (c as any).creditLimit || '',
+                STATUS_LABELS[c.status] || c.status,
+              ]);
+              downloadCSV(`khach-hang-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+            }}>
               <Download size={14} /> Xuất Excel
             </button>
             <button className="btn btn--primary" onClick={() => { setShowAddForm(true); setEditingId(null); }}>

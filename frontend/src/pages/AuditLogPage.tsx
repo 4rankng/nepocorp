@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
+import { downloadCSV } from '../lib/csv';
 import {
   Search,
   Activity,
@@ -204,7 +205,17 @@ export default function AuditLogPage() {
           </p>
         </div>
         <div className="page-actions">
-          <button className="btn btn--secondary">
+          <button className="btn btn--secondary" onClick={() => {
+            const headers = ['#', 'Thời gian', 'Người dùng', 'Hành động', 'Nội dung'];
+            const rows = entries.map((e, i) => [
+              i + 1,
+              formatExactTime(e.timestamp),
+              e.userName || e.userEmail,
+              ACTION_LABELS[e.action] || e.action,
+              e.message,
+            ]);
+            downloadCSV(`nhat-ky-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+          }}>
             <Download size={14} />
             Xuất Excel
           </button>

@@ -197,6 +197,121 @@ export async function distributeProfit(quarter: number, year: number) {
 
   return { quarter, year, netProfit, distributions };
 }
+/**
+ * Receivables summary: aggregate customer outstanding balances bucketed by aging.
+ * Uses FIFO allocation — payments are applied against the oldest open debits first —
+ * so bucket totals reconcile to total outstanding.
+ */
+export async function getReceivablesSummary() {
+  // Fetch all CUSTOMER ledger entries, oldest first (for FIFO)
+  const ledgerRows = await db.select({
+    entityId: s.ledger.entityId,
+    debit: s.ledger.debit,
+    credit: s.ledger.credit,
+    timestamp: s.ledger.timestamp,
+  }).from(s.ledger)
+    .where(eq(s.ledger.entityType, 'CUSTOMER'))
+    .orderBy(sql`${s.ledger.id} ASC`);
+
+  // Group by customer
+  const byCustomer = new Map<number, Array<{ debit: number; credit: number; timestamp: Date | null }>>();
+  for (const row of ledgerRows) {
+    const entries = byCustomer.get(row.entityId) || [];
+    entries.push({
+      debit: parseFloat(row.debit || '0'),
+      credit: parseFloat(row.credit || '0'),
+      timestamp: row.timestamp,
+    });
+    byCustomer.set(row.entityId, entries);
+  }
+
+  const now = Date.now();
+  const DAY_MS = 86400000;
+
+  // Aging buckets: { range, label, count of customers, total amount }
+  const buckets = [
+    { range: '0-30',  label: 'Trong hạn',      count: 0, amount: 0 },
+    { range: '31-60', label: '31-60 ngày',      count: 0, amount: 0 },
+    { range: '61-90', label: '61-90 ngày',      count: 0, amount: 0 },
+    { range: '90+',   label: 'Trên 90 ngày',     count: 0, amount: 0 },
+  ];
+
+  let totalOutstanding = 0;
+  let totalCustomers = 0;
+  let overdueCustomers = 0;
+
+  for (const [, entries] of byCustomer) {
+    // FIFO: walk chronological entries, maintain open invoices list
+    const openInvoices: Array<{ timestamp: string; open: number }> = [];
+
+    for (const entry of entries) {
+      if (entry.debit > 0 && entry.timestamp) {
+        openInvoices.push({
+          timestamp: new Date(entry.timestamp).toISOString().slice(0, 10),
+          open: entry.debit,
+        });
+      }
+      if (entry.credit > 0) {
+        // Apply payment FIFO against oldest open invoices
+        let remaining = entry.credit;
+        for (const inv of openInvoices) {
+          if (remaining <= 0) break;
+          if (inv.open <= 0) continue;
+          const apply = Math.min(inv.open, remaining);
+          inv.open -= apply;
+          remaining -= apply;
+        }
+      }
+    }
+
+    // Compute outstanding and bucket
+    let customerOutstanding = 0;
+    let customerMaxDays = 0;
+
+    for (const inv of openInvoices) {
+      if (inv.open <= 0) continue;
+      customerOutstanding += inv.open;
+      const ageInDays = Math.floor((now - new Date(inv.timestamp).getTime()) / DAY_MS);
+      if (ageInDays > customerMaxDays) customerMaxDays = ageInDays;
+
+      if (ageInDays <= 30) {
+        buckets[0].amount += inv.open;
+      } else if (ageInDays <= 60) {
+        buckets[1].amount += inv.open;
+      } else if (ageInDays <= 90) {
+        buckets[2].amount += inv.open;
+      } else {
+        buckets[3].amount += inv.open;
+      }
+    }
+
+    if (customerOutstanding > 0) {
+      totalCustomers++;
+      totalOutstanding += customerOutstanding;
+
+      // A customer is in a bucket if they have any open amount in that range or older
+      if (customerMaxDays > 90) {
+        buckets[3].count++;
+        overdueCustomers++;
+      } else if (customerMaxDays > 60) {
+        buckets[2].count++;
+        overdueCustomers++;
+      } else if (customerMaxDays > 30) {
+        buckets[1].count++;
+        overdueCustomers++;
+      } else {
+        buckets[0].count++;
+      }
+    }
+  }
+
+  return {
+    buckets,
+    totalOutstanding,
+    totalCustomers,
+    overdueCustomers,
+  };
+}
 
 // ─── Internal helpers ──────────────────────────────────────────────────────────
 

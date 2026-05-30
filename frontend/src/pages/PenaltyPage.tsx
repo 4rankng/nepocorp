@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
+import { downloadCSV } from '../lib/csv';
 import type { Driver, PenaltyReason, Truck } from '@nepocorp/shared';
 import type { CreatePenaltyRequest } from '@nepocorp/shared';
 import { TruckStatus, DriverStatus } from '@nepocorp/shared';
@@ -302,6 +304,7 @@ function SeverityIcon({ severity }: { severity: Severity }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PenaltyPage() {
+  const navigate = useNavigate();
   const [penalties, setPenalties] = useState<PenaltyRow[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -449,7 +452,17 @@ export default function PenaltyPage() {
           </div>
         </div>
         <div className="page-actions">
-          <Btn variant="secondary" icon={<Download size={14} />}>
+          <Btn variant="secondary" icon={<Download size={14} />} onClick={() => {
+            const headers = ['Tài xế', 'Mã lệnh', 'Lý do', 'Số tiền', 'Ngày'];
+            const rows = filteredPenalties.map(p => [
+              p.driverName || '—',
+              p.trip_id ? `#${p.trip_id}` : '—',
+              p.reasonText || p.custom_reason || '—',
+              p.amount,
+              p.date,
+            ]);
+            downloadCSV(`ky-luat-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+          }}>
             Xuất báo cáo
           </Btn>
           <Btn variant="primary" icon={<Plus size={14} />} onClick={() => openDrawer()}>
@@ -716,7 +729,7 @@ export default function PenaltyPage() {
                 </div>
               </div>
               <div className="penalty-empty-actions">
-                <Btn variant="secondary" icon={<ShieldCheck size={13} />}>Xem nội quy</Btn>
+                <Btn variant="secondary" icon={<ShieldCheck size={13} />} onClick={() => navigate('/config/penalty-reasons')}>Xem nội quy</Btn>
                 <Btn variant="primary" icon={<Plus size={13} />} onClick={() => openDrawer()}>Lập biên bản</Btn>
               </div>
             </div>
@@ -749,7 +762,7 @@ export default function PenaltyPage() {
                         </td>
                         <td>
                           {p.trip_id
-                            ? <a href={`/trips/${p.trip_id}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: 12 }}>#{p.trip_id}</a>
+                             ? <a href={`/trips/${p.trip_id}`} onClick={(e) => { e.preventDefault(); navigate(`/trips/${p.trip_id}`); }} style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: 12 }}>#{p.trip_id}</a>
                             : <span style={{ color: 'var(--ink-3)' }}>—</span>}
                         </td>
                         <td style={{ color: 'var(--ink-2)', maxWidth: 240 }}>
@@ -816,7 +829,7 @@ export default function PenaltyPage() {
             <div className="legend">
               <span>Cập nhật lần cuối: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{formatDate(new Date().toISOString().slice(0, 10))}</strong></span>
             </div>
-            <a href="/config/penalty-reasons" style={{ color: 'var(--accent-2)', fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>Sửa bảng phạt →</a>
+            <a href="/config/penalty-reasons" onClick={(e) => { e.preventDefault(); navigate('/config/penalty-reasons'); }} style={{ color: 'var(--accent-2)', fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>Sửa bảng phạt →</a>
           </div>
         </Panel>
       </div>

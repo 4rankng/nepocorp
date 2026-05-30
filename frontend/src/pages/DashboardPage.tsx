@@ -633,7 +633,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
-              <button className="btn btn--secondary btn--sm">Quyết định</button>
+              <button className="btn btn--secondary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/debt'); }}>Quyết định</button>
             </div>
           ) : (
             <div className="todo" onClick={() => navigate('/debt')}>
@@ -672,7 +672,7 @@ export default function DashboardPage() {
                       <div className="todo__meta"><span>{previewParts.join(' · ')}</span></div>
                     )}
                   </div>
-                  <button className="btn btn--secondary btn--sm">Phân xe</button>
+                  <button className="btn btn--secondary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/dispatch'); }}>Phân xe</button>
                 </div>
               );
             })()
@@ -704,7 +704,7 @@ export default function DashboardPage() {
               </div>
               <div className="todo__meta"><span>Xác nhận để chốt sổ tháng</span></div>
             </div>
-            <button className="btn btn--primary btn--sm">Xem & xác nhận</button>
+            <button className="btn btn--primary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/profit'); }}>Xem & xác nhận</button>
           </div>
 
       </Panel>

@@ -55,6 +55,12 @@ export default function ProfitPage() {
   // Data
   const [report, setReport] = useState<PnlReport | null>(null);
   const [capTable, setCapTable] = useState<CapTableHistory[]>([]);
+  const [toast, setToast] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -99,9 +105,9 @@ export default function ProfitPage() {
         year: distQuarterYear
       });
       setDistResult(res);
-      alert('Đã thực hiện chốt phân chia lợi nhuận thành công!');
+      setToast({ kind: 'success', text: 'Đã thực hiện chốt phân chia lợi nhuận thành công!' });
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi phân chia lợi nhuận.');
+      setToast({ kind: 'error', text: err.message || 'Lỗi khi phân chia lợi nhuận.' });
     } finally {
       setDistributing(false);
     }
@@ -125,6 +131,24 @@ export default function ProfitPage() {
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
+      {toast && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
+            minWidth: 280, maxWidth: 480,
+            padding: '12px 16px', borderRadius: 8,
+            background: toast.kind === 'success' ? 'var(--accent)' : 'var(--danger)',
+            color: '#fff', fontSize: 13, fontWeight: 600,
+            boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}
+          onClick={() => setToast(null)}
+        >
+          <span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} />
+          <span style={{ flex: 1 }}>{toast.text}</span>
+        </div>
+      )}
       {/* Header */}
       <PageHeader 
         title="Lợi nhuận & Phân chia" 
