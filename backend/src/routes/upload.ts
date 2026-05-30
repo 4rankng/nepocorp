@@ -3,6 +3,7 @@ import multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
 import crypto from 'crypto';
+import sharp from 'sharp';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -11,6 +12,9 @@ import { Role } from '@nepocorp/shared';
 import { storageService } from '../services/storage.service';
 import { config } from '../config';
 import type { Request, Response } from 'express';
+
+// Maximum dimension for server-side downscale
+const MAX_IMAGE_DIMENSION = 2048;
 
 // Magic-bytes sniffer for secure validation Sniff file signatures
 function sniffMimeType(buffer: Buffer): string | null {
@@ -39,39 +43,6 @@ function sniffMimeType(buffer: Buffer): string | null {
   return null;
 }
 
-// Pure-JS JPEG EXIF GPS and metadata stripper
-function stripJpegExif(buffer: Buffer): Buffer {
-  if (buffer[0] !== 0xff || buffer[1] !== 0xd8) return buffer;
-  
-  const chunks: Buffer[] = [buffer.subarray(0, 2)];
-  let offset = 2;
-  
-  while (offset < buffer.length) {
-    if (buffer[offset] !== 0xff) break;
-    const marker = buffer[offset + 1];
-    
-    // SOS starts image data - copy remainder
-    if (marker === 0xda) {
-      chunks.push(buffer.subarray(offset));
-      break;
-    }
-    
-    const length = buffer.readUInt16BE(offset + 2);
-    const nextOffset = offset + 2 + length;
-    
-    // Drop APP1 marker containing EXIF
-    if (marker === 0xe1) {
-      // Skipped
-    } else {
-      chunks.push(buffer.subarray(offset, nextOffset));
-    }
-    
-    offset = nextOffset;
-  }
-  
-  return Buffer.concat(chunks);
-}
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
@@ -98,11 +69,36 @@ uploadRouter.post('/', upload.single('file'), requireRoles(Role.ADMIN, Role.MANA
       return res.status(400).json({ error: 'Định dạng file không được hỗ trợ hoặc file bị hỏng' });
     }
 
-    // 2. Process buffer (EXIF strip JPEGs)
-    let processedBuffer = file.buffer;
-    let ext = path.extname(file.originalname).toLowerCase();
-    if (mime === 'image/jpeg') {
-      processedBuffer = stripJpegExif(file.buffer);
+    // 2. Process image with sharp: HEIC→JPEG transcode, EXIF strip, downscale
+    let processedBuffer: Buffer;
+    let ext: string;
+
+    if (mime === 'image/heic') {
+      // Transcode HEIC to JPEG
+      processedBuffer = await sharp(file.buffer)
+        .rotate() // auto-rotate based on EXIF orientation, then strip it
+        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+      ext = '.jpg';
+    } else {
+      // For JPEG/PNG/WebP: strip EXIF + downscale if needed
+      const pipeline = sharp(file.buffer)
+        .rotate()
+        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+        .withMetadata(false); // strip all EXIF/metadata
+
+      if (mime === 'image/jpeg') {
+        processedBuffer = await pipeline.jpeg({ quality: 85 }).toBuffer();
+        ext = '.jpg';
+      } else if (mime === 'image/png') {
+        processedBuffer = await pipeline.png().toBuffer();
+        ext = '.png';
+      } else {
+        // WebP
+        processedBuffer = await pipeline.webp({ quality: 85 }).toBuffer();
+        ext = '.webp';
+      }
     }
 
     // 3. Generate UUID storage key
