@@ -22,10 +22,7 @@ export async function getDashboardStats() {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-  const nextMonth = month === 12 ? 1 : month + 1;
-  const nextYear = month === 12 ? year + 1 : year;
-  const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+  const { start: monthStart, end: monthEnd } = monthDateRange(year, month);
 
   const [
     [stats],
@@ -160,51 +157,18 @@ export async function getPnlReport(month: number, year: number) {
  * Distribute net profit for a quarter to cap-table partners.
  */
 export async function distributeProfit(quarter: number, year: number) {
-  const capEntries = await db.select().from(s.capTableHistory)
-    .orderBy(desc(s.capTableHistory.effectiveDate));
+  const plan = await computeDistribution(quarter, year);
 
-  const qStartMonth = (quarter - 1) * 3 + 1;
-  const qEndMonth = quarter * 3;
-  const { start: qStart } = monthDateRange(year, qStartMonth);
-  const { end: qEnd } = monthDateRange(year, qEndMonth);
-
-  const trips = await db.select().from(s.trips).where(
-    and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), gte(s.trips.departureDate, qStart), sql`${s.trips.departureDate} < ${qEnd}`)
-  );
-
-  const netProfit = trips.reduce((sum, t) => sum + parseFloat(t.grossProfit || '0'), 0);
-
-  // capTableHistory is a *history* — pick the latest snapshot date that's
-  // been reached by the quarter end, then dedupe per partner so a partner
-  // doesn't get paid 6× because the seed/admin UI added duplicate rows.
-  const today = new Date().toISOString().slice(0, 10);
-  const cutoff = qEnd > today ? today : qEnd;
-  const reached = capEntries.filter(c => c.effectiveDate <= cutoff);
-  const pool = reached.length > 0 ? reached : capEntries;
-  const activePartners: Array<{ partnerName: string; percentage: string }> = [];
-  if (pool.length > 0) {
-    const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
-    const snapshot = pool.filter(c => c.effectiveDate === latestDate);
-    const byName = new Map<string, typeof snapshot[number]>();
-    for (const row of snapshot) {
-      const prev = byName.get(row.partnerName);
-      if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
-    }
-    for (const row of byName.values()) activePartners.push({ partnerName: row.partnerName, percentage: row.percentage });
+  if (plan.distributions.length > 0) {
+    await db.insert(s.distributions).values(plan.distributions.map(d => ({
+      quarter: d.quarter,
+      year: d.year,
+      partnerName: d.partnerName,
+      amount: d.amount,
+    })));
   }
 
-  const distributions = activePartners.map(entry => ({
-    quarter,
-    year,
-    partnerName: entry.partnerName,
-    amount: String(Math.round(netProfit * parseFloat(entry.percentage) / 100)),
-  }));
-
-  if (distributions.length > 0) {
-    await db.insert(s.distributions).values(distributions);
-  }
-
-  return { quarter, year, netProfit, distributions };
+  return { quarter, year, netProfit: plan.netProfit, distributions: plan.distributions };
 }
 
 /**
@@ -212,45 +176,8 @@ export async function distributeProfit(quarter: number, year: number) {
  * Same logic as distributeProfit but returns the calculation without inserting.
  */
 export async function previewDistribution(quarter: number, year: number) {
-  const capEntries = await db.select().from(s.capTableHistory)
-    .orderBy(desc(s.capTableHistory.effectiveDate));
-
-  const qStartMonth = (quarter - 1) * 3 + 1;
-  const qEndMonth = quarter * 3;
-  const { start: qStart } = monthDateRange(year, qStartMonth);
-  const { end: qEnd } = monthDateRange(year, qEndMonth);
-
-  const trips = await db.select().from(s.trips).where(
-    and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), gte(s.trips.departureDate, qStart), sql`${s.trips.departureDate} < ${qEnd}`)
-  );
-
-  const netProfit = trips.reduce((sum, t) => sum + parseFloat(t.grossProfit || '0'), 0);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const cutoff = qEnd > today ? today : qEnd;
-  const reached = capEntries.filter(c => c.effectiveDate <= cutoff);
-  const pool = reached.length > 0 ? reached : capEntries;
-  const activePartners: Array<{ partnerName: string; percentage: string }> = [];
-  if (pool.length > 0) {
-    const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
-    const snapshot = pool.filter(c => c.effectiveDate === latestDate);
-    const byName = new Map<string, typeof snapshot[number]>();
-    for (const row of snapshot) {
-      const prev = byName.get(row.partnerName);
-      if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
-    }
-    for (const row of byName.values()) activePartners.push({ partnerName: row.partnerName, percentage: row.percentage });
-  }
-
-  const distributions = activePartners.map(entry => ({
-    quarter,
-    year,
-    partnerName: entry.partnerName,
-    percentage: entry.percentage,
-    amount: String(Math.round(netProfit * parseFloat(entry.percentage) / 100)),
-  }));
-
-  return { quarter, year, netProfit, tripCount: trips.length, distributions };
+  const plan = await computeDistribution(quarter, year);
+  return { quarter, year, netProfit: plan.netProfit, tripCount: plan.tripCount, distributions: plan.distributions };
 }
 
 /**
@@ -261,6 +188,7 @@ export async function getDistributionHistory() {
     .orderBy(desc(s.distributions.year), desc(s.distributions.quarter), desc(s.distributions.id));
   return rows;
 }
+
 /**
  * Receivables summary: aggregate customer outstanding balances bucketed by aging.
  * Uses FIFO allocation — payments are applied against the oldest open debits first —
@@ -392,6 +320,65 @@ export async function getReceivablesSummary() {
 
 // ─── Internal helpers ──────────────────────────────────────────────────────────
 
+type CapRow = typeof s.capTableHistory.$inferSelect;
+
+/**
+ * Resolve the active cap-table snapshot as of a cutoff date.
+ * Picks the latest effective date ≤ cutoff, deduplicates by partner name
+ * (keeping the row with the newest createdAt).
+ */
+function resolveCapTableSnapshot(
+  capRows: CapRow[],
+  cutoffDate: string,
+): Array<{ partnerName: string; percentage: string }> {
+  const reached = capRows.filter(c => c.effectiveDate <= cutoffDate);
+  const pool = reached.length > 0 ? reached : capRows;
+  if (pool.length === 0) return [];
+
+  const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
+  const snapshot = pool.filter(c => c.effectiveDate === latestDate);
+  const byName = new Map<string, CapRow>();
+  for (const row of snapshot) {
+    const prev = byName.get(row.partnerName);
+    if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
+  }
+  return Array.from(byName.values()).map(r => ({ partnerName: r.partnerName, percentage: r.percentage }));
+}
+
+/**
+ * Compute a profit distribution plan for a quarter.
+ * Shared by both distributeProfit (persists) and previewDistribution (returns only).
+ */
+async function computeDistribution(quarter: number, year: number) {
+  const capEntries = await db.select().from(s.capTableHistory)
+    .orderBy(desc(s.capTableHistory.effectiveDate));
+
+  const qStartMonth = (quarter - 1) * 3 + 1;
+  const qEndMonth = quarter * 3;
+  const { start: qStart } = monthDateRange(year, qStartMonth);
+  const { end: qEnd } = monthDateRange(year, qEndMonth);
+
+  const trips = await db.select().from(s.trips).where(
+    and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), gte(s.trips.departureDate, qStart), sql`${s.trips.departureDate} < ${qEnd}`)
+  );
+
+  const netProfit = trips.reduce((sum, t) => sum + parseFloat(t.grossProfit || '0'), 0);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const cutoff = qEnd > today ? today : qEnd;
+  const activePartners = resolveCapTableSnapshot(capEntries, cutoff);
+
+  const distributions = activePartners.map(entry => ({
+    quarter,
+    year,
+    partnerName: entry.partnerName,
+    percentage: entry.percentage,
+    amount: String(Math.round(netProfit * parseFloat(entry.percentage) / 100)),
+  }));
+
+  return { netProfit, tripCount: trips.length, distributions };
+}
+
 type LedgerRow = { entityType: string; entityId: number; debit: string | null; balance: string; createdAt: Date | null };
 
 async function resolveTopOverdue(ledgerRows: LedgerRow[]) {
@@ -430,25 +417,15 @@ async function resolveTopOverdue(ledgerRows: LedgerRow[]) {
   return topOverdueCustomer;
 }
 
-function resolveTopShareholder(capRows: typeof s.capTableHistory.$inferSelect[]) {
+function resolveTopShareholder(capRows: CapRow[]) {
   let topShareholder: { name: string; percentage: number } | null = null;
   if (capRows.length > 0) {
     const today = new Date().toISOString().slice(0, 10);
-    const reached = capRows.filter(c => c.partnerName && c.effectiveDate <= today);
-    const pool = reached.length > 0 ? reached : capRows.filter(c => c.partnerName);
-    if (pool.length > 0) {
-      const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
-      const snapshot = pool.filter(c => c.effectiveDate === latestDate);
-      const byName = new Map<string, typeof snapshot[number]>();
-      for (const row of snapshot) {
-        const prev = byName.get(row.partnerName);
-        if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
-      }
-      const sorted = Array.from(byName.values())
-        .map(c => ({ name: c.partnerName, percentage: parseFloat(c.percentage) || 0 }))
-        .sort((a, b) => b.percentage - a.percentage);
-      topShareholder = sorted[0] || null;
-    }
+    const partners = resolveCapTableSnapshot(capRows, today);
+    const sorted = partners
+      .map(c => ({ name: c.partnerName, percentage: parseFloat(c.percentage) || 0 }))
+      .sort((a, b) => b.percentage - a.percentage);
+    topShareholder = sorted[0] || null;
   }
   return topShareholder;
 }

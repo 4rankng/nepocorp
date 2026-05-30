@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { DashboardStats, TripDetail, Role } from '@nepocorp/shared';
 import { TripStatus, ROLE_LABELS, parseThreshold } from '@nepocorp/shared';
 import { Panel, KPI } from '../components/UI';
+import { SkeletonLine, SkeletonKPIs } from '../components/shared';
 import {
   useDashboardStats,
   usePnlReport,
@@ -132,18 +133,12 @@ export default function DashboardPage() {
       <div className="fade-up">
         <header className="page-header">
           <div>
-            <h1 className="page-title">Chào buổi sáng...</h1>
-            <p className="page-subtitle">Đang tải báo cáo phân tích...</p>
+            <SkeletonLine width="180px" />
+            <div style={{ height: 4 }} />
+            <SkeletonLine width="260px" />
           </div>
         </header>
-        <div className="kpi-grid" style={{ marginBottom: 20 }}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="kpi" style={{ minHeight: 110 }}>
-              <div style={{ height: 12, width: '40%', background: 'var(--bg-3)', borderRadius: 4, margin: '8px 0 12px' }} />
-              <div style={{ height: 22, width: '60%', background: 'var(--bg-3)', borderRadius: 4, marginBottom: 8 }} />
-            </div>
-          ))}
-        </div>
+        <SkeletonKPIs count={4} />
       </div>
     );
   }
@@ -201,19 +196,27 @@ export default function DashboardPage() {
   }));
 
   // Helper formatting for KPI values — uses shared formatCompact
+  // "tr" (short for triệu) is the preferred display form; no expansion needed.
   const fmtKpi = (v: number) => {
     const s = formatCompact(v);
-    return s.replace(/ ty$/, ' tỷ').replace(/ tr$/, ' triệu');
+    return s.replace(/ ty$/, ' tỷ');
   };
-  const KPI_SUFFIX = ' ₫';
+  // Split formatted value into { num, suffix } so "tr" can be rendered
+  // at the same small size as the "₫" currency symbol.
+  const splitKpi = (v: number): { num: string; suffix: string } => {
+    const s = fmtKpi(v);
+    const i = s.lastIndexOf(' ');
+    if (i === -1) return { num: s, suffix: '' };
+    return { num: s.slice(0, i), suffix: s.slice(i + 1) };
+  };
   const formattedRevenue = fmtKpi(revenue);
-  const revenueUnit = KPI_SUFFIX;
   const formattedCosts = fmtKpi(costs);
-  const costsUnit = KPI_SUFFIX;
   const formattedGross = fmtKpi(grossProfit);
-  const grossUnit = KPI_SUFFIX;
   const formattedNet = fmtKpi(netProfit);
-  const netUnit = KPI_SUFFIX;
+  const kpiRevenue = splitKpi(revenue);
+  const kpiCosts = splitKpi(costs);
+  const kpiGross = splitKpi(grossProfit);
+  const kpiNet = splitKpi(netProfit);
 
   // MoM percentages computed from actual P&L data
   // previous month has no data, fall back to "—" rather than a fake number.
@@ -294,7 +297,7 @@ export default function DashboardPage() {
             ) : (
               <strong>chưa đủ dữ liệu so sánh</strong>
             )}
-            . Lợi nhuận ròng dự kiến <strong>{formatCurrency(netProfit)}</strong> sau phí quản lý.
+            . Lợi nhuận ròng dự kiến <strong>{fmtKpi(netProfit)} ₫</strong> sau phí quản lý.
           </p>
         </div>
         <div className="page-actions">
@@ -318,7 +321,7 @@ export default function DashboardPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
           </div>
-          <div className="kpi__value">{formattedRevenue}<span className="kpi__value-unit">{revenueUnit}</span></div>
+          <div className="kpi__value">{kpiRevenue.num}<span className="kpi__value-unit">{kpiRevenue.suffix && ` ${kpiRevenue.suffix}`} ₫</span></div>
           <div className={`kpi__meta ${prevPnlReport ? (isRevUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
             {prevPnlReport && (
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -339,7 +342,7 @@ export default function DashboardPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="15" y2="22"/><line x1="4" y1="9" x2="14" y2="9"/><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"/></svg>
             </div>
           </div>
-          <div className="kpi__value">{formattedCosts}<span className="kpi__value-unit">{costsUnit}</span></div>
+          <div className="kpi__value">{kpiCosts.num}<span className="kpi__value-unit">{kpiCosts.suffix && ` ${kpiCosts.suffix}`} ₫</span></div>
           <div className="kpi__meta">
             {((costs / (revenue || 1)) * 100).toFixed(1)}% doanh thu
             {prevPnlReport && (
@@ -355,7 +358,7 @@ export default function DashboardPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             </div>
           </div>
-          <div className="kpi__value">{formattedGross}<span className="kpi__value-unit">{grossUnit}</span></div>
+          <div className="kpi__value">{kpiGross.num}<span className="kpi__value-unit">{kpiGross.suffix && ` ${kpiGross.suffix}`} ₫</span></div>
           <div className={`kpi__meta ${prevPnlReport ? (isGrossUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
             {prevPnlReport && (
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -376,7 +379,7 @@ export default function DashboardPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
             </div>
           </div>
-          <div className="kpi__value">{formattedNet}<span className="kpi__value-unit">{netUnit}</span></div>
+          <div className="kpi__value">{kpiNet.num}<span className="kpi__value-unit">{kpiNet.suffix && ` ${kpiNet.suffix}`} ₫</span></div>
           <div className="kpi__meta">
             Sau phí QL · <span style={{ color: 'var(--brand)', fontWeight: 600 }}>Phân chia →</span>
           </div>
@@ -478,7 +481,7 @@ export default function DashboardPage() {
         {/* Right Column: Cost Breakdown Donut Chart fallback */}
         <Panel
           title={`Cơ cấu chi phí T${currentMonth}`}
-          subtitle={`Tổng ${formattedCosts}${costsUnit}`}
+          subtitle={`Tổng ${formattedCosts} ₫`}
         >
             <div className="aging" style={{ gap: 18 }}>
               <div 
@@ -490,7 +493,7 @@ export default function DashboardPage() {
               >
                 <div className="aging__donut-label">
                   <div>
-                    <div className="aging__total">{formattedCosts}M</div>
+                    <div className="aging__total">{formattedCosts}</div>
                     <div className="aging__total-label">Chi phí T{currentMonth}</div>
                   </div>
                 </div>
@@ -499,38 +502,38 @@ export default function DashboardPage() {
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--brand)' }}></span>
                   <span className="aging__row-label">Nhiên liệu</span>
-                  <span className="aging__row-value">{Math.round(fuelCost / 1000000)}M</span>
+                  <span className="aging__row-value">{Math.round(fuelCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
                   <span className="aging__row-pct">{fuelPct}%</span>
                 </div>
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--info)' }}></span>
                   <span className="aging__row-label">Lương lái xe</span>
-                  <span className="aging__row-value">{Math.round(driverCost / 1000000)}M</span>
+                  <span className="aging__row-value">{Math.round(driverCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
                   <span className="aging__row-pct">{driverPct}%</span>
                 </div>
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--warning)' }}></span>
                   <span className="aging__row-label">Tiền đi đường</span>
-                  <span className="aging__row-value">{Math.round(roadCost / 1000000)}M</span>
+                  <span className="aging__row-value">{Math.round(roadCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
                   <span className="aging__row-pct">{roadPct}%</span>
                 </div>
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: '#E07D2E' }}></span>
                   <span className="aging__row-label">Phí quản lý</span>
-                  <span className="aging__row-value">{Math.round(mgmtCost / 1000000)}M</span>
+                  <span className="aging__row-value">{Math.round(mgmtCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
                   <span className="aging__row-pct">{mgmtPct}%</span>
                 </div>
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--danger)' }}></span>
                   <span className="aging__row-label">Bảo dưỡng</span>
-                  <span className="aging__row-value">{Math.round(maintCost / 1000000)}M</span>
+                  <span className="aging__row-value">{Math.round(maintCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
                   <span className="aging__row-pct">{maintPct}%</span>
                 </div>
                 {otherPct > 0 && (
                 <div className="aging__row">
                   <span className="aging__dot" style={{ background: 'var(--fg-3)' }}></span>
                   <span className="aging__row-label">Khác</span>
-                  <span className="aging__row-value">{Math.round(otherCost / 1000000)}M</span>
+                  <span className="aging__row-value">{Math.round(otherCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
                   <span className="aging__row-pct">{otherPct}%</span>
                 </div>
                 )}
@@ -568,7 +571,7 @@ export default function DashboardPage() {
                     <div className="hbar-row__track">
                       <div className={barClass} style={{ width: `${pctWidth}%` }} />
                     </div>
-                    <div className="hbar-row__value">{Math.round(t.profit / 1000000)}M ₫</div>
+                    <div className="hbar-row__value">{Math.round(t.profit / 1000000)}<small style={{fontSize:'0.75em',opacity:0.7}}>tr ₫</small></div>
                   </div>
                 );
               })}
@@ -594,8 +597,8 @@ export default function DashboardPage() {
                     <div className="toplist__meta">{r.meta}</div>
                   </div>
                   <div>
-                    <div className="toplist__value">{Math.round(r.profit / 1000000)}M ₫</div>
-                    <div className="toplist__value-sub">{Math.round((r.profit / (r.trips || 1)) / 1000000).toFixed(1)}M / chuyến</div>
+                    <div className="toplist__value">{Math.round(r.profit / 1000000)}<small style={{fontSize:'0.75em',opacity:0.7}}>tr ₫</small></div>
+                    <div className="toplist__value-sub">{Math.round((r.profit / (r.trips || 1)) / 1000000).toFixed(1)}<small style={{fontSize:'0.8em',opacity:0.7}}>tr</small> / chuyến</div>
                   </div>
                 </div>
               ))}

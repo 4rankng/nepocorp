@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Role } from '@nepocorp/shared';
 import Layout from './components/Layout';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
+import { ToastProvider } from './components/shared/Toast';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -63,9 +65,11 @@ function AppRoutes() {
   const driverOnly = (el: ReactElement) => (isDriver ? el : <Navigate to={adminHome} replace />);
 
   return (
-    <Layout>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+    <ToastProvider>
+      <Layout>
+        <ErrorBoundary>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
           <Route path="/" element={<Navigate to={isDriver ? driverHome : adminHome} replace />} />
           <Route
             path="/dashboard"
@@ -110,9 +114,11 @@ function AppRoutes() {
             path="*"
             element={<Navigate to={isDriver ? driverHome : adminHome} replace />}
           />
-        </Routes>
-      </Suspense>
-    </Layout>
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </Layout>
+    </ToastProvider>
   );
 }
 

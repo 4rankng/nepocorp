@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
 import { formatCurrency } from '../lib/format';
+import { splitRoute } from '../lib/route';
+import { formatDayMonth } from '../lib/date';
 import { downloadCSV } from '../lib/csv';
 import { TripStatus, TRIP_STATUS_LABELS, parseThreshold } from '@nepocorp/shared';
 import type { TripDetail } from '@nepocorp/shared';
@@ -49,24 +51,6 @@ const DEFAULT_WARN_THRESHOLD = 37;
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
-function splitRoute(routeName: string | undefined | null): { from: string; to: string } | null {
-  if (!routeName) return null;
-  const separators = ['→', '⇒', '->', ' - ', ' – ', '>'];
-  for (const sep of separators) {
-    if (routeName.includes(sep)) {
-      const [from, to] = routeName.split(sep).map((s) => s.trim());
-      if (from && to) return { from, to };
-    }
-  }
-  return null;
-}
-
-function formatDayMonth(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
 
 function buildTripCode(trip: TripDetail): string {
   const d = trip.departure_date ? new Date(trip.departure_date) : null;
