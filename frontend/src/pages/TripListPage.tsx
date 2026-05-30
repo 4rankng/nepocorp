@@ -24,7 +24,7 @@ import {
 import { tripClient } from '../api/tripClient';
 import { formatCurrency } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
-import { TripStatus, TRIP_STATUS_LABELS } from '@nepocorp/shared';
+import { TripStatus, TRIP_STATUS_LABELS, parseThreshold } from '@nepocorp/shared';
 import type { TripDetail } from '@nepocorp/shared';
 import { useFuelConfig } from '../hooks/useQueries';
 
@@ -99,9 +99,9 @@ export default function TripListPage() {
   const trips = data?.items || [];
   const { data: fuelConfig } = useFuelConfig();
 
-  // Dynamic threshold from fuel_config — fallback to default
+  // Dynamic threshold from fuel_config — NaN-safe fallback to default
   const warnThreshold = fuelConfig
-    ? Number(fuelConfig.warning_threshold) ?? DEFAULT_WARN_THRESHOLD
+    ? parseThreshold(fuelConfig.warning_threshold, DEFAULT_WARN_THRESHOLD)
     : DEFAULT_WARN_THRESHOLD;
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');

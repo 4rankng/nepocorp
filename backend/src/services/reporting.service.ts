@@ -29,7 +29,6 @@ export async function getDashboardStats() {
 
   const [
     [stats],
-    [truckCount],
     [driverCount],
     truckStatusCounts,
     ledgerRows,
@@ -47,7 +46,6 @@ export async function getDashboardStats() {
       gte(s.trips.departureDate, monthStart),
       sql`${s.trips.departureDate} < ${monthEnd}`,
     )),
-    db.select({ count: sql<number>`count(*)` }).from(s.trucks).where(isNull(s.trucks.deletedAt)),
     db.select({ count: sql<number>`count(*)` }).from(s.drivers).where(isNull(s.drivers.deletedAt)),
     db.select({
       status: s.trucks.status,
@@ -72,14 +70,17 @@ export async function getDashboardStats() {
   // Resolve top shareholder from cap table
   const topShareholder = resolveTopShareholder(capRows);
 
+  const revenue = parseFloat(stats?.revenue || '0');
+  const costs = parseFloat(stats?.costs || '0');
+
   return {
-    revenue: parseFloat(stats?.revenue || '0'),
-    costs: parseFloat(stats?.costs || '0'),
-    grossProfit: parseFloat(stats?.revenue || '0') - parseFloat(stats?.costs || '0'),
+    revenue,
+    costs,
+    grossProfit: revenue - costs,
     tripCount: Number(stats?.tripCount || 0),
     completedTrips: Number(stats?.completedTrips || 0),
     inTransitTrips: Number(stats?.inTransitTrips || 0),
-    totalTrucks: Number(truckCount?.count || 0),
+    totalTrucks: truckStatusCounts.reduce((sum: number, r: any) => sum + Number(r.count), 0),
     totalDrivers: Number(driverCount?.count || 0),
     fleetStatus: Object.fromEntries(
       truckStatusCounts.map((r: any) => [r.status, Number(r.count)])

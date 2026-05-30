@@ -15,6 +15,8 @@ export type {
   LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket, UnpaidTrip,
 } from './types';
 
+export { parseThreshold } from './types';
+
 export {
   tripLegSchema, createTripSchema, updateTripFiguresSchema,
   createPaymentSchema, createPenaltySchema, createAdjustmentSchema,

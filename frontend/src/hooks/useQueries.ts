@@ -15,10 +15,8 @@ import type {
 import { TRIPS, REPORTS, CONFIG, FINANCIAL } from '@nepocorp/shared';
 
 export interface ExtendedDashboardStats extends DashboardStats {
-  totalTrucks?: number;
-  totalDrivers?: number;
-  topOverdueCustomer?: { id: number; name: string; amount: number };
-  topShareholder?: { name: string; percentage: string };
+  topOverdueCustomer?: { name: string; balance: number; days: number } | null;
+  topShareholder?: { name: string; percentage: number } | null;
 }
 
 export interface PnlReport {

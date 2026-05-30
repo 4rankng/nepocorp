@@ -5,8 +5,8 @@ import { api } from '../lib/api';
 import { formatCurrency, formatNumber, formatCompact } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardStats, TripDetail, Role } from '@nepocorp/shared';
-import { TripStatus, ROLE_LABELS } from '@nepocorp/shared';
-import { Panel } from '../components/UI';
+import { TripStatus, ROLE_LABELS, parseThreshold } from '@nepocorp/shared';
+import { Panel, KPI } from '../components/UI';
 import {
   useDashboardStats,
   usePnlReport,
@@ -21,8 +21,6 @@ import {
 /* -------------------------------------------------------------------------- */
 
 interface ExtendedDashboardStats extends DashboardStats {
-  totalTrucks?: number;
-  totalDrivers?: number;
   topOverdueCustomer?: { name: string; balance: number; days: number } | null;
   topShareholder?: { name: string; percentage: number } | null;
 }
@@ -105,8 +103,8 @@ export default function DashboardPage() {
   // (must be called before any conditional returns to satisfy Rules of Hooks)
   const fuelWarnings = useMemo(() => {
     if (!fuelConfig || allTrips.length === 0) return [];
-    const warnThreshold = Number(fuelConfig.warning_threshold) || 0;
-    const critThreshold = Number(fuelConfig.critical_threshold) || 0;
+    const warnThreshold = parseThreshold(fuelConfig.warning_threshold, 0);
+    const critThreshold = parseThreshold(fuelConfig.critical_threshold, 0);
     if (!warnThreshold) return [];
     const flagged: Array<{ tripId: number; code: string; driver: string; ttbq: number; critical: boolean }> = [];
     for (const t of allTrips) {
@@ -610,40 +608,33 @@ export default function DashboardPage() {
           subtitle={`${stats?.totalTrucks ?? 0} đầu kéo · ${stats?.totalDrivers ?? 0} tài xế`}
         >
           {(() => {
-            const fleet: Record<string, number> = (stats as any)?.fleetStatus ?? {};
+            const fleet = stats?.fleetStatus ?? {};
             const active = fleet['ACTIVE'] ?? 0;
             const maintenance = fleet['MAINTENANCE'] ?? 0;
             const inactive = fleet['INACTIVE'] ?? 0;
             const inTransit = stats?.inTransitTrips ?? 0;
             const total = active + maintenance + inactive || 1;
+            const fleetCards: Array<{ label: string; value: number; variant: 'success' | 'warn' | 'default' | 'accent' }> = [
+              { label: 'Hoạt động', value: active, variant: 'success' },
+              { label: 'Bảo dưỡng', value: maintenance, variant: 'warn' },
+              { label: 'Ngừng', value: inactive, variant: 'default' },
+              { label: 'Đang chạy', value: inTransit, variant: 'accent' },
+            ];
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--success)' }}>{active}</div>
-                    <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Hoạt động</div>
-                  </div>
-                  <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--warning)' }}>{maintenance}</div>
-                    <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Bảo dưỡng</div>
-                  </div>
-                  <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--fg-3)' }}>{inactive}</div>
-                    <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Ngừng</div>
-                  </div>
-                  <div style={{ flex: 1, textAlign: 'center', padding: '12px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--brand)' }}>{inTransit}</div>
-                    <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Đang chạy</div>
-                  </div>
+              <>
+                <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                  {fleetCards.map(c => (
+                    <KPI key={c.label} label={c.label} value={c.value} variant={c.variant} />
+                  ))}
                 </div>
                 {/* Utilization bar */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                   <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
                     <div style={{ width: `${(active / total) * 100}%`, height: '100%', borderRadius: 3, background: 'var(--success)' }} />
                   </div>
                   <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>{Math.round((active / total) * 100)}% sử dụng</span>
                 </div>
-              </div>
+              </>
             );
           })()}
         </Panel>

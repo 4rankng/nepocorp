@@ -25,8 +25,8 @@ export function FuelConfigurator({
   const isSupplementActive = Number(fuelSupplementLiters) > 0;
 
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 14 }}>
         <span className="typo-eyebrow">Định mức & Bổ sung dầu</span>
       </div>
 

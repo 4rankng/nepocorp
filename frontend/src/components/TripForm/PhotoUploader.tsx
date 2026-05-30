@@ -44,8 +44,8 @@ export function PhotoUploader({
   const otherPhotos = photos.filter((p) => p.type === "OTHER");
 
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 14 }}>
         <span className="typo-eyebrow">Xác thực chè & Ảnh đính kèm</span>
       </div>
 

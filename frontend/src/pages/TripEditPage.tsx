@@ -295,8 +295,9 @@ export default function TripEditPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="row-2" style={{ alignItems: 'stretch' }}>
-          {/* Left panel - Legs list */}
+        {/* 3-column grid: legs | form fields | sticky P&L */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.5fr 1fr', gap: 16, alignItems: 'start', marginBottom: 20 }}>
+          {/* Col 1 — Route legs */}
           <TripLegFields
             legs={legs}
             addLeg={handleAddLeg}
@@ -304,7 +305,7 @@ export default function TripEditPage() {
             updateLeg={handleUpdateLeg}
           />
 
-          {/* Right panel - Financials / Fuel / Photos */}
+          {/* Col 2 — Fuel, allowances, photos, notes */}
           <div className="panel" style={{ padding: '20px 24px' }}>
             <FuelConfigurator
               fuelMode={fuelMode}
@@ -316,6 +317,8 @@ export default function TripEditPage() {
               fuelSupplementReason={fuelSupplementReason}
               onFuelSupplementReasonChange={setFuelSupplementReason}
             />
+
+            <div style={{ borderTop: '1px solid var(--border-2)', margin: '4px 0 20px' }} />
 
             <AllowanceConfigurator
               tollsDiscount={tollsDiscount}
@@ -333,6 +336,8 @@ export default function TripEditPage() {
               suggestedPrice={suggestedPrice}
             />
 
+            <div style={{ borderTop: '1px solid var(--border-2)', margin: '4px 0 20px' }} />
+
             <PhotoUploader
               photos={mapUrlsToPhotos(photoUrls)}
               onPhotosChange={(updatedPhotos) => setPhotoUrls(updatedPhotos.map(p => p.url))}
@@ -341,7 +346,7 @@ export default function TripEditPage() {
               onUpload={handlePhotoUpload}
             />
 
-            <div className="field" style={{ marginTop: 16 }}>
+            <div className="field" style={{ marginTop: 4 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>Ghi chú chuyến đi</label>
               <textarea
                 className="input"
@@ -352,29 +357,29 @@ export default function TripEditPage() {
               />
             </div>
           </div>
-        </div>
 
-        {/* Live estimates and totals panel under the form */}
-        <div style={{ marginTop: 24, marginBottom: 24 }}>
-          <TotalsPanel
-            legs={legs}
-            fuelMode={fuelMode}
-            fuelLitersOverride={fuelLitersOverride}
-            fuelSupplementLiters={fuelSupplementLiters}
-            tollsDiscount={tollsDiscount}
-            tollsAddition={tollsAddition}
-            tollsStations={tollsStations}
-            hasReturnCargo={hasReturnCargo}
-            driverSalary={driverSalary}
-            revenue={revenue}
-            isMountainRoute={trip.route?.is_mountain}
-            mountainFixedAllowance={trip.route?.fixed_fuel_allowance ? Number(trip.route.fixed_fuel_allowance) : null}
-            roadAllowanceBase={Number(trip.road_allowance_base_applied || 0)}
-          />
+          {/* Col 3 — Live P&L (sticky) */}
+          <div style={{ position: 'sticky', top: 24 }}>
+            <TotalsPanel
+              legs={legs}
+              fuelMode={fuelMode}
+              fuelLitersOverride={fuelLitersOverride}
+              fuelSupplementLiters={fuelSupplementLiters}
+              tollsDiscount={tollsDiscount}
+              tollsAddition={tollsAddition}
+              tollsStations={tollsStations}
+              hasReturnCargo={hasReturnCargo}
+              driverSalary={driverSalary}
+              revenue={revenue}
+              isMountainRoute={trip.route?.is_mountain}
+              mountainFixedAllowance={trip.route?.fixed_fuel_allowance ? Number(trip.route.fixed_fuel_allowance) : null}
+              roadAllowanceBase={Number(trip.road_allowance_base_applied || 0)}
+            />
+          </div>
         </div>
 
         {/* Submit Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
           <button
             type="submit"
             className="btn btn--primary"

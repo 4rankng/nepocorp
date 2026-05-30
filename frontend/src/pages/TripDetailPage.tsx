@@ -11,6 +11,7 @@ import type { TripDetail } from '@nepocorp/shared';
 import {
   TripStatus, TRIP_STATUS_LABELS,
   FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
+  parseThreshold,
 } from '@nepocorp/shared';
 import { Panel, StatusPill, useConfirm, Drawer } from '../components/UI';
 import { useTripDetail, useTripAdjustments, useTrucksAndDrivers, useFuelConfig } from '../hooks/useQueries';
@@ -350,8 +351,8 @@ export default function TripDetailPage() {
             const totalLiters = Number(trip.fuel_liters) || 0;
             if (totalKm > 0 && totalLiters > 0) {
               const ttbq = (totalLiters / totalKm) * 100;
-              const warnThreshold = fuelConfig ? Number(fuelConfig.warning_threshold) : 0;
-              const critThreshold = fuelConfig ? Number(fuelConfig.critical_threshold) : 0;
+              const warnThreshold = fuelConfig ? parseThreshold(fuelConfig.warning_threshold, 0) : 0;
+              const critThreshold = fuelConfig ? parseThreshold(fuelConfig.critical_threshold, 0) : 0;
               let badge: React.ReactNode = null;
               if (critThreshold > 0 && ttbq > critThreshold) {
                 badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--danger)', fontWeight: 600 }}>🔴 Vượt ngưỡng nghiêm trọng ({critThreshold.toFixed(1)})</span>;

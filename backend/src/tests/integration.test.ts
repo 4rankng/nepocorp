@@ -24,11 +24,11 @@ import { initEnforcer } from '../casbin/enforcer';
 const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
-// Apply same auth chain as production: authMiddleware + casbinAuthz
-app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
-app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
-app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
+// Apply same auth chain as production: specific paths first, catch-all /api last
 app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRoutes);
+app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
+app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
+app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
 
 let server: http.Server;
 let baseUrl: string;
@@ -43,6 +43,8 @@ let trailerId: number;
 let routeId: number;
 let cargoTypeId: number;
 let driverUserId: number;
+let truckId2: number;
+let driverId2: number;
 
 before(async () => {
   // Initialize Casbin enforcer before tests (required by casbinAuthz middleware)
@@ -62,6 +64,8 @@ before(async () => {
   const [cust] = await db.select().from(s.customers).limit(1);
   const [drvr] = await db.select().from(s.drivers).limit(1);
   const [trck] = await db.select().from(s.trucks).limit(1);
+  const [trck2] = await db.select().from(s.trucks).offset(1).limit(1);
+  const [drvr2] = await db.select().from(s.drivers).offset(1).limit(1);
   const [trlr] = await db.select().from(s.trailers).limit(1);
   const [rte] = await db.select().from(s.routes).limit(1);
   const [crg] = await db.select().from(s.cargoTypes).limit(1);
@@ -75,6 +79,18 @@ before(async () => {
   routeId = rte.id;
   cargoTypeId = crg.id;
   driverUserId = drvUser.id;
+  // Second truck/driver for tests that need fresh state after prior tests dispatch
+  // Find a truck+driver without any existing IN_TRANSIT trips
+  const activeTrips = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
+    .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
+  const busyTrucks = new Set(activeTrips.map(t => t.truckId));
+  const busyDrivers = new Set(activeTrips.map(t => t.driverId));
+  const allTrucks = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
+  const allDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
+  const freeTruck = allTrucks.find(t => !busyTrucks.has(t.id));
+  const freeDriver = allDrivers.find(d => !busyDrivers.has(d.id));
+  truckId2 = freeTruck?.id ?? trck.id;
+  driverId2 = freeDriver?.id ?? drvr.id;
 
   // Generate tokens
   adminToken = jwt.sign({ userId: adm.id, username: adm.username, role: Role.ADMIN }, config.jwtSecret);
@@ -344,13 +360,33 @@ test('T4.6 — Driver Isolation: Driver endpoints block sensitive pricing/revenu
 // T4.7 — State-Machine Transitions & Locking Guards
 // ─────────────────────────────────────────────────────────────────────────────
 test('T4.7 — State-Machine: Transition matrices, photo gates, and lock validations', async () => {
-  // 1. Create trip
+  // Clean up any stale IN_TRANSIT trips from prior test runs so we can dispatch freely
+  await db.update(s.trips)
+    .set({ status: TripStatus.CANCELED })
+    .where(and(
+      eq(s.trips.status, TripStatus.IN_TRANSIT),
+      sql`${s.trips.departureDate} >= '2026-06-01'`,
+    ));
+
+  // Now find a free truck+driver
+  const allTrucks = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
+  const allDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
+  const activeTrips = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
+    .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
+  const busyTrucks = new Set(activeTrips.map((t: any) => t.truckId));
+  const busyDrivers = new Set(activeTrips.map((t: any) => t.driverId));
+  const freeTruck = allTrucks.find(t => !busyTrucks.has(t.id));
+  const freeDriver = allDrivers.find(d => !busyDrivers.has(d.id));
+  const tTruck = freeTruck?.id ?? truckId;
+  const tDriver = freeDriver?.id ?? driverId;
+
+  // 1. Create trip with free truck/driver
   const trip = await tripService.createTrip({
     customer_id: customerId,
     route_id: routeId,
     trailer_id: trailerId,
-    truck_id: truckId,
-    driver_id: driverId,
+    truck_id: tTruck,
+    driver_id: tDriver,
     cargo_type_id: cargoTypeId,
     departure_date: '2026-06-04',
   });

@@ -32,8 +32,8 @@ export function AllowanceConfigurator({
   suggestedPrice,
 }: AllowanceConfiguratorProps) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 14 }}>
         <span className="typo-eyebrow">Chi phí đường bộ & Doanh thu</span>
       </div>
 

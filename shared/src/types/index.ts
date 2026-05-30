@@ -346,6 +346,17 @@ export interface DashboardStats {
   tripCount: number;
   completedTrips: number;
   inTransitTrips: number;
+  totalTrucks?: number;
+  totalDrivers?: number;
+  fleetStatus?: Record<string, number>;
+  topOverdueCustomer?: { name: string; balance: number; days: number } | null;
+  topShareholder?: { name: string; percentage: number } | null;
+}
+
+/** Parse a threshold value safely — returns fallback for NaN/null/undefined */
+export function parseThreshold(raw: string | number | null | undefined, fallback: number): number {
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 export interface AgingBucket {
