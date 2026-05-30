@@ -143,3 +143,62 @@ test('negative road allowance clamped to 0', () => {
   // 1500000 - 2000000 + 50000 - 110000 + 300000 = -260000 -> clamped to 0
   assert.strictEqual(result.totalRoadAllowance, 0);
 });
+
+test('0 legs (empty legs array)', () => {
+  const input = {
+    ...defaultBaseInput,
+    legs: [],
+    fuelPerTripSupplement: 0,
+  };
+
+  const result = computeTripTotals(input);
+
+  // No legs → 0 leg liters, no per-trip supplement → only user supplement
+  assert.strictEqual(result.totalFuelLiters, 0);
+  assert.strictEqual(result.legCalculations.length, 0);
+  assert.strictEqual(result.totalFuelCost, 0);
+  // roadAllowance unchanged by legs
+  assert.strictEqual(result.totalRoadAllowance, 1640000);
+  assert.strictEqual(result.grossProfit, 4000000 - 0 - 1640000 - 800000);
+});
+
+test('0 revenue produces negative grossProfit (full cost)', () => {
+  const input = {
+    ...defaultBaseInput,
+    revenue: 0,
+  };
+
+  const result = computeTripTotals(input);
+
+  assert.strictEqual(result.totalFuelLiters, 84.6);
+  assert.strictEqual(result.totalFuelCost, 1692000);
+  assert.strictEqual(result.totalRoadAllowance, 1640000);
+  assert.strictEqual(result.totalCost, 4132000);
+  // grossProfit = 0 - 4132000 = -4132000
+  assert.strictEqual(result.grossProfit, -4132000);
+});
+
+test('round2dp x.xx5 boundary within computeTripTotals', () => {
+  // Use km that produces x.xx5 boundary: 11.5 km * 43.0 / 100 = 4.945 → round2dp = 4.95
+  const input = {
+    ...defaultBaseInput,
+    legs: [{ sequence: 1, km: 11.5, loadingType: 'HANG' as const }],
+    fuelPerTripSupplement: 0,
+    fuelSupplementLiters: 0,
+    tollsDiscount: 0,
+    tollsAddition: 0,
+    tollsStations: 0,
+    hasReturnCargo: false,
+    driverSalary: 0,
+    revenue: 0,
+    roadAllowanceBase: 0,
+  };
+
+  const result = computeTripTotals(input);
+
+  // 11.5 * 43 / 100 = 4.945 → round2dp = 4.95
+  assert.strictEqual(result.legCalculations[0].calculatedLiters, 4.95);
+  assert.strictEqual(result.totalFuelLiters, 4.95);
+  // fuelCost = 4.95 * 20000 = 99000
+  assert.strictEqual(result.totalFuelCost, 99000);
+});
