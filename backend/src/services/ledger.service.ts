@@ -89,4 +89,54 @@ export class LedgerService {
 
     return inserted;
   }
+
+  // ─── Read methods ────────────────────────────────────────────────────────────
+
+  /**
+   * Paginated ledger query with optional entity filters.
+   */
+  static async getEntries(opts: {
+    entityType?: string;
+    entityId?: number;
+    page?: number;
+    limit?: number;
+  }) {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(100, opts.limit ?? 50);
+    const conditions = [];
+    if (opts.entityType) conditions.push(eq(s.ledger.entityType, opts.entityType));
+    if (opts.entityId !== undefined) conditions.push(eq(s.ledger.entityId, opts.entityId));
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [items, [countRow]] = await Promise.all([
+      db.select().from(s.ledger)
+        .where(where)
+        .orderBy(desc(s.ledger.id))
+        .limit(limit).offset((page - 1) * limit),
+      db.select({ count: sql<number>`count(*)` }).from(s.ledger).where(where),
+    ]);
+
+    return { items, total: Number(countRow?.count ?? 0), page, pageSize: limit };
+  }
+
+  /**
+   * All ledger rows for a specific entity, newest first.
+   */
+  static async getEntriesByEntity(entityType: string, entityId: number) {
+    return db.select().from(s.ledger)
+      .where(and(eq(s.ledger.entityType, entityType), eq(s.ledger.entityId, entityId)))
+      .orderBy(desc(s.ledger.id));
+  }
+
+  /**
+   * Current (latest) balance for an entity. Returns 0 if no entries exist.
+   */
+  static async getBalance(entityType: string, entityId: number): Promise<number> {
+    const [last] = await db.select({ balance: s.ledger.balance })
+      .from(s.ledger)
+      .where(and(eq(s.ledger.entityType, entityType), eq(s.ledger.entityId, entityId)))
+      .orderBy(desc(s.ledger.id))
+      .limit(1);
+    return last ? Number(last.balance) : 0;
+  }
 }

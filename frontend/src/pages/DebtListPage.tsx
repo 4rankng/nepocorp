@@ -52,7 +52,13 @@ export default function DebtListPage() {
     loadData();
   }, []);
 
-  // Compute debt figures and aging details for all customers
+  // Compute debt figures and aging details for all customers.
+  //
+  // We previously summed gross TRIP_REVENUE entries into age buckets without
+  // subtracting payments, so the buckets total disagreed with totalOutstanding
+  // ("TRONG HẠN 52tr" when the customer's open balance is 49.6M because
+  // they had already paid 2.4M). Apply payments FIFO against the oldest
+  // open invoice — the bucket totals now reconcile to totalOutstanding.
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
     const now = new Date();
 
@@ -60,35 +66,51 @@ export default function DebtListPage() {
       // Filter ledger entries for this customer
       const cLedger = ledgerEntries.filter(entry => entry.entity_type === 'CUSTOMER' && entry.entity_id === c.id);
 
-      // Latest entry balance represents total outstanding
+      // Latest entry balance (rows arrive newest-first) is the open balance.
       const latestRow = cLedger[0];
       const totalOutstanding = latestRow ? parseFloat(latestRow.balance) : 0;
 
-      // Group revenue entries into age buckets (similar to backend)
       const aging = { current: 0, d30: 0, d60: 0, over90: 0 };
       let maxOverdueDays = 0;
 
-      const revenueEntries = cLedger.filter(entry => entry.txn_type === 'TRIP_REVENUE');
+      // Walk ledger oldest → newest so we can FIFO-allocate payments against
+      // the oldest unpaid revenue rows.
+      const chronological = [...cLedger].sort((a, b) => {
+        const at = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const bt = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return at - bt;
+      });
 
-      for (const entry of revenueEntries) {
-        if (!entry.timestamp) continue;
-        const entryDate = new Date(entry.timestamp);
-        const ageInDays = Math.floor((now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
-        const amount = parseFloat(entry.debit || '0');
-
-        if (ageInDays <= 30) {
-          aging.current += amount;
-        } else if (ageInDays <= 60) {
-          aging.d30 += amount;
-        } else if (ageInDays <= 90) {
-          aging.d60 += amount;
-        } else {
-          aging.over90 += amount;
+      // Open invoices (debit lots): {timestamp, openAmount}
+      const openInvoices: Array<{ ts: string; open: number }> = [];
+      for (const entry of chronological) {
+        const debit = parseFloat(entry.debit || '0');
+        const credit = parseFloat(entry.credit || '0');
+        if (debit > 0 && entry.timestamp) {
+          openInvoices.push({ ts: entry.timestamp, open: debit });
         }
-
-        if (totalOutstanding > 0 && ageInDays > maxOverdueDays) {
-          maxOverdueDays = ageInDays;
+        if (credit > 0) {
+          // Apply payment FIFO against oldest open invoices
+          let remaining = credit;
+          for (const inv of openInvoices) {
+            if (remaining <= 0) break;
+            if (inv.open <= 0) continue;
+            const apply = Math.min(inv.open, remaining);
+            inv.open -= apply;
+            remaining -= apply;
+          }
         }
+      }
+
+      // Bucket the remaining open amounts by age.
+      for (const inv of openInvoices) {
+        if (inv.open <= 0) continue;
+        const ageInDays = Math.floor((now.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24));
+        if (ageInDays <= 30) aging.current += inv.open;
+        else if (ageInDays <= 60) aging.d30 += inv.open;
+        else if (ageInDays <= 90) aging.d60 += inv.open;
+        else aging.over90 += inv.open;
+        if (ageInDays > maxOverdueDays) maxOverdueDays = ageInDays;
       }
 
       // Classify credit risk

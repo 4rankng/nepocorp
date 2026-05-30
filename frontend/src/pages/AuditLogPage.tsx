@@ -19,15 +19,43 @@ import { Panel } from '../components/UI';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
+// The backend's snake_case serializer middleware converts response keys
+// camelCase → snake_case, so audit log entries arrive with `user_email`
+// (not `userEmail`). Keep both forms in the type — older code that uses
+// camelCase still typechecks, and the runtime reads `user_email` first.
 interface AuditEntry {
   id: number;
   timestamp: string;
-  userEmail: string;
-  userName: string;
+  user_email?: string;
+  user_name?: string;
+  userEmail?: string;
+  userName?: string;
   action: string;
-  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
+  method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
   message: string;
-  category: 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
+  category?: 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
+}
+
+// Normalized entry with guaranteed non-optional fields.
+type NormalizedEntry = AuditEntry & { userEmail: string; userName: string; category: NonNullable<AuditEntry['category']> };
+
+// Map raw API entry → canonical shape with both case-forms populated.
+function normalizeEntry(e: any): NormalizedEntry {
+  const email = e.user_email || e.userEmail || '';
+  const name = e.user_name || e.userName || email;
+  // Categorise from the action when the backend hasn't set it explicitly.
+  const action: string = e.action || '';
+  let category: AuditEntry['category'] = 'config';
+  if (action.startsWith('TRIP_') || action === 'STATUS_CHANGED') category = 'trip';
+  else if (['PAYMENT_RECEIVED', 'ADJUSTMENT_CREATED', 'PROFIT_DISTRIBUTED'].includes(action)) category = 'finance';
+  else if (action === 'PENALTY_CREATED') category = 'penalty';
+  else if (action === 'USER_LOGIN' || action === 'USER_LOGOUT') category = 'auth';
+  return {
+    ...e,
+    userEmail: email,
+    userName: name,
+    category: e.category || category,
+  };
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────
@@ -124,7 +152,7 @@ export default function AuditLogPage() {
   const [filter, setFilter] = useState<Category>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [entries, setEntries] = useState<NormalizedEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -135,7 +163,7 @@ export default function AuditLogPage() {
       if (filter !== 'all') params.set('category', filter);
       if (search.trim()) params.set('search', search.trim());
       const res = await api.get<{ items: AuditEntry[]; total: number }>(`/audit-logs?${params}`);
-      setEntries(res.items);
+      setEntries((res.items || []).map(normalizeEntry));
       setTotal(res.total);
     } catch { setEntries([]); setTotal(0); }
     finally { setLoading(false); }

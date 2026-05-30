@@ -7,6 +7,7 @@ import { authMiddleware } from './middleware/auth';
 import { casbinAuthz } from './middleware/casbin';
 import { auditLogMiddleware } from './middleware/audit';
 import { globalErrorHandler } from './middleware/errorHandler';
+import { snakeCaseSerializer } from './middleware/serializer';
 import { initAuditService } from './services/audit.service';
 import authRoutes from './routes/auth';
 import configRoutes, { auditLogRouter } from './routes/config';
@@ -29,6 +30,7 @@ app.use(express.json());
 app.use('/uploads', express.static(config.uploadDir));
 app.use(requestLogger);
 app.use(auditLogMiddleware);
+app.use(snakeCaseSerializer);
 
 // ── Public routes ──────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

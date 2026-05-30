@@ -339,8 +339,15 @@ export default function CustomersPage() {
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       {((c as any).contactPerson || c.contact_person) && <div style={{ fontWeight: 600 }}>{(c as any).contactPerson || c.contact_person}</div>}
-                      {c.phone && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{c.phone}</div>}
-                      {!((c as any).contactPerson || c.contact_person) && !c.phone && <span style={{ color: 'var(--ink-3)' }}>—</span>}
+                      {/* Seed data stored phone numbers in the `contact_info`
+                          text field rather than the dedicated `phone` column,
+                          so fall through to that before rendering "—". */}
+                      {(c.phone || (c as any).contact_info || (c as any).contactInfo) && (
+                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                          {c.phone || (c as any).contact_info || (c as any).contactInfo}
+                        </div>
+                      )}
+                      {!((c as any).contactPerson || c.contact_person) && !c.phone && !(c as any).contact_info && !(c as any).contactInfo && <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                       {((c as any).creditLimit || c.credit_limit) ? formatCurrency((c as any).creditLimit || c.credit_limit) : '—'}

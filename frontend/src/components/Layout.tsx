@@ -90,8 +90,11 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/config')) return 'Cấu hình';
   if (pathname === '/users') return 'Người dùng';
   if (pathname === '/audit-logs') return 'Nhật ký người dùng';
-  if (pathname === '/my-trips') return 'Lệnh của tôi';
-  if (pathname === '/my-earnings') return 'Thu nhập';
+  // Driver routes — startsWith catches the detail pages too
+  // (e.g. /my-trips/:id) so the breadcrumb doesn't fall through to a
+  // duplicated "NEPO > NEPO" placeholder.
+  if (pathname.startsWith('/my-trips')) return 'Lệnh của tôi';
+  if (pathname.startsWith('/my-earnings')) return 'Thu nhập';
   return 'NEPO';
 }
 

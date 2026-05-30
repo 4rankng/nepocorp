@@ -51,6 +51,10 @@ export default function DashboardPage() {
   const [createdTrips, setCreatedTrips] = useState<TripDetail[]>([]);
   const [topOverdueCustomer, setTopOverdueCustomer] = useState<{ name: string; balance: number; days: number } | null>(null);
   const [topShareholder, setTopShareholder] = useState<{ name: string; percentage: number } | null>(null);
+  // 12-month revenue/profit history — previously the line chart was a hardcoded
+  // SVG path with fixed coordinates which displayed the same growth curve
+  // regardless of real data. We now drive it from per-month P&L reports.
+  const [yearlySeries, setYearlySeries] = useState<{ revenue: number; grossProfit: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   const now = new Date();
@@ -62,11 +66,20 @@ export default function DashboardPage() {
     const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
     const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
     const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+    // Last day of the current month (inclusive). Without this upper bound,
+    // /trips?date_from=monthStart pulled in trips dated for future months
+    // which then surfaced in the dashboard cost donut and made the breakdown
+    // disagree with the dashboard endpoint's correctly-month-bounded total.
+    const nextMonthNum = currentMonth === 12 ? 1 : currentMonth + 1;
+    const nextYearNum = currentMonth === 12 ? currentYear + 1 : currentYear;
+    const monthEnd = new Date(`${nextYearNum}-${String(nextMonthNum).padStart(2, '0')}-01`);
+    monthEnd.setUTCDate(monthEnd.getUTCDate() - 1);
+    const monthEndStr = monthEnd.toISOString().slice(0, 10);
     Promise.all([
       api.get<ExtendedDashboardStats>('/reports/dashboard'),
       api.get<PnlReport>(`/reports/pnl?month=${currentMonth}&year=${currentYear}`),
       // Current-month trips for chart data (server-side date filter)
-      api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&date_from=${monthStart}`),
+      api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&date_from=${monthStart}&date_to=${monthEndStr}`),
       // All CREATED trips regardless of date (dispatch alerts must not miss prior-month trips)
       api.get<{ items: TripDetail[]; total: number }>(`/trips?limit=100&status=CREATED`).catch(() => ({ items: [] as TripDetail[], total: 0 })),
       api.get<PnlReport>(`/reports/pnl?month=${prevMonth}&year=${prevYear}`).catch(() => null as PnlReport | null),
@@ -85,6 +98,29 @@ export default function DashboardPage() {
         console.error('Error fetching dashboard analytical logs:', err);
       })
       .finally(() => setLoading(false));
+  }, [currentMonth, currentYear]);
+
+  // Fetch trailing 12-month P&L for the trend chart. Anchored at the current
+  // month so the line ends on the latest data point and reads left-to-right
+  // as the prior year. Failures fall back to zero for that month so a single
+  // 500 doesn't blank the whole chart.
+  useEffect(() => {
+    const months: Array<{ m: number; y: number }> = [];
+    for (let i = 11; i >= 0; i--) {
+      const offsetMonth = currentMonth - i;
+      let m = offsetMonth;
+      let y = currentYear;
+      while (m <= 0) { m += 12; y -= 1; }
+      months.push({ m, y });
+    }
+    Promise.all(
+      months.map(({ m, y }) =>
+        api
+          .get<PnlReport>(`/reports/pnl?month=${m}&year=${y}`)
+          .then((r) => ({ revenue: Number(r?.totalRevenue ?? 0), grossProfit: Number(r?.grossProfit ?? 0) }))
+          .catch(() => ({ revenue: 0, grossProfit: 0 }))
+      )
+    ).then(setYearlySeries);
   }, [currentMonth, currentYear]);
 
   // Loading skeleton matching wireframe spacing
@@ -205,21 +241,36 @@ export default function DashboardPage() {
   const isCostUp = costs > prevCosts;
   const isGrossUp = grossProfit >= prevGross;
 
-  // Cost breakdown from real locked trip data
+  // Cost breakdown from real locked trip data.
+  // Trip-level costs (fuel/road/driver) sum to the same `totalCost` that the
+  // dashboard endpoint returns as `costs`. Anything else (management fee,
+  // maintenance) is overhead booked separately. We previously seeded
+  // `maintCost` with a fabricated 7% of total — which inflated the breakdown
+  // and made the donut legend (22+6+12+0+3 = 43M) disagree with the donut
+  // centre label (40M from `costs`). Show only data we actually have, and
+  // bucket the unallocated remainder as "Khác" so the legend ALWAYS sums to
+  // the centre figure.
   const lockedTrips = currentMonthTrips.filter(t => t.status === TripStatus.LOCKED);
   const realFuelCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).total_fuel_cost || '0'), 0);
   const realRoadCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).total_road_allowance || '0'), 0);
   const realDriverCost = lockedTrips.reduce((s, t) => s + parseFloat((t as any).driver_salary || '0'), 0);
-  const mgmtCost = pnlReport?.managementFee ?? 24000000;
-  // Prefer real data; fall back to proportional estimate when no locked trips yet
+  const mgmtCost = pnlReport?.managementFee ?? 0;
   const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
-  const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.38);
-  const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.18);
-  const driverCost = hasRealCosts ? realDriverCost : Math.round(costs * 0.22);
-  const maintCost  = Math.round(costs * 0.07);
-  const otherCost  = Math.max(0, costs - fuelCost - roadCost - driverCost - mgmtCost - maintCost);
+  // When we have real per-trip costs, use them directly. When we don't, use
+  // a wireframe split of the API totalCost so the page still feels populated.
+  const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);
+  const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.25);
+  const driverCost = hasRealCosts ? realDriverCost : Math.round(costs * 0.20);
+  // Pie denominator anchors on the API `costs` figure (the donut centre).
+  // Maintenance/other are derived from the residual after subtracting the
+  // tracked categories, so the legend reconciles to the centre label.
+  const tripCostSum = fuelCost + roadCost + driverCost;
+  const totalCostsForPie = Math.max(costs, tripCostSum + mgmtCost);
+  const residual = Math.max(0, totalCostsForPie - tripCostSum - mgmtCost);
+  const maintCost = 0; // not tracked yet; was previously a fabricated 7%
+  const otherCost = residual;
 
-  const totalPie = fuelCost + driverCost + roadCost + mgmtCost + maintCost + otherCost || 1;
+  const totalPie = totalCostsForPie || 1;
   const p = (v: number) => Math.round((v / totalPie) * 100);
   const fuelPct   = p(fuelCost);
   const driverPct = p(driverCost);
@@ -358,57 +409,75 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <svg className="linechart" viewBox="0 0 700 220" preserveAspectRatio="none" role="img" aria-label="Biểu đồ doanh thu và lợi nhuận 12 tháng" style={{ overflow: 'visible' }}>
-              {/* grid lines */}
-              <line className="linechart__grid" x1="40" y1="20" x2="680" y2="20" strokeDasharray="2 4"/>
-              <line className="linechart__grid" x1="40" y1="62" x2="680" y2="62" strokeDasharray="2 4"/>
-              <line className="linechart__grid" x1="40" y1="105" x2="680" y2="105" strokeDasharray="2 4"/>
-              <line className="linechart__grid" x1="40" y1="148" x2="680" y2="148" strokeDasharray="2 4"/>
-              <line className="linechart__grid" x1="40" y1="190" x2="680" y2="190"/>
-
-              {/* Y axis labels */}
-              <text className="linechart__axis-label" x="34" y="24" textAnchor="end">1.1B</text>
-              <text className="linechart__axis-label" x="34" y="66" textAnchor="end">820M</text>
-              <text className="linechart__axis-label" x="34" y="109" textAnchor="end">550M</text>
-              <text className="linechart__axis-label" x="34" y="152" textAnchor="end">280M</text>
-              <text className="linechart__axis-label" x="34" y="194" textAnchor="end">0</text>
-
-              {/* X axis (months) */}
-              <text className="linechart__axis-label" x="40" y="210" textAnchor="middle">T6</text>
-              <text className="linechart__axis-label" x="98" y="210" textAnchor="middle">T7</text>
-              <text className="linechart__axis-label" x="156" y="210" textAnchor="middle">T8</text>
-              <text className="linechart__axis-label" x="215" y="210" textAnchor="middle">T9</text>
-              <text className="linechart__axis-label" x="273" y="210" textAnchor="middle">T10</text>
-              <text className="linechart__axis-label" x="331" y="210" textAnchor="middle">T11</text>
-              <text className="linechart__axis-label" x="389" y="210" textAnchor="middle">T12</text>
-              <text className="linechart__axis-label" x="447" y="210" textAnchor="middle">T1</text>
-              <text className="linechart__axis-label" x="505" y="210" textAnchor="middle">T2</text>
-              <text className="linechart__axis-label" x="564" y="210" textAnchor="middle">T3</text>
-              <text className="linechart__axis-label" x="622" y="210" textAnchor="middle">T4</text>
-              <text className="linechart__axis-label" x="680" y="210" textAnchor="middle">T5</text>
-
-              {/* Revenue area fill */}
-              <path className="linechart__area" d="M 40,74 L 98,63 L 156,68 L 215,57 L 273,45 L 331,48 L 389,54 L 447,59 L 505,48 L 564,39 L 622,36 L 680,23 L 680,190 L 40,190 Z"/>
-
-              {/* Revenue line */}
-              <path className="linechart__line linechart__line--revenue" d="M 40,74 L 98,63 L 156,68 L 215,57 L 273,45 L 331,48 L 389,54 L 447,59 L 505,48 L 564,39 L 622,36 L 680,23"/>
-
-              {/* Profit line */}
-              <path className="linechart__line linechart__line--profit" d="M 40,153 L 98,147 L 156,150 L 215,144 L 273,138 L 331,141 L 389,145 L 447,147 L 505,141 L 564,136 L 622,134 L 680,129"/>
-
-              {/* Dots on last point (highlighted) */}
-              <circle className="linechart__dot" cx="680" cy="23" r="5"/>
-              <circle className="linechart__dot linechart__dot--profit" cx="680" cy="129" r="5"/>
-
-              {/* Tooltip for latest */}
-              <g transform="translate(680, 23)">
-                <rect x="-90" y="-38" width="86" height="28" rx="6" fill="var(--ink)"/>
-                <text x="-47" y="-26" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="10" fill="rgba(255,255,255,0.65)" fontWeight="500">T{currentMonth}/{currentYear}</text>
-                <text x="-47" y="-14" textAnchor="middle" fontFamily="var(--font-display)" fontSize="12" fill="#fff" fontWeight="700">
-                  {revenue >= 1000000000 ? `${(revenue / 1000000000).toFixed(2)} tỷ ₫` : `${Math.round(revenue / 1000000)}M ₫`}
-                </text>
-              </g>
-            </svg>
+            {(() => {
+              // Data-driven 12-month chart. Previously this was a fixed SVG
+              // with hardcoded coordinates which lied about the data —
+              // showing growth peaking at "T5/2026" regardless of reality.
+              // Now we map yearlySeries onto the same axis layout.
+              const series = yearlySeries.length === 12
+                ? yearlySeries
+                : Array.from({ length: 12 }, () => ({ revenue: 0, grossProfit: 0 }));
+              const maxVal = Math.max(
+                1,
+                ...series.map((s) => Math.max(s.revenue, s.grossProfit)),
+              );
+              // Nice round axis max — next 100M tick above the data.
+              const niceMax = Math.ceil(maxVal / 100_000_000) * 100_000_000;
+              const x0 = 40, x1 = 680, y0 = 20, y1 = 190;
+              const xFor = (i: number) => x0 + (i * (x1 - x0)) / 11;
+              const yFor = (v: number) => y1 - (v / niceMax) * (y1 - y0);
+              const monthLabels: string[] = [];
+              for (let i = 0; i < 12; i++) {
+                let m = currentMonth - 11 + i;
+                while (m <= 0) m += 12;
+                monthLabels.push(`T${m}`);
+              }
+              const revPath = series.map((s, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i)},${yFor(s.revenue)}`).join(' ');
+              const profitPath = series.map((s, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i)},${yFor(s.grossProfit)}`).join(' ');
+              const areaPath = `${revPath} L ${xFor(11)},${y1} L ${xFor(0)},${y1} Z`;
+              const lastIdx = 11;
+              const lastX = xFor(lastIdx);
+              const lastY = yFor(series[lastIdx].revenue);
+              const lastProfitY = yFor(series[lastIdx].grossProfit);
+              const fmt = (v: number) =>
+                v >= 1_000_000_000 ? `${(v / 1_000_000_000).toFixed(2)} tỷ ₫` : `${Math.round(v / 1_000_000)}M ₫`;
+              // 5 evenly spaced Y ticks.
+              const ticks = [4, 3, 2, 1, 0].map((i) => (niceMax * i) / 4);
+              const tickYs = [y0, y0 + (y1 - y0) * 0.25, y0 + (y1 - y0) * 0.5, y0 + (y1 - y0) * 0.75, y1];
+              return (
+                <svg className="linechart" viewBox="0 0 700 220" preserveAspectRatio="none" role="img" aria-label="Biểu đồ doanh thu và lợi nhuận 12 tháng" style={{ overflow: 'visible' }}>
+                  {/* grid lines */}
+                  {tickYs.map((y, idx) => (
+                    <line key={idx} className="linechart__grid" x1={x0} y1={y} x2={x1} y2={y} strokeDasharray={idx === tickYs.length - 1 ? undefined : '2 4'} />
+                  ))}
+                  {/* Y axis labels */}
+                  {ticks.map((v, idx) => (
+                    <text key={idx} className="linechart__axis-label" x={x0 - 6} y={tickYs[idx] + 4} textAnchor="end">{fmt(v).replace(' ₫', '')}</text>
+                  ))}
+                  {/* X axis (months) */}
+                  {monthLabels.map((label, i) => (
+                    <text key={i} className="linechart__axis-label" x={xFor(i)} y={y1 + 20} textAnchor="middle">{label}</text>
+                  ))}
+                  {/* Revenue area fill */}
+                  <path className="linechart__area" d={areaPath} />
+                  {/* Revenue line */}
+                  <path className="linechart__line linechart__line--revenue" d={revPath} />
+                  {/* Profit line */}
+                  <path className="linechart__line linechart__line--profit" d={profitPath} />
+                  {/* Dots on last point (highlighted) */}
+                  <circle className="linechart__dot" cx={lastX} cy={lastY} r="5" />
+                  <circle className="linechart__dot linechart__dot--profit" cx={lastX} cy={lastProfitY} r="5" />
+                  {/* Tooltip for latest */}
+                  <g transform={`translate(${lastX}, ${lastY})`}>
+                    <rect x="-90" y="-38" width="86" height="28" rx="6" fill="var(--ink)" />
+                    <text x="-47" y="-26" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="10" fill="rgba(255,255,255,0.65)" fontWeight="500">T{currentMonth}/{currentYear}</text>
+                    <text x="-47" y="-14" textAnchor="middle" fontFamily="var(--font-display)" fontSize="12" fill="#fff" fontWeight="700">
+                      {fmt(series[lastIdx].revenue)}
+                    </text>
+                  </g>
+                </svg>
+              );
+            })()}
         </Panel>
 
         {/* Right Column: Cost Breakdown Donut Chart fallback */}

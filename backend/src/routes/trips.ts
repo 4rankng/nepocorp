@@ -5,31 +5,21 @@ import { eq, and, isNull, sql, desc, gte, lte } from 'drizzle-orm';
 import { TripStatus, TxnType } from '@nepocorp/shared';
 import { createTripSchema, updateTripFiguresSchema, createAdjustmentSchema } from '@nepocorp/shared';
 import * as tripService from '../services/trip.service';
+import { LedgerService } from '../services/ledger.service';
 import type { Request, Response } from 'express';
 
 const router = Router();
 
-/** Shared transform: camelCase DB row → snake_case + nested objects for frontend */
-function transformTripRow(item: Record<string, any>, extras?: { legs?: any[]; photoUrls?: string[] }) {
+/** Shape flat joined rows into nested relation objects. Key casing is handled by snakeCaseSerializer. */
+function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; photoUrls?: string[] }) {
   return {
     ...item,
-    departure_date: item.departureDate,
-    fuel_mode: item.fuelMode,
-    fuel_consumption: item.fuelLiters,
-    fuel_liters: item.fuelLiters,
-    total_fuel_cost: item.totalFuelCost,
-    road_allowance: item.totalRoadAllowance,
-    total_road_allowance: item.totalRoadAllowance,
-    driver_salary: item.driverSalary,
-    total_cost: item.totalCost,
-    gross_profit: item.grossProfit,
-    customer_reference: item.customerReference,
-    has_return_cargo: item.hasReturnCargo,
     customer: item.customerName ? { id: item.customerId, name: item.customerName } : null,
     driver: item.driverName ? { id: item.driverId, name: item.driverName } : null,
-    truck: item.truckPlate ? { id: item.truckId, license_plate: item.truckPlate } : null,
-    route: item.routeName ? { id: item.routeId, name: item.routeName, distance: item.routeDistance, distance_km: item.routeDistance } : null,
-    trailer: item.trailerLicensePlate ? { id: item.trailerId, license_plate: item.trailerLicensePlate, type: item.trailerType } : null,
+    truck: item.truckPlate ? { id: item.truckId, licensePlate: item.truckPlate } : null,
+    route: item.routeName ? { id: item.routeId, name: item.routeName, distanceKm: item.routeDistance } : null,
+    trailer: item.trailerLicensePlate ? { id: item.trailerId, licensePlate: item.trailerLicensePlate, type: item.trailerType } : null,
+    trailerType: item.trailerType || '40FT',
     ...extras,
   };
 }
@@ -95,13 +85,10 @@ router.get('/', async (req: Request, res: Response) => {
 
     const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(s.trips).where(and(...conditions));
 
-    // Transform to match frontend expectations
-    const transformedItems = items.map(item => ({
-      ...transformTripRow(item),
-      trailer_type: item.trailerType || '40FT',
-    }));
+    // Shape nested relations (key casing handled by snakeCaseSerializer middleware)
+    const shapedItems = items.map(item => shapeTripRelations(item));
 
-    res.json({ items: transformedItems, total: Number(countRow?.count ?? 0), page, pageSize: limit });
+    res.json({ items: shapedItems, total: Number(countRow?.count ?? 0), page, pageSize: limit });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Lỗi máy chủ' });
   }
@@ -165,10 +152,10 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
 
-    // Transform to match frontend expectations
-    const transformedTrip = transformTripRow(trip, { legs, photoUrls });
+    // Shape nested relations (key casing handled by snakeCaseSerializer middleware)
+    const shapedTrip = shapeTripRelations(trip, { legs, photoUrls });
 
-    res.json(transformedTrip);
+    res.json(shapedTrip);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -196,13 +183,7 @@ router.put('/:id/actuals', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     const data = updateTripFiguresSchema.parse(req.body);
-
-    // If still IN_TRANSIT, transitionTripStatus will handle completion photo checks, etc.
-    const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, id)).limit(1);
-    if (trip?.status === TripStatus.IN_TRANSIT) {
-      await tripService.transitionTripStatus(id, TripStatus.COMPLETED, req.user!.userId, req.user!.role);
-    }
-
+    // Auto-complete from IN_TRANSIT is now handled inside updateTripFigures
     const updated = await tripService.updateTripFigures(id, {
       ...data,
       expected_version: data.version,
@@ -301,23 +282,15 @@ router.post('/:id/adjustment', async (req: Request, res: Response) => {
     const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
 
+    const isDebit = data.amount > 0;
     await db.transaction(async (tx) => {
-      const [lastEntry] = await tx.select().from(s.ledger)
-        .where(and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, trip.customerId)))
-        .orderBy(desc(s.ledger.id)).limit(1);
-
-      const prevBalance = parseFloat(lastEntry?.balance || '0');
-      const isDebit = data.amount > 0;
-      const newBalance = prevBalance + data.amount;
-
-      await tx.insert(s.ledger).values({
+      await LedgerService.postEntry(tx, {
         txnType: TxnType.ADJUSTMENT,
         txnId: tripId,
         entityType: 'CUSTOMER',
         entityId: trip.customerId,
-        debit: isDebit ? String(data.amount) : '0',
-        credit: isDebit ? '0' : String(Math.abs(data.amount)),
-        balance: String(newBalance),
+        debit: isDebit ? data.amount : 0,
+        credit: isDebit ? 0 : Math.abs(data.amount),
         note: `${data.note} (HĐ: ${data.signed_agreement_ref})`,
       });
     });
