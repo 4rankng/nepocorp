@@ -88,6 +88,165 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+ * DRIVER TRIP CARD — base + mobile responsive override.
+ * Desktop: route + status + truck + date + salary + chevron all on ONE row.
+ * Mobile (<640px): salary moves down to its own row so the route name has
+ * the full width and doesn't collapse to one word per line.
+ * ────────────────────────────────────────────────────────────────────────── */
+.driver-trip-card__body {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.driver-trip-card__icon {
+  width: 42px; height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--brand-soft);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.driver-trip-card__main { flex: 1; min-width: 0; }
+.driver-trip-card__head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.driver-trip-card__route {
+  font-weight: 600; font-size: 14px; color: var(--fg-1);
+}
+.driver-trip-card__meta {
+  display: flex; align-items: center; gap: 16px;
+  font-size: 12px; color: var(--fg-3);
+  flex-wrap: wrap;
+}
+.driver-trip-card__meta-item {
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.driver-trip-card__salary { text-align: right; flex-shrink: 0; }
+.driver-trip-card__salary-value {
+  font-size: 15px; font-weight: 700; color: var(--fg-1);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+}
+.driver-trip-card__arrow { color: var(--fg-3); flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .driver-trip-card__body {
+    padding: 12px 14px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .driver-trip-card__icon { width: 36px; height: 36px; }
+  .driver-trip-card__main { flex: 1 1 calc(100% - 60px); }
+  /* Salary jumps to a new full-width row below the title+meta so the route
+     name keeps all the horizontal space it needs. */
+  .driver-trip-card__salary {
+    order: 99;
+    flex: 1 1 100%;
+    text-align: left;
+    padding-left: 48px;  /* visually align under the title (icon width + gap) */
+    margin-top: -2px;
+  }
+  .driver-trip-card__salary-value { font-size: 14px; }
+  .driver-trip-card__arrow { display: none; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * PHONE (< 640px) — per-page custom layouts that don't already have
+ * mobile @media rules in their own stylesheets.
+ * ────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* ── Dispatch page ── */
+  /* Hero card: stack title block and action buttons */
+  .dispatch-page .hero { padding: 18px 16px !important; }
+  .dispatch-page .hero-top { flex-direction: column !important; gap: 12px !important; align-items: flex-start !important; }
+  .dispatch-page .hero-h1 { font-size: 22px !important; line-height: 1.2 !important; }
+  .dispatch-page .hero-sub { font-size: 12.5px !important; }
+  .dispatch-page .hero-actions { width: 100% !important; flex-wrap: wrap !important; }
+  .dispatch-page .hero-actions .btn-d { flex: 1 1 auto !important; justify-content: center !important; }
+
+  /* Metric strip: 2x2 grid on phone */
+  .dispatch-page .metrics { grid-template-columns: 1fr 1fr !important; gap: 10px !important; padding: 14px !important; }
+  .dispatch-page .metric { padding: 10px 12px !important; }
+  .dispatch-page .metric-label { font-size: 10px !important; }
+  .dispatch-page .metric-value { font-size: 20px !important; }
+
+  /* Section heads stack */
+  .dispatch-page .section-head { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+  .dispatch-page .filter-tabs { width: 100% !important; overflow-x: auto !important; flex-wrap: nowrap !important; }
+  .dispatch-page .filter-tabs::-webkit-scrollbar { display: none; }
+
+  /* Fleet truck cards — 1 per row */
+  .dispatch-page .fleet-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Trip list page (shares hero/metrics with dispatch) ── */
+  .trip-list-page .hero { padding: 18px 16px !important; }
+  .trip-list-page .hero-top { flex-direction: column !important; gap: 12px !important; align-items: flex-start !important; }
+  .trip-list-page .hero-h1 { font-size: 22px !important; line-height: 1.2 !important; }
+  .trip-list-page .hero-sub { font-size: 12.5px !important; }
+  .trip-list-page .hero-actions { width: 100% !important; flex-wrap: wrap !important; }
+  .trip-list-page .hero-actions .btn-d { flex: 1 1 auto !important; justify-content: center !important; }
+  .trip-list-page .metrics { grid-template-columns: 1fr 1fr !important; gap: 10px !important; padding: 14px !important; }
+  .trip-list-page .metric { padding: 10px 12px !important; }
+  .trip-list-page .metric-label { font-size: 10px !important; }
+  .trip-list-page .metric-value { font-size: 20px !important; }
+  .trip-list-page .stats-strip { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+
+  /* ── Finance / Reports page ── */
+  /* Chart panels stack vertically and the trend chart container shrinks */
+  .finance-page .charts-row { flex-direction: column !important; }
+  .finance-page .panel { width: 100% !important; min-width: 0 !important; }
+
+  /* ── Penalty page ── */
+  .penalty-page .penalty-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Config page settings grid already has rules ── */
+  .settings-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Audit log two-column ── */
+  .audit-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Cap table / config CRUD tables ── */
+  .crud-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+
+  /* ── Trip detail page ── */
+  .trip-detail-grid { grid-template-columns: 1fr !important; }
+  .trip-detail-cols { flex-direction: column !important; }
+
+  /* ── Trip create / edit forms ── */
+  .trip-form-grid,
+  .trip-form-row { grid-template-columns: 1fr !important; flex-direction: column !important; }
+
+  /* ── Login page already centered, just tighten ── */
+  .login-card { padding: 24px 20px !important; }
+
+  /* ── Generic page header CTA buttons: stack to full width ── */
+  .page-header .btn,
+  .page-header .btn-primary { flex: 1 1 auto !important; justify-content: center !important; }
+
+  /* ── Toolbar / Search bar wrap fix ── */
+  .toolbar { flex-wrap: wrap !important; gap: 10px !important; }
+  .toolbar > * { flex: 1 1 100% !important; }
+
+  /* ── Hide non-essential icons on mobile to save space ── */
+  .topbar .icon-btn:not(.sidebar-toggle):not(.notification-btn) { display: none !important; }
+
+  /* ── Sticky table headers can break on mobile, allow scroll ── */
+  thead.sticky-header { position: relative !important; }
+
+  /* ── Form labels stack above inputs (not side by side) ── */
+  .form-row { flex-direction: column !important; align-items: stretch !important; gap: 6px !important; }
+
+  /* ── Modal / drawer take full screen ── */
+  .modal { padding: 0 !important; }
+  .modal__content,
+  .drawer__content { max-width: 100% !important; max-height: 100% !important; border-radius: 12px 12px 0 0 !important; margin: auto 0 0 !important; }
+
+  /* ── Driver portal bottom-nav style (if applicable) ── */
+  .driver-bottom-nav { padding-bottom: env(safe-area-inset-bottom) !important; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
  * NARROW PHONE (< 420px) — KPI grid finally goes to single column so
  * Vietnamese labels like "HÀNH ĐỘNG HÔM NAY" don't wrap awkwardly
  * ────────────────────────────────────────────────────────────────────────── */
@@ -103,4 +262,10 @@
 
   /* Fleet two-col stays stacked */
   .fleet-page .fleet-two-col { grid-template-columns: 1fr !important; }
+
+  /* Dispatch metrics drop to single col */
+  .dispatch-page .metrics { grid-template-columns: 1fr !important; }
+
+  /* TripList stats strip */
+  .trip-list-page .stats-strip { grid-template-columns: 1fr !important; }
 }

@@ -73,7 +73,7 @@ export default function DriverTripsPage() {
         {trips.map((trip, idx) => (
           <div
             key={trip.id}
-            className="panel fade-up"
+            className="panel fade-up driver-trip-card"
             style={{
               cursor: 'pointer',
               transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
@@ -89,32 +89,28 @@ export default function DriverTripsPage() {
               (e.currentTarget as HTMLDivElement).style.borderColor = '';
             }}
           >
-            <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div className="driver-trip-card__body">
               {/* Route icon */}
-              <div style={{
-                width: 42, height: 42, borderRadius: 'var(--radius-md)',
-                background: 'var(--brand-soft)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
+              <div className="driver-trip-card__icon">
                 <MapPin size={20} style={{ color: 'var(--brand)' }} />
               </div>
 
               {/* Main info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--fg-1)' }}>
+              <div className="driver-trip-card__main">
+                <div className="driver-trip-card__head">
+                  <span className="driver-trip-card__route">
                     {trip.routeName || 'Tuyến không xác định'}
                   </span>
                   <StatusPill variant={tripStatusVariant(trip.status)}>
                     {TRIP_STATUS_LABELS[trip.status] || trip.status}
                   </StatusPill>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: 'var(--fg-3)' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <div className="driver-trip-card__meta">
+                  <span className="driver-trip-card__meta-item">
                     <Truck size={12} />
                     {trip.truckPlate || '—'}
                   </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span className="driver-trip-card__meta-item">
                     <Calendar size={12} />
                     {formatDate(trip.departureDate)}
                   </span>
@@ -122,16 +118,16 @@ export default function DriverTripsPage() {
               </div>
 
               {/* Driver Salary */}
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div className="driver-trip-card__salary">
                 {trip.driverSalary && (
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
+                  <div className="driver-trip-card__salary-value">
                     {formatCurrency(trip.driverSalary)}
                   </div>
                 )}
               </div>
 
               {/* Arrow */}
-              <ArrowRight size={16} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
+              <ArrowRight size={16} className="driver-trip-card__arrow" />
             </div>
           </div>
         ))}

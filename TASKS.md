@@ -234,15 +234,54 @@ The NEPO logistics system has a comprehensive backend and frontend with most cor
 
 ## Phase 4 — Hardening (tests + infra)
 
+> **Test runner:** `npx tsx --test` (Node.js built-in). Tests go in `backend/src/tests/`.
+> Existing test files: `integration.test.ts`, `comprehensive.test.ts` — read them first for patterns.
+> **Key service files to test:** `backend/src/services/trip.service.ts`, `backend/src/services/ledger.service.ts`, `backend/src/routes/driver.ts`.
+
 - [ ] **T4.1 — Integ: ledger balance integrity (parallel locks, same customer)** · `M` · BE · dep: T2.7
-  - Epic ref: §8.2.
+  - File: `backend/src/tests/ledger-integrity.test.ts`
+  - Test: Lock 2 trips for same customer concurrently → verify running balance is correct (debit sums match).
+  - Verify: after locking trip A then trip B, customer's latest ledger `balance` = sum of both trip revenues.
+  - Verify: each lock creates exactly 1 CUSTOMER debit entry + 1 DRIVER credit entry.
+
 - [ ] **T4.2 — Integ: deadlock prevention (two trips sharing entities)** · `M` · BE · dep: T2.7
+  - File: `backend/src/tests/deadlock-prevention.test.ts`
+  - Test: Lock trip A (customer X, driver Y) and trip B (customer Y, driver X) concurrently.
+  - The sorted advisory lock in `ledger.service.ts` prevents deadlock — both should complete, not hang.
+  - Use `Promise.all` with a small delay to simulate concurrency.
+
 - [ ] **T4.3 — Integ: lock atomicity (forced mid-txn failure → full rollback)** · `M` · BE · dep: T2.7
+  - File: `backend/src/tests/lock-atomicity.test.ts`
+  - Test: attempt to lock a trip when ledger insert would fail (e.g., invalid entity_id).
+  - Verify: trip status remains COMPLETED (not LOCKED), no partial ledger rows written.
+  - Verify: subsequent valid lock attempt still works (no stale state).
+
 - [ ] **T4.4 — Integ: rate snapshotting (all 7 cols)** · `S` · BE · dep: T2.2
+  - File: `backend/src/tests/rate-snapshot.test.ts`
+  - Test: Create trip → verify 7 snapshot cols match config values at creation time.
+  - Then: change fuel_config.unit_price → verify existing trip's `fuelPriceApplied` did NOT change.
+  - Snapshot cols: `roadAllowanceBaseApplied`, `fuelLoadedNormApplied`, `fuelEmptyNormApplied`, `fuelFixedAllowanceApplied`, `tollPerStationApplied`, `returnCargoBonusApplied`, `fuelPriceApplied`.
+
 - [ ] **T4.5 — Integ: optimistic concurrency (two PUTs same version → one 409)** · `S` · BE · dep: T2.5
+  - File: `backend/src/tests/optimistic-concurrency.test.ts`
+  - Test: Read trip (version=1). Send two PUTs with version=1 concurrently.
+  - Verify: one succeeds (200, version becomes 2), one fails (409 Conflict).
+  - Verify: successful PUT's data is persisted, failed PUT's data is NOT.
+
 - [ ] **T4.6 — Integ: driver isolation (no sensitive cols in response)** · `S` · BE · dep: T2.16
+  - File: `backend/src/tests/driver-isolation.test.ts`
+  - Test: Hit `GET /api/driver/trips` and `GET /api/driver/trips/:id` as driver user.
+  - Verify response body does NOT contain any of: `revenue`, `grossProfit`, `totalCost`, `totalFuelCost`, `driverSalary`, `priceOverride`, `priceOverrideBy`, `priceOverrideAt`.
+  - Use `JSON.stringify` + regex or property-by-property check on response object.
+
 - [ ] **T4.7 — State-machine transition unit tests** · `M` · BE · dep: T2.8
-  - Legal/illegal transitions, idempotent lock 200, zero-revenue 422, read-first ordering. Epic ref: §8.1.
+  - File: `backend/src/tests/state-machine.test.ts`
+  - Test all legal transitions: CREATED→IN_TRANSIT, IN_TRANSIT→COMPLETED, COMPLETED→LOCKED, CREATED→CANCELED, IN_TRANSIT→CANCELED, COMPLETED→IN_TRANSIT (reopen).
+  - Test illegal transitions: LOCKED→anything, CANCELED→anything, CREATED→LOCKED (skip), CREATED→COMPLETED (skip).
+  - Test idempotent lock: lock same trip twice → second returns 200 (not error).
+  - Test zero-revenue: attempt lock with revenue=0 without `confirmZeroRevenue` → 422.
+  - Test zero-revenue with `confirmZeroRevenue: true` → 200 success.
+
 - [x] **T4.8 — DB: revoke UPDATE/DELETE on `ledger` at role level** · `S` · DB · dep: T1.11
   - Epic ref: §4.8.
 - [x] **T4.9 — OPS: persistent `UPLOAD_DIR` volume + nightly backup cron** · `S` · OPS · dep: T1.12
