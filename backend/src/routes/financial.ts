@@ -6,6 +6,7 @@ import { authMiddleware, requireRoles } from '../middleware/auth';
 import { Role, TxnType, TripStatus } from '@nepocorp/shared';
 import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
+import { LedgerService } from '../services/ledger.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -88,6 +89,9 @@ router.post('/payments/receive', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACC
     const data = createPaymentSchema.parse(req.body);
 
     await db.transaction(async (tx) => {
+      // Advisory lock to prevent concurrent payment races
+      await LedgerService.lockEntity(tx, 'CUSTOMER', data.customer_id);
+
       for (const payment of data.payments) {
         const [lastEntry] = await tx.select().from(s.ledger)
           .where(and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, data.customer_id)))
@@ -127,6 +131,9 @@ router.post('/adjustments', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTA
     if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
 
     await db.transaction(async (tx) => {
+      // Advisory lock to prevent races
+      await LedgerService.lockEntity(tx, 'CUSTOMER', trip.customerId);
+
       const [lastEntry] = await tx.select().from(s.ledger)
         .where(and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, trip.customerId)))
         .orderBy(desc(s.ledger.id)).limit(1);
@@ -143,7 +150,7 @@ router.post('/adjustments', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTA
         debit: isDebit ? String(data.amount) : '0',
         credit: isDebit ? '0' : String(Math.abs(data.amount)),
         balance: String(newBalance),
-        note: data.note,
+        note: `${data.note} (HĐ: ${data.signed_agreement_ref})`,
       });
     });
 
@@ -185,6 +192,9 @@ router.post('/penalties', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT
     const data = createPenaltySchema.parse(req.body);
 
     await db.transaction(async (tx) => {
+      // Advisory lock to prevent concurrent penalty races
+      await LedgerService.lockEntity(tx, 'DRIVER', data.driver_id);
+
       const [penalty] = await tx.insert(s.penalties).values({
         driverId: data.driver_id,
         tripId: data.trip_id,

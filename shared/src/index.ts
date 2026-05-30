@@ -33,3 +33,8 @@ export type {
   ManagementFeeInput, CapTableInput,
   CreateUserInput, UpdateUserInput,
 } from './schemas';
+
+export { round2dp } from './calculations/round';
+export { computeTripTotals } from './calculations/tripTotals';
+export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
+

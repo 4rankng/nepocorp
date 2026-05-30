@@ -1,9 +1,11 @@
+CREATE TYPE "public"."customer_status" AS ENUM('ACTIVE', 'LOCKED');--> statement-breakpoint
 CREATE TYPE "public"."driver_status" AS ENUM('ACTIVE', 'INACTIVE');--> statement-breakpoint
 CREATE TYPE "public"."fuel_mode" AS ENUM('AUTO', 'FLAT_RATE');--> statement-breakpoint
 CREATE TYPE "public"."loading_type" AS ENUM('HANG', 'VO');--> statement-breakpoint
 CREATE TYPE "public"."role" AS ENUM('ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER');--> statement-breakpoint
 CREATE TYPE "public"."trailer_status" AS ENUM('ACTIVE', 'MAINTENANCE', 'INACTIVE');--> statement-breakpoint
 CREATE TYPE "public"."trailer_type" AS ENUM('20FT', '40FT');--> statement-breakpoint
+CREATE TYPE "public"."trip_photo_type" AS ENUM('CONTAINER', 'SEAL', 'OTHER');--> statement-breakpoint
 CREATE TYPE "public"."trip_status" AS ENUM('CREATED', 'IN_TRANSIT', 'COMPLETED', 'LOCKED', 'CANCELED');--> statement-breakpoint
 CREATE TYPE "public"."truck_status" AS ENUM('ACTIVE', 'MAINTENANCE', 'INACTIVE');--> statement-breakpoint
 CREATE TYPE "public"."txn_type" AS ENUM('TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY');--> statement-breakpoint
@@ -40,7 +42,12 @@ CREATE TABLE "cargo_types" (
 CREATE TABLE "customers" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,
+	"tax_code" varchar(20),
+	"contact_person" varchar(255),
+	"phone" varchar(20),
 	"contact_info" text,
+	"credit_limit" numeric(15, 0),
+	"status" "customer_status" DEFAULT 'ACTIVE',
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp
@@ -131,6 +138,7 @@ CREATE TABLE "pricing_tables" (
 	"customer_id" integer NOT NULL,
 	"route_id" integer NOT NULL,
 	"price" numeric(15, 0) NOT NULL,
+	"effective_date" date DEFAULT now() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp
@@ -144,6 +152,14 @@ CREATE TABLE "road_allowances" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp
+);
+--> statement-breakpoint
+CREATE TABLE "road_config" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"toll_per_station" numeric(15, 0) DEFAULT '55000' NOT NULL,
+	"return_cargo_bonus" numeric(15, 0) DEFAULT '300000' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "routes" (
@@ -168,6 +184,11 @@ CREATE TABLE "trailers" (
 	CONSTRAINT "trailers_license_plate_unique" UNIQUE("license_plate")
 );
 --> statement-breakpoint
+CREATE TABLE "trip_code_counters" (
+	"year_month" varchar(10) PRIMARY KEY NOT NULL,
+	"counter" integer NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "trip_legs" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"trip_id" integer NOT NULL,
@@ -181,8 +202,20 @@ CREATE TABLE "trip_legs" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "trip_photos" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"trip_id" integer NOT NULL,
+	"type" "trip_photo_type" NOT NULL,
+	"storage_key" varchar(255) NOT NULL,
+	"uploaded_by" integer NOT NULL,
+	"uploaded_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "trips" (
 	"id" serial PRIMARY KEY NOT NULL,
+	"trip_code" varchar(50),
+	"version" integer DEFAULT 1 NOT NULL,
+	"created_by" integer,
 	"customer_id" integer NOT NULL,
 	"customer_reference" text,
 	"truck_id" integer NOT NULL,
@@ -196,12 +229,18 @@ CREATE TABLE "trips" (
 	"fuel_liters_override" numeric(10, 2),
 	"fuel_supplement_liters" numeric(10, 2) DEFAULT '0',
 	"fuel_supplement_reason" text,
-	"fuel_price_applied" numeric(10, 0),
 	"tolls_discount" numeric(15, 0) DEFAULT '0',
 	"tolls_addition" numeric(15, 0) DEFAULT '0',
 	"tolls_stations" integer DEFAULT 0,
 	"has_return_cargo" boolean DEFAULT false,
 	"driver_salary" numeric(15, 0),
+	"fuel_price_applied" numeric(10, 0),
+	"road_allowance_base_applied" numeric(15, 0),
+	"fuel_loaded_norm_applied" numeric(6, 2),
+	"fuel_empty_norm_applied" numeric(6, 2),
+	"fuel_fixed_allowance_applied" numeric(10, 2),
+	"toll_per_station_applied" numeric(15, 0),
+	"return_cargo_bonus_applied" numeric(15, 0),
 	"fuel_liters" numeric(10, 2),
 	"total_fuel_cost" numeric(15, 0),
 	"total_road_allowance" numeric(15, 0),
@@ -211,11 +250,11 @@ CREATE TABLE "trips" (
 	"revenue_original" numeric(15, 0),
 	"revenue_overridden_by" integer,
 	"revenue_overridden_at" timestamp,
-	"photo_urls" jsonb,
 	"notes" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp
+	"deleted_at" timestamp,
+	CONSTRAINT "trips_trip_code_unique" UNIQUE("trip_code")
 );
 --> statement-breakpoint
 CREATE TABLE "trucks" (
@@ -230,14 +269,18 @@ CREATE TABLE "trucks" (
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"email" varchar(255) NOT NULL,
+	"username" varchar(100),
+	"email" varchar(255),
+	"phone" varchar(20),
 	"password_hash" text NOT NULL,
 	"role" "role" DEFAULT 'DRIVER' NOT NULL,
 	"status" varchar(20) DEFAULT 'ACTIVE' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
+	CONSTRAINT "users_username_unique" UNIQUE("username"),
+	CONSTRAINT "users_email_unique" UNIQUE("email"),
+	CONSTRAINT "users_phone_unique" UNIQUE("phone")
 );
 --> statement-breakpoint
 ALTER TABLE "drivers" ADD CONSTRAINT "drivers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -249,11 +292,14 @@ ALTER TABLE "pricing_tables" ADD CONSTRAINT "pricing_tables_customer_id_customer
 ALTER TABLE "pricing_tables" ADD CONSTRAINT "pricing_tables_route_id_routes_id_fk" FOREIGN KEY ("route_id") REFERENCES "public"."routes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "road_allowances" ADD CONSTRAINT "road_allowances_route_id_routes_id_fk" FOREIGN KEY ("route_id") REFERENCES "public"."routes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trip_legs" ADD CONSTRAINT "trip_legs_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_photos" ADD CONSTRAINT "trip_photos_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_photos" ADD CONSTRAINT "trip_photos_uploaded_by_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trips" ADD CONSTRAINT "trips_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_truck_id_trucks_id_fk" FOREIGN KEY ("truck_id") REFERENCES "public"."trucks"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_driver_id_drivers_id_fk" FOREIGN KEY ("driver_id") REFERENCES "public"."drivers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_route_id_routes_id_fk" FOREIGN KEY ("route_id") REFERENCES "public"."routes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_trailer_id_trailers_id_fk" FOREIGN KEY ("trailer_id") REFERENCES "public"."trailers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_cargo_type_id_cargo_types_id_fk" FOREIGN KEY ("cargo_type_id") REFERENCES "public"."cargo_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE UNIQUE INDEX "pricing_tables_customer_route_idx" ON "pricing_tables" USING btree ("customer_id","route_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "pricing_tables_customer_route_date_idx" ON "pricing_tables" USING btree ("customer_id","route_id","effective_date");--> statement-breakpoint
 CREATE UNIQUE INDEX "road_allowances_route_type_idx" ON "road_allowances" USING btree ("route_id","trailer_type");

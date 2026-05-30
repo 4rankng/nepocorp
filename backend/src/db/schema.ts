@@ -14,6 +14,8 @@ export const truckStatusEnum = pgEnum('truck_status', ['ACTIVE', 'MAINTENANCE', 
 export const driverStatusEnum = pgEnum('driver_status', ['ACTIVE', 'INACTIVE']);
 export const trailerStatusEnum = pgEnum('trailer_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
 export const customerStatusEnum = pgEnum('customer_status', ['ACTIVE', 'LOCKED']);
+export const tripPhotoTypeEnum = pgEnum('trip_photo_type', ['CONTAINER', 'SEAL', 'OTHER']);
+
 
 // ─── Config tables ───────────────────────────────────────────────────────────
 
@@ -101,11 +103,12 @@ export const pricingTables = pgTable('pricing_tables', {
   customerId: integer('customer_id').references(() => customers.id).notNull(),
   routeId: integer('route_id').references(() => routes.id).notNull(),
   price: numeric('price', { precision: 15, scale: 0 }).notNull(),
+  effectiveDate: date('effective_date').notNull().defaultNow(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 }, (table) => [
-  uniqueIndex('pricing_tables_customer_route_idx').on(table.customerId, table.routeId),
+  uniqueIndex('pricing_tables_customer_route_date_idx').on(table.customerId, table.routeId, table.effectiveDate),
 ]);
 
 export const roadAllowances = pgTable('road_allowances', {
@@ -144,6 +147,9 @@ export const penaltyReasons = pgTable('penalty_reasons', {
 
 export const trips = pgTable('trips', {
   id: serial('id').primaryKey(),
+  tripCode: varchar('trip_code', { length: 50 }).unique(),
+  version: integer('version').default(1).notNull(),
+  createdBy: integer('created_by').references(() => users.id),
   customerId: integer('customer_id').references(() => customers.id).notNull(),
   customerReference: text('customer_reference'),
   truckId: integer('truck_id').references(() => trucks.id).notNull(),
@@ -157,12 +163,20 @@ export const trips = pgTable('trips', {
   fuelLitersOverride: numeric('fuel_liters_override', { precision: 10, scale: 2 }),
   fuelSupplementLiters: numeric('fuel_supplement_liters', { precision: 10, scale: 2 }).default('0'),
   fuelSupplementReason: text('fuel_supplement_reason'),
-  fuelPriceApplied: numeric('fuel_price_applied', { precision: 10, scale: 0 }),
   tollsDiscount: numeric('tolls_discount', { precision: 15, scale: 0 }).default('0'),
   tollsAddition: numeric('tolls_addition', { precision: 15, scale: 0 }).default('0'),
   tollsStations: integer('tolls_stations').default(0),
   hasReturnCargo: boolean('has_return_cargo').default(false),
   driverSalary: numeric('driver_salary', { precision: 15, scale: 0 }),
+  // Rate Snapshots
+  fuelPriceApplied: numeric('fuel_price_applied', { precision: 10, scale: 0 }),
+  roadAllowanceBaseApplied: numeric('road_allowance_base_applied', { precision: 15, scale: 0 }),
+  fuelLoadedNormApplied: numeric('fuel_loaded_norm_applied', { precision: 6, scale: 2 }),
+  fuelEmptyNormApplied: numeric('fuel_empty_norm_applied', { precision: 6, scale: 2 }),
+  fuelFixedAllowanceApplied: numeric('fuel_fixed_allowance_applied', { precision: 10, scale: 2 }),
+  tollPerStationApplied: numeric('toll_per_station_applied', { precision: 15, scale: 0 }),
+  returnCargoBonusApplied: numeric('return_cargo_bonus_applied', { precision: 15, scale: 0 }),
+  // Derived Fields
   fuelLiters: numeric('fuel_liters', { precision: 10, scale: 2 }),
   totalFuelCost: numeric('total_fuel_cost', { precision: 15, scale: 0 }),
   totalRoadAllowance: numeric('total_road_allowance', { precision: 15, scale: 0 }),
@@ -172,7 +186,6 @@ export const trips = pgTable('trips', {
   revenueOriginal: numeric('revenue_original', { precision: 15, scale: 0 }),
   revenueOverriddenBy: integer('revenue_overridden_by'),
   revenueOverriddenAt: timestamp('revenue_overridden_at'),
-  photoUrls: jsonb('photo_urls').$type<string[]>(),
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -263,3 +276,28 @@ export const auditLogs = pgTable('audit_logs', {
   ipAddress: varchar('ip_address', { length: 45 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// ─── E2E Epic Extensions ──────────────────────────────────────────────────────
+
+export const roadConfig = pgTable('road_config', {
+  id: serial('id').primaryKey(),
+  tollPerStation: numeric('toll_per_station', { precision: 15, scale: 0 }).notNull().default('55000'),
+  returnCargoBonus: numeric('return_cargo_bonus', { precision: 15, scale: 0 }).notNull().default('300000'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const tripCodeCounters = pgTable('trip_code_counters', {
+  yearMonth: varchar('year_month', { length: 10 }).primaryKey(),
+  counter: integer('counter').notNull(),
+});
+
+export const tripPhotos = pgTable('trip_photos', {
+  id: serial('id').primaryKey(),
+  tripId: integer('trip_id').references(() => trips.id).notNull(),
+  type: tripPhotoTypeEnum('type').notNull(),
+  storageKey: varchar('storage_key', { length: 255 }).notNull(),
+  uploadedBy: integer('uploaded_by').references(() => users.id).notNull(),
+  uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
+});
+

@@ -107,7 +107,8 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     const [trip] = await db.select({
-      id: s.trips.id, customerId: s.trips.customerId, customerReference: s.trips.customerReference,
+      id: s.trips.id, tripCode: s.trips.tripCode, version: s.trips.version,
+      customerId: s.trips.customerId, customerReference: s.trips.customerReference,
       truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
       trailerId: s.trips.trailerId, cargoTypeId: s.trips.cargoTypeId,
       status: s.trips.status, departureDate: s.trips.departureDate,
@@ -119,7 +120,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
       revenueOriginal: s.trips.revenueOriginal, revenueOverriddenBy: s.trips.revenueOverriddenBy,
       revenueOverriddenAt: s.trips.revenueOverriddenAt, hasReturnCargo: s.trips.hasReturnCargo,
-      driverSalary: s.trips.driverSalary, photoUrls: s.trips.photoUrls, notes: s.trips.notes,
+      driverSalary: s.trips.driverSalary, notes: s.trips.notes,
       createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt, deletedAt: s.trips.deletedAt,
       // Joined fields
       customerName: s.customers.name,
@@ -140,6 +141,13 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     const legs = await db.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, id)).orderBy(s.tripLegs.sequence);
 
+    // Fetch relational photo storage keys and construct URLs
+    const photos = await db.select({
+      storageKey: s.tripPhotos.storageKey
+    }).from(s.tripPhotos).where(eq(s.tripPhotos.tripId, id));
+
+    const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
+
     // Transform to match frontend expectations
     const transformedTrip = {
       ...trip,
@@ -157,6 +165,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       route: trip.routeName ? { id: trip.routeId, name: trip.routeName, distance: trip.routeDistance } : null,
       trailer: trip.trailerLicensePlate ? { id: trip.trailerId, license_plate: trip.trailerLicensePlate, type: trip.trailerType } : null,
       legs,
+      photoUrls,
     };
 
     res.json(transformedTrip);
@@ -170,8 +179,11 @@ router.put('/:id/pre-departure', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACC
   try {
     const id = parseInt(req.params.id as string);
     const data = updateTripFiguresSchema.parse(req.body);
-    await checkOptimisticLock(id, req.headers['if-unmodified-since'] as string | undefined);
-    const trip = await tripService.updateTripFigures(id, data);
+    const trip = await tripService.updateTripFigures(id, {
+      ...data,
+      expected_version: data.version,
+      user_id: req.user!.userId,
+    });
     res.json(trip);
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
@@ -184,15 +196,18 @@ router.put('/:id/actuals', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
   try {
     const id = parseInt(req.params.id as string);
     const data = updateTripFiguresSchema.parse(req.body);
-    await checkOptimisticLock(id, req.headers['if-unmodified-since'] as string | undefined);
 
-    // Move to COMPLETED if still IN_TRANSIT
+    // If still IN_TRANSIT, transitionTripStatus will handle completion photo checks, etc.
     const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, id)).limit(1);
     if (trip?.status === TripStatus.IN_TRANSIT) {
-      await db.update(s.trips).set({ status: TripStatus.COMPLETED, updatedAt: new Date() }).where(eq(s.trips.id, id));
+      await tripService.transitionTripStatus(id, TripStatus.COMPLETED, req.user!.userId, req.user!.role);
     }
 
-    const updated = await tripService.updateTripFigures(id, data);
+    const updated = await tripService.updateTripFigures(id, {
+      ...data,
+      expected_version: data.version,
+      user_id: req.user!.userId,
+    });
     res.json(updated);
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
@@ -203,10 +218,15 @@ router.put('/:id/actuals', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTAN
 // Dispatch trip
 router.post('/:id/dispatch', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
   try {
-    const trip = await tripService.dispatchTrip(parseInt(req.params.id as string));
+    const trip = await tripService.transitionTripStatus(
+      parseInt(req.params.id as string),
+      TripStatus.IN_TRANSIT,
+      req.user!.userId,
+      req.user!.role
+    );
     res.json(trip);
   } catch (err: any) {
-    res.status(400).json({ error: err.message });
+    res.status(err.status || 400).json({ error: err.message });
   }
 });
 
@@ -214,8 +234,14 @@ router.post('/:id/dispatch', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNT
 router.post('/:id/lock', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
-    await checkOptimisticLock(id, req.headers['if-unmodified-since'] as string | undefined);
-    const trip = await tripService.lockTrip(id, req.user!.userId);
+    const confirmZeroRevenue = req.body.confirmZeroRevenue === true;
+    const trip = await tripService.transitionTripStatus(
+      id,
+      TripStatus.LOCKED,
+      req.user!.userId,
+      req.user!.role,
+      confirmZeroRevenue
+    );
     res.json(trip);
   } catch (err: any) {
     res.status(err.status || 400).json({ error: err.message });
@@ -226,8 +252,12 @@ router.post('/:id/lock', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT)
 router.post('/:id/cancel', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
-    await checkOptimisticLock(id, req.headers['if-unmodified-since'] as string | undefined);
-    const trip = await tripService.cancelTrip(id);
+    const trip = await tripService.transitionTripStatus(
+      id,
+      TripStatus.CANCELED,
+      req.user!.userId,
+      req.user!.role
+    );
     res.json(trip);
   } catch (err: any) {
     res.status(err.status || 400).json({ error: err.message });

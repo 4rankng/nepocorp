@@ -153,6 +153,42 @@ export default function TripDetailPage() {
     }
   };
 
+  const handleLockClick = async () => {
+    if (!trip) return;
+    setActionLoading(true);
+    setError('');
+    try {
+      await api.post(`/trips/${trip.id}/lock`, {});
+      await loadTrip();
+    } catch (err: any) {
+      if (err instanceof ApiError && err.status === 422) {
+        // Zero-revenue lock confirmation dialog (T3.15)
+        const isConfirmed = await confirm('Doanh thu chuyến đi này bằng 0 VNĐ. Bạn có chắc chắn muốn chốt doanh thu bằng 0?', {
+          variant: 'warning',
+          confirmLabel: 'Xác nhận chốt',
+          cancelLabel: 'Hủy bỏ'
+        });
+        if (isConfirmed) {
+          setActionLoading(true);
+          try {
+            await api.post(`/trips/${trip.id}/lock`, { confirmZeroRevenue: true });
+            await loadTrip();
+          } catch (retryErr: any) {
+            setError(retryErr.message || 'Lỗi khi chốt chuyến đi.');
+          } finally {
+            setActionLoading(false);
+          }
+        }
+      } else if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err.message || 'Có lỗi xảy ra khi chốt chuyến đi.');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
@@ -234,7 +270,7 @@ export default function TripDetailPage() {
                 className="btn btn--primary btn--sm"
                 disabled={actionLoading || needsPhotos}
                 title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi chốt.' : undefined}
-                onClick={() => handleAction('lock', () => api.post(`/trips/${trip.id}/lock`, {}))}
+                onClick={handleLockClick}
               >
                 {actionLoading ? <Loader2 size={14} className="spin" /> : <Lock size={14} />}
                 Chốt chuyến

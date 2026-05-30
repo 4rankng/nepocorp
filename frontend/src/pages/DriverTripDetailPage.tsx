@@ -27,15 +27,12 @@ interface DriverTripDetail {
   cargoTypeName: string | null;
   fuelLiters: string | null;
   fuelMode: string | null;
-  roadAllowance: string | null;
+  totalRoadAllowance: string | null;
   driverSalary: string | null;
-  revenue: string | null;
-  totalCost: string | null;
-  grossProfit: string | null;
+  hasReturnCargo: boolean | null;
   legs: TripLeg[];
   notes: string | null;
   customerReference: string | null;
-  returnWithCargo: boolean;
 }
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
@@ -195,9 +192,9 @@ export default function DriverTripDetailPage() {
           <InfoRow
             icon={<MapPin size={16} />}
             label="Tiền đi đường"
-            value={trip.roadAllowance ? formatCurrency(trip.roadAllowance) : '—'}
+            value={trip.totalRoadAllowance ? formatCurrency(trip.totalRoadAllowance) : '—'}
           />
-          {trip.returnWithCargo && (
+          {trip.hasReturnCargo && (
             <div style={{ padding: '8px 0', fontSize: 13, color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>✓</span> Chuyến về có hàng (+300.000 đ)
             </div>

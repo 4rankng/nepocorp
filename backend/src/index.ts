@@ -8,7 +8,7 @@ import configRoutes from './routes/config';
 import tripRoutes from './routes/trips';
 import financialRoutes from './routes/financial';
 import driverRoutes from './routes/driver';
-import uploadRoutes from './routes/upload';
+import { uploadRouter, photosRouter } from './routes/upload';
 
 initAuditService();
 
@@ -33,7 +33,8 @@ app.use('/api', configRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api', financialRoutes);
 app.use('/api/driver/me', driverRoutes);
-app.use('/api/upload', uploadRoutes);
+app.use('/api/upload', uploadRouter);
+app.use('/api/photos', photosRouter);
 
 app.listen(config.port, () => {
   console.log(`NEPO API running on port ${config.port} [${config.nodeEnv}]`);

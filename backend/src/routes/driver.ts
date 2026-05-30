@@ -19,14 +19,18 @@ async function getDriverId(req: Request): Promise<number> {
   return driver.id;
 }
 
-// List assigned trips
+// List assigned trips (Driver custom allowlisted DTO)
 router.get('/trips', async (req: Request, res: Response) => {
   try {
     const driverId = await getDriverId(req);
     const items = await db.select({
-      id: s.trips.id, departureDate: s.trips.departureDate,
-      status: s.trips.status, fuelLiters: s.trips.fuelLiters,
-      revenue: s.trips.revenue, driverSalary: s.trips.driverSalary,
+      id: s.trips.id,
+      tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      status: s.trips.status,
+      fuelLiters: s.trips.fuelLiters,
+      totalRoadAllowance: s.trips.totalRoadAllowance,
+      driverSalary: s.trips.driverSalary,
       routeName: s.routes.name,
       truckPlate: s.trucks.licensePlate,
     }).from(s.trips)
@@ -41,14 +45,37 @@ router.get('/trips', async (req: Request, res: Response) => {
   }
 });
 
-// Trip detail
+// Trip detail (Driver custom allowlisted DTO)
 router.get('/trips/:id', async (req: Request, res: Response) => {
   try {
     const driverId = await getDriverId(req);
     const id = parseInt(req.params.id as string);
 
-    const [trip] = await db.select().from(s.trips)
-      .where(and(eq(s.trips.id, id), eq(s.trips.driverId, driverId)))
+    const [trip] = await db.select({
+      id: s.trips.id,
+      tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      status: s.trips.status,
+      fuelLiters: s.trips.fuelLiters,
+      fuelMode: s.trips.fuelMode,
+      totalRoadAllowance: s.trips.totalRoadAllowance,
+      driverSalary: s.trips.driverSalary,
+      hasReturnCargo: s.trips.hasReturnCargo,
+      notes: s.trips.notes,
+      customerReference: s.trips.customerReference,
+      routeName: s.routes.name,
+      truckPlate: s.trucks.licensePlate,
+      trailerPlate: s.trailers.licensePlate,
+      trailerType: s.trailers.type,
+      customerName: s.customers.name,
+      cargoTypeName: s.cargoTypes.name,
+    }).from(s.trips)
+      .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+      .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id))
+      .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+      .leftJoin(s.cargoTypes, eq(s.trips.cargoTypeId, s.cargoTypes.id))
+      .where(and(eq(s.trips.id, id), eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt)))
       .limit(1);
 
     if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });

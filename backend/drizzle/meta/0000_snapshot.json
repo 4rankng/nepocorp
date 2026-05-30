@@ -1,5 +1,5 @@
 {
-  "id": "684fd147-d1e6-455b-9f66-ad732285dc65",
+  "id": "840848c1-b306-494f-b09b-9c1771897398",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -192,11 +192,43 @@
           "primaryKey": false,
           "notNull": true
         },
+        "tax_code": {
+          "name": "tax_code",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_person": {
+          "name": "contact_person",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "contact_info": {
           "name": "contact_info",
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "credit_limit": {
+          "name": "credit_limit",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "customer_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'ACTIVE'"
         },
         "created_at": {
           "name": "created_at",
@@ -787,6 +819,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "effective_date": {
+          "name": "effective_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -809,8 +848,8 @@
         }
       },
       "indexes": {
-        "pricing_tables_customer_route_idx": {
-          "name": "pricing_tables_customer_route_idx",
+        "pricing_tables_customer_route_date_idx": {
+          "name": "pricing_tables_customer_route_date_idx",
           "columns": [
             {
               "expression": "customer_id",
@@ -820,6 +859,12 @@
             },
             {
               "expression": "route_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "effective_date",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -959,6 +1004,53 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.road_config": {
+      "name": "road_config",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "toll_per_station": {
+          "name": "toll_per_station",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'55000'"
+        },
+        "return_cargo_bonus": {
+          "name": "return_cargo_bonus",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'300000'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.routes": {
       "name": "routes",
       "schema": "",
@@ -1091,6 +1183,31 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.trip_code_counters": {
+      "name": "trip_code_counters",
+      "schema": "",
+      "columns": {
+        "year_month": {
+          "name": "year_month",
+          "type": "varchar(10)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "counter": {
+          "name": "counter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.trip_legs": {
       "name": "trip_legs",
       "schema": "",
@@ -1181,6 +1298,84 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.trip_photos": {
+      "name": "trip_photos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "trip_id": {
+          "name": "trip_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "trip_photo_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_key": {
+          "name": "storage_key",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploaded_by": {
+          "name": "uploaded_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploaded_at": {
+          "name": "uploaded_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "trip_photos_trip_id_trips_id_fk": {
+          "name": "trip_photos_trip_id_trips_id_fk",
+          "tableFrom": "trip_photos",
+          "tableTo": "trips",
+          "columnsFrom": [
+            "trip_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "trip_photos_uploaded_by_users_id_fk": {
+          "name": "trip_photos_uploaded_by_users_id_fk",
+          "tableFrom": "trip_photos",
+          "tableTo": "users",
+          "columnsFrom": [
+            "uploaded_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.trips": {
       "name": "trips",
       "schema": "",
@@ -1190,6 +1385,25 @@
           "type": "serial",
           "primaryKey": true,
           "notNull": true
+        },
+        "trip_code": {
+          "name": "trip_code",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "customer_id": {
           "name": "customer_id",
@@ -1274,12 +1488,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "fuel_price_applied": {
-          "name": "fuel_price_applied",
-          "type": "numeric(10, 0)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "tolls_discount": {
           "name": "tolls_discount",
           "type": "numeric(15, 0)",
@@ -1310,6 +1518,48 @@
         },
         "driver_salary": {
           "name": "driver_salary",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuel_price_applied": {
+          "name": "fuel_price_applied",
+          "type": "numeric(10, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "road_allowance_base_applied": {
+          "name": "road_allowance_base_applied",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuel_loaded_norm_applied": {
+          "name": "fuel_loaded_norm_applied",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuel_empty_norm_applied": {
+          "name": "fuel_empty_norm_applied",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuel_fixed_allowance_applied": {
+          "name": "fuel_fixed_allowance_applied",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "toll_per_station_applied": {
+          "name": "toll_per_station_applied",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "return_cargo_bonus_applied": {
+          "name": "return_cargo_bonus_applied",
           "type": "numeric(15, 0)",
           "primaryKey": false,
           "notNull": false
@@ -1368,12 +1618,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "photo_urls": {
-          "name": "photo_urls",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "notes": {
           "name": "notes",
           "type": "text",
@@ -1403,6 +1647,19 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "trips_created_by_users_id_fk": {
+          "name": "trips_created_by_users_id_fk",
+          "tableFrom": "trips",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "trips_customer_id_customers_id_fk": {
           "name": "trips_customer_id_customers_id_fk",
           "tableFrom": "trips",
@@ -1483,7 +1740,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "trips_trip_code_unique": {
+          "name": "trips_trip_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "trip_code"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1559,11 +1824,23 @@
           "primaryKey": true,
           "notNull": true
         },
+        "username": {
+          "name": "username",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "email": {
           "name": "email",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
         },
         "password_hash": {
           "name": "password_hash",
@@ -1611,11 +1888,25 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
+        "users_username_unique": {
+          "name": "users_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        },
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
           "columns": [
             "email"
+          ]
+        },
+        "users_phone_unique": {
+          "name": "users_phone_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "phone"
           ]
         }
       },
@@ -1625,6 +1916,14 @@
     }
   },
   "enums": {
+    "public.customer_status": {
+      "name": "customer_status",
+      "schema": "public",
+      "values": [
+        "ACTIVE",
+        "LOCKED"
+      ]
+    },
     "public.driver_status": {
       "name": "driver_status",
       "schema": "public",
@@ -1674,6 +1973,15 @@
       "values": [
         "20FT",
         "40FT"
+      ]
+    },
+    "public.trip_photo_type": {
+      "name": "trip_photo_type",
+      "schema": "public",
+      "values": [
+        "CONTAINER",
+        "SEAL",
+        "OTHER"
       ]
     },
     "public.trip_status": {

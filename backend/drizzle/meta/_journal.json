@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1779207660598,
-      "tag": "0000_bumpy_joseph",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1779248608255,
-      "tag": "0001_magical_wrecking_crew",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1779258760606,
-      "tag": "0002_dapper_centennial",
+      "when": 1780122860415,
+      "tag": "0000_initial_schema",
       "breakpoints": true
     }
   ]

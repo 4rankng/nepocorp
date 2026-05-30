@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, isNull, sql, like, and, desc } from 'drizzle-orm';
+import { eq, isNull, sql, like, and, desc, lte } from 'drizzle-orm';
 import { authMiddleware, requireRoles } from '../middleware/auth';
 import { Role } from '@nepocorp/shared';
 import {
@@ -84,6 +84,55 @@ function crud<T extends { id: unknown }>(
 
   return sub;
 }
+
+router.get('/catalogs/bootstrap', async (_req: Request, res: Response) => {
+  try {
+    const customersList = await db.select().from(s.customers).where(isNull(s.customers.deletedAt));
+    const trucksList = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
+    const driversList = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
+    const trailersList = await db.select().from(s.trailers).where(isNull(s.trailers.deletedAt));
+    const routesList = await db.select().from(s.routes).where(isNull(s.routes.deletedAt));
+    const cargoTypesList = await db.select().from(s.cargoTypes).where(isNull(s.cargoTypes.deletedAt));
+
+    res.json({
+      customers: customersList.filter(c => c.status === 'ACTIVE'),
+      trucks: trucksList.filter(t => t.status === 'ACTIVE'),
+      drivers: driversList.filter(d => d.status === 'ACTIVE'),
+      trailers: trailersList.filter(t => t.status === 'ACTIVE'),
+      routes: routesList,
+      cargoTypes: cargoTypesList,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/pricing', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+  try {
+    const customerId = parseInt(req.query.customerId as string);
+    const routeId = parseInt(req.query.routeId as string);
+    const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+
+    if (isNaN(customerId) || isNaN(routeId)) {
+      return res.status(400).json({ error: 'customerId và routeId là bắt buộc' });
+    }
+
+    const [pricing] = await db.select()
+      .from(s.pricingTables)
+      .where(and(
+        eq(s.pricingTables.customerId, customerId),
+        eq(s.pricingTables.routeId, routeId),
+        lte(s.pricingTables.effectiveDate, date),
+        isNull(s.pricingTables.deletedAt)
+      ))
+      .orderBy(desc(s.pricingTables.effectiveDate))
+      .limit(1);
+
+    res.json({ price: pricing ? Number(pricing.price) : 0 });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Mount CRUD routes
 router.use('/customers', crud(s.customers, customerSchema, { searchableField: 'name' }));

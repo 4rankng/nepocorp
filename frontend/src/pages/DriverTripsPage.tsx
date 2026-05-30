@@ -10,7 +10,6 @@ interface TripSummary {
   id: number;
   departureDate: string;
   status: TripStatus;
-  revenue: string | null;
   driverSalary: string | null;
   routeName: string | null;
   truckPlate: string | null;
@@ -122,16 +121,11 @@ export default function DriverTripsPage() {
                 </div>
               </div>
 
-              {/* Revenue */}
+              {/* Driver Salary */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 {trip.driverSalary && (
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
                     {formatCurrency(trip.driverSalary)}
-                  </div>
-                )}
-                {trip.revenue && (
-                  <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2 }}>
-                    Doanh thu: {formatCurrency(trip.revenue)}
                   </div>
                 )}
               </div>

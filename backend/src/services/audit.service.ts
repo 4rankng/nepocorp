@@ -30,3 +30,28 @@ export function initAuditService() {
 export function emitAudit(payload: AuditEntry) {
   eventBus.emit(AuditEvents.AUDIT_LOG, payload);
 }
+
+/**
+ * Synchronous in-transaction audit logger.
+ * Guarantees that the business operation and its audit record commit atomically.
+ */
+export async function writeAuditLogTransaction(
+  tx: any,
+  data: {
+    userId: number;
+    message: string;
+    entityType: string;
+    entityId: number | null;
+    payload?: Record<string, any>;
+    ipAddress?: string;
+  }
+) {
+  await tx.insert(auditLogs).values({
+    userId: data.userId,
+    message: data.message,
+    entityType: data.entityType,
+    entityId: data.entityId,
+    payload: data.payload ?? null,
+    ipAddress: data.ipAddress ?? null,
+  });
+}

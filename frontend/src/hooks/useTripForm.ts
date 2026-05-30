@@ -3,6 +3,8 @@ import { api, ApiError } from "../lib/api";
 import { FuelMode, LoadingType } from "@nepocorp/shared";
 export type { FuelMode } from "@nepocorp/shared";
 import type { PricingTable } from "@nepocorp/shared";
+import { tripClient } from "../api/tripClient";
+
 import type { TripOptions, RouteOption } from "./useTripOptions";
 import { calculateDistanceKm } from "../lib/maps";
 
@@ -154,23 +156,33 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     ]);
   }, [selectedRoute, legs.length]);
 
-  // Suggested price from pricing table
-  const suggestedPrice = useMemo(() => {
-    if (!customerId || !routeId) return null;
-    const match = options.pricingTables.find(
-      (pt) =>
-        pt.customer_id === Number(customerId) &&
-        pt.route_id === Number(routeId),
-    );
-    return match ? Number(match.price) : null;
-  }, [customerId, routeId, options.pricingTables]);
+  // Suggested price from pricing table (fetched on-demand)
+  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
 
-  // Auto-fill revenue from suggested price
   useEffect(() => {
-    if (suggestedPrice !== null && !revenue) {
-      setRevenue(String(suggestedPrice));
+    if (!customerId || !routeId) {
+      setSuggestedPrice(null);
+      return;
     }
-  }, [suggestedPrice, revenue]);
+    const fetchSuggestedPrice = async () => {
+      try {
+        const res = await tripClient.getPricing(
+          Number(customerId),
+          Number(routeId),
+          departureDate || undefined
+        );
+        setSuggestedPrice(res.price);
+        // Auto-fill revenue from suggested price if not overridden
+        setRevenue((prev) => {
+          if (!prev || prev === "0") return String(res.price);
+          return prev;
+        });
+      } catch (err) {
+        console.error("Error fetching live pricing suggestion:", err);
+      }
+    };
+    fetchSuggestedPrice();
+  }, [customerId, routeId, departureDate]);
 
   // Leg actions
   const addLeg = useCallback(() => {
@@ -226,24 +238,28 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     [legs],
   );
 
-  // Photo upload
-  const uploadPhotos = useCallback(async (files: FileList) => {
-    const formData = new FormData();
-    Array.from(files).forEach((file) => formData.append("files", file));
+  // Photo upload — one file per request to match new backend API
+  const uploadPhotos = useCallback(async (files: FileList, tripId?: number, type: 'CONTAINER' | 'SEAL' | 'OTHER' = 'OTHER') => {
     setUploading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "Lỗi tải ảnh lên");
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        if (tripId) formData.append("trip_id", String(tripId));
+        formData.append("type", type);
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        });
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || "Lỗi tải ảnh lên");
+        }
+        const result = await response.json();
+        setPhotoUrls((prev) => [...prev, result.url]);
       }
-      const result = await response.json();
-      setPhotoUrls((prev) => [...prev, ...result.urls]);
     } catch (err: any) {
       setError(err.message || "Lỗi khi tải ảnh.");
     } finally {
