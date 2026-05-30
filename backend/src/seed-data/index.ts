@@ -141,6 +141,16 @@ async function seed() {
     await db.insert(s.fuelConfig).values(fuelConfig);
   }
 
+  // Check if road config exists
+  const [existingRoadCfg] = await db.select().from(s.roadConfig).limit(1);
+  if (!existingRoadCfg) {
+    console.log('🛣️ Seeding road config...');
+    await db.insert(s.roadConfig).values({
+      tollPerStation: '55000',
+      returnCargoBonus: '300000',
+    });
+  }
+
   // Check if trips exist
   const [tc] = await db.select({ cnt: sql<number>`count(*)` }).from(s.trips);
   if (Number(tc?.cnt ?? 0) === 0) {
