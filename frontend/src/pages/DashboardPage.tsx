@@ -621,7 +621,10 @@ export default function DashboardPage() {
                   <div className="aging__row" key={sl.label}>
                     <span className="aging__dot" style={{ background: sl.color }}></span>
                     <span className="aging__row-label">{sl.label}</span>
-                    <span className="aging__row-value">{Math.round(sl.value / 1000000)}<small style={styles.smallUnit}>tr</small></span>
+                    {/* Use formatCompact so 500k renders as "500k" not rounded
+                        up to "1 tr" — Math.round(0.5) was producing "1tr" for
+                        any value < 1M, which contradicted the chart total. */}
+                    <span className="aging__row-value">{formatCompact(sl.value)}</span>
                     <span className="aging__row-pct">{sl.pct}%</span>
                   </div>
                 ))}

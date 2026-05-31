@@ -68,10 +68,12 @@ function AppRoutes() {
   );
 
   const isDriver = user?.role === Role.DRIVER;
+  const isAdmin = user?.role === Role.ADMIN;
   const driverHome = '/my-trips';
   const adminHome = '/dashboard';
   const adminOnly = (el: ReactElement) => (isDriver ? <Navigate to={driverHome} replace /> : el);
   const driverOnly = (el: ReactElement) => (isDriver ? el : <Navigate to={adminHome} replace />);
+  const superAdminOnly = (el: ReactElement) => (isAdmin ? el : <Navigate to={adminHome} replace />);
 
   // Wrap each page in its own ErrorBoundary so a crash in one route
   // doesn't block navigation to other routes.

@@ -81,14 +81,15 @@ interface KPIProps {
   icon?: React.ComponentType<{ size?: number; className?: string }>;
   meta?: React.ReactNode;
   variant?: 'success' | 'warn' | 'danger' | 'accent' | 'info' | 'default';
+  compact?: boolean;
   onClick?: () => void;
 }
 
-export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default', onClick }: KPIProps) {
+export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default', compact, onClick }: KPIProps) {
   const variantClass = variant === 'default' ? '' : `kpi--${variant}`;
   return (
     <div
-      className={`kpi ${variantClass} ${onClick ? 'kpi--clickable' : ''}`}
+      className={`kpi ${variantClass} ${onClick ? 'kpi--clickable' : ''} ${compact ? 'kpi--compact' : ''}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}

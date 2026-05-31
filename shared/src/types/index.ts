@@ -341,6 +341,7 @@ export interface VendorPaymentRequest {
   receiptId: string;
   amount: number;
   date: string;
+  confirmOverpay?: boolean;
 }
 
 // ─── API types ───────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Panel, KPI } from '../components/UI';
 import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditLogs';
+import { useAuth } from '../hooks/useAuth';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -123,6 +124,9 @@ export default function AuditLogPage() {
   const [selectedEntry, setSelectedEntry] = useState<NormalizedEntry | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+
   const { data, isLoading: loading } = useAuditLogs(page, PAGE_SIZE, filter, search);
   const rawEntries: AuditEntry[] = data?.items ?? [];
   const entries = useMemo(() => rawEntries.map(normalizeEntry), [rawEntries]);
@@ -234,6 +238,7 @@ export default function AuditLogPage() {
           label="Hoạt động gần nhất"
           value={entries[0] ? formatTime(entries[0].timestamp) : '—'}
           icon={Clock}
+          compact
           meta={entries[0] ? `${entries[0].message.slice(0, 30)}...` : 'Chưa có hoạt động'}
         />
       </div>
@@ -338,8 +343,8 @@ export default function AuditLogPage() {
                             </div>
                           </div>
                         </td>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <td style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
                             <div className="audit-event-tag">
                               <span className={`audit-dot ${categoryDotClass(entry.category)}`} />
                               {categoryIcon(entry.category)}
@@ -355,7 +360,7 @@ export default function AuditLogPage() {
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
-                                maxWidth: '300px',
+                                maxWidth: '100%',
                               }}
                               title={entry.message}
                             >
@@ -417,7 +422,7 @@ export default function AuditLogPage() {
                 </div>
 
                 {/* Technical Meta */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, background: 'var(--surface-2)', padding: 12, borderRadius: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: 12, background: 'var(--surface-2)', padding: 12, borderRadius: 8 }}>
                   <div>
                     <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
                       Thời gian
@@ -426,16 +431,18 @@ export default function AuditLogPage() {
                       {formatExactTime(selectedEntry.timestamp)}
                     </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
-                      Địa chỉ IP
+                  {isAdmin && (
+                    <div>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
+                        Địa chỉ IP
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Globe size={12} style={{ color: 'var(--info)' }} />
+                        {selectedEntry.ipAddress || 'Mạng nội bộ'}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Globe size={12} style={{ color: 'var(--info)' }} />
-                      {selectedEntry.ipAddress || 'Mạng nội bộ'}
-                    </div>
-                  </div>
-                  {selectedEntry.method && (
+                  )}
+                  {isAdmin && selectedEntry.method && (
                     <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8, borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 4 }}>
                       <span className={`audit-method audit-method--${selectedEntry.method}`}>
                         {selectedEntry.method}
@@ -447,46 +454,48 @@ export default function AuditLogPage() {
                   )}
                 </div>
 
-                {/* Payload JSON Inspector */}
-                {selectedEntry.payload && Object.keys(selectedEntry.payload).length > 0 ? (
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 180 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Terminal size={12} />
-                        Chi tiết tham số (JSON)
+                {/* Payload JSON Inspector — ADMIN only */}
+                {isAdmin && (
+                  selectedEntry.payload && Object.keys(selectedEntry.payload).length > 0 ? (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 180 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Terminal size={12} />
+                          Chi tiết tham số (JSON)
+                        </div>
+                        <button
+                          className="btn btn--secondary btn--sm"
+                          style={{ padding: '2px 8px', fontSize: 11, height: 24 }}
+                          onClick={() => handleCopyPayload(selectedEntry.payload)}
+                        >
+                          {copied ? <Check size={11} /> : <Copy size={11} />}
+                          {copied ? 'Đã chép!' : 'Sao chép'}
+                        </button>
                       </div>
-                      <button
-                        className="btn btn--secondary btn--sm"
-                        style={{ padding: '2px 8px', fontSize: 11, height: 24 }}
-                        onClick={() => handleCopyPayload(selectedEntry.payload)}
+                      <pre
+                        style={{
+                          flex: 1,
+                          background: 'var(--surface-3)',
+                          border: '1px solid var(--line-2)',
+                          borderRadius: 6,
+                          padding: 10,
+                          fontSize: 11,
+                          color: 'var(--ink)',
+                          fontFamily: 'var(--font-mono)',
+                          overflow: 'auto',
+                          maxHeight: 220,
+                          margin: 0,
+                        }}
                       >
-                        {copied ? <Check size={11} /> : <Copy size={11} />}
-                        {copied ? 'Đã chép!' : 'Sao chép'}
-                      </button>
+                        {JSON.stringify(selectedEntry.payload, null, 2)}
+                      </pre>
                     </div>
-                    <pre
-                      style={{
-                        flex: 1,
-                        background: 'var(--surface-3)',
-                        border: '1px solid var(--line-2)',
-                        borderRadius: 6,
-                        padding: 10,
-                        fontSize: 11,
-                        color: 'var(--ink)',
-                        fontFamily: 'var(--font-mono)',
-                        overflow: 'auto',
-                        maxHeight: 220,
-                        margin: 0,
-                      }}
-                    >
-                      {JSON.stringify(selectedEntry.payload, null, 2)}
-                    </pre>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--ink-3)', fontSize: 12, padding: 20 }}>
-                    <Info size={24} style={{ marginBottom: 6, color: 'var(--line-2)' }} />
-                    Không có tham số chi tiết đi kèm sự kiện này
-                  </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--ink-3)', fontSize: 12, padding: 20 }}>
+                      <Info size={24} style={{ marginBottom: 6, color: 'var(--line-2)' }} />
+                      Không có tham số chi tiết đi kèm sự kiện này
+                    </div>
+                  )
                 )}
               </div>
             ) : (

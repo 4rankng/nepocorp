@@ -6,8 +6,9 @@ import { TxnType, FINANCIAL } from '@nepocorp/shared';
 import type { SupplierStatement as SupplierStatementType, LedgerEntry, AgingBucket, VendorPaymentRequest } from '@nepocorp/shared';
 import { AlertTriangle, Phone, Building2, ArrowLeft, X, CreditCard, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
-import { api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
+import { useConfirm } from '../components/UI';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Phiếu chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
@@ -48,6 +49,7 @@ export default function PayableDetailPage() {
   const typedStatement = statement as SupplierStatementType | undefined;
   const error = queryError ? (queryError as Error).message : null;
   const { toast: showToast } = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -100,20 +102,19 @@ export default function PayableDetailPage() {
 
   const totalOutstanding = typedStatement?.totalOutstanding ?? 0;
 
-  async function handlePaymentSubmit() {
+  async function handlePaymentSubmit(confirmOverpay = false) {
     if (!id || !paymentAmount) return;
     setSubmitting(true);
     try {
-      const body: VendorPaymentRequest = {
+      const body: VendorPaymentRequest & { confirmOverpay?: boolean } = {
         supplierId: Number(id),
         amount: Number(paymentAmount),
         date: paymentDate,
         receiptId: paymentReceiptId,
+        confirmOverpay,
       };
       // Backend returns `{ ...ledgerEntry, warning?, overpayment? }`. If the
-      // payment exceeds outstanding debt, the backend records it but surfaces
-      // a `warning` field — show it as a warning toast so the user isn't
-      // silently left with a negative supplier balance they didn't intend.
+      // payment exceeds outstanding debt, the backend throws a 422 unless confirmOverpay: true is sent.
       const resp = await api.post<{ warning?: string; overpayment?: number }>(FINANCIAL.PAYMENTS_VENDOR, body);
       if (resp?.warning) {
         showToast({ kind: 'warning', message: resp.warning });
@@ -125,8 +126,20 @@ export default function PayableDetailPage() {
       setPaymentReceiptId('');
       queryClient.invalidateQueries({ queryKey: ['supplier-statement', id] });
       queryClient.invalidateQueries({ queryKey: ['payables-summary'] });
-    } catch (err) {
-      showToast({ kind: 'error', message: (err as Error).message || 'Lỗi ghi thanh toán' });
+    } catch (err: any) {
+      if (err instanceof ApiError && err.status === 422) {
+        setSubmitting(false);
+        const isConfirmed = await confirm(err.message, {
+          confirmLabel: 'Xác nhận',
+          cancelLabel: 'Hủy',
+          variant: 'warning',
+        });
+        if (isConfirmed) {
+          await handlePaymentSubmit(true);
+        }
+      } else {
+        showToast({ kind: 'error', message: err.message || 'Lỗi ghi thanh toán' });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -431,7 +444,7 @@ export default function PayableDetailPage() {
               </button>
               <button
                 className="btn btn--primary"
-                onClick={handlePaymentSubmit}
+                onClick={() => handlePaymentSubmit(false)}
                 disabled={submitting || !paymentAmount || !paymentDate}
               >
                 {submitting ? 'Đang ghi...' : 'Xác nhận'}
@@ -440,6 +453,7 @@ export default function PayableDetailPage() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

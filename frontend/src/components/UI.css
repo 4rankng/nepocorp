@@ -322,6 +322,14 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   font-weight: 500;
   margin-left: 2px;
 }
+.kpi--compact .kpi__value {
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.kpi--compact .kpi__value-unit {
+  font-size: 13px;
+}
 .kpi__meta {
   font-size: 11.5px;
   color: var(--ink-3);

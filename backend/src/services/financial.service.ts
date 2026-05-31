@@ -227,6 +227,7 @@ export interface VendorPaymentInput {
   amount: string;
   date: string;
   note?: string;
+  confirmOverpay?: boolean;
 }
 
 export async function recordVendorPayment(input: VendorPaymentInput) {
@@ -240,6 +241,13 @@ export async function recordVendorPayment(input: VendorPaymentInput) {
     const currentBalance = latestRow ? parseFloat(latestRow.balance) : 0;
     const paymentAmount = parseFloat(input.amount);
     const wouldOverpay = paymentAmount > currentBalance;
+
+    if (wouldOverpay && !input.confirmOverpay) {
+      throw new ApiError(
+        422,
+        `Thanh toán ${paymentAmount.toLocaleString('vi-VN')}₫ vượt công nợ hiện tại ${currentBalance.toLocaleString('vi-VN')}₫. Số dư sẽ âm. Bạn có chắc chắn muốn tiếp tục?`
+      );
+    }
 
     const posted = await LedgerService.postEntry(tx, {
       txnType: TxnType.VENDOR_PAYMENT,

@@ -411,14 +411,9 @@ export default function ExpenseEntryPage() {
                 >
                   <option value="">Chi phí công ty</option>
                   {trucks.map(t => (
-                    t.trailerPlateNumber ? (
-                      <optgroup key={t.id} label={t.licensePlate}>
-                        <option value={t.id}>{t.licensePlate} (đầu kéo)</option>
-                        <option value={t.id}>{t.trailerPlateNumber} (rơ-mooc)</option>
-                      </optgroup>
-                    ) : (
-                      <option key={t.id} value={t.id}>{t.licensePlate}</option>
-                    )
+                    <option key={t.id} value={t.id}>
+                      {t.licensePlate} {t.trailerPlateNumber ? `· rơ-moóc ${t.trailerPlateNumber}` : ''}
+                    </option>
                   ))}
                 </select>
               </FormGroup>

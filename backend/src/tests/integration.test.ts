@@ -60,15 +60,26 @@ before(async () => {
   });
 
   // Query existing database seed data
-  const [cust] = await db.select().from(s.customers).limit(1);
-  const [drvr] = await db.select().from(s.drivers).limit(1);
-  const [trck] = await db.select().from(s.trucks).limit(1);
-  const [trck2] = await db.select().from(s.trucks).offset(1).limit(1);
-  const [drvr2] = await db.select().from(s.drivers).offset(1).limit(1);
-  const [rte] = await db.select().from(s.routes).limit(1);
-  const [crg] = await db.select().from(s.cargoTypes).limit(1);
-  const [adm] = await db.select().from(s.users).where(eq(s.users.username, 'admin')).limit(1);
-  const [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
+  let [cust] = await db.select().from(s.customers).limit(1);
+  let [drvr] = await db.select().from(s.drivers).limit(1);
+  let [trck] = await db.select().from(s.trucks).limit(1);
+  let [rte] = await db.select().from(s.routes).limit(1);
+  let [crg] = await db.select().from(s.cargoTypes).limit(1);
+  let [adm] = await db.select().from(s.users).where(eq(s.users.username, 'admin')).limit(1);
+  let [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
+
+  if (!cust) {
+    [cust] = await db.insert(s.customers).values({ name: 'Khách hàng E2E' }).returning();
+  }
+  if (!drvr) {
+    [drvr] = await db.insert(s.drivers).values({ name: 'Lái xe E2E', userId: drvUser?.id ?? null }).returning();
+  }
+  if (!rte) {
+    [rte] = await db.insert(s.routes).values({ name: 'Hà Nội - Hải Phòng' }).returning();
+  }
+  if (!crg) {
+    [crg] = await db.insert(s.cargoTypes).values({ name: 'Hàng khô' }).returning();
+  }
 
   customerId = cust.id;
   driverId = drvr.id;
@@ -76,6 +87,59 @@ before(async () => {
   routeId = rte.id;
   cargoTypeId = crg.id;
   driverUserId = drvUser.id;
+
+  // Ensure fuelConfig exists
+  let [flCfg] = await db.select().from(s.fuelConfig).limit(1);
+  if (!flCfg) {
+    [flCfg] = await db.insert(s.fuelConfig).values({
+      loadedNorm: '43',
+      emptyNorm: '25',
+      unitPrice: '19000',
+    }).returning();
+  }
+
+  // Ensure roadAllowances exist
+  let [allowance] = await db.select().from(s.roadAllowances)
+    .where(eq(s.roadAllowances.routeId, routeId)).limit(1);
+  if (!allowance) {
+    [allowance] = await db.insert(s.roadAllowances).values({
+      routeId: routeId,
+      trailerType: '40FT',
+      baseAmount: '1200000',
+    }).returning();
+    await db.insert(s.roadAllowances).values({
+      routeId: routeId,
+      trailerType: '20FT',
+      baseAmount: '1000000',
+    }).onConflictDoNothing();
+  }
+
+  // Ensure pricing table entry exists
+  let [pricing] = await db.select().from(s.pricingTables)
+    .where(and(eq(s.pricingTables.customerId, customerId), eq(s.pricingTables.routeId, routeId))).limit(1);
+  if (!pricing) {
+    [pricing] = await db.insert(s.pricingTables).values({
+      customerId: customerId,
+      routeId: routeId,
+      price: '3500000',
+    }).returning();
+  }
+
+  // Ensure roadConfig exists
+  let [rdCfg] = await db.select().from(s.roadConfig).limit(1);
+  if (!rdCfg) {
+    [rdCfg] = await db.insert(s.roadConfig).values({
+      tollPerStation: '55000',
+      returnCargoBonus: '300000',
+    }).returning();
+  }
+
+  const [trck2] = await db.select().from(s.trucks).offset(1).limit(1);
+  let [drvr2] = await db.select().from(s.drivers).offset(1).limit(1);
+  if (!drvr2) {
+    [drvr2] = await db.insert(s.drivers).values({ name: 'Lái xe E2E 2' }).returning();
+  }
+
   // Second truck/driver for tests that need fresh state after prior tests dispatch
   // Find a truck+driver without any existing IN_TRANSIT trips
   const activeTrips = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
@@ -449,3 +513,47 @@ test('T4.7 — State-Machine: Transition matrices, photo gates, and lock validat
     /Không thể hủy chuyến đi đã chốt/
   );
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T4.8 — Vendor Payment Overpay Confirmation
+// ─────────────────────────────────────────────────────────────────────────────
+test('T4.8 — Vendor Payment: Overpay confirmation required (422)', async () => {
+  let [sup] = await db.select().from(s.suppliers).limit(1);
+  if (!sup) {
+    [sup] = await db.insert(s.suppliers).values({ name: 'Nhà cung cấp E2E' }).returning();
+  }
+
+  // 1. Try paying a sum that exceeds the current outstanding balance (which is 0 initially)
+  // This should fail with 422
+  const payRes1 = await testFetch('/api/payments/vendor', {
+    method: 'POST',
+    token: adminToken,
+    body: JSON.stringify({
+      supplierId: sup.id,
+      receiptId: `REC-E2E-${Date.now()}`,
+      amount: 1000000,
+      date: '2026-06-01',
+    }),
+  });
+
+  assert.strictEqual(payRes1.status, 422, 'Should return 422 for overpayment without confirmation');
+  assert.ok(payRes1.data.error.includes('vượt công nợ hiện tại'), 'Error message should complain about overpayment');
+
+  // 2. Try the same payment with confirmOverpay: true
+  // This should succeed (200)
+  const payRes2 = await testFetch('/api/payments/vendor', {
+    method: 'POST',
+    token: adminToken,
+    body: JSON.stringify({
+      supplierId: sup.id,
+      receiptId: `REC-E2E-${Date.now()}`,
+      amount: 1000000,
+      date: '2026-06-01',
+      confirmOverpay: true,
+    }),
+  });
+
+  assert.strictEqual(payRes2.status, 200, 'Should allow overpayment with confirmOverpay: true');
+  assert.ok(payRes2.data.id, 'Response should return the created ledger entry');
+});
+

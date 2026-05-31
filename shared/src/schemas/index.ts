@@ -290,6 +290,7 @@ export const vendorPaymentSchema = z.object({
   receiptId: z.string().min(1),
   amount: positiveNumeric,
   date: z.string().min(1),
+  confirmOverpay: z.boolean().optional(),
 });
 
 // ─── Inferred types ──────────────────────────────────────────────────────────
