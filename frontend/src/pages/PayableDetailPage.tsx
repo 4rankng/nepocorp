@@ -77,7 +77,7 @@ export default function PayableDetailPage() {
         URL.revokeObjectURL(url);
       }
     } catch (err) {
-      showToast?.((err as Error).message || 'Lỗi xuất sao kê');
+      showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất sao kê' });
     }
   };
 
