@@ -32,6 +32,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | **MVP 2** | **Dashboard Doanh thu - Chi phí** | Cung cấp cái nhìn tổng hợp và trực quan về sức khỏe tài chính. |
 | **MVP 3** | **Công nợ phải thu** | Kiểm soát rủi ro tài chính tập trung (71% nợ ở 4 KH), tự động hóa theo dõi nợ. |
 | **Hậu MVP** | **Nhận đơn, Phân chia LN, Kỷ luật** | Hoàn thiện quy trình vận hành khép kín và quản trị nâng cao. |
+| **Hậu MVP** | **Chi phí vận hành & Công nợ phải trả** | Số hóa chi phí sửa chữa/vật tư/bảo hiểm/đăng kiểm/phí đường bộ, quản lý nợ Nhà cung cấp, nhắc gia hạn. |
 
 **Ngoài phạm vi:** GPS tracking, variable pricing.
 
@@ -88,13 +89,14 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### 4.6 Tổng chi phí (Total Cost)
 
-* **Công thức:** `Tổng chi phí = Chi phí dầu (lít × đơn giá) + Tiền đi đường + Lương sản lượng`.
+* **Công thức (theo chuyến):** `Tổng chi phí = Chi phí dầu (lít × đơn giá) + Tiền đi đường + Lương sản lượng`.
 * Phạt kỷ luật **không** tính vào tổng chi phí — đây là khoản trừ lương tài xế, không phải chi phí công ty.
+* **Hai tầng:** thẻ **từng chuyến** giữ nguyên công thức trên (`computeTripTotals` không đổi). Ở **báo cáo lãi lỗ theo tháng**, Tổng chi phí bao gồm **TẤT CẢ chi phí** = Σ chi phí các chuyến + Σ chi phí vận hành/bảo dưỡng theo xe (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — xem §4.14). Chi phí bảo dưỡng là theo xe/tháng, không tính vào từng chuyến.
 
 ### 4.7 Lợi nhuận
 
-* **Lợi nhuận gộp (Gross Profit):** = Doanh thu - Tổng chi phí. Tính theo từng xe, theo tháng.
-* **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe - Phí quản lý + Thu nhập khác.
+* **Lợi nhuận gộp (Gross Profit):** = Tổng Doanh thu các chuyến − **Tổng chi phí xe**, tính theo từng **xe đầu kéo**, theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó trong tháng (sửa chữa đầu kéo, bảo hiểm/đăng kiểm/phí đường bộ của đầu kéo).
+* **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **(Chi phí gắn rơ-mooc + chi phí không gắn xe)** + Thu nhập khác. *(Chi phí rơ-mooc tách riêng ở cấp công ty vì rơ-mooc hoán đổi giữa các đầu kéo — không gộp vào một đầu kéo cụ thể.)*
 * **Phí quản lý:** Khoản cố định hàng tháng cho toàn công ty. Kế toán nhập thủ công. *(Mức cụ thể do Giám đốc ấn định — tạm thời placeholder 24.000.000 VNĐ/tháng; sẽ xác nhận chính thức sau.)*
 * **Thu nhập khác (Other Income):** Ghi nhận doanh thu phạt kỷ luật. Lương tài xế ghi nhận đầy đủ, không trừ phạt.
 
@@ -137,6 +139,21 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * 1 xe có thể có nhiều lái xe được phân công.
 * Rơ-mooc (trailer) có thể thay đổi theo chuyến — cùng 1 xe có thể kéo rơ-mooc 20ft chuyến này, 40ft chuyến sau.
 * **Đa container:** 1 chuyến xe có thể chở nhiều container (VD: 2 container 20ft). *(Pete xác nhận: "có thể 1 chuyến chạy 2 cont 20'")*
+
+### 4.14 Chi phí vận hành, Nhà cung cấp & Công nợ phải trả
+
+* **Phạm vi:** ghi nhận chi phí vận hành ngoài chuyến đi — sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — gắn với Nhà cung cấp và (tùy chọn) một xe.
+* **Nhà cung cấp (NCC):** danh mục mọi bên nhận tiền (gara, trạm lốp, cửa hàng phụ tùng, công ty bảo hiểm, trung tâm đăng kiểm, đơn vị thu phí đường bộ). **Bắt buộc** trên mọi phiếu chi phí. Không có trường "phân loại" (phân loại nằm ở hạng mục từng phiếu).
+* **Hạng mục chi phí:** danh mục **cấu hình được** (người dùng tự thêm). Mỗi hạng mục là **một lần** hoặc **định kỳ** (`is_renewable`); hạng mục định kỳ có `reminder_lead_days` (mặc định 30 ngày).
+* **Phiếu chi phí:** một phiếu = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một xe đầu kéo **hoặc** rơ-mooc (tùy chọn, có thể để trống → chi phí chung). Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → nhập nhiều phiếu.
+* **Trạng thái thanh toán:**
+    * **Trả ngay (PAID):** chỉ ghi cho P&L, không phát sinh công nợ (hệ thống không có tài khoản tiền mặt).
+    * **Ghi nợ (UNPAID):** tạo bản ghi Sổ cái `entity_type='VENDOR'` (credit = số tiền) → phát sinh **công nợ phải trả**.
+* **Hạng mục định kỳ:** phiếu ghi `valid_from`/`valid_to`. Dashboard **nhắc gia hạn** khi `hôm nay >= valid_to − reminder_lead_days` hoặc đã quá hạn (dùng `valid_to` mới nhất theo từng xe × hạng mục). Gia hạn = tạo phiếu mới hạn xa hơn. **Không phân bổ** — ghi toàn bộ vào tháng thanh toán.
+* **Công nợ phải trả (Accounts Payable):** mirror công nợ phải thu trên `entity_type='VENDOR'`. Quy ước dấu giống lái xe: `balance = balance trước + Credit − Debit`. **Tuổi nợ ngược chiều phải thu:** chi phí là Credit (tính tuổi), thanh toán là Debit (áp FIFO).
+* **Thanh toán NCC:** kế toán nhập tổng tiền trả cho một NCC → `VENDOR_PAYMENT` (debit) giảm số dư. **Khớp FIFO theo tổng số dư, không khớp từng phiếu.**
+* **Sửa/Xóa phiếu đã ghi nợ:** dùng bút toán **ADJUSTMENT** bù trừ (Sổ cái append-only); dòng phiếu soft-delete.
+* **Bảng `expenses`** là bảng vận hành mới (không phải bảng cấu hình), kèm bảng `expense_photos` cho ảnh hóa đơn.
 
 ---
 
@@ -184,6 +201,15 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 5. **[Kế toán]** Tôi muốn cấu hình định mức nhiên liệu theo tuyến đèo đốc.
 6. **[Kế toán]** Tôi muốn nhập phí quản lý hàng tháng.
 7. **[Kế toán]** Tôi muốn quản lý danh mục lý do vi phạm kỷ luật.
+8. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Nhà cung cấp và Hạng mục chi phí (một lần/định kỳ, số ngày nhắc gia hạn).
+
+### MODULE 9: CHI PHÍ VẬN HÀNH & CÔNG NỢ PHẢI TRẢ
+1. **[Kế toán]** Tôi muốn nhập phiếu chi phí (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ), gắn Nhà cung cấp và (tùy chọn) một xe, đính ảnh hóa đơn.
+2. **[Kế toán]** Tôi muốn chọn trạng thái Trả ngay hoặc Ghi nợ; phiếu Ghi nợ tự phát sinh công nợ phải trả cho NCC.
+3. **[Kế toán/Quản lý]** Tôi muốn xem danh sách công nợ phải trả theo NCC kèm tuổi nợ (0–30/31–60/61–90/90+) và xuất sao kê NCC.
+4. **[Kế toán]** Tôi muốn ghi nhận thanh toán cho NCC (giảm tổng số dư, FIFO).
+5. **[Quản lý]** Tôi muốn lợi nhuận gộp theo xe đã trừ chi phí bảo dưỡng của xe đó, và lợi nhuận ròng đã trừ chi phí rơ-mooc/chung.
+6. **[Quản lý/Kế toán]** Tôi muốn Dashboard nhắc khi bảo hiểm/đăng kiểm/phí đường bộ của xe sắp tới hạn hoặc đã quá hạn.
 
 ---
 
@@ -203,7 +229,9 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | 10 | **Đơn giá nhiên liệu** | Đơn giá 1 lít dầu (hiện tại 18.730 VNĐ) | 1 giá, có thể cập nhật |
 | 11 | **Cổ đông & Tỷ lệ vốn** | Tên, tỷ lệ %, ngày hiệu lực | Ông Thương 29.55%, Ông Phụng 70.45% |
 | 12 | **Danh mục kỷ luật** | Lý do vi phạm + số tiền phạt mặc định | VD: "Thiếu hóa đơn dầu - 100.000đ" |
-| 13 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán) | Các cột: ID, date, txn_type, credit, debit, balance |
+| 13 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán, Công nợ NCC) | Các cột: ID, date, txn_type, credit, debit, balance |
+| 14 | **Nhà cung cấp** | Tên, người liên hệ, SĐT, mã số thuế, ghi chú, trạng thái | Gara, trạm lốp, phụ tùng, bảo hiểm, đăng kiểm... |
+| 15 | **Hạng mục chi phí** | Tên, một lần/định kỳ (is_renewable), số ngày nhắc trước (mặc định 30) | Sửa chữa, Phụ tùng, Vật tư, Bảo hiểm, Đăng kiểm, Phí đường bộ |
 
 ---
 

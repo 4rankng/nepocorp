@@ -30,6 +30,7 @@ Mọi tài liệu được viết bằng **tiếng Việt**.
 | 09 | [Cấu hình Hệ thống](./09-CAU_HINH_HE_THONG.md) | 12 trang cấu hình: nhiên liệu, phụ phí đường, tuyến đường, loại hàng, bảng giá, lý do phạt, phí quản lý, cap table | `/config`, `/config/*` |
 | 10 | [Quản trị Hệ thống](./10-QUAN_TRI_HE_THONG.md) | Quản lý tài khoản người dùng, nhật ký hoạt động | `/users`, `/audit-logs` |
 | 11 | [Cổng thông tin Lái xe](./11-LAI_XE_MOBILE.md) | Lệnh vận chuyển, chi tiết chuyến, thu nhập, phạt (mobile-first) | `/my-trips`, `/my-trips/:id`, `/my-earnings`, `/my-penalties` |
+| 12 | [Chi phí, NCC & Công nợ phải trả](./12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md) | Danh mục Nhà cung cấp, hạng mục chi phí (một lần/định kỳ), nhập phiếu chi phí, công nợ phải trả, nhắc gia hạn | `/suppliers`, `/expenses`, `/payables`, `/payables/:id` |
 
 ---
 
