@@ -41,6 +41,7 @@ out/
 .tern-port
 # AI tool directories
 .claude/
+.kilo/
 .crush/
 .opencode/
 
