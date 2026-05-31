@@ -246,9 +246,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Uses item counts (stable per role) instead of scrollHeight (changes with collapse state).
   useEffect(() => {
     if (!sidebarOpen || navClientHeight === 0) return;
-    const ITEM_H = 38;   // sidebar-item: padding 10px*2 + ~18px line-height
-    const LABEL_H = 36;  // sidebar-section-label: padding 16px top + 6px bottom + ~14px text
-    const NAV_PAD = 20;  // sidebar-nav: padding 8px top + 12px bottom
+    const nav = navRef.current;
+    if (!nav) return;
+    const item = nav.querySelector('.sidebar-item') as HTMLElement | null;
+    const label = nav.querySelector('.sidebar-section-label') as HTMLElement | null;
+    const navStyle = getComputedStyle(nav);
+    const ITEM_H = item?.offsetHeight ?? 38;
+    const LABEL_H = label?.offsetHeight ?? 36;
+    const NAV_PAD = parseFloat(navStyle.paddingTop) + parseFloat(navStyle.paddingBottom) || 20;
     const totalH = (['operations', 'financials', 'admin'] as const).reduce((acc, s) => {
       const count = navItems.filter(i => i.section === s).length;
       return count > 0 ? acc + LABEL_H + count * ITEM_H : acc;

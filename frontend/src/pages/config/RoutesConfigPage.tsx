@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
@@ -48,33 +49,50 @@ function RouteInlineAdd({ saving, item, onsave, oncancel }: {
 
 export default function RoutesConfigPage() {
   const navigate = useNavigate();
-  const [routes, setRoutes] = useState<RouteType[]>([]);
-  const [routeTripStats, setRouteTripStats] = useState<Map<number, number>>(new Map());
-  const [routePriceMap, setRoutePriceMap] = useState<Map<number, { ft20?: number; ft40?: number }>>(new Map());
   const [routeFilter, setRouteFilter] = useState<'all' | 'plain' | 'mountain'>('all');
   const [search, setSearch] = useState('');
 
-  const refresh = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     const qs = search ? `?search=${encodeURIComponent(search)}&limit=100` : '?limit=100';
     const [routeRes, tripRes, raRes] = await Promise.all([
       api.get<PaginatedResponse<RouteType>>(`/routes${qs}`),
       api.get<{ items: any[] }>('/trips?limit=500').catch(() => ({ items: [] as any[] })),
       api.get<PaginatedResponse<RoadAllowance>>('/road-allowances?limit=200').catch(() => ({ items: [] as any[] })),
     ]);
-    setRoutes(routeRes.items);
+    return {
+      routes: routeRes.items,
+      trips: (tripRes as any).items as any[],
+      allowances: (raRes as any).items as any[],
+    };
+  }, [search]);
+
+  const { data, refetch } = useQuery({
+    queryKey: ['routes-config', search],
+    queryFn: fetchData,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const routes = data?.routes ?? [];
+
+  const routeTripStats = useMemo(() => {
+    const stats = new Map<number, number>();
+    if (!data?.trips) return stats;
     const now = new Date();
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const rtStats = new Map<number, number>();
-    (tripRes as any).items.forEach((t: any) => {
-      const dep = t.departureDate || t.departureDate || '';
+    data.trips.forEach((t: any) => {
+      const dep = t.departureDate || '';
       if (dep.startsWith(thisMonth)) {
-        const rid = t.routeId ?? t.routeId;
-        if (rid) rtStats.set(rid, (rtStats.get(rid) || 0) + 1);
+        const rid = t.routeId;
+        if (rid) stats.set(rid, (stats.get(rid) || 0) + 1);
       }
     });
-    setRouteTripStats(rtStats);
+    return stats;
+  }, [data?.trips]);
+
+  const routePriceMap = useMemo(() => {
     const priceMap = new Map<number, { ft20?: number; ft40?: number }>();
-    (raRes as any).items.forEach((ra: any) => {
+    if (!data?.allowances) return priceMap;
+    data.allowances.forEach((ra: any) => {
       const rid = ra.routeId ?? ra.routeId;
       const type = ra.trailer_type ?? ra.trailerType;
       if (!rid) return;
@@ -83,11 +101,10 @@ export default function RoutesConfigPage() {
       if (type === '40FT') p.ft40 = parseFloat(ra.base_amount ?? ra.baseAmount ?? '0');
       priceMap.set(rid, p);
     });
-    setRoutePriceMap(priceMap);
-  }, [search]);
+    return priceMap;
+  }, [data?.allowances]);
 
-  const crud = useCRUD('/routes', refresh);
-  useEffect(() => { refresh(); }, [refresh]);
+  const crud = useCRUD('/routes', async () => { await refetch(); });
 
   const now = new Date();
   const monthLabel = `T${now.getMonth() + 1}`;
@@ -118,10 +135,30 @@ export default function RoutesConfigPage() {
       </div>
 
       <div className="kpi-grid" style={{ marginBottom: 20 }}>
-        <div className="kpi"><div className="kpi__top"><span className="kpi__label">Tổng tuyến</span><div className="kpi__icon"><MapPin size={18} /></div></div><div className="kpi__value">{totalCount}</div><div className="kpi__meta kpi__meta--up">Tất cả tuyến đang hoạt động</div></div>
-        <div className="kpi kpi--success"><div className="kpi__top"><span className="kpi__label">Đang sử dụng {monthLabel}</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div></div><div className="kpi__value">{usedThisMonth}<span className="kpi__value-unit">/{totalCount}</span></div><div className="kpi__meta">{totalCount > 0 ? Math.round((usedThisMonth / totalCount) * 100) : 0}% tuyến có chuyến</div></div>
-        <div className="kpi kpi--warn"><div className="kpi__top"><span className="kpi__label">Tuyến núi</span><div className="kpi__icon"><Mountain size={18} /></div></div><div className="kpi__value">{mountainCount}</div><div className="kpi__meta">Định mức dầu cao hơn</div></div>
-        <div className="kpi"><div className="kpi__top"><span className="kpi__label">Phổ biến nhất</span><div className="kpi__icon"><Route size={18} /></div></div><div className="kpi__value" style={{ fontSize: 16, lineHeight: 1.3 }}>{popularRoute ? popularRoute.name.split(' - ')[0] : '—'}</div><div className="kpi__meta">{popularCount > 0 ? `${popularCount} chuyến ${monthLabel}` : 'Chưa có dữ liệu'}</div></div>
+        <div className="kpi">
+          <div className="kpi__top"><span className="kpi__label">Tổng tuyến</span><div className="kpi__icon"><MapPin size={18} /></div></div>
+          <div className="kpi__value">{totalCount}</div>
+          <div className="kpi__meta kpi__meta--up">Tất cả tuyến đang hoạt động</div>
+          <div className="kpi__watermark" aria-hidden="true"><MapPin size={80} /></div>
+        </div>
+        <div className="kpi kpi--success">
+          <div className="kpi__top"><span className="kpi__label">Đang sử dụng {monthLabel}</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div></div>
+          <div className="kpi__value">{usedThisMonth}<span className="kpi__value-unit">/{totalCount}</span></div>
+          <div className="kpi__meta">{totalCount > 0 ? Math.round((usedThisMonth / totalCount) * 100) : 0}% tuyến có chuyến</div>
+          <div className="kpi__watermark" aria-hidden="true"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        </div>
+        <div className="kpi kpi--warn">
+          <div className="kpi__top"><span className="kpi__label">Tuyến núi</span><div className="kpi__icon"><Mountain size={18} /></div></div>
+          <div className="kpi__value">{mountainCount}</div>
+          <div className="kpi__meta">Định mức dầu cao hơn</div>
+          <div className="kpi__watermark" aria-hidden="true"><Mountain size={80} /></div>
+        </div>
+        <div className="kpi">
+          <div className="kpi__top"><span className="kpi__label">Phổ biến nhất</span><div className="kpi__icon"><Route size={18} /></div></div>
+          <div className="kpi__value" style={{ fontSize: 16, lineHeight: 1.3 }}>{popularRoute ? popularRoute.name.split(' - ')[0] : '—'}</div>
+          <div className="kpi__meta">{popularCount > 0 ? `${popularCount} chuyến ${monthLabel}` : 'Chưa có dữ liệu'}</div>
+          <div className="kpi__watermark" aria-hidden="true"><Route size={80} /></div>
+        </div>
       </div>
 
       {crud.showAddForm && !crud.editingId && (

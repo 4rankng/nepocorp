@@ -9,6 +9,7 @@ export interface AuthUser {
   phone: string | null;
   role: Role;
   fullName?: string;
+  capabilities?: string[];
 }
 
 interface AuthContextType {

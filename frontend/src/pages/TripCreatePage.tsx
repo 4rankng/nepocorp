@@ -4,18 +4,16 @@ import { ArrowLeft } from 'lucide-react';
 import { useTripOptions } from '../hooks/useTripOptions';
 import { useTripForm } from '../hooks/useTripForm';
 import { TripFormProvider } from '../hooks/useTripFormContext';
-import {
-  ProgressPills,
-  TripInfoCard,
-  JourneyLegsCard,
-  FuelTollsRevenueCard,
-  ImagesNotesCard,
-  TripSummaryCard,
-  TripChecklistPanel,
-  TipCard,
-  ActionBar,
-  SectionDivider,
-} from '../components/trip';
+import { ProgressPills } from '../components/trip/ProgressPills';
+import { TripInfoCard } from '../components/trip/TripInfoCard';
+import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
+import { FuelTollsRevenueCard } from '../components/trip/FuelTollsRevenueCard';
+import { ImagesNotesCard } from '../components/trip/ImagesNotesCard';
+import { TripSummaryCard } from '../components/trip/TripSummaryCard';
+import { TripChecklistPanel } from '../components/trip/TripChecklistPanel';
+import { TipCard } from '../components/trip/TipCard';
+import { ActionBar } from '../components/trip/ActionBar';
+import { SectionDivider } from '../components/trip/SectionDivider';
 
 export default function TripCreatePage() {
   const navigate = useNavigate();

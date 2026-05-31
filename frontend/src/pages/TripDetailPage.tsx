@@ -16,7 +16,7 @@ import {
 import { Panel, StatusPill, useConfirm, Drawer } from '../components/UI';
 import { useTripDetail, useTripAdjustments, useTrucksAndDrivers, useFuelConfig } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
-import { Spinner } from '../components/shared';
+import { Spinner } from '../components/shared/Spinner';
 
 function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
   return (
@@ -324,11 +324,18 @@ export default function TripDetailPage() {
           {infoRow(<User size={16} />, 'Tài xế', trip.driver?.name)}
           {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailerType ? (trip.truck?.trailerPlateNumber ? `${trip.truck.trailerPlateNumber} (${trip.trailerType})` : trip.trailerType) : null)}
           {infoRow(<Calendar size={16} />, 'Ngày khởi hành', formatDate(trip.departureDate))}
+          {infoRow(<FileText size={16} />, 'Số cont', (trip.containerCount ?? 1) > 1 ? `${trip.containerCount ?? 1} cont` : '1 cont')}
           {infoRow(<FileText size={16} />, 'Mã tham chiếu', trip.customerReference)}
         </Panel>
 
         <Panel title="Tài chính">
           {infoRow(<Banknote size={16} />, 'Doanh thu', formatCurrency(trip.revenue))}
+          {(trip.containerCount ?? 1) > 1 && trip.revenue && (() => {
+            const count = trip.containerCount ?? 1;
+            const unitPrice = Math.floor(Number(trip.revenue) / count);
+            const remainder = Number(trip.revenue) - unitPrice * count;
+            return infoRow(<Banknote size={16} />, 'Đơn giá/cont', `${formatCurrency(String(unitPrice))} × ${count} cont${remainder > 0 ? ` (+${formatCurrency(String(remainder))})` : ''}`);
+          })()}
           {trip.revenueOriginal && trip.revenue && Number(trip.revenue) !== Number(trip.revenueOriginal) && (
             // Shorter label ("Giá gốc") so the strikethrough number doesn't wrap
             // to a second line on narrow screens. The "(trước điều chỉnh)"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Upload, X, Image as ImageIcon, Plus, Check } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatCurrency } from '../lib/format';
 import { PageHeader, FormGroup } from '../components/UI';
@@ -56,6 +56,16 @@ export default function ExpenseEntryPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [catalogsLoaded, setCatalogsLoaded] = useState(false);
+
+  // Quick-create supplier
+  const [showNewSupplier, setShowNewSupplier] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
+  const [creatingSupplier, setCreatingSupplier] = useState(false);
+
+  // Quick-create category
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   useQuery({
     queryKey: ['expense-form-catalogs'],
@@ -154,6 +164,40 @@ export default function ExpenseEntryPage() {
 
   const parseAmountInput = (displayVal: string) => {
     return displayVal.replace(/[^\d]/g, '');
+  };
+
+  const handleCreateSupplier = async () => {
+    if (!newSupplierName.trim()) return;
+    setCreatingSupplier(true);
+    try {
+      const created = await api.post<Supplier>(CONFIG.SUPPLIERS, { name: newSupplierName.trim(), status: 'ACTIVE' });
+      setSuppliers(prev => [...prev, created]);
+      set('supplierId', created.id);
+      setShowNewSupplier(false);
+      setNewSupplierName('');
+      toast({ kind: 'success', message: `Đã tạo nhà cung cấp "${created.name}".` });
+    } catch (e: unknown) {
+      toast({ kind: 'error', message: e instanceof Error ? e.message : 'Lỗi tạo nhà cung cấp' });
+    } finally {
+      setCreatingSupplier(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    setCreatingCategory(true);
+    try {
+      const created = await api.post<ExpenseCategory>(CONFIG.EXPENSE_CATEGORIES, { name: newCategoryName.trim(), isRenewable: false, reminderLeadDays: 30 });
+      setCategories(prev => [...prev, created]);
+      set('categoryId', created.id);
+      setShowNewCategory(false);
+      setNewCategoryName('');
+      toast({ kind: 'success', message: `Đã tạo hạng mục "${created.name}".` });
+    } catch (e: unknown) {
+      toast({ kind: 'error', message: e instanceof Error ? e.message : 'Lỗi tạo hạng mục' });
+    } finally {
+      setCreatingCategory(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -274,6 +318,39 @@ export default function ExpenseEntryPage() {
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
+                {catalogsLoaded && suppliers.length === 0 && !showNewSupplier && (
+                  <p style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
+                    Chưa có nhà cung cấp.{' '}
+                    <button type="button" onClick={() => setShowNewSupplier(true)} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                      Tạo mới
+                    </button>
+                  </p>
+                )}
+                {!showNewSupplier && suppliers.length > 0 && (
+                  <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <Plus size={12} /> Thêm nhà cung cấp mới
+                  </button>
+                )}
+                {showNewSupplier && (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      className="input"
+                      style={{ flex: 1 }}
+                      placeholder="Tên nhà cung cấp..."
+                      value={newSupplierName}
+                      onChange={e => setNewSupplierName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSupplier(); } if (e.key === 'Escape') { setShowNewSupplier(false); setNewSupplierName(''); } }}
+                      autoFocus
+                    />
+                    <button type="button" className="btn btn--primary btn--sm" disabled={creatingSupplier || !newSupplierName.trim()} onClick={handleCreateSupplier}>
+                      {creatingSupplier ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Check size={12} />}
+                    </button>
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setShowNewSupplier(false); setNewSupplierName(''); }}>
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
               </FormGroup>
 
               <FormGroup label="Hạng mục *" error={errors.categoryId}>
@@ -287,6 +364,39 @@ export default function ExpenseEntryPage() {
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+                {catalogsLoaded && categories.length === 0 && !showNewCategory && (
+                  <p style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
+                    Chưa có hạng mục.{' '}
+                    <button type="button" onClick={() => setShowNewCategory(true)} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                      Tạo mới
+                    </button>
+                  </p>
+                )}
+                {!showNewCategory && categories.length > 0 && (
+                  <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <Plus size={12} /> Thêm hạng mục mới
+                  </button>
+                )}
+                {showNewCategory && (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      className="input"
+                      style={{ flex: 1 }}
+                      placeholder="Tên hạng mục..."
+                      value={newCategoryName}
+                      onChange={e => setNewCategoryName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } if (e.key === 'Escape') { setShowNewCategory(false); setNewCategoryName(''); } }}
+                      autoFocus
+                    />
+                    <button type="button" className="btn btn--primary btn--sm" disabled={creatingCategory || !newCategoryName.trim()} onClick={handleCreateCategory}>
+                      {creatingCategory ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Check size={12} />}
+                    </button>
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}>
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
               </FormGroup>
 
               <FormGroup

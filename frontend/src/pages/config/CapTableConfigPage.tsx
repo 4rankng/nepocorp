@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react';
-import { InlineForm, FormActions, Field, CrudTable } from '../../components/config';
+import { InlineForm } from '../../components/config/InlineForm';
+import { FormActions } from '../../components/config/FormActions';
+import { Field } from '../../components/config/Field';
+import { CrudTable } from '../../components/config/CrudTable';
 import { formatCurrency } from '../../lib/format';
 import type { CapTableHistory } from '@nepocorp/shared';
 

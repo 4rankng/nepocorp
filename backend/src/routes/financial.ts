@@ -5,7 +5,7 @@ import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendo
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../services/reporting.service';
-import { getStatementData, exportStatementXlsx, exportStatementHtml, getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml } from '../services/statement.service';
+import { getStatementData, exportStatementXlsx, exportStatementHtml, getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, formatLocalDate, safeFilename } from '../services/statement.service';
 import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import * as financialService from '../services/financial.service';
 import { getPayablesSummary } from '../services/payables.service';
@@ -69,10 +69,8 @@ router.get('/ledger/customers/:id/statement/export', async (req: Request, res: R
     const data = await getStatementData(customerId);
     if (!data) return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
 
-    // Local date for filename — avoids toISOString() UTC drift in UTC+7
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const safeName = data.customer.name.replace(/[^a-zA-Z0-9À-ỹ ]/g, '').replace(/\s+/g, '-');
+    const dateStr = formatLocalDate();
+    const safeName = safeFilename(data.customer.name);
 
     if (format === 'pdf') {
       const html = exportStatementHtml(data, dateStr);
@@ -260,9 +258,8 @@ router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Ro
     const format = (req.query.format as string) || 'xlsx';
     const data = await getSupplierStatement(supplierId);
 
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const safeName = data.supplier.name.replace(/[^a-zA-Z0-9À-ỹ ]/g, '').replace(/\s+/g, '-');
+    const dateStr = formatLocalDate();
+    const safeName = safeFilename(data.supplier.name);
 
     if (format === 'pdf') {
       const html = exportSupplierStatementHtml(data, dateStr);

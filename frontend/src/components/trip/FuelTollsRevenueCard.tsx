@@ -73,7 +73,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <InputWithPrefix value={form.revenue} onChange={form.setRevenue} placeholder="4,200,000" prefix="VNĐ" mono type="number" />
           {form.suggestedPrice !== null && (
             <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
-              Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} VNĐ
+              Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} VNĐ{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} VNĐ` : ''}
             </div>
           )}
         </div>

@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { InlineForm, FormActions, Field, CrudTable } from '../../components/config';
+import { InlineForm } from '../../components/config/InlineForm';
+import { FormActions } from '../../components/config/FormActions';
+import { Field } from '../../components/config/Field';
+import { CrudTable } from '../../components/config/CrudTable';
 import type { ExpenseCategory } from '@nepocorp/shared';
 
 function ExpenseCategoryForm({ saving, item, onsave, oncancel }: {

@@ -221,6 +221,7 @@ export default function TripListPage() {
   const monthOptions = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
       const d = new Date();
+      d.setDate(1); // Set to 1st of the month to avoid month-end rollover (e.g., May 31 -> April 31 rolls over to May 1)
       d.setMonth(d.getMonth() - i);
       return {
         value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
@@ -344,6 +345,9 @@ export default function TripListPage() {
             <div className="cust-line">
               {trip.customer?.name ?? '—'}
               <span className="container-tag">{containerTag}</span>
+              {(trip.containerCount ?? 1) > 1 && (
+                <span className="container-tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>×{trip.containerCount ?? 1}</span>
+              )}
             </div>
           </div>
         );

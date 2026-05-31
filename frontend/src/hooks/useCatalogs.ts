@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { tripClient } from "../api/tripClient";
 
+export const BOOTSTRAP_QUERY_KEY = ["catalogs"] as const;
+
 export interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }>;
   trucks: Array<{ id: number; licensePlate: string; trailerPlateNumber: string | null; trailerType: '20FT' | '40FT' | null }>;
@@ -11,11 +13,8 @@ export interface CatalogData {
 
 export function useCatalogs() {
   return useQuery<CatalogData>({
-    queryKey: ["catalogs"],
-    queryFn: async () => {
-      const res = await tripClient.getBootstrap();
-      return res;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes stale time
+    queryKey: BOOTSTRAP_QUERY_KEY,
+    queryFn: () => tripClient.getBootstrap(),
+    staleTime: 5 * 60 * 1000,
   });
 }

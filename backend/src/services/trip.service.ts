@@ -17,9 +17,12 @@ export async function createTrip(data: {
   cargoTypeId: number;
   departureDate: string;
   customerReference?: string;
+  containerCount?: number;
   createdBy?: number;
 }) {
   return await db.transaction(async (tx) => {
+    const containerCount = data.containerCount ?? 1;
+
     // 1. Timezone-pinned pricing lookup
     const [pricing] = await tx.select()
       .from(s.pricingTables)
@@ -32,7 +35,8 @@ export async function createTrip(data: {
       .orderBy(desc(s.pricingTables.effectiveDate))
       .limit(1);
 
-    const revenue = pricing ? Number(pricing.price) : 0;
+    const basePrice = pricing ? Number(pricing.price) : 0;
+    const revenue = basePrice * containerCount;
 
     // 2. Fetch current global configuration rates to snapshot them.
     // All config tables must be populated — no silent fallbacks.
@@ -108,6 +112,7 @@ export async function createTrip(data: {
       truckId: data.truckId,
       driverId: data.driverId,
       cargoTypeId: data.cargoTypeId,
+      containerCount,
       departureDate: data.departureDate,
       customerReference: data.customerReference ?? null,
       status: TripStatus.CREATED,
@@ -539,7 +544,7 @@ export async function getTrips(filters: TripListFilters) {
   const items = await TRIP_RELATION_JOINS(db.select({
     id: s.trips.id, tripCode: s.trips.tripCode, customerId: s.trips.customerId, customerReference: s.trips.customerReference,
     truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
-    cargoTypeId: s.trips.cargoTypeId,
+    cargoTypeId: s.trips.cargoTypeId, containerCount: s.trips.containerCount,
     status: s.trips.status, departureDate: s.trips.departureDate,
     fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
     totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
@@ -562,7 +567,7 @@ export async function getTripById(id: number) {
     id: s.trips.id, tripCode: s.trips.tripCode, version: s.trips.version,
     customerId: s.trips.customerId, customerReference: s.trips.customerReference,
     truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
-    cargoTypeId: s.trips.cargoTypeId,
+    cargoTypeId: s.trips.cargoTypeId, containerCount: s.trips.containerCount,
     status: s.trips.status, departureDate: s.trips.departureDate,
     fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
     fuelLitersOverride: s.trips.fuelLitersOverride, fuelSupplementLiters: s.trips.fuelSupplementLiters,

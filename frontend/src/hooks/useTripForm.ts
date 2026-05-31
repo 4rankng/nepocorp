@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "../lib/api";
 import { FuelMode, LoadingType } from "@nepocorp/shared";
 export type { FuelMode } from "@nepocorp/shared";
@@ -11,6 +12,10 @@ import { calculateDistanceKm } from "../lib/maps";
 const FUEL_PRICE_PER_LITER = 25000;
 const LOADED_RATE = 43; // L/100km
 const EMPTY_RATE = 25; // L/100km
+
+function resolveContainerCount(raw: string): number {
+  return Math.min(10, Math.max(1, Number(raw) || 1));
+}
 
 export interface FormLeg {
   id: string;
@@ -46,6 +51,8 @@ export interface UseTripFormReturn {
   setDepartureDate: (v: string) => void;
   customerReference: string;
   setCustomerReference: (v: string) => void;
+  containerCount: string;
+  setContainerCount: (v: string) => void;
 
   // Legs
   legs: FormLeg[];
@@ -234,6 +241,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
   const [cargoTypeId, setCargoTypeId] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [customerReference, setCustomerReference] = useState("");
+  const [containerCount, setContainerCount] = useState("1");
 
   // Legs sub-hook
   const { legs, addLeg, removeLeg, updateLeg } = useTripLegs(options.routes, routeId);
@@ -260,32 +268,32 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
   // Upload sub-hook
   const { photoUrls, uploading, uploadPhotos, removePhoto } = useTripUpload(setError);
 
-  // Suggested price from pricing table (fetched on-demand)
-  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
+  const pricingQuery = useQuery({
+    queryKey: ["suggested-price", customerId, routeId, departureDate],
+    queryFn: async () => {
+      const res = await tripClient.getPricing(
+        Number(customerId),
+        Number(routeId),
+        departureDate || undefined,
+      );
+      return res;
+    },
+    enabled: !!customerId && !!routeId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const suggestedPrice = pricingQuery.data?.price ?? null;
 
   useEffect(() => {
-    if (!customerId || !routeId) {
-      setSuggestedPrice(null);
-      return;
+    if (pricingQuery.data !== undefined) {
+      const count = resolveContainerCount(containerCount);
+      setRevenue((prev) => {
+        if (!prev || prev === "0") return String(pricingQuery.data!.price * count);
+        if (Number(prev) === pricingQuery.data!.price) return String(pricingQuery.data!.price * count);
+        return prev;
+      });
     }
-    const fetchSuggestedPrice = async () => {
-      try {
-        const res = await tripClient.getPricing(
-          Number(customerId),
-          Number(routeId),
-          departureDate || undefined
-        );
-        setSuggestedPrice(res.price);
-        setRevenue((prev) => {
-          if (!prev || prev === "0") return String(res.price);
-          return prev;
-        });
-      } catch (err) {
-        console.error("Error fetching live pricing suggestion:", err);
-      }
-    };
-    fetchSuggestedPrice();
-  }, [customerId, routeId, departureDate]);
+  }, [pricingQuery.data, containerCount]);
 
   // Derived calculations
   const estimatedFuelCost = useMemo(() => {
@@ -417,6 +425,8 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
         if (customerReference.trim()) {
           createPayload.customerReference = customerReference.trim();
         }
+        const count = resolveContainerCount(containerCount);
+        createPayload.containerCount = count;
         const trip = await api.post<{ id: number }>("/trips", createPayload);
 
         if (hasOptionalData) {
@@ -486,7 +496,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     },
     [
       requiredFieldsFilled, customerId, routeId, truckId, trailerType,
-      driverId, cargoTypeId, departureDate, customerReference,
+      driverId, cargoTypeId, departureDate, customerReference, containerCount,
       hasOptionalData, legs, fuelMode, fuelLitersOverride,
       fuelSupplementLiters, fuelSupplementReason, tollsDiscount,
       tollsAddition, tollsStations, hasReturnCargo, driverSalary,
@@ -504,6 +514,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     cargoTypeId, setCargoTypeId,
     departureDate, setDepartureDate,
     customerReference, setCustomerReference,
+    containerCount, setContainerCount,
     // Legs
     legs, addLeg, removeLeg, updateLeg,
     // Fuel & financials

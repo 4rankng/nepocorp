@@ -62,7 +62,8 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     const { passwordHash, deletedAt, ...userPublic } = user;
-    res.json({ token, user: { ...userPublic, fullName: displayName } });
+    const capabilities = await userService.getCapabilities(user.role);
+    res.json({ token, user: { ...userPublic, fullName: displayName, capabilities } });
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: err.errors });
     // Log the actual error so we can debug login failures instead of a blind 500.
@@ -80,7 +81,9 @@ router.post('/login', async (req: Request, res: Response) => {
 
 router.get('/me', authMiddleware, async (req: Request, res: Response) => {
   try {
-    res.json(await userService.getUserProfile(req.user!.userId));
+    const profile = await userService.getUserProfile(req.user!.userId);
+    const capabilities = await userService.getCapabilities(req.user!.role);
+    res.json({ ...profile, capabilities });
   } catch (err: any) {
     res.status(err.statusCode || 500).json({ error: err.message });
   }

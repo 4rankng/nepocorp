@@ -7,6 +7,7 @@ import { db } from '../db';
 import { users, drivers } from '../db/schema';
 import { eq, isNull, sql } from 'drizzle-orm';
 import { ApiError } from '../errors';
+import { getEnforcer } from '../casbin/enforcer';
 
 export const USER_FIELDS = {
   id: users.id, username: users.username, email: users.email, phone: users.phone,
@@ -129,4 +130,13 @@ export async function resolveDisplayName(user: { id: number; role: string; fullN
     if (d?.name) displayName = d.name;
   }
   return displayName || user.username || 'Người dùng';
+}
+
+export async function getCapabilities(role: string): Promise<string[]> {
+  const enforcer = getEnforcer();
+  const capabilities: string[] = [];
+  if (await enforcer.enforce(role, 'users', 'write')) {
+    capabilities.push('manage_users');
+  }
+  return capabilities;
 }

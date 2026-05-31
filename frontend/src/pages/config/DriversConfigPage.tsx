@@ -1,21 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { StatusPill } from '../../components/UI';
-import { InlineForm, FormActions, Field, CrudTable } from '../../components/config';
+import { InlineForm } from '../../components/config/InlineForm';
+import { FormActions } from '../../components/config/FormActions';
+import { Field } from '../../components/config/Field';
+import { CrudTable } from '../../components/config/CrudTable';
 import type { Driver, Truck, PaginatedResponse } from '@nepocorp/shared';
 
 const DRIVER_STATUS_LABELS: Record<string, string> = { ACTIVE: 'Hoạt động', INACTIVE: 'Ngưng' };
 
-function DriverForm({ saving, item, onsave, oncancel }: {
-  saving: boolean; item?: Driver; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+function DriverForm({ saving, item, onsave, oncancel, truckList }: {
+  saving: boolean; item?: Driver; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; truckList: Truck[];
 }) {
   const [name, setName] = useState(item?.name || '');
   const [phone, setPhone] = useState(item?.phone || '');
   const [baseSalary, setBaseSalary] = useState(item?.baseSalary || '');
   const [truckId, setTruckId] = useState(item?.assignedTruckId || 0);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
-  const [tl, setTl] = useState<Truck[]>([]);
-  useEffect(() => { api.get<PaginatedResponse<Truck>>('/trucks').then(r => setTl(r.items)); }, []);
   return (
     <InlineForm colSpan={6}>
       <div style={{ flex: 2, minWidth: 150 }}>
@@ -31,7 +33,7 @@ function DriverForm({ saving, item, onsave, oncancel }: {
         <Field label="Xe phân công">
           <select className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
             <option value={0}>-- Chưa phân --</option>
-            {tl.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
+            {truckList.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
           </select>
         </Field>
       </div>
@@ -51,14 +53,18 @@ function DriverForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function DriversConfigPage() {
-  const [truckMap, setTruckMap] = useState<Map<number, string>>(new Map());
-  useEffect(() => {
-    api.get<PaginatedResponse<Truck>>('/trucks').then(r => {
-      const m = new Map<number, string>();
-      r.items.forEach(tk => m.set(tk.id, tk.licensePlate));
-      setTruckMap(m);
-    });
-  }, []);
+  const { data: trucksData } = useQuery({
+    queryKey: ['trucks-for-drivers-config'],
+    queryFn: () => api.get<PaginatedResponse<Truck>>('/trucks'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const truckList = trucksData?.items ?? [];
+  const truckMap = useMemo(() => {
+    const m = new Map<number, string>();
+    truckList.forEach(tk => m.set(tk.id, tk.licensePlate));
+    return m;
+  }, [truckList]);
 
   return (
     <CrudTable<Driver>
@@ -70,7 +76,7 @@ export default function DriversConfigPage() {
         { header: 'Xe phân công', render: (d) => <span style={{ fontFamily: 'var(--font-mono)' }}>{d.assignedTruckId ? (truckMap.get(d.assignedTruckId) || '—') : '—'}</span> },
         { header: 'Trạng thái', render: (d) => <StatusPill variant={d.status === 'ACTIVE' ? 'success' : 'danger'}>{DRIVER_STATUS_LABELS[d.status] || d.status}</StatusPill> },
       ]}
-      renderForm={(p) => <DriverForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}
+      renderForm={(p) => <DriverForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} truckList={truckList} />}
     />
   );
 }

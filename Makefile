@@ -17,7 +17,7 @@ dev: ## Start everything (db, redis, backend, frontend)
 	@sleep 1
 	@echo "Generating & running migrations..."
 	@cd backend && npx drizzle-kit generate 2>/dev/null || true
-	@cd backend && npx drizzle-kit migrate 2>/dev/null || true
+	@cd backend && npx drizzle-kit migrate
 	@echo "Starting backend (port 3090) and frontend (port 7173)..."
 	@bash -c '\
 		trap "kill 0" EXIT; \

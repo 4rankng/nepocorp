@@ -36,6 +36,13 @@
       "when": 1780239060600,
       "tag": "0004_tiny_the_call",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780239411849,
+      "tag": "0005_loving_strong_guy",
+      "breakpoints": true
     }
   ]
 }

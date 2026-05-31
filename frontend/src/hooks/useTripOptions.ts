@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tripClient } from "../api/tripClient";
 import { api } from "../lib/api";
 import type { PricingTable, PaginatedResponse } from "@nepocorp/shared";
+import { BOOTSTRAP_QUERY_KEY } from "./useCatalogs";
 
 export interface SelectOption {
   id: number;
@@ -38,39 +39,37 @@ interface CatalogData {
 }
 
 export function useTripOptions(): TripOptions {
-  const { data, isLoading } = useQuery({
-    queryKey: ["trip-options"],
+  const bootstrapQuery = useQuery<CatalogData>({
+    queryKey: BOOTSTRAP_QUERY_KEY,
+    queryFn: () => tripClient.getBootstrap(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const pricingQuery = useQuery<PricingTable[]>({
+    queryKey: ["pricing-tables"],
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const [catalog, pricingRes] = await Promise.all([
-        tripClient.getBootstrap() as Promise<CatalogData>,
-        api.get<PaginatedResponse<PricingTable>>("/pricing-tables"),
-      ]);
-
-      return {
-        customers: catalog.customers.map((c) => ({ id: c.id, label: c.name })),
-        routes: catalog.routes.map((r) => ({
-          id: r.id,
-          label: `${r.name}${r.distanceKm ? ` (${r.distanceKm} km)` : ""}`,
-          name: r.name,
-          distanceKm: r.distanceKm ?? undefined,
-        })),
-        trucks: catalog.trucks.map((t) => ({ id: t.id, label: t.licensePlate })),
-        drivers: catalog.drivers.map((d) => ({ id: d.id, label: d.name })),
-        cargoTypes: catalog.cargoTypes.map((c) => ({ id: c.id, label: c.name })),
-        pricingTables: pricingRes.items ?? [],
-      };
+      const res = await api.get<PaginatedResponse<PricingTable>>("/pricing-tables");
+      return res.items ?? [];
     },
   });
 
+  const catalog = bootstrapQuery.data;
+
   return {
-    customers: data?.customers ?? [],
-    routes: data?.routes ?? [],
-    trucks: data?.trucks ?? [],
+    customers: catalog?.customers.map((c) => ({ id: c.id, label: c.name })) ?? [],
+    routes:
+      catalog?.routes.map((r) => ({
+        id: r.id,
+        label: `${r.name}${r.distanceKm ? ` (${r.distanceKm} km)` : ""}`,
+        name: r.name,
+        distanceKm: r.distanceKm ?? undefined,
+      })) ?? [],
+    trucks: catalog?.trucks.map((t) => ({ id: t.id, label: t.licensePlate })) ?? [],
     trailerTypes: [{ value: '20FT', label: '20FT' }, { value: '40FT', label: '40FT' }],
-    drivers: data?.drivers ?? [],
-    cargoTypes: data?.cargoTypes ?? [],
-    pricingTables: data?.pricingTables ?? [],
-    loading: isLoading,
+    drivers: catalog?.drivers.map((d) => ({ id: d.id, label: d.name })) ?? [],
+    cargoTypes: catalog?.cargoTypes.map((c) => ({ id: c.id, label: c.name })) ?? [],
+    pricingTables: pricingQuery.data ?? [],
+    loading: bootstrapQuery.isLoading || pricingQuery.isLoading,
   };
 }

@@ -126,6 +126,9 @@ export default function DriverPenaltyPage() {
             {incidentCount}<span className="kpi__value-unit"> vụ</span>
           </div>
           <div className="kpi__meta">Trong tháng này</div>
+          <div className="kpi__watermark" aria-hidden="true">
+            {incidentCount > 0 ? <AlertTriangle size={80} /> : <ShieldCheck size={80} />}
+          </div>
         </div>
 
         <div className={`kpi ${totalMonthAmount > 0 ? 'kpi--warn' : 'kpi--success'}`}>
@@ -139,6 +142,9 @@ export default function DriverPenaltyPage() {
             {totalMonthAmount > 0 ? formatCurrency(totalMonthAmount) : '—'}
           </div>
           <div className="kpi__meta">Trừ vào lương tháng</div>
+          <div className="kpi__watermark" aria-hidden="true">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
         </div>
 
         <div className="kpi kpi--neutral">
@@ -150,6 +156,7 @@ export default function DriverPenaltyPage() {
             {allPenalties.length}<span className="kpi__value-unit"> vụ</span>
           </div>
           <div className="kpi__meta">Toàn lịch sử</div>
+          <div className="kpi__watermark" aria-hidden="true"><AlertOctagon size={80} /></div>
         </div>
       </div>
 
@@ -170,6 +177,7 @@ export default function DriverPenaltyPage() {
           <option value="">Tất cả thời gian</option>
           {Array.from({ length: 12 }, (_, i) => {
             const d = new Date();
+            d.setDate(1); // Set to 1st of the month to avoid month-end rollover (e.g., May 31 -> April 31 rolls over to May 1)
             d.setMonth(d.getMonth() - i);
             const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             return <option key={value} value={value}>Tháng {d.getMonth() + 1}/{d.getFullYear()}</option>;

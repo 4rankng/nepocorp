@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { formatCurrency } from '../../lib/format';
-import { InlineForm, FormActions, Field, CrudTable } from '../../components/config';
+import { InlineForm } from '../../components/config/InlineForm';
+import { FormActions } from '../../components/config/FormActions';
+import { Field } from '../../components/config/Field';
+import { CrudTable } from '../../components/config/CrudTable';
 import type { ManagementFee } from '@nepocorp/shared';
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);

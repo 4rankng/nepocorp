@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { InlineForm, FormActions, Field, CrudTable } from '../../components/config';
+import { InlineForm } from '../../components/config/InlineForm';
+import { FormActions } from '../../components/config/FormActions';
+import { Field } from '../../components/config/Field';
+import { CrudTable } from '../../components/config/CrudTable';
 import type { CargoType } from '@nepocorp/shared';
 
 function CargoTypeForm({ saving, item, onsave, oncancel }: {

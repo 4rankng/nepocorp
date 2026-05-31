@@ -69,6 +69,10 @@ export function TripInfoCard(props: TripInfoCardProps) {
             <input className="input mono" type="text" placeholder="VD: PO-12345" value={form.customerReference} onChange={(e) => form.setCustomerReference(e.target.value)} maxLength={50} />
             <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>(không bắt buộc)</span>
           </Field>
+          <Field label="Số cont" required>
+            <input className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} />
+            <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Số lượng container (mặc định: 1)</span>
+          </Field>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
-import { InlineForm, FormActions, Field, CrudTable } from '../../components/config';
+import { InlineForm } from '../../components/config/InlineForm';
+import { FormActions } from '../../components/config/FormActions';
+import { Field } from '../../components/config/Field';
+import { CrudTable } from '../../components/config/CrudTable';
 import type { PricingTable, Customer, Route as RouteType, PaginatedResponse } from '@nepocorp/shared';
 
 function PricingForm({ saving, item, onsave, oncancel, customers, routes }: {

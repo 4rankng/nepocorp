@@ -106,6 +106,11 @@ export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default',
         {unit && <span className="kpi__value-unit">{unit}</span>}
       </div>
       {meta && <div className="kpi__meta">{meta}</div>}
+      {Icon && (
+        <div className="kpi__watermark" aria-hidden="true">
+          <Icon size={80} />
+        </div>
+      )}
     </div>
   );
 }

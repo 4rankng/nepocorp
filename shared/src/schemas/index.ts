@@ -47,6 +47,7 @@ export const createTripSchema = z.object({
   cargoTypeId: z.coerce.number().int().positive(),
   departureDate: z.string().min(1),
   customerReference: z.string().optional(),
+  containerCount: z.coerce.number().int().min(1).max(10).optional(),
 });
 
 export const updateTripFiguresSchema = z.object({

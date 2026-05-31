@@ -362,6 +362,7 @@ export interface CreateTripRequest {
   cargoTypeId: number;
   departureDate: string;
   customerReference?: string;
+  containerCount?: number;
 }
 
 export interface TripLegInput {

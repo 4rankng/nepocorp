@@ -268,6 +268,8 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  position: relative;
+  overflow: hidden;
 }
 .kpi[role="button"], .kpi.kpi--clickable { cursor: pointer; }
 .kpi:hover {
@@ -330,6 +332,25 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 }
 .kpi__meta--up { color: var(--accent); font-weight: 600; }
 .kpi__meta--down { color: var(--danger); font-weight: 600; }
+
+.kpi__watermark {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  width: 88px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--ink-3);
+  opacity: 0.09;
+}
+.kpi--warn .kpi__watermark    { color: var(--warning); opacity: 0.13; }
+.kpi--danger .kpi__watermark  { color: var(--danger);  opacity: 0.12; }
+.kpi--success .kpi__watermark { color: var(--accent);  opacity: 0.13; }
+.kpi--accent .kpi__watermark  { color: var(--brand);   opacity: 0.12; }
+.kpi--info .kpi__watermark    { color: var(--info);    opacity: 0.13; }
 
 /* legacy stat-card for backward compat */
 .stat-card {

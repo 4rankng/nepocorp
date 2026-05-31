@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
@@ -7,7 +7,10 @@ import {
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
-import { InlineForm, FormActions, ActionBtns, Field } from '../components/config';
+import { InlineForm } from '../components/config/InlineForm';
+import { FormActions } from '../components/config/FormActions';
+import { ActionBtns } from '../components/config/ActionBtns';
+import { Field } from '../components/config/Field';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
 import { TrailerType } from '@nepocorp/shared';
@@ -25,36 +28,62 @@ const TRAILER_TYPE_LABELS: Record<string, string> = {
   [TrailerType.FT20]: '20FT', [TrailerType.FT40]: '40FT',
 };
 
+// ─── Static Styles ───────────────────────────────────────────────────────────
+
+const styles = {
+  flexCol2W160: { flex: 2, minWidth: 160 },
+  flexCol2W150: { flex: 2, minWidth: 150 },
+  flexCol1W140: { flex: 1, minWidth: 140 },
+  flexCol1W130: { flex: 1, minWidth: 130 },
+  flexCol1W120: { flex: 1, minWidth: 120 },
+  flexCol1W110: { flex: 1, minWidth: 110 },
+  emptyRow: { textAlign: 'center', padding: 32, color: 'var(--fg-3)' },
+  centerAlign: { textAlign: 'center' },
+  errorBanner: { textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' },
+  swatchSuccess: { background: 'var(--success)' },
+  swatchWarning: { background: 'var(--warning)' },
+  salaryMono: { fontFamily: 'var(--font-mono)', color: 'var(--ink)' },
+  dotSep: { opacity: 0.5 },
+  actionRow: { display: 'flex', gap: 8 },
+  metaRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  dotSuccess: { width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' },
+  dotWarning: { width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' },
+  textSuccess: { color: 'var(--success)', fontWeight: 600 },
+  textWarning: { color: 'var(--warning)', fontWeight: 600 },
+  textMuted: { opacity: 0.4 },
+  fontMono: { fontFamily: 'var(--font-mono)' },
+} as const;
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function AvatarInitials({ name }: { name: string }) {
+const AvatarInitials = memo(function AvatarInitials({ name }: { name: string }) {
   const c = avatarColorByName(name);
   return (
     <span className="fleet-avatar" style={{ background: c.bg, color: c.fg }}>
       {getInitials(name)}
     </span>
   );
-}
+});
 
-function Plate({ plate, tag }: { plate: string; tag: string }) {
+const Plate = memo(function Plate({ plate, tag }: { plate: string; tag: string }) {
   return (
     <span className="fleet-plate">
       <span className="fleet-plate-tag">{tag}</span>
       {plate}
     </span>
   );
-}
+});
 
-function TypeChip({ type }: { type: string }) {
+const TypeChip = memo(function TypeChip({ type }: { type: string }) {
   const cls = type === TrailerType.FT40 ? 'ft40' : 'ft20';
   return <span className={`fleet-type-chip ${cls}`}>{TRAILER_TYPE_LABELS[type] || type}</span>;
-}
+});
 
-function StatusDot({ status }: { status: string }) {
+const StatusDot = memo(function StatusDot({ status }: { status: string }) {
   const variant = status === 'ACTIVE' ? 'success' : status === 'MAINTENANCE' ? 'warn' : 'neutral';
   const label = TRUCK_STATUS[status] || DRIVER_STATUS[status] || status;
   return <StatusPill variant={variant} dot>{label}</StatusPill>;
-}
+});
 
 // ─── Forms ────────────────────────────────────────────────────────────────────
 
@@ -67,20 +96,20 @@ function TruckForm({ saving, item, onsave, oncancel }: {
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
   return (
     <InlineForm colSpan={7}>
-      <div style={{ flex: 2, minWidth: 160 }}>
+      <div style={styles.flexCol2W160}>
         <Field label="Biển số xe đầu"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51C-12345" /></Field>
       </div>
-      <div style={{ flex: 2, minWidth: 160 }}>
+      <div style={styles.flexCol2W160}>
         <Field label="Biển số rơ-moóc"><input className="input" value={trailerPlate} onChange={e => setTrailerPlate(e.target.value)} placeholder="VD: 51R-56789" /></Field>
       </div>
-      <div style={{ flex: 1, minWidth: 110 }}>
+      <div style={styles.flexCol1W110}>
         <Field label="Loại rơ-moóc">
           <select className="input" value={trailerType} onChange={e => setTrailerType(e.target.value)}>
             {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </Field>
       </div>
-      <div style={{ flex: 1, minWidth: 140 }}>
+      <div style={styles.flexCol1W140}>
         <Field label="Trạng thái">
           <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
             {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -103,16 +132,16 @@ function DriverForm({ saving, item, trucks, onsave, oncancel }: {
 
   return (
     <InlineForm colSpan={7}>
-      <div style={{ flex: 2, minWidth: 150 }}>
+      <div style={styles.flexCol2W150}>
         <Field label="Tên tài xế"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Họ và tên" /></Field>
       </div>
-      <div style={{ flex: 1, minWidth: 130 }}>
+      <div style={styles.flexCol1W130}>
         <Field label="SĐT"><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." /></Field>
       </div>
-      <div style={{ flex: 1, minWidth: 130 }}>
+      <div style={styles.flexCol1W130}>
         <Field label="Lương CB (VNĐ)"><input className="input" type="number" value={baseSalary} onChange={e => setBaseSalary(e.target.value)} placeholder="0" /></Field>
       </div>
-      <div style={{ flex: 1, minWidth: 140 }}>
+      <div style={styles.flexCol1W140}>
         <Field label="Xe phân công">
           <select className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
             <option value={0}>-- Chưa phân --</option>
@@ -120,7 +149,7 @@ function DriverForm({ saving, item, trucks, onsave, oncancel }: {
           </select>
         </Field>
       </div>
-      <div style={{ flex: 1, minWidth: 120 }}>
+      <div style={styles.flexCol1W120}>
         <Field label="Trạng thái">
           <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
             {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -182,7 +211,7 @@ function TruckCard({ trucks, driverByTruck, crud }: {
               <TruckForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />
             )}
             {trucks.length === 0 && !crud.showAddForm && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
+              <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
             )}
             {trucks.map((t, i) => crud.editingId === t.id
               ? <TruckForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
@@ -207,7 +236,7 @@ function TruckCard({ trucks, driverByTruck, crud }: {
                       : <span className="fleet-unassigned">— Chưa phân —</span>
                     }
                   </td>
-                  <td style={{ textAlign: 'center' }}><StatusDot status={t.status} /></td>
+                  <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
                   <td><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
                 </tr>
               ),
@@ -218,15 +247,15 @@ function TruckCard({ trucks, driverByTruck, crud }: {
       <div className="table-foot">
         <div className="fleet-legend">
           <span className="fleet-legend-item">
-            <span className="fleet-legend-swatch" style={{ background: 'var(--success)' }} /> Hoạt động
+            <span className="fleet-legend-swatch" style={styles.swatchSuccess} /> Hoạt động
           </span>
           <span className="fleet-legend-item">
-            <span className="fleet-legend-swatch" style={{ background: 'var(--warning)' }} /> Bảo trì
+            <span className="fleet-legend-swatch" style={styles.swatchWarning} /> Bảo trì
           </span>
         </div>
         <span>Hoạt động {active} · Bảo trì {maint}</span>
       </div>
-      {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
+      {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
     </Panel>
   );
 }
@@ -287,7 +316,7 @@ function DriverCard({ drivers, truckMap, crud }: {
               <DriverForm saving={crud.saving} trucks={[...truckMap.values()]} onsave={crud.doCreate} oncancel={crud.cancelForm} />
             )}
             {drivers.length === 0 && !crud.showAddForm && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
+              <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
             )}
             {filteredDrivers.map((d, i) => crud.editingId === d.id
               ? <DriverForm key={`edit-${d.id}`} saving={crud.saving} item={d} trucks={[...truckMap.values()]} onsave={dd => crud.doUpdate(d.id, dd)} oncancel={crud.cancelForm} />
@@ -317,7 +346,7 @@ function DriverCard({ drivers, truckMap, crud }: {
                       : <span className="fleet-salary empty">—</span>
                     }
                   </td>
-                  <td style={{ textAlign: 'center' }}><StatusDot status={d.status} /></td>
+                  <td style={styles.centerAlign}><StatusDot status={d.status} /></td>
                   <td><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
                 </tr>
               ),
@@ -327,17 +356,17 @@ function DriverCard({ drivers, truckMap, crud }: {
       </div>
       <div className="table-foot">
         <div className="fleet-legend">
-          <span>Tổng quỹ lương: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{totalSalary.toLocaleString('vi-VN')} VNĐ</strong></span>
+          <span>Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString('vi-VN')} VNĐ</strong></span>
           {unassigned > 0 && (
             <>
-              <span style={{ opacity: 0.5 }}>·</span>
+              <span style={styles.dotSep}>·</span>
               <span>{unassigned} tài xế chưa được phân xe</span>
             </>
           )}
         </div>
         <span>Hiển thị {filteredDrivers.length}/{drivers.length}</span>
       </div>
-      {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
+      {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
     </Panel>
   );
 }
@@ -382,7 +411,7 @@ export default function FleetPage() {
         title="Đội xe"
         description="Quản lý xe đầu kéo, rơ-moóc và tài xế trong một trang"
         action={
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={styles.actionRow}>
             <Btn variant="secondary" size="sm" icon={<Download size={14} />} onClick={() => {
               const headers = ['Loại', 'Biển số', 'Trạng thái', 'Tài xế gán'];
               const rows = [
@@ -404,12 +433,12 @@ export default function FleetPage() {
           icon={Truck}
           variant="success"
           meta={
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />
-              <span style={{ color: 'var(--success)', fontWeight: 600 }}>{activeTrucks} hoạt động</span>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' }} />
-              <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{maintTrucks} bảo trì</span>
+            <span style={styles.metaRow}>
+              <span style={styles.dotSuccess} />
+              <span style={styles.textSuccess}>{activeTrucks} hoạt động</span>
+              <span style={styles.textMuted}>·</span>
+              <span style={styles.dotWarning} />
+              <span style={styles.textWarning}>{maintTrucks} bảo trì</span>
             </span>
           }
         />
@@ -420,10 +449,10 @@ export default function FleetPage() {
           icon={Truck}
           variant="info"
           meta={
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontFamily: 'var(--font-mono)' }}>{ft40}×40FT</span>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span style={{ fontFamily: 'var(--font-mono)' }}>{ft20}×20FT</span>
+            <span style={styles.metaRow}>
+              <span style={styles.fontMono}>{ft40}×40FT</span>
+              <span style={styles.textMuted}>·</span>
+              <span style={styles.fontMono}>{ft20}×20FT</span>
             </span>
           }
         />
@@ -434,10 +463,10 @@ export default function FleetPage() {
           icon={UserCheck}
           variant="warn"
           meta={
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />
-              <span style={{ color: 'var(--success)', fontWeight: 600 }}>{drivers.length} đang làm</span>
-              <span style={{ opacity: 0.4 }}>·</span>
+            <span style={styles.metaRow}>
+              <span style={styles.dotSuccess} />
+              <span style={styles.textSuccess}>{drivers.length} đang làm</span>
+              <span style={styles.textMuted}>·</span>
               <span>{assignedDrivers} đã phân xe</span>
             </span>
           }
@@ -449,10 +478,10 @@ export default function FleetPage() {
           icon={CheckCircle}
           variant="default"
           meta={
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={styles.metaRow}>
               <span>Đủ xe + tài xế</span>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{activeTrucks - readyToRun} cần phân xế</span>
+              <span style={styles.textMuted}>·</span>
+              <span style={styles.textWarning}>{activeTrucks - readyToRun} cần phân xế</span>
             </span>
           }
         />

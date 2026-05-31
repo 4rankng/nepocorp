@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
-import { PageHeader, Panel } from '../../components/UI';
-import { InlineForm, FormActions, ActionBtns } from '../../components/config';
+import { InlineForm } from '../../components/config/InlineForm';
+import { FormActions } from '../../components/config/FormActions';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
@@ -33,39 +33,41 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function CustomersConfigPage() {
-  const navigate = useNavigate();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [customerTripStats, setCustomerTripStats] = useState<Map<number, { trips: number; revenue: number }>>(new Map());
   const [customerFilter, setCustomerFilter] = useState<'all' | 'high-risk' | 'active' | 'locked'>('all');
   const [search, setSearch] = useState('');
 
-  const refresh = useCallback(async () => {
-    const qs = search ? `?search=${encodeURIComponent(search)}&limit=100` : '?limit=100';
-    const [custRes, tripRes] = await Promise.all([
-      api.get<PaginatedResponse<Customer>>(`/customers${qs}`),
-      api.get<{ items: any[] }>('/trips?limit=500').catch(() => ({ items: [] as any[] })),
-    ]);
-    setCustomers(custRes.items);
-    const now = new Date();
-    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const statsMap = new Map<number, { trips: number; revenue: number }>();
-    (tripRes as any).items.forEach((t: any) => {
-      const dep = t.departureDate || t.departureDate || '';
-      if (dep.startsWith(thisMonth)) {
-        const cid = t.customerId ?? t.customerId;
-        if (cid) {
-          const s = statsMap.get(cid) || { trips: 0, revenue: 0 };
-          s.trips++;
-          s.revenue += parseFloat(t.revenue || '0');
-          statsMap.set(cid, s);
+  const { data, refetch } = useQuery({
+    queryKey: ['customers-config', search],
+    queryFn: async () => {
+      const qs = search ? `?search=${encodeURIComponent(search)}&limit=100` : '?limit=100';
+      const [custRes, tripRes] = await Promise.all([
+        api.get<PaginatedResponse<Customer>>(`/customers${qs}`),
+        api.get<{ items: any[] }>('/trips?limit=500').catch(() => ({ items: [] as any[] })),
+      ]);
+      const now = new Date();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const statsMap = new Map<number, { trips: number; revenue: number }>();
+      tripRes.items.forEach((t: any) => {
+        const dep = t.departureDate || '';
+        if (dep.startsWith(thisMonth)) {
+          const cid = t.customerId;
+          if (cid) {
+            const s = statsMap.get(cid) || { trips: 0, revenue: 0 };
+            s.trips++;
+            s.revenue += parseFloat(t.revenue || '0');
+            statsMap.set(cid, s);
+          }
         }
-      }
-    });
-    setCustomerTripStats(statsMap);
-  }, [search]);
+      });
+      return { customers: custRes.items, customerTripStats: statsMap };
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  const crud = useCRUD('/customers', refresh);
-  useEffect(() => { refresh(); }, [refresh]);
+  const customers = data?.customers ?? [];
+  const customerTripStats = data?.customerTripStats ?? new Map<number, { trips: number; revenue: number }>();
+
+  const crud = useCRUD('/customers', async () => { await refetch(); });
 
   const now = new Date();
   const monthLabel = `T${now.getMonth() + 1}`;
@@ -87,12 +89,12 @@ export default function CustomersConfigPage() {
     return 'low';
   }
 
-  const filtered = customers.filter(c => {
+  const filtered = useMemo(() => customers.filter(c => {
     if (customerFilter === 'active') return c.status === CustomerStatus.ACTIVE;
     if (customerFilter === 'locked') return c.status === CustomerStatus.LOCKED;
     if (customerFilter === 'high-risk') return getRiskLevel(c) === 'high';
     return true;
-  }).filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.taxCode || '').includes(search));
+  }).filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.taxCode || '').includes(search)), [customers, customerFilter, search]);
 
   return (
     <div className="fade-up">
@@ -132,10 +134,30 @@ export default function CustomersConfigPage() {
       </div>
 
       <div className="kpi-grid" style={{ marginBottom: 20 }}>
-        <div className="kpi"><div className="kpi__top"><span className="kpi__label">Tổng khách hàng</span><div className="kpi__icon"><Users size={18} /></div></div><div className="kpi__value">{totalCount}</div><div className="kpi__meta kpi__meta--up">Đang quản lý</div></div>
-        <div className="kpi kpi--success"><div className="kpi__top"><span className="kpi__label">Đang hoạt động</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div></div><div className="kpi__value">{activeCount}<span className="kpi__value-unit">/{totalCount}</span></div><div className="kpi__meta">{totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0}% hoạt động đều</div></div>
-        <div className="kpi kpi--warn"><div className="kpi__top"><span className="kpi__label">Top 4 chiếm</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div></div><div className="kpi__value">{top4Pct}<span className="kpi__value-unit">%</span></div><div className="kpi__meta">{top4Pct > 60 ? 'Rủi ro tập trung cao' : 'Doanh thu tháng này'}</div></div>
-        <div className="kpi kpi--danger"><div className="kpi__top"><span className="kpi__label">Tạm khoá</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div></div><div className="kpi__value">{lockedCount}</div><div className="kpi__meta">Do nợ quá hạn</div></div>
+        <div className="kpi">
+          <div className="kpi__top"><span className="kpi__label">Tổng khách hàng</span><div className="kpi__icon"><Users size={18} /></div></div>
+          <div className="kpi__value">{totalCount}</div>
+          <div className="kpi__meta kpi__meta--up">Đang quản lý</div>
+          <div className="kpi__watermark" aria-hidden="true"><Users size={80} /></div>
+        </div>
+        <div className="kpi kpi--success">
+          <div className="kpi__top"><span className="kpi__label">Đang hoạt động</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div></div>
+          <div className="kpi__value">{activeCount}<span className="kpi__value-unit">/{totalCount}</span></div>
+          <div className="kpi__meta">{totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0}% hoạt động đều</div>
+          <div className="kpi__watermark" aria-hidden="true"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div>
+        </div>
+        <div className="kpi kpi--warn">
+          <div className="kpi__top"><span className="kpi__label">Top 4 chiếm</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div></div>
+          <div className="kpi__value">{top4Pct}<span className="kpi__value-unit">%</span></div>
+          <div className="kpi__meta">{top4Pct > 60 ? 'Rủi ro tập trung cao' : 'Doanh thu tháng này'}</div>
+          <div className="kpi__watermark" aria-hidden="true"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        </div>
+        <div className="kpi kpi--danger">
+          <div className="kpi__top"><span className="kpi__label">Tạm khoá</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div></div>
+          <div className="kpi__value">{lockedCount}</div>
+          <div className="kpi__meta">Do nợ quá hạn</div>
+          <div className="kpi__watermark" aria-hidden="true"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        </div>
       </div>
 
       <div className="table-wrap">

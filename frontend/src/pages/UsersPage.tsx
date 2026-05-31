@@ -526,7 +526,9 @@ function AddPanel({ saving, error, onClose, onSave }: AddPanelProps) {
 export default function UsersPage() {
   const { user: me } = useAuth();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const canManage = me?.role === Role.ADMIN || me?.role === Role.MANAGER;
+  const canManage = me?.capabilities
+    ? me.capabilities.includes('manage_users')
+    : me?.role === Role.ADMIN || me?.role === Role.MANAGER;
 
   const { data: usersData, isLoading: loading, refetch: refetchUsers } = useUsers();
   const users = (usersData?.items ?? []) as UserRow[];
@@ -674,6 +676,7 @@ export default function UsersPage() {
           </div>
           <div className="kpi__value">{total}</div>
           <div className="kpi__meta kpi__meta--up">Đang hoạt động trong hệ thống</div>
+          <div className="kpi__watermark" aria-hidden="true"><Users size={80} /></div>
         </div>
         <div className="kpi kpi--warn">
           <div className="kpi__top">
@@ -682,6 +685,7 @@ export default function UsersPage() {
           </div>
           <div className="kpi__value">{staffCount}</div>
           <div className="kpi__meta">Admin · Quản lý · Kế toán</div>
+          <div className="kpi__watermark" aria-hidden="true"><UserCog size={80} /></div>
         </div>
         <div className="kpi kpi--success">
           <div className="kpi__top">
@@ -690,6 +694,7 @@ export default function UsersPage() {
           </div>
           <div className="kpi__value">{driverCount}</div>
           <div className="kpi__meta">Có quyền xem lệnh chạy xe</div>
+          <div className="kpi__watermark" aria-hidden="true"><ShieldCheck size={80} /></div>
         </div>
         <div className="kpi kpi--danger">
           <div className="kpi__top">
@@ -698,6 +703,7 @@ export default function UsersPage() {
           </div>
           <div className="kpi__value">{inactiveCount}</div>
           <div className="kpi__meta">Không thể đăng nhập</div>
+          <div className="kpi__watermark" aria-hidden="true"><Lock size={80} /></div>
         </div>
       </div>
 

@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { StatusPill } from '../../components/UI';
-import { InlineForm, FormActions, Field, CrudTable } from '../../components/config';
+import { InlineForm } from '../../components/config/InlineForm';
+import { FormActions } from '../../components/config/FormActions';
+import { Field } from '../../components/config/Field';
+import { CrudTable } from '../../components/config/CrudTable';
 import type { Truck } from '@nepocorp/shared';
 
 const TRUCK_STATUS_LABELS: Record<string, string> = {

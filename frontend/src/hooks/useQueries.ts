@@ -89,17 +89,24 @@ export function usePnlReport(month: number, year: number) {
 }
 
 export function useMonthlyTrips(year: number, month: number) {
-  const { data: period } = useSalaryPeriod(month, year);
-  return useQuery<TripDetail[]>({
-    queryKey: ['trips', 'monthly', year, month, period?.start],
-    enabled: !!period,
+  const salaryPeriodQuery = useSalaryPeriod(month, year);
+
+  const tripsQuery = useQuery<TripDetail[]>({
+    queryKey: ['trips', 'monthly', year, month, salaryPeriodQuery.data?.start],
+    enabled: !!salaryPeriodQuery.data,
     queryFn: async () => {
       const res = await api.get<PaginatedResponse<TripDetail>>(
-        `${TRIPS.LIST}?limit=100&date_from=${period!.start}&date_to=${period!.end}`,
+        `${TRIPS.LIST}?limit=100&date_from=${salaryPeriodQuery.data!.start}&date_to=${salaryPeriodQuery.data!.end}`,
       );
       return res.items;
     },
+    staleTime: 2 * 60 * 1000,
   });
+
+  return {
+    ...tripsQuery,
+    salaryPeriod: salaryPeriodQuery.data,
+  };
 }
 
 export function useCreatedTrips() {
@@ -147,17 +154,24 @@ export function useTripAdjustments(id: number) {
 }
 
 export function useTripCosts(month: number, year: number) {
-  const { data: period } = useSalaryPeriod(month, year);
-  return useQuery<TripDetail[]>({
-    queryKey: ['trip-costs', month, year, period?.start],
-    enabled: !!period,
+  const salaryPeriodQuery = useSalaryPeriod(month, year);
+
+  const tripsQuery = useQuery<TripDetail[]>({
+    queryKey: ['trip-costs', month, year, salaryPeriodQuery.data?.start],
+    enabled: !!salaryPeriodQuery.data,
     queryFn: async () => {
       const res = await api.get<PaginatedResponse<TripDetail>>(
-        `${TRIPS.LIST}?limit=100&status=LOCKED&date_from=${period!.start}&date_to=${period!.end}`,
+        `${TRIPS.LIST}?limit=100&status=LOCKED&date_from=${salaryPeriodQuery.data!.start}&date_to=${salaryPeriodQuery.data!.end}`,
       );
       return res.items;
     },
+    staleTime: 2 * 60 * 1000,
   });
+
+  return {
+    ...tripsQuery,
+    salaryPeriod: salaryPeriodQuery.data,
+  };
 }
 
 export function useCapTable() {
