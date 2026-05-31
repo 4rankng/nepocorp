@@ -193,6 +193,7 @@ export function initAuditService() {
       const message = renderAuditMessage(payload);
       await db.insert(auditLogs).values({
         userId: payload.userId ?? null,
+        actorName: payload.actorName ?? null,
         message,
         entityType: payload.entityType,
         entityId: payload.entityId ?? null,
@@ -217,6 +218,7 @@ export async function writeAuditLogTransaction(
   tx: any,
   data: {
     userId: number;
+    actorName?: string;
     message: string;
     entityType: string;
     entityId: number | null;
@@ -226,6 +228,7 @@ export async function writeAuditLogTransaction(
 ) {
   await tx.insert(auditLogs).values({
     userId: data.userId,
+    actorName: data.actorName ?? null,
     message: data.message,
     entityType: data.entityType,
     entityId: data.entityId,

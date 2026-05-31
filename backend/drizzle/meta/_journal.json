@@ -43,6 +43,13 @@
       "when": 1780239411849,
       "tag": "0005_loving_strong_guy",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780243494467,
+      "tag": "0006_sleepy_radioactive_man",
+      "breakpoints": true
     }
   ]
 }

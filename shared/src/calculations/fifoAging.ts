@@ -27,13 +27,22 @@ export function computeFifoAging(
   });
 
   const openInvoices: OpenInvoice[] = [];
+  let unappliedCredit = 0;
 
   for (const entry of chronological) {
     const debit = typeof entry.debit === 'number' ? entry.debit : parseFloat(entry.debit || '0');
     const credit = typeof entry.credit === 'number' ? entry.credit : parseFloat(entry.credit || '0');
 
     if (debit > 0 && entry.timestamp) {
-      openInvoices.push({ ts: entry.timestamp, open: debit });
+      let debitRemaining = debit;
+      if (unappliedCredit > 0) {
+        const apply = Math.min(unappliedCredit, debitRemaining);
+        unappliedCredit -= apply;
+        debitRemaining -= apply;
+      }
+      if (debitRemaining > 0) {
+        openInvoices.push({ ts: entry.timestamp, open: debitRemaining });
+      }
     }
 
     if (credit > 0) {
@@ -44,6 +53,9 @@ export function computeFifoAging(
         const apply = Math.min(inv.open, remaining);
         inv.open -= apply;
         remaining -= apply;
+      }
+      if (remaining > 0) {
+        unappliedCredit += remaining;
       }
     }
   }

@@ -451,7 +451,7 @@ export default function DashboardPage() {
             Tháng {currentMonth} / {currentYear} đang hoạt động — doanh thu{' '}
             {prevPnlReport ? (
               <>
-                <strong style={{ color: isRevUp ? 'var(--success)' : 'var(--danger)' }}>{revenueMoM} MoM</strong>
+                <strong style={{ color: isRevUp ? 'var(--success)' : 'var(--danger)' }}>{revenueMoM} so với tháng trước</strong>
               </>
             ) : (
               <strong>chưa đủ dữ liệu so sánh</strong>
@@ -502,7 +502,7 @@ export default function DashboardPage() {
           <div className="kpi__meta">
             {((costs / (revenue || 1)) * 100).toFixed(1)}% doanh thu
             {prevPnlReport && (
-              <> · <span style={{ color: isCostUp ? 'var(--warning)' : 'var(--success)', fontWeight: 600 }}>{costsMoM} MoM</span></>
+              <> · <span style={{ color: isCostUp ? 'var(--warning)' : 'var(--success)', fontWeight: 600 }}>{costsMoM} so với tháng trước</span></>
             )}
           </div>
           <div className="kpi__watermark" aria-hidden="true">
@@ -730,8 +730,10 @@ export default function DashboardPage() {
           flush
         >
           {/* Fixed table layout with explicit column widths so the "Còn lại"
-              status column doesn't get clipped to "Còn" + "15 ngà". */}
-          <table style={{ width: '100%', tableLayout: 'fixed' }}>
+              status column doesn't get clipped to "Còn" + "15 ngà".
+              Global `table { min-width: 900px }` was forcing the table wider
+              than this panel, so we override with minWidth: 0. */}
+          <table style={{ width: '100%', minWidth: 0, tableLayout: 'fixed' }}>
             <colgroup>
               <col style={{ width: '28%' }} />
               <col style={{ width: '32%' }} />

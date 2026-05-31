@@ -276,7 +276,7 @@ auditLogRouter.get('/', async (_req: Request, res: Response) => {
       id: s.auditLogs.id,
       timestamp: s.auditLogs.timestamp,
       userId: s.auditLogs.userId,
-      userName: s.users.fullName,
+      userName: sql`COALESCE(${s.auditLogs.actorName}, ${s.users.fullName})`,
       username: s.users.username,
       message: s.auditLogs.message,
       payload: s.auditLogs.payload,

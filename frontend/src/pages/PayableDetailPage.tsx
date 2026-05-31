@@ -173,7 +173,7 @@ export default function PayableDetailPage() {
 
   const { supplier, ledgerRows } = typedStatement;
   const hasDebt = totalOutstanding > 0;
-  const lastLedgerRow = ledgerRows[ledgerRows.length - 1];
+  const lastLedgerRow = ledgerRows[0];
   const actualBalance = lastLedgerRow ? parseFloat(lastLedgerRow.balance) : 0;
   const hasCredit = actualBalance < 0;
   const overpaymentAmount = hasCredit ? Math.abs(actualBalance) : 0;

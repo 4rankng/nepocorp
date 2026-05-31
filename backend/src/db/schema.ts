@@ -347,6 +347,7 @@ export const auditLogs = pgTable('audit_logs', {
   id: serial('id').primaryKey(),
   timestamp: timestamp('timestamp').defaultNow().notNull(),
   userId: integer('user_id'),
+  actorName: varchar('actor_name', { length: 255 }),
   message: text('message').notNull(),
   entityType: varchar('entity_type', { length: 50 }),
   entityId: integer('entity_id'),
