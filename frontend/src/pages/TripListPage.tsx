@@ -577,7 +577,7 @@ export default function TripListPage() {
             </div>
           </div>
           <div className="metric">
-            <div className="metric-label">Doanh thu vận chuyển</div>
+            <div className="metric-label">Tổng giá trị lệnh</div>
             <div className="metric-value d-mono">
               {formatMoney(heroSummary.revenue)}
               <span className="metric-unit">₫</span>

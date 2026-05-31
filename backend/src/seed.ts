@@ -110,6 +110,35 @@ async function seed() {
     console.log('✅ Penalty reasons already exist, skipping.');
   }
 
+  // Fix typo in existing penalty reasons (CFG3)
+  await db.update(schema.penaltyReasons)
+    .set({ reasonText: 'Không đội mũ bảo hiểm' })
+    .where(eq(schema.penaltyReasons.reasonText, 'Không chùy mũ bảo hiểm'));
+  console.log('✅ Penalty reason typo fixed (if existed).');
+
+  // Seed cap table (CAP1)
+  const existingCap = await db.select().from(schema.capTableHistory);
+  if (existingCap.length === 0) {
+    const now = new Date();
+    await db.insert(schema.capTableHistory).values([
+      {
+        partnerName: 'Ông Thương',
+        contributionAmount: '0',
+        percentage: '60.00',
+        effectiveDate: new Date(now.getFullYear(), 0, 1),
+      },
+      {
+        partnerName: 'Bà Hạnh',
+        contributionAmount: '0',
+        percentage: '40.00',
+        effectiveDate: new Date(now.getFullYear(), 0, 1),
+      },
+    ]);
+    console.log('✅ Cap table seeded! (60/40 split)');
+  } else {
+    console.log('✅ Cap table already exists, skipping.');
+  }
+
   process.exit(0);
 }
 

@@ -359,11 +359,13 @@ export default function DashboardPage() {
       }
     }
 
-    const totalPie = pieSlices.reduce((s, sl) => s + sl.value, 0) || 1;
+    const visibleSlices = pieSlices.filter(sl => sl.value > 0);
+
+    const totalPie = visibleSlices.reduce((s, sl) => s + sl.value, 0) || 1;
     const p = (v: number) => Math.round((v / totalPie) * 100);
     let usedPct = 0;
-    const slicesWithPct = pieSlices.map((sl, i) => {
-      const pct = i === pieSlices.length - 1 ? Math.max(0, 100 - usedPct) : p(sl.value);
+    const slicesWithPct = visibleSlices.map((sl, i) => {
+      const pct = i === visibleSlices.length - 1 ? Math.max(0, 100 - usedPct) : p(sl.value);
       usedPct += pct;
       return { ...sl, pct };
     });

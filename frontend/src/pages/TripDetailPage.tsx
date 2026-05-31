@@ -377,6 +377,28 @@ export default function TripDetailPage() {
             }
             return null;
           })()}
+          {(() => {
+            const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
+            const issuedLiters = Number(trip.fuelLiters) || 0;
+            if (computedLiters > 0 && issuedLiters > 0 && Math.abs(issuedLiters - computedLiters) > 0.5) {
+              const diff = issuedLiters - computedLiters;
+              const isOver = diff > 0;
+              return infoRow(
+                <Fuel size={16} />,
+                'So sánh nhiên liệu',
+                <span>
+                  <span style={{ color: 'var(--fg-2)' }}>Phát hành {issuedLiters.toLocaleString('vi-VN')}L</span>
+                  {' · '}
+                  <span style={{ color: 'var(--fg-2)' }}>Tính theo định mức {computedLiters.toLocaleString('vi-VN')}L</span>
+                  {' · '}
+                  <strong style={{ color: isOver ? 'var(--danger)' : 'var(--success)' }}>
+                    {isOver ? '+' : ''}{diff.toLocaleString('vi-VN')}L ({isOver ? 'vượt' : 'tiết kiệm'})
+                  </strong>
+                </span>,
+              );
+            }
+            return null;
+          })()}
           {infoRow(<MapPin size={16} />, 'Tiền đường', formatCurrency(trip.totalRoadAllowance))}
           {(Number(trip.tollsDiscount) > 0 || Number(trip.tollsAddition) > 0 || Number(trip.tollsStations) > 0 || trip.hasReturnCargo) && (
             <div style={{ padding: '6px 0 10px', borderBottom: '1px solid var(--border-1)' }}>
@@ -391,7 +413,7 @@ export default function TripDetailPage() {
                   <span>Tăng vé theo lệnh: <strong style={{ color: 'var(--success)' }}>+{formatCurrency(trip.tollsAddition)}</strong></span>
                 )}
                 {Number(trip.tollsStations) > 0 && (
-                  <span>Số trạm: <strong>{trip.tollsStations} trạm × 55.000 = -{formatCurrency(Number(trip.tollsStations) * 55000)}</strong></span>
+                  <span>Số trạm (trừ): {trip.tollsStations} trạm × 55.000 = <strong>{formatCurrency(Number(trip.tollsStations) * 55000)}</strong></span>
                 )}
                 {trip.hasReturnCargo && (
                   <span>Chuyến về có hàng: <strong style={{ color: 'var(--success)' }}>+300.000 ₫</strong></span>
@@ -453,37 +475,58 @@ export default function TripDetailPage() {
         </Panel>
       )}
 
-      {/* Photos */}
-      {trip.photoUrls && trip.photoUrls.length > 0 && (
-        <div className="section-gap">
-          <div style={{ marginBottom: 8 }}><span className="typo-eyebrow">Ảnh</span></div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
-            {trip.photoUrls.map((url, i) => (
-              <a
-                key={i}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  borderRadius: 'var(--radius-md)',
-                  overflow: 'hidden',
-                  border: '1px solid var(--border-1)',
-                  aspectRatio: '4/3',
-                  background: 'var(--bg-3)',
-                }}
-              >
-                <img
-                  src={url}
-                  alt={`Ảnh ${i + 1}`}
-                  loading="lazy"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-              </a>
-            ))}
+      {/* Photos — filter out empty/invalid URLs so we never render a broken
+          <img>. Seed data sometimes inserts empty placeholders; without this
+          guard the user sees a blank panel with a broken-image icon. */}
+      {(() => {
+        const validPhotos = (trip.photoUrls ?? []).filter(
+          (u): u is string => typeof u === 'string' && u.trim().length > 0 && u.trim() !== '#'
+        );
+        if (validPhotos.length === 0) return null;
+        return (
+          <div className="section-gap">
+            <div style={{ marginBottom: 8 }}><span className="typo-eyebrow">Ảnh ({validPhotos.length})</span></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+              {validPhotos.map((url, i) => (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block',
+                    borderRadius: 'var(--radius-md)',
+                    overflow: 'hidden',
+                    border: '1px solid var(--border-1)',
+                    aspectRatio: '4/3',
+                    background: 'var(--bg-3)',
+                  }}
+                >
+                  <img
+                    src={url}
+                    alt={`Ảnh ${i + 1}`}
+                    loading="lazy"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const parent = target.parentElement;
+                      if (parent) {
+                        target.style.display = 'none';
+                        parent.style.display = 'flex';
+                        parent.style.alignItems = 'center';
+                        parent.style.justifyContent = 'center';
+                        parent.style.color = 'var(--fg-3)';
+                        parent.style.fontSize = '12px';
+                        parent.textContent = 'Không tải được';
+                      }
+                    }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {!trip.notes && (!trip.photoUrls || trip.photoUrls.length === 0) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 12, marginTop: 4 }}>
@@ -506,16 +549,30 @@ export default function TripDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {adjustments.map((a: any) => (
-                  <tr key={a.id}>
-                    <td style={{ whiteSpace: 'nowrap' }}>{formatDate(a.createdAt)}</td>
-                    <td className="num" style={{ color: Number(a.amount) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
-                      {Number(a.amount) > 0 ? '+' : ''}{formatCurrency(a.amount)}
-                    </td>
-                    <td>{a.note}</td>
-                    <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{a.signedAgreementRef}</td>
-                  </tr>
-                ))}
+                {adjustments.map((a: any) => {
+                  const raw = a.amount ?? a.adjustment_amount ?? a.adjustmentAmount ?? null;
+                  const amt = raw != null ? Number(raw) : NaN;
+                  const isMissing = !Number.isFinite(amt);
+                  const isZero = !isMissing && amt === 0;
+                  const display = isMissing
+                    ? '— ₫'
+                    : isZero
+                      ? '0 ₫'
+                      : `${amt > 0 ? '+' : ''}${formatCurrency(amt)}`;
+                  return (
+                    <tr key={a.id}>
+                      <td style={{ whiteSpace: 'nowrap' }}>{formatDate(a.createdAt)}</td>
+                      <td className="num" style={{
+                        color: isMissing || isZero ? 'var(--fg-3)' : (amt > 0 ? 'var(--success)' : 'var(--danger)'),
+                        fontWeight: isMissing || isZero ? 500 : 600,
+                      }}>
+                        {display}
+                      </td>
+                      <td>{a.note}</td>
+                      <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{a.signedAgreementRef || '—'}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

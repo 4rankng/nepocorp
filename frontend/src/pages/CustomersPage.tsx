@@ -6,7 +6,7 @@ import {
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, FilterPill, StatusPill } from '../components/UI';
-import { formatCurrency } from '../lib/format';
+import { formatCurrency, formatCompact } from '../lib/format';
 import type { Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
 import { useCustomers, useCustomerLedgerEntries } from '../hooks/useQueries';
@@ -40,7 +40,7 @@ function CustomerForm({ item, saving, onsave, oncancel }: {
 
   return (
     <tr>
-      <td colSpan={8} style={{ background: 'var(--accent-soft)', padding: '12px 16px' }}>
+      <td colSpan={5} style={{ background: 'var(--accent-soft)', padding: '12px 16px' }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div style={{ flex: 2, minWidth: 160 }}>
             <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Tên khách hàng</label>
@@ -119,6 +119,29 @@ export default function CustomersPage() {
     }
     return map;
   }, [ledgerEntries]);
+
+  const revenueMap = useMemo(() => {
+    const map = new Map<number, number>();
+    if (!ledgerEntries) return map;
+    for (const entry of ledgerEntries) {
+      if (entry.entityType === 'CUSTOMER') {
+        const current = map.get(entry.entityId) || 0;
+        const amount = parseFloat(entry.debit || '0') || 0;
+        map.set(entry.entityId, current + amount);
+      }
+    }
+    return map;
+  }, [ledgerEntries]);
+
+  const top4Revenue = useMemo(() => {
+    const customerRevenues = customers
+      .map(c => ({ id: c.id, name: c.name, revenue: revenueMap.get(c.id) || 0 }))
+      .filter(c => c.revenue > 0)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 4);
+    const totalRevenue = customerRevenues.reduce((s, c) => s + c.revenue, 0);
+    return { customers: customerRevenues, total: totalRevenue };
+  }, [customers, revenueMap]);
 
   useEffect(() => {
     if (search === '') { setPage(1); return; }
@@ -220,10 +243,13 @@ export default function CustomersPage() {
         />
         <KPI
           label="Top 4 KH / doanh thu"
-          value="—"
-          variant="warn"
+          value={top4Revenue.total > 0 ? formatCompact(top4Revenue.total) : '—'}
+          variant={top4Revenue.total > 0 ? 'success' : 'warn'}
           icon={BarChart3}
-          meta="Chưa có dữ liệu doanh thu"
+          meta={top4Revenue.total > 0
+            ? `${top4Revenue.customers.length} KH · ${formatCompact(top4Revenue.total)} ₫`
+            : 'Chưa có dữ liệu doanh thu'
+          }
         />
         <KPI
           label="Tạm khoá"

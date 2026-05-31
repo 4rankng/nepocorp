@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
-import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
+import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI';
 import { ActionBtns } from '../components/config/ActionBtns';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
@@ -258,7 +258,7 @@ function TruckCard({ trucks, driverByTruck, crud }: {
             {trucks.map((t, i) => crud.editingId === t.id
               ? <TruckForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
               : (
-                <tr key={t.id}>
+                <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(t.id)}>
                   <td className="num">{i + 1}</td>
                   <td><Plate plate={t.licensePlate} tag="VN" /></td>
                   <td>
@@ -279,7 +279,7 @@ function TruckCard({ trucks, driverByTruck, crud }: {
                     }
                   </td>
                   <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
-                  <td><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
+                  <td onClick={e => e.stopPropagation()}><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
                 </tr>
               ),
             )}
@@ -363,7 +363,7 @@ function DriverCard({ drivers, truckMap, crud }: {
             {filteredDrivers.map((d, i) => crud.editingId === d.id
               ? <DriverForm key={`edit-${d.id}`} saving={crud.saving} item={d} trucks={[...truckMap.values()]} onsave={dd => crud.doUpdate(d.id, dd)} oncancel={crud.cancelForm} />
               : (
-                <tr key={d.id}>
+                <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(d.id)}>
                   <td className="num">{i + 1}</td>
                   <td>
                     <span className="fleet-assigned">
@@ -389,7 +389,7 @@ function DriverCard({ drivers, truckMap, crud }: {
                     }
                   </td>
                   <td style={styles.centerAlign}><StatusDot status={d.status} /></td>
-                  <td><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
+                  <td onClick={e => e.stopPropagation()}><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
                 </tr>
               ),
             )}
@@ -428,7 +428,7 @@ export default function FleetPage() {
   const truckCrud = useCRUD('/trucks', invalidateFleet);
   const driverCrud = useCRUD('/drivers', invalidateFleet);
 
-  const { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, assignedDrivers, readyToRun } = useMemo(() => {
+  const { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, assignedDrivers, activeDrivers, readyToRun } = useMemo(() => {
     const truckMap = new Map<number, TruckType>();
     trucks.forEach(t => truckMap.set(t.id, t));
 
@@ -440,11 +440,12 @@ export default function FleetPage() {
     const ft40 = trucks.filter(t => t.trailerType === TrailerType.FT40).length;
     const ft20 = trucks.filter(t => t.trailerType === TrailerType.FT20).length;
     const assignedDrivers = drivers.filter(d => d.assignedTruckId).length;
+    const activeDrivers = drivers.filter(d => d.status === 'ACTIVE').length;
     const readyToRun = trucks.filter(t =>
       t.status === 'ACTIVE' && driverByTruck.has(t.id),
     ).length;
 
-    return { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, assignedDrivers, readyToRun };
+    return { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, assignedDrivers, activeDrivers, readyToRun };
   }, [trucks, drivers]);
 
   return (
@@ -500,14 +501,14 @@ export default function FleetPage() {
         />
         <KPI
           label="Tài xế"
-          value={drivers.length}
+          value={activeDrivers}
           unit="người"
           icon={UserCheck}
           variant="warn"
           meta={
             <span style={styles.metaRow}>
               <span style={styles.dotSuccess} />
-              <span style={styles.textSuccess}>{drivers.length} đang làm</span>
+              <span style={styles.textSuccess}>{activeDrivers} đang làm</span>
               <span style={styles.textMuted}>·</span>
               <span>{assignedDrivers} đã phân xe</span>
             </span>
