@@ -23,7 +23,7 @@
 
 Module **Đội xe & Điều vận** gồm hai trang:
 - **Điều vận** (`/dispatch`) — Trung tâm chỉ huy điều vận chuyến đi, xem trạng thái đội xe, xuất phát chuyến, phân xe lại.
-- **Đội xe** (`/fleet`) — Quản lý CRUD xe đầu kéo, rơ moóc, tài xế.
+- **Đội xe** (`/fleet`) — Quản lý CRUD xe đầu kéo (kèm thông tin rơ-mooc ghép cặp) và tài xế. Không có bảng rơ-mooc riêng — biển số và loại rơ-mooc lưu trên bản ghi xe đầu kéo.
 
 ### 1.2 Vai trò truy cập
 
@@ -56,14 +56,6 @@ Module **Đội xe & Điều vận** gồm hai trang:
 | `PUT` | `/api/trucks/:id` | JWT + config:write | Cập nhật xe |
 | `DELETE` | `/api/trucks/:id` | JWT + config:delete | Xóa mềm xe |
 
-#### Quản lý Đội xe — Rơ moóc
-
-| Method | Path | Auth | Mô tả |
-|--------|------|------|-------|
-| `GET` | `/api/trailers` | JWT + config:read | Danh sách rơ moóc |
-| `POST` | `/api/trailers` | JWT + config:write | Thêm rơ moóc |
-| `PUT` | `/api/trailers/:id` | JWT + config:write | Cập nhật rơ moóc |
-| `DELETE` | `/api/trailers/:id` | JWT + config:delete | Xóa mềm rơ moóc |
 
 #### Quản lý Đội xe — Tài xế
 
@@ -108,9 +100,8 @@ Module **Đội xe & Điều vận** gồm hai trang:
 
 ![Đội xe](./screenshots/fleet.png)
 
-**4 thẻ KPI:**
+**3 thẻ KPI:**
 - Tổng xe đầu kéo (active/maintenance)
-- Tổng rơ moóc (20FT/40FT)
 - Tổng tài xế
 - Sẵn sàng chạy
 
@@ -118,17 +109,10 @@ Module **Đội xe & Điều vận** gồm hai trang:
 
 | Cột | Nội dung |
 |-----|----------|
-| Biển số | License plate |
+| Biển số đầu kéo | License plate |
+| Biển số rơ-mooc | Plate ghép cặp hoặc "--" |
+| Loại rơ-mooc | 20FT / 40FT hoặc "--" |
 | Tài xế được phân | Tên tài xế hoặc "--" |
-| Trạng thái | Active/Maintenance/Inactive |
-| Thao tác | Nút Sửa + Xóa |
-
-**Bảng Rơ moóc:**
-
-| Cột | Nội dung |
-|-----|----------|
-| Biển số | License plate |
-| Loại | 20FT / 40FT |
 | Trạng thái | Active/Maintenance/Inactive |
 | Thao tác | Nút Sửa + Xóa |
 
@@ -209,17 +193,7 @@ XÓA XE (mềm):
   → 200 { ok: true } → Xe biến mất (soft delete)
 ```
 
-### 3.4 CRUD Rơ moóc
-
-Tương tự CRUD Xe đầu kéo, nhưng thêm trường `type` (20FT/40FT).
-
-```
-POST /api/trailers { license_plate, type: "20FT"|"40FT", status? }
-PUT  /api/trailers/:id { license_plate?, type?, status? }
-DELETE /api/trailers/:id → soft delete
-```
-
-### 3.5 CRUD Tài xế
+### 3.4 CRUD Tài xế
 
 ```
 THÊM TÀI XẾ:
@@ -229,6 +203,10 @@ THÊM TÀI XẾ:
 SỬA TÀI XẾ:
   PUT /api/drivers/:id { name?, phone?, assigned_truck_id?, base_salary?, status? }
   → 200 OK
+
+THÊM/SỬA RƠ-MOOC: Dùng API xe đầu kéo:
+  PUT /api/trucks/:id { trailer_plate_number?, trailer_type?: "20FT"|"40FT" }
+  → Rơ-mooc không có endpoint riêng
 
 XÓA TÀI XẾ: KHÔNG HỖ TRỢ
   → Không có endpoint DELETE cho drivers
@@ -242,18 +220,12 @@ XÓA TÀI XẾ: KHÔNG HỖ TRỢ
 
 | Trường | Kiểu | Ràng buộc | Mô tả |
 |--------|------|-----------|-------|
-| `license_plate` | string | Bắt buộc, min 1 ký tự, unique | Biển số xe |
+| `license_plate` | string | Bắt buộc, min 1 ký tự, unique | Biển số đầu kéo |
+| `trailer_plate_number` | string | Tùy chọn | Biển số rơ-mooc ghép cặp cố định |
+| `trailer_type` | enum | Tùy chọn: `20FT` / `40FT` | Loại rơ-mooc ghép cặp |
 | `status` | enum | ACTIVE / MAINTENANCE / INACTIVE (mặc định ACTIVE) | Trạng thái xe |
 
-### 4.2 Trailer Entity
-
-| Trường | Kiểu | Ràng buộc | Mô tả |
-|--------|------|-----------|-------|
-| `license_plate` | string | Bắt buộc, min 1 ký tự, unique | Biển số rơ moóc |
-| `type` | enum | Bắt buộc: `20FT` / `40FT` | Loại rơ moóc |
-| `status` | enum | ACTIVE / MAINTENANCE / INACTIVE (mặc định ACTIVE) | Trạng thái |
-
-### 4.3 Driver Entity
+### 4.2 Driver Entity
 
 | Trường | Kiểu | Ràng buộc | Mô tả |
 |--------|------|-----------|-------|
@@ -281,12 +253,11 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 | CREATED | Chờ xuất phát | Dispatch, Reassign, Cancel |
 | IN_TRANSIT | Đang chạy | (Chỉ xem) |
 
-### 4.7 Seed Data
+### 4.6 Seed Data
 
 | Entity | Số lượng | Chi tiết |
 |--------|----------|----------|
-| Xe đầu kéo | 7 | 1 cái MAINTENANCE, 6 ACTIVE |
-| Rơ moóc | 7 | 4× 40FT, 3× 20FT, 1 cái MAINTENANCE |
+| Xe đầu kéo | 4 | Mỗi xe có biển số rơ-mooc ghép cặp và loại (20FT/40FT) |
 | Tài xế | Nhiều | Lương cơ bản 7.5M-8.5M VND |
 
 ---
@@ -334,15 +305,15 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 | TC-TRK-011 | Thêm xe trùng biển số | Đã có xe "51C-12345" | 1. Thêm xe cùng biển số | Lỗi 409: biển số đã tồn tại | High |
 | TC-TRK-012 | Sửa xe không tồn tại | Biết ID không tồn tại | 1. PUT /api/trucks/9999 | Lỗi 404: không tìm thấy | Medium |
 
-### 5.5 Happy Path — CRUD Rơ moóc
+### 5.5 Happy Path — Cập nhật thông tin Rơ-mooc trên Xe
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-TRL-001 | Thêm rơ moóc 40FT | Đăng nhập ADMIN | 1. Nhập biển số + chọn 40FT → Lưu | Tạo thành công, type=40FT | High |
-| TC-TRL-002 | Thêm rơ moóc 20FT | Đăng nhập ADMIN | 1. Nhập biển số + chọn 20FT → Lưu | Tạo thành công, type=20FT | High |
-| TC-TRL-003 | Sửa loại rơ moóc | Có rơ moóc 20FT | 1. Sửa type → 40FT → Lưu | Type cập nhật | Medium |
-| TC-TRL-004 | Xóa rơ moóc | Có rơ moóc cần xóa | 1. Nhấn "Xóa" → Xác nhận | Soft delete thành công | High |
-| TC-TRL-005 | Thêm thiếu loại | Đăng nhập ADMIN | 1. Chỉ nhập biển số, không chọn type | Lỗi validation: type bắt buộc | High |
+| TC-TRL-001 | Gắn rơ-mooc 40FT vào xe | Đăng nhập ADMIN, có xe | 1. Sửa xe → nhập biển số rơ-mooc + chọn 40FT → Lưu | Xe cập nhật trailer_plate_number + trailer_type=40FT | High |
+| TC-TRL-002 | Gắn rơ-mooc 20FT vào xe | Đăng nhập ADMIN, có xe | 1. Sửa xe → nhập biển số rơ-mooc + chọn 20FT → Lưu | Xe cập nhật trailer_type=20FT | High |
+| TC-TRL-003 | Đổi loại rơ-mooc | Xe đang ghép 20FT | 1. Sửa xe → đổi trailer_type → 40FT → Lưu | Type cập nhật, chuyến mới dùng 40FT | Medium |
+| TC-TRL-004 | Xóa thông tin rơ-mooc | Xe đang có rơ-mooc | 1. Sửa xe → xóa trắng biển số rơ-mooc → Lưu | trailer_plate_number=null, trailer_type=null | Medium |
+| TC-TRL-005 | Tiền đi đường tự tra đúng loại | Xe ghép 40FT | 1. Tạo chuyến với xe đó | Tiền đi đường chuẩn tra theo cặp (tuyến × 40FT) | High |
 
 ### 5.6 Happy Path — CRUD Tài xế
 
@@ -388,12 +359,11 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 ### Hạn chế
 
 - **Tài xế không thể xóa:** Endpoint DELETE `/api/drivers/:id` không tồn tại. Đổi status sang INACTIVE để "vô hiệu hóa".
-- **ACCOUNTANT không xóa được xe/rơ moóc:** Chỉ có `config:read` + `config:write`, không có `config:delete`.
+- **ACCOUNTANT không xóa được xe:** Chỉ có `config:read` + `config:write`, không có `config:delete`.
 - **Phân xe lại chỉ cho CREATED:** Chuyến IN_TRANSIT/COMPLETED/LOCKED không thể phân xe lại.
 - **Dispatch idempotent:** Nếu chuyến đã IN_TRANSIT, gọi dispatch lần nữa trả về 200 mà không side effect.
 
 ### Dữ liệu Seed
 
-- 7 xe đầu kéo (1 MAINTENANCE, 6 ACTIVE)
-- 7 rơ moóc (4× 40FT, 3× 20FT, 1 MAINTENANCE)
+- 4 xe đầu kéo, mỗi xe ghi sẵn biển số rơ-mooc ghép cặp + loại (20FT/40FT)
 - Tài xế với lương cơ bản 7,500,000 — 8,500,000 VND

@@ -137,7 +137,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 ### 4.13 Đội xe & Nhân sự
 
 * 1 xe có thể có nhiều lái xe được phân công.
-* Rơ-mooc (trailer) có thể thay đổi theo chuyến — cùng 1 xe có thể kéo rơ-mooc 20ft chuyến này, 40ft chuyến sau.
+* **Rơ-mooc ghép cặp cố định:** Mỗi đầu kéo ghép với một rơ-mooc cố định — biển số và loại rơ-mooc (20FT/40FT) lưu trực tiếp trên bảng xe đầu kéo. Không có bảng rơ-mooc riêng. Khi tạo chuyến, hệ thống tự tra loại rơ-mooc từ xe được chọn để tính tiền đi đường chuẩn. *(Pete xác nhận 31/5)*
 * **Đa container:** 1 chuyến xe có thể chở nhiều container (VD: 2 container 20ft). *(Pete xác nhận: "có thể 1 chuyến chạy 2 cont 20'")*
 
 ### 4.14 Chi phí vận hành, Nhà cung cấp & Công nợ phải trả
@@ -145,7 +145,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * **Phạm vi:** ghi nhận chi phí vận hành ngoài chuyến đi — sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — gắn với Nhà cung cấp và (tùy chọn) một xe.
 * **Nhà cung cấp (NCC):** danh mục mọi bên nhận tiền (gara, trạm lốp, cửa hàng phụ tùng, công ty bảo hiểm, trung tâm đăng kiểm, đơn vị thu phí đường bộ). **Bắt buộc** trên mọi phiếu chi phí. Không có trường "phân loại" (phân loại nằm ở hạng mục từng phiếu).
 * **Hạng mục chi phí:** danh mục **cấu hình được** (người dùng tự thêm). Mỗi hạng mục là **một lần** hoặc **định kỳ** (`is_renewable`); hạng mục định kỳ có `reminder_lead_days` (mặc định 30 ngày).
-* **Phiếu chi phí:** một phiếu = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một xe đầu kéo **hoặc** rơ-mooc (tùy chọn, có thể để trống → chi phí chung). Khi gắn rơ-mooc, hệ thống tự tra cặp đầu kéo để quy về **lãi gộp của đầu kéo ghép cặp**. Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → nhập nhiều phiếu.
+* **Phiếu chi phí:** một phiếu = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một **xe đầu kéo** (tùy chọn, có thể để trống → chi phí chung). Khi chi phí liên quan đến rơ-mooc (VD: thay lốp), kế toán chọn đầu kéo ghép cặp — không có trường rơ-mooc riêng. Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → nhập nhiều phiếu.
 * **Trạng thái thanh toán:**
     * **Trả ngay (PAID):** chỉ ghi cho P&L, không phát sinh công nợ (hệ thống không có tài khoản tiền mặt).
     * **Ghi nợ (UNPAID):** tạo bản ghi Sổ cái `entity_type='VENDOR'` (credit = số tiền) → phát sinh **công nợ phải trả**.
@@ -160,7 +160,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 ## 5. DANH SÁCH USER STORIES (THEO MODULE)
 
 ### MODULE 1: NHẬN ĐƠN HÀNG & PHÂN XE (ORDER & DISPATCH)
-1. **[Quản lý]** Tôi muốn tạo chuyến đi mới với: khách hàng, tuyến đường, loại container/rơ-mooc, xe đầu kéo, lái xe, ngày xuất phát → trạng thái "Mới tạo".
+1. **[Quản lý]** Tôi muốn tạo chuyến đi mới với: khách hàng, tuyến đường, xe đầu kéo, lái xe, loại hàng hóa, ngày xuất phát → trạng thái "Mới tạo". Loại rơ-mooc tự động lấy từ xe được chọn.
 2. **[Quản lý]** Tôi muốn chuyển trạng thái chuyến đi (Mới tạo → Đang chạy → Hoàn thành → Đã chốt).
 4. **[Lái xe]** Tôi muốn xem lịch trình chuyến đi của mình trên điện thoại (chỉ xem).
 5. **[Lái xe]** Tôi muốn xem số dầu được cấp cho chuyến đi trên điện thoại (chỉ xem).
@@ -208,7 +208,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 2. **[Kế toán]** Tôi muốn chọn trạng thái Trả ngay hoặc Ghi nợ; phiếu Ghi nợ tự phát sinh công nợ phải trả cho NCC.
 3. **[Kế toán/Quản lý]** Tôi muốn xem danh sách công nợ phải trả theo NCC kèm tuổi nợ (0–30/31–60/61–90/90+) và xuất sao kê NCC.
 4. **[Kế toán]** Tôi muốn ghi nhận thanh toán cho NCC (giảm tổng số dư, FIFO).
-5. **[Quản lý]** Tôi muốn lợi nhuận gộp theo xe đã trừ chi phí bảo dưỡng của xe đó, và lợi nhuận ròng đã trừ chi phí rơ-mooc/chung.
+5. **[Quản lý]** Tôi muốn lợi nhuận gộp theo xe đã trừ chi phí bảo dưỡng của xe đó (bao gồm chi phí rơ-mooc ghép cặp), và lợi nhuận ròng đã trừ chi phí chung (không gắn xe).
 6. **[Quản lý/Kế toán]** Tôi muốn Dashboard nhắc khi bảo hiểm/đăng kiểm/phí đường bộ của xe sắp tới hạn hoặc đã quá hạn.
 
 ---
@@ -220,18 +220,17 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | 1 | **Khách hàng** | Tên, liên hệ, thông tin công nợ | 44+ khách hàng |
 | 2 | **Tuyến đường** | Tên tuyến, khoảng cách, định mức đèo đốc (nếu có) | 38+ tuyến |
 | 3 | **Bảng giá** | Giá cố định theo Khách hàng × Tuyến đường | ~44×38 = 1.672 dòng |
-| 4 | **Xe đầu kéo** | Biển số, trạng thái | 4 xe |
-| 5 | **Rơ-mooc** | Biển số, loại (20ft/40ft), trạng thái | Theo thực tế |
-| 6 | **Lái xe** | Tên, xe được phân công, liên hệ, lương cơ bản | Nhiều lái xe/xe |
-| 7 | **Loại hàng hóa** | Tên loại, có yêu cầu upload ảnh không | VD: Chè (yêu cầu ảnh) |
-| 8 | **Tiền đi đường chuẩn** | Tiền chuẩn theo Tuyến đường × Loại rơ-mooc | ~38×2 = 76 dòng |
-| 9 | **Định mức nhiên liệu** | Định mức hàng/vỏ (cấu hình được), bổ sung/chuyến, đèo đốc theo tuyến | Cấu hình + theo tuyến |
-| 10 | **Đơn giá nhiên liệu** | Đơn giá 1 lít dầu (hiện tại 18.730 VNĐ) | 1 giá, có thể cập nhật |
-| 11 | **Cổ đông & Tỷ lệ vốn** | Tên, tỷ lệ %, ngày hiệu lực | Ông Thương 29.55%, Ông Phụng 70.45% |
-| 12 | **Danh mục kỷ luật** | Lý do vi phạm + số tiền phạt mặc định | VD: "Thiếu hóa đơn dầu - 100.000đ" |
-| 13 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán, Công nợ NCC) | Các cột: ID, date, txn_type, credit, debit, balance |
-| 14 | **Nhà cung cấp** | Tên, người liên hệ, SĐT, mã số thuế, ghi chú, trạng thái | Gara, trạm lốp, phụ tùng, bảo hiểm, đăng kiểm... |
-| 15 | **Hạng mục chi phí** | Tên, một lần/định kỳ (is_renewable), số ngày nhắc trước (mặc định 30) | Sửa chữa, Phụ tùng, Vật tư, Bảo hiểm, Đăng kiểm, Phí đường bộ |
+| 4 | **Xe đầu kéo** | Biển số, biển số rơ-mooc ghép cặp, loại rơ-mooc (20FT/40FT), trạng thái | 4 xe (rơ-mooc không có bảng riêng) |
+| 5 | **Lái xe** | Tên, xe được phân công, liên hệ, lương cơ bản | Nhiều lái xe/xe |
+| 6 | **Loại hàng hóa** | Tên loại, có yêu cầu upload ảnh không | VD: Chè (yêu cầu ảnh) |
+| 7 | **Tiền đi đường chuẩn** | Tiền chuẩn theo Tuyến đường × Loại rơ-mooc (20FT/40FT) | ~38×2 = 76 dòng |
+| 8 | **Định mức nhiên liệu** | Định mức hàng/vỏ (cấu hình được), bổ sung/chuyến, đèo đốc theo tuyến | Cấu hình + theo tuyến |
+| 9 | **Đơn giá nhiên liệu** | Đơn giá 1 lít dầu (hiện tại 18.730 VNĐ) | 1 giá, có thể cập nhật |
+| 10 | **Cổ đông & Tỷ lệ vốn** | Tên, tỷ lệ %, ngày hiệu lực | Ông Thương 29.55%, Ông Phụng 70.45% |
+| 11 | **Danh mục kỷ luật** | Lý do vi phạm + số tiền phạt mặc định | VD: "Thiếu hóa đơn dầu - 100.000đ" |
+| 12 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán, Công nợ NCC) | Các cột: ID, date, txn_type, credit, debit, balance |
+| 13 | **Nhà cung cấp** | Tên, người liên hệ, SĐT, mã số thuế, ghi chú, trạng thái | Gara, trạm lốp, phụ tùng, bảo hiểm, đăng kiểm... |
+| 14 | **Hạng mục chi phí** | Tên, một lần/định kỳ (is_renewable), số ngày nhắc trước (mặc định 30) | Sửa chữa, Phụ tùng, Vật tư, Bảo hiểm, Đăng kiểm, Phí đường bộ |
 
 ---
 
@@ -243,8 +242,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | :--- | :--- | :--- | :--- |
 | Khách hàng | Select | Có | Từ danh mục |
 | Tuyến đường | Select | Có | Từ danh mục |
-| Rơ-mooc | Select | Có | Chọn rơ-mooc cụ thể từ danh mục (loại 20ft/40ft tự suy ra) |
-| Xe đầu kéo | Select | Có | Từ danh mục |
+| Xe đầu kéo | Select | Có | Từ danh mục; loại rơ-mooc (20FT/40FT) tự động tra từ xe ghép cặp → dùng để tính tiền đi đường chuẩn |
 | Lái xe | Select | Có | Theo xe được phân công |
 | Loại hàng hóa | Select | Có | Từ danh mục (VD: Chè, Container rỗng, Hàng tổng hợp...) |
 | Ngày xuất phát | Date | Có | |

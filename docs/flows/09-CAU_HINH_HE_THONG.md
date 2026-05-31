@@ -10,24 +10,23 @@
 
 ### 1.1 Mô tả
 
-Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 12 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
+Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 11 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
 
-### 1.2 12 Sub-pages
+### 1.2 11 Sub-pages
 
 | # | Tên | Route | Mô tả |
 |---|-----|-------|-------|
 | 1 | Định mức nhiên liệu | `/config/fuel` | Tiêu hao NL theo loại xe + tuyến |
-| 2 | Tiền đi đường | `/config/road-allowances` | Phụ cấp đường theo tuyến × loại xe |
+| 2 | Tiền đi đường | `/config/road-allowances` | Phụ cấp đường theo tuyến × loại rơ-mooc (20FT/40FT) |
 | 3 | Quy tắc kỷ luật & phạt | `/config/penalty-reasons` | Danh mục lý do phạt |
 | 4 | Người dùng & Tài xế | `/config/drivers` | CRUD người dùng + hồ sơ tài xế |
 | 5 | Thông tin công ty & Cổ phần | `/config/cap-table` | Cổ đông, tỷ lệ chia lợi nhuận |
 | 6 | Khách hàng & Đối tác | `/config/customers` | CRUD khách hàng (xem 08-KHACH_HANG.md) |
 | 7 | Tuyến đường & Cự ly | `/config/routes` | Tuyến đường, khoảng cách |
-| 8 | Xe đầu kéo | `/config/trucks` | Biển số, trạng thái, định mức |
-| 9 | Danh mục Rơ-moóc | `/config/trailers` | Loại rơ-moóc (20FT, 40FT...) |
-| 10 | Loại hàng hóa | `/config/cargo-types` | Phân loại hàng hóa |
-| 11 | Bảng giá cước | `/config/pricing-tables` | Giá cước theo tuyến × loại hàng |
-| 12 | Phí quản lý | `/config/management-fees` | Tỷ lệ phí QL trừ P&L |
+| 8 | Xe đầu kéo | `/config/trucks` | Biển số, biển số rơ-mooc ghép cặp, loại rơ-mooc, trạng thái |
+| 9 | Loại hàng hóa | `/config/cargo-types` | Phân loại hàng hóa |
+| 10 | Bảng giá cước | `/config/pricing-tables` | Giá cước theo tuyến × loại hàng |
+| 11 | Phí quản lý | `/config/management-fees` | Tỷ lệ phí QL trừ P&L |
 
 ### 1.3 Phân quyền
 
@@ -51,8 +50,7 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 | GET/POST/PUT/DELETE | `/catalog/pricing-tables[/:id]` | CRUD bảng giá cước |
 | GET/POST/PUT/DELETE | `/catalog/management-fees[/:id]` | CRUD phí quản lý |
 | GET/POST/PUT/DELETE | `/catalog/route-configs[/:id]` | CRUD tuyến đường |
-| GET/POST/PUT/DELETE | `/catalog/trailers[/:id]` | CRUD rơ-moóc |
-| GET/POST/PUT/DELETE | `/fleet/trucks[/:id]` | CRUD xe đầu kéo |
+| GET/POST/PUT/DELETE | `/fleet/trucks[/:id]` | CRUD xe đầu kéo (kèm trailer_plate_number + trailer_type) |
 | GET/POST/PUT/DELETE | `/drivers[/:id]` | CRUD tài xế |
 | GET/PUT | `/config/cap-table` | Xem/cập nhật cổ phần |
 
@@ -62,7 +60,7 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 
 ### 2.1 Hub `/config`
 
-12 thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ 12. MANAGER ẩn Cổ phần. ACCOUNTANT chỉ xem. DRIVER không thấy menu.
+11 thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ 11. MANAGER ẩn Cổ phần. ACCOUNTANT chỉ xem. DRIVER không thấy menu.
 
 ### 2.2 Định mức nhiên liệu `/config/fuel`
 
@@ -102,25 +100,21 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 
 ### 2.9 Xe đầu kéo `/config/trucks`
 
-**Trường:** Biển số (bắt buộc, duy nhất), Loại xe, Năm SX, Tải trọng, Trạng thái (ACTIVE/MAINTENANCE/INACTIVE).
+**Trường:** Biển số đầu kéo (bắt buộc, duy nhất), Biển số rơ-mooc ghép cặp (tùy chọn), Loại rơ-mooc (20FT/40FT, tùy chọn), Trạng thái (ACTIVE/MAINTENANCE/INACTIVE).
 
-**Ràng buộc:** Không xóa khi gán chuyến đi. ACTIVE mới xuất hiện dropdown.
+**Ràng buộc:** Không xóa khi gán chuyến đi. ACTIVE mới xuất hiện dropdown tạo chuyến. Loại rơ-mooc quyết định tiền đi đường chuẩn sẽ tra theo cặp nào trong bảng `road_allowances`.
 
-### 2.10 Rơ-moóc `/config/trailers`
-
-**Trường:** Biển số (bắt buộc, duy nhất), Loại (FLATBED/TANKER/CONTAINER/DUMP/OTHER), Tải trọng, Trạng thái.
-
-### 2.11 Loại hàng hóa `/config/cargo-types`
+### 2.10 Loại hàng hóa `/config/cargo-types`
 
 **Trường:** Tên loại (bắt buộc, duy nhất), Mô tả, Mã, Trạng thái.
 
-### 2.12 Bảng giá cước `/config/pricing-tables`
+### 2.11 Bảng giá cước `/config/pricing-tables`
 
 **Trường:** Tuyến (bắt buộc), Loại hàng (bắt buộc), Đơn giá (>0), Đơn vị (per_trip/per_ton/per_km).
 
 **Ràng buộc:** Bộ 3 (tuyến + loại hàng + đơn vị) duy nhất.
 
-### 2.13 Phí quản lý `/config/management-fees`
+### 2.12 Phí quản lý `/config/management-fees`
 
 **Trường:** Tên phí (bắt buộc, duy nhất), Tỷ lệ % (0 < x <= 100), Mô tả, Trạng thái.
 
@@ -134,20 +128,19 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 Tuyến đường ─────────┐
                       ├──→ Bảng giá cước ──→ Chuyến đi
 Loại hàng hóa ───────┘                    │
-Xe đầu kéo ─────────────────────────────→ Chuyến đi
-Rơ-moóc ────────────────────────────────→ Chuyến đi
+Xe đầu kéo ─────────────────────────────→ Chuyến đi (loại rơ-mooc tự tra từ xe)
 Tài xế ─────────────────────────────────→ Chuyến đi
 Khách hàng ─────────────────────────────→ Chuyến đi
 
-Tuyến + Xe ──→ Định mức NL ──→ Tính chi phí
-Tuyến + Xe ──→ Tiền đi đường ──→ Tính chi phí
+Tuyến + Xe.trailerType ──→ Tiền đi đường ──→ Tính chi phí
+Tuyến + Xe ────────────→ Định mức NL ──────→ Tính chi phí
 Cổ phần ────→ Phân bổ lợi nhuận
 Phí QL ─────→ Trừ P&L
 ```
 
 ### 3.2 Thứ tự thiết lập
 
-1. Cổ phần → 2. Người dùng → 3. Khách hàng → 4. Loại hàng → 5. Tuyến đường → 6. Xe đầu kéo → 7. Rơ-moóc → 8. Bảng giá cước → 9. Định mức NL → 10. Tiền đi đường → 11. Lý do phạt → 12. Phí quản lý
+1. Cổ phần → 2. Người dùng → 3. Khách hàng → 4. Loại hàng → 5. Tuyến đường → 6. Xe đầu kéo (+ biển số/loại rơ-mooc ghép cặp) → 7. Bảng giá cước → 8. Định mức NL → 9. Tiền đi đường → 10. Lý do phạt → 11. Phí quản lý
 
 ---
 
@@ -161,15 +154,14 @@ Phí QL ─────→ Trừ P&L
 | MAINTENANCE | Đang bảo dưỡng | ❌ Không |
 | INACTIVE | Ngừng hoạt động | ❌ Không |
 
-### 4.2 Loại rơ-moóc
+### 4.2 Loại rơ-moóc (trailerType)
 
-| Giá | Mô tả |
-|-----|-------|
-| FLATBED | Xe ben / tải thùng |
-| TANKER | Xe bồn |
-| CONTAINER | Xe container |
-| DUMP | Xe đổ |
-| OTHER | Khác |
+| Giá trị | Mô tả |
+|---------|-------|
+| 20FT | Rơ-mooc 20 feet |
+| 40FT | Rơ-mooc 40 feet |
+
+Loại rơ-moóc là trường trên bảng `trucks` (`trailer_type`), dùng làm khóa tra bảng `road_allowances` (Tuyến × Loại rơ-moóc).
 
 ### 4.3 Đơn vị giá cước
 
@@ -187,7 +179,7 @@ Phí QL ─────→ Trừ P&L
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-CH-001 | 12 thẻ trên hub | ADMIN | Mở `/config` | Hiển thị đúng 12 thẻ có icon + tên + số lượng | High |
+| TC-CH-001 | 11 thẻ trên hub | ADMIN | Mở `/config` | Hiển thị đúng 11 thẻ có icon + tên + số lượng | High |
 | TC-CH-002 | Click thẻ → sub-page | ADMIN | Click "Định mức NL" | Chuyển đến `/config/fuel` | High |
 | TC-CH-003 | DRIVER không thấy menu | DRIVER | Kiểm tra sidebar | Không thấy "Cấu hình" | High |
 | TC-CH-004 | ACCOUNTANT chỉ xem | ACCOUNTANT | Vào sub-page bất kỳ | Không có nút Tạo/Sửa/Xóa | High |
@@ -243,12 +235,12 @@ Phí QL ─────→ Trừ P&L
 | TC-CH-019 | Tạo xe | ADMIN | Nhập "60C-12345", ACTIVE → Lưu | Tạo thành công | High |
 | TC-CH-020 | Trùng biển số | Có "60C-12345" | Tạo mới cùng BS → Lưu | Lỗi trùng lặp | High |
 
-### 5.9 Rơ-moóc (TC-CH-021 → TC-CH-022)
+### 5.9 Xe đầu kéo — thông tin rơ-moóc (TC-CH-021 → TC-CH-022)
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-CH-021 | Tạo rơ-moóc | ADMIN | Nhập BS + loại CONTAINER → Lưu | Tạo thành công | High |
-| TC-CH-022 | Lọc theo loại | Nhiều loại RM | Chọn filter TANKER | Chỉ hiện RM loại TANKER | Medium |
+| TC-CH-021 | Gắn rơ-moóc vào xe | ADMIN | Sửa xe → nhập biển số rơ-moóc + chọn 40FT → Lưu | Xe cập nhật trailer_plate + trailer_type | High |
+| TC-CH-022 | Tiền đi đường tự chọn đúng loại | Xe ghép 20FT | Tạo chuyến chọn xe đó | Road allowance tra theo (tuyến × 20FT) | High |
 
 ### 5.10 Loại hàng hóa (TC-CH-023 → TC-CH-024)
 
