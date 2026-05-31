@@ -483,6 +483,7 @@ export default function DashboardPage() {
           </div>
           <div className="kpi__value">{kpiRevenue.num}<span className="kpi__value-unit">{kpiRevenue.suffix && ` ${kpiRevenue.suffix}`} ₫</span></div>
           <div className={`kpi__meta ${prevPnlReport ? (isRevUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
+            {(stats?.lockedTrips ?? 0) > 0 && <><strong>{stats?.lockedTrips}</strong> chuyến ĐÃ CHỐT · </>}
             {prevPnlReport && (
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 {isRevUp

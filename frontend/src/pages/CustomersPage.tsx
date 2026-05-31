@@ -339,6 +339,7 @@ export default function CustomersPage() {
                 ? <CustomerForm key={`edit-${c.id}`} item={c} saving={saving} onsave={d => doUpdate(c.id, d)} oncancel={() => setEditingId(null)} />
                 : (
                   <tr key={c.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
+                    onClick={() => { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
@@ -368,7 +369,7 @@ export default function CustomersPage() {
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', position: 'relative' }}>
                       <div className="row-actions">
-                        <button className="row-action" onClick={() => setMenuOpenId(menuOpenId === c.id ? null : c.id)}>
+                        <button className="row-action" onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === c.id ? null : c.id); }}>
                           <MoreHorizontal size={14} />
                         </button>
                       </div>
@@ -377,7 +378,7 @@ export default function CustomersPage() {
                           position: 'absolute', right: 12, top: '100%', zIndex: 20,
                           background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
                           boxShadow: '0 4px 14px rgba(10,10,10,0.06)', overflow: 'hidden', minWidth: 140,
-                        }}>
+                        }} onClick={(e) => e.stopPropagation()}>
                           <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
                             onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
                             <Pencil size={13} /> Sửa

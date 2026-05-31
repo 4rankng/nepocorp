@@ -430,6 +430,8 @@ export interface DashboardStats {
   costs: number;
   grossProfit: number;
   tripCount: number;
+  /** Count of LOCKED trips — the subset whose revenue/costs contribute to the KPIs. */
+  lockedTrips?: number;
   completedTrips: number;
   inTransitTrips: number;
   totalTrucks?: number;

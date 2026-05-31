@@ -521,13 +521,13 @@ export default function FleetPage() {
           variant="default"
           meta={
             <span style={styles.metaRow}>
-              {activeTrucks === readyToRun ? (
+              {readyToRun >= activeTrucks ? (
                 <span style={styles.textSuccess}>Đủ xe + tài xế</span>
               ) : (
                 <>
                   <span>{readyToRun} xe sẵn sàng</span>
                   <span style={styles.textMuted}>·</span>
-                  <span style={styles.textWarning}>{activeTrucks - readyToRun} cần phân xế</span>
+                  <span style={styles.textWarning}>{activeTrucks - readyToRun} cần phân xe</span>
                 </>
               )}
             </span>

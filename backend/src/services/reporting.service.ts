@@ -96,7 +96,10 @@ export async function getDashboardStats() {
       revenue,
       costs,
       grossProfit: revenue - costs,
+      // tripCount reflects ALL active trips in the period (for display in trip list stats).
+      // lockedTrips reflects the trips whose revenue/cost are included in the KPIs.
       tripCount: Number(stats?.tripCount || 0),
+      lockedTrips: Number(stats?.lockedTrips || 0),
       completedTrips: Number(stats?.completedTrips || 0),
       inTransitTrips: Number(inTransitResult?.count || 0),
       totalTrucks: truckStatusCounts.reduce((sum: number, r: any) => sum + Number(r.count), 0),
