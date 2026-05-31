@@ -111,10 +111,16 @@ async function seed() {
   }
 
   // Fix typo in existing penalty reasons (CFG3)
-  await db.update(schema.penaltyReasons)
-    .set({ reasonText: 'Không đội mũ bảo hiểm' })
+  const typoRows = await db.select().from(schema.penaltyReasons)
     .where(eq(schema.penaltyReasons.reasonText, 'Không chùy mũ bảo hiểm'));
-  console.log('✅ Penalty reason typo fixed (if existed).');
+  if (typoRows.length > 0) {
+    await db.update(schema.penaltyReasons)
+      .set({ reasonText: 'Không đội mũ bảo hiểm' })
+      .where(eq(schema.penaltyReasons.reasonText, 'Không chùy mũ bảo hiểm'));
+    console.log(`✅ Penalty reason typo fixed (${typoRows.length} row(s)).`);
+  } else {
+    console.log('✅ No penalty reason typo found, skipping fix.');
+  }
 
   // Seed cap table (CAP1)
   const existingCap = await db.select().from(schema.capTableHistory);

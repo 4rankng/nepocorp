@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo, useEffect } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
-import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI';
+import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
 import { ActionBtns } from '../components/config/ActionBtns';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';

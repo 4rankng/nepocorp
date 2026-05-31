@@ -124,7 +124,7 @@ export default function CustomersPage() {
     const map = new Map<number, number>();
     if (!ledgerEntries) return map;
     for (const entry of ledgerEntries) {
-      if (entry.entityType === 'CUSTOMER') {
+      if (entry.entityType === 'CUSTOMER' && (entry as any).txnType === 'TRIP_REVENUE') {
         const current = map.get(entry.entityId) || 0;
         const amount = parseFloat(entry.debit || '0') || 0;
         map.set(entry.entityId, current + amount);
