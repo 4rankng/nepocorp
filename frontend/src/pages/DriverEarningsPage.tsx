@@ -121,24 +121,24 @@ export default function DriverEarningsPage() {
       </div>
 
       {/* Net income hero card */}
-      <div className="panel fade-up" style={{
+      <div className="panel fade-up earnings-hero" style={{
         marginBottom: 12,
         overflow: 'hidden',
         border: isPositive ? '1px solid var(--success)' : '1px solid var(--danger)',
       }}>
-        <div style={{
+        <div className="earnings-hero__inner" style={{
           padding: '24px 24px 20px',
           background: isPositive
             ? 'linear-gradient(135deg, var(--success-soft) 0%, var(--bg-2) 100%)'
             : 'linear-gradient(135deg, var(--danger-soft) 0%, var(--bg-2) 100%)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+          <div className="earnings-hero__row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p className="earnings-hero__label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
                 Thu nhập thực tế
               </p>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                <span className="earnings-hero__value" style={{
                   fontSize: 32, fontWeight: 800, letterSpacing: '-0.03em',
                   fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
                   color: isPositive ? 'var(--success-text)' : 'var(--danger-text)',
@@ -146,14 +146,15 @@ export default function DriverEarningsPage() {
                   {formatCurrency(earnings.netIncome)}
                 </span>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
+              <p className="earnings-hero__sub" style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
                 = Lương cơ bản + Thu nhập sản lượng - Khấu trừ
               </p>
             </div>
-            <div style={{
+            <div className="earnings-hero__icon" style={{
               width: 52, height: 52, borderRadius: 'var(--radius-lg)',
               background: isPositive ? 'var(--success-soft)' : 'var(--danger-soft)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
             }}>
               {isPositive
                 ? <TrendingUp size={24} style={{ color: 'var(--success)' }} />

@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config';
 import { initEnforcer } from './casbin/enforcer';
-import { requestLogger } from './middleware/logger';
 import { authMiddleware } from './middleware/auth';
 import { casbinAuthz } from './middleware/casbin';
 import { auditLogMiddleware } from './middleware/audit';
@@ -18,8 +17,6 @@ import mapsRoutes from './routes/maps';
 
 await initAuditService();
 await initEnforcer();
-const { applyRuntimePatches } = await import('./db/index');
-await applyRuntimePatches();
 
 const app = express();
 
@@ -29,7 +26,18 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use('/uploads', express.static(config.uploadDir));
-app.use(requestLogger);
+
+// Inlined request logger (was middleware/logger.ts — too shallow for its own module)
+const LOG_SKIP_PATHS = ['/api/health', '/uploads', '/favicon.ico'];
+app.use((req, res, next) => {
+  if (LOG_SKIP_PATHS.some(p => req.path.startsWith(p))) return next();
+  const start = Date.now();
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.path} ${res.statusCode} ${Date.now() - start}ms`);
+  });
+  next();
+});
+
 app.use(auditLogMiddleware);
 
 // ── Public routes ──────────────────────────────────────────────────────────

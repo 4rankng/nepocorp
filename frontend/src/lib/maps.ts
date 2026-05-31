@@ -1,3 +1,5 @@
+import { api } from './api';
+
 export interface PlaceSuggestion {
   placeId: string;
   description: string;
@@ -21,10 +23,10 @@ export async function fetchPlaceSuggestions(input: string): Promise<PlaceSuggest
   if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
 
   try {
-    const res = await fetch(`/api/maps/autocomplete?q=${encodeURIComponent(input)}`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    const suggestions: PlaceSuggestion[] = data.suggestions ?? [];
+    const data = await api.get<{ suggestions: PlaceSuggestion[] }>(
+      `/maps/autocomplete?q=${encodeURIComponent(input)}`
+    );
+    const suggestions = data.suggestions ?? [];
 
     // Evict oldest if at capacity
     if (suggestionCache.size >= CACHE_MAX) {
@@ -43,13 +45,12 @@ export async function calculateDistanceKm(origin: string, destination: string): 
   if (!origin || !destination || origin === destination) return null;
 
   try {
-    const res = await fetch(
-      `/api/maps/distance?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
+    const data = await api.get<{ km: number | null }>(
+      `/maps/distance?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`
     );
-    if (!res.ok) return null;
-    const data = await res.json();
     return data.km ?? null;
   } catch {
     return null;
   }
 }
+

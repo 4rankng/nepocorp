@@ -50,6 +50,13 @@
       "when": 1780203626996,
       "tag": "0006_safe_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780215400000,
+      "tag": "0007_fuel_supplement_norm",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { Role } from '@nepocorp/shared';
+import { isTokenBlacklisted } from '../lib/redis';
 
 export interface AuthUser {
   userId: number;
@@ -20,11 +21,15 @@ declare global {
   }
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Token không hợp lệ' });
   try {
-    req.user = jwt.verify(token, config.jwtSecret) as AuthUser;
+    const payload = jwt.verify(token, config.jwtSecret) as AuthUser & { jti?: string };
+    if (payload.jti && await isTokenBlacklisted(payload.jti)) {
+      return res.status(401).json({ error: 'Token đã bị thu hồi' });
+    }
+    req.user = payload;
     next();
   } catch {
     res.status(401).json({ error: 'Token hết hạn hoặc không hợp lệ' });

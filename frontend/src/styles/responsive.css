@@ -1,4 +1,39 @@
 /* ============================================================================
+ * Shared info-row component used by TripDetailPage and any other detail panel.
+ * Base (desktop) style is icon + (label-above-value); mobile overrides below
+ * collapse it to a single-line "Label: Value" so each row drops from ~50px to
+ * ~32px. Keeps a 44px tap target via padding.
+ * ========================================================================== */
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-2, var(--line));
+}
+.info-row:last-child { border-bottom: none; }
+.info-row__icon {
+  color: var(--fg-3, var(--ink-3));
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.info-row__body { min-width: 0; flex: 1; }
+.info-row__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-3, var(--ink-3));
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.info-row__value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg-1, var(--ink));
+}
+
+/* ============================================================================
  * Responsive overrides — MUST be imported LAST in index.css so these rules
  * win over per-page / per-component stylesheets in the cascade.
  *
@@ -131,20 +166,25 @@
 .driver-trip-card__arrow { color: var(--fg-3); flex-shrink: 0; }
 
 @media (max-width: 640px) {
+  /* Compact card: kill the double padding (panel + body), tight gaps */
+  .panel.driver-trip-card { padding: 0 !important; }
   .driver-trip-card__body {
-    padding: 12px 14px;
-    gap: 12px;
+    padding: 10px 12px;
+    gap: 10px;
     flex-wrap: wrap;
   }
-  .driver-trip-card__icon { width: 36px; height: 36px; }
-  .driver-trip-card__main { flex: 1 1 calc(100% - 60px); }
+  .driver-trip-card__icon { width: 32px; height: 32px; }
+  .driver-trip-card__main { flex: 1 1 calc(100% - 50px); }
+  .driver-trip-card__head { margin-bottom: 2px !important; gap: 6px !important; }
+  .driver-trip-card__route { font-size: 13.5px !important; }
+  .driver-trip-card__meta { gap: 12px !important; font-size: 11.5px !important; }
   /* Salary jumps to a new full-width row below the title+meta so the route
      name keeps all the horizontal space it needs. */
   .driver-trip-card__salary {
     order: 99;
     flex: 1 1 100%;
     text-align: left;
-    padding-left: 48px;  /* visually align under the title (icon width + gap) */
+    padding-left: 42px;  /* visually align under the title (icon width + gap) */
     margin-top: -2px;
   }
   .driver-trip-card__salary-value { font-size: 14px; }
@@ -304,6 +344,160 @@
   .page-actions { flex-wrap: wrap !important; width: 100% !important; gap: 8px !important; }
   .page-actions .btn { flex: 1 1 auto !important; min-width: 0 !important; justify-content: center !important; }
 
+  /* ─────────────────────────────────────────────────────────────────────────
+   * Mobile density pass — UI real estate is premium, fight for vertical
+   * space everywhere. Trim padding, collapse label/value pairs to inline,
+   * shrink KPI tile heights, force filter rails to horizontal scroll.
+   * ───────────────────────────────────────────────────────────────────────── */
+
+  /* Panels: tighter padding on phones (saves ~40px per panel) */
+  .panel { padding: 12px 14px !important; border-radius: 12px !important; }
+  .panel + .panel { margin-top: 10px !important; }
+
+  /* KPI cards: 2-col grid is fine on most phones; cut height by ~40px each */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; margin-bottom: 14px !important; }
+  .kpi {
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    min-height: 0 !important;
+  }
+  .kpi__top { margin-bottom: 4px !important; }
+  .kpi__label { font-size: 9.5px !important; line-height: 1.2 !important; letter-spacing: 0.04em !important; }
+  .kpi__icon { width: 20px !important; height: 20px !important; border-radius: 6px !important; }
+  .kpi__icon svg { width: 11px !important; height: 11px !important; }
+  .kpi__value { font-size: 18px !important; line-height: 1.1 !important; margin: 2px 0 !important; }
+  .kpi__value-unit { font-size: 11px !important; margin-left: 2px !important; }
+  .kpi__meta {
+    font-size: 10.5px !important; line-height: 1.25 !important;
+    gap: 3px !important; flex-wrap: wrap !important; margin-top: 2px !important;
+    /* When the meta has multiple span children with separator dots, flex
+       makes each child a hard column break at narrow widths. Flowing as
+       inline text lets natural word-wrap kick in instead of one-word lines. */
+    display: block !important;
+  }
+  .kpi__meta > * { display: inline !important; }
+  .kpi__meta > strong { font-weight: 600 !important; }
+
+  /* Filter pill rails (filter-tabs, filter-pills, dispatch filter-tabs,
+     toolbar containing FilterPill children, custom toolbar__pills):
+     horizontal scroll keeps height ≤ 1 row instead of wrapping to 3-4 rows.
+     Search input inside the toolbar (the "flex: 1" spacer trick) drops to
+     a second row so it gets full width. */
+  .filter-tabs, .dispatch-page .filter-tabs, .pill-row, .toolbar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 2px !important;
+    gap: 6px !important;
+  }
+  /* Wrap the pills section into a horizontally-scrollable sub-row when a
+     .toolbar contains a mix of pills + search. */
+  .toolbar > .filter-pill { flex: 0 0 auto !important; }
+  .toolbar > div[style*="flex: 1"] { display: none !important; }
+  .toolbar > div:has(input) { width: 100% !important; order: 99 !important; }
+  .filter-tabs::-webkit-scrollbar,
+  .dispatch-page .filter-tabs::-webkit-scrollbar,
+  .pill-row::-webkit-scrollbar,
+  .toolbar::-webkit-scrollbar { display: none !important; }
+  .filter-tabs > *, .pill-row > * { flex-shrink: 0 !important; }
+  .filter-pill {
+    padding: 5px 9px !important;
+    font-size: 11.5px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Page header: reduce gap and bottom margin */
+  .page-header { margin-bottom: 14px !important; gap: 8px !important; }
+  .page-subtitle { font-size: 12px !important; line-height: 1.4 !important; }
+
+  /* Generic detail-row pattern: collapse icon + (label above value) into a
+     single-line "icon Label: Value" row. Saves ~22px per row × 5-10 rows. */
+  .info-row {
+    padding: 6px 0 !important;
+    gap: 8px !important;
+  }
+  .info-row__icon svg { width: 14px !important; height: 14px !important; }
+  .info-row__body {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  .info-row__label {
+    font-size: 11px !important;
+    margin: 0 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    flex-shrink: 0 !important;
+    color: var(--ink-3) !important;
+  }
+  .info-row__value {
+    font-size: 13px !important;
+    text-align: right !important;
+    word-break: break-word !important;
+    min-width: 0 !important;
+  }
+  .detail-row, .kv-row, .field-row {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 6px 0 !important;
+  }
+  .detail-row__label, .kv-row__label, .field-row__label {
+    font-size: 11.5px !important;
+    color: var(--ink-3) !important;
+    flex-shrink: 0 !important;
+  }
+  .detail-row__value, .kv-row__value, .field-row__value {
+    font-size: 13px !important;
+    text-align: right !important;
+    word-break: break-word !important;
+    min-width: 0 !important;
+  }
+
+  /* Trip detail panels: each info section was using icon+label-above-value
+     blocks ~50px tall. Collapse to denser inline rows. */
+  [class*="info-section"] [class*="row"],
+  [class*="trip-info"] [class*="row"] {
+    padding: 6px 0 !important;
+  }
+
+  /* Trip list stats strip: shrink from 5-card vertical stack to 2x2 + 1 grid */
+  .trip-list-page .metrics, .trip-list-page .stats-strip {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+  .trip-list-page .metric { padding: 8px 10px !important; }
+  .trip-list-page .metric-label { font-size: 9.5px !important; }
+  .trip-list-page .metric-value { font-size: 16px !important; }
+
+  /* Dispatch metric strip: also tighter */
+  .dispatch-page .metrics {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+  .dispatch-page .metric { padding: 8px 10px !important; }
+  .dispatch-page .metric-label { font-size: 9.5px !important; }
+  .dispatch-page .metric-value { font-size: 16px !important; }
+
+  /* Topbar: shrink height by 4px */
+  .topbar { height: 48px !important; min-height: 48px !important; padding: 0 10px !important; }
+  .topbar__breadcrumb { font-size: 12.5px !important; }
+  .date-chip { padding: 4px 8px !important; font-size: 11px !important; }
+
+  /* Page title: reduce from 22px → 19px on phones, lose extra bottom margin */
+  .page-title { font-size: 19px !important; line-height: 1.2 !important; margin-bottom: 2px !important; }
+
+  /* App-body padding shrink: 16px → 10px */
+  .app-body, .content { padding: 10px 10px 24px !important; }
+
   /* ── Config landing page: convert big cards → compact list rows ──
      Desktop renders generous cards with a big icon, two-line description,
      status pill + edit button. On mobile that wastes a ton of vertical
@@ -448,15 +642,65 @@
   .kpi__value { font-size: 24px; }
   .page-title { font-size: 20px; }
 
-  /* Aging buckets / debt page */
-  .aging-buckets { grid-template-columns: 1fr !important; }
+  /* Aging buckets / debt page — 2-col is dense enough for compact bucket cards */
+  .aging-buckets { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .bucket { padding: 10px 12px !important; border-radius: 12px !important; }
+  .bucket__label { font-size: 9.5px !important; margin-bottom: 4px !important; }
+  .bucket__value { font-size: 18px !important; margin-bottom: 2px !important; }
+  .bucket__count { font-size: 10.5px !important; }
 
   /* Fleet two-col stays stacked */
   .fleet-page .fleet-two-col { grid-template-columns: 1fr !important; }
 
-  /* Dispatch metrics drop to single col */
-  .dispatch-page .metrics { grid-template-columns: 1fr !important; }
+  /* Dispatch metrics stay 2-col (numbers are short, 1-col wastes space) */
+  .dispatch-page .metrics { grid-template-columns: 1fr 1fr !important; }
 
   /* TripList stats strip */
   .trip-list-page .stats-strip { grid-template-columns: 1fr !important; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * MOBILE PROFIT PAGE — hero number was overflowing at 323px (52px font on
+ * "1.098.000 đ" doesn't fit). Tighten hero + partner cards into dense layout.
+ * ────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Hero card: shrink padding, downsize the headline so it fits viewport */
+  .profit-hero {
+    padding: 18px 16px !important;
+    border-radius: 14px !important;
+    margin-bottom: 16px !important;
+  }
+  .profit-hero__label { font-size: 10px !important; margin-bottom: 6px !important; letter-spacing: 0.06em !important; }
+  .profit-hero__value { font-size: 30px !important; letter-spacing: -0.02em !important; word-break: break-word; }
+  .profit-hero__currency { font-size: 18px !important; margin-left: 4px !important; }
+  .profit-hero__sub { font-size: 12px !important; margin-top: 8px !important; line-height: 1.4 !important; }
+
+  /* Partner cards: compact horizontal layout, name + avatar + amount on one line */
+  .partner-grid { gap: 10px !important; }
+  .partner-card {
+    padding: 14px !important;
+    border-radius: 12px !important;
+  }
+  .partner-card__head { gap: 10px !important; margin-bottom: 8px !important; }
+  .partner-card__avatar { width: 36px !important; height: 36px !important; font-size: 14px !important; }
+  .partner-card__name { font-size: 14px !important; }
+  .partner-card__role { font-size: 11px !important; }
+  .partner-card__pct { font-size: 14px !important; }
+  .partner-card__amount-label { font-size: 10px !important; margin-bottom: 4px !important; letter-spacing: 0.04em !important; }
+  .partner-card__amount { font-size: 22px !important; letter-spacing: -0.02em !important; word-break: break-word; }
+
+  /* Calc breakdown rows: tighter padding */
+  .calc-row { padding: 10px 12px !important; gap: 8px !important; }
+  .calc-row__label { font-size: 13px !important; }
+  .calc-row__value { font-size: 14px !important; }
+  .calc-row--final .calc-row__value { font-size: 18px !important; }
+
+  /* Driver earnings hero — number was wrapping to 2 lines at 323px */
+  .panel.earnings-hero { padding: 0 !important; }
+  .earnings-hero__inner { padding: 14px 16px 12px !important; }
+  .earnings-hero__label { font-size: 10.5px !important; margin-bottom: 4px !important; letter-spacing: 0.06em !important; }
+  .earnings-hero__value { font-size: 24px !important; letter-spacing: -0.02em !important; word-break: break-word; }
+  .earnings-hero__sub { font-size: 11px !important; margin-top: 4px !important; line-height: 1.35 !important; }
+  .earnings-hero__icon { width: 40px !important; height: 40px !important; }
+  .earnings-hero__icon svg { width: 20px !important; height: 20px !important; }
 }

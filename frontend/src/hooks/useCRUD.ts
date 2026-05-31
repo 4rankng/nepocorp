@@ -2,6 +2,10 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
+function getErrorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : 'Unknown error';
+}
+
 export function useCRUD(apiPath: string, onRefresh: () => Promise<void>) {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -19,9 +23,8 @@ export function useCRUD(apiPath: string, onRefresh: () => Promise<void>) {
     try {
       await api.post(apiPath, body);
       setShowAddForm(false);
-      await onRefresh();
-      await invalidateCatalogs();
-    } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
+      await Promise.all([onRefresh(), invalidateCatalogs()]);
+    } catch (e: unknown) { setError(getErrorMessage(e) || 'Lỗi lưu'); } finally { setSaving(false); }
   }, [apiPath, onRefresh, invalidateCatalogs]);
 
   const doUpdate = useCallback(async (id: number, body: Record<string, unknown>) => {
@@ -29,18 +32,16 @@ export function useCRUD(apiPath: string, onRefresh: () => Promise<void>) {
     try {
       await api.put(`${apiPath}/${id}`, body);
       setEditingId(null);
-      await onRefresh();
-      await invalidateCatalogs();
-    } catch (e: any) { setError(e?.message || 'Lỗi cập nhật'); } finally { setSaving(false); }
+      await Promise.all([onRefresh(), invalidateCatalogs()]);
+    } catch (e: unknown) { setError(getErrorMessage(e) || 'Lỗi cập nhật'); } finally { setSaving(false); }
   }, [apiPath, onRefresh, invalidateCatalogs]);
 
   const doDelete = useCallback(async (id: number) => {
     setDeleting(id);
     try {
       await api.delete(`${apiPath}/${id}`);
-      await onRefresh();
-      await invalidateCatalogs();
-    } catch (e: any) { setError(e?.message || 'Lỗi xóa'); } finally { setDeleting(null); }
+      await Promise.all([onRefresh(), invalidateCatalogs()]);
+    } catch (e: unknown) { setError(getErrorMessage(e) || 'Lỗi xóa'); } finally { setDeleting(null); }
   }, [apiPath, onRefresh, invalidateCatalogs]);
 
   const cancelForm = useCallback(() => { setShowAddForm(false); setEditingId(null); }, []);

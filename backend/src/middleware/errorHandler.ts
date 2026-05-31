@@ -9,17 +9,11 @@ export function globalErrorHandler(err: Error, req: Request, res: Response, _nex
     return;
   }
 
-  // Custom API errors
+  // Canonical API errors
   if (err instanceof ApiError) {
     const body: Record<string, unknown> = { error: err.message };
     if (err.details) body.details = err.details;
     res.status(err.statusCode).json(body);
-    return;
-  }
-
-  // Errors with a status property (e.g., thrown by checkOptimisticLock)
-  if ('status' in err && typeof (err as any).status === 'number') {
-    res.status((err as any).status).json({ error: err.message });
     return;
   }
 

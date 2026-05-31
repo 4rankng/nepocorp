@@ -133,44 +133,64 @@ export async function getReceivablesSummary() {
   };
 }
 
-type LedgerRow = { entityType: string; entityId: number; debit: string | null; balance: string; createdAt: Date | null };
-
 /**
- * Find the top overdue customer from a set of ledger rows.
- * Returns null if no customer has an outstanding balance.
+ * Deepened query to fetch the top overdue customer directly from the database.
+ * Avoids loading the entire ledger history into memory.
  */
-export async function resolveTopOverdue(ledgerRows: LedgerRow[]) {
-  const lastByCustomer = new Map<number, { balance: number; date: string }>();
-  const oldestUnpaidByCustomer = new Map<number, string>();
-  for (const row of ledgerRows) {
-    const entityId = row.entityId;
-    const balance = parseFloat(row.balance || '0');
-    const date = row.createdAt ? new Date(row.createdAt).toISOString().slice(0, 10) : '';
-    const prev = lastByCustomer.get(entityId);
-    if (!prev || date > prev.date) lastByCustomer.set(entityId, { balance, date });
-    const debit = parseFloat(row.debit || '0');
-    if (debit > 0 && date) {
-      const oldest = oldestUnpaidByCustomer.get(entityId);
-      if (!oldest || date < oldest) oldestUnpaidByCustomer.set(entityId, date);
+export async function getTopOverdueCustomer(): Promise<{ name: string; balance: number; days: number } | null> {
+  // 1. Get current balance for each customer (newest ledger entry)
+  const balanceRows = await db.execute(sql`
+    SELECT DISTINCT ON (entity_id) entity_id as "entityId", balance, timestamp
+    FROM ledger
+    WHERE entity_type = 'CUSTOMER'
+    ORDER BY entity_id, id DESC
+  `) as unknown as Array<{ entityId: number; balance: string; timestamp: string | null }>;
+
+  const activeDebtors = balanceRows
+    .map(r => ({ entityId: r.entityId, balance: parseFloat(r.balance || '0') }))
+    .filter(r => r.balance > 0);
+
+  if (activeDebtors.length === 0) return null;
+
+  const debtorIds = activeDebtors.map(d => d.entityId);
+
+  // 2. Get the oldest debit transaction date for each debtor
+  const oldestDebitRows = await db.execute(sql`
+    SELECT DISTINCT ON (entity_id) entity_id as "entityId", timestamp
+    FROM ledger
+    WHERE entity_type = 'CUSTOMER' 
+      AND debit::numeric > 0 
+      AND entity_id IN (${sql.join(debtorIds.map(id => sql`${id}`), sql`, `)})
+    ORDER BY entity_id, id ASC
+  `) as unknown as Array<{ entityId: number; timestamp: string | null }>;
+
+  const oldestDebitsMap = new Map(
+    oldestDebitRows.map(r => [r.entityId, r.timestamp ? new Date(r.timestamp) : null])
+  );
+
+  // 3. Fetch customer names
+  const customers = await db.select({ id: s.customers.id, name: s.customers.name })
+    .from(s.customers)
+    .where(sql`${s.customers.id} IN (${sql.join(debtorIds.map(id => sql`${id}`), sql`, `)})`);
+
+  const nameById = new Map(customers.map(c => [c.id, c.name]));
+
+  // 4. Find the customer with the highest outstanding balance
+  let topOverdue: { name: string; balance: number; days: number } | null = null;
+  const now = Date.now();
+
+  for (const debtor of activeDebtors) {
+    if (!topOverdue || debtor.balance > topOverdue.balance) {
+      const oldestDate = oldestDebitsMap.get(debtor.entityId);
+      const days = oldestDate ? Math.max(0, Math.floor((now - oldestDate.getTime()) / 86400000)) : 0;
+      topOverdue = {
+        name: nameById.get(debtor.entityId) || 'Khách hàng không xác định',
+        balance: debtor.balance,
+        days,
+      };
     }
   }
 
-  let topOverdueCustomer: { name: string; balance: number; days: number } | null = null;
-  if (lastByCustomer.size > 0) {
-    const debtorIds = [...lastByCustomer.entries()].filter(([, v]) => v.balance > 0).map(([id]) => id);
-    if (debtorIds.length > 0) {
-      const customers = await db.select({ id: s.customers.id, name: s.customers.name })
-        .from(s.customers).where(sql`${s.customers.id} IN (${sql.join(debtorIds.map(id => sql`${id}`), sql`, `)})`);
-      const nameById = new Map(customers.map(c => [c.id, c.name]));
-      for (const [id, { balance }] of lastByCustomer) {
-        if (balance <= 0) continue;
-        if (!topOverdueCustomer || balance > topOverdueCustomer.balance) {
-          const oldestDate = oldestUnpaidByCustomer.get(id);
-          const days = oldestDate ? Math.max(0, Math.floor((Date.now() - new Date(oldestDate).getTime()) / 86400000)) : 0;
-          topOverdueCustomer = { name: nameById.get(id) || 'Khách hàng không xác định', balance, days };
-        }
-      }
-    }
-  }
-  return topOverdueCustomer;
+  return topOverdue;
 }
+

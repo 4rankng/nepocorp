@@ -90,6 +90,54 @@ export class LedgerService {
     return inserted;
   }
 
+  /**
+   * Seam to handle financial ledger posting when a trip is locked.
+   * Isolates financial calculations and notes from the trip lifecycle machine.
+   */
+  static async postTripLock(tx: any, trip: {
+    id: number;
+    customerId: number;
+    driverId: number;
+    tripCode: string | null;
+    revenue: string | null;
+    driverSalary: string | null;
+  }) {
+    const revenue = Number(trip.revenue || 0);
+    const driverSalary = Number(trip.driverSalary || 0);
+
+    // Sorted advisory locking to prevent deadlocks
+    await this.lockEntities(tx, [
+      { entityType: 'CUSTOMER', entityId: trip.customerId },
+      { entityType: 'DRIVER', entityId: trip.driverId }
+    ]);
+
+    const lockTripLabel = trip.tripCode || '';
+
+    // 1. Post Customer Revenue entry
+    await this.postEntry(tx, {
+      txnType: TxnType.TRIP_REVENUE,
+      txnId: trip.id,
+      entityType: 'CUSTOMER',
+      entityId: trip.customerId,
+      debit: revenue,
+      credit: 0,
+      note: lockTripLabel ? `Doanh thu chuyến ${lockTripLabel}` : 'Doanh thu chuyến',
+    });
+
+    // 2. Post Driver Salary entry (if applicable)
+    if (driverSalary > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.DRIVER_SALARY,
+        txnId: trip.id,
+        entityType: 'DRIVER',
+        entityId: trip.driverId,
+        debit: 0,
+        credit: driverSalary,
+        note: lockTripLabel ? `Lương sản lượng chuyến ${lockTripLabel}` : 'Lương sản lượng chuyến',
+      });
+    }
+  }
+
   // ─── Read methods ────────────────────────────────────────────────────────────
 
   /**

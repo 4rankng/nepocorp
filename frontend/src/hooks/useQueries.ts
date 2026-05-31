@@ -271,3 +271,100 @@ export function useSalaryPeriod(month: number, year: number) {
     enabled: month >= 1 && month <= 12 && year >= 2000,
   });
 }
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: () => api.get<{ items: Array<{
+      id: number;
+      username: string | null;
+      fullName: string | null;
+      email: string | null;
+      phone: string | null;
+      role: string;
+      status: string;
+      createdAt: string;
+    }> }>('/auth/users'),
+  });
+}
+
+export function useDriverTrips() {
+  return useQuery({
+    queryKey: ['driver-trips'],
+    queryFn: () => api.get<{ items: Array<{
+      id: number;
+      departureDate: string;
+      status: string;
+      driverSalary: string | null;
+      routeName: string | null;
+      truckPlate: string | null;
+    }> }>('/driver/me/trips'),
+  });
+}
+
+export function useDriverEarnings(month: number, year: number) {
+  return useQuery({
+    queryKey: ['driver-earnings', month, year],
+    queryFn: () => api.get<{
+      baseSalary: string;
+      tripIncome: string;
+      penalties: string;
+      netIncome: string;
+      periodStart?: string;
+      periodEnd?: string;
+    }>(`/driver/me/earnings?month=${month}&year=${year}`),
+    enabled: month >= 1 && month <= 12 && year >= 2000,
+  });
+}
+
+export function useDriverPenalties(params?: { dateFrom: string; dateTo: string }) {
+  return useQuery({
+    queryKey: ['driver-penalties', params],
+    queryFn: () => {
+      const qs = params ? `?dateFrom=${params.dateFrom}&dateTo=${params.dateTo}` : '';
+      return api.get<Array<{
+        id: number;
+        driverId: number;
+        tripId: number | null;
+        tripCode?: string | null;
+        reasonId: number | null;
+        customReason: string | null;
+        amount: string;
+        date: string;
+        reasonText?: string;
+      }> | { items: Array<any> }>(`/driver/me/penalties${qs}`);
+    },
+  });
+}
+
+export function useCustomers(page: number, search: string) {
+  return useQuery({
+    queryKey: ['customers', page, search],
+    queryFn: () => {
+      const qs = new URLSearchParams({ page: String(page), limit: '10' });
+      if (search) qs.set('search', search);
+      return api.get<{
+        items: any[];
+        total: number;
+      }>(`/customers?${qs}`);
+    },
+  });
+}
+
+export function useDistributionHistory() {
+  return useQuery({
+    queryKey: ['distribution-history'],
+    queryFn: async () => {
+      const res = await api.get<Array<{
+        id: number;
+        quarter: number;
+        year: number;
+        partnerName: string;
+        amount: string;
+        createdAt: string;
+      }> | { items: Array<any> }>('/reports/distribution-history');
+      return Array.isArray(res) ? res : (res as any).items ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}

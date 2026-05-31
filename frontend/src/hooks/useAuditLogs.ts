@@ -8,8 +8,11 @@ export interface AuditEntry {
   userName?: string;
   action: string;
   method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
+  path?: string;
   message: string;
   category?: 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
+  payload?: Record<string, any>;
+  ipAddress?: string;
 }
 
 export type Category = 'all' | 'trip' | 'config' | 'finance' | 'auth' | 'penalty';

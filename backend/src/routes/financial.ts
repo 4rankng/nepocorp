@@ -1,15 +1,20 @@
 import { Router } from 'express';
-import { db } from '../db';
-import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql } from 'drizzle-orm';
-// auth + Casbin applied at mount point in index.ts
-import { Role, TxnType } from '@nepocorp/shared';
+import { Role } from '@nepocorp/shared';
 import { requireRoles } from '../middleware/casbin';
 import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../services/reporting.service';
 import { getStatementData, exportStatementXlsx, exportStatementHtml } from '../services/statement.service';
+import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
+import * as financialService from '../services/financial.service';
+import { registerAuditEvent } from '../services/audit-registry';
+import { AuditEvent } from '../services/audit-types';
+
+// Audit event registrations
+registerAuditEvent('POST', '/api/payments', AuditEvent.PAYMENT_RECEIVED);
+registerAuditEvent('POST', '/api/adjustments', AuditEvent.ADJUSTMENT_CREATED);
+registerAuditEvent('POST', '/api/penalties', AuditEvent.PENALTY_CREATED);
 
 const router = Router();
 
@@ -33,20 +38,7 @@ router.get('/ledger/balances', async (req: Request, res: Response) => {
   try {
     const entityType = req.query.entity_type as string;
     if (!entityType) return res.status(400).json({ error: 'entity_type is required' });
-    const rows = await db.selectDistinctOn([s.ledger.entityId], {
-      entityId: s.ledger.entityId,
-      balance: s.ledger.balance,
-      timestamp: s.ledger.timestamp,
-    })
-    .from(s.ledger)
-    .where(eq(s.ledger.entityType, entityType))
-    .orderBy(s.ledger.entityId, desc(s.ledger.id));
-    
-    res.json(rows.map(r => ({
-      entityId: r.entityId,
-      balance: parseFloat(r.balance),
-      timestamp: r.timestamp,
-    })));
+    res.json(await financialService.getEntityBalances(entityType));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -61,7 +53,7 @@ router.get('/ledger/customers/:id/statement', async (req: Request, res: Response
     if (!data) return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
     res.json(data);
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -89,7 +81,7 @@ router.get('/ledger/customers/:id/statement/export', async (req: Request, res: R
     res.setHeader('Content-Disposition', `attachment; filename=sao-ke-${safeName}-${dateStr}.xlsx`);
     await exportStatementXlsx(data, dateStr, res);
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -98,37 +90,16 @@ router.get('/ledger/customers/:id/statement/export', async (req: Request, res: R
 router.post('/payments/receive', async (req: Request, res: Response) => {
   try {
     const data = createPaymentSchema.parse(req.body);
-
-    await db.transaction(async (tx) => {
-      // Resolve trip codes up front so ledger notes read naturally — e.g.
-      // "Thanh toán chuyến TRP-202606-0082" rather than "Thanh toán chuyến #76".
-      // The customer-facing statement renders these notes verbatim.
-      const tripIds = Array.from(new Set(data.payments.map(p => p.tripId)));
-      const tripRows = tripIds.length > 0
-        ? await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode }).from(s.trips)
-            .where(sql`${s.trips.id} IN (${sql.join(tripIds.map(id => sql`${id}`), sql`, `)})`)
-        : [];
-      const codeById = new Map(tripRows.map(t => [t.id, t.tripCode || '']));
-
-      for (const payment of data.payments) {
-        const tripLabel = codeById.get(payment.tripId) || '';
-        await LedgerService.postEntry(tx, {
-          txnType: TxnType.PAYMENT_RECEIVED,
-          txnId: payment.tripId,
-          receiptId: data.receiptId,
-          entityType: 'CUSTOMER',
-          entityId: data.customerId,
-          debit: 0,
-          credit: payment.amount,
-          note: tripLabel ? `Thanh toán chuyến ${tripLabel}` : 'Thanh toán chuyến',
-        });
-      }
+    await financialService.recordPayment({
+      customerId: data.customerId,
+      receiptId: data.receiptId,
+      payments: data.payments.map((p: any) => ({ tripId: p.tripId, amount: p.amount })),
     });
-
+    cacheInvalidate('reports:dashboard');
     res.status(201).json({ ok: true });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -137,27 +108,17 @@ router.post('/payments/receive', async (req: Request, res: Response) => {
 router.post('/adjustments', async (req: Request, res: Response) => {
   try {
     const data = createAdjustmentSchema.parse(req.body);
-
-    const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, data.tripId)).limit(1);
-    if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
-
-    await db.transaction(async (tx) => {
-      const isDebit = data.amount > 0;
-      await LedgerService.postEntry(tx, {
-        txnType: TxnType.ADJUSTMENT,
-        txnId: data.tripId,
-        entityType: 'CUSTOMER',
-        entityId: trip.customerId,
-        debit: isDebit ? data.amount : 0,
-        credit: isDebit ? 0 : Math.abs(data.amount),
-        note: `${data.note} (HĐ: ${data.signedAgreementRef})`,
-      });
+    await financialService.createAdjustment({
+      tripId: data.tripId,
+      amount: data.amount,
+      note: data.note,
+      signedAgreementRef: data.signedAgreementRef,
     });
-
+    cacheInvalidate('reports:dashboard');
     res.status(201).json({ ok: true });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -165,25 +126,8 @@ router.post('/adjustments', async (req: Request, res: Response) => {
 
 router.get('/penalties', async (req: Request, res: Response) => {
   try {
-    const driverId = req.query.driverId as string;
-    const conditions = [isNull(s.penalties.deletedAt)];
-    if (driverId) conditions.push(eq(s.penalties.driverId, parseInt(driverId)));
-
-    const items = await db.select({
-      id: s.penalties.id, driverId: s.penalties.driverId, tripId: s.penalties.tripId,
-      reasonId: s.penalties.reasonId, customReason: s.penalties.customReason,
-      amount: s.penalties.amount, date: s.penalties.date,
-      driverName: s.drivers.name,
-      reasonText: s.penaltyReasons.reasonText,
-      tripCode: s.trips.tripCode,
-    }).from(s.penalties)
-      .leftJoin(s.drivers, eq(s.penalties.driverId, s.drivers.id))
-      .leftJoin(s.penaltyReasons, eq(s.penalties.reasonId, s.penaltyReasons.id))
-      .leftJoin(s.trips, eq(s.penalties.tripId, s.trips.id))
-      .where(and(...conditions))
-      .orderBy(desc(s.penalties.date));
-
-    res.json({ items, total: items.length });
+    const driverId = req.query.driverId ? parseInt(req.query.driverId as string) : undefined;
+    res.json(await financialService.getPenalties(driverId));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -192,45 +136,19 @@ router.get('/penalties', async (req: Request, res: Response) => {
 router.post('/penalties', async (req: Request, res: Response) => {
   try {
     const data = createPenaltySchema.parse(req.body);
-
-    await db.transaction(async (tx) => {
-      // Advisory lock to prevent concurrent penalty races
-      await LedgerService.lockEntity(tx, 'DRIVER', data.driverId);
-
-      const [penalty] = await tx.insert(s.penalties).values({
-        driverId: data.driverId,
-        tripId: data.tripId,
-        reasonId: data.reasonId,
-        customReason: data.customReason,
-        amount: String(data.amount),
-        date: data.date,
-      }).returning();
-
-      // Resolve trip code so the driver's ledger note reads naturally.
-      let tripLabel = '';
-      if (data.tripId) {
-        const [trip] = await tx.select({ tripCode: s.trips.tripCode })
-          .from(s.trips).where(eq(s.trips.id, data.tripId)).limit(1);
-        tripLabel = trip?.tripCode || '';
-      }
-
-      // Create ledger entry for driver
-      await LedgerService.postEntry(tx, {
-        txnType: TxnType.PENALTY,
-        txnId: penalty.id,
-        entityType: 'DRIVER',
-        entityId: data.driverId,
-        debit: data.amount,
-        credit: 0,
-        note: data.customReason
-          || (tripLabel ? `Kỷ luật chuyến ${tripLabel}` : 'Kỷ luật vi phạm'),
-      });
-
-      res.status(201).json(penalty);
+    const penalty = await financialService.createPenalty({
+      driverId: data.driverId,
+      tripId: data.tripId,
+      reasonId: data.reasonId,
+      customReason: data.customReason,
+      amount: data.amount,
+      date: data.date,
     });
+    cacheInvalidatePattern('reports:pnl:*');
+    res.status(201).json(penalty);
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -262,7 +180,7 @@ router.get('/reports/receivables-summary', async (_req: Request, res: Response) 
   try {
     res.json(await getReceivablesSummary());
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 

@@ -1,10 +1,11 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, sql, desc, lte } from 'drizzle-orm';
+import { eq, and, isNull, sql, desc, lte, gte } from 'drizzle-orm';
 import { TripStatus, FuelMode, TxnType, LoadingType, Role } from '@nepocorp/shared';
 import type { TripLegInput } from '@nepocorp/shared';
 import { computeTripTotals } from '@nepocorp/shared';
 import { LedgerService } from './ledger.service';
+import { ApiError } from '../errors';
 
 // ─── Trip lifecycle ──────────────────────────────────────────────────────────
 
@@ -38,19 +39,19 @@ export async function createTrip(data: {
     // All config tables must be populated — no silent fallbacks.
     const [fuelCfg] = await tx.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
     if (!fuelCfg) {
-      throw Object.assign(new Error('Chưa cấu hình định mức nhiên liệu. Vui lòng cấu hình trước khi tạo lệnh vận chuyển.'), { status: 400 });
+      throw new ApiError(400, 'Chưa cấu hình định mức nhiên liệu. Vui lòng cấu hình trước khi tạo lệnh vận chuyển.');
     }
     const [route] = await tx.select().from(s.routes).where(eq(s.routes.id, data.routeId)).limit(1);
     if (!route) {
-      throw Object.assign(new Error('Tuyến đường không tồn tại'), { status: 400 });
+      throw new ApiError(400, 'Tuyến đường không tồn tại');
     }
     const [trailer] = await tx.select().from(s.trailers).where(eq(s.trailers.id, data.trailerId)).limit(1);
     if (!trailer) {
-      throw Object.assign(new Error('Rơ moóc không tồn tại'), { status: 400 });
+      throw new ApiError(400, 'Rơ moóc không tồn tại');
     }
     const [roadCfg] = await tx.select().from(s.roadConfig).limit(1);
     if (!roadCfg) {
-      throw Object.assign(new Error('Chưa cấu hình tiền đường (road_config). Vui lòng cấu hình trước khi tạo lệnh vận chuyển.'), { status: 400 });
+      throw new ApiError(400, 'Chưa cấu hình tiền đường (road_config). Vui lòng cấu hình trước khi tạo lệnh vận chuyển.');
     }
 
     // Look up road allowance base for snapshotted column
@@ -62,9 +63,9 @@ export async function createTrip(data: {
       )
     ).limit(1);
     if (!allowance) {
-      throw Object.assign(
-        new Error(`Chưa cấu hình tiền chuẩn đường cho tuyến "${route.name}" với rơ moóc ${trailer.type}. Vui lòng thêm bản ghi trong bảng định mức tiền đường.`),
-        { status: 400 },
+      throw new ApiError(
+        400,
+        `Chưa cấu hình tiền chuẩn đường cho tuyến "${route.name}" với rơ moóc ${trailer.type}. Vui lòng thêm bản ghi trong bảng định mức tiền đường.`,
       );
     }
 
@@ -154,12 +155,12 @@ export async function updateTripFigures(
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) throw new Error('Không tìm thấy chuyến đi');
     if (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED) {
-      throw Object.assign(new Error('Chuyến đi đã chốt hoặc đã hủy, không thể sửa'), { status: 400 });
+      throw new ApiError(400, 'Chuyến đi đã chốt hoặc đã hủy, không thể sửa');
     }
 
     // 2. Optimistic concurrency check
     if (data.expectedVersion !== undefined && trip.version !== data.expectedVersion) {
-      throw Object.assign(new Error('Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.'), { status: 409 });
+      throw new ApiError(409, 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.');
     }
 
     const [route] = await tx.select().from(s.routes).where(eq(s.routes.id, trip.routeId)).limit(1);
@@ -221,9 +222,9 @@ export async function updateTripFigures(
       const photos = await tx.select({ id: s.tripPhotos.id })
         .from(s.tripPhotos).where(eq(s.tripPhotos.tripId, tripId)).limit(1);
       if (photos.length === 0) {
-        throw Object.assign(
-          new Error('Cần tải lên ít nhất 1 ảnh trước khi hoàn thành chuyến đi'),
-          { status: 400 }
+        throw new ApiError(
+          400,
+          'Cần tải lên ít nhất 1 ảnh trước khi hoàn thành chuyến đi',
         );
       }
       await tx.update(s.trips)
@@ -258,7 +259,7 @@ export async function updateTripFigures(
     }).where(and(eq(s.trips.id, tripId), eq(s.trips.version, trip.version))).returning();
 
     if (!updated) {
-      throw Object.assign(new Error('Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.'), { status: 409 });
+      throw new ApiError(409, 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.');
     }
 
     // 6. Persist physical leg segments
@@ -312,9 +313,9 @@ export async function transitionTripStatus(
       // dispatch — ACCOUNTANT's trip-write permission is for financial
       // fields only and shouldn't move the lifecycle forward.
       if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
-        throw Object.assign(
-          new Error('Chỉ Quản lý hoặc Quản trị viên mới có quyền xuất phát chuyến đi'),
-          { status: 403 },
+        throw new ApiError(
+          403,
+          'Chỉ Quản lý hoặc Quản trị viên mới có quyền xuất phát chuyến đi',
         );
       }
       if (currentStatus !== TripStatus.CREATED && currentStatus !== TripStatus.COMPLETED) {
@@ -342,9 +343,9 @@ export async function transitionTripStatus(
         // Never leak the numeric id — show the trip code or fall back to a
         // generic phrase rather than "#17" which reads like a debug log.
         const busyLabel = busyTruck.tripCode || 'một chuyến khác';
-        throw Object.assign(
-          new Error(`Xe đang chạy chuyến ${busyLabel}. Vui lòng hoàn thành chuyến đó trước.`),
-          { status: 409 }
+        throw new ApiError(
+          409,
+          `Xe đang chạy chuyến ${busyLabel}. Vui lòng hoàn thành chuyến đó trước.`,
         );
       }
     } else if (targetStatus === TripStatus.COMPLETED) {
@@ -357,14 +358,14 @@ export async function transitionTripStatus(
       const [cargoType] = await tx.select().from(s.cargoTypes).where(eq(s.cargoTypes.id, trip.cargoTypeId)).limit(1);
 
       if (photos.length === 0) {
-        throw Object.assign(new Error('Cần tải lên ít nhất 1 ảnh (CONTAINER/SEAL) để hoàn thành chuyến đi'), { status: 400 });
+        throw new ApiError(400, 'Cần tải lên ít nhất 1 ảnh (CONTAINER/SEAL) để hoàn thành chuyến đi');
       }
 
       if (cargoType && cargoType.requiresPhotos) {
         const containerPhotos = photos.filter(p => p.type === 'CONTAINER');
         const sealPhotos = photos.filter(p => p.type === 'SEAL');
         if (containerPhotos.length === 0 || sealPhotos.length === 0) {
-          throw Object.assign(new Error('Yêu cầu phải có ít nhất 1 ảnh CONTAINER và 1 ảnh SEAL đối với loại hàng chè'), { status: 400 });
+          throw new ApiError(400, 'Yêu cầu phải có ít nhất 1 ảnh CONTAINER và 1 ảnh SEAL đối với loại hàng chè');
         }
       }
     } else if (targetStatus === TripStatus.LOCKED) {
@@ -376,7 +377,7 @@ export async function transitionTripStatus(
       // Soft guard on zero-revenue
       const revenue = Number(trip.revenue || 0);
       if (revenue === 0 && !confirmZeroRevenue) {
-        throw Object.assign(new Error('Doanh thu bằng 0. Vui lòng xác nhận.'), { status: 422 });
+        throw new ApiError(422, 'Doanh thu bằng 0. Vui lòng xác nhận.');
       }
 
       // Conditional guard status update
@@ -386,41 +387,12 @@ export async function transitionTripStatus(
       }).where(and(eq(s.trips.id, tripId), eq(s.trips.status, TripStatus.COMPLETED))).returning();
 
       if (!lockedTrip) {
-        throw Object.assign(new Error('Chuyến đi không thể chốt hoặc đã bị thay đổi. Vui lòng tải lại.'), { status: 409 });
+        throw new ApiError(409, 'Chuyến đi không thể chốt hoặc đã bị thay đổi. Vui lòng tải lại.');
       }
 
-      // Sorted advisory locking & ledger posting
-      const driverSalary = Number(trip.driverSalary || 0);
-      await LedgerService.lockEntities(tx, [
-        { entityType: 'CUSTOMER', entityId: trip.customerId },
-        { entityType: 'DRIVER', entityId: trip.driverId }
-      ]);
+      // Post transaction financial ledger entries via service seam
+      await LedgerService.postTripLock(tx, lockedTrip);
 
-      // Customer revenue post — note is rendered in customer statements, so
-      // identify the trip by its tripCode (natural key) only.
-      const lockTripLabel = trip.tripCode || '';
-      await LedgerService.postEntry(tx, {
-        txnType: TxnType.TRIP_REVENUE,
-        txnId: tripId,
-        entityType: 'CUSTOMER',
-        entityId: trip.customerId,
-        debit: revenue,
-        credit: 0,
-        note: lockTripLabel ? `Doanh thu chuyến ${lockTripLabel}` : 'Doanh thu chuyến',
-      });
-
-      // Driver salary post (if any)
-      if (driverSalary > 0) {
-        await LedgerService.postEntry(tx, {
-          txnType: TxnType.DRIVER_SALARY,
-          txnId: tripId,
-          entityType: 'DRIVER',
-          entityId: trip.driverId,
-          debit: 0,
-          credit: driverSalary,
-          note: lockTripLabel ? `Lương sản lượng chuyến ${lockTripLabel}` : 'Lương sản lượng chuyến',
-        });
-      }
 
       // Audit row is written by the auditLogMiddleware for the POST /lock
       // endpoint as "Quản lý <actor> khóa chuyến <tripCode>". We intentionally
@@ -431,9 +403,9 @@ export async function transitionTripStatus(
       return lockedTrip;
     } else if (targetStatus === TripStatus.CANCELED) {
       if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
-        throw Object.assign(
-          new Error('Chỉ Quản lý hoặc Quản trị viên mới có quyền hủy chuyến đi'),
-          { status: 403 },
+        throw new ApiError(
+          403,
+          'Chỉ Quản lý hoặc Quản trị viên mới có quyền hủy chuyến đi',
         );
       }
       if (currentStatus === TripStatus.LOCKED) {
@@ -464,7 +436,7 @@ export async function transitionTripStatus(
     }).where(and(eq(s.trips.id, tripId), eq(s.trips.status, currentStatus))).returning();
 
     if (!updated) {
-      throw Object.assign(new Error('Trạng thái chuyến đi đã bị thay đổi bởi người khác. Vui lòng tải lại.'), { status: 409 });
+      throw new ApiError(409, 'Trạng thái chuyến đi đã bị thay đổi bởi người khác. Vui lòng tải lại.');
     }
 
     // Other transitions (e.g. IN_TRANSIT → COMPLETED triggered from /actuals)
@@ -501,5 +473,115 @@ export async function reassignTrip(tripId: number, data: { truckId: number; driv
   }).where(eq(s.trips.id, tripId)).returning();
 
   return updated;
+}
+
+// ─── Trip queries ────────────────────────────────────────────────────────────
+
+/** Common field set joined with relation names for trip list/detail. */
+const TRIP_RELATION_FIELDS = {
+  customerName: s.customers.name,
+  driverName: s.drivers.name,
+  truckPlate: s.trucks.licensePlate,
+  routeName: s.routes.name,
+  routeDistance: s.routes.distanceKm,
+  trailerLicensePlate: s.trailers.licensePlate,
+  trailerType: s.trailers.type,
+};
+
+const TRIP_RELATION_JOINS = (query: any) => query
+  .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+  .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
+  .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+  .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+  .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id));
+
+/** Shape flat joined rows into nested relation objects. */
+function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; photoUrls?: string[] }) {
+  return {
+    ...item,
+    customer: item.customerName ? { id: item.customerId, name: item.customerName } : null,
+    driver: item.driverName ? { id: item.driverId, name: item.driverName } : null,
+    truck: item.truckPlate ? { id: item.truckId, licensePlate: item.truckPlate } : null,
+    route: item.routeName ? { id: item.routeId, name: item.routeName, distanceKm: item.routeDistance } : null,
+    trailer: item.trailerLicensePlate ? { id: item.trailerId, licensePlate: item.trailerLicensePlate, type: item.trailerType } : null,
+    trailerType: item.trailerType || '40FT',
+    ...extras,
+  };
+}
+
+export interface TripListFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  truckId?: number;
+  driverId?: number;
+  customerId?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export async function getTrips(filters: TripListFilters) {
+  const page = Math.max(1, filters.page ?? 1);
+  const limit = Math.min(100, filters.limit ?? 50);
+
+  const conditions = [isNull(s.trips.deletedAt)];
+  if (filters.status) conditions.push(eq(s.trips.status, filters.status as TripStatus));
+  if (filters.truckId) conditions.push(eq(s.trips.truckId, filters.truckId));
+  if (filters.driverId) conditions.push(eq(s.trips.driverId, filters.driverId));
+  if (filters.customerId) conditions.push(eq(s.trips.customerId, filters.customerId));
+  if (filters.dateFrom) conditions.push(gte(s.trips.departureDate, filters.dateFrom));
+  if (filters.dateTo) conditions.push(lte(s.trips.departureDate, filters.dateTo));
+
+  const items = await TRIP_RELATION_JOINS(db.select({
+    id: s.trips.id, tripCode: s.trips.tripCode, customerId: s.trips.customerId, customerReference: s.trips.customerReference,
+    truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
+    trailerId: s.trips.trailerId, cargoTypeId: s.trips.cargoTypeId,
+    status: s.trips.status, departureDate: s.trips.departureDate,
+    fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
+    totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
+    totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
+    hasReturnCargo: s.trips.hasReturnCargo, driverSalary: s.trips.driverSalary, notes: s.trips.notes,
+    createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt,
+    ...TRIP_RELATION_FIELDS,
+  }).from(s.trips))
+    .where(and(...conditions))
+    .orderBy(desc(s.trips.departureDate), desc(s.trips.id))
+    .limit(limit).offset((page - 1) * limit);
+
+  const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(s.trips).where(and(...conditions));
+
+  return { items: items.map((item: any) => shapeTripRelations(item)), total: Number(countRow?.count ?? 0), page, pageSize: limit };
+}
+
+export async function getTripById(id: number) {
+  const [trip] = await TRIP_RELATION_JOINS(db.select({
+    id: s.trips.id, tripCode: s.trips.tripCode, version: s.trips.version,
+    customerId: s.trips.customerId, customerReference: s.trips.customerReference,
+    truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
+    trailerId: s.trips.trailerId, cargoTypeId: s.trips.cargoTypeId,
+    status: s.trips.status, departureDate: s.trips.departureDate,
+    fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
+    fuelLitersOverride: s.trips.fuelLitersOverride, fuelSupplementLiters: s.trips.fuelSupplementLiters,
+    fuelSupplementReason: s.trips.fuelSupplementReason, fuelPriceApplied: s.trips.fuelPriceApplied,
+    tollsDiscount: s.trips.tollsDiscount, tollsAddition: s.trips.tollsAddition, tollsStations: s.trips.tollsStations,
+    totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
+    totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
+    revenueOriginal: s.trips.revenueOriginal, revenueOverriddenBy: s.trips.revenueOverriddenBy,
+    revenueOverriddenAt: s.trips.revenueOverriddenAt, hasReturnCargo: s.trips.hasReturnCargo,
+    driverSalary: s.trips.driverSalary, notes: s.trips.notes,
+    createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt, deletedAt: s.trips.deletedAt,
+    ...TRIP_RELATION_FIELDS,
+  }).from(s.trips))
+    .where(and(eq(s.trips.id, id), isNull(s.trips.deletedAt))).limit(1);
+
+  if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
+
+  const [legs, photos] = await Promise.all([
+    db.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, id)).orderBy(s.tripLegs.sequence),
+    db.select({ storageKey: s.tripPhotos.storageKey }).from(s.tripPhotos).where(eq(s.tripPhotos.tripId, id)),
+  ]);
+
+  const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
+  return shapeTripRelations(trip, { legs, photoUrls });
 }
 

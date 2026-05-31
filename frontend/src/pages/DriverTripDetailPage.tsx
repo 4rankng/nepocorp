@@ -53,11 +53,11 @@ function loadingTypeLabel(t: string) {
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '12px 0', borderBottom: '1px solid var(--border-1)' }}>
-      <div style={{ color: 'var(--brand)', marginTop: 2, flexShrink: 0 }}>{icon}</div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 3 }}>{label}</div>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg-1)' }}>{value || '—'}</div>
+    <div className="info-row">
+      <span className="info-row__icon">{icon}</span>
+      <div className="info-row__body">
+        <div className="info-row__label">{label}</div>
+        <div className="info-row__value">{value || '—'}</div>
       </div>
     </div>
   );

@@ -2,8 +2,9 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, sql, gte, lte } from 'drizzle-orm';
 import { TripStatus } from '@nepocorp/shared';
-import { getReceivablesSummary as _getReceivablesSummary, resolveTopOverdue } from './receivables.service';
+import { getReceivablesSummary as _getReceivablesSummary, getTopOverdueCustomer } from './receivables.service';
 import { resolveSalaryPeriodDateRange, resolveQuarterDateRange } from './salary-period.service';
+import { cacheGet } from '../lib/redis';
 
 /** Build a [start, exclusive_end) date range for a calendar month/year. Used for trip code counters. */
 export function calendarMonthDateRange(year: number, month?: number) {
@@ -36,143 +37,132 @@ async function salaryPeriodDateRange(year: number, month: number) {
  * Dashboard summary: current-month KPIs, top overdue customer, top shareholder.
  */
 export async function getDashboardStats() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const { start: monthStart, end: monthEnd } = await salaryPeriodDateRange(year, month);
+  return cacheGet('reports:dashboard', 30, async () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const { start: monthStart, end: monthEnd } = await salaryPeriodDateRange(year, month);
 
-  const [
-    [stats],
-    [driverCount],
-    truckStatusCounts,
-    ledgerRows,
-    capRows,
-    [inTransitResult],
-  ] = await Promise.all([
-    db.select({
-      revenue: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.revenue}::numeric else 0 end), 0)`,
-      costs: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
-      tripCount: sql<number>`count(*)`,
-      completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
-      lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
-    }).from(s.trips).where(and(
-      isNull(s.trips.deletedAt),
-      gte(s.trips.departureDate, monthStart),
-      sql`${s.trips.departureDate} < ${monthEnd}`,
-    )),
-    db.select({ count: sql<number>`count(*)` }).from(s.drivers).where(isNull(s.drivers.deletedAt)),
-    db.select({
-      status: s.trucks.status,
-      count: sql<number>`count(*)`,
-    }).from(s.trucks).where(isNull(s.trucks.deletedAt)).groupBy(s.trucks.status),
-    db.select({
-      entityType: s.ledger.entityType,
-      entityId: s.ledger.entityId,
-      debit: s.ledger.debit,
-      balance: s.ledger.balance,
-      createdAt: s.ledger.timestamp,
-    }).from(s.ledger)
-      .where(eq(s.ledger.entityType, 'CUSTOMER'))
-      .orderBy(desc(s.ledger.id)),
-    db.select().from(s.capTableHistory)
-      .orderBy(desc(s.capTableHistory.effectiveDate)),
-    db.select({
-      count: sql<number>`count(*)`,
-    }).from(s.trips).where(and(
-      isNull(s.trips.deletedAt),
-      eq(s.trips.status, TripStatus.IN_TRANSIT),
-    )),
-  ]);
+    const [
+      [stats],
+      [driverCount],
+      truckStatusCounts,
+      capRows,
+      [inTransitResult],
+      topOverdueCustomer,
+    ] = await Promise.all([
+      db.select({
+        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.revenue}::numeric else 0 end), 0)`,
+        costs: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
+        tripCount: sql<number>`count(*)`,
+        completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
+        lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
+      }).from(s.trips).where(and(
+        isNull(s.trips.deletedAt),
+        gte(s.trips.departureDate, monthStart),
+        sql`${s.trips.departureDate} < ${monthEnd}`,
+      )),
+      db.select({ count: sql<number>`count(*)` }).from(s.drivers).where(isNull(s.drivers.deletedAt)),
+      db.select({
+        status: s.trucks.status,
+        count: sql<number>`count(*)`,
+      }).from(s.trucks).where(isNull(s.trucks.deletedAt)).groupBy(s.trucks.status),
+      db.select().from(s.capTableHistory)
+        .orderBy(desc(s.capTableHistory.effectiveDate)),
+      db.select({
+        count: sql<number>`count(*)`,
+      }).from(s.trips).where(and(
+        isNull(s.trips.deletedAt),
+        eq(s.trips.status, TripStatus.IN_TRANSIT),
+      )),
+      getTopOverdueCustomer(),
+    ]);
 
-  // Resolve top overdue customer from ledger
-  const topOverdueCustomer = await resolveTopOverdue(ledgerRows);
+    const topShareholder = resolveTopShareholder(capRows);
 
-  // Resolve top shareholder from cap table
-  const topShareholder = resolveTopShareholder(capRows);
+    const revenue = parseFloat(stats?.revenue || '0');
+    const costs = parseFloat(stats?.costs || '0');
 
-  const revenue = parseFloat(stats?.revenue || '0');
-  const costs = parseFloat(stats?.costs || '0');
-
-  return {
-    revenue,
-    costs,
-    grossProfit: revenue - costs,
-    tripCount: Number(stats?.tripCount || 0),
-    completedTrips: Number(stats?.completedTrips || 0),
-    inTransitTrips: Number(inTransitResult?.count || 0),
-    totalTrucks: truckStatusCounts.reduce((sum: number, r: any) => sum + Number(r.count), 0),
-    totalDrivers: Number(driverCount?.count || 0),
-    fleetStatus: Object.fromEntries(
-      truckStatusCounts.map((r: any) => [r.status, Number(r.count)])
-    ) as Record<string, number>,
-    topOverdueCustomer,
-    topShareholder,
-  };
+    return {
+      revenue,
+      costs,
+      grossProfit: revenue - costs,
+      tripCount: Number(stats?.tripCount || 0),
+      completedTrips: Number(stats?.completedTrips || 0),
+      inTransitTrips: Number(inTransitResult?.count || 0),
+      totalTrucks: truckStatusCounts.reduce((sum: number, r: any) => sum + Number(r.count), 0),
+      totalDrivers: Number(driverCount?.count || 0),
+      fleetStatus: Object.fromEntries(
+        truckStatusCounts.map((r: any) => [r.status, Number(r.count)])
+      ) as Record<string, number>,
+      topOverdueCustomer,
+      topShareholder,
+    };
+  });
 }
 
 /**
  * P&L report for a given period, with per-truck breakdown.
  */
 export async function getPnlReport(month: number, year: number) {
-  const { start: tripStart, end: tripEnd } = await salaryPeriodDateRange(year, month);
-  const dateFilter = month
-    ? and(gte(s.trips.departureDate, tripStart), sql`${s.trips.departureDate} < ${tripEnd}`)
-    : gte(s.trips.departureDate, tripStart);
+  return cacheGet(`reports:pnl:${month}:${year}`, 120, async () => {
+    const { start: tripStart, end: tripEnd } = await salaryPeriodDateRange(year, month);
+    const dateFilter = month
+      ? and(gte(s.trips.departureDate, tripStart), sql`${s.trips.departureDate} < ${tripEnd}`)
+      : gte(s.trips.departureDate, tripStart);
 
-  const trips = await db.select().from(s.trips).where(
-    and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), dateFilter)
-  );
+    const trips = await db.select().from(s.trips).where(
+      and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), dateFilter)
+    );
 
-  const totalRevenue = trips.reduce((sum, t) => sum + parseFloat(t.revenue || '0'), 0);
-  const totalCosts = trips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
-  const grossProfit = totalRevenue - totalCosts;
+    const totalRevenue = trips.reduce((sum, t) => sum + parseFloat(t.revenue || '0'), 0);
+    const totalCosts = trips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
+    const grossProfit = totalRevenue - totalCosts;
 
-  // Management fees
-  const fees = await db.select().from(s.managementFees);
-  const m = month || new Date().getMonth() + 1;
-  const [fee] = fees.filter(f => f.month === m && f.year === year);
-  const managementFee = fee ? parseFloat(fee.amount) : 0;
+    const fees = await db.select().from(s.managementFees);
+    const m = month || new Date().getMonth() + 1;
+    const [fee] = fees.filter(f => f.month === m && f.year === year);
+    const managementFee = fee ? parseFloat(fee.amount) : 0;
 
-  // Penalties as other income — reuse the same salary period date range
-  const penaltyDateFilter = month
-    ? and(gte(s.penalties.date, tripStart), sql`${s.penalties.date} < ${tripEnd}`)
-    : gte(s.penalties.date, tripStart);
-  const penaltyRows = await db.select({ total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)` })
-    .from(s.penalties)
-    .where(and(isNull(s.penalties.deletedAt), penaltyDateFilter));
-  const otherIncome = parseFloat(penaltyRows[0]?.total || '0');
+    const penaltyDateFilter = month
+      ? and(gte(s.penalties.date, tripStart), sql`${s.penalties.date} < ${tripEnd}`)
+      : gte(s.penalties.date, tripStart);
+    const penaltyRows = await db.select({ total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)` })
+      .from(s.penalties)
+      .where(and(isNull(s.penalties.deletedAt), penaltyDateFilter));
+    const otherIncome = parseFloat(penaltyRows[0]?.total || '0');
 
-  const netProfit = grossProfit - managementFee + otherIncome;
+    const netProfit = grossProfit - managementFee + otherIncome;
 
-  // Per-truck breakdown
-  const truckIds = [...new Set(trips.map(t => t.truckId).filter(Boolean))];
-  const truckRows = truckIds.length > 0
-    ? await db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate }).from(s.trucks)
-        .where(sql`${s.trucks.id} IN (${sql.join(truckIds.map(id => sql`${id}`), sql`, `)})`)
-    : [];
-  const plateById = new Map(truckRows.map(t => [t.id, t.licensePlate]));
+    const truckIds = [...new Set(trips.map(t => t.truckId).filter(Boolean))];
+    const truckRows = truckIds.length > 0
+      ? await db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate }).from(s.trucks)
+          .where(sql`${s.trucks.id} IN (${sql.join(truckIds.map(id => sql`${id}`), sql`, `)})`)
+      : [];
+    const plateById = new Map(truckRows.map(t => [t.id, t.licensePlate]));
 
-  const byTruck = new Map<number, { plate: string; revenue: number; costs: number; profit: number; trips: number }>();
-  for (const trip of trips) {
-    const existing = byTruck.get(trip.truckId) || { plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0 };
-    existing.revenue += parseFloat(trip.revenue || '0');
-    existing.costs += parseFloat(trip.totalCost || '0');
-    existing.profit += parseFloat(trip.grossProfit || '0');
-    existing.trips++;
-    byTruck.set(trip.truckId, existing);
-  }
+    const byTruck = new Map<number, { plate: string; revenue: number; costs: number; profit: number; trips: number }>();
+    for (const trip of trips) {
+      const existing = byTruck.get(trip.truckId) || { plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0 };
+      existing.revenue += parseFloat(trip.revenue || '0');
+      existing.costs += parseFloat(trip.totalCost || '0');
+      existing.profit += parseFloat(trip.grossProfit || '0');
+      existing.trips++;
+      byTruck.set(trip.truckId, existing);
+    }
 
-  return {
-    period: { month, year },
-    totalRevenue,
-    totalCosts,
-    grossProfit,
-    managementFee,
-    otherIncome,
-    netProfit,
-    tripCount: trips.length,
-    trucks: Array.from(byTruck.values()),
-  };
+    return {
+      period: { month, year },
+      totalRevenue,
+      totalCosts,
+      grossProfit,
+      managementFee,
+      otherIncome,
+      netProfit,
+      tripCount: trips.length,
+      trucks: Array.from(byTruck.values()),
+    };
+  });
 }
 
 /**

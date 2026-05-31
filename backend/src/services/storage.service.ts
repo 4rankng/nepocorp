@@ -2,13 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config';
 
-export interface StorageService {
-  upload(fileBuffer: Buffer, key: string): Promise<string>;
-  getSignedUrl(key: string): Promise<string>;
-  delete(key: string): Promise<void>;
-}
-
-export class LocalStorageService implements StorageService {
+export class LocalStorageService {
   private uploadDir: string;
 
   constructor() {

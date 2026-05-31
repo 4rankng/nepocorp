@@ -90,8 +90,10 @@
   color: #fff;
   flex-shrink: 0;
 }
-.partner-card__avatar--phung { background: linear-gradient(135deg, #4DC678, #008B3E); }
-.partner-card__avatar--thuong { background: linear-gradient(135deg, #6E9DCB, #3D6FA3); }
+.partner-card__avatar--phung,
+.partner-card__avatar--primary { background: linear-gradient(135deg, #4DC678, #008B3E); }
+.partner-card__avatar--thuong,
+.partner-card__avatar--secondary { background: linear-gradient(135deg, #6E9DCB, #3D6FA3); }
 .partner-card__name { font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 2px; color: var(--ink); }
 .partner-card__role { font-size: 12px; color: var(--ink-3); }
 .partner-card__pct { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--accent); letter-spacing: -0.02em; }

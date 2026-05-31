@@ -1,10 +1,15 @@
-import { eventBus, AuditEvents } from './event-bus';
+import { EventEmitter } from 'events';
 import { renderAuditMessage } from './audit-templates';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { auditLogs } from '../db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import type { AuditPayload } from './audit-types';
+
+// Inlined event bus — sole consumer is this module.
+const eventBus = new EventEmitter();
+eventBus.setMaxListeners(50);
+const AUDIT_LOG_EVENT = 'audit:log';
 
 export interface AuditEntry extends AuditPayload {
   userId?: number;
@@ -44,7 +49,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
 }
 
 export function initAuditService() {
-  eventBus.on(AuditEvents.AUDIT_LOG, async (payload: AuditEntry) => {
+  eventBus.on(AUDIT_LOG_EVENT, async (payload: AuditEntry) => {
     try {
       // For payment/adjustment/penalty audit rows, the middleware can only see
       // the numeric trip_id in the request body. Resolve it to the natural
@@ -69,7 +74,7 @@ export function initAuditService() {
 }
 
 export function emitAudit(payload: AuditEntry) {
-  eventBus.emit(AuditEvents.AUDIT_LOG, payload);
+  eventBus.emit(AUDIT_LOG_EVENT, payload);
 }
 
 /**

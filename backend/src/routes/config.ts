@@ -11,7 +11,9 @@ import {
   salaryPeriodSchema, salaryPeriodDefaultSchema,
 } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
-import { createCrudRouter, getBootstrapData, getPricing } from '../services/config.service';
+import { createCrudRouter } from './utils/crud-factory';
+import { getBootstrapData, getPricing } from '../services/config.service';
+import { cacheGet, cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -61,7 +63,11 @@ router.use('/cargo-types', createCrudRouter(s.cargoTypes, cargoTypeSchema));
 router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSchema));
 router.use('/road-allowances', createCrudRouter(s.roadAllowances, roadAllowanceSchema));
 router.use('/penalty-reasons', createCrudRouter(s.penaltyReasons, penaltyReasonSchema));
-router.use('/management-fees', createCrudRouter(s.managementFees, managementFeeSchema));
+router.use('/management-fees', createCrudRouter(s.managementFees, managementFeeSchema, {
+  afterCreate: async () => { cacheInvalidatePattern('reports:pnl:*'); },
+  afterUpdate: async () => { cacheInvalidatePattern('reports:pnl:*'); },
+  afterDelete: async () => { cacheInvalidatePattern('reports:pnl:*'); },
+}));
 // Cap-table is amount-based: percentages are derived as
 // contribution_amount / sum(contribution_amount) per snapshot, so totals are
 // always 100% by construction and there's no separate over-allocation check.
@@ -84,6 +90,7 @@ router.use('/drivers', (() => {
   sub.post('/', async (req: Request, res: Response) => {
     const data = driverSchema.parse(req.body);
     const [item] = await db.insert(s.drivers).values(data as any).returning();
+    await cacheInvalidate('catalogs:bootstrap');
     res.status(201).json(item);
   });
 
@@ -99,6 +106,7 @@ router.use('/drivers', (() => {
     const data = driverSchema.partial().parse(req.body);
     const [item] = await db.update(s.drivers).set({ ...(data as any), updatedAt: new Date() }).where(eq(s.drivers.id, id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
+    await cacheInvalidate('catalogs:bootstrap');
     res.json(item);
   });
 
@@ -107,29 +115,43 @@ router.use('/drivers', (() => {
 
 // Fuel config — singleton GET/PUT
 router.get('/fuel-config', async (_req: Request, res: Response) => {
-  const [row] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
-  if (!row) return res.json(null);
-  res.json(row);
+  try {
+    const row = await cacheGet('config:fuel', 300, async () => {
+      const [r] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
+      return r || null;
+    });
+    if (!row) return res.json(null);
+    res.json(row);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.put('/fuel-config', async (req: Request, res: Response) => {
-  const data = fuelConfigSchema.parse(req.body);
-  const values = {
-    loadedNorm: String(data.loadedNorm),
-    emptyNorm: String(data.emptyNorm),
-    supplement: String(data.supplement ?? 0),
-    unitPrice: String(data.unitPrice),
-    warningThreshold: String(data.warningThreshold),
-    criticalThreshold: String(data.criticalThreshold),
-    updatedAt: new Date(),
-  };
-  const [existing] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
-  if (existing) {
-    const [updated] = await db.update(s.fuelConfig).set(values).where(eq(s.fuelConfig.id, existing.id)).returning();
-    res.json(updated);
-  } else {
-    const [created] = await db.insert(s.fuelConfig).values(values).returning();
-    res.status(201).json(created);
+  try {
+    const data = fuelConfigSchema.parse(req.body);
+    const values = {
+      loadedNorm: String(data.loadedNorm),
+      emptyNorm: String(data.emptyNorm),
+      supplement: String(data.supplement ?? 0),
+      unitPrice: String(data.unitPrice),
+      warningThreshold: String(data.warningThreshold),
+      criticalThreshold: String(data.criticalThreshold),
+      updatedAt: new Date(),
+    };
+    const [existing] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
+    if (existing) {
+      const [updated] = await db.update(s.fuelConfig).set(values).where(eq(s.fuelConfig.id, existing.id)).returning();
+      await cacheInvalidate('config:fuel');
+      res.json(updated);
+    } else {
+      const [created] = await db.insert(s.fuelConfig).values(values).returning();
+      await cacheInvalidate('config:fuel');
+      res.status(201).json(created);
+    }
+  } catch (err: any) {
+    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -222,6 +244,31 @@ auditLogRouter.get('/', async (_req: Request, res: Response) => {
   try {
     const page = Math.max(1, parseInt(_req.query.page as string, 10) || 1);
     const limit = Math.min(100, parseInt(_req.query.limit as string, 10) || 50);
+    const category = _req.query.category as string;
+    const search = _req.query.search as string;
+
+    const conditions = [
+      sql`coalesce(${s.auditLogs.payload}->>'event', '') != 'ACCESS_DENIED'`
+    ];
+
+    if (category) {
+      if (category === 'trip') {
+        conditions.push(sql`(${s.auditLogs.payload}->>'event' LIKE 'TRIP_%' OR ${s.auditLogs.payload}->>'event' = 'STATUS_CHANGED')`);
+      } else if (category === 'finance') {
+        conditions.push(sql`${s.auditLogs.payload}->>'event' IN ('PAYMENT_RECEIVED', 'ADJUSTMENT_CREATED', 'PROFIT_DISTRIBUTED')`);
+      } else if (category === 'penalty') {
+        conditions.push(sql`${s.auditLogs.payload}->>'event' = 'PENALTY_CREATED'`);
+      } else if (category === 'auth') {
+        conditions.push(sql`${s.auditLogs.payload}->>'event' IN ('USER_LOGIN', 'USER_LOGOUT')`);
+      } else if (category === 'config') {
+        conditions.push(sql`${s.auditLogs.payload}->>'event' IN ('ENTITY_CREATED', 'ENTITY_UPDATED', 'ENTITY_DELETED')`);
+      }
+    }
+
+    if (search && search.trim()) {
+      const searchPattern = `%${search.trim()}%`;
+      conditions.push(sql`(${s.users.fullName} ILIKE ${searchPattern} OR ${s.users.username} ILIKE ${searchPattern} OR ${s.auditLogs.message} ILIKE ${searchPattern} OR ${s.auditLogs.payload}->>'event' ILIKE ${searchPattern})`);
+    }
 
     const items = await db.select({
       id: s.auditLogs.id,
@@ -234,25 +281,27 @@ auditLogRouter.get('/', async (_req: Request, res: Response) => {
       ipAddress: s.auditLogs.ipAddress,
     }).from(s.auditLogs)
       .leftJoin(s.users, eq(s.auditLogs.userId, s.users.id))
+      .where(and(...conditions))
       .orderBy(desc(s.auditLogs.id))
       .limit(limit).offset((page - 1) * limit);
 
-    const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(s.auditLogs);
+    const [countRow] = await db.select({ count: sql<number>`count(*)` })
+      .from(s.auditLogs)
+      .leftJoin(s.users, eq(s.auditLogs.userId, s.users.id))
+      .where(and(...conditions));
 
     res.json({
       items: items.map(i => ({
         id: i.id,
         userId: i.userId,
-        // Display name in priority order: full Vietnamese name → username.
-        // Email is intentionally NOT returned anymore — the audit log shouldn't
-        // leak personal contact info, and the rendered message already names
-        // the actor (e.g. "Quản lý Lê Văn Tỉnh khóa chuyến TRP-202606-0086").
         userName: i.userName || i.username || 'Người dùng',
         action: (i.payload as any)?.event || '',
         method: (i.payload as any)?.method || '',
         path: (i.payload as any)?.path || '',
         message: i.message,
         timestamp: i.timestamp,
+        payload: i.payload,
+        ipAddress: i.ipAddress,
       })),
       total: Number(countRow?.count ?? 0),
       page,

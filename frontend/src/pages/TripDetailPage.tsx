@@ -20,11 +20,11 @@ import { Spinner } from '../components/shared';
 
 function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--border-2)' }}>
-      <span style={{ color: 'var(--fg-3)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>{icon}</span>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--fg-1)' }}>{value || '—'}</div>
+    <div className="info-row">
+      <span className="info-row__icon">{icon}</span>
+      <div className="info-row__body">
+        <div className="info-row__label">{label}</div>
+        <div className="info-row__value">{value || '—'}</div>
       </div>
     </div>
   );
