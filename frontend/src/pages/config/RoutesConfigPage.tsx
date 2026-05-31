@@ -107,7 +107,7 @@ export default function RoutesConfigPage() {
   const crud = useCRUD('/routes', async () => { await refetch(); });
 
   const now = new Date();
-  const monthLabel = `T${now.getMonth() + 1}`;
+  const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getFullYear()).slice(-2)}`;
   const totalCount = routes.length;
   const mountainCount = routes.filter(r => r.isMountain).length;
   const usedThisMonth = routes.filter(r => (routeTripStats.get(r.id) || 0) > 0).length;

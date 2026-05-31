@@ -351,7 +351,7 @@ export default function PenaltyPage() {
   // ── Derived stats ────────────────────────────────────────────────────────────
 
   const now = new Date();
-  const monthLabel = `T${selMonth}/${selYear}`;
+  const monthLabel = `${String(selMonth).padStart(2, '0')}/${String(selYear).slice(-2)}`;
 
   // Filter penalties by salary period date range
   const monthPenalties = penalties.filter(p => {
@@ -369,7 +369,7 @@ export default function PenaltyPage() {
       }).length
     : 0;
   const monthComparison = prevMonthCount > 0
-    ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với T${prevMonthNum}`
+    ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với ${String(prevMonthNum).padStart(2, '0')}/${String(prevYearNum).slice(-2)}`
     : incidentCount === 0 ? 'Tháng an toàn' : '';
 
   const penalizedDriverIds = new Set(monthPenalties.map(p => p.driverId));

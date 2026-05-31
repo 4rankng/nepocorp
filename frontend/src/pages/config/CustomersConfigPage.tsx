@@ -70,7 +70,7 @@ export default function CustomersConfigPage() {
   const crud = useCRUD('/customers', async () => { await refetch(); });
 
   const now = new Date();
-  const monthLabel = `T${now.getMonth() + 1}`;
+  const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getFullYear()).slice(-2)}`;
   const totalCount = customers.length;
   const activeCount = customers.filter(c => c.status === CustomerStatus.ACTIVE).length;
   const lockedCount = customers.filter(c => c.status === CustomerStatus.LOCKED).length;

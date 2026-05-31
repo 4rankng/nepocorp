@@ -156,7 +156,7 @@ export default function FinancePage() {
                 ['Phí quản lý', mgmtFee, mgmtFeeLY],
                 ['Lợi nhuận ròng', netProfit, netProfitLY],
               ];
-              downloadCSV(`bao-cao-lai-lo-T${month}-${year}.csv`, headers, rows);
+              downloadCSV(`bao-cao-lai-lo-${String(month).padStart(2, '0')}-${String(year).slice(-2)}.csv`, headers, rows);
             }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất Excel
@@ -280,7 +280,7 @@ export default function FinancePage() {
         {/* Cost pie */}
         <div className="panel" style={{ padding: '16px 20px', flex: '1 1 280px', minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
-            Cơ cấu chi phí T{month}/{year}
+            Cơ cấu chi phí {String(month).padStart(2, '0')}/{String(year).slice(-2)}
           </div>
           {loading ? (
             <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
@@ -338,7 +338,7 @@ export default function FinancePage() {
       {!loading && topTrucks.length === 0 && (
         <div className="panel fade-up-3" style={{ padding: '16px 20px', marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
-            Top xe theo lợi nhuận – T{month}/{year}
+            Top xe theo lợi nhuận – {String(month).padStart(2, '0')}/{String(year).slice(-2)}
           </div>
           <div style={{ height: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 8 }}>
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
@@ -354,7 +354,7 @@ export default function FinancePage() {
       {!loading && topTrucks.length > 0 && (
         <div className="panel fade-up-3" style={{ padding: '16px 20px', marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
-            Top xe theo lợi nhuận – T{month}/{year}
+            Top xe theo lợi nhuận – {String(month).padStart(2, '0')}/{String(year).slice(-2)}
           </div>
           {(() => {
             const maxProfit = Math.max(...topTrucks.map(t => t['LN gộp']), 1);
@@ -617,7 +617,7 @@ export default function FinancePage() {
           {categoryBreakdown.length > 0 && (
             <Panel
               title="Cơ cấu chi phí theo hạng mục"
-              subtitle={`Tổng hợp chi phí T${month}/${year} phân theo loại`}
+              subtitle={`Tổng hợp chi phí ${String(month).padStart(2, '0')}/${String(year).slice(-2)} phân theo loại`}
               style={{ marginTop: 20 }}
               flush
             >
