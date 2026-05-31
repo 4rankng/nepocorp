@@ -29,14 +29,24 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
     }
 
+    // For drivers, prefer the drivers.name as a more accurate display label
+    // than users.full_name when both exist (drivers.name is the canonical
+    // payroll/contract name).
+    let displayName = user.fullName;
+    if (user.role === 'DRIVER') {
+      const [d] = await db.select({ name: drivers.name }).from(drivers).where(eq(drivers.userId, user.id)).limit(1);
+      if (d?.name) displayName = d.name;
+    }
+    displayName = displayName || user.username || 'Người dùng';
+
     const token = jwt.sign(
-      { userId: user.id, username: user.username, email: user.email, role: user.role },
+      { userId: user.id, username: user.username, email: user.email, fullName: displayName, role: user.role },
       config.jwtSecret,
       { expiresIn: config.jwtExpiresIn as any }
     );
 
     const { passwordHash, deletedAt, ...userPublic } = user;
-    res.json({ token, user: userPublic });
+    res.json({ token, user: { ...userPublic, fullName: displayName } });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
     res.status(500).json({ error: 'Lỗi máy chủ' });

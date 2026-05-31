@@ -117,10 +117,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // Close user menu when sidebar collapses to avoid invisible open state
-  useEffect(() => {
-    if (!sidebarOpen) setUserMenuOpen(false);
-  }, [sidebarOpen]);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const [profileModalOpen, setProfileModalOpen] = useState(false);

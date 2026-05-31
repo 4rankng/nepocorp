@@ -20,14 +20,15 @@ import tripRoutes from '../routes/trips';
 import financialRoutes from '../routes/financial';
 import driverRoutes from '../routes/driver';
 import { authMiddleware } from '../middleware/auth';
+import { casbinAuthz } from '../middleware/casbin';
 
 const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
-app.use('/api', authMiddleware, configRoutes);
-app.use('/api/trips', authMiddleware, tripRoutes);
-app.use('/api', authMiddleware, financialRoutes);
-app.use('/api/driver/me', authMiddleware, driverRoutes);
+app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRoutes);
+app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
+app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
+app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
 
 let server: http.Server;
 let baseUrl: string;

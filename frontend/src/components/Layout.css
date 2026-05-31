@@ -85,7 +85,15 @@
   }
 
   .app.sidebar-closed .sidebar-user-dropdown {
-    display: none;
+    position: fixed;
+    bottom: 8px;
+    left: 56px;
+    right: auto;
+    min-width: 200px;
+    margin-bottom: 0;
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+    z-index: 1001;
   }
 
   .app.sidebar-closed .sidebar-user-chevron {

@@ -217,6 +217,18 @@
   .trip-form-grid,
   .trip-form-row { grid-template-columns: 1fr !important; flex-direction: column !important; }
 
+  /* TripCreate page header: stack progress pills below title; shrink title font */
+  .tc-page-head { padding: 16px 14px 8px !important; flex-wrap: wrap !important; gap: 12px !important; }
+  .tc-page-title { font-size: 20px !important; line-height: 1.2 !important; }
+  .tc-page-sub { font-size: 12.5px !important; }
+  .tc-progress-pills { order: 99 !important; flex-basis: 100% !important; justify-content: flex-start !important; }
+  .tc-back-btn { width: 32px !important; height: 32px !important; }
+  .tc-form-row,
+  .tc-form-row--three { grid-template-columns: 1fr !important; }
+  .tc-content { grid-template-columns: 1fr !important; gap: 16px !important; padding: 0 !important; }
+  .tc-rail { position: static !important; }
+  .tc-action-bar { left: 0 !important; padding: 12px 16px !important; }
+
   /* ── Login page already centered, just tighten ── */
   .login-card { padding: 24px 20px !important; }
 

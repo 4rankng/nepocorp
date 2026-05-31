@@ -24,6 +24,10 @@ export const users = pgTable('users', {
   username: varchar('username', { length: 100 }).unique(),
   email: varchar('email', { length: 255 }).unique(),
   phone: varchar('phone', { length: 20 }).unique(),
+  // Human-readable full name (e.g. "Lê Văn Tài"). Used as the actor label in
+  // audit log messages so users see "Quản lý Lê Văn Tài khóa chuyến" instead
+  // of the email "Quản lý giamdoc@nepo.vn khóa chuyến #76".
+  fullName: varchar('full_name', { length: 255 }),
   passwordHash: text('password_hash').notNull(),
   role: roleEnum('role').notNull().default('DRIVER'),
   status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),

@@ -19,6 +19,8 @@ import mapsRoutes from './routes/maps';
 
 await initAuditService();
 await initEnforcer();
+const { applyRuntimePatches } = await import('./db/index');
+await applyRuntimePatches();
 
 const app = express();
 

@@ -98,8 +98,12 @@ before(async () => {
 });
 
 after(async () => {
+  try {
+    await db.delete(s.ledger).where(sql`${s.ledger.note} = 'Parallel ledger testing'`);
+    await db.delete(s.ledger).where(sql`${s.ledger.note} = 'Rollback test entry'`);
+  } catch {}
   await new Promise<void>((resolve) => server.close(() => resolve()));
-  await client.end(); // Close postgres connection pool so node:test can exit
+  await client.end();
 });
 
 // Helper to make fetch requests
@@ -278,7 +282,6 @@ test('T4.2 — Concurrency: Sorted locks prevent deadlocks for multiple trips wi
 // T4.4 — Rate Snapshotting validation
 // ─────────────────────────────────────────────────────────────────────────────
 test('T4.4 — Rate Snapshotting:applied values are preserved when configuration rates change', async () => {
-  // 1. Create a trip. Applied pricing should match existing config values.
   const trip = await tripService.createTrip({
     customer_id: customerId,
     route_id: routeId,
@@ -294,33 +297,36 @@ test('T4.4 — Rate Snapshotting:applied values are preserved when configuration
 
   assert.ok(originalFuelPrice > 0, 'Should have non-zero applied fuel price snapshot');
 
-  // 2. Modify global fuel config and road allowances base amounts
-  await db.update(s.fuelConfig).set({ unitPrice: '99000' });
-  await db.update(s.roadAllowances).set({ baseAmount: '9900000' }).where(eq(s.roadAllowances.routeId, routeId));
+  const [origConfig] = await db.select().from(s.fuelConfig).limit(1);
+  const origUnitPrice = origConfig.unitPrice;
+  const [origAllowance] = await db.select().from(s.roadAllowances)
+    .where(eq(s.roadAllowances.routeId, routeId)).limit(1);
+  const origBaseAmount = origAllowance.baseAmount;
 
-  // 3. Update the trip figures to trigger totals recalculation
-  await tripService.updateTripFigures(trip.id, {
-    fuel_mode: FuelMode.AUTO,
-    legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: LoadingType.HANG }],
-    fuel_supplement_liters: 0,
-    tolls_discount: 0,
-    tolls_addition: 0,
-    tolls_stations: 0,
-    has_return_cargo: false,
-    driver_salary: 500000,
-    revenue: 4000000,
-  });
+  try {
+    await db.update(s.fuelConfig).set({ unitPrice: '99000' });
+    await db.update(s.roadAllowances).set({ baseAmount: '9900000' }).where(eq(s.roadAllowances.routeId, routeId));
 
-  // 4. Retrieve the updated trip details
-  const [updatedTrip] = await db.select().from(s.trips).where(eq(s.trips.id, trip.id)).limit(1);
+    await tripService.updateTripFigures(trip.id, {
+      fuel_mode: FuelMode.AUTO,
+      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: LoadingType.HANG }],
+      fuel_supplement_liters: 0,
+      tolls_discount: 0,
+      tolls_addition: 0,
+      tolls_stations: 0,
+      has_return_cargo: false,
+      driver_salary: 500000,
+      revenue: 4000000,
+    });
 
-  // Assert that snapshotted rates did NOT change to the new global config values!
-  assert.strictEqual(Number(updatedTrip.fuelPriceApplied), originalFuelPrice, 'Applied fuel price snapshot must remain unchanged');
-  assert.strictEqual(Number(updatedTrip.roadAllowanceBaseApplied), originalRoadBase, 'Applied road allowance base snapshot must remain unchanged');
+    const [updatedTrip] = await db.select().from(s.trips).where(eq(s.trips.id, trip.id)).limit(1);
 
-  // Clean up global configurations to original values
-  await db.update(s.fuelConfig).set({ unitPrice: String(originalFuelPrice) });
-  await db.update(s.roadAllowances).set({ baseAmount: String(originalRoadBase) }).where(eq(s.roadAllowances.routeId, routeId));
+    assert.strictEqual(Number(updatedTrip.fuelPriceApplied), originalFuelPrice, 'Applied fuel price snapshot must remain unchanged');
+    assert.strictEqual(Number(updatedTrip.roadAllowanceBaseApplied), originalRoadBase, 'Applied road allowance base snapshot must remain unchanged');
+  } finally {
+    await db.update(s.fuelConfig).set({ unitPrice: origUnitPrice });
+    await db.update(s.roadAllowances).set({ baseAmount: origBaseAmount }).where(eq(s.roadAllowances.routeId, routeId));
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

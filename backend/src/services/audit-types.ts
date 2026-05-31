@@ -32,5 +32,13 @@ export interface AuditPayload {
   entityId?: number;
   actorRole?: string;
   actorEmail?: string;
+  /** Human-readable Vietnamese name shown in the audit log ("Lê Văn Tỉnh"). */
+  actorName?: string;
+  /**
+   * Human-readable identifier of the entity acted on (e.g. "TRP-202606-0086",
+   * "30A-12345", "Công ty CP Vận tải ABC"). Preferred over the numeric id in
+   * audit messages — readers should never see "chuyến #76".
+   */
+  entityKey?: string;
   metadata?: Record<string, unknown>;
 }

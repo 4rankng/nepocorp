@@ -7,6 +7,8 @@ export interface AuthUser {
   userId: number;
   username: string | null;
   email: string | null;
+  /** Human-readable Vietnamese name. Used as the actor label in audit logs. */
+  fullName: string | null;
   role: Role;
 }
 
