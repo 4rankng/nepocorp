@@ -55,11 +55,21 @@ function extractEntityKey(
     case 'cargo-types':
     case 'drivers':
     case 'penalty-reasons':
+    case 'suppliers':
+    case 'expense-categories':
       return pick(responseBody, 'name')
         || pick(requestBody, 'name');
     case 'cap-table':
       return pick(responseBody, 'partnerName')
         || pick(requestBody, 'partnerName');
+    case 'reports': {
+      const quarter = pick(responseBody, 'quarter') || pick(requestBody, 'quarter');
+      const year = pick(responseBody, 'year') || pick(requestBody, 'year');
+      if (quarter && year) {
+        return `Quý ${quarter}/${year}`;
+      }
+      return undefined;
+    }
     case 'payments':
     case 'adjustments':
     case 'penalties': {

@@ -23,6 +23,10 @@ const ENTITY_LABELS: Record<string, string> = {
   reports: 'báo cáo',
   auth: 'tài khoản',
   users: 'tài khoản',
+  expenses: 'khoản chi phí vận hành',
+  suppliers: 'nhà cung cấp',
+  'expense-categories': 'danh mục chi phí',
+  'salary-periods': 'cấu hình kỳ lương',
 };
 
 interface TemplateContext {
@@ -95,33 +99,35 @@ function withKey(key: string): string {
 }
 
 const templates: Record<string, (c: TemplateContext) => string> = {
-  [AuditEvent.TRIP_CREATED]: (c) => `${subj(c)} tạo lệnh vận chuyển${withKey(c.entityKey)}`,
-  [AuditEvent.TRIP_DISPATCHED]: (c) => `${subj(c)} xuất phát chuyến${withKey(c.entityKey)}`,
-  [AuditEvent.TRIP_UPDATED_PRE_DEPARTURE]: (c) => `${subj(c)} cập nhật số liệu trước xuất phát chuyến${withKey(c.entityKey)}`,
-  [AuditEvent.TRIP_UPDATED_ACTUALS]: (c) => `${subj(c)} cập nhật số liệu thực tế chuyến${withKey(c.entityKey)}`,
-  [AuditEvent.TRIP_COMPLETED]: (c) => `${subj(c)} hoàn thành chuyến${withKey(c.entityKey)}`,
-  [AuditEvent.TRIP_LOCKED]: (c) => `${subj(c)} khóa chuyến${withKey(c.entityKey)}`,
-  [AuditEvent.TRIP_CANCELED]: (c) => `${subj(c)} hủy chuyến${withKey(c.entityKey)}`,
+  [AuditEvent.TRIP_CREATED]: (c) => `${subj(c)} đã tạo mới lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  [AuditEvent.TRIP_DISPATCHED]: (c) => `${subj(c)} đã cho xe xuất phát cho lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  [AuditEvent.TRIP_UPDATED_PRE_DEPARTURE]: (c) => `${subj(c)} đã cập nhật các thông tin trước xuất phát cho lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  [AuditEvent.TRIP_UPDATED_ACTUALS]: (c) => `${subj(c)} đã cập nhật các số liệu thực tế sau chuyến đi cho lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  [AuditEvent.TRIP_COMPLETED]: (c) => `${subj(c)} đã xác nhận hoàn thành lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  [AuditEvent.TRIP_LOCKED]: (c) => `${subj(c)} đã chốt khóa lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''} (mọi số liệu đã được cố định và ghi nhận sổ cái)`,
+  [AuditEvent.TRIP_CANCELED]: (c) => `${subj(c)} đã hủy bỏ lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
 
-  [AuditEvent.PAYMENT_RECEIVED]: (c) => `${subj(c)} ghi nhận thanh toán${withKey(c.entityKey)}`,
-  [AuditEvent.ADJUSTMENT_CREATED]: (c) => `${subj(c)} tạo hóa đơn điều chỉnh${withKey(c.entityKey)}`,
-  [AuditEvent.PENALTY_CREATED]: (c) => `${subj(c)} ghi nhận kỷ luật${withKey(c.entityKey)}`,
-  [AuditEvent.PENALTY_CANCELED]: (c) => `${subj(c)} hủy kỷ luật${withKey(c.entityKey)}`,
-  [AuditEvent.DRIVER_SALARY_RECORDED]: (c) => `${subj(c)} ghi nhận lương tài xế${withKey(c.entityKey)}`,
+  [AuditEvent.PAYMENT_RECEIVED]: (c) => `${subj(c)} đã ghi nhận thanh toán${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  [AuditEvent.ADJUSTMENT_CREATED]: (c) => `${subj(c)} đã tạo bút toán điều chỉnh công nợ${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  [AuditEvent.PENALTY_CREATED]: (c) => `${subj(c)} đã ghi nhận quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.PENALTY_CANCELED]: (c) => `${subj(c)} đã hủy bỏ quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.DRIVER_SALARY_RECORDED]: (c) => `${subj(c)} đã ghi nhận bảng tính lương cho tài xế${c.entityKey ? `: ${c.entityKey}` : ''}`,
 
-  [AuditEvent.ENTITY_CREATED]: (c) => `${subj(c)} tạo ${c.entityLabel}${withKey(c.entityKey)}`,
-  [AuditEvent.ENTITY_UPDATED]: (c) => `${subj(c)} cập nhật ${c.entityLabel}${withKey(c.entityKey)}`,
-  [AuditEvent.ENTITY_DELETED]: (c) => `${subj(c)} xóa ${c.entityLabel}${withKey(c.entityKey)}`,
+  [AuditEvent.ENTITY_CREATED]: (c) => `${subj(c)} đã tạo mới ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.ENTITY_UPDATED]: (c) => `${subj(c)} đã cập nhật thông tin ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.ENTITY_DELETED]: (c) => `${subj(c)} đã xóa ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
 
-  [AuditEvent.USER_LOGIN]: (c) => `${subj(c)} đăng nhập hệ thống`,
-  [AuditEvent.USER_LOGOUT]: (c) => `${subj(c)} đăng xuất hệ thống`,
-  [AuditEvent.LOGIN_FAILED]: (c) => `Đăng nhập thất bại${c.entityKey ? ` cho tài khoản ${c.entityKey}` : ''}${c.ipAddress ? ` từ IP ${c.ipAddress}` : ''}`,
-  [AuditEvent.ACCESS_DENIED]: (c) => `${subj(c)} bị từ chối truy cập ${c.entityLabel}${withKey(c.entityKey)}`,
+  [AuditEvent.USER_LOGIN]: (c) => `${subj(c)} đã đăng nhập vào hệ thống`,
+  [AuditEvent.USER_LOGOUT]: (c) => `${subj(c)} đã đăng xuất khỏi hệ thống`,
+  [AuditEvent.LOGIN_FAILED]: (c) => `Phát hiện nỗ lực đăng nhập thất bại${c.entityKey ? ` cho tài khoản ${c.entityKey}` : ''}${c.ipAddress ? ` từ địa chỉ IP ${c.ipAddress}` : ''}`,
+  [AuditEvent.ACCESS_DENIED]: (c) => `Từ chối truy cập của ${subj(c)} vào tài nguyên ${c.entityLabel}${c.entityKey ? ` (${c.entityKey})` : ''}`,
+
+  [AuditEvent.PROFIT_DISTRIBUTED]: (c) => `${subj(c)} đã thực hiện phân phối lợi nhuận cho các cổ đông của ${c.entityKey || 'hệ thống'}`,
 };
 
 export function renderAuditMessage(payload: AuditPayload): string {
   const template = templates[payload.event];
   if (template) return template(ctx(payload));
   const c = ctx(payload);
-  return `${subj(c)} thực hiện ${payload.event} trên ${c.entityLabel}${withKey(c.entityKey)}`;
+  return `${subj(c)} đã thực hiện hành động ${payload.event} trên ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`;
 }

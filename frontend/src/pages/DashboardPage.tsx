@@ -729,8 +729,15 @@ export default function DashboardPage() {
           style={styles.mb16}
           flush
         >
-          <div className="table-scroll">
-            <table>
+          {/* Fixed table layout with explicit column widths so the "Còn lại"
+              status column doesn't get clipped to "Còn" + "15 ngà". */}
+          <table style={{ width: '100%', tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '28%' }} />
+              <col style={{ width: '32%' }} />
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '20%' }} />
+            </colgroup>
               <thead>
                 <tr>
                   <th>Phương tiện</th>
@@ -766,7 +773,6 @@ export default function DashboardPage() {
                 })}
               </tbody>
             </table>
-          </div>
         </Panel>
       )}
 
