@@ -157,6 +157,12 @@ export async function updateTripFigures(
     userId?: number;
   },
 ) {
+  // Normalize leg distances to integers to satisfy strict database integer constraints and avoid PG 22P02 syntax errors
+  const normalizedLegs = data.legs.map(leg => ({
+    ...leg,
+    km: Math.round(leg.km),
+  }));
+
   return await db.transaction(async (tx) => {
     // 1. Fetch trip and check lock status
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
@@ -198,7 +204,7 @@ export async function updateTripFigures(
 
     // 4. Compute Totals using pure shared function
     const totalsInput = {
-      legs: data.legs.map(l => ({ sequence: l.sequence, km: l.km, loadingType: l.loadingType })),
+      legs: normalizedLegs.map(l => ({ sequence: l.sequence, km: l.km, loadingType: l.loadingType })),
       fuelMode: data.fuelMode,
       fuelLitersOverride: data.fuelLitersOverride ?? null,
       fuelSupplementLiters: data.fuelSupplementLiters ?? 0,
@@ -269,11 +275,11 @@ export async function updateTripFigures(
       throw new ApiError(409, 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.');
     }
 
-    // 6. Persist physical leg segments
+    // 7. Persist physical leg segments
     await tx.delete(s.tripLegs).where(eq(s.tripLegs.tripId, tripId));
-    if (data.legs.length > 0) {
+    if (normalizedLegs.length > 0) {
       await tx.insert(s.tripLegs).values(
-        data.legs.map((leg, i) => {
+        normalizedLegs.map((leg, i) => {
           const calcLeg = totals.legCalculations.find(cl => cl.sequence === leg.sequence);
           return {
             tripId,
@@ -590,7 +596,32 @@ export async function getTripById(id: number) {
     db.select({ storageKey: s.tripPhotos.storageKey }).from(s.tripPhotos).where(eq(s.tripPhotos.tripId, id)),
   ]);
 
+  const uniquePairs = [...new Set(legs.map(l => `${l.origin.trim().toLowerCase()}|${l.destination.trim().toLowerCase()}`))];
+  const cacheEntries = uniquePairs.length > 0
+    ? await db
+        .select({
+          originCleaned: s.routeDistanceCache.originCleaned,
+          destinationCleaned: s.routeDistanceCache.destinationCleaned,
+          polylinePath: s.routeDistanceCache.polylinePath,
+        })
+        .from(s.routeDistanceCache)
+        .where(
+          sql`(${s.routeDistanceCache.originCleaned}, ${s.routeDistanceCache.destinationCleaned}) IN (${sql.join(uniquePairs.map(p => {
+            const [o, d] = p.split('|');
+            return sql`(${o}, ${d})`;
+          }), sql`, `)})`
+        )
+    : [];
+  const cacheMap = new Map<string, typeof cacheEntries[number]>(
+    cacheEntries.map(e => [`${e.originCleaned}|${e.destinationCleaned}`, e] as const)
+  );
+  const legsWithPaths = legs.map(leg => {
+    const key = `${leg.origin.trim().toLowerCase()}|${leg.destination.trim().toLowerCase()}`;
+    const cached = cacheMap.get(key);
+    return { ...leg, polylinePath: cached?.polylinePath ?? null };
+  });
+
   const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
-  return shapeTripRelations(trip, { legs, photoUrls });
+  return shapeTripRelations(trip, { legs: legsWithPaths, photoUrls });
 }
 

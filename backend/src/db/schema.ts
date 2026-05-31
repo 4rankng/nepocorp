@@ -380,3 +380,14 @@ export const tripPhotos = pgTable('trip_photos', {
   uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
 });
 
+export const routeDistanceCache = pgTable('route_distance_cache', {
+  id: serial('id').primaryKey(),
+  originCleaned: varchar('origin_cleaned', { length: 255 }).notNull(),
+  destinationCleaned: varchar('destination_cleaned', { length: 255 }).notNull(),
+  distanceKm: numeric('distance_km', { precision: 10, scale: 2 }).notNull(),
+  durationSeconds: integer('duration_seconds'),
+  polylinePath: text('polyline_path'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+

@@ -20,8 +20,8 @@ type NormalizedEntry = AuditEntry & {
 
 // Map raw API entry → canonical shape
 function normalizeEntry(e: any): NormalizedEntry {
-  const name = e.userName || e.username || e.userEmail || 'Người dùng';
-  const email = e.userEmail || '';
+  const name = e.userName || e.actorName || e.actor_name || e.username || e.userEmail || 'Người dùng';
+  const email = e.userEmail || e.actorEmail || '';
   const action: string = e.action || '';
   let category: AuditEntry['category'] = 'config';
   if (action.startsWith('TRIP_') || action === 'STATUS_CHANGED') category = 'trip';

@@ -20,7 +20,6 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed }: JourneyLegsCa
       title="Hành trình chi tiết"
       subtitle="Khai báo các chặng đường, cự ly và tải trọng"
       badge="optional"
-      action={{ label: 'Thêm chặng', icon: <Plus size={14} />, onClick: addLeg }}
       collapsible={collapsible}
       defaultCollapsed={defaultCollapsed}
     >
@@ -57,9 +56,19 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed }: JourneyLegsCa
               />
             ))}
           </div>
-          <div className="form-summary">
-            <span>Tổng số chặng: <strong>{legs.length}</strong></span>
-            <span>Tổng cự ly: <strong>{totalKm.toLocaleString('vi-VN')} Km</strong></span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+            <div className="form-summary" style={{ margin: 0 }}>
+              <span>Tổng số chặng: <strong>{legs.length}</strong></span>
+              <span>Tổng cự ly: <strong>{totalKm.toLocaleString('vi-VN')} Km</strong></span>
+            </div>
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              onClick={addLeg}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Plus size={14} /> Thêm chặng
+            </button>
           </div>
         </>
       )}

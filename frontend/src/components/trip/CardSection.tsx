@@ -1,12 +1,11 @@
 import React, { useState, useId } from 'react';
-import { Plus, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 interface CardSectionProps {
   number: number;
   title: string;
   subtitle?: string;
   badge?: 'required' | 'optional';
-  action?: { label: string; icon?: React.ReactNode; onClick: () => void };
   /** Allow the section to collapse/expand. When true the head row becomes a button. */
   collapsible?: boolean;
   /** Initial state when `collapsible` is true. Defaults to expanded. */
@@ -19,7 +18,6 @@ export function CardSection({
   title,
   subtitle,
   badge,
-  action,
   collapsible = false,
   defaultCollapsed = false,
   children,
@@ -42,16 +40,6 @@ export function CardSection({
           {badge === 'required' ? 'Bắt buộc' : 'Tùy chọn'}
         </span>
       )}
-      {action && !collapsed && (
-        <button
-          className="tc-card-action"
-          onClick={(e) => { e.stopPropagation(); action.onClick(); }}
-          type="button"
-        >
-          {action.icon ?? <Plus size={14} />}
-          {action.label}
-        </button>
-      )}
       {collapsible && (
         <ChevronDown
           size={18}
@@ -65,15 +53,23 @@ export function CardSection({
   return (
     <section className={`tc-card${collapsible ? ' is-collapsible' : ''}${collapsed ? ' is-collapsed' : ''}`}>
       {collapsible ? (
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           className="tc-card-head tc-card-head-btn"
           onClick={() => setCollapsed((v) => !v)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setCollapsed((v) => !v);
+            }
+          }}
           aria-expanded={!collapsed}
           aria-controls={bodyId}
+          style={{ cursor: 'pointer' }}
         >
           {headContent}
-        </button>
+        </div>
       ) : (
         <div className="tc-card-head">{headContent}</div>
       )}

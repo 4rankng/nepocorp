@@ -110,8 +110,8 @@ export default function ExpenseListPage() {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
       <PageHeader
-        title="Phiếu chi phí"
-        description={`${total} phiếu chi phí`}
+        title="Chi phí phát sinh"
+        description={`${total} khoản chi phí`}
         action={
           <button className="btn btn--primary btn--sm" onClick={() => navigate('/expenses/new')}>
             <Plus size={14} /> Thêm phiếu chi
@@ -203,7 +203,7 @@ export default function ExpenseListPage() {
             </div>
           ) : expenses.length === 0 ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
-              Chưa có phiếu chi phí nào.
+              Chưa có khoản chi phí nào.
             </div>
           ) : (
             expenses.map(e => (
@@ -269,7 +269,7 @@ export default function ExpenseListPage() {
               ) : expenses.length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
-                    Chưa có phiếu chi phí nào.
+                    Chưa có khoản chi phí nào.
                   </td>
                 </tr>
               ) : (

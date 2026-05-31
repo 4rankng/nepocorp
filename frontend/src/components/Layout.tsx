@@ -91,9 +91,9 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/profit')) return 'Phân chia lợi nhuận';
   if (pathname.startsWith('/debt')) return 'Công nợ phải thu';
   if (pathname.startsWith('/payables')) return 'Công nợ phải trả';
-  if (pathname.startsWith('/expenses/new')) return 'Tạo phiếu chi phí';
-  if (pathname.match(/^\/expenses\/\d+\/edit$/)) return 'Sửa phiếu chi phí';
-  if (pathname.startsWith('/expenses')) return 'Phiếu chi phí';
+  if (pathname.startsWith('/expenses/new')) return 'Ghi nhận chi phí';
+  if (pathname.match(/^\/expenses\/\d+\/edit$/)) return 'Sửa chi phí';
+  if (pathname.startsWith('/expenses')) return 'Chi phí phát sinh';
   if (pathname.startsWith('/suppliers')) return 'Nhà cung cấp';
   if (pathname === '/penalties' || pathname === '/my-penalties') return 'Kỷ luật';
   if (pathname.startsWith('/customers')) return 'Khách hàng';

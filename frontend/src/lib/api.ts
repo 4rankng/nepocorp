@@ -45,12 +45,44 @@ class ApiClient {
       if (typeof raw === 'string') {
         msg = raw;
       } else if (Array.isArray(raw)) {
-        // Zod error array: each entry has { path, message } — join human-readable.
+        const FIELD_VI: Record<string, string> = {
+          legs: 'Hành trình',
+          'legs.origin': 'Điểm đi',
+          'legs.destination': 'Điểm đến',
+          'legs.km': 'Số km',
+          'legs.loadingType': 'Loại tải',
+          fuelMode: 'Chế độ nhiên liệu',
+          fuelLitersOverride: 'Số lít dầu',
+          fuelSupplementLiters: 'Dầu bổ sung',
+          fuelSupplementReason: 'Lý do bổ sung',
+          tollsDiscount: 'Giảm vé',
+          tollsAddition: 'Tăng vé',
+          tollsStations: 'Số trạm',
+          hasReturnCargo: 'Hàng về',
+          driverSalary: 'Lương tài xế',
+          revenue: 'Doanh thu',
+          notes: 'Ghi chú',
+          customerId: 'Khách hàng',
+          routeId: 'Tuyến đường',
+          truckId: 'Xe đầu kéo',
+          driverId: 'Tài xế',
+          cargoTypeId: 'Loại hàng',
+          departureDate: 'Ngày xuất phát',
+          containerCount: 'Số container',
+        };
+        const MSG_VI: Record<string, string> = {
+          'Array must contain at least 1 element': 'Phải có ít nhất 1 chặng hành trình',
+          'Number must be greater than 0': 'Giá trị phải lớn hơn 0',
+          'Required': 'Trường bắt buộc',
+        };
         msg = raw
           .map((e: any) => {
             const field = Array.isArray(e?.path) ? e.path.join('.') : e?.path;
-            return field ? `${field}: ${e?.message ?? e}` : (e?.message ?? JSON.stringify(e));
+            const viField = field ? FIELD_VI[field] || field : '';
+            const viMsg = MSG_VI[e?.message] || e?.message || '';
+            return viField ? `${viField}: ${viMsg}` : viMsg;
           })
+          .filter(Boolean)
           .join('; ');
       } else if (raw && typeof raw === 'object') {
         msg = (raw as any).message || JSON.stringify(raw);

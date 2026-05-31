@@ -143,15 +143,15 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 ### 4.14 Chi phí vận hành, Nhà cung cấp & Công nợ phải trả
 
 * **Phạm vi:** ghi nhận chi phí vận hành ngoài chuyến đi — sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — gắn với Nhà cung cấp và (tùy chọn) một xe.
-* **Nhà cung cấp (NCC):** danh mục mọi bên nhận tiền (gara, trạm lốp, cửa hàng phụ tùng, công ty bảo hiểm, trung tâm đăng kiểm, đơn vị thu phí đường bộ). **Bắt buộc** trên mọi phiếu chi phí. Không có trường "phân loại" (phân loại nằm ở hạng mục từng phiếu).
+* **Nhà cung cấp (NCC):** danh mục mọi bên nhận tiền (gara, trạm lốp, cửa hàng phụ tùng, công ty bảo hiểm, trung tâm đăng kiểm, đơn vị thu phí đường bộ). **Bắt buộc** trên mọi khoản chi phí. Không có trường "phân loại" (phân loại nằm ở hạng mục từng khoản chi).
 * **Hạng mục chi phí:** danh mục **cấu hình được** (người dùng tự thêm). Mỗi hạng mục là **một lần** hoặc **định kỳ** (`is_renewable`); hạng mục định kỳ có `reminder_lead_days` (mặc định 30 ngày).
-* **Phiếu chi phí:** một phiếu = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một **xe đầu kéo** (tùy chọn, có thể để trống → chi phí chung). Khi chi phí liên quan đến rơ-mooc (VD: thay lốp), kế toán chọn đầu kéo ghép cặp — không có trường rơ-mooc riêng. Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → nhập nhiều phiếu.
+* **Chi phí phát sinh:** một khoản chi = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một **xe đầu kéo** (tùy chọn, có thể để trống → chi phí chung). Khi chi phí liên quan đến rơ-mooc (VD: thay lốp), kế toán chọn đầu kéo ghép cặp — không có trường rơ-mooc riêng. Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → ghi nhận nhiều lần.
 * **Trạng thái thanh toán:**
     * **Trả ngay (PAID):** chỉ ghi cho P&L, không phát sinh công nợ (hệ thống không có tài khoản tiền mặt).
     * **Ghi nợ (UNPAID):** tạo bản ghi Sổ cái `entity_type='VENDOR'` (credit = số tiền) → phát sinh **công nợ phải trả**.
 * **Hạng mục định kỳ:** phiếu ghi `valid_from`/`valid_to`. Dashboard **nhắc gia hạn** khi `hôm nay >= valid_to − reminder_lead_days` hoặc đã quá hạn (dùng `valid_to` mới nhất theo từng xe × hạng mục). Gia hạn = tạo phiếu mới hạn xa hơn. **Không phân bổ** — ghi toàn bộ vào tháng thanh toán.
 * **Công nợ phải trả (Accounts Payable):** mirror công nợ phải thu trên `entity_type='VENDOR'`. Quy ước dấu giống lái xe: `balance = balance trước + Credit − Debit`. **Tuổi nợ ngược chiều phải thu:** chi phí là Credit (tính tuổi), thanh toán là Debit (áp FIFO).
-* **Thanh toán NCC:** kế toán nhập tổng tiền trả cho một NCC → `VENDOR_PAYMENT` (debit) giảm số dư. **Khớp FIFO theo tổng số dư, không khớp từng phiếu.**
+* **Thanh toán công nợ:** kế toán nhập tổng tiền trả cho một NCC → `VENDOR_PAYMENT` (debit) giảm số dư. **Khớp FIFO theo tổng số dư, không khớp từng khoản chi.**
 * **Sửa/Xóa phiếu đã ghi nợ:** dùng bút toán **ADJUSTMENT** bù trừ (Sổ cái append-only); dòng phiếu soft-delete.
 * **Bảng `expenses`** là bảng vận hành mới (không phải bảng cấu hình), kèm bảng `expense_photos` cho ảnh hóa đơn.
 
@@ -204,7 +204,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 8. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Nhà cung cấp và Hạng mục chi phí (một lần/định kỳ, số ngày nhắc gia hạn).
 
 ### MODULE 9: CHI PHÍ VẬN HÀNH & CÔNG NỢ PHẢI TRẢ
-1. **[Kế toán]** Tôi muốn nhập phiếu chi phí (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ), gắn Nhà cung cấp và (tùy chọn) một xe, đính ảnh hóa đơn.
+1. **[Kế toán]** Tôi muốn ghi nhận chi phí phát sinh (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ), gắn Nhà cung cấp và (tùy chọn) một xe, đính ảnh hóa đơn.
 2. **[Kế toán]** Tôi muốn chọn trạng thái Trả ngay hoặc Ghi nợ; phiếu Ghi nợ tự phát sinh công nợ phải trả cho NCC.
 3. **[Kế toán/Quản lý]** Tôi muốn xem danh sách công nợ phải trả theo NCC kèm tuổi nợ (0–30/31–60/61–90/90+) và xuất sao kê NCC.
 4. **[Kế toán]** Tôi muốn ghi nhận thanh toán cho NCC (giảm tổng số dư, FIFO).

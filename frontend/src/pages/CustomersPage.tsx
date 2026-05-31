@@ -203,7 +203,7 @@ export default function CustomersPage() {
           meta={total > 0 ? `${Math.round((activeCount / total) * 100)}% hoạt động đều` : ''}
         />
         <KPI
-          label="Top 4 chiếm"
+          label="Top 4 KH / doanh thu"
           value="—"
           variant="warn"
           icon={BarChart3}

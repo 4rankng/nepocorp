@@ -7,7 +7,7 @@ import type { PricingTable } from "@nepocorp/shared";
 import { tripClient } from "../api/tripClient";
 
 import type { TripOptions, RouteOption } from "./useTripOptions";
-import { calculateDistanceKm } from "../lib/maps";
+import { calculateRoute } from "../lib/maps";
 
 const FUEL_PRICE_PER_LITER = 25000;
 const LOADED_RATE = 43; // L/100km
@@ -24,6 +24,7 @@ export interface FormLeg {
   destination: string;
   km: string;
   loadingType: LoadingType;
+  polylinePath?: string | null;
 }
 
 export interface CompletionStatus {
@@ -119,13 +120,13 @@ function useTripLegs(routes: RouteOption[], routeId: string) {
 
   useEffect(() => {
     if (!selectedRoute || legs.length > 0) return;
-    const parts = selectedRoute.name.split("→");
+    const parts = selectedRoute.name.split(/\s*[-→]\s*/).filter(Boolean);
     setLegs([
       {
         id: Math.random().toString(),
         sequence: 1,
         origin: parts[0]?.trim() || "",
-        destination: parts[1]?.trim() || "",
+        destination: parts.length > 1 ? parts[parts.length - 1].trim() : "",
         km: selectedRoute.distanceKm ? String(selectedRoute.distanceKm) : "",
         loadingType: LoadingType.HANG,
       },
@@ -170,11 +171,15 @@ function useTripLegs(routes: RouteOption[], routeId: string) {
         const destination = field === 'destination' ? value : currentLeg.destination;
 
         if (origin && destination) {
-          const km = await calculateDistanceKm(origin, destination);
+          const { km, polylinePath } = await calculateRoute(origin, destination);
           if (km !== null) {
             setLegs(prev => prev.map((leg, i) => {
               if (i === idx) {
-                return { ...leg, km: String(km) };
+                return { 
+                  ...leg, 
+                  km: String(km),
+                  polylinePath
+                };
               }
               return leg;
             }));

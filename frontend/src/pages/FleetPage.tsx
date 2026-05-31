@@ -521,9 +521,15 @@ export default function FleetPage() {
           variant="default"
           meta={
             <span style={styles.metaRow}>
-              <span>Đủ xe + tài xế</span>
-              <span style={styles.textMuted}>·</span>
-              <span style={styles.textWarning}>{activeTrucks - readyToRun} cần phân xế</span>
+              {activeTrucks === readyToRun ? (
+                <span style={styles.textSuccess}>Đủ xe + tài xế</span>
+              ) : (
+                <>
+                  <span>{readyToRun} xe sẵn sàng</span>
+                  <span style={styles.textMuted}>·</span>
+                  <span style={styles.textWarning}>{activeTrucks - readyToRun} cần phân xế</span>
+                </>
+              )}
             </span>
           }
         />

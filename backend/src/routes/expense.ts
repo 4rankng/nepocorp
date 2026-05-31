@@ -55,7 +55,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'ID không hợp lệ' });
     }
     const expense = await getExpense(db, id);
-    if (!expense) return res.status(404).json({ error: 'Không tìm thấy phiếu chi phí' });
+    if (!expense) return res.status(404).json({ error: 'Không tìm thấy khoản chi phí' });
     res.json(expense);
   } catch (err: any) {
     console.error('[GET /api/expenses/:id]', err?.message, err?.stack);

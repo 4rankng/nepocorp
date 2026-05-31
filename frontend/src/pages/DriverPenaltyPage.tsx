@@ -39,7 +39,7 @@ export default function DriverPenaltyPage() {
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
-  const monthLabel = `${String(currentMonth).padStart(2, '0')}/${String(currentYear).slice(-2)}`;
+  const monthLabel = `T${currentMonth}/${currentYear}`;
 
   const { data: currentPeriod, isLoading: periodLoading } = useSalaryPeriod(currentMonth, currentYear);
 

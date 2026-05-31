@@ -185,7 +185,7 @@ export default function DebtListPage() {
       {/* Aging buckets matching the wireframe */}
       <div className="aging-buckets">
         <div className="bucket" onClick={() => setFilterMode('all')} style={{ borderColor: filterMode === 'all' ? 'var(--brand)' : undefined }}>
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--ok"></span>Trong hạn</div>
+          <div className="bucket__label"><span className="bucket__dot bucket__dot--ok"></span>0–30 ngày</div>
           <div className="bucket__value">{formatCompact(totals.current)} ₫</div>
           <div className="bucket__count">{totals.currentCusts} khách hàng</div>
         </div>

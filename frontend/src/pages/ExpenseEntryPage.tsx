@@ -244,14 +244,14 @@ export default function ExpenseEntryPage() {
     try {
       if (isEdit) {
         await api.put(`${FINANCIAL.EXPENSE(Number(id))}`, result.data);
-        toast({ kind: 'success', message: 'Đã cập nhật phiếu chi phí.' });
+        toast({ kind: 'success', message: 'Đã cập nhật chi phí.' });
       } else {
         await api.post(FINANCIAL.EXPENSES, result.data);
-        toast({ kind: 'success', message: 'Đã tạo phiếu chi phí.' });
+        toast({ kind: 'success', message: 'Đã ghi nhận chi phí.' });
       }
       navigate('/expenses');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi lưu phiếu chi phí';
+      const msg = err instanceof Error ? err.message : 'Lỗi lưu chi phí';
       setPageError(msg);
     } finally {
       setSubmitting(false);
@@ -272,8 +272,8 @@ export default function ExpenseEntryPage() {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
       <PageHeader
-        title={isEdit ? 'Sửa phiếu chi phí' : 'Tạo phiếu chi phí'}
-        description={isEdit ? `Phiếu #${id}` : 'Nhập thông tin phiếu chi phí mới'}
+        title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
+        description={isEdit ? `Chi phí #${id}` : 'Nhập thông tin chi phí phát sinh'}
         onBack={() => navigate('/expenses')}
       />
 

@@ -22,22 +22,28 @@ export function LocationAutocomplete({
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sessionToken, setSessionToken] = useState(() => Math.random().toString(36).substring(2, 15));
   const wrapperRef = useRef<HTMLDivElement>(null);
   const closeDropdown = useCallback(() => setIsOpen(false), []);
 
-  useClickOutside(wrapperRef, closeDropdown);
+  const refreshSessionToken = useCallback(() => {
+    setSessionToken(Math.random().toString(36).substring(2, 15));
+  }, []);
+
+  useClickOutside(wrapperRef, closeDropdown, { escapeKey: true });
 
   // Fetch suggestions with debounce
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (value.length >= 2) {
+      if (value.trim().length >= 3) {
         setLoading(true);
-        const results = await fetchPlaceSuggestions(value);
+        const results = await fetchPlaceSuggestions(value, sessionToken);
         // Only show suggestions if we have matches that aren't exactly the current value
         if (results.length > 0 && !(results.length === 1 && results[0].description === value)) {
           setSuggestions(results);
           setIsOpen(true);
         } else {
+          setSuggestions([]);
           setIsOpen(false);
         }
         setLoading(false);
@@ -45,15 +51,18 @@ export function LocationAutocomplete({
         setSuggestions([]);
         setIsOpen(false);
       }
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [value]);
+  }, [value, sessionToken]);
 
   const handleSelect = (suggestion: PlaceSuggestion) => {
     onChange(suggestion.description);
     setIsOpen(false);
+    setSuggestions([]);
+    refreshSessionToken();
   };
+
 
   return (
     <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
@@ -64,7 +73,7 @@ export function LocationAutocomplete({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => {
-          if (suggestions.length > 0) setIsOpen(true);
+          if (suggestions.length > 0 && value.trim().length >= 3) setIsOpen(true);
         }}
         required={required}
         autoComplete="off"
