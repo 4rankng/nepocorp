@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, Save } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
@@ -42,8 +42,13 @@ export default function TripEditPage() {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
 
+  const lastTripId = useRef<number | null>(null);
+
   useEffect(() => {
     if (!trip) return;
+    if (lastTripId.current === trip.id) return;
+    lastTripId.current = trip.id;
+
     setFuelMode(trip.fuelMode);
     setFuelLitersOverride(trip.fuelLitersOverride ? String(trip.fuelLitersOverride) : '');
     setFuelSupplementLiters(trip.fuelSupplementLiters ? String(trip.fuelSupplementLiters) : '');

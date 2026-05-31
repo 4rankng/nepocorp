@@ -5,6 +5,15 @@ import { TripStatus } from '@nepocorp/shared';
 import { getReceivablesSummary as _getReceivablesSummary, getTopOverdueCustomer } from './receivables.service';
 import { resolveSalaryPeriodDateRange, resolveQuarterDateRange } from './salary-period.service';
 import { cacheGet } from '../lib/redis';
+import { ApiError } from '../errors';
+
+/** Local date string (YYYY-MM-DD) using system timezone — avoids toISOString() UTC drift. */
+function localDateStr(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 /** Build a [start, exclusive_end) date range for a calendar month/year. Used for trip code counters. */
 export function calendarMonthDateRange(year: number, month?: number) {
@@ -263,15 +272,12 @@ async function computeDistribution(quarter: number, year: number) {
 
   const netProfit = trips.reduce((sum, t) => sum + parseFloat(t.grossProfit || '0'), 0);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   const cutoff = qEnd > today ? today : qEnd;
   const activePartners = resolveCapTableSnapshot(capEntries, cutoff);
 
   if (activePartners.length === 0) {
-    throw Object.assign(
-      new Error('Chưa có dữ liệu cổ đông. Vui lòng vào "Cấu hình → Cổ phần" và thêm vốn góp trước khi phân chia lợi nhuận.'),
-      { status: 400 },
-    );
+    throw new ApiError(400, 'Chưa có dữ liệu cổ đông. Vui lòng vào "Cấu hình → Cổ phần" và thêm vốn góp trước khi phân chia lợi nhuận.');
   }
 
   // Compute per-partner share using floor, then assign remainder to the last
@@ -298,7 +304,7 @@ async function computeDistribution(quarter: number, year: number) {
 function resolveTopShareholder(capRows: CapRow[]) {
   let topShareholder: { name: string; percentage: number } | null = null;
   if (capRows.length > 0) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     const partners = resolveCapTableSnapshot(capRows, today);
     const sorted = partners
       .sort((a, b) => b.percentage - a.percentage);

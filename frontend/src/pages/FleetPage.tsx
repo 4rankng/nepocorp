@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Truck, Container, UserCheck, Plus, Search,
@@ -450,23 +450,25 @@ export default function FleetPage() {
   const trailerCrud = useCRUD('/trailers', invalidateFleet);
   const driverCrud = useCRUD('/drivers', invalidateFleet);
 
-  // Cross-reference maps
-  const truckMap = new Map<number, TruckType>();
-  trucks.forEach(t => truckMap.set(t.id, t));
+  const { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, maintTrailers, assignedDrivers, readyToRun } = useMemo(() => {
+    const truckMap = new Map<number, TruckType>();
+    trucks.forEach(t => truckMap.set(t.id, t));
 
-  const driverByTruck = new Map<number, Driver>();
-  drivers.forEach(d => { if (d.assignedTruckId) driverByTruck.set(d.assignedTruckId, d); });
+    const driverByTruck = new Map<number, Driver>();
+    drivers.forEach(d => { if (d.assignedTruckId) driverByTruck.set(d.assignedTruckId, d); });
 
-  // KPI computations
-  const activeTrucks = trucks.filter(t => t.status === 'ACTIVE').length;
-  const maintTrucks = trucks.filter(t => t.status === 'MAINTENANCE').length;
-  const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
-  const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
-  const maintTrailers = trailers.filter(t => t.status === 'MAINTENANCE').length;
-  const assignedDrivers = drivers.filter(d => d.assignedTruckId).length;
-  const readyToRun = trucks.filter(t =>
-    t.status === 'ACTIVE' && driverByTruck.has(t.id),
-  ).length;
+    const activeTrucks = trucks.filter(t => t.status === 'ACTIVE').length;
+    const maintTrucks = trucks.filter(t => t.status === 'MAINTENANCE').length;
+    const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
+    const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
+    const maintTrailers = trailers.filter(t => t.status === 'MAINTENANCE').length;
+    const assignedDrivers = drivers.filter(d => d.assignedTruckId).length;
+    const readyToRun = trucks.filter(t =>
+      t.status === 'ACTIVE' && driverByTruck.has(t.id),
+    ).length;
+
+    return { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, maintTrailers, assignedDrivers, readyToRun };
+  }, [trucks, trailers, drivers]);
 
   return (
     <div className="fleet-page fade-up">

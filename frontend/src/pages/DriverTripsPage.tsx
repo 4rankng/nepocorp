@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Truck, Calendar, ArrowRight, Loader2, MapPin } from 'lucide-react';
-import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
+import { useDriverTrips } from '../hooks/useQueries';
 
 interface TripSummary {
   id: number;
@@ -27,17 +26,9 @@ function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 's
 
 export default function DriverTripsPage() {
   const navigate = useNavigate();
-  const [trips, setTrips] = useState<TripSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-    api.get<{ items: TripSummary[] }>('/driver/me/trips')
-      .then(r => setTrips(r.items))
-      .catch(() => setError('Không thể tải danh sách lệnh'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, isLoading: loading, error: queryError } = useDriverTrips();
+  const trips = (data?.items ?? []) as TripSummary[];
+  const error = queryError ? 'Không thể tải danh sách lệnh' : null;
 
   if (loading) return (
     <Panel>

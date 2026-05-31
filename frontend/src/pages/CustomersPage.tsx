@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Users, UserCheck, BarChart3, Lock, Plus, Download, Search,
   MoreHorizontal, Pencil, Trash2, X, Save, Loader2,
@@ -9,6 +9,7 @@ import { PageHeader, KPI, FilterPill, StatusPill } from '../components/UI';
 import { formatCurrency } from '../lib/format';
 import type { Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
+import { useCustomers } from '../hooks/useQueries';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
 
@@ -85,13 +86,9 @@ function CustomerForm({ item, saving, onsave, oncancel }: {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -101,46 +98,33 @@ export default function CustomersPage() {
 
   const pageSize = 10;
 
-  const fetchCustomers = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const qs = new URLSearchParams({ page: String(page), limit: String(pageSize) });
-      if (search) qs.set('search', search);
-      const r = await api.get<PaginatedResponse<Customer>>(`/customers?${qs}`);
-      setCustomers(r.items);
-      setTotal(r.total);
-    } catch {
-      setError('Không thể tải dữ liệu');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search]);
+  const { data: customersData, isLoading: loading, error: queryError, refetch: refetchCustomers } = useCustomers(page, search);
+  const customers = customersData?.items ?? [];
+  const total = customersData?.total ?? 0;
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const error = queryError ? 'Không thể tải dữ liệu' : mutationError;
 
-  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
-
-  // Debounced search
   useEffect(() => {
     if (search === '') { setPage(1); return; }
     const t = setTimeout(() => setPage(1), 300);
     return () => clearTimeout(t);
   }, [search]);
 
-  // Computed KPI values
-  const activeCount = customers.filter(c => c.status === CustomerStatus.ACTIVE).length;
-  const lockedCount = customers.filter(c => c.status === CustomerStatus.LOCKED).length;
-
-  // Filtered list
-  const filtered = customers.filter(c => {
-    if (filter === 'active') return c.status === CustomerStatus.ACTIVE;
-    if (filter === 'locked') return c.status === CustomerStatus.LOCKED;
-    if (filter === 'risk') {
-      const debt = 0; // TODO: compute from ledger
-      const limit = Number((c as any).creditLimit || c.creditLimit || 0);
-      return limit > 0 && debt / limit > 0.8;
-    }
-    return true;
-  });
+  const { activeCount, lockedCount, filtered } = useMemo(() => {
+    const activeCount = customers.filter(c => c.status === CustomerStatus.ACTIVE).length;
+    const lockedCount = customers.filter(c => c.status === CustomerStatus.LOCKED).length;
+    const filtered = customers.filter(c => {
+      if (filter === 'active') return c.status === CustomerStatus.ACTIVE;
+      if (filter === 'locked') return c.status === CustomerStatus.LOCKED;
+      if (filter === 'risk') {
+        const debt = 0; // TODO: compute from ledger
+        const limit = Number((c as any).creditLimit || c.creditLimit || 0);
+        return limit > 0 && debt / limit > 0.8;
+      }
+      return true;
+    });
+    return { activeCount, lockedCount, filtered };
+  }, [customers, filter]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -149,8 +133,8 @@ export default function CustomersPage() {
     try {
       await api.post('/customers', body);
       setShowAddForm(false);
-      await fetchCustomers();
-    } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
+      await refetchCustomers();
+    } catch (e: any) { setMutationError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
   }
 
   async function doUpdate(id: number, body: Record<string, unknown>) {
@@ -159,8 +143,8 @@ export default function CustomersPage() {
       await api.put(`/customers/${id}`, body);
       setEditingId(null);
       setMenuOpenId(null);
-      await fetchCustomers();
-    } catch (e: any) { setError(e?.message || 'Lỗi cập nhật'); } finally { setSaving(false); }
+      await refetchCustomers();
+    } catch (e: any) { setMutationError(e?.message || 'Lỗi cập nhật'); } finally { setSaving(false); }
   }
 
   async function doDelete(id: number) {
@@ -168,8 +152,8 @@ export default function CustomersPage() {
     try {
       await api.delete(`/customers/${id}`);
       setMenuOpenId(null);
-      await fetchCustomers();
-    } catch (e: any) { setError(e?.message || 'Lỗi xóa'); } finally { setDeleting(null); }
+      await refetchCustomers();
+    } catch (e: any) { setMutationError(e?.message || 'Lỗi xóa'); } finally { setDeleting(null); }
   }
 
   return (
@@ -329,7 +313,7 @@ export default function CustomersPage() {
               {error && (
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--danger)' }}>
                   <p>{error}</p>
-                  <button className="btn btn--secondary btn--sm" style={{ marginTop: 8 }} onClick={fetchCustomers}>Thử lại</button>
+                  <button className="btn btn--secondary btn--sm" style={{ marginTop: 8 }} onClick={() => refetchCustomers()}>Thử lại</button>
                 </td></tr>
               )}
               {!loading && filtered.length === 0 && !showAddForm && (
@@ -351,9 +335,6 @@ export default function CustomersPage() {
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       {((c as any).contactPerson || c.contactPerson) && <div style={{ fontWeight: 600 }}>{(c as any).contactPerson || c.contactPerson}</div>}
-                      {/* Seed data stored phone numbers in the `contact_info`
-                          text field rather than the dedicated `phone` column,
-                          so fall through to that before rendering "—". */}
                       {(c.phone || (c as any).contact_info || (c as any).contactInfo) && (
                         <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
                           {c.phone || (c as any).contact_info || (c as any).contactInfo}

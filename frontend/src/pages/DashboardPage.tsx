@@ -127,6 +127,96 @@ export default function DashboardPage() {
     return flagged.sort((a, b) => b.ttbq - a.ttbq).slice(0, 5);
   }, [fuelConfig, allTrips]);
 
+  const derived = useMemo(() => {
+    if (!stats) return null;
+
+    const revenue = stats.revenue ?? 0;
+    const costs = stats.costs ?? 0;
+    const grossProfit = stats.grossProfit ?? 0;
+    const managementFee = pnlReport?.managementFee ?? 0;
+    const otherIncome = pnlReport?.otherIncome ?? 0;
+    const netProfit = grossProfit - managementFee + otherIncome;
+
+    const sortedTrucks = pnlReport?.trucks
+      ? [...pnlReport.trucks].sort((a, b) => b.profit - a.profit).slice(0, 5)
+      : [];
+
+    const routeMap = new Map<string, { name: string; trips: number; profit: number }>();
+    allTrips.forEach((t: TripDetail) => {
+      if (!t.route || !t.route.name) return;
+      const name = t.route.name;
+      const profVal = parseFloat(t.grossProfit as string || '0');
+      const existing = routeMap.get(name) || { name, trips: 0, profit: 0 };
+      existing.trips++;
+      existing.profit += profVal;
+      routeMap.set(name, existing);
+    });
+    const sortedRoutes = Array.from(routeMap.values())
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 5);
+
+    const displayTrucks = sortedTrucks.map(t => ({
+      plate: t.plate,
+      trips: t.trips,
+      profit: t.profit,
+      driver: `Đầu kéo · ${t.trips} chuyến`
+    }));
+
+    const maxTruckProfit = Math.max(...displayTrucks.map(t => t.profit), 1);
+
+    const avgRevenuePerTrip = pnlReport?.tripCount ? pnlReport.totalRevenue / pnlReport.tripCount : 0;
+
+    const displayRoutes = sortedRoutes.map(r => ({
+      name: r.name,
+      trips: r.trips,
+      profit: r.profit,
+      meta: r.trips > 0 && avgRevenuePerTrip > 0
+        ? `${r.trips} chuyến · biên ${Math.round((r.profit / (r.trips * avgRevenuePerTrip)) * 100)}%`
+        : `${r.trips} chuyến`,
+    }));
+
+    const lockedTrips = allTrips.filter((t: TripDetail) => t.status === TripStatus.LOCKED);
+    const realFuelCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
+    const realRoadCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
+    const realDriverCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driverSalary || '0'), 0);
+    const mgmtCost = pnlReport?.managementFee ?? 0;
+    const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
+    const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);
+    const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.25);
+    const driverCost = hasRealCosts ? realDriverCost : Math.round(costs * 0.20);
+    const tripCostSum = fuelCost + roadCost + driverCost;
+    const totalCostsForPie = Math.max(costs, tripCostSum + mgmtCost);
+    const residual = Math.max(0, totalCostsForPie - tripCostSum - mgmtCost);
+    const maintCost = 0;
+    const otherCost = residual;
+    const totalPie = totalCostsForPie || 1;
+    const p = (v: number) => Math.round((v / totalPie) * 100);
+    const fuelPct   = p(fuelCost);
+    const driverPct = p(driverCost);
+    const roadPct   = p(roadCost);
+    const mgmtPct   = p(mgmtCost);
+    const maintPct  = p(maintCost);
+    const otherPct  = Math.max(0, 100 - fuelPct - driverPct - roadPct - mgmtPct - maintPct);
+    const c1 = fuelPct;
+    const c2 = c1 + driverPct;
+    const c3 = c2 + roadPct;
+    const c4 = c3 + mgmtPct;
+    const c5 = c4 + maintPct;
+
+    const prevRevenue = prevPnlReport?.totalRevenue ?? 0;
+    const prevCosts = prevPnlReport?.totalCosts ?? 0;
+    const prevGross = prevPnlReport?.grossProfit ?? 0;
+
+    return {
+      revenue, costs, grossProfit, netProfit,
+      displayTrucks, maxTruckProfit, displayRoutes,
+      fuelCost, roadCost, driverCost, mgmtCost, maintCost, otherCost,
+      fuelPct, driverPct, roadPct, mgmtPct, maintPct, otherPct,
+      c1, c2, c3, c4, c5,
+      prevRevenue, prevCosts, prevGross,
+    };
+  }, [stats, pnlReport, prevPnlReport, allTrips]);
+
   // Loading skeleton matching wireframe spacing
   if (loading) {
     return (
@@ -143,68 +233,21 @@ export default function DashboardPage() {
     );
   }
 
-  // Derived statistics
-  const revenue = stats?.revenue ?? 0;
-  const costs = stats?.costs ?? 0;
-  const grossProfit = stats?.grossProfit ?? 0;
-  const managementFee = pnlReport?.managementFee ?? 0;
-  const otherIncome = pnlReport?.otherIncome ?? 0;
-  const netProfit = grossProfit - managementFee + otherIncome;
+  const {
+    revenue = 0, costs = 0, grossProfit = 0, netProfit = 0,
+    displayTrucks = [], maxTruckProfit = 1, displayRoutes = [],
+    fuelCost = 0, roadCost = 0, driverCost = 0, mgmtCost = 0, maintCost = 0, otherCost = 0,
+    fuelPct = 0, driverPct = 0, roadPct = 0, mgmtPct = 0, maintPct = 0, otherPct = 0,
+    c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0,
+    prevRevenue = 0, prevCosts = 0, prevGross = 0,
+  } = derived ?? {};
 
-  const currentMonthTrips = allTrips;
   const createdTripsCount = createdTrips.length;
 
-  // Sorting trucks by profit for performance card
-  const sortedTrucks = pnlReport?.trucks
-    ? [...pnlReport.trucks].sort((a, b) => b.profit - a.profit).slice(0, 5)
-    : [];
-
-  // Sorting routes by profit
-  const routeMap = new Map<string, { name: string; trips: number; profit: number }>();
-  currentMonthTrips.forEach((t: TripDetail) => {
-    if (!t.route || !t.route.name) return;
-    const name = t.route.name;
-    const profVal = parseFloat(t.grossProfit as string || '0');
-    const existing = routeMap.get(name) || { name, trips: 0, profit: 0 };
-    existing.trips++;
-    existing.profit += profVal;
-    routeMap.set(name, existing);
-  });
-  const sortedRoutes = Array.from(routeMap.values())
-    .sort((a, b) => b.profit - a.profit)
-    .slice(0, 5);
-
-  const displayTrucks = sortedTrucks.map(t => ({
-    plate: t.plate,
-    trips: t.trips,
-    profit: t.profit,
-    driver: `Đầu kéo · ${t.trips} chuyến`
-  }));
-
-  const maxTruckProfit = Math.max(...displayTrucks.map(t => t.profit), 1);
-
-  // Avg revenue per trip from PnL report — used for route margin denominator
-  const avgRevenuePerTrip = pnlReport?.tripCount ? pnlReport.totalRevenue / pnlReport.tripCount : 0;
-
-  const displayRoutes = sortedRoutes.map(r => ({
-    name: r.name,
-    trips: r.trips,
-    profit: r.profit,
-    meta: r.trips > 0 && avgRevenuePerTrip > 0
-      ? `${r.trips} chuyến · biên ${Math.round((r.profit / (r.trips * avgRevenuePerTrip)) * 100)}%`
-      : `${r.trips} chuyến`,
-  }));
-
-  // Helper formatting for KPI values — uses shared formatCompact
-  // "tr" (short for triệu) is the preferred display form; no expansion needed.
   const fmtKpi = (v: number) => {
     const s = formatCompact(v);
     return s.replace(/ ty$/, ' tỷ');
   };
-  // Split formatted value into { num, suffix } so "tr" / "k" can be rendered
-  // at the same small size as the "₫" currency symbol.
-  // "tr" and "tỷ" have a leading space in formatCompact; "k" does not, so we
-  // strip it explicitly so all magnitude suffixes render in kpi__value-unit.
   const splitKpi = (v: number): { num: string; suffix: string } => {
     const s = fmtKpi(v);
     if (s.endsWith('k')) return { num: s.slice(0, -1), suffix: 'k' };
@@ -221,16 +264,8 @@ export default function DashboardPage() {
   const kpiGross = splitKpi(grossProfit);
   const kpiNet = splitKpi(netProfit);
 
-  // MoM percentages computed from actual P&L data
-  // previous month has no data, fall back to "—" rather than a fake number.
-  const prevRevenue = prevPnlReport?.totalRevenue ?? 0;
-  const prevCosts = prevPnlReport?.totalCosts ?? 0;
-  const prevGross = prevPnlReport?.grossProfit ?? 0;
   const fmtMoM = (current: number, previous: number | undefined | null): string => {
     if (previous == null) return '—';
-    // Display "Mới" (new) instead of "+∞" when prior month has no data —
-    // infinity isn't a useful figure for a director glancing at the
-    // dashboard, and reads as a rendering bug.
     if (previous === 0) return current > 0 ? 'Mới' : '0%';
     const pct = ((current - previous) / previous) * 100;
     return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
@@ -241,49 +276,6 @@ export default function DashboardPage() {
   const isRevUp = revenue >= prevRevenue;
   const isCostUp = costs > prevCosts;
   const isGrossUp = grossProfit >= prevGross;
-
-  // Cost breakdown from real locked trip data.
-  // Trip-level costs (fuel/road/driver) sum to the same `totalCost` that the
-  // dashboard endpoint returns as `costs`. Anything else (management fee,
-  // maintenance) is overhead booked separately. We previously seeded
-  // `maintCost` with a fabricated 7% of total — which inflated the breakdown
-  // and made the donut legend (22+6+12+0+3 = 43M) disagree with the donut
-  // centre label (40M from `costs`). Show only data we actually have, and
-  // bucket the unallocated remainder as "Khác" so the legend ALWAYS sums to
-  // the centre figure.
-  const lockedTrips = currentMonthTrips.filter((t: TripDetail) => t.status === TripStatus.LOCKED);
-  const realFuelCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
-  const realRoadCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
-  const realDriverCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driverSalary || '0'), 0);
-  const mgmtCost = pnlReport?.managementFee ?? 0;
-  const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
-  // When we have real per-trip costs, use them directly. When we don't, use
-  // a wireframe split of the API totalCost so the page still feels populated.
-  const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);
-  const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.25);
-  const driverCost = hasRealCosts ? realDriverCost : Math.round(costs * 0.20);
-  // Pie denominator anchors on the API `costs` figure (the donut centre).
-  // Maintenance/other are derived from the residual after subtracting the
-  // tracked categories, so the legend reconciles to the centre label.
-  const tripCostSum = fuelCost + roadCost + driverCost;
-  const totalCostsForPie = Math.max(costs, tripCostSum + mgmtCost);
-  const residual = Math.max(0, totalCostsForPie - tripCostSum - mgmtCost);
-  const maintCost = 0; // not tracked yet; was previously a fabricated 7%
-  const otherCost = residual;
-
-  const totalPie = totalCostsForPie || 1;
-  const p = (v: number) => Math.round((v / totalPie) * 100);
-  const fuelPct   = p(fuelCost);
-  const driverPct = p(driverCost);
-  const roadPct   = p(roadCost);
-  const mgmtPct   = p(mgmtCost);
-  const maintPct  = p(maintCost);
-  const otherPct  = Math.max(0, 100 - fuelPct - driverPct - roadPct - mgmtPct - maintPct);
-  const c1 = fuelPct;
-  const c2 = c1 + driverPct;
-  const c3 = c2 + roadPct;
-  const c4 = c3 + mgmtPct;
-  const c5 = c4 + maintPct;
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>

@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
-import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { PageHeader, Panel, KPI } from '../components/UI';
-import { useSalaryPeriod } from '../hooks/useQueries';
+import { useSalaryPeriod, useDriverEarnings, useDriverPenalties } from '../hooks/useQueries';
 
 interface EarningsSummary {
   baseSalary: string;
@@ -28,14 +27,15 @@ export default function DriverEarningsPage() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
-  const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
-  const [penalties, setPenalties] = useState<PenaltyEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const { data: period } = useSalaryPeriod(month, year);
+  const { data: earnings, isLoading: earningsLoading, error: earningsError } = useDriverEarnings(month, year);
+  const penaltyParams = period ? { dateFrom: period.start, dateTo: period.end } : undefined;
+  const { data: penaltiesData, isLoading: penaltiesLoading } = useDriverPenalties(penaltyParams);
+  const penalties: PenaltyEntry[] = Array.isArray(penaltiesData) ? penaltiesData : (penaltiesData as any)?.items ?? [];
+  const loading = earningsLoading || penaltiesLoading;
+  const error = earningsError ? 'Không thể tải dữ liệu thu nhập' : null;
 
-  // Generate period options: last 12 months
   const periodOptions = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -46,24 +46,6 @@ export default function DriverEarningsPage() {
       };
     });
   }, []);
-
-  // Fetch earnings when period changes
-  useEffect(() => {
-    setLoading(true);
-    const penaltyParams = period
-      ? `?date_from=${period.start}&date_to=${period.end}`
-      : '';
-    Promise.all([
-      api.get<EarningsSummary>(`/driver/me/earnings?month=${month}&year=${year}`),
-      api.get<{ items: PenaltyEntry[] }>(`/driver/me/penalties${penaltyParams}`),
-    ])
-      .then(([e, p]) => {
-        setEarnings(e);
-        setPenalties(p.items);
-      })
-      .catch(() => setError('Không thể tải dữ liệu thu nhập'))
-      .finally(() => setLoading(false));
-  }, [month, year, period?.start, period?.end]);
 
   const periodKey = `${year}-${String(month).padStart(2, '0')}`;
 

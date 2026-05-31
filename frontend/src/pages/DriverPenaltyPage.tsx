@@ -1,9 +1,8 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { api } from '../lib/api';
+import { useState, useMemo } from 'react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { ShieldCheck, AlertTriangle, AlertOctagon, Loader2 } from 'lucide-react';
 import { Card } from '../components/UI';
-import { useSalaryPeriod } from '../hooks/useQueries';
+import { useSalaryPeriod, useDriverPenalties } from '../hooks/useQueries';
 
 interface DriverPenaltyRow {
   id: number;
@@ -18,41 +17,32 @@ interface DriverPenaltyRow {
 }
 
 export default function DriverPenaltyPage() {
-  const [allPenalties, setAllPenalties] = useState<DriverPenaltyRow[]>([]);
-  const [filteredPenalties, setFilteredPenalties] = useState<DriverPenaltyRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [monthFilter, setMonthFilter] = useState('');
 
-  // Fetch all penalties once (needed for total count)
-  const fetchAllPenalties = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api.get<DriverPenaltyRow[] | { items: DriverPenaltyRow[] }>('/driver/me/penalties');
-      const items = Array.isArray(data) ? data : (data as any).items ?? [];
-      setAllPenalties(items);
-      setFilteredPenalties(items);
-    } catch { /* silent */ } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: allPenaltiesData, isLoading: loading } = useDriverPenalties();
+  const allPenalties = useMemo((): DriverPenaltyRow[] => {
+    return Array.isArray(allPenaltiesData) ? allPenaltiesData : (allPenaltiesData as any)?.items ?? [];
+  }, [allPenaltiesData]);
 
-  useEffect(() => { fetchAllPenalties(); }, [fetchAllPenalties]);
+  const filterMonthNum = monthFilter ? parseInt(monthFilter.split('-')[1]) : 0;
+  const filterYearNum = monthFilter ? parseInt(monthFilter.split('-')[0]) : 0;
+  const { data: filterPeriod } = useSalaryPeriod(filterMonthNum, filterYearNum);
 
-  // ── Derived stats ─────────────────────────────────────────────────────────
+  const { data: filteredPenaltiesData } = useDriverPenalties(
+    filterPeriod ? { dateFrom: filterPeriod.start, dateTo: filterPeriod.end } : undefined
+  );
+  const filteredPenalties = useMemo((): DriverPenaltyRow[] => {
+    if (!monthFilter) return allPenalties;
+    return Array.isArray(filteredPenaltiesData) ? filteredPenaltiesData : (filteredPenaltiesData as any)?.items ?? allPenalties;
+  }, [monthFilter, filteredPenaltiesData, allPenalties]);
+
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
   const monthLabel = `T${currentMonth}`;
 
-  // Resolve salary period for current month
   const { data: currentPeriod, isLoading: periodLoading } = useSalaryPeriod(currentMonth, currentYear);
 
-  // Resolve salary period for the selected filter month
-  const filterMonthNum = monthFilter ? parseInt(monthFilter.split('-')[1]) : 0;
-  const filterYearNum = monthFilter ? parseInt(monthFilter.split('-')[0]) : 0;
-  const { data: filterPeriod } = useSalaryPeriod(filterMonthNum, filterYearNum);
-
-  // Current month stats — filter from allPenalties using resolved salary period
   const monthPenalties = useMemo(() => {
     if (!currentPeriod) return [] as DriverPenaltyRow[];
     return allPenalties.filter(p => {
@@ -64,23 +54,12 @@ export default function DriverPenaltyPage() {
   const incidentCount = monthPenalties.length;
   const isSafeThisMonth = incidentCount === 0;
 
-  // When month filter is selected and period resolved, re-fetch from server with date params
-  useEffect(() => {
-    if (!monthFilter) {
-      setFilteredPenalties(allPenalties);
-      return;
-    }
-    if (!filterPeriod) return;
-    api.get<DriverPenaltyRow[] | { items: DriverPenaltyRow[] }>(
-      `/driver/me/penalties?dateFrom=${filterPeriod.start}&dateTo=${filterPeriod.end}`,
-    ).then(data => {
-      setFilteredPenalties(Array.isArray(data) ? data : (data as any).items ?? []);
-    }).catch(() => {
-      setFilteredPenalties(allPenalties);
-    });
-  }, [monthFilter, filterPeriod, allPenalties]);
-
-  const isLoadingPeriod = periodLoading || (!currentPeriod && !loading);
+  // Only show the loading banner while the period query is in flight.
+  // If the query finished with no period defined for current month, we still
+  // want to render the safe/violation banner using monthPenalties=[] (the
+  // memo handles that). Previously this stuck on "Đang tải..." forever when
+  // no period existed for the current month.
+  const isLoadingPeriod = periodLoading;
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>

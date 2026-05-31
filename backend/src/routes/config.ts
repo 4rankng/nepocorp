@@ -185,7 +185,7 @@ router.put('/salary-periods/default', async (req: Request, res: Response) => {
     const data = salaryPeriodDefaultSchema.parse(req.body);
     res.json(await updateSalaryPeriodDefault(data.defaultStartDay, data.defaultEndDay));
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -208,7 +208,7 @@ router.post('/salary-periods', async (req: Request, res: Response) => {
       ),
     );
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -223,7 +223,7 @@ router.put('/salary-periods/:id', async (req: Request, res: Response) => {
     );
     res.json(result);
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 

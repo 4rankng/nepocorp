@@ -1,19 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
-  DollarSign,
   Calendar,
   TrendingUp,
-  ArrowRightLeft,
-  Briefcase,
   Users,
-  Percent,
   CheckSquare,
   Eye
 } from 'lucide-react';
-import { api, ApiError } from '../lib/api';
+import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
-import { PageHeader, Card, KPI, FormGroup, useConfirm } from '../components/UI';
+import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
 import { formatCurrency as formatVND } from '../lib/format';
+import { useCapTable, useDistributionHistory } from '../hooks/useQueries';
+import { useToast } from '../components/shared/Toast';
 import type { CapTableHistory } from '@nepocorp/shared';
 
 interface PnlReport {
@@ -50,68 +49,29 @@ interface DistributionRecord {
 
 export default function ProfitPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { toast: showToast } = useToast();
 
-  // Month / Year state
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
 
-  // Quarter Distribution State
   const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.ceil((now.getMonth() + 1) / 3));
   const [distQuarterYear, setDistQuarterYear] = useState<number>(now.getFullYear());
   const [distributing, setDistributing] = useState(false);
   const [distResult, setDistResult] = useState<DistributionResult | null>(null);
   const [preview, setPreview] = useState<DistributionResult | null>(null);
   const [previewing, setPreviewing] = useState(false);
-  const [history, setHistory] = useState<DistributionRecord[]>([]);
 
-  // Data
-  const [report, setReport] = useState<PnlReport | null>(null);
-  const [capTable, setCapTable] = useState<CapTableHistory[]>([]);
-  const [toast, setToast] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4500);
-    return () => clearTimeout(t);
-  }, [toast]);
+  const { data: report, isLoading: loading, error: reportError } = useQuery<PnlReport>({
+    queryKey: ['pnl-detail', selectedMonth, selectedYear],
+    queryFn: () => api.get<PnlReport>(`/reports/pnl?month=${selectedMonth}&year=${selectedYear}`),
+  });
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    let pnlOk = false;
-    let capOk = false;
-    try {
-      const pnlRes = await api.get<PnlReport>(`/reports/pnl?month=${selectedMonth}&year=${selectedYear}`);
-      setReport(pnlRes);
-      pnlOk = true;
-    } catch (err) {
-      console.error(err);
-    }
-    try {
-      const capRes = await api.get<{ items: CapTableHistory[] }>('/cap-table?limit=50');
-      setCapTable(Array.isArray(capRes) ? capRes : (capRes.items || []));
-      capOk = true;
-    } catch (err) {
-      console.error(err);
-    }
-    if (!pnlOk && !capOk) {
-      setError('Không thể tải báo cáo phân chia lợi nhuận.');
-    }
-    // Load distribution history
-    try {
-      const histRes = await api.get<DistributionRecord[]>('/reports/distribution-history');
-      setHistory(Array.isArray(histRes) ? histRes : []);
-    } catch { /* non-critical */ }
-    setLoading(false);
-  }, [selectedMonth, selectedYear]);
+  const { data: capTable = [], error: capError } = useCapTable();
+  const { data: history = [], refetch: refetchHistory } = useDistributionHistory();
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const error = reportError && capError ? 'Không thể tải báo cáo phân chia lợi nhuận.' : null;
 
-  // Action: Preview distribution
   const handlePreview = async () => {
     setPreviewing(true);
     setPreview(null);
@@ -122,13 +82,12 @@ export default function ProfitPage() {
       });
       setPreview(res);
     } catch (err: any) {
-      setToast({ kind: 'error', text: err.message || 'Lỗi khi xem trước phân phối.' });
+      showToast({ kind: 'error', message: err.message || 'Lỗi khi xem trước phân phối.' });
     } finally {
       setPreviewing(false);
     }
   };
 
-  // Action: Distribute profit
   const handleDistributeProfit = async () => {
     if (!await confirm(`Xác nhận chốt & phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}? Hành động này không thể hoàn tác.`)) {
       return;
@@ -143,20 +102,15 @@ export default function ProfitPage() {
       });
       setDistResult(res);
       setPreview(null);
-      setToast({ kind: 'success', text: 'Đã thực hiện chốt phân chia lợi nhuận thành công!' });
-      // Reload history
-      try {
-        const histRes = await api.get<DistributionRecord[]>('/reports/distribution-history');
-        setHistory(Array.isArray(histRes) ? histRes : []);
-      } catch { /* non-critical */ }
+      showToast({ kind: 'success', message: 'Đã thực hiện chốt phân chia lợi nhuận thành công!' });
+      refetchHistory();
     } catch (err: any) {
-      setToast({ kind: 'error', text: err.message || 'Lỗi khi phân chia lợi nhuận.' });
+      showToast({ kind: 'error', message: err.message || 'Lỗi khi phân chia lợi nhuận.' });
     } finally {
       setDistributing(false);
     }
   };
 
-  // Resolve active cap table from database data.
   const getDisplayCapTable = () => {
     if (capTable && capTable.length > 0) {
       const result = getActiveCapTable(capTable);
@@ -170,24 +124,6 @@ export default function ProfitPage() {
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
-      {toast && (
-        <div
-          role="status"
-          style={{
-            position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
-            minWidth: 280, maxWidth: 480,
-            padding: '12px 16px', borderRadius: 8,
-            background: toast.kind === 'success' ? 'var(--accent)' : 'var(--danger)',
-            color: '#fff', fontSize: 13, fontWeight: 600,
-            boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
-            display: 'flex', alignItems: 'center', gap: 10,
-          }}
-          onClick={() => setToast(null)}
-        >
-          <span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} />
-          <span style={{ flex: 1 }}>{toast.text}</span>
-        </div>
-      )}
       {/* Header */}
       <PageHeader 
         title="Lợi nhuận & Phân chia" 
@@ -216,7 +152,6 @@ export default function ProfitPage() {
                 ))}
               </select>
             </div>
-            <button className="btn btn--secondary" onClick={loadData} style={{ height: 36 }}>Tải lại</button>
           </div>
         }
       />
@@ -255,7 +190,7 @@ export default function ProfitPage() {
             
             <div className="partner-grid">
               {activeCapTable.map((partner, i) => {
-                const isPrimary = i === 0; // first = largest share after sort
+                const isPrimary = i === 0;
                 const avatarChar = partner.partnerName.charAt(partner.partnerName.lastIndexOf(' ') + 1) || partner.partnerName.charAt(0);
                 const partnerShare = Math.round(netProfit * partner.percentage / 100);
 
@@ -421,7 +356,7 @@ export default function ProfitPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {history.map((d) => (
+                      {history.map((d: any) => (
                         <tr key={d.id} style={{ borderBottom: '1px solid var(--border-3)' }}>
                           <td style={{ padding: '6px 0', fontWeight: 600 }}>Q{d.quarter}/{d.year}</td>
                           <td style={{ padding: '6px 0' }}>{d.partnerName}</td>

@@ -66,7 +66,9 @@ router.get('/ledger/customers/:id/statement/export', async (req: Request, res: R
     const data = await getStatementData(customerId);
     if (!data) return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
 
-    const dateStr = new Date().toISOString().slice(0, 10);
+    // Local date for filename — avoids toISOString() UTC drift in UTC+7
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const safeName = data.customer.name.replace(/[^a-zA-Z0-9À-ỹ ]/g, '').replace(/\s+/g, '-');
 
     if (format === 'pdf') {
@@ -95,7 +97,7 @@ router.post('/payments/receive', async (req: Request, res: Response) => {
       receiptId: data.receiptId,
       payments: data.payments.map((p: any) => ({ tripId: p.tripId, amount: p.amount })),
     });
-    cacheInvalidate('reports:dashboard');
+    await cacheInvalidate('reports:dashboard');
     res.status(201).json({ ok: true });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
@@ -114,7 +116,7 @@ router.post('/adjustments', async (req: Request, res: Response) => {
       note: data.note,
       signedAgreementRef: data.signedAgreementRef,
     });
-    cacheInvalidate('reports:dashboard');
+    await cacheInvalidate('reports:dashboard');
     res.status(201).json({ ok: true });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
@@ -144,7 +146,7 @@ router.post('/penalties', async (req: Request, res: Response) => {
       amount: data.amount,
       date: data.date,
     });
-    cacheInvalidatePattern('reports:pnl:*');
+    await cacheInvalidatePattern('reports:pnl:*');
     res.status(201).json(penalty);
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });

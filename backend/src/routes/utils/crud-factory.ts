@@ -46,7 +46,9 @@ export function createCrudRouter(
     const conditions = [];
     if (hasSoftDelete) conditions.push(isNull(table.deletedAt));
     if (search && searchableField) {
-      conditions.push(like(table[searchableField], `%${search}%`));
+      // Escape SQL LIKE metacharacters to prevent unintended wildcard expansion
+      const escaped = search.replace(/[%_]/g, '\\$&');
+      conditions.push(like(table[searchableField], `%${escaped}%`));
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;

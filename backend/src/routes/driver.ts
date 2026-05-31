@@ -18,7 +18,7 @@ router.get('/trips', async (req: Request, res: Response) => {
     const items = await getDriverTrips(driver.id);
     res.json({ items });
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -30,7 +30,7 @@ router.get('/trips/:id', async (req: Request, res: Response) => {
     if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
     res.json(trip);
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -42,7 +42,7 @@ router.get('/earnings', async (req: Request, res: Response) => {
     const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
     res.json(await getDriverEarnings(driver.id, month, year));
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 
@@ -55,7 +55,7 @@ router.get('/penalties', async (req: Request, res: Response) => {
     const items = await getDriverPenalties(driver.id, dateFrom, dateTo);
     res.json({ items });
   } catch (err: any) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 

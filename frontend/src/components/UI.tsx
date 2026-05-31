@@ -2,6 +2,31 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, ArrowLeft, HelpCircle, X } from 'lucide-react';
 
+/* ─── Extracted shared style constants ──────────────────────────────────── */
+
+const STYLE_OVERLAY: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  backdropFilter: 'blur(4px)',
+  WebkitBackdropFilter: 'blur(4px)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 16,
+};
+
+const FLEX_CENTER: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+const FLEX_ROW: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+};
+
 /* ─── Global confirm shortcuts ──────────────────────────────────────────────
  * Canonical keyboard pattern for any dialog/modal/drawer that asks the user
  * to confirm or cancel something:
@@ -30,15 +55,12 @@ export function useConfirmShortcuts(opts: {
         return;
       }
       if (e.key === 'Enter' && onConfirm) {
-        // Don't hijack Enter inside multi-line editors or when Shift/IME compose.
         const target = e.target as HTMLElement | null;
         if (e.shiftKey || e.isComposing) return;
         if (target) {
           const tag = target.tagName;
           if (tag === 'TEXTAREA') return;
           if (target.isContentEditable) return;
-          // Don't double-trigger when focus is on a <button> — let the button's
-          // native click handler run instead.
           if (tag === 'BUTTON') return;
         }
         e.preventDefault();
@@ -142,7 +164,7 @@ export function Panel({ title, subtitle, action, children, flush, className = ''
             {title && <h3 className="panel__title">{title}</h3>}
             {subtitle && <p className="panel__subtitle">{subtitle}</p>}
           </div>
-          {action && <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>{action}</div>}
+          {action && <div style={{ ...FLEX_ROW, flexWrap: 'wrap' }}>{action}</div>}
         </div>
       )}
       <div className={`panel__body${flush ? ' panel__body--flush' : ''}`}>{children}</div>
@@ -331,10 +353,6 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  /**
-   * Optional primary action. When provided, pressing Enter while the modal is
-   * open triggers it (e.g. "Save", "Confirm"). ESC always closes the modal.
-   */
   onConfirm?: () => void;
 }
 
@@ -343,18 +361,7 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: M
   if (!isOpen) return null;
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(10,10,10,0.4)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: 16,
-      }}
+      style={{ ...STYLE_OVERLAY, background: 'rgba(10,10,10,0.4)', zIndex: 1000 }}
       onClick={onClose}
     >
       <div
@@ -422,10 +429,6 @@ interface DrawerProps {
   subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  /**
-   * Optional primary action. When provided, pressing Enter while the drawer
-   * is open triggers it. ESC always closes the drawer.
-   */
   onConfirm?: () => void;
 }
 
@@ -484,7 +487,7 @@ interface DataTableProps<T extends { id?: number | string }> {
   emptyMessage?: string;
   loading?: boolean;
   className?: string;
-  standalone?: boolean; // if true, full rounded corners (no toolbar above)
+  standalone?: boolean;
 }
 
 export function DataTable<T extends { id?: number | string }>({
@@ -569,7 +572,6 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  // Enter → confirm, Escape → cancel (global pattern, see useConfirmShortcuts).
   useConfirmShortcuts({ isOpen, onConfirm, onCancel });
 
   if (!isOpen) return null;
@@ -579,18 +581,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(10,10,10,0.45)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1100,
-        padding: 16,
-      }}
+      style={{ ...STYLE_OVERLAY, background: 'rgba(10,10,10,0.45)', zIndex: 1100 }}
       onClick={onCancel}
     >
       <div
@@ -612,14 +603,12 @@ export function ConfirmDialog({
       >
         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
           <div style={{
+            ...FLEX_CENTER,
             flexShrink: 0,
             width: 40,
             height: 40,
             borderRadius: 10,
             background: variant === 'danger' ? 'var(--danger-soft, #FEF2F2)' : 'var(--accent-soft)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}>
             <Icon size={20} color={iconColor} />
           </div>

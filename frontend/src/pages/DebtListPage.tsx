@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, formatCompact } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
@@ -7,6 +7,7 @@ import { computeFifoAging } from '@nepocorp/shared';
 import { Search, ChevronRight, Users, Wallet, AlertCircle } from 'lucide-react';
 import { KPI, PageHeader, Card } from '../components/UI';
 import { useCustomerDebts } from '../hooks/useQueries';
+import { useToast } from '../components/shared/Toast';
 
 interface CustomerDebtInfo {
   customer: Customer;
@@ -32,12 +33,7 @@ export default function DebtListPage() {
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk'>(
     searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
   );
-  const [toast, setToast] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4500);
-    return () => clearTimeout(t);
-  }, [toast]);
+  const { toast: showToast } = useToast();
 
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
     const now = new Date();
@@ -161,24 +157,6 @@ export default function DebtListPage() {
 
   return (
     <div className="fade-up">
-      {toast && (
-        <div
-          role="status"
-          style={{
-            position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
-            minWidth: 280, maxWidth: 480,
-            padding: '12px 16px', borderRadius: 8,
-            background: toast.kind === 'success' ? 'var(--accent)' : 'var(--danger)',
-            color: '#fff', fontSize: 13, fontWeight: 600,
-            boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
-            display: 'flex', alignItems: 'center', gap: 10,
-          }}
-          onClick={() => setToast(null)}
-        >
-          <span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} />
-          <span style={{ flex: 1 }}>{toast.text}</span>
-        </div>
-      )}
       <PageHeader
         title="Công nợ phải thu"
         description={`Tổng nợ: ${formatCurrency(totals.total)} • ${customers.length} khách hàng • cập nhật vừa xong`}
@@ -200,7 +178,7 @@ export default function DebtListPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất báo cáo
             </button>
-            <button className="btn btn--primary btn--sm" onClick={() => setToast({ kind: 'success', text: 'Đã gửi nhắc nợ hàng loạt thành công!' })}>
+            <button className="btn btn--primary btn--sm" onClick={() => showToast({ kind: 'success', message: 'Đã gửi nhắc nợ hàng loạt thành công!' })}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Gửi nhắc nợ hàng loạt
             </button>

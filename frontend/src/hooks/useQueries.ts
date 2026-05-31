@@ -238,7 +238,7 @@ export function useBadgeCounts() {
   });
 }
 
-export function useTrucksAndDrivers() {
+export function useTrucksAndDrivers(options?: { enabled?: boolean }) {
   return useQuery<{ trucks: TruckType[]; drivers: DriverType[] }>({
     queryKey: ['trucks-drivers'],
     queryFn: async () => {
@@ -251,6 +251,7 @@ export function useTrucksAndDrivers() {
         drivers: driversRes.items,
       };
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

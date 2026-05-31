@@ -10,13 +10,17 @@ import type { Request, Response } from 'express';
 
 // Audit event registrations — declared once at module load, matched by middleware
 registerAuditEvent('POST', '/api/trips', AuditEvent.TRIP_CREATED);
-registerAuditEvent('PUT', '/api/trips/', AuditEvent.TRIP_UPDATED_PRE_DEPARTURE);
-registerAuditEvent('POST', '/api/trips/', AuditEvent.TRIP_DISPATCHED);
+registerAuditEvent('PUT', '/api/trips/', '/pre-departure', AuditEvent.TRIP_UPDATED_PRE_DEPARTURE);
+registerAuditEvent('PUT', '/api/trips/', '/actuals', AuditEvent.TRIP_UPDATED_ACTUALS);
+registerAuditEvent('POST', '/api/trips/', '/dispatch', AuditEvent.TRIP_DISPATCHED);
+registerAuditEvent('POST', '/api/trips/', '/lock', AuditEvent.TRIP_LOCKED);
+registerAuditEvent('POST', '/api/trips/', '/cancel', AuditEvent.TRIP_CANCELED);
+registerAuditEvent('POST', '/api/trips/', '/adjustment', AuditEvent.ADJUSTMENT_CREATED);
 
 const router = Router();
 
-function invalidateReportCaches(invalidatePnl?: boolean) {
-  Promise.all([
+async function invalidateReportCaches(invalidatePnl?: boolean) {
+  await Promise.all([
     cacheInvalidate('reports:dashboard'),
     invalidatePnl ? cacheInvalidatePattern('reports:pnl:*') : Promise.resolve(),
   ]).catch(() => {});
@@ -48,7 +52,7 @@ router.post('/', async (req: Request, res: Response) => {
       ...data,
       createdBy: req.user!.userId,
     });
-    invalidateReportCaches();
+    await invalidateReportCaches();
     res.status(201).json(trip);
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
@@ -76,7 +80,7 @@ router.put('/:id/pre-departure', async (req: Request, res: Response) => {
       expectedVersion: data.version,
       userId: req.user!.userId,
     });
-    invalidateReportCaches();
+    await invalidateReportCaches();
     res.json(trip);
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
@@ -94,7 +98,7 @@ router.put('/:id/actuals', async (req: Request, res: Response) => {
       expectedVersion: data.version,
       userId: req.user!.userId,
     });
-    invalidateReportCaches();
+    await invalidateReportCaches();
     res.json(updated);
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
@@ -111,7 +115,7 @@ router.post('/:id/dispatch', async (req: Request, res: Response) => {
       req.user!.userId,
       req.user!.role,
     );
-    invalidateReportCaches();
+    await invalidateReportCaches();
     res.json(trip);
   } catch (err: any) {
     res.status(err.statusCode || 400).json({ error: err.message });
@@ -130,7 +134,7 @@ router.post('/:id/lock', async (req: Request, res: Response) => {
       req.user!.role,
       confirmZeroRevenue,
     );
-    invalidateReportCaches(true);
+    await invalidateReportCaches(true);
     res.json(trip);
   } catch (err: any) {
     res.status(err.statusCode || 400).json({ error: err.message });
@@ -147,7 +151,7 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
       req.user!.userId,
       req.user!.role,
     );
-    invalidateReportCaches();
+    await invalidateReportCaches();
     res.json(trip);
   } catch (err: any) {
     res.status(err.statusCode || 400).json({ error: err.message });
@@ -163,7 +167,7 @@ router.patch('/:id/reassign', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'truckId và driverId là bắt buộc' });
     }
     const trip = await tripService.reassignTrip(id, { truckId: Number(truckId), driverId: Number(driverId) });
-    invalidateReportCaches();
+    await invalidateReportCaches();
     res.json(trip);
   } catch (err: any) {
     res.status(err.statusCode || 400).json({ error: err.message });
@@ -192,7 +196,7 @@ router.post('/:id/adjustment', async (req: Request, res: Response) => {
       note: data.note,
       signedAgreementRef: data.signedAgreementRef,
     });
-    cacheInvalidate('reports:dashboard');
+    await invalidateReportCaches(true);
     res.status(201).json({ ok: true });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });

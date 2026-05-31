@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
@@ -79,51 +79,65 @@ export default function FinancePage() {
 
   const error = queryError ? (queryError as any).message || 'Không thể tải báo cáo' : null;
 
-  const fuelCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
-  const roadCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
-  const driverCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).driverSalary || '0'), 0);
-
-  const totalRevenue = report?.totalRevenue ?? 0;
-  const otherRevenue = report?.otherIncome ?? 0;
-  const transRevenue = Math.max(0, totalRevenue - otherRevenue);
-  const totalCosts = report?.totalCosts ?? 0;
-  const grossProfit = report?.grossProfit ?? (totalRevenue - totalCosts);
-  const mgmtFee = report?.managementFee ?? 0;
-  const netProfit = report?.netProfit ?? (grossProfit - mgmtFee + otherRevenue);
-
-  const totalRevenueLY = prevReport?.totalRevenue ?? 0;
-  const otherRevenueLY = prevReport?.otherIncome ?? 0;
-  const transRevenueLY = Math.max(0, totalRevenueLY - otherRevenueLY);
-  const totalCostsLY = prevReport?.totalCosts ?? 0;
-  const grossProfitLY = prevReport?.grossProfit ?? (totalRevenueLY - totalCostsLY);
-  const mgmtFeeLY = prevReport?.managementFee ?? 0;
-  const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
-
-  const activeCapTable = getActiveCapTable(capTableRaw)
-    .map(c => ({ name: c.partnerName, pct: c.percentage }));
-
   const compactNum = (v: number) => {
     if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}tỷ`;
     if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(1)}tr`;
     return `${(v / 1e3).toFixed(0)}k`;
   };
 
-  const revenueChartData = yearlyData.map((r, i) => ({
-    name: `T${i + 1}`,
-    'Doanh thu': r?.totalRevenue ?? 0,
-    'LN gộp': r?.grossProfit ?? 0,
-  }));
+  const {
+    fuelCost, roadCost, driverCost,
+    totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, mgmtFee, netProfit,
+    totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, netProfitLY,
+    activeCapTable, revenueChartData, costPieData, topTrucks,
+  } = useMemo(() => {
+    const fuelCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
+    const roadCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
+    const driverCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).driverSalary || '0'), 0);
 
-  const costPieData = [
-    { name: 'Nhiên liệu', value: fuelCost, fill: '#3b82f6' },
-    { name: 'Tiền đường', value: roadCost, fill: '#f59e0b' },
-    { name: 'Lương lái xe', value: driverCost, fill: '#10b981' },
-  ].filter(d => d.value > 0);
+    const totalRevenue = report?.totalRevenue ?? 0;
+    const otherRevenue = report?.otherIncome ?? 0;
+    const transRevenue = Math.max(0, totalRevenue - otherRevenue);
+    const totalCosts = report?.totalCosts ?? 0;
+    const grossProfit = report?.grossProfit ?? (totalRevenue - totalCosts);
+    const mgmtFee = report?.managementFee ?? 0;
+    const netProfit = report?.netProfit ?? (grossProfit - mgmtFee + otherRevenue);
 
-  const topTrucks = [...(report?.trucks ?? [])]
-    .sort((a, b) => b.profit - a.profit)
-    .slice(0, 5)
-    .map(t => ({ name: t.plate, 'LN gộp': t.profit }));
+    const totalRevenueLY = prevReport?.totalRevenue ?? 0;
+    const otherRevenueLY = prevReport?.otherIncome ?? 0;
+    const transRevenueLY = Math.max(0, totalRevenueLY - otherRevenueLY);
+    const totalCostsLY = prevReport?.totalCosts ?? 0;
+    const grossProfitLY = prevReport?.grossProfit ?? (totalRevenueLY - totalCostsLY);
+    const mgmtFeeLY = prevReport?.managementFee ?? 0;
+    const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
+
+    const activeCapTable = getActiveCapTable(capTableRaw)
+      .map(c => ({ name: c.partnerName, pct: c.percentage }));
+
+    const revenueChartData = yearlyData.map((r, i) => ({
+      name: `T${i + 1}`,
+      'Doanh thu': r?.totalRevenue ?? 0,
+      'LN gộp': r?.grossProfit ?? 0,
+    }));
+
+    const costPieData = [
+      { name: 'Nhiên liệu', value: fuelCost, fill: '#3b82f6' },
+      { name: 'Tiền đường', value: roadCost, fill: '#f59e0b' },
+      { name: 'Lương lái xe', value: driverCost, fill: '#10b981' },
+    ].filter(d => d.value > 0);
+
+    const topTrucks = [...(report?.trucks ?? [])]
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 5)
+      .map(t => ({ name: t.plate, 'LN gộp': t.profit }));
+
+    return {
+      fuelCost, roadCost, driverCost,
+      totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, mgmtFee, netProfit,
+      totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, netProfitLY,
+      activeCapTable, revenueChartData, costPieData, topTrucks,
+    };
+  }, [tripCostsRaw, report, prevReport, capTableRaw, yearlyData]);
 
   return (
     <div className="fade-up-1" style={{ paddingBottom: 40 }}>

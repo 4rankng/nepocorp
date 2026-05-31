@@ -153,7 +153,7 @@ export async function updateTripFigures(
   return await db.transaction(async (tx) => {
     // 1. Fetch trip and check lock status
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
-    if (!trip) throw new Error('Không tìm thấy chuyến đi');
+    if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
     if (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED) {
       throw new ApiError(400, 'Chuyến đi đã chốt hoặc đã hủy, không thể sửa');
     }
@@ -302,7 +302,7 @@ export async function transitionTripStatus(
   // Subject + Verb + Natural Key sentences.
   return await db.transaction(async (tx) => {
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
-    if (!trip) throw new Error('Không tìm thấy chuyến đi');
+    if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
 
     const currentStatus = trip.status as TripStatus;
     if (currentStatus === targetStatus) return trip; // Idempotent short-circuit
@@ -319,7 +319,7 @@ export async function transitionTripStatus(
         );
       }
       if (currentStatus !== TripStatus.CREATED && currentStatus !== TripStatus.COMPLETED) {
-        throw new Error('Chỉ có thể xuất phát chuyến đi ở trạng thái Mới tạo hoặc Hoàn thành');
+        throw new ApiError(409, 'Chỉ có thể xuất phát chuyến đi ở trạng thái Mới tạo hoặc Hoàn thành');
       }
       // Block dispatching a second trip on a truck that is already running
       // another trip — physically a truck can only be on one IN_TRANSIT trip
@@ -350,7 +350,7 @@ export async function transitionTripStatus(
       }
     } else if (targetStatus === TripStatus.COMPLETED) {
       if (currentStatus !== TripStatus.IN_TRANSIT) {
-        throw new Error('Chỉ có thể hoàn thành chuyến đi đang chạy');
+        throw new ApiError(409, 'Chỉ có thể hoàn thành chuyến đi đang chạy');
       }
 
       // Enforce photo completion requirements
@@ -371,7 +371,7 @@ export async function transitionTripStatus(
     } else if (targetStatus === TripStatus.LOCKED) {
       // Inline lock procedure to avoid nested transaction
       if (currentStatus !== TripStatus.COMPLETED) {
-        throw new Error('Chỉ có thể chốt chuyến đi khi ở trạng thái Hoàn thành');
+        throw new ApiError(409, 'Chỉ có thể chốt chuyến đi khi ở trạng thái Hoàn thành');
       }
 
       // Soft guard on zero-revenue
@@ -409,7 +409,7 @@ export async function transitionTripStatus(
         );
       }
       if (currentStatus === TripStatus.LOCKED) {
-        throw new Error('Không thể hủy chuyến đi đã chốt');
+        throw new ApiError(409, 'Không thể hủy chuyến đi đã chốt');
       }
 
       // Canceled: zero all financials
@@ -451,28 +451,30 @@ export async function transitionTripStatus(
 }
 
 export async function reassignTrip(tripId: number, data: { truckId: number; driverId: number }) {
-  const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
-  if (!trip) throw new Error('Không tìm thấy chuyến đi');
-  if (trip.status !== TripStatus.CREATED) throw new Error('Chỉ có thể đổi tài xế/xe cho chuyến chưa xuất phát');
+  return await db.transaction(async (tx) => {
+    const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
+    if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
+    if (trip.status !== TripStatus.CREATED) throw new ApiError(409, 'Chỉ có thể đổi tài xế/xe cho chuyến chưa xuất phát');
 
-  // Validate truck/driver exist before attempting the update — otherwise the
-  // raw postgres FK constraint error ("insert or update on table trips
-  // violates foreign key constraint trips_truck_id_trucks_id_fk") leaks into
-  // the UI as an unfriendly red banner. Catch the bad id at the API edge.
-  const [truck] = await db.select({ id: s.trucks.id }).from(s.trucks)
-    .where(and(eq(s.trucks.id, data.truckId), isNull(s.trucks.deletedAt))).limit(1);
-  if (!truck) throw new Error('Xe đầu kéo không tồn tại hoặc đã bị xóa');
-  const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
-    .where(and(eq(s.drivers.id, data.driverId), isNull(s.drivers.deletedAt))).limit(1);
-  if (!driver) throw new Error('Tài xế không tồn tại hoặc đã bị xóa');
+    // Validate truck/driver exist before attempting the update — otherwise the
+    // raw postgres FK constraint error ("insert or update on table trips
+    // violates foreign key constraint trips_truck_id_trucks_id_fk") leaks into
+    // the UI as an unfriendly red banner. Catch the bad id at the API edge.
+    const [truck] = await tx.select({ id: s.trucks.id }).from(s.trucks)
+      .where(and(eq(s.trucks.id, data.truckId), isNull(s.trucks.deletedAt))).limit(1);
+    if (!truck) throw new ApiError(400, 'Xe đầu kéo không tồn tại hoặc đã bị xóa');
+    const [driver] = await tx.select({ id: s.drivers.id }).from(s.drivers)
+      .where(and(eq(s.drivers.id, data.driverId), isNull(s.drivers.deletedAt))).limit(1);
+    if (!driver) throw new ApiError(400, 'Tài xế không tồn tại hoặc đã bị xóa');
 
-  const [updated] = await db.update(s.trips).set({
-    truckId: data.truckId,
-    driverId: data.driverId,
-    updatedAt: new Date(),
-  }).where(eq(s.trips.id, tripId)).returning();
+    const [updated] = await tx.update(s.trips).set({
+      truckId: data.truckId,
+      driverId: data.driverId,
+      updatedAt: new Date(),
+    }).where(eq(s.trips.id, tripId)).returning();
 
-  return updated;
+    return updated;
+  });
 }
 
 // ─── Trip queries ────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Users, ShieldCheck, UserCog, Lock, Plus, Pencil, Trash2,
   Loader2, Save, X, KeyRound, Eye, EyeOff,
@@ -8,6 +8,8 @@ import { formatDate } from '../lib/format';
 import { Role, ROLE_LABELS } from '@nepocorp/shared';
 import { useAuth } from '../hooks/useAuth';
 import { useConfirm } from '../components/UI';
+import { useUsers } from '../hooks/useQueries';
+import { useToast } from '../components/shared/Toast';
 
 interface UserRow {
   id: number;
@@ -34,8 +36,8 @@ export default function UsersPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const isAdmin = me?.role === Role.ADMIN;
 
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: usersData, isLoading: loading, refetch: refetchUsers } = useUsers();
+  const users = (usersData?.items ?? []) as UserRow[];
   const [error, setError] = useState<string | null>(null);
 
   const [filter, setFilter] = useState<FilterKey>('all');
@@ -55,12 +57,7 @@ export default function UsersPage() {
   const [showAddPw, setShowAddPw]   = useState(false);
   const [addError, setAddError]     = useState<string | null>(null);
 
-  const [toast, setToast] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4500);
-    return () => clearTimeout(t);
-  }, [toast]);
+  const { toast: showToast } = useToast();
 
   // Edit form state
   const [editRole, setEditRole]     = useState<Role>(Role.DRIVER);
@@ -69,36 +66,22 @@ export default function UsersPage() {
   const [showEditPw, setShowEditPw] = useState(false);
   const [editError, setEditError]   = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await api.get<{ items: UserRow[] }>('/auth/users');
-      setUsers(data.items || []);
-    } catch (e: any) {
-      setError(e.message || 'Không thể tải danh sách tài khoản');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  // ── Derived stats ──────────────────────────────────────────────────────────
-  const total = users.length;
-  const staffCount = users.filter(u => u.role !== Role.DRIVER).length;
-  const driverCount = users.filter(u => u.role === Role.DRIVER).length;
-  const inactiveCount = users.filter(u => u.status !== 'ACTIVE').length;
-
-  const filtered = users
-    .filter(u => filter === 'all' || u.role === filter)
-    .filter(u => {
-      if (!search) return true;
-      const q = search.toLowerCase();
-      return (u.username || '').toLowerCase().includes(q)
-        || (u.email || '').toLowerCase().includes(q)
-        || (u.phone || '').includes(q);
-    });
+  const { total, staffCount, driverCount, inactiveCount, filtered } = useMemo(() => {
+    const total = users.length;
+    const staffCount = users.filter(u => u.role !== Role.DRIVER).length;
+    const driverCount = users.filter(u => u.role === Role.DRIVER).length;
+    const inactiveCount = users.filter(u => u.status !== 'ACTIVE').length;
+    const filtered = users
+      .filter(u => filter === 'all' || u.role === filter)
+      .filter(u => {
+        if (!search) return true;
+        const q = search.toLowerCase();
+        return (u.username || '').toLowerCase().includes(q)
+          || (u.email || '').toLowerCase().includes(q)
+          || (u.phone || '').includes(q);
+      });
+    return { total, staffCount, driverCount, inactiveCount, filtered };
+  }, [users, filter, search]);
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
 
@@ -120,7 +103,7 @@ export default function UsersPage() {
       setShowAddForm(false);
       setAddUsername(''); setAddEmail(''); setAddPhone('');
       setAddPassword(''); setAddRole(Role.DRIVER);
-      load();
+      refetchUsers();
     } catch (e: any) {
       setAddError(e.message || 'Lỗi khi tạo tài khoản');
     } finally {
@@ -145,7 +128,7 @@ export default function UsersPage() {
       if (editPassword) body.password = editPassword;
       await api.patch(`/auth/users/${id}`, body);
       setEditingId(null);
-      load();
+      refetchUsers();
     } catch (e: any) {
       setEditError(e.message || 'Lỗi khi cập nhật');
     } finally {
@@ -158,9 +141,9 @@ export default function UsersPage() {
     setDeleting(id);
     try {
       await api.delete(`/auth/users/${id}`);
-      load();
+      refetchUsers();
     } catch (e: any) {
-      setToast({ kind: 'error', text: e.message || 'Lỗi khi xóa' });
+      showToast({ kind: 'error', message: e.message || 'Lỗi khi xóa' });
     } finally {
       setDeleting(null);
     }
@@ -176,25 +159,6 @@ export default function UsersPage() {
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
-      {toast && (
-        <div
-          role="status"
-          style={{
-            position: 'fixed', right: 24, bottom: 24, zIndex: 1000,
-            minWidth: 280, maxWidth: 480,
-            padding: '12px 16px', borderRadius: 8,
-            background: toast.kind === 'success' ? 'var(--accent)' : 'var(--danger)',
-            color: '#fff', fontSize: 13, fontWeight: 600,
-            boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
-            display: 'flex', alignItems: 'center', gap: 10,
-          }}
-          onClick={() => setToast(null)}
-        >
-          <span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} />
-          <span style={{ flex: 1 }}>{toast.text}</span>
-        </div>
-      )}
-
       {/* Page header */}
       <div className="page-header">
         <div>

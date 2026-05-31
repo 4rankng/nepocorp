@@ -46,7 +46,9 @@ export default function TripDetailPage() {
 
   // Reassign modal state
   const [showReassign, setShowReassign] = useState(false);
-  const { data: trucksDriversData } = useTrucksAndDrivers();
+  const { data: trucksDriversData } = useTrucksAndDrivers({
+    enabled: showReassign || trip?.status === TripStatus.CREATED,
+  });
   const reassignTrucks = trucksDriversData?.trucks ?? [];
   const reassignDrivers = trucksDriversData?.drivers ?? [];
   const [reassignTruckId, setReassignTruckId] = useState('');
