@@ -31,13 +31,13 @@ export async function getDashboardStats() {
     truckStatusCounts,
     ledgerRows,
     capRows,
+    [inTransitResult],
   ] = await Promise.all([
     db.select({
       revenue: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.revenue}::numeric else 0 end), 0)`,
       costs: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
       tripCount: sql<number>`count(*)`,
       completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
-      inTransitTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'IN_TRANSIT')`,
       lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
     }).from(s.trips).where(and(
       isNull(s.trips.deletedAt),
@@ -60,6 +60,12 @@ export async function getDashboardStats() {
       .orderBy(desc(s.ledger.id)),
     db.select().from(s.capTableHistory)
       .orderBy(desc(s.capTableHistory.effectiveDate)),
+    db.select({
+      count: sql<number>`count(*)`,
+    }).from(s.trips).where(and(
+      isNull(s.trips.deletedAt),
+      eq(s.trips.status, TripStatus.IN_TRANSIT),
+    )),
   ]);
 
   // Resolve top overdue customer from ledger
@@ -77,7 +83,7 @@ export async function getDashboardStats() {
     grossProfit: revenue - costs,
     tripCount: Number(stats?.tripCount || 0),
     completedTrips: Number(stats?.completedTrips || 0),
-    inTransitTrips: Number(stats?.inTransitTrips || 0),
+    inTransitTrips: Number(inTransitResult?.count || 0),
     totalTrucks: truckStatusCounts.reduce((sum: number, r: any) => sum + Number(r.count), 0),
     totalDrivers: Number(driverCount?.count || 0),
     fleetStatus: Object.fromEntries(

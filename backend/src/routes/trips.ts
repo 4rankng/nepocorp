@@ -56,7 +56,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (dateTo) conditions.push(lte(s.trips.departureDate, dateTo));
 
     const items = await db.select({
-      id: s.trips.id, customerId: s.trips.customerId, customerReference: s.trips.customerReference,
+      id: s.trips.id, tripCode: s.trips.tripCode, customerId: s.trips.customerId, customerReference: s.trips.customerReference,
       truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
       trailerId: s.trips.trailerId, cargoTypeId: s.trips.cargoTypeId,
       status: s.trips.status, departureDate: s.trips.departureDate,
@@ -64,7 +64,7 @@ router.get('/', async (req: Request, res: Response) => {
       totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
       totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
       hasReturnCargo: s.trips.hasReturnCargo, driverSalary: s.trips.driverSalary, notes: s.trips.notes,
-      createdAt: s.trips.createdAt,
+      createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt,
       // Joined fields - include nested objects for frontend compatibility
       customerName: s.customers.name,
       driverName: s.drivers.name,

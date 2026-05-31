@@ -10,7 +10,7 @@ import {
   managementFeeSchema, capTableSchema,
 } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
-import { createCrudRouter, getBootstrapData, getPricing } from '../services/config.service';
+import { createCrudRouter, getBootstrapData, getPricing, snakeToCamelKeys } from '../services/config.service';
 
 const router = Router();
 
@@ -74,7 +74,7 @@ router.use('/drivers', (() => {
 
   sub.post('/', async (req: Request, res: Response) => {
     const data = driverSchema.parse(req.body);
-    const [item] = await db.insert(s.drivers).values(data).returning();
+    const [item] = await db.insert(s.drivers).values(snakeToCamelKeys(data) as any).returning();
     res.status(201).json(item);
   });
 
@@ -88,7 +88,7 @@ router.use('/drivers', (() => {
   sub.put('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     const data = driverSchema.partial().parse(req.body);
-    const [item] = await db.update(s.drivers).set({ ...data, updatedAt: new Date() }).where(eq(s.drivers.id, id)).returning();
+    const [item] = await db.update(s.drivers).set({ ...(snakeToCamelKeys(data) as any), updatedAt: new Date() }).where(eq(s.drivers.id, id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     res.json(item);
   });
