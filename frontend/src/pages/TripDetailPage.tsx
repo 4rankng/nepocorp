@@ -17,6 +17,7 @@ import { Panel, StatusPill, useConfirm, Drawer } from '../components/UI';
 import { useTripDetail, useTripAdjustments, useTrucksAndDrivers, useFuelConfig } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '../components/shared/Spinner';
+import { LeafletMap } from '../components/shared/LeafletMap';
 
 function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
   return (
@@ -145,9 +146,9 @@ export default function TripDetailPage() {
       await refetchTrip();
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 422) {
-        const isConfirmed = await confirm('Doanh thu chuyến đi này bằng 0 VNĐ. Bạn có chắc chắn muốn chốt doanh thu bằng 0?', {
+        const isConfirmed = await confirm('Doanh thu chuyến đi này bằng 0 VNĐ. Bạn có chắc chắn muốn khóa chuyến với doanh thu bằng 0?', {
           variant: 'warning',
-          confirmLabel: 'Xác nhận chốt',
+          confirmLabel: 'Xác nhận khóa',
           cancelLabel: 'Hủy bỏ'
         });
         if (isConfirmed) {
@@ -156,7 +157,7 @@ export default function TripDetailPage() {
             await api.post(`/trips/${trip.id}/lock`, { confirmZeroRevenue: true });
             await refetchTrip();
           } catch (retryErr: any) {
-            setActionError(retryErr.message || 'Lỗi khi chốt chuyến đi.');
+            setActionError(retryErr.message || 'Lỗi khi khóa chuyến đi.');
           } finally {
             setActionLoading(false);
           }
@@ -164,7 +165,7 @@ export default function TripDetailPage() {
       } else if (err instanceof ApiError) {
         setActionError(err.message);
       } else {
-        setActionError(err.message || 'Có lỗi xảy ra khi chốt chuyến đi.');
+        setActionError(err.message || 'Có lỗi xảy ra khi khóa chuyến đi.');
       }
     } finally {
       setActionLoading(false);
@@ -251,15 +252,15 @@ export default function TripDetailPage() {
               <button
                 className="btn btn--primary btn--sm"
                 disabled={actionLoading || needsPhotos}
-                title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi chốt.' : undefined}
+                title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi khóa.' : undefined}
                 onClick={handleLockClick}
               >
                 {actionLoading ? <Loader2 size={14} className="spin" /> : <Lock size={14} />}
-                Chốt chuyến
+                Khóa chuyến
               </button>
               {needsPhotos && (
                 <span style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                  Chưa có ảnh — cần ít nhất 1 ảnh để chốt
+                  Chưa có ảnh — cần ít nhất 1 ảnh để khóa
                 </span>
               )}
             </>
@@ -410,6 +411,12 @@ export default function TripDetailPage() {
           style={{ marginTop: 20 }}
           flush
         >
+          {trip.legs.some(leg => leg.polylinePath) && (
+            <div style={{ padding: '16px 20px 0' }}>
+              <LeafletMap legs={trip.legs} height="280px" />
+            </div>
+          )}
+
           <div className="table-scroll">
             <table>
               <thead>

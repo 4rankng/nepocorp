@@ -189,8 +189,11 @@ export default function FinancePage() {
           ))}
         </select>
         {report && (
-          <span style={{ fontSize: 13, color: 'var(--fg-3)', marginLeft: 8 }}>
-            Ghi nhận <strong>{report.tripCount}</strong> lệnh chốt sổ
+          <span
+            style={{ fontSize: 13, color: 'var(--fg-3)', marginLeft: 8, cursor: 'help' }}
+            title="Chốt sổ: chuyến đã chuyển trạng thái 'Đã khóa' trong kỳ — doanh thu và chi phí được ghi nhận vào sổ kế toán"
+          >
+            Ghi nhận <strong>{report.tripCount}</strong> chuyến đã khóa trong kỳ
           </span>
         )}
       </div>
@@ -227,7 +230,7 @@ export default function FinancePage() {
                 <line x1="6" y1="20" x2="6" y2="14"/><line x1="10" y1="20" x2="10" y2="8"/>
                 <line x1="14" y1="20" x2="14" y2="11"/><line x1="18" y1="20" x2="18" y2="4"/>
               </svg>
-              <div>Chưa có lệnh chốt sổ trong năm {year}</div>
+              <div>Chưa có chuyến nào được khóa trong năm {year}</div>
               <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh để xem xu hướng doanh thu hàng tháng</div>
             </div>
           ) : (
@@ -347,7 +350,7 @@ export default function FinancePage() {
               <circle cx="5.5" cy="18.5" r="2.5"/>
               <circle cx="18.5" cy="18.5" r="2.5"/>
             </svg>
-            <div>Chưa có xe nào có lệnh chốt sổ trong tháng này</div>
+            <div>Chưa có xe nào có chuyến đã khóa trong tháng này</div>
           </div>
         </div>
       )}

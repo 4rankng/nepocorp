@@ -74,7 +74,7 @@ export default function ProfitPage() {
   };
 
   const handleDistributeProfit = async () => {
-    if (!await confirm(`Xác nhận chốt & phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}? Hành động này không thể hoàn tác.`)) {
+    if (!await confirm(`Xác nhận phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}? Hành động này không thể hoàn tác.`)) {
       return;
     }
 
@@ -87,7 +87,7 @@ export default function ProfitPage() {
       });
       setDistResult(res);
       setPreview(null);
-      showToast({ kind: 'success', message: 'Đã thực hiện chốt phân chia lợi nhuận thành công!' });
+      showToast({ kind: 'success', message: 'Đã thực hiện phân chia lợi nhuận thành công!' });
       refetchHistory();
     } catch (err: any) {
       showToast({ kind: 'error', message: err.message || 'Lỗi khi phân chia lợi nhuận.' });
@@ -163,7 +163,7 @@ export default function ProfitPage() {
                 {formatVND(netProfit)}
               </div>
               <div className="profit-hero__sub">
-                Sau khi trừ phí quản lý {formatVND(report?.managementFee || 0)} · Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã chốt
+                Sau khi trừ phí quản lý {formatVND(report?.managementFee || 0)} · Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã khóa
               </div>
             </div>
 
@@ -304,7 +304,7 @@ export default function ProfitPage() {
               {/* Confirmed execution result (immutable record) */}
               {distResult && (
                 <div style={{ marginTop: 16, padding: 16, background: 'var(--brand-soft)', borderRadius: 8, border: '1px dashed var(--brand)' }}>
-                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--brand)' }}>✅ Đã chốt sổ Quý {distResult.quarter} / {distResult.year}</h4>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--brand)' }}>✅ Đã phân chia lợi nhuận Quý {distResult.quarter} / {distResult.year}</h4>
                   <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>Tổng lợi nhuận ròng phân phối: <strong>{formatVND(distResult.netProfit)}</strong></p>
                   <table style={{ width: '100%', fontSize: 12.5 }}>
                     <thead>
@@ -329,7 +329,7 @@ export default function ProfitPage() {
 
             {/* Historical Distribution View */}
             {history.length > 0 && (
-              <Card style={{ marginTop: 16 }} title="Lịch sử phân phối" subtitle="Các lần chốt phân chia lợi nhuận đã thực hiện">
+              <Card style={{ marginTop: 16 }} title="Lịch sử phân phối" subtitle="Các lần phân chia lợi nhuận đã thực hiện">
                 <div className="table-scroll">
                   <table style={{ width: '100%', fontSize: 12.5 }}>
                     <thead>
@@ -337,7 +337,7 @@ export default function ProfitPage() {
                         <th style={{ textAlign: 'left', paddingBottom: 6 }}>Kỳ</th>
                         <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
                         <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền</th>
-                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Ngày chốt</th>
+                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Ngày phân chia</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -418,7 +418,7 @@ export default function ProfitPage() {
             <div style={{ marginTop: 16, padding: '14px 18px', background: 'var(--bg-3)', borderRadius: 8, fontSize: 11.5, color: 'var(--fg-3)', lineHeight: 1.5 }}>
               <p style={{ margin: 0, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>* Nguyên tắc ghi nhận:</p>
               <ul style={{ margin: 0, paddingLeft: 16 }}>
-                <li>Doanh thu và chi phí chỉ được ghi nhận sau khi chuyến đi đã chuyển sang trạng thái <strong>Đã chốt (LOCKED)</strong>.</li>
+                <li>Doanh thu và chi phí chỉ được ghi nhận sau khi chuyến đi đã chuyển sang trạng thái <strong>Đã khóa (LOCKED)</strong>.</li>
                 <li>Phí phạt tài xế được tính trực tiếp vào thu nhập tài chính khác của doanh nghiệp (Salary Deduction Ledger).</li>
               </ul>
             </div>

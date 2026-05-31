@@ -501,7 +501,7 @@ export default function TripListPage() {
             <div className="hero-sub">
               {trips.length} chuyến đã ghi nhận
               {statusCounts[TripStatus.COMPLETED] > 0 && (
-                <> · {statusCounts[TripStatus.COMPLETED]} chờ chốt</>
+                <span title="Chờ khóa: chuyến đã hoàn thành, chờ kế toán xác nhận khóa sổ kế toán"> · {statusCounts[TripStatus.COMPLETED]} chờ khóa</span>
               )}
               {heroSummary.missingFuel > 0 && (
                 <> · {heroSummary.missingFuel} chưa khai báo dầu</>
@@ -536,7 +536,7 @@ export default function TripListPage() {
               <div className="bb-seg bb-huy"  style={{ width: `${breakdownPct.huy}%` }} />
             </div>
             <div className="breakdown-legend">
-              <span className="legend-item"><span className="legend-dot bb-chot" />Đã chốt {statusCounts[TripStatus.LOCKED]}</span>
+              <span className="legend-item"><span className="legend-dot bb-chot" />Đã khóa {statusCounts[TripStatus.LOCKED]}</span>
               <span className="legend-item"><span className="legend-dot bb-htth" />Hoàn thành {statusCounts[TripStatus.COMPLETED]}</span>
               <span className="legend-item"><span className="legend-dot bb-dang" />Đang chạy {statusCounts[TripStatus.IN_TRANSIT]}</span>
               <span className="legend-item"><span className="legend-dot bb-moi"  />Mới tạo {statusCounts[TripStatus.CREATED]}</span>
@@ -620,7 +620,7 @@ export default function TripListPage() {
             className={`stab${statusFilter === TripStatus.LOCKED ? ' active' : ''}`}
             onClick={() => setStatusFilter(TripStatus.LOCKED)}
           >
-            Đã chốt <span className="stc">{statusCounts[TripStatus.LOCKED]}</span>
+            Đã khóa <span className="stc">{statusCounts[TripStatus.LOCKED]}</span>
           </button>
           <button
             type="button"

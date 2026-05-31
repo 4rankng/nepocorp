@@ -60,7 +60,7 @@ export const TRIP_STATUS_LABELS: Record<TripStatus, string> = {
   [TripStatus.CREATED]: 'Mới tạo',
   [TripStatus.IN_TRANSIT]: 'Đang chạy',
   [TripStatus.COMPLETED]: 'Hoàn thành',
-  [TripStatus.LOCKED]: 'Đã chốt',
+  [TripStatus.LOCKED]: 'Đã khóa',
   [TripStatus.CANCELED]: 'Đã hủy',
 };
 
