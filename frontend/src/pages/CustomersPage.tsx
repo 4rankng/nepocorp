@@ -9,7 +9,7 @@ import { PageHeader, KPI, FilterPill, StatusPill } from '../components/UI';
 import { formatCurrency } from '../lib/format';
 import type { Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
-import { useCustomers } from '../hooks/useQueries';
+import { useCustomers, useCustomerLedgerEntries } from '../hooks/useQueries';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
 
@@ -21,8 +21,8 @@ const STATUS_LABELS: Record<string, string> = {
 function riskDot(debt: number | null, limit: number | null) {
   if (!debt || !limit || limit === 0) return 'low';
   const ratio = debt / limit;
-  if (ratio > 1) return 'high';
-  if (ratio > 0.7) return 'med';
+  if (ratio > 0.8) return 'high';
+  if (ratio >= 0.5) return 'med';
   return 'low';
 }
 
@@ -99,10 +99,26 @@ export default function CustomersPage() {
   const pageSize = 10;
 
   const { data: customersData, isLoading: loading, error: queryError, refetch: refetchCustomers } = useCustomers(page, search);
+  const { data: ledgerEntries } = useCustomerLedgerEntries();
   const customers = customersData?.items ?? [];
   const total = customersData?.total ?? 0;
   const [mutationError, setMutationError] = useState<string | null>(null);
   const error = queryError ? 'Không thể tải dữ liệu' : mutationError;
+
+  const debtMap = useMemo(() => {
+    const map = new Map<number, number>();
+    if (!ledgerEntries) return map;
+    const byCustomer = new Map<number, { balance: string }>();
+    for (const entry of ledgerEntries) {
+      if (entry.entityType === 'CUSTOMER' && !byCustomer.has(entry.entityId)) {
+        byCustomer.set(entry.entityId, entry);
+      }
+    }
+    for (const [id, entry] of byCustomer) {
+      map.set(id, parseFloat(entry.balance));
+    }
+    return map;
+  }, [ledgerEntries]);
 
   useEffect(() => {
     if (search === '') { setPage(1); return; }
@@ -117,14 +133,14 @@ export default function CustomersPage() {
       if (filter === 'active') return c.status === CustomerStatus.ACTIVE;
       if (filter === 'locked') return c.status === CustomerStatus.LOCKED;
       if (filter === 'risk') {
-        const debt = 0; // TODO: compute from ledger
+        const debt = debtMap.get(c.id) ?? 0;
         const limit = Number((c as any).creditLimit || c.creditLimit || 0);
         return limit > 0 && debt / limit > 0.8;
       }
       return true;
     });
     return { activeCount, lockedCount, filtered };
-  }, [customers, filter]);
+  }, [customers, filter, debtMap]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -249,7 +265,7 @@ export default function CustomersPage() {
               <div key={c.id} className="m-card">
                 <div className="m-card__top">
                   <span className="m-card__title">
-                    <span className={`risk-dot risk-dot--${riskDot(0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
+                    <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
                     {c.name}
                   </span>
                   <StatusPill variant={c.status === CustomerStatus.ACTIVE ? 'success' : 'danger'}>
@@ -328,7 +344,7 @@ export default function CustomersPage() {
                   >
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 600 }}>
-                        <span className={`risk-dot risk-dot--${riskDot(0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
+                         <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
                         {c.name}
                       </div>
                       {((c as any).taxCode || c.taxCode) && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {(c as any).taxCode || c.taxCode}</div>}

@@ -325,7 +325,7 @@ export default function TripDetailPage() {
           {infoRow(<User size={16} />, 'Tài xế', trip.driver?.name)}
           {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailerType ? (trip.truck?.trailerPlateNumber ? `${trip.truck.trailerPlateNumber} (${trip.trailerType})` : trip.trailerType) : null)}
           {infoRow(<Calendar size={16} />, 'Ngày khởi hành', formatDate(trip.departureDate))}
-          {infoRow(<FileText size={16} />, 'Số cont', (trip.containerCount ?? 1) > 1 ? `${trip.containerCount ?? 1} cont` : '1 cont')}
+          {infoRow(<FileText size={16} />, 'Số cont', String(trip.containerCount ?? 1))}
           {infoRow(<FileText size={16} />, 'Mã tham chiếu', trip.customerReference)}
         </Panel>
 

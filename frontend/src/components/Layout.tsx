@@ -87,6 +87,12 @@ function getPageTitle(pathname: string): string {
   if (pathname === '/dashboard') return 'Tổng quan';
   if (pathname.startsWith('/dispatch')) return 'Điều vận & Phân xe';
   if (pathname.startsWith('/fleet')) return 'Đội xe';
+  const tripMatch = pathname.match(/^\/trips\/(\d+)(?:\/edit)?$/);
+  if (tripMatch) {
+    const isEdit = pathname.endsWith('/edit');
+    return `${isEdit ? 'Sửa' : 'Chi tiết'} lệnh #${tripMatch[1]}`;
+  }
+  if (pathname === '/trips/new') return 'Tạo lệnh vận chuyển';
   if (pathname.startsWith('/trips')) return 'Lệnh vận chuyển';
   if (pathname === '/finance') return 'Báo cáo lãi lỗ';
   if (pathname.startsWith('/profit')) return 'Phân chia lợi nhuận';

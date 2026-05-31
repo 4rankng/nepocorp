@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   useReactTable,
@@ -297,14 +297,14 @@ export default function TripListPage() {
       cell: ({ row }) => {
         const trip = row.original;
         return (
-          <div className="trip-col">
-            <div className="trip-name">{trip.customer?.name ?? '—'}</div>
+          <Link to={`/trips/${trip.id}`} className="trip-col" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }} onClick={(e) => e.stopPropagation()}>
+            <div className="trip-name" style={{ color: 'var(--brand)', fontWeight: 600 }}>{trip.customer?.name ?? '—'}</div>
             <div className="trip-meta">
-              <span className="trip-id">{buildTripCode(trip)}</span>
+              <span className="trip-id" style={{ color: 'var(--ink)' }}>{buildTripCode(trip)}</span>
               <span className="trip-meta-sep">·</span>
               <span>{formatDayMonth(trip.departureDate)}</span>
             </div>
-          </div>
+          </Link>
         );
       }
     }),
@@ -465,14 +465,13 @@ export default function TripListPage() {
             >
               <Pencil size={14} />
             </button>
-            <button
-              type="button"
+            <Link
+              to={`/trips/${trip.id}`}
               className="action-btn"
               title="Chi tiết"
-              onClick={() => navigate(`/trips/${trip.id}`)}
             >
               <Eye size={14} />
-            </button>
+            </Link>
           </div>
         );
       }

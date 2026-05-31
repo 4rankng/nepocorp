@@ -126,7 +126,7 @@ const MonthlyChart = React.memo(function MonthlyChart({
       <circle className="linechart__dot linechart__dot--profit" cx={lastX} cy={lastProfitY} r="5" />
       <g transform={`translate(${lastX}, ${lastY})`}>
         <rect x="-90" y="-38" width="86" height="28" rx="6" fill="var(--ink)" />
-        <text x="-47" y="-26" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="10" fill="rgba(255,255,255,0.65)" fontWeight="500">{String(currentMonth).padStart(2, '0')}/{String(currentYear).slice(-2)}</text>
+        <text x="-47" y="-26" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="10" fill="rgba(255,255,255,0.65)" fontWeight="500">{String(currentMonth).padStart(2, '0')}/{currentYear}</text>
         <text x="-47" y="-14" textAnchor="middle" fontFamily="var(--font-display)" fontSize="12" fill="#fff" fontWeight="700">
           {fmt(series[lastIdx].revenue)}
         </text>
@@ -287,7 +287,10 @@ export default function DashboardPage() {
     const grossProfit = stats.grossProfit ?? 0;
     const managementFee = pnlReport?.managementFee ?? 0;
     const otherIncome = pnlReport?.otherIncome ?? 0;
-    const netProfit = grossProfit - managementFee + otherIncome;
+    // Prefer the fully-computed netProfit from the PnL report (accounts for maintenance
+    // and company-level expenses). Fall back to the simpler estimate when the PnL report
+    // hasn't loaded yet.
+    const netProfit = pnlReport?.netProfit ?? (grossProfit - managementFee + otherIncome);
 
     const sortedTrucks = pnlReport?.trucks
       ? [...pnlReport.trucks].sort((a, b) => b.profit - a.profit).slice(0, 5)
@@ -476,7 +479,7 @@ export default function DashboardPage() {
       <div className="kpi-grid">
         <div className="kpi" onClick={() => navigate('/finance')}>
           <div className="kpi__top">
-            <span className="kpi__label">Doanh thu {String(currentMonth).padStart(2, '0')}/{String(currentYear).slice(-2)}</span>
+            <span className="kpi__label">Doanh thu {String(currentMonth).padStart(2, '0')}/{currentYear}</span>
           </div>
           <div className="kpi__value">{kpiRevenue.num}<span className="kpi__value-unit">{kpiRevenue.suffix && ` ${kpiRevenue.suffix}`} ₫</span></div>
           <div className={`kpi__meta ${prevPnlReport ? (isRevUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
@@ -552,7 +555,7 @@ export default function DashboardPage() {
         {/* Left Column: 12-Month Line Chart */}
         <Panel
           title="Doanh thu & Lợi nhuận gộp · 12 tháng"
-          subtitle={`Tăng trưởng đều — đỉnh tại ${String(currentMonth).padStart(2, '0')}/${String(currentYear).slice(-2)}`}
+          subtitle={`Tăng trưởng đều — đỉnh tại ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
           action={<a href="#" onClick={(e) => { e.preventDefault(); navigate('/finance'); }} style={styles.linkAction}>Xem báo cáo →</a>}
         >
 
@@ -572,7 +575,7 @@ export default function DashboardPage() {
 
         {/* Right Column: Cost Breakdown Donut Chart fallback */}
         <Panel
-          title={`Cơ cấu chi phí ${String(currentMonth).padStart(2, '0')}/${String(currentYear).slice(-2)}`}
+          title={`Cơ cấu chi phí ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
           subtitle={`Tổng ${formattedTotalPie} ₫`}
         >
             {slicesWithPct.every(sl => sl.value === 0) ? (
@@ -587,7 +590,7 @@ export default function DashboardPage() {
                   <div className="aging__donut-label">
                     <div>
                       <div className="aging__total">—</div>
-                      <div className="aging__total-label">Chi phí {String(currentMonth).padStart(2, '0')}/{String(currentYear).slice(-2)}</div>
+                      <div className="aging__total-label">Chi phí {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
                     </div>
                   </div>
                 </div>
@@ -613,7 +616,7 @@ export default function DashboardPage() {
                 <div className="aging__donut-label">
                   <div>
                     <div className="aging__total">{formattedTotalPie}</div>
-                    <div className="aging__total-label">Chi phí {String(currentMonth).padStart(2, '0')}/{String(currentYear).slice(-2)}</div>
+                    <div className="aging__total-label">Chi phí {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
                   </div>
                 </div>
               </div>
@@ -641,7 +644,7 @@ export default function DashboardPage() {
 
         {/* Vehicle Profitability */}
         <Panel
-          title={`Lợi nhuận theo xe · ${String(currentMonth).padStart(2, '0')}/${String(currentYear).slice(-2)}`}
+          title={`Lợi nhuận theo xe · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
           subtitle="Biên lợi nhuận gộp từng đầu kéo"
         >
             <div className="stack" style={styles.gap6}>
@@ -679,7 +682,7 @@ export default function DashboardPage() {
 
         {/* Top Profitable Routes */}
         <Panel
-          title={`Top tuyến sinh lời · ${String(currentMonth).padStart(2, '0')}/${String(currentYear).slice(-2)}`}
+          title={`Top tuyến sinh lời · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
           subtitle="Theo tổng lợi nhuận gộp"
           action={<a href="#" onClick={(e) => { e.preventDefault(); navigate('/routes'); }} style={styles.linkAction}>Tất cả →</a>}
         >
@@ -918,7 +921,7 @@ export default function DashboardPage() {
             </div>
             <div className="todo__body">
               <div className="todo__title">
-                Báo cáo lợi nhuận {String(currentMonth).padStart(2, '0')}/{String(currentYear).slice(-2)} sẵn sàng
+                Báo cáo lợi nhuận {String(currentMonth).padStart(2, '0')}/{currentYear} sẵn sàng
                 {topShareholder ? (
                   <> — phần của <strong>{topShareholder.name}</strong> ({topShareholder.percentage.toFixed(2)}%) là <strong>{formatCurrency(Math.round(netProfit * topShareholder.percentage / 100))}</strong></>
                 ) : (

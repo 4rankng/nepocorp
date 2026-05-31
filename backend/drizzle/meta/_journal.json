@@ -57,6 +57,13 @@
       "when": 1780244737057,
       "tag": "0007_warm_living_mummy",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780246837076,
+      "tag": "0008_melodic_firelord",
+      "breakpoints": true
     }
   ]
 }

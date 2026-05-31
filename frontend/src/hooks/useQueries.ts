@@ -351,6 +351,19 @@ export function useDriverPenalties(params?: { dateFrom: string; dateTo: string }
   });
 }
 
+export function useCustomerLedgerEntries() {
+  return useQuery<LedgerEntry[]>({
+    queryKey: ['customer-ledger-entries'],
+    queryFn: async () => {
+      const res = await api.get<PaginatedResponse<LedgerEntry>>(
+        `${FINANCIAL.LEDGER}?entity_type=CUSTOMER&limit=2000`,
+      );
+      return res.items;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
 export function useCustomers(page: number, search: string) {
   return useQuery({
     queryKey: ['customers', page, search],

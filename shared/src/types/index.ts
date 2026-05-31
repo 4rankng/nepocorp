@@ -178,6 +178,7 @@ export interface TripLeg {
   km: number;
   loadingType: LoadingType;
   calculatedLiters: string | null;
+  polylinePath: string | null;
   createdAt: string;
   updatedAt: string;
 }
