@@ -254,6 +254,58 @@
   border-radius: 50%;
 }
 
+/* ─── Inline edit row ─────────────────────────────────────────────────────── */
+
+.fleet-page .fleet-edit-row td {
+  background: var(--surface-2);
+  border-top: 1px solid var(--accent);
+  border-bottom: 1px solid var(--accent);
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.fleet-page .fleet-edit-row td:first-child {
+  border-left: 3px solid var(--accent);
+  border-radius: 0;
+}
+
+.fleet-page .fleet-edit-row td:last-child {
+  border-right: 1px solid var(--accent);
+}
+
+/* compact inputs inside the edit row */
+.fleet-page .fleet-edit-row .input--sm {
+  padding: 5px 8px;
+  font-size: 13px;
+  height: 32px;
+  width: 100%;
+}
+
+/* trailer plate + type side-by-side */
+.fleet-page .fleet-edit-pair {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.fleet-page .fleet-edit-pair .input--sm:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.fleet-page .fleet-edit-select-sm {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+/* save / cancel buttons in the actions cell */
+.fleet-page .fleet-edit-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+}
+
 /* Responsive */
 /* Stack trucks/trailers panels earlier — at 2-column on viewports under
    ~1400px the embedded tables become narrow enough that the "Trạng thái"

@@ -419,19 +419,22 @@ export default function PayableDetailPage() {
 
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
-                Mã biên lai
+                Mã biên lai *
               </label>
               <input
                 type="text"
                 value={paymentReceiptId}
                 onChange={e => setPaymentReceiptId(e.target.value)}
-                placeholder="Tùy chọn"
+                placeholder="VD: PT-20260531-01"
                 style={{
                   width: '100%', padding: '8px 12px', borderRadius: 8,
                   border: '1px solid var(--line)', fontSize: 14,
                   background: 'var(--bg-1)', color: 'var(--fg-1)',
                 }}
               />
+              <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+                Bắt buộc để đối chiếu sao kê ngân hàng / phiếu chi.
+              </p>
             </div>
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -445,7 +448,7 @@ export default function PayableDetailPage() {
               <button
                 className="btn btn--primary"
                 onClick={() => handlePaymentSubmit(false)}
-                disabled={submitting || !paymentAmount || !paymentDate}
+                disabled={submitting || !paymentAmount || !paymentDate || !paymentReceiptId.trim()}
               >
                 {submitting ? 'Đang ghi...' : 'Xác nhận'}
               </button>

@@ -46,7 +46,7 @@ export function PhotoUploader({
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ marginBottom: 14 }}>
-        <span className="typo-eyebrow">Xác thực chè & Ảnh đính kèm</span>
+        <span className="typo-eyebrow">Xác thực chứng từ & Ảnh đính kèm</span>
       </div>
 
       {requiresPhotos && (
@@ -61,7 +61,7 @@ export function PhotoUploader({
           fontWeight: 600,
           lineHeight: 1.4,
         }}>
-          ⚠️ Hàng chè yêu cầu đính kèm ảnh vỏ Container và Niêm phong (Seal) để hoàn thành chuyến đi.
+          ⚠️ Loại hàng này yêu cầu đính kèm ảnh vỏ Container và Niêm phong (Seal) để hoàn thành chuyến đi.
         </div>
       )}
 

@@ -265,6 +265,51 @@ export async function listExpenses(database: any, filters: ExpenseListFilters) {
   return { items, total: Number(countRow?.count ?? 0), page, pageSize };
 }
 
+/**
+ * Fetch a single expense (with supplier / category / truck joins) by id.
+ * Used by the edit page to pre-populate the form. Returns `null` when the
+ * row doesn't exist or is soft-deleted — callers should map that to 404.
+ */
+export async function getExpense(database: any, id: number) {
+  const [row] = await database.select({
+    id: s.expenses.id,
+    expenseDate: s.expenses.expenseDate,
+    supplierId: s.expenses.supplierId,
+    categoryId: s.expenses.categoryId,
+    truckId: s.expenses.truckId,
+    amount: s.expenses.amount,
+    paymentStatus: s.expenses.paymentStatus,
+    validFrom: s.expenses.validFrom,
+    validTo: s.expenses.validTo,
+    receiptId: s.expenses.receiptId,
+    note: s.expenses.note,
+    createdBy: s.expenses.createdBy,
+    createdAt: s.expenses.createdAt,
+    updatedAt: s.expenses.updatedAt,
+    deletedAt: s.expenses.deletedAt,
+    supplier: {
+      id: s.suppliers.id,
+      name: s.suppliers.name,
+    },
+    category: {
+      id: s.expenseCategories.id,
+      name: s.expenseCategories.name,
+      isRenewable: s.expenseCategories.isRenewable,
+      reminderLeadDays: s.expenseCategories.reminderLeadDays,
+    },
+    truck: {
+      id: s.trucks.id,
+      licensePlate: s.trucks.licensePlate,
+    },
+  }).from(s.expenses)
+    .leftJoin(s.suppliers, eq(s.expenses.supplierId, s.suppliers.id))
+    .leftJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
+    .leftJoin(s.trucks, eq(s.expenses.truckId, s.trucks.id))
+    .where(and(eq(s.expenses.id, id), isNull(s.expenses.deletedAt)))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function getRenewalReminders(database: any) {
   const rows = await database.select({
     expenseId: s.expenses.id,

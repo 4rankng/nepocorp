@@ -71,7 +71,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
       return [
         { key: 'my-trips', label: 'Lệnh của tôi', path: '/my-trips', icon: Route, section: 'operations' },
         { key: 'my-earnings', label: 'Thu nhập', path: '/my-earnings', icon: DollarSign, section: 'operations' },
-        { key: 'my-penalties', label: 'Phạt', path: '/my-penalties', icon: AlertTriangle, section: 'operations' },
+        { key: 'my-penalties', label: 'Kỷ luật', path: '/my-penalties', icon: AlertTriangle, section: 'operations' },
       ];
     default:
       return [];

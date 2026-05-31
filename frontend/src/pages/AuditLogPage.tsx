@@ -283,7 +283,7 @@ export default function AuditLogPage() {
       </div>
 
       {/* ── Two-Column Overhaul Layout ── */}
-      <div className="audit-grid">
+      <div className="audit-grid" style={!isAdmin ? { gridTemplateColumns: '1fr' } : undefined}>
         {/* Left Column: Table List */}
         <Panel flush style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="table-scroll">
@@ -395,8 +395,8 @@ export default function AuditLogPage() {
           )}
         </Panel>
 
-        {/* Right Column: Interactive Details Pane */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Right Column: Interactive Details Pane — ADMIN only */}
+        {isAdmin && <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Panel style={{ flex: 1, minHeight: 460, position: 'relative' }}>
             {selectedEntry ? (
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }} className="fade-up">
@@ -541,7 +541,7 @@ export default function AuditLogPage() {
               </div>
             )}
           </Panel>
-        </div>
+        </div>}
       </div>
 
       {/* ── Pagination ── */}

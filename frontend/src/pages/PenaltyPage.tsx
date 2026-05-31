@@ -370,7 +370,7 @@ export default function PenaltyPage() {
     : 0;
   const monthComparison = prevMonthCount > 0
     ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với T${prevMonthNum}`
-    : incidentCount === 0 ? 'Tháng sạch' : '';
+    : incidentCount === 0 ? 'Tháng an toàn' : '';
 
   const penalizedDriverIds = new Set(monthPenalties.map(p => p.driverId));
   const safeCount = drivers.filter(d => !penalizedDriverIds.has(d.id)).length;
@@ -438,7 +438,7 @@ export default function PenaltyPage() {
               <h1 className="page-title">Kỷ luật</h1>
               <span className="penalty-month-pill">
                 <span className="dot" />
-                {monthLabel} · {incidentCount === 0 ? 'Sạch' : `${incidentCount} vụ`}
+                {monthLabel} · {incidentCount === 0 ? 'An toàn' : `${incidentCount} vụ`}
               </span>
             </div>
             <p className="page-subtitle">
@@ -560,7 +560,7 @@ export default function PenaltyPage() {
                 Bảng xếp hạng tài xế
                 <span className="count-pill">{drivers.length}</span>
               </div>
-              <div className="penalty-card-sub">Sắp xếp theo chuỗi ngày sạch và mức an toàn nghiệp vụ</div>
+              <div className="penalty-card-sub">Sắp xếp theo chuỗi ngày an toàn và mức vi phạm nghiệp vụ</div>
             </div>
           </div>
           <div className="penalty-head-tools">
@@ -661,7 +661,7 @@ export default function PenaltyPage() {
         </div>
         <div className="penalty-table-foot">
           <div className="legend">
-            <span>TB chuỗi sạch: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
+            <span>TB chuỗi an toàn: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
             <span style={{ opacity: 0.5 }}>·</span>
             <span>{driversOver90} tài xế đạt mốc 90 ngày</span>
             <span style={{ opacity: 0.5 }}>·</span>
@@ -736,7 +736,7 @@ export default function PenaltyPage() {
               </div>
               <div className="penalty-empty-stats">
                 <div className="penalty-empty-stat">
-                  <div className="lbl">Chuỗi sạch</div>
+                  <div className="lbl">Chuỗi an toàn</div>
                   <div className="val pos">{longestStreak}<span className="u">ngày</span></div>
                 </div>
                 <div className="penalty-empty-divider" />

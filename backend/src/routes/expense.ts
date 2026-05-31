@@ -10,6 +10,7 @@ import {
   updateExpense,
   deleteExpense,
   getRenewalReminders,
+  getExpense,
 } from '../services/expense.service';
 
 registerAuditEvent('POST', '/api/expenses', AuditEvent.ENTITY_CREATED);
@@ -41,6 +42,24 @@ router.get('/', async (req: Request, res: Response) => {
     res.json(await listExpenses(db, filters));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/expenses/:id — fetch one expense for the edit page.
+// The frontend `ExpenseEntryPage` queries this when isEdit=true; without it
+// the form rendered empty for every "sửa phiếu".
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID không hợp lệ' });
+    }
+    const expense = await getExpense(db, id);
+    if (!expense) return res.status(404).json({ error: 'Không tìm thấy phiếu chi phí' });
+    res.json(expense);
+  } catch (err: any) {
+    console.error('[GET /api/expenses/:id]', err?.message, err?.stack);
+    res.status(500).json({ error: err?.message || 'Lỗi máy chủ' });
   }
 });
 

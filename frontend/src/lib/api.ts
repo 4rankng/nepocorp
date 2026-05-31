@@ -36,7 +36,28 @@ class ApiClient {
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: 'Lỗi kết nối' }));
-      throw new ApiError(res.status, error.error || 'Lỗi không xác định');
+      // Server may return error as a string OR a ZodError array of
+      // `{ path, message, code }` objects. Stringifying an array via the
+      // ApiError constructor produced "[object Object]" in toast messages.
+      // Coerce arrays / objects to a readable string before throwing.
+      const raw = error.error ?? error.detail ?? error.message;
+      let msg: string;
+      if (typeof raw === 'string') {
+        msg = raw;
+      } else if (Array.isArray(raw)) {
+        // Zod error array: each entry has { path, message } — join human-readable.
+        msg = raw
+          .map((e: any) => {
+            const field = Array.isArray(e?.path) ? e.path.join('.') : e?.path;
+            return field ? `${field}: ${e?.message ?? e}` : (e?.message ?? JSON.stringify(e));
+          })
+          .join('; ');
+      } else if (raw && typeof raw === 'object') {
+        msg = (raw as any).message || JSON.stringify(raw);
+      } else {
+        msg = 'Lỗi không xác định';
+      }
+      throw new ApiError(res.status, msg);
     }
     return (await res.json()) as T;
   }

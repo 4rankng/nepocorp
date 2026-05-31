@@ -2,15 +2,12 @@ import { useState, useCallback, useMemo, memo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
-  Download, Filter, CheckCircle,
+  Download, Filter, CheckCircle, Save, X, Loader2,
 } from 'lucide-react';
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
-import { InlineForm } from '../components/config/InlineForm';
-import { FormActions } from '../components/config/FormActions';
 import { ActionBtns } from '../components/config/ActionBtns';
-import { Field } from '../components/config/Field';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
 import { TrailerType } from '@nepocorp/shared';
@@ -31,12 +28,6 @@ const TRAILER_TYPE_LABELS: Record<string, string> = {
 // ─── Static Styles ───────────────────────────────────────────────────────────
 
 const styles = {
-  flexCol2W160: { flex: 2, minWidth: 160 },
-  flexCol2W150: { flex: 2, minWidth: 150 },
-  flexCol1W140: { flex: 1, minWidth: 140 },
-  flexCol1W130: { flex: 1, minWidth: 130 },
-  flexCol1W120: { flex: 1, minWidth: 120 },
-  flexCol1W110: { flex: 1, minWidth: 110 },
   emptyRow: { textAlign: 'center', padding: 32, color: 'var(--fg-3)' },
   centerAlign: { textAlign: 'center' },
   errorBanner: { textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' },
@@ -85,6 +76,24 @@ const StatusDot = memo(function StatusDot({ status }: { status: string }) {
   return <StatusPill variant={variant} dot>{label}</StatusPill>;
 });
 
+// ─── Inline edit row actions ─────────────────────────────────────────────────
+
+function EditActions({ saving, isedit, onsave, oncancel }: {
+  saving: boolean; isedit: boolean; onsave: () => void; oncancel: () => void;
+}) {
+  return (
+    <div className="fleet-edit-actions">
+      <button className="btn btn--primary btn--sm" disabled={saving} onClick={onsave}>
+        {saving ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
+        {isedit ? 'Cập nhật' : 'Thêm'}
+      </button>
+      <button className="btn btn--ghost btn--sm" onClick={oncancel}>
+        <X size={12} /> Hủy
+      </button>
+    </div>
+  );
+}
+
 // ─── Forms ────────────────────────────────────────────────────────────────────
 
 function TruckForm({ saving, item, onsave, oncancel }: {
@@ -94,30 +103,44 @@ function TruckForm({ saving, item, onsave, oncancel }: {
   const [trailerPlate, setTrailerPlate] = useState(item?.trailerPlateNumber || '');
   const [trailerType, setTrailerType] = useState<string>(item?.trailerType || TrailerType.FT40);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
+  const handleSave = () => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), trailerPlateNumber: trailerPlate.trim() || null, trailerType: trailerType as TrailerType, status }); };
   return (
-    <InlineForm colSpan={7}>
-      <div style={styles.flexCol2W160}>
-        <Field label="Biển số xe đầu"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51C-12345" /></Field>
-      </div>
-      <div style={styles.flexCol2W160}>
-        <Field label="Biển số rơ-moóc"><input className="input" value={trailerPlate} onChange={e => setTrailerPlate(e.target.value)} placeholder="VD: 51R-56789" /></Field>
-      </div>
-      <div style={styles.flexCol1W110}>
-        <Field label="Loại rơ-moóc">
-          <select className="input" value={trailerType} onChange={e => setTrailerType(e.target.value)}>
+    <tr className="fleet-edit-row">
+      <td className="num" />
+      <td>
+        <input
+          className="input input--sm"
+          value={plate}
+          onChange={e => setPlate(e.target.value)}
+          placeholder="VD: 60C-12345"
+          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
+          autoFocus
+        />
+      </td>
+      <td>
+        <div className="fleet-edit-pair">
+          <input
+            className="input input--sm"
+            value={trailerPlate}
+            onChange={e => setTrailerPlate(e.target.value)}
+            placeholder="VD: 70C-56789"
+            onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
+          />
+          <select className="input input--sm fleet-edit-select-sm" value={trailerType} onChange={e => setTrailerType(e.target.value)}>
             {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-        </Field>
-      </div>
-      <div style={styles.flexCol1W140}>
-        <Field label="Trạng thái">
-          <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
-            {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </Field>
-      </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), trailerPlateNumber: trailerPlate.trim() || null, trailerType: trailerType as TrailerType, status }); }} />
-    </InlineForm>
+        </div>
+      </td>
+      <td />
+      <td>
+        <select className="input input--sm" value={status} onChange={e => setStatus(e.target.value)}>
+          {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+      </td>
+      <td>
+        <EditActions saving={saving} isedit={!!item} onsave={handleSave} oncancel={oncancel} />
+      </td>
+    </tr>
   );
 }
 
@@ -129,38 +152,57 @@ function DriverForm({ saving, item, trucks, onsave, oncancel }: {
   const [baseSalary, setBaseSalary] = useState<string | number>(item?.baseSalary || '');
   const [truckId, setTruckId] = useState<number>(item?.assignedTruckId || 0);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
-
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onsave({ name: name.trim(), phone: phone.trim() || undefined, baseSalary: baseSalary ? Number(baseSalary) : undefined, assignedTruckId: truckId || null, status });
+  };
   return (
-    <InlineForm colSpan={7}>
-      <div style={styles.flexCol2W150}>
-        <Field label="Tên tài xế"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Họ và tên" /></Field>
-      </div>
-      <div style={styles.flexCol1W130}>
-        <Field label="SĐT"><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." /></Field>
-      </div>
-      <div style={styles.flexCol1W130}>
-        <Field label="Lương CB (VNĐ)"><input className="input" type="number" value={baseSalary} onChange={e => setBaseSalary(e.target.value)} placeholder="0" /></Field>
-      </div>
-      <div style={styles.flexCol1W140}>
-        <Field label="Xe phân công">
-          <select className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
-            <option value={0}>-- Chưa phân --</option>
-            {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
-          </select>
-        </Field>
-      </div>
-      <div style={styles.flexCol1W120}>
-        <Field label="Trạng thái">
-          <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
-            {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </Field>
-      </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
-        if (!name.trim()) return;
-        onsave({ name: name.trim(), phone: phone.trim() || undefined, baseSalary: baseSalary ? Number(baseSalary) : undefined, assignedTruckId: truckId || null, status });
-      }} />
-    </InlineForm>
+    <tr className="fleet-edit-row">
+      <td className="num" />
+      <td>
+        <input
+          className="input input--sm"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="Họ và tên"
+          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
+          autoFocus
+        />
+      </td>
+      <td>
+        <input
+          className="input input--sm"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          placeholder="0912..."
+          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
+        />
+      </td>
+      <td>
+        <select className="input input--sm" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
+          <option value={0}>— Chưa phân —</option>
+          {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
+        </select>
+      </td>
+      <td>
+        <input
+          className="input input--sm"
+          type="number"
+          value={baseSalary}
+          onChange={e => setBaseSalary(e.target.value)}
+          placeholder="0"
+          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
+        />
+      </td>
+      <td>
+        <select className="input input--sm" value={status} onChange={e => setStatus(e.target.value)}>
+          {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+      </td>
+      <td>
+        <EditActions saving={saving} isedit={!!item} onsave={handleSave} oncancel={oncancel} />
+      </td>
+    </tr>
   );
 }
 
