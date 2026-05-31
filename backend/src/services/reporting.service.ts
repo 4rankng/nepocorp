@@ -141,7 +141,9 @@ export async function getPnlReport(month: number, year: number) {
       .where(and(isNull(s.penalties.deletedAt), penaltyDateFilter));
     const otherIncome = parseFloat(penaltyRows[0]?.total || '0');
 
-    const netProfit = grossProfit - managementFee + otherIncome;
+    const expenseDateFilter = month
+      ? and(gte(s.expenses.expenseDate, tripStart), sql`${s.expenses.expenseDate} < ${tripEnd}`)
+      : gte(s.expenses.expenseDate, tripStart);
 
     const truckIds = [...new Set(trips.map(t => t.truckId).filter(Boolean))];
     const truckRows = truckIds.length > 0
@@ -150,25 +152,83 @@ export async function getPnlReport(month: number, year: number) {
       : [];
     const plateById = new Map(truckRows.map(t => [t.id, t.licensePlate]));
 
-    const byTruck = new Map<number, { plate: string; revenue: number; costs: number; profit: number; trips: number }>();
+    // Truck-associated operating expenses (repairs, insurance, registration, parts, etc.).
+    // These are separate from trip-level costs (fuel, road allowance, driver salary) and
+    // do not overlap — expense categories cover vehicle overhead not captured per-trip.
+    const maintenanceExpensesByTruck = new Map<number, number>();
+    if (truckIds.length > 0) {
+      const expenseRows = await db.select({
+        truckId: s.expenses.truckId,
+        total: sql<string>`coalesce(sum(${s.expenses.amount}::numeric), 0)`,
+      }).from(s.expenses).where(
+        and(isNull(s.expenses.deletedAt), sql`${s.expenses.truckId} IN (${sql.join(truckIds.map(id => sql`${id}`), sql`, `)})`, expenseDateFilter)
+      ).groupBy(s.expenses.truckId);
+      for (const row of expenseRows) {
+        if (row.truckId) maintenanceExpensesByTruck.set(row.truckId, parseFloat(row.total));
+      }
+    }
+
+    const [companyExpenseRow] = await db.select({
+      total: sql<string>`coalesce(sum(${s.expenses.amount}::numeric), 0)`,
+    }).from(s.expenses).where(
+      and(isNull(s.expenses.deletedAt), isNull(s.expenses.truckId), expenseDateFilter)
+    );
+    const companyExpenses = parseFloat(companyExpenseRow?.total || '0');
+
+    const categoryBreakdownRows = await db.select({
+      categoryName: s.expenseCategories.name,
+      total: sql<string>`coalesce(sum(${s.expenses.amount}::numeric), 0)`,
+    }).from(s.expenses)
+      .innerJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
+      .where(and(isNull(s.expenses.deletedAt), expenseDateFilter))
+      .groupBy(s.expenseCategories.name);
+    const categoryBreakdown = categoryBreakdownRows.map(r => ({
+      categoryName: r.categoryName,
+      total: r.total,
+    }));
+
+    let totalMaintenanceExpenses = 0;
+    const byTruck = new Map<number, { plate: string; revenue: number; costs: number; profit: number; trips: number; maintenanceExpenses: number }>();
     for (const trip of trips) {
-      const existing = byTruck.get(trip.truckId) || { plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0 };
+      const existing = byTruck.get(trip.truckId) || { plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0, maintenanceExpenses: 0 };
       existing.revenue += parseFloat(trip.revenue || '0');
       existing.costs += parseFloat(trip.totalCost || '0');
       existing.profit += parseFloat(trip.grossProfit || '0');
       existing.trips++;
       byTruck.set(trip.truckId, existing);
     }
+    for (const [truckId, mtnExp] of maintenanceExpensesByTruck) {
+      const entry = byTruck.get(truckId);
+      if (entry) {
+        entry.maintenanceExpenses = mtnExp;
+        entry.costs += mtnExp;
+        entry.profit -= mtnExp;
+      }
+      totalMaintenanceExpenses += mtnExp;
+    }
+
+    const adjustedGrossProfit = grossProfit - totalMaintenanceExpenses;
+    const adjustedTotalCosts = totalCosts + totalMaintenanceExpenses;
+    const netProfit = adjustedGrossProfit - managementFee - companyExpenses + otherIncome;
+
+    const maintenanceExpensesByTruckResult: Record<number, string> = {};
+    for (const [truckId, mtnExp] of maintenanceExpensesByTruck) {
+      maintenanceExpensesByTruckResult[truckId] = String(mtnExp);
+    }
 
     return {
       period: { month, year },
       totalRevenue,
-      totalCosts,
-      grossProfit,
+      totalCosts: adjustedTotalCosts,
+      grossProfit: adjustedGrossProfit,
       managementFee,
       otherIncome,
+      companyExpenses,
       netProfit,
       tripCount: trips.length,
+      maintenanceExpensesTotal: totalMaintenanceExpenses,
+      maintenanceExpensesByTruck: maintenanceExpensesByTruckResult,
+      categoryBreakdown,
       trucks: Array.from(byTruck.values()),
     };
   });

@@ -3,6 +3,7 @@ import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { TxnType, computeFifoAging } from '@nepocorp/shared';
 import { LedgerService } from './ledger.service';
+import { ApiError } from '../errors';
 
 export interface CustomerStatementData {
   customer: { id: number; name: string; contactInfo: string | null };
@@ -224,4 +225,40 @@ function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+export async function getSupplierStatement(supplierId: number) {
+  const [supplier] = await db.select({
+    id: s.suppliers.id,
+    name: s.suppliers.name,
+    phone: s.suppliers.phone,
+    contactPerson: s.suppliers.contactPerson,
+  }).from(s.suppliers).where(eq(s.suppliers.id, supplierId)).limit(1);
+
+  if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
+
+  const ledgerRows = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+  const totalOutstanding = ledgerRows.length > 0 ? parseFloat(ledgerRows[0].balance) : 0;
+
+  const now = new Date();
+  const { aging } = computeFifoAging(
+    ledgerRows.map((r: any) => ({
+      timestamp: r.timestamp,
+      debit: r.credit ?? '0',
+      credit: r.debit ?? '0',
+    })),
+    now,
+  );
+
+  return {
+    supplier,
+    ledgerRows,
+    totalOutstanding,
+    agingBuckets: [
+      { range: '0-30 ngày', amount: aging.current },
+      { range: '31-60 ngày', amount: aging.d30 },
+      { range: '61-90 ngày', amount: aging.d60 },
+      { range: 'Trên 90 ngày', amount: aging.over90 },
+    ],
+  };
 }

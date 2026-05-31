@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { Role } from '@nepocorp/shared';
 import { requireRoles } from '../middleware/casbin';
-import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema } from '@nepocorp/shared';
+import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendorPaymentSchema } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../services/reporting.service';
-import { getStatementData, exportStatementXlsx, exportStatementHtml } from '../services/statement.service';
+import { getStatementData, exportStatementXlsx, exportStatementHtml, getSupplierStatement } from '../services/statement.service';
 import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import * as financialService from '../services/financial.service';
+import { getPayablesSummary } from '../services/payables.service';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 
@@ -15,6 +16,7 @@ import { AuditEvent } from '../services/audit-types';
 registerAuditEvent('POST', '/api/payments', AuditEvent.PAYMENT_RECEIVED);
 registerAuditEvent('POST', '/api/adjustments', AuditEvent.ADJUSTMENT_CREATED);
 registerAuditEvent('POST', '/api/penalties', AuditEvent.PENALTY_CREATED);
+registerAuditEvent('POST', '/api/payments/vendor', AuditEvent.PAYMENT_RECEIVED);
 
 const router = Router();
 
@@ -215,6 +217,35 @@ router.post('/reports/distribute-profit', requireRoles(Role.ADMIN, Role.MANAGER)
     res.status(201).json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/payments/vendor', async (req: Request, res: Response) => {
+  try {
+    const data = vendorPaymentSchema.parse(req.body);
+    const posted = await financialService.recordVendorPayment({ ...data, amount: String(data.amount) });
+    res.json(posted);
+  } catch (err: any) {
+    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+router.get('/ledger/suppliers/:id/statement', async (req: Request, res: Response) => {
+  try {
+    const supplierId = Number(req.params.id);
+    const data = await getSupplierStatement(supplierId);
+    res.json(data);
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+router.get('/reports/payables-summary', async (_req: Request, res: Response) => {
+  try {
+    res.json(await getPayablesSummary());
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 

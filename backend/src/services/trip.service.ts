@@ -12,7 +12,6 @@ import { ApiError } from '../errors';
 export async function createTrip(data: {
   customerId: number;
   routeId: number;
-  trailerId: number;
   truckId: number;
   driverId: number;
   cargoTypeId: number;
@@ -45,27 +44,30 @@ export async function createTrip(data: {
     if (!route) {
       throw new ApiError(400, 'Tuyến đường không tồn tại');
     }
-    const [trailer] = await tx.select().from(s.trailers).where(eq(s.trailers.id, data.trailerId)).limit(1);
-    if (!trailer) {
-      throw new ApiError(400, 'Rơ moóc không tồn tại');
-    }
+
     const [roadCfg] = await tx.select().from(s.roadConfig).limit(1);
     if (!roadCfg) {
       throw new ApiError(400, 'Chưa cấu hình tiền đường (road_config). Vui lòng cấu hình trước khi tạo lệnh vận chuyển.');
     }
 
+    const [truck] = await tx.select().from(s.trucks).where(eq(s.trucks.id, data.truckId)).limit(1);
+    if (!truck) {
+      throw new ApiError(400, 'Xe đầu kéo không tồn tại');
+    }
+    const trailerType = truck.trailerType || '40FT';
+
     // Look up road allowance base for snapshotted column
     const [allowance] = await tx.select().from(s.roadAllowances).where(
       and(
         eq(s.roadAllowances.routeId, data.routeId),
-        eq(s.roadAllowances.trailerType, trailer.type),
+        eq(s.roadAllowances.trailerType, trailerType),
         isNull(s.roadAllowances.deletedAt)
       )
     ).limit(1);
     if (!allowance) {
       throw new ApiError(
         400,
-        `Chưa cấu hình tiền chuẩn đường cho tuyến "${route.name}" với rơ moóc ${trailer.type}. Vui lòng thêm bản ghi trong bảng định mức tiền đường.`,
+        `Chưa cấu hình tiền chuẩn đường cho tuyến "${route.name}" với rơ moóc ${trailerType}. Vui lòng thêm bản ghi trong bảng định mức tiền đường.`,
       );
     }
 
@@ -102,7 +104,7 @@ export async function createTrip(data: {
       createdBy: data.createdBy ?? null,
       customerId: data.customerId,
       routeId: data.routeId,
-      trailerId: data.trailerId,
+      trailerType,
       truckId: data.truckId,
       driverId: data.driverId,
       cargoTypeId: data.cargoTypeId,
@@ -460,16 +462,18 @@ export async function reassignTrip(tripId: number, data: { truckId: number; driv
     // raw postgres FK constraint error ("insert or update on table trips
     // violates foreign key constraint trips_truck_id_trucks_id_fk") leaks into
     // the UI as an unfriendly red banner. Catch the bad id at the API edge.
-    const [truck] = await tx.select({ id: s.trucks.id }).from(s.trucks)
+    const [truck] = await tx.select({ id: s.trucks.id, trailerType: s.trucks.trailerType }).from(s.trucks)
       .where(and(eq(s.trucks.id, data.truckId), isNull(s.trucks.deletedAt))).limit(1);
     if (!truck) throw new ApiError(400, 'Xe đầu kéo không tồn tại hoặc đã bị xóa');
     const [driver] = await tx.select({ id: s.drivers.id }).from(s.drivers)
       .where(and(eq(s.drivers.id, data.driverId), isNull(s.drivers.deletedAt))).limit(1);
     if (!driver) throw new ApiError(400, 'Tài xế không tồn tại hoặc đã bị xóa');
 
+    const trailerType = truck.trailerType || trip.trailerType;
     const [updated] = await tx.update(s.trips).set({
       truckId: data.truckId,
       driverId: data.driverId,
+      trailerType,
       updatedAt: new Date(),
     }).where(eq(s.trips.id, tripId)).returning();
 
@@ -486,16 +490,15 @@ const TRIP_RELATION_FIELDS = {
   truckPlate: s.trucks.licensePlate,
   routeName: s.routes.name,
   routeDistance: s.routes.distanceKm,
-  trailerLicensePlate: s.trailers.licensePlate,
-  trailerType: s.trailers.type,
+  trailerLicensePlate: s.trucks.trailerPlateNumber,
+  trailerType: s.trips.trailerType,
 };
 
 const TRIP_RELATION_JOINS = (query: any) => query
   .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
   .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
   .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
-  .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
-  .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id));
+  .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id));
 
 /** Shape flat joined rows into nested relation objects. */
 function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; photoUrls?: string[] }) {
@@ -505,7 +508,6 @@ function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; 
     driver: item.driverName ? { id: item.driverId, name: item.driverName } : null,
     truck: item.truckPlate ? { id: item.truckId, licensePlate: item.truckPlate } : null,
     route: item.routeName ? { id: item.routeId, name: item.routeName, distanceKm: item.routeDistance } : null,
-    trailer: item.trailerLicensePlate ? { id: item.trailerId, licensePlate: item.trailerLicensePlate, type: item.trailerType } : null,
     trailerType: item.trailerType || '40FT',
     ...extras,
   };
@@ -537,7 +539,7 @@ export async function getTrips(filters: TripListFilters) {
   const items = await TRIP_RELATION_JOINS(db.select({
     id: s.trips.id, tripCode: s.trips.tripCode, customerId: s.trips.customerId, customerReference: s.trips.customerReference,
     truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
-    trailerId: s.trips.trailerId, cargoTypeId: s.trips.cargoTypeId,
+    cargoTypeId: s.trips.cargoTypeId,
     status: s.trips.status, departureDate: s.trips.departureDate,
     fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
     totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
@@ -560,7 +562,7 @@ export async function getTripById(id: number) {
     id: s.trips.id, tripCode: s.trips.tripCode, version: s.trips.version,
     customerId: s.trips.customerId, customerReference: s.trips.customerReference,
     truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
-    trailerId: s.trips.trailerId, cargoTypeId: s.trips.cargoTypeId,
+    cargoTypeId: s.trips.cargoTypeId,
     status: s.trips.status, departureDate: s.trips.departureDate,
     fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
     fuelLitersOverride: s.trips.fuelLitersOverride, fuelSupplementLiters: s.trips.fuelSupplementLiters,

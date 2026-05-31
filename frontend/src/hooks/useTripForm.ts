@@ -36,8 +36,8 @@ export interface UseTripFormReturn {
   setRouteId: (v: string) => void;
   truckId: string;
   setTruckId: (v: string) => void;
-  trailerId: string;
-  setTrailerId: (v: string) => void;
+  trailerType: string;
+  setTrailerType: (v: string) => void;
   driverId: string;
   setDriverId: (v: string) => void;
   cargoTypeId: string;
@@ -229,7 +229,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
   const [customerId, setCustomerId] = useState("");
   const [routeId, setRouteId] = useState("");
   const [truckId, setTruckId] = useState("");
-  const [trailerId, setTrailerId] = useState("");
+  const [trailerType, setTrailerType] = useState("");
   const [driverId, setDriverId] = useState("");
   const [cargoTypeId, setCargoTypeId] = useState("");
   const [departureDate, setDepartureDate] = useState("");
@@ -319,12 +319,12 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     if (customerId) count++;
     if (routeId) count++;
     if (truckId) count++;
-    if (trailerId) count++;
+    if (trailerType) count++;
     if (driverId) count++;
     if (cargoTypeId) count++;
     if (departureDate) count++;
     return count;
-  }, [customerId, routeId, truckId, trailerId, driverId, cargoTypeId, departureDate]);
+  }, [customerId, routeId, truckId, trailerType, driverId, cargoTypeId, departureDate]);
 
   const completionStatus = useMemo((): CompletionStatus => {
     let fuelRevenue = 0;
@@ -409,7 +409,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
           customerId: Number(customerId),
           routeId: Number(routeId),
           truckId: Number(truckId),
-          trailerId: Number(trailerId),
+          trailerType: trailerType || undefined,
           driverId: Number(driverId),
           cargoTypeId: Number(cargoTypeId),
           departureDate: departureDate,
@@ -485,7 +485,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
       }
     },
     [
-      requiredFieldsFilled, customerId, routeId, truckId, trailerId,
+      requiredFieldsFilled, customerId, routeId, truckId, trailerType,
       driverId, cargoTypeId, departureDate, customerReference,
       hasOptionalData, legs, fuelMode, fuelLitersOverride,
       fuelSupplementLiters, fuelSupplementReason, tollsDiscount,
@@ -499,7 +499,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     customerId, setCustomerId,
     routeId, setRouteId,
     truckId, setTruckId,
-    trailerId, setTrailerId,
+    trailerType, setTrailerType,
     driverId, setDriverId,
     cargoTypeId, setCargoTypeId,
     departureDate, setDepartureDate,

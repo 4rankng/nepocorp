@@ -6,7 +6,6 @@ import type { AuditPayload } from './audit-types';
 const ENTITY_LABELS: Record<string, string> = {
   customers: 'khách hàng',
   trucks: 'xe đầu kéo',
-  trailers: 'rơ-moóc',
   routes: 'tuyến đường',
   'cargo-types': 'loại hàng hóa',
   'pricing-tables': 'bảng giá',

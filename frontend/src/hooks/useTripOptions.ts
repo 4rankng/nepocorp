@@ -13,25 +13,26 @@ export interface RouteOption extends SelectOption {
   distanceKm?: number;
 }
 
+export interface TrailerTypeOption {
+  value: string;
+  label: string;
+}
+
 export interface TripOptions {
   customers: SelectOption[];
   routes: RouteOption[];
   trucks: SelectOption[];
-  trailers: SelectOption[];
+  trailerTypes: TrailerTypeOption[];
   drivers: SelectOption[];
   cargoTypes: SelectOption[];
   pricingTables: PricingTable[];
   loading: boolean;
 }
 
-const unwrap = (d: unknown) =>
-  Array.isArray(d) ? d : (d as any)?.items ?? [];
-
 interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }>;
   trucks: Array<{ id: number; licensePlate: string }>;
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
-  trailers: Array<{ id: number; licensePlate: string; type: string }>;
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
 }
@@ -55,10 +56,6 @@ export function useTripOptions(): TripOptions {
           distanceKm: r.distanceKm ?? undefined,
         })),
         trucks: catalog.trucks.map((t) => ({ id: t.id, label: t.licensePlate })),
-        trailers: catalog.trailers.map((t) => ({
-          id: t.id,
-          label: `${t.licensePlate} (${t.type})`,
-        })),
         drivers: catalog.drivers.map((d) => ({ id: d.id, label: d.name })),
         cargoTypes: catalog.cargoTypes.map((c) => ({ id: c.id, label: c.name })),
         pricingTables: pricingRes.items ?? [],
@@ -70,7 +67,7 @@ export function useTripOptions(): TripOptions {
     customers: data?.customers ?? [],
     routes: data?.routes ?? [],
     trucks: data?.trucks ?? [],
-    trailers: data?.trailers ?? [],
+    trailerTypes: [{ value: '20FT', label: '20FT' }, { value: '40FT', label: '40FT' }],
     drivers: data?.drivers ?? [],
     cargoTypes: data?.cargoTypes ?? [],
     pricingTables: data?.pricingTables ?? [],

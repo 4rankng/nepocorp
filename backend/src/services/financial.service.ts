@@ -186,3 +186,29 @@ export async function getEntityBalances(entityType: string) {
     timestamp: r.timestamp,
   }));
 }
+
+// ─── Vendor payments ───────────────────────────────────────────────────────────
+
+export interface VendorPaymentInput {
+  supplierId: number;
+  receiptId?: string;
+  amount: string;
+  date: string;
+  note?: string;
+}
+
+export async function recordVendorPayment(input: VendorPaymentInput) {
+  return db.transaction(async (tx) => {
+    const posted = await LedgerService.postEntry(tx, {
+      txnType: TxnType.VENDOR_PAYMENT,
+      entityType: 'VENDOR',
+      entityId: input.supplierId,
+      debit: parseFloat(input.amount),
+      credit: 0,
+      receiptId: input.receiptId,
+      note: input.note || 'Thanh toán nhà cung cấp',
+    });
+
+    return posted;
+  });
+}

@@ -66,14 +66,13 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
     customerReference: s.trips.customerReference,
     routeName: s.routes.name,
     truckPlate: s.trucks.licensePlate,
-    trailerPlate: s.trailers.licensePlate,
-    trailerType: s.trailers.type,
+    trailerPlate: s.trucks.trailerPlateNumber,
+    trailerType: s.trips.trailerType,
     customerName: s.customers.name,
     cargoTypeName: s.cargoTypes.name,
   }).from(s.trips)
     .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
     .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
-    .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id))
     .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
     .leftJoin(s.cargoTypes, eq(s.trips.cargoTypeId, s.cargoTypes.id))
     .where(and(eq(s.trips.id, tripId), eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt)))

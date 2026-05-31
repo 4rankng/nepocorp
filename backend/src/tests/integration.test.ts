@@ -39,7 +39,6 @@ let driverToken: string;
 let customerId: number;
 let driverId: number;
 let truckId: number;
-let trailerId: number;
 let routeId: number;
 let cargoTypeId: number;
 let driverUserId: number;
@@ -66,7 +65,6 @@ before(async () => {
   const [trck] = await db.select().from(s.trucks).limit(1);
   const [trck2] = await db.select().from(s.trucks).offset(1).limit(1);
   const [drvr2] = await db.select().from(s.drivers).offset(1).limit(1);
-  const [trlr] = await db.select().from(s.trailers).limit(1);
   const [rte] = await db.select().from(s.routes).limit(1);
   const [crg] = await db.select().from(s.cargoTypes).limit(1);
   const [adm] = await db.select().from(s.users).where(eq(s.users.username, 'admin')).limit(1);
@@ -75,7 +73,6 @@ before(async () => {
   customerId = cust.id;
   driverId = drvr.id;
   truckId = trck.id;
-  trailerId = trlr.id;
   routeId = rte.id;
   cargoTypeId = crg.id;
   driverUserId = drvUser.id;
@@ -128,7 +125,6 @@ test('T4.5 — Concurrency: Two PUT requests with same version -> one 409', asyn
   const trip = await tripService.createTrip({
     customerId: customerId,
     routeId: routeId,
-    trailerId: trailerId,
     truckId: truckId,
     driverId: driverId,
     cargoTypeId: cargoTypeId,
@@ -285,7 +281,6 @@ test('T4.4 — Rate Snapshotting:applied values are preserved when configuration
   const trip = await tripService.createTrip({
     customerId: customerId,
     routeId: routeId,
-    trailerId: trailerId,
     truckId: truckId,
     driverId: driverId,
     cargoTypeId: cargoTypeId,
@@ -337,7 +332,6 @@ test('T4.6 — Driver Isolation: Driver endpoints block sensitive pricing/revenu
   const trip = await tripService.createTrip({
     customerId: customerId,
     routeId: routeId,
-    trailerId: trailerId,
     truckId: truckId,
     driverId: driverId,
     cargoTypeId: cargoTypeId,
@@ -390,7 +384,6 @@ test('T4.7 — State-Machine: Transition matrices, photo gates, and lock validat
   const trip = await tripService.createTrip({
     customerId: customerId,
     routeId: routeId,
-    trailerId: trailerId,
     truckId: tTruck,
     driverId: tDriver,
     cargoTypeId: cargoTypeId,

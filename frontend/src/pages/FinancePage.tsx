@@ -63,14 +63,16 @@ export default function FinancePage() {
   };
 
   const {
-    fuelCost, roadCost, driverCost,
+    fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
     totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, mgmtFee, netProfit,
-    totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, netProfitLY,
-    activeCapTable, revenueChartData, costPieData, topTrucks,
+    totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, companyExpensesLY, netProfitLY,
+    activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown,
   } = useMemo(() => {
     const fuelCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
     const roadCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
     const driverCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).driverSalary || '0'), 0);
+    const maintenanceCost = report?.maintenanceExpensesTotal ?? 0;
+    const companyExpenses = report?.companyExpenses ?? 0;
 
     const totalRevenue = report?.totalRevenue ?? 0;
     const otherRevenue = report?.otherIncome ?? 0;
@@ -86,6 +88,7 @@ export default function FinancePage() {
     const totalCostsLY = prevReport?.totalCosts ?? 0;
     const grossProfitLY = prevReport?.grossProfit ?? (totalRevenueLY - totalCostsLY);
     const mgmtFeeLY = prevReport?.managementFee ?? 0;
+    const companyExpensesLY = prevReport?.companyExpenses ?? 0;
     const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
 
     const activeCapTable = getActiveCapTable(capTableRaw)
@@ -101,18 +104,29 @@ export default function FinancePage() {
       { name: 'Nhiên liệu', value: fuelCost, fill: '#3b82f6' },
       { name: 'Tiền đường', value: roadCost, fill: '#f59e0b' },
       { name: 'Lương lái xe', value: driverCost, fill: '#10b981' },
+      { name: 'Bảo dưỡng', value: maintenanceCost, fill: '#ef4444' },
     ].filter(d => d.value > 0);
+
+    const categoryBreakdown: Array<{ categoryName: string; total: number }> =
+      (report?.categoryBreakdown ?? []).map(c => ({
+        categoryName: c.categoryName,
+        total: parseFloat(c.total),
+      }));
 
     const topTrucks = [...(report?.trucks ?? [])]
       .sort((a, b) => b.profit - a.profit)
       .slice(0, 5)
-      .map(t => ({ name: t.plate, 'LN gộp': t.profit }));
+      .map(t => ({
+        name: t.plate,
+        'LN gộp': t.profit,
+        maintenance: t.maintenanceExpenses ?? 0,
+      }));
 
     return {
-      fuelCost, roadCost, driverCost,
+      fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
       totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, mgmtFee, netProfit,
-      totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, netProfitLY,
-      activeCapTable, revenueChartData, costPieData, topTrucks,
+      totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, companyExpensesLY, netProfitLY,
+      activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown,
     };
   }, [tripCostsRaw, report, prevReport, capTableRaw, yearlyData]);
 
@@ -459,6 +473,17 @@ export default function FinancePage() {
               <div className="pnl-row__yoy">—</div><div className="pnl-row__pct">—</div>
             </div>
 
+            {maintenanceCost > 0 && (
+            <div className="pnl-row">
+              <div className="pnl-row__label">
+                Bảo dưỡng &amp; sửa chữa
+                <div className="pnl-row__label-sub">Chi phí bảo dưỡng xe đầu kéo</div>
+              </div>
+              <div className="pnl-row__amount">{formatRawNumber(maintenanceCost)}</div>
+              <div className="pnl-row__yoy">—</div><div className="pnl-row__pct">—</div>
+            </div>
+            )}
+
             <div className="pnl-row pnl-row--subtotal">
               <div className="pnl-row__label">Tổng chi phí vận hành</div>
               <div className="pnl-row__amount">{formatRawNumber(totalCosts)}</div>
@@ -491,11 +516,23 @@ export default function FinancePage() {
               <div className={`pnl-row__pct ${prevReport ? yoyClass(mgmtFee, mgmtFeeLY) : ''}`}>{prevReport ? yoyPct(mgmtFee, mgmtFeeLY) : '—'}</div>
             </div>
 
+            {companyExpenses > 0 && (
+            <div className="pnl-row">
+              <div className="pnl-row__label">
+                Chi phí công ty
+                <div className="pnl-row__label-sub">Bảo hiểm, đăng kiểm, phí cố định khác</div>
+              </div>
+              <div className="pnl-row__amount">{formatRawNumber(companyExpenses)}</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(companyExpensesLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(companyExpenses, companyExpensesLY) : ''}`}>{prevReport ? yoyPct(companyExpenses, companyExpensesLY) : '—'}</div>
+            </div>
+            )}
+
             <div className="pnl-row pnl-row--subtotal">
               <div className="pnl-row__label">Tổng chi phí hoạt động</div>
-              <div className="pnl-row__amount">{formatRawNumber(mgmtFee)}</div>
-              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(mgmtFeeLY) : '—'}</div>
-              <div className={`pnl-row__pct ${prevReport ? yoyClass(mgmtFee, mgmtFeeLY) : ''}`}>{prevReport ? yoyPct(mgmtFee, mgmtFeeLY) : '—'}</div>
+              <div className="pnl-row__amount">{formatRawNumber(mgmtFee + companyExpenses)}</div>
+              <div className="pnl-row__yoy">{prevReport ? formatRawNumber(mgmtFeeLY + companyExpensesLY) : '—'}</div>
+              <div className={`pnl-row__pct ${prevReport ? yoyClass(mgmtFee + companyExpenses, mgmtFeeLY + companyExpensesLY) : ''}`}>{prevReport ? yoyPct(mgmtFee + companyExpenses, mgmtFeeLY + companyExpensesLY) : '—'}</div>
             </div>
 
             {/* FINAL NET PROFIT */}
@@ -540,21 +577,74 @@ export default function FinancePage() {
                       <th className="num">Lệnh</th>
                       <th className="num">Doanh thu chặng</th>
                       <th className="num">Tổng chi phí</th>
+                      {maintenanceCost > 0 && <th className="num">Bảo dưỡng</th>}
                       <th className="num">Lợi nhuận gộp</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {report.trucks.map(t => (
-                      <tr key={t.plate}>
-                        <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{t.plate}</td>
-                        <td className="num">{t.trips}</td>
-                        <td className="num">{formatRawNumber(t.revenue)}</td>
-                        <td className="num">{formatRawNumber(t.costs)}</td>
-                        <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
-                          {formatRawNumber(t.profit)}
-                        </td>
-                      </tr>
-                    ))}
+                    {report.trucks.map(t => {
+                      const truckMaint = t.maintenanceExpenses ?? 0;
+                      return (
+                        <tr key={t.plate}>
+                          <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{t.plate}</td>
+                          <td className="num">{t.trips}</td>
+                          <td className="num">{formatRawNumber(t.revenue)}</td>
+                          <td className="num">{formatRawNumber(t.costs)}</td>
+                          {maintenanceCost > 0 && (
+                            <td className="num">{truckMaint > 0 ? formatRawNumber(truckMaint) : '—'}</td>
+                          )}
+                          <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
+                            {formatRawNumber(t.profit)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          )}
+
+          {/* Expense category breakdown */}
+          {categoryBreakdown.length > 0 && (
+            <Panel
+              title="Cơ cấu chi phí theo hạng mục"
+              subtitle={`Tổng hợp chi phí T${month}/${year} phân theo loại`}
+              style={{ marginTop: 20 }}
+              flush
+            >
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Hạng mục</th>
+                      <th className="num" style={{ width: 200 }}>Tổng chi phí</th>
+                      <th style={{ width: 200 }}>Tỷ trọng</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const grandTotal = categoryBreakdown.reduce((s, c) => s + c.total, 0) || 1;
+                      return categoryBreakdown.map((cat, i) => {
+                        const pct = (cat.total / grandTotal) * 100;
+                        return (
+                          <tr key={i}>
+                            <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{cat.categoryName}</td>
+                            <td className="num">{formatRawNumber(cat.total)} ₫</td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'var(--border)', overflow: 'hidden' }}>
+                                  <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4, background: 'var(--brand)' }} />
+                                </div>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', minWidth: 40, textAlign: 'right' }}>
+                                  {pct.toFixed(1)}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>

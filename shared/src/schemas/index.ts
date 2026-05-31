@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, TrailerStatus, CustomerStatus,
+  TrailerType, TruckStatus, DriverStatus, CustomerStatus,
 } from '../constants';
 
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
@@ -42,7 +42,6 @@ export const tripLegSchema = z.object({
 export const createTripSchema = z.object({
   customerId: z.coerce.number().int().positive(),
   routeId: z.coerce.number().int().positive(),
-  trailerId: z.coerce.number().int().positive(),
   truckId: z.coerce.number().int().positive(),
   driverId: z.coerce.number().int().positive(),
   cargoTypeId: z.coerce.number().int().positive(),
@@ -161,13 +160,9 @@ export const customerSchema = z.object({
 
 export const truckSchema = z.object({
   licensePlate: z.string().min(1),
+  trailerPlateNumber: z.string().optional().nullable(),
+  trailerType: z.nativeEnum(TrailerType).optional().nullable(),
   status: z.nativeEnum(TruckStatus).optional().default(TruckStatus.ACTIVE),
-});
-
-export const trailerSchema = z.object({
-  licensePlate: z.string().min(1),
-  type: z.nativeEnum(TrailerType),
-  status: z.nativeEnum(TrailerStatus).optional().default(TrailerStatus.ACTIVE),
 });
 
 export const routeSchema = z.object({
@@ -277,21 +272,12 @@ export const expenseSchema = z.object({
   supplierId: z.coerce.number().int().positive(),
   categoryId: z.coerce.number().int().positive(),
   truckId: z.coerce.number().int().positive().optional().nullable(),
-  trailerId: z.coerce.number().int().positive().optional().nullable(),
   amount: positiveNumeric,
   paymentStatus: z.enum(['PAID', 'UNPAID']),
   validFrom: z.string().optional().nullable(),
   validTo: z.string().optional().nullable(),
   receiptId: z.string().optional(),
   note: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (data.truckId && data.trailerId) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Không thể chọn cả đầu kéo và rơ-mooc cùng lúc',
-      path: ['truckId'],
-    });
-  }
 });
 
 export const vendorPaymentSchema = z.object({
@@ -313,7 +299,6 @@ export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type CustomerInput = z.infer<typeof customerSchema>;
 export type TruckInput = z.infer<typeof truckSchema>;
-export type TrailerInput = z.infer<typeof trailerSchema>;
 export type RouteInput = z.infer<typeof routeSchema>;
 export type CargoTypeInput = z.infer<typeof cargoTypeSchema>;
 export type PricingTableInput = z.infer<typeof pricingTableSchema>;

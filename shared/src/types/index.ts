@@ -1,6 +1,6 @@
 import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, TrailerStatus, CustomerStatus,
+  TrailerType, TruckStatus, DriverStatus, CustomerStatus,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -50,17 +50,9 @@ export interface Customer {
 export interface Truck {
   id: number;
   licensePlate: string;
+  trailerPlateNumber: string | null;
+  trailerType: TrailerType | null;
   status: TruckStatus;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
-
-export interface Trailer {
-  id: number;
-  licensePlate: string;
-  type: TrailerType;
-  status: TrailerStatus;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -137,7 +129,7 @@ export interface Trip {
   truckId: number;
   driverId: number;
   routeId: number;
-  trailerId: number;
+  trailerType: TrailerType | null;
   cargoTypeId: number;
   status: TripStatus;
   departureDate: string;
@@ -293,7 +285,6 @@ export interface Expense {
   supplierId: number;
   categoryId: number;
   truckId: number | null;
-  trailerId: number | null;
   amount: string;
   paymentStatus: string;
   validFrom: string | null;
@@ -310,7 +301,6 @@ export interface ExpenseWithRefs extends Expense {
   supplier?: Supplier;
   category?: ExpenseCategory;
   truck?: { id: number; licensePlate: string };
-  trailer?: { id: number; licensePlate: string };
 }
 
 export interface PayableSummary {
@@ -339,8 +329,6 @@ export interface RenewalReminder {
   categoryName: string;
   truckId: number | null;
   truckPlate: string | null;
-  trailerId: number | null;
-  trailerPlate: string | null;
   validTo: string;
   reminderLeadDays: number;
   daysRemaining: number;
@@ -359,7 +347,6 @@ export interface TripDetail extends Trip {
   legs: TripLeg[];
   driver?: Driver;
   truck?: Truck;
-  trailer?: Trailer;
   route?: Route;
   customer?: Customer;
   cargoType?: CargoType;
@@ -368,7 +355,6 @@ export interface TripDetail extends Trip {
 export interface CreateTripRequest {
   customerId: number;
   routeId: number;
-  trailerId: number;
   truckId: number;
   driverId: number;
   cargoTypeId: number;
@@ -482,6 +468,7 @@ export interface PnlTruck {
   costs: number;
   profit: number;
   trips: number;
+  maintenanceExpenses: number;
 }
 
 export interface PnlReport {
@@ -494,6 +481,10 @@ export interface PnlReport {
   netProfit: number;
   tripCount: number;
   trucks: PnlTruck[];
+  maintenanceExpensesTotal: number;
+  maintenanceExpensesByTruck: Record<number, string>;
+  companyExpenses: number;
+  categoryBreakdown: Array<{ categoryName: string; total: string }>;
 }
 
 // ─── Salary Period ─────────────────────────────────────────────────────────────

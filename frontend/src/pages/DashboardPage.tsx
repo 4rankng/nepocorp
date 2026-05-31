@@ -15,17 +15,14 @@ import {
   useCreatedTrips,
   useYearlyPnl,
   useFuelConfig,
+  useRenewalReminders,
   type PnlReport,
+  type ExtendedDashboardStats,
 } from '../hooks/useQueries';
 
 /* -------------------------------------------------------------------------- */
 /*  Interfaces                                                                */
 /* -------------------------------------------------------------------------- */
-
-interface ExtendedDashboardStats extends DashboardStats {
-  topOverdueCustomer?: { name: string; balance: number; days: number } | null;
-  topShareholder?: { name: string; percentage: number } | null;
-}
 
 interface CustomerLite { id: number; name: string }
 
@@ -48,6 +45,7 @@ export default function DashboardPage() {
   const { data: allTrips = EMPTY_TRIPS } = useMonthlyTrips(currentYear, currentMonth);
   const { data: createdTrips = EMPTY_CREATED } = useCreatedTrips();
   const { data: fuelConfig } = useFuelConfig();
+  const { data: renewalReminders = [] } = useRenewalReminders();
   const { data: receivablesSummary } = useQuery({
     queryKey: ['receivables-summary'],
     queryFn: () => api.get<{
@@ -620,6 +618,55 @@ export default function DashboardPage() {
 
       </div>
 
+      {/* Renewal Reminders Panel */}
+      {renewalReminders.length > 0 && (
+        <Panel
+          title="Nhắc gia hạn"
+          subtitle={`${renewalReminders.length} hạng mục sắp hoặc đã quá hạn`}
+          style={{ marginBottom: 16 }}
+          flush
+        >
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Phương tiện</th>
+                  <th>Hạng mục</th>
+                  <th className="num">Hạn hiệu lực</th>
+                  <th className="num">Còn lại</th>
+                </tr>
+              </thead>
+              <tbody>
+                {renewalReminders.map((r) => {
+                  const isOverdue = r.daysRemaining < 0;
+                  const isWarning = !isOverdue && r.daysRemaining <= (r.reminderLeadDays || 30);
+                  return (
+                    <tr key={r.id}>
+                      <td style={{ fontWeight: 600 }}>{r.truckPlate || '—'}</td>
+                      <td>{r.categoryName}</td>
+                      <td className="num">{new Date(r.validTo).toLocaleDateString('vi-VN')}</td>
+                      <td className="num">
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '2px 10px',
+                          borderRadius: 10,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          background: isOverdue ? 'var(--danger-soft, #fef2f2)' : isWarning ? '#fef9c3' : 'transparent',
+                          color: isOverdue ? 'var(--danger)' : isWarning ? '#a16207' : 'var(--fg-2)',
+                        }}>
+                          {isOverdue ? `Quá hạn ${Math.abs(r.daysRemaining)} ngày` : `${r.daysRemaining} ngày`}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      )}
+
       {/* Row 3: Action Alerts ("Cần chú ý") */}
       <Panel
         title="Cần chú ý"
@@ -741,6 +788,29 @@ export default function DashboardPage() {
                 </div>
               </div>
               <button className="btn btn--secondary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/trips'); }}>Xem chuyến</button>
+            </div>
+          )}
+
+          {/* Renewal reminders — expenses approaching or past validTo date */}
+          {renewalReminders.length > 0 && (
+            <div className="todo" onClick={() => navigate('/expenses')}>
+              <div className={`todo__icon ${renewalReminders.some(r => r.daysRemaining < 0) ? 'todo__icon--danger' : 'todo__icon--warn'}`}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div className="todo__body">
+                <div className="todo__title">
+                  <strong>{renewalReminders.length} hạng mục</strong> sắp hoặc đã quá hạn gia hạn
+                </div>
+                <div className="todo__meta">
+                  <span>
+                    {renewalReminders.slice(0, 3).map(r =>
+                      `${r.truckPlate || 'Công ty'} · ${r.categoryName}: ${r.daysRemaining < 0 ? `Quá hạn ${Math.abs(r.daysRemaining)} ngày` : `Còn ${r.daysRemaining} ngày`}`
+                    ).join(' · ')}
+                    {renewalReminders.length > 3 && ` · +${renewalReminders.length - 3} khác`}
+                  </span>
+                </div>
+              </div>
+              <button className="btn btn--secondary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/expenses'); }}>Xem chi phí</button>
             </div>
           )}
 

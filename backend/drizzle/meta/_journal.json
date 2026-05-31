@@ -15,6 +15,20 @@
       "when": 1780233634356,
       "tag": "0001_cloudy_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780237500000,
+      "tag": "0002_trailer_consolidation",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780237357922,
+      "tag": "0003_powerful_morlocks",
+      "breakpoints": true
     }
   ]
 }

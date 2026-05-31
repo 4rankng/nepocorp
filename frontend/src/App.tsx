@@ -28,7 +28,6 @@ const ProfitPage = lazy(() => import('./pages/ProfitPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const FleetPage = lazy(() => import('./pages/FleetPage'));
 const TrucksConfigPage = lazy(() => import('./pages/config/TrucksConfigPage'));
-const TrailersConfigPage = lazy(() => import('./pages/config/TrailersConfigPage'));
 const RoutesConfigPage = lazy(() => import('./pages/config/RoutesConfigPage'));
 const CargoTypesConfigPage = lazy(() => import('./pages/config/CargoTypesConfigPage'));
 const PricingTablesConfigPage = lazy(() => import('./pages/config/PricingTablesConfigPage'));
@@ -40,6 +39,13 @@ const CapTableConfigPage = lazy(() => import('./pages/config/CapTableConfigPage'
 const CustomersConfigPage = lazy(() => import('./pages/config/CustomersConfigPage'));
 const ManagementFeesConfigPage = lazy(() => import('./pages/config/ManagementFeesConfigPage'));
 const SalaryPeriodConfigPage = lazy(() => import('./pages/config/SalaryPeriodConfigPage'));
+const SupplierListPage = lazy(() => import('./pages/SupplierListPage'));
+const ExpenseListPage = lazy(() => import('./pages/ExpenseListPage'));
+const ExpenseEntryPage = lazy(() => import('./pages/ExpenseEntryPage'));
+const PayableListPage = lazy(() => import('./pages/PayableListPage'));
+const PayableDetailPage = lazy(() => import('./pages/PayableDetailPage'));
+
+const ExpenseCategoriesConfigPage = lazy(() => import('./pages/config/ExpenseCategoriesConfigPage'));
 
 function PageLoader() {
   return (
@@ -106,7 +112,6 @@ function AppRoutes() {
           <Route path="/trailers" element={<Navigate to="/fleet" replace />} />
           <Route path="/config" element={adminOnly(page(<ConfigPage />))} />
           <Route path="/config/trucks" element={adminOnly(page(<TrucksConfigPage />))} />
-          <Route path="/config/trailers" element={adminOnly(page(<TrailersConfigPage />))} />
           <Route path="/config/routes" element={adminOnly(page(<RoutesConfigPage />))} />
           <Route path="/config/cargo-types" element={adminOnly(page(<CargoTypesConfigPage />))} />
           <Route path="/config/pricing-tables" element={adminOnly(page(<PricingTablesConfigPage />))} />
@@ -118,6 +123,13 @@ function AppRoutes() {
           <Route path="/config/customers" element={adminOnly(page(<CustomersConfigPage />))} />
           <Route path="/config/management-fees" element={adminOnly(page(<ManagementFeesConfigPage />))} />
           <Route path="/config/salary-periods" element={adminOnly(page(<SalaryPeriodConfigPage />))} />
+          <Route path="/config/expense-categories" element={adminOnly(page(<ExpenseCategoriesConfigPage />))} />
+          <Route path="/suppliers" element={adminOnly(page(<SupplierListPage />))} />
+          <Route path="/expenses" element={adminOnly(page(<ExpenseListPage />))} />
+          <Route path="/expenses/new" element={adminOnly(page(<ExpenseEntryPage />))} />
+          <Route path="/expenses/:id/edit" element={adminOnly(page(<ExpenseEntryPage />))} />
+          <Route path="/payables" element={adminOnly(page(<PayableListPage />))} />
+          <Route path="/payables/:id" element={adminOnly(page(<PayableDetailPage />))} />
           <Route path="/users" element={adminOnly(page(<UsersPage />))} />
           <Route path="/audit-logs" element={adminOnly(page(<AuditLogPage />))} />
           <Route path="/my-trips" element={driverOnly(page(<DriverTripsPage />))} />

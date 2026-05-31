@@ -4,11 +4,12 @@ import * as s from '../db/schema';
 import { eq, isNull, sql, and, desc } from 'drizzle-orm';
 // auth + Casbin applied at mount point in index.ts
 import {
-  customerSchema, truckSchema, trailerSchema, routeSchema,
+  customerSchema, truckSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
   fuelConfigSchema, penaltyReasonSchema, driverSchema,
   managementFeeSchema, capTableSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
+  supplierSchema, expenseCategorySchema,
 } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
@@ -57,7 +58,6 @@ router.get('/pricing', async (req: Request, res: Response) => {
 
 router.use('/customers', createCrudRouter(s.customers, customerSchema, { searchableField: 'name' }));
 router.use('/trucks', createCrudRouter(s.trucks, truckSchema, { searchableField: 'licensePlate' }));
-router.use('/trailers', createCrudRouter(s.trailers, trailerSchema, { searchableField: 'licensePlate' }));
 router.use('/routes', createCrudRouter(s.routes, routeSchema, { searchableField: 'name' }));
 router.use('/cargo-types', createCrudRouter(s.cargoTypes, cargoTypeSchema));
 router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSchema));
@@ -72,6 +72,8 @@ router.use('/management-fees', createCrudRouter(s.managementFees, managementFeeS
 // contribution_amount / sum(contribution_amount) per snapshot, so totals are
 // always 100% by construction and there's no separate over-allocation check.
 router.use('/cap-table', createCrudRouter(s.capTableHistory, capTableSchema));
+router.use('/suppliers', createCrudRouter(s.suppliers, supplierSchema, { searchableField: 'name' }));
+router.use('/expense-categories', createCrudRouter(s.expenseCategories, expenseCategorySchema, { searchableField: 'name' }));
 
 // Drivers — special handling (includes user_id)
 router.use('/drivers', (() => {

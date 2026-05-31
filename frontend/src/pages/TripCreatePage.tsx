@@ -51,7 +51,7 @@ export default function TripCreatePage() {
               customers={options.customers}
               routes={options.routes}
               trucks={options.trucks}
-              trailers={options.trailers}
+              trailerTypes={options.trailerTypes}
               drivers={options.drivers}
               cargoTypes={options.cargoTypes}
               loading={options.loading}

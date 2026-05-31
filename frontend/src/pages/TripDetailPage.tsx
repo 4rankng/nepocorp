@@ -322,7 +322,7 @@ export default function TripDetailPage() {
         <Panel title="Thông tin cơ bản">
           {infoRow(<Truck size={16} />, 'Xe đầu', trip.truck?.licensePlate)}
           {infoRow(<User size={16} />, 'Tài xế', trip.driver?.name)}
-          {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailer ? `${trip.trailer.licensePlate} (${trip.trailer.type})` : null)}
+          {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailerType ? (trip.truck?.trailerPlateNumber ? `${trip.truck.trailerPlateNumber} (${trip.trailerType})` : trip.trailerType) : null)}
           {infoRow(<Calendar size={16} />, 'Ngày khởi hành', formatDate(trip.departureDate))}
           {infoRow(<FileText size={16} />, 'Mã tham chiếu', trip.customerReference)}
         </Panel>

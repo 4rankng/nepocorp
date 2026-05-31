@@ -5,7 +5,6 @@ export interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }>;
   trucks: Array<{ id: number; licensePlate: string }>;
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
-  trailers: Array<{ id: number; licensePlate: string; type: string }>;
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
 }

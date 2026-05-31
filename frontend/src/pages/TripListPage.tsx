@@ -327,7 +327,7 @@ export default function TripListPage() {
       cell: ({ row }) => {
         const trip = row.original;
         const route = splitRoute(trip.route?.name);
-        const containerTag = trip.trailer?.type ?? '40FT';
+        const containerTag = trip.trailerType ?? '40FT';
         return (
           <div className="route-cust">
             <div className="route-line">

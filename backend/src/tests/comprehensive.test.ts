@@ -40,7 +40,6 @@ let driverToken: string;
 let customerId: number;
 let driverId: number;
 let truckId: number;
-let trailerId: number;
 let routeId: number;
 let cargoTypeId: number;
 let driverUserId: number;
@@ -65,7 +64,6 @@ before(async () => {
   const [cust] = await db.select().from(s.customers).limit(1);
   const [drvr] = await db.select().from(s.drivers).limit(1);
   const [trck] = await db.select().from(s.trucks).limit(1);
-  const [trlr] = await db.select().from(s.trailers).limit(1);
   const [rte] = await db.select().from(s.routes).limit(1);
   const [crg] = await db.select().from(s.cargoTypes).limit(1);
   const [adm] = await db.select().from(s.users).where(eq(s.users.username, 'admin')).limit(1);
@@ -73,7 +71,6 @@ before(async () => {
   const [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
 
   customerId = cust.id;
-  trailerId = trlr.id;
   routeId = rte.id;
   cargoTypeId = crg.id;
   driverUserId = drvUser.id;
@@ -172,7 +169,7 @@ test('E2E — Auth flow (Login, Me, User List, Create, Delete)', async () => {
 // ─────────────────────────────────────────────────────────────────────────────
 test('E2E — Catalog endpoints CRUD reads & listings', async () => {
   const catalogs = [
-    'trucks', 'trailers', 'customers', 'routes', 'cargo-types',
+    'trucks', 'customers', 'routes', 'cargo-types',
     'pricing-tables', 'road-allowances', 'fuel-config', 'penalty-reasons',
     'cap-table', 'management-fees'
   ];
@@ -193,17 +190,16 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     method: 'POST',
     token: adminToken,
     body: JSON.stringify({
-      customer_id: customerId,
-      route_id: routeId,
-      trailer_id: trailerId,
-      truck_id: truckId,
-      driver_id: driverId,
-      cargo_type_id: cargoTypeId,
-      departure_date: '2026-06-10',
+      customerId,
+      routeId,
+      truckId,
+      driverId,
+      cargoTypeId,
+      departureDate: '2026-06-10',
       notes: 'Comprehensive E2E test trip'
     })
   });
-  if (createRes.status !== 201) console.log('CREATE TRIP FAIL:', createRes, { truckId, driverId, customerId, routeId, trailerId, cargoTypeId });
+  if (createRes.status !== 201) console.log('CREATE TRIP FAIL:', createRes, { truckId, driverId, customerId, routeId, cargoTypeId });
   assert.strictEqual(createRes.status, 201);
   assert.strictEqual(createRes.data.status, TripStatus.CREATED);
   tripId = createRes.data.id;
@@ -225,8 +221,8 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     method: 'PATCH',
     token: adminToken,
     body: JSON.stringify({
-      truck_id: altTruck.id,
-      driver_id: altDriver.id
+      truckId: altTruck.id,
+      driverId: altDriver.id
     })
   });
   if (reassignRes.status !== 200) console.log('REASSIGN FAIL:', reassignRes, 'altTruck:', altTruck.id, 'altDriver:', altDriver.id, 'busyTrucks:', [...curBusyTrucks], 'busyDrivers:', [...curBusyDrivers]);
@@ -238,14 +234,14 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     token: adminToken,
     body: JSON.stringify({
       version: reassignRes.data.version,
-      fuel_mode: FuelMode.AUTO,
-      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: LoadingType.HANG }],
-      fuel_supplement_liters: 0,
-      tolls_discount: 0,
-      tolls_addition: 0,
-      tolls_stations: 2,
-      has_return_cargo: false,
-      driver_salary: 450000,
+      fuelMode: FuelMode.AUTO,
+      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: LoadingType.HANG }],
+      fuelSupplementLiters: 0,
+      tollsDiscount: 0,
+      tollsAddition: 0,
+      tollsStations: 2,
+      hasReturnCargo: false,
+      driverSalary: 450000,
       revenue: 4000000,
     })
   });
@@ -275,15 +271,15 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     token: adminToken,
     body: JSON.stringify({
       version: updatedVersion,
-      fuel_mode: FuelMode.AUTO,
-      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: LoadingType.HANG }],
-      fuel_supplement_liters: 5, // supplementary liters
-      fuel_supplement_reason: 'Kẹt xe đường tránh kéo dài',
-      tolls_discount: 0,
-      tolls_addition: 0,
-      tolls_stations: 2,
-      has_return_cargo: false,
-      driver_salary: 500000,
+      fuelMode: FuelMode.AUTO,
+      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: LoadingType.HANG }],
+      fuelSupplementLiters: 5, // supplementary liters
+      fuelSupplementReason: 'Kẹt xe đường tránh kéo dài',
+      tollsDiscount: 0,
+      tollsAddition: 0,
+      tollsStations: 2,
+      hasReturnCargo: false,
+      driverSalary: 500000,
       revenue: 4500000,
     })
   });

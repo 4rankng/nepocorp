@@ -1,14 +1,14 @@
 import React from 'react';
 import { CardSection } from './CardSection';
 import { RouteChips } from './RouteChips';
-import type { SelectOption, RouteOption } from '../../hooks/useTripOptions';
+import type { SelectOption, RouteOption, TrailerTypeOption } from '../../hooks/useTripOptions';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 
 interface TripInfoCardProps {
   customers: SelectOption[];
   routes: RouteOption[];
   trucks: SelectOption[];
-  trailers: SelectOption[];
+  trailerTypes: TrailerTypeOption[];
   drivers: SelectOption[];
   cargoTypes: SelectOption[];
   loading: boolean;
@@ -44,6 +44,13 @@ export function TripInfoCard(props: TripInfoCardProps) {
     </select>
   );
 
+  const selStatic = (value: string, onChange: (v: string) => void, options: TrailerTypeOption[], placeholder: string) => (
+    <select className="input" style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)} disabled={props.loading}>
+      <option value="">{props.loading ? 'Đang tải...' : placeholder}</option>
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+
   return (
     <CardSection number={1} title="Thông tin chuyến đi" subtitle="Khách hàng, tuyến, hàng hóa và phương tiện" badge="required">
       <div className="tc-form-row">
@@ -68,8 +75,8 @@ export function TripInfoCard(props: TripInfoCardProps) {
           <Field label="Xe đầu" required>
             {sel(form.truckId, form.setTruckId, props.trucks, 'Chọn xe đầu')}
           </Field>
-          <Field label="Rơ moóc" required>
-            {sel(form.trailerId, form.setTrailerId, props.trailers, 'Chọn rơ moóc')}
+          <Field label="Loại rơ moóc" required>
+            {selStatic(form.trailerType, form.setTrailerType, props.trailerTypes, 'Chọn loại rơ moóc')}
           </Field>
           <Field label="Tài xế" required>
             {sel(form.driverId, form.setDriverId, props.drivers, 'Chọn tài xế')}

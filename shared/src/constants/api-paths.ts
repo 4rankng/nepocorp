@@ -38,8 +38,6 @@ export const CONFIG = {
   CUSTOMER: (id: number) => `/customers/${id}`,
   TRUCKS: '/trucks',
   TRUCK: (id: number) => `/trucks/${id}`,
-  TRAILERS: '/trailers',
-  TRAILER: (id: number) => `/trailers/${id}`,
   ROUTES: '/routes',
   ROUTE: (id: number) => `/routes/${id}`,
   CARGO_TYPES: '/cargo-types',

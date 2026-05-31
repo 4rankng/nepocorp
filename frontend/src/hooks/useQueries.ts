@@ -14,6 +14,12 @@ import type {
   SalaryPeriodRange,
   PnlTruck,
   PnlReport,
+  Supplier,
+  ExpenseCategory,
+  ExpenseWithRefs,
+  PayableSummary,
+  SupplierStatement,
+  RenewalReminder,
 } from '@nepocorp/shared';
 import { TRIPS, REPORTS, CONFIG, FINANCIAL } from '@nepocorp/shared';
 
@@ -35,7 +41,7 @@ export interface NormalizedTrip {
   driverName: string;
   routeId: number;
   routeName: string;
-  trailerId: number;
+  trailerType: string;
   cargoTypeId: number;
   status: string;
   departureDate: string;
@@ -55,7 +61,7 @@ export function normalizeTrip(t: any): NormalizedTrip {
     driverName: t.driver?.name ?? '',
     routeId: t.routeId,
     routeName: t.route?.name ?? '',
-    trailerId: t.trailerId,
+    trailerType: t.trailerType ?? '',
     cargoTypeId: t.cargoTypeId,
     status: t.status,
     departureDate: t.departureDate ?? '',
@@ -358,6 +364,78 @@ export function useDistributionHistory() {
       }> | { items: Array<any> }>('/reports/distribution-history');
       return Array.isArray(res) ? res : (res as any).items ?? [];
     },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSuppliers(page?: number, search?: string) {
+  return useQuery({
+    queryKey: ['suppliers', page, search],
+    queryFn: () => {
+      const qs = new URLSearchParams();
+      if (page) qs.set('page', String(page));
+      if (search) qs.set('search', search);
+      const query = qs.toString() ? `?${qs.toString()}` : '';
+      return api.get<PaginatedResponse<Supplier>>(`${CONFIG.SUPPLIERS}${query}`);
+    },
+  });
+}
+
+export function useExpenseCategories(page?: number, search?: string) {
+  return useQuery({
+    queryKey: ['expense-categories', page, search],
+    queryFn: () => {
+      const qs = new URLSearchParams();
+      if (page) qs.set('page', String(page));
+      if (search) qs.set('search', search);
+      const query = qs.toString() ? `?${qs.toString()}` : '';
+      return api.get<PaginatedResponse<ExpenseCategory>>(`${CONFIG.EXPENSE_CATEGORIES}${query}`);
+    },
+  });
+}
+
+export function useExpenses(filters?: { truckId?: number; supplierId?: number; categoryId?: number; fromDate?: string; toDate?: string; page?: number; pageSize?: number }) {
+  return useQuery({
+    queryKey: ['expenses', filters],
+    queryFn: () => {
+      const qs = new URLSearchParams();
+      if (filters) {
+        if (filters.truckId) qs.set('truckId', String(filters.truckId));
+        if (filters.supplierId) qs.set('supplierId', String(filters.supplierId));
+        if (filters.categoryId) qs.set('categoryId', String(filters.categoryId));
+        if (filters.fromDate) qs.set('fromDate', filters.fromDate);
+        if (filters.toDate) qs.set('toDate', filters.toDate);
+        if (filters.page) qs.set('page', String(filters.page));
+        if (filters.pageSize) qs.set('pageSize', String(filters.pageSize));
+      }
+      const query = qs.toString() ? `?${qs.toString()}` : '';
+      return api.get<PaginatedResponse<ExpenseWithRefs>>(`${FINANCIAL.EXPENSES}${query}`);
+    },
+  });
+}
+
+export function usePayablesSummary() {
+  return useQuery({
+    queryKey: ['payables-summary'],
+    queryFn: async () => {
+      const result = await api.get<{ items: PayableSummary[]; totalOutstanding: string; totalSuppliers: number; overdueSuppliers: number }>(REPORTS.PAYABLES_SUMMARY);
+      return result;
+    },
+  });
+}
+
+export function useSupplierStatement(supplierId: number | undefined) {
+  return useQuery<SupplierStatement>({
+    queryKey: ['supplier-statement', supplierId],
+    queryFn: () => api.get<SupplierStatement>(FINANCIAL.SUPPLIER_STATEMENT(supplierId!)),
+    enabled: !!supplierId,
+  });
+}
+
+export function useRenewalReminders() {
+  return useQuery<RenewalReminder[]>({
+    queryKey: ['renewal-reminders'],
+    queryFn: () => api.get<RenewalReminder[]>(REPORTS.RENEWALS),
     staleTime: 5 * 60 * 1000,
   });
 }

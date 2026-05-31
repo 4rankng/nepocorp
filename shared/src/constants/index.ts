@@ -50,11 +50,6 @@ export enum DriverStatus {
   INACTIVE = 'INACTIVE',
 }
 
-export enum TrailerStatus {
-  ACTIVE = 'ACTIVE',
-  MAINTENANCE = 'MAINTENANCE',
-  INACTIVE = 'INACTIVE',
-}
 
 export enum CustomerStatus {
   ACTIVE = 'ACTIVE',

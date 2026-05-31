@@ -1,12 +1,12 @@
 export {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, TrailerStatus, CustomerStatus,
+  TrailerType, TruckStatus, DriverStatus, CustomerStatus,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS,
 } from './constants';
 
 export type {
-  User, UserPublic, Driver, Customer, Truck, Trailer, Route, CargoType,
+  User, UserPublic, Driver, Customer, Truck, Route, CargoType,
   PricingTable, RoadAllowance, FuelConfig, PenaltyReason,
   Trip, TripLeg, TripDetail, LedgerEntry, Penalty,
   CapTableHistory, Distribution, ManagementFee, AuditLog,
@@ -23,7 +23,7 @@ export {
   tripLegSchema, createTripSchema, updateTripFiguresSchema,
   createPaymentSchema, createPenaltySchema, createAdjustmentSchema,
   loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema,
-  customerSchema, truckSchema, trailerSchema, routeSchema,
+  customerSchema, truckSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
   fuelConfigSchema, penaltyReasonSchema, driverSchema,
   managementFeeSchema, capTableSchema,
@@ -34,7 +34,7 @@ export {
 export type {
   CreateTripInput, UpdateTripFiguresInput, CreatePaymentInput,
   CreatePenaltyInput, CreateAdjustmentInput, LoginInput,
-  CustomerInput, TruckInput, TrailerInput, RouteInput,
+  CustomerInput, TruckInput, RouteInput,
   CargoTypeInput, PricingTableInput, RoadAllowanceInput,
   FuelConfigInput, PenaltyReasonInput, DriverInput,
   ManagementFeeInput, CapTableInput,

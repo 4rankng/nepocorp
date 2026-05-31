@@ -7,7 +7,7 @@ export interface LedgerPostRequest {
   txnType: TxnType;
   txnId?: number;
   receiptId?: string;
-  entityType: 'CUSTOMER' | 'DRIVER';
+  entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR';
   entityId: number;
   debit: number;
   credit: number;
@@ -21,7 +21,8 @@ export class LedgerService {
   private static getEntityTypeKey(type: string): number {
     if (type === 'CUSTOMER') return 1;
     if (type === 'DRIVER') return 2;
-    return 3;
+    if (type === 'VENDOR') return 3;
+    return 4;
   }
 
   /**
@@ -35,7 +36,7 @@ export class LedgerService {
   /**
    * Acquire sorted locks for multiple entities to prevent deadlocks
    */
-  static async lockEntities(tx: any, entities: { entityType: 'CUSTOMER' | 'DRIVER'; entityId: number }[]) {
+  static async lockEntities(tx: any, entities: { entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR'; entityId: number }[]) {
     // Sort entities globally to prevent deadlocks
     const sorted = [...entities].sort((a, b) => {
       const aKey = this.getEntityTypeKey(a.entityType);
@@ -67,11 +68,11 @@ export class LedgerService {
     
     // Sign convention rules:
     // Customer: Debit increases outstanding balance, Credit decreases outstanding balance
-    // Driver: Credit increases payable balance, Debit decreases payable balance
+    // Driver/Vendor: Credit increases payable balance, Debit decreases payable balance
     let newBalance = prevBalance;
     if (request.entityType === 'CUSTOMER') {
       newBalance = prevBalance + request.debit - request.credit;
-    } else if (request.entityType === 'DRIVER') {
+    } else if (request.entityType === 'DRIVER' || request.entityType === 'VENDOR') {
       newBalance = prevBalance + request.credit - request.debit;
     }
 

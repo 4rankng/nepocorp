@@ -48,7 +48,6 @@ function extractEntityKey(
       return pick(responseBody, 'tripCode')
         || pick(requestBody, 'tripCode');
     case 'trucks':
-    case 'trailers':
       return pick(responseBody, 'licensePlate')
         || pick(requestBody, 'licensePlate');
     case 'customers':

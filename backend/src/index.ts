@@ -11,6 +11,7 @@ import authRoutes from './routes/auth';
 import configRoutes, { auditLogRouter } from './routes/config';
 import tripRoutes from './routes/trips';
 import financialRoutes from './routes/financial';
+import expenseRoutes from './routes/expense';
 import driverRoutes from './routes/driver';
 import { uploadRouter, photosRouter } from './routes/upload';
 import mapsRoutes from './routes/maps';
@@ -59,6 +60,7 @@ app.use('/api/photos', authMiddleware, casbinAuthz('photos'), photosRouter);
 app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
 app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
+app.use('/api/expenses', authMiddleware, casbinAuthz('financial'), expenseRoutes);
 app.use('/api/audit-logs', authMiddleware, casbinAuthz('audit_logs'), auditLogRouter);
 app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  Truck, Container, UserCheck, Plus, Search,
+  Truck, UserCheck, Plus, Search,
   Download, Filter, CheckCircle,
 } from 'lucide-react';
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
@@ -11,7 +11,7 @@ import { InlineForm, FormActions, ActionBtns, Field } from '../components/config
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
 import { TrailerType } from '@nepocorp/shared';
-import type { Truck as TruckType, Trailer, Driver } from '@nepocorp/shared';
+import type { Truck as TruckType, Driver } from '@nepocorp/shared';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -62,11 +62,23 @@ function TruckForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: TruckType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
   const [plate, setPlate] = useState(item?.licensePlate || '');
+  const [trailerPlate, setTrailerPlate] = useState(item?.trailerPlateNumber || '');
+  const [trailerType, setTrailerType] = useState<string>(item?.trailerType || TrailerType.FT40);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
   return (
-    <InlineForm colSpan={5}>
+    <InlineForm colSpan={7}>
       <div style={{ flex: 2, minWidth: 160 }}>
-        <Field label="Biển số"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51C-12345" /></Field>
+        <Field label="Biển số xe đầu"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51C-12345" /></Field>
+      </div>
+      <div style={{ flex: 2, minWidth: 160 }}>
+        <Field label="Biển số rơ-moóc"><input className="input" value={trailerPlate} onChange={e => setTrailerPlate(e.target.value)} placeholder="VD: 51R-56789" /></Field>
+      </div>
+      <div style={{ flex: 1, minWidth: 110 }}>
+        <Field label="Loại rơ-moóc">
+          <select className="input" value={trailerType} onChange={e => setTrailerType(e.target.value)}>
+            {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </Field>
       </div>
       <div style={{ flex: 1, minWidth: 140 }}>
         <Field label="Trạng thái">
@@ -75,39 +87,7 @@ function TruckForm({ saving, item, onsave, oncancel }: {
           </select>
         </Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), status }); }} />
-    </InlineForm>
-  );
-}
-
-function TrailerForm({ saving, item, onsave, oncancel }: {
-  saving: boolean; item?: Trailer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
-}) {
-  const [plate, setPlate] = useState(item?.licensePlate || '');
-  const [type, setType] = useState<string>(item?.type || TrailerType.FT40);
-  const [status, setStatus] = useState(item?.status || 'ACTIVE');
-  return (
-    <InlineForm colSpan={6}>
-      <div style={{ flex: 2, minWidth: 160 }}>
-        <Field label="Biển số"><input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="VD: 51R-56789" /></Field>
-      </div>
-      <div style={{ flex: 1, minWidth: 110 }}>
-        <Field label="Loại">
-          <select className="input" value={type} onChange={e => setType(e.target.value as TrailerType)}>
-            {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </Field>
-      </div>
-      <div style={{ flex: 1, minWidth: 130 }}>
-        <Field label="Trạng thái">
-          <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
-            <option value="ACTIVE">Hoạt động</option>
-            <option value="MAINTENANCE">Bảo trì</option>
-            <option value="INACTIVE">Ngưng</option>
-          </select>
-        </Field>
-      </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), type: type as TrailerType, status }); }} />
+      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), trailerPlateNumber: trailerPlate.trim() || null, trailerType: trailerType as TrailerType, status }); }} />
     </InlineForm>
   );
 }
@@ -190,7 +170,8 @@ function TruckCard({ trucks, driverByTruck, crud }: {
           <thead>
             <tr>
               <th className="num">#</th>
-              <th>Biển số</th>
+              <th>Biển số xe đầu</th>
+              <th>Rơ-moóc</th>
               <th>Tài xế gán</th>
               <th className="center">Trạng thái</th>
               <th className="actions">Thao tác</th>
@@ -201,7 +182,7 @@ function TruckCard({ trucks, driverByTruck, crud }: {
               <TruckForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />
             )}
             {trucks.length === 0 && !crud.showAddForm && (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
             )}
             {trucks.map((t, i) => crud.editingId === t.id
               ? <TruckForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
@@ -209,6 +190,12 @@ function TruckCard({ trucks, driverByTruck, crud }: {
                 <tr key={t.id}>
                   <td className="num">{i + 1}</td>
                   <td><Plate plate={t.licensePlate} tag="VN" /></td>
+                  <td>
+                    {t.trailerPlateNumber
+                      ? <span className="fleet-pair"><Plate plate={t.trailerPlateNumber} tag="RM" /> <TypeChip type={t.trailerType ?? TrailerType.FT40} /></span>
+                      : <span className="fleet-unassigned">—</span>
+                    }
+                  </td>
                   <td>
                     {driverByTruck.has(t.id)
                       ? (
@@ -238,84 +225,6 @@ function TruckCard({ trucks, driverByTruck, crud }: {
           </span>
         </div>
         <span>Hoạt động {active} · Bảo trì {maint}</span>
-      </div>
-      {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
-    </Panel>
-  );
-}
-
-function TrailerCard({ trailers, crud }: {
-  trailers: Trailer[];
-  crud: ReturnType<typeof useCRUD>;
-}) {
-  const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
-  const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
-
-  return (
-    <Panel flush>
-      <div className="fleet-card-head">
-        <div className="fleet-card-lead">
-          <div className="fleet-card-icon alt">
-            <Container size={18} />
-          </div>
-          <div>
-            <div className="fleet-card-title">
-              Rơ-moóc <span className="count-pill">{trailers.length}</span>
-            </div>
-            <div className="fleet-card-sub">Danh mục sơ mi rơ-moóc (20ft / 40ft)</div>
-          </div>
-        </div>
-        <div className="fleet-card-tools">
-          <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
-            <Plus size={13} /> Thêm rơ-moóc
-          </button>
-        </div>
-      </div>
-      <div className="table-scroll">
-        <table className="tt-table">
-          <thead>
-            <tr>
-              <th className="num">#</th>
-              <th>Biển số</th>
-              <th className="center">Loại</th>
-              <th>Ghép với</th>
-              <th className="center">Trạng thái</th>
-              <th className="actions">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {crud.showAddForm && !crud.editingId && (
-              <TrailerForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />
-            )}
-            {trailers.length === 0 && !crud.showAddForm && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>Chưa có dữ liệu</td></tr>
-            )}
-            {trailers.map((t, i) => crud.editingId === t.id
-              ? <TrailerForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
-              : (
-                <tr key={t.id}>
-                  <td className="num">{i + 1}</td>
-                  <td><Plate plate={t.licensePlate} tag="RM" /></td>
-                  <td style={{ textAlign: 'center' }}><TypeChip type={t.type} /></td>
-                  <td><span className="fleet-unassigned">—</span></td>
-                  <td style={{ textAlign: 'center' }}><StatusDot status={t.status} /></td>
-                  <td><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
-                </tr>
-              ),
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="table-foot">
-        <div className="fleet-legend">
-          <span className="fleet-legend-item">
-            <span className="fleet-legend-swatch" style={{ background: 'var(--info)' }} /> 40FT
-          </span>
-          <span className="fleet-legend-item">
-            <span className="fleet-legend-swatch" style={{ background: 'var(--accent)' }} /> 20FT
-          </span>
-        </div>
-        <span>{ft40}×40FT · {ft20}×20FT</span>
       </div>
       {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' }}>{crud.error}</div>}
     </Panel>
@@ -439,7 +348,6 @@ export default function FleetPage() {
   const queryClient = useQueryClient();
   const { data: fleetData } = useFleetData();
   const trucks = fleetData?.trucks ?? [];
-  const trailers = fleetData?.trailers ?? [];
   const drivers = fleetData?.drivers ?? [];
 
   const invalidateFleet = useCallback(async () => {
@@ -447,10 +355,9 @@ export default function FleetPage() {
   }, [queryClient]);
 
   const truckCrud = useCRUD('/trucks', invalidateFleet);
-  const trailerCrud = useCRUD('/trailers', invalidateFleet);
   const driverCrud = useCRUD('/drivers', invalidateFleet);
 
-  const { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, maintTrailers, assignedDrivers, readyToRun } = useMemo(() => {
+  const { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, assignedDrivers, readyToRun } = useMemo(() => {
     const truckMap = new Map<number, TruckType>();
     trucks.forEach(t => truckMap.set(t.id, t));
 
@@ -459,16 +366,15 @@ export default function FleetPage() {
 
     const activeTrucks = trucks.filter(t => t.status === 'ACTIVE').length;
     const maintTrucks = trucks.filter(t => t.status === 'MAINTENANCE').length;
-    const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
-    const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
-    const maintTrailers = trailers.filter(t => t.status === 'MAINTENANCE').length;
+    const ft40 = trucks.filter(t => t.trailerType === TrailerType.FT40).length;
+    const ft20 = trucks.filter(t => t.trailerType === TrailerType.FT20).length;
     const assignedDrivers = drivers.filter(d => d.assignedTruckId).length;
     const readyToRun = trucks.filter(t =>
       t.status === 'ACTIVE' && driverByTruck.has(t.id),
     ).length;
 
-    return { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, maintTrailers, assignedDrivers, readyToRun };
-  }, [trucks, trailers, drivers]);
+    return { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, assignedDrivers, readyToRun };
+  }, [trucks, drivers]);
 
   return (
     <div className="fleet-page fade-up">
@@ -481,7 +387,6 @@ export default function FleetPage() {
               const headers = ['Loại', 'Biển số', 'Trạng thái', 'Tài xế gán'];
               const rows = [
                 ...trucks.map(t => ['Xe đầu kéo', t.licensePlate, TRUCK_STATUS[t.status] || t.status, driverByTruck.has(t.id) ? driverByTruck.get(t.id)!.name : '—']),
-                ...trailers.map(t => ['Rơ-moóc', t.licensePlate, t.status === 'ACTIVE' ? 'Hoạt động' : t.status, '—']),
               ];
               downloadCSV(`doi-xe-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
             }}>Xuất Excel</Btn>
@@ -510,21 +415,15 @@ export default function FleetPage() {
         />
         <KPI
           label="Rơ-moóc"
-          value={trailers.length}
+          value={ft40 + ft20}
           unit="moóc"
-          icon={Container}
+          icon={Truck}
           variant="info"
           meta={
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontFamily: 'var(--font-mono)' }}>{ft40}×40FT</span>
               <span style={{ opacity: 0.4 }}>·</span>
               <span style={{ fontFamily: 'var(--font-mono)' }}>{ft20}×20FT</span>
-              {maintTrailers > 0 && (
-                <>
-                  <span style={{ opacity: 0.4 }}>·</span>
-                  <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{maintTrailers} bảo trì</span>
-                </>
-              )}
             </span>
           }
         />
@@ -559,11 +458,8 @@ export default function FleetPage() {
         />
       </div>
 
-      {/* Trucks + Trailers side by side */}
-      <div className="fleet-two-col">
-        <TruckCard trucks={trucks} driverByTruck={driverByTruck} crud={truckCrud} />
-        <TrailerCard trailers={trailers} crud={trailerCrud} />
-      </div>
+      {/* Trucks */}
+      <TruckCard trucks={trucks} driverByTruck={driverByTruck} crud={truckCrud} />
 
       {/* Drivers full width */}
       <DriverCard drivers={drivers} truckMap={truckMap} crud={driverCrud} />

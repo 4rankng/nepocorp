@@ -19,6 +19,8 @@ import {
   ChevronUp,
   Compass,
   Layers,
+  FileText,
+  Store,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -52,8 +54,11 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'finance', label: 'Báo cáo lãi lỗ', path: '/finance', icon: Wallet, section: 'financials' },
         { key: 'profit', label: 'Lợi nhuận & phân chia', path: '/profit', icon: DollarSign, section: 'financials' },
         { key: 'debt', label: 'Công nợ phải thu', path: '/debt', icon: Receipt, section: 'financials' },
+        { key: 'expenses', label: 'Chi phí vận hành', path: '/expenses', icon: FileText, section: 'financials' },
+        { key: 'payables', label: 'Công nợ phải trả', path: '/payables', icon: Receipt, section: 'financials' },
         
         { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'admin' },
+        { key: 'suppliers', label: 'Nhà cung cấp', path: '/suppliers', icon: Store, section: 'admin' },
         { key: 'routes', label: 'Tuyến đường', path: '/config/routes', icon: Route, section: 'admin' },
         { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'admin' },
         ...(role === 'ADMIN' || role === 'MANAGER' ? [
@@ -84,6 +89,11 @@ function getPageTitle(pathname: string): string {
   if (pathname === '/finance') return 'Báo cáo lãi lỗ';
   if (pathname.startsWith('/profit')) return 'Lợi nhuận & Phân chia';
   if (pathname.startsWith('/debt')) return 'Công nợ phải thu';
+  if (pathname.startsWith('/payables')) return 'Công nợ phải trả';
+  if (pathname.startsWith('/expenses/new')) return 'Tạo phiếu chi phí';
+  if (pathname.match(/^\/expenses\/\d+\/edit$/)) return 'Sửa phiếu chi phí';
+  if (pathname.startsWith('/expenses')) return 'Phiếu chi phí';
+  if (pathname.startsWith('/suppliers')) return 'Nhà cung cấp';
   if (pathname === '/penalties' || pathname === '/my-penalties') return 'Kỷ luật';
   if (pathname.startsWith('/customers')) return 'Khách hàng';
   if (pathname.startsWith('/routes')) return 'Tuyến đường';

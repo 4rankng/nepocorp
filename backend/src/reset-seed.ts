@@ -10,10 +10,12 @@ async function resetAndSeed() {
   await db.delete(s.trips);
   await db.delete(s.ledger);
   await db.delete(s.penalties);
+  await db.delete(s.expensePhotos);
+  await db.delete(s.expenses);
+  await db.delete(s.expenseCategories);
   await db.delete(s.pricingTables);
   await db.delete(s.roadAllowances);
   await db.delete(s.drivers);
-  await db.delete(s.trailers);
   await db.delete(s.trucks);
   await db.delete(s.routes);
   await db.delete(s.cargoTypes);
@@ -26,7 +28,7 @@ async function resetAndSeed() {
   console.log('🔄 Running fresh seed...');
 
   // Run the new modular seed
-  require('./seed-data');
+  require('./seed');
 }
 
 resetAndSeed().catch(err => {
