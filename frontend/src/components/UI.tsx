@@ -95,11 +95,6 @@ export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default',
     >
       <div className="kpi__top">
         <span className="kpi__label">{label}</span>
-        {Icon && (
-          <div className="kpi__icon">
-            <Icon size={18} />
-          </div>
-        )}
       </div>
       <div className="kpi__value">
         {value}
@@ -108,7 +103,7 @@ export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default',
       {meta && <div className="kpi__meta">{meta}</div>}
       {Icon && (
         <div className="kpi__watermark" aria-hidden="true">
-          <Icon size={80} />
+          <Icon size={72} />
         </div>
       )}
     </div>

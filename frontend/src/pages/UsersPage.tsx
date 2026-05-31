@@ -670,40 +670,28 @@ export default function UsersPage() {
       {/* KPI grid */}
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
         <div className="kpi">
-          <div className="kpi__top">
-            <span className="kpi__label">Tổng tài khoản</span>
-            <div className="kpi__icon"><Users size={18} /></div>
-          </div>
+          <div className="kpi__top"><span className="kpi__label">Tổng tài khoản</span></div>
           <div className="kpi__value">{total}</div>
           <div className="kpi__meta kpi__meta--up">Đang hoạt động trong hệ thống</div>
-          <div className="kpi__watermark" aria-hidden="true"><Users size={80} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><Users size={72} /></div>
         </div>
         <div className="kpi kpi--warn">
-          <div className="kpi__top">
-            <span className="kpi__label">Nhân sự văn phòng</span>
-            <div className="kpi__icon"><UserCog size={18} /></div>
-          </div>
+          <div className="kpi__top"><span className="kpi__label">Nhân sự văn phòng</span></div>
           <div className="kpi__value">{staffCount}</div>
           <div className="kpi__meta">Admin · Quản lý · Kế toán</div>
-          <div className="kpi__watermark" aria-hidden="true"><UserCog size={80} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><UserCog size={72} /></div>
         </div>
         <div className="kpi kpi--success">
-          <div className="kpi__top">
-            <span className="kpi__label">Tài xế</span>
-            <div className="kpi__icon"><ShieldCheck size={18} /></div>
-          </div>
+          <div className="kpi__top"><span className="kpi__label">Tài xế</span></div>
           <div className="kpi__value">{driverCount}</div>
           <div className="kpi__meta">Có quyền xem lệnh chạy xe</div>
-          <div className="kpi__watermark" aria-hidden="true"><ShieldCheck size={80} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><ShieldCheck size={72} /></div>
         </div>
         <div className="kpi kpi--danger">
-          <div className="kpi__top">
-            <span className="kpi__label">Bị khoá / Ngưng</span>
-            <div className="kpi__icon"><Lock size={18} /></div>
-          </div>
+          <div className="kpi__top"><span className="kpi__label">Bị khoá / Ngưng</span></div>
           <div className="kpi__value">{inactiveCount}</div>
           <div className="kpi__meta">Không thể đăng nhập</div>
-          <div className="kpi__watermark" aria-hidden="true"><Lock size={80} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><Lock size={72} /></div>
         </div>
       </div>
 

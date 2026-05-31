@@ -116,47 +116,34 @@ export default function DriverPenaltyPage() {
       {/* ── KPI row ────────────────────────────────────────────────────────── */}
       <div className="kpi-grid" style={{ marginBottom: 28 }}>
         <div className={`kpi ${incidentCount > 0 ? 'kpi--danger' : 'kpi--success'}`}>
-          <div className="kpi__top">
-            <span className="kpi__label">Vi phạm {monthLabel}</span>
-            <div className="kpi__icon">
-              {incidentCount > 0 ? <AlertTriangle size={18} /> : <ShieldCheck size={18} />}
-            </div>
-          </div>
+          <div className="kpi__top"><span className="kpi__label">Vi phạm {monthLabel}</span></div>
           <div className="kpi__value">
             {incidentCount}<span className="kpi__value-unit"> vụ</span>
           </div>
           <div className="kpi__meta">Trong tháng này</div>
           <div className="kpi__watermark" aria-hidden="true">
-            {incidentCount > 0 ? <AlertTriangle size={80} /> : <ShieldCheck size={80} />}
+            {incidentCount > 0 ? <AlertTriangle size={72} /> : <ShieldCheck size={72} />}
           </div>
         </div>
 
         <div className={`kpi ${totalMonthAmount > 0 ? 'kpi--warn' : 'kpi--success'}`}>
-          <div className="kpi__top">
-            <span className="kpi__label">Khấu trừ {monthLabel}</span>
-            <div className="kpi__icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-          </div>
+          <div className="kpi__top"><span className="kpi__label">Khấu trừ {monthLabel}</span></div>
           <div className="kpi__value" style={{ fontSize: totalMonthAmount > 9999999 ? 20 : 28 }}>
             {totalMonthAmount > 0 ? formatCurrency(totalMonthAmount) : '—'}
           </div>
           <div className="kpi__meta">Trừ vào lương tháng</div>
           <div className="kpi__watermark" aria-hidden="true">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
         </div>
 
         <div className="kpi kpi--neutral">
-          <div className="kpi__top">
-            <span className="kpi__label">Tổng biên bản</span>
-            <div className="kpi__icon"><AlertOctagon size={18} /></div>
-          </div>
+          <div className="kpi__top"><span className="kpi__label">Tổng biên bản</span></div>
           <div className="kpi__value">
             {allPenalties.length}<span className="kpi__value-unit"> vụ</span>
           </div>
           <div className="kpi__meta">Toàn lịch sử</div>
-          <div className="kpi__watermark" aria-hidden="true"><AlertOctagon size={80} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><AlertOctagon size={72} /></div>
         </div>
       </div>
 

@@ -136,28 +136,28 @@ export default function RoutesConfigPage() {
 
       <div className="kpi-grid" style={{ marginBottom: 20 }}>
         <div className="kpi">
-          <div className="kpi__top"><span className="kpi__label">Tổng tuyến</span><div className="kpi__icon"><MapPin size={18} /></div></div>
+          <div className="kpi__top"><span className="kpi__label">Tổng tuyến</span></div>
           <div className="kpi__value">{totalCount}</div>
           <div className="kpi__meta kpi__meta--up">Tất cả tuyến đang hoạt động</div>
-          <div className="kpi__watermark" aria-hidden="true"><MapPin size={80} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><MapPin size={72} /></div>
         </div>
         <div className="kpi kpi--success">
-          <div className="kpi__top"><span className="kpi__label">Đang sử dụng {monthLabel}</span><div className="kpi__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div></div>
+          <div className="kpi__top"><span className="kpi__label">Đang sử dụng {monthLabel}</span></div>
           <div className="kpi__value">{usedThisMonth}<span className="kpi__value-unit">/{totalCount}</span></div>
           <div className="kpi__meta">{totalCount > 0 ? Math.round((usedThisMonth / totalCount) * 100) : 0}% tuyến có chuyến</div>
-          <div className="kpi__watermark" aria-hidden="true"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div className="kpi__watermark" aria-hidden="true"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
         </div>
         <div className="kpi kpi--warn">
-          <div className="kpi__top"><span className="kpi__label">Tuyến núi</span><div className="kpi__icon"><Mountain size={18} /></div></div>
+          <div className="kpi__top"><span className="kpi__label">Tuyến núi</span></div>
           <div className="kpi__value">{mountainCount}</div>
           <div className="kpi__meta">Định mức dầu cao hơn</div>
-          <div className="kpi__watermark" aria-hidden="true"><Mountain size={80} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><Mountain size={72} /></div>
         </div>
         <div className="kpi">
-          <div className="kpi__top"><span className="kpi__label">Phổ biến nhất</span><div className="kpi__icon"><Route size={18} /></div></div>
+          <div className="kpi__top"><span className="kpi__label">Phổ biến nhất</span></div>
           <div className="kpi__value" style={{ fontSize: 16, lineHeight: 1.3 }}>{popularRoute ? popularRoute.name.split(' - ')[0] : '—'}</div>
           <div className="kpi__meta">{popularCount > 0 ? `${popularCount} chuyến ${monthLabel}` : 'Chưa có dữ liệu'}</div>
-          <div className="kpi__watermark" aria-hidden="true"><Route size={80} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><Route size={72} /></div>
         </div>
       </div>
 

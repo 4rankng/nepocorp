@@ -110,8 +110,16 @@ export default function PayableDetailPage() {
         date: paymentDate,
         receiptId: paymentReceiptId,
       };
-      await api.post(FINANCIAL.PAYMENTS_VENDOR, body);
-      showToast({ kind: 'success', message: `Đã ghi thanh toán ${formatCurrency(body.amount)}` });
+      // Backend returns `{ ...ledgerEntry, warning?, overpayment? }`. If the
+      // payment exceeds outstanding debt, the backend records it but surfaces
+      // a `warning` field — show it as a warning toast so the user isn't
+      // silently left with a negative supplier balance they didn't intend.
+      const resp = await api.post<{ warning?: string; overpayment?: number }>(FINANCIAL.PAYMENTS_VENDOR, body);
+      if (resp?.warning) {
+        showToast({ kind: 'warning', message: resp.warning });
+      } else {
+        showToast({ kind: 'success', message: `Đã ghi thanh toán ${formatCurrency(body.amount)}` });
+      }
       setShowPaymentModal(false);
       setPaymentAmount('');
       setPaymentReceiptId('');

@@ -335,10 +335,10 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 
 .kpi__watermark {
   position: absolute;
-  right: -10px;
-  bottom: -10px;
-  width: 88px;
-  height: 88px;
+  right: 10px;
+  bottom: 6px;
+  width: 76px;
+  height: 76px;
   display: flex;
   align-items: center;
   justify-content: center;
