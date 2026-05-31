@@ -14,6 +14,7 @@ export type {
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
   LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket, UnpaidTrip,
   SalaryPeriod, SalaryPeriodRange, PnlTruck, PnlReport,
+  Supplier, ExpenseCategory, Expense, ExpenseWithRefs, PayableSummary, SupplierStatement, RenewalReminder, VendorPaymentRequest,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -27,6 +28,7 @@ export {
   fuelConfigSchema, penaltyReasonSchema, driverSchema,
   managementFeeSchema, capTableSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
+  supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
 } from './schemas';
 
 export type {
@@ -37,6 +39,7 @@ export type {
   FuelConfigInput, PenaltyReasonInput, DriverInput,
   ManagementFeeInput, CapTableInput,
   SalaryPeriodInput, SalaryPeriodDefaultInput,
+  SupplierInput, ExpenseCategoryInput, ExpenseInput, VendorPaymentInput,
   CreateUserInput, UpdateUserInput,
 } from './schemas';
 

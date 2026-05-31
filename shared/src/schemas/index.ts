@@ -254,6 +254,53 @@ export const salaryPeriodDefaultSchema = z.object({
   defaultEndDay: z.number().int().min(1).max(31),
 });
 
+// ─── Supplier & Expense ────────────────────────────────────────────────────────
+
+export const supplierSchema = z.object({
+  name: z.string().min(1),
+  contactPerson: z.string().optional(),
+  phone: z.string().optional(),
+  taxCode: z.string().optional(),
+  note: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
+});
+
+export const expenseCategorySchema = z.object({
+  name: z.string().min(1),
+  isRenewable: z.boolean().optional().default(false),
+  reminderLeadDays: z.number().int().positive().optional().default(30),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
+});
+
+export const expenseSchema = z.object({
+  expenseDate: z.string().min(1),
+  supplierId: z.coerce.number().int().positive(),
+  categoryId: z.coerce.number().int().positive(),
+  truckId: z.coerce.number().int().positive().optional().nullable(),
+  trailerId: z.coerce.number().int().positive().optional().nullable(),
+  amount: positiveNumeric,
+  paymentStatus: z.enum(['PAID', 'UNPAID']),
+  validFrom: z.string().optional().nullable(),
+  validTo: z.string().optional().nullable(),
+  receiptId: z.string().optional(),
+  note: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.truckId && data.trailerId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Không thể chọn cả đầu kéo và rơ-mooc cùng lúc',
+      path: ['truckId'],
+    });
+  }
+});
+
+export const vendorPaymentSchema = z.object({
+  supplierId: z.coerce.number().int().positive(),
+  receiptId: z.string().min(1),
+  amount: positiveNumeric,
+  date: z.string().min(1),
+});
+
 // ─── Inferred types ──────────────────────────────────────────────────────────
 
 export type CreateTripInput = z.infer<typeof createTripSchema>;
@@ -278,3 +325,7 @@ export type ManagementFeeInput = z.infer<typeof managementFeeSchema>;
 export type CapTableInput = z.infer<typeof capTableSchema>;
 export type SalaryPeriodInput = z.infer<typeof salaryPeriodSchema>;
 export type SalaryPeriodDefaultInput = z.infer<typeof salaryPeriodDefaultSchema>;
+export type SupplierInput = z.infer<typeof supplierSchema>;
+export type ExpenseCategoryInput = z.infer<typeof expenseCategorySchema>;
+export type ExpenseInput = z.infer<typeof expenseSchema>;
+export type VendorPaymentInput = z.infer<typeof vendorPaymentSchema>;

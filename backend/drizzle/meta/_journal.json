@@ -8,6 +8,13 @@
       "when": 1780220921060,
       "tag": "0000_flat_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780233634356,
+      "tag": "0001_cloudy_nova",
+      "breakpoints": true
     }
   ]
 }

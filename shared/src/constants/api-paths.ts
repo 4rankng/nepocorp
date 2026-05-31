@@ -60,15 +60,23 @@ export const CONFIG = {
   SALARY_PERIODS: '/salary-periods',
   SALARY_PERIOD_DEFAULT: '/salary-periods/default',
   SALARY_PERIOD_RESOLVE: '/salary-periods/resolve',
+  SUPPLIERS: '/suppliers',
+  SUPPLIER: (id: number) => `/suppliers/${id}`,
+  EXPENSE_CATEGORIES: '/expense-categories',
+  EXPENSE_CATEGORY: (id: number) => `/expense-categories/${id}`,
 } as const;
 
 // ─── Financial ──────────────────────────────────────────────────────────────────
 export const FINANCIAL = {
   LEDGER: '/ledger',
   CUSTOMER_STATEMENT: (id: number) => `/ledger/customers/${id}/statement`,
+  SUPPLIER_STATEMENT: (id: number) => `/ledger/suppliers/${id}/statement`,
   PAYMENTS_RECEIVE: '/payments/receive',
+  PAYMENTS_VENDOR: '/payments/vendor',
   ADJUSTMENTS: '/adjustments',
   PENALTIES: '/penalties',
+  EXPENSES: '/expenses',
+  EXPENSE: (id: number) => `/expenses/${id}`,
 } as const;
 
 // ─── Reports ────────────────────────────────────────────────────────────────────
@@ -76,6 +84,8 @@ export const REPORTS = {
   DASHBOARD: '/reports/dashboard',
   PNL: '/reports/pnl',
   RECEIVABLES_SUMMARY: '/reports/receivables-summary',
+  PAYABLES_SUMMARY: '/reports/payables-summary',
+  RENEWALS: '/reports/renewals',
   DISTRIBUTE_PROFIT: '/reports/distribute-profit',
 } as const;
 

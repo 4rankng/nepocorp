@@ -95,8 +95,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### 4.7 Lợi nhuận
 
-* **Lợi nhuận gộp (Gross Profit):** = Tổng Doanh thu các chuyến − **Tổng chi phí xe**, tính theo từng **xe đầu kéo**, theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó trong tháng (sửa chữa đầu kéo, bảo hiểm/đăng kiểm/phí đường bộ của đầu kéo).
-* **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **(Chi phí gắn rơ-mooc + chi phí không gắn xe)** + Thu nhập khác. *(Chi phí rơ-mooc tách riêng ở cấp công ty vì rơ-mooc hoán đổi giữa các đầu kéo — không gộp vào một đầu kéo cụ thể.)*
+* **Lợi nhuận gộp (Gross Profit):** = Tổng Doanh thu các chuyến − **Tổng chi phí xe**, tính theo từng **xe đầu kéo**, theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó **hoặc rơ-mooc ghép cặp với xe đó** trong tháng (sửa chữa đầu kéo/rơ-mooc, bảo hiểm/đăng kiểm/phí đường bộ của cả cặp). Mỗi đầu kéo và rơ-mooc **ghép thành cặp cố định** — chi phí rơ-mooc tính chung vào chi phí của đầu kéo ghép cặp.
+* **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **Chi phí không gắn xe (chi phí chung)** + Thu nhập khác.
 * **Phí quản lý:** Khoản cố định hàng tháng cho toàn công ty. Kế toán nhập thủ công. *(Mức cụ thể do Giám đốc ấn định — tạm thời placeholder 24.000.000 VNĐ/tháng; sẽ xác nhận chính thức sau.)*
 * **Thu nhập khác (Other Income):** Ghi nhận doanh thu phạt kỷ luật. Lương tài xế ghi nhận đầy đủ, không trừ phạt.
 
@@ -145,7 +145,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * **Phạm vi:** ghi nhận chi phí vận hành ngoài chuyến đi — sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — gắn với Nhà cung cấp và (tùy chọn) một xe.
 * **Nhà cung cấp (NCC):** danh mục mọi bên nhận tiền (gara, trạm lốp, cửa hàng phụ tùng, công ty bảo hiểm, trung tâm đăng kiểm, đơn vị thu phí đường bộ). **Bắt buộc** trên mọi phiếu chi phí. Không có trường "phân loại" (phân loại nằm ở hạng mục từng phiếu).
 * **Hạng mục chi phí:** danh mục **cấu hình được** (người dùng tự thêm). Mỗi hạng mục là **một lần** hoặc **định kỳ** (`is_renewable`); hạng mục định kỳ có `reminder_lead_days` (mặc định 30 ngày).
-* **Phiếu chi phí:** một phiếu = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một xe đầu kéo **hoặc** rơ-mooc (tùy chọn, có thể để trống → chi phí chung). Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → nhập nhiều phiếu.
+* **Phiếu chi phí:** một phiếu = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một xe đầu kéo **hoặc** rơ-mooc (tùy chọn, có thể để trống → chi phí chung). Khi gắn rơ-mooc, hệ thống tự tra cặp đầu kéo để quy về **lãi gộp của đầu kéo ghép cặp**. Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → nhập nhiều phiếu.
 * **Trạng thái thanh toán:**
     * **Trả ngay (PAID):** chỉ ghi cho P&L, không phát sinh công nợ (hệ thống không có tài khoản tiền mặt).
     * **Ghi nợ (UNPAID):** tạo bản ghi Sổ cái `entity_type='VENDOR'` (credit = số tiền) → phát sinh **công nợ phải trả**.

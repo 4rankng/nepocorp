@@ -61,7 +61,7 @@ Form nhập:
 1. **Ngày** (bắt buộc)
 2. **Nhà cung cấp** (bắt buộc, từ danh mục)
 3. **Hạng mục** (bắt buộc, từ danh mục)
-4. **Xe** — chọn xe đầu kéo **hoặc** rơ-mooc, **hoặc để trống** (chi phí chung)
+4. **Xe** — chọn xe đầu kéo **hoặc** rơ-mooc, **hoặc để trống** (chi phí chung). Khi chọn rơ-mooc, P&L tự gộp vào lãi gộp của đầu kéo ghép cặp.
 5. **Số tiền** (bắt buộc, VND)
 6. **Trạng thái:** Trả ngay (PAID) / Ghi nợ (UNPAID)
 7. **Hiệu lực từ – đến** (`valid_from`/`valid_to`) — **chỉ hiện khi hạng mục là định kỳ**
@@ -122,10 +122,12 @@ PUT/DELETE /api/expenses/:id
 
 ```
 getPnlReport(month, year)
-  → Per-truck: Tổng chi phí xe = Σ chi phí chuyến của xe + Σ bảo dưỡng gắn xe trong tháng
+  → Per-truck: Tổng chi phí xe = Σ chi phí chuyến của xe
+                                + Σ bảo dưỡng gắn đầu kéo đó trong tháng
+                                + Σ bảo dưỡng gắn rơ-mooc ghép cặp với xe đó trong tháng
               Lãi gộp xe = Doanh thu − Tổng chi phí xe
-  → Company-level: Σ chi phí gắn rơ-mooc + chi phí không gắn xe
-  → Lãi ròng = Σ Lãi gộp xe − Phí quản lý − (Chi phí rơ-mooc + chung) + Thu nhập khác
+  → Company-level: Σ chi phí không gắn xe (để trống)
+  → Lãi ròng = Σ Lãi gộp xe − Phí quản lý − Chi phí chung + Thu nhập khác
 ```
 
 ---
@@ -158,7 +160,7 @@ getPnlReport(month, year)
 | Phiếu gắn | Quy về |
 |-----------|--------|
 | Xe đầu kéo | Trừ vào **Lãi gộp** của chính xe đó |
-| Rơ-mooc | **Chi phí chung công ty** (trừ ở Lãi ròng) — vì rơ-mooc hoán đổi giữa các đầu kéo |
+| Rơ-mooc | Trừ vào **Lãi gộp của đầu kéo ghép cặp** — đầu kéo và rơ-mooc ghép cố định, tính chung |
 | Không gắn xe | **Chi phí chung công ty** (trừ ở Lãi ròng) |
 
 ---
@@ -218,7 +220,7 @@ getPnlReport(month, year)
 | TC-ID | Tiêu đề | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------|-------------------|---------|
 | TC-CP-060 | Bảo dưỡng đầu kéo vào lãi gộp | Phiếu gắn xe X trong tháng | /finance: lãi gộp xe X giảm đúng số tiền | High |
-| TC-CP-061 | Chi phí rơ-mooc vào lãi ròng | Phiếu gắn rơ-mooc | Không trừ vào xe nào; trừ ở dòng chi phí chung (lãi ròng) | High |
+| TC-CP-061 | Chi phí rơ-mooc vào lãi gộp đầu kéo cặp | Phiếu gắn rơ-mooc R1 (ghép cặp đầu kéo X) | Trừ vào lãi gộp của xe X; không trừ ở chi phí chung | High |
 | TC-CP-062 | Chi phí chung vào lãi ròng | Phiếu không gắn xe | Trừ ở dòng chi phí chung | Medium |
 | TC-CP-063 | Lát cắt cơ cấu chi phí | Có nhiều hạng mục | Pie chart hiện lát sửa chữa/phụ tùng/bảo hiểm/đăng kiểm/phí đường bộ | Medium |
 | TC-CP-064 | Nhắc gia hạn sắp tới hạn | Bảo hiểm valid_to trong 30 ngày | Dashboard hiện cảnh báo | High |
@@ -239,7 +241,7 @@ getPnlReport(month, year)
 - **Tổng chi phí bao gồm TẤT CẢ chi phí** ở tầng P&L (chuyến + bảo dưỡng). Thẻ từng chuyến vẫn chỉ là dầu + tiền đi đường + lương — `computeTripTotals` không đổi.
 - **Không đếm trùng:** nhiên liệu mua nợ **ngoài phạm vi** — chi phí dầu đã tính theo chuyến.
 - **Phí đường bộ** (phí bảo trì đường bộ năm, theo xe) **khác** **Tiền đi đường** (vé cầu đường mỗi chuyến). Không nhầm.
-- **Chi phí rơ-mooc luôn là chi phí chung công ty** — không gộp vào đầu kéo (rơ-mooc hoán đổi giữa các đầu kéo).
+- **Chi phí rơ-mooc tính vào lãi gộp đầu kéo ghép cặp** — mỗi đầu kéo và rơ-mooc ghép thành cặp cố định; hệ thống tự tra cặp khi tổng hợp P&L. Chỉ chi phí để trống (không gắn xe) mới là chi phí chung công ty.
 - **Không phân bổ (no amortization):** chi phí định kỳ ghi toàn bộ vào tháng thanh toán; chỉ nhắc gia hạn, không trải đều.
 - Sổ cái VENDOR dùng chung bảng `ledger`, `entity_type='VENDOR'`, append-only.
 - Tài khoản test: xem [README](./README.md) (ketoan / admin123).

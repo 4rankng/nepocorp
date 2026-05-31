@@ -261,6 +261,98 @@ export interface AuditLog {
   createdAt: string;
 }
 
+// ─── Vendor & Expense ───────────────────────────────────────────────────────────
+
+export interface Supplier {
+  id: number;
+  name: string;
+  contactPerson: string | null;
+  phone: string | null;
+  taxCode: string | null;
+  note: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface ExpenseCategory {
+  id: number;
+  name: string;
+  isRenewable: boolean;
+  reminderLeadDays: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface Expense {
+  id: number;
+  expenseDate: string;
+  supplierId: number;
+  categoryId: number;
+  truckId: number | null;
+  trailerId: number | null;
+  amount: string;
+  paymentStatus: string;
+  validFrom: string | null;
+  validTo: string | null;
+  receiptId: string | null;
+  note: string | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface ExpenseWithRefs extends Expense {
+  supplier?: Supplier;
+  category?: ExpenseCategory;
+  truck?: { id: number; licensePlate: string };
+  trailer?: { id: number; licensePlate: string };
+}
+
+export interface PayableSummary {
+  supplier: Supplier;
+  totalOutstanding: number;
+  aging: {
+    current: number;
+    d30: number;
+    d60: number;
+    over90: number;
+  };
+  maxOverdueDays: number;
+}
+
+export interface SupplierStatement {
+  supplier: Pick<Supplier, 'id' | 'name' | 'phone' | 'contactPerson'>;
+  ledgerRows: LedgerEntry[];
+  totalOutstanding: number;
+  agingBuckets: AgingBucket[];
+}
+
+export interface RenewalReminder {
+  id: number;
+  expenseId: number;
+  categoryId: number;
+  categoryName: string;
+  truckId: number | null;
+  truckPlate: string | null;
+  trailerId: number | null;
+  trailerPlate: string | null;
+  validTo: string;
+  reminderLeadDays: number;
+  daysRemaining: number;
+}
+
+export interface VendorPaymentRequest {
+  supplierId: number;
+  receiptId: string;
+  amount: number;
+  date: string;
+}
+
 // ─── API types ───────────────────────────────────────────────────────────────
 
 export interface TripDetail extends Trip {

@@ -8,7 +8,7 @@ export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'C
 export const fuelModeEnum = pgEnum('fuel_mode', ['AUTO', 'FLAT_RATE']);
 export const loadingTypeEnum = pgEnum('loading_type', ['HANG', 'VO']);
 export const roleEnum = pgEnum('role', ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER']);
-export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY']);
+export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT']);
 export const trailerTypeEnum = pgEnum('trailer_type', ['20FT', '40FT']);
 export const truckStatusEnum = pgEnum('truck_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
 export const driverStatusEnum = pgEnum('driver_status', ['ACTIVE', 'INACTIVE']);
@@ -293,6 +293,59 @@ export const salaryPeriods = pgTable('salary_periods', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
+});
+
+// ─── Vendor & Expense ────────────────────────────────────────────────────────────
+
+export const suppliers = pgTable('suppliers', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  contactPerson: varchar('contact_person', { length: 255 }),
+  phone: varchar('phone', { length: 20 }),
+  taxCode: varchar('tax_code', { length: 20 }),
+  note: text('note'),
+  status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
+export const expenseCategories = pgTable('expense_categories', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  isRenewable: boolean('is_renewable').default(false),
+  reminderLeadDays: integer('reminder_lead_days').default(30),
+  status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
+export const expenses = pgTable('expenses', {
+  id: serial('id').primaryKey(),
+  expenseDate: date('expense_date').notNull(),
+  supplierId: integer('supplier_id').references(() => suppliers.id).notNull(),
+  categoryId: integer('category_id').references(() => expenseCategories.id).notNull(),
+  truckId: integer('truck_id').references(() => trucks.id),
+  trailerId: integer('trailer_id').references(() => trailers.id),
+  amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
+  paymentStatus: varchar('payment_status', { length: 20 }).notNull(),
+  validFrom: timestamp('valid_from'),
+  validTo: timestamp('valid_to'),
+  receiptId: varchar('receipt_id', { length: 100 }),
+  note: text('note'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
+export const expensePhotos = pgTable('expense_photos', {
+  id: serial('id').primaryKey(),
+  expenseId: integer('expense_id').references(() => expenses.id).notNull(),
+  storageKey: varchar('storage_key', { length: 255 }).notNull(),
+  uploadedBy: integer('uploaded_by'),
+  uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
 });
 
 // ─── Audit ───────────────────────────────────────────────────────────────────

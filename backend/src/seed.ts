@@ -21,6 +21,21 @@ async function seed() {
   for (const u of users) {
     console.log(`  ${u.username} / admin123 (${u.role})`);
   }
+
+  const categories = [
+    { name: 'Sửa chữa', isRenewable: false, reminderLeadDays: 30, status: 'ACTIVE' },
+    { name: 'Phụ tùng', isRenewable: false, reminderLeadDays: 30, status: 'ACTIVE' },
+    { name: 'Vật tư', isRenewable: false, reminderLeadDays: 30, status: 'ACTIVE' },
+    { name: 'Bảo hiểm', isRenewable: true, reminderLeadDays: 30, status: 'ACTIVE' },
+    { name: 'Đăng kiểm', isRenewable: true, reminderLeadDays: 30, status: 'ACTIVE' },
+    { name: 'Phí đường bộ', isRenewable: true, reminderLeadDays: 30, status: 'ACTIVE' },
+  ];
+
+  for (const cat of categories) {
+    await db.insert(schema.expenseCategories).values(cat).onConflictDoNothing();
+  }
+
+  console.log('✅ Expense categories seeded!');
   process.exit(0);
 }
 

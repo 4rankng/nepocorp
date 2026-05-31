@@ -5,7 +5,7 @@ Dựa trên tài liệu nghiệp vụ `12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md` v�
 > [!CAUTION]
 > **LƯU Ý CỰC KỲ QUAN TRỌNG CHO AGENT:**
 > 1. **Tuổi nợ AP đảo chiều so với phải thu:** (Chi phí = Credit, Thanh toán = Debit). TUYỆT ĐỐI KHÔNG copy nguyên vẹn logic tính toán từ phần công nợ phải thu (`receivables.service.ts`) sang. Hàm tổng hợp AP phải tính tuổi nợ trên **open credits** và áp **debits** làm thanh toán theo phương pháp FIFO.
-> 2. **Chi phí rơ-mooc:** LUÔN LUÔN được tính là **chi phí chung của công ty** (vì rơ-mooc được hoán đổi liên tục giữa các xe đầu kéo). Không quy chi phí này về bất kỳ đầu kéo cụ thể nào khi tính P&L.
+> 2. **Mô hình rơ-mooc (Pete xác nhận 31/5):** Đầu kéo và rơ-mooc **ghép theo cặp cố định**. Biển số rơ-mooc là một **trường thuộc bảng `trucks`** (`trailerPlateNumber`), không phải entity riêng. Bảng `expenses` **không có** `trailerId` FK — mọi phiếu chi phí chỉ gắn với `truckId` (đầu kéo). Khi nhập chi phí cho rơ-mooc, kế toán chọn đầu kéo ghép cặp. KHÔNG có rơ-mooc "chi phí chung công ty" — chỉ phiếu để trống xe mới là chi phí chung.
 > 3. **Lưu ý kiểu dữ liệu:** Trạng thái thanh toán (`PAID`, `UNPAID`) và loại cấu hình (`hạng mục chi phí`) sử dụng `varchar` thay vì enum cứng. Chỉ thêm `'VENDOR_EXPENSE'` và `'VENDOR_PAYMENT'` vào `txnTypeEnum` đã có cho nghiệp vụ sổ cái.
 
 ## Tài liệu tham khảo (Context cho agent)
@@ -13,22 +13,23 @@ Dựa trên tài liệu nghiệp vụ `12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md` v�
 - **Kế hoạch chi tiết:** [`plans/03-cong-no.md`](./plans/03-cong-no.md) — 15 quyết định thiết kế (đánh số), 5 phase, mục Kiểm thử.
 - **Tài liệu QA + API + luồng:** [`docs/flows/12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md`](./docs/flows/12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md) — danh sách endpoint, luồng nghiệp vụ, ~40 test case (mã `TC-CP-xxx`).
 - **Glossary:** [`CONTEXT.md`](./CONTEXT.md) — Vendor / Expense / Expense Item / AP, công thức Lãi gộp/ròng.
-- **ADR (đừng "sửa nhầm"):** [`docs/adr/0001-chi-phi-ro-mooc-la-chi-phi-chung.md`](./docs/adr/0001-chi-phi-ro-mooc-la-chi-phi-chung.md) (chi phí rơ-mooc = chi phí chung công ty), [`docs/adr/0002-khong-phan-bo-chi-phi-dinh-ky.md`](./docs/adr/0002-khong-phan-bo-chi-phi-dinh-ky.md) (không amortize).
+- **ADR:** [`docs/adr/0001-chi-phi-ro-mooc-la-chi-phi-chung.md`](./docs/adr/0001-chi-phi-ro-mooc-la-chi-phi-chung.md) — **ĐÃ BỊ ĐẢO NGƯỢC** bởi quyết định Pete 31/5: rơ-mooc ghép cặp cố định với đầu kéo, biển số rơ-mooc là trường trên bảng `trucks`. [`docs/adr/0002-khong-phan-bo-chi-phi-dinh-ky.md`](./docs/adr/0002-khong-phan-bo-chi-phi-dinh-ky.md) (không amortize — vẫn còn hiệu lực).
 
 **Thứ tự thực thi:** Phase 1 → 2 → 3 → 4 → 5 (Phase 1 phải xong trước; FE Phase 3/4/5 phụ thuộc backend Phase 2). **TDD bắt buộc** (CLAUDE.md): viết test trước cho logic sổ cái VENDOR, aging AP, và P&L.
 
 ## Phase 1 — CSDL, Shared Types & Migration
 
 - [ ] **1. Cập nhật schema database (`backend/src/db/schema.ts`)**:
-  - [ ] Tạo bảng `suppliers`: `id` (serial), `name` (varchar, notNull), `contactPerson` (varchar), `phone` (varchar), `taxCode` (varchar), `note` (text), `status` (varchar default 'ACTIVE'), `createdAt`, `updatedAt`, `deletedAt`. Bảng này hỗ trợ soft-delete giống `customers`.
-  - [ ] Tạo bảng `expenseCategories`: `id` (serial), `name` (varchar, notNull), `isRenewable` (boolean default false), `reminderLeadDays` (int default 30), `status` (varchar default 'ACTIVE'), `createdAt`, `updatedAt`, `deletedAt`.
-  - [ ] Tạo bảng `expenses`: `id` (serial), `expenseDate` (timestamp/date, notNull), `supplierId` (integer, FK -> `suppliers.id`, notNull), `categoryId` (integer, FK -> `expenseCategories.id`, notNull), `truckId` (integer, FK -> `trucks.id`, nullable), `trailerId` (integer, FK -> `trailers.id`, nullable), `amount` (numeric(15,0), notNull), `paymentStatus` (varchar, notNull: 'PAID' hoặc 'UNPAID'), `validFrom` (timestamp, nullable), `validTo` (timestamp, nullable), `receiptId` (varchar(100), nullable), `note` (text, nullable), `createdBy` (integer, FK -> `users.id`), `createdAt`, `updatedAt`, `deletedAt`. **CHECK constraint**: Không được có đồng thời cả `truckId` và `trailerId`.
-  - [ ] Tạo bảng `expensePhotos`: `id` (serial), `expenseId` (integer, FK -> `expenses.id`, notNull), `storageKey` (varchar, notNull), `uploadedBy` (integer), `uploadedAt` (timestamp).
-  - [ ] Cập nhật `txnTypeEnum`: Thêm `'VENDOR_EXPENSE'` (Credit/tăng nợ) và `'VENDOR_PAYMENT'` (Debit/giảm nợ).
+  > **Lưu ý:** Bảng `suppliers`, `expenseCategories`, `expenses` (có `trailerId`), `expensePhotos` và `txnTypeEnum` mở rộng đã được thêm vào schema. Tuy nhiên cần sửa lại theo mô hình rơ-mooc mới:
+  - [ ] **Xóa bảng `trailers`** khỏi schema — rơ-mooc không phải entity riêng. Xóa cả `trailerStatusEnum`.
+  - [ ] **Cập nhật bảng `trucks`**: Thêm `trailerPlateNumber` (varchar(20), nullable) và `trailerType` (trailerTypeEnum: '20FT'|'40FT', nullable) — biển số và loại rơ-mooc ghép cặp cố định.
+  - [ ] **Cập nhật bảng `trips`**: Xóa `trailerId` (FK -> trailers). Thêm `trailerType` (trailerTypeEnum, notNull) — snapshot loại rơ-mooc tại thời điểm tạo chuyến (tra từ truck ghép cặp). `trailerTypeEnum` vẫn giữ vì dùng trong `road_allowances` và `trips`.
+  - [ ] **Cập nhật bảng `expenses`**: Xóa `trailerId` (FK -> trailers) — đã có trong schema nhưng cần bỏ đi. Chỉ giữ `truckId` (nullable). Để trống `truckId` = chi phí chung công ty.
+  - [ ] Chạy `pnpm db:generate` sau khi sửa xong toàn bộ schema.
 
 - [ ] **2. Cập nhật Shared Types & Schemas (`shared/src/`)**:
-  - [ ] `types/index.ts`: Định nghĩa các interface Typescript: `Supplier`, `ExpenseCategory`, `Expense`, `ExpenseWithRefs` (kèm thông tin supplier, category, truck, trailer), `PayableSummary` (tổng nợ theo supplier), `SupplierStatement` (chi tiết giao dịch NCC), `RenewalReminder`.
-  - [ ] `schemas/index.ts`: Tạo các Zod schema tương ứng: `supplierSchema`, `expenseCategorySchema`, `expenseSchema` (nhớ rule `truckId` và `trailerId` không đồng thời), `vendorPaymentSchema` (chứa `supplierId`, `receiptId`, `amount`, `date`).
+  - [ ] `types/index.ts`: Định nghĩa các interface Typescript: `Supplier`, `ExpenseCategory`, `Expense`, `ExpenseWithRefs` (kèm thông tin supplier, category, truck — **không có trailer**), `PayableSummary` (tổng nợ theo supplier), `SupplierStatement` (chi tiết giao dịch NCC), `RenewalReminder`.
+  - [ ] `schemas/index.ts`: Tạo các Zod schema tương ứng: `supplierSchema`, `expenseCategorySchema`, `expenseSchema` (chỉ `truckId` optional — không có `trailerId`), `vendorPaymentSchema` (chứa `supplierId`, `receiptId`, `amount`, `date`).
   - [ ] `constants/index.ts`: Cập nhật enum `TxnType` (thêm `VENDOR_EXPENSE`, `VENDOR_PAYMENT`). Cập nhật `api-paths.ts` cho các route mới (`CONFIG.SUPPLIERS`, `EXPENSES`, `FINANCIAL.PAYMENTS_VENDOR`, vv).
   - [ ] `calculations/`: Viết hoặc điều chỉnh hàm `computeFifoAging`. Nếu dùng chung hàm cũ, phải truyền tham số rõ ràng để xử lý logic đảo chiều cho AP (Credit là chi phí/nợ, Debit là thanh toán).
 
@@ -46,8 +47,9 @@ Dựa trên tài liệu nghiệp vụ `12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md` v�
 - [ ] **5. Expense Service (`backend/src/services/expense.service.ts`)**:
   - [ ] `createExpense`: Tạo dòng expense. Nếu `paymentStatus === 'UNPAID'`, gọi `ledgerService.postEntry` để tạo dòng `VENDOR_EXPENSE` (amount vào cột credit) để tăng nợ. Chạy trong Transaction. Bọc Advisory lock `VENDOR:<supplierId>`.
   - [ ] `updateExpense` / `deleteExpense`: Áp dụng soft-delete. NẾU phiếu cũ là `UNPAID` (đã ghi nợ), phải sinh ra một dòng sổ cái `ADJUSTMENT` để bù trừ phần nợ đã ghi (append-only, không update sổ cái). NẾU phiếu cũ là `PAID`, không cần bù trừ sổ cái.
-  - [ ] `listExpenses`: Query kèm relations (supplier, category, truck, trailer). Hỗ trợ filter theo `truckId`, `trailerId`, `supplierId`, `categoryId`, khoảng thời gian `expenseDate`.
-  - [ ] `getExpensesByTruckMonth` và `getCompanyExpensesByMonth`: Dùng cho P&L (Lấy theo tháng, phân tách chi phí đầu kéo và chi phí rơ-mooc/chung).
+  - [ ] `listExpenses`: Query kèm relations (supplier, category, truck). Hỗ trợ filter theo `truckId`, `supplierId`, `categoryId`, khoảng thời gian `expenseDate`. **Không có `trailerId` filter**.
+  - [ ] `getExpensesByTruckMonth(truckId, month, year)`: Chi phí gắn đầu kéo cụ thể trong tháng — dùng cho P&L per-truck.
+  - [ ] `getCompanyExpensesByMonth(month, year)`: Chi phí **không gắn xe** (`truckId IS NULL`) trong tháng — chi phí chung công ty. **Không còn bucket rơ-mooc riêng**.
   - [ ] `getRenewalReminders`: Lấy danh sách các khoản (theo xe) có `validTo` gần tới hạn (so với `reminderLeadDays`) hoặc đã quá hạn. Group theo xe + hạng mục để lấy `validTo` mới nhất.
 
 - [ ] **6. Payables & Financial Services (`backend/src/services/`)**:
@@ -57,9 +59,9 @@ Dựa trên tài liệu nghiệp vụ `12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md` v�
 
 - [ ] **7. P&L & Analytics (`backend/src/services/reporting.service.ts`)**:
   - [ ] Cập nhật `getPnlReport`:
-    - Tính `Tổng chi phí xe` = (Chi phí chuyến của xe) + (Tổng `expenses` gắn với `truckId` trong tháng). Lãi gộp xe = Doanh thu - Tổng chi phí xe.
-    - Tính chi phí cấp công ty: (Tổng `expenses` gắn với `trailerId`) + (Tổng `expenses` không gắn xe). Ghi chú: Chi phí rơ-mooc luôn trừ thẳng vào Lãi ròng công ty (ở dòng chi phí chung).
-    - Cập nhật công thức tổng quát: Lãi ròng = Tổng Lãi gộp xe - Phí quản lý - Chi phí công ty (bao gồm rơ-mooc) + Thu nhập khác.
+    - Tính `Tổng chi phí xe` = (Chi phí chuyến của xe) + (Tổng `expenses` có `truckId = xe đó` trong tháng). Lãi gộp xe = Doanh thu - Tổng chi phí xe. Chi phí rơ-mooc ghép cặp với xe được nhập qua truckId của đầu kéo nên đã tự nằm trong bucket này.
+    - Tính chi phí chung công ty: Tổng `expenses` có `truckId IS NULL` trong tháng. **Không có bucket rơ-mooc riêng**.
+    - Công thức: Lãi ròng = Tổng Lãi gộp xe - Phí quản lý - Chi phí chung + Thu nhập khác.
 
 - [ ] **8. Router & Middleware (`backend/src/routes/`)**:
   - [ ] Dùng `createCrudRouter` trong `config.ts` để tạo các endpoints cho `/api/suppliers` và `/api/expense-categories`. Invalidate cache `catalogs:bootstrap` khi có thay đổi.
@@ -81,7 +83,7 @@ Dựa trên tài liệu nghiệp vụ `12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md` v�
   - [ ] `ExpenseListPage`: Grid view dạng bảng cho desktop và card view responsive cho mobile.
   - [ ] `ExpenseEntryPage` (Form Tạo/Sửa):
     - Các trường bắt buộc: Ngày, Nhà cung cấp (dropdown), Hạng mục (dropdown), Số tiền (VND format).
-    - Trường Xe: Dropdown cho phép chọn Đầu kéo HOẶC Rơ-mooc (UI tự clear value của cái kia nếu chọn một cái), hoặc có thể bỏ trống hoàn toàn.
+    - Trường Xe: Dropdown chọn **Đầu kéo** (từ danh mục trucks), hoặc bỏ trống (chi phí chung). **Không có dropdown rơ-mooc riêng** — kế toán chọn đầu kéo ghép cặp khi chi phí liên quan đến rơ-mooc.
     - Trạng thái: Radio/Select chọn Trả ngay (PAID) / Ghi nợ (UNPAID).
     - Dynamic fields: Nếu hạng mục được chọn có `isRenewable === true`, hiển thị thêm 2 trường DatePicker cho `valid_from` và `valid_to`. Bắt buộc điền nếu hiện.
     - Upload ảnh hóa đơn tái sử dụng component Upload.
@@ -106,10 +108,9 @@ Dựa trên tài liệu nghiệp vụ `12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md` v�
 - [ ] **Concurrency & Locking**: API `/payments/vendor` và tạo expense `UNPAID` phải được bọc trong Advisory Lock ID của Vendor để ngăn race condition (sai số dư) trên bảng ledger.
 - [ ] **Immutability Sổ cái**: Sửa hoặc xóa một `expense` (UNPAID) phải tạo ra một dòng `ADJUSTMENT` trong ledger để bù trừ, chứ TUYỆT ĐỐI không được UPDATE trực tiếp dòng cũ.
 - [ ] **Validation API**:
-  - Bắn lỗi 400 nếu truyền lên cả `truckId` và `trailerId`.
   - Bắn lỗi 400 nếu hạng mục `isRenewable` mà thiếu `validTo`.
   - Từ chối thao tác (403/Redirect) nếu role là DRIVER truy cập vào các routes/API của vendor và expenses.
-- [ ] **Testing P&L**: Chạy báo cáo P&L và verify Lãi gộp của một xe bị trừ đi chính xác số tiền sửa chữa của xe đó trong tháng, và chi phí thay lốp rơ-mooc thì trừ thẳng vào lãi ròng ở mục chi phí chung công ty.
+- [ ] **Testing P&L**: Chạy báo cáo P&L và verify: (a) Lãi gộp xe X bị trừ đúng số tiền sửa chữa gắn với truckId=X trong tháng; (b) chi phí thay lốp rơ-mooc ghép với xe X được nhập qua truckId=X, trừ vào lãi gộp xe X chứ không vào chi phí chung; (c) phiếu không gắn xe trừ vào lãi ròng ở mục chi phí chung.
 
 ## Truy vết Test case (map sang `docs/flows/12-...md` §5)
 
@@ -119,7 +120,7 @@ Dựa trên tài liệu nghiệp vụ `12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md` v�
 | 2 — Ledger/Expense/AP | TC-CP-004/005 (post sổ cái UNPAID/PAID), TC-CP-008 (thanh toán giảm nợ), **TC-CP-040 (aging đảo chiều)**, TC-CP-041/042/043 (ADJUSTMENT bù trừ), TC-CP-044 (immutable), TC-CP-050 (concurrency) |
 | 3 — FE catalog/phiếu chi phí | TC-CP-001→007, TC-CP-020→024 (validation), TC-CP-070/071 (responsive) |
 | 4 — FE công nợ phải trả | TC-CP-008, TC-CP-071 |
-| 5 — P&L/Dashboard | TC-CP-060→066 (gồm nhắc gia hạn TC-CP-064/065/066) |
+| 5 — P&L/Dashboard | TC-CP-060, TC-CP-061 (sửa: rơ-mooc → lãi gộp đầu kéo), TC-CP-062→066 (gồm nhắc gia hạn TC-CP-064/065/066) |
 | Xuyên suốt — RBAC | TC-CP-030→033 (DRIVER bị chặn) |
 
 ## Định nghĩa Hoàn thành (Definition of Done — mỗi task)
