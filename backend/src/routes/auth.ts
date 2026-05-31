@@ -8,6 +8,8 @@ import { config } from '../config';
 import { loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@nepocorp/shared';
 import { authMiddleware } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
+import { emitAudit } from '../services/audit.service';
+import { AuditEvent } from '../services/audit-types';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -21,11 +23,31 @@ router.post('/login', async (req: Request, res: Response) => {
     ).limit(1);
 
     if (!user || user.deletedAt || user.status !== 'ACTIVE') {
+      // Audit failed login — unknown or inactive account
+      emitAudit({
+        event: AuditEvent.LOGIN_FAILED,
+        entityType: 'auth',
+        entityKey: identifier,
+        actorName: identifier,
+        ipAddress: req.ip,
+        metadata: { reason: user ? 'inactive' : 'unknown_account' },
+      });
       return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      // Audit failed login — wrong password
+      emitAudit({
+        event: AuditEvent.LOGIN_FAILED,
+        entityType: 'auth',
+        userId: user.id,
+        actorRole: user.role,
+        actorEmail: user.email ?? undefined,
+        entityKey: identifier,
+        ipAddress: req.ip,
+        metadata: { reason: 'wrong_password' },
+      });
       return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
     }
 
@@ -47,6 +69,17 @@ router.post('/login', async (req: Request, res: Response) => {
 
     const { passwordHash, deletedAt, ...userPublic } = user;
     res.json({ token, user: { ...userPublic, fullName: displayName } });
+
+    // Audit login success — emitted after response so it can't block the reply
+    emitAudit({
+      event: AuditEvent.USER_LOGIN,
+      entityType: 'auth',
+      userId: user.id,
+      actorRole: user.role,
+      actorEmail: user.email ?? undefined,
+      actorName: displayName,
+      ipAddress: req.ip,
+    });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
     res.status(500).json({ error: 'Lỗi máy chủ' });
@@ -139,7 +172,20 @@ router.patch('/me', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.user!.userId;
     const data = updateProfileSchema.parse(req.body);
     const updates: Record<string, unknown> = { updatedAt: sql`now()` };
-    if (data.username !== undefined) updates.username = data.username;
+
+    // Username is a login credential — require password confirmation to change it
+    if (data.username !== undefined) {
+      if (!data.currentPassword) {
+        return res.status(400).json({ error: 'Cần xác nhận mật khẩu hiện tại để thay đổi tên đăng nhập' });
+      }
+      const [user] = await db.select({ passwordHash: users.passwordHash })
+        .from(users).where(eq(users.id, userId)).limit(1);
+      if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+      const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
+      if (!valid) return res.status(401).json({ error: 'Mật khẩu hiện tại không đúng' });
+      updates.username = data.username;
+    }
+
     if (data.email !== undefined) updates.email = data.email || null;
     if (data.phone !== undefined) updates.phone = data.phone || null;
 

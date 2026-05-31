@@ -5,7 +5,7 @@ import { auditLogs } from '../db/schema';
 import type { AuditPayload } from './audit-types';
 
 export interface AuditEntry extends AuditPayload {
-  userId: number;
+  userId?: number;
   ipAddress?: string;
 }
 
@@ -14,7 +14,7 @@ export function initAuditService() {
     try {
       const message = renderAuditMessage(payload);
       await db.insert(auditLogs).values({
-        userId: payload.userId,
+        userId: payload.userId ?? null,
         message,
         entityType: payload.entityType,
         entityId: payload.entityId ?? null,

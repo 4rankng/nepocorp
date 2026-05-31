@@ -22,6 +22,7 @@ export const AuditEvent = {
   // Auth
   USER_LOGIN: 'USER_LOGIN',
   USER_LOGOUT: 'USER_LOGOUT',
+  LOGIN_FAILED: 'LOGIN_FAILED',
 } as const;
 
 export type AuditEventType = (typeof AuditEvent)[keyof typeof AuditEvent];

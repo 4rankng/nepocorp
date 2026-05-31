@@ -163,6 +163,23 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
           body: sanitizeBody(req.body as Record<string, unknown>),
         },
       });
+    } else if (res.statusCode === 403 && req.user) {
+      // Security audit: authenticated user hit Casbin RBAC denial
+      emitAudit({
+        event: AuditEvent.ENTITY_UPDATED,
+        entityType: extractEntityType(fullPath) || 'unknown',
+        userId: req.user.userId,
+        actorRole: req.user.role,
+        actorEmail: req.user.email ?? undefined,
+        actorName: req.user.fullName ?? req.user.username ?? undefined,
+        ipAddress: req.ip,
+        metadata: {
+          method: req.method,
+          path: fullPath,
+          statusCode: 403,
+          reason: 'rbac_denied',
+        },
+      });
     }
     return (originalEnd as any).apply(res, args);
   };

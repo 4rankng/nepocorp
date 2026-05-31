@@ -58,9 +58,12 @@ function ctx(payload: AuditPayload): TemplateContext {
   // the actor name alone in any of these cases.
   const actorL = actor.toLowerCase();
   const roleL = roleLabel.toLowerCase();
+  // Use word-boundary matching to avoid false positives on Vietnamese names.
+  // E.g. role "tài" must not match actor "tài xế lê văn tài" unless the actor
+  // IS the role label. Only exact match or prefix-with-space counts.
   const overlaps = actorL === roleL
     || actorL.startsWith(roleL + ' ')
-    || actorL.includes(roleL);
+    || actorL.endsWith(' ' + roleL);
   const role = overlaps ? '' : roleLabel;
 
   // Prefer the natural key over "#id". Only fall back to the numeric id when
@@ -107,6 +110,7 @@ const templates: Record<string, (c: TemplateContext) => string> = {
 
   [AuditEvent.USER_LOGIN]: (c) => `${subj(c)} đăng nhập hệ thống`,
   [AuditEvent.USER_LOGOUT]: (c) => `${subj(c)} đăng xuất hệ thống`,
+  [AuditEvent.LOGIN_FAILED]: (c) => `Đăng nhập thất bại${c.entityKey ? ` cho tài khoản ${c.entityKey}` : ''} từ IP ${c.actor}`,
 };
 
 export function renderAuditMessage(payload: AuditPayload): string {

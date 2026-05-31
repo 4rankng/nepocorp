@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
@@ -75,10 +76,41 @@ const RUNTIME_PATCHES: string[] = [
   `UPDATE "users" SET "full_name" = COALESCE("username", 'Người dùng') WHERE "full_name" IS NULL`,
 ];
 
+/** SHA-256 of the SQL text — used as the dedup key in _runtime_patches. */
+function patchHash(sql: string): string {
+  return createHash('sha256').update(sql).digest('hex').slice(0, 16);
+}
+
+/**
+ * Apply runtime patches that haven't been applied yet.
+ *
+ * A lightweight tracking table `_runtime_patches` records the content hash
+ * of each patch that completed successfully. On subsequent boots only new
+ * (previously unseen) patches are executed — this avoids full-table scans
+ * from idempotent-but-expensive UPDATEs running on every deploy.
+ */
 export async function applyRuntimePatches(): Promise<void> {
+  // Create the tracking table if it doesn't exist yet
+  await client.unsafe(`
+    CREATE TABLE IF NOT EXISTS "_runtime_patches" (
+      hash  varchar(16) PRIMARY KEY,
+      applied_at timestamp NOT NULL DEFAULT now()
+    )
+  `);
+
+  // Fetch already-applied hashes
+  const applied: Set<string> = new Set(
+    (await client.unsafe(`SELECT hash FROM "_runtime_patches"`).catch(() => ({ rows: [] })))
+      .map?.((r: any) => r.hash as string) ?? [],
+  );
+
   for (const sql of RUNTIME_PATCHES) {
+    const hash = patchHash(sql);
+    if (applied.has(hash)) continue; // already done — skip
+
     try {
       await client.unsafe(sql);
+      await client.unsafe(`INSERT INTO "_runtime_patches" (hash) VALUES ('${hash}') ON CONFLICT DO NOTHING`);
     } catch (err: any) {
       console.warn('[db] runtime patch failed (continuing):', err.message, '\n  sql:', sql.slice(0, 100));
     }
