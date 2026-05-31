@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { PageHeader, Panel, KPI } from '../components/UI';
+import { useSalaryPeriod } from '../hooks/useQueries';
 
 interface EarningsSummary {
   baseSalary: string;
   tripIncome: string;
   penalties: string;
   netIncome: string;
+  periodStart?: string;
+  periodEnd?: string;
 }
 
 interface PenaltyEntry {
@@ -19,22 +22,50 @@ interface PenaltyEntry {
   reasonText: string | null;
 }
 
+const MONTHS_VN = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+
 export default function DriverEarningsPage() {
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
   const [penalties, setPenalties] = useState<PenaltyEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { data: period } = useSalaryPeriod(month, year);
+
+  // Generate period options: last 12 months
+  const periodOptions = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      return {
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        label: `${MONTHS_VN[d.getMonth()]}/${d.getFullYear()}`,
+      };
+    });
+  }, []);
+
+  // Fetch earnings when period changes
   useEffect(() => {
     setLoading(true);
+    const penaltyParams = period
+      ? `?date_from=${period.start}&date_to=${period.end}`
+      : '';
     Promise.all([
-      api.get<EarningsSummary>('/driver/me/earnings'),
-      api.get<{ items: PenaltyEntry[] }>('/driver/me/penalties'),
+      api.get<EarningsSummary>(`/driver/me/earnings?month=${month}&year=${year}`),
+      api.get<{ items: PenaltyEntry[] }>(`/driver/me/penalties${penaltyParams}`),
     ])
-      .then(([e, p]) => { setEarnings(e); setPenalties(p.items); })
+      .then(([e, p]) => {
+        setEarnings(e);
+        setPenalties(p.items);
+      })
       .catch(() => setError('Không thể tải dữ liệu thu nhập'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [month, year, period?.start, period?.end]);
+
+  const periodKey = `${year}-${String(month).padStart(2, '0')}`;
 
   if (loading) return (
     <Panel>
@@ -59,7 +90,35 @@ export default function DriverEarningsPage() {
 
   return (
     <div>
-      <PageHeader title="Thu nhập" description="Tổng hợp thu nhập và khấu trừ" />
+      <PageHeader
+        title="Thu nhập"
+        description="Tổng hợp thu nhập và khấu trừ"
+      />
+
+      {/* Period selector */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <select
+          className="input"
+          value={periodKey}
+          onChange={(e) => {
+            const [y, m] = e.target.value.split('-').map(Number);
+            setYear(y);
+            setMonth(m);
+          }}
+          style={{ width: 160 }}
+        >
+          {periodOptions.map(o => (
+            <option key={`${o.year}-${String(o.month).padStart(2, '0')}`} value={`${o.year}-${String(o.month).padStart(2, '0')}`}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        {period && (
+          <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>
+            ({formatDate(period.start)} — {formatDate(period.end)})
+          </span>
+        )}
+      </div>
 
       {/* Net income hero card */}
       <div className="panel fade-up" style={{

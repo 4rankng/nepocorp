@@ -238,6 +238,23 @@ export const capTableSchema = z.object({
   effective_date: z.string().min(1),
 });
 
+// ─── Salary Period ──────────────────────────────────────────────────────────────
+
+/** Per-month salary period override */
+export const salaryPeriodSchema = z.object({
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2000),
+  start_date: z.string().min(1),
+  end_date: z.string().min(1),
+  label: z.string().optional(),
+});
+
+/** Global default salary period configuration */
+export const salaryPeriodDefaultSchema = z.object({
+  default_start_day: z.number().int().min(1).max(28),
+  default_end_day: z.number().int().min(1).max(31),
+});
+
 // ─── Inferred types ──────────────────────────────────────────────────────────
 
 export type CreateTripInput = z.infer<typeof createTripSchema>;
@@ -260,3 +277,5 @@ export type PenaltyReasonInput = z.infer<typeof penaltyReasonSchema>;
 export type DriverInput = z.infer<typeof driverSchema>;
 export type ManagementFeeInput = z.infer<typeof managementFeeSchema>;
 export type CapTableInput = z.infer<typeof capTableSchema>;
+export type SalaryPeriodInput = z.infer<typeof salaryPeriodSchema>;
+export type SalaryPeriodDefaultInput = z.infer<typeof salaryPeriodDefaultSchema>;

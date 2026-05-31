@@ -17,6 +17,7 @@ import {
   Panel, Btn, Drawer, FormGroup, KPI,
 } from '../components/UI';
 import { usePenalties, usePenaltyCatalogs, type PenaltyRow } from '../hooks/usePenalties';
+import { useSalaryPeriod } from '../hooks/useQueries';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -266,6 +267,14 @@ export default function PenaltyPage() {
     await queryClient.invalidateQueries({ queryKey: ['penalties'] });
   }, [queryClient]);
 
+  // Resolve salary period for the selected month
+  const { data: salaryPeriod, isLoading: periodLoading } = useSalaryPeriod(selMonth, selYear);
+
+  // Resolve previous month's salary period for comparison
+  const prevMonthNum = selMonth === 1 ? 12 : selMonth - 1;
+  const prevYearNum = selMonth === 1 ? selYear - 1 : selYear;
+  const { data: prevSalaryPeriod } = useSalaryPeriod(prevMonthNum, prevYearNum);
+
   // ── Cross-reference maps ─────────────────────────────────────────────────────
 
   const truckMap = new Map<number, Truck>();
@@ -274,18 +283,25 @@ export default function PenaltyPage() {
   // ── Derived stats ────────────────────────────────────────────────────────────
 
   const now = new Date();
-  const thisMonth = `${selYear}-${String(selMonth).padStart(2, '0')}`;
   const monthLabel = `T${selMonth}/${selYear}`;
 
-  const monthPenalties = penalties.filter(p => (p.date || '').startsWith(thisMonth));
+  // Filter penalties by salary period date range
+  const monthPenalties = penalties.filter(p => {
+    if (!salaryPeriod) return false;
+    const d = p.date || '';
+    return d >= salaryPeriod.start && d <= salaryPeriod.end;
+  });
   const totalMonthAmount = monthPenalties.reduce((s, p) => s + parseFloat(p.amount), 0);
   const incidentCount = monthPenalties.length;
 
-  const prevMonthDate = new Date(selYear, selMonth - 2, 1);
-  const prevMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
-  const prevMonthCount = penalties.filter(p => (p.date || '').startsWith(prevMonthKey)).length;
+  const prevMonthCount = prevSalaryPeriod
+    ? penalties.filter(p => {
+        const d = p.date || '';
+        return d >= prevSalaryPeriod.start && d <= prevSalaryPeriod.end;
+      }).length
+    : 0;
   const monthComparison = prevMonthCount > 0
-    ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với T${prevMonthDate.getMonth() + 1}`
+    ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với T${prevMonthNum}`
     : incidentCount === 0 ? 'Tháng sạch' : '';
 
   const penalizedDriverIds = new Set(monthPenalties.map(p => p.driver_id));
@@ -403,6 +419,12 @@ export default function PenaltyPage() {
       </div>
 
       {/* ── KPI strip (4 cards) ──────────────────────────────────────────── */}
+      {periodLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '24px 0', color: 'var(--fg-3)', fontSize: 13 }}>
+          <Loader2 size={16} className="spin" />
+          Đang tải dữ liệu kỳ lương...
+        </div>
+      ) : (
       <div className="kpi-grid">
         <KPI
           label={`Vi phạm ${monthLabel}`}
@@ -457,6 +479,7 @@ export default function PenaltyPage() {
           }
         />
       </div>
+      )}
 
       {/* ── Driver scoreboard ────────────────────────────────────────────── */}
       <Panel flush>

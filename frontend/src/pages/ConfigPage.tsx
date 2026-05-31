@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Truck, Container, MapPin, Package, DollarSign, Route,
-  AlertTriangle, UserCheck, Fuel, Building,
+  AlertTriangle, UserCheck, Fuel, Building, Calendar,
 } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 
@@ -134,6 +134,16 @@ export default function ConfigPage() {
           <p className="setting-card__desc">Cấu hình phí quản lý vận hành theo tháng/năm dùng cho báo cáo lãi lỗ.</p>
           <div className="setting-card__foot">
             <span className="setting-card__status"><span className="dot"></span>Chi phí cố định</span>
+            <span className="setting-card__action">Sửa {CHEVRON}</span>
+          </div>
+        </button>
+
+        <button className="setting-card" onClick={() => navigate('/config/salary-periods')}>
+          <div className="setting-card__icon"><Calendar size={20} /></div>
+          <h3 className="setting-card__title">Kỳ lương</h3>
+          <p className="setting-card__desc">Cấu hình kỳ lương hàng tháng. Mặc định: ngày 26 tháng trước đến ngày 25 tháng này. Có thể ghi đè từng tháng.</p>
+          <div className="setting-card__foot">
+            <span className="setting-card__status"><span className="dot"></span>Thời kỳ tính lương</span>
             <span className="setting-card__action">Sửa {CHEVRON}</span>
           </div>
         </button>

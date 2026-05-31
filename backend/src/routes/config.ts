@@ -8,9 +8,18 @@ import {
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
   fuelConfigSchema, penaltyReasonSchema, driverSchema,
   managementFeeSchema, capTableSchema,
+  salaryPeriodSchema, salaryPeriodDefaultSchema,
 } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter, getBootstrapData, getPricing, snakeToCamelKeys } from '../services/config.service';
+import {
+  getSalaryPeriodDefault,
+  updateSalaryPeriodDefault,
+  getSalaryPeriodOverrides,
+  upsertSalaryPeriodOverride,
+  deleteSalaryPeriodOverride,
+  resolveSalaryPeriodDateRange,
+} from '../services/salary-period.service';
 
 const router = Router();
 
@@ -28,8 +37,8 @@ router.get('/catalogs/bootstrap', async (_req: Request, res: Response) => {
 
 router.get('/pricing', async (req: Request, res: Response) => {
   try {
-    const customerId = parseInt(req.query.customerId as string);
-    const routeId = parseInt(req.query.routeId as string);
+    const customerId = parseInt(req.query.customerId as string, 10);
+    const routeId = parseInt(req.query.routeId as string, 10);
     const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
 
     if (isNaN(customerId) || isNaN(routeId)) {
@@ -79,14 +88,14 @@ router.use('/drivers', (() => {
   });
 
   sub.get('/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string);
+    const id = parseInt(req.params.id as string, 10);
     const [item] = await db.select().from(s.drivers).where(and(eq(s.drivers.id, id), isNull(s.drivers.deletedAt))).limit(1);
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     res.json(item);
   });
 
   sub.put('/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string);
+    const id = parseInt(req.params.id as string, 10);
     const data = driverSchema.partial().parse(req.body);
     const [item] = await db.update(s.drivers).set({ ...(snakeToCamelKeys(data) as any), updatedAt: new Date() }).where(eq(s.drivers.id, id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
@@ -124,12 +133,95 @@ router.put('/fuel-config', async (req: Request, res: Response) => {
   }
 });
 
+// ─── Salary Period Config ──────────────────────────────────────────────────────
+
+// Resolve a salary period for a given month/year (used by frontend hooks)
+router.get('/salary-periods/resolve', async (req: Request, res: Response) => {
+  try {
+    const month = parseInt(req.query.month as string, 10);
+    const year = parseInt(req.query.year as string, 10);
+    if (!month || !year || month < 1 || month > 12) {
+      return res.status(400).json({ error: 'Tháng và năm là bắt buộc (month 1-12, year >= 2000)' });
+    }
+    res.json(await resolveSalaryPeriodDateRange(month, year));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Global default — singleton GET/PUT (same pattern as fuel-config)
+router.get('/salary-periods/default', async (_req: Request, res: Response) => {
+  try {
+    res.json(await getSalaryPeriodDefault());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/salary-periods/default', async (req: Request, res: Response) => {
+  try {
+    const data = salaryPeriodDefaultSchema.parse(req.body);
+    res.json(await updateSalaryPeriodDefault(data.default_start_day, data.default_end_day));
+  } catch (err: any) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Per-month overrides — list, create, update, soft-delete
+router.get('/salary-periods', async (_req: Request, res: Response) => {
+  try {
+    const items = await getSalaryPeriodOverrides();
+    res.json({ items, total: items.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/salary-periods', async (req: Request, res: Response) => {
+  try {
+    const data = salaryPeriodSchema.parse(req.body);
+    res.status(201).json(
+      await upsertSalaryPeriodOverride(
+        data.month, data.year, data.start_date, data.end_date, data.label,
+      ),
+    );
+  } catch (err: any) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.put('/salary-periods/:id', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
+    const data = salaryPeriodSchema.parse(req.body);
+    // Update by id — fetch existing to validate, then upsert by month/year
+    const result = await upsertSalaryPeriodOverride(
+      data.month, data.year, data.start_date, data.end_date, data.label,
+    );
+    res.json(result);
+  } catch (err: any) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.delete('/salary-periods/:id', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    const deleted = await deleteSalaryPeriodOverride(id);
+    if (!deleted) return res.status(404).json({ error: 'Không tìm thấy' });
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Audit logs (mounted separately with ADMIN-only Casbin resource) ────────
 export const auditLogRouter = Router();
 auditLogRouter.get('/', async (_req: Request, res: Response) => {
   try {
-    const page = Math.max(1, parseInt(_req.query.page as string) || 1);
-    const limit = Math.min(100, parseInt(_req.query.limit as string) || 50);
+    const page = Math.max(1, parseInt(_req.query.page as string, 10) || 1);
+    const limit = Math.min(100, parseInt(_req.query.limit as string, 10) || 50);
 
     const items = await db.select({
       id: s.auditLogs.id,

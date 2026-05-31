@@ -1,11 +1,12 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql, gte } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, gte, lte } from 'drizzle-orm';
 import { TripStatus } from '@nepocorp/shared';
 import { getReceivablesSummary as _getReceivablesSummary, resolveTopOverdue } from './receivables.service';
+import { resolveSalaryPeriodDateRange, resolveQuarterDateRange } from './salary-period.service';
 
-/** Build a [start, exclusive_end) date range for a given month/year. */
-export function monthDateRange(year: number, month?: number) {
+/** Build a [start, exclusive_end) date range for a calendar month/year. Used for trip code counters. */
+export function calendarMonthDateRange(year: number, month?: number) {
   if (month) {
     const start = `${year}-${String(month).padStart(2, '0')}-01`;
     const endMonth = month === 12 ? 1 : month + 1;
@@ -16,6 +17,21 @@ export function monthDateRange(year: number, month?: number) {
   return { start: `${year}-01-01`, end: `${year + 1}-01-01` };
 }
 
+/** @deprecated Use calendarMonthDateRange or salaryPeriodDateRange instead */
+export const monthDateRange = calendarMonthDateRange;
+
+/**
+ * Resolve salary-period-aware date range for a given month/year.
+ * Returns { start, end } where start is inclusive and end is exclusive (next day).
+ */
+async function salaryPeriodDateRange(year: number, month: number) {
+  const resolved = await resolveSalaryPeriodDateRange(month, year);
+  // Convert inclusive end to exclusive end for SQL comparisons
+  // Uses local date arithmetic to avoid toISOString() timezone shift
+  const exclusiveEnd = addDay(resolved.end);
+  return { start: resolved.start, end: exclusiveEnd };
+}
+
 /**
  * Dashboard summary: current-month KPIs, top overdue customer, top shareholder.
  */
@@ -23,7 +39,7 @@ export async function getDashboardStats() {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const { start: monthStart, end: monthEnd } = monthDateRange(year, month);
+  const { start: monthStart, end: monthEnd } = await salaryPeriodDateRange(year, month);
 
   const [
     [stats],
@@ -98,7 +114,7 @@ export async function getDashboardStats() {
  * P&L report for a given period, with per-truck breakdown.
  */
 export async function getPnlReport(month: number, year: number) {
-  const { start: tripStart, end: tripEnd } = monthDateRange(year, month);
+  const { start: tripStart, end: tripEnd } = await salaryPeriodDateRange(year, month);
   const dateFilter = month
     ? and(gte(s.trips.departureDate, tripStart), sql`${s.trips.departureDate} < ${tripEnd}`)
     : gte(s.trips.departureDate, tripStart);
@@ -117,11 +133,10 @@ export async function getPnlReport(month: number, year: number) {
   const [fee] = fees.filter(f => f.month === m && f.year === year);
   const managementFee = fee ? parseFloat(fee.amount) : 0;
 
-  // Penalties as other income
-  const { start: penStart, end: penEnd } = monthDateRange(year, month);
+  // Penalties as other income — reuse the same salary period date range
   const penaltyDateFilter = month
-    ? and(gte(s.penalties.date, penStart), sql`${s.penalties.date} < ${penEnd}`)
-    : gte(s.penalties.date, penStart);
+    ? and(gte(s.penalties.date, tripStart), sql`${s.penalties.date} < ${tripEnd}`)
+    : gte(s.penalties.date, tripStart);
   const penaltyRows = await db.select({ total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)` })
     .from(s.penalties)
     .where(and(isNull(s.penalties.deletedAt), penaltyDateFilter));
@@ -248,10 +263,9 @@ async function computeDistribution(quarter: number, year: number) {
   const capEntries = await db.select().from(s.capTableHistory)
     .orderBy(desc(s.capTableHistory.effectiveDate));
 
-  const qStartMonth = (quarter - 1) * 3 + 1;
-  const qEndMonth = quarter * 3;
-  const { start: qStart } = monthDateRange(year, qStartMonth);
-  const { end: qEnd } = monthDateRange(year, qEndMonth);
+  const { start: qStart, end: qEndRaw } = await resolveQuarterDateRange(quarter, year);
+  // Convert inclusive end to exclusive end for SQL comparisons
+  const qEnd = addDay(qEndRaw);
 
   const trips = await db.select().from(s.trips).where(
     and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), gte(s.trips.departureDate, qStart), sql`${s.trips.departureDate} < ${qEnd}`)
@@ -302,4 +316,17 @@ function resolveTopShareholder(capRows: CapRow[]) {
     topShareholder = top ? { name: top.partnerName, percentage: top.percentage } : null;
   }
   return topShareholder;
+}
+
+/**
+ * Add one day to a YYYY-MM-DD date string using pure arithmetic.
+ * Avoids Date/toISOString which shifts dates in non-UTC timezones (e.g. UTC+7 Vietnam).
+ */
+function addDay(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d + 1); // day+1 handles month/year rollover
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
 }

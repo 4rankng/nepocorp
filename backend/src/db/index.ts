@@ -101,6 +101,41 @@ const RUNTIME_PATCHES: RuntimePatch[] = [
     name: 'backfill_remaining_full_names',
     sql: `UPDATE "users" SET "full_name" = COALESCE("username", 'Người dùng') WHERE "full_name" IS NULL`,
   },
+  {
+    name: 'create_salary_periods_table',
+    sql: `CREATE TABLE IF NOT EXISTS "salary_periods" (
+      "id" serial PRIMARY KEY,
+      "month" integer,
+      "year" integer,
+      "start_date" date,
+      "end_date" date,
+      "label" varchar(100),
+      "default_start_day" integer,
+      "default_end_day" integer,
+      "is_default" boolean NOT NULL DEFAULT false,
+      "created_at" timestamp NOT NULL DEFAULT now(),
+      "updated_at" timestamp NOT NULL DEFAULT now(),
+      "deleted_at" timestamp
+    )`,
+  },
+  {
+    name: 'seed_salary_period_default',
+    sql: `INSERT INTO "salary_periods" ("is_default", "default_start_day", "default_end_day", "label")
+          SELECT true, 1, 0, 'Kỳ lương mặc định'
+          WHERE NOT EXISTS (SELECT 1 FROM "salary_periods" WHERE "is_default" = true)`,
+  },
+  {
+    name: 'add_fuel_supplement_norm_applied_col',
+    sql: `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "fuel_supplement_norm_applied" numeric(6,2)`,
+  },
+  {
+    name: 'backfill_fuel_supplement_norm_applied',
+    sql: `UPDATE "trips" SET "fuel_supplement_norm_applied" = COALESCE((SELECT "supplement" FROM "fuel_config" WHERE "deleted_at" IS NULL LIMIT 1), '3') WHERE "fuel_supplement_norm_applied" IS NULL`,
+  },
+  {
+    name: 'ensure_road_config_exists',
+    sql: `INSERT INTO "road_config" ("toll_per_station", "return_cargo_bonus") SELECT '55000', '300000' WHERE NOT EXISTS (SELECT 1 FROM "road_config")`,
+  },
 ];
 
 export async function applyRuntimePatches(): Promise<void> {

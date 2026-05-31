@@ -39,6 +39,7 @@ const FuelConfigPage = lazy(() => import('./pages/config/FuelConfigPage'));
 const CapTableConfigPage = lazy(() => import('./pages/config/CapTableConfigPage'));
 const CustomersConfigPage = lazy(() => import('./pages/config/CustomersConfigPage'));
 const ManagementFeesConfigPage = lazy(() => import('./pages/config/ManagementFeesConfigPage'));
+const SalaryPeriodConfigPage = lazy(() => import('./pages/config/SalaryPeriodConfigPage'));
 
 function PageLoader() {
   return (
@@ -116,6 +117,7 @@ function AppRoutes() {
           <Route path="/config/cap-table" element={adminOnly(page(<CapTableConfigPage />))} />
           <Route path="/config/customers" element={adminOnly(page(<CustomersConfigPage />))} />
           <Route path="/config/management-fees" element={adminOnly(page(<ManagementFeesConfigPage />))} />
+          <Route path="/config/salary-periods" element={adminOnly(page(<SalaryPeriodConfigPage />))} />
           <Route path="/users" element={adminOnly(page(<UsersPage />))} />
           <Route path="/audit-logs" element={adminOnly(page(<AuditLogPage />))} />
           <Route path="/my-trips" element={driverOnly(page(<DriverTripsPage />))} />

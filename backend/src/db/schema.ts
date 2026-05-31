@@ -180,6 +180,7 @@ export const trips = pgTable('trips', {
   fuelLoadedNormApplied: numeric('fuel_loaded_norm_applied', { precision: 6, scale: 2 }),
   fuelEmptyNormApplied: numeric('fuel_empty_norm_applied', { precision: 6, scale: 2 }),
   fuelFixedAllowanceApplied: numeric('fuel_fixed_allowance_applied', { precision: 10, scale: 2 }),
+  fuelSupplementNormApplied: numeric('fuel_supplement_norm_applied', { precision: 6, scale: 2 }),
   tollPerStationApplied: numeric('toll_per_station_applied', { precision: 15, scale: 0 }),
   returnCargoBonusApplied: numeric('return_cargo_bonus_applied', { precision: 15, scale: 0 }),
   // Derived Fields
@@ -276,6 +277,24 @@ export const managementFees = pgTable('management_fees', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const salaryPeriods = pgTable('salary_periods', {
+  id: serial('id').primaryKey(),
+  // null for the global default row; 1-12 for per-month overrides
+  month: integer('month'),
+  year: integer('year'),
+  // Explicit dates for per-month overrides; null for global default (derived)
+  startDate: date('start_date'),
+  endDate: date('end_date'),
+  label: varchar('label', { length: 100 }),
+  // Only set on the global default row (isDefault = true)
+  defaultStartDay: integer('default_start_day'),
+  defaultEndDay: integer('default_end_day'),
+  isDefault: boolean('is_default').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
 // ─── Audit ───────────────────────────────────────────────────────────────────
 
 export const auditLogs = pgTable('audit_logs', {
@@ -294,8 +313,8 @@ export const auditLogs = pgTable('audit_logs', {
 
 export const roadConfig = pgTable('road_config', {
   id: serial('id').primaryKey(),
-  tollPerStation: numeric('toll_per_station', { precision: 15, scale: 0 }).notNull().default('55000'),
-  returnCargoBonus: numeric('return_cargo_bonus', { precision: 15, scale: 0 }).notNull().default('300000'),
+  tollPerStation: numeric('toll_per_station', { precision: 15, scale: 0 }).notNull(),
+  returnCargoBonus: numeric('return_cargo_bonus', { precision: 15, scale: 0 }).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

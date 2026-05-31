@@ -378,3 +378,29 @@ export interface CustomerStatement {
   totalOutstanding: number;
   unpaidTrips: UnpaidTrip[];
 }
+
+// ─── Salary Period ─────────────────────────────────────────────────────────────
+
+export interface SalaryPeriod {
+  id: number;
+  month: number | null;           // null for global default row
+  year: number | null;            // null for global default row
+  start_date: string | null;      // null for global default (derived)
+  end_date: string | null;        // null for global default (derived)
+  label: string | null;
+  default_start_day: number | null; // only set on global default
+  default_end_day: number | null;   // only set on global default
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+/** Resolved salary period date range returned by the resolve endpoint */
+export interface SalaryPeriodRange {
+  month: number;
+  year: number;
+  start: string;  // YYYY-MM-DD inclusive
+  end: string;    // YYYY-MM-DD inclusive
+  label: string;
+}

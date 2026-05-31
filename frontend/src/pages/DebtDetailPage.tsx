@@ -1,89 +1,88 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@nepocorp/shared';
-import type { CustomerStatement, LedgerEntry, UnpaidTrip } from '@nepocorp/shared';
-import { AlertTriangle, Wallet, X, Download, ListOrdered, FileSpreadsheet, FileText } from 'lucide-react';
-import { PageHeader, Panel, KPI } from '../components/UI';
+import type { CustomerStatement, LedgerEntry, AgingBucket } from '@nepocorp/shared';
+import { AlertTriangle, Download, FileSpreadsheet, FileText, Phone, Building2, ArrowLeft } from 'lucide-react';
 import { useCustomerStatement } from '../hooks/useQueries';
+import { getInitials } from '../lib/avatar';
 
-// ── Txn type labels ─────────────────────────────────────────────────────────
+// ── Txn type label + pill variant ──────────────────────────────────────────
 
-const TXN_LABELS: Record<string, string> = {
-  [TxnType.TRIP_REVENUE]: 'Doanh thu chuyến',
-  [TxnType.PAYMENT_RECEIVED]: 'Thu tiền',
-  [TxnType.PENALTY]: 'Phạt',
-  [TxnType.MANAGEMENT_FEE]: 'Phí quản lý',
-  [TxnType.ADJUSTMENT]: 'Điều chỉnh',
-  [TxnType.DRIVER_SALARY]: 'Lương tài xế',
+const TXN_META: Record<string, { label: string; pill: string }> = {
+  [TxnType.TRIP_REVENUE]:      { label: 'DOANH THU CHUYẾN', pill: 'dd-txn-pill dd-txn-pill--rev' },
+  [TxnType.PAYMENT_RECEIVED]:  { label: 'THU TIỀN',         pill: 'dd-txn-pill dd-txn-pill--pay' },
+  [TxnType.PENALTY]:           { label: 'PHẠT',             pill: 'dd-txn-pill dd-txn-pill--pen' },
+  [TxnType.MANAGEMENT_FEE]:    { label: 'PHÍ QUẢN LÝ',     pill: 'dd-txn-pill dd-txn-pill--other' },
+  [TxnType.ADJUSTMENT]:        { label: 'ĐIỀU CHỈNH',      pill: 'dd-txn-pill dd-txn-pill--adj' },
+  [TxnType.DRIVER_SALARY]:     { label: 'LƯƠNG TÀI XẾ',    pill: 'dd-txn-pill dd-txn-pill--other' },
 };
+const DEFAULT_META = { label: 'KHÁC', pill: 'dd-txn-pill dd-txn-pill--other' };
 
-// ── Component ────────────────────────────────────────────────────────────────
+// ── Aging constants ────────────────────────────────────────────────────────
+
+const AGING_RANGES = [
+  { label: '0–30 NGÀY',  dotColor: 'var(--accent)',  index: 0 },
+  { label: '31–60 NGÀY', dotColor: 'var(--warning)', index: 1 },
+  { label: '61–90 NGÀY', dotColor: '#D97706',        index: 2 },
+  { label: 'TRÊN 90 NGÀY', dotColor: 'var(--danger)', index: 3 },
+] as const;
+
+// ── Ledger filter type ─────────────────────────────────────────────────────
+
+type LedgerFilter = 'all' | typeof TxnType.PAYMENT_RECEIVED | typeof TxnType.ADJUSTMENT | typeof TxnType.TRIP_REVENUE;
+
+const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
+  { key: 'all',              label: 'Tất cả' },
+  { key: TxnType.PAYMENT_RECEIVED, label: 'Thu tiền' },
+  { key: TxnType.ADJUSTMENT,       label: 'Điều chỉnh' },
+  { key: TxnType.TRIP_REVENUE,     label: 'Doanh thu' },
+];
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+// Map backend agingBuckets (ordered 0→90+) to fixed 4-slot array
+function normalizeAging(buckets: AgingBucket[]): number[] {
+  const amounts = [0, 0, 0, 0];
+  buckets.forEach((b, i) => {
+    if (i < 4) amounts[i] = b.amount;
+  });
+  return amounts;
+}
+
+// ── Component ──────────────────────────────────────────────────────────────
 
 export default function DebtDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id);
-  const error = queryError ? (queryError as any).message : null;
+  const error = queryError ? (queryError as Error).message : null;
 
-  // Payment modal state
-  const [showPayment, setShowPayment] = useState(false);
-  const [receiptId, setReceiptId] = useState('');
-  const [selectedTripIds, setSelectedTripIds] = useState<Set<number>>(new Set());
-  const [paymentAmounts, setPaymentAmounts] = useState<Record<number, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  // ── Payment submit ───────────────────────────────────────────────────────
+  // ── Derived data ────────────────────────────────────────────────────────
 
-  const handleSubmitPayment = async () => {
-    if (!id || !receiptId.trim()) return;
-    const payments = Array.from(selectedTripIds)
-      .map(tripId => ({
-        trip_id: tripId,
-        amount: parseFloat(paymentAmounts[tripId] || '0'),
-      }))
-      .filter(p => p.amount > 0);
-    if (payments.length === 0) return;
+  const agingAmounts = useMemo(() =>
+    normalizeAging(statement?.agingBuckets ?? []),
+    [statement?.agingBuckets]
+  );
 
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      await api.post('/payments/receive', {
-        customer_id: Number(id),
-        receipt_id: receiptId,
-        payments,
-      });
-      setShowPayment(false);
-      setReceiptId('');
-      setSelectedTripIds(new Set());
-      setPaymentAmounts({});
-      refetch();
-    } catch (e: any) {
-      setSubmitError(e.message || 'Lỗi khi ghi nhận thanh toán');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const filteredRows = useMemo(() => {
+    if (!statement) return [];
+    if (ledgerFilter === 'all') return statement.ledgerRows;
+    return statement.ledgerRows.filter(r => r.txn_type === ledgerFilter);
+  }, [statement, ledgerFilter]);
 
-  const closePaymentModal = () => {
-    setShowPayment(false);
-    setSelectedTripIds(new Set());
-    setPaymentAmounts({});
-  };
+  const activeAgingIdx = useMemo(() => {
+    let max = -1, idx = 0;
+    agingAmounts.forEach((a, i) => { if (a > max) { max = a; idx = i; } });
+    return max > 0 ? idx : -1;
+  }, [agingAmounts]);
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  const totalOutstanding = statement?.totalOutstanding ?? 0;
 
-  // Unpaid trips from backend (FIFO-sorted, credits already applied)
-  const unpaidTrips = useMemo(() => statement?.unpaidTrips ?? [], [statement]);
-
-  // Running total for payment modal
-  const allocatedTotal = useMemo(() => {
-    return Array.from(selectedTripIds)
-      .reduce((sum, tripId) => sum + parseFloat(paymentAmounts[tripId] || '0'), 0);
-  }, [selectedTripIds, paymentAmounts]);
+  // ── Loading / Error ─────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -96,155 +95,193 @@ export default function DebtDetailPage() {
   if (error || !statement) {
     return (
       <div>
-        <PageHeader title="Sổ kế toán" onBack={() => navigate('/debt')} />
-        <Panel>
+        <div className="dd-header">
+          <button className="dd-back" onClick={() => navigate('/debt')}>
+            <ArrowLeft size={20} />
+          </button>
+          <div className="dd-meta">
+            <h1>Sổ kế toán</h1>
+          </div>
+        </div>
+        <div className="dd-summary">
           <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error || 'Không tìm thấy dữ liệu'}</p>
-        </Panel>
+        </div>
       </div>
     );
   }
 
-  const { customer, ledgerRows, agingBuckets, totalOutstanding } = statement;
+  const { customer, ledgerRows } = statement;
+  const initials = getInitials(customer.name);
+  const hasDebt = totalOutstanding > 0;
+  const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1; // avoid /0
 
   return (
     <div>
-      <PageHeader
-        title={customer.name}
-        description={customer.contact_info || 'Không có thông tin liên hệ'}
-        action={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ position: 'relative' }}>
-              <button
-                className="btn btn--secondary"
-                onClick={() => setShowExportMenu(v => !v)}
-              >
-                <Download size={14} />
-                Xuất sao kê
-              </button>
-              {showExportMenu && (
-                <div style={{
-                  position: 'absolute', right: 0, top: '100%', marginTop: 4,
-                  background: 'var(--bg-1)', border: '1px solid var(--border)',
-                  borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                  zIndex: 50, minWidth: 180, overflow: 'hidden',
-                }}>
-                  <button
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
-                    onClick={() => { setShowExportMenu(false); window.open(`/api/ledger/customers/${id}/statement/export?format=xlsx`, '_blank'); }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <FileSpreadsheet size={14} style={{ color: '#16a34a' }} />
-                    Excel (.xlsx)
-                  </button>
-                  <button
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
-                    onClick={() => { setShowExportMenu(false); window.open(`/api/ledger/customers/${id}/statement/export?format=pdf`, '_blank'); }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <FileText size={14} style={{ color: '#dc2626' }} />
-                    PDF (In)
-                  </button>
-                </div>
-              )}
-            </div>
-            <button className="btn btn--primary" onClick={() => setShowPayment(true)}>
-              <Wallet size={15} />
-              Ghi nhận thanh toán
+      {/* ── Customer Header ─────────────────────────────────────────────── */}
+      <div className="dd-header">
+        <button className="dd-back" onClick={() => navigate('/debt')}>
+          <ArrowLeft size={20} />
+        </button>
+        <div className="dd-avatar">{initials}</div>
+        <div className="dd-meta">
+          <h1>{customer.name}</h1>
+          <div className="dd-sub">
+            {customer.contact_info && (
+              <span>
+                <Phone size={15} />
+                <span className="dd-mono">{customer.contact_info}</span>
+              </span>
+            )}
+            <span>
+              <Building2 size={15} />
+              Khách hàng doanh nghiệp
+            </span>
+            {hasDebt ? (
+              <span className="dd-tag dd-tag--warn dd-tag--dot">Còn nợ trong hạn</span>
+            ) : (
+              <span className="dd-tag dd-tag--ok dd-tag--dot">Đã thanh toán đủ</span>
+            )}
+          </div>
+        </div>
+        <div className="dd-actions">
+          {/* Export dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => setShowExportMenu(v => !v)}
+            >
+              <Download size={14} />
+              Xuất sao kê
             </button>
+            {showExportMenu && (
+              <div style={{
+                position: 'absolute', right: 0, top: '100%', marginTop: 4,
+                background: 'var(--surface)', border: '1px solid var(--line)',
+                borderRadius: 8, boxShadow: 'var(--sh-lg)',
+                zIndex: 50, minWidth: 180, overflow: 'hidden',
+              }}>
+                <button
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
+                  onClick={() => { setShowExportMenu(false); window.open(`/api/ledger/customers/${id}/statement/export?format=xlsx`, '_blank'); }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <FileSpreadsheet size={14} style={{ color: '#16a34a' }} />
+                  Excel (.xlsx)
+                </button>
+                <button
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
+                  onClick={() => { setShowExportMenu(false); window.open(`/api/ledger/customers/${id}/statement/export?format=pdf`, '_blank'); }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <FileText size={14} style={{ color: '#dc2626' }} />
+                  PDF (In)
+                </button>
+              </div>
+            )}
           </div>
-        }
-        onBack={() => navigate('/debt')}
-      />
-
-      {/* Total outstanding */}
-      <div
-        className="panel fade-up"
-        style={{
-          padding: '20px 24px',
-          marginBottom: 16,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderLeft: `4px solid ${totalOutstanding > 0 ? 'var(--danger)' : 'var(--success)'}`,
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', marginBottom: 4, letterSpacing: 0.05 }}>
-            TỔNG CỘNG NỢ
-          </div>
-          <div
-            className="typo-mono"
-            style={{
-              fontSize: 28,
-              fontWeight: 800,
-              color: totalOutstanding > 0 ? 'var(--danger)' : 'var(--success)',
-            }}
-          >
-            {formatCurrency(totalOutstanding)}
-          </div>
-        </div>
-        <div style={{
-          width: 48, height: 48, borderRadius: 'var(--radius-lg)',
-          background: totalOutstanding > 0 ? 'var(--danger-soft)' : 'var(--success-soft)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <AlertTriangle
-            size={24}
-            style={{ color: totalOutstanding > 0 ? 'var(--danger)' : 'var(--success)' }}
-          />
         </div>
       </div>
 
-      {/* Aging buckets */}
-      <div className="kpi-grid fade-up" style={{ marginBottom: 20 }}>
-        {agingBuckets.length > 0
-          ? agingBuckets.map((bucket, i) => (
-              <KPI
-                key={i}
-                label={bucket.range}
-                value={formatCurrency(bucket.amount)}
-                variant={bucket.amount > 0 ? 'danger' : 'default'}
-              />
-            ))
-          : (
-            <>
-              <AgingPlaceholder range="0-30 ngày" />
-              <AgingPlaceholder range="31-60 ngày" />
-              <AgingPlaceholder range="61-90 ngày" />
-              <AgingPlaceholder range="90+ ngày" />
-            </>
-          )
-        }
-      </div>
+      {/* ── Summary Card ────────────────────────────────────────────────── */}
+      <section className="dd-summary">
+        <div className="dd-sum-top">
+          <div>
+            <div className="dd-sum-label">TỔNG CỘNG NỢ</div>
+            <div className={`dd-sum-total ${hasDebt ? '' : ' dd-sum-total--clear'}`}>
+              {hasDebt
+                ? <>{formatCurrency(totalOutstanding).replace(' ₫', '')}<span className="dd-cur">đ</span></>
+                : <>0<span className="dd-cur">đ</span></>
+              }
+            </div>
+            {hasDebt && (
+              <div className="dd-sum-note">
+                <AlertTriangle size={17} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+                {activeAgingIdx <= 0
+                  ? 'Toàn bộ công nợ đang trong hạn 30 ngày — cần theo dõi thu hồi.'
+                  : `Có công nợ quá hạn ${AGING_RANGES[activeAgingIdx].label.toLowerCase()} — cần ưu tiên thu hồi.`
+                }
+              </div>
+            )}
+          </div>
+          <div className="dd-sum-update">
+            Cập nhật lần cuối
+            <b>{new Date().toLocaleDateString('vi-VN')}</b>
+            {ledgerRows.length} giao dịch trong kỳ
+          </div>
+        </div>
 
-      {/* Ledger table */}
-      <Panel
-        title="Sổ kế toán"
-        subtitle={`${ledgerRows.length} giao dịch`}
-        style={{ marginTop: 20 }}
-        flush
-      >
+        {/* Aging bar */}
+        <div className="dd-aging-bar">
+          {agingAmounts.map((amt, i) => {
+            const pct = agingTotal > 0 ? (amt / agingTotal) * 100 : 0;
+            return pct > 0
+              ? <i key={i} className={`dd-seg-${i}`} style={{ width: `${pct}%` }} />
+              : null;
+          })}
+        </div>
+
+        {/* Aging grid */}
+        <div className="dd-aging-grid">
+          {AGING_RANGES.map((range, i) => {
+            const amt = agingAmounts[i];
+            const isActive = i === activeAgingIdx;
+            const pct = agingTotal > 0 ? Math.round((amt / agingTotal) * 100) : 0;
+            return (
+              <div key={i} className={`dd-aging-cell${isActive ? ' dd-aging-cell--active' : ''}`}>
+                <div className="dd-ac-head">
+                  <span className="dd-ac-dot" style={{ background: range.dotColor }} />
+                  {range.label}
+                </div>
+                <div className={`dd-ac-val${amt === 0 ? ' dd-ac-val--zero' : ''}`}>
+                  {formatCurrency(amt).replace(' ₫', '')}đ
+                </div>
+                <div className="dd-ac-share">
+                  {amt > 0 ? `${pct}% tổng công nợ` : 'Không phát sinh'}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── Ledger Card ─────────────────────────────────────────────────── */}
+      <section className="dd-ledger">
+        <div className="dd-ledger-head">
+          <h2>Sổ kế toán</h2>
+          <span className="dd-cnt">{filteredRows.length} giao dịch</span>
+          <div className="dd-filters">
+            {FILTER_OPTIONS.map(f => (
+              <button
+                key={f.key}
+                className={`dd-filter-chip${ledgerFilter === f.key ? ' dd-filter-chip--on' : ''}`}
+                onClick={() => setLedgerFilter(f.key)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="table-scroll">
-          <table className="tt-table">
+          <table className="dd-table">
             <thead>
               <tr>
-                <th>Ngày</th>
-                <th>Loại giao dịch</th>
-                <th style={{ textAlign: 'right' }}>Nợ</th>
-                <th style={{ textAlign: 'right' }}>Có</th>
-                <th style={{ textAlign: 'right' }}>Số dư</th>
-                <th>Ghi chú</th>
+                <th>NGÀY</th>
+                <th>LOẠI GIAO DỊCH</th>
+                <th className="dd-r">NỢ</th>
+                <th className="dd-r">CÓ</th>
+                <th className="dd-r">SỐ DƯ</th>
+                <th>GHI CHÚ</th>
               </tr>
             </thead>
             <tbody>
-              {ledgerRows.map(row => (
+              {filteredRows.map(row => (
                 <LedgerRow key={row.id} row={row} />
               ))}
-              {ledgerRows.length === 0 && (
+              {filteredRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                     Không có giao dịch
                   </td>
                 </tr>
@@ -252,173 +289,7 @@ export default function DebtDetailPage() {
             </tbody>
           </table>
         </div>
-      </Panel>
-
-      {/* ── Payment Modal ──────────────────────────────────────────────────── */}
-      {showPayment && (
-        <div
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(9,9,11,0.45)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 'var(--z-modal)' as any,
-            padding: 24,
-          }}
-          onClick={closePaymentModal}
-        >
-          <div style={{ width: '100%', maxWidth: 520 }} onClick={e => e.stopPropagation()}>
-          <Panel
-            title="Ghi nhận thanh toán"
-            action={
-              <button className="btn btn--ghost btn--icon btn--sm" onClick={closePaymentModal}>
-                <X size={16} />
-              </button>
-            }
-            style={{ maxHeight: '90vh', overflow: 'auto' }}
-          >
-            {submitError && (
-              <div style={{
-                padding: '10px 14px', marginBottom: 14,
-                background: 'var(--danger-soft)', color: 'var(--danger-text)',
-                borderRadius: 'var(--radius-md)', fontSize: 13,
-              }}>
-                {submitError}
-              </div>
-            )}
-
-            {/* Receipt ID */}
-            <div className="field">
-              <label>Mã phiếu thu</label>
-              <input
-                className="input"
-                placeholder="VD: PT-001"
-                value={receiptId}
-                onChange={e => setReceiptId(e.target.value)}
-              />
-            </div>
-
-            {/* Trip payments */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-1)' }}>
-                  Thanh toán theo lệnh
-                  <span style={{ fontWeight: 400, color: 'var(--fg-3)', marginLeft: 6, fontSize: 11 }}>sắp xếp cũ nhất trước (FIFO)</span>
-                </label>
-                {unpaidTrips.length > 0 && (
-                  <button
-                    className="btn btn--secondary btn--sm"
-                    style={{ fontSize: 11, padding: '3px 10px', gap: 4 }}
-                    onClick={() => {
-                      const newSelected = new Set(unpaidTrips.map(t => t.tripId));
-                      setSelectedTripIds(newSelected);
-                      const amounts: Record<number, string> = {};
-                      unpaidTrips.forEach(t => { amounts[t.tripId] = String(t.outstanding); });
-                      setPaymentAmounts(amounts);
-                    }}
-                  >
-                    <ListOrdered size={12} />
-                    Chọn tất cả (FIFO)
-                  </button>
-                )}
-              </div>
-              {unpaidTrips.length === 0 ? (
-                <p style={{ fontSize: 13, color: 'var(--fg-3)', textAlign: 'center', padding: 12 }}>
-                  Không tìm thấy chuyến chưa thanh toán.
-                </p>
-              ) : (
-                unpaidTrips.map((trip, idx) => {
-                  const isSelected = selectedTripIds.has(trip.tripId);
-                  return (
-                    <div key={trip.tripId} style={{
-                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
-                      padding: '6px 8px',
-                      background: isSelected ? 'var(--brand-soft)' : 'var(--bg-2)',
-                      borderRadius: 6,
-                    }}>
-                      <span style={{
-                        flexShrink: 0, fontSize: 10, fontWeight: 700,
-                        color: 'var(--brand)', background: 'var(--brand-soft)',
-                        border: '1px solid var(--brand)',
-                        borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap',
-                      }}>
-                        {idx === 0 ? '#1 cũ nhất' : `#${idx + 1}`}
-                      </span>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => {
-                          setSelectedTripIds(prev => {
-                            const next = new Set(prev);
-                            if (next.has(trip.tripId)) next.delete(trip.tripId);
-                            else next.add(trip.tripId);
-                            return next;
-                          });
-                          if (!isSelected) {
-                            setPaymentAmounts(prev => ({ ...prev, [trip.tripId]: String(trip.outstanding) }));
-                          } else {
-                            setPaymentAmounts(prev => {
-                              const next = { ...prev };
-                              delete next[trip.tripId];
-                              return next;
-                            });
-                          }
-                        }}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600 }}>{trip.note || `Chuyến #${trip.tripId}`}</div>
-                        <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>{new Date(trip.date).toLocaleDateString('vi-VN')}</div>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--danger)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                        {formatCurrency(trip.outstanding)}
-                      </div>
-                      {isSelected && (
-                        <input
-                          className="input"
-                          type="number"
-                          placeholder="Số tiền"
-                          value={paymentAmounts[trip.tripId] || ''}
-                          onChange={e => setPaymentAmounts(prev => ({ ...prev, [trip.tripId]: e.target.value }))}
-                          style={{ width: 120, fontSize: 12 }}
-                        />
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Running total */}
-            {selectedTripIds.size > 0 && (
-              <div style={{
-                padding: '10px 14px', marginTop: 8,
-                background: allocatedTotal > totalOutstanding ? 'var(--danger-soft)' : 'var(--brand-soft)',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                fontSize: 13, fontWeight: 600,
-              }}>
-                <span style={{ color: 'var(--fg-2)' }}>
-                  Đã phân bổ: <span className="typo-mono">{formatCurrency(allocatedTotal)}</span>
-                  <span style={{ fontWeight: 400, color: 'var(--fg-3)' }}> / {formatCurrency(totalOutstanding)}</span>
-                </span>
-                {allocatedTotal > totalOutstanding && (
-                  <span style={{ color: 'var(--danger)', fontSize: 11 }}>Vượt quá công nợ</span>
-                )}
-              </div>
-            )}
-
-            <button
-              className="btn btn--primary"
-              style={{ width: '100%', marginTop: 8 }}
-              disabled={submitting || !receiptId.trim()}
-              onClick={handleSubmitPayment}
-            >
-              {submitting ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
-            </button>
-          </Panel>
-          </div>
-        </div>
-      )}
+      </section>
     </div>
   );
 }
@@ -429,25 +300,22 @@ function LedgerRow({ row }: { row: LedgerEntry }) {
   const debit = parseFloat(row.debit) || 0;
   const credit = parseFloat(row.credit) || 0;
   const balance = parseFloat(row.balance) || 0;
+  const meta = TXN_META[row.txn_type] ?? DEFAULT_META;
 
   return (
     <tr>
-      <td style={{ whiteSpace: 'nowrap' }}>{formatDate(row.timestamp)}</td>
-      <td>
-        <span className="badge badge-outline" style={{ fontSize: 11 }}>
-          {TXN_LABELS[row.txn_type] || row.txn_type}
-        </span>
+      <td className="dd-td-date">{formatDate(row.timestamp)}</td>
+      <td><span className={meta.pill}>{meta.label}</span></td>
+      <td className={`dd-num ${debit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
+        {debit > 0 ? formatCurrency(debit).replace(' ₫', '') + 'đ' : '–'}
       </td>
-      <td className="num">{debit > 0 ? formatCurrency(debit) : '—'}</td>
-      <td className="num">{credit > 0 ? formatCurrency(credit) : '—'}</td>
-      <td className="num" style={{ color: balance > 0 ? 'var(--danger)' : 'var(--fg-1)' }}>
-        {formatCurrency(balance)}
+      <td className={`dd-num ${credit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
+        {credit > 0 ? formatCurrency(credit).replace(' ₫', '') + 'đ' : '–'}
       </td>
-      <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{row.note || ''}</td>
+      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : ''}`}>
+        {formatCurrency(balance).replace(' ₫', '')}đ
+      </td>
+      <td className="dd-td-note">{row.note || ''}</td>
     </tr>
   );
-}
-
-function AgingPlaceholder({ range }: { range: string }) {
-  return <KPI label={range} value="—" />;
 }

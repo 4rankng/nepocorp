@@ -34,33 +34,48 @@ export async function createTrip(data: {
 
     const revenue = pricing ? Number(pricing.price) : 0;
 
-    // 2. Fetch current global configuration rates to snapshot them
+    // 2. Fetch current global configuration rates to snapshot them.
+    // All config tables must be populated — no silent fallbacks.
     const [fuelCfg] = await tx.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
+    if (!fuelCfg) {
+      throw Object.assign(new Error('Chưa cấu hình định mức nhiên liệu. Vui lòng cấu hình trước khi tạo lệnh vận chuyển.'), { status: 400 });
+    }
     const [route] = await tx.select().from(s.routes).where(eq(s.routes.id, data.route_id)).limit(1);
+    if (!route) {
+      throw Object.assign(new Error('Tuyến đường không tồn tại'), { status: 400 });
+    }
     const [trailer] = await tx.select().from(s.trailers).where(eq(s.trailers.id, data.trailer_id)).limit(1);
+    if (!trailer) {
+      throw Object.assign(new Error('Rơ moóc không tồn tại'), { status: 400 });
+    }
     const [roadCfg] = await tx.select().from(s.roadConfig).limit(1);
-
-    // Look up road allowance base for snapshotted column
-    let roadAllowanceBase = 0;
-    if (trailer) {
-      const [allowance] = await tx.select().from(s.roadAllowances).where(
-        and(
-          eq(s.roadAllowances.routeId, data.route_id),
-          eq(s.roadAllowances.trailerType, trailer.type),
-          isNull(s.roadAllowances.deletedAt)
-        )
-      ).limit(1);
-      if (allowance) {
-        roadAllowanceBase = Number(allowance.baseAmount);
-      }
+    if (!roadCfg) {
+      throw Object.assign(new Error('Chưa cấu hình tiền đường (road_config). Vui lòng cấu hình trước khi tạo lệnh vận chuyển.'), { status: 400 });
     }
 
-    const fuelPriceApplied = fuelCfg ? Number(fuelCfg.unitPrice) : 0;
-    const fuelLoadedNormApplied = fuelCfg ? Number(fuelCfg.loadedNorm) : 0;
-    const fuelEmptyNormApplied = fuelCfg ? Number(fuelCfg.emptyNorm) : 0;
-    const fuelFixedAllowanceApplied = (route && route.fixedFuelAllowance) ? Number(route.fixedFuelAllowance) : 0;
-    const tollPerStationApplied = roadCfg ? Number(roadCfg.tollPerStation) : 55000;
-    const returnCargoBonusApplied = roadCfg ? Number(roadCfg.returnCargoBonus) : 300000;
+    // Look up road allowance base for snapshotted column
+    const [allowance] = await tx.select().from(s.roadAllowances).where(
+      and(
+        eq(s.roadAllowances.routeId, data.route_id),
+        eq(s.roadAllowances.trailerType, trailer.type),
+        isNull(s.roadAllowances.deletedAt)
+      )
+    ).limit(1);
+    if (!allowance) {
+      throw Object.assign(
+        new Error(`Chưa cấu hình tiền chuẩn đường cho tuyến "${route.name}" với rơ moóc ${trailer.type}. Vui lòng thêm bản ghi trong bảng định mức tiền đường.`),
+        { status: 400 },
+      );
+    }
+
+    const roadAllowanceBase = Number(allowance.baseAmount);
+    const fuelPriceApplied = Number(fuelCfg.unitPrice);
+    const fuelLoadedNormApplied = Number(fuelCfg.loadedNorm);
+    const fuelEmptyNormApplied = Number(fuelCfg.emptyNorm);
+    const fuelFixedAllowanceApplied = route.fixedFuelAllowance ? Number(route.fixedFuelAllowance) : 0;
+    const fuelSupplementNormApplied = Number(fuelCfg.supplement);
+    const tollPerStationApplied = Number(roadCfg.tollPerStation);
+    const returnCargoBonusApplied = Number(roadCfg.returnCargoBonus);
 
     // 3. Atomic tripCode generation
     const departureDate = new Date(data.departure_date);
@@ -102,6 +117,7 @@ export async function createTrip(data: {
       fuelLoadedNormApplied: String(fuelLoadedNormApplied),
       fuelEmptyNormApplied: String(fuelEmptyNormApplied),
       fuelFixedAllowanceApplied: String(fuelFixedAllowanceApplied),
+      fuelSupplementNormApplied: String(fuelSupplementNormApplied),
       tollPerStationApplied: String(tollPerStationApplied),
       returnCargoBonusApplied: String(returnCargoBonusApplied),
     }).returning();
@@ -148,14 +164,16 @@ export async function updateTripFigures(
 
     const [route] = await tx.select().from(s.routes).where(eq(s.routes.id, trip.routeId)).limit(1);
 
-    // 3. Resolve snapshotted rates (reuse from trip row, fall back to global if null)
+    // 3. Resolve snapshotted rates from trip row (set at creation time).
+    // If any snapshot is null, the trip was created before config was enforced.
     const fuelPriceApplied = Number(trip.fuelPriceApplied || 0);
     const roadAllowanceBaseApplied = Number(trip.roadAllowanceBaseApplied || 0);
     const fuelLoadedNormApplied = Number(trip.fuelLoadedNormApplied || 0);
     const fuelEmptyNormApplied = Number(trip.fuelEmptyNormApplied || 0);
     const fuelFixedAllowanceApplied = Number(trip.fuelFixedAllowanceApplied || 0);
-    const tollPerStationApplied = Number(trip.tollPerStationApplied || 55000);
-    const returnCargoBonusApplied = Number(trip.returnCargoBonusApplied || 300000);
+    const fuelSupplementNormApplied = Number((trip as any).fuelSupplementNormApplied || 0);
+    const tollPerStationApplied = Number(trip.tollPerStationApplied || 0);
+    const returnCargoBonusApplied = Number(trip.returnCargoBonusApplied || 0);
 
     const revenue = data.revenue !== undefined ? data.revenue : Number(trip.revenue || 0);
     let revenueOriginal = Number(trip.revenueOriginal || 0);
@@ -178,7 +196,7 @@ export async function updateTripFigures(
       fuelSupplementLiters: data.fuel_supplement_liters ?? 0,
       fuelLoadedNorm: fuelLoadedNormApplied,
       fuelEmptyNorm: fuelEmptyNormApplied,
-      fuelPerTripSupplement: 3, // standard per-trip addition
+      fuelPerTripSupplement: fuelSupplementNormApplied,
       fuelUnitPrice: fuelPriceApplied,
       isMountainRoute: route ? !!route.isMountain : false,
       mountainFixedAllowance: fuelFixedAllowanceApplied > 0 ? fuelFixedAllowanceApplied : null,

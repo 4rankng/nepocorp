@@ -152,9 +152,11 @@ router.get('/penalties', async (req: Request, res: Response) => {
       amount: s.penalties.amount, date: s.penalties.date,
       driverName: s.drivers.name,
       reasonText: s.penaltyReasons.reasonText,
+      tripCode: s.trips.tripCode,
     }).from(s.penalties)
       .leftJoin(s.drivers, eq(s.penalties.driverId, s.drivers.id))
       .leftJoin(s.penaltyReasons, eq(s.penalties.reasonId, s.penaltyReasons.id))
+      .leftJoin(s.trips, eq(s.penalties.tripId, s.trips.id))
       .where(and(...conditions))
       .orderBy(desc(s.penalties.date));
 

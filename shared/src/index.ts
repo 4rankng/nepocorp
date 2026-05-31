@@ -13,6 +13,7 @@ export type {
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
   LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket, UnpaidTrip,
+  SalaryPeriod, SalaryPeriodRange,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -25,6 +26,7 @@ export {
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
   fuelConfigSchema, penaltyReasonSchema, driverSchema,
   managementFeeSchema, capTableSchema,
+  salaryPeriodSchema, salaryPeriodDefaultSchema,
 } from './schemas';
 
 export type {
@@ -34,6 +36,7 @@ export type {
   CargoTypeInput, PricingTableInput, RoadAllowanceInput,
   FuelConfigInput, PenaltyReasonInput, DriverInput,
   ManagementFeeInput, CapTableInput,
+  SalaryPeriodInput, SalaryPeriodDefaultInput,
   CreateUserInput, UpdateUserInput,
 } from './schemas';
 

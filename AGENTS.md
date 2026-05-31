@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Vietnamese trucking/logistics management web app replacing 7+ Excel files Monorepo with shared types, Express backend, React frontend. Domain model is in `CONTEXT.md` — read it before touching business logic.
+Vietnamese trucking/logistics management web app replacing 7+ Excel files. Monorepo with shared types, Express backend, React frontend. Domain model is in `CONTEXT.md` — read it before touching business logic.
 
 ## Commands
 
@@ -10,70 +10,107 @@ Vietnamese trucking/logistics management web app replacing 7+ Excel files Monore
 # Install
 pnpm install
 
-# Dev (both packages in parallel)
-pnpm dev
+# First-time setup (infra + migrate + seed)
+make setup
+
+# Dev (both in parallel — db, redis, backend, frontend)
+make dev            # or: pnpm dev
 
 # Dev individual packages
-pnpm dev:backend    # Express on :3001 (tsx watch)
-pnpm dev:frontend   # Vite on :5173, proxies /api → :3001
+cd backend && pnpm dev       # Express on :3090 (tsx watch)
+cd frontend && npx vite --port 7173  # Vite on :7173, proxies /api → :3090
 
 # Build (shared must build first)
-pnpm build
+make build         # or: pnpm build
 
-# Database
-pnpm db:generate    # drizzle-kit generate (from backend)
-pnpm db:migrate     # drizzle-kit migrate
-pnpm db:studio      # drizzle-kit studio GUI
+# Database (run from backend/)
+cd backend && pnpm db:generate    # drizzle-kit generate
+cd backend && pnpm db:migrate     # drizzle-kit migrate
+cd backend && pnpm db:studio      # drizzle-kit studio GUI
+
+# Other
+make seed          # Seed database with sample data
+make studio        # Open Drizzle Studio
+make stop          # Stop backend/frontend (keep db)
+make down          # Stop everything including db/redis
+make clean         # Remove everything including db volume
 ```
 
-Backend `.env` required (see `packages/backend/.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `UPLOAD_DIR`, `NODE_ENV`.
+Backend `.env` required (see `backend/.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `UPLOAD_DIR`, `NODE_ENV`.
 
-No test runner or linter is configured. No CI pipeline.
+Ports: PostgreSQL **5440**, Redis **6390**, Backend **3090**, Frontend **7173**.
+
+No linter or CI pipeline configured.
 
 ## Architecture
 
 ```
 nepocorp/
-├── packages/
-│   ├── shared/        # @nepocorp/shared — types, Zod schemas, enums
-│   ├── backend/       # @nepocorp/backend — Express 5 + Drizzle ORM + PostgreSQL
-│   └── frontend/      # @nepocorp/frontend — React 19 + Vite + Tailwind 4
+├── shared/            # @nepocorp/shared — types, Zod schemas, enums, calculations
+├── backend/           # @nepocorp/backend — Express 5 + Drizzle ORM + PostgreSQL
+├── frontend/          # @nepocorp/frontend — React 19 + Vite + Tailwind 4
 ├── docs/              # product-spec.md, high-level-design.md, company PDFs
 ├── wireframe/         # HTML wireframes for accountant/director/driver views
 └── CONTEXT.md         # Domain glossary & business rules (authoritative)
 ```
 
-### Backend (`packages/backend/src/`)
+### Backend (`backend/src/`)
 
 | Path | Purpose |
 |---|---|
-| `index.ts` | Express app, CORS, route mounting, global audit middleware |
+| `index.ts` | Express app, CORS, middleware stack, route mounting with Casbin |
 | `config/index.ts` | dotenv loading |
 | `db/schema.ts` | All Drizzle ORM table definitions + pgEnums |
 | `db/index.ts` | Drizzle instance (postgres.js driver) |
-| `middleware/auth.ts` | JWT verification + `requireRoles()` RBAC helper |
+| `errors.ts` | `ApiError` class for structured error responses |
+| `casbin/` | Casbin enforcer setup, model.conf, policy.csv |
+| `middleware/auth.ts` | JWT verification only (extracts user from token) |
+| `middleware/casbin.ts` | Casbin RBAC + `requireRoles()` helper (the one used in routes) |
 | `middleware/audit.ts` | Auto-logs mutation requests as Vietnamese audit messages |
-| `routes/` | Express routers: `auth`, `config`, `trips`, `financial`, `driver`, `upload` |
+| `middleware/errorHandler.ts` | Global error handler (Zod → 400, ApiError → custom, PG 23505 → 409, generic → 500) |
+| `middleware/serializer.ts` | snake_case response serializer |
+| `middleware/logger.ts` | Request logger |
+| `routes/` | Express routers: `auth`, `config`, `trips`, `financial`, `driver`, `upload`, `maps` |
 | `services/trip.service.ts` | Trip business logic: fuel calc, road allowance, lifecycle transitions |
+| `services/config.service.ts` | `createCrudRouter()` factory for catalog tables (customers, trucks, routes, etc.) |
+| `services/ledger.service.ts` | Ledger and payment business logic |
+| `services/reporting.service.ts` | P&L and reporting logic |
+| `services/receivables.service.ts` | Receivables management |
+| `services/statement.service.ts` | Statement generation |
+| `services/salary-period.service.ts` | Salary period management |
+| `services/audit.service.ts` | Audit log queries |
+| `services/driver.service.ts` | Driver-specific business logic |
+| `services/storage.service.ts` | File storage logic |
+| `services/audit-templates.ts` | Vietnamese audit message templates |
+| `services/audit-types.ts` | Audit type definitions |
+| `services/event-bus.ts` | Internal event bus |
 
-### Frontend (`packages/frontend/src/`)
+### Frontend (`frontend/src/`)
 
 | Path | Purpose |
 |---|---|
-| `api/` | Empty — API calls are currently inline or through `lib/api.ts` |
-| `hooks/useAuth.tsx` | Auth context, token in localStorage, auto-fetch `/users/me` |
+| `hooks/` | 12 hooks: `useAuth`, `useAuditLogs`, `useCatalogs`, `useClickOutside`, `useCRUD`, `useFleetData`, `useObservedWidth`, `usePenalties`, `useQueries`, `useTripForm`, `useTripFormContext`, `useTripOptions` |
 | `lib/api.ts` | `ApiClient` class wrapping fetch with Bearer token |
 | `lib/format.ts` | Vietnamese locale formatters (₫ currency, number, date) |
+| `lib/` | 9 files: `api`, `avatar`, `cap-table`, `csv`, `date`, `format`, `maps`, `round`, `route` |
 | `components/Layout.tsx` | Sidebar nav (role-based), topbar |
-| `pages/` | All stubs except `LoginPage.tsx` — awaiting implementation |
+| `components/UI.tsx` | Shared UI primitives |
+| `components/shared/` | Shared components |
+| `components/trip/` | Trip-related components |
+| `components/TripForm/` | Trip form components |
+| `components/config/` | Config/CRUD components |
+| `components/LocationAutocomplete.tsx` | Location autocomplete widget |
+| `pages/` | 36 files — fully implemented (Dashboard, TripList, TripCreate, TripDetail, TripEdit, Finance, DebtList, DebtDetail, Penalty, Profit, Fleet, Dispatch, Config, AuditLog, Users, Customers, DriverViews, etc.) |
 
-### Shared (`packages/shared/src/`)
+### Shared (`shared/src/`)
 
 | Path | Purpose |
 |---|---|
 | `constants/` | Enums (`TripStatus`, `FuelMode`, `Role`, `TxnType`, etc.) + Vietnamese label maps |
 | `types/` | TypeScript interfaces for all entities + API request/response shapes |
 | `schemas/` | Zod validation schemas for all inputs (mirrors types) |
+| `calculations/` | Shared calculation logic (fuel, road allowance, etc.) |
+| `index.ts` | Barrel export |
 
 ## Key Patterns & Conventions
 
@@ -82,8 +119,10 @@ nepocorp/
 - **Express 5** (not Express 4) — async error handling differs; route handlers can be async without wrapping.
 - **Drizzle ORM** with `postgres.js` driver, not `pg`. Schema is a single file (`db/schema.ts`).
 - **pgEnum** for all status/type fields — defined at top of schema.ts, used in table definitions.
-- **Route structure**: Each domain area is one router file. `config.ts` uses a generic CRUD factory pattern for catalog tables (customers, trucks, routes, etc.) — check it before creating new CRUD routes.
-- **RBAC**: `requireRoles('ADMIN', 'MANAGER')` from `middleware/auth.ts`. Applied per-route.
+- **Route structure**: Each domain area is one router file. `createCrudRouter()` factory in `services/config.service.ts` generates CRUD routes for catalog tables — check it before creating new CRUD routes.
+- **RBAC is dual-layer**: `casbinAuthz('resource')` wraps route groups for coarse resource-level access + `requireRoles(Role.ADMIN, ...)` for tighter endpoint-level gating. `requireRoles()` lives in `middleware/casbin.ts` (NOT `auth.ts`). Both are used together on sensitive routes.
+- **Error handling**: `globalErrorHandler` catches `ZodError` → 400, `ApiError` → custom status, PG unique violation (23505) → 409, generic → 500.
+- **Response serialization**: `snakeCaseSerializer` middleware converts response keys.
 - **Audit logging**: Global middleware in `audit.ts` intercepts all mutations and writes Vietnamese-language audit messages. One API call = one audit row, regardless of how many tables it touches.
 - **Ledger immutability**: No UPDATE/DELETE endpoints on the ledger. Corrections go through `POST /api/ledger/adjustments` as new rows.
 
@@ -91,7 +130,8 @@ nepocorp/
 
 - **Vite path aliases**: `@` → `./src`, `@nepocorp/shared` → `../shared/src` (configured in `vite.config.ts`).
 - **Tailwind CSS v4** (not v3) — uses `@tailwindcss/vite` plugin, no `tailwind.config.js`.
-- **No state management library** — just React context (auth) and local state so far.
+- **Dev server**: Port 7173, proxies `/api` → `http://localhost:3090`.
+- **No state management library** — React context (auth) + custom hooks (`useCRUD`, `useQueries`, `useCatalogs`, etc.).
 - **Role-based routing**: `App.tsx` mounts all routes; `Layout.tsx` conditionally shows nav items by role.
 
 ### Shared
@@ -116,10 +156,10 @@ This is a Vietnamese logistics domain with specific business rules. Read `CONTEX
 
 ## Current State (as of writing)
 
-- **Backend**: Fully implemented — auth, CRUD, trip lifecycle, fuel/allowance calculations, ledger, payments, P&L, audit logging, file uploads.
-- **Frontend**: Shell only — routing, layout, auth, API client, and formatters are done. All page components (except LoginPage) are empty stubs.
-- **Shared**: Complete — all types, enums, and Zod schemas.
-- **Tests**: None. No test framework installed.
+- **Backend**: Fully implemented — auth, CRUD, trip lifecycle, fuel/allowance calculations, ledger, payments, P&L, audit logging, file uploads, maps.
+- **Frontend**: Fully implemented — all pages built (36 files), organized component library, custom hooks for data fetching and forms.
+- **Shared**: Complete — all types, enums, Zod schemas, and shared calculations.
+- **Tests**: Backend has `cd backend && pnpm test` → `npx tsx --test src/tests/integration.test.ts`.
 - **Linting**: None configured.
 
 <skills_system priority="1">

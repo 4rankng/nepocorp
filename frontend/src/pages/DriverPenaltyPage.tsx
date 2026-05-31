@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { ShieldCheck, AlertTriangle, AlertOctagon, Loader2 } from 'lucide-react';
 import { Card } from '../components/UI';
+import { useSalaryPeriod } from '../hooks/useQueries';
 
 interface DriverPenaltyRow {
   id: number;
@@ -16,35 +17,69 @@ interface DriverPenaltyRow {
 }
 
 export default function DriverPenaltyPage() {
-  const [penalties, setPenalties] = useState<DriverPenaltyRow[]>([]);
+  const [allPenalties, setAllPenalties] = useState<DriverPenaltyRow[]>([]);
+  const [filteredPenalties, setFilteredPenalties] = useState<DriverPenaltyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthFilter, setMonthFilter] = useState('');
 
-  const fetchPenalties = useCallback(async () => {
+  // Fetch all penalties once (needed for total count)
+  const fetchAllPenalties = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.get<DriverPenaltyRow[] | { items: DriverPenaltyRow[] }>('/driver/me/penalties');
-      setPenalties(Array.isArray(data) ? data : (data as any).items ?? []);
+      const items = Array.isArray(data) ? data : (data as any).items ?? [];
+      setAllPenalties(items);
+      setFilteredPenalties(items);
     } catch { /* silent */ } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchPenalties(); }, [fetchPenalties]);
+  useEffect(() => { fetchAllPenalties(); }, [fetchAllPenalties]);
 
   // ── Derived stats ─────────────────────────────────────────────────────────
   const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const monthLabel = `T${now.getMonth() + 1}`;
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const monthLabel = `T${currentMonth}`;
 
-  const monthPenalties = penalties.filter(p => (p.date || '').startsWith(thisMonth));
+  // Resolve salary period for current month
+  const { data: currentPeriod, isLoading: periodLoading } = useSalaryPeriod(currentMonth, currentYear);
+
+  // Resolve salary period for the selected filter month
+  const filterMonthNum = monthFilter ? parseInt(monthFilter.split('-')[1]) : 0;
+  const filterYearNum = monthFilter ? parseInt(monthFilter.split('-')[0]) : 0;
+  const { data: filterPeriod } = useSalaryPeriod(filterMonthNum, filterYearNum);
+
+  // Current month stats — filter from allPenalties using resolved salary period
+  const monthPenalties = useMemo(() => {
+    if (!currentPeriod) return [] as DriverPenaltyRow[];
+    return allPenalties.filter(p => {
+      const d = p.date || '';
+      return d >= currentPeriod.start && d <= currentPeriod.end;
+    });
+  }, [allPenalties, currentPeriod]);
   const totalMonthAmount = monthPenalties.reduce((s, p) => s + parseFloat(p.amount), 0);
   const incidentCount = monthPenalties.length;
   const isSafeThisMonth = incidentCount === 0;
 
-  const filteredPenalties = monthFilter
-    ? penalties.filter(p => (p.date || '').startsWith(monthFilter))
-    : penalties;
+  // When month filter is selected and period resolved, re-fetch from server with date params
+  useEffect(() => {
+    if (!monthFilter) {
+      setFilteredPenalties(allPenalties);
+      return;
+    }
+    if (!filterPeriod) return;
+    api.get<DriverPenaltyRow[] | { items: DriverPenaltyRow[] }>(
+      `/driver/me/penalties?date_from=${filterPeriod.start}&date_to=${filterPeriod.end}`,
+    ).then(data => {
+      setFilteredPenalties(Array.isArray(data) ? data : (data as any).items ?? []);
+    }).catch(() => {
+      setFilteredPenalties(allPenalties);
+    });
+  }, [monthFilter, filterPeriod, allPenalties]);
+
+  const isLoadingPeriod = periodLoading || (!currentPeriod && !loading);
 
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
@@ -58,33 +93,45 @@ export default function DriverPenaltyPage() {
       </div>
 
       {/* ── Status banner ───────────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 16,
-        padding: '16px 20px',
-        borderRadius: 12,
-        marginBottom: 20,
-        background: isSafeThisMonth ? 'var(--success-soft)' : 'var(--danger-soft)',
-        border: `1px solid ${isSafeThisMonth ? 'var(--success)' : 'var(--danger)'}`,
-      }}>
+      {isLoadingPeriod ? (
         <div style={{
-          width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
-          background: isSafeThisMonth ? 'var(--success)' : 'var(--danger)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          padding: '16px 20px', borderRadius: 12, marginBottom: 20,
+          background: 'var(--bg-2)', border: '1px solid var(--border-2)',
+          color: 'var(--fg-3)', fontSize: 13,
         }}>
-          {isSafeThisMonth ? <ShieldCheck size={22} /> : <AlertOctagon size={22} />}
+          <Loader2 size={16} className="spin" />
+          Đang tải dữ liệu kỳ lương...
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: isSafeThisMonth ? 'var(--success)' : 'var(--danger)' }}>
-            {isSafeThisMonth ? `Không vi phạm ${monthLabel}` : `${incidentCount} vi phạm ${monthLabel}`}
+      ) : (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16,
+          padding: '16px 20px',
+          borderRadius: 12,
+          marginBottom: 20,
+          background: isSafeThisMonth ? 'var(--success-soft)' : 'var(--danger-soft)',
+          border: `1px solid ${isSafeThisMonth ? 'var(--success)' : 'var(--danger)'}`,
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+            background: isSafeThisMonth ? 'var(--success)' : 'var(--danger)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+          }}>
+            {isSafeThisMonth ? <ShieldCheck size={22} /> : <AlertOctagon size={22} />}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 2 }}>
-            {isSafeThisMonth
-              ? 'Bạn đang chấp hành tốt nội quy công ty. Tiếp tục phát huy!'
-              : `Tổng khấu trừ lương: ${formatCurrency(totalMonthAmount)}`
-            }
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: isSafeThisMonth ? 'var(--success)' : 'var(--danger)' }}>
+              {isSafeThisMonth ? `Không vi phạm ${monthLabel}` : `${incidentCount} vi phạm ${monthLabel}`}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 2 }}>
+              {isSafeThisMonth
+                ? 'Bạn đang chấp hành tốt nội quy công ty. Tiếp tục phát huy!'
+                : `Tổng khấu trừ lương: ${formatCurrency(totalMonthAmount)}`
+              }
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ── KPI row ────────────────────────────────────────────────────────── */}
       <div className="kpi-grid" style={{ marginBottom: 28 }}>
@@ -120,7 +167,7 @@ export default function DriverPenaltyPage() {
             <div className="kpi__icon"><AlertOctagon size={18} /></div>
           </div>
           <div className="kpi__value">
-            {penalties.length}<span className="kpi__value-unit"> vụ</span>
+            {allPenalties.length}<span className="kpi__value-unit"> vụ</span>
           </div>
           <div className="kpi__meta">Toàn lịch sử</div>
         </div>
@@ -214,7 +261,7 @@ export default function DriverPenaltyPage() {
       )}
 
       {/* ── Footer note ─────────────────────────────────────────────────────── */}
-      {penalties.length > 0 && (
+      {allPenalties.length > 0 && (
         <div style={{ marginTop: 24, padding: '12px 16px', background: 'var(--bg-2)', borderRadius: 8, fontSize: 12, color: 'var(--fg-3)', textAlign: 'center' }}>
           Các khoản phạt được khấu trừ trực tiếp vào lương sản lượng hàng tháng.
           Liên hệ quản lý nếu có thắc mắc.

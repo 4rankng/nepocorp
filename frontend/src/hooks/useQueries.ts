@@ -11,6 +11,7 @@ import type {
   Truck as TruckType,
   Driver as DriverType,
   FuelConfig,
+  SalaryPeriodRange,
 } from '@nepocorp/shared';
 import { TRIPS, REPORTS, CONFIG, FINANCIAL } from '@nepocorp/shared';
 
@@ -88,14 +89,13 @@ export function usePnlReport(month: number, year: number) {
 }
 
 export function useMonthlyTrips(year: number, month: number) {
+  const { data: period } = useSalaryPeriod(month, year);
   return useQuery<TripDetail[]>({
-    queryKey: ['trips', 'monthly', year, month],
+    queryKey: ['trips', 'monthly', year, month, period?.start],
+    enabled: !!period,
     queryFn: async () => {
-      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-      const lastDay = new Date(year, month, 0).getDate();
-      const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       const res = await api.get<PaginatedResponse<TripDetail>>(
-        `${TRIPS.LIST}?limit=100&date_from=${monthStart}&date_to=${monthEnd}`,
+        `${TRIPS.LIST}?limit=100&date_from=${period!.start}&date_to=${period!.end}`,
       );
       return res.items;
     },
@@ -147,14 +147,13 @@ export function useTripAdjustments(id: number) {
 }
 
 export function useTripCosts(month: number, year: number) {
+  const { data: period } = useSalaryPeriod(month, year);
   return useQuery<TripDetail[]>({
-    queryKey: ['trip-costs', month, year],
+    queryKey: ['trip-costs', month, year, period?.start],
+    enabled: !!period,
     queryFn: async () => {
-      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-      const lastDay = new Date(year, month, 0).getDate();
-      const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       const res = await api.get<PaginatedResponse<TripDetail>>(
-        `${TRIPS.LIST}?limit=100&status=LOCKED&date_from=${monthStart}&date_to=${monthEnd}`,
+        `${TRIPS.LIST}?limit=100&status=LOCKED&date_from=${period!.start}&date_to=${period!.end}`,
       );
       return res.items;
     },
@@ -258,5 +257,15 @@ export function useFuelConfig() {
     queryKey: ['fuel-config'],
     queryFn: () => api.get<FuelConfig | null>(CONFIG.FUEL_CONFIG),
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+/** Resolve the salary period date range for a given month/year */
+export function useSalaryPeriod(month: number, year: number) {
+  return useQuery<SalaryPeriodRange>({
+    queryKey: ['salary-period', month, year],
+    queryFn: () => api.get<SalaryPeriodRange>(`${CONFIG.SALARY_PERIOD_RESOLVE}?month=${month}&year=${year}`),
+    staleTime: 30 * 60 * 1000,
+    enabled: month >= 1 && month <= 12 && year >= 2000,
   });
 }

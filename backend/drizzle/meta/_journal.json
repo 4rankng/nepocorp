@@ -43,6 +43,13 @@
       "when": 1780197343738,
       "tag": "0005_little_sauron",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780203626996,
+      "tag": "0006_safe_chat",
+      "breakpoints": true
     }
   ]
 }

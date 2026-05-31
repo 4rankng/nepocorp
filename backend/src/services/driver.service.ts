@@ -1,6 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, gte, lte } from 'drizzle-orm';
+import { resolveSalaryPeriodDateRange } from './salary-period.service';
 
 /**
  * Resolve an auth-user ID to the corresponding driver record.
@@ -89,48 +90,82 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
 
 /**
  * Earnings summary for a driver: base salary + trip income - penalties.
+ * When month/year are provided, scopes to that salary period.
+ * Otherwise returns all-time totals (backward compatible).
  */
-export async function getDriverEarnings(driverId: number) {
+export async function getDriverEarnings(driverId: number, month?: number, year?: number) {
+  // Build date filters if month/year provided
+  let dateRange: { start: string; end: string } | null = null;
+  if (month && year) {
+    const resolved = await resolveSalaryPeriodDateRange(month, year);
+    dateRange = { start: resolved.start, end: resolved.end };
+  }
+
+  // Trip income — scoped to salary period if provided
+  const tripConditions = [eq(s.trips.driverId, driverId), eq(s.trips.status, 'LOCKED'), isNull(s.trips.deletedAt)];
+  if (dateRange) {
+    tripConditions.push(gte(s.trips.departureDate, dateRange.start));
+    tripConditions.push(lte(s.trips.departureDate, dateRange.end));
+  }
   const [salarySum] = await db.select({
     total: sql<string>`coalesce(sum(${s.trips.driverSalary}::numeric), 0)`,
   }).from(s.trips)
-    .where(and(eq(s.trips.driverId, driverId), eq(s.trips.status, 'LOCKED'), isNull(s.trips.deletedAt)));
+    .where(and(...tripConditions));
 
+  // Penalties — scoped to salary period if provided
+  const penaltyConditions = [eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt)];
+  if (dateRange) {
+    penaltyConditions.push(gte(s.penalties.date, dateRange.start));
+    penaltyConditions.push(lte(s.penalties.date, dateRange.end));
+  }
   const [penaltySum] = await db.select({
     total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)`,
   }).from(s.penalties)
-    .where(and(eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt)));
+    .where(and(...penaltyConditions));
 
   const [driver] = await db.select().from(s.drivers)
     .where(eq(s.drivers.id, driverId)).limit(1);
 
   // Thu nhập thực tế = Lương cơ bản + Thu nhập sản lượng − Khấu trừ
-  // The mobile UI displays this formula explicitly under the hero card, so the
-  // API must follow the same definition. Earlier versions returned only
-  // (tripIncome − penalties) which mismatched the on-screen label.
   const baseSalary = parseFloat(driver?.baseSalary || '0');
   const tripIncome = parseFloat(salarySum?.total || '0');
   const penalties = parseFloat(penaltySum?.total || '0');
-  return {
+
+  const result: { baseSalary: string; tripIncome: string; penalties: string; netIncome: string; periodStart?: string; periodEnd?: string } = {
     baseSalary: String(baseSalary),
     tripIncome: String(tripIncome),
     penalties: String(penalties),
     netIncome: String(baseSalary + tripIncome - penalties),
   };
+
+  // Include the resolved period info when scoped
+  if (dateRange) {
+    result.periodStart = dateRange.start;
+    result.periodEnd = dateRange.end;
+  }
+
+  return result;
 }
 
 /**
- * List penalties for a driver.
+ * List penalties for a driver, optionally scoped to a date range.
  */
-export async function getDriverPenalties(driverId: number) {
+export async function getDriverPenalties(driverId: number, dateFrom?: string, dateTo?: string) {
+  const conditions = [eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt)];
+  if (dateFrom) conditions.push(gte(s.penalties.date, dateFrom));
+  if (dateTo) conditions.push(lte(s.penalties.date, dateTo));
+
   return db.select({
     id: s.penalties.id,
     amount: s.penalties.amount,
     date: s.penalties.date,
     customReason: s.penalties.customReason,
     reasonText: s.penaltyReasons.reasonText,
+    tripId: s.penalties.tripId,
+    tripCode: s.trips.tripCode,
   }).from(s.penalties)
     .leftJoin(s.penaltyReasons, eq(s.penalties.reasonId, s.penaltyReasons.id))
-    .where(and(eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt)))
+    .leftJoin(s.trips, eq(s.penalties.tripId, s.trips.id))
+    .where(and(...conditions))
     .orderBy(desc(s.penalties.date));
 }
