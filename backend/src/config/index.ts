@@ -10,4 +10,5 @@ export const config = {
   uploadDir: process.env.UPLOAD_DIR || './uploads',
   nodeEnv: process.env.NODE_ENV || 'development',
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
+  corsOrigin: process.env.CORS_ORIGIN || '',
 };

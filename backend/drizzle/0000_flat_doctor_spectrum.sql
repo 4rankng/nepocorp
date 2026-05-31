@@ -24,7 +24,8 @@ CREATE TABLE "audit_logs" (
 CREATE TABLE "cap_table_history" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"partner_name" varchar(255) NOT NULL,
-	"percentage" numeric(5, 2) NOT NULL,
+	"contribution_amount" numeric(15, 0) DEFAULT '0' NOT NULL,
+	"percentage" numeric(5, 2) DEFAULT '0' NOT NULL,
 	"effective_date" date NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -82,6 +83,8 @@ CREATE TABLE "fuel_config" (
 	"empty_norm" numeric(6, 2) NOT NULL,
 	"supplement" numeric(6, 2) DEFAULT '3',
 	"unit_price" numeric(10, 0) NOT NULL,
+	"warning_threshold" numeric(6, 2) DEFAULT '37',
+	"critical_threshold" numeric(6, 2) DEFAULT '40',
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp
@@ -156,8 +159,8 @@ CREATE TABLE "road_allowances" (
 --> statement-breakpoint
 CREATE TABLE "road_config" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"toll_per_station" numeric(15, 0) DEFAULT '55000' NOT NULL,
-	"return_cargo_bonus" numeric(15, 0) DEFAULT '300000' NOT NULL,
+	"toll_per_station" numeric(15, 0) NOT NULL,
+	"return_cargo_bonus" numeric(15, 0) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -168,6 +171,21 @@ CREATE TABLE "routes" (
 	"distance_km" integer,
 	"is_mountain" boolean DEFAULT false,
 	"fixed_fuel_allowance" numeric(10, 2),
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"deleted_at" timestamp
+);
+--> statement-breakpoint
+CREATE TABLE "salary_periods" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"month" integer,
+	"year" integer,
+	"start_date" date,
+	"end_date" date,
+	"label" varchar(100),
+	"default_start_day" integer,
+	"default_end_day" integer,
+	"is_default" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp
@@ -239,6 +257,7 @@ CREATE TABLE "trips" (
 	"fuel_loaded_norm_applied" numeric(6, 2),
 	"fuel_empty_norm_applied" numeric(6, 2),
 	"fuel_fixed_allowance_applied" numeric(10, 2),
+	"fuel_supplement_norm_applied" numeric(6, 2),
 	"toll_per_station_applied" numeric(15, 0),
 	"return_cargo_bonus_applied" numeric(15, 0),
 	"fuel_liters" numeric(10, 2),
@@ -272,6 +291,7 @@ CREATE TABLE "users" (
 	"username" varchar(100),
 	"email" varchar(255),
 	"phone" varchar(20),
+	"full_name" varchar(255),
 	"password_hash" text NOT NULL,
 	"role" "role" DEFAULT 'DRIVER' NOT NULL,
 	"status" varchar(20) DEFAULT 'ACTIVE' NOT NULL,
@@ -301,5 +321,6 @@ ALTER TABLE "trips" ADD CONSTRAINT "trips_driver_id_drivers_id_fk" FOREIGN KEY (
 ALTER TABLE "trips" ADD CONSTRAINT "trips_route_id_routes_id_fk" FOREIGN KEY ("route_id") REFERENCES "public"."routes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_trailer_id_trailers_id_fk" FOREIGN KEY ("trailer_id") REFERENCES "public"."trailers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_cargo_type_id_cargo_types_id_fk" FOREIGN KEY ("cargo_type_id") REFERENCES "public"."cargo_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "penalties_date_idx" ON "penalties" USING btree ("date");--> statement-breakpoint
 CREATE UNIQUE INDEX "pricing_tables_customer_route_date_idx" ON "pricing_tables" USING btree ("customer_id","route_id","effective_date");--> statement-breakpoint
 CREATE UNIQUE INDEX "road_allowances_route_type_idx" ON "road_allowances" USING btree ("route_id","trailer_type");

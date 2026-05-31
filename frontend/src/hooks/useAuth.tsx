@@ -15,7 +15,7 @@ interface AuthContextType {
   user: AuthUser | null;
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
-  updateUser: (updates: Pick<AuthUser, 'email' | 'phone' | 'username'>) => void;
+  updateUser: (updates: Pick<AuthUser, 'email' | 'phone' | 'username' | 'fullName'>) => void;
   isAuthenticated: boolean;
   loading: boolean;
 }

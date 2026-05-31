@@ -116,7 +116,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [profileForm, setProfileForm] = useState({ email: '', phone: '', username: '' });
+  const [profileForm, setProfileForm] = useState({ email: '', phone: '', username: '', fullName: '' });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [profileSaving, setProfileSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -130,7 +130,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const openProfileModal = () => {
     if (!user) return;
-    setProfileForm({ email: user.email || '', phone: user.phone || '', username: user.username || '' });
+    setProfileForm({ email: user.email || '', phone: user.phone || '', username: user.username || '', fullName: user.fullName || '' });
     setProfileError(null);
     setProfileModalOpen(true);
     setUserMenuOpen(false);
@@ -148,8 +148,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setProfileSaving(true);
     setProfileError(null);
     try {
-      const updated = await api.patch<{ email: string; phone: string; username: string }>('/auth/me', profileForm);
-      updateUser({ email: updated.email, phone: updated.phone, username: updated.username });
+      const updated = await api.patch<{ email: string; phone: string; username: string; fullName: string | null }>('/auth/me', profileForm);
+      updateUser({ email: updated.email, phone: updated.phone, username: updated.username, fullName: updated.fullName ?? undefined });
       setProfileModalOpen(false);
     } catch (err: any) {
       setProfileError(err?.message || 'Không thể lưu thông tin.');
@@ -354,6 +354,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               value={profileForm.username}
               onChange={e => setProfileForm(f => ({ ...f, username: e.target.value }))}
               placeholder="username"
+            />
+          </FormGroup>
+          <FormGroup label="Họ và tên">
+            <input
+              className="input"
+              value={profileForm.fullName}
+              onChange={e => setProfileForm(f => ({ ...f, fullName: e.target.value }))}
+              placeholder="Nguyễn Văn A"
             />
           </FormGroup>
           <FormGroup label="Email">

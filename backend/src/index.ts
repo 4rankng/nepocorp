@@ -22,7 +22,11 @@ const app = express();
 
 // ── Core middleware ────────────────────────────────────────────────────────
 app.use(cors({
-  origin: config.nodeEnv === 'development' ? 'http://localhost:7173' : false,
+  origin: config.corsOrigin
+    ? config.corsOrigin.split(',').map(s => s.trim())
+    : config.nodeEnv === 'development'
+      ? 'http://localhost:7173'
+      : false,
 }));
 app.use(express.json());
 app.use('/uploads', express.static(config.uploadDir));

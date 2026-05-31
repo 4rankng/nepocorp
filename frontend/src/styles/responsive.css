@@ -305,7 +305,28 @@
     align-items: center !important;
   }
   .dispatch-page .order-row .o-date { grid-area: date !important; font-size: 12px !important; }
-  .dispatch-page .order-row .o-route { grid-area: route !important; font-size: 12px !important; min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+  /* o-route is a flex container with chip children; keep them on one line.
+     Both flex-wrap: nowrap and child shrink are required — pure white-space
+     doesn't stop flex items from wrapping. */
+  .dispatch-page .order-row .o-route {
+    grid-area: route !important;
+    font-size: 12px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+  }
+  .dispatch-page .order-row .o-route .from,
+  .dispatch-page .order-row .o-route .to {
+    min-width: 0 !important;
+    /* Equal flex share between origin/dest so both get readable space
+       instead of "H..." for both. */
+    flex: 1 1 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding: 2px 7px !important;
+    font-size: 11.5px !important;
+  }
   .dispatch-page .order-row .o-actions { grid-area: action !important; }
   .dispatch-page .order-row .o-actions .btn,
   .dispatch-page .order-row .o-actions .pill-btn { padding: 6px 12px !important; font-size: 12px !important; }

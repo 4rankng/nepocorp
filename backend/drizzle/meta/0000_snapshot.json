@@ -1,5 +1,5 @@
 {
-  "id": "840848c1-b306-494f-b09b-9c1771897398",
+  "id": "95837bf1-6d3d-4fae-950a-0d592a8226e1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -89,11 +89,19 @@
           "primaryKey": false,
           "notNull": true
         },
+        "contribution_amount": {
+          "name": "contribution_amount",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
         "percentage": {
           "name": "percentage",
           "type": "numeric(5, 2)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'0'"
         },
         "effective_date": {
           "name": "effective_date",
@@ -455,6 +463,20 @@
           "primaryKey": false,
           "notNull": true
         },
+        "warning_threshold": {
+          "name": "warning_threshold",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'37'"
+        },
+        "critical_threshold": {
+          "name": "critical_threshold",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'40'"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -692,7 +714,23 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "penalties_date_idx": {
+          "name": "penalties_date_idx",
+          "columns": [
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "penalties_driver_id_drivers_id_fk": {
           "name": "penalties_driver_id_drivers_id_fk",
@@ -1018,15 +1056,13 @@
           "name": "toll_per_station",
           "type": "numeric(15, 0)",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'55000'"
+          "notNull": true
         },
         "return_cargo_bonus": {
           "name": "return_cargo_bonus",
           "type": "numeric(15, 0)",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'300000'"
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1085,6 +1121,94 @@
           "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.salary_periods": {
+      "name": "salary_periods",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "month": {
+          "name": "month",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "label": {
+          "name": "label",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_start_day": {
+          "name": "default_start_day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_end_day": {
+          "name": "default_end_day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_default": {
+          "name": "is_default",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -1552,6 +1676,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "fuel_supplement_norm_applied": {
+          "name": "fuel_supplement_norm_applied",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "toll_per_station_applied": {
           "name": "toll_per_station_applied",
           "type": "numeric(15, 0)",
@@ -1839,6 +1969,12 @@
         "phone": {
           "name": "phone",
           "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "full_name": {
+          "name": "full_name",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
