@@ -278,6 +278,8 @@ auditLogRouter.get('/', async (_req: Request, res: Response) => {
       userId: s.auditLogs.userId,
       userName: sql`COALESCE(${s.auditLogs.actorName}, ${s.users.fullName}, ${s.users.username})`,
       username: s.users.username,
+      userDeletedAt: s.users.deletedAt,
+      userIdExists: s.users.id,
       message: s.auditLogs.message,
       payload: s.auditLogs.payload,
       ipAddress: s.auditLogs.ipAddress,
@@ -293,18 +295,25 @@ auditLogRouter.get('/', async (_req: Request, res: Response) => {
       .where(and(...conditions));
 
     res.json({
-      items: items.map(i => ({
-        id: i.id,
-        userId: i.userId,
-        userName: i.userName || i.username || 'Người dùng',
-        action: (i.payload as any)?.event || '',
-        method: (i.payload as any)?.method || '',
-        path: (i.payload as any)?.path || '',
-        message: i.message,
-        timestamp: i.timestamp,
-        payload: i.payload,
-        ipAddress: i.ipAddress,
-      })),
+      items: items.map(i => {
+        let displayName = i.userName || i.username || 'Người dùng';
+        const isDeleted = i.userDeletedAt !== null || (i.userId !== null && i.userIdExists === null);
+        if (isDeleted) {
+          displayName = `${displayName} (Đã xóa)`;
+        }
+        return {
+          id: i.id,
+          userId: i.userId,
+          userName: displayName,
+          action: (i.payload as any)?.event || '',
+          method: (i.payload as any)?.method || '',
+          path: (i.payload as any)?.path || '',
+          message: i.message,
+          timestamp: i.timestamp,
+          payload: i.payload,
+          ipAddress: i.ipAddress,
+        };
+      }),
       total: Number(countRow?.count ?? 0),
       page,
       pageSize: limit,

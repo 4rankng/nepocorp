@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, sql, desc, lte, gte } from 'drizzle-orm';
+import { eq, and, or, isNull, sql, desc, lte, gte } from 'drizzle-orm';
 import { TripStatus, FuelMode, TxnType, LoadingType, Role } from '@nepocorp/shared';
 import type { TripLegInput } from '@nepocorp/shared';
 import { computeTripTotals } from '@nepocorp/shared';
@@ -606,10 +606,13 @@ export async function getTripById(id: number) {
         })
         .from(s.routeDistanceCache)
         .where(
-          sql`(${s.routeDistanceCache.originCleaned}, ${s.routeDistanceCache.destinationCleaned}) IN (${sql.join(uniquePairs.map(p => {
-            const [o, d] = p.split('|');
-            return sql`(${o}, ${d})`;
-          }), sql`, `)})`
+          or(...uniquePairs.map(pair => {
+            const [o, d] = pair.split('|');
+            return and(
+              eq(s.routeDistanceCache.originCleaned, o),
+              eq(s.routeDistanceCache.destinationCleaned, d)
+            );
+          }))
         )
     : [];
   const cacheMap = new Map<string, typeof cacheEntries[number]>(

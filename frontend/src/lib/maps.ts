@@ -21,7 +21,7 @@ const CACHE_TTL = 5 * 60 * 1000;
 export async function fetchPlaceSuggestions(input: string, sessionToken?: string): Promise<PlaceSuggestion[]> {
   if (!input.trim() || input.trim().length < 3) return [];
 
-  const key = `${input.trim().toLowerCase()}:${sessionToken || 'none'}`;
+  const key = input.trim().toLowerCase();
 
   // Check cache
   const cached = suggestionCache.get(key);

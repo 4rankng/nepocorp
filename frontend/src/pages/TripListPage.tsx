@@ -557,8 +557,12 @@ export default function TripListPage() {
               {heroSummary.fuel.toLocaleString('vi-VN', { maximumFractionDigits: 0 })}
               <span className="metric-unit">L</span>
             </div>
-            <div className={`metric-delta ${heroSummary.avgPer100 > warnThreshold ? 'delta-warn' : 'delta-flat'}`}>
-              TB {heroSummary.avgPer100.toFixed(1).replace('.', ',')} L/100km · ngưỡng {warnThreshold.toFixed(1).replace('.', ',')}
+            <div className={`metric-delta ${heroSummary.km > 0 && heroSummary.avgPer100 > warnThreshold ? 'delta-warn' : 'delta-flat'}`}>
+              {heroSummary.km > 0 ? (
+                <>TB {heroSummary.avgPer100.toFixed(1).replace('.', ',')} L/100km · ngưỡng {warnThreshold.toFixed(1).replace('.', ',')}</>
+              ) : (
+                <>TB không khả dụng (0 km)</>
+              )}
             </div>
           </div>
           <div className="metric">

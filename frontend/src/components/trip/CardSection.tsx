@@ -53,23 +53,16 @@ export function CardSection({
   return (
     <section className={`tc-card${collapsible ? ' is-collapsible' : ''}${collapsed ? ' is-collapsed' : ''}`}>
       {collapsible ? (
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           className="tc-card-head tc-card-head-btn"
           onClick={() => setCollapsed((v) => !v)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              setCollapsed((v) => !v);
-            }
-          }}
           aria-expanded={!collapsed}
           aria-controls={bodyId}
           style={{ cursor: 'pointer' }}
         >
           {headContent}
-        </div>
+        </button>
       ) : (
         <div className="tc-card-head">{headContent}</div>
       )}

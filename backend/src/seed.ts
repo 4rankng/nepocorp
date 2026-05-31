@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { db } from './db';
 import * as schema from './db/schema';
 import { Role } from '@nepocorp/shared';
+import { eq } from 'drizzle-orm';
 
 async function seed() {
   const passwordHash = await bcrypt.hash('admin123', 10);
@@ -30,6 +31,30 @@ async function seed() {
     { name: 'Đăng kiểm', isRenewable: true, reminderLeadDays: 30, status: 'ACTIVE' },
     { name: 'Phí đường bộ', isRenewable: true, reminderLeadDays: 30, status: 'ACTIVE' },
   ];
+
+  // Deduplicate existing categories
+  const allCats = await db.select().from(schema.expenseCategories);
+  const nameToIds = new Map<string, number[]>();
+  for (const c of allCats) {
+    const ids = nameToIds.get(c.name) || [];
+    ids.push(c.id);
+    nameToIds.set(c.name, ids);
+  }
+
+  for (const [name, ids] of nameToIds.entries()) {
+    if (ids.length > 1) {
+      const keepId = ids[0];
+      const dupIds = ids.slice(1);
+      for (const dupId of dupIds) {
+        await db.update(schema.expenses)
+          .set({ categoryId: keepId })
+          .where(eq(schema.expenses.categoryId, dupId));
+        await db.delete(schema.expenseCategories)
+          .where(eq(schema.expenseCategories.id, dupId));
+      }
+      console.log(`  Deduplicated category "${name}": kept ID ${keepId}, removed duplicates [${dupIds.join(', ')}]`);
+    }
+  }
 
   const existingCats = await db.select({ name: schema.expenseCategories.name })
     .from(schema.expenseCategories);
@@ -68,7 +93,7 @@ async function seed() {
     { reasonText: 'Không tuân thủ tuyến đường', defaultAmount: '200000' },
     { reasonText: 'Xe không sạch sẽ', defaultAmount: '50000' },
     { reasonText: 'Thiếu giấy tờ', defaultAmount: '150000' },
-    { reasonText: 'Không chùy mũ bảo hiểm', defaultAmount: '100000' },
+    { reasonText: 'Không đội mũ bảo hiểm', defaultAmount: '100000' },
     { reasonText: 'Lái xe khi say xỉn', defaultAmount: '1000000' },
   ];
 

@@ -12,6 +12,8 @@ import { LedgerService } from '../services/ledger.service';
 import { config } from '../config';
 import { initEnforcer } from '../casbin/enforcer';
 import { initAuditService } from '../services/audit.service';
+import { disconnectRedis } from '../lib/redis';
+
 
 // Import route handlers directly to avoid port conflicts
 import authRoutes from '../routes/auth';
@@ -100,6 +102,7 @@ before(async () => {
 after(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await client.end();
+  await disconnectRedis();
 });
 
 async function testFetch(urlPath: string, options: any = {}) {
@@ -300,7 +303,7 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     method: 'POST',
     token: adminToken
   });
-  assert.strictEqual(cancelRes.status, 400); // Bad Request (Matrix block)
+  assert.strictEqual(cancelRes.status, 409); // Conflict (Matrix block)
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -338,10 +341,10 @@ test('E2E — Financial operations (P&L, profit sharing, ledger, statements, rec
     method: 'POST',
     token: adminToken,
     body: JSON.stringify({
-      trip_id: tripId,
+      tripId: tripId,
       amount: -100000, // Negative for adjustment credit note
       note: 'Điều chỉnh chiết khấu cuối tháng',
-      signed_agreement_ref: 'AGR-2026-001'
+      signedAgreementRef: 'AGR-2026-001'
     })
   });
   assert.strictEqual(adjustRes.status, 201);
@@ -356,9 +359,9 @@ test('E2E — Financial operations (P&L, profit sharing, ledger, statements, rec
     method: 'POST',
     token: adminToken,
     body: JSON.stringify({
-      customer_id: customerId,
-      receipt_id: `REC-${Date.now()}`,
-      payments: [{ trip_id: tripId, amount: 500000 }]
+      customerId: customerId,
+      receiptId: `REC-${Date.now()}`,
+      payments: [{ tripId: tripId, amount: 500000 }]
     })
   });
   assert.strictEqual(paymentRes.status, 201);

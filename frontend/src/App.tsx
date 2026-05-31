@@ -136,6 +136,7 @@ function AppRoutes() {
           <Route path="/audit-logs" element={adminOnly(page(<AuditLogPage />))} />
           <Route path="/audit-log" element={<Navigate to="/audit-logs" replace />} />
           <Route path="/admin/audit-logs" element={<Navigate to="/audit-logs" replace />} />
+          <Route path="/admin/audit-log" element={<Navigate to="/audit-logs" replace />} />
           <Route path="/my-trips" element={driverOnly(page(<DriverTripsPage />))} />
           <Route path="/my-trips/:id" element={driverOnly(page(<DriverTripDetailPage />))} />
           <Route path="/my-earnings" element={driverOnly(page(<DriverEarningsPage />))} />

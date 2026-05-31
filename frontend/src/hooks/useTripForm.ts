@@ -183,6 +183,8 @@ function useTripLegs(routes: RouteOption[], routeId: string) {
               }
               return leg;
             }));
+          } else {
+            setLegs(prev => prev.map((l, i) => i === idx ? { ...l, polylinePath: undefined } : l));
           }
         }
       }

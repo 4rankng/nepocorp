@@ -388,6 +388,8 @@ export const routeDistanceCache = pgTable('route_distance_cache', {
   durationSeconds: integer('duration_seconds'),
   polylinePath: text('polyline_path'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex('route_distance_cache_uniq_idx').on(table.originCleaned, table.destinationCleaned),
+]);
 
 

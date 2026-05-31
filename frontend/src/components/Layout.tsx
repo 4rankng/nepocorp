@@ -41,7 +41,8 @@ interface NavItem {
 }
 
 function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number): NavItem[] {
-  switch (role) {
+  const normRole = String(role || '').toUpperCase();
+  switch (normRole) {
     case 'MANAGER':
     case 'ACCOUNTANT':
     case 'ADMIN':
