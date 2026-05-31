@@ -84,21 +84,16 @@ export async function getUserProfile(userId: number) {
   return user;
 }
 
-/** Update current user's profile (username, email, phone). */
+/** Update current user's profile (username, fullName, email, phone). */
 export async function updateProfile(
   userId: number,
-  data: { username?: string; email?: string; phone?: string; currentPassword?: string },
+  data: { username?: string; fullName?: string; email?: string; phone?: string },
 ) {
   const updates: Record<string, unknown> = { updatedAt: sql`now()` };
 
-  if (data.username !== undefined) {
-    if (!data.currentPassword) {
-      throw new ApiError(400, 'Cần xác nhận mật khẩu hiện tại để thay đổi tên đăng nhập');
-    }
-    await verifyPassword(userId, data.currentPassword);
-    updates.username = data.username;
-  }
+  if (data.username !== undefined) updates.username = data.username;
 
+  if (data.fullName !== undefined) updates.fullName = data.fullName || null;
   if (data.email !== undefined) updates.email = data.email || null;
   if (data.phone !== undefined) updates.phone = data.phone || null;
 

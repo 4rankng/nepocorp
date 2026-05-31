@@ -135,12 +135,11 @@ export const updateUserSchema = z.object({
 
 export const updateProfileSchema = z.object({
   username: z.string().min(1, 'Tên đăng nhập không được để trống').max(100).optional(),
+  fullName: z.string().max(255).or(z.literal('')).optional(),
   email: z.string().email('Email không hợp lệ').or(z.literal('')).optional(),
   phone: z.string().min(6, 'Số điện thoại quá ngắn').or(z.literal('')).optional(),
-  // Required when changing username — username is a login credential
-  currentPassword: z.string().min(1).optional(),
-}).refine(data => data.username || data.email || data.phone, {
-  message: 'Phải cung cấp ít nhất một trong: username, email, hoặc số điện thoại',
+}).refine(data => data.username || data.fullName !== undefined || data.email || data.phone, {
+  message: 'Phải cung cấp ít nhất một trong: username, họ tên, email, hoặc số điện thoại',
 });
 
 export const changePasswordSchema = z.object({
