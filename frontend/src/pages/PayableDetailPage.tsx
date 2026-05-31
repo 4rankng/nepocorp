@@ -11,8 +11,8 @@ import { useToast } from '../components/shared/Toast';
 import { useConfirm } from '../components/UI';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
-  [TxnType.VENDOR_EXPENSE]:  { label: 'Phiếu chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
-  [TxnType.VENDOR_PAYMENT]:  { label: 'Thanh toán NCC',  pill: 'dd-txn-pill dd-txn-pill--pay' },
+  [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
+  [TxnType.VENDOR_PAYMENT]:  { label: 'Thanh toán công nợ',  pill: 'dd-txn-pill dd-txn-pill--pay' },
   [TxnType.ADJUSTMENT]:      { label: 'Điều chỉnh',      pill: 'dd-txn-pill dd-txn-pill--adj' },
 };
 const DEFAULT_META = { label: 'KHÁC', pill: 'dd-txn-pill dd-txn-pill--other' };
@@ -28,8 +28,8 @@ type LedgerFilter = 'all' | typeof TxnType.VENDOR_EXPENSE | typeof TxnType.VENDO
 
 const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
   { key: 'all',                     label: 'Tất cả' },
-  { key: TxnType.VENDOR_EXPENSE,    label: 'Phiếu chi phí' },
-  { key: TxnType.VENDOR_PAYMENT,    label: 'Thanh toán NCC' },
+  { key: TxnType.VENDOR_EXPENSE,    label: 'Ghi nhận chi phí' },
+  { key: TxnType.VENDOR_PAYMENT,    label: 'Thanh toán công nợ' },
   { key: TxnType.ADJUSTMENT,        label: 'Điều chỉnh' },
 ];
 
@@ -177,7 +177,8 @@ export default function PayableDetailPage() {
   const actualBalance = lastLedgerRow ? parseFloat(lastLedgerRow.balance) : 0;
   const hasCredit = actualBalance < 0;
   const overpaymentAmount = hasCredit ? Math.abs(actualBalance) : 0;
-  const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1;
+  const effectiveAging = totalOutstanding > 0 ? agingAmounts : [0, 0, 0, 0];
+  const agingTotal = totalOutstanding || 1;
 
   return (
     <div>
@@ -286,7 +287,7 @@ export default function PayableDetailPage() {
 
         {/* Aging bar */}
         <div className="dd-aging-bar">
-          {agingAmounts.map((amt, i) => {
+          {effectiveAging.map((amt, i) => {
             const pct = agingTotal > 0 ? (amt / agingTotal) * 100 : 0;
             return pct > 0
               ? <i key={i} className={`dd-seg-${i}`} style={{ width: `${pct}%` }} />
@@ -297,7 +298,7 @@ export default function PayableDetailPage() {
         {/* Aging grid */}
         <div className="dd-aging-grid">
           {AGING_RANGES.map((range, i) => {
-            const amt = agingAmounts[i];
+            const amt = effectiveAging[i];
             const isActive = i === activeAgingIdx;
             const pct = agingTotal > 0 ? Math.round((amt / agingTotal) * 100) : 0;
             return (

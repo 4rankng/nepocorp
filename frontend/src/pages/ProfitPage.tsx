@@ -379,12 +379,28 @@ export default function ProfitPage() {
                 <div className="calc-row__label calc-row__label--bold">Lợi nhuận gộp hoạt động</div>
                 <div className="calc-row__value">{formatVND(report?.grossProfit || 0)}</div>
               </div>
+              {((report?.maintenanceExpensesTotal ?? 0) > 0) && (
+                <div className="calc-row">
+                  <div className="calc-row__label">
+                    <span className="calc-row__op">-</span>
+                    Chi phí bảo dưỡng, đăng kiểm xe
+                  </div>
+                  <div className="calc-row__value calc-row__value--neg">-{formatVND(report?.maintenanceExpensesTotal || 0)}</div>
+                </div>
+              )}
               <div className="calc-row">
                 <div className="calc-row__label">
                   <span className="calc-row__op">-</span>
                   Phí quản lý văn phòng định mức
                 </div>
                 <div className="calc-row__value calc-row__value--neg">-{formatVND(report?.managementFee || 0)}</div>
+              </div>
+              <div className="calc-row">
+                <div className="calc-row__label">
+                  <span className="calc-row__op">-</span>
+                  Chi phí chung công ty
+                </div>
+                <div className="calc-row__value calc-row__value--neg">-{formatVND(report?.companyExpenses || 0)}</div>
               </div>
               <div className="calc-row">
                 <div className="calc-row__label">

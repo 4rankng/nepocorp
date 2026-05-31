@@ -51,8 +51,8 @@ const TXN_LABELS: Record<string, string> = {
 };
 
 const VENDOR_TXN_LABELS: Record<string, string> = {
-  VENDOR_EXPENSE: 'Chi nhà cung cấp',
-  VENDOR_PAYMENT: 'Thanh toán NCC',
+  VENDOR_EXPENSE: 'Ghi nhận chi phí',
+  VENDOR_PAYMENT: 'Thanh toán công nợ',
   ADJUSTMENT: 'Điều chỉnh',
 };
 
@@ -73,7 +73,6 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
   if (!customer) return null;
 
   const ledgerRows = await LedgerService.getEntriesByEntity('CUSTOMER', customerId);
-  const totalOutstanding = ledgerRows.length > 0 ? parseFloat(ledgerRows[0].balance) : 0;
 
   const now = new Date();
   const { aging, openInvoices } = computeFifoAging(
@@ -84,6 +83,8 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
     })),
     now,
   );
+
+  const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
 
   const revenueEntries = ledgerRows.filter((r: any) => r.txnType === TxnType.TRIP_REVENUE);
   const tripNotes = new Map<number, string>();
@@ -176,7 +177,6 @@ export async function getSupplierStatement(supplierId: number): Promise<Supplier
   if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
 
   const ledgerRows = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
-  const totalOutstanding = ledgerRows.length > 0 ? parseFloat(ledgerRows[0].balance) : 0;
 
   const now = new Date();
   const { aging } = computeFifoAging(
@@ -187,6 +187,8 @@ export async function getSupplierStatement(supplierId: number): Promise<Supplier
     })),
     now,
   );
+
+  const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
 
   return {
     supplier,

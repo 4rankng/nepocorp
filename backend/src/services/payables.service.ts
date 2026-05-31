@@ -66,12 +66,13 @@ export async function getPayablesSummary() {
       if (ageDays > maxOverdueDays) maxOverdueDays = ageDays;
     }
 
-    totalOutstanding += balance;
+    const agingSum = aging.current + aging.d30 + aging.d60 + aging.over90;
+    totalOutstanding += agingSum;
     if (maxOverdueDays > 30) overdueSuppliers++;
 
     items.push({
       supplier: supplier as any,
-      totalOutstanding: balance,
+      totalOutstanding: agingSum,
       aging,
       maxOverdueDays,
     });

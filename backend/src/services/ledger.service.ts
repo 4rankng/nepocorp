@@ -151,7 +151,7 @@ export class LedgerService {
     limit?: number;
   }) {
     const page = Math.max(1, opts.page ?? 1);
-    const limit = Math.min(100, opts.limit ?? 50);
+    const limit = Math.min(10_000, opts.limit ?? 50);
     const conditions = [];
     if (opts.entityType) conditions.push(eq(s.ledger.entityType, opts.entityType));
     if (opts.entityId !== undefined) conditions.push(eq(s.ledger.entityId, opts.entityId));
