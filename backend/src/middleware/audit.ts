@@ -99,7 +99,7 @@ function extractEntityKey(
       const tripRef = pick(responseBody, 'tripCode', 'trip_code')
         || pick(requestBody, 'tripCode', 'trip_code');
       if (tripRef) return `cho chuyến ${tripRef}`;
-      return fallbackId ? `#${fallbackId}` : undefined;
+      return fallbackId != null ? `#${fallbackId}` : undefined;
     }
     default:
       return pick(responseBody, 'name', 'code')
@@ -134,19 +134,21 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
     return originalJson(body);
   };
 
+  const isLoginPath = fullPath.includes('/login');
+
   const originalEnd = res.end;
   res.end = function (...args: any[]) {
-    if (res.statusCode < 400 && req.user) {
-      const event = resolveAuditEvent(req.method, fullPath);
-      const entityType = extractEntityType(fullPath);
-      const entityId = extractEntityId(fullPath, req.body as Record<string, unknown>);
-      const entityKey = extractEntityKey(
-        entityType,
-        capturedBody,
-        req.body as Record<string, unknown>,
-        entityId,
-      );
+    const event = resolveAuditEvent(req.method, fullPath);
+    const entityType = extractEntityType(fullPath);
+    const entityId = extractEntityId(fullPath, req.body as Record<string, unknown>);
+    const entityKey = extractEntityKey(
+      entityType,
+      capturedBody,
+      req.body as Record<string, unknown>,
+      entityId,
+    );
 
+    if (res.statusCode < 400 && req.user) {
       emitAudit({
         event,
         entityType: entityType || 'unknown',
@@ -163,11 +165,43 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
           body: sanitizeBody(req.body as Record<string, unknown>),
         },
       });
-    } else if (res.statusCode === 403 && req.user) {
-      // Security audit: authenticated user hit Casbin RBAC denial
+    } else if (res.statusCode < 400 && !req.user && isLoginPath) {
+      const respUser = capturedBody?.user as Record<string, unknown> | undefined;
       emitAudit({
-        event: AuditEvent.ENTITY_UPDATED,
-        entityType: extractEntityType(fullPath) || 'unknown',
+        event,
+        entityType: entityType || 'auth',
+        entityId: entityId ?? undefined,
+        entityKey,
+        userId: respUser?.id as number,
+        actorRole: respUser?.role as string,
+        actorEmail: respUser?.email as string,
+        actorName: (respUser?.fullName as string) ?? (respUser?.username as string),
+        ipAddress: req.ip,
+        metadata: {
+          method: req.method,
+          path: fullPath,
+          body: sanitizeBody(req.body as Record<string, unknown>),
+        },
+      });
+    } else if (res.statusCode === 401 && isLoginPath) {
+      emitAudit({
+        event: AuditEvent.LOGIN_FAILED,
+        entityType: 'auth',
+        entityKey: (req.body as any)?.identifier as string,
+        ipAddress: req.ip,
+        metadata: {
+          method: req.method,
+          path: fullPath,
+          statusCode: res.statusCode,
+          failed: true,
+        },
+      });
+    } else if (res.statusCode === 403 && req.user) {
+      emitAudit({
+        event: AuditEvent.ACCESS_DENIED,
+        entityType: entityType || 'unknown',
+        entityId: entityId ?? undefined,
+        entityKey,
         userId: req.user.userId,
         actorRole: req.user.role,
         actorEmail: req.user.email ?? undefined,
@@ -176,8 +210,8 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
         metadata: {
           method: req.method,
           path: fullPath,
-          statusCode: 403,
-          reason: 'rbac_denied',
+          statusCode: res.statusCode,
+          forbidden: true,
         },
       });
     }

@@ -104,11 +104,18 @@ export async function getDriverEarnings(driverId: number) {
   const [driver] = await db.select().from(s.drivers)
     .where(eq(s.drivers.id, driverId)).limit(1);
 
+  // Thu nhập thực tế = Lương cơ bản + Thu nhập sản lượng − Khấu trừ
+  // The mobile UI displays this formula explicitly under the hero card, so the
+  // API must follow the same definition. Earlier versions returned only
+  // (tripIncome − penalties) which mismatched the on-screen label.
+  const baseSalary = parseFloat(driver?.baseSalary || '0');
+  const tripIncome = parseFloat(salarySum?.total || '0');
+  const penalties = parseFloat(penaltySum?.total || '0');
   return {
-    baseSalary: driver?.baseSalary || '0',
-    tripIncome: salarySum?.total || '0',
-    penalties: penaltySum?.total || '0',
-    netIncome: String(parseFloat(salarySum?.total || '0') - parseFloat(penaltySum?.total || '0')),
+    baseSalary: String(baseSalary),
+    tripIncome: String(tripIncome),
+    penalties: String(penalties),
+    netIncome: String(baseSalary + tripIncome - penalties),
   };
 }
 

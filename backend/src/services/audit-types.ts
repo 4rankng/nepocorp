@@ -23,6 +23,7 @@ export const AuditEvent = {
   USER_LOGIN: 'USER_LOGIN',
   USER_LOGOUT: 'USER_LOGOUT',
   LOGIN_FAILED: 'LOGIN_FAILED',
+  ACCESS_DENIED: 'ACCESS_DENIED',
 } as const;
 
 export type AuditEventType = (typeof AuditEvent)[keyof typeof AuditEvent];

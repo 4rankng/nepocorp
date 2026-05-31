@@ -290,6 +290,15 @@ export async function transitionTripStatus(
 
     // Verify role permissions and transition matrix
     if (targetStatus === TripStatus.IN_TRANSIT) {
+      // Per docs/flows/01-TRIP_LIFECYCLE.md §2.3, only ADMIN/MANAGER can
+      // dispatch — ACCOUNTANT's trip-write permission is for financial
+      // fields only and shouldn't move the lifecycle forward.
+      if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
+        throw Object.assign(
+          new Error('Chỉ Quản lý hoặc Quản trị viên mới có quyền xuất phát chuyến đi'),
+          { status: 403 },
+        );
+      }
       if (currentStatus !== TripStatus.CREATED && currentStatus !== TripStatus.COMPLETED) {
         throw new Error('Chỉ có thể xuất phát chuyến đi ở trạng thái Mới tạo hoặc Hoàn thành');
       }
@@ -404,7 +413,10 @@ export async function transitionTripStatus(
       return lockedTrip;
     } else if (targetStatus === TripStatus.CANCELED) {
       if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
-        throw new Error('Chỉ Quản lý hoặc Admin mới có quyền hủy chuyến đi');
+        throw Object.assign(
+          new Error('Chỉ Quản lý hoặc Quản trị viên mới có quyền hủy chuyến đi'),
+          { status: 403 },
+        );
       }
       if (currentStatus === TripStatus.LOCKED) {
         throw new Error('Không thể hủy chuyến đi đã chốt');

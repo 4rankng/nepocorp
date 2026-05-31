@@ -201,10 +201,13 @@ export default function DashboardPage() {
     const s = formatCompact(v);
     return s.replace(/ ty$/, ' tỷ');
   };
-  // Split formatted value into { num, suffix } so "tr" can be rendered
+  // Split formatted value into { num, suffix } so "tr" / "k" can be rendered
   // at the same small size as the "₫" currency symbol.
+  // "tr" and "tỷ" have a leading space in formatCompact; "k" does not, so we
+  // strip it explicitly so all magnitude suffixes render in kpi__value-unit.
   const splitKpi = (v: number): { num: string; suffix: string } => {
     const s = fmtKpi(v);
+    if (s.endsWith('k')) return { num: s.slice(0, -1), suffix: 'k' };
     const i = s.lastIndexOf(' ');
     if (i === -1) return { num: s, suffix: '' };
     return { num: s.slice(0, i), suffix: s.slice(i + 1) };

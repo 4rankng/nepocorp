@@ -1,7 +1,9 @@
 import { eventBus, AuditEvents } from './event-bus';
 import { renderAuditMessage } from './audit-templates';
 import { db } from '../db';
+import * as s from '../db/schema';
 import { auditLogs } from '../db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import type { AuditPayload } from './audit-types';
 
 export interface AuditEntry extends AuditPayload {
@@ -9,9 +11,48 @@ export interface AuditEntry extends AuditPayload {
   ipAddress?: string;
 }
 
+/**
+ * Resolve human-readable identifiers for entities whose audit row only has the
+ * numeric foreign key in the request body (payments, adjustments, penalties
+ * all reference a trip via `trip_id`). Runs async out-of-band so it doesn't
+ * delay the response.
+ */
+async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined> {
+  if (payload.entityKey) return payload.entityKey;
+  const body = (payload.metadata?.body || {}) as Record<string, any>;
+
+  // Single-trip ref: { trip_id: 12 } → look up tripCode
+  const singleTripId = body.trip_id ?? body.tripId;
+  if (typeof singleTripId === 'number') {
+    const [trip] = await db.select({ tripCode: s.trips.tripCode })
+      .from(s.trips).where(eq(s.trips.id, singleTripId)).limit(1);
+    if (trip?.tripCode) return `cho chuyến ${trip.tripCode}`;
+  }
+
+  // Multi-trip ref: { payments: [{ trip_id, amount }, ...] } → join codes
+  if (Array.isArray(body.payments)) {
+    const ids = body.payments.map((p: any) => p?.trip_id).filter((x: any) => typeof x === 'number');
+    if (ids.length > 0) {
+      const rows = await db.select({ tripCode: s.trips.tripCode })
+        .from(s.trips).where(inArray(s.trips.id, ids));
+      const codes = rows.map(r => r.tripCode).filter(Boolean) as string[];
+      if (codes.length > 0) return `cho ${codes.length === 1 ? `chuyến ${codes[0]}` : `${codes.length} chuyến (${codes.join(', ')})`}`;
+    }
+  }
+
+  return undefined;
+}
+
 export function initAuditService() {
   eventBus.on(AuditEvents.AUDIT_LOG, async (payload: AuditEntry) => {
     try {
+      // For payment/adjustment/penalty audit rows, the middleware can only see
+      // the numeric trip_id in the request body. Resolve it to the natural
+      // tripCode so the message reads "ghi nhận thanh toán cho chuyến TRP-..."
+      // rather than the bare "ghi nhận thanh toán".
+      if (!payload.entityKey && ['payments', 'adjustments', 'penalties'].includes(payload.entityType)) {
+        try { payload.entityKey = await enrichEntityKey(payload); } catch {}
+      }
       const message = renderAuditMessage(payload);
       await db.insert(auditLogs).values({
         userId: payload.userId ?? null,

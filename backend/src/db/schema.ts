@@ -248,7 +248,7 @@ export const capTableHistory = pgTable('cap_table_history', {
   partnerName: varchar('partner_name', { length: 255 }).notNull(),
   // Optional — application drives cap-table ownership via percentage; this
   // column is reserved for future amount-based book-keeping.
-  contributionAmount: numeric('contribution_amount', { precision: 15, scale: 0 }).default('0'),
+  contributionAmount: numeric('contribution_amount', { precision: 15, scale: 0 }).default('0').notNull(),
   // Snapshot ownership percentage (0–100). Distribution math reads this
   // directly; contributionAmount is a separate book-keeping field.
   percentage: numeric('percentage', { precision: 5, scale: 2 }).notNull().default('0'),

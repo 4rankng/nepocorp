@@ -8,8 +8,6 @@ import { config } from '../config';
 import { loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@nepocorp/shared';
 import { authMiddleware } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
-import { emitAudit } from '../services/audit.service';
-import { AuditEvent } from '../services/audit-types';
 import type { Request, Response } from 'express';
 
 const router = Router();
@@ -23,31 +21,11 @@ router.post('/login', async (req: Request, res: Response) => {
     ).limit(1);
 
     if (!user || user.deletedAt || user.status !== 'ACTIVE') {
-      // Audit failed login — unknown or inactive account
-      emitAudit({
-        event: AuditEvent.LOGIN_FAILED,
-        entityType: 'auth',
-        entityKey: identifier,
-        actorName: identifier,
-        ipAddress: req.ip,
-        metadata: { reason: user ? 'inactive' : 'unknown_account' },
-      });
       return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      // Audit failed login — wrong password
-      emitAudit({
-        event: AuditEvent.LOGIN_FAILED,
-        entityType: 'auth',
-        userId: user.id,
-        actorRole: user.role,
-        actorEmail: user.email ?? undefined,
-        entityKey: identifier,
-        ipAddress: req.ip,
-        metadata: { reason: 'wrong_password' },
-      });
       return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
     }
 
@@ -69,17 +47,8 @@ router.post('/login', async (req: Request, res: Response) => {
 
     const { passwordHash, deletedAt, ...userPublic } = user;
     res.json({ token, user: { ...userPublic, fullName: displayName } });
-
-    // Audit login success — emitted after response so it can't block the reply
-    emitAudit({
-      event: AuditEvent.USER_LOGIN,
-      entityType: 'auth',
-      userId: user.id,
-      actorRole: user.role,
-      actorEmail: user.email ?? undefined,
-      actorName: displayName,
-      ipAddress: req.ip,
-    });
+    // Login success/failure audit is handled by auditLogMiddleware
+    // (reads user data from the JSON response body on login paths).
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
     res.status(500).json({ error: 'Lỗi máy chủ' });

@@ -37,6 +37,7 @@ interface TemplateContext {
    * if nothing is known so the rendered sentence reads naturally.
    */
   entityKey: string;
+  ipAddress: string;
 }
 
 function ctx(payload: AuditPayload): TemplateContext {
@@ -63,7 +64,8 @@ function ctx(payload: AuditPayload): TemplateContext {
   // IS the role label. Only exact match or prefix-with-space counts.
   const overlaps = actorL === roleL
     || actorL.startsWith(roleL + ' ')
-    || actorL.endsWith(' ' + roleL);
+    || actorL.endsWith(' ' + roleL)
+    || actorL.includes(' ' + roleL + ' ');
   const role = overlaps ? '' : roleLabel;
 
   // Prefer the natural key over "#id". Only fall back to the numeric id when
@@ -72,11 +74,14 @@ function ctx(payload: AuditPayload): TemplateContext {
   const entityKey = (payload.entityKey || '').trim()
     || (payload.entityId ? String(payload.entityId) : '');
 
+  const ipAddress = (payload as any).ipAddress || '';
+
   return {
     role,
     actor,
     entityLabel: ENTITY_LABELS[payload.entityType] || payload.entityType,
     entityKey,
+    ipAddress,
   };
 }
 
@@ -110,7 +115,8 @@ const templates: Record<string, (c: TemplateContext) => string> = {
 
   [AuditEvent.USER_LOGIN]: (c) => `${subj(c)} đăng nhập hệ thống`,
   [AuditEvent.USER_LOGOUT]: (c) => `${subj(c)} đăng xuất hệ thống`,
-  [AuditEvent.LOGIN_FAILED]: (c) => `Đăng nhập thất bại${c.entityKey ? ` cho tài khoản ${c.entityKey}` : ''} từ IP ${c.actor}`,
+  [AuditEvent.LOGIN_FAILED]: (c) => `Đăng nhập thất bại${c.entityKey ? ` cho tài khoản ${c.entityKey}` : ''}${c.ipAddress ? ` từ IP ${c.ipAddress}` : ''}`,
+  [AuditEvent.ACCESS_DENIED]: (c) => `${subj(c)} bị từ chối truy cập ${c.entityLabel}${withKey(c.entityKey)}`,
 };
 
 export function renderAuditMessage(payload: AuditPayload): string {
