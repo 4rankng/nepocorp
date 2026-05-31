@@ -12,9 +12,9 @@ const TRAILER_TYPE_LABELS: Record<string, string> = {
 function RoadAllowanceForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: RoadAllowance; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
-  const [routeId, setRouteId] = useState(item?.route_id || 0);
-  const [trailerType, setTrailerType] = useState(item?.trailer_type || TrailerType.FT20);
-  const [baseAmount, setBaseAmount] = useState(item?.base_amount || '');
+  const [routeId, setRouteId] = useState(item?.routeId || 0);
+  const [trailerType, setTrailerType] = useState(item?.trailerType || TrailerType.FT20);
+  const [baseAmount, setBaseAmount] = useState(item?.baseAmount || '');
   const [rl, setRl] = useState<RouteType[]>([]);
   useEffect(() => { api.get<PaginatedResponse<RouteType>>('/routes').then(r => setRl(r.items)); }, []);
   return (
@@ -37,7 +37,7 @@ function RoadAllowanceForm({ saving, item, onsave, oncancel }: {
       <div style={{ flex: 1, minWidth: 120 }}>
         <Field label="Mức cơ bản (VNĐ)"><input className="input" type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)} placeholder="0" /></Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!routeId || !baseAmount) return; onsave({ route_id: routeId, trailer_type: trailerType, base_amount: Number(baseAmount) }); }} />
+      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!routeId || !baseAmount) return; onsave({ routeId: routeId, trailerType: trailerType, baseAmount: Number(baseAmount) }); }} />
     </InlineForm>
   );
 }
@@ -57,9 +57,9 @@ export default function RoadAllowancesConfigPage() {
       title="Tiền đi đường" description="Định mức tiền dọc đường theo Tuyến × Loại rơ-moóc"
       endpoint="/road-allowances" colSpan={5}
       columns={[
-        { header: 'Tuyến đường', render: (ra) => routeMap.get(ra.route_id) || '—' },
-        { header: 'Loại rơ-moóc', render: (ra) => <span className="badge badge-outline">{TRAILER_TYPE_LABELS[ra.trailer_type] || ra.trailer_type}</span> },
-        { header: 'Mức cơ bản', className: 'num', render: (ra) => <span style={{ color: 'var(--fg-1)' }}>{formatCurrency(ra.base_amount)}</span> },
+        { header: 'Tuyến đường', render: (ra) => routeMap.get(ra.routeId) || '—' },
+        { header: 'Loại rơ-moóc', render: (ra) => <span className="badge badge-outline">{TRAILER_TYPE_LABELS[ra.trailerType] || ra.trailerType}</span> },
+        { header: 'Mức cơ bản', className: 'num', render: (ra) => <span style={{ color: 'var(--fg-1)' }}>{formatCurrency(ra.baseAmount)}</span> },
       ]}
       renderForm={(p) => <RoadAllowanceForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}
     />

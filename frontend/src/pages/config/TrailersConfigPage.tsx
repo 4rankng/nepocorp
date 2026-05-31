@@ -10,7 +10,7 @@ const TRAILER_TYPE_LABELS: Record<string, string> = {
 function TrailerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: Trailer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
-  const [plate, setPlate] = useState(item?.license_plate || '');
+  const [plate, setPlate] = useState(item?.licensePlate || '');
   const [type, setType] = useState<string>(item?.type || TrailerType.FT20);
   return (
     <InlineForm colSpan={4}>
@@ -24,7 +24,7 @@ function TrailerForm({ saving, item, onsave, oncancel }: {
           </select>
         </Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ license_plate: plate.trim(), type: type as TrailerType }); }} />
+      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), type: type as TrailerType }); }} />
     </InlineForm>
   );
 }
@@ -35,7 +35,7 @@ export default function TrailersConfigPage() {
       title="Rơ-moóc" description="Danh mục rơ-moóc loại 20FT và 40FT"
       endpoint="/trailers" colSpan={4}
       columns={[
-        { header: 'Biển số', render: (t) => <span style={{ fontWeight: 600, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)' }}>{t.license_plate}</span> },
+        { header: 'Biển số', render: (t) => <span style={{ fontWeight: 600, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)' }}>{t.licensePlate}</span> },
         { header: 'Loại', render: (t) => <span className="badge badge-outline">{TRAILER_TYPE_LABELS[t.type] || t.type}</span> },
       ]}
       renderForm={(p) => <TrailerForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}

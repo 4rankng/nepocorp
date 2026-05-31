@@ -54,21 +54,21 @@ export interface NormalizedTrip {
 export function normalizeTrip(t: any): NormalizedTrip {
   return {
     id: t.id,
-    customerId: t.customer_id ?? t.customerId,
-    customerName: t.customer?.name ?? t.customer_name ?? '',
-    customerReference: t.customer_reference ?? t.customerReference ?? undefined,
-    truckId: t.truck_id ?? t.truckId,
-    truckPlate: t.truck?.license_plate ?? t.truck?.licensePlate ?? '',
-    driverId: t.driver_id ?? t.driverId,
-    driverName: t.driver?.name ?? t.driver_name ?? '',
-    routeId: t.route_id ?? t.routeId,
-    routeName: t.route?.name ?? t.route_name ?? '',
-    trailerId: t.trailer_id ?? t.trailerId,
-    cargoTypeId: t.cargo_type_id ?? t.cargoTypeId,
+    customerId: t.customerId,
+    customerName: t.customer?.name ?? '',
+    customerReference: t.customerReference ?? undefined,
+    truckId: t.truckId,
+    truckPlate: t.truck?.licensePlate ?? '',
+    driverId: t.driverId,
+    driverName: t.driver?.name ?? '',
+    routeId: t.routeId,
+    routeName: t.route?.name ?? '',
+    trailerId: t.trailerId,
+    cargoTypeId: t.cargoTypeId,
     status: t.status,
-    departureDate: t.departure_date ?? t.departureDate ?? '',
+    departureDate: t.departureDate ?? '',
     notes: t.notes ?? undefined,
-    tripCode: t.trip_code ?? t.tripCode ?? undefined,
+    tripCode: t.tripCode ?? undefined,
   };
 }
 
@@ -77,6 +77,8 @@ export function useDashboardStats() {
     queryKey: ['dashboard'],
     queryFn: () => api.get<ExtendedDashboardStats>(REPORTS.DASHBOARD),
     staleTime: 2 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: true,
   });
 }
 

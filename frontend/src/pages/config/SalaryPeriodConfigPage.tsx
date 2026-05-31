@@ -8,8 +8,8 @@ interface SalaryPeriodOverride {
   id: number;
   month: number;
   year: number;
-  start_date: string;
-  end_date: string;
+  startDate: string;
+  endDate: string;
   label: string | null;
 }
 
@@ -18,8 +18,8 @@ function SalaryPeriodOverrideForm({ saving, item, onsave, oncancel }: {
 }) {
   const [month, setMonth] = useState(item?.month || new Date().getMonth() + 1);
   const [year, setYear] = useState(item?.year || new Date().getFullYear());
-  const [startDate, setStartDate] = useState(item?.start_date || '');
-  const [endDate, setEndDate] = useState(item?.end_date || '');
+  const [startDate, setStartDate] = useState(item?.startDate || '');
+  const [endDate, setEndDate] = useState(item?.endDate || '');
   const [label, setLabel] = useState(item?.label || '');
 
   return (
@@ -45,24 +45,24 @@ function SalaryPeriodOverrideForm({ saving, item, onsave, oncancel }: {
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
         if (!startDate || !endDate) return;
-        onsave({ month, year, start_date: startDate, end_date: endDate, label: label || undefined });
+        onsave({ month, year, startDate: startDate, endDate: endDate, label: label || undefined });
       }} />
     </InlineForm>
   );
 }
 
 export default function SalaryPeriodConfigPage() {
-  const [defaultConfig, setDefaultConfig] = useState<{ default_start_day: number; default_end_day: number } | null>(null);
+  const [defaultConfig, setDefaultConfig] = useState<{ defaultStartDay: number; defaultEndDay: number } | null>(null);
   const [startDay, setStartDay] = useState(26);
   const [endDay, setEndDay] = useState(25);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get<{ default_start_day: number; default_end_day: number } | null>('/salary-periods/default').then(row => {
+    api.get<{ defaultStartDay: number; defaultEndDay: number } | null>('/salary-periods/default').then(row => {
       if (row) {
         setDefaultConfig(row);
-        setStartDay(row.default_start_day ?? 26);
-        setEndDay(row.default_end_day ?? 25);
+        setStartDay(row.defaultStartDay ?? 26);
+        setEndDay(row.defaultEndDay ?? 25);
       }
     }).catch(() => {});
   }, []);
@@ -70,7 +70,7 @@ export default function SalaryPeriodConfigPage() {
   async function saveDefault() {
     setSaving(true);
     try {
-      const result = await api.put<{ default_start_day: number; default_end_day: number }>('/salary-periods/default', { default_start_day: startDay, default_end_day: endDay });
+      const result = await api.put<{ defaultStartDay: number; defaultEndDay: number }>('/salary-periods/default', { defaultStartDay: startDay, defaultEndDay: endDay });
       setDefaultConfig(result);
     } finally {
       setSaving(false);
@@ -105,7 +105,7 @@ export default function SalaryPeriodConfigPage() {
         </div>
         {defaultConfig && (
           <p style={{ fontSize: 13, color: 'var(--brand)', marginTop: 12 }}>
-            Hiện tại: Ngày {defaultConfig.default_start_day} tháng trước → Ngày {defaultConfig.default_end_day} tháng này
+            Hiện tại: Ngày {defaultConfig.defaultStartDay} tháng trước → Ngày {defaultConfig.defaultEndDay} tháng này
           </p>
         )}
       </div>
@@ -119,8 +119,8 @@ export default function SalaryPeriodConfigPage() {
         columns={[
           { header: 'Tháng', render: (r) => <span style={{ fontWeight: 600 }}>Tháng {r.month}</span> },
           { header: 'Năm', render: (r) => r.year },
-          { header: 'Ngày bắt đầu', render: (r) => r.start_date },
-          { header: 'Ngày kết thúc', render: (r) => r.end_date },
+          { header: 'Ngày bắt đầu', render: (r) => r.startDate },
+          { header: 'Ngày kết thúc', render: (r) => r.endDate },
           { header: 'Ghi chú', render: (r) => r.label || '—' },
         ]}
         renderForm={(p) => <SalaryPeriodOverrideForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}

@@ -64,8 +64,8 @@ export default function TripDetailPage() {
 
   const openReassign = () => {
     setReassignError('');
-    setReassignTruckId(String(trip?.truck_id ?? ''));
-    setReassignDriverId(String(trip?.driver_id ?? ''));
+    setReassignTruckId(String(trip?.truckId ?? ''));
+    setReassignDriverId(String(trip?.driverId ?? ''));
     setShowReassign(true);
   };
 
@@ -75,8 +75,8 @@ export default function TripDetailPage() {
     setReassignError('');
     try {
       await api.patch(`/trips/${id}/reassign`, {
-        truck_id: Number(reassignTruckId),
-        driver_id: Number(reassignDriverId),
+        truckId: Number(reassignTruckId),
+        driverId: Number(reassignDriverId),
       });
       setShowReassign(false);
       await refetchTrip();
@@ -103,7 +103,7 @@ export default function TripDetailPage() {
       await api.post(`/trips/${id}/adjustment`, {
         amount: Number(adjustAmount),
         note: adjustNote.trim(),
-        signed_agreement_ref: adjustRef.trim(),
+        signedAgreementRef: adjustRef.trim(),
       });
       await queryClient.invalidateQueries({ queryKey: ['trip-adjustments'] });
       await refetchTrip();
@@ -198,7 +198,7 @@ export default function TripDetailPage() {
   const canLock = trip.status === TripStatus.COMPLETED;
   const canReassign = trip.status === TripStatus.CREATED;
   const canAdjust = trip.status === TripStatus.LOCKED;
-  const needsPhotos = !trip.photo_urls || trip.photo_urls.length === 0;
+  const needsPhotos = !trip.photoUrls || trip.photoUrls.length === 0;
 
   return (
     <div className="fade-up">
@@ -318,41 +318,41 @@ export default function TripDetailPage() {
       {/* Info grid */}
       <div className="row-2 section-gap">
         <Panel title="Thông tin cơ bản">
-          {infoRow(<Truck size={16} />, 'Xe đầu', trip.truck?.license_plate)}
+          {infoRow(<Truck size={16} />, 'Xe đầu', trip.truck?.licensePlate)}
           {infoRow(<User size={16} />, 'Tài xế', trip.driver?.name)}
-          {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailer ? `${trip.trailer.license_plate} (${trip.trailer.type})` : null)}
-          {infoRow(<Calendar size={16} />, 'Ngày khởi hành', formatDate(trip.departure_date))}
-          {infoRow(<FileText size={16} />, 'Mã tham chiếu', trip.customer_reference)}
+          {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailer ? `${trip.trailer.licensePlate} (${trip.trailer.type})` : null)}
+          {infoRow(<Calendar size={16} />, 'Ngày khởi hành', formatDate(trip.departureDate))}
+          {infoRow(<FileText size={16} />, 'Mã tham chiếu', trip.customerReference)}
         </Panel>
 
         <Panel title="Tài chính">
           {infoRow(<Banknote size={16} />, 'Doanh thu', formatCurrency(trip.revenue))}
-          {trip.revenue_original && trip.revenue && Number(trip.revenue) !== Number(trip.revenue_original) && (
+          {trip.revenueOriginal && trip.revenue && Number(trip.revenue) !== Number(trip.revenueOriginal) && (
             infoRow(
               <Banknote size={16} />,
               'Giá gốc (trước điều chỉnh)',
               <span style={{ textDecoration: 'line-through', color: 'var(--fg-3)' }}>
-                {formatCurrency(trip.revenue_original)}
+                {formatCurrency(trip.revenueOriginal)}
               </span>,
             )
           )}
-          {infoRow(<Banknote size={16} />, 'Tổng chi phí', formatCurrency(trip.total_cost))}
+          {infoRow(<Banknote size={16} />, 'Tổng chi phí', formatCurrency(trip.totalCost))}
           {infoRow(
             <Banknote size={16} />,
             'Lợi nhuận gộp',
-            <span style={{ color: trip.gross_profit && Number(trip.gross_profit) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
-              {formatCurrency(trip.gross_profit)}
+            <span style={{ color: trip.grossProfit && Number(trip.grossProfit) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+              {formatCurrency(trip.grossProfit)}
             </span>,
           )}
-          {infoRow(<Fuel size={16} />, 'Chế độ nhiên liệu', FUEL_MODE_LABELS[trip.fuel_mode])}
-          {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuel_liters ? `${Number(trip.fuel_liters).toLocaleString('vi-VN')} lít` : '—')}
+          {infoRow(<Fuel size={16} />, 'Chế độ nhiên liệu', FUEL_MODE_LABELS[trip.fuelMode])}
+          {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuelLiters ? `${Number(trip.fuelLiters).toLocaleString('vi-VN')} lít` : '—')}
           {(() => {
             const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
-            const totalLiters = Number(trip.fuel_liters) || 0;
+            const totalLiters = Number(trip.fuelLiters) || 0;
             if (totalKm > 0 && totalLiters > 0) {
               const ttbq = (totalLiters / totalKm) * 100;
-              const warnThreshold = fuelConfig ? parseThreshold(fuelConfig.warning_threshold, 0) : 0;
-              const critThreshold = fuelConfig ? parseThreshold(fuelConfig.critical_threshold, 0) : 0;
+              const warnThreshold = fuelConfig ? parseThreshold(fuelConfig.warningThreshold, 0) : 0;
+              const critThreshold = fuelConfig ? parseThreshold(fuelConfig.criticalThreshold, 0) : 0;
               let badge: React.ReactNode = null;
               if (critThreshold > 0 && ttbq > critThreshold) {
                 badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--danger)', fontWeight: 600 }}>🔴 Vượt ngưỡng nghiêm trọng ({critThreshold.toFixed(1)})</span>;
@@ -364,29 +364,29 @@ export default function TripDetailPage() {
             }
             return null;
           })()}
-          {infoRow(<MapPin size={16} />, 'Tiền đường', formatCurrency(trip.total_road_allowance))}
-          {(Number(trip.tolls_discount) > 0 || Number(trip.tolls_addition) > 0 || Number(trip.tolls_stations) > 0 || trip.has_return_cargo) && (
+          {infoRow(<MapPin size={16} />, 'Tiền đường', formatCurrency(trip.totalRoadAllowance))}
+          {(Number(trip.tollsDiscount) > 0 || Number(trip.tollsAddition) > 0 || Number(trip.tollsStations) > 0 || trip.hasReturnCargo) && (
             <div style={{ padding: '6px 0 10px', borderBottom: '1px solid var(--border-1)' }}>
               <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Chi tiết tiền đường
               </div>
               <div style={{ fontSize: 12, color: 'var(--fg-2)', display: 'flex', flexDirection: 'column', gap: 3, paddingLeft: 12 }}>
-                {Number(trip.tolls_discount) > 0 && (
-                  <span>Giảm vé QL5: <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(trip.tolls_discount)}</strong></span>
+                {Number(trip.tollsDiscount) > 0 && (
+                  <span>Giảm vé QL5: <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(trip.tollsDiscount)}</strong></span>
                 )}
-                {Number(trip.tolls_addition) > 0 && (
-                  <span>Tăng vé theo lệnh: <strong style={{ color: 'var(--success)' }}>+{formatCurrency(trip.tolls_addition)}</strong></span>
+                {Number(trip.tollsAddition) > 0 && (
+                  <span>Tăng vé theo lệnh: <strong style={{ color: 'var(--success)' }}>+{formatCurrency(trip.tollsAddition)}</strong></span>
                 )}
-                {Number(trip.tolls_stations) > 0 && (
-                  <span>Số trạm: <strong>{trip.tolls_stations} trạm × 55.000 = -{formatCurrency(Number(trip.tolls_stations) * 55000)}</strong></span>
+                {Number(trip.tollsStations) > 0 && (
+                  <span>Số trạm: <strong>{trip.tollsStations} trạm × 55.000 = -{formatCurrency(Number(trip.tollsStations) * 55000)}</strong></span>
                 )}
-                {trip.has_return_cargo && (
+                {trip.hasReturnCargo && (
                   <span>Chuyến về có hàng: <strong style={{ color: 'var(--success)' }}>+300.000 ₫</strong></span>
                 )}
               </div>
             </div>
           )}
-          {infoRow(<User size={16} />, 'Lương tài xế', formatCurrency(trip.driver_salary))}
+          {infoRow(<User size={16} />, 'Lương tài xế', formatCurrency(trip.driverSalary))}
         </Panel>
       </div>
 
@@ -417,8 +417,8 @@ export default function TripDetailPage() {
                     <td>{leg.origin}</td>
                     <td>{leg.destination}</td>
                     <td className="num">{leg.km.toLocaleString('vi-VN')}</td>
-                    <td><span className="badge badge-outline" style={{ fontSize: 11 }}>{LOADING_TYPE_LABELS[leg.loading_type]}</span></td>
-                    <td className="num">{leg.calculated_liters ? Number(leg.calculated_liters).toLocaleString('vi-VN') : '—'}</td>
+                    <td><span className="badge badge-outline" style={{ fontSize: 11 }}>{LOADING_TYPE_LABELS[leg.loadingType]}</span></td>
+                    <td className="num">{leg.calculatedLiters ? Number(leg.calculatedLiters).toLocaleString('vi-VN') : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -435,11 +435,11 @@ export default function TripDetailPage() {
       )}
 
       {/* Photos */}
-      {trip.photo_urls && trip.photo_urls.length > 0 && (
+      {trip.photoUrls && trip.photoUrls.length > 0 && (
         <div className="section-gap">
           <div style={{ marginBottom: 8 }}><span className="typo-eyebrow">Ảnh</span></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
-            {trip.photo_urls.map((url, i) => (
+            {trip.photoUrls.map((url, i) => (
               <a
                 key={i}
                 href={url}
@@ -466,7 +466,7 @@ export default function TripDetailPage() {
         </div>
       )}
 
-      {!trip.notes && (!trip.photo_urls || trip.photo_urls.length === 0) && (
+      {!trip.notes && (!trip.photoUrls || trip.photoUrls.length === 0) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 12, marginTop: 4 }}>
           <ImageIcon size={14} />
           Chưa có ảnh hoặc ghi chú
@@ -489,12 +489,12 @@ export default function TripDetailPage() {
               <tbody>
                 {adjustments.map((a: any) => (
                   <tr key={a.id}>
-                    <td style={{ whiteSpace: 'nowrap' }}>{formatDate(a.created_at)}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{formatDate(a.createdAt)}</td>
                     <td className="num" style={{ color: Number(a.amount) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
                       {Number(a.amount) > 0 ? '+' : ''}{formatCurrency(a.amount)}
                     </td>
                     <td>{a.note}</td>
-                    <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{a.signed_agreement_ref}</td>
+                    <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{a.signedAgreementRef}</td>
                   </tr>
                 ))}
               </tbody>
@@ -516,7 +516,7 @@ export default function TripDetailPage() {
                 <label>Xe đầu kéo</label>
                 <select className="input" value={reassignTruckId} onChange={e => setReassignTruckId(e.target.value)}>
                   <option value="">-- Chọn xe --</option>
-                  {reassignTrucks.map(t => <option key={t.id} value={t.id}>{t.license_plate}</option>)}
+                  {reassignTrucks.map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
                 </select>
               </div>
               <div className="field">

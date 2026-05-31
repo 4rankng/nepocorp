@@ -29,6 +29,29 @@ router.get('/ledger', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/ledger/balances', async (req: Request, res: Response) => {
+  try {
+    const entityType = req.query.entity_type as string;
+    if (!entityType) return res.status(400).json({ error: 'entity_type is required' });
+    const rows = await db.selectDistinctOn([s.ledger.entityId], {
+      entityId: s.ledger.entityId,
+      balance: s.ledger.balance,
+      timestamp: s.ledger.timestamp,
+    })
+    .from(s.ledger)
+    .where(eq(s.ledger.entityType, entityType))
+    .orderBy(s.ledger.entityId, desc(s.ledger.id));
+    
+    res.json(rows.map(r => ({
+      entityId: r.entityId,
+      balance: parseFloat(r.balance),
+      timestamp: r.timestamp,
+    })));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Customer statement ──────────────────────────────────────────────────────
 
 router.get('/ledger/customers/:id/statement', async (req: Request, res: Response) => {
@@ -80,7 +103,7 @@ router.post('/payments/receive', async (req: Request, res: Response) => {
       // Resolve trip codes up front so ledger notes read naturally — e.g.
       // "Thanh toán chuyến TRP-202606-0082" rather than "Thanh toán chuyến #76".
       // The customer-facing statement renders these notes verbatim.
-      const tripIds = Array.from(new Set(data.payments.map(p => p.trip_id)));
+      const tripIds = Array.from(new Set(data.payments.map(p => p.tripId)));
       const tripRows = tripIds.length > 0
         ? await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode }).from(s.trips)
             .where(sql`${s.trips.id} IN (${sql.join(tripIds.map(id => sql`${id}`), sql`, `)})`)
@@ -88,13 +111,13 @@ router.post('/payments/receive', async (req: Request, res: Response) => {
       const codeById = new Map(tripRows.map(t => [t.id, t.tripCode || '']));
 
       for (const payment of data.payments) {
-        const tripLabel = codeById.get(payment.trip_id) || '';
+        const tripLabel = codeById.get(payment.tripId) || '';
         await LedgerService.postEntry(tx, {
           txnType: TxnType.PAYMENT_RECEIVED,
-          txnId: payment.trip_id,
-          receiptId: data.receipt_id,
+          txnId: payment.tripId,
+          receiptId: data.receiptId,
           entityType: 'CUSTOMER',
-          entityId: data.customer_id,
+          entityId: data.customerId,
           debit: 0,
           credit: payment.amount,
           note: tripLabel ? `Thanh toán chuyến ${tripLabel}` : 'Thanh toán chuyến',
@@ -115,19 +138,19 @@ router.post('/adjustments', async (req: Request, res: Response) => {
   try {
     const data = createAdjustmentSchema.parse(req.body);
 
-    const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, data.trip_id)).limit(1);
+    const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, data.tripId)).limit(1);
     if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
 
     await db.transaction(async (tx) => {
       const isDebit = data.amount > 0;
       await LedgerService.postEntry(tx, {
         txnType: TxnType.ADJUSTMENT,
-        txnId: data.trip_id,
+        txnId: data.tripId,
         entityType: 'CUSTOMER',
         entityId: trip.customerId,
         debit: isDebit ? data.amount : 0,
         credit: isDebit ? 0 : Math.abs(data.amount),
-        note: `${data.note} (HĐ: ${data.signed_agreement_ref})`,
+        note: `${data.note} (HĐ: ${data.signedAgreementRef})`,
       });
     });
 
@@ -142,7 +165,7 @@ router.post('/adjustments', async (req: Request, res: Response) => {
 
 router.get('/penalties', async (req: Request, res: Response) => {
   try {
-    const driverId = req.query.driver_id as string;
+    const driverId = req.query.driverId as string;
     const conditions = [isNull(s.penalties.deletedAt)];
     if (driverId) conditions.push(eq(s.penalties.driverId, parseInt(driverId)));
 
@@ -172,22 +195,22 @@ router.post('/penalties', async (req: Request, res: Response) => {
 
     await db.transaction(async (tx) => {
       // Advisory lock to prevent concurrent penalty races
-      await LedgerService.lockEntity(tx, 'DRIVER', data.driver_id);
+      await LedgerService.lockEntity(tx, 'DRIVER', data.driverId);
 
       const [penalty] = await tx.insert(s.penalties).values({
-        driverId: data.driver_id,
-        tripId: data.trip_id,
-        reasonId: data.reason_id,
-        customReason: data.custom_reason,
+        driverId: data.driverId,
+        tripId: data.tripId,
+        reasonId: data.reasonId,
+        customReason: data.customReason,
         amount: String(data.amount),
         date: data.date,
       }).returning();
 
       // Resolve trip code so the driver's ledger note reads naturally.
       let tripLabel = '';
-      if (data.trip_id) {
+      if (data.tripId) {
         const [trip] = await tx.select({ tripCode: s.trips.tripCode })
-          .from(s.trips).where(eq(s.trips.id, data.trip_id)).limit(1);
+          .from(s.trips).where(eq(s.trips.id, data.tripId)).limit(1);
         tripLabel = trip?.tripCode || '';
       }
 
@@ -196,10 +219,10 @@ router.post('/penalties', async (req: Request, res: Response) => {
         txnType: TxnType.PENALTY,
         txnId: penalty.id,
         entityType: 'DRIVER',
-        entityId: data.driver_id,
+        entityId: data.driverId,
         debit: data.amount,
         credit: 0,
-        note: data.custom_reason
+        note: data.customReason
           || (tripLabel ? `Kỷ luật chuyến ${tripLabel}` : 'Kỷ luật vi phạm'),
       });
 

@@ -9,24 +9,24 @@ import { LedgerService } from './ledger.service';
 // ─── Trip lifecycle ──────────────────────────────────────────────────────────
 
 export async function createTrip(data: {
-  customer_id: number;
-  route_id: number;
-  trailer_id: number;
-  truck_id: number;
-  driver_id: number;
-  cargo_type_id: number;
-  departure_date: string;
-  customer_reference?: string;
-  created_by?: number;
+  customerId: number;
+  routeId: number;
+  trailerId: number;
+  truckId: number;
+  driverId: number;
+  cargoTypeId: number;
+  departureDate: string;
+  customerReference?: string;
+  createdBy?: number;
 }) {
   return await db.transaction(async (tx) => {
     // 1. Timezone-pinned pricing lookup
     const [pricing] = await tx.select()
       .from(s.pricingTables)
       .where(and(
-        eq(s.pricingTables.customerId, data.customer_id),
-        eq(s.pricingTables.routeId, data.route_id),
-        lte(s.pricingTables.effectiveDate, data.departure_date),
+        eq(s.pricingTables.customerId, data.customerId),
+        eq(s.pricingTables.routeId, data.routeId),
+        lte(s.pricingTables.effectiveDate, data.departureDate),
         isNull(s.pricingTables.deletedAt)
       ))
       .orderBy(desc(s.pricingTables.effectiveDate))
@@ -40,11 +40,11 @@ export async function createTrip(data: {
     if (!fuelCfg) {
       throw Object.assign(new Error('Chưa cấu hình định mức nhiên liệu. Vui lòng cấu hình trước khi tạo lệnh vận chuyển.'), { status: 400 });
     }
-    const [route] = await tx.select().from(s.routes).where(eq(s.routes.id, data.route_id)).limit(1);
+    const [route] = await tx.select().from(s.routes).where(eq(s.routes.id, data.routeId)).limit(1);
     if (!route) {
       throw Object.assign(new Error('Tuyến đường không tồn tại'), { status: 400 });
     }
-    const [trailer] = await tx.select().from(s.trailers).where(eq(s.trailers.id, data.trailer_id)).limit(1);
+    const [trailer] = await tx.select().from(s.trailers).where(eq(s.trailers.id, data.trailerId)).limit(1);
     if (!trailer) {
       throw Object.assign(new Error('Rơ moóc không tồn tại'), { status: 400 });
     }
@@ -56,7 +56,7 @@ export async function createTrip(data: {
     // Look up road allowance base for snapshotted column
     const [allowance] = await tx.select().from(s.roadAllowances).where(
       and(
-        eq(s.roadAllowances.routeId, data.route_id),
+        eq(s.roadAllowances.routeId, data.routeId),
         eq(s.roadAllowances.trailerType, trailer.type),
         isNull(s.roadAllowances.deletedAt)
       )
@@ -78,7 +78,7 @@ export async function createTrip(data: {
     const returnCargoBonusApplied = Number(roadCfg.returnCargoBonus);
 
     // 3. Atomic tripCode generation
-    const departureDate = new Date(data.departure_date);
+    const departureDate = new Date(data.departureDate);
     const year = departureDate.getFullYear();
     const month = String(departureDate.getMonth() + 1).padStart(2, '0');
     const yearMonth = `${year}${month}`;
@@ -98,15 +98,15 @@ export async function createTrip(data: {
     const [trip] = await tx.insert(s.trips).values({
       tripCode,
       version: 1,
-      createdBy: data.created_by ?? null,
-      customerId: data.customer_id,
-      routeId: data.route_id,
-      trailerId: data.trailer_id,
-      truckId: data.truck_id,
-      driverId: data.driver_id,
-      cargoTypeId: data.cargo_type_id,
-      departureDate: data.departure_date,
-      customerReference: data.customer_reference ?? null,
+      createdBy: data.createdBy ?? null,
+      customerId: data.customerId,
+      routeId: data.routeId,
+      trailerId: data.trailerId,
+      truckId: data.truckId,
+      driverId: data.driverId,
+      cargoTypeId: data.cargoTypeId,
+      departureDate: data.departureDate,
+      customerReference: data.customerReference ?? null,
       status: TripStatus.CREATED,
       revenue: String(revenue),
       revenueOriginal: String(revenue),
@@ -134,19 +134,19 @@ export async function updateTripFigures(
   tripId: number,
   data: {
     legs: TripLegInput[];
-    fuel_mode: FuelMode;
-    fuel_liters_override?: number | null;
-    fuel_supplement_liters?: number;
-    fuel_supplement_reason?: string;
-    tolls_discount?: number;
-    tolls_addition?: number;
-    tolls_stations?: number;
-    has_return_cargo?: boolean;
-    driver_salary?: number;
+    fuelMode: FuelMode;
+    fuelLitersOverride?: number | null;
+    fuelSupplementLiters?: number;
+    fuelSupplementReason?: string;
+    tollsDiscount?: number;
+    tollsAddition?: number;
+    tollsStations?: number;
+    hasReturnCargo?: boolean;
+    driverSalary?: number;
     revenue?: number;
     notes?: string;
-    expected_version?: number;
-    user_id?: number;
+    expectedVersion?: number;
+    userId?: number;
   },
 ) {
   return await db.transaction(async (tx) => {
@@ -158,7 +158,7 @@ export async function updateTripFigures(
     }
 
     // 2. Optimistic concurrency check
-    if (data.expected_version !== undefined && trip.version !== data.expected_version) {
+    if (data.expectedVersion !== undefined && trip.version !== data.expectedVersion) {
       throw Object.assign(new Error('Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.'), { status: 409 });
     }
 
@@ -182,18 +182,18 @@ export async function updateTripFigures(
 
     if (data.revenue !== undefined && data.revenue !== Number(trip.revenue || 0)) {
       revenueOriginal = revenueOriginal || Number(trip.revenue || 0);
-      revenueOverriddenBy = data.user_id ?? null;
+      revenueOverriddenBy = data.userId ?? null;
       revenueOverriddenAt = new Date();
     }
 
-    const driverSalary = data.driver_salary !== undefined ? data.driver_salary : Number(trip.driverSalary || 0);
+    const driverSalary = data.driverSalary !== undefined ? data.driverSalary : Number(trip.driverSalary || 0);
 
     // 4. Compute Totals using pure shared function
     const totalsInput = {
-      legs: data.legs.map(l => ({ sequence: l.sequence, km: l.km, loadingType: l.loading_type })),
-      fuelMode: data.fuel_mode,
-      fuelLitersOverride: data.fuel_liters_override ?? null,
-      fuelSupplementLiters: data.fuel_supplement_liters ?? 0,
+      legs: data.legs.map(l => ({ sequence: l.sequence, km: l.km, loadingType: l.loadingType })),
+      fuelMode: data.fuelMode,
+      fuelLitersOverride: data.fuelLitersOverride ?? null,
+      fuelSupplementLiters: data.fuelSupplementLiters ?? 0,
       fuelLoadedNorm: fuelLoadedNormApplied,
       fuelEmptyNorm: fuelEmptyNormApplied,
       fuelPerTripSupplement: fuelSupplementNormApplied,
@@ -201,11 +201,11 @@ export async function updateTripFigures(
       isMountainRoute: route ? !!route.isMountain : false,
       mountainFixedAllowance: fuelFixedAllowanceApplied > 0 ? fuelFixedAllowanceApplied : null,
       roadAllowanceBase: roadAllowanceBaseApplied,
-      tollsDiscount: data.tolls_discount ?? 0,
-      tollsAddition: data.tolls_addition ?? 0,
-      tollsStations: data.tolls_stations ?? 0,
+      tollsDiscount: data.tollsDiscount ?? 0,
+      tollsAddition: data.tollsAddition ?? 0,
+      tollsStations: data.tollsStations ?? 0,
       tollPerStation: tollPerStationApplied,
-      hasReturnCargo: data.has_return_cargo ?? false,
+      hasReturnCargo: data.hasReturnCargo ?? false,
       returnCargoBonus: returnCargoBonusApplied,
       revenue,
       driverSalary,
@@ -231,18 +231,18 @@ export async function updateTripFigures(
         .where(eq(s.trips.id, tripId));
     }
 
-    // 6. Update derived fields and increment version
+        // 6. Update derived fields and increment version
     const nextVersion = trip.version + 1;
     const [updated] = await tx.update(s.trips).set({
       version: nextVersion,
-      fuelMode: data.fuel_mode,
-      fuelLitersOverride: data.fuel_liters_override != null ? String(data.fuel_liters_override) : null,
-      fuelSupplementLiters: String(data.fuel_supplement_liters || 0),
-      fuelSupplementReason: data.fuel_supplement_reason ?? null,
-      tollsDiscount: String(data.tolls_discount || 0),
-      tollsAddition: String(data.tolls_addition || 0),
-      tollsStations: data.tolls_stations || 0,
-      hasReturnCargo: data.has_return_cargo ?? false,
+      fuelMode: data.fuelMode,
+      fuelLitersOverride: data.fuelLitersOverride != null ? String(data.fuelLitersOverride) : null,
+      fuelSupplementLiters: String(data.fuelSupplementLiters || 0),
+      fuelSupplementReason: data.fuelSupplementReason ?? null,
+      tollsDiscount: String(data.tollsDiscount || 0),
+      tollsAddition: String(data.tollsAddition || 0),
+      tollsStations: data.tollsStations || 0,
+      hasReturnCargo: data.hasReturnCargo ?? false,
       driverSalary: String(driverSalary),
       fuelLiters: String(totals.totalFuelLiters),
       totalFuelCost: String(totals.totalFuelCost),
@@ -273,7 +273,7 @@ export async function updateTripFigures(
             origin: leg.origin,
             destination: leg.destination,
             km: leg.km,
-            loadingType: leg.loading_type,
+            loadingType: leg.loadingType,
             calculatedLiters: calcLeg ? String(calcLeg.calculatedLiters) : '0',
           };
         })
@@ -478,7 +478,7 @@ export async function transitionTripStatus(
   });
 }
 
-export async function reassignTrip(tripId: number, data: { truck_id: number; driver_id: number }) {
+export async function reassignTrip(tripId: number, data: { truckId: number; driverId: number }) {
   const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
   if (!trip) throw new Error('Không tìm thấy chuyến đi');
   if (trip.status !== TripStatus.CREATED) throw new Error('Chỉ có thể đổi tài xế/xe cho chuyến chưa xuất phát');
@@ -488,15 +488,15 @@ export async function reassignTrip(tripId: number, data: { truck_id: number; dri
   // violates foreign key constraint trips_truck_id_trucks_id_fk") leaks into
   // the UI as an unfriendly red banner. Catch the bad id at the API edge.
   const [truck] = await db.select({ id: s.trucks.id }).from(s.trucks)
-    .where(and(eq(s.trucks.id, data.truck_id), isNull(s.trucks.deletedAt))).limit(1);
+    .where(and(eq(s.trucks.id, data.truckId), isNull(s.trucks.deletedAt))).limit(1);
   if (!truck) throw new Error('Xe đầu kéo không tồn tại hoặc đã bị xóa');
   const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
-    .where(and(eq(s.drivers.id, data.driver_id), isNull(s.drivers.deletedAt))).limit(1);
+    .where(and(eq(s.drivers.id, data.driverId), isNull(s.drivers.deletedAt))).limit(1);
   if (!driver) throw new Error('Tài xế không tồn tại hoặc đã bị xóa');
 
   const [updated] = await db.update(s.trips).set({
-    truckId: data.truck_id,
-    driverId: data.driver_id,
+    truckId: data.truckId,
+    driverId: data.driverId,
     updatedAt: new Date(),
   }).where(eq(s.trips.id, tripId)).returning();
 

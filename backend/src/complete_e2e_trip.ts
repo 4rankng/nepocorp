@@ -29,17 +29,17 @@ async function run() {
 
   // Update actuals
   await tripService.updateTripFigures(tripId, {
-    expected_version: version,
-    fuel_mode: FuelMode.AUTO,
-    legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: 'HANG' as any }],
-    fuel_supplement_liters: 0,
-    tolls_discount: 0,
-    tolls_addition: 0,
-    tolls_stations: 0,
-    has_return_cargo: false,
-    driver_salary: 500000,
+    expectedVersion: version,
+    fuelMode: FuelMode.AUTO,
+    legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: 'HANG' as any }],
+    fuelSupplementLiters: 0,
+    tollsDiscount: 0,
+    tollsAddition: 0,
+    tollsStations: 0,
+    hasReturnCargo: false,
+    driverSalary: 500000,
     revenue: 4500000,
-    user_id: 2
+    userId: 2
   });
   console.log('3. Updated trip figures and actuals.');
 

@@ -20,8 +20,8 @@ function normalizeEntry(e: any): NormalizedEntry {
   // Backend now returns userName as the canonical display label. Fall back
   // through legacy fields (user_email, userEmail) so previously-stored rows
   // still render readably until they roll over.
-  const name = e.user_name || e.userName || e.username || e.user_email || e.userEmail || 'Người dùng';
-  const email = e.user_email || e.userEmail || '';
+  const name = e.userName || e.username || e.userEmail || 'Người dùng';
+  const email = e.userEmail || '';
   // Categorise from the action when the backend hasn't set it explicitly.
   const action: string = e.action || '';
   let category: AuditEntry['category'] = 'config';

@@ -12,6 +12,7 @@ import { useConfirm } from '../components/UI';
 interface UserRow {
   id: number;
   username: string | null;
+  fullName: string | null;
   email: string | null;
   phone: string | null;
   role: Role;
@@ -521,14 +522,14 @@ export default function UsersPage() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: 13, fontWeight: 700, color: u.role === Role.ADMIN ? 'var(--danger)' : u.role === Role.DRIVER ? 'var(--success)' : 'var(--warning)',
                           }}>
-                            {(u.username || u.email || '?').charAt(0).toUpperCase()}
+                            {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div className="row-strong">
-                              {u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
+                              {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
                               {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>(bạn)</span>}
                             </div>
-                            <div className="row-meta">ID #{u.id}</div>
+                            <div className="row-meta">@{u.username}</div>
                           </div>
                         </div>
                       </td>

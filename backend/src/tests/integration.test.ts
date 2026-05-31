@@ -126,25 +126,25 @@ async function testFetch(urlPath: string, options: any = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 test('T4.5 — Concurrency: Two PUT requests with same version -> one 409', async () => {
   const trip = await tripService.createTrip({
-    customer_id: customerId,
-    route_id: routeId,
-    trailer_id: trailerId,
-    truck_id: truckId,
-    driver_id: driverId,
-    cargo_type_id: cargoTypeId,
-    departure_date: '2026-06-01',
+    customerId: customerId,
+    routeId: routeId,
+    trailerId: trailerId,
+    truckId: truckId,
+    driverId: driverId,
+    cargoTypeId: cargoTypeId,
+    departureDate: '2026-06-01',
   });
 
   const updatePayload = {
     version: trip.version, // version = 1
-    fuel_mode: FuelMode.AUTO,
-    legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: 'HANG' }],
-    fuel_supplement_liters: 0,
-    tolls_discount: 0,
-    tolls_addition: 0,
-    tolls_stations: 0,
-    has_return_cargo: false,
-    driver_salary: 500000,
+    fuelMode: FuelMode.AUTO,
+    legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: 'HANG' }],
+    fuelSupplementLiters: 0,
+    tollsDiscount: 0,
+    tollsAddition: 0,
+    tollsStations: 0,
+    hasReturnCargo: false,
+    driverSalary: 500000,
     revenue: 4000000,
   };
 
@@ -283,13 +283,13 @@ test('T4.2 — Concurrency: Sorted locks prevent deadlocks for multiple trips wi
 // ─────────────────────────────────────────────────────────────────────────────
 test('T4.4 — Rate Snapshotting:applied values are preserved when configuration rates change', async () => {
   const trip = await tripService.createTrip({
-    customer_id: customerId,
-    route_id: routeId,
-    trailer_id: trailerId,
-    truck_id: truckId,
-    driver_id: driverId,
-    cargo_type_id: cargoTypeId,
-    departure_date: '2026-06-02',
+    customerId: customerId,
+    routeId: routeId,
+    trailerId: trailerId,
+    truckId: truckId,
+    driverId: driverId,
+    cargoTypeId: cargoTypeId,
+    departureDate: '2026-06-02',
   });
 
   const originalFuelPrice = Number(trip.fuelPriceApplied);
@@ -308,14 +308,14 @@ test('T4.4 — Rate Snapshotting:applied values are preserved when configuration
     await db.update(s.roadAllowances).set({ baseAmount: '9900000' }).where(eq(s.roadAllowances.routeId, routeId));
 
     await tripService.updateTripFigures(trip.id, {
-      fuel_mode: FuelMode.AUTO,
-      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loading_type: LoadingType.HANG }],
-      fuel_supplement_liters: 0,
-      tolls_discount: 0,
-      tolls_addition: 0,
-      tolls_stations: 0,
-      has_return_cargo: false,
-      driver_salary: 500000,
+      fuelMode: FuelMode.AUTO,
+      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: LoadingType.HANG }],
+      fuelSupplementLiters: 0,
+      tollsDiscount: 0,
+      tollsAddition: 0,
+      tollsStations: 0,
+      hasReturnCargo: false,
+      driverSalary: 500000,
       revenue: 4000000,
     });
 
@@ -335,13 +335,13 @@ test('T4.4 — Rate Snapshotting:applied values are preserved when configuration
 test('T4.6 — Driver Isolation: Driver endpoints block sensitive pricing/revenue columns', async () => {
   // Create a trip assigned to the driver
   const trip = await tripService.createTrip({
-    customer_id: customerId,
-    route_id: routeId,
-    trailer_id: trailerId,
-    truck_id: truckId,
-    driver_id: driverId,
-    cargo_type_id: cargoTypeId,
-    departure_date: '2026-06-03',
+    customerId: customerId,
+    routeId: routeId,
+    trailerId: trailerId,
+    truckId: truckId,
+    driverId: driverId,
+    cargoTypeId: cargoTypeId,
+    departureDate: '2026-06-03',
   });
 
   // Query as Driver role
@@ -388,13 +388,13 @@ test('T4.7 — State-Machine: Transition matrices, photo gates, and lock validat
 
   // 1. Create trip with free truck/driver
   const trip = await tripService.createTrip({
-    customer_id: customerId,
-    route_id: routeId,
-    trailer_id: trailerId,
-    truck_id: tTruck,
-    driver_id: tDriver,
-    cargo_type_id: cargoTypeId,
-    departure_date: '2026-06-04',
+    customerId: customerId,
+    routeId: routeId,
+    trailerId: trailerId,
+    truckId: tTruck,
+    driverId: tDriver,
+    cargoTypeId: cargoTypeId,
+    departureDate: '2026-06-04',
   });
 
   assert.strictEqual(trip.status, TripStatus.CREATED);

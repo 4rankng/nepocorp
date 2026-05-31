@@ -18,7 +18,7 @@ export interface FormLeg {
   origin: string;
   destination: string;
   km: string;
-  loading_type: LoadingType;
+  loadingType: LoadingType;
 }
 
 export interface CompletionStatus {
@@ -119,8 +119,8 @@ function useTripLegs(routes: RouteOption[], routeId: string) {
         sequence: 1,
         origin: parts[0]?.trim() || "",
         destination: parts[1]?.trim() || "",
-        km: selectedRoute.distance_km ? String(selectedRoute.distance_km) : "",
-        loading_type: LoadingType.HANG,
+        km: selectedRoute.distanceKm ? String(selectedRoute.distanceKm) : "",
+        loadingType: LoadingType.HANG,
       },
     ]);
   }, [selectedRoute, legs.length]);
@@ -136,7 +136,7 @@ function useTripLegs(routes: RouteOption[], routeId: string) {
           origin: lastLeg ? lastLeg.destination : "",
           destination: "",
           km: "",
-          loading_type: LoadingType.HANG,
+          loadingType: LoadingType.HANG,
         },
       ];
     });
@@ -295,7 +295,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     }
     return legs.reduce((acc, leg) => {
       const km = Number(leg.km) || 0;
-      const rate = leg.loading_type === LoadingType.HANG ? LOADED_RATE : EMPTY_RATE;
+      const rate = leg.loadingType === LoadingType.HANG ? LOADED_RATE : EMPTY_RATE;
       return acc + (km / 100) * rate * FUEL_PRICE_PER_LITER;
     }, 0);
   }, [fuelMode, fuelLitersOverride, legs]);
@@ -406,16 +406,16 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
       setSubmitting(true);
       try {
         const createPayload: Record<string, unknown> = {
-          customer_id: Number(customerId),
-          route_id: Number(routeId),
-          truck_id: Number(truckId),
-          trailer_id: Number(trailerId),
-          driver_id: Number(driverId),
-          cargo_type_id: Number(cargoTypeId),
-          departure_date: departureDate,
+          customerId: Number(customerId),
+          routeId: Number(routeId),
+          truckId: Number(truckId),
+          trailerId: Number(trailerId),
+          driverId: Number(driverId),
+          cargoTypeId: Number(cargoTypeId),
+          departureDate: departureDate,
         };
         if (customerReference.trim()) {
-          createPayload.customer_reference = customerReference.trim();
+          createPayload.customerReference = customerReference.trim();
         }
         const trip = await api.post<{ id: number }>("/trips", createPayload);
 
@@ -446,27 +446,27 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
               origin: l.origin.trim(),
               destination: l.destination.trim(),
               km: Number(l.km),
-              loading_type: l.loading_type,
+              loadingType: l.loadingType,
             })),
-            fuel_mode: fuelMode,
-            fuel_liters_override:
+            fuelMode,
+            fuelLitersOverride:
               fuelMode === FuelMode.FLAT_RATE
                 ? fuelLitersOverride
                   ? Number(fuelLitersOverride)
                   : 0
                 : undefined,
-            fuel_supplement_liters: fuelSupplementLiters
+            fuelSupplementLiters: fuelSupplementLiters
               ? Number(fuelSupplementLiters)
               : 0,
-            fuel_supplement_reason: fuelSupplementReason.trim() || undefined,
-            tolls_discount: tollsDiscount ? Number(tollsDiscount) : 0,
-            tolls_addition: tollsAddition ? Number(tollsAddition) : 0,
-            tolls_stations: tollsStations ? Number(tollsStations) : 0,
-            has_return_cargo: hasReturnCargo,
-            driver_salary: driverSalary ? Number(driverSalary) : 0,
+            fuelSupplementReason: fuelSupplementReason.trim() || undefined,
+            tollsDiscount: tollsDiscount ? Number(tollsDiscount) : 0,
+            tollsAddition: tollsAddition ? Number(tollsAddition) : 0,
+            tollsStations: tollsStations ? Number(tollsStations) : 0,
+            hasReturnCargo: hasReturnCargo,
+            driverSalary: driverSalary ? Number(driverSalary) : 0,
             revenue: revenue ? Number(revenue) : undefined,
             notes: notes.trim() || undefined,
-            photo_urls: photoUrls,
+            photoUrls,
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }

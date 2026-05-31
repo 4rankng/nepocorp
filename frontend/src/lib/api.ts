@@ -6,36 +6,6 @@ export class ApiError extends Error {
 
 const API_BASE = '/api';
 
-// The backend now applies a snake_case serializer middleware on every response
-// (see backend/src/middleware/serializer.ts), so all keys arrive in snake_case
-// (gross_profit, total_revenue, license_plate, …). A lot of legacy frontend
-// code still reads the camelCase form (stats.grossProfit, t.licensePlate, …).
-// Rather than touching every read site, we mutate the parsed JSON to expose
-// a camelCase alias for every snake_case key, so both forms work in the UI.
-// This is idempotent — keys without an underscore aren't touched, and we
-// only add aliases when the camelCase key isn't already present.
-function addCamelCaseAliases(value: any): any {
-  if (Array.isArray(value)) {
-    for (const item of value) addCamelCaseAliases(item);
-    return value;
-  }
-  if (value && typeof value === 'object') {
-    for (const key of Object.keys(value)) {
-      const v = (value as any)[key];
-      if (v && typeof v === 'object') addCamelCaseAliases(v);
-      if (key.includes('_')) {
-        const camel = key.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
-        if (camel !== key && !(camel in value)) (value as any)[camel] = v;
-      }
-    }
-  }
-  return value;
-}
-
-// The backend now applies snakeCaseSerializer middleware, converting all
-// camelCase keys to snake_case at the response seam. The frontend consumes
-// snake_case directly — no client-side transformation needed.
-
 class ApiClient {
   private token: string | null = null;
 
@@ -68,7 +38,7 @@ class ApiClient {
       const error = await res.json().catch(() => ({ error: 'Lỗi kết nối' }));
       throw new ApiError(res.status, error.error || 'Lỗi không xác định');
     }
-    return addCamelCaseAliases(await res.json()) as T;
+    return (await res.json()) as T;
   }
 
   get<T>(path: string) { return this.request<T>(path); }

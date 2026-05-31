@@ -7,11 +7,11 @@ function PenaltyReasonForm({ saving, item, onsave, oncancel, existingReasons }: 
   saving: boolean; item?: PenaltyReason; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
   existingReasons: PenaltyReason[];
 }) {
-  const [reason, setReason] = useState(item?.reason_text || '');
-  const [amount, setAmount] = useState(item?.default_amount || '');
+  const [reason, setReason] = useState(item?.reasonText || '');
+  const [amount, setAmount] = useState(item?.defaultAmount || '');
   const isDuplicate = reason.trim().length > 0 && existingReasons.some(r =>
     r.id !== item?.id &&
-    r.reason_text.trim().toLowerCase() === reason.trim().toLowerCase()
+    r.reasonText.trim().toLowerCase() === reason.trim().toLowerCase()
   );
   return (
     <InlineForm colSpan={4}>
@@ -25,7 +25,7 @@ function PenaltyReasonForm({ saving, item, onsave, oncancel, existingReasons }: 
       <div style={{ flex: 1, minWidth: 140 }}>
         <Field label="Mức mặc định (VNĐ)"><input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!reason.trim() || isDuplicate) return; onsave({ reason_text: reason.trim(), default_amount: Number(amount) || 0 }); }} />
+      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!reason.trim() || isDuplicate) return; onsave({ reasonText: reason.trim(), defaultAmount: Number(amount) || 0 }); }} />
     </InlineForm>
   );
 }
@@ -36,8 +36,8 @@ export default function PenaltyReasonsConfigPage() {
       title="Lý do phạt" description="Danh mục lỗi vi phạm tài xế và mức phạt mặc định"
       endpoint="/penalty-reasons" colSpan={4}
       columns={[
-        { header: 'Lý do', render: (pr) => <span style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{pr.reason_text}</span> },
-        { header: 'Mức mặc định', className: 'num', render: (pr) => formatCurrency(pr.default_amount) },
+        { header: 'Lý do', render: (pr) => <span style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{pr.reasonText}</span> },
+        { header: 'Mức mặc định', className: 'num', render: (pr) => formatCurrency(pr.defaultAmount) },
       ]}
       renderForm={(p) => <PenaltyReasonForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} existingReasons={p.items as PenaltyReason[]} />}
     />

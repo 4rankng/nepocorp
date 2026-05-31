@@ -7,183 +7,186 @@ import type {
 
 export interface User {
   id: number;
+  username: string;
   email: string;
-  password_hash: string;
+  phone: string | null;
+  fullName: string | null;
+  passwordHash: string;
   role: Role;
   status: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
-export type UserPublic = Omit<User, 'password_hash' | 'deleted_at'>;
+export type UserPublic = Omit<User, 'passwordHash' | 'deletedAt'>;
 
 export interface Driver {
   id: number;
-  user_id: number;
+  userId: number | null;
   name: string;
   phone: string | null;
-  assigned_truck_id: number | null;
-  base_salary: string | null;
+  assignedTruckId: number | null;
+  baseSalary: string | null;
   status: DriverStatus;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Customer {
   id: number;
   name: string;
-  tax_code: string | null;
-  contact_person: string | null;
+  taxCode: string | null;
+  contactPerson: string | null;
   phone: string | null;
-  contact_info: string | null;
-  credit_limit: string | null;
+  contactInfo: string | null;
+  creditLimit: string | null;
   status: CustomerStatus;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Truck {
   id: number;
-  license_plate: string;
+  licensePlate: string;
   status: TruckStatus;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Trailer {
   id: number;
-  license_plate: string;
+  licensePlate: string;
   type: TrailerType;
   status: TrailerStatus;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface Route {
   id: number;
   name: string;
-  distance_km: number | null;
-  is_mountain: boolean;
-  fixed_fuel_allowance: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  distanceKm: number | null;
+  isMountain: boolean;
+  fixedFuelAllowance: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface CargoType {
   id: number;
   name: string;
-  requires_photos: boolean;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  requiresPhotos: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface PricingTable {
   id: number;
-  customer_id: number;
-  route_id: number;
+  customerId: number;
+  routeId: number;
   price: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface RoadAllowance {
   id: number;
-  route_id: number;
-  trailer_type: TrailerType;
-  base_amount: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  routeId: number;
+  trailerType: TrailerType;
+  baseAmount: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface FuelConfig {
   id: number;
-  loaded_norm: string;
-  empty_norm: string;
+  loadedNorm: string;
+  emptyNorm: string;
   supplement: string;
-  unit_price: string;
-  warning_threshold: string;
-  critical_threshold: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  unitPrice: string;
+  warningThreshold: string;
+  criticalThreshold: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface PenaltyReason {
   id: number;
-  reason_text: string;
-  default_amount: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  reasonText: string;
+  defaultAmount: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 // ─── Operations ──────────────────────────────────────────────────────────────
 
 export interface Trip {
   id: number;
-  customer_id: number;
-  customer_reference: string | null;
-  truck_id: number;
-  driver_id: number;
-  route_id: number;
-  trailer_id: number;
-  cargo_type_id: number;
+  customerId: number;
+  customerReference: string | null;
+  truckId: number;
+  driverId: number;
+  routeId: number;
+  trailerId: number;
+  cargoTypeId: number;
   status: TripStatus;
-  departure_date: string;
-  fuel_mode: FuelMode;
-  fuel_liters_override: string | null;
-  fuel_supplement_liters: string | null;
-  fuel_supplement_reason: string | null;
-  fuel_price_applied: string | null;
-  tolls_discount: string;
-  tolls_addition: string;
-  tolls_stations: number;
-  has_return_cargo: boolean;
-  driver_salary: string | null;
-  fuel_liters: string | null;
-  total_fuel_cost: string | null;
-  total_road_allowance: string | null;
-  total_cost: string | null;
+  departureDate: string;
+  fuelMode: FuelMode;
+  fuelLitersOverride: string | null;
+  fuelSupplementLiters: string | null;
+  fuelSupplementReason: string | null;
+  fuelPriceApplied: string | null;
+  tollsDiscount: string;
+  tollsAddition: string;
+  tollsStations: number;
+  hasReturnCargo: boolean;
+  driverSalary: string | null;
+  fuelLiters: string | null;
+  totalFuelCost: string | null;
+  totalRoadAllowance: string | null;
+  totalCost: string | null;
   revenue: string | null;
-  gross_profit: string | null;
-  revenue_original: string | null;
-  revenue_overridden_by: number | null;
-  revenue_overridden_at: string | null;
-  photo_urls: string[] | null;
+  grossProfit: string | null;
+  revenueOriginal: string | null;
+  revenueOverriddenBy: number | null;
+  revenueOverriddenAt: string | null;
+  photoUrls: string[] | null;
   notes: string | null;
-  trip_code: string | null;
+  tripCode: string | null;
   version: number;
-  created_by: number | null;
-  road_allowance_base_applied: string | null;
-  fuel_loaded_norm_applied: string | null;
-  fuel_empty_norm_applied: string | null;
-  fuel_fixed_allowance_applied: string | null;
-  toll_per_station_applied: string | null;
-  return_cargo_bonus_applied: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdBy: number | null;
+  roadAllowanceBaseApplied: string | null;
+  fuelLoadedNormApplied: string | null;
+  fuelEmptyNormApplied: string | null;
+  fuelFixedAllowanceApplied: string | null;
+  tollPerStationApplied: string | null;
+  returnCargoBonusApplied: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface TripLeg {
   id: number;
-  trip_id: number;
+  tripId: number;
   sequence: number;
   origin: string;
   destination: string;
   km: number;
-  loading_type: LoadingType;
-  calculated_liters: string | null;
-  created_at: string;
-  updated_at: string;
+  loadingType: LoadingType;
+  calculatedLiters: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Financials ──────────────────────────────────────────────────────────────
@@ -191,29 +194,29 @@ export interface TripLeg {
 export interface LedgerEntry {
   id: number;
   timestamp: string;
-  txn_type: TxnType;
-  txn_id: number | null;
-  receipt_id: string | null;
-  entity_type: string;
-  entity_id: number;
+  txnType: TxnType;
+  txnId: number | null;
+  receiptId: string | null;
+  entityType: string;
+  entityId: number;
   credit: string;
   debit: string;
   balance: string;
   note: string | null;
-  created_at: string;
+  createdAt: string;
 }
 
 export interface Penalty {
   id: number;
-  driver_id: number;
-  trip_id: number | null;
-  reason_id: number | null;
-  custom_reason: string | null;
+  driverId: number;
+  tripId: number | null;
+  reasonId: number | null;
+  customReason: string | null;
   amount: string;
   date: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface CapTableHistory {
@@ -229,10 +232,10 @@ export interface Distribution {
   id: number;
   quarter: number;
   year: number;
-  partner_name: string;
+  partnerName: string;
   amount: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ManagementFee {
@@ -240,8 +243,8 @@ export interface ManagementFee {
   month: number;
   year: number;
   amount: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Audit ───────────────────────────────────────────────────────────────────
@@ -249,13 +252,13 @@ export interface ManagementFee {
 export interface AuditLog {
   id: number;
   timestamp: string;
-  user_id: number | null;
+  userId: number | null;
   message: string;
-  entity_type: string | null;
-  entity_id: number | null;
+  entityType: string | null;
+  entityId: number | null;
   payload: Record<string, unknown> | null;
-  ip_address: string | null;
-  created_at: string;
+  ipAddress: string | null;
+  createdAt: string;
 }
 
 // ─── API types ───────────────────────────────────────────────────────────────
@@ -271,14 +274,14 @@ export interface TripDetail extends Trip {
 }
 
 export interface CreateTripRequest {
-  customer_id: number;
-  route_id: number;
-  trailer_id: number;
-  truck_id: number;
-  driver_id: number;
-  cargo_type_id: number;
-  departure_date: string;
-  customer_reference?: string;
+  customerId: number;
+  routeId: number;
+  trailerId: number;
+  truckId: number;
+  driverId: number;
+  cargoTypeId: number;
+  departureDate: string;
+  customerReference?: string;
 }
 
 export interface TripLegInput {
@@ -286,45 +289,45 @@ export interface TripLegInput {
   origin: string;
   destination: string;
   km: number;
-  loading_type: LoadingType;
+  loadingType: LoadingType;
 }
 
 export interface UpdateTripFiguresRequest {
   legs: TripLegInput[];
-  fuel_mode: FuelMode;
-  fuel_liters_override?: number;
-  fuel_supplement_liters?: number;
-  fuel_supplement_reason?: string;
-  tolls_discount?: number;
-  tolls_addition?: number;
-  tolls_stations?: number;
-  has_return_cargo?: boolean;
-  driver_salary?: number;
+  fuelMode: FuelMode;
+  fuelLitersOverride?: number;
+  fuelSupplementLiters?: number;
+  fuelSupplementReason?: string;
+  tollsDiscount?: number;
+  tollsAddition?: number;
+  tollsStations?: number;
+  hasReturnCargo?: boolean;
+  driverSalary?: number;
   revenue?: number;
   notes?: string;
-  photo_urls?: string[];
+  photoUrls?: string[];
 }
 
 export interface CreatePaymentRequest {
-  customer_id: number;
-  receipt_id: string;
-  payments: { trip_id: number; amount: number }[];
+  customerId: number;
+  receiptId: string;
+  payments: { tripId: number; amount: number }[];
 }
 
 export interface CreatePenaltyRequest {
-  driver_id: number;
-  trip_id?: number;
-  reason_id?: number;
-  custom_reason?: string;
+  driverId: number;
+  tripId?: number;
+  reasonId?: number;
+  customReason?: string;
   amount: number;
   date: string;
 }
 
 export interface CreateAdjustmentRequest {
-  trip_id: number;
+  tripId: number;
   amount: number;
   note: string;
-  signed_agreement_ref: string;
+  signedAgreementRef: string;
 }
 
 export interface LoginResponse {
@@ -372,7 +375,7 @@ export interface UnpaidTrip {
 }
 
 export interface CustomerStatement {
-  customer: Pick<Customer, 'id' | 'name' | 'contact_info'>;
+  customer: Pick<Customer, 'id' | 'name' | 'contactInfo'>;
   ledgerRows: LedgerEntry[];
   agingBuckets: AgingBucket[];
   totalOutstanding: number;
@@ -385,15 +388,15 @@ export interface SalaryPeriod {
   id: number;
   month: number | null;           // null for global default row
   year: number | null;            // null for global default row
-  start_date: string | null;      // null for global default (derived)
-  end_date: string | null;        // null for global default (derived)
+  startDate: string | null;      // null for global default (derived)
+  endDate: string | null;        // null for global default (derived)
   label: string | null;
-  default_start_day: number | null; // only set on global default
-  default_end_day: number | null;   // only set on global default
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  defaultStartDay: number | null; // only set on global default
+  defaultEndDay: number | null;   // only set on global default
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 /** Resolved salary period date range returned by the resolve endpoint */

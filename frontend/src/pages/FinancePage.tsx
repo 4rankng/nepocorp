@@ -47,8 +47,7 @@ function formatRawNumber(num: number | string | null): string {
 }
 
 function yoyPct(current: number, previous: number): string {
-  if (previous == null) return current > 0 ? '+∞' : '—';
-  if (previous === 0) return current > 0 ? '+∞' : '—';
+  if (previous == null || previous === 0) return current > 0 ? 'Mới' : '—';
   const pct = ((current - previous) / previous * 100).toFixed(1);
   return `${Number(pct) >= 0 ? '+' : ''}${pct}%`;
 }
@@ -80,9 +79,9 @@ export default function FinancePage() {
 
   const error = queryError ? (queryError as any).message || 'Không thể tải báo cáo' : null;
 
-  const fuelCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).total_fuel_cost || '0'), 0);
-  const roadCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).total_road_allowance || '0'), 0);
-  const driverCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).driver_salary || '0'), 0);
+  const fuelCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
+  const roadCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
+  const driverCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).driverSalary || '0'), 0);
 
   const totalRevenue = report?.totalRevenue ?? 0;
   const otherRevenue = report?.otherIncome ?? 0;
@@ -346,33 +345,39 @@ export default function FinancePage() {
           </div>
           {(() => {
             const maxProfit = Math.max(...topTrucks.map(t => t['LN gộp']), 1);
+            const minProfit = Math.min(...topTrucks.map(t => t['LN gộp']), 0);
+            const totalRange = maxProfit - minProfit;
             const svgH = Math.max(120, topTrucks.length * 36);
-            // Reserve right-side gutter for the value label so it never gets
-            // clipped at the viewBox edge. plateW (90) + barTrackW + gap + valW (90)
-            // must fit in viewBox 400.
             const plateW = 90;
             const valW = 90;
             const gap = 8;
             const barTrackW = 400 - plateW - valW - gap;
-            const valX = plateW + barTrackW + gap;
+            const zeroX = minProfit < 0 ? plateW + (Math.abs(minProfit) / totalRange) * barTrackW : plateW;
             return (
               <svg width="100%" height={svgH} viewBox={`0 0 400 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
                 {topTrucks.map((t, i) => {
-                  const raw = (t['LN gộp'] / maxProfit) * barTrackW;
-                  const w = Math.max(0, raw);
-                  const labelOverlapsBar = plateW + w > valX - 50;
+                  const val = t['LN gộp'];
+                  const isNegative = val < 0;
+                  const w = (Math.abs(val) / totalRange) * barTrackW;
+                  const barX = isNegative ? zeroX - w : zeroX;
+                  const fill = isNegative ? 'var(--danger)' : '#6366f1';
+                  const labelX = isNegative ? zeroX + 6 : zeroX + w + 6;
                   return (
                     <g key={i} transform={`translate(0, ${i * 36})`}>
                       <text x={0} y={16} fontSize={12} fill="var(--fg-2)">{t.name}</text>
-                      <rect x={plateW} y={4} width={w} height={20} fill="#6366f1" rx={3} />
+                      <rect x={barX} y={4} width={w} height={20} fill={fill} rx={3} />
+                      {/* Zero axis line if we have negative profits */}
+                      {minProfit < 0 && (
+                        <line x1={zeroX} y1={0} x2={zeroX} y2={28} stroke="var(--border-2)" strokeWidth={1} strokeDasharray="2,2" />
+                      )}
                       <text
-                        x={labelOverlapsBar ? plateW + w - 6 : plateW + w + 6}
+                        x={labelX}
                         y={19}
                         fontSize={11}
-                        fill={labelOverlapsBar ? '#fff' : 'var(--fg-2)'}
-                        textAnchor={labelOverlapsBar ? 'end' : 'start'}
-                        fontWeight={labelOverlapsBar ? 600 : 400}
-                      >{formatRawNumber(t['LN gộp'])} ₫</text>
+                        fill={isNegative ? 'var(--danger)' : 'var(--fg-2)'}
+                        textAnchor="start"
+                        fontWeight={isNegative ? 600 : 400}
+                      >{formatRawNumber(val)} ₫</text>
                     </g>
                   );
                 })}

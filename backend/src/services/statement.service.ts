@@ -5,7 +5,7 @@ import { TxnType, computeFifoAging } from '@nepocorp/shared';
 import { LedgerService } from './ledger.service';
 
 export interface CustomerStatementData {
-  customer: { id: number; name: string; contact_info: string | null };
+  customer: { id: number; name: string; contactInfo: string | null };
   ledgerRows: any[];
   totalOutstanding: number;
   unpaidTrips: Array<{ tripId: number; date: string; outstanding: number; note: string }>;
@@ -83,7 +83,7 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return {
-    customer: { id: customer.id, name: customer.name, contact_info: customer.contactInfo },
+    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo },
     ledgerRows,
     totalOutstanding,
     unpaidTrips,
@@ -118,7 +118,7 @@ export async function exportStatementXlsx(data: CustomerStatementData, dateStr: 
   const titleCell = sheet.getCell('A1');
   titleCell.value = `NEPO Logistics — Sao kê công nợ: ${data.customer.name}`;
   titleCell.font = { size: 14, bold: true };
-  sheet.getCell('A2').value = `Liên hệ: ${data.customer.contact_info || '—'}`;
+  sheet.getCell('A2').value = `Liên hệ: ${data.customer.contactInfo || '—'}`;
   sheet.getCell('A3').value = `Ngày xuất: ${dateStr}`;
   sheet.getCell('A4').value = `Tổng nợ: ${data.totalOutstanding.toLocaleString('vi-VN')} ₫`;
 
@@ -205,7 +205,7 @@ export function exportStatementHtml(data: CustomerStatementData, dateStr: string
 <h1>NEPO Logistics — Sao kê công nợ</h1>
 <div class="meta">
   Khách hàng: <strong>${escapeHtml(data.customer.name)}</strong><br>
-  Liên hệ: ${escapeHtml(data.customer.contact_info || '—')}<br>
+  Liên hệ: ${escapeHtml(data.customer.contactInfo || '—')}<br>
   Ngày xuất: ${dateStr}
 </div>
 <div class="total">Tổng nợ: ${data.totalOutstanding.toLocaleString('vi-VN')} ₫</div>

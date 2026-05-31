@@ -7,10 +7,11 @@ import { useSalaryPeriod } from '../hooks/useQueries';
 
 interface DriverPenaltyRow {
   id: number;
-  driver_id: number;
-  trip_id: number | null;
-  reason_id: number | null;
-  custom_reason: string | null;
+  driverId: number;
+  tripId: number | null;
+  tripCode?: string | null;
+  reasonId: number | null;
+  customReason: string | null;
   amount: string;
   date: string;
   reasonText?: string;
@@ -71,7 +72,7 @@ export default function DriverPenaltyPage() {
     }
     if (!filterPeriod) return;
     api.get<DriverPenaltyRow[] | { items: DriverPenaltyRow[] }>(
-      `/driver/me/penalties?date_from=${filterPeriod.start}&date_to=${filterPeriod.end}`,
+      `/driver/me/penalties?dateFrom=${filterPeriod.start}&dateTo=${filterPeriod.end}`,
     ).then(data => {
       setFilteredPenalties(Array.isArray(data) ? data : (data as any).items ?? []);
     }).catch(() => {
@@ -232,7 +233,7 @@ export default function DriverPenaltyPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-1)' }}>
-                      {p.reasonText || p.custom_reason || 'Vi phạm nội quy'}
+                      {p.reasonText || p.customReason || 'Vi phạm nội quy'}
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--danger)', whiteSpace: 'nowrap' }}>
                       -{formatCurrency(Number(p.amount))}
@@ -242,15 +243,15 @@ export default function DriverPenaltyPage() {
                     <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>
                       📅 {formatDate(p.date)}
                     </span>
-                    {p.trip_id && (
+                    {p.tripId && p.tripCode && (
                       <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>
-                        🚛 Lệnh #{p.trip_id}
+                        🚛 {p.tripCode}
                       </span>
                     )}
                   </div>
-                  {p.custom_reason && p.reasonText && (
+                  {p.customReason && p.reasonText && (
                     <div style={{ marginTop: 6, fontSize: 12, color: 'var(--fg-3)', fontStyle: 'italic' }}>
-                      {p.custom_reason}
+                      {p.customReason}
                     </div>
                   )}
                 </div>

@@ -47,18 +47,17 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
 
 /**
  * Pull a human-readable identifier out of a response/request body so audit
- * messages can read "khóa chuyến TRP-202606-0086" instead of "khóa chuyến #76".
+ * messages can read "khóa chuyến TRP-202606-0086" instead of raw numeric IDs.
  *
  * Checks both camelCase and snake_case because the serializer middleware can
  * emit either depending on order. Preference is route-specific: trips have a
  * `tripCode`, trucks/trailers have a `licensePlate`, everything config-like
- * has `name`. As a last resort the entity numeric id is returned.
+ * has `name`. Returns undefined if no readable key is found.
  */
 function extractEntityKey(
   entityType: string | null,
   responseBody: Record<string, unknown> | null,
   requestBody: Record<string, unknown> | null,
-  fallbackId: number | null,
 ): string | undefined {
   const pick = (obj: Record<string, unknown> | null, ...keys: string[]): string | undefined => {
     if (!obj) return undefined;
@@ -72,39 +71,34 @@ function extractEntityKey(
 
   switch (entityType) {
     case 'trips':
-      return pick(responseBody, 'tripCode', 'trip_code')
-        || pick(requestBody, 'tripCode', 'trip_code')
-        || (fallbackId != null ? `#${fallbackId}` : undefined);
+      return pick(responseBody, 'tripCode')
+        || pick(requestBody, 'tripCode');
     case 'trucks':
     case 'trailers':
-      return pick(responseBody, 'licensePlate', 'license_plate')
-        || pick(requestBody, 'licensePlate', 'license_plate')
-        || (fallbackId != null ? `#${fallbackId}` : undefined);
+      return pick(responseBody, 'licensePlate')
+        || pick(requestBody, 'licensePlate');
     case 'customers':
     case 'routes':
     case 'cargo-types':
     case 'drivers':
     case 'penalty-reasons':
       return pick(responseBody, 'name')
-        || pick(requestBody, 'name')
-        || (fallbackId != null ? `#${fallbackId}` : undefined);
+        || pick(requestBody, 'name');
     case 'cap-table':
-      return pick(responseBody, 'partnerName', 'partner_name')
-        || pick(requestBody, 'partnerName', 'partner_name')
-        || (fallbackId != null ? `#${fallbackId}` : undefined);
+      return pick(responseBody, 'partnerName')
+        || pick(requestBody, 'partnerName');
     case 'payments':
     case 'adjustments':
     case 'penalties': {
       // These often reference a trip in the body — surface that.
-      const tripRef = pick(responseBody, 'tripCode', 'trip_code')
-        || pick(requestBody, 'tripCode', 'trip_code');
+      const tripRef = pick(responseBody, 'tripCode')
+        || pick(requestBody, 'tripCode');
       if (tripRef) return `cho chuyến ${tripRef}`;
-      return fallbackId != null ? `#${fallbackId}` : undefined;
+      return undefined;
     }
     default:
       return pick(responseBody, 'name', 'code')
-        || pick(requestBody, 'name', 'code')
-        || (fallbackId != null ? `#${fallbackId}` : undefined);
+        || pick(requestBody, 'name', 'code');
   }
 }
 
@@ -145,7 +139,6 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
       entityType,
       capturedBody,
       req.body as Record<string, unknown>,
-      entityId,
     );
 
     if (res.statusCode < 400 && req.user) {

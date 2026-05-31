@@ -12,7 +12,7 @@ interface TripLeg {
   origin: string;
   destination: string;
   km: number;
-  loading_type: string;
+  loadingType: string;
 }
 
 interface DriverTripDetail {
@@ -233,11 +233,11 @@ export default function DriverTripDetailPage() {
                     <span>{leg.km} km</span>
                     <span style={{
                       padding: '1px 8px', borderRadius: 20,
-                      background: leg.loading_type === 'HANG' ? 'var(--brand-soft)' : 'var(--bg-2)',
-                      color: leg.loading_type === 'HANG' ? 'var(--brand)' : 'var(--fg-3)',
+                      background: leg.loadingType === 'HANG' ? 'var(--brand-soft)' : 'var(--bg-2)',
+                      color: leg.loadingType === 'HANG' ? 'var(--brand)' : 'var(--fg-3)',
                       fontSize: 11, fontWeight: 600,
                     }}>
-                      {loadingTypeLabel(leg.loading_type)}
+                      {loadingTypeLabel(leg.loadingType)}
                     </span>
                   </div>
                 </div>

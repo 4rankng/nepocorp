@@ -48,7 +48,7 @@ export function JourneyLegRow({ leg, onRemove, onUpdate, canRemove }: JourneyLeg
         </div>
         <div>
           <div className="leg-card__mini-label">Tải trọng</div>
-          <select className="input input--sm" value={leg.loading_type} onChange={(e) => onUpdate('loading_type', e.target.value)}>
+          <select className="input input--sm" value={leg.loadingType} onChange={(e) => onUpdate('loadingType', e.target.value)}>
             <option value="HANG">Có hàng</option>
             <option value="VO">Vỏ rỗng</option>
           </select>

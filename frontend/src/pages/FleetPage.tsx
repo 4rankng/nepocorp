@@ -61,7 +61,7 @@ function StatusDot({ status }: { status: string }) {
 function TruckForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: TruckType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
-  const [plate, setPlate] = useState(item?.license_plate || '');
+  const [plate, setPlate] = useState(item?.licensePlate || '');
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
   return (
     <InlineForm colSpan={5}>
@@ -75,7 +75,7 @@ function TruckForm({ saving, item, onsave, oncancel }: {
           </select>
         </Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ license_plate: plate.trim(), status }); }} />
+      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), status }); }} />
     </InlineForm>
   );
 }
@@ -83,7 +83,7 @@ function TruckForm({ saving, item, onsave, oncancel }: {
 function TrailerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: Trailer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
-  const [plate, setPlate] = useState(item?.license_plate || '');
+  const [plate, setPlate] = useState(item?.licensePlate || '');
   const [type, setType] = useState<string>(item?.type || TrailerType.FT40);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
   return (
@@ -107,7 +107,7 @@ function TrailerForm({ saving, item, onsave, oncancel }: {
           </select>
         </Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ license_plate: plate.trim(), type: type as TrailerType, status }); }} />
+      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), type: type as TrailerType, status }); }} />
     </InlineForm>
   );
 }
@@ -117,8 +117,8 @@ function DriverForm({ saving, item, trucks, onsave, oncancel }: {
 }) {
   const [name, setName] = useState(item?.name || '');
   const [phone, setPhone] = useState(item?.phone || '');
-  const [baseSalary, setBaseSalary] = useState<string | number>(item?.base_salary || '');
-  const [truckId, setTruckId] = useState<number>(item?.assigned_truck_id || 0);
+  const [baseSalary, setBaseSalary] = useState<string | number>(item?.baseSalary || '');
+  const [truckId, setTruckId] = useState<number>(item?.assignedTruckId || 0);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
 
   return (
@@ -136,7 +136,7 @@ function DriverForm({ saving, item, trucks, onsave, oncancel }: {
         <Field label="Xe phân công">
           <select className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
             <option value={0}>-- Chưa phân --</option>
-            {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.license_plate}</option>)}
+            {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
           </select>
         </Field>
       </div>
@@ -149,7 +149,7 @@ function DriverForm({ saving, item, trucks, onsave, oncancel }: {
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
         if (!name.trim()) return;
-        onsave({ name: name.trim(), phone: phone.trim() || undefined, base_salary: baseSalary ? Number(baseSalary) : undefined, assigned_truck_id: truckId || null, status });
+        onsave({ name: name.trim(), phone: phone.trim() || undefined, baseSalary: baseSalary ? Number(baseSalary) : undefined, assignedTruckId: truckId || null, status });
       }} />
     </InlineForm>
   );
@@ -208,7 +208,7 @@ function TruckCard({ trucks, driverByTruck, crud }: {
               : (
                 <tr key={t.id}>
                   <td className="num">{i + 1}</td>
-                  <td><Plate plate={t.license_plate} tag="VN" /></td>
+                  <td><Plate plate={t.licensePlate} tag="VN" /></td>
                   <td>
                     {driverByTruck.has(t.id)
                       ? (
@@ -295,7 +295,7 @@ function TrailerCard({ trailers, crud }: {
               : (
                 <tr key={t.id}>
                   <td className="num">{i + 1}</td>
-                  <td><Plate plate={t.license_plate} tag="RM" /></td>
+                  <td><Plate plate={t.licensePlate} tag="RM" /></td>
                   <td style={{ textAlign: 'center' }}><TypeChip type={t.type} /></td>
                   <td><span className="fleet-unassigned">—</span></td>
                   <td style={{ textAlign: 'center' }}><StatusDot status={t.status} /></td>
@@ -328,8 +328,8 @@ function DriverCard({ drivers, truckMap, crud }: {
   crud: ReturnType<typeof useCRUD>;
 }) {
   const [driverSearch, setDriverSearch] = useState('');
-  const totalSalary = drivers.reduce((s, d) => s + (d.base_salary ? Number(d.base_salary) : 0), 0);
-  const unassigned = drivers.filter(d => !d.assigned_truck_id).length;
+  const totalSalary = drivers.reduce((s, d) => s + (d.baseSalary ? Number(d.baseSalary) : 0), 0);
+  const unassigned = drivers.filter(d => !d.assignedTruckId).length;
   const q = driverSearch.trim().toLowerCase();
   const filteredDrivers = q
     ? drivers.filter(d => d.name.toLowerCase().includes(q) || (d.phone && d.phone.includes(q)))
@@ -393,18 +393,18 @@ function DriverCard({ drivers, truckMap, crud }: {
                   </td>
                   <td><span className="fleet-phone">{d.phone || '—'}</span></td>
                   <td>
-                    {d.assigned_truck_id && truckMap.has(d.assigned_truck_id)
+                    {d.assignedTruckId && truckMap.has(d.assignedTruckId)
                       ? (
                         <span className="fleet-pair">
-                          {truckMap.get(d.assigned_truck_id)!.license_plate}
+                          {truckMap.get(d.assignedTruckId)!.licensePlate}
                         </span>
                       )
                       : <span className="fleet-unassigned">— Chưa phân —</span>
                     }
                   </td>
                   <td>
-                    {d.base_salary
-                      ? <span className="fleet-salary">{Number(d.base_salary).toLocaleString('vi-VN')}<span className="unit">VNĐ</span></span>
+                    {d.baseSalary
+                      ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">VNĐ</span></span>
                       : <span className="fleet-salary empty">—</span>
                     }
                   </td>
@@ -455,7 +455,7 @@ export default function FleetPage() {
   trucks.forEach(t => truckMap.set(t.id, t));
 
   const driverByTruck = new Map<number, Driver>();
-  drivers.forEach(d => { if (d.assigned_truck_id) driverByTruck.set(d.assigned_truck_id, d); });
+  drivers.forEach(d => { if (d.assignedTruckId) driverByTruck.set(d.assignedTruckId, d); });
 
   // KPI computations
   const activeTrucks = trucks.filter(t => t.status === 'ACTIVE').length;
@@ -463,7 +463,7 @@ export default function FleetPage() {
   const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
   const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
   const maintTrailers = trailers.filter(t => t.status === 'MAINTENANCE').length;
-  const assignedDrivers = drivers.filter(d => d.assigned_truck_id).length;
+  const assignedDrivers = drivers.filter(d => d.assignedTruckId).length;
   const readyToRun = trucks.filter(t =>
     t.status === 'ACTIVE' && driverByTruck.has(t.id),
   ).length;
@@ -478,8 +478,8 @@ export default function FleetPage() {
             <Btn variant="secondary" size="sm" icon={<Download size={14} />} onClick={() => {
               const headers = ['Loại', 'Biển số', 'Trạng thái', 'Tài xế gán'];
               const rows = [
-                ...trucks.map(t => ['Xe đầu kéo', t.license_plate, TRUCK_STATUS[t.status] || t.status, driverByTruck.has(t.id) ? driverByTruck.get(t.id)!.name : '—']),
-                ...trailers.map(t => ['Rơ-moóc', t.license_plate, t.status === 'ACTIVE' ? 'Hoạt động' : t.status, '—']),
+                ...trucks.map(t => ['Xe đầu kéo', t.licensePlate, TRUCK_STATUS[t.status] || t.status, driverByTruck.has(t.id) ? driverByTruck.get(t.id)!.name : '—']),
+                ...trailers.map(t => ['Rơ-moóc', t.licensePlate, t.status === 'ACTIVE' ? 'Hoạt động' : t.status, '—']),
               ];
               downloadCSV(`doi-xe-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
             }}>Xuất Excel</Btn>

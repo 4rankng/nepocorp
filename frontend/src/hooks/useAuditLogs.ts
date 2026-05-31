@@ -4,8 +4,6 @@ import { api } from '../lib/api';
 export interface AuditEntry {
   id: number;
   timestamp: string;
-  user_email?: string;
-  user_name?: string;
   userEmail?: string;
   userName?: string;
   action: string;

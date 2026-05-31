@@ -61,7 +61,7 @@ function formatTenure(createdAt: string): string {
 
 function computeStreak(driverId: number, penalties: PenaltyRow[], createdAt: string): number {
   const driverPenalties = penalties
-    .filter(p => p.driver_id === driverId && p.date)
+    .filter(p => p.driverId === driverId && p.date)
     .sort((a, b) => b.date.localeCompare(a.date));
   if (driverPenalties.length === 0) {
     const hire = new Date(createdAt);
@@ -116,13 +116,13 @@ function PenaltyFormDrawer({
     setSubmitting(true);
     setSubmitError(null);
     const body: CreatePenaltyRequest = {
-      driver_id: Number(formDriverId),
+      driverId: Number(formDriverId),
       amount: parseFloat(formAmount),
       date: formDate,
     };
-    if (formTripId) body.trip_id = Number(formTripId);
-    if (formReasonId) body.reason_id = Number(formReasonId);
-    if (formCustomReason) body.custom_reason = formCustomReason;
+    if (formTripId) body.tripId = Number(formTripId);
+    if (formReasonId) body.reasonId = Number(formReasonId);
+    if (formCustomReason) body.customReason = formCustomReason;
     try {
       await api.post('/penalties', body);
       onCreated();
@@ -138,7 +138,7 @@ function PenaltyFormDrawer({
     setFormReasonId(reasonId);
     if (reasonId) {
       const reason = reasons.find(r => r.id === Number(reasonId));
-      if (reason?.default_amount) setFormAmount(reason.default_amount);
+      if (reason?.defaultAmount) setFormAmount(reason.defaultAmount);
     }
   };
 
@@ -181,7 +181,7 @@ function PenaltyFormDrawer({
         <FormGroup label="Lý do danh mục">
           <select className="input" value={formReasonId} onChange={e => handleReasonChange(e.target.value)}>
             <option value="">-- Chọn danh mục --</option>
-            {reasons.map(r => <option key={r.id} value={r.id}>{r.reason_text} ({formatCurrency(Number(r.default_amount))})</option>)}
+            {reasons.map(r => <option key={r.id} value={r.id}>{r.reasonText} ({formatCurrency(Number(r.defaultAmount))})</option>)}
           </select>
         </FormGroup>
         <FormGroup label="Lý do chi tiết khác">
@@ -189,7 +189,7 @@ function PenaltyFormDrawer({
           {formCustomReason.length > 5 && (() => {
             const q = formCustomReason.toLowerCase();
             const match = reasons.find(r =>
-              r.reason_text.toLowerCase().includes(q) || q.includes(r.reason_text.toLowerCase())
+              r.reasonText.toLowerCase().includes(q) || q.includes(r.reasonText.toLowerCase())
             );
             if (!match) return null;
             return (
@@ -198,9 +198,9 @@ function PenaltyFormDrawer({
                 <button
                   type="button"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--brand)', fontWeight: 600, padding: 0, fontSize: 11, textDecoration: 'underline' }}
-                  onClick={() => { setFormCustomReason(match.reason_text); if (match.default_amount) setFormAmount(match.default_amount); }}
+                  onClick={() => { setFormCustomReason(match.reasonText); if (match.defaultAmount) setFormAmount(match.defaultAmount); }}
                 >
-                  "{match.reason_text}"
+                  "{match.reasonText}"
                 </button>
                 {' '}— dùng lý do này?
               </div>
@@ -304,7 +304,7 @@ export default function PenaltyPage() {
     ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với T${prevMonthNum}`
     : incidentCount === 0 ? 'Tháng sạch' : '';
 
-  const penalizedDriverIds = new Set(monthPenalties.map(p => p.driver_id));
+  const penalizedDriverIds = new Set(monthPenalties.map(p => p.driverId));
   const safeCount = drivers.filter(d => !penalizedDriverIds.has(d.id)).length;
 
   const yearStart = `${now.getFullYear()}-01-01`;
@@ -321,15 +321,14 @@ export default function PenaltyPage() {
   const cutoffStr = cutoffDate.toISOString().slice(0, 10);
 
   const driverDetails = drivers.map(d => {
-    const streakDays = computeStreak(d.id, penalties, d.created_at);
-    const driverPenalties = penalties.filter(p => p.driver_id === d.id && p.date >= cutoffStr);
+    const streakDays = computeStreak(d.id, penalties, d.createdAt);
+    const driverPenalties = penalties.filter(p => p.driverId === d.id && p.date >= cutoffStr);
     const violationsInPeriod = driverPenalties.length;
-    const driverYTD = ytdPenalties.filter(p => p.driver_id === d.id);
+    const driverYTD = ytdPenalties.filter(p => p.driverId === d.id);
     const fineYTD = driverYTD.reduce((s, p) => s + parseFloat(p.amount), 0);
     const grade = getGrade(streakDays, violationsInPeriod);
-    const truckPlate = d.assigned_truck_id && truckMap.has(d.assigned_truck_id)
-      ? truckMap.get(d.assigned_truck_id)!.license_plate
-      : null;
+    const truckPlate = d.assignedTruckId && truckMap.has(d.assignedTruckId)
+      ? truckMap.get(d.assignedTruckId)!.licensePlate: null;
     return { ...d, streakDays, violationsInPeriod, fineYTD, grade, truckPlate };
   }).sort((a, b) => b.streakDays - a.streakDays || a.violationsInPeriod - b.violationsInPeriod);
 
@@ -350,7 +349,7 @@ export default function PenaltyPage() {
   // ── Violation log filtering ──────────────────────────────────────────────────
 
   const filteredPenalties = logDriverFilter
-    ? penalties.filter(p => p.driver_id === logDriverFilter)
+    ? penalties.filter(p => p.driverId === logDriverFilter)
     : penalties; // status filter is future work; show all for now
 
   // ── Open drawer helpers ──────────────────────────────────────────────────────
@@ -384,8 +383,8 @@ export default function PenaltyPage() {
             const headers = ['Tài xế', 'Mã lệnh', 'Lý do', 'Số tiền', 'Ngày'];
             const rows = filteredPenalties.map(p => [
               p.driverName || '—',
-              p.trip_id ? `#${p.trip_id}` : '—',
-              p.reasonText || p.custom_reason || '—',
+              p.tripId ? `#${p.tripId}` : '—',
+              p.reasonText || p.customReason || '—',
               p.amount,
               p.date,
             ]);
@@ -545,7 +544,7 @@ export default function PenaltyPage() {
                           <span className="penalty-driver-info">
                             <div className="name">{d.name}</div>
                             <div className="role">
-                              {d.truckPlate || 'Chưa phân xe'} · {formatTenure(d.created_at)}
+                              {d.truckPlate || 'Chưa phân xe'} · {formatTenure(d.createdAt)}
                             </div>
                           </span>
                         </span>
@@ -716,12 +715,12 @@ export default function PenaltyPage() {
                           </div>
                         </td>
                         <td>
-                          {p.trip_id
-                             ? <a href={`/trips/${p.trip_id}`} onClick={(e) => { e.preventDefault(); navigate(`/trips/${p.trip_id}`); }} style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: 12 }}>#{p.trip_id}</a>
+                          {p.tripId && p.tripCode
+                             ? <a href={`/trips/${p.tripId}`} onClick={(e) => { e.preventDefault(); navigate(`/trips/${p.tripId}`); }} style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: 12 }}>{p.tripCode}</a>
                             : <span style={{ color: 'var(--ink-3)' }}>—</span>}
                         </td>
                         <td style={{ color: 'var(--ink-2)', maxWidth: 240 }}>
-                          {p.reasonText || p.custom_reason || '—'}
+                          {p.reasonText || p.customReason || '—'}
                         </td>
                         <td className="num">
                           <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(Number(p.amount))}</strong>
@@ -757,7 +756,7 @@ export default function PenaltyPage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {reasons.map((r, idx) => {
-              const amount = Number(r.default_amount);
+              const amount = Number(r.defaultAmount);
               const sev = getSeverity(amount);
               const code = `KL-${String(idx + 1).padStart(2, '0')}`;
               return (
@@ -766,7 +765,7 @@ export default function PenaltyPage() {
                     <SeverityIcon severity={sev} />
                   </div>
                   <div className="penalty-vio-type-info">
-                    <div className="penalty-vio-type-name">{r.reason_text}</div>
+                    <div className="penalty-vio-type-name">{r.reasonText}</div>
                     <div className="penalty-vio-type-meta">
                       <span className={`penalty-sev-pill ${sev}`}>{getSeverityLabel(sev)}</span>
                       <span className="code">{code}</span>

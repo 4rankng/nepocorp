@@ -8,22 +8,6 @@ import * as s from '../db/schema';
 import { eq, isNull, sql, like, and, desc, lte } from 'drizzle-orm';
 import type { Request, Response } from 'express';
 
-// ─── Key transform ──────────────────────────────────────────────────────────────
-
-/**
- * Convert snake_case keys to camelCase for Drizzle column compatibility.
- * Zod schemas use snake_case field names (license_plate, contact_info, …)
- * but Drizzle columns use camelCase (licensePlate, contactInfo, …).
- */
-export function snakeToCamelKeys<T extends Record<string, any>>(input: T): Record<string, any> {
-  const out: Record<string, any> = {};
-  for (const [k, v] of Object.entries(input)) {
-    const camel = k.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
-    out[camel] = v;
-  }
-  return out;
-}
-
 // ─── CRUD factory ───────────────────────────────────────────────────────────────
 
 /**
@@ -65,7 +49,7 @@ export function createCrudRouter(
 
   sub.post('/', async (req: Request, res: Response) => {
     const data = createSchema.parse(req.body);
-    const [item] = await db.insert(table).values(snakeToCamelKeys(data)).returning();
+    const [item] = await db.insert(table).values(data).returning();
     res.status(201).json(item);
   });
 
@@ -81,7 +65,7 @@ export function createCrudRouter(
   sub.put('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     const data = createSchema.partial().parse(req.body);
-    const [item] = await db.update(table).set({ ...snakeToCamelKeys(data), updatedAt: new Date() }).where(eq(table.id, id)).returning();
+    const [item] = await db.update(table).set({ ...data, updatedAt: new Date() }).where(eq(table.id, id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     res.json(item);
   });

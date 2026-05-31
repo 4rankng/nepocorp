@@ -100,7 +100,7 @@ router.post('/', async (req: Request, res: Response) => {
     const data = createTripSchema.parse(req.body);
     const trip = await tripService.createTrip({
       ...data,
-      created_by: req.user!.userId,
+      createdBy: req.user!.userId,
     });
     res.status(201).json(trip);
   } catch (err: any) {
@@ -171,8 +171,8 @@ router.put('/:id/pre-departure', async (req: Request, res: Response) => {
     const data = updateTripFiguresSchema.parse(req.body);
     const trip = await tripService.updateTripFigures(id, {
       ...data,
-      expected_version: data.version,
-      user_id: req.user!.userId,
+      expectedVersion: data.version,
+      userId: req.user!.userId,
     });
     res.json(trip);
   } catch (err: any) {
@@ -189,8 +189,8 @@ router.put('/:id/actuals', async (req: Request, res: Response) => {
     // Auto-complete from IN_TRANSIT is now handled inside updateTripFigures
     const updated = await tripService.updateTripFigures(id, {
       ...data,
-      expected_version: data.version,
-      user_id: req.user!.userId,
+      expectedVersion: data.version,
+      userId: req.user!.userId,
     });
     res.json(updated);
   } catch (err: any) {
@@ -252,11 +252,11 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
 router.patch('/:id/reassign', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
-    const { truck_id, driver_id } = req.body;
-    if (!truck_id || !driver_id) {
-      return res.status(400).json({ error: 'truck_id và driver_id là bắt buộc' });
+    const { truckId, driverId } = req.body;
+    if (!truckId || !driverId) {
+      return res.status(400).json({ error: 'truckId và driverId là bắt buộc' });
     }
-    const trip = await tripService.reassignTrip(id, { truck_id: Number(truck_id), driver_id: Number(driver_id) });
+    const trip = await tripService.reassignTrip(id, { truckId: Number(truckId), driverId: Number(driverId) });
     res.json(trip);
   } catch (err: any) {
     res.status(err.status || 400).json({ error: err.message });
@@ -280,7 +280,7 @@ router.get('/:id/adjustments', async (req: Request, res: Response) => {
 router.post('/:id/adjustment', async (req: Request, res: Response) => {
   try {
     const tripId = parseInt(req.params.id as string);
-    const data = createAdjustmentSchema.parse({ ...req.body, trip_id: tripId });
+    const data = createAdjustmentSchema.parse({ ...req.body, tripId });
 
     const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
@@ -294,7 +294,7 @@ router.post('/:id/adjustment', async (req: Request, res: Response) => {
         entityId: trip.customerId,
         debit: isDebit ? data.amount : 0,
         credit: isDebit ? 0 : Math.abs(data.amount),
-        note: `${data.note} (HĐ: ${data.signed_agreement_ref})`,
+        note: `${data.note} (HĐ: ${data.signedAgreementRef})`,
       });
     });
 

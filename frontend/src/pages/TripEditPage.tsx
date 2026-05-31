@@ -44,25 +44,25 @@ export default function TripEditPage() {
 
   useEffect(() => {
     if (!trip) return;
-    setFuelMode(trip.fuel_mode);
-    setFuelLitersOverride(trip.fuel_liters_override ? String(trip.fuel_liters_override) : '');
-    setFuelSupplementLiters(trip.fuel_supplement_liters ? String(trip.fuel_supplement_liters) : '');
-    setFuelSupplementReason(trip.fuel_supplement_reason || '');
-    setTollsDiscount(trip.tolls_discount ? String(trip.tolls_discount) : '');
-    setTollsAddition(trip.tolls_addition ? String(trip.tolls_addition) : '');
-    setTollsStations(trip.tolls_stations ? String(trip.tolls_stations) : '');
-    setHasReturnCargo(!!trip.has_return_cargo);
-    setDriverSalary(trip.driver_salary ? String(trip.driver_salary) : '');
+    setFuelMode(trip.fuelMode);
+    setFuelLitersOverride(trip.fuelLitersOverride ? String(trip.fuelLitersOverride) : '');
+    setFuelSupplementLiters(trip.fuelSupplementLiters ? String(trip.fuelSupplementLiters) : '');
+    setFuelSupplementReason(trip.fuelSupplementReason || '');
+    setTollsDiscount(trip.tollsDiscount ? String(trip.tollsDiscount) : '');
+    setTollsAddition(trip.tollsAddition ? String(trip.tollsAddition) : '');
+    setTollsStations(trip.tollsStations ? String(trip.tollsStations) : '');
+    setHasReturnCargo(!!trip.hasReturnCargo);
+    setDriverSalary(trip.driverSalary ? String(trip.driverSalary) : '');
     setRevenue(trip.revenue ? String(trip.revenue) : '');
     setNotes(trip.notes || '');
-    setPhotoUrls(trip.photo_urls || []);
+    setPhotoUrls(trip.photoUrls || []);
 
-    if (trip.customer_id && trip.route_id) {
+    if (trip.customerId && trip.routeId) {
       (async () => {
         try {
           const ptRes = await api.get<PaginatedResponse<PricingTable>>('/pricing-tables');
           const match = (ptRes.items || []).find(
-            (pt: PricingTable) => pt.customer_id === trip.customer_id && pt.route_id === trip.route_id
+            (pt: PricingTable) => pt.customerId === trip.customerId && pt.routeId === trip.routeId
           );
           if (match) {
             setSuggestedPrice(Number(match.price));
@@ -79,7 +79,7 @@ export default function TripEditPage() {
         origin: leg.origin,
         destination: leg.destination,
         km: String(leg.km),
-        loading_type: leg.loading_type,
+        loadingType: leg.loadingType,
       })));
     } else {
       setLegs([{
@@ -88,7 +88,7 @@ export default function TripEditPage() {
         origin: trip.route?.name.split('→')[0]?.trim() || '',
         destination: trip.route?.name.split('→')[1]?.trim() || '',
         km: '',
-        loading_type: LoadingType.HANG,
+        loadingType: LoadingType.HANG,
       }]);
     }
   }, [trip]);
@@ -105,7 +105,7 @@ export default function TripEditPage() {
           origin: lastLeg ? lastLeg.destination : '',
           destination: '',
           km: '',
-          loading_type: LoadingType.HANG,
+          loadingType: LoadingType.HANG,
         },
       ];
     });
@@ -224,18 +224,18 @@ export default function TripEditPage() {
           origin: l.origin.trim(),
           destination: l.destination.trim(),
           km: Number(l.km),
-          loading_type: l.loading_type,
+          loadingType: l.loadingType,
         })),
         version: trip.version,
-        fuel_mode: fuelMode,
-        fuel_liters_override: fuelMode === FuelMode.FLAT_RATE ? (fuelLitersOverride ? Number(fuelLitersOverride) : 0) : undefined,
-        fuel_supplement_liters: fuelSupplementLiters ? Number(fuelSupplementLiters) : 0,
-        fuel_supplement_reason: fuelSupplementReason.trim() || undefined,
-        tolls_discount: tollsDiscount ? Number(tollsDiscount) : 0,
-        tolls_addition: tollsAddition ? Number(tollsAddition) : 0,
-        tolls_stations: tollsStations ? Number(tollsStations) : 0,
-        has_return_cargo: hasReturnCargo,
-        driver_salary: driverSalary ? Number(driverSalary) : 0,
+        fuelMode: fuelMode,
+        fuelLitersOverride: fuelMode === FuelMode.FLAT_RATE ? (fuelLitersOverride ? Number(fuelLitersOverride) : 0) : undefined,
+        fuelSupplementLiters: fuelSupplementLiters ? Number(fuelSupplementLiters) : 0,
+        fuelSupplementReason: fuelSupplementReason.trim() || undefined,
+        tollsDiscount: tollsDiscount ? Number(tollsDiscount) : 0,
+        tollsAddition: tollsAddition ? Number(tollsAddition) : 0,
+        tollsStations: tollsStations ? Number(tollsStations) : 0,
+        hasReturnCargo: hasReturnCargo,
+        driverSalary: driverSalary ? Number(driverSalary) : 0,
         revenue: revenue ? Number(revenue) : undefined,
         notes: notes.trim() || undefined,
       };
@@ -341,7 +341,7 @@ export default function TripEditPage() {
             <PhotoUploader
               photos={mapUrlsToPhotos(photoUrls)}
               onPhotosChange={(updatedPhotos) => setPhotoUrls(updatedPhotos.map(p => p.url))}
-              requiresPhotos={!!trip.cargoType?.requires_photos}
+              requiresPhotos={!!trip.cargoType?.requiresPhotos}
               uploading={uploading}
               onUpload={handlePhotoUpload}
             />
@@ -371,9 +371,9 @@ export default function TripEditPage() {
               hasReturnCargo={hasReturnCargo}
               driverSalary={driverSalary}
               revenue={revenue}
-              isMountainRoute={trip.route?.is_mountain}
-              mountainFixedAllowance={trip.route?.fixed_fuel_allowance ? Number(trip.route.fixed_fuel_allowance) : null}
-              roadAllowanceBase={Number(trip.road_allowance_base_applied || 0)}
+              isMountainRoute={trip.route?.isMountain}
+              mountainFixedAllowance={trip.route?.fixedFuelAllowance ? Number(trip.route.fixedFuelAllowance) : null}
+              roadAllowanceBase={Number(trip.roadAllowanceBaseApplied || 0)}
             />
           </div>
         </div>

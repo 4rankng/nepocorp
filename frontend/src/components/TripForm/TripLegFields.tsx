@@ -9,7 +9,7 @@ export interface FormLeg {
   origin: string;
   destination: string;
   km: string;
-  loading_type: LoadingType;
+  loadingType: LoadingType;
 }
 
 interface TripLegFieldsProps {
@@ -121,8 +121,8 @@ export function TripLegFields({ legs, addLeg, removeLeg, updateLeg }: TripLegFie
                 <select
                   className="input"
                   style={{ padding: "7px 10px", fontSize: 13 }}
-                  value={leg.loading_type}
-                  onChange={e => updateLeg(idx, "loading_type", e.target.value as LoadingType)}
+                  value={leg.loadingType}
+                  onChange={e => updateLeg(idx, "loadingType", e.target.value as LoadingType)}
                 >
                   <option value={LoadingType.HANG}>Có hàng</option>
                   <option value={LoadingType.VO}>Vỏ rỗng</option>

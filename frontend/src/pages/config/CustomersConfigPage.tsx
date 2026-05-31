@@ -18,7 +18,7 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: Customer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
   const [name, setName] = useState(item?.name || '');
-  const [contactInfo, setContactInfo] = useState(item?.contact_info || '');
+  const [contactInfo, setContactInfo] = useState(item?.contactInfo || '');
   return (
     <InlineForm colSpan={7}>
       <div style={{ flex: 2, minWidth: 180 }}>
@@ -27,7 +27,7 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
       <div style={{ flex: 2, minWidth: 180 }}>
         <Field label="Liên hệ"><input className="input" value={contactInfo} onChange={e => setContactInfo(e.target.value)} placeholder="SĐT, email..." /></Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => onsave({ name: name.trim(), contact_info: contactInfo.trim() || undefined })} />
+      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => onsave({ name: name.trim(), contactInfo: contactInfo.trim() || undefined })} />
     </InlineForm>
   );
 }
@@ -50,9 +50,9 @@ export default function CustomersConfigPage() {
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const statsMap = new Map<number, { trips: number; revenue: number }>();
     (tripRes as any).items.forEach((t: any) => {
-      const dep = t.departure_date || t.departureDate || '';
+      const dep = t.departureDate || t.departureDate || '';
       if (dep.startsWith(thisMonth)) {
-        const cid = t.customer_id ?? t.customerId;
+        const cid = t.customerId ?? t.customerId;
         if (cid) {
           const s = statsMap.get(cid) || { trips: 0, revenue: 0 };
           s.trips++;
@@ -80,7 +80,7 @@ export default function CustomersConfigPage() {
 
   function getRiskLevel(c: Customer): 'high' | 'med' | 'low' {
     const debt = 0;
-    const limit = parseFloat(c.credit_limit || '0');
+    const limit = parseFloat(c.creditLimit || '0');
     if (limit > 0 && debt > limit * 0.8) return 'high';
     if (c.status === CustomerStatus.LOCKED) return 'high';
     if (limit > 0 && debt > limit * 0.5) return 'med';
@@ -92,7 +92,7 @@ export default function CustomersConfigPage() {
     if (customerFilter === 'locked') return c.status === CustomerStatus.LOCKED;
     if (customerFilter === 'high-risk') return getRiskLevel(c) === 'high';
     return true;
-  }).filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.tax_code || '').includes(search));
+  }).filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.taxCode || '').includes(search));
 
   return (
     <div className="fade-up">
@@ -109,11 +109,11 @@ export default function CustomersConfigPage() {
             const headers = ['Khách hàng', 'MST', 'Liên hệ', 'Chuyến ' + monthLabel, 'Doanh thu ' + monthLabel, 'Hạn mức TD', 'Trạng thái'];
             const rows = filtered.map(c => {
               const stats = customerTripStats.get(c.id);
-              const creditLimit = parseFloat(c.credit_limit || '0');
+              const creditLimit = parseFloat(c.creditLimit || '0');
               return [
                 c.name,
-                c.tax_code || '',
-                c.contact_info || c.phone || '',
+                c.taxCode || '',
+                c.contactInfo || c.phone || '',
                 stats?.trips ?? '',
                 stats?.revenue ?? '',
                 creditLimit > 0 ? creditLimit : '',
@@ -172,16 +172,16 @@ export default function CustomersConfigPage() {
                 }
                 const risk = getRiskLevel(c);
                 const stats = customerTripStats.get(c.id);
-                const creditLimit = parseFloat(c.credit_limit || '0');
+                const creditLimit = parseFloat(c.creditLimit || '0');
                 return (
                   <tr key={c.id}>
                     <td>
                       <div className="row-strong"><span className={`risk-dot risk-dot--${risk}`} />{c.name}</div>
-                      {c.tax_code && <div className="row-meta">MST {c.tax_code}</div>}
+                      {c.taxCode && <div className="row-meta">MST {c.taxCode}</div>}
                     </td>
                     <td>
-                      {c.contact_person && <div className="row-strong">{c.contact_person}</div>}
-                      <div className="row-meta">{c.phone || c.contact_info || '—'}</div>
+                      {c.contactPerson && <div className="row-strong">{c.contactPerson}</div>}
+                      <div className="row-meta">{c.phone || c.contactInfo || '—'}</div>
                     </td>
                     <td className="num">{stats?.trips ?? '—'}</td>
                     <td className="num big">{stats?.revenue ? formatCurrency(stats.revenue) : '—'}</td>

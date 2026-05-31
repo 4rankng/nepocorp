@@ -33,7 +33,7 @@ import type { NormalizedTrip } from '../hooks/useQueries';
 interface Driver {
   id: number;
   name: string;
-  assigned_truck_id?: number | null;
+  assignedTruckId?: number | null;
   status: string;
 }
 
@@ -81,7 +81,7 @@ export default function DispatchPage() {
   const drivers = (data?.drivers ?? []) as Driver[];
   const trucks = (data?.trucks ?? []).map((t: any) => ({
     id: t.id,
-    licensePlate: t.license_plate ?? t.licensePlate ?? '',
+    licensePlate: t.licensePlate ?? '',
     status: t.status ?? '',
   }));
   const pendingTrips: NormalizedTrip[] = data?.pendingTrips ?? [];
@@ -152,8 +152,8 @@ export default function DispatchPage() {
     setReassignState((s) => ({ ...s, loading: true, error: '' }));
     try {
       await api.patch(`/trips/${tripId}/reassign`, {
-        truck_id: Number(reassignState.truckId),
-        driver_id: Number(reassignState.driverId),
+        truckId: Number(reassignState.truckId),
+        driverId: Number(reassignState.driverId),
       });
       await queryClient.invalidateQueries({ queryKey: ['dispatch'] });
       closeReassign();
@@ -167,7 +167,7 @@ export default function DispatchPage() {
   const getActiveTripForTruck = (truckId: number) =>
     activeTrips.find((t) => t.truckId === truckId);
   const getDefaultDriverForTruck = (truckId: number) =>
-    drivers.find((d) => d.assigned_truck_id === truckId);
+    drivers.find((d) => d.assignedTruckId === truckId);
 
   const fleetCounts = useMemo(() => {
     let running = 0;

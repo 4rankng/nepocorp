@@ -68,7 +68,7 @@ function CustomerForm({ item, saving, onsave, oncancel }: {
             </select>
           </div>
           <div style={{ display: 'flex', gap: 6, paddingBottom: 4 }}>
-            <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={() => onsave({ name: name.trim(), tax_code: taxCode.trim() || undefined, contact_person: contactPerson.trim() || undefined, phone: phone.trim() || undefined, credit_limit: creditLimit ? Number(creditLimit) : undefined, status })}>
+            <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={() => onsave({ name: name.trim(), taxCode: taxCode.trim() || undefined, contactPerson: contactPerson.trim() || undefined, phone: phone.trim() || undefined, creditLimit: creditLimit ? Number(creditLimit) : undefined, status })}>
               {saving ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
               {item ? 'Cập nhật' : 'Thêm'}
             </button>
@@ -136,7 +136,7 @@ export default function CustomersPage() {
     if (filter === 'locked') return c.status === CustomerStatus.LOCKED;
     if (filter === 'risk') {
       const debt = 0; // TODO: compute from ledger
-      const limit = Number((c as any).creditLimit || c.credit_limit || 0);
+      const limit = Number((c as any).creditLimit || c.creditLimit || 0);
       return limit > 0 && debt / limit > 0.8;
     }
     return true;
@@ -265,28 +265,28 @@ export default function CustomersPage() {
               <div key={c.id} className="m-card">
                 <div className="m-card__top">
                   <span className="m-card__title">
-                    <span className={`risk-dot risk-dot--${riskDot(0, Number((c as any).creditLimit || c.credit_limit || 0))}`} />
+                    <span className={`risk-dot risk-dot--${riskDot(0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
                     {c.name}
                   </span>
                   <StatusPill variant={c.status === CustomerStatus.ACTIVE ? 'success' : 'danger'}>
                     {STATUS_LABELS[c.status] || c.status}
                   </StatusPill>
                 </div>
-                {((c as any).taxCode || c.tax_code) && (
+                {((c as any).taxCode || c.taxCode) && (
                   <div className="m-card__meta" style={{ fontFamily: 'var(--font-mono)' }}>
-                    MST {(c as any).taxCode || c.tax_code}
+                    MST {(c as any).taxCode || c.taxCode}
                   </div>
                 )}
-                {((c as any).contactPerson || c.contact_person || c.phone) && (
+                {((c as any).contactPerson || c.contactPerson || c.phone) && (
                   <div className="m-card__meta">
-                    {(c as any).contactPerson || c.contact_person}
+                    {(c as any).contactPerson || c.contactPerson}
                     {c.phone && <><span className="m-card__meta-sep">·</span>{c.phone}</>}
                   </div>
                 )}
-                {((c as any).creditLimit || c.credit_limit) && (
+                {((c as any).creditLimit || c.creditLimit) && (
                   <div className="m-card__row">
                     <span className="m-card__row-label">Hạn mức tín dụng</span>
-                    <span className="m-card__row-value">{formatCurrency((c as any).creditLimit || c.credit_limit)}</span>
+                    <span className="m-card__row-value">{formatCurrency((c as any).creditLimit || c.creditLimit)}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
@@ -344,13 +344,13 @@ export default function CustomersPage() {
                   >
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 600 }}>
-                        <span className={`risk-dot risk-dot--${riskDot(0, Number((c as any).creditLimit || c.credit_limit || 0))}`} />
+                        <span className={`risk-dot risk-dot--${riskDot(0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
                         {c.name}
                       </div>
-                      {((c as any).taxCode || c.tax_code) && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {(c as any).taxCode || c.tax_code}</div>}
+                      {((c as any).taxCode || c.taxCode) && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {(c as any).taxCode || c.taxCode}</div>}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                      {((c as any).contactPerson || c.contact_person) && <div style={{ fontWeight: 600 }}>{(c as any).contactPerson || c.contact_person}</div>}
+                      {((c as any).contactPerson || c.contactPerson) && <div style={{ fontWeight: 600 }}>{(c as any).contactPerson || c.contactPerson}</div>}
                       {/* Seed data stored phone numbers in the `contact_info`
                           text field rather than the dedicated `phone` column,
                           so fall through to that before rendering "—". */}
@@ -359,10 +359,10 @@ export default function CustomersPage() {
                           {c.phone || (c as any).contact_info || (c as any).contactInfo}
                         </div>
                       )}
-                      {!((c as any).contactPerson || c.contact_person) && !c.phone && !(c as any).contact_info && !(c as any).contactInfo && <span style={{ color: 'var(--ink-3)' }}>—</span>}
+                      {!((c as any).contactPerson || c.contactPerson) && !c.phone && !(c as any).contact_info && !(c as any).contactInfo && <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                      {((c as any).creditLimit || c.credit_limit) ? formatCurrency((c as any).creditLimit || c.credit_limit) : '—'}
+                      {((c as any).creditLimit || c.creditLimit) ? formatCurrency((c as any).creditLimit || c.creditLimit) : '—'}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <StatusPill variant={c.status === CustomerStatus.ACTIVE ? 'success' : 'danger'}>

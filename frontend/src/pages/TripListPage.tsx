@@ -59,9 +59,9 @@ function buildTripCode(trip: TripDetail): string {
   // when the backend doesn't supply trip_code (older rows, or list endpoint
   // missing the field — should not happen after backend bug #1 fix).
   const t = trip as any;
-  if (t.trip_code) return t.trip_code;
   if (t.tripCode) return t.tripCode;
-  const d = trip.departure_date ? new Date(trip.departure_date) : null;
+  if (t.tripCode) return t.tripCode;
+  const d = trip.departureDate ? new Date(trip.departureDate) : null;
   if (d && !Number.isNaN(d.getTime())) {
     const dd = String(d.getDate()).padStart(2, '0');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -71,8 +71,8 @@ function buildTripCode(trip: TripDetail): string {
 }
 
 function calcConsumption(trip: TripDetail): { liters: number; per100: number } | null {
-  const fuel = trip.fuel_liters ? Number(trip.fuel_liters) : null;
-  const distance = Number(trip.route?.distance_km ?? 0);
+  const fuel = trip.fuelLiters ? Number(trip.fuelLiters) : null;
+  const distance = Number(trip.route?.distanceKm ?? 0);
   if (!fuel || !distance) return null;
   return { liters: fuel, per100: (fuel / distance) * 100 };
 }
@@ -93,7 +93,7 @@ export default function TripListPage() {
 
   // Dynamic threshold from fuel_config — NaN-safe fallback to default
   const warnThreshold = fuelConfig
-    ? parseThreshold(fuelConfig.warning_threshold, DEFAULT_WARN_THRESHOLD)
+    ? parseThreshold(fuelConfig.warningThreshold, DEFAULT_WARN_THRESHOLD)
     : DEFAULT_WARN_THRESHOLD;
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
@@ -138,17 +138,17 @@ export default function TripListPage() {
     return trips.filter((trip) => {
       if (statusFilter && trip.status !== statusFilter) return false;
       if (monthYearFilter && salaryPeriod) {
-        const dep = trip.departure_date;
+        const dep = trip.departureDate;
         if (!dep || dep < salaryPeriod.start || dep > salaryPeriod.end) return false;
       }
-      if (truckFilter && trip.truck?.license_plate !== truckFilter) return false;
-      if (customerFilter && String(trip.customer_id) !== customerFilter) return false;
+      if (truckFilter && trip.truck?.licensePlate !== truckFilter) return false;
+      if (customerFilter && String(trip.customerId) !== customerFilter) return false;
       if (q) {
         const matchId = String(trip.id).includes(q);
         const matchCode = buildTripCode(trip).toLowerCase().includes(q);
         const matchCustomer = trip.customer?.name?.toLowerCase().includes(q) ?? false;
         const matchRoute = trip.route?.name?.toLowerCase().includes(q) ?? false;
-        const matchPlate = trip.truck?.license_plate?.toLowerCase().includes(q) ?? false;
+        const matchPlate = trip.truck?.licensePlate?.toLowerCase().includes(q) ?? false;
         if (!matchId && !matchCode && !matchCustomer && !matchRoute && !matchPlate) return false;
       }
       return true;
@@ -168,7 +168,7 @@ export default function TripListPage() {
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const monthTrips = useMemo(
-    () => trips.filter((t) => t.departure_date?.startsWith(monthKey)),
+    () => trips.filter((t) => t.departureDate?.startsWith(monthKey)),
     [trips, monthKey],
   );
 
@@ -179,11 +179,11 @@ export default function TripListPage() {
     let revenue = 0;
     let missingFuel = 0;
     for (const t of monthTrips) {
-      km += Number(t.route?.distance_km ?? 0);
-      const f = t.fuel_liters ? Number(t.fuel_liters) : 0;
+      km += Number(t.route?.distanceKm ?? 0);
+      const f = t.fuelLiters ? Number(t.fuelLiters) : 0;
       if (f) fuel += f;
       else missingFuel++;
-      road += Number(t.total_road_allowance ?? 0);
+      road += Number(t.totalRoadAllowance ?? 0);
       revenue += Number(t.revenue ?? 0);
     }
     const avgPer100 = km > 0 && fuel > 0 ? (fuel / km) * 100 : 0;
@@ -205,7 +205,7 @@ export default function TripListPage() {
   const truckOptions = useMemo(() => {
     const set = new Set<string>();
     for (const t of trips) {
-      if (t.truck?.license_plate) set.add(t.truck.license_plate);
+      if (t.truck?.licensePlate) set.add(t.truck.licensePlate);
     }
     return Array.from(set).sort();
   }, [trips]);
@@ -213,7 +213,7 @@ export default function TripListPage() {
   const customerOptions = useMemo(() => {
     const map = new Map<number, string>();
     for (const t of trips) {
-      if (t.customer?.name) map.set(t.customer_id, t.customer.name);
+      if (t.customer?.name) map.set(t.customerId, t.customer.name);
     }
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], 'vi'));
   }, [trips]);
@@ -236,11 +236,11 @@ export default function TripListPage() {
       buildTripCode(t),
       t.customer?.name ?? '',
       t.route?.name ?? '',
-      t.truck?.license_plate ?? '',
-      t.departure_date ?? '',
-      Number(t.route?.distance_km ?? 0) || '',
-      t.fuel_liters ?? '',
-      t.total_road_allowance ?? '',
+      t.truck?.licensePlate ?? '',
+      t.departureDate ?? '',
+      Number(t.route?.distanceKm ?? 0) || '',
+      t.fuelLiters ?? '',
+      t.totalRoadAllowance ?? '',
       t.revenue ?? '',
       TRIP_STATUS_LABELS[t.status],
     ]);
@@ -301,13 +301,13 @@ export default function TripListPage() {
             <div className="trip-meta">
               <span className="trip-id">{buildTripCode(trip)}</span>
               <span className="trip-meta-sep">·</span>
-              <span>{formatDayMonth(trip.departure_date)}</span>
+              <span>{formatDayMonth(trip.departureDate)}</span>
             </div>
           </div>
         );
       }
     }),
-    columnHelper.accessor((row) => row.truck?.license_plate ?? '', {
+    columnHelper.accessor((row) => row.truck?.licensePlate ?? '', {
       id: 'truck',
       header: 'Xe',
       cell: ({ row }) => {
@@ -316,7 +316,7 @@ export default function TripListPage() {
         const isCanceled = trip.status === TripStatus.CANCELED;
         return (
           <span className={`plate${isCreated || isCanceled ? ' idle' : ''}`}>
-            {trip.truck?.license_plate ?? '—'}
+            {trip.truck?.licensePlate ?? '—'}
           </span>
         );
       }
@@ -349,12 +349,12 @@ export default function TripListPage() {
         );
       }
     }),
-    columnHelper.accessor((row) => Number(row.route?.distance_km ?? 0), {
+    columnHelper.accessor((row) => Number(row.route?.distanceKm ?? 0), {
       id: 'km',
       header: 'KM',
       cell: ({ row }) => {
         const trip = row.original;
-        const km = Number(trip.route?.distance_km ?? 0);
+        const km = Number(trip.route?.distanceKm ?? 0);
         return (
           <div className={km > 0 ? 'km-val' : 'km-empty'}>
             {km > 0 ? (
@@ -407,12 +407,12 @@ export default function TripListPage() {
         );
       }
     }),
-    columnHelper.accessor((row) => Number(row.total_road_allowance ?? 0), {
+    columnHelper.accessor((row) => Number(row.totalRoadAllowance ?? 0), {
       id: 'road',
       header: 'Tiền đường',
       cell: ({ row }) => {
         const trip = row.original;
-        const road = Number(trip.total_road_allowance ?? 0);
+        const road = Number(trip.totalRoadAllowance ?? 0);
         const isCanceled = trip.status === TripStatus.CANCELED;
         return (
           <div className={road > 0 ? 'money' : 'money-empty'}>
@@ -714,8 +714,8 @@ export default function TripListPage() {
               const isCanceled = trip.status === TripStatus.CANCELED;
               const isCreated = trip.status === TripStatus.CREATED;
               const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
-              const km = Number(trip.route?.distance_km ?? 0);
-              const road = Number(trip.total_road_allowance ?? 0);
+              const km = Number(trip.route?.distanceKm ?? 0);
+              const road = Number(trip.totalRoadAllowance ?? 0);
 
               return (
                 <div
@@ -729,10 +729,10 @@ export default function TripListPage() {
                       <div className="trip-mcard__id">
                         {buildTripCode(trip)}
                         <span className="trip-meta-sep">·</span>
-                        <span>{formatDayMonth(trip.departure_date)}</span>
+                        <span>{formatDayMonth(trip.departureDate)}</span>
                         <span className="trip-meta-sep">·</span>
                         <span className={`plate${isCreated || isCanceled ? ' idle' : ''}`} style={{ fontSize: 10, padding: '2px 7px' }}>
-                          {trip.truck?.license_plate ?? '—'}
+                          {trip.truck?.licensePlate ?? '—'}
                         </span>
                       </div>
                     </div>

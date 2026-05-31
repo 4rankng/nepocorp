@@ -1,20 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { Driver, PenaltyReason, Truck, PaginatedResponse } from '@nepocorp/shared';
+import type { Driver, PenaltyReason, Truck } from '@nepocorp/shared';
 
 interface PenaltyRow {
   id: number;
-  driver_id: number;
-  trip_id: number | null;
-  reason_id: number | null;
-  custom_reason: string | null;
+  driverId: number;
+  tripId: number | null;
+  reasonId: number | null;
+  customReason: string | null;
   amount: string;
   date: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
   driverName?: string;
   reasonText?: string;
+  tripCode?: string | null;
 }
 
 export function usePenalties() {

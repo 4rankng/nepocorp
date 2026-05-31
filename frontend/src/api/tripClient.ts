@@ -45,7 +45,7 @@ export const tripClient = {
     return api.post<Trip>(TRIPS.CANCEL(id), {});
   },
 
-  reassignTrip: async (id: number, data: { truck_id: number; trailer_id: number; driver_id: number }) => {
+  reassignTrip: async (id: number, data: { truckId: number; trailerId: number; driverId: number }) => {
     return api.patch<Trip>(TRIPS.REASSIGN(id), data);
   },
 

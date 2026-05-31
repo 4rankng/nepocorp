@@ -71,7 +71,7 @@ export default function DebtDetailPage() {
   const filteredRows = useMemo(() => {
     if (!statement) return [];
     if (ledgerFilter === 'all') return statement.ledgerRows;
-    return statement.ledgerRows.filter(r => r.txn_type === ledgerFilter);
+    return statement.ledgerRows.filter(r => r.txnType === ledgerFilter);
   }, [statement, ledgerFilter]);
 
   const activeAgingIdx = useMemo(() => {
@@ -126,10 +126,10 @@ export default function DebtDetailPage() {
         <div className="dd-meta">
           <h1>{customer.name}</h1>
           <div className="dd-sub">
-            {customer.contact_info && (
+            {customer.contactInfo && (
               <span>
                 <Phone size={15} />
-                <span className="dd-mono">{customer.contact_info}</span>
+                <span className="dd-mono">{customer.contactInfo}</span>
               </span>
             )}
             <span>
@@ -300,7 +300,7 @@ function LedgerRow({ row }: { row: LedgerEntry }) {
   const debit = parseFloat(row.debit) || 0;
   const credit = parseFloat(row.credit) || 0;
   const balance = parseFloat(row.balance) || 0;
-  const meta = TXN_META[row.txn_type] ?? DEFAULT_META;
+  const meta = TXN_META[row.txnType] ?? DEFAULT_META;
 
   return (
     <tr>

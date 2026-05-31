@@ -51,7 +51,7 @@ export function TotalsPanel({
     const formattedLegs = legs.map((leg) => ({
       sequence: leg.sequence,
       km: Number(leg.km) || 0,
-      loadingType: leg.loading_type,
+      loadingType: leg.loadingType,
     }));
 
     return computeTripTotals({

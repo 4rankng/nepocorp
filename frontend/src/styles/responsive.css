@@ -198,7 +198,186 @@
   .finance-page .panel { width: 100% !important; min-width: 0 !important; }
 
   /* ── Penalty page ── */
+  /* ── Panel-with-action-tools headers ──
+     Pages like /penalties, /fleet, /dispatch, /trips put a title block on
+     the left and an action toolbar (filter pills, period seg, "Thêm xe"
+     buttons) on the right inside a horizontal flex. On phones the right
+     side eats the title's space and Vietnamese headings collapse to one
+     word per line. Force the header into a vertical stack so the title
+     gets its full row and the tools land on a horizontally-scrollable
+     row below. */
+  .penalty-page .penalty-card-head,
+  .fleet-page .fleet-card-head,
+  .dispatch-page .section-head,
+  .trip-list-page .section-head {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+  }
+  .penalty-page .penalty-card-lead,
+  .fleet-page .fleet-card-lead {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+  .penalty-page .penalty-card-title,
+  .fleet-page .fleet-card-title {
+    flex-wrap: wrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: anywhere !important;
+  }
+  .penalty-page .penalty-card-sub,
+  .fleet-page .fleet-card-sub {
+    white-space: normal !important;
+    word-break: keep-all !important;
+  }
+  .penalty-page .penalty-head-tools,
+  .fleet-page .fleet-card-tools {
+    width: 100% !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .penalty-page .penalty-head-tools::-webkit-scrollbar,
+  .fleet-page .fleet-card-tools::-webkit-scrollbar { display: none !important; }
+  .penalty-page .penalty-head-tools > *,
+  .fleet-page .fleet-card-tools > * { flex-shrink: 0 !important; }
+
+  /* Two-column page sections collapse to single column on phones */
+  .penalty-page .penalty-two-col { grid-template-columns: 1fr !important; }
   .penalty-page .penalty-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Dispatch orders list: dense 2-line cards ──
+     Earlier we collapsed the 5-col grid to a single column, but that
+     produced overly tall cards (only ~5 orders fit per screen). Re-flow
+     into a dense 2-line layout:
+       row 1: date · route pills · action button
+       row 2: customer (full width)
+     Trims each card from ~140px → ~80px so ~8 orders fit per screen. */
+  .dispatch-page .orders-head { display: none !important; }
+  .dispatch-page .order-row {
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    grid-template-areas: "date route action" "cust cust cust" !important;
+    column-gap: 10px !important;
+    row-gap: 4px !important;
+    padding: 10px 14px !important;
+    align-items: center !important;
+  }
+  .dispatch-page .order-row .o-date { grid-area: date !important; font-size: 12px !important; }
+  .dispatch-page .order-row .o-route { grid-area: route !important; font-size: 12px !important; min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+  .dispatch-page .order-row .o-actions { grid-area: action !important; }
+  .dispatch-page .order-row .o-actions .btn,
+  .dispatch-page .order-row .o-actions .pill-btn { padding: 6px 12px !important; font-size: 12px !important; }
+  .dispatch-page .order-row .o-customer { grid-area: cust !important; font-size: 12px !important; color: var(--ink-3) !important; }
+  .dispatch-page .order-row .o-assign { display: none !important; }
+
+  /* ── Trip create / edit form: tighten gaps and stack 2-col leg routes ── */
+  .leg-card__head { gap: 8px !important; }
+  .leg-card__route { grid-template-columns: 1fr !important; }
+
+  /* ── Config CRUD tables (cap-table, pricing-tables, drivers, etc.) ──
+     The shared CrudTable renders an HTML table. On phones the table is
+     wider than the viewport — wrap it in a horizontal-scroll container
+     visually so users know to swipe right. */
+  .tt-table-wrap, .crud-table-wrap, .table-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    position: relative !important;
+  }
+  /* Faint shadow on the right edge to hint at scrollability */
+  .tt-table-wrap::after, .crud-table-wrap::after, .table-scroll::after {
+    content: '';
+    position: sticky;
+    right: 0; top: 0; bottom: 0;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(0,0,0,0.06));
+    pointer-events: none;
+  }
+  .tt-table { min-width: 480px !important; }
+
+  /* ── /finance and /profit charts area: ensure they don't push horizontal scroll ── */
+  .finance-page .panel, .pnl-row { min-width: 0 !important; }
+  .pnl-row { padding-left: 14px !important; padding-right: 14px !important; }
+
+  /* ── Page-action button rows: wrap and fill width ── */
+  .page-actions { flex-wrap: wrap !important; width: 100% !important; gap: 8px !important; }
+  .page-actions .btn { flex: 1 1 auto !important; min-width: 0 !important; justify-content: center !important; }
+
+  /* ── Config landing page: convert big cards → compact list rows ──
+     Desktop renders generous cards with a big icon, two-line description,
+     status pill + edit button. On mobile that wastes a ton of vertical
+     space (only 3-4 cards fit per screen). Re-flow each card into a
+     single touch-row: small icon on the left, title + sub stacked in
+     the middle, chevron on the right. Hides the description and status
+     pill since the title alone is enough on mobile. */
+  .settings-grid { grid-template-columns: 1fr !important; gap: 6px !important; }
+  .setting-card {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    min-height: 56px !important;
+  }
+  .setting-card__icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    flex-shrink: 0 !important;
+  }
+  .setting-card__icon svg { width: 18px !important; height: 18px !important; }
+  .setting-card__title { font-size: 14px !important; margin: 0 !important; }
+  .setting-card__desc { display: none !important; }
+  .setting-card__foot {
+    padding-top: 0 !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+  }
+  /* Drop the status dot/pill on mobile, keep only the "Sửa >" chevron */
+  .setting-card__foot > *:not(:last-child) { display: none !important; }
+
+  /* ── Generic "panel header with title + right-side tools" pattern ──
+     Catches all the page-specific header classes that follow the same
+     layout (title-block + action toolbar in one row). Falling back here
+     covers config sub-pages and any panel that doesn't have its own
+     stylesheet override. */
+  .panel > div:first-child[class*="head"],
+  .panel > header,
+  .panel-head,
+  .card-head {
+    flex-wrap: wrap !important;
+  }
+  .panel-head > *,
+  .card-head > * { min-width: 0 !important; }
+
+  /* ── /debt/:id (DebtDetailPage) mobile fixes ── */
+  /* Customer header row: back btn + 60px avatar + name + actions tries to fit
+     in one row, truncating the customer name to "Công t…" on phones. Stack
+     the action button below the name+avatar so the full company name shows. */
+  .dd-header {
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+  .dd-meta { flex: 1 1 100% !important; min-width: 0 !important; }
+  .dd-meta h1 { font-size: 18px !important; line-height: 1.25 !important; word-break: keep-all !important; }
+  .dd-actions { flex: 1 1 100% !important; }
+  .dd-actions .btn { width: 100% !important; justify-content: center !important; }
+  /* Ledger card header: title + filter pills stack so "Sổ kế toán" reads
+     on one line instead of wrapping per word. */
+  .dd-ledger-head {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+  }
+  .dd-ledger-head h2 { font-size: 15px !important; }
+  .dd-filters { width: 100% !important; overflow-x: auto !important; flex-wrap: nowrap !important; }
+  .dd-filters > * { flex-shrink: 0 !important; }
+  .dd-filters::-webkit-scrollbar { display: none !important; }
+  /* Aging buckets: 4-col → 1-col so the value isn't crammed */
+  .dd-aging-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
 
   /* ── Config page settings grid already has rules ── */
   .settings-grid { grid-template-columns: 1fr !important; }

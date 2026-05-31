@@ -50,8 +50,8 @@ router.get('/earnings', async (req: Request, res: Response) => {
 router.get('/penalties', async (req: Request, res: Response) => {
   try {
     const driver = await getDriverByUserId(req.user!.userId);
-    const dateFrom = req.query.date_from as string | undefined;
-    const dateTo = req.query.date_to as string | undefined;
+    const dateFrom = req.query.dateFrom as string | undefined;
+    const dateTo = req.query.dateTo as string | undefined;
     const items = await getDriverPenalties(driver.id, dateFrom, dateTo);
     res.json({ items });
   } catch (err: any) {

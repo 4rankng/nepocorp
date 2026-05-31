@@ -10,7 +10,7 @@ export interface SelectOption {
 
 export interface RouteOption extends SelectOption {
   name: string;
-  distance_km?: number;
+  distanceKm?: number;
 }
 
 export interface TripOptions {
@@ -28,12 +28,12 @@ const unwrap = (d: unknown) =>
   Array.isArray(d) ? d : (d as any)?.items ?? [];
 
 interface CatalogData {
-  customers: Array<{ id: number; name: string; contact_person: string | null; phone: string | null }>;
-  trucks: Array<{ id: number; license_plate: string }>;
-  drivers: Array<{ id: number; name: string; assigned_truck_id: number | null }>;
-  trailers: Array<{ id: number; license_plate: string; type: string }>;
-  routes: Array<{ id: number; name: string; distance_km: number | null; is_mountain: boolean; fixed_fuel_allowance: string | null }>;
-  cargoTypes: Array<{ id: number; name: string; requires_photos: boolean }>;
+  customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }>;
+  trucks: Array<{ id: number; licensePlate: string }>;
+  drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
+  trailers: Array<{ id: number; licensePlate: string; type: string }>;
+  routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null }>;
+  cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
 }
 
 export function useTripOptions(): TripOptions {
@@ -50,14 +50,14 @@ export function useTripOptions(): TripOptions {
         customers: catalog.customers.map((c) => ({ id: c.id, label: c.name })),
         routes: catalog.routes.map((r) => ({
           id: r.id,
-          label: `${r.name}${r.distance_km ? ` (${r.distance_km} km)` : ""}`,
+          label: `${r.name}${r.distanceKm ? ` (${r.distanceKm} km)` : ""}`,
           name: r.name,
-          distance_km: r.distance_km ?? undefined,
+          distanceKm: r.distanceKm ?? undefined,
         })),
-        trucks: catalog.trucks.map((t) => ({ id: t.id, label: t.license_plate })),
+        trucks: catalog.trucks.map((t) => ({ id: t.id, label: t.licensePlate })),
         trailers: catalog.trailers.map((t) => ({
           id: t.id,
-          label: `${t.license_plate} (${t.type})`,
+          label: `${t.licensePlate} (${t.type})`,
         })),
         drivers: catalog.drivers.map((d) => ({ id: d.id, label: d.name })),
         cargoTypes: catalog.cargoTypes.map((c) => ({ id: c.id, label: c.name })),

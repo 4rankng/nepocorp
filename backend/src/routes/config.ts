@@ -11,7 +11,7 @@ import {
   salaryPeriodSchema, salaryPeriodDefaultSchema,
 } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
-import { createCrudRouter, getBootstrapData, getPricing, snakeToCamelKeys } from '../services/config.service';
+import { createCrudRouter, getBootstrapData, getPricing } from '../services/config.service';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -83,7 +83,7 @@ router.use('/drivers', (() => {
 
   sub.post('/', async (req: Request, res: Response) => {
     const data = driverSchema.parse(req.body);
-    const [item] = await db.insert(s.drivers).values(snakeToCamelKeys(data) as any).returning();
+    const [item] = await db.insert(s.drivers).values(data as any).returning();
     res.status(201).json(item);
   });
 
@@ -97,7 +97,7 @@ router.use('/drivers', (() => {
   sub.put('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string, 10);
     const data = driverSchema.partial().parse(req.body);
-    const [item] = await db.update(s.drivers).set({ ...(snakeToCamelKeys(data) as any), updatedAt: new Date() }).where(eq(s.drivers.id, id)).returning();
+    const [item] = await db.update(s.drivers).set({ ...(data as any), updatedAt: new Date() }).where(eq(s.drivers.id, id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     res.json(item);
   });
@@ -115,12 +115,12 @@ router.get('/fuel-config', async (_req: Request, res: Response) => {
 router.put('/fuel-config', async (req: Request, res: Response) => {
   const data = fuelConfigSchema.parse(req.body);
   const values = {
-    loadedNorm: String(data.loaded_norm),
-    emptyNorm: String(data.empty_norm),
+    loadedNorm: String(data.loadedNorm),
+    emptyNorm: String(data.emptyNorm),
     supplement: String(data.supplement ?? 0),
-    unitPrice: String(data.unit_price),
-    warningThreshold: String(data.warning_threshold),
-    criticalThreshold: String(data.critical_threshold),
+    unitPrice: String(data.unitPrice),
+    warningThreshold: String(data.warningThreshold),
+    criticalThreshold: String(data.criticalThreshold),
     updatedAt: new Date(),
   };
   const [existing] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
@@ -161,7 +161,7 @@ router.get('/salary-periods/default', async (_req: Request, res: Response) => {
 router.put('/salary-periods/default', async (req: Request, res: Response) => {
   try {
     const data = salaryPeriodDefaultSchema.parse(req.body);
-    res.json(await updateSalaryPeriodDefault(data.default_start_day, data.default_end_day));
+    res.json(await updateSalaryPeriodDefault(data.defaultStartDay, data.defaultEndDay));
   } catch (err: any) {
     res.status(err.status || 500).json({ error: err.message });
   }
@@ -182,7 +182,7 @@ router.post('/salary-periods', async (req: Request, res: Response) => {
     const data = salaryPeriodSchema.parse(req.body);
     res.status(201).json(
       await upsertSalaryPeriodOverride(
-        data.month, data.year, data.start_date, data.end_date, data.label,
+        data.month, data.year, data.startDate, data.endDate, data.label,
       ),
     );
   } catch (err: any) {
@@ -197,7 +197,7 @@ router.put('/salary-periods/:id', async (req: Request, res: Response) => {
     const data = salaryPeriodSchema.parse(req.body);
     // Update by id — fetch existing to validate, then upsert by month/year
     const result = await upsertSalaryPeriodOverride(
-      data.month, data.year, data.start_date, data.end_date, data.label,
+      data.month, data.year, data.startDate, data.endDate, data.label,
     );
     res.json(result);
   } catch (err: any) {

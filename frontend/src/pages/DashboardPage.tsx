@@ -104,20 +104,20 @@ export default function DashboardPage() {
   // (must be called before any conditional returns to satisfy Rules of Hooks)
   const fuelWarnings = useMemo(() => {
     if (!fuelConfig || allTrips.length === 0) return [];
-    const warnThreshold = parseThreshold(fuelConfig.warning_threshold, 0);
-    const critThreshold = parseThreshold(fuelConfig.critical_threshold, 0);
+    const warnThreshold = parseThreshold(fuelConfig.warningThreshold, 0);
+    const critThreshold = parseThreshold(fuelConfig.criticalThreshold, 0);
     if (!warnThreshold) return [];
     const flagged: Array<{ tripId: number; code: string; driver: string; ttbq: number; critical: boolean }> = [];
     for (const t of allTrips) {
       const trip: TripDetail = t;
       const totalKm = trip.legs?.reduce((s: number, l: any) => s + Number(l.km), 0) ?? 0;
-      const totalLiters = Number(trip.fuel_liters) || 0;
+      const totalLiters = Number(trip.fuelLiters) || 0;
       if (totalKm <= 0 || totalLiters <= 0) continue;
       const ttbq = (totalLiters / totalKm) * 100;
       if (ttbq > warnThreshold) {
         flagged.push({
           tripId: trip.id,
-          code: trip.trip_code ?? `#${trip.id}`,
+          code: trip.tripCode ?? `#${trip.id}`,
           driver: trip.driver?.name ?? '—',
           ttbq,
           critical: critThreshold > 0 && ttbq > critThreshold,
@@ -164,7 +164,7 @@ export default function DashboardPage() {
   currentMonthTrips.forEach((t: TripDetail) => {
     if (!t.route || !t.route.name) return;
     const name = t.route.name;
-    const profVal = parseFloat(t.gross_profit as string || '0');
+    const profVal = parseFloat(t.grossProfit as string || '0');
     const existing = routeMap.get(name) || { name, trips: 0, profit: 0 };
     existing.trips++;
     existing.profit += profVal;
@@ -252,9 +252,9 @@ export default function DashboardPage() {
   // bucket the unallocated remainder as "Khác" so the legend ALWAYS sums to
   // the centre figure.
   const lockedTrips = currentMonthTrips.filter((t: TripDetail) => t.status === TripStatus.LOCKED);
-  const realFuelCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).total_fuel_cost || '0'), 0);
-  const realRoadCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).total_road_allowance || '0'), 0);
-  const realDriverCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driver_salary || '0'), 0);
+  const realFuelCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
+  const realRoadCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
+  const realDriverCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driverSalary || '0'), 0);
   const mgmtCost = pnlReport?.managementFee ?? 0;
   const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
   // When we have real per-trip costs, use them directly. When we don't, use

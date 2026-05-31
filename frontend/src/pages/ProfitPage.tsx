@@ -43,9 +43,9 @@ interface DistributionRecord {
   id: number;
   quarter: number;
   year: number;
-  partner_name: string;
+  partnerName: string;
   amount: string;
-  created_at: string;
+  createdAt: string;
 }
 
 export default function ProfitPage() {
@@ -424,9 +424,9 @@ export default function ProfitPage() {
                       {history.map((d) => (
                         <tr key={d.id} style={{ borderBottom: '1px solid var(--border-3)' }}>
                           <td style={{ padding: '6px 0', fontWeight: 600 }}>Q{d.quarter}/{d.year}</td>
-                          <td style={{ padding: '6px 0' }}>{d.partner_name}</td>
+                          <td style={{ padding: '6px 0' }}>{d.partnerName}</td>
                           <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 600 }}>{formatVND(Number(d.amount))}</td>
-                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)', fontSize: 11 }}>{new Date(d.created_at).toLocaleDateString('vi-VN')}</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)', fontSize: 11 }}>{new Date(d.createdAt).toLocaleDateString('vi-VN')}</td>
                         </tr>
                       ))}
                     </tbody>

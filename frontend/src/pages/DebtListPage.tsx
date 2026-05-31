@@ -2,11 +2,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, formatCompact } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
-import type { Customer, LedgerEntry } from '@nepocorp/shared';
+import type { Customer } from '@nepocorp/shared';
+import { computeFifoAging } from '@nepocorp/shared';
 import { Search, ChevronRight, Users, Wallet, AlertCircle } from 'lucide-react';
 import { KPI, PageHeader, Card } from '../components/UI';
 import { useCustomerDebts } from '../hooks/useQueries';
-import { computeFifoAging } from '@nepocorp/shared';
 
 interface CustomerDebtInfo {
   customer: Customer;
@@ -41,12 +41,12 @@ export default function DebtListPage() {
 
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
     const now = new Date();
-    const ledgerByCustomer = new Map<number, LedgerEntry[]>();
+    const ledgerByCustomer = new Map<number, typeof ledgerEntries>();
     for (const entry of ledgerEntries) {
-      if (entry.entity_type === 'CUSTOMER') {
-        const list = ledgerByCustomer.get(entry.entity_id);
+      if (entry.entityType === 'CUSTOMER') {
+        const list = ledgerByCustomer.get(entry.entityId);
         if (list) list.push(entry);
-        else ledgerByCustomer.set(entry.entity_id, [entry]);
+        else ledgerByCustomer.set(entry.entityId, [entry]);
       }
     }
 
@@ -55,8 +55,6 @@ export default function DebtListPage() {
 
       const latestRow = cLedger[0];
       const totalOutstanding = latestRow ? parseFloat(latestRow.balance) : 0;
-
-      let maxOverdueDays = 0;
 
       const { aging, openInvoices } = computeFifoAging(
         cLedger.map(e => ({
@@ -67,6 +65,7 @@ export default function DebtListPage() {
         now,
       );
 
+      let maxOverdueDays = 0;
       for (const inv of openInvoices) {
         if (inv.open > 0) {
           const ageInDays = Math.floor((now.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24));
@@ -153,7 +152,7 @@ export default function DebtListPage() {
       const q = search.toLowerCase().trim();
       result = result.filter(d =>
         d.customer.name.toLowerCase().includes(q) ||
-        (d.customer.contact_info && d.customer.contact_info.toLowerCase().includes(q))
+        (d.customer.contactInfo && d.customer.contactInfo.toLowerCase().includes(q))
       );
     }
 
@@ -302,8 +301,8 @@ export default function DebtListPage() {
                         {formatCurrency(d.totalOutstanding)}
                       </span>
                     </div>
-                    {d.customer.contact_info && (
-                      <div className="m-card__meta">{d.customer.contact_info}</div>
+                    {d.customer.contactInfo && (
+                      <div className="m-card__meta">{d.customer.contactInfo}</div>
                     )}
                     {d.totalOutstanding > 0 && (
                       <>
@@ -364,7 +363,9 @@ export default function DebtListPage() {
                           {d.customer.name}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 16 }}>
-                          Nợ quá hạn
+                          {d.totalOutstanding > 0
+                            ? (d.maxOverdueDays > 30 ? "Nợ quá hạn" : "Trong hạn")
+                            : (d.totalOutstanding < 0 ? "Trả trước" : "Cân bằng")}
                         </div>
                       </td>
 
@@ -404,7 +405,7 @@ export default function DebtListPage() {
                       </td>
 
                       <td style={{ fontSize: 13, color: 'var(--fg-2)' }}>
-                        {d.customer.contact_info || <span style={{ color: 'var(--fg-3)' }}>Chưa cấu hình</span>}
+                        {d.customer.contactInfo || <span style={{ color: 'var(--fg-3)' }}>Chưa cấu hình</span>}
                       </td>
 
                       <td style={{ textAlign: 'right' }}>

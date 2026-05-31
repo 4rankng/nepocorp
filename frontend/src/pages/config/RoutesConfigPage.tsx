@@ -15,9 +15,9 @@ function RouteInlineAdd({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: RouteType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
   const [name, setName] = useState(item?.name || '');
-  const [distance, setDistance] = useState(item?.distance_km?.toString() || '');
-  const [isMountain, setIsMountain] = useState(item?.is_mountain || false);
-  const [fuelAllowance, setFuelAllowance] = useState(item?.fixed_fuel_allowance || '');
+  const [distance, setDistance] = useState(item?.distanceKm?.toString() || '');
+  const [isMountain, setIsMountain] = useState(item?.isMountain || false);
+  const [fuelAllowance, setFuelAllowance] = useState(item?.fixedFuelAllowance || '');
   return (
     <>
       <div style={{ flex: 2, minWidth: 160 }}>
@@ -36,7 +36,7 @@ function RouteInlineAdd({ saving, item, onsave, oncancel }: {
         <Field label="NL khoán (lít)"><input className="input" type="number" value={fuelAllowance} onChange={e => setFuelAllowance(e.target.value)} placeholder="0" /></Field>
       </div>
       <div style={{ display: 'flex', gap: 6, paddingBottom: 4, alignItems: 'flex-end' }}>
-        <button className="btn btn--primary btn--sm" disabled={saving} onClick={() => { if (!name.trim()) return; onsave({ name: name.trim(), distance_km: distance ? Number(distance) : undefined, is_mountain: isMountain, fixed_fuel_allowance: fuelAllowance || null }); }}>
+        <button className="btn btn--primary btn--sm" disabled={saving} onClick={() => { if (!name.trim()) return; onsave({ name: name.trim(), distanceKm: distance ? Number(distance) : undefined, isMountain: isMountain, fixedFuelAllowance: fuelAllowance || null }); }}>
           {saving ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
           {item ? 'Cập nhật' : 'Thêm'}
         </button>
@@ -66,16 +66,16 @@ export default function RoutesConfigPage() {
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const rtStats = new Map<number, number>();
     (tripRes as any).items.forEach((t: any) => {
-      const dep = t.departure_date || t.departureDate || '';
+      const dep = t.departureDate || t.departureDate || '';
       if (dep.startsWith(thisMonth)) {
-        const rid = t.route_id ?? t.routeId;
+        const rid = t.routeId ?? t.routeId;
         if (rid) rtStats.set(rid, (rtStats.get(rid) || 0) + 1);
       }
     });
     setRouteTripStats(rtStats);
     const priceMap = new Map<number, { ft20?: number; ft40?: number }>();
     (raRes as any).items.forEach((ra: any) => {
-      const rid = ra.route_id ?? ra.routeId;
+      const rid = ra.routeId ?? ra.routeId;
       const type = ra.trailer_type ?? ra.trailerType;
       if (!rid) return;
       const p = priceMap.get(rid) || {};
@@ -92,7 +92,7 @@ export default function RoutesConfigPage() {
   const now = new Date();
   const monthLabel = `T${now.getMonth() + 1}`;
   const totalCount = routes.length;
-  const mountainCount = routes.filter(r => r.is_mountain).length;
+  const mountainCount = routes.filter(r => r.isMountain).length;
   const usedThisMonth = routes.filter(r => (routeTripStats.get(r.id) || 0) > 0).length;
 
   let popularRoute: RouteType | undefined;
@@ -100,8 +100,8 @@ export default function RoutesConfigPage() {
   routes.forEach(r => { const c = routeTripStats.get(r.id) || 0; if (c > popularCount) { popularCount = c; popularRoute = r; } });
 
   const filtered = routes.filter(r => {
-    if (routeFilter === 'plain') return !r.is_mountain;
-    if (routeFilter === 'mountain') return r.is_mountain;
+    if (routeFilter === 'plain') return !r.isMountain;
+    if (routeFilter === 'mountain') return r.isMountain;
     return true;
   }).filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -176,11 +176,11 @@ export default function RoutesConfigPage() {
                   <tr key={r.id}>
                     <td>
                       <div className="row-strong">{r.name}</div>
-                      {r.fixed_fuel_allowance && <div className="row-meta">NL khoán: {r.fixed_fuel_allowance} L</div>}
+                      {r.fixedFuelAllowance && <div className="row-meta">NL khoán: {r.fixedFuelAllowance} L</div>}
                     </td>
-                    <td className="num">{r.distance_km != null ? `${r.distance_km}` : '—'}</td>
+                    <td className="num">{r.distanceKm != null ? `${r.distanceKm}` : '—'}</td>
                     <td>
-                      {r.is_mountain
+                      {r.isMountain
                         ? <span className="pill pill--warn"><span className="dot" />Tuyến núi</span>
                         : <span className="pill pill--neutral">Đồng bằng</span>}
                     </td>
