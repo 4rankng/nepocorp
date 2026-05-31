@@ -264,13 +264,23 @@ async function computeDistribution(quarter: number, year: number) {
     );
   }
 
-  const distributions = activePartners.map(entry => ({
-    quarter,
-    year,
-    partnerName: entry.partnerName,
-    percentage: String(entry.percentage),
-    amount: String(Math.round(netProfit * entry.percentage / 100)),
-  }));
+  // Compute per-partner share using floor, then assign remainder to the last
+  // partner. This guarantees sum(distributions) == netProfit exactly, avoiding
+  // the rounding over-allocation bug (e.g. two 50% partners × 7₫ = 4+4=8₫).
+  let allocated = 0;
+  const distributions = activePartners.map((entry, i) => {
+    const isLast = i === activePartners.length - 1;
+    const raw = netProfit * entry.percentage / 100;
+    const amount = isLast ? Math.round(netProfit - allocated) : Math.floor(raw);
+    allocated += amount;
+    return {
+      quarter,
+      year,
+      partnerName: entry.partnerName,
+      percentage: String(entry.percentage),
+      amount: String(amount),
+    };
+  });
 
   return { netProfit, tripCount: trips.length, distributions };
 }

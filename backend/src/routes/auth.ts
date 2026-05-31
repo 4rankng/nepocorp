@@ -12,6 +12,15 @@ import type { Request, Response } from 'express';
 
 const router = Router();
 
+/** Verify a user's current password. Throws with { status } on failure. */
+async function verifyPassword(userId: number, password: string): Promise<void> {
+  const [user] = await db.select({ passwordHash: users.passwordHash })
+    .from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) throw Object.assign(new Error('Không tìm thấy người dùng'), { status: 404 });
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) throw Object.assign(new Error('Mật khẩu hiện tại không đúng'), { status: 401 });
+}
+
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const { identifier, password } = loginSchema.parse(req.body);
@@ -147,11 +156,11 @@ router.patch('/me', authMiddleware, async (req: Request, res: Response) => {
       if (!data.currentPassword) {
         return res.status(400).json({ error: 'Cần xác nhận mật khẩu hiện tại để thay đổi tên đăng nhập' });
       }
-      const [user] = await db.select({ passwordHash: users.passwordHash })
-        .from(users).where(eq(users.id, userId)).limit(1);
-      if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
-      const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
-      if (!valid) return res.status(401).json({ error: 'Mật khẩu hiện tại không đúng' });
+      try {
+        await verifyPassword(userId, data.currentPassword);
+      } catch (err: any) {
+        return res.status(err.status || 401).json({ error: err.message });
+      }
       updates.username = data.username;
     }
 
@@ -176,13 +185,7 @@ router.post('/change-password', authMiddleware, async (req: Request, res: Respon
     const userId = req.user!.userId;
     const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
 
-    const [user] = await db.select({ passwordHash: users.passwordHash })
-      .from(users).where(eq(users.id, userId)).limit(1);
-
-    if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
-
-    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!valid) return res.status(401).json({ error: 'Mật khẩu hiện tại không đúng' });
+    await verifyPassword(userId, currentPassword);
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await db.update(users).set({ passwordHash, updatedAt: sql`now()` })

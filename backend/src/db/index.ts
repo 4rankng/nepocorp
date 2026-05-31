@@ -111,8 +111,16 @@ export async function applyRuntimePatches(): Promise<void> {
     )
   `);
 
-  const rows = await client.unsafe(`SELECT name FROM "_applied_patches"`).catch(() => ({ rows: [] as { name: string }[] }));
-  const applied: Set<string> = new Set((rows as any).map?.((r: any) => r.name as string) ?? []);
+  // Fetch already-applied patches. Only swallow the expected "relation does not
+  // not exist" error (code 42P01) that fires on first boot before the table is
+  // created. All other errors (permissions, connection) should propagate.
+  let rows: { name: string }[] = [];
+  try {
+    rows = await client.unsafe(`SELECT name FROM "_applied_patches"`);
+  } catch (err: any) {
+    if (err?.code !== '42P01') throw err; // unexpected — let it crash
+  }
+  const applied: Set<string> = new Set(rows.map((r: any) => r.name as string));
 
   let skipped = 0;
   let appliedCount = 0;
