@@ -92,21 +92,7 @@ export default function LoginPage() {
             {submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
 
-          <div className="login-hints">
-            <p className="login-hints__title">Tài khoản demo:</p>
-            <div className="login-hints__accounts">
-              <button type="button" className="login-hints__chip" onClick={() => { setUsername('giamdoc'); setPassword('admin123'); }}>
-                giamdoc <span>Giám đốc</span>
-              </button>
-              <button type="button" className="login-hints__chip" onClick={() => { setUsername('ketoan'); setPassword('admin123'); }}>
-                ketoan <span>Kế toán</span>
-              </button>
-              <button type="button" className="login-hints__chip" onClick={() => { setUsername('laixe'); setPassword('admin123'); }}>
-                laixe <span>Lái xe</span>
-              </button>
-            </div>
-            <p className="login-hints__pw">Mật khẩu: <code>admin123</code></p>
-          </div>
+
         </form>
       </div>
 
