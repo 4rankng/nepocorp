@@ -8,7 +8,7 @@ export interface AuthUser {
   email: string | null;
   phone: string | null;
   role: Role;
-  name?: string;
+  fullName?: string;
 }
 
 interface AuthContextType {
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const updateUser = useCallback((updates: Pick<AuthUser, 'email' | 'phone' | 'username'>) => {
+  const updateUser = useCallback((updates: Pick<AuthUser, 'email' | 'phone' | 'username' | 'fullName'>) => {
     setUser(prev => prev ? { ...prev, ...updates } : prev);
   }, []);
 

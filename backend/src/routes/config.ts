@@ -53,6 +53,9 @@ router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSche
 router.use('/road-allowances', createCrudRouter(s.roadAllowances, roadAllowanceSchema));
 router.use('/penalty-reasons', createCrudRouter(s.penaltyReasons, penaltyReasonSchema));
 router.use('/management-fees', createCrudRouter(s.managementFees, managementFeeSchema));
+// Cap-table is amount-based: percentages are derived as
+// contribution_amount / sum(contribution_amount) per snapshot, so totals are
+// always 100% by construction and there's no separate over-allocation check.
 router.use('/cap-table', createCrudRouter(s.capTableHistory, capTableSchema));
 
 // Drivers — special handling (includes user_id)
@@ -132,7 +135,8 @@ auditLogRouter.get('/', async (_req: Request, res: Response) => {
       id: s.auditLogs.id,
       timestamp: s.auditLogs.timestamp,
       userId: s.auditLogs.userId,
-      userEmail: s.users.email,
+      userName: s.users.fullName,
+      username: s.users.username,
       message: s.auditLogs.message,
       payload: s.auditLogs.payload,
       ipAddress: s.auditLogs.ipAddress,
@@ -147,7 +151,11 @@ auditLogRouter.get('/', async (_req: Request, res: Response) => {
       items: items.map(i => ({
         id: i.id,
         userId: i.userId,
-        userEmail: i.userEmail || '',
+        // Display name in priority order: full Vietnamese name → username.
+        // Email is intentionally NOT returned anymore — the audit log shouldn't
+        // leak personal contact info, and the rendered message already names
+        // the actor (e.g. "Quản lý Lê Văn Tỉnh khóa chuyến TRP-202606-0086").
+        userName: i.userName || i.username || 'Người dùng',
         action: (i.payload as any)?.event || '',
         method: (i.payload as any)?.method || '',
         path: (i.payload as any)?.path || '',

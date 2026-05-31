@@ -219,7 +219,7 @@ export interface Penalty {
 export interface CapTableHistory {
   id: number;
   partnerName: string;
-  percentage: string;
+  contributionAmount: string;
   effectiveDate: string;
   createdAt: string;
   updatedAt: string;

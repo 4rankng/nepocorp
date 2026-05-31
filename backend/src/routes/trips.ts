@@ -98,7 +98,10 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const data = createTripSchema.parse(req.body);
-    const trip = await tripService.createTrip(data);
+    const trip = await tripService.createTrip({
+      ...data,
+      created_by: req.user!.userId,
+    });
     res.status(201).json(trip);
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
@@ -203,7 +206,7 @@ router.post('/:id/dispatch', async (req: Request, res: Response) => {
       parseInt(req.params.id as string),
       TripStatus.IN_TRANSIT,
       req.user!.userId,
-      req.user!.role
+      req.user!.role,
     );
     res.json(trip);
   } catch (err: any) {
@@ -221,7 +224,7 @@ router.post('/:id/lock', async (req: Request, res: Response) => {
       TripStatus.LOCKED,
       req.user!.userId,
       req.user!.role,
-      confirmZeroRevenue
+      confirmZeroRevenue,
     );
     res.json(trip);
   } catch (err: any) {
@@ -237,7 +240,7 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
       id,
       TripStatus.CANCELED,
       req.user!.userId,
-      req.user!.role
+      req.user!.role,
     );
     res.json(trip);
   } catch (err: any) {

@@ -246,7 +246,12 @@ export const penalties = pgTable('penalties', {
 export const capTableHistory = pgTable('cap_table_history', {
   id: serial('id').primaryKey(),
   partnerName: varchar('partner_name', { length: 255 }).notNull(),
-  percentage: numeric('percentage', { precision: 5, scale: 2 }).notNull(),
+  // Optional — application drives cap-table ownership via percentage; this
+  // column is reserved for future amount-based book-keeping.
+  contributionAmount: numeric('contribution_amount', { precision: 15, scale: 0 }).default('0'),
+  // Snapshot ownership percentage (0–100). Distribution math reads this
+  // directly; contributionAmount is a separate book-keeping field.
+  percentage: numeric('percentage', { precision: 5, scale: 2 }).notNull().default('0'),
   effectiveDate: date('effective_date').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -55,10 +55,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
 router.get('/me', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const [user] = await db.select({
-      id: users.id, username: users.username, email: users.email, phone: users.phone, role: users.role, status: users.status,
-      createdAt: users.createdAt,
-    }).from(users).where(eq(users.id, req.user!.userId)).limit(1);
+    const [user] = await db.select(USER_FIELDS).from(users).where(eq(users.id, req.user!.userId)).limit(1);
 
     if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
 
@@ -77,7 +74,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
 
 const USER_FIELDS = {
   id: users.id, username: users.username, email: users.email, phone: users.phone,
-  role: users.role, status: users.status, createdAt: users.createdAt,
+  role: users.role, status: users.status, fullName: users.fullName, createdAt: users.createdAt,
 };
 
 router.get('/users', authMiddleware, casbinAuthz('users'), async (_req: Request, res: Response) => {

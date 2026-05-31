@@ -47,13 +47,14 @@ function formatRawNumber(num: number | string | null): string {
 }
 
 function yoyPct(current: number, previous: number): string {
-  if (!previous) return current > 0 ? '+∞' : '—';
+  if (previous == null) return current > 0 ? '+∞' : '—';
+  if (previous === 0) return current > 0 ? '+∞' : '—';
   const pct = ((current - previous) / previous * 100).toFixed(1);
   return `${Number(pct) >= 0 ? '+' : ''}${pct}%`;
 }
 
 function yoyClass(current: number, previous: number): string {
-  if (!previous) return '';
+  if (previous == null) return '';
   return current >= previous ? 'pnl-row__pct--up' : 'pnl-row__pct--down';
 }
 
@@ -99,7 +100,7 @@ export default function FinancePage() {
   const mgmtFeeLY = prevReport?.managementFee ?? 0;
   const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
 
-  const activeCapTable = getActiveCapTable(capTableRaw, [])
+  const activeCapTable = getActiveCapTable(capTableRaw)
     .map(c => ({ name: c.partnerName, pct: c.percentage }));
 
   const compactNum = (v: number) => {

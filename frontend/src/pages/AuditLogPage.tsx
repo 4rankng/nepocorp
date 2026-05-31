@@ -11,12 +11,17 @@ import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditL
 // ─── Types ──────────────────────────────────────────────────────────────
 
 // Normalized entry with guaranteed non-optional fields.
-type NormalizedEntry = AuditEntry & { userEmail: string; userName: string; category: NonNullable<AuditEntry['category']> };
+// `userEmail` kept on the type only as a back-compat read for older API
+// responses, but the UI no longer renders it (users objected to PII leakage).
+type NormalizedEntry = AuditEntry & { userName: string; userEmail: string; category: NonNullable<AuditEntry['category']> };
 
 // Map raw API entry → canonical shape with both case-forms populated.
 function normalizeEntry(e: any): NormalizedEntry {
+  // Backend now returns userName as the canonical display label. Fall back
+  // through legacy fields (user_email, userEmail) so previously-stored rows
+  // still render readably until they roll over.
+  const name = e.user_name || e.userName || e.username || e.user_email || e.userEmail || 'Người dùng';
   const email = e.user_email || e.userEmail || '';
-  const name = e.user_name || e.userName || email;
   // Categorise from the action when the backend hasn't set it explicitly.
   const action: string = e.action || '';
   let category: AuditEntry['category'] = 'config';
@@ -26,8 +31,8 @@ function normalizeEntry(e: any): NormalizedEntry {
   else if (action === 'USER_LOGIN' || action === 'USER_LOGOUT') category = 'auth';
   return {
     ...e,
-    userEmail: email,
     userName: name,
+    userEmail: email,
     category: e.category || category,
   };
 }
@@ -131,7 +136,7 @@ export default function AuditLogPage() {
 
   // KPI counts from all entries (server-filtered)
   const todayCount = total;
-  const uniqueUsers = new Set(entries.map(e => e.userEmail)).size;
+  const uniqueUsers = new Set(entries.map(e => e.userName)).size;
   const topCategory = (() => {
     const counts: Record<string, number> = {};
     entries.forEach(e => { counts[e.category] = (counts[e.category] || 0) + 1; });
@@ -163,7 +168,7 @@ export default function AuditLogPage() {
             const rows = entries.map((e, i) => [
               i + 1,
               formatExactTime(e.timestamp),
-              e.userName || e.userEmail,
+              e.userName,
               ACTION_LABELS[e.action] || e.action,
               e.message,
             ]);
@@ -242,7 +247,7 @@ export default function AuditLogPage() {
           <Search size={14} />
           <input
             type="text"
-            placeholder="Tìm theo nội dung, email, hành động..."
+            placeholder="Tìm theo nội dung, tên người dùng, hành động..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
           />
@@ -279,15 +284,12 @@ export default function AuditLogPage() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div className={`avatar-ring ${avatarColor(entry.userName || entry.userEmail)}`}>
-                          {getInitials(entry.userName || entry.userEmail)}
+                        <div className={`avatar-ring ${avatarColor(entry.userName)}`}>
+                          {getInitials(entry.userName)}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {entry.userName || entry.userEmail}
-                          </div>
-                          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-                            {entry.userEmail}
+                            {entry.userName}
                           </div>
                         </div>
                       </div>

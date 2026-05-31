@@ -68,7 +68,7 @@ export const TRIP_STATUS_LABELS: Record<TripStatus, string> = {
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
-  [Role.ADMIN]: 'Quản trị',
+  [Role.ADMIN]: 'Quản trị viên',
   [Role.MANAGER]: 'Quản lý',
   [Role.ACCOUNTANT]: 'Kế toán',
   [Role.DRIVER]: 'Tài xế',

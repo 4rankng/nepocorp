@@ -25,6 +25,7 @@ import { useClickOutside } from '../hooks/useClickOutside';
 import { api } from '../lib/api';
 import { Modal, FormGroup } from './UI';
 import { useBadgeCounts } from '../hooks/useQueries';
+import { ROLE_LABELS } from '@nepocorp/shared';
 import type { Role } from '@nepocorp/shared';
 
 interface NavItem {
@@ -72,13 +73,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
 }
 
 function getRoleLabel(role: Role): string {
-  switch (role) {
-    case 'MANAGER': return 'Quản lý';
-    case 'ACCOUNTANT': return 'Kế toán';
-    case 'ADMIN': return 'Quản trị';
-    case 'DRIVER': return 'Tài xế';
-    default: return role;
-  }
+  return ROLE_LABELS[role] || role;
 }
 
 function getPageTitle(pathname: string): string {
@@ -291,15 +286,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <User size={18} />
             </div>
             <div className="meta">
-              <div className="name">{user.name || getRoleLabel(user.role)}</div>
-              <div className="role">{user.email || user.username || getRoleLabel(user.role)}</div>
+              <div className="name">{user.fullName || user.username || getRoleLabel(user.role)}</div>
+              <div className="role">{getRoleLabel(user.role)}</div>
             </div>
             <ChevronUp size={14} className="sidebar-user-chevron" />
           </button>
           {userMenuOpen && (
             <div className="sidebar-user-dropdown">
               <div className="sidebar-user-dropdown-header">
-                <div className="name">{user.name || getRoleLabel(user.role)}</div>
+                <div className="name">{user.fullName || getRoleLabel(user.role)}</div>
                 <div className="role">{getRoleLabel(user.role)}</div>
               </div>
               <div className="sidebar-user-dropdown-divider" />

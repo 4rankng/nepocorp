@@ -45,6 +45,69 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
   return rest;
 }
 
+/**
+ * Pull a human-readable identifier out of a response/request body so audit
+ * messages can read "khóa chuyến TRP-202606-0086" instead of "khóa chuyến #76".
+ *
+ * Checks both camelCase and snake_case because the serializer middleware can
+ * emit either depending on order. Preference is route-specific: trips have a
+ * `tripCode`, trucks/trailers have a `licensePlate`, everything config-like
+ * has `name`. As a last resort the entity numeric id is returned.
+ */
+function extractEntityKey(
+  entityType: string | null,
+  responseBody: Record<string, unknown> | null,
+  requestBody: Record<string, unknown> | null,
+  fallbackId: number | null,
+): string | undefined {
+  const pick = (obj: Record<string, unknown> | null, ...keys: string[]): string | undefined => {
+    if (!obj) return undefined;
+    for (const k of keys) {
+      const v = (obj as any)[k];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+      if (typeof v === 'number') return String(v);
+    }
+    return undefined;
+  };
+
+  switch (entityType) {
+    case 'trips':
+      return pick(responseBody, 'tripCode', 'trip_code')
+        || pick(requestBody, 'tripCode', 'trip_code')
+        || (fallbackId != null ? `#${fallbackId}` : undefined);
+    case 'trucks':
+    case 'trailers':
+      return pick(responseBody, 'licensePlate', 'license_plate')
+        || pick(requestBody, 'licensePlate', 'license_plate')
+        || (fallbackId != null ? `#${fallbackId}` : undefined);
+    case 'customers':
+    case 'routes':
+    case 'cargo-types':
+    case 'drivers':
+    case 'penalty-reasons':
+      return pick(responseBody, 'name')
+        || pick(requestBody, 'name')
+        || (fallbackId != null ? `#${fallbackId}` : undefined);
+    case 'cap-table':
+      return pick(responseBody, 'partnerName', 'partner_name')
+        || pick(requestBody, 'partnerName', 'partner_name')
+        || (fallbackId != null ? `#${fallbackId}` : undefined);
+    case 'payments':
+    case 'adjustments':
+    case 'penalties': {
+      // These often reference a trip in the body — surface that.
+      const tripRef = pick(responseBody, 'tripCode', 'trip_code')
+        || pick(requestBody, 'tripCode', 'trip_code');
+      if (tripRef) return `cho chuyến ${tripRef}`;
+      return fallbackId ? `#${fallbackId}` : undefined;
+    }
+    default:
+      return pick(responseBody, 'name', 'code')
+        || pick(requestBody, 'name', 'code')
+        || (fallbackId != null ? `#${fallbackId}` : undefined);
+  }
+}
+
 export function auditLogMiddleware(req: Request, res: Response, next: NextFunction) {
   if (!['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
     return next();
@@ -58,21 +121,41 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
   // `req.originalUrl` is preserved through routing and is the right source.
   const fullPath = (req.originalUrl || req.url || '').split('?')[0];
 
-  const originalEnd = res.end;
+  // Intercept res.json so we can inspect the response body (e.g. the created
+  // trip's tripCode, the truck's licensePlate) for use in audit messages.
+  // Falling back to req.body alone wasn't enough: POST /api/trips' response
+  // body contains the generated tripCode that the request doesn't have.
+  let capturedBody: Record<string, unknown> | null = null;
+  const originalJson = res.json.bind(res);
+  res.json = function (body: any) {
+    if (body && typeof body === 'object' && !Array.isArray(body)) {
+      capturedBody = body as Record<string, unknown>;
+    }
+    return originalJson(body);
+  };
 
+  const originalEnd = res.end;
   res.end = function (...args: any[]) {
     if (res.statusCode < 400 && req.user) {
       const event = resolveAuditEvent(req.method, fullPath);
       const entityType = extractEntityType(fullPath);
       const entityId = extractEntityId(fullPath, req.body as Record<string, unknown>);
+      const entityKey = extractEntityKey(
+        entityType,
+        capturedBody,
+        req.body as Record<string, unknown>,
+        entityId,
+      );
 
       emitAudit({
         event,
         entityType: entityType || 'unknown',
         entityId: entityId ?? undefined,
+        entityKey,
         userId: req.user.userId,
         actorRole: req.user.role,
-        actorEmail: req.user.email ?? req.user.username ?? undefined,
+        actorEmail: req.user.email ?? undefined,
+        actorName: req.user.fullName ?? req.user.username ?? undefined,
         ipAddress: req.ip,
         metadata: {
           method: req.method,

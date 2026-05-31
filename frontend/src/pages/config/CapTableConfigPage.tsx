@@ -1,27 +1,28 @@
 import { useState, useMemo } from 'react';
 import { InlineForm, FormActions, Field, CrudTable } from '../../components/config';
+import { formatCurrency } from '../../lib/format';
 import type { CapTableHistory } from '@nepocorp/shared';
 
 function CapTableForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: CapTableHistory; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
   const [partnerName, setPartnerName] = useState(item?.partnerName || '');
-  const [percentage, setPercentage] = useState(item?.percentage || '');
+  const [contributionAmount, setContributionAmount] = useState(item?.contributionAmount || '');
   const [effectiveDate, setEffectiveDate] = useState(item ? item.effectiveDate.split('T')[0] : '');
   return (
     <InlineForm colSpan={5}>
       <div style={{ flex: 2, minWidth: 180 }}>
         <Field label="Tên cổ đông"><input className="input" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="Nhập tên cổ đông..." /></Field>
       </div>
-      <div style={{ flex: 1, minWidth: 100 }}>
-        <Field label="Tỷ lệ cổ phần (%)"><input className="input" type="number" step="0.01" value={percentage} onChange={e => setPercentage(e.target.value)} placeholder="0.00" /></Field>
+      <div style={{ flex: 1, minWidth: 130 }}>
+        <Field label="Số vốn góp (₫)"><input className="input" type="number" step="1000000" value={contributionAmount} onChange={e => setContributionAmount(e.target.value)} placeholder="0" /></Field>
       </div>
       <div style={{ flex: 1.5, minWidth: 150 }}>
         <Field label="Ngày hiệu lực"><input className="input" type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} /></Field>
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
-        if (!partnerName.trim() || !percentage || !effectiveDate) return;
-        onsave({ partnerName: partnerName.trim(), percentage: Number(percentage), effectiveDate });
+        if (!partnerName.trim() || !contributionAmount || !effectiveDate) return;
+        onsave({ partnerName: partnerName.trim(), contributionAmount: Number(contributionAmount), effectiveDate });
       }} />
     </InlineForm>
   );
@@ -41,10 +42,23 @@ function computeCapTableActiveIds(items: CapTableHistory[]): Set<number> {
   return new Set(Array.from(byName.values(), r => r.id));
 }
 
+/** Auto-calculate percentage from contribution amounts */
+function computePercentages(items: CapTableHistory[]): Map<number, number> {
+  const activeIds = computeCapTableActiveIds(items);
+  const activeItems = items.filter(i => activeIds.has(i.id));
+  const total = activeItems.reduce((sum, i) => sum + (parseFloat(i.contributionAmount) || 0), 0);
+  const map = new Map<number, number>();
+  for (const i of activeItems) {
+    const amt = parseFloat(i.contributionAmount) || 0;
+    map.set(i.id, total > 0 ? Math.round((amt / total) * 10000) / 100 : 0);
+  }
+  return map;
+}
+
 export default function CapTableConfigPage() {
   return (
     <CrudTable<CapTableHistory>
-      title="Tỷ lệ cổ phần (Cap Table)" description="Lịch sử tỷ lệ góp vốn cổ đông công ty"
+      title="Tỷ lệ cổ phần" description="Lịch sử vốn góp cổ đông công ty — tỷ lệ tự động tính từ số vốn"
       endpoint="/cap-table" colSpan={5}
       showDelete={false}
       computeActiveIds={computeCapTableActiveIds}
@@ -71,9 +85,18 @@ export default function CapTableConfigPage() {
           ),
         },
         {
+          header: 'Số vốn góp',
+          className: 'num',
+          render: (ct) => <span style={{ fontWeight: 600 }}>{formatCurrency(parseFloat(ct.contributionAmount) || 0)}</span>,
+        },
+        {
           header: 'Tỷ lệ (%)',
           className: 'num',
-          render: (ct, _i, isActive) => <span style={{ fontWeight: 600, color: isActive ? 'var(--brand)' : 'var(--fg-2)' }}>{Number(ct.percentage).toFixed(2)}%</span>,
+          render: (ct, _i, isActive, allItems) => {
+            const pctMap = computePercentages(allItems);
+            const pct = pctMap.get(ct.id);
+            return <span style={{ fontWeight: 600, color: isActive ? 'var(--brand)' : 'var(--fg-2)' }}>{pct !== undefined ? `${pct.toFixed(2)}%` : '—'}</span>;
+          },
         },
         {
           header: 'Ngày hiệu lực',

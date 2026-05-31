@@ -203,12 +203,13 @@ type CapRow = typeof s.capTableHistory.$inferSelect;
 /**
  * Resolve the active cap-table snapshot as of a cutoff date.
  * Picks the latest effective date ≤ cutoff, deduplicates by partner name
- * (keeping the row with the newest createdAt).
+ * (keeping the row with the newest createdAt), then auto-calculates
+ * percentages from contribution amounts.
  */
 function resolveCapTableSnapshot(
   capRows: CapRow[],
   cutoffDate: string,
-): Array<{ partnerName: string; percentage: string }> {
+): Array<{ partnerName: string; contributionAmount: number; percentage: number }> {
   const reached = capRows.filter(c => c.partnerName && c.effectiveDate <= cutoffDate);
   const pool = reached.length > 0 ? reached : capRows;
   if (pool.length === 0) return [];
@@ -220,7 +221,17 @@ function resolveCapTableSnapshot(
     const prev = byName.get(row.partnerName);
     if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
   }
-  return Array.from(byName.values()).map(r => ({ partnerName: r.partnerName, percentage: r.percentage }));
+
+  const partners = Array.from(byName.values()).map(r => ({
+    partnerName: r.partnerName,
+    contributionAmount: parseFloat(r.contributionAmount ?? '0') || 0,
+  }));
+
+  const total = partners.reduce((sum, p) => sum + p.contributionAmount, 0);
+  return partners.map(p => ({
+    ...p,
+    percentage: total > 0 ? Math.round((p.contributionAmount / total) * 10000) / 100 : 0,
+  }));
 }
 
 /**
@@ -246,12 +257,19 @@ async function computeDistribution(quarter: number, year: number) {
   const cutoff = qEnd > today ? today : qEnd;
   const activePartners = resolveCapTableSnapshot(capEntries, cutoff);
 
+  if (activePartners.length === 0) {
+    throw Object.assign(
+      new Error('Chưa có dữ liệu cổ đông. Vui lòng vào "Cấu hình → Cổ phần" và thêm vốn góp trước khi phân chia lợi nhuận.'),
+      { status: 400 },
+    );
+  }
+
   const distributions = activePartners.map(entry => ({
     quarter,
     year,
     partnerName: entry.partnerName,
-    percentage: entry.percentage,
-    amount: String(Math.round(netProfit * parseFloat(entry.percentage) / 100)),
+    percentage: String(entry.percentage),
+    amount: String(Math.round(netProfit * entry.percentage / 100)),
   }));
 
   return { netProfit, tripCount: trips.length, distributions };
@@ -263,9 +281,9 @@ function resolveTopShareholder(capRows: CapRow[]) {
     const today = new Date().toISOString().slice(0, 10);
     const partners = resolveCapTableSnapshot(capRows, today);
     const sorted = partners
-      .map(c => ({ name: c.partnerName, percentage: parseFloat(c.percentage) || 0 }))
       .sort((a, b) => b.percentage - a.percentage);
-    topShareholder = sorted[0] || null;
+    const top = sorted[0];
+    topShareholder = top ? { name: top.partnerName, percentage: top.percentage } : null;
   }
   return topShareholder;
 }

@@ -12,7 +12,7 @@ interface CrudColumn<T> {
   header: string;
   width?: number;
   className?: string;
-  render: (item: T, index: number, isActive: boolean) => React.ReactNode;
+  render: (item: T, index: number, isActive: boolean, allItems: T[]) => React.ReactNode;
 }
 
 interface CrudTableProps<T extends { id: number }> {
@@ -134,7 +134,7 @@ export function CrudTable<T extends { id: number }>({
                     <td className="num">{i + 1}</td>
                     {columns.map(col => (
                       <td key={col.header} className={col.className}>
-                        {col.render(item, i, isActive)}
+                        {col.render(item, i, isActive, items)}
                       </td>
                     ))}
                     <td>

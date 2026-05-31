@@ -221,9 +221,18 @@ export const managementFeeSchema = z.object({
   amount: nonNegNumeric,
 });
 
+// Cap-table snapshot. The application drives ownership through `percentage`
+// (0–100); `contribution_amount` is optional book-keeping kept here so the
+// schema matches the underlying table without forcing every CRUD payload
+// to supply it.
 export const capTableSchema = z.object({
   partner_name: z.string().min(1),
-  percentage: z.number().min(0).max(100),
+  percentage: z.union([z.number(), z.string()]).optional()
+    .transform(v => v == null ? undefined : Number(v))
+    .refine(v => v == null || (v >= 0 && v <= 100), { message: 'Tỷ lệ phải trong khoảng 0–100' }),
+  contribution_amount: z.union([z.number(), z.string()]).optional()
+    .transform(v => v == null ? undefined : Number(v))
+    .refine(v => v == null || v >= 0, { message: 'Số tiền góp vốn không hợp lệ' }),
   effective_date: z.string().min(1),
 });
 

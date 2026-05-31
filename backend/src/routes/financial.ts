@@ -77,7 +77,18 @@ router.post('/payments/receive', async (req: Request, res: Response) => {
     const data = createPaymentSchema.parse(req.body);
 
     await db.transaction(async (tx) => {
+      // Resolve trip codes up front so ledger notes read naturally — e.g.
+      // "Thanh toán chuyến TRP-202606-0082" rather than "Thanh toán chuyến #76".
+      // The customer-facing statement renders these notes verbatim.
+      const tripIds = Array.from(new Set(data.payments.map(p => p.trip_id)));
+      const tripRows = tripIds.length > 0
+        ? await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode }).from(s.trips)
+            .where(sql`${s.trips.id} IN (${sql.join(tripIds.map(id => sql`${id}`), sql`, `)})`)
+        : [];
+      const codeById = new Map(tripRows.map(t => [t.id, t.tripCode || '']));
+
       for (const payment of data.payments) {
+        const tripLabel = codeById.get(payment.trip_id) || '';
         await LedgerService.postEntry(tx, {
           txnType: TxnType.PAYMENT_RECEIVED,
           txnId: payment.trip_id,
@@ -86,7 +97,7 @@ router.post('/payments/receive', async (req: Request, res: Response) => {
           entityId: data.customer_id,
           debit: 0,
           credit: payment.amount,
-          note: `Thanh toán chuyến #${payment.trip_id}`,
+          note: tripLabel ? `Thanh toán chuyến ${tripLabel}` : 'Thanh toán chuyến',
         });
       }
     });
@@ -170,6 +181,14 @@ router.post('/penalties', async (req: Request, res: Response) => {
         date: data.date,
       }).returning();
 
+      // Resolve trip code so the driver's ledger note reads naturally.
+      let tripLabel = '';
+      if (data.trip_id) {
+        const [trip] = await tx.select({ tripCode: s.trips.tripCode })
+          .from(s.trips).where(eq(s.trips.id, data.trip_id)).limit(1);
+        tripLabel = trip?.tripCode || '';
+      }
+
       // Create ledger entry for driver
       await LedgerService.postEntry(tx, {
         txnType: TxnType.PENALTY,
@@ -178,7 +197,8 @@ router.post('/penalties', async (req: Request, res: Response) => {
         entityId: data.driver_id,
         debit: data.amount,
         credit: 0,
-        note: data.custom_reason || `Kỷ luật chuyến #${data.trip_id || ''}`,
+        note: data.custom_reason
+          || (tripLabel ? `Kỷ luật chuyến ${tripLabel}` : 'Kỷ luật vi phạm'),
       });
 
       res.status(201).json(penalty);

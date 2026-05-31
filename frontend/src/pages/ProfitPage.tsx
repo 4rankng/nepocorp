@@ -156,17 +156,13 @@ export default function ProfitPage() {
     }
   };
 
-  // Get active cap table (default if empty).
+  // Resolve active cap table from database data.
   const getDisplayCapTable = () => {
     if (capTable && capTable.length > 0) {
       const result = getActiveCapTable(capTable);
       if (result.length > 0) return result;
     }
-    // Wireframe default fallbacks
-    return [
-      { partnerName: 'Ông Phụng', percentage: 70.45 },
-      { partnerName: 'Ông Thương', percentage: 29.55 }
-    ];
+    return [];
   };
 
   const activeCapTable = getDisplayCapTable();
@@ -259,15 +255,14 @@ export default function ProfitPage() {
             
             <div className="partner-grid">
               {activeCapTable.map((partner, i) => {
-                const maxPct = Math.max(...activeCapTable.map(p => p.percentage));
-                const isPhung = partner.percentage === maxPct;
+                const isPrimary = i === 0; // first = largest share after sort
                 const avatarChar = partner.partnerName.charAt(partner.partnerName.lastIndexOf(' ') + 1) || partner.partnerName.charAt(0);
                 const partnerShare = Math.round(netProfit * partner.percentage / 100);
 
                 return (
-                  <div key={i} className={`partner-card ${isPhung ? 'partner-card--primary' : ''}`}>
+                  <div key={i} className={`partner-card ${isPrimary ? 'partner-card--primary' : ''}`}>
                     <div className="partner-card__head">
-                      <div className={`partner-card__avatar ${isPhung ? 'partner-card__avatar--phung' : 'partner-card__avatar--thuong'}`}>
+                      <div className={`partner-card__avatar ${isPrimary ? 'partner-card__avatar--primary' : 'partner-card__avatar--secondary'}`}>
                         {avatarChar}
                       </div>
                       <div className="partner-card__info">
@@ -275,25 +270,7 @@ export default function ProfitPage() {
                           {partner.partnerName}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'nowrap' }}>
-                          {isPhung ? (
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '2px 7px',
-                              background: 'var(--brand-soft)',
-                              color: 'var(--brand)',
-                              borderRadius: 99,
-                              fontSize: 9,
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.06em',
-                              whiteSpace: 'nowrap',
-                              flexShrink: 0
-                            }}>
-                              Đối tác chính
-                            </span>
-                          ) : (
-                            <span className="partner-card__role">Đối tác góp vốn</span>
-                          )}
+                          <span className="partner-card__role">{isPrimary ? 'Đối tác chính' : 'Đối tác góp vốn'}</span>
                           <div className="partner-card__pct" style={{ marginLeft: 'auto', fontSize: 16 }}>
                             {partner.percentage}%
                           </div>
@@ -301,13 +278,33 @@ export default function ProfitPage() {
                       </div>
                     </div>
                     <div className="partner-card__amount-label">Phần lợi nhuận tháng {selectedMonth}</div>
-                    <div className="partner-card__amount" style={{ color: isPhung ? 'var(--brand)' : 'var(--info)' }}>
+                    <div className="partner-card__amount" style={{ color: isPrimary ? 'var(--brand)' : 'var(--info)' }}>
                       {formatVND(partnerShare)}
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            {activeCapTable.length === 0 && (
+              <div style={{
+                padding: 24,
+                background: 'var(--bg-2)',
+                borderRadius: 8,
+                textAlign: 'center',
+                color: 'var(--fg-3)',
+                fontSize: 13,
+              }}>
+                <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--fg-2)' }}>Chưa cấu hình tỷ lệ cổ phần</p>
+                <p style={{ margin: 0 }}>
+                  Vui lòng thêm bản ghi tại{' '}
+                  <a href="/config/cap-table" style={{ color: 'var(--brand)', fontWeight: 600 }}>
+                    Cấu hình Cổ đông
+                  </a>{' '}
+                  để hiển thị phân chia lợi nhuận.
+                </p>
+              </div>
+            )}
 
             {/* Quarterly Settlement Action Card */}
             <Card style={{ marginTop: 24 }} title="Quyết toán & Chốt Quý" subtitle="Khóa sổ kế toán và tạo bản ghi phân phối lợi nhuận chính thức.">

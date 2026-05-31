@@ -167,7 +167,7 @@ export async function resolveTopOverdue(ledgerRows: LedgerRow[]) {
         if (!topOverdueCustomer || balance > topOverdueCustomer.balance) {
           const oldestDate = oldestUnpaidByCustomer.get(id);
           const days = oldestDate ? Math.max(0, Math.floor((Date.now() - new Date(oldestDate).getTime()) / 86400000)) : 0;
-          topOverdueCustomer = { name: nameById.get(id) || `KH #${id}`, balance, days };
+          topOverdueCustomer = { name: nameById.get(id) || 'Khách hàng không xác định', balance, days };
         }
       }
     }

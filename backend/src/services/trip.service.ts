@@ -5,7 +5,6 @@ import { TripStatus, FuelMode, TxnType, LoadingType, Role } from '@nepocorp/shar
 import type { TripLegInput } from '@nepocorp/shared';
 import { computeTripTotals } from '@nepocorp/shared';
 import { LedgerService } from './ledger.service';
-import { writeAuditLogTransaction } from './audit.service';
 
 // ─── Trip lifecycle ──────────────────────────────────────────────────────────
 
@@ -107,13 +106,9 @@ export async function createTrip(data: {
       returnCargoBonusApplied: String(returnCargoBonusApplied),
     }).returning();
 
-    await writeAuditLogTransaction(tx, {
-      userId: data.created_by || 1,
-      message: `Khởi tạo lệnh vận chuyển ${tripCode}`,
-      entityType: 'trips',
-      entityId: trip.id,
-      payload: { event: 'TRIP_CREATED', diff: { tripCode, status: 'CREATED' } }
-    });
+    // Audit row is produced by auditLogMiddleware on POST /api/trips as
+    // "Quản lý <actor> tạo lệnh vận chuyển <tripCode>". A service-level write
+    // here would duplicate that row, so we deliberately skip it.
 
     return trip;
   });
@@ -267,13 +262,10 @@ export async function updateTripFigures(
       );
     }
 
-    await writeAuditLogTransaction(tx, {
-      userId: data.user_id || 1,
-      message: `Cập nhật số liệu thực tế chuyến đi ${trip.tripCode || `#${tripId}`}`,
-      entityType: 'trips',
-      entityId: tripId,
-      payload: { event: 'TRIP_UPDATED', diff: { version: nextVersion } }
-    });
+    // Audit row is produced by auditLogMiddleware on PUT /api/trips/:id/
+    // actuals (and /pre-departure) as "Quản lý <actor> cập nhật số liệu
+    // thực tế chuyến <tripCode>". Skip the service-level write to avoid
+    // duplicating that row.
 
     return updated;
   });
@@ -284,8 +276,11 @@ export async function transitionTripStatus(
   targetStatus: TripStatus,
   userId: number,
   userRole: string,
-  confirmZeroRevenue?: boolean
+  confirmZeroRevenue?: boolean,
 ) {
+  // Audit rows for status transitions are produced by the auditLogMiddleware
+  // on the corresponding endpoint (POST /dispatch, /lock, /cancel) with full
+  // Subject + Verb + Natural Key sentences.
   return await db.transaction(async (tx) => {
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) throw new Error('Không tìm thấy chuyến đi');
@@ -317,8 +312,11 @@ export async function transitionTripStatus(
         ))
         .limit(1);
       if (busyTruck && busyTruck.id !== tripId) {
+        // Never leak the numeric id — show the trip code or fall back to a
+        // generic phrase rather than "#17" which reads like a debug log.
+        const busyLabel = busyTruck.tripCode || 'một chuyến khác';
         throw Object.assign(
-          new Error(`Xe đã đang chạy chuyến ${busyTruck.tripCode || '#' + busyTruck.id}. Vui lòng hoàn thành chuyến đó trước.`),
+          new Error(`Xe đang chạy chuyến ${busyLabel}. Vui lòng hoàn thành chuyến đó trước.`),
           { status: 409 }
         );
       }
@@ -371,7 +369,9 @@ export async function transitionTripStatus(
         { entityType: 'DRIVER', entityId: trip.driverId }
       ]);
 
-      // Customer revenue post
+      // Customer revenue post — note is rendered in customer statements, so
+      // identify the trip by its tripCode (natural key) only.
+      const lockTripLabel = trip.tripCode || '';
       await LedgerService.postEntry(tx, {
         txnType: TxnType.TRIP_REVENUE,
         txnId: tripId,
@@ -379,7 +379,7 @@ export async function transitionTripStatus(
         entityId: trip.customerId,
         debit: revenue,
         credit: 0,
-        note: `Doanh thu chuyến #${tripId} [Lệnh: ${trip.tripCode || ''}]`,
+        note: lockTripLabel ? `Doanh thu chuyến ${lockTripLabel}` : 'Doanh thu chuyến',
       });
 
       // Driver salary post (if any)
@@ -391,17 +391,15 @@ export async function transitionTripStatus(
           entityId: trip.driverId,
           debit: 0,
           credit: driverSalary,
-          note: `Lương sản lượng chuyến #${tripId} [Lệnh: ${trip.tripCode || ''}]`,
+          note: lockTripLabel ? `Lương sản lượng chuyến ${lockTripLabel}` : 'Lương sản lượng chuyến',
         });
       }
 
-      await writeAuditLogTransaction(tx, {
-        userId,
-        message: `Chốt sổ tài chính chuyến đi ${trip.tripCode || `#${tripId}`}`,
-        entityType: 'trips',
-        entityId: tripId,
-        payload: { event: 'TRIP_LOCKED', diff: { status: 'LOCKED' } }
-      });
+      // Audit row is written by the auditLogMiddleware for the POST /lock
+      // endpoint as "Quản lý <actor> khóa chuyến <tripCode>". We intentionally
+      // skip a service-level write here to avoid a duplicate row, and to keep
+      // a single source of truth for audit message phrasing (no enum leakage,
+      // always Subject + Verb).
 
       return lockedTrip;
     } else if (targetStatus === TripStatus.CANCELED) {
@@ -425,14 +423,8 @@ export async function transitionTripStatus(
         updatedAt: new Date(),
       }).where(eq(s.trips.id, tripId)).returning();
 
-      await writeAuditLogTransaction(tx, {
-        userId,
-        message: `Hủy chuyến đi ${trip.tripCode || `#${tripId}`}`,
-        entityType: 'trips',
-        entityId: tripId,
-        payload: { event: 'TRIP_CANCELED', diff: { status: 'CANCELED' } }
-      });
-
+      // Cancel audit row is written by the middleware for POST /cancel
+      // ("Quản lý <actor> hủy chuyến <tripCode>") — skip duplicate write.
       return updated;
     }
 
@@ -445,13 +437,12 @@ export async function transitionTripStatus(
       throw Object.assign(new Error('Trạng thái chuyến đi đã bị thay đổi bởi người khác. Vui lòng tải lại.'), { status: 409 });
     }
 
-    await writeAuditLogTransaction(tx, {
-      userId,
-      message: `Chuyển trạng thái chuyến đi ${trip.tripCode || `#${tripId}`} từ ${currentStatus} sang ${targetStatus}`,
-      entityType: 'trips',
-      entityId: tripId,
-      payload: { event: 'STATUS_CHANGED', diff: { status: targetStatus } }
-    });
+    // Other transitions (e.g. IN_TRANSIT → COMPLETED triggered from /actuals)
+    // are described by their own middleware-generated audit row using natural
+    // Vietnamese verbs. We deliberately do NOT write a generic "chuyển trạng
+    // thái từ <enum> sang <enum>" row — that previously leaked DB enum values
+    // like CREATED / IN_TRANSIT into the audit log and read like a debug log
+    // rather than a user-facing activity record.
 
     return updated;
   });

@@ -44,7 +44,9 @@ let trailerId: number;
 let routeId: number;
 let cargoTypeId: number;
 let driverUserId: number;
-let testTripId: number;
+let tripId: number;
+let allTrucks: any[];
+let allDrivers: any[];
 
 before(async () => {
   await initAuditService();
@@ -71,12 +73,27 @@ before(async () => {
   const [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
 
   customerId = cust.id;
-  driverId = drvr.id;
-  truckId = trck.id;
   trailerId = trlr.id;
   routeId = rte.id;
   cargoTypeId = crg.id;
   driverUserId = drvUser.id;
+
+  // Cancel stale IN_TRANSIT trips left from previous test runs / seed data
+  // so that free trucks/drivers are always available for this test run.
+  await db.update(s.trips)
+    .set({ status: TripStatus.CANCELED, updatedAt: new Date() })
+    .where(eq(s.trips.status, TripStatus.IN_TRANSIT));
+
+  const activeTrips = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
+    .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
+  const busyTrucks = new Set(activeTrips.map((t: any) => t.truckId));
+  const busyDrivers = new Set(activeTrips.map((t: any) => t.driverId));
+  allTrucks = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
+  allDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
+  const freeTruck = allTrucks.find(t => !busyTrucks.has(t.id));
+  const freeDriver = allDrivers.find(d => !busyDrivers.has(d.id));
+  truckId = freeTruck?.id ?? trck.id;
+  driverId = freeDriver?.id ?? drvr.id;
 
   adminToken = jwt.sign({ userId: adm.id, username: adm.username, role: Role.ADMIN }, config.jwtSecret);
   accountantToken = jwt.sign({ userId: act.id, username: act.username, role: Role.ACCOUNTANT }, config.jwtSecret);
@@ -186,14 +203,24 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
       notes: 'Comprehensive E2E test trip'
     })
   });
+  if (createRes.status !== 201) console.log('CREATE TRIP FAIL:', createRes, { truckId, driverId, customerId, routeId, trailerId, cargoTypeId });
   assert.strictEqual(createRes.status, 201);
-  const tripId = createRes.data.id;
-  testTripId = tripId;
   assert.strictEqual(createRes.data.status, TripStatus.CREATED);
+  tripId = createRes.data.id;
 
   // 2. Reassign truck/driver
-  const [altTruck] = await db.select().from(s.trucks).limit(1);
-  const [altDriver] = await db.select().from(s.drivers).limit(1);
+  const currentActive = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
+    .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
+  const curBusyTrucks = new Set(currentActive.map((t: any) => t.truckId));
+  const curBusyDrivers = new Set(currentActive.map((t: any) => t.driverId));
+  const currentTrucks = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
+  const currentDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
+  const altTruck = currentTrucks.find(t => !curBusyTrucks.has(t.id) && t.id !== truckId)
+    || currentTrucks.find(t => !curBusyTrucks.has(t.id))
+    || currentTrucks.find(t => t.id === truckId)!;
+  const altDriver = currentDrivers.find(d => !curBusyDrivers.has(d.id) && d.id !== driverId)
+    || currentDrivers.find(d => !curBusyDrivers.has(d.id))
+    || currentDrivers.find(d => d.id === driverId)!;
   const reassignRes = await testFetch(`/api/trips/${tripId}/reassign`, {
     method: 'PATCH',
     token: adminToken,
@@ -202,6 +229,7 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
       driver_id: altDriver.id
     })
   });
+  if (reassignRes.status !== 200) console.log('REASSIGN FAIL:', reassignRes, 'altTruck:', altTruck.id, 'altDriver:', altDriver.id, 'busyTrucks:', [...curBusyTrucks], 'busyDrivers:', [...curBusyDrivers]);
   assert.strictEqual(reassignRes.status, 200);
 
   // 3. Update Pre-departure figures (AUTO mode, standard estimates)
@@ -229,6 +257,7 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     method: 'POST',
     token: adminToken
   });
+  if (dispatchRes.status !== 200) console.log('DISPATCH FAIL:', dispatchRes);
   assert.strictEqual(dispatchRes.status, 200);
   assert.strictEqual(dispatchRes.data.status, TripStatus.IN_TRANSIT);
 
@@ -313,7 +342,7 @@ test('E2E — Financial operations (P&L, profit sharing, ledger, statements, rec
     method: 'POST',
     token: adminToken,
     body: JSON.stringify({
-      trip_id: testTripId,
+      trip_id: tripId,
       amount: -100000, // Negative for adjustment credit note
       note: 'Điều chỉnh chiết khấu cuối tháng',
       signed_agreement_ref: 'AGR-2026-001'
@@ -333,7 +362,7 @@ test('E2E — Financial operations (P&L, profit sharing, ledger, statements, rec
     body: JSON.stringify({
       customer_id: customerId,
       receipt_id: `REC-${Date.now()}`,
-      payments: [{ trip_id: testTripId, amount: 500000 }]
+      payments: [{ trip_id: tripId, amount: 500000 }]
     })
   });
   assert.strictEqual(paymentRes.status, 201);
