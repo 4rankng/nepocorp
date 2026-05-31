@@ -130,6 +130,10 @@ export const updateUserSchema = z.object({
   role: z.nativeEnum(Role).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
   password: z.string().min(6).optional(),
+  username: z.string().min(1).max(100).optional(),
+  fullName: z.string().max(255).or(z.literal('')).optional(),
+  email: z.string().email().or(z.literal('')).optional(),
+  phone: z.string().min(6).or(z.literal('')).optional(),
 });
 
 export const updateProfileSchema = z.object({

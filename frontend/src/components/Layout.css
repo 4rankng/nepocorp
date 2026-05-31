@@ -236,6 +236,33 @@
   color: var(--sb-text-muted);
   padding: 16px 12px 6px;
 }
+
+/* collapsible section toggle */
+.sidebar-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: color 150ms ease;
+}
+.sidebar-section-toggle:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+.sidebar-section-chevron {
+  margin-left: auto;
+  opacity: 0.5;
+  flex-shrink: 0;
+  transition: transform 200ms ease, opacity 150ms ease;
+}
+.sidebar-section-toggle:hover .sidebar-section-chevron {
+  opacity: 0.8;
+}
+.sidebar-section-chevron.collapsed {
+  transform: rotate(-90deg);
+}
 /* wireframe-canonical section label */
 .nav-section-label {
   font-family: var(--font-mono);

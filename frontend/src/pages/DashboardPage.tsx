@@ -30,6 +30,16 @@ const EMPTY_TRIPS: TripDetail[] = [];
 const EMPTY_CREATED: TripDetail[] = [];
 const EMPTY_YEARLY: (PnlReport | null)[] = [];
 
+const CATEGORY_COLORS: Record<string, string> = {
+  'Sửa chữa': '#8B5CF6',
+  'Phụ tùng': '#F59E0B',
+  'Vật tư': '#6366F1',
+  'Bảo hiểm': '#06B6D4',
+  'Đăng kiểm': '#10B981',
+  'Phí đường bộ': '#EC4899',
+};
+const FALLBACK_COLORS = ['#8B5CF6', '#F59E0B', '#06B6D4', '#10B981', '#EC4899', '#6366F1'];
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -58,7 +68,7 @@ export default function DashboardPage() {
   // calendar year Jan-Dec. Fetch both this year and last year, then take
   // the trailing slice — otherwise the chart's X-axis labels (T6/2025 →
   // T5/2026) didn't match the data (which was Jan-Dec 2026), so the last
-  // point's tooltip read "T5/2026 0M đ" when May 2026 actually had 17.5M.
+  // point's tooltip read "T5/2026 0 tr đ" when May 2026 actually had 17.5 tr.
   const { data: thisYearRaw = EMPTY_YEARLY } = useYearlyPnl(currentYear);
   const { data: lastYearRaw = EMPTY_YEARLY } = useYearlyPnl(currentYear - 1);
   const yearlySeries = useMemo(() => {
@@ -162,25 +172,47 @@ export default function DashboardPage() {
     const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
     const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);
     const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.25);
-    const driverCost = hasRealCosts ? realDriverCost : Math.round(costs * 0.20);
-    const tripCostSum = fuelCost + roadCost + driverCost;
-    const totalCostsForPie = Math.max(costs, tripCostSum + mgmtCost);
-    const residual = Math.max(0, totalCostsForPie - tripCostSum - mgmtCost);
-    const maintCost = 0;
-    const otherCost = residual;
-    const totalPie = totalCostsForPie || 1;
+    const driverCost = hasRealCosts ? realDriverCost  : Math.round(costs * 0.20);
+
+    // Dynamic expense category costs from P&L report
+    let fallbackIdx = 0;
+
+    // Build unified pie slices: trip costs + expense categories
+    const pieSlices: Array<{ label: string; value: number; color: string }> = [
+      { label: 'Nhiên liệu', value: fuelCost, color: 'var(--brand)' },
+      { label: 'Lương lái xe', value: driverCost, color: 'var(--info)' },
+      { label: 'Tiền đi đường', value: roadCost, color: 'var(--warning)' },
+      { label: 'Phí quản lý', value: mgmtCost, color: '#E07D2E' },
+    ];
+
+    // Add dynamic expense categories from P&L breakdown
+    const categoryBreakdown = pnlReport?.categoryBreakdown ?? [];
+    for (const cat of categoryBreakdown) {
+      const amount = parseFloat(cat.total) || 0;
+      if (amount > 0) {
+        const color = CATEGORY_COLORS[cat.categoryName] ?? FALLBACK_COLORS[fallbackIdx++ % FALLBACK_COLORS.length];
+        pieSlices.push({ label: cat.categoryName, value: amount, color });
+      }
+    }
+
+    // Compute totals and percentages
+    const totalPie = pieSlices.reduce((s, sl) => s + sl.value, 0) || 1;
     const p = (v: number) => Math.round((v / totalPie) * 100);
-    const fuelPct   = p(fuelCost);
-    const driverPct = p(driverCost);
-    const roadPct   = p(roadCost);
-    const mgmtPct   = p(mgmtCost);
-    const maintPct  = p(maintCost);
-    const otherPct  = Math.max(0, 100 - fuelPct - driverPct - roadPct - mgmtPct - maintPct);
-    const c1 = fuelPct;
-    const c2 = c1 + driverPct;
-    const c3 = c2 + roadPct;
-    const c4 = c3 + mgmtPct;
-    const c5 = c4 + maintPct;
+    let usedPct = 0;
+    const slicesWithPct = pieSlices.map((sl, i) => {
+      const pct = i === pieSlices.length - 1 ? Math.max(0, 100 - usedPct) : p(sl.value);
+      usedPct += pct;
+      return { ...sl, pct };
+    });
+
+    // Build conic-gradient stops
+    let cumPct = 0;
+    const gradientStops = slicesWithPct.map(sl => {
+      const start = cumPct;
+      cumPct += sl.pct;
+      return `${sl.color} ${start}% ${cumPct}%`;
+    });
+    const conicGradient = `conic-gradient(${gradientStops.join(', ')})`;
 
     const prevRevenue = prevPnlReport?.totalRevenue ?? 0;
     const prevCosts = prevPnlReport?.totalCosts ?? 0;
@@ -189,9 +221,8 @@ export default function DashboardPage() {
     return {
       revenue, costs, grossProfit, netProfit,
       displayTrucks, maxTruckProfit, displayRoutes,
-      fuelCost, roadCost, driverCost, mgmtCost, maintCost, otherCost,
-      fuelPct, driverPct, roadPct, mgmtPct, maintPct, otherPct,
-      c1, c2, c3, c4, c5,
+      fuelCost, roadCost, driverCost, mgmtCost,
+      slicesWithPct, conicGradient, totalPie,
       prevRevenue, prevCosts, prevGross,
     };
   }, [stats, pnlReport, prevPnlReport, allTrips]);
@@ -215,18 +246,14 @@ export default function DashboardPage() {
   const {
     revenue = 0, costs = 0, grossProfit = 0, netProfit = 0,
     displayTrucks = [], maxTruckProfit = 1, displayRoutes = [],
-    fuelCost = 0, roadCost = 0, driverCost = 0, mgmtCost = 0, maintCost = 0, otherCost = 0,
-    fuelPct = 0, driverPct = 0, roadPct = 0, mgmtPct = 0, maintPct = 0, otherPct = 0,
-    c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0,
+    fuelCost = 0, roadCost = 0, driverCost = 0, mgmtCost = 0,
+    slicesWithPct = [], conicGradient = 'conic-gradient(var(--fg-3) 0% 100%)', totalPie = 1,
     prevRevenue = 0, prevCosts = 0, prevGross = 0,
   } = derived ?? {};
 
   const createdTripsCount = createdTrips.length;
 
-  const fmtKpi = (v: number) => {
-    const s = formatCompact(v);
-    return s.replace(/ ty$/, ' tỷ');
-  };
+  const fmtKpi = (v: number) => formatCompact(v);
   const splitKpi = (v: number): { num: string; suffix: string } => {
     const s = fmtKpi(v);
     if (s.endsWith('k')) return { num: s.slice(0, -1), suffix: 'k' };
@@ -236,6 +263,7 @@ export default function DashboardPage() {
   };
   const formattedRevenue = fmtKpi(revenue);
   const formattedCosts = fmtKpi(costs);
+  const formattedTotalPie = fmtKpi(totalPie);
   const formattedGross = fmtKpi(grossProfit);
   const formattedNet = fmtKpi(netProfit);
   const kpiRevenue = splitKpi(revenue);
@@ -281,7 +309,7 @@ export default function DashboardPage() {
           </button>
           <button className="btn btn--primary" onClick={() => navigate('/dispatch')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            Phân xe · {createdTripsCount > 0 ? createdTripsCount : 5} đơn chờ
+            Phân xe{createdTripsCount > 0 ? ` · ${createdTripsCount} đơn chờ` : ''}
           </button>
         </div>
       </header>
@@ -455,64 +483,58 @@ export default function DashboardPage() {
         {/* Right Column: Cost Breakdown Donut Chart fallback */}
         <Panel
           title={`Cơ cấu chi phí T${currentMonth}`}
-          subtitle={`Tổng ${formattedCosts} ₫`}
+          subtitle={`Tổng ${formattedTotalPie} ₫`}
         >
+            {slicesWithPct.every(sl => sl.value === 0) ? (
+              <div className="aging" style={{ gap: 18 }}>
+                <div 
+                  className="aging__donut" 
+                  style={{ 
+                    background: 'conic-gradient(var(--surface-3) 0% 100%)',
+                    ['--bg-2' as any]: '#ffffff'
+                  }}
+                >
+                  <div className="aging__donut-label">
+                    <div>
+                      <div className="aging__total">—</div>
+                      <div className="aging__total-label">Chi phí T{currentMonth}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="aging__list">
+                  <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+                    Chưa có dữ liệu chi phí
+                  </div>
+                </div>
+              </div>
+            ) : (
             <div className="aging" style={{ gap: 18 }}>
               <div 
                 className="aging__donut" 
                 style={{ 
-                  background: `conic-gradient(var(--brand) 0% ${c1}%, var(--info) ${c1}% ${c2}%, var(--warning) ${c2}% ${c3}%, #E07D2E ${c3}% ${c4}%, var(--danger) ${c4}% ${c5}%, var(--fg-3) ${c5}% 100%)`,
+                  background: conicGradient,
                   ['--bg-2' as any]: '#ffffff'
                 }}
               >
                 <div className="aging__donut-label">
                   <div>
-                    <div className="aging__total">{formattedCosts}</div>
+                    <div className="aging__total">{formattedTotalPie}</div>
                     <div className="aging__total-label">Chi phí T{currentMonth}</div>
                   </div>
                 </div>
               </div>
               <div className="aging__list">
-                <div className="aging__row">
-                  <span className="aging__dot" style={{ background: 'var(--brand)' }}></span>
-                  <span className="aging__row-label">Nhiên liệu</span>
-                  <span className="aging__row-value">{Math.round(fuelCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
-                  <span className="aging__row-pct">{fuelPct}%</span>
-                </div>
-                <div className="aging__row">
-                  <span className="aging__dot" style={{ background: 'var(--info)' }}></span>
-                  <span className="aging__row-label">Lương lái xe</span>
-                  <span className="aging__row-value">{Math.round(driverCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
-                  <span className="aging__row-pct">{driverPct}%</span>
-                </div>
-                <div className="aging__row">
-                  <span className="aging__dot" style={{ background: 'var(--warning)' }}></span>
-                  <span className="aging__row-label">Tiền đi đường</span>
-                  <span className="aging__row-value">{Math.round(roadCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
-                  <span className="aging__row-pct">{roadPct}%</span>
-                </div>
-                <div className="aging__row">
-                  <span className="aging__dot" style={{ background: '#E07D2E' }}></span>
-                  <span className="aging__row-label">Phí quản lý</span>
-                  <span className="aging__row-value">{Math.round(mgmtCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
-                  <span className="aging__row-pct">{mgmtPct}%</span>
-                </div>
-                <div className="aging__row">
-                  <span className="aging__dot" style={{ background: 'var(--danger)' }}></span>
-                  <span className="aging__row-label">Bảo dưỡng</span>
-                  <span className="aging__row-value">{Math.round(maintCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
-                  <span className="aging__row-pct">{maintPct}%</span>
-                </div>
-                {otherPct > 0 && (
-                <div className="aging__row">
-                  <span className="aging__dot" style={{ background: 'var(--fg-3)' }}></span>
-                  <span className="aging__row-label">Khác</span>
-                  <span className="aging__row-value">{Math.round(otherCost / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
-                  <span className="aging__row-pct">{otherPct}%</span>
-                </div>
-                )}
+                {slicesWithPct.map((sl) => (
+                  <div className="aging__row" key={sl.label}>
+                    <span className="aging__dot" style={{ background: sl.color }}></span>
+                    <span className="aging__row-label">{sl.label}</span>
+                    <span className="aging__row-value">{Math.round(sl.value / 1000000)}<small style={{fontSize:"0.75em",opacity:0.7}}>tr</small></span>
+                    <span className="aging__row-pct">{sl.pct}%</span>
+                  </div>
+                ))}
               </div>
             </div>
+            )}
         </Panel>
 
       </div>
@@ -582,7 +604,10 @@ export default function DashboardPage() {
         {/* Fleet Status Overview */}
         <Panel
           title="Tình trạng đội xe"
-          subtitle={`${stats?.totalTrucks ?? 0} đầu kéo · ${stats?.totalDrivers ?? 0} tài xế`}
+          subtitle={stats?.totalDrivers
+            ? `${stats?.totalTrucks ?? 0} đầu kéo · ${stats.totalDrivers} tài xế`
+            : `${stats?.totalTrucks ?? 0} đầu kéo · chưa đăng ký tài xế`}
+          style={{ gridColumn: '1 / -1' }}
         >
           {(() => {
             const fleet = stats?.fleetStatus ?? {};
@@ -599,7 +624,7 @@ export default function DashboardPage() {
             ];
             return (
               <>
-                <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
                   {fleetCards.map(c => (
                     <KPI key={c.label} label={c.label} value={c.value} variant={c.variant} />
                   ))}
@@ -792,7 +817,7 @@ export default function DashboardPage() {
           )}
 
           {/* Renewal reminders — expenses approaching or past validTo date */}
-          {renewalReminders.length > 0 && (
+          {renewalReminders.length > 0 ? (
             <div className="todo" onClick={() => navigate('/expenses')}>
               <div className={`todo__icon ${renewalReminders.some(r => r.daysRemaining < 0) ? 'todo__icon--danger' : 'todo__icon--warn'}`}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -809,6 +834,17 @@ export default function DashboardPage() {
                     {renewalReminders.length > 3 && ` · +${renewalReminders.length - 3} khác`}
                   </span>
                 </div>
+              </div>
+              <button className="btn btn--secondary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/expenses'); }}>Xem chi phí</button>
+            </div>
+          ) : (
+            <div className="todo" onClick={() => navigate('/expenses')}>
+              <div className="todo__icon todo__icon--info">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div className="todo__body">
+                <div className="todo__title">Không có hạng mục cần gia hạn</div>
+                <div className="todo__meta"><span>Bảo hiểm, đăng kiểm, phí đường bộ</span></div>
               </div>
               <button className="btn btn--secondary btn--sm" onClick={(e) => { e.stopPropagation(); navigate('/expenses'); }}>Xem chi phí</button>
             </div>

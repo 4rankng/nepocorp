@@ -1,6 +1,6 @@
 import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, CustomerStatus,
+  TrailerType, TruckStatus, DriverStatus, CustomerStatus, PenaltyStatus,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -131,6 +131,7 @@ export interface Trip {
   routeId: number;
   trailerType: TrailerType | null;
   cargoTypeId: number;
+  containerCount: number | null;
   status: TripStatus;
   departureDate: string;
   fuelMode: FuelMode;
@@ -206,6 +207,7 @@ export interface Penalty {
   customReason: string | null;
   amount: string;
   date: string;
+  status: PenaltyStatus;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

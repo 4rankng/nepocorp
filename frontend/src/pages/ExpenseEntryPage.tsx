@@ -241,7 +241,6 @@ export default function ExpenseEntryPage() {
             </div>
           )}
 
-          {/* Date */}
           <div className="panel">
             <div className="panel__body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <FormGroup label="Ngày chi *" error={errors.expenseDate}>
@@ -263,12 +262,7 @@ export default function ExpenseEntryPage() {
                   <option value="PAID">Trả ngay</option>
                 </select>
               </FormGroup>
-            </div>
-          </div>
 
-          {/* Supplier & Category */}
-          <div className="panel">
-            <div className="panel__body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <FormGroup label="Nhà cung cấp *" error={errors.supplierId}>
                 <select
                   className="input"
@@ -294,12 +288,7 @@ export default function ExpenseEntryPage() {
                   ))}
                 </select>
               </FormGroup>
-            </div>
-          </div>
 
-          {/* Truck & Amount */}
-          <div className="panel">
-            <div className="panel__body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <FormGroup
                 label="Xe"
                 helpText="Để trống nếu là chi phí công ty"
@@ -312,7 +301,14 @@ export default function ExpenseEntryPage() {
                 >
                   <option value="">Chi phí công ty</option>
                   {trucks.map(t => (
-                    <option key={t.id} value={t.id}>{t.licensePlate}</option>
+                    t.trailerPlateNumber ? (
+                      <optgroup key={t.id} label={t.licensePlate}>
+                        <option value={t.id}>{t.licensePlate} (đầu kéo)</option>
+                        <option value={t.id}>{t.trailerPlateNumber} (rơ-mooc)</option>
+                      </optgroup>
+                    ) : (
+                      <option key={t.id} value={t.id}>{t.licensePlate}</option>
+                    )
                   ))}
                 </select>
               </FormGroup>
@@ -328,40 +324,28 @@ export default function ExpenseEntryPage() {
                   style={{ fontFamily: 'var(--font-mono)' }}
                 />
               </FormGroup>
-            </div>
-          </div>
 
-          {/* Validity dates — only for renewable categories */}
-          {showValidityFields && (
-            <div className="panel">
-              <div className="panel__head">
-                <h3 className="panel__title">Hiệu lực</h3>
-                <p className="panel__subtitle">Hạng mục "{selectedCategory.name}" có tính gia hạn</p>
-              </div>
-              <div className="panel__body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <FormGroup label="Hiệu lực từ *" error={errors.validFrom}>
-                  <input
-                    type="date"
-                    className="input"
-                    value={form.validFrom}
-                    onChange={e => set('validFrom', e.target.value)}
-                  />
-                </FormGroup>
-                <FormGroup label="Hiệu lực đến *" error={errors.validTo}>
-                  <input
-                    type="date"
-                    className="input"
-                    value={form.validTo}
-                    onChange={e => set('validTo', e.target.value)}
-                  />
-                </FormGroup>
-              </div>
-            </div>
-          )}
+              {showValidityFields && (
+                <>
+                  <FormGroup label="Hiệu lực từ *" error={errors.validFrom}>
+                    <input
+                      type="date"
+                      className="input"
+                      value={form.validFrom}
+                      onChange={e => set('validFrom', e.target.value)}
+                    />
+                  </FormGroup>
+                  <FormGroup label="Hiệu lực đến *" error={errors.validTo}>
+                    <input
+                      type="date"
+                      className="input"
+                      value={form.validTo}
+                      onChange={e => set('validTo', e.target.value)}
+                    />
+                  </FormGroup>
+                </>
+              )}
 
-          {/* Receipt & Notes */}
-          <div className="panel">
-            <div className="panel__body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <FormGroup label="Mã biên lai" error={errors.receiptId}>
                 <input
                   type="text"
@@ -373,13 +357,12 @@ export default function ExpenseEntryPage() {
               </FormGroup>
 
               <FormGroup label="Ghi chú" error={errors.note}>
-                <textarea
+                <input
+                  type="text"
                   className="input"
                   value={form.note}
                   onChange={e => set('note', e.target.value)}
                   placeholder="Ghi chú thêm..."
-                  rows={3}
-                  style={{ resize: 'vertical' }}
                 />
               </FormGroup>
             </div>

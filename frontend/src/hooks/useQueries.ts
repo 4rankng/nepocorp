@@ -228,11 +228,12 @@ export function useBadgeCounts() {
         api.get<PaginatedResponse<any>>(FINANCIAL.PENALTIES),
       ]);
       return {
-        dispatchCount: tripsRes.total,
-        penaltiesCount: penaltiesRes.total,
+        dispatchCount: tripsRes.total ?? 0,
+        penaltiesCount: penaltiesRes.total ?? 0,
       };
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
 

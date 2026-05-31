@@ -6,7 +6,7 @@
  */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, sql, desc, isNull } from 'drizzle-orm';
+import { eq, and, sql, desc, isNull, ne } from 'drizzle-orm';
 import { TxnType } from '@nepocorp/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -150,7 +150,7 @@ export async function getPenalties(driverId?: number) {
   const items = await db.select({
     id: s.penalties.id, driverId: s.penalties.driverId, tripId: s.penalties.tripId,
     reasonId: s.penalties.reasonId, customReason: s.penalties.customReason,
-    amount: s.penalties.amount, date: s.penalties.date,
+    amount: s.penalties.amount, date: s.penalties.date, status: s.penalties.status,
     driverName: s.drivers.name,
     reasonText: s.penaltyReasons.reasonText,
     tripCode: s.trips.tripCode,
@@ -162,6 +162,38 @@ export async function getPenalties(driverId?: number) {
     .orderBy(desc(s.penalties.date));
 
   return { items, total: items.length };
+}
+
+/**
+ * Cancel (void) a penalty — reverses the driver ledger entry.
+ */
+export async function cancelPenalty(penaltyId: number, reason?: string) {
+  const [penalty] = await db.select().from(s.penalties)
+    .where(eq(s.penalties.id, penaltyId)).limit(1);
+  if (!penalty) throw new ApiError(404, 'Không tìm thấy kỷ luật');
+  if (penalty.status === 'CANCELED') throw new ApiError(400, 'Kỷ luật đã được hủy trước đó');
+
+  return db.transaction(async (tx) => {
+    await LedgerService.lockEntity(tx, 'DRIVER', penalty.driverId);
+
+    await tx.update(s.penalties)
+      .set({ status: 'CANCELED', updatedAt: new Date() })
+      .where(eq(s.penalties.id, penaltyId));
+
+    await LedgerService.postEntry(tx, {
+      txnType: TxnType.ADJUSTMENT,
+      txnId: penalty.id,
+      entityType: 'DRIVER',
+      entityId: penalty.driverId,
+      debit: 0,
+      credit: Number(penalty.amount),
+      note: reason || `Hủy kỷ luật #${penalty.id}`,
+    });
+
+    const [updated] = await tx.select().from(s.penalties)
+      .where(eq(s.penalties.id, penaltyId)).limit(1);
+    return updated;
+  });
 }
 
 // ─── Ledger balances ────────────────────────────────────────────────────────────
@@ -199,16 +231,32 @@ export interface VendorPaymentInput {
 
 export async function recordVendorPayment(input: VendorPaymentInput) {
   return db.transaction(async (tx) => {
+    const [latestRow] = await tx.select({ balance: s.ledger.balance })
+      .from(s.ledger)
+      .where(and(eq(s.ledger.entityType, 'VENDOR'), eq(s.ledger.entityId, input.supplierId)))
+      .orderBy(desc(s.ledger.id))
+      .limit(1);
+
+    const currentBalance = latestRow ? parseFloat(latestRow.balance) : 0;
+    const paymentAmount = parseFloat(input.amount);
+    const wouldOverpay = paymentAmount > currentBalance;
+
     const posted = await LedgerService.postEntry(tx, {
       txnType: TxnType.VENDOR_PAYMENT,
       entityType: 'VENDOR',
       entityId: input.supplierId,
-      debit: parseFloat(input.amount),
+      debit: paymentAmount,
       credit: 0,
       receiptId: input.receiptId,
       note: input.note || 'Thanh toán nhà cung cấp',
     });
 
-    return posted;
+    return {
+      ...posted,
+      ...(wouldOverpay ? {
+        warning: `Thanh toán ${paymentAmount.toLocaleString('vi-VN')}₫ vượt công nợ hiện tại ${currentBalance.toLocaleString('vi-VN')}₫. Số dư sẽ âm.`,
+        overpayment: paymentAmount - currentBalance,
+      } : {}),
+    };
   });
 }

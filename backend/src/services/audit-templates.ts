@@ -106,6 +106,7 @@ const templates: Record<string, (c: TemplateContext) => string> = {
   [AuditEvent.PAYMENT_RECEIVED]: (c) => `${subj(c)} ghi nhận thanh toán${withKey(c.entityKey)}`,
   [AuditEvent.ADJUSTMENT_CREATED]: (c) => `${subj(c)} tạo hóa đơn điều chỉnh${withKey(c.entityKey)}`,
   [AuditEvent.PENALTY_CREATED]: (c) => `${subj(c)} ghi nhận kỷ luật${withKey(c.entityKey)}`,
+  [AuditEvent.PENALTY_CANCELED]: (c) => `${subj(c)} hủy kỷ luật${withKey(c.entityKey)}`,
   [AuditEvent.DRIVER_SALARY_RECORDED]: (c) => `${subj(c)} ghi nhận lương tài xế${withKey(c.entityKey)}`,
 
   [AuditEvent.ENTITY_CREATED]: (c) => `${subj(c)} tạo ${c.entityLabel}${withKey(c.entityKey)}`,

@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql, gte, lte } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, gte, lte, ne } from 'drizzle-orm';
 import { resolveSalaryPeriodDateRange } from './salary-period.service';
 
 /**
@@ -112,7 +112,7 @@ export async function getDriverEarnings(driverId: number, month?: number, year?:
     .where(and(...tripConditions));
 
   // Penalties — scoped to salary period if provided
-  const penaltyConditions = [eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt)];
+  const penaltyConditions = [eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt), ne(s.penalties.status, 'CANCELED')];
   if (dateRange) {
     penaltyConditions.push(gte(s.penalties.date, dateRange.start));
     penaltyConditions.push(lte(s.penalties.date, dateRange.end));
@@ -158,6 +158,7 @@ export async function getDriverPenalties(driverId: number, dateFrom?: string, da
     id: s.penalties.id,
     amount: s.penalties.amount,
     date: s.penalties.date,
+    status: s.penalties.status,
     customReason: s.penalties.customReason,
     reasonText: s.penaltyReasons.reasonText,
     tripId: s.penalties.tripId,

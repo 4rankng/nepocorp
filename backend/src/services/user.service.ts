@@ -49,16 +49,24 @@ export async function createUser(data: {
   return created;
 }
 
-/** Update user fields (role, status, password). */
+/** Update user fields (role, status, password, username, fullName, email, phone). */
 export async function updateUser(id: number, data: {
   role?: string;
   status?: string;
   password?: string;
+  username?: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
 }) {
   const updates: Record<string, unknown> = { updatedAt: sql`now()` };
   if (data.role !== undefined) updates.role = data.role as any;
   if (data.status !== undefined) updates.status = data.status;
   if (data.password) updates.passwordHash = await bcrypt.hash(data.password, 10);
+  if (data.username !== undefined) updates.username = data.username;
+  if (data.fullName !== undefined) updates.fullName = data.fullName || null;
+  if (data.email !== undefined) updates.email = data.email || null;
+  if (data.phone !== undefined) updates.phone = data.phone || null;
   const [updated] = await db.update(users).set(updates)
     .where(eq(users.id, id)).returning(USER_FIELDS);
   if (!updated) throw new ApiError(404, 'Không tìm thấy người dùng');

@@ -14,6 +14,7 @@ export const truckStatusEnum = pgEnum('truck_status', ['ACTIVE', 'MAINTENANCE', 
 export const driverStatusEnum = pgEnum('driver_status', ['ACTIVE', 'INACTIVE']);
 export const customerStatusEnum = pgEnum('customer_status', ['ACTIVE', 'LOCKED']);
 export const tripPhotoTypeEnum = pgEnum('trip_photo_type', ['CONTAINER', 'SEAL', 'OTHER']);
+export const penaltyStatusEnum = pgEnum('penalty_status', ['ACTIVE', 'CANCELED']);
 
 
 // ─── Config tables ───────────────────────────────────────────────────────────
@@ -154,6 +155,7 @@ export const trips = pgTable('trips', {
   routeId: integer('route_id').references(() => routes.id).notNull(),
   trailerType: trailerTypeEnum('trailer_type'),
   cargoTypeId: integer('cargo_type_id').references(() => cargoTypes.id).notNull(),
+  containerCount: integer('container_count').default(1),
   status: tripStatusEnum('status').default('CREATED'),
   departureDate: date('departure_date').notNull(),
   fuelMode: fuelModeEnum('fuel_mode').default('AUTO'),
@@ -228,6 +230,7 @@ export const penalties = pgTable('penalties', {
   customReason: text('custom_reason'),
   amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
   date: date('date').notNull(),
+  status: penaltyStatusEnum('status').default('ACTIVE').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

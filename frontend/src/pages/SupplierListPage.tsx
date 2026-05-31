@@ -47,7 +47,7 @@ function SupplierForm({ item, saving, onsave, oncancel }: {
             <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Mã số thuế</label>
             <input className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312..." style={{ width: '100%' }} />
           </div>
-          <div style={{ flex: 1, minWidth: 100 }}>
+          <div style={{ flex: 1, minWidth: 160 }}>
             <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Trạng thái</label>
             <select className="input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: '100%' }}>
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -180,7 +180,7 @@ export default function SupplierListPage() {
           unit={`/ ${total}`}
           variant="success"
           icon={UserCheck}
-          meta={total > 0 ? `${Math.round((activeCount / total) * 100)}% hoạt động đều` : ''}
+          meta={total > 0 ? `${activeCount}/${total} đang hoạt động` : ''}
         />
       </div>
 

@@ -131,6 +131,9 @@ router.get('/users', authMiddleware, casbinAuthz('users'), async (_req: Request,
 router.post('/users', authMiddleware, casbinAuthz('users'), async (req: Request, res: Response) => {
   try {
     const data = createUserSchema.parse(req.body);
+    if (req.user?.role !== 'ADMIN' && data.role === 'ADMIN') {
+      return res.status(403).json({ error: 'Chỉ quản trị viên mới có thể gán vai trò ADMIN' });
+    }
     const created = await userService.createUser({
       username: data.username,
       email: data.email,
@@ -150,10 +153,17 @@ router.post('/users', authMiddleware, casbinAuthz('users'), async (req: Request,
 router.patch('/users/:id', authMiddleware, casbinAuthz('users'), async (req: Request, res: Response) => {
   try {
     const data = updateUserSchema.parse(req.body);
+    if (req.user?.role !== 'ADMIN' && data.role === 'ADMIN') {
+      return res.status(403).json({ error: 'Chỉ quản trị viên mới có thể gán vai trò ADMIN' });
+    }
     const updated = await userService.updateUser(Number(req.params.id), {
       role: data.role,
       status: data.status,
       password: data.password,
+      username: data.username,
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
     });
     res.json(updated);
   } catch (err: any) {

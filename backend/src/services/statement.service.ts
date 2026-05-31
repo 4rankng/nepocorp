@@ -262,3 +262,122 @@ export async function getSupplierStatement(supplierId: number) {
     ],
   };
 }
+
+const VENDOR_TXN_LABELS: Record<string, string> = {
+  VENDOR_EXPENSE: 'Chi nhà cung cấp',
+  VENDOR_PAYMENT: 'Thanh toán NCC',
+  ADJUSTMENT: 'Điều chỉnh',
+};
+
+export async function exportSupplierStatementXlsx(
+  data: Awaited<ReturnType<typeof getSupplierStatement>>,
+  dateStr: string,
+  writable: import('stream').Writable,
+): Promise<void> {
+  const ExcelJS = await import('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Sao kê công nợ NCC');
+
+  sheet.mergeCells('A1:F1');
+  const titleCell = sheet.getCell('A1');
+  titleCell.value = `NEPO Logistics — Sao kê công nợ nhà cung cấp: ${data.supplier.name}`;
+  titleCell.font = { size: 14, bold: true };
+  sheet.getCell('A2').value = `Liên hệ: ${data.supplier.phone || '—'}`;
+  sheet.getCell('A3').value = `Người liên hệ: ${data.supplier.contactPerson || '—'}`;
+  sheet.getCell('A4').value = `Ngày xuất: ${dateStr}`;
+  sheet.getCell('A5').value = `Tổng nợ: ${data.totalOutstanding.toLocaleString('vi-VN')} ₫`;
+
+  sheet.getCell('A7').value = 'Thống kê aging:';
+  data.agingBuckets.forEach((b, i) => {
+    sheet.getCell(i + 8, 1).value = b.range;
+    sheet.getCell(i + 8, 2).value = b.amount;
+    sheet.getCell(i + 8, 2).numFmt = '#,##0';
+  });
+
+  const headerRow = 13;
+  sheet.getRow(headerRow).values = ['Ngày', 'Loại GD', 'Nợ', 'Có', 'Số dư', 'Ghi chú'];
+  sheet.getRow(headerRow).font = { bold: true };
+  sheet.getRow(headerRow).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+
+  data.ledgerRows.forEach((row: any, i: number) => {
+    const r = headerRow + 1 + i;
+    const debit = parseFloat(row.debit || '0');
+    const credit = parseFloat(row.credit || '0');
+    const balance = parseFloat(row.balance || '0');
+    sheet.getCell(r, 1).value = row.timestamp ? new Date(row.timestamp).toISOString().slice(0, 10) : '';
+    sheet.getCell(r, 2).value = VENDOR_TXN_LABELS[row.txnType] || row.txnType;
+    sheet.getCell(r, 3).value = debit || '';
+    if (debit) sheet.getCell(r, 3).numFmt = '#,##0';
+    sheet.getCell(r, 4).value = credit || '';
+    if (credit) sheet.getCell(r, 4).numFmt = '#,##0';
+    sheet.getCell(r, 5).value = balance;
+    sheet.getCell(r, 5).numFmt = '#,##0';
+    sheet.getCell(r, 6).value = row.note || '';
+  });
+
+  sheet.getColumn(1).width = 12;
+  sheet.getColumn(2).width = 22;
+  sheet.getColumn(3).width = 16;
+  sheet.getColumn(4).width = 16;
+  sheet.getColumn(5).width = 18;
+  sheet.getColumn(6).width = 32;
+
+  await workbook.xlsx.write(writable);
+}
+
+export function exportSupplierStatementHtml(
+  data: Awaited<ReturnType<typeof getSupplierStatement>>,
+  dateStr: string,
+): string {
+  const rows = data.ledgerRows.map((row: any) => {
+    const debit = parseFloat(row.debit || '0');
+    const credit = parseFloat(row.credit || '0');
+    const balance = parseFloat(row.balance || '0');
+    const date = row.timestamp ? new Date(row.timestamp).toISOString().slice(0, 10) : '';
+    return `<tr>
+      <td>${date}</td>
+      <td>${VENDOR_TXN_LABELS[row.txnType] || row.txnType}</td>
+      <td class="num">${debit ? debit.toLocaleString('vi-VN') : ''}</td>
+      <td class="num">${credit ? credit.toLocaleString('vi-VN') : ''}</td>
+      <td class="num">${balance.toLocaleString('vi-VN')}</td>
+      <td>${escapeHtml(row.note || '')}</td>
+    </tr>`;
+  }).join('');
+
+  const agingRows = data.agingBuckets.map(b =>
+    `<tr><td>${b.range}</td><td class="num">${b.amount.toLocaleString('vi-VN')} ₫</td></tr>`
+  ).join('');
+
+  return `<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8">
+<title>Sao kê công nợ NCC — ${escapeHtml(data.supplier.name)}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .meta { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
+  .total { font-size: 16px; font-weight: 700; color: #111827; margin: 12px 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12.5px; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+  th { background: #f3f4f6; font-weight: 700; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .aging { width: auto; margin-top: 8px; }
+  .aging td { padding: 4px 12px 4px 0; }
+  @media print { body { margin: 0; } }
+</style>
+</head><body>
+<h1>NEPO Logistics — Sao kê công nợ nhà cung cấp</h1>
+<div class="meta">
+  Nhà cung cấp: <strong>${escapeHtml(data.supplier.name)}</strong><br>
+  Liên hệ: ${escapeHtml(data.supplier.phone || '—')}<br>
+  Người liên hệ: ${escapeHtml(data.supplier.contactPerson || '—')}<br>
+  Ngày xuất: ${dateStr}
+</div>
+<div class="total">Tổng nợ: ${data.totalOutstanding.toLocaleString('vi-VN')} ₫</div>
+<table class="aging">${agingRows}</table>
+<table>
+  <thead><tr><th>Ngày</th><th>Loại GD</th><th class="num">Nợ</th><th class="num">Có</th><th class="num">Số dư</th><th>Ghi chú</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+</body></html>`;
+}

@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType, FINANCIAL } from '@nepocorp/shared';
 import type { SupplierStatement as SupplierStatementType, LedgerEntry, AgingBucket, VendorPaymentRequest } from '@nepocorp/shared';
-import { AlertTriangle, Phone, Building2, ArrowLeft, X, CreditCard } from 'lucide-react';
+import { AlertTriangle, Phone, Building2, ArrowLeft, X, CreditCard, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
@@ -51,10 +51,35 @@ export default function PayableDetailPage() {
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [paymentReceiptId, setPaymentReceiptId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const downloadExport = async (format: string) => {
+    setShowExportMenu(false);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api${FINANCIAL.SUPPLIER_STATEMENT_EXPORT(Number(id))}?format=${format}`, {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) throw new Error('Tải thất bại');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (format === 'pdf') {
+        window.open(url, '_blank');
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sao-ke-ncc-${id}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      showToast?.((err as Error).message || 'Lỗi xuất sao kê');
+    }
+  };
 
   const agingAmounts = useMemo(() =>
     normalizeAging(typedStatement?.agingBuckets ?? []),
@@ -127,6 +152,10 @@ export default function PayableDetailPage() {
 
   const { supplier, ledgerRows } = typedStatement;
   const hasDebt = totalOutstanding > 0;
+  const lastLedgerRow = ledgerRows[ledgerRows.length - 1];
+  const actualBalance = lastLedgerRow ? parseFloat(lastLedgerRow.balance) : 0;
+  const hasCredit = actualBalance < 0;
+  const overpaymentAmount = hasCredit ? Math.abs(actualBalance) : 0;
   const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1;
 
   return (
@@ -156,12 +185,40 @@ export default function PayableDetailPage() {
             )}
             {hasDebt ? (
               <span className="dd-tag dd-tag--warn dd-tag--dot">Còn nợ</span>
+            ) : hasCredit ? (
+              <span className="dd-tag dd-tag--warn dd-tag--dot">Đã trả thừa {formatCurrency(overpaymentAmount).replace(' ₫', '')}đ</span>
             ) : (
               <span className="dd-tag dd-tag--ok dd-tag--dot">Đã thanh toán đủ</span>
             )}
           </div>
         </div>
         <div className="dd-actions">
+          <div style={{ position: 'relative' }}>
+            <button
+              className="btn btn--secondary"
+              onClick={() => setShowExportMenu(v => !v)}
+            >
+              <Download size={14} />
+              Xuất sao kê
+            </button>
+            {showExportMenu && (
+              <div style={{
+                position: 'absolute', right: 0, top: '100%', marginTop: 4,
+                background: 'var(--surface)', border: '1px solid var(--line)',
+                borderRadius: 8, boxShadow: 'var(--sh-lg)',
+                zIndex: 50, minWidth: 180, overflow: 'hidden',
+              }}>
+                <button className="dd-export-btn" onClick={() => downloadExport('xlsx')}>
+                  <FileSpreadsheet size={14} style={{ color: '#16a34a' }} />
+                  Excel (.xlsx)
+                </button>
+                <button className="dd-export-btn" onClick={() => downloadExport('pdf')}>
+                  <FileText size={14} style={{ color: '#dc2626' }} />
+                  PDF (In)
+                </button>
+              </div>
+            )}
+          </div>
           <button
             className="btn btn--primary"
             onClick={() => setShowPaymentModal(true)}
@@ -190,6 +247,12 @@ export default function PayableDetailPage() {
                   ? 'Toàn bộ công nợ đang trong hạn 30 ngày.'
                   : `Có công nợ quá hạn ${AGING_RANGES[activeAgingIdx].label.toLowerCase()} — cần ưu tiên thanh toán.`
                 }
+              </div>
+            )}
+            {hasCredit && (
+              <div className="dd-sum-note" style={{ marginTop: 4 }}>
+                <AlertTriangle size={17} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+                Đã trả thừa {formatCurrency(overpaymentAmount).replace(' ₫', '')}đ — nhà cung cấp đang nợ lại công ty
               </div>
             )}
           </div>
@@ -389,8 +452,8 @@ function LedgerRow({ row }: { row: LedgerEntry }) {
       <td className={`dd-num ${credit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
         {credit > 0 ? formatCurrency(credit).replace(' ₫', '') + 'đ' : '–'}
       </td>
-      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : ''}`}>
-        {formatCurrency(balance).replace(' ₫', '')}đ
+      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
+        {balance < 0 ? '-' : ''}{formatCurrency(Math.abs(balance)).replace(' ₫', '')}đ
       </td>
       <td className="dd-td-note">{row.note || ''}</td>
     </tr>

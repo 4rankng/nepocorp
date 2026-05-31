@@ -5,7 +5,7 @@ import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendo
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../services/reporting.service';
-import { getStatementData, exportStatementXlsx, exportStatementHtml, getSupplierStatement } from '../services/statement.service';
+import { getStatementData, exportStatementXlsx, exportStatementHtml, getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml } from '../services/statement.service';
 import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import * as financialService from '../services/financial.service';
 import { getPayablesSummary } from '../services/payables.service';
@@ -16,6 +16,7 @@ import { AuditEvent } from '../services/audit-types';
 registerAuditEvent('POST', '/api/payments', AuditEvent.PAYMENT_RECEIVED);
 registerAuditEvent('POST', '/api/adjustments', AuditEvent.ADJUSTMENT_CREATED);
 registerAuditEvent('POST', '/api/penalties', AuditEvent.PENALTY_CREATED);
+registerAuditEvent('POST', '/api/penalties/', '/cancel', AuditEvent.PENALTY_CANCELED);
 registerAuditEvent('POST', '/api/payments/vendor', AuditEvent.PAYMENT_RECEIVED);
 
 const router = Router();
@@ -50,7 +51,7 @@ router.get('/ledger/balances', async (req: Request, res: Response) => {
 
 router.get('/ledger/customers/:id/statement', async (req: Request, res: Response) => {
   try {
-    const customerId = parseInt(req.params.id as string);
+    const customerId = parseInt(req.params.id as string, 10);
     const data = await getStatementData(customerId);
     if (!data) return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
     res.json(data);
@@ -63,7 +64,7 @@ router.get('/ledger/customers/:id/statement', async (req: Request, res: Response
 
 router.get('/ledger/customers/:id/statement/export', async (req: Request, res: Response) => {
   try {
-    const customerId = parseInt(req.params.id as string);
+    const customerId = parseInt(req.params.id as string, 10);
     const format = (req.query.format as string) || 'xlsx';
     const data = await getStatementData(customerId);
     if (!data) return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
@@ -156,6 +157,18 @@ router.post('/penalties', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/penalties/:id/cancel', requireRoles(Role.ADMIN, Role.MANAGER), async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    const { reason } = req.body || {};
+    const penalty = await financialService.cancelPenalty(id, reason);
+    await cacheInvalidatePattern('reports:pnl:*');
+    res.json(penalty);
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 router.get('/reports/dashboard', async (_req: Request, res: Response) => {
@@ -238,6 +251,36 @@ router.get('/ledger/suppliers/:id/statement', async (req: Request, res: Response
     res.json(data);
   } catch (err: any) {
     res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (req: Request, res: Response) => {
+  try {
+    const supplierId = parseInt(req.params.id as string, 10);
+    const format = (req.query.format as string) || 'xlsx';
+    const data = await getSupplierStatement(supplierId);
+
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const safeName = data.supplier.name.replace(/[^a-zA-Z0-9À-ỹ ]/g, '').replace(/\s+/g, '-');
+
+    if (format === 'pdf') {
+      const html = exportSupplierStatementHtml(data, dateStr);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+      return;
+    }
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=sao-ke-ncc-${safeName}-${dateStr}.xlsx`);
+    await exportSupplierStatementXlsx(data, dateStr, res);
+  } catch (err: any) {
+    if (res.headersSent) {
+      console.error('Export failed after headers sent:', err.message);
+      res.end();
+    } else {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
   }
 });
 

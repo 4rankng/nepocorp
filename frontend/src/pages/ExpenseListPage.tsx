@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, ChevronRight, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
-import { formatCurrency, formatDate } from '../lib/format';
-import { PageHeader, StatusPill } from '../components/UI';
+import { formatCurrency, formatCompact, formatDate } from '../lib/format';
+import { KPI, PageHeader, StatusPill } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery } from '@tanstack/react-query';
@@ -93,6 +93,16 @@ export default function ExpenseListPage() {
     setPage(1);
   };
 
+  const stats = useMemo(() => {
+    const items = expenseData?.items ?? [];
+    const totalAmount = items.reduce((s, e) => s + parseFloat(String(e.amount)), 0);
+    const unpaidItems = items.filter(e => e.paymentStatus === 'UNPAID');
+    const paidItems = items.filter(e => e.paymentStatus === 'PAID');
+    const unpaidAmount = unpaidItems.reduce((s, e) => s + parseFloat(String(e.amount)), 0);
+    const paidAmount = paidItems.reduce((s, e) => s + parseFloat(String(e.amount)), 0);
+    return { totalAmount, unpaidCount: unpaidItems.length, unpaidAmount, paidCount: paidItems.length, paidAmount };
+  }, [expenseData]);
+
   const hasFilters = supplierId || categoryId || truckId || dateFrom || dateTo;
 
   return (
@@ -109,13 +119,18 @@ export default function ExpenseListPage() {
         }
       />
 
-      {/* Filter toolbar */}
-      <div className="toolbar" style={{ flexWrap: 'wrap', gap: 8 }}>
+      <div className="kpi-grid">
+        <KPI label="Tổng chi phí" value={formatCompact(stats.totalAmount)} />
+        <KPI label="Chưa thanh toán" value={`${stats.unpaidCount}`} unit="phiếu" variant="warn" meta={formatCompact(stats.unpaidAmount)} />
+        <KPI label="Đã thanh toán" value={`${stats.paidCount}`} unit="phiếu" variant="success" meta={formatCompact(stats.paidAmount)} />
+      </div>
+
+      <div className="toolbar" style={{ flexWrap: 'nowrap', gap: 8, overflow: 'auto' }}>
         <select
           className="input"
           value={supplierId}
           onChange={e => { setSupplierId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
-          style={{ fontSize: 12.5, minWidth: 140 }}
+          style={{ fontSize: 12.5, minWidth: 120 }}
         >
           <option value="">Tất cả NCC</option>
           {suppliers.map(s => (
@@ -127,7 +142,7 @@ export default function ExpenseListPage() {
           className="input"
           value={categoryId}
           onChange={e => { setCategoryId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
-          style={{ fontSize: 12.5, minWidth: 140 }}
+          style={{ fontSize: 12.5, minWidth: 120 }}
         >
           <option value="">Tất cả hạng mục</option>
           {categories.map(c => (
@@ -139,7 +154,7 @@ export default function ExpenseListPage() {
           className="input"
           value={truckId}
           onChange={e => { setTruckId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
-          style={{ fontSize: 12.5, minWidth: 130 }}
+          style={{ fontSize: 12.5, minWidth: 110 }}
         >
           <option value="">Tất cả xe</option>
           {trucks.map(t => (
@@ -152,7 +167,7 @@ export default function ExpenseListPage() {
           className="input"
           value={dateFrom}
           onChange={e => { setDateFrom(e.target.value); setPage(1); }}
-          style={{ fontSize: 12.5, width: 140 }}
+          style={{ fontSize: 12.5, width: 'auto', minWidth: 130 }}
           placeholder="Từ ngày"
         />
         <input
@@ -160,7 +175,7 @@ export default function ExpenseListPage() {
           className="input"
           value={dateTo}
           onChange={e => { setDateTo(e.target.value); setPage(1); }}
-          style={{ fontSize: 12.5, width: 140 }}
+          style={{ fontSize: 12.5, width: 'auto', minWidth: 130 }}
           placeholder="Đến ngày"
         />
 

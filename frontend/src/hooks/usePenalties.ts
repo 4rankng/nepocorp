@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { Driver, PenaltyReason, Truck } from '@nepocorp/shared';
+import type { Driver, PenaltyReason, Truck, PenaltyStatus } from '@nepocorp/shared';
 
 interface PenaltyRow {
   id: number;
@@ -10,6 +10,7 @@ interface PenaltyRow {
   customReason: string | null;
   amount: string;
   date: string;
+  status: PenaltyStatus;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

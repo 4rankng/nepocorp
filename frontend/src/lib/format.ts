@@ -9,7 +9,7 @@ export function formatCompact(n: number | string | null): string {
   if (n == null) return '—';
   const num = typeof n === 'string' ? parseFloat(n) : n;
   if (isNaN(num)) return '—';
-  if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' ty';
+  if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' tỷ';
   if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + ' tr';
   if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
   return num.toLocaleString('vi-VN');

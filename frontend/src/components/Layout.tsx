@@ -16,6 +16,7 @@ import {
   UserCog,
   KeyRound,
   ChevronRight,
+  ChevronDown,
   ChevronUp,
   Compass,
   Layers,
@@ -50,13 +51,13 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'fleet', label: 'Đội xe', path: '/fleet', icon: Layers, section: 'admin' },
         { key: 'trips', label: 'Sổ chuyến đi', path: '/trips', icon: Truck, section: 'operations' },
         { key: 'penalties', label: 'Kỷ luật', path: '/penalties', icon: AlertTriangle, section: 'operations', count: penaltiesCount },
-        
+
         { key: 'finance', label: 'Báo cáo lãi lỗ', path: '/finance', icon: Wallet, section: 'financials' },
-        { key: 'profit', label: 'Lợi nhuận & phân chia', path: '/profit', icon: DollarSign, section: 'financials' },
+        { key: 'profit', label: 'Phân chia lợi nhuận', path: '/profit', icon: DollarSign, section: 'financials' },
         { key: 'debt', label: 'Công nợ phải thu', path: '/debt', icon: Receipt, section: 'financials' },
-        { key: 'expenses', label: 'Chi phí vận hành', path: '/expenses', icon: FileText, section: 'financials' },
         { key: 'payables', label: 'Công nợ phải trả', path: '/payables', icon: Receipt, section: 'financials' },
-        
+        { key: 'expenses', label: 'Chi phí vận hành', path: '/expenses', icon: FileText, section: 'financials' },
+
         { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'admin' },
         { key: 'suppliers', label: 'Nhà cung cấp', path: '/suppliers', icon: Store, section: 'admin' },
         { key: 'routes', label: 'Tuyến đường', path: '/config/routes', icon: Route, section: 'admin' },
@@ -87,7 +88,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/fleet')) return 'Đội xe';
   if (pathname.startsWith('/trips')) return 'Lệnh vận chuyển';
   if (pathname === '/finance') return 'Báo cáo lãi lỗ';
-  if (pathname.startsWith('/profit')) return 'Lợi nhuận & Phân chia';
+  if (pathname.startsWith('/profit')) return 'Phân chia lợi nhuận';
   if (pathname.startsWith('/debt')) return 'Công nợ phải thu';
   if (pathname.startsWith('/payables')) return 'Công nợ phải trả';
   if (pathname.startsWith('/expenses/new')) return 'Tạo phiếu chi phí';
@@ -217,14 +218,66 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const dispatchCount = badgeData?.dispatchCount;
   const penaltiesCount = badgeData?.penaltiesCount;
 
-  if (!user) return null;
-
-  const navItems = getNavItems(user.role, dispatchCount, penaltiesCount);
+  // Derive nav items before early return so hooks remain unconditional
+  const navItems = user ? getNavItems(user.role, dispatchCount, penaltiesCount) : [];
   const activeKey = navItems
     .filter(item => location.pathname.startsWith(item.path))
     .sort((a, b) => b.path.length - a.path.length)[0]?.key || '';
-    
+
   const pageTitle = getPageTitle(location.pathname);
+  const activeSection = navItems.find(i => i.key === activeKey)?.section;
+
+  const navRef = useRef<HTMLElement>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // Track only the nav's own clientHeight — changes only on real window/sidebar resize,
+  // never when we collapse/expand sections (avoids feedback loops with scrollHeight).
+  const [navClientHeight, setNavClientHeight] = useState(0);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    setNavClientHeight(nav.clientHeight);
+    const ro = new ResizeObserver(() => setNavClientHeight(nav.clientHeight));
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, []); // no deps — just measures the element, never writes collapsed
+
+  // Auto-collapse / expand based on calculated total height vs available height.
+  // Uses item counts (stable per role) instead of scrollHeight (changes with collapse state).
+  useEffect(() => {
+    if (!sidebarOpen || navClientHeight === 0) return;
+    const ITEM_H = 38;   // sidebar-item: padding 10px*2 + ~18px line-height
+    const LABEL_H = 36;  // sidebar-section-label: padding 16px top + 6px bottom + ~14px text
+    const NAV_PAD = 20;  // sidebar-nav: padding 8px top + 12px bottom
+    const totalH = (['operations', 'financials', 'admin'] as const).reduce((acc, s) => {
+      const count = navItems.filter(i => i.section === s).length;
+      return count > 0 ? acc + LABEL_H + count * ITEM_H : acc;
+    }, NAV_PAD);
+
+    if (totalH > navClientHeight) {
+      setCollapsed(prev => {
+        const next = new Set<string>(
+          (['operations', 'financials', 'admin'] as const).filter(k => k !== activeSection)
+        );
+        if (next.size === prev.size && [...next].every(k => prev.has(k))) return prev;
+        return next;
+      });
+    } else {
+      setCollapsed(prev => (prev.size === 0 ? prev : new Set<string>()));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navClientHeight, sidebarOpen, activeSection, user?.role]);
+
+  const toggleSection = useCallback((key: string) => {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  if (!user) return null;
 
   const handleNavigate = (path: string) => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -234,11 +287,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const renderNavSection = (label: string, sectionName: 'operations' | 'financials' | 'admin') => {
     const items = navItems.filter(i => i.section === sectionName);
     if (items.length === 0) return null;
+    const isCollapsed = collapsed.has(sectionName);
 
     return (
       <div key={sectionName}>
-        <div className="sidebar-section-label">{label}</div>
-        {items.map(item => {
+        <button
+          className="sidebar-section-label sidebar-section-toggle"
+          onClick={() => toggleSection(sectionName)}
+        >
+          <span>{label}</span>
+          <ChevronDown
+            size={10}
+            className={`sidebar-section-chevron${isCollapsed ? ' collapsed' : ''}`}
+          />
+        </button>
+        {!isCollapsed && items.map(item => {
           const IconC = item.icon;
           const isActive = item.key === activeKey;
           const isDanger = item.key === 'penalties';
@@ -252,7 +315,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <IconC size={16} />
               <span className="sidebar-item-label">{item.label}</span>
 
-              {item.count !== undefined && (
+              {item.count !== undefined && item.count > 0 && (
                 <span
                   className={`nav-item__badge${isDanger ? ' nav-item__badge--danger' : ''}`}
                   style={{ marginLeft: 'auto' }}
@@ -260,7 +323,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {item.count}
                 </span>
               )}
-              {isActive && item.count === undefined && (
+              {isActive && (item.count === undefined || item.count === 0) && (
                 <ChevronRight size={12} style={{ marginLeft: 'auto', opacity: 0.6 }} />
               )}
             </button>
@@ -284,7 +347,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" ref={navRef as React.RefObject<HTMLElement>}>
           {renderNavSection('Vận hành', 'operations')}
           {renderNavSection('Tài chính', 'financials')}
           {renderNavSection('Danh mục', 'admin')}

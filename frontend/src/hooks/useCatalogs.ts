@@ -3,7 +3,7 @@ import { tripClient } from "../api/tripClient";
 
 export interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }>;
-  trucks: Array<{ id: number; licensePlate: string }>;
+  trucks: Array<{ id: number; licensePlate: string; trailerPlateNumber: string | null; trailerType: '20FT' | '40FT' | null }>;
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;

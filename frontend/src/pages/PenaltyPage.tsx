@@ -7,17 +7,19 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { Driver, PenaltyReason, Truck } from '@nepocorp/shared';
 import type { CreatePenaltyRequest } from '@nepocorp/shared';
-import { TruckStatus, DriverStatus } from '@nepocorp/shared';
+import { TruckStatus, DriverStatus, PenaltyStatus, PENALTY_STATUS_LABELS } from '@nepocorp/shared';
+import { FINANCIAL } from '@nepocorp/shared';
 import {
   Shield, ShieldCheck, Download, Plus, Eye, FileText,
   Zap, Trophy, Clock, Save, Loader2, X, Users, AlertTriangle,
-  DollarSign,
+  DollarSign, XCircle,
 } from 'lucide-react';
 import {
   Panel, Btn, Drawer, FormGroup, KPI,
 } from '../components/UI';
 import { usePenalties, usePenaltyCatalogs, type PenaltyRow } from '../hooks/usePenalties';
 import { useSalaryPeriod } from '../hooks/useQueries';
+import { useAuth } from '../hooks/useAuth';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -233,6 +235,54 @@ function SeverityIcon({ severity }: { severity: Severity }) {
   }
 }
 
+// ─── CancelConfirmDialog ─────────────────────────────────────────────────────
+
+function CancelConfirmDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  penalty,
+  loading,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (reason?: string) => void;
+  penalty: PenaltyRow | null;
+  loading: boolean;
+}) {
+  const [reason, setReason] = useState('');
+  if (!isOpen || !penalty) return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: 'var(--bg-1)', borderRadius: 12, padding: 24, width: 400, maxWidth: '90vw', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--danger-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)' }}>
+            <XCircle size={18} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Xác nhận hủy kỷ luật?</div>
+            <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>Hành động này sẽ hoàn tiền vào tài khoản tài xế</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 13, marginBottom: 12, padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 8 }}>
+          <div><strong>Tài xế:</strong> {penalty.driverName || 'Tài xế'}</div>
+          <div><strong>Số tiền:</strong> <span style={{ color: 'var(--danger)' }}>{formatCurrency(Number(penalty.amount))}đ</span></div>
+          <div><strong>Lý do:</strong> {penalty.reasonText || penalty.customReason || '—'}</div>
+        </div>
+        <FormGroup label="Lý do hủy (tùy chọn)">
+          <input className="input" placeholder="VD: Hủy do sai sót..." value={reason} onChange={e => setReason(e.target.value)} />
+        </FormGroup>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+          <Btn variant="ghost" onClick={onClose}>Đóng</Btn>
+          <Btn variant="danger" icon={loading ? <Loader2 size={13} className="spin" /> : <XCircle size={13} />} disabled={loading} onClick={() => onConfirm(reason || undefined)}>
+            Xác nhận hủy
+          </Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PenaltyPage() {
@@ -250,6 +300,10 @@ export default function PenaltyPage() {
   const [scoreFilter, setScoreFilter] = useState<'7d' | '30d' | '90d' | 'ytd'>('90d');
   const [logFilter, setLogFilter] = useState<'all' | 'pending' | 'deducted'>('all');
   const [logDriverFilter, setLogDriverFilter] = useState<number | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<PenaltyRow | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const { user } = useAuth();
+  const canCancel = user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
   const nowDate = new Date();
   const [selMonth, setSelMonth] = useState(nowDate.getMonth() + 1);
@@ -266,6 +320,20 @@ export default function PenaltyPage() {
   const handlePenaltyCreated = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['penalties'] });
   }, [queryClient]);
+
+  const handleCancelPenalty = useCallback(async (reason?: string) => {
+    if (!cancelTarget) return;
+    setCancelLoading(true);
+    try {
+      await api.post(FINANCIAL.PENALTY_CANCEL(cancelTarget.id), { reason });
+      await queryClient.invalidateQueries({ queryKey: ['penalties'] });
+      setCancelTarget(null);
+    } catch (e: any) {
+      alert(e.message || 'Lỗi khi hủy kỷ luật');
+    } finally {
+      setCancelLoading(false);
+    }
+  }, [cancelTarget, queryClient]);
 
   // Resolve salary period for the selected month
   const { data: salaryPeriod, isLoading: periodLoading } = useSalaryPeriod(selMonth, selYear);
@@ -698,11 +766,13 @@ export default function PenaltyPage() {
                       <th>Lý do vi phạm</th>
                       <th className="num">Số tiền phạt</th>
                       <th>Ngày ghi nhận</th>
+                      <th>Trạng thái</th>
+                      {canCancel && <th style={{ width: 44 }} />}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredPenalties.map(p => (
-                      <tr key={p.id}>
+                      <tr key={p.id} style={p.status === 'CANCELED' ? { opacity: 0.5 } : undefined}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{
@@ -726,6 +796,30 @@ export default function PenaltyPage() {
                           <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(Number(p.amount))}</strong>
                         </td>
                         <td style={{ color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{formatDate(p.date)}</td>
+                        <td>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+                            background: p.status === 'ACTIVE' ? 'var(--success-soft)' : 'var(--bg-3)',
+                            color: p.status === 'ACTIVE' ? 'var(--success)' : 'var(--fg-3)',
+                          }}>
+                            {p.status === 'ACTIVE' ? '●' : '○'} {PENALTY_STATUS_LABELS[p.status]}
+                          </span>
+                        </td>
+                        {canCancel && (
+                          <td>
+                            {p.status !== 'CANCELED' && (
+                              <button
+                                className="penalty-row-act"
+                                style={{ color: 'var(--danger)' }}
+                                aria-label="Hủy kỷ luật"
+                                onClick={() => setCancelTarget(p)}
+                              >
+                                <XCircle size={14} />
+                              </button>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -796,6 +890,15 @@ export default function PenaltyPage() {
         reasons={reasons}
         onCreated={handlePenaltyCreated}
         preselectedDriverId={preselectedDriver}
+      />
+
+      {/* ── Cancel confirmation dialog ──────────────────────────────────── */}
+      <CancelConfirmDialog
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={handleCancelPenalty}
+        penalty={cancelTarget}
+        loading={cancelLoading}
       />
     </div>
   );

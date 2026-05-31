@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql, gte, lte } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, gte, lte, ne } from 'drizzle-orm';
 import { TripStatus } from '@nepocorp/shared';
 import { getReceivablesSummary as _getReceivablesSummary, getTopOverdueCustomer } from './receivables.service';
 import { resolveSalaryPeriodDateRange, resolveQuarterDateRange } from './salary-period.service';
@@ -138,7 +138,7 @@ export async function getPnlReport(month: number, year: number) {
       : gte(s.penalties.date, tripStart);
     const penaltyRows = await db.select({ total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)` })
       .from(s.penalties)
-      .where(and(isNull(s.penalties.deletedAt), penaltyDateFilter));
+      .where(and(isNull(s.penalties.deletedAt), ne(s.penalties.status, 'CANCELED'), penaltyDateFilter));
     const otherIncome = parseFloat(penaltyRows[0]?.total || '0');
 
     const expenseDateFilter = month

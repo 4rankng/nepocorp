@@ -179,7 +179,7 @@ Authorization: Bearer <token>
 | Menu | Route | Icon | Mô tả |
 |------|-------|------|-------|
 | Báo cáo lãi lỗ | `/finance` | Wallet | P&L theo tháng |
-| Lợi nhuận & Phân chia | `/profit` | DollarSign | Phân bổ lợi nhuận |
+| Phân chia lợi nhuận | `/profit` | DollarSign | Phân bổ lợi nhuận |
 | Công nợ phải thu | `/debt` | Receipt | Công nợ khách hàng |
 
 **Phần "Danh mục" (Admin):**

@@ -81,4 +81,14 @@ export const LOADING_TYPE_LABELS: Record<LoadingType, string> = {
   [LoadingType.VO]: 'Vỏ',
 };
 
+export enum PenaltyStatus {
+  ACTIVE = 'ACTIVE',
+  CANCELED = 'CANCELED',
+}
+
+export const PENALTY_STATUS_LABELS: Record<PenaltyStatus, string> = {
+  [PenaltyStatus.ACTIVE]: 'Hiệu lực',
+  [PenaltyStatus.CANCELED]: 'Đã hủy',
+};
+
 export * from './api-paths';

@@ -69,10 +69,12 @@ export const FINANCIAL = {
   LEDGER: '/ledger',
   CUSTOMER_STATEMENT: (id: number) => `/ledger/customers/${id}/statement`,
   SUPPLIER_STATEMENT: (id: number) => `/ledger/suppliers/${id}/statement`,
+  SUPPLIER_STATEMENT_EXPORT: (id: number) => `/ledger/suppliers/${id}/statement/export`,
   PAYMENTS_RECEIVE: '/payments/receive',
   PAYMENTS_VENDOR: '/payments/vendor',
   ADJUSTMENTS: '/adjustments',
   PENALTIES: '/penalties',
+  PENALTY_CANCEL: (id: number) => `/penalties/${id}/cancel`,
   EXPENSES: '/expenses',
   EXPENSE: (id: number) => `/expenses/${id}`,
 } as const;
@@ -83,7 +85,7 @@ export const REPORTS = {
   PNL: '/reports/pnl',
   RECEIVABLES_SUMMARY: '/reports/receivables-summary',
   PAYABLES_SUMMARY: '/reports/payables-summary',
-  RENEWALS: '/reports/renewals',
+  RENEWALS: '/expenses/reports/renewals',
   DISTRIBUTE_PROFIT: '/reports/distribute-profit',
 } as const;
 

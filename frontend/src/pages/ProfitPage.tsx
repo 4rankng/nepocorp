@@ -110,8 +110,8 @@ export default function ProfitPage() {
   return (
     <div className="fade-up" style={{ paddingBottom: 40 }}>
       {/* Header */}
-      <PageHeader 
-        title="Lợi nhuận & Phân chia" 
+      <PageHeader
+        title="Phân chia lợi nhuận"
         description="Báo cáo phân bổ lợi nhuận ròng giữa các đối tác góp vốn."
         action={
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -153,7 +153,7 @@ export default function ProfitPage() {
         </div>
       ) : (
         <div className="profit-layout">
-          
+
           {/* Left Column: Monthly Profit Hero & Shareholder cards */}
           <div>
             {/* Profit Hero Widget */}
@@ -172,7 +172,7 @@ export default function ProfitPage() {
               <Users size={16} style={{ color: 'var(--brand)' }} />
               Phân chia theo tỷ lệ cổ phần
             </h3>
-            
+
             <div className="partner-grid">
               {activeCapTable.map((partner, i) => {
                 const isPrimary = i === 0;
@@ -407,7 +407,7 @@ export default function ProfitPage() {
               </ul>
             </div>
           </div>
-          
+
         </div>
       )}
       {confirmDialog}

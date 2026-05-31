@@ -62,8 +62,8 @@ export async function createExpense(tx: any, data: ExpenseCreateInput, userId?: 
     truckId: data.truckId ?? null,
     amount: data.amount,
     paymentStatus: data.paymentStatus,
-    validFrom: data.validFrom ?? null,
-    validTo: data.validTo ?? null,
+    validFrom: data.validFrom ? new Date(data.validFrom) : null,
+    validTo: data.validTo ? new Date(data.validTo) : null,
     receiptId: data.receiptId ?? null,
     note: data.note ?? null,
     createdBy: userId ?? null,
@@ -144,8 +144,8 @@ export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInpu
   if (data.truckId !== undefined) updateValues.truckId = data.truckId;
   if (data.amount !== undefined) updateValues.amount = data.amount;
   if (data.paymentStatus !== undefined) updateValues.paymentStatus = data.paymentStatus;
-  if (data.validFrom !== undefined) updateValues.validFrom = data.validFrom;
-  if (data.validTo !== undefined) updateValues.validTo = data.validTo;
+  if (data.validFrom !== undefined) updateValues.validFrom = data.validFrom ? new Date(data.validFrom) : null;
+  if (data.validTo !== undefined) updateValues.validTo = data.validTo ? new Date(data.validTo) : null;
   if (data.receiptId !== undefined) updateValues.receiptId = data.receiptId;
   if (data.note !== undefined) updateValues.note = data.note;
 
