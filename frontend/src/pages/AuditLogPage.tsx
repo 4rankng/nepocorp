@@ -26,7 +26,7 @@ function normalizeEntry(e: any): NormalizedEntry {
   if (action.startsWith('TRIP_') || action === 'STATUS_CHANGED') category = 'trip';
   else if (['PAYMENT_RECEIVED', 'ADJUSTMENT_CREATED', 'PROFIT_DISTRIBUTED'].includes(action)) category = 'finance';
   else if (action === 'PENALTY_CREATED') category = 'penalty';
-  else if (action === 'USER_LOGIN' || action === 'USER_LOGOUT') category = 'auth';
+  else if (['USER_LOGIN', 'USER_LOGOUT', 'LOGIN_FAILED', 'ACCESS_DENIED'].includes(action)) category = 'auth';
   return {
     ...e,
     userName: name,
@@ -64,6 +64,8 @@ const ACTION_LABELS: Record<string, string> = {
   ENTITY_DELETED: 'Xóa',
   USER_LOGIN: 'Đăng nhập',
   USER_LOGOUT: 'Đăng xuất',
+  LOGIN_FAILED: 'Đăng nhập thất bại',
+  ACCESS_DENIED: 'Bị từ chối quyền',
   STATUS_CHANGED: 'Đổi trạng thái',
   TRIP_REASSIGNED: 'Đổi xe / tài xế',
   PROFIT_DISTRIBUTED: 'Chia lợi nhuận',

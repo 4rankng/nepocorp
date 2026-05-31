@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
   TrendingUp,
@@ -11,20 +10,9 @@ import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
 import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
 import { formatCurrency as formatVND } from '../lib/format';
-import { useCapTable, useDistributionHistory } from '../hooks/useQueries';
+import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
 import type { CapTableHistory } from '@nepocorp/shared';
-
-interface PnlReport {
-  period: { month: number; year: number };
-  totalRevenue: number;
-  totalCosts: number;
-  grossProfit: number;
-  managementFee: number;
-  otherIncome: number;
-  netProfit: number;
-  tripCount: number;
-}
 
 interface DistributionResult {
   quarter: number;
@@ -62,10 +50,7 @@ export default function ProfitPage() {
   const [preview, setPreview] = useState<DistributionResult | null>(null);
   const [previewing, setPreviewing] = useState(false);
 
-  const { data: report, isLoading: loading, error: reportError } = useQuery<PnlReport>({
-    queryKey: ['pnl-detail', selectedMonth, selectedYear],
-    queryFn: () => api.get<PnlReport>(`/reports/pnl?month=${selectedMonth}&year=${selectedYear}`),
-  });
+  const { data: report, isLoading: loading, error: reportError } = usePnlReport(selectedMonth, selectedYear);
 
   const { data: capTable = [], error: capError } = useCapTable();
   const { data: history = [], refetch: refetchHistory } = useDistributionHistory();

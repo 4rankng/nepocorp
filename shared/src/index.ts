@@ -13,7 +13,7 @@ export type {
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
   LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket, UnpaidTrip,
-  SalaryPeriod, SalaryPeriodRange,
+  SalaryPeriod, SalaryPeriodRange, PnlTruck, PnlReport,
 } from './types';
 
 export { parseThreshold } from './types';

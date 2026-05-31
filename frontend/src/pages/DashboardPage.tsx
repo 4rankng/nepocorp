@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatNumber, formatCompact } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
-import type { DashboardStats, TripDetail, Role } from '@nepocorp/shared';
+import type { DashboardStats, TripDetail, CapTableHistory, Role } from '@nepocorp/shared';
 import { TripStatus, ROLE_LABELS, parseThreshold } from '@nepocorp/shared';
 import { Panel, KPI } from '../components/UI';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared';
@@ -15,6 +15,7 @@ import {
   useCreatedTrips,
   useYearlyPnl,
   useFuelConfig,
+  type PnlReport,
 } from '../hooks/useQueries';
 
 /* -------------------------------------------------------------------------- */
@@ -26,27 +27,11 @@ interface ExtendedDashboardStats extends DashboardStats {
   topShareholder?: { name: string; percentage: number } | null;
 }
 
-interface PnlTruck {
-  plate: string;
-  revenue: number;
-  costs: number;
-  profit: number;
-  trips: number;
-}
-
-interface PnlReport {
-  period: { month: number; year: number };
-  totalRevenue: number;
-  totalCosts: number;
-  grossProfit: number;
-  managementFee: number;
-  otherIncome: number;
-  netProfit: number;
-  tripCount: number;
-  trucks: PnlTruck[];
-}
-
 interface CustomerLite { id: number; name: string }
+
+const EMPTY_TRIPS: TripDetail[] = [];
+const EMPTY_CREATED: TripDetail[] = [];
+const EMPTY_YEARLY: (PnlReport | null)[] = [];
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -57,15 +42,11 @@ export default function DashboardPage() {
   const currentYear = now.getFullYear();
 
   /* ---- TanStack Query hooks ---- */
-  const { data: stats, isLoading: loading } = useDashboardStats() as any;
-  const { data: pnlReport } = usePnlReport(currentMonth, currentYear) as any;
-  const { data: prevPnlReport } = useQuery<PnlReport | null>({
-    queryKey: ['pnl', currentMonth, currentYear - 1],
-    queryFn: () => api.get<PnlReport>(`/reports/pnl?month=${currentMonth}&year=${currentYear - 1}`).catch(() => null),
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: allTrips = [] } = useMonthlyTrips(currentYear, currentMonth) as any;
-  const { data: createdTrips = [] } = useCreatedTrips() as any;
+  const { data: stats, isLoading: loading } = useDashboardStats();
+  const { data: pnlReport } = usePnlReport(currentMonth, currentYear);
+  const { data: prevPnlReport } = usePnlReport(currentMonth, currentYear - 1);
+  const { data: allTrips = EMPTY_TRIPS } = useMonthlyTrips(currentYear, currentMonth);
+  const { data: createdTrips = EMPTY_CREATED } = useCreatedTrips();
   const { data: fuelConfig } = useFuelConfig();
   const { data: receivablesSummary } = useQuery({
     queryKey: ['receivables-summary'],
@@ -80,8 +61,8 @@ export default function DashboardPage() {
   // the trailing slice — otherwise the chart's X-axis labels (T6/2025 →
   // T5/2026) didn't match the data (which was Jan-Dec 2026), so the last
   // point's tooltip read "T5/2026 0M đ" when May 2026 actually had 17.5M.
-  const { data: thisYearRaw = [] } = useYearlyPnl(currentYear);
-  const { data: lastYearRaw = [] } = useYearlyPnl(currentYear - 1);
+  const { data: thisYearRaw = EMPTY_YEARLY } = useYearlyPnl(currentYear);
+  const { data: lastYearRaw = EMPTY_YEARLY } = useYearlyPnl(currentYear - 1);
   const yearlySeries = useMemo(() => {
     const out: Array<{ revenue: number; grossProfit: number }> = [];
     for (let i = 11; i >= 0; i--) {

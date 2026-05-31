@@ -438,9 +438,15 @@
   .info-row__value {
     font-size: 13px !important;
     text-align: right !important;
-    word-break: break-word !important;
+    /* overflow-wrap allows long single tokens to break, but doesn't break
+       mid-formatted-number the way word-break: break-word does. */
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
     min-width: 0 !important;
   }
+  /* If the label is so long it eats most of the row, let it shrink instead
+     of forcing the value to a tiny column. Both flex 1 with min-width: 0. */
+  .info-row__label { max-width: 55% !important; }
   .detail-row, .kv-row, .field-row {
     display: flex !important;
     align-items: baseline !important;
@@ -643,7 +649,10 @@
   /* Reduce letter-spacing and size so long Vietnamese labels like
      "HÀNH ĐỘNG HÔM NAY" or "NGƯỜI DÙNG HOẠT ĐỘNG" fit on 2 lines max. */
   .kpi__label { font-size: 9.5px !important; letter-spacing: 0.02em !important; }
-  .kpi__value { font-size: 20px !important; }
+  /* Keep numbers on one line. "8.000.000 đ" at 20px was wrapping the "đ" to a
+     second line in narrow 2-col columns; 17px keeps it together. */
+  .kpi__value { font-size: 17px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+  .kpi__value-unit { font-size: 12px !important; }
   .kpi__meta { font-size: 10.5px !important; }
   .page-title { font-size: 19px !important; }
 
@@ -699,6 +708,16 @@
   .calc-row__label { font-size: 13px !important; }
   .calc-row__value { font-size: 14px !important; }
   .calc-row--final .calc-row__value { font-size: 18px !important; }
+
+  /* TripEdit page — the inline 3-col grid (legs | form | P&L) was forcing
+     three skinny columns at 320px, causing per-character text wrapping in
+     the column headers. Collapse to single column on phones. */
+  .te-edit-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+
+  /* Eyebrow labels — drop the 0.1em letter-spacing on phones so headers like
+     "HÀNH TRÌNH CHI TIẾT (CHẶNG ĐƯỜNG)" don't wrap to 3 lines next to a
+     button on the same row. */
+  .typo-eyebrow { letter-spacing: 0.04em !important; font-size: 10.5px !important; }
 
   /* Trip create/edit form sections — tighten card padding */
   .tc-card { margin-bottom: 12px !important; border-radius: 12px !important; }

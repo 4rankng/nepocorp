@@ -382,6 +382,28 @@ export interface CustomerStatement {
   unpaidTrips: UnpaidTrip[];
 }
 
+// ─── Reports ────────────────────────────────────────────────────────────────────
+
+export interface PnlTruck {
+  plate: string;
+  revenue: number;
+  costs: number;
+  profit: number;
+  trips: number;
+}
+
+export interface PnlReport {
+  period: { month: number; year: number };
+  totalRevenue: number;
+  totalCosts: number;
+  grossProfit: number;
+  managementFee: number;
+  otherIncome: number;
+  netProfit: number;
+  tripCount: number;
+  trucks: PnlTruck[];
+}
+
 // ─── Salary Period ─────────────────────────────────────────────────────────────
 
 export interface SalaryPeriod {

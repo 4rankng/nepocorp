@@ -1,33 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
-import { usePnlReport, useYearlyPnl, useTripCosts, useCapTable } from '../hooks/useQueries';
-
-interface PnlTruck {
-  plate: string;
-  revenue: number;
-  costs: number;
-  profit: number;
-  trips: number;
-}
-
-interface PnlReport {
-  period: { month: number; year: number };
-  totalRevenue: number;
-  totalCosts: number;
-  grossProfit: number;
-  managementFee: number;
-  otherIncome: number;
-  netProfit: number;
-  tripCount: number;
-  trucks: PnlTruck[];
-}
+import { usePnlReport, useYearlyPnl, useTripCosts, useCapTable, type PnlReport } from '../hooks/useQueries';
+import type { TripDetail, CapTableHistory } from '@nepocorp/shared';
 
 const MONTHS = [
   'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4',
@@ -57,27 +36,25 @@ function yoyClass(current: number, previous: number): string {
   return current >= previous ? 'pnl-row__pct--up' : 'pnl-row__pct--down';
 }
 
+const EMPTY_TRIPS: TripDetail[] = [];
+const EMPTY_CAP: CapTableHistory[] = [];
+const EMPTY_YEARLY: (PnlReport | null)[] = [];
+
 export default function FinancePage() {
   const navigate = useNavigate();
   const { month: cm, year: cy } = now();
   const [month, setMonth] = useState(cm);
   const [year, setYear] = useState(cy);
 
-  const { data: reportRaw, isLoading: loading, error: queryError } = usePnlReport(month, year);
-  const report = reportRaw as unknown as PnlReport | undefined;
+  const { data: report, isLoading: loading, error: queryError } = usePnlReport(month, year);
 
-  const { data: prevYearReportRaw } = useQuery<PnlReport | null>({
-    queryKey: ['pnl', month, year - 1],
-    queryFn: () => api.get<PnlReport>(`/reports/pnl?month=${month}&year=${year - 1}`).catch(() => null),
-    staleTime: 5 * 60 * 1000,
-  });
-  const prevReport = prevYearReportRaw as unknown as PnlReport | null | undefined;
+  const { data: prevReport } = usePnlReport(month, year - 1);
 
-  const { data: tripCostsRaw = [] } = useTripCosts(month, year);
-  const { data: capTableRaw = [] } = useCapTable();
-  const { data: yearlyData = [], isLoading: yearlyLoading } = useYearlyPnl(year);
+  const { data: tripCostsRaw = EMPTY_TRIPS } = useTripCosts(month, year);
+  const { data: capTableRaw = EMPTY_CAP } = useCapTable();
+  const { data: yearlyData = EMPTY_YEARLY, isLoading: yearlyLoading } = useYearlyPnl(year);
 
-  const error = queryError ? (queryError as any).message || 'Không thể tải báo cáo' : null;
+  const error = queryError ? queryError.message || 'Không thể tải báo cáo' : null;
 
   const compactNum = (v: number) => {
     if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}tỷ`;

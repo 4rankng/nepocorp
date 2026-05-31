@@ -42,8 +42,12 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
     }
 
-    // Import bcrypt locally to keep this as the only auth route that needs it
-    const bcrypt = await import('bcryptjs');
+    // Import bcrypt locally to keep this as the only auth route that needs it.
+    // bcryptjs uses CommonJS interop — under ESM, the namespace object's
+    // default export is the actual API (compare, hash, etc.). Reach through
+    // .default so `compare` is a real function, not undefined.
+    const bcryptMod = await import('bcryptjs');
+    const bcrypt = (bcryptMod as any).default ?? bcryptMod;
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
@@ -60,8 +64,15 @@ router.post('/login', async (req: Request, res: Response) => {
     const { passwordHash, deletedAt, ...userPublic } = user;
     res.json({ token, user: { ...userPublic, fullName: displayName } });
   } catch (err: any) {
-    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
-    res.status(500).json({ error: 'Lỗi máy chủ' });
+    if (err?.name === 'ZodError') return res.status(400).json({ error: err.errors });
+    // Log the actual error so we can debug login failures instead of a blind 500.
+    console.error('[auth/login] unexpected error:', err?.message, err?.stack);
+    // In dev, surface the error so QA can see what's wrong without tailing logs.
+    const isProd = config.nodeEnv === 'production';
+    res.status(500).json({
+      error: 'Lỗi máy chủ',
+      ...(isProd ? {} : { detail: err?.message, where: err?.stack?.split('\n').slice(0, 4) }),
+    });
   }
 });
 

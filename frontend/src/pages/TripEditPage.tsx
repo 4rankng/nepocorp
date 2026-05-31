@@ -300,8 +300,10 @@ export default function TripEditPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* 3-column grid: legs | form fields | sticky P&L */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.5fr 1fr', gap: 16, alignItems: 'start', marginBottom: 20 }}>
+        {/* 3-column grid on desktop: legs | form fields | sticky P&L.
+            Class also lets responsive.css collapse to 1-col on mobile so the
+            three columns don't try to fit side-by-side in a 320px viewport. */}
+        <div className="te-edit-grid" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.5fr 1fr', gap: 16, alignItems: 'start', marginBottom: 20 }}>
           {/* Col 1 — Route legs */}
           <TripLegFields
             legs={legs}

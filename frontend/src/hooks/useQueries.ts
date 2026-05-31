@@ -12,24 +12,16 @@ import type {
   Driver as DriverType,
   FuelConfig,
   SalaryPeriodRange,
+  PnlTruck,
+  PnlReport,
 } from '@nepocorp/shared';
 import { TRIPS, REPORTS, CONFIG, FINANCIAL } from '@nepocorp/shared';
+
+export type { PnlTruck, PnlReport };
 
 export interface ExtendedDashboardStats extends DashboardStats {
   topOverdueCustomer?: { name: string; balance: number; days: number } | null;
   topShareholder?: { name: string; percentage: number } | null;
-}
-
-export interface PnlReport {
-  period: string;
-  totalRevenue: number;
-  totalCosts: number;
-  grossProfit: number;
-  managementFee: number;
-  otherIncome: number;
-  netProfit: number;
-  tripCount: number;
-  trucks: string[];
 }
 
 export interface NormalizedTrip {

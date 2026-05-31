@@ -330,9 +330,12 @@ export default function TripDetailPage() {
         <Panel title="Tài chính">
           {infoRow(<Banknote size={16} />, 'Doanh thu', formatCurrency(trip.revenue))}
           {trip.revenueOriginal && trip.revenue && Number(trip.revenue) !== Number(trip.revenueOriginal) && (
+            // Shorter label ("Giá gốc") so the strikethrough number doesn't wrap
+            // to a second line on narrow screens. The "(trước điều chỉnh)"
+            // context is implied by the strikethrough styling.
             infoRow(
               <Banknote size={16} />,
-              'Giá gốc (trước điều chỉnh)',
+              'Giá gốc',
               <span style={{ textDecoration: 'line-through', color: 'var(--fg-3)' }}>
                 {formatCurrency(trip.revenueOriginal)}
               </span>,
