@@ -32,7 +32,7 @@ export function ActionBar({ loading, onCancel, onSubmit }: ActionBarProps) {
         </div>
         <div className="tc-action-bar__spacer" />
         <button className="btn btn--ghost" type="button" onClick={onCancel} disabled={form.submitting}>Hủy</button>
-        <button className="btn btn--secondary" type="button" disabled title="Chưa hỗ trợ">
+        <button className="btn btn--secondary desktop-only" type="button" disabled title="Chưa hỗ trợ">
           <Save size={16} /> Lưu nháp
         </button>
         <button className="btn btn--primary" type="button" disabled={disabled || !allFilled} onClick={onSubmit}>

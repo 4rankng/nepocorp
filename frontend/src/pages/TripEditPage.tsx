@@ -284,20 +284,7 @@ export default function TripEditPage() {
 
         {confirmDialog}
 
-        <div className="mobile-only" style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'var(--surface)',
-          borderTop: '1px solid var(--line)',
-          padding: '12px 16px',
-          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-          display: 'flex',
-          gap: 8,
-          zIndex: 40,
-          boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
-        }}>
+        <div className="tc-edit-mobile-bar">
           <button
             type="button"
             className="btn btn--secondary"

@@ -4,23 +4,6 @@ import { AlertTriangle, ArrowLeft, HelpCircle, X } from 'lucide-react';
 
 /* ─── Extracted shared style constants ──────────────────────────────────── */
 
-const STYLE_OVERLAY: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  backdropFilter: 'blur(4px)',
-  WebkitBackdropFilter: 'blur(4px)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 16,
-};
-
-const FLEX_CENTER: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
 const FLEX_ROW: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -577,52 +560,25 @@ export function ConfirmDialog({
 
   const Icon = variant === 'danger' || variant === 'warning' ? AlertTriangle : HelpCircle;
   const iconColor = variant === 'danger' ? 'var(--danger)' : variant === 'warning' ? 'var(--warning)' : 'var(--accent)';
+  const iconBg = variant === 'danger' ? 'confirm-icon--danger' : variant === 'warning' ? 'confirm-icon--warning' : 'confirm-icon--primary';
 
   return (
-    <div
-      style={{ ...STYLE_OVERLAY, background: 'rgba(10,10,10,0.45)', zIndex: 1100 }}
-      onClick={onCancel}
-    >
+    <div className="confirm-overlay" onClick={onCancel}>
       <div
         role="alertdialog"
         aria-modal="true"
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--line)',
-          borderRadius: 16,
-          boxShadow: 'var(--sh-lg)',
-          width: '100%',
-          maxWidth: 400,
-          padding: '28px 28px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 20,
-        }}
+        className="confirm-box"
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-          <div style={{
-            ...FLEX_CENTER,
-            flexShrink: 0,
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: variant === 'danger' ? 'var(--danger-soft, #FEF2F2)' : 'var(--accent-soft)',
-          }}>
-            <Icon size={20} color={iconColor} />
+        <div className="confirm-body">
+          <div className={`confirm-icon ${iconBg}`}>
+            <Icon size={22} color={iconColor} />
           </div>
-          <p style={{
-            margin: 0,
-            fontSize: 14,
-            lineHeight: 1.55,
-            color: 'var(--ink)',
-            fontWeight: 500,
-            paddingTop: 9,
-          }}>
+          <p className="confirm-message">
             {message}
           </p>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <div className="confirm-actions">
           <button className="btn btn--secondary btn--sm" onClick={onCancel}>
             {cancelLabel}
           </button>

@@ -233,7 +233,7 @@ export default function TripListPage() {
         return (
           <Link to={`/trips/${trip.id}`} className="trip-col" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }} onClick={(e) => e.stopPropagation()}>
             <div className="trip-name">
-              <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{tripCode}</span>
               <span className="trip-meta-sep">·</span>
               <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
             </div>

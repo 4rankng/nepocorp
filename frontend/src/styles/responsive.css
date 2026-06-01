@@ -350,6 +350,32 @@
   }
   .drawer__content { max-width: 100%; max-height: 100%; border-radius: 12px 12px 0 0; margin: auto 0 0; }
 
+  /* ── ConfirmDialog: bottom-sheet on phones ── */
+  .confirm-overlay {
+    padding: 0;
+    align-items: flex-end;
+    background: rgba(10,10,10,0.5);
+  }
+  .confirm-box {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    margin: auto 0 0;
+    padding: 24px 20px 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0));
+    animation: modalSlideUp 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    gap: 16px;
+  }
+  .confirm-message { font-size: 15px; }
+  .confirm-actions {
+    gap: 8px;
+  }
+  .confirm-actions .btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    justify-content: center;
+  }
+
   /* ── Tap targets (Apple/Material want ≥44px) ── */
   .btn--sm,
   .btn-sm { min-height: 38px; padding: 8px 12px; font-size: 13px; }

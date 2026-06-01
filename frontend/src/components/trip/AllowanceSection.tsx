@@ -43,7 +43,7 @@ export function AllowanceSection() {
         <span className="typo-eyebrow">Chi phí đường bộ & Doanh thu</span>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="row-2">
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tăng vé theo lệnh (đ)</label>
           <InputWithPrefix
@@ -70,7 +70,7 @@ export function AllowanceSection() {
         </div>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "center", marginBottom: 16 }}>
+      <div className="row-2" style={{ alignItems: "center" }}>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Số trạm thu phí (Trạm)</label>
           <input
@@ -97,7 +97,7 @@ export function AllowanceSection() {
         </div>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="row-2">
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Điều chỉnh tiền đi đường (đ)</label>
           <InputWithPrefix
@@ -134,7 +134,7 @@ export function AllowanceSection() {
         </div>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="row-2">
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Trả hàng 2 điểm (đ)</label>
           <InputWithPrefix
@@ -163,7 +163,7 @@ export function AllowanceSection() {
         </div>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="row-2">
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu trả hàng (đ)</label>
           <InputWithPrefix

@@ -18,6 +18,7 @@
 @media (max-width: 800px) {
   .pnl-row { grid-template-columns: 1fr 120px; }
   .pnl-row__yoy, .pnl-row__pct { display: none; }
+  .pnl-row--final .pnl-row__amount { font-size: 15px; }
 }
 .pnl-row:last-child { border-bottom: none; }
 .pnl-row--section {

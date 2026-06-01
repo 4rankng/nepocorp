@@ -74,7 +74,7 @@ export function FuelSection() {
         </p>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div className="row-2">
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Số lít bổ sung</label>
           <input
