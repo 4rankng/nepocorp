@@ -12,6 +12,7 @@ import { Role } from '@nepocorp/shared';
 import { storageService } from '../services/storage.service';
 import { config } from '../config';
 import type { Request, Response } from 'express';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 // Maximum dimension for server-side downscale
 const MAX_IMAGE_DIMENSION = 2048;
@@ -50,131 +51,123 @@ const upload = multer({
 
 const uploadRouter = Router();
 
-uploadRouter.post('/', upload.single('file'), async (req: Request, res: Response) => {
-  try {
-    const file = req.file;
-    const tripId = parseInt(req.body.trip_id);
-    const type = req.body.type as 'CONTAINER' | 'SEAL' | 'OTHER';
+uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+  const file = req.file;
+  const tripId = parseInt(req.body.trip_id);
+  const type = req.body.type as 'CONTAINER' | 'SEAL' | 'OTHER';
 
-    if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
-    if (isNaN(tripId)) return res.status(400).json({ error: 'trip_id không hợp lệ' });
-    if (!['CONTAINER', 'SEAL', 'OTHER'].includes(type)) {
-      return res.status(400).json({ error: 'Loại ảnh không hợp lệ' });
-    }
-
-    // 1. Sniff magic bytes
-    const mime = sniffMimeType(file.buffer);
-    if (!mime) {
-      return res.status(400).json({ error: 'Định dạng file không được hỗ trợ hoặc file bị hỏng' });
-    }
-
-    // 2. Process image with sharp: HEIC→JPEG transcode, EXIF strip, downscale
-    let processedBuffer: Buffer;
-    let ext: string;
-
-    if (mime === 'image/heic') {
-      // Transcode HEIC to JPEG
-      processedBuffer = await sharp(file.buffer)
-        .rotate() // auto-rotate based on EXIF orientation, then strip it
-        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 85 })
-        .toBuffer();
-      ext = '.jpg';
-    } else {
-      // For JPEG/PNG/WebP: strip EXIF metadata (GPS, camera info, etc.) + downscale
-      const pipeline = sharp(file.buffer)
-        .rotate()
-        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
-        .withMetadata({ orientation: undefined });
-
-      if (mime === 'image/jpeg') {
-        processedBuffer = await pipeline.jpeg({ quality: 85 }).toBuffer();
-        ext = '.jpg';
-      } else if (mime === 'image/png') {
-        processedBuffer = await pipeline.png().toBuffer();
-        ext = '.png';
-      } else {
-        // WebP
-        processedBuffer = await pipeline.webp({ quality: 85 }).toBuffer();
-        ext = '.webp';
-      }
-    }
-
-    // 3. Generate UUID storage key
-    const uuid = crypto.randomUUID();
-    const key = `trips/${tripId}/${type.toLowerCase()}-${uuid}${ext}`;
-
-    // 4. Upload buffer
-    await storageService.upload(processedBuffer, key);
-
-    // 5. Persist relation in DB
-    const [photo] = await db.insert(s.tripPhotos).values({
-      tripId,
-      type,
-      storageKey: key,
-      uploadedBy: req.user!.userId,
-    }).returning();
-
-    res.status(201).json({
-      ok: true,
-      storageKey: key,
-      url: `/api/photos/${encodeURIComponent(key)}`
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
+  if (isNaN(tripId)) return res.status(400).json({ error: 'trip_id không hợp lệ' });
+  if (!['CONTAINER', 'SEAL', 'OTHER'].includes(type)) {
+    return res.status(400).json({ error: 'Loại ảnh không hợp lệ' });
   }
-});
+
+  // 1. Sniff magic bytes
+  const mime = sniffMimeType(file.buffer);
+  if (!mime) {
+    return res.status(400).json({ error: 'Định dạng file không được hỗ trợ hoặc file bị hỏng' });
+  }
+
+  // 2. Process image with sharp: HEIC→JPEG transcode, EXIF strip, downscale
+  let processedBuffer: Buffer;
+  let ext: string;
+
+  if (mime === 'image/heic') {
+    // Transcode HEIC to JPEG
+    processedBuffer = await sharp(file.buffer)
+      .rotate() // auto-rotate based on EXIF orientation, then strip it
+      .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    ext = '.jpg';
+  } else {
+    // For JPEG/PNG/WebP: strip EXIF metadata (GPS, camera info, etc.) + downscale
+    const pipeline = sharp(file.buffer)
+      .rotate()
+      .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+      .withMetadata({ orientation: undefined });
+
+    if (mime === 'image/jpeg') {
+      processedBuffer = await pipeline.jpeg({ quality: 85 }).toBuffer();
+      ext = '.jpg';
+    } else if (mime === 'image/png') {
+      processedBuffer = await pipeline.png().toBuffer();
+      ext = '.png';
+    } else {
+      // WebP
+      processedBuffer = await pipeline.webp({ quality: 85 }).toBuffer();
+      ext = '.webp';
+    }
+  }
+
+  // 3. Generate UUID storage key
+  const uuid = crypto.randomUUID();
+  const key = `trips/${tripId}/${type.toLowerCase()}-${uuid}${ext}`;
+
+  // 4. Upload buffer
+  await storageService.upload(processedBuffer, key);
+
+  // 5. Persist relation in DB
+  const [photo] = await db.insert(s.tripPhotos).values({
+    tripId,
+    type,
+    storageKey: key,
+    uploadedBy: req.user!.userId,
+  }).returning();
+
+  res.status(201).json({
+    ok: true,
+    storageKey: key,
+    url: `/api/photos/${encodeURIComponent(key)}`
+  });
+}));
 
 // Authenticated Photos serving Router
 const photosRouter = Router();
 
-photosRouter.get('/{*path}', async (req: Request, res: Response) => {
-  try {
-    const rawKey = typeof req.params.path === 'string' ? req.params.path : Array.isArray(req.params.path) ? req.params.path.join('/') : '';
-    const key = decodeURIComponent(rawKey);
+photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) => {
+  const rawKey = typeof req.params.path === 'string' ? req.params.path : Array.isArray(req.params.path) ? req.params.path.join('/') : '';
+  const key = decodeURIComponent(rawKey);
 
-    // Parse trip ID
-    const match = key.match(/^trips\/(\d+)\//);
-    if (!match) {
-      return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
-    }
-    const tripId = parseInt(match[1]);
-
-    // Check permissions
-    if (req.user!.role === Role.DRIVER) {
-      const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
-        .where(eq(s.drivers.userId, req.user!.userId)).limit(1);
-      
-      if (!driver) {
-        return res.status(403).json({ error: 'Không có quyền truy cập ảnh này' });
-      }
-
-      const [trip] = await db.select()
-        .from(s.trips)
-        .where(and(eq(s.trips.id, tripId), eq(s.trips.driverId, driver.id)))
-        .limit(1);
-
-      if (!trip) {
-        return res.status(403).json({ error: 'Không có quyền truy cập ảnh của chuyến đi này' });
-      }
-    }
-
-    const uploadDir = path.resolve(config.uploadDir || path.join(process.cwd(), 'uploads'));
-    const filePath = path.resolve(uploadDir, key);
-
-    // Path traversal guard: resolved path must stay within uploadDir
-    if (!filePath.startsWith(uploadDir + path.sep)) {
-      return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
-    }
-
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Không tìm thấy ảnh' });
-    }
-
-    res.sendFile(filePath);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  // Parse trip ID
+  const match = key.match(/^trips\/(\d+)\//);
+  if (!match) {
+    return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
   }
-});
+  const tripId = parseInt(match[1]);
+
+  // Check permissions
+  if (req.user!.role === Role.DRIVER) {
+    const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
+      .where(eq(s.drivers.userId, req.user!.userId)).limit(1);
+    
+    if (!driver) {
+      return res.status(403).json({ error: 'Không có quyền truy cập ảnh này' });
+    }
+
+    const [trip] = await db.select()
+      .from(s.trips)
+      .where(and(eq(s.trips.id, tripId), eq(s.trips.driverId, driver.id)))
+      .limit(1);
+
+    if (!trip) {
+      return res.status(403).json({ error: 'Không có quyền truy cập ảnh của chuyến đi này' });
+    }
+  }
+
+  const uploadDir = path.resolve(config.uploadDir || path.join(process.cwd(), 'uploads'));
+  const filePath = path.resolve(uploadDir, key);
+
+  // Path traversal guard: resolved path must stay within uploadDir
+  if (!filePath.startsWith(uploadDir + path.sep)) {
+    return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
+  }
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Không tìm thấy ảnh' });
+  }
+
+  res.sendFile(filePath);
+}));
 
 export { uploadRouter, photosRouter };

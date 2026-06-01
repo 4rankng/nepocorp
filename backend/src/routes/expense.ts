@@ -12,6 +12,7 @@ import {
   getRenewalReminders,
   getExpense,
 } from '../services/expense.service';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 registerAuditEvent('POST', '/api/expenses', AuditEvent.ENTITY_CREATED);
 registerAuditEvent('PUT', '/api/expenses/', AuditEvent.ENTITY_UPDATED);
@@ -19,90 +20,63 @@ registerAuditEvent('DELETE', '/api/expenses/', AuditEvent.ENTITY_DELETED);
 
 const router = Router();
 
-router.get('/reports/renewals', async (_req: Request, res: Response) => {
-  try {
-    const reminders = await getRenewalReminders(db);
-    res.json(reminders);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get('/reports/renewals', asyncHandler(async (_req: Request, res: Response) => {
+  const reminders = await getRenewalReminders(db);
+  res.json(reminders);
+}));
 
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    const filters = {
-      truckId: req.query.truckId ? Number(req.query.truckId) : undefined,
-      supplierId: req.query.supplierId ? Number(req.query.supplierId) : undefined,
-      categoryId: req.query.categoryId ? Number(req.query.categoryId) : undefined,
-      fromDate: req.query.fromDate as string | undefined,
-      toDate: req.query.toDate as string | undefined,
-      page: req.query.page ? Number(req.query.page) : undefined,
-      pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
-    };
-    res.json(await listExpenses(db, filters));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const filters = {
+    truckId: req.query.truckId ? Number(req.query.truckId) : undefined,
+    supplierId: req.query.supplierId ? Number(req.query.supplierId) : undefined,
+    categoryId: req.query.categoryId ? Number(req.query.categoryId) : undefined,
+    fromDate: req.query.fromDate as string | undefined,
+    toDate: req.query.toDate as string | undefined,
+    page: req.query.page ? Number(req.query.page) : undefined,
+    pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
+  };
+  res.json(await listExpenses(db, filters));
+}));
 
 // GET /api/expenses/:id — fetch one expense for the edit page.
 // The frontend `ExpenseEntryPage` queries this when isEdit=true; without it
 // the form rendered empty for every "sửa phiếu".
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id) || id <= 0) {
-      return res.status(400).json({ error: 'ID không hợp lệ' });
-    }
-    const expense = await getExpense(db, id);
-    if (!expense) return res.status(404).json({ error: 'Không tìm thấy khoản chi phí' });
-    res.json(expense);
-  } catch (err: any) {
-    console.error('[GET /api/expenses/:id]', err?.message, err?.stack);
-    res.status(500).json({ error: err?.message || 'Lỗi máy chủ' });
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    return res.status(400).json({ error: 'ID không hợp lệ' });
   }
-});
+  const expense = await getExpense(db, id);
+  if (!expense) return res.status(404).json({ error: 'Không tìm thấy khoản chi phí' });
+  res.json(expense);
+}));
 
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const validatedData = expenseSchema.parse(req.body);
-    const userId = req.user?.userId;
-    const result = await db.transaction(async (tx) => {
-      return createExpense(tx, { ...validatedData, amount: String(validatedData.amount) }, userId);
-    });
-    res.status(201).json(result);
-  } catch (err: any) {
-    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
-    res.status(err.statusCode || 500).json({ error: err.message });
-  }
-});
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
+  const validatedData = expenseSchema.parse(req.body);
+  const userId = req.user?.userId;
+  const result = await db.transaction(async (tx) => {
+    return createExpense(tx, { ...validatedData, amount: String(validatedData.amount) }, userId);
+  });
+  res.status(201).json(result);
+}));
 
-router.put('/:id', async (req: Request, res: Response) => {
-  try {
-    const validatedData = expenseSchema.partial().parse(req.body);
-    const userId = req.user?.userId;
-    const serviceData: Record<string, any> = { ...validatedData };
-    if (validatedData.amount !== undefined) serviceData.amount = String(validatedData.amount);
-    const result = await db.transaction(async (tx) => {
-      return updateExpense(tx, Number(req.params.id), serviceData as any, userId);
-    });
-    res.json(result);
-  } catch (err: any) {
-    if (err.name === 'ZodError') return res.status(400).json({ error: err.errors });
-    res.status(err.statusCode || 500).json({ error: err.message });
-  }
-});
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const validatedData = expenseSchema.partial().parse(req.body);
+  const userId = req.user?.userId;
+  const serviceData: Record<string, any> = { ...validatedData };
+  if (validatedData.amount !== undefined) serviceData.amount = String(validatedData.amount);
+  const result = await db.transaction(async (tx) => {
+    return updateExpense(tx, Number(req.params.id), serviceData as any, userId);
+  });
+  res.json(result);
+}));
 
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.userId;
-    await db.transaction(async (tx) => {
-      await deleteExpense(tx, Number(req.params.id), userId);
-    });
-    res.json({ ok: true });
-  } catch (err: any) {
-    res.status(err.statusCode || 500).json({ error: err.message });
-  }
-});
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  await db.transaction(async (tx) => {
+    await deleteExpense(tx, Number(req.params.id), userId);
+  });
+  res.json({ ok: true });
+}));
 
 export default router;
