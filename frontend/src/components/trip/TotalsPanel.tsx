@@ -2,14 +2,16 @@ import React, { useMemo } from "react";
 import { DollarSign, Clock, Users, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { computeTripTotals } from "@nepocorp/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
+import { useFuelConfig } from '../../hooks/useQueries';
 
 export function TotalsPanel() {
   const form = useTripFormContext();
+  const { data: fuelConfig } = useFuelConfig();
   const {
     legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
     tollsDiscount, tollsAddition, tollsStations,
     hasReturnCargo, driverSalary, revenue,
-    selectedRouteData, roadAllowanceBaseApplied,
+    selectedRouteData, roadAllowanceBaseApplied, fuelActualUnitPrice,
   } = form;
 
   const isMountainRoute = selectedRouteData?.isMountain ?? false;
@@ -30,7 +32,8 @@ export function TotalsPanel() {
       fuelLoadedNorm: 43,
       fuelEmptyNorm: 25,
       fuelPerTripSupplement: 3,
-      fuelUnitPrice: 25000,
+      fuelUnitPrice: fuelConfig ? Number(fuelConfig.unitPrice) : 25000,
+      fuelActualUnitPrice: fuelActualUnitPrice ? Number(fuelActualUnitPrice) : null,
       isMountainRoute,
       mountainFixedAllowance,
       roadAllowanceBase: roadAllowanceBaseApplied ?? 0,
@@ -47,7 +50,7 @@ export function TotalsPanel() {
     legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
     isMountainRoute, mountainFixedAllowance, roadAllowanceBaseApplied,
     tollsDiscount, tollsAddition, tollsStations,
-    hasReturnCargo, revenue, driverSalary,
+    hasReturnCargo, revenue, driverSalary, fuelConfig, fuelActualUnitPrice,
   ]);
 
   const fmt = (v: number) => Math.abs(Math.round(v)).toLocaleString("vi-VN");
@@ -68,14 +71,14 @@ export function TotalsPanel() {
         </h3>
         <div className="tc-summary-card__big mono" style={{ fontSize: 24, fontWeight: 800 }}>
           {fmt(revenueNum)}
-          <span className="tc-summary-card__currency" style={{ fontSize: 13, marginLeft: 4 }}>VNĐ</span>
+          <span className="tc-summary-card__currency" style={{ fontSize: 13, marginLeft: 4 }}>đ</span>
         </div>
       </div>
 
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>
           <span>Phân bổ chi phí</span>
-          <span>{fmt(totalCost)} VNĐ</span>
+          <span>{fmt(totalCost)} đ</span>
         </div>
         <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "rgba(255,255,255,0.15)", marginBottom: 12 }}>
           <div style={{ width: `${fuelPct}%`, background: "#3B82F6" }} title={`Dầu: ${fuelPct.toFixed(0)}%`} />
@@ -148,7 +151,7 @@ export function TotalsPanel() {
           >
             {isProfitPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
             {isProfitPositive ? "+" : "−"}
-            {fmt(totals.grossProfit)} VNĐ
+            {fmt(totals.grossProfit)} đ
           </span>
         </div>
       </div>

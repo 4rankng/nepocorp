@@ -55,7 +55,7 @@ export default function ProfitPage() {
   const { data: capTable = [], error: capError } = useCapTable();
   const { data: history = [], refetch: refetchHistory } = useDistributionHistory();
 
-  const error = reportError && capError ? 'Không thể tải báo cáo phân chia lợi nhuận.' : null;
+  const error = reportError || capError ? 'Không thể tải báo cáo phân chia lợi nhuận.' : null;
 
   const handlePreview = async () => {
     setPreviewing(true);

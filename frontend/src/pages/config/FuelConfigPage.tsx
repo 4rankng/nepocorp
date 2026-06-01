@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, Loader2 } from 'lucide-react';
+import { Clock, User } from 'lucide-react';
 import { api } from '../../lib/api';
+import { configClient } from '../../api/configClient';
 import { PageHeader, Panel } from '../../components/UI';
-import type { FuelConfig } from '@nepocorp/shared';
+import type { FuelConfig, FuelPriceHistory } from '@nepocorp/shared';
 
 export default function FuelConfigPage() {
   const navigate = useNavigate();
@@ -13,7 +15,8 @@ export default function FuelConfigPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [init, setInit] = useState(false);
+  const [history, setHistory] = useState<FuelPriceHistory[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   useEffect(() => {
     api.get<FuelConfig | null>('/fuel-config').then(fc => {
@@ -27,9 +30,12 @@ export default function FuelConfigPage() {
           warningThreshold: f.warningThreshold ?? f.warning_threshold ?? '37',
           criticalThreshold: f.criticalThreshold ?? f.critical_threshold ?? '40',
         });
-        setInit(true);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    configClient.getFuelPriceHistory().then(setHistory).catch(() => {}).finally(() => setHistoryLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -69,7 +75,7 @@ export default function FuelConfigPage() {
             <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>Số lít bổ sung thêm mặc định cho mỗi chuyến</p>
           </div>
           <div className="field">
-            <label>Đơn giá nhiên liệu hiện hành (VNĐ/lít)</label>
+            <label>Đơn giá nhiên liệu hiện hành (đ/lít)</label>
             <input className="input" type="number" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="VD: 23000" />
           </div>
         </div>
@@ -92,12 +98,42 @@ export default function FuelConfigPage() {
         </div>
 
         <div style={{ marginTop: 8 }}>
-          <button className="btn btn--primary" disabled={saving || !form.loadedNorm || !form.emptyNorm || !form.unitPrice} onClick={handleSave}>
+          <button className="btn btn--primary" disabled={saving || !(Number(form.loadedNorm) > 0) || !(Number(form.emptyNorm) > 0) || !(Number(form.unitPrice) > 0)} onClick={handleSave}>
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
             Lưu cấu hình
           </button>
         </div>
         {error && <div style={{ textAlign: 'center', color: 'var(--danger)', marginTop: 12 }}>{error}</div>}
+      </Panel>
+      <Panel title="Lịch sử giá nhiên liệu" subtitle="Theo dõi các lần thay đổi đơn giá nhiên liệu" style={{ marginTop: 20 }}>
+        {historyLoading ? (
+          <div style={{ textAlign: 'center', padding: 20, color: 'var(--fg-3)' }}>Đang tải…</div>
+        ) : history.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 20, color: 'var(--fg-3)', fontSize: 13 }}>Chưa có lịch sử thay đổi giá</div>
+        ) : (
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ngày hiệu lực</th>
+                  <th className="num">Đơn giá (VNĐ/lít)</th>
+                  <th>Người thay đổi</th>
+                  <th>Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((row) => (
+                  <tr key={row.id}>
+                    <td style={{ whiteSpace: 'nowrap' }}>{new Date(row.effectiveDate).toLocaleDateString('vi-VN')}</td>
+                    <td className="num" style={{ fontWeight: 600 }}>{Number(row.unitPrice).toLocaleString('vi-VN')}</td>
+                    <td style={{ color: 'var(--fg-3)' }}>—</td>
+                    <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{row.note || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Panel>
     </div>
   );

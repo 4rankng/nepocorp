@@ -50,7 +50,8 @@ export const tripLegSchema = z.object({
   sequence: z.number().int().positive(),
   origin: z.string().min(1),
   destination: z.string().min(1),
-  km: positiveNumeric,
+  // Allow 0 so accountants can save partial drafts before final figures are entered.
+  km: nonNegNumeric,
   loadingType: z.nativeEnum(LoadingType),
 });
 
@@ -72,10 +73,12 @@ export const updateTripFiguresSchema = z.object({
   fuelLitersOverride: nonNegNumeric.nullable().optional(),
   fuelSupplementLiters: nonNegNumeric.optional(),
   fuelSupplementReason: z.string().optional(),
+  fuelActualUnitPrice: positiveNumeric.nullable().optional(),
   tollsDiscount: nonNegNumeric.optional(),
   tollsAddition: nonNegNumeric.optional(),
   tollsStations: z.coerce.number().int().nonnegative().optional(),
   hasReturnCargo: z.boolean().optional(),
+  roadAllowanceOverride: nonNegNumeric.nullable().optional(),
   driverSalary: nonNegNumeric.optional(),
   revenue: nonNegNumeric.optional(),
   revenueEmptyReturn: nonNegNumeric.optional(),
@@ -238,6 +241,12 @@ export const fuelConfigSchema = z.object({
   criticalThreshold: nonNegNumeric.optional().default(40),
 });
 
+export const fuelPriceHistorySchema = z.object({
+  unitPrice: positiveNumeric,
+  effectiveDate: z.string().min(1),
+  note: z.string().optional(),
+});
+
 export const penaltyReasonSchema = z.object({
   reasonText: z.string().min(1),
   defaultAmount: nonNegNumeric,
@@ -329,10 +338,27 @@ export const vendorPaymentSchema = z.object({
   confirmOverpay: z.boolean().optional(),
 });
 
+// ─── Forwarder catalogs ──────────────────────────────────────────────────────
+
+export const containerTypeSchema = z.object({
+  code: z.string().min(1, 'Mã loại container không được để trống').max(20),
+  name: z.string().min(1, 'Tên loại container không được để trống').max(50),
+  notes: z.string().optional().nullable(),
+});
+
+export const portSchema = z.object({
+  name: z.string().min(1, 'Tên cảng/bãi không được để trống').max(255),
+  code: z.string().max(20).optional().nullable(),
+  address: z.string().optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
 // ─── Forwarder ──────────────────────────────────────────────────────────────
 
 export const tripContainerSchema = z.object({
   tripId: z.coerce.number().int().positive(),
+  containerTypeId: z.coerce.number().int().positive().optional().nullable(),
   containerNumber: z.string().min(1, 'Số container không được để trống'),
   sealNumber: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
@@ -389,3 +415,6 @@ export type TripContainerInput = z.infer<typeof tripContainerSchema>;
 export type TripExpenseInput = z.infer<typeof tripExpenseSchema>;
 export type CreateAdvanceRequestInput = z.infer<typeof createAdvanceRequestSchema>;
 export type CreateAdvanceSettlementInput = z.infer<typeof createAdvanceSettlementSchema>;
+export type ContainerTypeInput = z.infer<typeof containerTypeSchema>;
+export type PortInput = z.infer<typeof portSchema>;
+

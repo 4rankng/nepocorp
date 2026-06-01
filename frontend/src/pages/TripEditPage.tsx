@@ -86,20 +86,6 @@ export default function TripEditPage() {
           </div>
         </header>
 
-        {error && (
-          <div style={{
-            margin: '0 28px 8px',
-            padding: '12px 16px',
-            background: 'var(--danger-soft)',
-            color: 'var(--danger-text)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 13,
-            border: '1px solid rgba(220,38,38,0.12)',
-          }}>
-            {error}
-          </div>
-        )}
-
         <form id="trip-edit-form" onSubmit={onSubmit}>
           <div className="tc-content">
             <div className="tc-form-col">
@@ -206,15 +192,41 @@ export default function TripEditPage() {
         </form>
 
         <div className="tc-action-bar">
-          <div className="tc-action-bar__status">
-            <div className="tc-action-bar__status-icon">
-              <Save size={16} />
+          {error ? (
+            <div
+              className="tc-action-bar__status"
+              role="alert"
+              style={{ color: 'var(--danger)', maxWidth: '60%' }}
+            >
+              <div
+                className="tc-action-bar__status-icon"
+                style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}
+              >
+                !
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div className="tc-action-bar__status-main" style={{ color: 'var(--danger)' }}>
+                  Không lưu được
+                </div>
+                <div
+                  className="tc-action-bar__status-sub"
+                  style={{ color: 'var(--danger)', whiteSpace: 'normal', lineHeight: 1.35 }}
+                >
+                  {error}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="tc-action-bar__status-main">Cập nhật số liệu</div>
-              <div className="tc-action-bar__status-sub">Lệnh vận chuyển #{trip.id}</div>
+          ) : (
+            <div className="tc-action-bar__status">
+              <div className="tc-action-bar__status-icon">
+                <Save size={16} />
+              </div>
+              <div>
+                <div className="tc-action-bar__status-main">Cập nhật số liệu</div>
+                <div className="tc-action-bar__status-sub">Lệnh vận chuyển #{trip.id}</div>
+              </div>
             </div>
-          </div>
+          )}
           <div className="tc-action-bar__spacer" />
           <button
             type="button"

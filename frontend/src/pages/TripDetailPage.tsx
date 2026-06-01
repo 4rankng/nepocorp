@@ -146,7 +146,7 @@ export default function TripDetailPage() {
       await refetchTrip();
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 422) {
-        const isConfirmed = await confirm('Doanh thu chuyến đi này bằng 0 VNĐ. Bạn có chắc chắn muốn khóa chuyến với doanh thu bằng 0?', {
+        const isConfirmed = await confirm('Doanh thu chuyến đi này bằng 0 đ. Bạn có chắc chắn muốn khóa chuyến với doanh thu bằng 0?', {
           variant: 'warning',
           confirmLabel: 'Xác nhận khóa',
           cancelLabel: 'Hủy bỏ'
@@ -376,6 +376,25 @@ export default function TripDetailPage() {
               return infoRow(<Fuel size={16} />, 'TTBQ (L/100km)', <>{ttbq.toFixed(1).replace('.', ',')} L/100km{badge}</>);
             }
             return null;
+          })()}
+          {infoRow(<Fuel size={16} />, 'Đơn giá cấu hình', trip.fuelPriceApplied ? `${Number(trip.fuelPriceApplied).toLocaleString('vi-VN')} VNĐ/lít` : '—')}
+          {(trip as any).fuelActualUnitPrice && Number((trip as any).fuelActualUnitPrice) > 0 && (() => {
+            const actualPrice = Number((trip as any).fuelActualUnitPrice);
+            const configPrice = Number(trip.fuelPriceApplied || 0);
+            const liters = Number(trip.fuelLiters || 0);
+            const variance = Math.round(liters * actualPrice) - Math.round(liters * configPrice);
+            return (
+              <>
+                {infoRow(<Fuel size={16} />, 'Đơn giá thực tế', `${actualPrice.toLocaleString('vi-VN')} VNĐ/lít`)}
+                {variance !== 0 && infoRow(
+                  <Fuel size={16} />,
+                  'Chênh lệch giá nhiên liệu',
+                  <span style={{ color: variance < 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+                    {variance > 0 ? '+' : ''}{variance.toLocaleString('vi-VN')} VNĐ ({variance < 0 ? 'tiết kiệm' : 'thêm chi phí'})
+                  </span>,
+                )}
+              </>
+            );
           })()}
           {(() => {
             const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
@@ -622,7 +641,7 @@ export default function TripDetailPage() {
         </p>
         {adjustError && <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 13 }}>{adjustError}</div>}
         <div className="field">
-          <label>Số tiền điều chỉnh (VNĐ) *</label>
+          <label>Số tiền điều chỉnh (đ) *</label>
           <input className="input" type="number" placeholder="VD: -500000 hoặc 300000" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} />
         </div>
         <div className="field">

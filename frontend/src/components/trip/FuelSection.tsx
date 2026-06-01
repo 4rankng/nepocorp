@@ -7,6 +7,7 @@ export function FuelSection() {
   const {
     fuelMode, setFuelMode,
     fuelLitersOverride, setFuelLitersOverride,
+    fuelActualUnitPrice, setFuelActualUnitPrice,
     fuelSupplementLiters, setFuelSupplementLiters,
     fuelSupplementReason, setFuelSupplementReason,
   } = form;
@@ -53,6 +54,23 @@ export function FuelSection() {
           />
         </div>
       )}
+
+      <div className="field" style={{ marginBottom: 16 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>
+          Đơn giá thực tế (VND/lít)
+        </label>
+        <input
+          className="input"
+          type="number"
+          placeholder="Để trống = dùng giá cấu hình"
+          value={fuelActualUnitPrice}
+          onChange={(e) => setFuelActualUnitPrice(e.target.value)}
+          style={{ width: "100%" }}
+        />
+        <p style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
+          Giá cấu hình áp dụng: {Number(form.fuelPriceApplied || 0).toLocaleString('vi-VN')} VND/lít
+        </p>
+      </div>
 
       <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div className="field">

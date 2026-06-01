@@ -53,6 +53,8 @@ const PayableListPage = lazy(() => import('./pages/PayableListPage'));
 const PayableDetailPage = lazy(() => import('./pages/PayableDetailPage'));
 
 const ExpenseCategoriesConfigPage = lazy(() => import('./pages/config/ExpenseCategoriesConfigPage'));
+const ContainerTypesConfigPage = lazy(() => import('./pages/config/ContainerTypesConfigPage'));
+const PortsConfigPage = lazy(() => import('./pages/config/PortsConfigPage'));
 
 function PageLoader() {
   return (
@@ -141,6 +143,8 @@ function AppRoutes() {
           <Route path="/config/management-fees" element={adminOnly(page(<ManagementFeesConfigPage />))} />
           <Route path="/config/salary-periods" element={adminOnly(page(<SalaryPeriodConfigPage />))} />
           <Route path="/config/expense-categories" element={adminOnly(page(<ExpenseCategoriesConfigPage />))} />
+          <Route path="/config/container-types" element={adminOnly(page(<ContainerTypesConfigPage />))} />
+          <Route path="/config/ports" element={adminOnly(page(<PortsConfigPage />))} />
           <Route path="/suppliers" element={adminOnly(page(<SupplierListPage />))} />
           <Route path="/expenses" element={adminOnly(page(<ExpenseListPage />))} />
           <Route path="/expenses/new" element={adminOnly(page(<ExpenseEntryPage />))} />

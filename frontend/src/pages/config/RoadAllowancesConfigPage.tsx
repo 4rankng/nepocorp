@@ -38,7 +38,7 @@ function RoadAllowanceForm({ saving, item, onsave, oncancel }: {
         </Field>
       </div>
       <div style={{ flex: 1, minWidth: 120 }}>
-        <Field label="Mức cơ bản (VNĐ)"><input className="input" type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)} placeholder="0" /></Field>
+        <Field label="Mức cơ bản (đ)"><input className="input" type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)} placeholder="0" /></Field>
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!routeId || !baseAmount) return; onsave({ routeId: routeId, trailerType: trailerType, baseAmount: Number(baseAmount) }); }} />
     </InlineForm>

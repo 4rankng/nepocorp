@@ -35,6 +35,7 @@ router.post('/trips/:tripId/containers', asyncHandler(async (req: Request, res: 
   if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
   const container = await createTripContainer({
     ...parsed.data,
+    containerTypeId: parsed.data.containerTypeId ?? null,
     sealNumber: parsed.data.sealNumber ?? null,
     notes: parsed.data.notes ?? null,
     createdBy: forwarder.id,

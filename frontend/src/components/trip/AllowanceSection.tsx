@@ -1,4 +1,5 @@
 import React from "react";
+import { computeRoadAllowance } from "@nepocorp/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 
 export function AllowanceSection() {
@@ -13,7 +14,24 @@ export function AllowanceSection() {
     revenueCombine, setRevenueCombine,
     suggestedPrice,
     containerCount,
+    roadAllowanceOverride, setRoadAllowanceOverride,
+    roadAllowanceBaseApplied,
+    tollPerStationApplied,
+    returnCargoBonusApplied,
   } = form;
+
+  const computedRoadAllowanceHint = React.useMemo(() => {
+    if (!roadAllowanceBaseApplied) return null;
+    return computeRoadAllowance({
+      base: Number(roadAllowanceBaseApplied) || 0,
+      tollsDiscount: Number(tollsDiscount) || 0,
+      tollsAddition: Number(tollsAddition) || 0,
+      tollsStations: Number(tollsStations) || 0,
+      tollPerStation: tollPerStationApplied ?? 55000,
+      returnCargoBonus: returnCargoBonusApplied ?? 300000,
+      hasReturnCargo,
+    });
+  }, [roadAllowanceBaseApplied, tollsDiscount, tollsAddition, tollsStations, hasReturnCargo, tollPerStationApplied, returnCargoBonusApplied]);
 
   return (
     <div style={{ marginBottom: 0 }}>
@@ -23,7 +41,7 @@ export function AllowanceSection() {
 
       <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tăng vé theo lệnh (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tăng vé theo lệnh (đ)</label>
           <input
             className="input"
             type="number"
@@ -34,7 +52,7 @@ export function AllowanceSection() {
           />
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Giảm vé QL5 (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Giảm vé QL5 (đ)</label>
           <input
             className="input"
             type="number"
@@ -73,7 +91,28 @@ export function AllowanceSection() {
 
       <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lương sản lượng tài xế (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Điều chỉnh tiền đi đường (đ)</label>
+          <input
+            className="input"
+            type="number"
+            placeholder="Để trống = tự tính"
+            value={roadAllowanceOverride}
+            onChange={(e) => setRoadAllowanceOverride(e.target.value)}
+            style={{ width: "100%" }}
+          />
+          {computedRoadAllowanceHint !== null && (
+            <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
+              Tự tính: {computedRoadAllowanceHint.toLocaleString("vi-VN")} đ
+              {roadAllowanceOverride && Number(roadAllowanceOverride) !== computedRoadAllowanceHint && (
+                <span style={{ color: "var(--warning)", marginLeft: 8 }}>
+                  Đã điều chỉnh
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="field">
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lương sản lượng tài xế (đ)</label>
           <input
             className="input"
             type="number"
@@ -83,8 +122,11 @@ export function AllowanceSection() {
             style={{ width: "100%" }}
           />
         </div>
+      </div>
+
+      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu trả hàng (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu trả hàng (đ)</label>
           <input
             className="input"
             type="number"
@@ -95,7 +137,7 @@ export function AllowanceSection() {
           />
           {suggestedPrice !== null && (
             <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
-              Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString("vi-VN")} VNĐ{Number(containerCount) > 1 ? ` × ${containerCount} cont = ${(suggestedPrice * Number(containerCount)).toLocaleString("vi-VN")} VNĐ` : ''}
+              Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString("vi-VN")} đ{Number(containerCount) > 1 ? ` × ${containerCount} cont = ${(suggestedPrice * Number(containerCount)).toLocaleString("vi-VN")} đ` : ''}
               {revenueEmptyReturn && Number(revenueEmptyReturn) !== suggestedPrice * Number(containerCount) && (
                 <span style={{ color: "var(--warning)", marginLeft: 8 }}>
                   Giá đã điều chỉnh
@@ -104,11 +146,8 @@ export function AllowanceSection() {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu kết hợp đóng hàng (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu kết hợp đóng hàng (đ)</label>
           <input
             className="input"
             type="number"
@@ -118,7 +157,6 @@ export function AllowanceSection() {
             style={{ width: "100%" }}
           />
         </div>
-        <div className="field" />
       </div>
     </div>
   );

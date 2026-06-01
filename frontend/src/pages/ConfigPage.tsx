@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import {
   Users, Truck, MapPin, Package, DollarSign, Route,
-  AlertTriangle, UserCheck, Fuel, Building, Calendar, Tags,
+  AlertTriangle, UserCheck, Fuel, Building, Calendar, Tags, Container, Anchor,
 } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { api } from '../lib/api';
@@ -34,6 +34,8 @@ export default function ConfigPage() {
     salaryDefault,
     expenseCategories,
     fuelConfig,
+    containerTypes,
+    ports,
   ] = useQueries({
     queries: [
       { queryKey: ['cfg-count', 'penalty-reasons'],    queryFn: () => api.get<ListResponse>('/penalty-reasons?limit=1'),    staleTime: 60_000 },
@@ -50,6 +52,8 @@ export default function ConfigPage() {
       { queryKey: ['cfg-count', 'salary-default'],     queryFn: () => api.get<{ defaultStartDay?: number; defaultEndDay?: number } | null>('/salary-periods/default'), staleTime: 60_000 },
       { queryKey: ['cfg-count', 'expense-categories'], queryFn: () => api.get<ListResponse>('/expense-categories?limit=1'), staleTime: 60_000 },
       { queryKey: ['cfg-count', 'fuel-config'],        queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
+      { queryKey: ['cfg-count', 'container-types'],    queryFn: () => api.get<ListResponse>('/container-types?limit=1'),   staleTime: 60_000 },
+      { queryKey: ['cfg-count', 'ports'],              queryFn: () => api.get<ListResponse>('/ports?limit=1'),              staleTime: 60_000 },
     ],
   });
 
@@ -209,6 +213,26 @@ export default function ConfigPage() {
           <p className="setting-card__desc">Phân loại chi phí vận hành. Bật định kỳ để theo dõi ngày gia hạn bảo hiểm, đăng kiểm, bảo dưỡng.</p>
           <div className="setting-card__foot">
             <span className="setting-card__status"><span className="dot"></span>{countLabel(expenseCategories.data?.total, 'hạng mục')}</span>
+            <span className="setting-card__action">Sửa {CHEVRON}</span>
+          </div>
+        </button>
+
+        <button className="setting-card" onClick={() => navigate('/config/container-types')}>
+          <div className="setting-card__icon"><Container size={20} /></div>
+          <h3 className="setting-card__title">Loại container</h3>
+          <p className="setting-card__desc">Danh mục các loại container (20'DC, 20'OT, 20'RF, 40'DC, 40'HC…) dùng khi ghi nhận số container / seal.</p>
+          <div className="setting-card__foot">
+            <span className="setting-card__status"><span className="dot"></span>{countLabel(containerTypes.data?.total, 'loại')}</span>
+            <span className="setting-card__action">Sửa {CHEVRON}</span>
+          </div>
+        </button>
+
+        <button className="setting-card" onClick={() => navigate('/config/ports')}>
+          <div className="setting-card__icon"><Anchor size={20} /></div>
+          <h3 className="setting-card__title">Cảng / Bãi Hải Phòng</h3>
+          <p className="setting-card__desc">Danh mục các cảng và bãi container tại khu vực Hải Phòng, dùng làm điểm đi / điểm đến trong chuyến hàng.</p>
+          <div className="setting-card__foot">
+            <span className="setting-card__status"><span className="dot"></span>{countLabel(ports.data?.total, 'cảng/bãi')}</span>
             <span className="setting-card__action">Sửa {CHEVRON}</span>
           </div>
         </button>

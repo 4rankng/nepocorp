@@ -71,7 +71,18 @@ export async function getForwarderTripDetail(tripId: number, forwarderId: number
     .where(eq(s.tripLegs.tripId, tripId))
     .orderBy(s.tripLegs.sequence);
 
-  const containers = await db.select().from(s.tripContainers)
+  const containers = await db.select({
+    id: s.tripContainers.id,
+    tripId: s.tripContainers.tripId,
+    containerTypeId: s.tripContainers.containerTypeId,
+    containerTypeName: s.containerTypes.name,
+    containerNumber: s.tripContainers.containerNumber,
+    sealNumber: s.tripContainers.sealNumber,
+    notes: s.tripContainers.notes,
+    createdBy: s.tripContainers.createdBy,
+    createdAt: s.tripContainers.createdAt,
+  }).from(s.tripContainers)
+    .leftJoin(s.containerTypes, eq(s.tripContainers.containerTypeId, s.containerTypes.id))
     .where(eq(s.tripContainers.tripId, tripId))
     .orderBy(desc(s.tripContainers.createdAt));
 
@@ -94,6 +105,7 @@ export async function getForwarderTripDetail(tripId: number, forwarderId: number
 
 export async function createTripContainer(data: {
   tripId: number;
+  containerTypeId?: number | null;
   containerNumber: string;
   sealNumber: string | null;
   notes: string | null;
@@ -101,6 +113,7 @@ export async function createTripContainer(data: {
 }) {
   const [inserted] = await db.insert(s.tripContainers).values({
     tripId: data.tripId,
+    containerTypeId: data.containerTypeId ?? null,
     containerNumber: data.containerNumber,
     sealNumber: data.sealNumber,
     notes: data.notes,

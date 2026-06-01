@@ -41,10 +41,10 @@ class ApiClient {
       // ApiError constructor produced "[object Object]" in toast messages.
       // Coerce arrays / objects to a readable string before throwing.
       const raw = error.error ?? error.detail ?? error.message;
+      const details = error.details;
       let msg: string;
-      if (typeof raw === 'string') {
-        msg = raw;
-      } else if (Array.isArray(raw)) {
+      const zodDetails = details ?? (Array.isArray(raw) ? raw : null);
+      if (Array.isArray(zodDetails) && zodDetails.length > 0) {
         const FIELD_VI: Record<string, string> = {
           legs: 'Hành trình',
           'legs.origin': 'Điểm đi',
@@ -69,21 +69,31 @@ class ApiClient {
           cargoTypeId: 'Loại hàng',
           departureDate: 'Ngày xuất phát',
           containerCount: 'Số container',
+          roadAllowanceOverride: 'Điều chỉnh tiền đi đường',
         };
         const MSG_VI: Record<string, string> = {
           'Array must contain at least 1 element': 'Phải có ít nhất 1 chặng hành trình',
           'Number must be greater than 0': 'Giá trị phải lớn hơn 0',
           'Required': 'Trường bắt buộc',
         };
-        msg = raw
+        msg = zodDetails
           .map((e: any) => {
-            const field = Array.isArray(e?.path) ? e.path.join('.') : e?.path;
-            const viField = field ? FIELD_VI[field] || field : '';
+            // Strip numeric array indices so legs.0.km → legs.km for label lookup,
+            // but preserve a 1-based index in the visible label (e.g. "Chặng 1 — ").
+            const rawPath: Array<string | number> = Array.isArray(e?.path) ? e.path : (e?.path ? [e.path] : []);
+            const idx = rawPath.find((s) => typeof s === 'number');
+            const namedPath = rawPath.filter((s) => typeof s === 'string').join('.');
+            const viField = namedPath ? FIELD_VI[namedPath] || namedPath : '';
             const viMsg = MSG_VI[e?.message] || e?.message || '';
-            return viField ? `${viField}: ${viMsg}` : viMsg;
+            const prefix = typeof idx === 'number' && namedPath.startsWith('legs')
+              ? `Chặng ${Number(idx) + 1} — `
+              : '';
+            return viField ? `${prefix}${viField}: ${viMsg}` : `${prefix}${viMsg}`;
           })
           .filter(Boolean)
           .join('; ');
+      } else if (typeof raw === 'string') {
+        msg = raw;
       } else if (raw && typeof raw === 'object') {
         msg = (raw as any).message || JSON.stringify(raw);
       } else {

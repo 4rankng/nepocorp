@@ -3,7 +3,7 @@ import { CONFIG } from '@nepocorp/shared';
 import type {
   Truck,
   Driver,
-  FuelConfig,
+  FuelConfig, FuelPriceHistory,
   SalaryPeriodRange,
   CapTableHistory,
   Supplier,
@@ -59,5 +59,9 @@ export const configClient = {
 
   getPenaltyReasons: async () => {
     return api.get<PaginatedResponse<any>>(CONFIG.PENALTY_REASONS);
+  },
+
+  getFuelPriceHistory: async () => {
+    return api.get<FuelPriceHistory[]>('/fuel-price-history');
   },
 };

@@ -10,6 +10,7 @@ export interface ComputeTripTotalsInput {
   fuelEmptyNorm: number;
   fuelPerTripSupplement: number;
   fuelUnitPrice: number;
+  fuelActualUnitPrice?: number | null;
   isMountainRoute: boolean;
   mountainFixedAllowance: number | null;
   roadAllowanceBase: number;
@@ -21,15 +22,35 @@ export interface ComputeTripTotalsInput {
   returnCargoBonus: number;
   revenue: number;
   driverSalary: number;
+  roadAllowanceOverride?: number | null;
 }
 
 export interface ComputeTripTotalsOutput {
   totalFuelLiters: number;
   legCalculations: { sequence: number; calculatedLiters: number }[];
   totalFuelCost: number;
+  fuelPriceVariance: number;
+  effectiveFuelPrice: number;
   totalRoadAllowance: number;
   totalCost: number;
   grossProfit: number;
+}
+
+export function computeRoadAllowance(params: {
+  base: number;
+  tollsDiscount: number;
+  tollsAddition: number;
+  tollsStations: number;
+  tollPerStation: number;
+  returnCargoBonus: number;
+  hasReturnCargo: boolean;
+}): number {
+  const raw = params.base
+    - params.tollsDiscount
+    + params.tollsAddition
+    - (params.tollsStations * params.tollPerStation)
+    + (params.hasReturnCargo ? params.returnCargoBonus : 0);
+  return Math.max(0, raw);
 }
 
 export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTotalsOutput {
@@ -64,15 +85,26 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     }
   }
 
-  const totalFuelCost = Math.round(totalFuelLiters * input.fuelUnitPrice);
+  const effectiveFuelPrice = input.fuelActualUnitPrice || input.fuelUnitPrice;
+  const totalFuelCost = Math.round(totalFuelLiters * effectiveFuelPrice);
+  const fuelPriceVariance = input.fuelActualUnitPrice
+    ? Math.round(totalFuelLiters * input.fuelActualUnitPrice) - Math.round(totalFuelLiters * input.fuelUnitPrice)
+    : 0;
 
-  const rawRoadAllowance = input.roadAllowanceBase
-    - input.tollsDiscount
-    + input.tollsAddition
-    - (input.tollsStations * input.tollPerStation)
-    + (input.hasReturnCargo ? input.returnCargoBonus : 0);
+  const computedRoadAllowance = computeRoadAllowance({
+    base: input.roadAllowanceBase,
+    tollsDiscount: input.tollsDiscount,
+    tollsAddition: input.tollsAddition,
+    tollsStations: input.tollsStations,
+    tollPerStation: input.tollPerStation,
+    returnCargoBonus: input.returnCargoBonus,
+    hasReturnCargo: input.hasReturnCargo,
+  });
 
-  const totalRoadAllowance = Math.max(0, rawRoadAllowance);
+  const totalRoadAllowance =
+    input.roadAllowanceOverride != null && input.roadAllowanceOverride > 0
+      ? input.roadAllowanceOverride
+      : computedRoadAllowance;
 
   const totalCost = totalFuelCost + totalRoadAllowance + input.driverSalary;
   const grossProfit = input.revenue - totalCost;
@@ -81,6 +113,8 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     totalFuelLiters,
     legCalculations,
     totalFuelCost,
+    fuelPriceVariance,
+    effectiveFuelPrice,
     totalRoadAllowance,
     totalCost,
     grossProfit,

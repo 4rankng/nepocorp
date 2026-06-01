@@ -156,6 +156,15 @@ export const fuelConfig = pgTable('fuel_config', {
   deletedAt: timestamp('deleted_at'),
 });
 
+export const fuelPriceHistory = pgTable('fuel_price_history', {
+  id: serial('id').primaryKey(),
+  unitPrice: numeric('unit_price', { precision: 10, scale: 0 }).notNull(),
+  effectiveDate: timestamp('effective_date').notNull(),
+  changedBy: integer('changed_by').references(() => users.id),
+  note: text('note'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const penaltyReasons = pgTable('penalty_reasons', {
   id: serial('id').primaryKey(),
   reasonText: text('reason_text').notNull(),
@@ -194,6 +203,7 @@ export const trips = pgTable('trips', {
   driverSalary: numeric('driver_salary', { precision: 15, scale: 0 }),
   // Rate Snapshots
   fuelPriceApplied: numeric('fuel_price_applied', { precision: 10, scale: 0 }),
+  fuelActualUnitPrice: numeric('fuel_actual_unit_price', { precision: 10, scale: 0 }),
   roadAllowanceBaseApplied: numeric('road_allowance_base_applied', { precision: 15, scale: 0 }),
   fuelLoadedNormApplied: numeric('fuel_loaded_norm_applied', { precision: 6, scale: 2 }),
   fuelEmptyNormApplied: numeric('fuel_empty_norm_applied', { precision: 6, scale: 2 }),
@@ -205,6 +215,7 @@ export const trips = pgTable('trips', {
   fuelLiters: numeric('fuel_liters', { precision: 10, scale: 2 }),
   totalFuelCost: numeric('total_fuel_cost', { precision: 15, scale: 0 }),
   totalRoadAllowance: numeric('total_road_allowance', { precision: 15, scale: 0 }),
+  roadAllowanceOverride: numeric('road_allowance_override', { precision: 15, scale: 0 }),
   totalCost: numeric('total_cost', { precision: 15, scale: 0 }),
   revenue: numeric('revenue', { precision: 15, scale: 0 }),
   revenueEmptyReturn: numeric('revenue_empty_return', { precision: 15, scale: 0 }).default('0'),
@@ -371,11 +382,36 @@ export const expensePhotos = pgTable('expense_photos', {
   uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
 });
 
+// ─── Forwarder catalogs ──────────────────────────────────────────────────────────
+
+export const containerTypes = pgTable('container_types', {
+  id: serial('id').primaryKey(),
+  code: varchar('code', { length: 20 }).notNull().unique(), // e.g. "20DC", "40HC"
+  name: varchar('name', { length: 50 }).notNull(),          // e.g. "20'DC", "40'HC"
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
+export const ports = pgTable('ports', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),   // e.g. "Cảng Hải Phòng"
+  code: varchar('code', { length: 20 }),              // e.g. "HPH"
+  address: text('address'),
+  city: varchar('city', { length: 100 }).default('Hải Phòng'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
 // ─── Forwarder ──────────────────────────────────────────────────────────────────
 
 export const tripContainers = pgTable('trip_containers', {
   id: serial('id').primaryKey(),
   tripId: integer('trip_id').references(() => trips.id).notNull(),
+  containerTypeId: integer('container_type_id').references(() => containerTypes.id),
   containerNumber: varchar('container_number', { length: 50 }).notNull(),
   sealNumber: varchar('seal_number', { length: 50 }),
   notes: text('notes'),

@@ -120,6 +120,20 @@
       "when": 1780302379324,
       "tag": "0016_lucky_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1780304526843,
+      "tag": "0017_curious_tenebrous",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1780305109915,
+      "tag": "0018_high_titania",
+      "breakpoints": true
     }
   ]
 }

@@ -6,10 +6,10 @@ import { formatCurrency } from '../lib/format';
 import { PageHeader, FormGroup } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FINANCIAL, CONFIG } from '@nepocorp/shared';
 import { expenseSchema } from '@nepocorp/shared';
-import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@nepocorp/shared';
+import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory, Trailer } from '@nepocorp/shared';
 
 type FormState = {
   expenseDate: string;
@@ -44,6 +44,7 @@ export default function ExpenseEntryPage() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState<FormState>(initialForm);
   const [expenseType, setExpenseType] = useState<'COMPANY' | 'TRUCK' | 'TRAILER'>('COMPANY');
@@ -55,6 +56,13 @@ export default function ExpenseEntryPage() {
 
   const { data: catalogData } = useCatalogs();
   const trucks = catalogData?.trucks ?? [];
+
+  const { data: trailersData } = useQuery({
+    queryKey: ['trailers'],
+    queryFn: () => api.get<{ items: Trailer[] }>('/trailers?limit=200'),
+    staleTime: 5 * 60 * 1000,
+  });
+  const trailers = trailersData?.items ?? [];
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -302,6 +310,9 @@ export default function ExpenseEntryPage() {
         await api.post(FINANCIAL.EXPENSES, result.data);
         toast({ kind: 'success', message: 'Đã ghi nhận chi phí.' });
       }
+      // Invalidate every cached expenses page so the list refetches with the new row.
+      // ExpenseListPage uses queryKey ['expenses', params], so we match the prefix.
+      await queryClient.invalidateQueries({ queryKey: ['expenses'] });
       navigate('/expenses');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi lưu chi phí';
@@ -522,10 +533,10 @@ export default function ExpenseEntryPage() {
                     onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
                   >
                     <option value="">Chọn rơ-moóc…</option>
-                    {trucks
-                      .filter(t => t.trailerPlateNumber)
+                    {trailers
+                      .filter(t => t.status === 'ACTIVE')
                       .map(t => (
-                        <option key={t.id} value={t.id}>{t.trailerPlateNumber}</option>
+                        <option key={t.id} value={t.id}>{t.licensePlate}</option>
                       ))}
                   </select>
                   {errors.truckId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
@@ -533,7 +544,7 @@ export default function ExpenseEntryPage() {
               )}
 
               <div className="expense-group">
-                <label className="expense-label">Số tiền (VNĐ) <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label className="expense-label">Số tiền (đ) <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
@@ -547,7 +558,7 @@ export default function ExpenseEntryPage() {
                     style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: 'var(--accent-2)' }}
                   />
                   <span style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-4)', pointerEvents: 'none', fontWeight: 500 }}>
-                    VNĐ
+                    đ
                   </span>
                 </div>
                 {errors.amount && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.amount}</p>}

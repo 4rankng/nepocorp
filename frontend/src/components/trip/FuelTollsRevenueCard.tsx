@@ -46,16 +46,35 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </div>
       </div>
 
+      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
+        <div className="field">
+          <label>Đơn giá nhiên liệu thực tế (VNĐ/lít)</label>
+          <InputWithPrefix
+            value={form.fuelActualUnitPrice}
+            onChange={form.setFuelActualUnitPrice}
+            placeholder="Để trống = dùng giá cấu hình"
+            prefix="VNĐ"
+            type="number"
+            mono
+          />
+        </div>
+        <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0 }}>
+            Nhập giá thực tế tại trạm nếu khác giá cấu hình. Để trống để dùng giá cấu hình hiện hành.
+          </p>
+        </div>
+      </div>
+
       <SectionDivider label="Vé đường bộ & doanh thu" />
 
       <div className="tc-form-row tc-form-row--three">
         <div className="field">
           <label>Tăng vé theo lệnh</label>
-          <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="150,000" prefix="VNĐ" mono type="number" />
+          <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="150,000" prefix="đ" mono type="number" />
         </div>
         <div className="field">
           <label>Giảm vé QL5</label>
-          <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="40,000" prefix="VNĐ" mono type="number" />
+          <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="40,000" prefix="đ" mono type="number" />
         </div>
         <div className="field">
           <label>Số trạm thu phí</label>
@@ -66,7 +85,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Lương sản lượng tài xế</label>
-          <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850,000" prefix="VNĐ" mono type="number" />
+          <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850,000" prefix="đ" mono type="number" />
         </div>
         <CheckboxCard
           checked={form.hasReturnCargo}
@@ -80,16 +99,16 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Doanh thu trả hàng</label>
-          <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4,200,000" prefix="VNĐ" mono type="number" />
+          <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4,200,000" prefix="đ" mono type="number" />
           {form.suggestedPrice !== null && (
             <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
-              Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} VNĐ{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} VNĐ` : ''}
+              Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} đ{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} đ` : ''}
             </div>
           )}
         </div>
         <div className="field">
           <label>Doanh thu kết hợp đóng hàng</label>
-          <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2,000,000" prefix="VNĐ" mono type="number" />
+          <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2,000,000" prefix="đ" mono type="number" />
         </div>
       </div>
     </CardSection>

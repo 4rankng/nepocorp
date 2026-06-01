@@ -20,7 +20,7 @@ export function TripSummaryCard() {
       <h3 className="tc-summary-card__label">Ước tính lệnh</h3>
       <div className="tc-summary-card__big mono">
         {fmt(revenue)}
-        <span className="tc-summary-card__currency">VNĐ</span>
+        <span className="tc-summary-card__currency">đ</span>
       </div>
       <div className="tc-summary-card__mini">Doanh thu chuyến · chưa trừ chi phí</div>
 

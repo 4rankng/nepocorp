@@ -166,10 +166,12 @@ export async function updateTripFigures(
     fuelLitersOverride?: number | null;
     fuelSupplementLiters?: number;
     fuelSupplementReason?: string;
+    fuelActualUnitPrice?: number | null;
     tollsDiscount?: number;
     tollsAddition?: number;
     tollsStations?: number;
     hasReturnCargo?: boolean;
+    roadAllowanceOverride?: number | null;
     driverSalary?: number;
     revenue?: number;
     revenueEmptyReturn?: number;
@@ -193,6 +195,7 @@ export async function updateTripFigures(
     if (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED) {
       throw new ApiError(400, 'Chuyến đi đã chốt hoặc đã hủy, không thể sửa');
     }
+
 
     // 2. Optimistic concurrency check
     if (data.expectedVersion !== undefined && trip.version !== data.expectedVersion) {
@@ -304,6 +307,7 @@ export async function updateTripFigures(
       fuelEmptyNorm: fuelEmptyNormApplied,
       fuelPerTripSupplement: fuelSupplementNormApplied,
       fuelUnitPrice: fuelPriceApplied,
+      fuelActualUnitPrice: data.fuelActualUnitPrice ?? null,
       isMountainRoute: route ? !!route.isMountain : false,
       mountainFixedAllowance: fuelFixedAllowanceApplied > 0 ? fuelFixedAllowanceApplied : null,
       roadAllowanceBase: roadAllowanceBaseApplied,
@@ -315,6 +319,7 @@ export async function updateTripFigures(
       returnCargoBonus: returnCargoBonusApplied,
       revenue,
       driverSalary,
+      roadAllowanceOverride: data.roadAllowanceOverride ?? null,
     };
 
     const totals = computeTripTotals(totalsInput);
@@ -348,11 +353,13 @@ export async function updateTripFigures(
       fuelLitersOverride: data.fuelLitersOverride != null ? String(data.fuelLitersOverride) : null,
       fuelSupplementLiters: String(data.fuelSupplementLiters || 0),
       fuelSupplementReason: data.fuelSupplementReason ?? null,
+      fuelActualUnitPrice: data.fuelActualUnitPrice != null ? String(data.fuelActualUnitPrice) : null,
       tollsDiscount: String(data.tollsDiscount || 0),
       tollsAddition: String(data.tollsAddition || 0),
       tollsStations: data.tollsStations || 0,
       hasReturnCargo: data.hasReturnCargo ?? false,
       driverSalary: String(driverSalary),
+      roadAllowanceOverride: data.roadAllowanceOverride != null ? String(data.roadAllowanceOverride) : null,
       fuelLiters: String(totals.totalFuelLiters),
       totalFuelCost: String(totals.totalFuelCost),
       totalRoadAllowance: String(totals.totalRoadAllowance),
@@ -689,6 +696,7 @@ export async function getTripById(id: number) {
     fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
     fuelLitersOverride: s.trips.fuelLitersOverride, fuelSupplementLiters: s.trips.fuelSupplementLiters,
     fuelSupplementReason: s.trips.fuelSupplementReason, fuelPriceApplied: s.trips.fuelPriceApplied,
+    fuelActualUnitPrice: s.trips.fuelActualUnitPrice,
     tollsDiscount: s.trips.tollsDiscount, tollsAddition: s.trips.tollsAddition, tollsStations: s.trips.tollsStations,
     totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
     totalCost: s.trips.totalCost, revenue: s.trips.revenue, revenueEmptyReturn: s.trips.revenueEmptyReturn,

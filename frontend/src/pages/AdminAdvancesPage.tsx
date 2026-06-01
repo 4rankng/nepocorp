@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Wallet, Loader2, Check, X as XIcon } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ADVANCE_REQUEST_STATUS_LABELS } from '@nepocorp/shared';
+import { ADVANCE_REQUEST_STATUS_LABELS, type AdvanceRequestStatus } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import {
   useAdminAdvanceRequests,
@@ -80,7 +80,7 @@ export default function AdminAdvancesPage() {
                     <Wallet size={16} style={{ color: 'var(--fg-3)' }} />
                     <strong>{req.requesterName || `Đối tác #${req.requesterId}`}</strong>
                     <StatusPill variant={advanceRequestStatusVariant(req.status)}>
-                      {ADVANCE_REQUEST_STATUS_LABELS[req.status]}
+                      {ADVANCE_REQUEST_STATUS_LABELS[req.status as AdvanceRequestStatus]}
                     </StatusPill>
                   </div>
                   <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>

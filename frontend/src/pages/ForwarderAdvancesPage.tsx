@@ -74,7 +74,7 @@ export default function ForwarderAdvancesPage() {
             )}
 
             <form onSubmit={handleSubmit}>
-              <FormGroup label="Số tiền (VNĐ)">
+              <FormGroup label="Số tiền (đ)">
                 <input
                   type="number"
                   min={1}

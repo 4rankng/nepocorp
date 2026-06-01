@@ -23,7 +23,7 @@ function ManagementFeeForm({ saving, item, onsave, oncancel }: {
           </select>
         </Field>
         <Field label="Năm"><input className="input" type="number" value={year} onChange={e => setYear(Number(e.target.value))} style={{ width: 100 }} /></Field>
-        <Field label="Số tiền (VNĐ)"><input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="VD: 24000000" style={{ width: 160 }} /></Field>
+        <Field label="Số tiền (đ)"><input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="VD: 24000000" style={{ width: 160 }} /></Field>
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
         if (!amount || Number(amount) <= 0) return;

@@ -26,7 +26,7 @@ function PenaltyReasonForm({ saving, item, onsave, oncancel, existingReasons }: 
         </Field>
       </div>
       <div style={{ flex: 1, minWidth: 140 }}>
-        <Field label="Mức mặc định (VNĐ)"><input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
+        <Field label="Mức mặc định (đ)"><input className="input" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!reason.trim() || isDuplicate) return; onsave({ reasonText: reason.trim(), defaultAmount: Number(amount) || 0 }); }} />
     </InlineForm>

@@ -6,6 +6,7 @@ import { TRIP_STATUS_LABELS, FORWARDER_EXPENSE_TYPE_LABELS, type TripStatus, typ
 import { StatusPill, Panel, FormGroup } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
+import { useCatalogs } from '../hooks/useCatalogs';
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
   switch (status) {
@@ -28,8 +29,11 @@ export default function ForwarderTripDetailPage() {
   const createExpenseMut = useCreateForwarderExpense();
   const deleteExpenseMut = useDeleteForwarderExpense();
 
+  const { data: catalogs } = useCatalogs();
+  const containerTypeOptions = catalogs?.containerTypes ?? [];
+
   const [showContainerForm, setShowContainerForm] = useState(false);
-  const [containerForm, setContainerForm] = useState({ containerNumber: '', sealNumber: '', notes: '' });
+  const [containerForm, setContainerForm] = useState({ containerTypeId: '', containerNumber: '', sealNumber: '', notes: '' });
 
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expenseForm, setExpenseForm] = useState<{ expenseType: string; amount: string; note: string }>({
@@ -60,8 +64,16 @@ export default function ForwarderTripDetailPage() {
   const handleAddContainer = () => {
     if (!containerForm.containerNumber.trim()) return;
     createContainerMut.mutate(
-      { tripId, data: { containerNumber: containerForm.containerNumber, sealNumber: containerForm.sealNumber || undefined, notes: containerForm.notes || undefined } },
-      { onSuccess: () => { setContainerForm({ containerNumber: '', sealNumber: '', notes: '' }); setShowContainerForm(false); } },
+      {
+        tripId,
+        data: {
+          containerTypeId: containerForm.containerTypeId ? parseInt(containerForm.containerTypeId, 10) : undefined,
+          containerNumber: containerForm.containerNumber,
+          sealNumber: containerForm.sealNumber || undefined,
+          notes: containerForm.notes || undefined,
+        },
+      },
+      { onSuccess: () => { setContainerForm({ containerTypeId: '', containerNumber: '', sealNumber: '', notes: '' }); setShowContainerForm(false); } },
     );
   };
 
@@ -173,12 +185,25 @@ export default function ForwarderTripDetailPage() {
         {showContainerForm && (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-1)', background: 'var(--bg-2)' }}>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              <FormGroup label="Số container" style={{ flex: 1, minWidth: 140 }}>
+              <FormGroup label="Loại container" style={{ flex: '0 0 150px' }}>
+                <select
+                  className="input"
+                  value={containerForm.containerTypeId}
+                  onChange={e => setContainerForm(f => ({ ...f, containerTypeId: e.target.value }))}
+                >
+                  <option value="">-- Chọn loại --</option>
+                  {containerTypeOptions.map(ct => (
+                    <option key={ct.id} value={String(ct.id)}>{ct.name}</option>
+                  ))}
+                </select>
+              </FormGroup>
+              <FormGroup label="Số container *" style={{ flex: 1, minWidth: 140 }}>
                 <input
                   className="input"
                   value={containerForm.containerNumber}
                   onChange={e => setContainerForm(f => ({ ...f, containerNumber: e.target.value }))}
-                  placeholder="MSKU-123456"
+                  placeholder="MSKU 123456 7"
+                  style={{ fontFamily: 'var(--font-mono)' }}
                 />
               </FormGroup>
               <FormGroup label="Số seal" style={{ flex: 1, minWidth: 120 }}>
@@ -187,6 +212,7 @@ export default function ForwarderTripDetailPage() {
                   value={containerForm.sealNumber}
                   onChange={e => setContainerForm(f => ({ ...f, sealNumber: e.target.value }))}
                   placeholder="SEAL-001"
+                  style={{ fontFamily: 'var(--font-mono)' }}
                 />
               </FormGroup>
               <FormGroup label="Ghi chú" style={{ flex: 2, minWidth: 140 }}>
@@ -218,9 +244,21 @@ export default function ForwarderTripDetailPage() {
               <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', borderBottom: '1px solid var(--border-1)' }}>
                 <Package size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontWeight: 600, fontSize: 13 }}>{c.containerNumber}</span>
+                  {c.containerTypeName && (
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, color: 'var(--brand)',
+                      background: 'var(--brand-subtle, rgba(0,177,79,0.1))',
+                      borderRadius: 4, padding: '1px 6px', marginRight: 8,
+                      fontFamily: 'var(--font-mono)',
+                    }}>
+                      {c.containerTypeName}
+                    </span>
+                  )}
+                  <span style={{ fontWeight: 600, fontSize: 13, fontFamily: 'var(--font-mono)' }}>{c.containerNumber}</span>
                   {c.sealNumber && (
-                    <span style={{ color: 'var(--fg-3)', fontSize: 12, marginLeft: 12 }}>Seal: {c.sealNumber}</span>
+                    <span style={{ color: 'var(--fg-3)', fontSize: 12, marginLeft: 12 }}>
+                      Seal: <span style={{ fontFamily: 'var(--font-mono)' }}>{c.sealNumber}</span>
+                    </span>
                   )}
                 </div>
                 {c.notes && (
@@ -261,7 +299,7 @@ export default function ForwarderTripDetailPage() {
                   ))}
                 </select>
               </FormGroup>
-              <FormGroup label="Số tiền (VNĐ)" style={{ flex: 1, minWidth: 120 }}>
+              <FormGroup label="Số tiền (đ)" style={{ flex: 1, minWidth: 120 }}>
                 <input
                   className="input"
                   type="number"

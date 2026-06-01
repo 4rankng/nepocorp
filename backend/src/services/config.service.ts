@@ -15,7 +15,7 @@ import { cacheGet, cacheInvalidate } from '../lib/redis';
  */
 export async function getBootstrapData() {
   return cacheGet('catalogs:bootstrap', 60, async () => {
-    const [customersList, trucksList, driversList, routesList, cargoTypesList, expenseCategoriesList, suppliersList, trailersList] = await Promise.all([
+    const [customersList, trucksList, driversList, routesList, cargoTypesList, expenseCategoriesList, suppliersList, trailersList, containerTypesList, portsList] = await Promise.all([
       db.select().from(s.customers).where(isNull(s.customers.deletedAt)),
       db.select().from(s.trucks).where(isNull(s.trucks.deletedAt)),
       db.select().from(s.drivers).where(isNull(s.drivers.deletedAt)),
@@ -24,6 +24,8 @@ export async function getBootstrapData() {
       db.select().from(s.expenseCategories).where(isNull(s.expenseCategories.deletedAt)),
       db.select().from(s.suppliers).where(isNull(s.suppliers.deletedAt)),
       db.select().from(s.trailers).where(isNull(s.trailers.deletedAt)),
+      db.select().from(s.containerTypes).where(isNull(s.containerTypes.deletedAt)),
+      db.select().from(s.ports).where(isNull(s.ports.deletedAt)),
     ]);
 
     return {
@@ -35,6 +37,8 @@ export async function getBootstrapData() {
       expenseCategories: expenseCategoriesList.filter(c => c.status === 'ACTIVE'),
       suppliers: suppliersList.filter(s => s.status === 'ACTIVE'),
       trailers: trailersList.filter(t => t.status === 'ACTIVE'),
+      containerTypes: containerTypesList,
+      ports: portsList,
     };
   });
 }
@@ -75,7 +79,7 @@ export async function upsertFuelConfig(data: {
   unitPrice: number;
   warningThreshold: number;
   criticalThreshold: number;
-}): Promise<any> {
+}, userId?: number): Promise<any> {
   const values = {
     loadedNorm: String(data.loadedNorm),
     emptyNorm: String(data.emptyNorm),
@@ -86,13 +90,45 @@ export async function upsertFuelConfig(data: {
     updatedAt: new Date(),
   };
   const [existing] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
+  let result;
+  let status: number;
   if (existing) {
     const [updated] = await db.update(s.fuelConfig).set(values).where(eq(s.fuelConfig.id, existing.id)).returning();
-    await cacheInvalidate('config:fuel');
-    return { result: updated, status: 200 };
+    result = updated;
+    status = 200;
+    if (String(data.unitPrice) !== String(existing.unitPrice)) {
+      await db.insert(s.fuelPriceHistory).values({
+        unitPrice: String(data.unitPrice),
+        effectiveDate: new Date(),
+        changedBy: userId ?? null,
+        note: null,
+      });
+    }
   } else {
     const [created] = await db.insert(s.fuelConfig).values(values).returning();
-    await cacheInvalidate('config:fuel');
-    return { result: created, status: 201 };
+    result = created;
+    status = 201;
+    await db.insert(s.fuelPriceHistory).values({
+      unitPrice: String(data.unitPrice),
+      effectiveDate: new Date(),
+      changedBy: userId ?? null,
+      note: 'Cấu hình ban đầu',
+    });
   }
+  await cacheInvalidate('config:fuel');
+  return { result, status };
+}
+
+export async function getFuelPriceHistory(): Promise<any[]> {
+  return cacheGet('config:fuel-price-history', 300, async () => {
+    return db.select().from(s.fuelPriceHistory).orderBy(desc(s.fuelPriceHistory.effectiveDate));
+  });
+}
+
+export async function getEffectiveFuelPrice(date: Date): Promise<number | null> {
+  const [row] = await db.select().from(s.fuelPriceHistory)
+    .where(lte(s.fuelPriceHistory.effectiveDate, date))
+    .orderBy(desc(s.fuelPriceHistory.effectiveDate))
+    .limit(1);
+  return row ? Number(row.unitPrice) : null;
 }

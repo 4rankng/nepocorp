@@ -10,10 +10,11 @@ import {
   managementFeeSchema, capTableSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema,
+  containerTypeSchema, portSchema,
 } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
-import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig } from '../services/config.service';
+import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice } from '../services/config.service';
 import { cacheGet, cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import {
   getSalaryPeriodDefault,
@@ -82,6 +83,8 @@ router.use('/trucks', createCrudRouter(s.trucks, truckSchema, {
 router.use('/trailers', createCrudRouter(s.trailers, trailerSchema, { searchableField: 'licensePlate' }));
 router.use('/routes', createCrudRouter(s.routes, routeSchema, { searchableField: 'name' }));
 router.use('/cargo-types', createCrudRouter(s.cargoTypes, cargoTypeSchema));
+router.use('/container-types', createCrudRouter(s.containerTypes, containerTypeSchema, { searchableField: 'name' }));
+router.use('/ports', createCrudRouter(s.ports, portSchema, { searchableField: 'name' }));
 router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSchema));
 router.use('/road-allowances', createCrudRouter(s.roadAllowances, roadAllowanceSchema));
 router.use('/penalty-reasons', createCrudRouter(s.penaltyReasons, penaltyReasonSchema));
@@ -111,8 +114,22 @@ router.get('/fuel-config', asyncHandler(async (_req: Request, res: Response) => 
 
 router.put('/fuel-config', asyncHandler(async (req: Request, res: Response) => {
   const data = fuelConfigSchema.parse(req.body);
-  const { result, status } = await upsertFuelConfig(data);
+  const { result, status } = await upsertFuelConfig(data, req.user!.userId);
+  await cacheInvalidate('config:fuel-price-history');
   res.status(status).json(result);
+}));
+
+// Fuel price history
+router.get('/fuel-price-history', asyncHandler(async (_req: Request, res: Response) => {
+  const history = await getFuelPriceHistory();
+  res.json(history);
+}));
+
+router.get('/fuel-price-history/effective', asyncHandler(async (req: Request, res: Response) => {
+  const dateStr = req.query.date as string;
+  if (!dateStr) return res.status(400).json({ error: 'Tham số date là bắt buộc (YYYY-MM-DD)' });
+  const price = await getEffectiveFuelPrice(new Date(dateStr));
+  res.json({ price });
 }));
 
 // ─── Salary Period Config ──────────────────────────────────────────────────────

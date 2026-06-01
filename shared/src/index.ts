@@ -11,7 +11,7 @@ export {
 
 export type {
   User, UserPublic, Driver, Customer, Truck, Trailer, Route, CargoType,
-  PricingTable, RoadAllowance, FuelConfig, PenaltyReason,
+  PricingTable, RoadAllowance, FuelConfig, FuelPriceHistory, PenaltyReason,
   Trip, TripLeg, TripDetail, LedgerEntry, Penalty,
   CapTableHistory, Distribution, ManagementFee, AuditLog, Notification,
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
@@ -21,6 +21,7 @@ export type {
   Supplier, ExpenseCategory, Expense, ExpenseWithRefs, PayableSummary, SupplierStatement, RenewalReminder, VendorPaymentRequest,
   TripContainer, TripExpense, TripExpenseWithRefs,
   AdvanceRequest, AdvanceRequestWithRefs, AdvanceSettlement, AdvanceSettlementWithRefs,
+  ContainerType, Port,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -31,12 +32,13 @@ export {
   loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema,
   customerSchema, truckSchema, trailerSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
-  fuelConfigSchema, penaltyReasonSchema, driverSchema,
+  fuelConfigSchema, fuelPriceHistorySchema, penaltyReasonSchema, driverSchema,
   managementFeeSchema, capTableSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
   tripContainerSchema, tripExpenseSchema,
   createAdvanceRequestSchema, createAdvanceSettlementSchema,
+  containerTypeSchema, portSchema,
 } from './schemas';
 
 export type {
@@ -51,10 +53,11 @@ export type {
   CreateUserInput, UpdateUserInput,
   TripContainerInput, TripExpenseInput,
   CreateAdvanceRequestInput, CreateAdvanceSettlementInput,
+  ContainerTypeInput, PortInput,
 } from './schemas';
 
 export { round2dp } from './calculations/round';
-export { computeTripTotals } from './calculations/tripTotals';
+export { computeTripTotals, computeRoadAllowance } from './calculations/tripTotals';
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
 export { computeFifoAging } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';

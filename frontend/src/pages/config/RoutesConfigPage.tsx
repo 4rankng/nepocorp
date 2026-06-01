@@ -232,7 +232,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
               </div>
             </div>
             <div className="field" style={{ marginTop: 12 }}>
-              <label htmlFor="route-salary" style={labelStyle}>Lương sản lượng tài xế (VNĐ / chuyến)</label>
+              <label htmlFor="route-salary" style={labelStyle}>Lương sản lượng tài xế (đ / chuyến)</label>
               <input
                 id="route-salary"
                 className="input"

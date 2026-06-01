@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../lib/api";
 import { FuelMode, LoadingType, TripStatus } from "@nepocorp/shared";
 export type { FuelMode } from "@nepocorp/shared";
@@ -83,6 +83,10 @@ export interface UseTripFormReturn {
   setHasReturnCargo: (v: boolean) => void;
   driverSalary: string;
   setDriverSalary: (v: string) => void;
+  roadAllowanceOverride: string;
+  setRoadAllowanceOverride: (v: string) => void;
+  fuelActualUnitPrice: string;
+  setFuelActualUnitPrice: (v: string) => void;
   revenue: string;
   setRevenue: (v: string) => void;
   revenueEmptyReturn: string;
@@ -115,6 +119,8 @@ export interface UseTripFormReturn {
   tripStatus?: TripStatus;
   version?: string;
   roadAllowanceBaseApplied?: number;
+  tollPerStationApplied?: number;
+  returnCargoBonusApplied?: number;
   isEditMode: boolean;
   selectedRouteData: RouteOption | null;
 }
@@ -269,6 +275,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const params = isParamsObject(arg) ? arg : { options: arg, mode: 'create' as const };
   const { options, mode = 'create', existingTrip } = params;
   const isEditMode = mode === 'edit';
+  const queryClient = useQueryClient();
 
   const lastTripId = useRef<number | null>(null);
 
@@ -291,6 +298,13 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [tollsStations, setTollsStations] = useState(isEditMode && existingTrip?.tollsStations != null ? String(existingTrip.tollsStations) : "");
   const [hasReturnCargo, setHasReturnCargo] = useState(isEditMode && existingTrip ? !!existingTrip.hasReturnCargo : false);
   const [driverSalary, setDriverSalary] = useState(isEditMode && existingTrip?.driverSalary ? String(existingTrip.driverSalary) : "");
+  const [roadAllowanceOverride, setRoadAllowanceOverride] = useState(
+    isEditMode && existingTrip?.roadAllowanceOverride ? String(existingTrip.roadAllowanceOverride) : ""
+  );
+  const [fuelActualUnitPrice, setFuelActualUnitPrice] = useState(
+    isEditMode && existingTrip && (existingTrip as any).fuelActualUnitPrice
+      ? String((existingTrip as any).fuelActualUnitPrice) : ""
+  );
   const [revenueEmptyReturn, setRevenueEmptyReturn] = useState(() => {
     if (isEditMode && existingTrip) {
       if (existingTrip.revenueEmptyReturn) return String(existingTrip.revenueEmptyReturn);
@@ -345,6 +359,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }
     setRevenueCombine(existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : '0');
     setNotes(existingTrip.notes || '');
+    setFuelActualUnitPrice((existingTrip as any).fuelActualUnitPrice ? String((existingTrip as any).fuelActualUnitPrice) : '');
     setPhotoUrls(existingTrip.photoUrls || []);
 
     if (existingTrip.legs && existingTrip.legs.length > 0) {
@@ -613,10 +628,18 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             revenueEmptyReturn: revenueEmptyReturn ? Number(revenueEmptyReturn) : 0,
             revenueCombine: revenueCombine ? Number(revenueCombine) : 0,
             notes: notes.trim() || undefined,
+            roadAllowanceOverride: roadAllowanceOverride ? Number(roadAllowanceOverride) : null,
+            fuelActualUnitPrice: fuelActualUnitPrice ? Number(fuelActualUnitPrice) : null,
           };
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
           await api.put(endpoint, payload);
+          // Invalidate trip list + detail + monthly aggregates so caches don't go stale.
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['trips'] }),
+            queryClient.invalidateQueries({ queryKey: ['trip', existingTrip.id] }),
+            queryClient.invalidateQueries({ queryKey: ['trip-adjustments'] }),
+          ]);
           return existingTrip.id;
         }
 
@@ -691,9 +714,12 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             revenueCombine: revenueCombine ? Number(revenueCombine) : 0,
             notes: notes.trim() || undefined,
             photoUrls,
+            fuelActualUnitPrice: fuelActualUnitPrice ? Number(fuelActualUnitPrice) : null,
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }
+        // Invalidate trip list after a fresh create so the new row appears.
+        await queryClient.invalidateQueries({ queryKey: ['trips'] });
         return trip.id;
       } catch (err) {
         if (isEditMode && err instanceof ApiError && err.status === 409) {
@@ -718,7 +744,10 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
       hasOptionalData, legs, fuelMode, fuelLitersOverride,
       fuelSupplementLiters, fuelSupplementReason, tollsDiscount,
       tollsAddition, tollsStations, hasReturnCargo, driverSalary,
+      roadAllowanceOverride,
+      fuelActualUnitPrice,
       revenue, revenueEmptyReturn, revenueCombine, notes, photoUrls,
+      queryClient,
     ],
   );
 
@@ -742,6 +771,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     tollsStations, setTollsStations,
     hasReturnCargo, setHasReturnCargo,
     driverSalary, setDriverSalary,
+    roadAllowanceOverride, setRoadAllowanceOverride,
+    fuelActualUnitPrice, setFuelActualUnitPrice,
     revenue, setRevenue,
     revenueEmptyReturn, setRevenueEmptyReturn,
     revenueCombine, setRevenueCombine,
@@ -760,6 +791,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     tripStatus: isEditMode ? existingTrip?.status : undefined,
     version: isEditMode && existingTrip ? String(existingTrip.version) : undefined,
     roadAllowanceBaseApplied: isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : undefined,
+    tollPerStationApplied: isEditMode && existingTrip?.tollPerStationApplied ? Number(existingTrip.tollPerStationApplied) : undefined,
+    returnCargoBonusApplied: isEditMode && existingTrip?.returnCargoBonusApplied ? Number(existingTrip.returnCargoBonusApplied) : undefined,
     isEditMode,
     selectedRouteData,
   };

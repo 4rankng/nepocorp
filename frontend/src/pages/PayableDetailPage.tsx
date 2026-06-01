@@ -387,7 +387,7 @@ export default function PayableDetailPage() {
 
             <div style={{ marginBottom: 16 }}>
               <label htmlFor="payment-amount" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
-                Số tiền (VNĐ) *
+                Số tiền (đ) *
               </label>
               <input
                 id="payment-amount"

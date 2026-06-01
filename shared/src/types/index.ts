@@ -126,6 +126,15 @@ export interface FuelConfig {
   deletedAt: string | null;
 }
 
+export interface FuelPriceHistory {
+  id: number;
+  unitPrice: string;
+  effectiveDate: string;
+  changedBy: number | null;
+  note: string | null;
+  createdAt: string;
+}
+
 export interface PenaltyReason {
   id: number;
   reasonText: string;
@@ -155,6 +164,7 @@ export interface Trip {
   fuelSupplementLiters: string | null;
   fuelSupplementReason: string | null;
   fuelPriceApplied: string | null;
+  fuelActualUnitPrice: string | null;
   tollsDiscount: string;
   tollsAddition: string;
   tollsStations: number;
@@ -163,6 +173,7 @@ export interface Trip {
   fuelLiters: string | null;
   totalFuelCost: string | null;
   totalRoadAllowance: string | null;
+  roadAllowanceOverride: string | null;
   totalCost: string | null;
   revenue: string | null;
   revenueEmptyReturn: string | null;
@@ -379,11 +390,37 @@ export interface VendorPaymentRequest {
   confirmOverpay?: boolean;
 }
 
+// ─── Forwarder catalogs ──────────────────────────────────────────────────────────
+
+export interface ContainerType {
+  id: number;
+  code: string;   // e.g. "20DC", "40HC"
+  name: string;   // e.g. "20'DC", "40'HC"
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface Port {
+  id: number;
+  name: string;
+  code: string | null;
+  address: string | null;
+  city: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
 // ─── Forwarder ────────────────────────────────────────────────────────────────────
 
 export interface TripContainer {
   id: number;
   tripId: number;
+  containerTypeId: number | null;
+  containerTypeName: string | null; // joined display name
   containerNumber: string;
   sealNumber: string | null;
   notes: string | null;
@@ -480,10 +517,12 @@ export interface UpdateTripFiguresRequest {
   fuelLitersOverride?: number;
   fuelSupplementLiters?: number;
   fuelSupplementReason?: string;
+  fuelActualUnitPrice?: number | null;
   tollsDiscount?: number;
   tollsAddition?: number;
   tollsStations?: number;
   hasReturnCargo?: boolean;
+  roadAllowanceOverride?: number | null;
   driverSalary?: number;
   revenue?: number;
   revenueEmptyReturn?: number;

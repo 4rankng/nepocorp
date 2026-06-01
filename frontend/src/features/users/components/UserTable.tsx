@@ -504,10 +504,9 @@ function MobileCardList({ filtered, canManage, deleting, currentUserId, onEdit, 
                             onClick={() => { setActiveMenuId(null); onEdit(u); }}>
                             <Pencil size={13} /> Sửa
                           </button>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)' }}
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
                             disabled={!!deleting || isMe}
-                            onClick={() => { setActiveMenuId(null); !isMe && onDelete(u.id); }}
-                            style={{ opacity: isMe ? 0.4 : 1 }}>
+                            onClick={() => { setActiveMenuId(null); !isMe && onDelete(u.id); }}>
                             {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
                           </button>
                         </div>

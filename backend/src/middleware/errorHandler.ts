@@ -5,7 +5,18 @@ import { config } from '../config';
 export function globalErrorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
   // Zod validation errors → 400
   if (err.name === 'ZodError') {
-    res.status(400).json({ error: 'Dữ liệu không hợp lệ', details: (err as any).errors });
+    const issues = (err as any).errors as Array<{ message: string; path?: Array<string | number> }>;
+    const first = issues?.[0];
+    // Surface a user-readable top-level message including field path so the UI doesn't
+    // have to inspect `details`. Fall back to the generic message if no issues.
+    let topMessage = 'Dữ liệu không hợp lệ';
+    if (first?.message) {
+      const pathLabel = first.path && first.path.length
+        ? ` (${first.path.join('.')})`
+        : '';
+      topMessage = `${first.message}${pathLabel}`;
+    }
+    res.status(400).json({ error: topMessage, details: issues });
     return;
   }
 

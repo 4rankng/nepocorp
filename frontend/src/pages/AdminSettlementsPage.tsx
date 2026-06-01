@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileText, Loader2, Check, X as XIcon, ClipboardCheck } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ADVANCE_SETTLEMENT_STATUS_LABELS } from '@nepocorp/shared';
+import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import {
   useAdminSettlements,
@@ -61,13 +61,13 @@ export default function AdminSettlementsPage() {
           <div style={{ textAlign: 'center', padding: 32 }}>
             <Loader2 style={{ animation: 'spin 1s linear infinite' }} />
           </div>
-        ) : !settlements || settlements.length === 0 ? (
+        ) : !settlements?.items || settlements.items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>
             Chưa có phiếu thanh toán nào
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {settlements.map((s: any) => (
+            {settlements.items.map((s: any) => (
               <div
                 key={s.id}
                 style={{
@@ -81,7 +81,7 @@ export default function AdminSettlementsPage() {
                     <FileText size={16} style={{ color: 'var(--fg-3)' }} />
                     <strong>{s.forwarderName || `Đối tác #${s.forwarderId}`}</strong>
                     <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
-                      {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status]}
+                      {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status as AdvanceSettlementStatus]}
                     </StatusPill>
                   </div>
                   <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>

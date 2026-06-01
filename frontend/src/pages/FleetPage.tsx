@@ -657,7 +657,7 @@ function DriverCard({ drivers, truckMap, crud }: {
                 </td>
                 <td>
                   {d.baseSalary
-                    ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">VNĐ</span></span>
+                    ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">đ</span></span>
                     : <span className="fleet-salary empty">—</span>
                   }
                 </td>
@@ -670,7 +670,7 @@ function DriverCard({ drivers, truckMap, crud }: {
       </div>
       <div className="table-foot">
         <div className="fleet-legend">
-          <span>Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString('vi-VN')} VNĐ</strong></span>
+          <span>Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString('vi-VN')} đ</strong></span>
           {unassigned > 0 && (
             <>
               <span style={styles.dotSep}>·</span>
