@@ -509,47 +509,69 @@ export default function TripDetailPage() {
         );
         if (validPhotos.length === 0) return null;
         return (
-          <div className="section-gap">
-            <div style={{ marginBottom: 8 }}><span className="typo-eyebrow">Ảnh ({validPhotos.length})</span></div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+          <Panel
+            title="Hình ảnh"
+            subtitle={`${validPhotos.length} ảnh đính kèm`}
+            style={{ marginTop: 20 }}
+          >
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                gap: 12,
+              }}
+            >
               {validPhotos.map((url, i) => (
                 <a
                   key={i}
                   href={getAuthenticatedPhotoUrl(url)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  title={`Ảnh ${i + 1} — bấm để xem lớn`}
                   style={{
                     display: 'block',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: 'var(--radius-lg)',
                     overflow: 'hidden',
                     border: '1px solid var(--border-1)',
                     aspectRatio: '4/3',
                     background: 'var(--bg-3)',
+                    transition: 'box-shadow 0.2s, transform 0.2s',
+                    cursor: 'zoom-in',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)';
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
                   }}
                 >
                   <img
                     src={getAuthenticatedPhotoUrl(url)}
                     alt={`Ảnh ${i + 1}`}
                     loading="lazy"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      const parent = target.parentElement;
-                      if (parent) {
-                        target.style.display = 'none';
-                        parent.style.display = 'flex';
-                        parent.style.alignItems = 'center';
-                        parent.style.justifyContent = 'center';
-                        parent.style.color = 'var(--fg-3)';
-                        parent.style.fontSize = '12px';
-                        parent.textContent = 'Không tải được';
-                      }
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      transition: 'transform 0.25s ease',
                     }}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                 </a>
               ))}
             </div>
-          </div>
+          </Panel>
         );
       })()}
 
