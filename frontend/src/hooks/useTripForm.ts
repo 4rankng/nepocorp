@@ -272,7 +272,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [fuelSupplementReason, setFuelSupplementReason] = useState(isEditMode && existingTrip?.fuelSupplementReason ? existingTrip.fuelSupplementReason : "");
   const [tollsDiscount, setTollsDiscount] = useState(isEditMode && existingTrip?.tollsDiscount ? String(existingTrip.tollsDiscount) : "");
   const [tollsAddition, setTollsAddition] = useState(isEditMode && existingTrip?.tollsAddition ? String(existingTrip.tollsAddition) : "");
-  const [tollsStations, setTollsStations] = useState(isEditMode && existingTrip?.tollsStations ? String(existingTrip.tollsStations) : "");
+  const [tollsStations, setTollsStations] = useState(isEditMode && existingTrip?.tollsStations != null ? String(existingTrip.tollsStations) : "");
   const [hasReturnCargo, setHasReturnCargo] = useState(isEditMode && existingTrip ? !!existingTrip.hasReturnCargo : false);
   const [driverSalary, setDriverSalary] = useState(isEditMode && existingTrip?.driverSalary ? String(existingTrip.driverSalary) : "");
   const [revenue, setRevenue] = useState(isEditMode && existingTrip?.revenue ? String(existingTrip.revenue) : "");
@@ -296,7 +296,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     setFuelSupplementReason(existingTrip.fuelSupplementReason || '');
     setTollsDiscount(existingTrip.tollsDiscount ? String(existingTrip.tollsDiscount) : '');
     setTollsAddition(existingTrip.tollsAddition ? String(existingTrip.tollsAddition) : '');
-    setTollsStations(existingTrip.tollsStations ? String(existingTrip.tollsStations) : '');
+    setTollsStations(existingTrip.tollsStations != null ? String(existingTrip.tollsStations) : '');
     setHasReturnCargo(!!existingTrip.hasReturnCargo);
     setDriverSalary(existingTrip.driverSalary ? String(existingTrip.driverSalary) : '');
     setRevenue(existingTrip.revenue ? String(existingTrip.revenue) : '');
