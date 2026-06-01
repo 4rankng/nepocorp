@@ -549,10 +549,11 @@
   flex-shrink: 0;
   -webkit-backdrop-filter: blur(14px) saturate(140%);
           backdrop-filter: blur(14px) saturate(140%);
-  transition: transform 220ms var(--ease), opacity 220ms var(--ease);
+  transition: transform 220ms var(--ease), opacity 220ms var(--ease), margin-top 220ms var(--ease);
 }
 .topbar--hidden {
   transform: translateY(-100%);
+  margin-top: calc(-1 * var(--topbar-h));
   opacity: 0;
   pointer-events: none;
 }
