@@ -70,7 +70,10 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
 
 router.get('/me', authMiddleware, asyncHandler(async (req: Request, res: Response) => {
   const profile = await userService.getUserProfile(req.user!.userId);
-  const capabilities = await userService.getCapabilities(req.user!.role);
+  if (req.user!.role !== profile.role) {
+    throw new ApiError(401, 'Vai trò đã thay đổi, vui lòng đăng nhập lại');
+  }
+  const capabilities = await userService.getCapabilities(profile.role);
   res.json({ ...profile, capabilities });
 }));
 

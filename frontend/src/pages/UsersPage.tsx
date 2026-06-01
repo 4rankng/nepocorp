@@ -12,6 +12,7 @@ export default function UsersPage() {
   const canManage = me?.capabilities
     ? me.capabilities.includes('manage_users')
     : me?.role === Role.ADMIN || me?.role === Role.MANAGER;
+  const canDelete = me?.role === Role.ADMIN;
 
   const { data: usersData, isLoading: loading, refetch: refetchUsers } = useUsers();
   const users = (usersData?.items ?? []) as UserRow[];
@@ -125,6 +126,7 @@ export default function UsersPage() {
         filter={filter}
         search={search}
         canManage={canManage}
+        canDelete={canDelete}
         deleting={deleting}
         currentUserId={me?.userId}
         onFilterChange={handleFilterChange}

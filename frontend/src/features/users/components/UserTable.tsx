@@ -20,6 +20,7 @@ interface UserTableProps {
   filter: FilterKey;
   search: string;
   canManage: boolean;
+  canDelete?: boolean;
   deleting: number | null;
   currentUserId?: number;
   onFilterChange: (f: FilterKey) => void;
@@ -55,7 +56,7 @@ const ROLE_FILTER_CLS: Record<string, string> = {
 
 export function UserTable({
   users, filtered, paginated, total, staffCount, driverCount, inactiveCount,
-  filter, search, canManage, deleting, currentUserId,
+  filter, search, canManage, canDelete = canManage, deleting, currentUserId,
   onFilterChange, onSearchChange, onEdit, onDelete, onAdd,
   sortBy, sortOrder, onSort,
   currentPage, pageSize, onPageChange,
@@ -193,6 +194,7 @@ export function UserTable({
         <DesktopTable
           filtered={paginated}
           canManage={canManage}
+          canDelete={canDelete}
           deleting={deleting}
           currentUserId={currentUserId}
           onEdit={onEdit}
@@ -206,6 +208,7 @@ export function UserTable({
         <MobileCardList
           filtered={paginated}
           canManage={canManage}
+          canDelete={canDelete}
           deleting={deleting}
           currentUserId={currentUserId}
           onEdit={onEdit}
@@ -296,11 +299,12 @@ export function UserTable({
 /* ── Desktop table (inside panel) ─────────────────────────────────────────── */
 
 function DesktopTable({
-  filtered, canManage, deleting, currentUserId, onEdit, onDelete,
+  filtered, canManage, canDelete, deleting, currentUserId, onEdit, onDelete,
   sortBy, sortOrder, onSort,
 }: {
   filtered: UserRow[];
   canManage: boolean;
+  canDelete: boolean;
   deleting: number | null;
   currentUserId?: number;
   onEdit: (u: UserRow) => void;
@@ -406,17 +410,19 @@ function DesktopTable({
                         >
                           <Pencil size={13} />
                         </button>
-                        <button
-                          className="row-action"
-                          title={isMe ? 'Không thể tự xóa' : 'Xóa tài khoản'}
-                          disabled={!!deleting || isMe}
-                          onClick={() => !isMe && onDelete(u.id)}
-                          style={{ opacity: isMe ? 0.3 : 1 }}
-                        >
-                          {deleting === u.id
-                            ? <Loader2 size={13} className="spin" />
-                            : <Trash2 size={13} style={{ color: isMe ? undefined : 'var(--danger)' }} />}
-                        </button>
+                        {canDelete && (
+                          <button
+                            className="row-action"
+                            title={isMe ? 'Không thể tự xóa' : 'Xóa tài khoản'}
+                            disabled={!!deleting || isMe}
+                            onClick={() => !isMe && onDelete(u.id)}
+                            style={{ opacity: isMe ? 0.3 : 1 }}
+                          >
+                            {deleting === u.id
+                              ? <Loader2 size={13} className="spin" />
+                              : <Trash2 size={13} style={{ color: isMe ? undefined : 'var(--danger)' }} />}
+                          </button>
+                        )}
                       </div>
                     </td>
                   )}
@@ -432,9 +438,10 @@ function DesktopTable({
 
 /* ── Mobile card list (inside panel) ──────────────────────────────────────── */
 
-function MobileCardList({ filtered, canManage, deleting, currentUserId, onEdit, onDelete }: {
+function MobileCardList({ filtered, canManage, canDelete, deleting, currentUserId, onEdit, onDelete }: {
   filtered: UserRow[];
   canManage: boolean;
+  canDelete: boolean;
   deleting: number | null;
   currentUserId?: number;
   onEdit: (u: UserRow) => void;
@@ -504,11 +511,13 @@ function MobileCardList({ filtered, canManage, deleting, currentUserId, onEdit, 
                             onClick={() => { setActiveMenuId(null); onEdit(u); }}>
                             <Pencil size={13} /> Sửa
                           </button>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
-                            disabled={!!deleting || isMe}
-                            onClick={() => { setActiveMenuId(null); !isMe && onDelete(u.id); }}>
-                            {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
-                          </button>
+                          {canDelete && (
+                            <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
+                              disabled={!!deleting || isMe}
+                              onClick={() => { setActiveMenuId(null); !isMe && onDelete(u.id); }}>
+                              {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
