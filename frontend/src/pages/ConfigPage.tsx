@@ -102,7 +102,7 @@ export default function ConfigPage() {
         <button className="setting-card" onClick={() => navigate('/config/trip-expense')}>
           <div className="setting-card__icon"><Settings size={20} /></div>
           <h3 className="setting-card__title">Chi phí chuyến đi</h3>
-          <p className="setting-card__desc">Lương kết hợp, trả hàng 2 điểm, lưu ca xe, tiền trạm BOT, thưởng chuyến về có hàng.</p>
+          <p className="setting-card__desc">Tiền kết hợp, trả hàng 2 điểm, lưu ca xe, tiền trạm BOT, thưởng chuyến về có hàng.</p>
           <div className="setting-card__foot">
             <span className="setting-card__status"><span className="dot" style={{ background: '#10B981' }}></span>5 mục</span>
             <span className="setting-card__action">Sửa {CHEVRON}</span>

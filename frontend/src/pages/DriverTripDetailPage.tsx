@@ -177,7 +177,7 @@ export default function DriverTripDetailPage() {
         <div style={{ padding: '0 20px' }}>
           <InfoRow
             icon={<DollarSign size={16} />}
-            label="Lương sản lượng"
+            label="Tiền kết hợp"
             value={
               <span style={{ color: 'var(--brand)', fontSize: 17 }}>
                 {trip.driverSalary ? formatCurrency(trip.driverSalary) : '—'}

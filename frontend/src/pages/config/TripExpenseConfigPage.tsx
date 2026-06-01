@@ -69,7 +69,7 @@ export default function TripExpenseConfigPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div className="field">
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-                Lương kết hợp mặc định (đ)
+                Tiền kết hợp mặc định (đ)
               </label>
               <input className="input mono" type="text" value={form.defaultDriverSalary} onChange={set('defaultDriverSalary')} placeholder="400.000" />
               <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>

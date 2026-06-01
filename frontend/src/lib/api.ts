@@ -59,7 +59,7 @@ class ApiClient {
           tollsAddition: 'Tăng vé',
           tollsStations: 'Số trạm',
           hasReturnCargo: 'Hàng về',
-          driverSalary: 'Lương tài xế',
+          driverSalary: 'Tiền kết hợp',
           revenue: 'Doanh thu',
           notes: 'Ghi chú',
           customerId: 'Khách hàng',

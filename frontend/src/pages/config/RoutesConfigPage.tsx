@@ -232,7 +232,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
               </div>
             </div>
             <div className="field" style={{ marginTop: 12 }}>
-              <label htmlFor="route-salary" style={labelStyle}>Lương sản lượng tài xế (đ / chuyến)</label>
+              <label htmlFor="route-salary" style={labelStyle}>Tiền kết hợp (đ / chuyến)</label>
               <input
                 id="route-salary"
                 className="input"
@@ -241,7 +241,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
                 onChange={e => setDriverSalary(e.target.value)}
                 placeholder="VD: 500000"
               />
-              <p style={hintStyle}>Mức lương khoán cho 1 chuyến trên tuyến này. Để trống nếu tính theo công thức chung.</p>
+              <p style={hintStyle}>Tiền kết hợp mặc định cho tuyến này. Để trống nếu dùng giá trị chung.</p>
             </div>
           </div>
         </div>
@@ -506,7 +506,7 @@ export default function RoutesConfigPage() {
               <thead>
                 <tr>
                   <th>Tuyến đường</th><th className="num">KM</th><th>Loại</th>
-                  <th className="num">Trạm thu phí</th><th className="num">Lương SL</th>
+                  <th className="num">Trạm thu phí</th><th className="num">Tiền KH</th>
                   <th className="num">Chuẩn 20ft</th>
                   <th className="num">Chuẩn 40ft</th><th className="num">Sử dụng {monthLabel}</th>
                 </tr>
@@ -538,7 +538,7 @@ export default function RoutesConfigPage() {
                           : <span className="pill pill--neutral">Đồng bằng</span>}
                       </td>
                       <td className="num" data-label="Trạm">{r.tollsStations != null ? r.tollsStations : '—'}</td>
-                      <td className="num" data-label="Lương SL">{r.driverSalary ? formatCurrency(Number(r.driverSalary)) : '—'}</td>
+                      <td className="num" data-label="Tiền KH">{r.driverSalary ? formatCurrency(Number(r.driverSalary)) : '—'}</td>
                       <td className="num" data-label="20ft">{prices?.ft20 ? formatCurrency(prices.ft20) : '—'}</td>
                       <td className="num" data-label="40ft">{prices?.ft40 ? formatCurrency(prices.ft40) : '—'}</td>
                       <td className="num" data-label={`Dùng ${monthLabel}`}>
@@ -662,7 +662,7 @@ export default function RoutesConfigPage() {
                 </strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                <span style={{ color: 'var(--fg-3)' }}>Lương sản lượng:</span>
+                <span style={{ color: 'var(--fg-3)' }}>Tiền kết hợp:</span>
                 <strong style={{ color: 'var(--fg-1)' }}>
                   {selectedRoute.driverSalary ? formatCurrency(Number(selectedRoute.driverSalary)) : 'Theo công thức'}
                 </strong>

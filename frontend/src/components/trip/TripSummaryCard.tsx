@@ -34,7 +34,7 @@ export function TripSummaryCard() {
           <span className="tc-summary-row__val tc-summary-row__val--neg">−{fmt(tollCost)}</span>
         </div>
         <div className="tc-summary-row">
-          <span className="tc-summary-row__lbl"><Users size={12} /> Lương tài xế</span>
+          <span className="tc-summary-row__lbl"><Users size={12} /> Tiền kết hợp</span>
           <span className="tc-summary-row__val tc-summary-row__val--neg">−{fmt(driverSalary)}</span>
         </div>
         <div className="tc-summary-row tc-summary-row--total">

@@ -441,7 +441,7 @@ export default function TripDetailPage() {
               </div>
             </div>
           )}
-          {infoRow(<User size={16} />, 'Lương tài xế', formatCurrency(trip.driverSalary))}
+          {infoRow(<User size={16} />, 'Tiền kết hợp', formatCurrency(trip.driverSalary))}
           {Number(trip.twoPointDeliveryBonus) > 0 && infoRow(<MapPin size={16} />, 'Trả hàng 2 điểm', formatCurrency(trip.twoPointDeliveryBonus))}
           {Number(trip.vehicleShiftAllowance) > 0 && infoRow(<Clock size={16} />, 'Lưu ca xe', formatCurrency(trip.vehicleShiftAllowance))}
         </Panel>

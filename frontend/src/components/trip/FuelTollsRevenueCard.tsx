@@ -84,7 +84,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
 
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
-          <label>Lương kết hợp</label>
+          <label>Tiền kết hợp</label>
           <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850.000" prefix="đ" mono type="money" />
         </div>
         <CheckboxCard
