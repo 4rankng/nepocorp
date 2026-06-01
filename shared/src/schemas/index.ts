@@ -198,6 +198,12 @@ export const routeSchema = z.object({
   fixedFuelAllowance: nonNegNumeric.nullable().optional(),
   tollsStations: nonNegNumeric.nullable().optional(),
   driverSalary: nonNegNumeric.nullable().optional(),
+  defaultLegs: z.array(z.object({
+    origin: z.string(),
+    destination: z.string(),
+    km: z.coerce.number().int().nonnegative(),
+    loadingType: z.enum([LoadingType.HANG, LoadingType.VO]),
+  })).optional().nullable(),
 });
 
 export const cargoTypeSchema = z.object({

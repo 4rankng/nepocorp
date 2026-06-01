@@ -57,11 +57,23 @@ export async function createExpense(tx: any, data: ExpenseCreateInput, userId?: 
     throw new ApiError(400, 'Chi phí có thời hạn cần ngày hết hạn (validTo)');
   }
 
+  // Route the incoming `truckId` into the correct FK column based on
+  // `vehicleComponent`. Pete's requirement: tách chi phí sửa chữa / đăng
+  // kiểm / thay lốp theo đầu kéo vs rơ-moóc, which only works if the
+  // trailer expense actually lands in `trailer_id` (otherwise the row
+  // looks correct in the form but the list shows the wrong vehicle plate
+  // — see expense list bug where vehicleComponent=TRAILER but xe column
+  // still showed truck plate because both tables share id=1).
+  const isTrailer = data.truckId != null && data.vehicleComponent === 'TRAILER';
+  const truckIdToInsert = isTrailer ? null : (data.truckId ?? null);
+  const trailerIdToInsert = isTrailer ? data.truckId : null;
+
   const [expense] = await tx.insert(s.expenses).values({
     expenseDate: data.expenseDate,
     supplierId: data.supplierId,
     categoryId: data.categoryId,
-    truckId: data.truckId ?? null,
+    truckId: truckIdToInsert,
+    trailerId: trailerIdToInsert,
     vehicleComponent: data.truckId ? (data.vehicleComponent ?? 'TRUCK') : null,
     amount: data.amount,
     paymentStatus: data.paymentStatus,
@@ -145,7 +157,13 @@ export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInpu
   if (data.supplierId !== undefined) updateValues.supplierId = data.supplierId;
   if (data.categoryId !== undefined) updateValues.categoryId = data.categoryId;
   if (data.truckId !== undefined) {
-    updateValues.truckId = data.truckId;
+    // Mirror createExpense's column-routing logic: trailer IDs go into
+    // trailer_id, not truck_id. Without this, switching an expense from
+    // ĐẦU KÉO → RƠ-MOÓC during edit would leave the trailer id in the
+    // truck_id column and the list view would render the wrong plate.
+    const isTrailer = data.truckId != null && data.vehicleComponent === 'TRAILER';
+    updateValues.truckId = isTrailer ? null : data.truckId;
+    updateValues.trailerId = isTrailer ? data.truckId : null;
     updateValues.vehicleComponent = data.truckId ? (data.vehicleComponent ?? 'TRUCK') : null;
   } else if (data.vehicleComponent !== undefined) {
     // Enforce the same invariant as createExpense: vehicleComponent must be

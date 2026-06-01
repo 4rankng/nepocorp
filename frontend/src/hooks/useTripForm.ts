@@ -131,17 +131,29 @@ function useTripLegs(routes: RouteOption[], routeId: string) {
 
   useEffect(() => {
     if (!selectedRoute || legs.length > 0) return;
-    const parts = selectedRoute.name.split(/\s*[-→]\s*/).filter(Boolean);
-    setLegs([
-      {
+    
+    if (selectedRoute.defaultLegs && selectedRoute.defaultLegs.length > 0) {
+      setLegs(selectedRoute.defaultLegs.map((l, i) => ({
         id: Math.random().toString(),
-        sequence: 1,
-        origin: parts[0]?.trim() || "",
-        destination: parts.length > 1 ? parts[parts.length - 1].trim() : "",
-        km: selectedRoute.distanceKm ? String(selectedRoute.distanceKm) : "",
-        loadingType: LoadingType.HANG,
-      },
-    ]);
+        sequence: i + 1,
+        origin: l.origin,
+        destination: l.destination,
+        km: l.km.toString(),
+        loadingType: l.loadingType as LoadingType,
+      })));
+    } else {
+      const parts = selectedRoute.name.split(/\s*[-→]\s*/).filter(Boolean);
+      setLegs([
+        {
+          id: Math.random().toString(),
+          sequence: 1,
+          origin: parts[0]?.trim() || "",
+          destination: parts.length > 1 ? parts[parts.length - 1].trim() : "",
+          km: selectedRoute.distanceKm ? String(selectedRoute.distanceKm) : "",
+          loadingType: LoadingType.HANG,
+        },
+      ]);
+    }
   }, [selectedRoute, legs.length]);
 
   const addLeg = useCallback(() => {

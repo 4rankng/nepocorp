@@ -7,6 +7,7 @@ import { formatCurrency } from '../../lib/format';
 import { PageHeader, useConfirm, Modal } from '../../components/UI';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Route as RouteType, RoadAllowance, PaginatedResponse } from '@nepocorp/shared';
+import { LoadingType } from '@nepocorp/shared';
 
 /**
  * RouteFormModal — replaces the tr-based inline add form, which was visually
@@ -24,6 +25,9 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
   const [fuelAllowance, setFuelAllowance] = useState('');
   const [tollsStations, setTollsStations] = useState('');
   const [driverSalary, setDriverSalary] = useState('');
+  
+  type DefaultLeg = { id: string; origin: string; destination: string; km: string; loadingType: LoadingType };
+  const [defaultLegs, setDefaultLegs] = useState<DefaultLeg[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -33,6 +37,18 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
       setFuelAllowance(item?.fixedFuelAllowance || '');
       setTollsStations(item?.tollsStations?.toString() || '');
       setDriverSalary(item?.driverSalary || '');
+      
+      if (item?.defaultLegs && Array.isArray(item.defaultLegs)) {
+        setDefaultLegs(item.defaultLegs.map(l => ({
+          id: Math.random().toString(),
+          origin: l.origin,
+          destination: l.destination,
+          km: l.km.toString(),
+          loadingType: l.loadingType as LoadingType
+        })));
+      } else {
+        setDefaultLegs([]);
+      }
     }
   }, [isOpen, item?.id]);
 
@@ -45,7 +61,25 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
       fixedFuelAllowance: fuelAllowance || null,
       tollsStations: tollsStations ? Number(tollsStations) : null,
       driverSalary: driverSalary || null,
+      defaultLegs: defaultLegs.length > 0 ? defaultLegs.map(l => ({
+        origin: l.origin,
+        destination: l.destination,
+        km: Number(l.km) || 0,
+        loadingType: l.loadingType
+      })) : null
     });
+  };
+
+  const addLeg = () => {
+    setDefaultLegs([...defaultLegs, { id: Math.random().toString(), origin: '', destination: '', km: '', loadingType: LoadingType.HANG }]);
+  };
+  
+  const updateLeg = (id: string, field: keyof DefaultLeg, val: string) => {
+    setDefaultLegs(defaultLegs.map(l => l.id === id ? { ...l, [field]: val } : l));
+  };
+  
+  const removeLeg = (id: string) => {
+    setDefaultLegs(defaultLegs.filter(l => l.id !== id));
   };
 
   const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 } as const;
@@ -73,7 +107,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
         </>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '70vh', overflowY: 'auto', padding: '0 4px' }}>
         <div>
           <div style={sectionLabelStyle}>Thông tin cơ bản</div>
           <div className="field" style={{ marginBottom: 14 }}>
@@ -120,8 +154,42 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
             </div>
           </div>
         </div>
+        
         <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
-          <div style={sectionLabelStyle}>Định mức tự điền cho lệnh vận chuyển</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ ...sectionLabelStyle, margin: 0 }}>Hành trình chi tiết (Mặc định)</div>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={addLeg} style={{ height: 26, padding: '0 8px' }}>
+              <Plus size={14} /> Thêm chặng
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '0 0 12px' }}>
+            Khai báo sẵn các chặng để tự động điền khi tạo lệnh vận chuyển trên tuyến này.
+          </p>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {defaultLegs.length === 0 ? (
+              <div style={{ padding: '16px', textAlign: 'center', background: 'var(--bg-2)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--line)' }}>
+                <span style={{ color: 'var(--fg-3)', fontSize: 13 }}>Chưa có chặng mặc định</span>
+              </div>
+            ) : defaultLegs.map((leg, i) => (
+              <div key={leg.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 70px 100px 30px', gap: 8, alignItems: 'center', background: 'var(--bg-2)', padding: '8px', borderRadius: 'var(--radius-md)' }}>
+                <input className="input input--sm" placeholder="Điểm đi" value={leg.origin} onChange={e => updateLeg(leg.id, 'origin', e.target.value)} />
+                <input className="input input--sm" placeholder="Điểm đến" value={leg.destination} onChange={e => updateLeg(leg.id, 'destination', e.target.value)} />
+                <input className="input input--sm" type="number" placeholder="Km" value={leg.km} onChange={e => updateLeg(leg.id, 'km', e.target.value)} />
+                <select className="input input--sm" value={leg.loadingType} onChange={e => updateLeg(leg.id, 'loadingType', e.target.value)}>
+                  <option value={LoadingType.HANG}>Có hàng</option>
+                  <option value={LoadingType.VO}>Vỏ rỗng</option>
+                </select>
+                <button type="button" className="btn btn--ghost btn--icon btn--sm" onClick={() => removeLeg(leg.id)} style={{ color: 'var(--danger)' }}>
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+          <div style={sectionLabelStyle}>Định mức nhiên liệu & Tiền lương</div>
           <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '0 0 12px' }}>
             Các giá trị này sẽ được dùng để gợi ý khi tạo / sửa lệnh trên tuyến này.
           </p>
