@@ -170,7 +170,10 @@ restore:
 	echo "📥 Restoring backup into local database..." && \
 	docker exec -i nepo-db psql -U postgres -d nepocorp < "$$SQL_FILE" && \
 	rm -f "$$SQL_FILE" && \
-	echo "✅ Restore complete!"
+	echo "🔑 Resetting all user passwords to admin123..." && \
+	HASH=$$(cd backend && node -e "console.log(require('bcryptjs').hashSync('admin123',10))") && \
+	docker exec nepo-db psql -U postgres -d nepocorp -c "UPDATE users SET password_hash = '$$HASH';" && \
+	echo "✅ Restore complete! All passwords reset to admin123"
 
 ## adminer-on: Start adminer container on production
 adminer-on:
