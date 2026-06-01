@@ -664,6 +664,7 @@ export interface TripListFilters {
   customerId?: number;
   dateFrom?: string;
   dateTo?: string;
+  search?: string;
 }
 
 export async function getTrips(filters: TripListFilters) {
@@ -677,6 +678,18 @@ export async function getTrips(filters: TripListFilters) {
   if (filters.customerId) conditions.push(eq(s.trips.customerId, filters.customerId));
   if (filters.dateFrom) conditions.push(gte(s.trips.departureDate, filters.dateFrom));
   if (filters.dateTo) conditions.push(lte(s.trips.departureDate, filters.dateTo));
+  if (filters.search) {
+    const term = `%${filters.search}%`;
+    conditions.push(
+      or(
+        sql`${s.trips.tripCode} ILIKE ${term}`,
+        sql`${s.trips.id}::text ILIKE ${term}`,
+        sql`${s.customers.name} ILIKE ${term}`,
+        sql`${s.trucks.licensePlate} ILIKE ${term}`,
+        sql`${s.routes.name} ILIKE ${term}`,
+      )!
+    );
+  }
 
   const items = await TRIP_RELATION_JOINS(db.select({
     id: s.trips.id, tripCode: s.trips.tripCode, customerId: s.trips.customerId, customerReference: s.trips.customerReference,
@@ -695,7 +708,10 @@ export async function getTrips(filters: TripListFilters) {
     .orderBy(desc(s.trips.departureDate), desc(s.trips.id))
     .limit(limit).offset((page - 1) * limit);
 
-  const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(s.trips).where(and(...conditions));
+  const countQuery = filters.search
+    ? TRIP_RELATION_JOINS(db.select({ count: sql<number>`count(*)` }).from(s.trips))
+    : db.select({ count: sql<number>`count(*)` }).from(s.trips);
+  const [countRow] = await countQuery.where(and(...conditions));
 
   // Batch-load container instances for this page so the list can show
   // "Loại container" + "Số container" columns (Pete's request 2026-06).
@@ -731,6 +747,86 @@ export async function getTrips(filters: TripListFilters) {
     total: Number(countRow?.count ?? 0),
     page,
     pageSize: limit,
+  };
+}
+
+export interface TripSummary {
+  statusCounts: Record<string, number>;
+  totalKm: number;
+  totalFuel: number;
+  totalRoad: number;
+  totalRevenue: number;
+  missingFuel: number;
+  avgPer100: number;
+  truckOptions: Array<{ id: number; licensePlate: string }>;
+  customerOptions: Array<{ id: number; name: string }>;
+}
+
+export async function getTripsSummary(dateFrom?: string, dateTo?: string): Promise<TripSummary> {
+  const conditions = [isNull(s.trips.deletedAt)];
+  if (dateFrom) conditions.push(gte(s.trips.departureDate, dateFrom));
+  if (dateTo) conditions.push(lte(s.trips.departureDate, dateTo));
+
+  const where = and(...conditions);
+
+  // Aggregate metrics in one query
+  const [agg] = await db.select({
+    total: sql<number>`count(*)`,
+    created: sql<number>`count(*) filter (where ${s.trips.status} = 'CREATED')`,
+    inTransit: sql<number>`count(*) filter (where ${s.trips.status} = 'IN_TRANSIT')`,
+    completed: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
+    locked: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
+    canceled: sql<number>`count(*) filter (where ${s.trips.status} = 'CANCELED')`,
+    totalKm: sql<number>`coalesce(sum(${s.routes.distanceKm}), 0)`,
+    totalFuel: sql<number>`coalesce(sum(${s.trips.fuelLiters}), 0)`,
+    totalRoad: sql<number>`coalesce(sum(${s.trips.totalRoadAllowance}), 0)`,
+    totalRevenue: sql<number>`coalesce(sum(${s.trips.revenue}), 0)`,
+    missingFuel: sql<number>`count(*) filter (where ${s.trips.fuelLiters} is null or ${s.trips.fuelLiters} = 0)`,
+  }).from(s.trips)
+    .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+    .where(where);
+
+  const totalKm = Number(agg?.totalKm ?? 0);
+  const totalFuel = Number(agg?.totalFuel ?? 0);
+  const avgPer100 = totalKm > 0 && totalFuel > 0 ? (totalFuel / totalKm) * 100 : 0;
+
+  const statusCounts: Record<string, number> = {
+    all: Number(agg?.total ?? 0),
+    [TripStatus.CREATED]: Number(agg?.created ?? 0),
+    [TripStatus.IN_TRANSIT]: Number(agg?.inTransit ?? 0),
+    [TripStatus.COMPLETED]: Number(agg?.completed ?? 0),
+    [TripStatus.LOCKED]: Number(agg?.locked ?? 0),
+    [TripStatus.CANCELED]: Number(agg?.canceled ?? 0),
+  };
+
+  // Distinct truck options
+  const truckRows = await db.selectDistinct({
+    id: s.trucks.id,
+    licensePlate: s.trucks.licensePlate,
+  }).from(s.trips)
+    .innerJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+    .where(where)
+    .orderBy(s.trucks.licensePlate);
+
+  // Distinct customer options
+  const customerRows = await db.selectDistinct({
+    id: s.customers.id,
+    name: s.customers.name,
+  }).from(s.trips)
+    .innerJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+    .where(where)
+    .orderBy(s.customers.name);
+
+  return {
+    statusCounts,
+    totalKm,
+    totalFuel,
+    totalRoad: Number(agg?.totalRoad ?? 0),
+    totalRevenue: Number(agg?.totalRevenue ?? 0),
+    missingFuel: Number(agg?.missingFuel ?? 0),
+    avgPer100,
+    truckOptions: truckRows,
+    customerOptions: customerRows,
   };
 }
 

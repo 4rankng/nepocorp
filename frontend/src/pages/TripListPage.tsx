@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,14 +12,9 @@ import {
   Plus,
   Search,
   ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-  Eye,
   AlertCircle,
   X as XIcon,
-  TrendingUp,
-  TrendingDown,
+  Loader2,
 } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
 import { formatCurrency } from '../lib/format';
@@ -44,7 +39,7 @@ const STATUS_PILL_CLASS: Record<TripStatus, string> = {
 
 // Default threshold for "warn" consumption (L/100km) — overridden by fuel config when loaded
 const DEFAULT_WARN_THRESHOLD = 37;
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const PAGE_SIZE = 25;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -68,114 +63,102 @@ function formatMoney(n: number): string {
 // ─── Component ────────────────────────────────────────────────────────────
 export default function TripListPage() {
   const navigate = useNavigate();
-  const { data, isLoading: loading } = useQuery({
-    queryKey: ['trips'],
-    queryFn: () => tripClient.listTrips({ limit: 500 }),
-  });
-  const trips = data?.items || [];
+  const { month, year } = useMonth();
   const { data: fuelConfig } = useFuelConfig();
+  const { data: salaryPeriod } = useSalaryPeriod(month, year);
 
-  // Dynamic threshold from fuel_config — NaN-safe fallback to default
+  // Dynamic threshold from fuel config — NaN-safe fallback to default
   const warnThreshold = fuelConfig
     ? parseThreshold(fuelConfig.warningThreshold, DEFAULT_WARN_THRESHOLD)
     : DEFAULT_WARN_THRESHOLD;
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
-  const [truckFilter, setTruckFilter] = useState<string>('');
-  const [customerFilter, setCustomerFilter] = useState<string>('');
+  const [truckFilter, setTruckFilter] = useState<number | ''>('');
+  const [customerFilter, setCustomerFilter] = useState<number | ''>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const { month, year } = useMonth();
 
-  // Resolve salary period for the global month
-  const { data: salaryPeriod } = useSalaryPeriod(month, year);
-  const selectedRef = useRef<Set<number>>(new Set());
-  const [selectedVersion, setSelectedVersion] = useState(0);
-  const selected = selectedRef.current;
+  // Debounced search to avoid excessive API calls while typing
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
-
-
-  // Reset page when filters change
   useEffect(() => {
-    setPage(1);
-  }, [statusFilter, month, year, truckFilter, customerFilter, searchQuery]);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [searchQuery]);
 
-  // ── Derived data ──────────────────────────────────────────────────────
-  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-  
-  const baseTrips = useMemo(() => {
-    return trips.filter((trip) => {
-      const dep = trip.departureDate;
-      if (salaryPeriod) {
-        if (!dep || dep < salaryPeriod.start || dep > salaryPeriod.end) return false;
-      } else {
-        if (!dep?.startsWith(monthKey)) return false;
-      }
-      return true;
-    });
-  }, [trips, salaryPeriod, monthKey]);
+  // Date range from salary period
+  const dateFrom = salaryPeriod?.start;
+  const dateTo = salaryPeriod?.end;
 
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {
-      all: baseTrips.length,
-      [TripStatus.CREATED]: 0,
-      [TripStatus.IN_TRANSIT]: 0,
-      [TripStatus.COMPLETED]: 0,
-      [TripStatus.LOCKED]: 0,
-      [TripStatus.CANCELED]: 0,
-    };
-    for (const t of baseTrips) counts[t.status] = (counts[t.status] ?? 0) + 1;
-    return counts;
-  }, [baseTrips]);
+  // ── Summary query (status counts + aggregate metrics for the month) ──
+  const { data: summary } = useQuery({
+    queryKey: ['trips-summary', dateFrom, dateTo],
+    queryFn: () => tripClient.getTripsSummary({ dateFrom, dateTo }),
+    enabled: !!dateFrom && !!dateTo,
+    staleTime: 30 * 1000,
+  });
 
-  const filteredTrips = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return baseTrips.filter((trip) => {
-      if (statusFilter && trip.status !== statusFilter) return false;
-      if (truckFilter && trip.truck?.licensePlate !== truckFilter) return false;
-      if (customerFilter && String(trip.customerId) !== customerFilter) return false;
-      if (q) {
-        const matchId = String(trip.id).includes(q);
-        const matchCode = buildTripCode(trip).toLowerCase().includes(q);
-        const matchCustomer = trip.customer?.name?.toLowerCase().includes(q) ?? false;
-        const matchRoute = trip.route?.name?.toLowerCase().includes(q) ?? false;
-        const matchPlate = trip.truck?.licensePlate?.toLowerCase().includes(q) ?? false;
-        if (!matchId && !matchCode && !matchCustomer && !matchRoute && !matchPlate) return false;
-      }
-      return true;
-    });
-  }, [baseTrips, statusFilter, truckFilter, customerFilter, searchQuery]);
+  // ── Infinite query for paginated trip list ──
+  const {
+    data: infiniteData,
+    isLoading: loading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['trips', dateFrom, dateTo, statusFilter, truckFilter, customerFilter, debouncedSearch],
+    queryFn: ({ pageParam }) => tripClient.listTrips({
+      page: pageParam,
+      limit: PAGE_SIZE,
+      status: statusFilter || undefined,
+      truckId: truckFilter || undefined,
+      customerId: customerFilter || undefined,
+      search: debouncedSearch || undefined,
+      dateFrom,
+      dateTo,
+    }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const totalPages = Math.ceil(lastPage.total / lastPage.pageSize);
+      if (lastPage.page < totalPages) return lastPage.page + 1;
+      return undefined;
+    },
+    enabled: !!dateFrom && !!dateTo,
+    staleTime: 30 * 1000,
+  });
 
-  const totalPages = Math.max(1, Math.ceil(filteredTrips.length / pageSize));
-  const safePage = Math.min(page, totalPages);
-  const pageRange = useMemo(() => {
-    const start = (safePage - 1) * pageSize;
-    return filteredTrips.slice(start, start + pageSize);
-  }, [filteredTrips, safePage, pageSize]);
-  const pageRangeRef = useRef<TripDetail[]>([]);
-  pageRangeRef.current = pageRange;
+  // Flatten all loaded pages into a single array
+  const trips = useMemo(
+    () => infiniteData?.pages.flatMap(p => p.items) ?? [],
+    [infiniteData]
+  );
 
-  // ── Hero metrics (selected month) ──────────────────────────────────────
-  const heroSummary = useMemo(() => {
-    let km = 0;
-    let fuel = 0;
-    let road = 0;
-    let revenue = 0;
-    let missingFuel = 0;
-    for (const t of baseTrips) {
-      km += Number(t.route?.distanceKm ?? 0);
-      const f = t.fuelLiters ? Number(t.fuelLiters) : 0;
-      if (f) fuel += f;
-      else missingFuel++;
-      road += Number(t.totalRoadAllowance ?? 0);
-      revenue += Number(t.revenue ?? 0);
-    }
-    const avgPer100 = km > 0 && fuel > 0 ? (fuel / km) * 100 : 0;
-    return { km, fuel, road, revenue, missingFuel, avgPer100 };
-  }, [baseTrips]);
+  // Total from the last page (server-side count)
+  const totalCount = infiniteData?.pages?.[0]?.total ?? 0;
 
-  // Status breakdown for breakdown bar (all trips, not just this month)
+  // ── Sentinel ref for IntersectionObserver ──
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // ── Derived data from summary ──────────────────────────────────────
+  const statusCounts = summary?.statusCounts ?? { all: 0, [TripStatus.CREATED]: 0, [TripStatus.IN_TRANSIT]: 0, [TripStatus.COMPLETED]: 0, [TripStatus.LOCKED]: 0, [TripStatus.CANCELED]: 0 };
+
   const breakdownPct = (statusCounts.all || 0) === 0
     ? { chot: 0, htth: 0, dang: 0, moi: 0, huy: 0 }
     : {
@@ -186,27 +169,36 @@ export default function TripListPage() {
         huy: (statusCounts[TripStatus.CANCELED] / statusCounts.all) * 100,
       };
 
-  // Distinct trucks + customers for dropdowns
-  const truckOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const t of baseTrips) {
-      if (t.truck?.licensePlate) set.add(t.truck.licensePlate);
-    }
-    return Array.from(set).sort();
-  }, [baseTrips]);
-
-  const customerOptions = useMemo(() => {
-    const map = new Map<number, string>();
-    for (const t of baseTrips) {
-      if (t.customer?.name) map.set(t.customerId, t.customer.name);
-    }
-    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], 'vi'));
-  }, [baseTrips]);
+  const truckOptions = summary?.truckOptions ?? [];
+  const customerOptions = summary?.customerOptions ?? [];
 
   // ── Actions ───────────────────────────────────────────────────────────
-  const handleExport = () => {
+  const handleExport = useCallback(async () => {
+    // Fetch all matching trips by paginating through all pages
+    const commonParams = {
+      status: statusFilter || undefined,
+      truckId: truckFilter || undefined,
+      customerId: customerFilter || undefined,
+      search: debouncedSearch || undefined,
+      dateFrom,
+      dateTo,
+    };
+
+    const first = await tripClient.listTrips({ ...commonParams, limit: 100, page: 1 });
+    const allTrips = [...first.items];
+
+    const totalPages = Math.ceil(first.total / first.pageSize);
+    if (totalPages > 1) {
+      const remaining = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, i) =>
+          tripClient.listTrips({ ...commonParams, limit: 100, page: i + 2 })
+        )
+      );
+      for (const res of remaining) allTrips.push(...res.items);
+    }
+
     const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Tiền đi đường', 'Doanh thu', 'Trạng thái'];
-    const rows = filteredTrips.map((t) => {
+    const rows = allTrips.map((t) => {
       const containers = ((t as any).containers ?? []) as Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>;
       const typeCodes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
       const numbers = containers.map(c => c.containerNumber).join(', ');
@@ -226,25 +218,7 @@ export default function TripListPage() {
       ];
     });
     downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
-  };
-
-  const toggleSelected = useCallback((id: number) => {
-    const next = selectedRef.current;
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setSelectedVersion(v => v + 1);
-  }, []);
-
-  const toggleSelectAll = useCallback(() => {
-    const visibleIds = pageRangeRef.current.map((t) => t.id);
-    const allSelected = visibleIds.every((id) => selectedRef.current.has(id));
-    const next = selectedRef.current;
-    if (allSelected) visibleIds.forEach((id) => next.delete(id));
-    else visibleIds.forEach((id) => next.add(id));
-    setSelectedVersion(v => v + 1);
-  }, []);
-
-  const allVisibleSelected =
-    pageRange.length > 0 && pageRange.every((t) => selectedRef.current.has(t.id));
+  }, [statusFilter, truckFilter, customerFilter, debouncedSearch, dateFrom, dateTo]);
 
   const columnHelper = createColumnHelper<TripDetail>();
 
@@ -462,10 +436,10 @@ export default function TripListPage() {
         );
       }
     })
-  ], [selectedVersion, navigate, warnThreshold]);
+  ], [navigate, warnThreshold]);
 
   const tableInstance = useReactTable({
-    data: pageRange,
+    data: trips,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -484,12 +458,12 @@ export default function TripListPage() {
             <div className="hero-eyebrow">Sổ chuyến · {todayLabel}</div>
             <h1 className="hero-h1">Sổ chuyến đi</h1>
             <div className="hero-sub">
-              {baseTrips.length} chuyến đã ghi nhận
+              {statusCounts.all} chuyến đã ghi nhận
               {statusCounts[TripStatus.COMPLETED] > 0 && (
                 <span title="Chờ khóa: chuyến đã hoàn thành, chờ kế toán xác nhận khóa sổ kế toán"> · {statusCounts[TripStatus.COMPLETED]} chờ khóa</span>
               )}
-              {heroSummary.missingFuel > 0 && (
-                <> · {heroSummary.missingFuel} chưa khai báo dầu</>
+              {(summary?.missingFuel ?? 0) > 0 && (
+                <> · {summary?.missingFuel} chưa khai báo dầu</>
               )}
             </div>
           </div>
@@ -531,20 +505,20 @@ export default function TripListPage() {
           <div className="metric">
             <div className="metric-label">Tổng KM tháng này</div>
             <div className="metric-value d-mono">
-              {heroSummary.km.toLocaleString('vi-VN')}
+              {(summary?.totalKm ?? 0).toLocaleString('vi-VN')}
               <span className="metric-unit">km</span>
             </div>
-            <div className="metric-delta delta-flat">{baseTrips.length} chuyến tháng này</div>
+            <div className="metric-delta delta-flat">{statusCounts.all} chuyến tháng này</div>
           </div>
           <div className="metric">
             <div className="metric-label">Tổng dầu tiêu thụ</div>
             <div className="metric-value d-mono">
-              {heroSummary.fuel.toLocaleString('vi-VN', { maximumFractionDigits: 0 })}
+              {(summary?.totalFuel ?? 0).toLocaleString('vi-VN', { maximumFractionDigits: 0 })}
               <span className="metric-unit">L</span>
             </div>
-            <div className={`metric-delta ${heroSummary.km > 0 && heroSummary.avgPer100 > warnThreshold ? 'delta-warn' : 'delta-flat'}`}>
-              {heroSummary.km > 0 ? (
-                <>TB {heroSummary.avgPer100.toFixed(1).replace('.', ',')} L/100km · ngưỡng {warnThreshold.toFixed(1).replace('.', ',')}</>
+            <div className={`metric-delta ${(summary?.totalKm ?? 0) > 0 && (summary?.avgPer100 ?? 0) > warnThreshold ? 'delta-warn' : 'delta-flat'}`}>
+              {(summary?.totalKm ?? 0) > 0 ? (
+                <>TB {(summary?.avgPer100 ?? 0).toFixed(1).replace('.', ',')} L/100km · ngưỡng {warnThreshold.toFixed(1).replace('.', ',')}</>
               ) : (
                 <>TB không khả dụng (0 km)</>
               )}
@@ -553,19 +527,19 @@ export default function TripListPage() {
           <div className="metric">
             <div className="metric-label">Tiền đi đường</div>
             <div className="metric-value d-mono">
-              {formatMoney(heroSummary.road)}
+              {formatMoney(summary?.totalRoad ?? 0)}
               <span className="metric-unit">₫</span>
             </div>
             <div className="metric-delta delta-flat">
-              {heroSummary.missingFuel > 0
-                ? `${heroSummary.missingFuel} chuyến chưa cập nhật`
+              {(summary?.missingFuel ?? 0) > 0
+                ? `${summary?.missingFuel} chuyến chưa cập nhật`
                 : 'Đã cập nhật đầy đủ'}
             </div>
           </div>
           <div className="metric">
             <div className="metric-label">Tổng giá trị lệnh <span style={{ fontWeight: 400, fontSize: '0.85em', opacity: 0.7 }}>(tất cả trạng thái)</span></div>
             <div className="metric-value d-mono">
-              {formatMoney(heroSummary.revenue)}
+              {formatMoney(summary?.totalRevenue ?? 0)}
               <span className="metric-unit">₫</span>
             </div>
             <div className="metric-delta delta-flat">Tháng {month} · bao gồm tất cả trạng thái chuyến</div>
@@ -643,10 +617,10 @@ export default function TripListPage() {
           <label className={`filter-pill${truckFilter ? ' has-value' : ''}`}>
             <div className="filter-lbl-wrap">
               <span className="filter-lbl-cap">Phương tiện</span>
-              <select value={truckFilter} onChange={(e) => setTruckFilter(e.target.value)}>
+              <select value={truckFilter} onChange={(e) => setTruckFilter(e.target.value ? Number(e.target.value) : '')}>
                 <option value="">Tất cả xe</option>
-                {truckOptions.map((plate) => (
-                  <option key={plate} value={plate}>{plate}</option>
+                {truckOptions.map((t) => (
+                  <option key={t.id} value={t.id}>{t.licensePlate}</option>
                 ))}
               </select>
             </div>
@@ -656,10 +630,10 @@ export default function TripListPage() {
           <label className={`filter-pill${customerFilter ? ' has-value' : ''}`}>
             <div className="filter-lbl-wrap">
               <span className="filter-lbl-cap">Khách hàng</span>
-              <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)}>
+              <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value ? Number(e.target.value) : '')}>
                 <option value="">Tất cả khách hàng</option>
-                {customerOptions.map(([id, name]) => (
-                  <option key={id} value={id}>{name}</option>
+                {customerOptions.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
@@ -696,7 +670,7 @@ export default function TripListPage() {
 
           {loading ? (
             <div className="table-empty">Đang tải danh sách chuyến đi…</div>
-          ) : filteredTrips.length === 0 ? (
+          ) : trips.length === 0 ? (
             <div className="table-empty">Không tìm thấy chuyến đi nào.</div>
           ) : (
             tableInstance.getRowModel().rows.map(row => (
@@ -730,10 +704,10 @@ export default function TripListPage() {
         <div className="trip-mobile-list">
           {loading ? (
             <div className="table-empty">Đang tải…</div>
-          ) : filteredTrips.length === 0 ? (
+          ) : trips.length === 0 ? (
             <div className="table-empty">Không tìm thấy chuyến đi nào.</div>
           ) : (
-            pageRange.map((trip) => {
+            trips.map((trip) => {
               const cons = calcConsumption(trip);
               const route = splitRoute(trip.route?.name);
               const isCanceled = trip.status === TripStatus.CANCELED;
@@ -838,75 +812,21 @@ export default function TripListPage() {
           )}
         </div>
 
-        {/* ── Pagination footer ──────────────────────────────────── */}
-        {filteredTrips.length > 0 && (
+        {/* ── Infinite scroll sentinel (shared by desktop + mobile) ─── */}
+        <div ref={sentinelRef} style={{ height: 1 }} />
+        {isFetchingNextPage && (
+          <div className="table-empty" style={{ padding: '16px 0' }}>
+            <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', marginRight: 8, verticalAlign: 'middle' }} />
+            Đang tải thêm…
+          </div>
+        )}
+
+        {/* ── Footer info ──────────────────────────────────────────── */}
+        {trips.length > 0 && (
           <div className="table-foot">
             <div className="page-info">
-              Hiển thị{' '}
-              <b>
-                {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredTrips.length)}
-              </b>{' '}
-              trong <b>{filteredTrips.length}</b> chuyến
-              {selected.size > 0 && <span> · {selected.size} đã chọn</span>}
-            </div>
-            <div className="pagination">
-              <button
-                type="button"
-                className="page-btn"
-                disabled={safePage <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                aria-label="Trang trước"
-              >
-                <ChevronLeft size={12} />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => {
-                  // Show first, last, current ±1
-                  if (totalPages <= 7) return true;
-                  if (p === 1 || p === totalPages) return true;
-                  if (Math.abs(p - safePage) <= 1) return true;
-                  return false;
-                })
-                .map((p, idx, arr) => {
-                  const prev = arr[idx - 1];
-                  const gap = prev && p - prev > 1;
-                  return (
-                    <span key={p} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      {gap && <span style={{ color: 'var(--ink-3)', padding: '0 4px' }}>…</span>}
-                      <button
-                        type="button"
-                        className={`page-btn${p === safePage ? ' active' : ''}`}
-                        onClick={() => setPage(p)}
-                      >
-                        {p}
-                      </button>
-                    </span>
-                  );
-                })}
-              <button
-                type="button"
-                className="page-btn"
-                disabled={safePage >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                aria-label="Trang sau"
-              >
-                <ChevronRight size={12} />
-              </button>
-            </div>
-            <div className="ps-select">
-              Hiển thị
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setPage(1);
-                }}
-              >
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-              chuyến / trang
+              Hiển thị <b>{trips.length}</b> trong <b>{totalCount}</b> chuyến
+              {!hasNextPage && ' · Đã tải tất cả'}
             </div>
           </div>
         )}

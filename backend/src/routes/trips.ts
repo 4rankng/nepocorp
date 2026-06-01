@@ -36,6 +36,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const customerIdVal = (req.query.customerId || req.query.customer_id) as string;
   const dateFromVal = (req.query.dateFrom || req.query.date_from) as string;
   const dateToVal = (req.query.dateTo || req.query.date_to) as string;
+  const searchVal = (req.query.search || req.query.q) as string;
 
   res.json(await tripService.getTrips({
     page: parseInt(req.query.page as string) || 1,
@@ -46,6 +47,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     customerId: customerIdVal ? parseInt(customerIdVal, 10) : undefined,
     dateFrom: dateFromVal,
     dateTo: dateToVal,
+    search: searchVal || undefined,
   }));
 }));
 
@@ -66,6 +68,13 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     targetDriverId: trip.driverId,
   });
   res.status(201).json(trip);
+}));
+
+// Trip summary (status counts + aggregate metrics for a date range)
+router.get('/summary', asyncHandler(async (req: Request, res: Response) => {
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  res.json(await tripService.getTripsSummary(dateFrom, dateTo));
 }));
 
 // Get trip detail with legs
