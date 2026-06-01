@@ -4,15 +4,8 @@ import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
+import { TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS } from '@nepocorp/shared';
 import type { Trailer } from '@nepocorp/shared';
-
-const TRAILER_STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Hoạt động', MAINTENANCE: 'Bảo trì', INACTIVE: 'Ngưng hoạt động',
-};
-
-const TRAILER_TYPE_LABELS: Record<string, string> = {
-  '20FT': '20FT', '40FT': '40FT',
-};
 
 function TrailerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: Trailer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;

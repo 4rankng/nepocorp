@@ -1,6 +1,6 @@
 import { db } from './index.js';
 import * as s from './schema.js';
-import { eq, isNotNull, sql, and } from 'drizzle-orm';
+import { isNotNull, sql } from 'drizzle-orm';
 
 async function migrateTrailers() {
   console.log('Starting trailer migration...');
@@ -24,12 +24,12 @@ async function migrateTrailers() {
 
       console.log(`Found ${trucksWithTrailers.length} trucks with trailer plates.`);
 
-      const uniqueCombos = new Map<string, { plateNumber: string; type: '20FT' | '40FT' }>();
+      const uniqueCombos = new Map<string, { licensePlate: string; type: '20FT' | '40FT' }>();
       for (const t of trucksWithTrailers) {
         const key = `${t.trailerPlateNumber}|${t.trailerType ?? '40FT'}`;
         if (!uniqueCombos.has(key)) {
           uniqueCombos.set(key, {
-            plateNumber: t.trailerPlateNumber!,
+            licensePlate: t.trailerPlateNumber!,
             type: (t.trailerType ?? '40FT') as '20FT' | '40FT',
           });
         }
@@ -41,62 +41,39 @@ async function migrateTrailers() {
         .insert(s.trailers)
         .values(
           Array.from(uniqueCombos.values()).map((combo) => ({
-            plateNumber: combo.plateNumber,
+            licensePlate: combo.licensePlate,
             type: combo.type,
           }))
         )
-        .returning({ id: s.trailers.id, plateNumber: s.trailers.plateNumber });
+        .returning({ id: s.trailers.id, licensePlate: s.trailers.licensePlate });
 
       console.log(`Inserted ${insertedTrailers.length} trailers.`);
 
-      const plateToTrailerId = new Map<string, number>();
-      for (const tr of insertedTrailers) {
-        plateToTrailerId.set(tr.plateNumber, tr.id);
-      }
+      const trucksUpdated = await tx.execute(sql`
+        UPDATE trucks SET current_trailer_id = tr.id
+        FROM trailers tr
+        WHERE trucks.trailer_plate_number = tr."licensePlate"
+          AND trucks.current_trailer_id IS NULL
+      `);
+      console.log(`Updated currentTrailerId on ${trucksUpdated.count} trucks.`);
 
-      let trucksUpdated = 0;
-      for (const truck of trucksWithTrailers) {
-        const trailerId = plateToTrailerId.get(truck.trailerPlateNumber!);
-        if (trailerId != null) {
-          await tx
-            .update(s.trucks)
-            .set({ currentTrailerId: trailerId })
-            .where(eq(s.trucks.id, truck.id));
-          trucksUpdated++;
-        }
-      }
-      console.log(`Updated currentTrailerId on ${trucksUpdated} trucks.`);
-
-      const truckIdToTrailerId = new Map<number, number>();
-      for (const truck of trucksWithTrailers) {
-        const trailerId = plateToTrailerId.get(truck.trailerPlateNumber!);
-        if (trailerId != null) {
-          truckIdToTrailerId.set(truck.id, trailerId);
-        }
-      }
-
-      const allTrips = await tx
-        .select({ id: s.trips.id, truckId: s.trips.truckId })
-        .from(s.trips);
-
-      let tripsUpdated = 0;
-      for (const trip of allTrips) {
-        const trailerId = truckIdToTrailerId.get(trip.truckId);
-        if (trailerId != null) {
-          await tx
-            .update(s.trips)
-            .set({ trailerId })
-            .where(eq(s.trips.id, trip.id));
-          tripsUpdated++;
-        }
-      }
-      console.log(`Updated trailerId on ${tripsUpdated} trips.`);
+      const tripsUpdated = await tx.execute(sql`
+        UPDATE trips SET
+          trailer_id = tr.current_trailer_id,
+          trailer_type = COALESCE(trips.trailer_type, tl.type)
+        FROM trucks tr
+        JOIN trailers tl ON tr.current_trailer_id = tl.id
+        WHERE trips.truck_id = tr.id
+          AND tr.current_trailer_id IS NOT NULL
+          AND trips.trailer_id IS NULL
+      `);
+      console.log(`Updated trailerId on ${tripsUpdated.count} trips.`);
 
       return {
         skipped: false,
         trailersInserted: insertedTrailers.length,
-        trucksUpdated,
-        tripsUpdated,
+        trucksUpdated: trucksUpdated.count,
+        tripsUpdated: tripsUpdated.count,
       };
     });
 

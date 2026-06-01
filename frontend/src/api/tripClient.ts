@@ -1,24 +1,30 @@
 import { api } from "../lib/api";
-import { TRIPS, CATALOGS, REPORTS, CONFIG } from "@nepocorp/shared";
+import { TRIPS, CATALOGS } from "@nepocorp/shared";
 import type {
   Trip,
   TripDetail,
   CreateTripRequest,
   UpdateTripFiguresRequest,
-  TripStatus,
+  PaginatedResponse,
 } from "@nepocorp/shared";
 
 export const tripClient = {
-  listTrips: async (params?: { status?: string; limit?: number }) => {
+  listTrips: async (params?: { status?: string; limit?: number; date_from?: string; date_to?: string }) => {
     const query = new URLSearchParams();
     if (params?.status) query.append("status", params.status);
     if (params?.limit) query.append("limit", String(params.limit));
+    if (params?.date_from) query.append("date_from", params.date_from);
+    if (params?.date_to) query.append("date_to", params.date_to);
     const queryString = query.toString() ? `?${query.toString()}` : "";
-    return api.get<{ items: TripDetail[]; total: number }>(`${TRIPS.LIST}${queryString}`);
+    return api.get<PaginatedResponse<TripDetail>>(`${TRIPS.LIST}${queryString}`);
   },
 
   getTrip: async (id: number) => {
     return api.get<TripDetail>(TRIPS.DETAIL(id));
+  },
+
+  getAdjustments: async (id: number) => {
+    return api.get<{ items: any[] }>(TRIPS.ADJUSTMENTS(id));
   },
 
   createTrip: async (data: CreateTripRequest) => {

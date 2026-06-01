@@ -2,7 +2,6 @@ import {
   pgTable, serial, varchar, text, integer, boolean, timestamp,
   jsonb, numeric, date, pgEnum, uniqueIndex, index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 // Enums
 export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'COMPLETED', 'LOCKED', 'CANCELED']);
@@ -56,9 +55,9 @@ export const trailers = pgTable('trailers', {
   licensePlate: varchar('license_plate', { length: 20 }).notNull().unique(),
   type: trailerTypeEnum('type').notNull(),
   status: trailerStatusEnum('status').default('ACTIVE').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).default(sql`now()`).notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).default(sql`now()`).notNull(),
-  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export const drivers = pgTable('drivers', {
@@ -205,7 +204,9 @@ export const trips = pgTable('trips', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (table) => [
+  index('trips_trailer_id_idx').on(table.trailerId),
+]);
 
 export const tripLegs = pgTable('trip_legs', {
   id: serial('id').primaryKey(),

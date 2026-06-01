@@ -1,17 +1,17 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "../lib/api";
-import { FuelMode, LoadingType } from "@nepocorp/shared";
+import { FuelMode, LoadingType, TripStatus } from "@nepocorp/shared";
 export type { FuelMode } from "@nepocorp/shared";
-import type { PricingTable } from "@nepocorp/shared";
+import type { PricingTable, TripDetail, PaginatedResponse } from "@nepocorp/shared";
 import { tripClient } from "../api/tripClient";
 
 import type { TripOptions, RouteOption } from "./useTripOptions";
 import { calculateRoute } from "../lib/maps";
 
 const FUEL_PRICE_PER_LITER = 25000;
-const LOADED_RATE = 43; // L/100km
-const EMPTY_RATE = 25; // L/100km
+const LOADED_RATE = 43;
+const EMPTY_RATE = 25;
 
 function resolveContainerCount(raw: string): number {
   return Math.min(10, Math.max(1, Number(raw) || 1));
@@ -34,8 +34,13 @@ export interface CompletionStatus {
   images: number;
 }
 
+export interface UseTripFormParams {
+  options: TripOptions;
+  mode?: 'create' | 'edit';
+  existingTrip?: TripDetail;
+}
+
 export interface UseTripFormReturn {
-  // Required fields
   customerId: string;
   setCustomerId: (v: string) => void;
   routeId: string;
@@ -55,13 +60,11 @@ export interface UseTripFormReturn {
   containerCount: string;
   setContainerCount: (v: string) => void;
 
-  // Legs
   legs: FormLeg[];
   addLeg: () => void;
   removeLeg: (idx: number) => void;
   updateLeg: (idx: number, field: keyof FormLeg, value: string) => void;
 
-  // Fuel & financials
   fuelMode: FuelMode;
   setFuelMode: (v: FuelMode) => void;
   fuelLitersOverride: string;
@@ -83,14 +86,12 @@ export interface UseTripFormReturn {
   revenue: string;
   setRevenue: (v: string) => void;
 
-  // Attachments
   notes: string;
   setNotes: (v: string) => void;
   photoUrls: string[];
-  uploadPhotos: (files: FileList) => Promise<void>;
+  uploadPhotos: (files: FileList, tripId?: number, type?: 'CONTAINER' | 'SEAL' | 'OTHER') => Promise<void>;
   removePhoto: (idx: number) => void;
 
-  // Derived
   suggestedPrice: number | null;
   estimatedFuelCost: number;
   estimatedTollCost: number;
@@ -100,12 +101,22 @@ export interface UseTripFormReturn {
   requiredFieldsFilled: number;
   totalRequiredFields: number;
 
-  // UI
   submitting: boolean;
   uploading: boolean;
   error: string;
   setError: (v: string) => void;
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
+
+  tripId?: number;
+  tripStatus?: TripStatus;
+  version?: string;
+  roadAllowanceBaseApplied?: number;
+  isEditMode: boolean;
+  selectedRouteData: RouteOption | null;
+}
+
+function isParamsObject(arg: TripOptions | UseTripFormParams): arg is UseTripFormParams {
+  return 'options' in arg;
 }
 
 // ─── Sub-hook: Leg management ────────────────────────────────────────────
@@ -233,63 +244,111 @@ function useTripUpload(onError: (msg: string) => void) {
     setPhotoUrls((prev) => prev.filter((_, i) => i !== idx));
   }, []);
 
-  return { photoUrls, uploading, uploadPhotos, removePhoto };
+  return { photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto };
 }
 
 // ─── Main hook ───────────────────────────────────────────────────────────
 
-export function useTripForm(options: TripOptions): UseTripFormReturn {
-  // Required fields
-  const [customerId, setCustomerId] = useState("");
-  const [routeId, setRouteId] = useState("");
-  const [truckId, setTruckId] = useState("");
-  const [trailerType, setTrailerType] = useState("");
-  const [driverId, setDriverId] = useState("");
-  const [cargoTypeId, setCargoTypeId] = useState("");
-  const [departureDate, setDepartureDate] = useState("");
-  const [customerReference, setCustomerReference] = useState("");
-  const [containerCount, setContainerCount] = useState("1");
+export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormReturn {
+  const params = isParamsObject(arg) ? arg : { options: arg, mode: 'create' as const };
+  const { options, mode = 'create', existingTrip } = params;
+  const isEditMode = mode === 'edit';
 
-  useEffect(() => {
-    if (truckId && options?.trucks) {
-      const selectedTruck = options.trucks.find(t => t.id === Number(truckId));
-      if (selectedTruck?.currentTrailerId && options?.trailers) {
-        const trailer = options.trailers.find(t => t.id === selectedTruck.currentTrailerId);
-        if (trailer && !trailerType) {
-          setTrailerType(trailer.label.includes('20') ? '20FT' : '40FT');
-        }
-      }
-    }
-  }, [truckId]);
+  const lastTripId = useRef<number | null>(null);
 
-  // Legs sub-hook
-  const { legs, addLeg, removeLeg, updateLeg } = useTripLegs(options.routes, routeId);
+  const [customerId, setCustomerId] = useState(isEditMode && existingTrip ? String(existingTrip.customerId) : "");
+  const [routeId, setRouteId] = useState(isEditMode && existingTrip ? String(existingTrip.routeId) : "");
+  const [truckId, setTruckId] = useState(isEditMode && existingTrip ? String(existingTrip.truckId) : "");
+  const [trailerType, setTrailerType] = useState(isEditMode && existingTrip?.trailerType ? existingTrip.trailerType : "");
+  const [driverId, setDriverId] = useState(isEditMode && existingTrip ? String(existingTrip.driverId) : "");
+  const [cargoTypeId, setCargoTypeId] = useState(isEditMode && existingTrip ? String(existingTrip.cargoTypeId) : "");
+  const [departureDate, setDepartureDate] = useState(isEditMode && existingTrip ? existingTrip.departureDate : "");
+  const [customerReference, setCustomerReference] = useState(isEditMode && existingTrip?.customerReference ? existingTrip.customerReference : "");
+  const [containerCount, setContainerCount] = useState(isEditMode && existingTrip?.containerCount ? String(existingTrip.containerCount) : "1");
 
-  // Fuel & financials
-  const [fuelMode, setFuelMode] = useState<FuelMode>(FuelMode.AUTO);
-  const [fuelLitersOverride, setFuelLitersOverride] = useState("");
-  const [fuelSupplementLiters, setFuelSupplementLiters] = useState("");
-  const [fuelSupplementReason, setFuelSupplementReason] = useState("");
-  const [tollsDiscount, setTollsDiscount] = useState("");
-  const [tollsAddition, setTollsAddition] = useState("");
-  const [tollsStations, setTollsStations] = useState("");
-  const [hasReturnCargo, setHasReturnCargo] = useState(false);
-  const [driverSalary, setDriverSalary] = useState("");
-  const [revenue, setRevenue] = useState("");
+  const [fuelMode, setFuelMode] = useState<FuelMode>(isEditMode && existingTrip ? existingTrip.fuelMode : FuelMode.AUTO);
+  const [fuelLitersOverride, setFuelLitersOverride] = useState(isEditMode && existingTrip?.fuelLitersOverride ? String(existingTrip.fuelLitersOverride) : "");
+  const [fuelSupplementLiters, setFuelSupplementLiters] = useState(isEditMode && existingTrip?.fuelSupplementLiters ? String(existingTrip.fuelSupplementLiters) : "");
+  const [fuelSupplementReason, setFuelSupplementReason] = useState(isEditMode && existingTrip?.fuelSupplementReason ? existingTrip.fuelSupplementReason : "");
+  const [tollsDiscount, setTollsDiscount] = useState(isEditMode && existingTrip?.tollsDiscount ? String(existingTrip.tollsDiscount) : "");
+  const [tollsAddition, setTollsAddition] = useState(isEditMode && existingTrip?.tollsAddition ? String(existingTrip.tollsAddition) : "");
+  const [tollsStations, setTollsStations] = useState(isEditMode && existingTrip?.tollsStations ? String(existingTrip.tollsStations) : "");
+  const [hasReturnCargo, setHasReturnCargo] = useState(isEditMode && existingTrip ? !!existingTrip.hasReturnCargo : false);
+  const [driverSalary, setDriverSalary] = useState(isEditMode && existingTrip?.driverSalary ? String(existingTrip.driverSalary) : "");
+  const [revenue, setRevenue] = useState(isEditMode && existingTrip?.revenue ? String(existingTrip.revenue) : "");
+  const [notes, setNotes] = useState(isEditMode && existingTrip?.notes ? existingTrip.notes : "");
 
-  // Attachments
-  const [notes, setNotes] = useState("");
-
-  // UI
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // Upload sub-hook
-  const { photoUrls, uploading, uploadPhotos, removePhoto } = useTripUpload(setError);
+  const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripLegs(options.routes, routeId);
+  const { photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto } = useTripUpload(setError);
+
+  useEffect(() => {
+    if (!isEditMode || !existingTrip) return;
+    if (lastTripId.current === existingTrip.id) return;
+    lastTripId.current = existingTrip.id;
+
+    setRouteId(String(existingTrip.routeId));
+    setFuelMode(existingTrip.fuelMode);
+    setFuelLitersOverride(existingTrip.fuelLitersOverride ? String(existingTrip.fuelLitersOverride) : '');
+    setFuelSupplementLiters(existingTrip.fuelSupplementLiters ? String(existingTrip.fuelSupplementLiters) : '');
+    setFuelSupplementReason(existingTrip.fuelSupplementReason || '');
+    setTollsDiscount(existingTrip.tollsDiscount ? String(existingTrip.tollsDiscount) : '');
+    setTollsAddition(existingTrip.tollsAddition ? String(existingTrip.tollsAddition) : '');
+    setTollsStations(existingTrip.tollsStations ? String(existingTrip.tollsStations) : '');
+    setHasReturnCargo(!!existingTrip.hasReturnCargo);
+    setDriverSalary(existingTrip.driverSalary ? String(existingTrip.driverSalary) : '');
+    setRevenue(existingTrip.revenue ? String(existingTrip.revenue) : '');
+    setNotes(existingTrip.notes || '');
+    setPhotoUrls(existingTrip.photoUrls || []);
+
+    if (existingTrip.legs && existingTrip.legs.length > 0) {
+      setLegs(existingTrip.legs.map((leg: any) => ({
+        id: String(leg.id || Math.random()),
+        sequence: leg.sequence,
+        origin: leg.origin,
+        destination: leg.destination,
+        km: String(leg.km),
+        loadingType: leg.loadingType,
+      })));
+    } else {
+      const parts = (existingTrip.route?.name || '').split(/\s*[-→]\s*/).filter(Boolean);
+      const originGuess = parts[0]?.trim() || '';
+      const destGuess = parts.length > 1 ? parts[parts.length - 1].trim() : '';
+      setLegs([{
+        id: Math.random().toString(),
+        sequence: 1,
+        origin: originGuess,
+        destination: destGuess,
+        km: '',
+        loadingType: LoadingType.HANG,
+      }]);
+    }
+  }, [isEditMode, existingTrip]);
+
+  useEffect(() => {
+    if (truckId && options?.trucks && options?.trailers) {
+      const selectedTruck = options.trucks.find(t => t.id === Number(truckId));
+      if (selectedTruck?.currentTrailerId) {
+        const trailer = options.trailers.find(t => t.id === selectedTruck.currentTrailerId);
+        if (trailer) {
+          setTrailerType(trailer.type === '20FT' ? '20FT' : '40FT');
+        }
+      }
+    }
+  }, [truckId, options?.trucks, options?.trailers]);
 
   const pricingQuery = useQuery({
     queryKey: ["suggested-price", customerId, routeId, departureDate],
     queryFn: async () => {
+      if (isEditMode && existingTrip?.customerId && existingTrip?.routeId) {
+        const ptRes = await api.get<PaginatedResponse<PricingTable>>('/pricing-tables');
+        const match = (ptRes.items || []).find(
+          (pt: PricingTable) => pt.customerId === existingTrip.customerId && pt.routeId === existingTrip.routeId
+        );
+        if (match) return { price: Number(match.price) };
+      }
       const res = await tripClient.getPricing(
         Number(customerId),
         Number(routeId),
@@ -304,7 +363,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
   const suggestedPrice = pricingQuery.data?.price ?? null;
 
   useEffect(() => {
-    if (pricingQuery.data !== undefined) {
+    if (pricingQuery.data !== undefined && !isEditMode) {
       const count = resolveContainerCount(containerCount);
       setRevenue((prev) => {
         if (!prev || prev === "0") return String(pricingQuery.data!.price * count);
@@ -312,9 +371,26 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
         return prev;
       });
     }
-  }, [pricingQuery.data, containerCount]);
+  }, [pricingQuery.data, containerCount, isEditMode]);
 
-  // Derived calculations
+  const selectedRouteData = useMemo((): RouteOption | null => {
+    if (routeId) {
+      const found = options.routes.find(r => r.id === Number(routeId));
+      if (found) return found;
+    }
+    if (isEditMode && existingTrip?.route) {
+      return {
+        id: existingTrip.route.id,
+        label: existingTrip.route.name,
+        name: existingTrip.route.name,
+        distanceKm: existingTrip.route.distanceKm ?? undefined,
+        isMountain: existingTrip.route.isMountain,
+        fixedFuelAllowance: existingTrip.route.fixedFuelAllowance,
+      };
+    }
+    return null;
+  }, [routeId, options.routes, isEditMode, existingTrip]);
+
   const estimatedFuelCost = useMemo(() => {
     if (fuelMode === FuelMode.FLAT_RATE) {
       const liters = Number(fuelLitersOverride) || 0;
@@ -425,13 +501,60 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
       e?.preventDefault();
       setError("");
 
-      if (requiredFieldsFilled < 7) {
+      if (!isEditMode && requiredFieldsFilled < 7) {
         setError("Vui lòng điền đầy đủ các trường bắt buộc.");
         return;
       }
 
+      if (isEditMode) {
+        if (legs.length === 0) {
+          setError('Cần có ít nhất 1 chặng đường.');
+          return;
+        }
+        for (const leg of legs) {
+          if (!leg.origin.trim() || !leg.destination.trim() || !leg.km || isNaN(Number(leg.km)) || Number(leg.km) <= 0) {
+            setError(`Chặng số ${leg.sequence} thông tin chưa hợp lệ (Km phải là số lớn hơn 0).`);
+            return;
+          }
+        }
+        const supplementNum = Number(fuelSupplementLiters);
+        if (supplementNum > 0 && !fuelSupplementReason.trim()) {
+          setError('Vui lòng điền lý do bổ sung dầu.');
+          return;
+        }
+      }
+
       setSubmitting(true);
       try {
+        if (isEditMode && existingTrip) {
+          const payload = {
+            routeId: routeId ? Number(routeId) : undefined,
+            legs: legs.map(l => ({
+              sequence: l.sequence,
+              origin: l.origin.trim(),
+              destination: l.destination.trim(),
+              km: Number(l.km),
+              loadingType: l.loadingType,
+            })),
+            version: existingTrip.version,
+            fuelMode: fuelMode,
+            fuelLitersOverride: fuelMode === FuelMode.FLAT_RATE ? (fuelLitersOverride ? Number(fuelLitersOverride) : 0) : undefined,
+            fuelSupplementLiters: fuelSupplementLiters ? Number(fuelSupplementLiters) : 0,
+            fuelSupplementReason: fuelSupplementReason.trim() || undefined,
+            tollsDiscount: tollsDiscount ? Number(tollsDiscount) : 0,
+            tollsAddition: tollsAddition ? Number(tollsAddition) : 0,
+            tollsStations: tollsStations ? Number(tollsStations) : 0,
+            hasReturnCargo: hasReturnCargo,
+            driverSalary: driverSalary ? Number(driverSalary) : 0,
+            revenue: revenue ? Number(revenue) : undefined,
+            notes: notes.trim() || undefined,
+          };
+
+          const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
+          await api.put(endpoint, payload);
+          return existingTrip.id;
+        }
+
         const createPayload: Record<string, unknown> = {
           customerId: Number(customerId),
           routeId: Number(routeId),
@@ -470,11 +593,6 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
             throw new Error("Vui lòng điền lý do bổ sung dầu.");
           }
 
-          // The /pre-departure endpoint requires at least one leg. If the user
-          // expanded the optional sections but never filled in any km, skip
-          // the pre-departure call entirely — otherwise the create succeeds,
-          // the pre-departure 400s, and the user sees a scary "Hành trình:
-          // Array must contain at least 1" error even though the trip exists.
           if (legsToSubmit.length === 0) {
             return trip.id;
           }
@@ -511,6 +629,10 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
         }
         return trip.id;
       } catch (err) {
+        if (isEditMode && err instanceof ApiError && err.status === 409) {
+          setError("Xung đột phiên bản: số liệu của bạn đã cũ so với hệ thống.");
+          throw err;
+        }
         if (err instanceof ApiError) {
           setError(err.message);
         } else if (err instanceof Error) {
@@ -524,7 +646,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
       }
     },
     [
-      requiredFieldsFilled, customerId, routeId, truckId, trailerType,
+      isEditMode, existingTrip, requiredFieldsFilled, customerId, routeId, truckId, trailerType,
       driverId, cargoTypeId, departureDate, customerReference, containerCount,
       hasOptionalData, legs, fuelMode, fuelLitersOverride,
       fuelSupplementLiters, fuelSupplementReason, tollsDiscount,
@@ -534,7 +656,6 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
   );
 
   return {
-    // Required
     customerId, setCustomerId,
     routeId, setRouteId,
     truckId, setTruckId,
@@ -544,9 +665,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     departureDate, setDepartureDate,
     customerReference, setCustomerReference,
     containerCount, setContainerCount,
-    // Legs
     legs, addLeg, removeLeg, updateLeg,
-    // Fuel & financials
     fuelMode, setFuelMode,
     fuelLitersOverride, setFuelLitersOverride,
     fuelSupplementLiters, setFuelSupplementLiters,
@@ -557,10 +676,8 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     hasReturnCargo, setHasReturnCargo,
     driverSalary, setDriverSalary,
     revenue, setRevenue,
-    // Attachments
     notes, setNotes,
     photoUrls, uploadPhotos, removePhoto,
-    // Derived
     suggestedPrice,
     estimatedFuelCost,
     estimatedTollCost,
@@ -569,7 +686,12 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
     completedSections,
     requiredFieldsFilled,
     totalRequiredFields: 7,
-    // UI
     submitting, uploading, error, setError, handleSubmit,
+    tripId: isEditMode ? existingTrip?.id : undefined,
+    tripStatus: isEditMode ? existingTrip?.status : undefined,
+    version: isEditMode && existingTrip ? String(existingTrip.version) : undefined,
+    roadAllowanceBaseApplied: isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : undefined,
+    isEditMode,
+    selectedRouteData,
   };
 }

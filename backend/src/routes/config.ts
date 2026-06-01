@@ -26,6 +26,22 @@ import {
 import { asyncHandler } from '../middleware/asyncHandler';
 import { queryAuditLogs } from '../services/audit-query.service';
 
+async function syncTrailerFields(data: Record<string, any>) {
+  if (data.currentTrailerId != null && data.currentTrailerId !== '') {
+    const [trailer] = await db.select().from(s.trailers)
+      .where(and(eq(s.trailers.id, data.currentTrailerId), isNull(s.trailers.deletedAt)))
+      .limit(1);
+    if (trailer) {
+      data.trailerPlateNumber = trailer.licensePlate;
+      data.trailerType = trailer.type;
+    }
+  } else if (data.currentTrailerId === null || data.currentTrailerId === '') {
+    data.trailerPlateNumber = null;
+    data.trailerType = null;
+  }
+  return data;
+}
+
 const router = Router();
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
@@ -54,29 +70,11 @@ router.use('/customers', createCrudRouter(s.customers, customerSchema, { searcha
 router.use('/trucks', createCrudRouter(s.trucks, truckSchema, {
   searchableField: 'licensePlate',
   beforeCreate: async (data, _req) => {
-    if (data.currentTrailerId) {
-      const [trailer] = await db.select().from(s.trailers)
-        .where(eq(s.trailers.id, data.currentTrailerId)).limit(1);
-      if (trailer) {
-        data.trailerPlateNumber = trailer.licensePlate;
-        data.trailerType = trailer.type;
-      }
-    }
-    return data;
+    return syncTrailerFields(data);
   },
   beforeUpdate: async (_id, data, _req) => {
     if (data.currentTrailerId !== undefined) {
-      if (data.currentTrailerId) {
-        const [trailer] = await db.select().from(s.trailers)
-          .where(eq(s.trailers.id, data.currentTrailerId)).limit(1);
-        if (trailer) {
-          data.trailerPlateNumber = trailer.licensePlate;
-          data.trailerType = trailer.type;
-        }
-      } else {
-        data.trailerPlateNumber = null;
-        data.trailerType = null;
-      }
+      return syncTrailerFields(data);
     }
     return data;
   },

@@ -1,27 +1,16 @@
 import React from "react";
 import { FuelMode } from "@nepocorp/shared";
+import { useTripFormContext } from "../../hooks/useTripFormContext";
 
-interface FuelConfiguratorProps {
-  fuelMode: FuelMode;
-  onFuelModeChange: (v: FuelMode) => void;
-  fuelLitersOverride: string;
-  onFuelLitersOverrideChange: (v: string) => void;
-  fuelSupplementLiters: string;
-  onFuelSupplementLitersChange: (v: string) => void;
-  fuelSupplementReason: string;
-  onFuelSupplementReasonChange: (v: string) => void;
-}
+export function FuelSection() {
+  const form = useTripFormContext();
+  const {
+    fuelMode, setFuelMode,
+    fuelLitersOverride, setFuelLitersOverride,
+    fuelSupplementLiters, setFuelSupplementLiters,
+    fuelSupplementReason, setFuelSupplementReason,
+  } = form;
 
-export function FuelConfigurator({
-  fuelMode,
-  onFuelModeChange,
-  fuelLitersOverride,
-  onFuelLitersOverrideChange,
-  fuelSupplementLiters,
-  onFuelSupplementLitersChange,
-  fuelSupplementReason,
-  onFuelSupplementReasonChange,
-}: FuelConfiguratorProps) {
   const isSupplementActive = Number(fuelSupplementLiters) > 0;
 
   return (
@@ -43,7 +32,7 @@ export function FuelConfigurator({
             width: "100%",
           }}
           value={fuelMode}
-          onChange={(e) => onFuelModeChange(e.target.value as FuelMode)}
+          onChange={(e) => setFuelMode(e.target.value as FuelMode)}
         >
           <option value={FuelMode.AUTO}>Tự động (Định mức × Km chặng)</option>
           <option value={FuelMode.FLAT_RATE}>Khoán (Nhập thủ công)</option>
@@ -58,7 +47,7 @@ export function FuelConfigurator({
             type="number"
             placeholder="VD: 55"
             value={fuelLitersOverride}
-            onChange={(e) => onFuelLitersOverrideChange(e.target.value)}
+            onChange={(e) => setFuelLitersOverride(e.target.value)}
             required
             style={{ width: "100%" }}
           />
@@ -73,7 +62,7 @@ export function FuelConfigurator({
             type="number"
             placeholder="VD: 3"
             value={fuelSupplementLiters}
-            onChange={(e) => onFuelSupplementLitersChange(e.target.value)}
+            onChange={(e) => setFuelSupplementLiters(e.target.value)}
             style={{ width: "100%" }}
           />
         </div>
@@ -85,7 +74,7 @@ export function FuelConfigurator({
             className="input"
             placeholder="VD: Chạy máy lạnh kéo dài"
             value={fuelSupplementReason}
-            onChange={(e) => onFuelSupplementReasonChange(e.target.value)}
+            onChange={(e) => setFuelSupplementReason(e.target.value)}
             required={isSupplementActive}
             style={{ width: "100%" }}
           />

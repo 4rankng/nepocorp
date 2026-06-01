@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
-import { Upload, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
+import { useTripFormContext } from "../../hooks/useTripFormContext";
 
 export type PhotoType = "CONTAINER" | "SEAL" | "OTHER";
 
@@ -9,34 +10,42 @@ export interface TripFormPhoto {
 }
 
 interface PhotoUploaderProps {
-  photos: TripFormPhoto[];
-  onPhotosChange: (photos: TripFormPhoto[]) => void;
   requiresPhotos: boolean;
-  uploading: boolean;
-  onUpload: (files: FileList, type: PhotoType) => Promise<void>;
+  tripId?: number;
 }
 
-export function PhotoUploader({
-  photos,
-  onPhotosChange,
-  requiresPhotos,
-  uploading,
-  onUpload,
-}: PhotoUploaderProps) {
+function mapUrlsToPhotos(urls: string[]): TripFormPhoto[] {
+  return urls.map(url => {
+    let type: PhotoType = 'OTHER';
+    const decoded = decodeURIComponent(url.toLowerCase());
+    if (decoded.includes('/container-') || decoded.includes('%2fcontainer-')) {
+      type = 'CONTAINER';
+    } else if (decoded.includes('/seal-') || decoded.includes('%2fseal-')) {
+      type = 'SEAL';
+    }
+    return { url, type };
+  });
+}
+
+export function PhotoUploader({ requiresPhotos, tripId }: PhotoUploaderProps) {
+  const form = useTripFormContext();
+  const { photoUrls, uploadPhotos, removePhoto, uploading } = form;
+
   const containerInputRef = useRef<HTMLInputElement>(null);
   const sealInputRef = useRef<HTMLInputElement>(null);
   const otherInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: PhotoType) => {
+  const photos = mapUrlsToPhotos(photoUrls);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: PhotoType) => {
     if (e.target.files && e.target.files.length > 0) {
-      onUpload(e.target.files, type);
+      await uploadPhotos(e.target.files, tripId, type);
       e.target.value = "";
     }
   };
 
-  const removePhoto = (idx: number) => {
-    const updated = photos.filter((_, i) => i !== idx);
-    onPhotosChange(updated);
+  const handleRemovePhoto = (idx: number) => {
+    removePhoto(idx);
   };
 
   const containerPhotos = photos.filter((p) => p.type === "CONTAINER");
@@ -78,12 +87,12 @@ export function PhotoUploader({
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
-            {containerPhotos.map((photo, i) => {
+            {containerPhotos.map((photo) => {
               const globalIdx = photos.findIndex((p) => p.url === photo.url);
               return (
                 <div key={photo.url} style={{ width: 64, height: 64, borderRadius: "var(--radius-sm)", border: "1px solid var(--border-1)", position: "relative", overflow: "hidden" }}>
                   <img src={photo.url} alt="Container" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <button type="button" onClick={() => removePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <button type="button" onClick={() => handleRemovePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                     <X size={8} />
                   </button>
                 </div>
@@ -113,12 +122,12 @@ export function PhotoUploader({
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
-            {sealPhotos.map((photo, i) => {
+            {sealPhotos.map((photo) => {
               const globalIdx = photos.findIndex((p) => p.url === photo.url);
               return (
                 <div key={photo.url} style={{ width: 64, height: 64, borderRadius: "var(--radius-sm)", border: "1px solid var(--border-1)", position: "relative", overflow: "hidden" }}>
                   <img src={photo.url} alt="Seal" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <button type="button" onClick={() => removePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <button type="button" onClick={() => handleRemovePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                     <X size={8} />
                   </button>
                 </div>
@@ -148,12 +157,12 @@ export function PhotoUploader({
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
-          {otherPhotos.map((photo, i) => {
+          {otherPhotos.map((photo) => {
             const globalIdx = photos.findIndex((p) => p.url === photo.url);
             return (
               <div key={photo.url} style={{ width: 64, height: 64, borderRadius: "var(--radius-sm)", border: "1px solid var(--border-1)", position: "relative", overflow: "hidden" }}>
                 <img src={photo.url} alt="Other" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <button type="button" onClick={() => removePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <button type="button" onClick={() => handleRemovePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                   <X size={8} />
                 </button>
               </div>

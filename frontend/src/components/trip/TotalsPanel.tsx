@@ -1,52 +1,20 @@
 import React, { useMemo } from "react";
 import { DollarSign, Clock, Users, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { computeTripTotals, FuelMode } from "@nepocorp/shared";
-import type { FormLeg } from "./TripLegFields";
+import { computeTripTotals } from "@nepocorp/shared";
+import { useTripFormContext } from "../../hooks/useTripFormContext";
 
-interface TotalsPanelProps {
-  legs: FormLeg[];
-  fuelMode: FuelMode;
-  fuelLitersOverride: string;
-  fuelSupplementLiters: string;
-  tollsDiscount: string;
-  tollsAddition: string;
-  tollsStations: string;
-  hasReturnCargo: boolean;
-  driverSalary: string;
-  revenue: string;
-  // Rates fallbacks/snapshots
-  fuelUnitPrice?: number;
-  fuelLoadedNorm?: number;
-  fuelEmptyNorm?: number;
-  fuelPerTripSupplement?: number;
-  tollPerStation?: number;
-  returnCargoBonus?: number;
-  roadAllowanceBase?: number;
-  isMountainRoute?: boolean;
-  mountainFixedAllowance?: number | null;
-}
+export function TotalsPanel() {
+  const form = useTripFormContext();
+  const {
+    legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
+    tollsDiscount, tollsAddition, tollsStations,
+    hasReturnCargo, driverSalary, revenue,
+    selectedRouteData, roadAllowanceBaseApplied,
+  } = form;
 
-export function TotalsPanel({
-  legs,
-  fuelMode,
-  fuelLitersOverride,
-  fuelSupplementLiters,
-  tollsDiscount,
-  tollsAddition,
-  tollsStations,
-  hasReturnCargo,
-  driverSalary,
-  revenue,
-  fuelUnitPrice = 25000,
-  fuelLoadedNorm = 43,
-  fuelEmptyNorm = 25,
-  fuelPerTripSupplement = 3,
-  tollPerStation = 55000,
-  returnCargoBonus = 300000,
-  roadAllowanceBase = 0,
-  isMountainRoute = false,
-  mountainFixedAllowance = null,
-}: TotalsPanelProps) {
+  const isMountainRoute = selectedRouteData?.isMountain ?? false;
+  const mountainFixedAllowance = selectedRouteData?.fixedFuelAllowance ? Number(selectedRouteData.fixedFuelAllowance) : null;
+
   const totals = useMemo(() => {
     const formattedLegs = legs.map((leg) => ({
       sequence: leg.sequence,
@@ -59,42 +27,27 @@ export function TotalsPanel({
       fuelMode: fuelMode,
       fuelLitersOverride: fuelLitersOverride ? Number(fuelLitersOverride) : null,
       fuelSupplementLiters: fuelSupplementLiters ? Number(fuelSupplementLiters) : 0,
-      fuelLoadedNorm,
-      fuelEmptyNorm,
-      fuelPerTripSupplement,
-      fuelUnitPrice,
+      fuelLoadedNorm: 43,
+      fuelEmptyNorm: 25,
+      fuelPerTripSupplement: 3,
+      fuelUnitPrice: 25000,
       isMountainRoute,
       mountainFixedAllowance,
-      roadAllowanceBase,
+      roadAllowanceBase: roadAllowanceBaseApplied ?? 0,
       tollsDiscount: tollsDiscount ? Number(tollsDiscount) : 0,
       tollsAddition: tollsAddition ? Number(tollsAddition) : 0,
       tollsStations: tollsStations ? Number(tollsStations) : 0,
-      tollPerStation,
+      tollPerStation: 55000,
       hasReturnCargo,
-      returnCargoBonus,
+      returnCargoBonus: 300000,
       revenue: revenue ? Number(revenue) : 0,
       driverSalary: driverSalary ? Number(driverSalary) : 0,
     });
   }, [
-    legs,
-    fuelMode,
-    fuelLitersOverride,
-    fuelSupplementLiters,
-    fuelLoadedNorm,
-    fuelEmptyNorm,
-    fuelPerTripSupplement,
-    fuelUnitPrice,
-    isMountainRoute,
-    mountainFixedAllowance,
-    roadAllowanceBase,
-    tollsDiscount,
-    tollsAddition,
-    tollsStations,
-    tollPerStation,
-    hasReturnCargo,
-    returnCargoBonus,
-    revenue,
-    driverSalary,
+    legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
+    isMountainRoute, mountainFixedAllowance, roadAllowanceBaseApplied,
+    tollsDiscount, tollsAddition, tollsStations,
+    hasReturnCargo, revenue, driverSalary,
   ]);
 
   const fmt = (v: number) => Math.abs(Math.round(v)).toLocaleString("vi-VN");
@@ -102,7 +55,6 @@ export function TotalsPanel({
   const revenueNum = Number(revenue) || 0;
   const isProfitPositive = totals.grossProfit >= 0;
 
-  // Compute cost percentages for rendering a progress bar
   const totalCost = totals.totalFuelCost + totals.totalRoadAllowance + (Number(driverSalary) || 0);
   const fuelPct = totalCost > 0 ? (totals.totalFuelCost / totalCost) * 100 : 0;
   const roadPct = totalCost > 0 ? (totals.totalRoadAllowance / totalCost) * 100 : 0;

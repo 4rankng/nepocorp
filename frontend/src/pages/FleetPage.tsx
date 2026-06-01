@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, memo, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
   Download, Filter, CheckCircle, Save, X, Loader2,
@@ -10,9 +10,10 @@ import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI
 import { ActionBtns } from '../components/config/ActionBtns';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
-import { useCatalogs } from '../hooks/useCatalogs';
-import { TrailerType } from '@nepocorp/shared';
-import type { Truck as TruckType, Driver } from '@nepocorp/shared';
+import { api } from '../lib/api';
+import type { PaginatedResponse } from '@nepocorp/shared';
+import { TrailerType, TRAILER_TYPE_LABELS } from '@nepocorp/shared';
+import type { Trailer, Truck as TruckType, Driver } from '@nepocorp/shared';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -21,9 +22,6 @@ const TRUCK_STATUS: Record<string, string> = {
 };
 const DRIVER_STATUS: Record<string, string> = {
   ACTIVE: 'Hoạt động', INACTIVE: 'Ngưng',
-};
-const TRAILER_TYPE_LABELS: Record<string, string> = {
-  [TrailerType.FT20]: '20FT', [TrailerType.FT40]: '40FT',
 };
 
 // ─── Static Styles ───────────────────────────────────────────────────────────
@@ -68,7 +66,7 @@ const Plate = memo(function Plate({ plate, tag }: { plate: string; tag: string }
 
 const TypeChip = memo(function TypeChip({ type }: { type: string }) {
   const cls = type === TrailerType.FT40 ? 'ft40' : 'ft20';
-  return <span className={`fleet-type-chip ${cls}`}>{TRAILER_TYPE_LABELS[type] || type}</span>;
+  return <span className={`fleet-type-chip ${cls}`}>{TRAILER_TYPE_LABELS[type as TrailerType] || type}</span>;
 });
 
 const StatusDot = memo(function StatusDot({ status }: { status: string }) {
@@ -149,7 +147,7 @@ function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpen }: {
           >
             <option value="">— Không có —</option>
             {trailers.map(t => (
-              <option key={t.id} value={t.id}>{t.licensePlate} ({TRAILER_TYPE_LABELS[t.type] || t.type})</option>
+              <option key={t.id} value={t.id}>{t.licensePlate} ({TRAILER_TYPE_LABELS[t.type as TrailerType] || t.type})</option>
             ))}
           </select>
         </div>
@@ -328,10 +326,14 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                 <td className="num">{i + 1}</td>
                 <td><Plate plate={t.licensePlate} tag="VN" /></td>
                 <td>
-                  {t.trailerPlateNumber
-                    ? <span className="fleet-pair"><Plate plate={t.trailerPlateNumber} tag="RM" /> <TypeChip type={t.trailerType ?? TrailerType.FT40} /></span>
-                    : <span className="fleet-unassigned">—</span>
-                  }
+                  {(() => {
+                    const tr = t.currentTrailerId ? trailers.find(x => x.id === t.currentTrailerId) : null;
+                    return tr
+                      ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span>
+                      : t.trailerPlateNumber
+                        ? <span className="fleet-pair"><Plate plate={t.trailerPlateNumber} tag="RM" /> <TypeChip type={t.trailerType ?? TrailerType.FT40} /></span>
+                        : <span className="fleet-unassigned">—</span>;
+                  })()}
                 </td>
                 <td>
                   {driverByTruck.has(t.id)
@@ -501,10 +503,14 @@ function DriverCard({ drivers, truckMap, crud }: {
 export default function FleetPage() {
   const queryClient = useQueryClient();
   const { data: fleetData } = useFleetData();
-  const { data: catalog } = useCatalogs();
+  const { data: trailersData } = useQuery({
+    queryKey: ['trailers'],
+    queryFn: () => api.get<PaginatedResponse<Trailer>>('/trailers'),
+    staleTime: 60_000,
+  });
   const trucks = fleetData?.trucks ?? [];
   const drivers = fleetData?.drivers ?? [];
-  const trailers = catalog?.trailers ?? [];
+  const trailers = trailersData?.items ?? [];
 
   const invalidateFleet = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['fleet'] });

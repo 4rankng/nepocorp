@@ -12,10 +12,16 @@ export interface SelectOption {
 export interface RouteOption extends SelectOption {
   name: string;
   distanceKm?: number;
+  isMountain?: boolean;
+  fixedFuelAllowance?: string | null;
 }
 
 export interface TruckOption extends SelectOption {
   currentTrailerId: number | null;
+}
+
+export interface TrailerOption extends SelectOption {
+  type: string;
 }
 
 export interface TrailerTypeOption {
@@ -29,7 +35,7 @@ export interface TripOptions {
   trucks: TruckOption[];
   trailerTypes: TrailerTypeOption[];
   drivers: SelectOption[];
-  trailers: SelectOption[];
+  trailers: TrailerOption[];
   cargoTypes: SelectOption[];
   pricingTables: PricingTable[];
   loading: boolean;
@@ -70,11 +76,13 @@ export function useTripOptions(): TripOptions {
         label: `${r.name}${r.distanceKm ? ` (${r.distanceKm} km)` : ""}`,
         name: r.name,
         distanceKm: r.distanceKm ?? undefined,
+        isMountain: r.isMountain,
+        fixedFuelAllowance: r.fixedFuelAllowance,
       })) ?? [],
     trucks: catalog?.trucks.map((t) => ({ id: t.id, label: t.licensePlate, currentTrailerId: t.currentTrailerId ?? null })) ?? [],
     trailerTypes: [{ value: '20FT', label: '20FT' }, { value: '40FT', label: '40FT' }],
     drivers: catalog?.drivers.map((d) => ({ id: d.id, label: d.name })) ?? [],
-    trailers: catalog?.trailers?.map((t) => ({ id: t.id, label: t.licensePlate })) ?? [],
+    trailers: catalog?.trailers?.map((t) => ({ id: t.id, label: t.licensePlate, type: t.type })) ?? [],
     cargoTypes: catalog?.cargoTypes.map((c) => ({ id: c.id, label: c.name })) ?? [],
     pricingTables: pricingQuery.data ?? [],
     loading: bootstrapQuery.isLoading || pricingQuery.isLoading,

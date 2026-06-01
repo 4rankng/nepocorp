@@ -9,6 +9,22 @@ import { ApiError } from '../errors';
 
 // ─── Trip lifecycle ──────────────────────────────────────────────────────────
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function resolveTrailer(
+  tx: Tx,
+  currentTrailerId: number | null,
+): Promise<{ trailerId: number | null; trailerType: string | null }> {
+  if (!currentTrailerId) return { trailerId: null, trailerType: null };
+  const [trailer] = await tx.select().from(s.trailers)
+    .where(and(eq(s.trailers.id, currentTrailerId), isNull(s.trailers.deletedAt)))
+    .limit(1);
+  if (trailer) {
+    return { trailerId: trailer.id, trailerType: trailer.type };
+  }
+  return { trailerId: null, trailerType: null };
+}
+
 export async function createTrip(data: {
   customerId: number;
   routeId: number;
@@ -57,18 +73,9 @@ export async function createTrip(data: {
     if (!truck) {
       throw new ApiError(400, 'Xe đầu kéo không tồn tại');
     }
-    let trailerId: number | null = null;
-    let trailerType = truck.trailerType || '40FT';
-
-    if (truck.currentTrailerId) {
-      const [trailer] = await tx.select().from(s.trailers)
-        .where(eq(s.trailers.id, truck.currentTrailerId))
-        .limit(1);
-      if (trailer) {
-        trailerId = trailer.id;
-        trailerType = trailer.type;
-      }
-    }
+    const resolved = await resolveTrailer(tx, truck.currentTrailerId);
+    const trailerId = resolved.trailerId;
+    const trailerType = (resolved.trailerType || truck.trailerType || '40FT') as '20FT' | '40FT';
 
     // Look up road allowance base for snapshotted column
     const [allowance] = await tx.select().from(s.roadAllowances).where(
@@ -555,18 +562,9 @@ export async function reassignTrip(tripId: number, data: { truckId: number; driv
       .where(and(eq(s.drivers.id, data.driverId), isNull(s.drivers.deletedAt))).limit(1);
     if (!driver) throw new ApiError(400, 'Tài xế không tồn tại hoặc đã bị xóa');
 
-    let trailerId: number | null = null;
-    let trailerType = newTruck.trailerType || trip.trailerType || '40FT';
-
-    if (newTruck.currentTrailerId) {
-      const [trailer] = await tx.select().from(s.trailers)
-        .where(eq(s.trailers.id, newTruck.currentTrailerId))
-        .limit(1);
-      if (trailer) {
-        trailerId = trailer.id;
-        trailerType = trailer.type;
-      }
-    }
+    const resolved = await resolveTrailer(tx, newTruck.currentTrailerId);
+    const trailerId = resolved.trailerId;
+    const trailerType = (resolved.trailerType || newTruck.trailerType || trip.trailerType || '40FT') as '20FT' | '40FT';
 
     const [updated] = await tx.update(s.trips).set({
       truckId: data.truckId,

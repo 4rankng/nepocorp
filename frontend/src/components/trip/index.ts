@@ -14,3 +14,7 @@ export { TripSummaryCard } from './TripSummaryCard';
 export { TripChecklistPanel } from './TripChecklistPanel';
 export { TipCard } from './TipCard';
 export { ActionBar } from './ActionBar';
+export { FuelSection } from './FuelSection';
+export { AllowanceSection } from './AllowanceSection';
+export { TotalsPanel } from './TotalsPanel';
+export { PhotoUploader } from './PhotoUploader';

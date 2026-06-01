@@ -1,36 +1,18 @@
 import React from "react";
+import { useTripFormContext } from "../../hooks/useTripFormContext";
 
-interface AllowanceConfiguratorProps {
-  tollsDiscount: string;
-  onTollsDiscountChange: (v: string) => void;
-  tollsAddition: string;
-  onTollsAdditionChange: (v: string) => void;
-  tollsStations: string;
-  onTollsStationsChange: (v: string) => void;
-  hasReturnCargo: boolean;
-  onHasReturnCargoChange: (v: boolean) => void;
-  driverSalary: string;
-  onDriverSalaryChange: (v: string) => void;
-  revenue: string;
-  onRevenueChange: (v: string) => void;
-  suggestedPrice: number | null;
-}
+export function AllowanceSection() {
+  const form = useTripFormContext();
+  const {
+    tollsDiscount, setTollsDiscount,
+    tollsAddition, setTollsAddition,
+    tollsStations, setTollsStations,
+    hasReturnCargo, setHasReturnCargo,
+    driverSalary, setDriverSalary,
+    revenue, setRevenue,
+    suggestedPrice,
+  } = form;
 
-export function AllowanceConfigurator({
-  tollsDiscount,
-  onTollsDiscountChange,
-  tollsAddition,
-  onTollsAdditionChange,
-  tollsStations,
-  onTollsStationsChange,
-  hasReturnCargo,
-  onHasReturnCargoChange,
-  driverSalary,
-  onDriverSalaryChange,
-  revenue,
-  onRevenueChange,
-  suggestedPrice,
-}: AllowanceConfiguratorProps) {
   return (
     <div style={{ marginBottom: 0 }}>
       <div style={{ marginBottom: 14 }}>
@@ -45,7 +27,7 @@ export function AllowanceConfigurator({
             type="number"
             placeholder="VD: 150000"
             value={tollsAddition}
-            onChange={(e) => onTollsAdditionChange(e.target.value)}
+            onChange={(e) => setTollsAddition(e.target.value)}
             style={{ width: "100%" }}
           />
         </div>
@@ -56,7 +38,7 @@ export function AllowanceConfigurator({
             type="number"
             placeholder="VD: 40000"
             value={tollsDiscount}
-            onChange={(e) => onTollsDiscountChange(e.target.value)}
+            onChange={(e) => setTollsDiscount(e.target.value)}
             style={{ width: "100%" }}
           />
         </div>
@@ -70,7 +52,7 @@ export function AllowanceConfigurator({
             type="number"
             placeholder="VD: 4"
             value={tollsStations}
-            onChange={(e) => onTollsStationsChange(e.target.value)}
+            onChange={(e) => setTollsStations(e.target.value)}
             style={{ width: "100%" }}
           />
         </div>
@@ -79,7 +61,7 @@ export function AllowanceConfigurator({
             <input
               type="checkbox"
               checked={hasReturnCargo}
-              onChange={(e) => onHasReturnCargoChange(e.target.checked)}
+              onChange={(e) => setHasReturnCargo(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: "var(--brand)", cursor: "pointer" }}
             />
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--fg-1)" }}>Chuyến về có hàng (+300k)</span>
@@ -95,7 +77,7 @@ export function AllowanceConfigurator({
             type="number"
             placeholder="VD: 850000"
             value={driverSalary}
-            onChange={(e) => onDriverSalaryChange(e.target.value)}
+            onChange={(e) => setDriverSalary(e.target.value)}
             style={{ width: "100%" }}
           />
         </div>
@@ -106,7 +88,7 @@ export function AllowanceConfigurator({
             type="number"
             placeholder="VD: 4200000"
             value={revenue}
-            onChange={(e) => onRevenueChange(e.target.value)}
+            onChange={(e) => setRevenue(e.target.value)}
             style={{ width: "100%" }}
           />
           {suggestedPrice !== null && (
