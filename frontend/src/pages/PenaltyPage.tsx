@@ -58,7 +58,12 @@ export default function PenaltyPage() {
         onClose={() => { setDrawerOpen(false); setPreselectedDriver(undefined); }}
         drivers={drivers}
         reasons={reasons}
-        onSubmit={(body) => createMutation.mutateAsync(body)}
+        onSubmit={async (body) => {
+          const result = await createMutation.mutateAsync(body);
+          setDrawerOpen(false);
+          setPreselectedDriver(undefined);
+          return result;
+        }}
         preselectedDriverId={preselectedDriver}
       />
 

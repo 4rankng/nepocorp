@@ -368,7 +368,7 @@ interface ModalProps {
 export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: ModalProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   if (!isOpen) return null;
-  return (
+  return createPortal(
     <div
       style={{ ...STYLE_OVERLAY, background: 'rgba(10,10,10,0.4)', zIndex: 1000 }}
       onClick={onClose}
@@ -427,7 +427,8 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: M
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

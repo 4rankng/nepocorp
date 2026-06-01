@@ -274,6 +274,205 @@ function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen }: {
   );
 }
 
+// ─── TrailerFormModal ───────────────────────────────────────────────────────
+
+/**
+ * Modal for creating/editing a trailer (rơ-moóc).
+ * Trailers are separate entities from trucks so a single trailer can be
+ * reassigned across multiple đầu kéo over its lifetime, and so registration
+ * / tyre / repair expenses can be tagged to a specific trailer (Pete's
+ * requirement: "phần chi phí sửa chữa và chi phí đăng kiểm, thay lốp thì
+ * nên tách theo rơ mooc và đầu kéo").
+ */
+function TrailerFormModal({ saving, item, onsave, oncancel, isOpen }: {
+  saving: boolean;
+  item?: { id: number; licensePlate: string; type: string; status: string };
+  onsave: (d: Record<string, unknown>) => void;
+  oncancel: () => void;
+  isOpen: boolean;
+}) {
+  const [plate, setPlate] = useState(item?.licensePlate || '');
+  const [type, setType] = useState<string>(item?.type || TrailerType.FT40);
+  const [status, setStatus] = useState(item?.status || 'ACTIVE');
+  useEffect(() => {
+    if (isOpen) {
+      setPlate(item?.licensePlate || '');
+      setType(item?.type || TrailerType.FT40);
+      setStatus(item?.status || 'ACTIVE');
+    }
+  }, [isOpen, item?.id]);
+  const handleSave = () => {
+    if (!plate.trim()) return;
+    onsave({ licensePlate: plate.trim(), type, status });
+  };
+  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 } as const;
+  return (
+    <Modal
+      isOpen={isOpen}
+      title={item ? `Sửa rơ-moóc ${item.licensePlate}` : 'Thêm rơ-moóc'}
+      onClose={oncancel}
+      onConfirm={handleSave}
+      footer={
+        <>
+          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
+            <X size={14} /> Hủy
+          </button>
+          <button className="btn btn--primary btn--sm" disabled={saving || !plate.trim()} onClick={handleSave}>
+            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {item ? 'Cập nhật' : 'Thêm rơ-moóc'}
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="field">
+          <label htmlFor="trailer-plate-input" style={labelStyle}>
+            Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input
+            id="trailer-plate-input"
+            className="input"
+            value={plate}
+            onChange={e => setPlate(e.target.value)}
+            placeholder="VD: 70C-12345"
+            autoFocus
+          />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="trailer-type-input" style={labelStyle}>Loại rơ-moóc</label>
+            <select id="trailer-type-input" className="input" value={type} onChange={e => setType(e.target.value)}>
+              {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="trailer-status-input" style={labelStyle}>Trạng thái</label>
+            <select id="trailer-status-input" className="input" value={status} onChange={e => setStatus(e.target.value)}>
+              <option value="ACTIVE">Hoạt động</option>
+              <option value="MAINTENANCE">Bảo trì</option>
+              <option value="INACTIVE">Ngưng</option>
+            </select>
+          </div>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0, padding: '8px 12px', background: 'var(--bg-2)', borderRadius: 6 }}>
+          💡 Sau khi thêm, bạn có thể gán rơ-moóc cho đầu kéo bằng cách sửa xe
+          đầu kéo và chọn rơ-moóc trong danh sách.
+        </p>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── TrailerCard ────────────────────────────────────────────────────────────
+
+function TrailerCard({ trailers, trucks, crud }: {
+  trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
+  trucks: TruckType[];
+  crud: ReturnType<typeof useCRUD>;
+}) {
+  // Build reverse lookup: trailerId → truck plate, so we can show which đầu
+  // kéo each rơ-moóc is currently coupled to.
+  const truckByTrailer = useMemo(() => {
+    const m = new Map<number, TruckType>();
+    trucks.forEach(t => { if (t.currentTrailerId) m.set(t.currentTrailerId, t); });
+    return m;
+  }, [trucks]);
+  const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
+  const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
+  const active = trailers.filter(t => t.status === 'ACTIVE').length;
+
+  return (
+    <Panel flush>
+      <div className="fleet-card-head">
+        <div className="fleet-card-lead">
+          <div className="fleet-card-icon">
+            <Truck size={18} />
+          </div>
+          <div>
+            <div className="fleet-card-title">
+              Rơ-moóc <span className="count-pill">{trailers.length}</span>
+            </div>
+            <div className="fleet-card-sub">Quản lý rơ-moóc · Tách chi phí sửa chữa, đăng kiểm, thay lốp theo từng rơ-moóc</div>
+          </div>
+        </div>
+        <div className="fleet-card-tools">
+          <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
+            <Plus size={13} /> Thêm rơ-moóc
+          </button>
+        </div>
+      </div>
+      <div className="table-scroll">
+        <table className="tt-table">
+          <thead>
+            <tr>
+              <th className="num">#</th>
+              <th>Biển số rơ-moóc</th>
+              <th>Loại</th>
+              <th>Đầu kéo đang ghép</th>
+              <th className="center">Trạng thái</th>
+              <th className="actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {trailers.length === 0 && (
+              <tr><td colSpan={6} style={styles.emptyRow}>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</td></tr>
+            )}
+            {trailers.map((t, i) => {
+              const coupledTruck = truckByTrailer.get(t.id);
+              return (
+                <tr
+                  key={t.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => crud.setEditingId(t.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(t.id); } }}
+                >
+                  <td className="num">{i + 1}</td>
+                  <td><Plate plate={t.licensePlate} tag="RM" /></td>
+                  <td><TypeChip type={t.type} /></td>
+                  <td>
+                    {coupledTruck
+                      ? <span className="fleet-pair"><Plate plate={coupledTruck.licensePlate} tag="VN" /></span>
+                      : <span className="fleet-unassigned">— Chưa ghép —</span>
+                    }
+                  </td>
+                  <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
+                  <td onClick={e => e.stopPropagation()}>
+                    <ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="table-foot">
+        <div className="fleet-legend">
+          <span><strong style={styles.fontMono}>{ft40}</strong> × 40FT</span>
+          <span style={styles.dotSep}>·</span>
+          <span><strong style={styles.fontMono}>{ft20}</strong> × 20FT</span>
+          <span style={styles.dotSep}>·</span>
+          <span>{active} đang hoạt động</span>
+        </div>
+        <span>Hiển thị {trailers.length}</span>
+      </div>
+      {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
+      <TrailerFormModal
+        key={crud.editingId ?? (crud.showAddForm ? 'add' : 'closed')}
+        isOpen={crud.showAddForm || crud.editingId != null}
+        saving={crud.saving}
+        item={crud.editingId != null ? trailers.find(t => t.id === crud.editingId) : undefined}
+        onsave={d => {
+          if (crud.editingId != null) crud.doUpdate(crud.editingId, d);
+          else crud.doCreate(d);
+        }}
+        oncancel={crud.cancelForm}
+      />
+    </Panel>
+  );
+}
+
 // ─── Card Components ─────────────────────────────────────────────────────────
 
 function TruckCard({ trucks, driverByTruck, trailers, crud }: {
@@ -518,6 +717,13 @@ export default function FleetPage() {
 
   const truckCrud = useCRUD('/trucks', invalidateFleet);
   const driverCrud = useCRUD('/drivers', invalidateFleet);
+  // Trailers are a separate catalog so a rơ-moóc can be coupled to different
+  // đầu kéo over time. Invalidate both the trailers list AND fleet (since
+  // the truck rows display the coupled trailer's plate).
+  const trailerCrud = useCRUD('/trailers', async () => {
+    await queryClient.invalidateQueries({ queryKey: ['trailers'] });
+    await invalidateFleet();
+  });
 
   const { truckMap, driverByTruck, activeTrucks, maintTrucks, assignedDrivers, activeDrivers, readyToRun } = useMemo(() => {
     const truckMap = new Map<number, TruckType>();
@@ -628,10 +834,15 @@ export default function FleetPage() {
         />
       </div>
 
-      {/* Trucks */}
+      {/* Trucks (đầu kéo) */}
       <TruckCard trucks={trucks} driverByTruck={driverByTruck} trailers={trailers} crud={truckCrud} />
 
-      {/* Drivers full width */}
+      {/* Trailers (rơ-moóc) — separate catalog so a rơ-moóc can be coupled
+          to different đầu kéo over time, and so repair / đăng kiểm / thay
+          lốp expenses can be split between truck and trailer. */}
+      <TrailerCard trailers={trailers} trucks={trucks} crud={trailerCrud} />
+
+      {/* Drivers */}
       <DriverCard drivers={drivers} truckMap={truckMap} crud={driverCrud} />
     </div>
   );

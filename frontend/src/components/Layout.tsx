@@ -104,7 +104,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/suppliers')) return 'Nhà cung cấp';
   if (pathname === '/penalties' || pathname === '/my-penalties') return 'Kỷ luật';
   if (pathname.startsWith('/customers')) return 'Khách hàng';
-  if (pathname.startsWith('/routes')) return 'Tuyến đường';
+  if (pathname.startsWith('/config/routes') || pathname.startsWith('/routes')) return 'Tuyến đường';
   if (pathname === '/config') return 'Cấu hình hệ thống';
   if (pathname.startsWith('/config')) return 'Cấu hình';
   if (pathname === '/users') return 'Người dùng';
