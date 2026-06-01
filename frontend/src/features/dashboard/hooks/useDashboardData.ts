@@ -109,7 +109,7 @@ export function useDashboardData() {
       if (ttbq > warnThreshold) {
         flagged.push({
           tripId: trip.id,
-          code: trip.tripCode ?? trip.id.toString(),
+          code: trip.tripCode ?? '—',
           driver: trip.driver?.name ?? '—',
           ttbq,
           critical: critThreshold > 0 && ttbq > critThreshold,

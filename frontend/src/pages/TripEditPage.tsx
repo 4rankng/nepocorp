@@ -251,7 +251,7 @@ export default function TripEditPage() {
                 ) : (
                   <div style={{ fontSize: 12, color: 'var(--fg-3)', lineHeight: 1.4 }}>
                     <div style={{ fontWeight: 600, color: 'var(--fg-2)' }}>Cập nhật số liệu</div>
-                    <div>Lệnh vận chuyển {trip.tripCode || trip.id}</div>
+                    <div>Lệnh vận chuyển {trip.tripCode || 'Lệnh vận chuyển'}</div>
                   </div>
                 )}
 

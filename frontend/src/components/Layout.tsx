@@ -101,7 +101,7 @@ function getPageTitle(pathname: string): string {
   const tripMatch = pathname.match(/^\/trips\/(\d+)(?:\/edit)?$/);
   if (tripMatch) {
     const isEdit = pathname.endsWith('/edit');
-    return `${isEdit ? 'Sửa' : 'Chi tiết'} lệnh ${tripMatch[1]}`;
+    return isEdit ? 'Sửa lệnh vận chuyển' : 'Chi tiết lệnh vận chuyển';
   }
   if (pathname === '/trips/new') return 'Tạo lệnh vận chuyển';
   if (pathname.startsWith('/trips')) return 'Lệnh vận chuyển';

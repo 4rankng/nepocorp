@@ -331,7 +331,7 @@ export default function ExpenseEntryPage() {
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <PageHeader
           title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
-          description={isEdit ? `Chi phí ${id}` : 'Nhập thông tin chi phí phát sinh'}
+          description={isEdit ? 'Cập nhật thông tin chi phí phát sinh' : 'Nhập thông tin chi phí phát sinh'}
           onBack={() => navigate('/expenses')}
         />
 
