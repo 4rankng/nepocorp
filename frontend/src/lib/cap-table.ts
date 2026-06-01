@@ -15,6 +15,7 @@ interface CapTableEntry {
   effectiveDate: string;
   createdAt: string;
   contributionAmount: string;
+  percentage?: string;
 }
 
 export interface ActivePartner {
@@ -54,8 +55,18 @@ export function getActiveCapTable(
 
   const total = partners.reduce((sum, p) => sum + p.contributionAmount, 0);
 
-  return partners.map(p => ({
-    ...p,
-    percentage: total > 0 ? Math.round((p.contributionAmount / total) * 10000) / 100 : 0,
+  if (total > 0) {
+    // Calculate from contribution amounts
+    return partners.map(p => ({
+      ...p,
+      percentage: Math.round((p.contributionAmount / total) * 10000) / 100,
+    }));
+  }
+
+  // Fall back to stored percentage field when contributionAmount is not set
+  return Array.from(byName.values()).map(c => ({
+    partnerName: c.partnerName,
+    contributionAmount: 0,
+    percentage: parseFloat(c.percentage ?? '0') || 0,
   }));
 }

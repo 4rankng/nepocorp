@@ -2,19 +2,17 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, sql, gte, lte, ne } from 'drizzle-orm';
 import { resolveSalaryPeriodDateRange } from './salary-period.service';
+import { ApiError } from '../errors';
 
 /**
  * Resolve an auth-user ID to the corresponding driver record.
- * Throws if the user has no active driver profile. We attach a `.status = 404`
- * marker so admin/manager users (who legitimately have no row in `drivers`)
- * get a clean 404 instead of a 500 when they hit /api/driver/me/* — the
- * dashboard endpoint's generic 500 catch was leaking the Vietnamese error
- * message as if the system itself was broken.
+ * Extends `ApiError` so the global error handler honours the 404 instead
+ * of falling through to the generic 500 branch (which previously leaked
+ * the stack trace to the client and broke the driver portal UX).
  */
-export class NoDriverProfileError extends Error {
-  status = 404;
+export class NoDriverProfileError extends ApiError {
   constructor() {
-    super('Không tìm thấy thông tin lái xe');
+    super(404, 'Không tìm thấy thông tin lái xe');
     this.name = 'NoDriverProfileError';
   }
 }

@@ -27,6 +27,14 @@ await initEnforcer();
 
 const app = express();
 
+// Honour X-Forwarded-For from the reverse proxy in front of us (nginx in
+// prod). Without this, `req.ip` returns the Docker bridge IP (e.g.
+// 172.18.0.1) and audit logs capture that instead of the real client IP.
+// Configurable via TRUST_PROXY env (number of hops, or true/false); defaults
+// to 1 in production, false in dev. MUST be set before any middleware that
+// reads `req.ip`.
+app.set('trust proxy', config.trustProxy);
+
 // ── Core middleware ────────────────────────────────────────────────────────
 app.use(cors({
   origin: config.corsOrigin

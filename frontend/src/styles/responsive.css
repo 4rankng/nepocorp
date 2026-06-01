@@ -580,34 +580,106 @@
   .setting-card__foot { padding-top: 0; margin-left: auto; flex-shrink: 0; }
   .setting-card__foot > *:not(:last-child):not(:first-child) { display: none; }
 
-  /* ── Routes config page ── */
-  .routes-config-grid { grid-template-columns: 1fr; }
+  /* ── Routes config page — Mobile Pass 1 (2026-06-02) ──
+     - Cards replace the cramped 8-col table
+     - First cell becomes the headline (no redundant "TUYẾN ĐƯỜNG:" prefix)
+     - Other cells become inline chips with light bg
+     - Watermarks hidden on KPI tiles to free up space */
+  .routes-config-grid { grid-template-columns: 1fr; gap: 12px; }
   .routes-config-grid > .sticky-card { display: none; }
+
+  /* Container — disable horizontal scroll since rows are vertical cards */
+  .routes-config-page .table-wrap { background: transparent; border: none; box-shadow: none; }
+  .routes-config-page .table-scroll { overflow-x: visible; }
+  .routes-config-page .table-scroll::after { display: none; }
+
+  /* Drop table layout entirely on mobile so the row widths follow the viewport
+     instead of the sum of column widths (table layout sized rows to ~900px). */
+  .routes-table { display: block; width: 100%; min-width: 0; }
   .routes-table thead { display: none; }
+  .routes-table tbody { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
   .routes-table tbody tr {
-    display: block; background: #fff;
-    border-bottom: 1px solid var(--line);
-    padding: 12px 14px; position: relative;
+    display: block;
+    width: 100%;
+    background: var(--bg-1, #fff);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 160ms var(--ease, ease), box-shadow 160ms var(--ease, ease);
   }
-  .routes-table tbody tr:last-child { border-bottom: none; }
-  .routes-table td:first-child {
-    display: block; padding: 0 0 8px 0;
-    border-bottom: 1px solid var(--line); margin-bottom: 8px;
+  .routes-table tbody tr:hover {
+    border-color: var(--brand, var(--primary));
   }
-  .routes-table td:first-child .row-strong { font-size: 14px; font-weight: 600; }
-  .routes-table td[data-label] {
+
+  /* Data cells — inline chips. Defined FIRST so the more-specific
+     :first-child rule below can override display:inline-flex. */
+  .routes-table tbody td[data-label] {
     display: inline-flex; align-items: center;
-    gap: 4px; font-size: 12px; padding: 2px 8px 2px 0; color: var(--ink-2);
+    gap: 4px; padding: 4px 8px;
+    margin: 3px 6px 3px 0;
+    font-size: 11.5px;
+    color: var(--fg-2, var(--ink-2));
+    background: var(--bg-2, rgba(15, 23, 42, 0.04));
+    border-radius: 8px;
+    white-space: nowrap;
   }
-  .routes-table td[data-label]::before {
-    content: attr(data-label) ": ";
-    font-size: 10.5px; font-weight: 600; color: var(--ink-3);
-    text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+  .routes-table tbody td[data-label]::before {
+    content: attr(data-label) ":";
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--fg-3, var(--ink-3));
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
   }
-  .routes-table td:last-child {
-    display: block; position: absolute; top: 10px; right: 10px; padding: 0;
+  .routes-table tbody td[data-label].num {
+    font-variant-numeric: tabular-nums;
   }
-  .routes-table td:last-child .row-actions { gap: 2px; }
+
+  /* First cell (route name) is the card headline.
+     td:first-child[data-label] has higher specificity than td[data-label]
+     AND comes later, so it wins on both counts. */
+  .routes-table tbody td:first-child[data-label] {
+    display: block;
+    padding: 0 0 10px 0;
+    margin: 0 0 10px 0;
+    border: none;
+    border-bottom: 1px solid var(--line-2, rgba(15, 23, 42, 0.06));
+    border-radius: 0;
+    background: transparent;
+    width: 100%;
+    white-space: normal;
+  }
+  .routes-table tbody td:first-child[data-label]::before {
+    content: none;
+  }
+  .routes-table tbody td:first-child[data-label] .row-strong {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--fg-1, var(--ink));
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    display: block;
+  }
+  .routes-table tbody td:first-child[data-label] .row-meta {
+    font-size: 11.5px;
+    color: var(--fg-3, var(--ink-3));
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* Hide KPI watermark icons on narrow viewports — they crowd the value */
+  .routes-config-page .kpi__watermark { display: none; }
+  .routes-config-page .kpi { overflow: hidden; }
+
+  /* "Popular route" KPI value can be a long Vietnamese city name */
+  .routes-config-page .kpi__value { word-break: keep-all; overflow-wrap: anywhere; }
+
+  /* Table footer — compact */
+  .routes-config-page .table-foot { padding: 8px 4px; font-size: 11.5px; }
 
   /* ── Login page ── */
   .login-card { padding: 24px 20px; }

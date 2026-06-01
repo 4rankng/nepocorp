@@ -5,6 +5,23 @@ dotenv.config();
 
 const isProd = process.env.NODE_ENV === 'production';
 
+// Express `trust proxy` setting — controls how `req.ip` reads X-Forwarded-For.
+// Number = hop count (typical: 1 when a single reverse proxy like nginx sits
+// in front), boolean = trust all / trust none. Default 1 in production, false
+// in dev. WITHOUT THIS, `req.ip` returns the Docker bridge address (e.g.
+// 172.18.0.1) instead of the real client IP, which breaks audit logging.
+const trustProxySchema = z.union([z.boolean(), z.number().int().nonnegative()]);
+
+function parseTrustProxy(raw: string | undefined): boolean | number {
+  if (raw === undefined || raw === '') return isProd ? 1 : false;
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  const n = Number(raw);
+  if (Number.isInteger(n) && n >= 0) return n;
+  // Fall back to safe default if the env value is bogus.
+  return isProd ? 1 : false;
+}
+
 const configSchema = z.object({
   port: z.coerce.number().int().positive().default(3001),
   databaseUrl: z.string().url().min(1),
@@ -15,6 +32,7 @@ const configSchema = z.object({
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   googleMapsApiKey: z.string().default(''),
   corsOrigin: z.string().default(''),
+  trustProxy: trustProxySchema.default(isProd ? 1 : false),
 });
 
 const raw = {
@@ -27,6 +45,7 @@ const raw = {
   nodeEnv: process.env.NODE_ENV,
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
   corsOrigin: process.env.CORS_ORIGIN,
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
 };
 
 // Provide dev-only defaults for values not marked as required in production
@@ -41,6 +60,7 @@ const withDefaults = {
   nodeEnv: raw.nodeEnv || 'development',
   googleMapsApiKey: raw.googleMapsApiKey || '',
   corsOrigin: raw.corsOrigin || '',
+  trustProxy: raw.trustProxy,
 };
 
 const result = configSchema.safeParse(withDefaults);
@@ -68,4 +88,5 @@ export const config = result.success ? result.data : configSchema.parse({
   nodeEnv: 'development',
   googleMapsApiKey: '',
   corsOrigin: '',
+  trustProxy: false,
 });

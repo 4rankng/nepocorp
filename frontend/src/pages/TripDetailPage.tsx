@@ -11,8 +11,9 @@ import type { TripDetail } from '@nepocorp/shared';
 import {
   TripStatus, TRIP_STATUS_LABELS,
   FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
-  parseThreshold,
+  parseThreshold, Role,
 } from '@nepocorp/shared';
+import { useAuth } from '../hooks/useAuth';
 import { Panel, StatusPill, useConfirm, Drawer, Modal } from '../components/UI';
 import { useTripDetail, useTripAdjustments, useTrucksAndDrivers, useFuelConfig } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
@@ -36,6 +37,7 @@ export default function TripDetailPage() {
   const navigate = useNavigate();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: trip, isLoading: loading, error: queryError, refetch: refetchTrip } = useTripDetail(id);
   const error = queryError ? 'Không thể tải thông tin lệnh vận chuyển.' : '';
@@ -195,12 +197,13 @@ export default function TripDetailPage() {
   if (!trip) return null;
 
   const displayError = actionError || error;
-  const canEdit = trip.status === TripStatus.CREATED || trip.status === TripStatus.COMPLETED;
-  const canCancel = trip.status !== TripStatus.LOCKED && trip.status !== TripStatus.CANCELED;
-  const canDispatch = trip.status === TripStatus.CREATED;
-  const canLock = trip.status === TripStatus.COMPLETED;
-  const canReassign = trip.status === TripStatus.CREATED;
-  const canAdjust = trip.status === TripStatus.LOCKED;
+  const isManagerOrAdmin = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
+  const canEdit = (trip.status === TripStatus.CREATED || trip.status === TripStatus.COMPLETED) && isManagerOrAdmin;
+  const canCancel = trip.status !== TripStatus.LOCKED && trip.status !== TripStatus.CANCELED && isManagerOrAdmin;
+  const canDispatch = trip.status === TripStatus.CREATED && isManagerOrAdmin;
+  const canLock = trip.status === TripStatus.COMPLETED && isManagerOrAdmin;
+  const canReassign = trip.status === TripStatus.CREATED && isManagerOrAdmin;
+  const canAdjust = trip.status === TripStatus.LOCKED && isManagerOrAdmin;
   const needsPhotos = !trip.photoUrls || trip.photoUrls.length === 0;
 
   return (

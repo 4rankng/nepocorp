@@ -321,7 +321,20 @@ function resolveCapTableSnapshot(
     if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
   }
 
-  const partners = Array.from(byName.values()).map(r => ({
+  const rows = Array.from(byName.values());
+
+  // Use stored percentage if all partners have explicit percentages set;
+  // otherwise fall back to calculating from contributionAmount.
+  const hasStoredPct = rows.every(r => parseFloat(r.percentage ?? '0') > 0);
+  if (hasStoredPct) {
+    return rows.map(r => ({
+      partnerName: r.partnerName,
+      contributionAmount: parseFloat(r.contributionAmount ?? '0') || 0,
+      percentage: parseFloat(r.percentage ?? '0'),
+    }));
+  }
+
+  const partners = rows.map(r => ({
     partnerName: r.partnerName,
     contributionAmount: parseFloat(r.contributionAmount ?? '0') || 0,
   }));

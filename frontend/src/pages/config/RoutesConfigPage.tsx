@@ -424,7 +424,7 @@ export default function RoutesConfigPage() {
   }).filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="fade-up">
+    <div className="fade-up routes-config-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Tuyến đường</h1>

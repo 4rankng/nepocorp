@@ -1,0 +1,258 @@
+/* ============================================================================
+ * AdminAdvancesPage (.adv-page)
+ * BEM-scoped styles: desktop CSS-grid table + mobile stacked cards.
+ * Design tokens from styles/tokens.css; responsive breakpoints match
+ * TripListPage (≤760px for mobile card switch).
+ * ========================================================================== */
+
+.adv-page .adv-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--sh-sm);
+}
+
+/* ── Desktop grid header ──────────────────────────────────────────────── */
+.adv-page .adv-grid-head {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) 130px 110px 130px minmax(160px, 2fr) 150px;
+  padding: 11px 16px;
+  gap: 12px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.adv-page .adv-grid-head > div {
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-bold);
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adv-page .adv-grid-head .col-right { text-align: right; }
+.adv-page .adv-grid-head .col-center { text-align: center; }
+
+/* ── Desktop grid row ─────────────────────────────────────────────────── */
+.adv-page .adv-grid-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) 130px 110px 130px minmax(160px, 2fr) 150px;
+  padding: 12px 16px;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  transition: background var(--t-fast);
+}
+.adv-page .adv-grid-row:last-child { border-bottom: none; }
+.adv-page .adv-grid-row:hover { background: var(--surface-2); }
+.adv-page .adv-grid-row > div {
+  line-height: var(--lh-normal);
+  min-width: 0;
+}
+
+/* ── Row cells ────────────────────────────────────────────────────────── */
+.adv-page .adv-requester {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.adv-page .adv-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.adv-page .adv-requester-name {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adv-page .adv-amount {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.adv-page .adv-date {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  text-align: center;
+}
+.adv-page .adv-reason {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adv-page .adv-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+.adv-page .adv-approver {
+  font-size: var(--fs-2xs);
+  color: var(--ink-3);
+  text-align: right;
+}
+.adv-page .adv-approver strong {
+  color: var(--ink-2);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Loading / empty states ───────────────────────────────────────────── */
+.adv-page .adv-loading {
+  text-align: center;
+  padding: 48px 24px;
+}
+.adv-page .adv-empty {
+  text-align: center;
+  padding: 56px 24px;
+}
+.adv-page .adv-empty-icon {
+  color: var(--ink-4);
+  margin: 0 auto 12px;
+}
+.adv-page .adv-empty-text {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  font-weight: var(--fw-medium);
+}
+
+/* ── Footer count ─────────────────────────────────────────────────────── */
+.adv-page .adv-footer {
+  margin-top: 8px;
+  padding-left: 4px;
+  font-size: var(--fs-xs);
+  color: var(--ink-4);
+}
+
+/* ── Mobile cards (hidden on desktop) ─────────────────────────────────── */
+.adv-page .adv-cards { display: none; }
+
+.adv-page .adv-mcard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.adv-page .adv-mcard:hover { border-color: var(--line-2); }
+
+.adv-page .adv-mcard__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.adv-page .adv-mcard__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.adv-page .adv-mcard__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.adv-page .adv-mcard__name {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adv-page .adv-mcard__amount {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  color: var(--ink);
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.adv-page .adv-mcard__meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  margin-bottom: 10px;
+}
+.adv-page .adv-mcard__meta-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.adv-page .adv-mcard__meta-label {
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  font-weight: var(--fw-semibold);
+  flex-shrink: 0;
+}
+.adv-page .adv-mcard__meta-value {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  text-align: right;
+  min-width: 0;
+  word-break: break-word;
+}
+
+/* Mobile action buttons */
+.adv-page .adv-mcard__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.adv-page .adv-mcard__actions .btn {
+  flex: 1;
+  justify-content: center;
+  min-height: 44px;
+}
+
+/* ── Responsive: ≤760px ───────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  /* Hide desktop grid, show mobile cards */
+  .adv-page .adv-grid-head,
+  .adv-page .adv-grid-row { display: none; }
+  .adv-page .adv-cards { display: block; }
+
+  /* Panel becomes transparent wrapper for cards */
+  .adv-page .adv-panel {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+}

@@ -494,6 +494,12 @@ export async function transitionTripStatus(
         }
       }
     } else if (targetStatus === TripStatus.LOCKED) {
+      if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
+        throw new ApiError(
+          403,
+          'Chỉ Quản lý hoặc Quản trị viên mới có quyền chốt khóa chuyến đi',
+        );
+      }
       // Inline lock procedure to avoid nested transaction
       if (currentStatus !== TripStatus.COMPLETED) {
         throw new ApiError(409, 'Chỉ có thể chốt chuyến đi khi ở trạng thái Hoàn thành');

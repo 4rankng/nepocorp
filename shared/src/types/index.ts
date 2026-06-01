@@ -260,6 +260,7 @@ export interface CapTableHistory {
   id: number;
   partnerName: string;
   contributionAmount: string;
+  percentage?: string;
   effectiveDate: string;
   createdAt: string;
   updatedAt: string;

@@ -22,6 +22,7 @@
 @import "./pages/FleetPage.css";
 @import "./pages/PenaltyPage.css";
 @import "./pages/ExpenseEntryPage.css";
+@import "./pages/AdminAdvancesPage.css";
 @import "./features/users/users.css";
 
 /* Responsive overrides MUST be imported last — they win the cascade against

@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import { Loader2, Check, X, Wallet, CheckCircle2, XCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ADVANCE_REQUEST_STATUS_LABELS, type AdvanceRequestStatus } from '@nepocorp/shared';
-import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import {
+  ADVANCE_REQUEST_STATUS_LABELS,
+  AdvanceRequestStatus,
+} from '@nepocorp/shared';
+import { KPI, PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
 import {
   useAdminAdvanceRequests,
   useApproveAdvanceRequest,
@@ -10,105 +13,79 @@ import {
 } from '../hooks/useQueries';
 import { advanceRequestStatusVariant } from '../lib/status-variants';
 
-const tabs = [
+/* ── Types ─────────────────────────────────────────────────────────────── */
+
+interface AdvanceRequest {
+  id: number;
+  requesterName: string | null;
+  requesterId: number;
+  amount: number | string;
+  createdAt: string;
+  status: AdvanceRequestStatus;
+  reason: string | null;
+  approverName: string | null;
+}
+
+type StatusFilter = '' | AdvanceRequestStatus;
+
+const TABS: { key: StatusFilter; label: string }[] = [
   { key: '', label: 'Tất cả' },
-  { key: 'PENDING', label: 'Chờ duyệt' },
-  { key: 'APPROVED', label: 'Đã duyệt' },
-  { key: 'REJECTED', label: 'Từ chối' },
+  { key: AdvanceRequestStatus.PENDING, label: 'Chờ duyệt' },
+  { key: AdvanceRequestStatus.APPROVED, label: 'Đã duyệt' },
+  { key: AdvanceRequestStatus.REJECTED, label: 'Từ chối' },
 ];
 
-function AdvanceRow({ req, approveMutation, rejectMutation }: { req: any; approveMutation: any; rejectMutation: any }) {
-  const [hovered, setHovered] = useState(false);
+/* ── Desktop grid row ──────────────────────────────────────────────────── */
+
+function AdvanceGridRow({
+  req,
+  approveMutation,
+  rejectMutation,
+}: {
+  req: AdvanceRequest;
+  approveMutation: ReturnType<typeof useApproveAdvanceRequest>;
+  rejectMutation: ReturnType<typeof useRejectAdvanceRequest>;
+}) {
   const isApproving = approveMutation.isPending && approveMutation.variables === req.id;
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === req.id;
-  const isPending = req.status === 'PENDING';
+  const isPending = req.status === AdvanceRequestStatus.PENDING;
 
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        padding: '12px 16px',
-        borderBottom: '1px solid var(--line)',
-        background: hovered ? 'var(--surface-2)' : 'transparent',
-        transition: 'background 0.1s',
-      }}
-    >
-      {/* Icon + Requester */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: 220, flexShrink: 0 }}>
-        <div style={{ 
-          width: 32, height: 32, borderRadius: 8, 
-          background: 'var(--surface-3)', 
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--ink-3)', flexShrink: 0
-        }}>
+    <div className="adv-grid-row">
+      {/* Requester */}
+      <div className="adv-requester">
+        <div className="adv-avatar">
           <Wallet size={16} />
         </div>
-        <span style={{
-          fontWeight: 600,
-          fontSize: 13,
-          color: 'var(--ink)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}>
+        <span className="adv-requester-name">
           {req.requesterName || `Đối tác ${req.requesterId}`}
         </span>
       </div>
 
       {/* Amount */}
-      <span style={{
-        width: 120,
-        flexShrink: 0,
-        fontWeight: 600,
-        fontFamily: 'var(--font-mono)',
-        fontSize: 13,
-        color: 'var(--ink)',
-        textAlign: 'right',
-      }}>
+      <div className="adv-amount">
         {formatCurrency(Number(req.amount))}
-      </span>
+      </div>
 
       {/* Date */}
-      <span style={{
-        width: 100,
-        flexShrink: 0,
-        fontSize: 12,
-        color: 'var(--ink-3)',
-        textAlign: 'center',
-      }}>
+      <div className="adv-date">
         {formatDate(req.createdAt)}
-      </span>
+      </div>
 
       {/* Status */}
-      <div style={{ width: 120, flexShrink: 0 }}>
+      <div>
         <StatusPill variant={advanceRequestStatusVariant(req.status)}>
-          {ADVANCE_REQUEST_STATUS_LABELS[req.status as AdvanceRequestStatus]}
+          {ADVANCE_REQUEST_STATUS_LABELS[req.status]}
         </StatusPill>
       </div>
 
       {/* Reason */}
-      <span style={{
-        flex: 1,
-        fontSize: 13,
-        color: 'var(--ink-2)',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}>
-        {req.reason}
-      </span>
+      <div className="adv-reason">{req.reason}</div>
 
-      {/* Actions / Approver Info */}
-      <div style={{ width: 140, flexShrink: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+      {/* Actions / Approver */}
+      <div className="adv-actions">
         {isPending ? (
-          <div style={{
-            display: 'flex',
-            gap: 4,
-          }}>
+          <>
             <button
               className="btn btn--ghost btn--icon btn--sm"
               onClick={() => approveMutation.mutate(req.id)}
@@ -123,15 +100,13 @@ function AdvanceRow({ req, approveMutation, rejectMutation }: { req: any; approv
               onClick={() => rejectMutation.mutate(req.id)}
               disabled={isApproving || isRejecting}
               title="Từ chối yêu cầu"
-              style={{ color: 'var(--ink-3)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--danger)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-3)')}
+              style={{ color: 'var(--danger)' }}
             >
               {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
             </button>
-          </div>
+          </>
         ) : req.approverName ? (
-          <div style={{ fontSize: 11, color: 'var(--ink-3)', textAlign: 'right' }}>
+          <div className="adv-approver">
             bởi <strong>{req.approverName}</strong>
           </div>
         ) : null}
@@ -140,89 +115,232 @@ function AdvanceRow({ req, approveMutation, rejectMutation }: { req: any; approv
   );
 }
 
-export default function AdminAdvancesPage() {
-  const [statusFilter, setStatusFilter] = useState('');
-  const { data, isLoading } = useAdminAdvanceRequests(
-    statusFilter ? { status: statusFilter } : undefined,
+/* ── Mobile card ───────────────────────────────────────────────────────── */
+
+function AdvanceMobileCard({
+  req,
+  approveMutation,
+  rejectMutation,
+}: {
+  req: AdvanceRequest;
+  approveMutation: ReturnType<typeof useApproveAdvanceRequest>;
+  rejectMutation: ReturnType<typeof useRejectAdvanceRequest>;
+}) {
+  const isApproving = approveMutation.isPending && approveMutation.variables === req.id;
+  const isRejecting = rejectMutation.isPending && rejectMutation.variables === req.id;
+  const isPending = req.status === AdvanceRequestStatus.PENDING;
+
+  return (
+    <div className="adv-mcard">
+      {/* Top: avatar + name + status */}
+      <div className="adv-mcard__top">
+        <div className="adv-mcard__left">
+          <div className="adv-mcard__avatar">
+            <Wallet size={16} />
+          </div>
+          <span className="adv-mcard__name">
+            {req.requesterName || `Đối tác ${req.requesterId}`}
+          </span>
+        </div>
+        <StatusPill variant={advanceRequestStatusVariant(req.status)}>
+          {ADVANCE_REQUEST_STATUS_LABELS[req.status]}
+        </StatusPill>
+      </div>
+
+      {/* Amount — prominent */}
+      <div className="adv-mcard__amount">
+        {formatCurrency(Number(req.amount))}
+      </div>
+
+      {/* Meta: date + reason */}
+      <div className="adv-mcard__meta">
+        <div className="adv-mcard__meta-row">
+          <span className="adv-mcard__meta-label">Ngày tạo</span>
+          <span className="adv-mcard__meta-value">{formatDate(req.createdAt)}</span>
+        </div>
+        {req.reason && (
+          <div className="adv-mcard__meta-row">
+            <span className="adv-mcard__meta-label">Lý do</span>
+            <span className="adv-mcard__meta-value">{req.reason}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      {isPending ? (
+        <div className="adv-mcard__actions">
+          <button
+            className="btn btn--primary"
+            onClick={() => approveMutation.mutate(req.id)}
+            disabled={isApproving || isRejecting}
+          >
+            {isApproving ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
+            Duyệt
+          </button>
+          <button
+            className="btn btn--secondary btn--danger"
+            onClick={() => rejectMutation.mutate(req.id)}
+            disabled={isApproving || isRejecting}
+          >
+            {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
+            Từ chối
+          </button>
+        </div>
+      ) : req.approverName ? (
+        <div className="adv-mcard__meta-row" style={{ marginTop: 4 }}>
+          <span className="adv-mcard__meta-label">Duyệt bởi</span>
+          <span className="adv-mcard__meta-value" style={{ fontWeight: 600, color: 'var(--ink)' }}>
+            {req.approverName}
+          </span>
+        </div>
+      ) : null}
+    </div>
   );
+}
+
+/* ── Page ──────────────────────────────────────────────────────────────── */
+
+export default function AdminAdvancesPage() {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
+
+  // Fetch ALL requests once — client-side filtering for accurate counts/totals
+  const { data, isLoading } = useAdminAdvanceRequests();
   const approveMutation = useApproveAdvanceRequest();
   const rejectMutation = useRejectAdvanceRequest();
 
-  const requests = data?.items ?? [];
+  const allRequests: AdvanceRequest[] = (data?.items ?? []) as AdvanceRequest[];
 
+  /* ── Derived counts & totals ─────────────────────────────────────────── */
+  const stats = useMemo(() => {
+    const counts: Record<string, number> = { total: 0, [AdvanceRequestStatus.PENDING]: 0, [AdvanceRequestStatus.APPROVED]: 0, [AdvanceRequestStatus.REJECTED]: 0 };
+    const totals: Record<string, number> = { [AdvanceRequestStatus.PENDING]: 0, [AdvanceRequestStatus.APPROVED]: 0, [AdvanceRequestStatus.REJECTED]: 0 };
+
+    for (const req of allRequests) {
+      counts.total++;
+      const s = req.status as string;
+      if (s in counts) counts[s]++;
+      const amt = Number(req.amount) || 0;
+      if (s in totals) totals[s] += amt;
+    }
+    return { counts, totals };
+  }, [allRequests]);
+
+  const filtered = useMemo(() => {
+    if (!statusFilter) return allRequests;
+    return allRequests.filter((r) => r.status === statusFilter);
+  }, [allRequests, statusFilter]);
+
+  /* ── Tab counts ──────────────────────────────────────────────────────── */
+  const tabCounts = useMemo(() => ({
+    '': stats.counts.total,
+    [AdvanceRequestStatus.PENDING]: stats.counts.PENDING,
+    [AdvanceRequestStatus.APPROVED]: stats.counts.APPROVED,
+    [AdvanceRequestStatus.REJECTED]: stats.counts.REJECTED,
+  }), [stats]);
+
+  /* ── Render ──────────────────────────────────────────────────────────── */
   return (
-    <div className="fade-up">
+    <div className="adv-page fade-up">
       <PageHeader
         title="Quản lý tạm ứng"
         description="Duyệt hoặc từ chối yêu cầu tạm ứng"
       />
 
-      <div style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
-        borderRadius: 12,
-        overflow: 'hidden',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
-      }}>
-        {/* Filters Toolbar */}
+      {/* ── KPI strip ─────────────────────────────────────────────────── */}
+      <div className="kpi-grid cols-3">
+        <KPI
+          label="Chờ duyệt"
+          value={stats.counts.PENDING}
+          variant="warn"
+          icon={Wallet}
+          meta={formatCurrency(stats.totals.PENDING)}
+          onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.PENDING ? '' : AdvanceRequestStatus.PENDING)}
+        />
+        <KPI
+          label="Đã duyệt"
+          value={stats.counts.APPROVED}
+          variant="success"
+          icon={Wallet}
+          meta={formatCurrency(stats.totals.APPROVED)}
+          onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.APPROVED ? '' : AdvanceRequestStatus.APPROVED)}
+        />
+        <KPI
+          label="Từ chối"
+          value={stats.counts.REJECTED}
+          variant="danger"
+          icon={Wallet}
+          meta={formatCurrency(stats.totals.REJECTED)}
+          onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.REJECTED ? '' : AdvanceRequestStatus.REJECTED)}
+        />
+      </div>
+
+      {/* ── Card wrapper ──────────────────────────────────────────────── */}
+      <div className="adv-panel">
+        {/* Filter tabs */}
         <Toolbar>
-          {tabs.map((tab) => (
+          {TABS.map((tab) => (
             <FilterPill
               key={tab.key}
               active={statusFilter === tab.key}
               onClick={() => setStatusFilter(tab.key)}
+              count={tabCounts[tab.key]}
             >
               {tab.label}
             </FilterPill>
           ))}
         </Toolbar>
 
-        {/* Column Headers */}
-        {requests.length > 0 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-            padding: '10px 16px',
-            borderBottom: '1px solid var(--line)',
-            background: 'var(--surface-2)',
-          }}>
-            <span style={{ width: 220, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Người yêu cầu</span>
-            <span style={{ width: 120, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'right' }}>Số tiền</span>
-            <span style={{ width: 100, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>Ngày tạo</span>
-            <span style={{ width: 120, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Trạng thái</span>
-            <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Lý do</span>
-            <span style={{ width: 140, flexShrink: 0 }} />
-          </div>
-        )}
-
-        {/* List Body */}
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: 48 }}>
-            <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', color: 'var(--ink-3)', margin: '0 auto' }} />
+          <div className="adv-loading">
+            <Loader2 size={24} className="spin" style={{ color: 'var(--ink-3)' }} />
           </div>
-        ) : requests.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '64px 24px' }}>
-            <Wallet size={32} style={{ color: 'var(--ink-4)', margin: '0 auto 12px' }} />
-            <div style={{ fontSize: 14, color: 'var(--ink-2)', fontWeight: 500 }}>Không có yêu cầu tạm ứng nào</div>
+        ) : filtered.length === 0 ? (
+          <div className="adv-empty">
+            <Wallet size={32} className="adv-empty-icon" />
+            <div className="adv-empty-text">Không có yêu cầu tạm ứng nào</div>
           </div>
         ) : (
-          <div>
-            {requests.map((req: any) => (
-              <AdvanceRow
-                key={req.id}
-                req={req}
-                approveMutation={approveMutation}
-                rejectMutation={rejectMutation}
-              />
-            ))}
-          </div>
+          <>
+            {/* Desktop: grid header + rows */}
+            <div className="adv-grid-head">
+              <div>Người yêu cầu</div>
+              <div className="col-right">Số tiền</div>
+              <div className="col-center">Ngày tạo</div>
+              <div>Trạng thái</div>
+              <div>Lý do</div>
+              <div />
+            </div>
+
+            <div>
+              {filtered.map((req) => (
+                <AdvanceGridRow
+                  key={req.id}
+                  req={req}
+                  approveMutation={approveMutation}
+                  rejectMutation={rejectMutation}
+                />
+              ))}
+            </div>
+
+            {/* Mobile: stacked cards */}
+            <div className="adv-cards">
+              {filtered.map((req) => (
+                <AdvanceMobileCard
+                  key={req.id}
+                  req={req}
+                  approveMutation={approveMutation}
+                  rejectMutation={rejectMutation}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
-      {requests.length > 0 && (
-        <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-4)', paddingLeft: 4 }}>
-          {requests.length} yêu cầu tạm ứng
+      {/* Footer count */}
+      {filtered.length > 0 && (
+        <div className="adv-footer">
+          {filtered.length} yêu cầu tạm ứng
         </div>
       )}
     </div>
