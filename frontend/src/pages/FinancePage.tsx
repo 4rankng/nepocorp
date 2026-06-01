@@ -587,28 +587,36 @@ export default function FinancePage() {
                       <th className="num">Lệnh</th>
                       <th className="num">Doanh thu chặng</th>
                       <th className="num">Tổng chi phí</th>
-                      {maintenanceCost > 0 && <th className="num">Bảo dưỡng</th>}
+                      {maintenanceCost > 0 && (
+                        <>
+                          <th className="num">BD đầu kéo</th>
+                          <th className="num">BD rơ-mooc</th>
+                        </>
+                      )}
                       <th className="num">Lợi nhuận gộp</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {report.trucks.map(t => {
-                      const truckMaint = t.maintenanceExpenses ?? 0;
-                      return (
+                    {report.trucks.map(t => (
                         <tr key={t.plate}>
                           <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{t.plate}</td>
                           <td className="num">{t.trips}</td>
                           <td className="num">{formatRawNumber(t.revenue)}</td>
                           <td className="num">{formatRawNumber(t.costs)}</td>
-                          {maintenanceCost > 0 && (
-                            <td className="num">{truckMaint > 0 ? formatRawNumber(truckMaint) : '—'}</td>
-                          )}
+                          {maintenanceCost > 0 && (() => {
+                            const comp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
+                            return (
+                              <>
+                                <td className="num">{comp.truck > 0 ? formatRawNumber(comp.truck) : '—'}</td>
+                                <td className="num">{comp.trailer > 0 ? formatRawNumber(comp.trailer) : '—'}</td>
+                              </>
+                            );
+                          })()}
                           <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
                             {formatRawNumber(t.profit)}
                           </td>
                         </tr>
-                      );
-                    })}
+                    ))}
                   </tbody>
                 </table>
               </div>

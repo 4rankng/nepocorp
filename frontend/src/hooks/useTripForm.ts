@@ -428,6 +428,7 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
           driverId: Number(driverId),
           cargoTypeId: Number(cargoTypeId),
           departureDate: departureDate,
+          fuelMode,
         };
         if (customerReference.trim()) {
           createPayload.customerReference = customerReference.trim();
@@ -455,6 +456,15 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
           const supplementNum = Number(fuelSupplementLiters);
           if (supplementNum > 0 && !fuelSupplementReason.trim()) {
             throw new Error("Vui lòng điền lý do bổ sung dầu.");
+          }
+
+          // The /pre-departure endpoint requires at least one leg. If the user
+          // expanded the optional sections but never filled in any km, skip
+          // the pre-departure call entirely — otherwise the create succeeds,
+          // the pre-departure 400s, and the user sees a scary "Hành trình:
+          // Array must contain at least 1" error even though the trip exists.
+          if (legsToSubmit.length === 0) {
+            return trip.id;
           }
 
           const preDeparturePayload = {

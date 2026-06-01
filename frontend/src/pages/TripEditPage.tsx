@@ -5,6 +5,7 @@ import { api, ApiError } from '../lib/api';
 import { useConfirm } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
 import { useTripDetail } from '../hooks/useQueries';
+import { useCatalogs } from '../hooks/useCatalogs';
 import { FuelMode, LoadingType, TripStatus } from '@nepocorp/shared';
 import type { TripDetail, PricingTable, PaginatedResponse } from '@nepocorp/shared';
 import { calculateDistanceKm } from '../lib/maps';
@@ -26,6 +27,8 @@ export default function TripEditPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
+  const { data: catalogData } = useCatalogs();
+  const [routeId, setRouteId] = useState('');
   const [legs, setLegs] = useState<FormLeg[]>([]);
   const [fuelMode, setFuelMode] = useState<FuelMode>(FuelMode.AUTO);
   const [fuelLitersOverride, setFuelLitersOverride] = useState('');
@@ -48,6 +51,7 @@ export default function TripEditPage() {
     if (lastTripId.current === trip.id) return;
     lastTripId.current = trip.id;
 
+    setRouteId(trip.routeId ? String(trip.routeId) : '');
     setFuelMode(trip.fuelMode);
     setFuelLitersOverride(trip.fuelLitersOverride ? String(trip.fuelLitersOverride) : '');
     setFuelSupplementLiters(trip.fuelSupplementLiters ? String(trip.fuelSupplementLiters) : '');
@@ -232,6 +236,7 @@ export default function TripEditPage() {
     setSubmitting(true);
     try {
       const payload = {
+        routeId: routeId ? Number(routeId) : undefined,
         legs: legs.map(l => ({
           sequence: l.sequence,
           origin: l.origin.trim(),
@@ -269,6 +274,10 @@ export default function TripEditPage() {
       } else {
         setError("Có lỗi xảy ra khi lưu số liệu. Vui lòng thử lại.");
       }
+      // Page is long enough that the error banner above the form is
+      // easy to miss after scrolling. Pop the user back to the top so
+      // the banner is visible (previously the form just looked dead).
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSubmitting(false);
     }
@@ -330,6 +339,22 @@ export default function TripEditPage() {
                     <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>({trip.containerCount ?? 1} cont × đơn giá)</span>
                   )}
                 </div>
+                
+                <div className="field" style={{ marginBottom: 20 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Tuyến đường</label>
+                  <select 
+                    className="input" 
+                    value={routeId} 
+                    onChange={(e) => setRouteId(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Chọn tuyến đường --</option>
+                    {catalogData?.routes.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <TripLegFields
                   legs={legs}
                   addLeg={handleAddLeg}

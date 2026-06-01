@@ -84,6 +84,7 @@ export const REPORTS = {
   DASHBOARD: '/reports/dashboard',
   PNL: '/reports/pnl',
   RECEIVABLES_SUMMARY: '/reports/receivables-summary',
+  RECEIVABLES_AGING: '/reports/receivables-aging',
   PAYABLES_SUMMARY: '/reports/payables-summary',
   RENEWALS: '/expenses/reports/renewals',
   DISTRIBUTE_PROFIT: '/reports/distribute-profit',

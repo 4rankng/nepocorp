@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import type {
   TripDetail,
-  Customer,
   LedgerEntry,
   CustomerStatement,
   CapTableHistory,
@@ -22,6 +21,14 @@ import type {
   RenewalReminder,
 } from '@nepocorp/shared';
 import { TRIPS, REPORTS, CONFIG, FINANCIAL } from '@nepocorp/shared';
+
+export interface CustomerAging {
+  customerId: number;
+  customerName: string;
+  totalOutstanding: number;
+  aging: { current: number; d30: number; d60: number; over90: number };
+  maxOverdueDays: number;
+}
 
 export type { PnlTruck, PnlReport };
 
@@ -184,19 +191,11 @@ export function useCapTable() {
   });
 }
 
-export function useCustomerDebts() {
-  return useQuery<{ customers: Customer[]; ledgerEntries: LedgerEntry[] }>({
-    queryKey: ['customer-debts'],
-    queryFn: async () => {
-      const [customersRes, ledgerRes] = await Promise.all([
-        api.get<PaginatedResponse<Customer>>(CONFIG.CUSTOMERS),
-        api.get<PaginatedResponse<LedgerEntry>>(`${FINANCIAL.LEDGER}?entity_type=CUSTOMER&limit=2000`),
-      ]);
-      return {
-        customers: customersRes.items,
-        ledgerEntries: ledgerRes.items,
-      };
-    },
+export function useCustomerAging() {
+  return useQuery<{ customers: CustomerAging[] }>({
+    queryKey: ['customer-aging'],
+    queryFn: () => api.get<{ customers: CustomerAging[] }>(REPORTS.RECEIVABLES_AGING),
+    staleTime: 2 * 60 * 1000,
   });
 }
 

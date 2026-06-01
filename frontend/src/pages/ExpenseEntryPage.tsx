@@ -16,6 +16,7 @@ type FormState = {
   supplierId: number | '';
   categoryId: number | '';
   truckId: number | '';
+  vehicleComponent: 'TRUCK' | 'TRAILER';
   amount: string;
   paymentStatus: 'PAID' | 'UNPAID';
   validFrom: string;
@@ -29,6 +30,7 @@ const initialForm: FormState = {
   supplierId: '',
   categoryId: '',
   truckId: '',
+  vehicleComponent: 'TRUCK' as const,
   amount: '',
   paymentStatus: 'UNPAID',
   validFrom: '',
@@ -44,6 +46,7 @@ export default function ExpenseEntryPage() {
   const { toast } = useToast();
 
   const [form, setForm] = useState<FormState>(initialForm);
+  const [expenseType, setExpenseType] = useState<'COMPANY' | 'TRUCK' | 'TRAILER'>('COMPANY');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [pageError, setPageError] = useState('');
@@ -96,6 +99,7 @@ export default function ExpenseEntryPage() {
         supplierId: existingExpense.supplierId || '',
         categoryId: existingExpense.categoryId || '',
         truckId: existingExpense.truckId || '',
+        vehicleComponent: existingExpense.vehicleComponent || 'TRUCK',
         amount: existingExpense.amount || '',
         paymentStatus: (existingExpense.paymentStatus as 'PAID' | 'UNPAID') || 'UNPAID',
         validFrom: existingExpense.validFrom?.slice(0, 10) || '',
@@ -103,6 +107,7 @@ export default function ExpenseEntryPage() {
         receiptId: existingExpense.receiptId || '',
         note: existingExpense.note || '',
       });
+      setExpenseType(existingExpense.truckId ? (existingExpense.vehicleComponent as 'TRUCK' | 'TRAILER') : 'COMPANY');
     }
   }, [existingExpense]);
 
@@ -210,6 +215,7 @@ export default function ExpenseEntryPage() {
       supplierId: Number(form.supplierId),
       categoryId: Number(form.categoryId),
       truckId: form.truckId ? Number(form.truckId) : null,
+      vehicleComponent: form.truckId ? form.vehicleComponent : null,
       amount: form.amount,
       paymentStatus: form.paymentStatus,
       validFrom: showValidityFields && form.validFrom ? form.validFrom : null,
@@ -219,24 +225,47 @@ export default function ExpenseEntryPage() {
     };
 
     const result = expenseSchema.safeParse(payload);
+
+    if (expenseType !== 'COMPANY' && !form.truckId) {
+      setErrors(prev => ({ ...prev, truckId: 'Vui lòng chọn biển số' }));
+      setTimeout(() => document.querySelector<HTMLElement>('[name="truckId"]')?.focus(), 0);
+      return;
+    }
+
     if (!result.success) {
+      // Zod's default messages are in English ("Number must be greater than 0"),
+      // which looked broken next to the Vietnamese form labels. Translate the
+      // common ones and fall back to the field-specific friendly message.
+      const FRIENDLY: Record<string, string> = {
+        supplierId: 'Vui lòng chọn nhà cung cấp',
+        categoryId: 'Vui lòng chọn hạng mục chi phí',
+        amount: 'Số tiền phải là số dương',
+        expenseDate: 'Vui lòng chọn ngày chi',
+        paymentStatus: 'Vui lòng chọn trạng thái thanh toán',
+      };
       const fieldErrors: Record<string, string> = {};
       for (const issue of result.error.issues) {
         const field = issue.path[0]?.toString();
         if (field && !fieldErrors[field]) {
-          fieldErrors[field] = issue.message;
+          fieldErrors[field] = FRIENDLY[field] ?? issue.message;
         }
       }
       setErrors(fieldErrors);
+      const firstErrorField = result.error.issues[0]?.path[0]?.toString();
+      if (firstErrorField) {
+        setTimeout(() => document.querySelector<HTMLElement>(`[name="${firstErrorField}"]`)?.focus(), 0);
+      }
       return;
     }
 
     if (showValidityFields && !form.validFrom) {
       setErrors(prev => ({ ...prev, validFrom: 'Trường bắt buộc khi hạng mục có tính gia hạn' }));
+      setTimeout(() => document.querySelector<HTMLElement>('[name="validFrom"]')?.focus(), 0);
       return;
     }
     if (showValidityFields && !form.validTo) {
       setErrors(prev => ({ ...prev, validTo: 'Trường bắt buộc khi hạng mục có tính gia hạn' }));
+      setTimeout(() => document.querySelector<HTMLElement>('[name="validTo"]')?.focus(), 0);
       return;
     }
 
@@ -268,74 +297,74 @@ export default function ExpenseEntryPage() {
   }
 
   return (
-    <div className="fade-up">
+    <div className="fade-up relative min-h-[calc(100vh-64px)] p-4 md:p-8 overflow-hidden">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
+      {/* Decorative blobs */}
+      <div className="absolute top-0 right-10 w-72 h-72 rounded-full mix-blend-multiply opacity-50 blur-3xl animate-blob" style={{ background: 'rgba(0,177,79,0.15)' }} />
+      <div className="absolute bottom-20 left-10 w-96 h-96 rounded-full mix-blend-multiply opacity-50 blur-3xl animate-blob animation-delay-2000" style={{ background: 'rgba(30,91,184,0.1)' }} />
 
-      <PageHeader
-        title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
-        description={isEdit ? `Chi phí #${id}` : 'Nhập thông tin chi phí phát sinh'}
-        onBack={() => navigate('/expenses')}
-      />
+      <div className="relative max-w-4xl mx-auto">
+        <PageHeader
+          title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
+          description={isEdit ? `Chi phí #${id}` : 'Nhập thông tin chi phí phát sinh'}
+          onBack={() => navigate('/expenses')}
+        />
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, padding: '0 16px 32px' }}>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-8 pb-16">
           {pageError && (
-            <div className="panel" style={{ padding: 16, color: 'var(--danger)' }}>
-              {pageError}
+            <div className="animate-shake" style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)', padding: '16px 20px', borderRadius: '16px', border: '1px solid var(--danger)' }}>
+              <strong>Lỗi:</strong> {pageError}
             </div>
           )}
 
-          <div className="panel">
-            <div className="panel__body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <FormGroup label="Ngày chi *" error={errors.expenseDate}>
+          <div className="expense-panel">
+            <div className="expense-panel__header">
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>Thông tin chung</h2>
+              <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>Cập nhật các thông tin cơ bản cho phiếu chi</p>
+            </div>
+            
+            <div className="expense-panel__body expense-grid">
+              <div className="expense-group">
+                <label className="expense-label">Ngày chi <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <input
                   type="date"
-                  className="input"
+                  name="expenseDate"
+                  className="expense-input"
                   value={form.expenseDate}
                   onChange={e => set('expenseDate', e.target.value)}
                 />
-              </FormGroup>
+                {errors.expenseDate && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.expenseDate}</p>}
+              </div>
 
-              <FormGroup label="Trạng thái thanh toán *" error={errors.paymentStatus}>
+              <div className="expense-group">
+                <label className="expense-label">Trạng thái thanh toán <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <select
-                  className="input"
+                  name="paymentStatus"
+                  className="expense-input"
                   value={form.paymentStatus}
                   onChange={e => set('paymentStatus', e.target.value as 'PAID' | 'UNPAID')}
                 >
                   <option value="UNPAID">Ghi nợ</option>
                   <option value="PAID">Trả ngay</option>
                 </select>
-              </FormGroup>
+                {errors.paymentStatus && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.paymentStatus}</p>}
+              </div>
 
-              <FormGroup label="Nhà cung cấp *" error={errors.supplierId}>
-                <select
-                  className="input"
-                  value={form.supplierId}
-                  onChange={e => set('supplierId', e.target.value ? Number(e.target.value) : '')}
-                >
-                  <option value="">Chọn nhà cung cấp…</option>
-                  {suppliers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-                {catalogsLoaded && suppliers.length === 0 && !showNewSupplier && (
-                  <p style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
-                    Chưa có nhà cung cấp.{' '}
-                    <button type="button" onClick={() => setShowNewSupplier(true)} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-                      Tạo mới
+              <div className="expense-group" style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label className="expense-label" style={{ marginBottom: 0 }}>Nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  {!showNewSupplier && (
+                    <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                      <Plus size={14} /> Thêm mới
                     </button>
-                  </p>
-                )}
-                {!showNewSupplier && suppliers.length > 0 && (
-                  <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <Plus size={12} /> Thêm nhà cung cấp mới
-                  </button>
-                )}
-                {showNewSupplier && (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                  )}
+                </div>
+                {showNewSupplier ? (
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <input
                       type="text"
-                      className="input"
+                      name="newSupplierName"
+                      className="expense-input"
                       style={{ flex: 1 }}
                       placeholder="Tên nhà cung cấp…"
                       value={newSupplierName}
@@ -343,45 +372,44 @@ export default function ExpenseEntryPage() {
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSupplier(); } if (e.key === 'Escape') { setShowNewSupplier(false); setNewSupplierName(''); } }}
                       autoFocus
                     />
-                    <button type="button" className="btn btn--primary btn--sm" disabled={creatingSupplier || !newSupplierName.trim()} onClick={handleCreateSupplier}>
-                      {creatingSupplier ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Check size={12} />}
+                    <button type="button" className="expense-btn-save" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingSupplier || !newSupplierName.trim()} onClick={handleCreateSupplier}>
+                      {creatingSupplier ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
                     </button>
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setShowNewSupplier(false); setNewSupplierName(''); }}>
-                      <X size={12} />
+                    <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewSupplier(false); setNewSupplierName(''); }}>
+                      <X size={16} />
                     </button>
                   </div>
+                ) : (
+                  <select
+                    name="supplierId"
+                    className="expense-input"
+                    value={form.supplierId}
+                    onChange={e => set('supplierId', e.target.value ? Number(e.target.value) : '')}
+                  >
+                    <option value="">Chọn nhà cung cấp…</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
                 )}
-              </FormGroup>
+                {errors.supplierId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.supplierId}</p>}
+              </div>
 
-              <FormGroup label="Hạng mục *" error={errors.categoryId}>
-                <select
-                  className="input"
-                  value={form.categoryId}
-                  onChange={e => set('categoryId', e.target.value ? Number(e.target.value) : '')}
-                >
-                  <option value="">Chọn hạng mục…</option>
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-                {catalogsLoaded && categories.length === 0 && !showNewCategory && (
-                  <p style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
-                    Chưa có hạng mục.{' '}
-                    <button type="button" onClick={() => setShowNewCategory(true)} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-                      Tạo mới
+              <div className="expense-group" style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label className="expense-label" style={{ marginBottom: 0 }}>Hạng mục <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  {!showNewCategory && (
+                    <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                      <Plus size={14} /> Thêm mới
                     </button>
-                  </p>
-                )}
-                {!showNewCategory && categories.length > 0 && (
-                  <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <Plus size={12} /> Thêm hạng mục mới
-                  </button>
-                )}
-                {showNewCategory && (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                  )}
+                </div>
+                {showNewCategory ? (
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <input
                       type="text"
-                      className="input"
+                      name="newCategoryName"
+                      className="expense-input"
                       style={{ flex: 1 }}
                       placeholder="Tên hạng mục…"
                       value={newCategoryName}
@@ -389,103 +417,176 @@ export default function ExpenseEntryPage() {
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } if (e.key === 'Escape') { setShowNewCategory(false); setNewCategoryName(''); } }}
                       autoFocus
                     />
-                    <button type="button" className="btn btn--primary btn--sm" disabled={creatingCategory || !newCategoryName.trim()} onClick={handleCreateCategory}>
-                      {creatingCategory ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Check size={12} />}
+                    <button type="button" className="expense-btn-save" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingCategory || !newCategoryName.trim()} onClick={handleCreateCategory}>
+                      {creatingCategory ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
                     </button>
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}>
-                      <X size={12} />
+                    <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}>
+                      <X size={16} />
                     </button>
                   </div>
+                ) : (
+                  <select
+                    name="categoryId"
+                    className="expense-input"
+                    value={form.categoryId}
+                    onChange={e => set('categoryId', e.target.value ? Number(e.target.value) : '')}
+                  >
+                    <option value="">Chọn hạng mục…</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 )}
-              </FormGroup>
+                {errors.categoryId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.categoryId}</p>}
+              </div>
 
-              <FormGroup
-                label="Xe"
-                helpText="Để trống nếu là chi phí công ty"
-                error={errors.truckId}
-              >
+              <div className="expense-group">
+                <label className="expense-label">Loại chi phí</label>
                 <select
-                  className="input"
-                  value={form.truckId}
-                  onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
+                  className="expense-input"
+                  value={expenseType}
+                  onChange={e => {
+                    const val = e.target.value as 'COMPANY' | 'TRUCK' | 'TRAILER';
+                    setExpenseType(val);
+                    if (val === 'COMPANY') {
+                      set('truckId', '');
+                    } else {
+                      set('vehicleComponent', val);
+                      set('truckId', ''); 
+                    }
+                  }}
                 >
-                  <option value="">Chi phí công ty</option>
-                  {trucks.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.licensePlate} {t.trailerPlateNumber ? `· rơ-moóc ${t.trailerPlateNumber}` : ''}
-                    </option>
-                  ))}
+                  <option value="COMPANY">Chi phí công ty</option>
+                  <option value="TRUCK">Xe (Đầu kéo)</option>
+                  <option value="TRAILER">Rơ-moóc</option>
                 </select>
-              </FormGroup>
+              </div>
 
-              <FormGroup label="Số tiền (VNĐ) *" error={errors.amount}>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="input"
-                  value={form.amount ? formatAmountDisplay(form.amount) : ''}
-                  onChange={e => set('amount', parseAmountInput(e.target.value))}
-                  placeholder="0"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                />
-              </FormGroup>
+              {expenseType === 'TRUCK' && (
+                <div className="expense-group">
+                  <label className="expense-label">Biển số xe <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <select
+                    name="truckId"
+                    className="expense-input"
+                    value={form.truckId}
+                    onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
+                  >
+                    <option value="">Chọn xe…</option>
+                    {trucks.map(t => (
+                      <option key={t.id} value={t.id}>{t.licensePlate}</option>
+                    ))}
+                  </select>
+                  {errors.truckId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
+                </div>
+              )}
+
+              {expenseType === 'TRAILER' && (
+                <div className="expense-group">
+                  <label className="expense-label">Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <select
+                    name="truckId"
+                    className="expense-input"
+                    value={form.truckId}
+                    onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
+                  >
+                    <option value="">Chọn rơ-moóc…</option>
+                    {trucks
+                      .filter(t => t.trailerPlateNumber)
+                      .map(t => (
+                        <option key={t.id} value={t.id}>{t.trailerPlateNumber}</option>
+                      ))}
+                  </select>
+                  {errors.truckId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
+                </div>
+              )}
+
+              <div className="expense-group">
+                <label className="expense-label">Số tiền (VNĐ) <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    name="amount"
+                    inputMode="numeric"
+                    className="expense-input"
+                    value={form.amount ? formatAmountDisplay(form.amount) : ''}
+                    onChange={e => set('amount', parseAmountInput(e.target.value))}
+                    placeholder="0"
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: 'var(--accent-2)' }}
+                  />
+                  <span style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-4)', pointerEvents: 'none', fontWeight: 500 }}>
+                    VNĐ
+                  </span>
+                </div>
+                {errors.amount && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.amount}</p>}
+              </div>
 
               {showValidityFields && (
                 <>
-                  <FormGroup label="Hiệu lực từ *" error={errors.validFrom}>
+                  <div className="expense-group">
+                    <label className="expense-label">Hiệu lực từ <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input
                       type="date"
-                      className="input"
+                      name="validFrom"
+                      className="expense-input"
                       value={form.validFrom}
                       onChange={e => set('validFrom', e.target.value)}
                     />
-                  </FormGroup>
-                  <FormGroup label="Hiệu lực đến *" error={errors.validTo}>
+                    {errors.validFrom && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.validFrom}</p>}
+                  </div>
+                  <div className="expense-group">
+                    <label className="expense-label">Hiệu lực đến <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input
                       type="date"
-                      className="input"
+                      name="validTo"
+                      className="expense-input"
                       value={form.validTo}
                       onChange={e => set('validTo', e.target.value)}
                     />
-                  </FormGroup>
+                    {errors.validTo && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.validTo}</p>}
+                  </div>
                 </>
               )}
 
-              <FormGroup label="Mã biên lai" error={errors.receiptId}>
+              <div className="expense-group">
+                <label className="expense-label">Mã biên lai</label>
                 <input
                   type="text"
-                  className="input"
+                  name="receiptId"
+                  className="expense-input"
                   value={form.receiptId}
                   onChange={e => set('receiptId', e.target.value)}
                   placeholder="Nhập mã biên lai…"
                 />
-              </FormGroup>
+              </div>
 
-              <FormGroup label="Ghi chú" error={errors.note}>
+              <div className="expense-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="expense-label">Ghi chú</label>
                 <input
                   type="text"
-                  className="input"
+                  name="note"
+                  className="expense-input"
                   value={form.note}
                   onChange={e => set('note', e.target.value)}
                   placeholder="Ghi chú thêm…"
                 />
-              </FormGroup>
+              </div>
             </div>
           </div>
 
-          {/* Photo upload */}
-          <div className="panel">
-            <div className="panel__head">
-              <h3 className="panel__title">Ảnh hóa đơn</h3>
+          <div className="expense-panel">
+            <div className="expense-panel__header">
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)' }}>Ảnh hóa đơn</h3>
+              <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>Đính kèm ảnh biên lai / chứng từ nếu có</p>
             </div>
-            <div className="panel__body">
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+            <div className="expense-panel__body">
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: photoUrls.length > 0 ? 24 : 0 }}>
                 {photoUrls.map((url, idx) => (
                   <div
                     key={idx}
                     style={{
-                      position: 'relative', width: 72, height: 72, borderRadius: 8,
-                      border: '1px solid var(--line)', overflow: 'hidden',
+                      position: 'relative', width: 104, height: 104, borderRadius: 16,
+                      border: '1px solid var(--line-2)', overflow: 'hidden',
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.06)'
                     }}
                   >
                     <img src={url} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -493,30 +594,25 @@ export default function ExpenseEntryPage() {
                       type="button"
                       onClick={() => removePhoto(idx)}
                       style={{
-                        position: 'absolute', top: 2, right: 2, width: 20, height: 20,
-                        borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none',
+                        position: 'absolute', top: 6, right: 6, width: 28, height: 28,
+                        borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none',
                         color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', fontSize: 10,
+                        cursor: 'pointer', transition: 'all 0.2s ease', backdropFilter: 'blur(4px)'
                       }}
+                      onMouseOver={e => { e.currentTarget.style.background = 'rgba(227,36,52,0.9)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                      onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.transform = 'scale(1)'; }}
                     >
-                      <X size={10} />
+                      <X size={16} />
                     </button>
                   </div>
                 ))}
               </div>
 
-              <label
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  height: 48, border: '1px dashed var(--fg-3)', borderRadius: 8,
-                  background: 'var(--surface-2)', cursor: uploading ? 'wait' : 'pointer',
-                  color: 'var(--fg-2)', fontSize: 12,
-                }}
-              >
+              <label className="expense-upload-zone" style={{ pointerEvents: uploading ? 'none' : 'auto', opacity: uploading ? 0.7 : 1 }}>
                 {uploading ? (
-                  <><Loader2 size={14} className="spin" style={{ marginRight: 6 }} /> Đang tải…</>
+                  <><Loader2 size={32} className="spin" style={{ color: 'var(--accent)' }} /> <span style={{ fontSize: 15, marginTop: 8 }}>Đang tải ảnh lên…</span></>
                 ) : (
-                  <><Upload size={14} style={{ marginRight: 6 }} /> Thêm ảnh hóa đơn</>
+                  <><Upload size={32} style={{ color: 'var(--accent)', marginBottom: 8 }} /> <span style={{ fontSize: 16, color: 'var(--ink)' }}>Nhấn để tải lên ảnh hóa đơn</span><span style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 400 }}>Hỗ trợ JPG, PNG (tối đa 5MB)</span></>
                 )}
                 <input
                   type="file"
@@ -530,31 +626,31 @@ export default function ExpenseEntryPage() {
             </div>
           </div>
 
-          {/* Submit actions */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32 }}>
             <button
               type="button"
               className="btn btn--secondary"
               onClick={() => navigate('/expenses')}
+              style={{ padding: '14px 28px', fontSize: 15, borderRadius: 12, border: '1px solid var(--line-3)', background: 'transparent', fontWeight: 600, color: 'var(--ink-2)' }}
             >
               Hủy
             </button>
             <button
               type="submit"
-              className="btn btn--primary"
+              className="expense-btn-save"
               disabled={submitting || uploading}
             >
               {submitting ? (
-                <><Loader2 size={14} className="spin" /> Đang lưu…</>
+                <><Loader2 size={18} className="spin" /> Đang lưu…</>
               ) : isEdit ? (
-                'Cập nhật'
+                <><Check size={18} /> Cập nhật</>
               ) : (
-                'Tạo phiếu chi'
+                <><Plus size={18} /> Tạo phiếu chi</>
               )}
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

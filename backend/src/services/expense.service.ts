@@ -10,6 +10,7 @@ export interface ExpenseCreateInput {
   supplierId: number;
   categoryId: number;
   truckId?: number | null;
+  vehicleComponent?: 'TRUCK' | 'TRAILER' | null;
   amount: string;
   paymentStatus: string;
   validFrom?: string | null;
@@ -23,6 +24,7 @@ export interface ExpenseUpdateInput {
   supplierId?: number;
   categoryId?: number;
   truckId?: number | null;
+  vehicleComponent?: 'TRUCK' | 'TRAILER' | null;
   amount?: string;
   paymentStatus?: string;
   validFrom?: string | null;
@@ -60,6 +62,7 @@ export async function createExpense(tx: any, data: ExpenseCreateInput, userId?: 
     supplierId: data.supplierId,
     categoryId: data.categoryId,
     truckId: data.truckId ?? null,
+    vehicleComponent: data.truckId ? (data.vehicleComponent ?? 'TRUCK') : null,
     amount: data.amount,
     paymentStatus: data.paymentStatus,
     validFrom: data.validFrom ? new Date(data.validFrom) : null,
@@ -141,7 +144,12 @@ export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInpu
   if (data.expenseDate !== undefined) updateValues.expenseDate = data.expenseDate;
   if (data.supplierId !== undefined) updateValues.supplierId = data.supplierId;
   if (data.categoryId !== undefined) updateValues.categoryId = data.categoryId;
-  if (data.truckId !== undefined) updateValues.truckId = data.truckId;
+  if (data.truckId !== undefined) {
+    updateValues.truckId = data.truckId;
+    updateValues.vehicleComponent = data.truckId ? (data.vehicleComponent ?? 'TRUCK') : null;
+  } else if (data.vehicleComponent !== undefined) {
+    updateValues.vehicleComponent = data.vehicleComponent;
+  }
   if (data.amount !== undefined) updateValues.amount = data.amount;
   if (data.paymentStatus !== undefined) updateValues.paymentStatus = data.paymentStatus;
   if (data.validFrom !== undefined) updateValues.validFrom = data.validFrom ? new Date(data.validFrom) : null;
@@ -213,6 +221,7 @@ export async function listExpenses(database: any, filters: ExpenseListFilters) {
       supplierId: s.expenses.supplierId,
       categoryId: s.expenses.categoryId,
       truckId: s.expenses.truckId,
+      vehicleComponent: s.expenses.vehicleComponent,
       amount: s.expenses.amount,
       paymentStatus: s.expenses.paymentStatus,
       validFrom: s.expenses.validFrom,
@@ -277,6 +286,7 @@ export async function getExpense(database: any, id: number) {
     supplierId: s.expenses.supplierId,
     categoryId: s.expenses.categoryId,
     truckId: s.expenses.truckId,
+    vehicleComponent: s.expenses.vehicleComponent,
     amount: s.expenses.amount,
     paymentStatus: s.expenses.paymentStatus,
     validFrom: s.expenses.validFrom,

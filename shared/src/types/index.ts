@@ -288,6 +288,7 @@ export interface Expense {
   supplierId: number;
   categoryId: number;
   truckId: number | null;
+  vehicleComponent: 'TRUCK' | 'TRAILER' | null;
   amount: string;
   paymentStatus: string;
   validFrom: string | null;
@@ -470,6 +471,7 @@ export interface CustomerStatement {
 // ─── Reports ────────────────────────────────────────────────────────────────────
 
 export interface PnlTruck {
+  id: number;
   plate: string;
   revenue: number;
   costs: number;
@@ -490,6 +492,7 @@ export interface PnlReport {
   trucks: PnlTruck[];
   maintenanceExpensesTotal: number;
   maintenanceExpensesByTruck: Record<number, string>;
+  maintenanceByComponent: Record<number, { truck: number; trailer: number }>;
   companyExpenses: number;
   categoryBreakdown: Array<{ categoryName: string; total: string }>;
 }

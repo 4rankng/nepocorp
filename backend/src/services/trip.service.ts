@@ -18,6 +18,7 @@ export async function createTrip(data: {
   departureDate: string;
   customerReference?: string;
   containerCount?: number;
+  fuelMode?: FuelMode;
   createdBy?: number;
 }) {
   return await db.transaction(async (tx) => {
@@ -39,20 +40,18 @@ export async function createTrip(data: {
     const revenue = basePrice * containerCount;
 
     // 2. Fetch current global configuration rates to snapshot them.
-    // All config tables must be populated — no silent fallbacks.
+    // We do NOT throw errors if configurations are missing during creation,
+    // so that managers can create transport plans with basic information.
+    // Accounting will supplement the data (costs, quota) later.
+
     const [fuelCfg] = await tx.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
-    if (!fuelCfg) {
-      throw new ApiError(400, 'Chưa cấu hình định mức nhiên liệu. Vui lòng cấu hình trước khi tạo lệnh vận chuyển.');
-    }
+    
     const [route] = await tx.select().from(s.routes).where(eq(s.routes.id, data.routeId)).limit(1);
     if (!route) {
       throw new ApiError(400, 'Tuyến đường không tồn tại');
     }
 
     const [roadCfg] = await tx.select().from(s.roadConfig).limit(1);
-    if (!roadCfg) {
-      throw new ApiError(400, 'Chưa cấu hình tiền đường (road_config). Vui lòng cấu hình trước khi tạo lệnh vận chuyển.');
-    }
 
     const [truck] = await tx.select().from(s.trucks).where(eq(s.trucks.id, data.truckId)).limit(1);
     if (!truck) {
@@ -68,21 +67,15 @@ export async function createTrip(data: {
         isNull(s.roadAllowances.deletedAt)
       )
     ).limit(1);
-    if (!allowance) {
-      throw new ApiError(
-        400,
-        `Chưa cấu hình tiền chuẩn đường cho tuyến "${route.name}" với rơ moóc ${trailerType}. Vui lòng thêm bản ghi trong bảng định mức tiền đường.`,
-      );
-    }
 
-    const roadAllowanceBase = Number(allowance.baseAmount);
-    const fuelPriceApplied = Number(fuelCfg.unitPrice);
-    const fuelLoadedNormApplied = Number(fuelCfg.loadedNorm);
-    const fuelEmptyNormApplied = Number(fuelCfg.emptyNorm);
+    const roadAllowanceBase = allowance ? Number(allowance.baseAmount) : 0;
+    const fuelPriceApplied = fuelCfg ? Number(fuelCfg.unitPrice) : 0;
+    const fuelLoadedNormApplied = fuelCfg ? Number(fuelCfg.loadedNorm) : 0;
+    const fuelEmptyNormApplied = fuelCfg ? Number(fuelCfg.emptyNorm) : 0;
     const fuelFixedAllowanceApplied = route.fixedFuelAllowance ? Number(route.fixedFuelAllowance) : 0;
-    const fuelSupplementNormApplied = Number(fuelCfg.supplement);
-    const tollPerStationApplied = Number(roadCfg.tollPerStation);
-    const returnCargoBonusApplied = Number(roadCfg.returnCargoBonus);
+    const fuelSupplementNormApplied = fuelCfg ? Number(fuelCfg.supplement) : 0;
+    const tollPerStationApplied = roadCfg ? Number(roadCfg.tollPerStation) : 0;
+    const returnCargoBonusApplied = roadCfg ? Number(roadCfg.returnCargoBonus) : 0;
 
     // 3. Atomic tripCode generation
     const departureDate = new Date(data.departureDate);
@@ -116,6 +109,12 @@ export async function createTrip(data: {
       departureDate: data.departureDate,
       customerReference: data.customerReference ?? null,
       status: TripStatus.CREATED,
+      // Persist the chosen fuel mode (defaults to AUTO at the DB layer).
+      // Previously this was dropped on the floor so a user picking
+      // FLAT_RATE on the create form still got AUTO saved, then the
+      // pre-departure update would fail with "Chưa cấu hình định mức
+      // nhiên liệu" even when liters were entered manually.
+      fuelMode: data.fuelMode ?? FuelMode.AUTO,
       revenue: String(revenue),
       revenueOriginal: String(revenue),
 
@@ -155,6 +154,7 @@ export async function updateTripFigures(
     notes?: string;
     expectedVersion?: number;
     userId?: number;
+    routeId?: number;
   },
 ) {
   // Normalize leg distances to integers to satisfy strict database integer constraints and avoid PG 22P02 syntax errors
@@ -176,15 +176,39 @@ export async function updateTripFigures(
       throw new ApiError(409, 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.');
     }
 
-    const [route] = await tx.select().from(s.routes).where(eq(s.routes.id, trip.routeId)).limit(1);
+    let finalRouteId = trip.routeId;
+    let fuelFixedAllowanceApplied = Number(trip.fuelFixedAllowanceApplied || 0);
+    let roadAllowanceBaseApplied = Number(trip.roadAllowanceBaseApplied || 0);
+    let route = null;
+
+    if (data.routeId !== undefined && data.routeId !== trip.routeId) {
+      finalRouteId = data.routeId;
+      const [newRoute] = await tx.select().from(s.routes).where(eq(s.routes.id, finalRouteId)).limit(1);
+      if (newRoute) {
+        route = newRoute;
+        fuelFixedAllowanceApplied = Number(newRoute.fixedFuelAllowance || 0);
+      }
+      
+      if (trip.trailerType) {
+        const [allowance] = await tx.select().from(s.roadAllowances).where(
+          and(
+            eq(s.roadAllowances.routeId, finalRouteId),
+            eq(s.roadAllowances.trailerType, trip.trailerType),
+            isNull(s.roadAllowances.deletedAt)
+          )
+        ).limit(1);
+        roadAllowanceBaseApplied = allowance ? Number(allowance.baseAmount) : 0;
+      }
+    } else {
+      const [existingRoute] = await tx.select().from(s.routes).where(eq(s.routes.id, trip.routeId)).limit(1);
+      route = existingRoute;
+    }
 
     // 3. Resolve snapshotted rates from trip row (set at creation time).
     // If any snapshot is null, the trip was created before config was enforced.
     const fuelPriceApplied = Number(trip.fuelPriceApplied || 0);
-    const roadAllowanceBaseApplied = Number(trip.roadAllowanceBaseApplied || 0);
     const fuelLoadedNormApplied = Number(trip.fuelLoadedNormApplied || 0);
     const fuelEmptyNormApplied = Number(trip.fuelEmptyNormApplied || 0);
-    const fuelFixedAllowanceApplied = Number(trip.fuelFixedAllowanceApplied || 0);
     const fuelSupplementNormApplied = Number((trip as any).fuelSupplementNormApplied || 0);
     const tollPerStationApplied = Number(trip.tollPerStationApplied || 0);
     const returnCargoBonusApplied = Number(trip.returnCargoBonusApplied || 0);
@@ -249,6 +273,9 @@ export async function updateTripFigures(
     const nextVersion = trip.version + 1;
     const [updated] = await tx.update(s.trips).set({
       version: nextVersion,
+      routeId: finalRouteId,
+      fuelFixedAllowanceApplied: String(fuelFixedAllowanceApplied),
+      roadAllowanceBaseApplied: String(roadAllowanceBaseApplied),
       fuelMode: data.fuelMode,
       fuelLitersOverride: data.fuelLitersOverride != null ? String(data.fuelLitersOverride) : null,
       fuelSupplementLiters: String(data.fuelSupplementLiters || 0),

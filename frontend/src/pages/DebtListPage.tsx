@@ -2,15 +2,15 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, formatCompact } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
-import type { Customer } from '@nepocorp/shared';
-import { computeFifoAging } from '@nepocorp/shared';
 import { Search, ChevronRight, Users, Wallet, AlertCircle } from 'lucide-react';
 import { KPI, PageHeader, Card } from '../components/UI';
-import { useCustomerDebts } from '../hooks/useQueries';
+import { useCustomerAging } from '../hooks/useQueries';
+import type { CustomerAging } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
 
 interface CustomerDebtInfo {
-  customer: Customer;
+  customerId: number;
+  customerName: string;
   totalOutstanding: number;
   aging: {
     current: number;
@@ -22,12 +22,18 @@ interface CustomerDebtInfo {
   riskClass: 'high' | 'med' | 'low';
 }
 
+function classifyRisk(totalOutstanding: number, aging: CustomerAging['aging'], maxOverdueDays: number): 'high' | 'med' | 'low' {
+  if (totalOutstanding <= 0) return 'low';
+  if (aging.over90 > 0 || totalOutstanding > 100_000_000) return 'high';
+  if (maxOverdueDays > 30) return 'med';
+  return 'low';
+}
+
 export default function DebtListPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { data, isLoading: loading, error: queryError } = useCustomerDebts();
-  const customers = data?.customers ?? [];
-  const ledgerEntries = data?.ledgerEntries ?? [];
+  const { data, isLoading: loading, error: queryError } = useCustomerAging();
+  const rawCustomers = data?.customers ?? [];
   const error = queryError ? (queryError as any).message : null;
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk'>(
@@ -36,57 +42,15 @@ export default function DebtListPage() {
   const { toast: showToast } = useToast();
 
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
-    const now = new Date();
-    const ledgerByCustomer = new Map<number, typeof ledgerEntries>();
-    for (const entry of ledgerEntries) {
-      if (entry.entityType === 'CUSTOMER') {
-        const list = ledgerByCustomer.get(entry.entityId);
-        if (list) list.push(entry);
-        else ledgerByCustomer.set(entry.entityId, [entry]);
-      }
-    }
-
-    return customers.map(c => {
-      const cLedger = ledgerByCustomer.get(c.id) ?? [];
-
-      const latestRow = cLedger[0];
-      const totalOutstanding = latestRow ? parseFloat(latestRow.balance) : 0;
-
-      const { aging, openInvoices } = computeFifoAging(
-        cLedger.map(e => ({
-          timestamp: e.timestamp,
-          debit: e.debit || '0',
-          credit: e.credit || '0',
-        })),
-        now,
-      );
-
-      let maxOverdueDays = 0;
-      for (const inv of openInvoices) {
-        if (inv.open > 0) {
-          const ageInDays = Math.floor((now.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24));
-          if (ageInDays > maxOverdueDays) maxOverdueDays = ageInDays;
-        }
-      }
-
-      let riskClass: 'high' | 'med' | 'low' = 'low';
-      if (totalOutstanding > 0) {
-        if (aging.over90 > 0 || totalOutstanding > 100000000) {
-          riskClass = 'high';
-        } else if (aging.d30 > 0 || aging.d60 > 0) {
-          riskClass = 'med';
-        }
-      }
-
-      return {
-        customer: c,
-        totalOutstanding,
-        aging,
-        maxOverdueDays,
-        riskClass,
-      };
-    });
-  }, [customers, ledgerEntries]);
+    return rawCustomers.map(c => ({
+      customerId: c.customerId,
+      customerName: c.customerName,
+      totalOutstanding: c.totalOutstanding,
+      aging: c.aging,
+      maxOverdueDays: c.maxOverdueDays,
+      riskClass: classifyRisk(c.totalOutstanding, c.aging, c.maxOverdueDays),
+    }));
+  }, [rawCustomers]);
 
   const totals = useMemo(() => {
     const sum = {
@@ -147,8 +111,7 @@ export default function DebtListPage() {
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       result = result.filter(d =>
-        d.customer.name.toLowerCase().includes(q) ||
-        (d.customer.contactInfo && d.customer.contactInfo.toLowerCase().includes(q))
+        d.customerName.toLowerCase().includes(q)
       );
     }
 
@@ -159,13 +122,13 @@ export default function DebtListPage() {
     <div className="fade-up">
       <PageHeader
         title="Công nợ phải thu"
-        description={`Tổng nợ: ${formatCurrency(totals.total)} • ${customers.length} khách hàng • cập nhật vừa xong`}
+        description={`Tổng nợ: ${formatCurrency(totals.total)} • ${rawCustomers.length} khách hàng • cập nhật vừa xong`}
         action={
           <div className="page-actions">
             <button className="btn btn--secondary btn--sm" onClick={() => {
               const headers = ['Khách hàng', 'Tổng nợ', 'Trong hạn', '31-60 ngày', '61-90 ngày', 'Trên 90 ngày', 'Rủi ro'];
               const rows = filteredDebts.map(d => [
-                d.customer.name,
+                d.customerName,
                 d.totalOutstanding,
                 d.aging.current,
                 d.aging.d30,
@@ -265,19 +228,16 @@ export default function DebtListPage() {
                 const pct60     = totalAging > 0 ? (d.aging.d60    / totalAging) * 100 : 0;
                 const pct90     = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
                 return (
-                  <div key={d.customer.id} className="m-card" onClick={() => navigate(`/debt/${d.customer.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/debt/${d.customer.id}`); } }}>
+                  <div key={d.customerId} className="m-card" onClick={() => navigate(`/debt/${d.customerId}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/debt/${d.customerId}`); } }}>
                     <div className="m-card__top">
                       <span className="m-card__title">
                         <span className={`risk-dot risk-dot--${d.riskClass}`} />
-                        {d.customer.name}
+                        {d.customerName}
                       </span>
                       <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value`} style={{ fontSize: 13.5 }}>
                         {formatCurrency(d.totalOutstanding)}
                       </span>
                     </div>
-                    {d.customer.contactInfo && (
-                      <div className="m-card__meta">{d.customer.contactInfo}</div>
-                    )}
                     {d.totalOutstanding > 0 && (
                       <>
                         <div className="aging-bar" style={{ height: 5, borderRadius: 3, overflow: 'hidden', display: 'flex', marginTop: 8, marginBottom: 4 }}>
@@ -313,7 +273,6 @@ export default function DebtListPage() {
                   <th className="num">Tổng nợ</th>
                   <th>Phân bổ tuổi nợ</th>
                   <th className="num" style={{ textAlign: 'center' }}>Quá hạn lớn nhất</th>
-                  <th>Thông tin liên hệ</th>
                   <th style={{ width: 48 }}></th>
                 </tr>
               </thead>
@@ -327,14 +286,14 @@ export default function DebtListPage() {
 
                   return (
                     <tr
-                      key={d.customer.id}
-                      onClick={() => navigate(`/debt/${d.customer.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/debt/${d.customer.id}`); } }}
+                      key={d.customerId}
+                      onClick={() => navigate(`/debt/${d.customerId}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/debt/${d.customerId}`); } }}
                       style={{ cursor: 'pointer' }}
                     >
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, color: 'var(--fg-1)' }}>
                           <span className={`risk-dot risk-dot--${d.riskClass}`} />
-                          {d.customer.name}
+                          {d.customerName}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 16 }}>
                           {d.totalOutstanding > 0
@@ -378,10 +337,6 @@ export default function DebtListPage() {
                         )}
                       </td>
 
-                      <td style={{ fontSize: 13, color: 'var(--fg-2)' }}>
-                        {d.customer.contactInfo || <span style={{ color: 'var(--fg-3)' }}>Chưa cấu hình</span>}
-                      </td>
-
                       <td style={{ textAlign: 'right' }}>
                         <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
                       </td>
@@ -391,7 +346,7 @@ export default function DebtListPage() {
 
                 {filteredDebts.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--fg-3)' }}>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--fg-3)' }}>
                       Không tìm thấy dữ liệu công nợ thỏa mãn bộ lọc.
                     </td>
                   </tr>

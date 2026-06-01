@@ -15,6 +15,7 @@ export const driverStatusEnum = pgEnum('driver_status', ['ACTIVE', 'INACTIVE']);
 export const customerStatusEnum = pgEnum('customer_status', ['ACTIVE', 'LOCKED']);
 export const tripPhotoTypeEnum = pgEnum('trip_photo_type', ['CONTAINER', 'SEAL', 'OTHER']);
 export const penaltyStatusEnum = pgEnum('penalty_status', ['ACTIVE', 'CANCELED']);
+export const vehicleComponentEnum = pgEnum('vehicle_component', ['TRUCK', 'TRAILER']);
 
 
 // ─── Config tables ───────────────────────────────────────────────────────────
@@ -321,6 +322,7 @@ export const expenses = pgTable('expenses', {
   supplierId: integer('supplier_id').references(() => suppliers.id).notNull(),
   categoryId: integer('category_id').references(() => expenseCategories.id).notNull(),
   truckId: integer('truck_id').references(() => trucks.id),
+  vehicleComponent: vehicleComponentEnum('vehicle_component').default('TRUCK'),
   amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
   paymentStatus: varchar('payment_status', { length: 20 }).notNull(),
   validFrom: timestamp('valid_from'),

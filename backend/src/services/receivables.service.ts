@@ -1,19 +1,11 @@
-/**
- * Receivables service — FIFO aging, overdue resolution.
- * Extracted from reporting.service.ts to isolate the receivables domain.
- */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, asc, inArray } from 'drizzle-orm';
+import { computeFifoAging } from '@nepocorp/shared';
 
-/**
- * Aggregate customer outstanding balances bucketed by aging.
- * Uses FIFO allocation — payments are applied against the oldest open debits first —
- * so bucket totals reconcile to total outstanding.
- * Handles prepayments by carrying forward unapplied credits against future debits.
- */
-export async function getReceivablesSummary() {
-  // Fetch all CUSTOMER ledger entries, oldest first (for FIFO)
+type LedgerEntry = { debit: string | null; credit: string | null; timestamp: Date | null };
+
+async function fetchCustomerLedgerGrouped(): Promise<Map<number, LedgerEntry[]>> {
   const ledgerRows = await db.select({
     entityId: s.ledger.entityId,
     debit: s.ledger.debit,
@@ -23,22 +15,32 @@ export async function getReceivablesSummary() {
     .where(eq(s.ledger.entityType, 'CUSTOMER'))
     .orderBy(sql`${s.ledger.id} ASC`);
 
-  // Group by customer
-  const byCustomer = new Map<number, Array<{ debit: number; credit: number; timestamp: Date | null }>>();
+  const byCustomer = new Map<number, LedgerEntry[]>();
   for (const row of ledgerRows) {
     const entries = byCustomer.get(row.entityId) || [];
-    entries.push({
-      debit: parseFloat(row.debit || '0'),
-      credit: parseFloat(row.credit || '0'),
-      timestamp: row.timestamp,
-    });
+    entries.push({ debit: row.debit, credit: row.credit, timestamp: row.timestamp });
     byCustomer.set(row.entityId, entries);
   }
+  return byCustomer;
+}
 
-  const now = Date.now();
+function computeCustomerAging(entries: LedgerEntry[], now: Date) {
+  return computeFifoAging(
+    entries.map(e => ({
+      timestamp: e.timestamp instanceof Date ? e.timestamp.toISOString() : e.timestamp as string | null,
+      debit: e.debit ?? '0',
+      credit: e.credit ?? '0',
+    })),
+    now,
+  );
+}
+
+export async function getReceivablesSummary() {
+  const byCustomer = await fetchCustomerLedgerGrouped();
+
+  const now = new Date();
   const DAY_MS = 86400000;
 
-  // Aging buckets: { range, label, count of customers, total amount }
   const buckets = [
     { range: '0-30',  label: 'Trong hạn',      count: 0, amount: 0 },
     { range: '31-60', label: '31-60 ngày',      count: 0, amount: 0 },
@@ -50,64 +52,20 @@ export async function getReceivablesSummary() {
   let totalCustomers = 0;
 
   for (const [, entries] of byCustomer) {
-    // FIFO: walk chronological entries, maintain open invoices list.
-    // Track unapplied credits (prepayments) to offset against future debits.
-    const openInvoices: Array<{ epochMs: number; open: number }> = [];
-    let unappliedCredit = 0;
+    const { aging, openInvoices } = computeCustomerAging(entries, now);
 
-    for (const entry of entries) {
-      if (entry.debit > 0) {
-        let debitRemaining = entry.debit;
-        // Offset against any carried-forward prepayment first
-        if (unappliedCredit > 0) {
-          const apply = Math.min(unappliedCredit, debitRemaining);
-          unappliedCredit -= apply;
-          debitRemaining -= apply;
-        }
-        if (debitRemaining > 0) {
-          openInvoices.push({
-            epochMs: entry.timestamp ? entry.timestamp.getTime() : now,
-            open: debitRemaining,
-          });
-        }
-      }
-      if (entry.credit > 0) {
-        // Apply payment FIFO against oldest open invoices
-        let remaining = entry.credit;
-        for (const inv of openInvoices) {
-          if (remaining <= 0) break;
-          if (inv.open <= 0) continue;
-          const apply = Math.min(inv.open, remaining);
-          inv.open -= apply;
-          remaining -= apply;
-        }
-        // Carry forward any unapplied credit (e.g. prepayments)
-        if (remaining > 0) {
-          unappliedCredit += remaining;
-        }
-      }
-    }
-
-    // Compute outstanding and bucket
-    let customerOutstanding = 0;
+    const customerOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
     let customerMaxDays = 0;
-
     for (const inv of openInvoices) {
       if (inv.open <= 0) continue;
-      customerOutstanding += inv.open;
-      const ageInDays = Math.floor((now - inv.epochMs) / DAY_MS);
+      const ageInDays = Math.floor((now.getTime() - new Date(inv.ts).getTime()) / DAY_MS);
       if (ageInDays > customerMaxDays) customerMaxDays = ageInDays;
-
-      if (ageInDays <= 30) {
-        buckets[0].amount += inv.open;
-      } else if (ageInDays <= 60) {
-        buckets[1].amount += inv.open;
-      } else if (ageInDays <= 90) {
-        buckets[2].amount += inv.open;
-      } else {
-        buckets[3].amount += inv.open;
-      }
     }
+
+    buckets[0].amount += aging.current;
+    buckets[1].amount += aging.d30;
+    buckets[2].amount += aging.d60;
+    buckets[3].amount += aging.over90;
 
     if (customerOutstanding > 0) {
       totalCustomers++;
@@ -133,12 +91,7 @@ export async function getReceivablesSummary() {
   };
 }
 
-/**
- * Deepened query to fetch the top overdue customer directly from the database.
- * Avoids loading the entire ledger history into memory.
- */
 export async function getTopOverdueCustomer(): Promise<{ name: string; balance: number; days: number } | null> {
-  // 1. Get current balance for each customer (newest ledger entry)
   const balanceRows = await db.execute(sql`
     SELECT DISTINCT ON (entity_id) entity_id as "entityId", balance, timestamp
     FROM ledger
@@ -154,7 +107,6 @@ export async function getTopOverdueCustomer(): Promise<{ name: string; balance: 
 
   const debtorIds = activeDebtors.map(d => d.entityId);
 
-  // 2. Get the oldest debit transaction date for each debtor
   const oldestDebitRows = await db.execute(sql`
     SELECT DISTINCT ON (entity_id) entity_id as "entityId", timestamp
     FROM ledger
@@ -168,14 +120,12 @@ export async function getTopOverdueCustomer(): Promise<{ name: string; balance: 
     oldestDebitRows.map(r => [r.entityId, r.timestamp ? new Date(r.timestamp) : null])
   );
 
-  // 3. Fetch customer names
   const customers = await db.select({ id: s.customers.id, name: s.customers.name })
     .from(s.customers)
     .where(sql`${s.customers.id} IN (${sql.join(debtorIds.map(id => sql`${id}`), sql`, `)})`);
 
   const nameById = new Map(customers.map(c => [c.id, c.name]));
 
-  // 4. Find the customer with the highest outstanding balance
   let topOverdue: { name: string; balance: number; days: number } | null = null;
   const now = Date.now();
 
@@ -194,3 +144,39 @@ export async function getTopOverdueCustomer(): Promise<{ name: string; balance: 
   return topOverdue;
 }
 
+export async function getCustomerAgingList() {
+  const byCustomer = await fetchCustomerLedgerGrouped();
+
+  const customerIds = [...byCustomer.keys()];
+  const customers = customerIds.length > 0
+    ? await db.select({ id: s.customers.id, name: s.customers.name })
+        .from(s.customers)
+        .where(inArray(s.customers.id, customerIds))
+    : [];
+  const nameMap = new Map(customers.map(c => [c.id, c.name]));
+
+  const now = new Date();
+  const result = [];
+
+  for (const [customerId, entries] of byCustomer) {
+    const { aging, openInvoices } = computeCustomerAging(entries, now);
+
+    const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
+    const maxOverdueDays = openInvoices.length > 0
+      ? Math.max(...openInvoices.filter(inv => inv.open > 0).map(inv => Math.floor((now.getTime() - new Date(inv.ts).getTime()) / 86400000)), 0)
+      : 0;
+
+    if (totalOutstanding > 0) {
+      result.push({
+        customerId,
+        customerName: nameMap.get(customerId) || `Khách hàng #${customerId}`,
+        totalOutstanding,
+        aging,
+        maxOverdueDays,
+      });
+    }
+  }
+
+  result.sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+  return { customers: result };
+}

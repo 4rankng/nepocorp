@@ -237,6 +237,12 @@ export default function ExpenseListPage() {
                     <span className="m-card__row-value">{e.truck.licensePlate}</span>
                   </div>
                 )}
+                {e.vehicleComponent && (
+                  <div className="m-card__row">
+                    <span className="m-card__row-label">Thành phần</span>
+                    <span className="m-card__row-value">{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.truck ? 'Đầu kéo' : ''}</span>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -253,6 +259,7 @@ export default function ExpenseListPage() {
                 <th>Nhà cung cấp</th>
                 <th>Hạng mục</th>
                 <th>Xe</th>
+                <th>Thành phần</th>
                 <th className="num">Số tiền</th>
                 <th>Trạng thái</th>
                 <th style={{ width: 48 }}></th>
@@ -261,14 +268,14 @@ export default function ExpenseListPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                     <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
                     <p>Đang tải…</p>
                   </td>
                 </tr>
               ) : expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                     Chưa có khoản chi phí nào.
                   </td>
                 </tr>
@@ -285,6 +292,7 @@ export default function ExpenseListPage() {
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>
                     <td>{e.category?.name || '—'}</td>
                     <td>{e.truck?.licensePlate || <span style={{ color: 'var(--fg-3)' }}>—</span>}</td>
+                    <td>{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.truck ? 'Đầu kéo' : ''}</td>
                     <td className="num typo-mono" style={{ fontWeight: 700, color: 'var(--danger)' }}>
                       {formatCurrency(e.amount)}
                     </td>

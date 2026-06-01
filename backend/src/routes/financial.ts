@@ -9,6 +9,7 @@ import { getStatementData, exportStatementXlsx, exportStatementHtml, getSupplier
 import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import * as financialService from '../services/financial.service';
 import { getPayablesSummary } from '../services/payables.service';
+import { getCustomerAgingList } from '../services/receivables.service';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 
@@ -195,6 +196,15 @@ router.get('/reports/pnl', async (req: Request, res: Response) => {
 router.get('/reports/receivables-summary', async (_req: Request, res: Response) => {
   try {
     res.json(await getReceivablesSummary());
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+router.get('/reports/receivables-aging', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), async (_req: Request, res: Response) => {
+  try {
+    const data = await getCustomerAgingList();
+    res.json(data);
   } catch (err: any) {
     res.status(err.statusCode || 500).json({ error: err.message });
   }

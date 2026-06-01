@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@nepocorp/shared';
 import type { CustomerStatement, LedgerEntry, AgingBucket } from '@nepocorp/shared';
-import { AlertTriangle, Download, FileSpreadsheet, FileText, Phone, Building2, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, Download, FileSpreadsheet, FileText, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save } from 'lucide-react';
 import { useCustomerStatement } from '../hooks/useQueries';
 import { getInitials } from '../lib/avatar';
+import { api } from '../lib/api';
+import { Modal } from '../components/UI';
 
 // ── Txn type label + pill variant ──────────────────────────────────────────
 
@@ -61,6 +64,16 @@ export default function DebtDetailPage() {
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showExportMenu, setShowExportMenu] = useState(false);
 
+  // Payment modal state — was missing entirely (BUG: no way to record
+  // a payment from the debt detail page even though /api/payments/receive
+  // exists on the backend).
+  const [showPay, setShowPay] = useState(false);
+  const [payAmount, setPayAmount] = useState('');
+  const [payReceipt, setPayReceipt] = useState('');
+  const [paySubmitting, setPaySubmitting] = useState(false);
+  const [payError, setPayError] = useState('');
+  const queryClient = useQueryClient();
+
   // ── Derived data ────────────────────────────────────────────────────────
 
   const agingAmounts = useMemo(() =>
@@ -114,6 +127,61 @@ export default function DebtDetailPage() {
   const initials = getInitials(customer.name);
   const hasDebt = totalOutstanding > 0;
   const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1; // avoid /0
+  const unpaidTrips = (statement as any).unpaidTrips ?? [];
+
+  // FIFO-distribute the entered amount across the oldest unpaid trips,
+  // then POST. The backend also re-applies FIFO inside the transaction
+  // for safety; this just gives the user a clear preview of how their
+  // payment will land.
+  const openPaymentModal = () => {
+    setPayAmount('');
+    setPayReceipt('');
+    setPayError('');
+    setShowPay(true);
+  };
+
+  const submitPayment = async () => {
+    setPayError('');
+    const amount = parseFloat(payAmount.replace(/[.,\s]/g, ''));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPayError('Số tiền không hợp lệ.');
+      return;
+    }
+    if (!payReceipt.trim()) {
+      setPayError('Mã biên lai là bắt buộc.');
+      return;
+    }
+    if (unpaidTrips.length === 0) {
+      setPayError('Khách hàng không có công nợ để thanh toán.');
+      return;
+    }
+    // Cap at total outstanding so we don't overpay.
+    const capped = Math.min(amount, totalOutstanding);
+    let remaining = capped;
+    const payments: Array<{ tripId: number; amount: number }> = [];
+    for (const t of unpaidTrips) {
+      if (remaining <= 0) break;
+      const apply = Math.min(t.outstanding, remaining);
+      payments.push({ tripId: t.tripId, amount: apply });
+      remaining -= apply;
+    }
+    setPaySubmitting(true);
+    try {
+      await api.post('/payments/receive', {
+        customerId: Number(id),
+        receiptId: payReceipt.trim(),
+        payments,
+      });
+      await queryClient.invalidateQueries({ queryKey: ['customer-statement'] });
+      await queryClient.invalidateQueries({ queryKey: ['debt'] });
+      await refetch();
+      setShowPay(false);
+    } catch (e: any) {
+      setPayError(e?.message || 'Lỗi khi ghi nhận thanh toán.');
+    } finally {
+      setPaySubmitting(false);
+    }
+  };
 
   return (
     <div>
@@ -144,6 +212,15 @@ export default function DebtDetailPage() {
           </div>
         </div>
         <div className="dd-actions">
+          {hasDebt && (
+            <button
+              className="btn btn--primary"
+              onClick={openPaymentModal}
+            >
+              <Plus size={14} />
+              Ghi nhận thanh toán
+            </button>
+          )}
           {/* Export dropdown */}
           <div style={{ position: 'relative' }}>
             <button
@@ -290,6 +367,77 @@ export default function DebtDetailPage() {
           </table>
         </div>
       </section>
+
+      {/* Payment modal — FIFO across unpaid trips */}
+      <Modal
+        isOpen={showPay}
+        title={`Ghi nhận thanh toán — ${customer.name}`}
+        onClose={() => setShowPay(false)}
+        onConfirm={submitPayment}
+        footer={
+          <>
+            <button className="btn btn--ghost btn--sm" onClick={() => setShowPay(false)}>
+              <X size={14} /> Hủy
+            </button>
+            <button
+              className="btn btn--primary btn--sm"
+              disabled={paySubmitting || !payAmount.trim() || !payReceipt.trim()}
+              onClick={submitPayment}
+            >
+              {paySubmitting ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+              Ghi nhận
+            </button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {payError && (
+            <div style={{ padding: '10px 12px', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8, fontSize: 13 }}>
+              {payError}
+            </div>
+          )}
+          <div style={{
+            padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 8,
+            fontSize: 13, color: 'var(--fg-2)',
+          }}>
+            Còn nợ: <strong style={{ color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+              {formatCurrency(totalOutstanding)}
+            </strong> ({unpaidTrips.length} chuyến chưa thu)
+          </div>
+          <div className="field">
+            <label htmlFor="pay-amount" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+              Số tiền nhận (VND) <span style={{ color: 'var(--danger)' }}>*</span>
+            </label>
+            <input
+              id="pay-amount"
+              className="input"
+              type="number"
+              value={payAmount}
+              onChange={e => setPayAmount(e.target.value)}
+              placeholder="VD: 5000000"
+              autoFocus
+            />
+            <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+              Sẽ phân bổ FIFO vào {unpaidTrips.length} chuyến chưa thu, bắt đầu từ chuyến cũ nhất.
+            </p>
+          </div>
+          <div className="field">
+            <label htmlFor="pay-receipt" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+              Mã biên lai / phiếu thu <span style={{ color: 'var(--danger)' }}>*</span>
+            </label>
+            <input
+              id="pay-receipt"
+              className="input"
+              value={payReceipt}
+              onChange={e => setPayReceipt(e.target.value)}
+              placeholder="VD: PT-20260601-01"
+            />
+            <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+              Bắt buộc để đối chiếu với sao kê ngân hàng / sổ quỹ.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

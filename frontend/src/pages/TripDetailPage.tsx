@@ -551,26 +551,24 @@ export default function TripDetailPage() {
               </thead>
               <tbody>
                 {adjustments.map((a: any) => {
-                  const raw = a.amount ?? a.adjustment_amount ?? a.adjustmentAmount ?? null;
-                  const amt = raw != null ? Number(raw) : NaN;
-                  const isMissing = !Number.isFinite(amt);
-                  const isZero = !isMissing && amt === 0;
-                  const display = isMissing
-                    ? '— ₫'
-                    : isZero
-                      ? '0 ₫'
-                      : `${amt > 0 ? '+' : ''}${formatCurrency(amt)}`;
+                  const debitVal = Number(a.debit ?? a.debit_amount ?? 0);
+                  const creditVal = Number(a.credit ?? a.credit_amount ?? 0);
+                  const amt = debitVal - creditVal;
+                  const isZero = amt === 0;
+                  const display = isZero
+                    ? '0 ₫'
+                    : `${amt > 0 ? '+' : ''}${formatCurrency(amt)}`;
                   return (
                     <tr key={a.id}>
-                      <td style={{ whiteSpace: 'nowrap' }}>{formatDate(a.createdAt)}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{formatDate(a.createdAt ?? a.created_at)}</td>
                       <td className="num" style={{
-                        color: isMissing || isZero ? 'var(--fg-3)' : (amt > 0 ? 'var(--success)' : 'var(--danger)'),
-                        fontWeight: isMissing || isZero ? 500 : 600,
+                        color: isZero ? 'var(--fg-3)' : (amt > 0 ? 'var(--success)' : 'var(--danger)'),
+                        fontWeight: isZero ? 500 : 600,
                       }}>
                         {display}
                       </td>
                       <td>{a.note}</td>
-                      <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{a.signedAgreementRef || '—'}</td>
+                      <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{a.signedAgreementRef ?? a.signed_agreement_ref ?? '—'}</td>
                     </tr>
                   );
                 })}

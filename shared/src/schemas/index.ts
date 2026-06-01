@@ -5,27 +5,39 @@ import {
 } from '../constants';
 
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
-export const numericMoney = z.union([z.number(), z.string()]).transform((val) => {
+export const numericMoney = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
-  if (isNaN(num)) throw new Error('Giá trị tiền tệ không hợp lệ');
+  if (isNaN(num)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Giá trị tiền tệ không hợp lệ' });
+    return z.NEVER;
+  }
   return num;
 });
 
-export const numericDecimal = z.union([z.number(), z.string()]).transform((val) => {
+export const numericDecimal = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
-  if (isNaN(num)) throw new Error('Giá trị số không hợp lệ');
+  if (isNaN(num)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Giá trị số không hợp lệ' });
+    return z.NEVER;
+  }
   return num;
 });
 
-const positiveNumeric = z.union([z.number(), z.string()]).transform((val) => {
+const positiveNumeric = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
-  if (isNaN(num) || num <= 0) throw new Error('Phải là số dương');
+  if (isNaN(num) || num <= 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Phải là số dương' });
+    return z.NEVER;
+  }
   return num;
 });
 
-const nonNegNumeric = z.union([z.number(), z.string()]).transform((val) => {
+const nonNegNumeric = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
-  if (isNaN(num) || num < 0) throw new Error('Phải là số không âm');
+  if (isNaN(num) || num < 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Phải là số không âm' });
+    return z.NEVER;
+  }
   return num;
 });
 
@@ -48,6 +60,7 @@ export const createTripSchema = z.object({
   departureDate: z.string().min(1),
   customerReference: z.string().optional(),
   containerCount: z.coerce.number().int().min(1).max(10).optional(),
+  fuelMode: z.nativeEnum(FuelMode).optional(),
 });
 
 export const updateTripFiguresSchema = z.object({
@@ -65,6 +78,7 @@ export const updateTripFiguresSchema = z.object({
   notes: z.string().optional(),
   photoUrls: z.array(z.string()).optional(),
   version: z.number().int().optional(),
+  routeId: z.coerce.number().int().positive().optional(),
 }).superRefine((data, ctx) => {
   if (data.fuelSupplementLiters && data.fuelSupplementLiters > 0) {
     if (!data.fuelSupplementReason || data.fuelSupplementReason.trim() === '') {
@@ -277,6 +291,7 @@ export const expenseSchema = z.object({
   supplierId: z.coerce.number().int().positive(),
   categoryId: z.coerce.number().int().positive(),
   truckId: z.coerce.number().int().positive().optional().nullable(),
+  vehicleComponent: z.enum(['TRUCK', 'TRAILER']).optional().default('TRUCK'),
   amount: positiveNumeric,
   paymentStatus: z.enum(['PAID', 'UNPAID']),
   validFrom: z.string().optional().nullable(),

@@ -158,16 +158,31 @@ export async function getPnlReport(month: number, year: number) {
     // Truck-associated operating expenses (repairs, insurance, registration, parts, etc.).
     // These are separate from trip-level costs (fuel, road allowance, driver salary) and
     // do not overlap — expense categories cover vehicle overhead not captured per-trip.
+    // Component-level breakdown: truck head vs trailer maintenance expenses.
+    // Single query grouped by (truckId, vehicleComponent) serves both the
+    // per-truck total and the truck/trailer split.
     const maintenanceExpensesByTruck = new Map<number, number>();
+    const maintenanceByComponent = new Map<number, { truck: number; trailer: number }>();
     if (truckIds.length > 0) {
-      const expenseRows = await db.select({
+      const componentRows = await db.select({
         truckId: s.expenses.truckId,
+        vehicleComponent: s.expenses.vehicleComponent,
         total: sql<string>`coalesce(sum(${s.expenses.amount}::numeric), 0)`,
       }).from(s.expenses).where(
         and(isNull(s.expenses.deletedAt), sql`${s.expenses.truckId} IN (${sql.join(truckIds.map(id => sql`${id}`), sql`, `)})`, expenseDateFilter)
-      ).groupBy(s.expenses.truckId);
-      for (const row of expenseRows) {
-        if (row.truckId) maintenanceExpensesByTruck.set(row.truckId, parseFloat(row.total));
+      ).groupBy(s.expenses.truckId, s.expenses.vehicleComponent);
+
+      for (const row of componentRows) {
+        if (!row.truckId) continue;
+        const amount = parseFloat(row.total);
+        const comp = maintenanceByComponent.get(row.truckId) ?? { truck: 0, trailer: 0 };
+        if (row.vehicleComponent === 'TRAILER') {
+          comp.trailer = amount;
+        } else {
+          comp.truck = amount;
+        }
+        maintenanceByComponent.set(row.truckId, comp);
+        maintenanceExpensesByTruck.set(row.truckId, (maintenanceExpensesByTruck.get(row.truckId) ?? 0) + amount);
       }
     }
 
@@ -191,9 +206,9 @@ export async function getPnlReport(month: number, year: number) {
     }));
 
     let totalMaintenanceExpenses = 0;
-    const byTruck = new Map<number, { plate: string; revenue: number; costs: number; profit: number; trips: number; maintenanceExpenses: number }>();
+    const byTruck = new Map<number, { id: number; plate: string; revenue: number; costs: number; profit: number; trips: number; maintenanceExpenses: number }>();
     for (const trip of trips) {
-      const existing = byTruck.get(trip.truckId) || { plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0, maintenanceExpenses: 0 };
+      const existing = byTruck.get(trip.truckId) || { id: trip.truckId, plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0, maintenanceExpenses: 0 };
       existing.revenue += parseFloat(trip.revenue || '0');
       existing.costs += parseFloat(trip.totalCost || '0');
       existing.profit += parseFloat(trip.grossProfit || '0');
@@ -231,6 +246,7 @@ export async function getPnlReport(month: number, year: number) {
       tripCount: trips.length,
       maintenanceExpensesTotal: totalMaintenanceExpenses,
       maintenanceExpensesByTruck: maintenanceExpensesByTruckResult,
+      maintenanceByComponent: Object.fromEntries(maintenanceByComponent),
       categoryBreakdown,
       trucks: Array.from(byTruck.values()),
     };

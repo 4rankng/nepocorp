@@ -64,6 +64,13 @@
       "when": 1780246837076,
       "tag": "0008_melodic_firelord",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780282582727,
+      "tag": "0009_mighty_jane_foster",
+      "breakpoints": true
     }
   ]
 }
