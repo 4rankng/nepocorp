@@ -399,6 +399,27 @@
 }
 @media (max-width: 560px) {
   .dash-wf .wf-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .dash-wf .wf-kpi .val { font-size: 21px; }
+  .dash-wf .wf-kpi { padding: 12px 14px; }
+  .dash-wf .wf-kpi .val {
+    font-size: 19px;
+    /* Keep "18.600.000 đ" on one line — the inline <i>đ</i> was wrapping
+       onto its own row in the narrow 2-col grid (Mobile Pass 3, 2026-06-02).
+       No ellipsis: the value should be fully visible. 19px mono fits
+       11 chars + đ unit inside a 167px column. */
+    white-space: nowrap;
+    overflow: visible;
+  }
+  .dash-wf .wf-kpi { overflow: hidden; }
+  .dash-wf .wf-kpi .val i { font-size: 12px; margin-left: 2px; }
+  /* The "· Mới" delta badge fights the label for horizontal space and
+     squeezes "Doanh thu · 06/2026" into a two-line wrap. The month is
+     already visible in the topbar date range, so hide the badge on phones. */
+  .dash-wf .wf-kpi .row1 .delta.flat { display: none; }
+  .dash-wf .wf-kpi .lbl {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dash-wf .wf-kpi .foot { font-size: 11px; margin-top: 5px; }
   .dash-wf .wf-fstats { grid-template-columns: 1fr 1fr; }
 }

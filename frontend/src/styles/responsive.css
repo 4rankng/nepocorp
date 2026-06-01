@@ -474,19 +474,75 @@
   .dispatch-page .order-row .o-customer { grid-area: cust; font-size: 12px; color: var(--ink-3); }
   .dispatch-page .order-row .o-assign { display: none; }
 
-  /* ── Trip list page ── */
-  .trip-list-page .hero { padding: 18px 16px; }
-  .trip-list-page .hero-top { flex-direction: column; gap: 12px; align-items: flex-start; }
+  /* ── Trip list page — Mobile Pass 2 (2026-06-02) ──
+     Tightens above-the-fold density and adds a scroll affordance to the
+     horizontally-scrollable status-tab strip (was previously cutting "Đang chạy"
+     off the right edge with no swipe hint). */
+  .trip-list-page .hero { padding: 14px 14px 12px; }
+  .trip-list-page .hero-top { flex-direction: column; gap: 10px; align-items: flex-start; }
   .trip-list-page .hero-h1 { font-size: 22px; line-height: 1.2; }
   .trip-list-page .hero-sub { font-size: 12.5px; }
   .trip-list-page .hero-actions { width: 100%; flex-wrap: wrap; }
-  .trip-list-page .hero-actions .btn-d { flex: 1 1 auto; justify-content: center; }
-  .trip-list-page .metrics { grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
-  .trip-list-page .metric { padding: 8px 10px; }
-  .trip-list-page .metric-label { font-size: 9.5px; }
+  .trip-list-page .hero-actions .btn-d { flex: 1 1 auto; justify-content: center; min-height: 38px; }
+
+  .trip-list-page .metrics { grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; }
+  .trip-list-page .metric { padding: 8px 10px; min-width: 0; }
+  .trip-list-page .metric-label {
+    font-size: 9.5px;
+    /* Force single-line so cards align on the 2-col grid. Long labels like
+       "Tổng KM tháng này" used to wrap to 2 lines, throwing off the rhythm. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* "Tổng giá trị lệnh (tất cả trạng thái)" — drop the parenthetical on phones,
+     it doesn't fit and the metric-delta line below repeats the same info. */
+  .trip-list-page .metric-label > span { display: none; }
   .trip-list-page .metric-value { font-size: 16px; }
+  .trip-list-page .metric-value .metric-unit { margin-left: 2px; }
+  .trip-list-page .metric-delta { font-size: 10.5px; line-height: 1.3; }
+  .trip-list-page .metric.featured { grid-column: 1 / -1; }
+  .trip-list-page .metric.featured .breakdown-legend { gap: 6px 10px; font-size: 11px; }
+
   .trip-list-page .stats-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
   .trip-list-page .section-head { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; }
+
+  /* Status-tab strip — was overflowing without any swipe hint. Add a 24px
+     right-edge gradient (sticky-positioned) so users see there's more.
+     Tightened pill sizing to fit one extra option in the visible width. */
+  .trip-list-page .status-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    position: relative;
+  }
+  .trip-list-page .status-tabs::-webkit-scrollbar { display: none; }
+  .trip-list-page .status-tabs > * { flex-shrink: 0; }
+  .trip-list-page .status-tabs .stab-pill {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 6px;
+  }
+  .trip-list-page .status-tabs .stab-pill .stab-count {
+    font-size: 11px;
+    padding: 1px 6px;
+  }
+  /* Right-edge fade — sits inside the scroll container so it pins to the
+     visible right edge regardless of scroll position. */
+  .trip-list-page .filters-row-top {
+    position: relative;
+    padding-right: 0;
+  }
+  .trip-list-page .filters-row-top::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    width: 28px;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, var(--bg-1, #fff) 75%);
+  }
 
   /* ── Trip create / edit ── */
   .leg-card__head { gap: 8px; }
@@ -680,6 +736,30 @@
 
   /* Table footer — compact */
   .routes-config-page .table-foot { padding: 8px 4px; font-size: 11.5px; }
+
+  /* ── Users admin page — Mobile Pass 4 (2026-06-02) ──
+     Same family of fixes as Routes page Pass 1 — hide the decorative KPI
+     watermark icon (lucide outline at 72px) that crowds the tile value,
+     and let the longer two-word labels (NHÂN SỰ VĂN PHÒNG, BỊ KHOÁ / NGƯNG)
+     wrap gracefully instead of butting up against the badge.
+     Page-scope class lives on the root <div className="fade-up …">. */
+  .users-admin-page .kpi__watermark { display: none; }
+  .users-admin-page .kpi { overflow: hidden; padding: 12px 14px; }
+  .users-admin-page .kpi__top {
+    /* The role badge ("· Văn phòng", "· An toàn") in .kpi__top was forcing
+       the label into a narrow column. Wrap the badge below the label so the
+       label always gets the full width. */
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .users-admin-page .kpi__label {
+    font-size: 10px;
+    line-height: 1.25;
+    flex: 1 1 100%;
+  }
+  .users-admin-page .kpi__value { font-size: 22px; line-height: 1.15; }
+  .users-admin-page .kpi__meta { font-size: 11px; margin-top: 6px; }
 
   /* ── Login page ── */
   .login-card { padding: 24px 20px; }

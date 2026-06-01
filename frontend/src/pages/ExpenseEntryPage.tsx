@@ -326,29 +326,31 @@ export default function ExpenseEntryPage() {
   }
 
   return (
-    <div className="fade-up" style={{ minHeight: 'calc(100vh - 64px)', padding: '16px 16px 32px' }}>
+    <div className="fade-up expense-page-wrap">
 
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <div className="expense-page-container">
         <PageHeader
           title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
           description={isEdit ? 'Cập nhật thông tin chi phí phát sinh' : 'Nhập thông tin chi phí phát sinh'}
           onBack={() => navigate('/expenses')}
         />
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-8 pb-16">
+        <form onSubmit={handleSubmit} className="expense-page-form">
           {pageError && (
-            <div className="animate-shake" style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)', padding: '16px 20px', borderRadius: '16px', border: '1px solid var(--danger)' }}>
+            <div className="animate-shake expense-page-error">
               <strong>Lỗi:</strong> {pageError}
             </div>
           )}
 
-          <div className="expense-panel">
-            <div className="expense-panel__header">
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>Thông tin chung</h2>
-              <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>Cập nhật các thông tin cơ bản cho phiếu chi</p>
-            </div>
-            
-            <div className="expense-panel__body expense-grid">
+          <div className="expense-page-layout">
+            <div className="expense-layout__main">
+              <div className="expense-panel">
+                <div className="expense-panel__header">
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>Thông tin chung</h2>
+                  <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>{isEdit ? 'Cập nhật' : 'Nhập'} các thông tin cơ bản cho phiếu chi</p>
+                </div>
+
+                <div className="expense-panel__body expense-grid">
               <div className="expense-group">
                 <label className="expense-label">Ngày chi <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <input
@@ -607,84 +609,81 @@ export default function ExpenseEntryPage() {
                   placeholder="Ghi chú thêm…"
                 />
               </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="expense-panel">
-            <div className="expense-panel__header">
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)' }}>Ảnh hóa đơn</h3>
-              <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>Đính kèm ảnh biên lai / chứng từ nếu có</p>
-            </div>
-            <div className="expense-panel__body">
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: photoUrls.length > 0 ? 24 : 0 }}>
-                {photoUrls.map((url, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      position: 'relative', width: 104, height: 104, borderRadius: 16,
-                      border: '1px solid var(--line-2)', overflow: 'hidden',
-                      boxShadow: '0 8px 16px rgba(0,0,0,0.06)'
-                    }}
-                  >
-                    <img src={url} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(idx)}
-                      style={{
-                        position: 'absolute', top: 6, right: 6, width: 32, height: 32,
-                        borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none',
-                        color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', transition: 'all 0.2s ease', backdropFilter: 'blur(4px)'
-                      }}
-                      onMouseOver={e => { e.currentTarget.style.background = 'rgba(227,36,52,0.9)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                      onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.transform = 'scale(1)'; }}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
+            <div className="expense-layout__aside">
+              <div className="expense-panel expense-panel--photo">
+                <div className="expense-panel__header">
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)' }}>Ảnh hóa đơn</h3>
+                  <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>Đính kèm biên lai / chứng từ nếu có</p>
+                </div>
+                <div className="expense-panel__body expense-photo-body">
+                  {photoUrls.length > 0 && (
+                    <div className="expense-photo-grid">
+                      {photoUrls.map((url, idx) => (
+                        <div key={idx} className="expense-photo-thumb">
+                          <img src={url} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(idx)}
+                            className="expense-photo-remove"
+                            onMouseOver={e => { e.currentTarget.style.background = 'rgba(227,36,52,0.9)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                            onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <label className="expense-upload-zone" style={{ pointerEvents: uploading ? 'none' : 'auto', opacity: uploading ? 0.7 : 1 }}>
+                    {uploading ? (
+                      <><Loader2 size={28} className="spin" style={{ color: 'var(--accent)' }} /> <span style={{ fontSize: 14, marginTop: 8 }}>Đang tải ảnh lên…</span></>
+                    ) : (
+                      <>
+                        <Upload size={28} style={{ color: 'var(--accent)', marginBottom: 6 }} />
+                        <span style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>Nhấn để tải lên ảnh hóa đơn</span>
+                        <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>JPG, PNG · tối đa 5MB</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: 'none' }}
+                      onChange={e => e.target.files && handlePhotoUpload(e.target.files)}
+                      disabled={uploading}
+                    />
+                  </label>
+                </div>
               </div>
 
-              <label className="expense-upload-zone" style={{ pointerEvents: uploading ? 'none' : 'auto', opacity: uploading ? 0.7 : 1 }}>
-                {uploading ? (
-                  <><Loader2 size={32} className="spin" style={{ color: 'var(--accent)' }} /> <span style={{ fontSize: 15, marginTop: 8 }}>Đang tải ảnh lên…</span></>
-                ) : (
-                  <><Upload size={32} style={{ color: 'var(--accent)', marginBottom: 8 }} /> <span style={{ fontSize: 16, color: 'var(--ink)' }}>Nhấn để tải lên ảnh hóa đơn</span><span style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 400 }}>Hỗ trợ JPG, PNG (tối đa 5MB)</span></>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  style={{ display: 'none' }}
-                  onChange={e => e.target.files && handlePhotoUpload(e.target.files)}
-                  disabled={uploading}
-                />
-              </label>
+              <div className="expense-actions">
+                <button
+                  type="button"
+                  className="btn btn--secondary expense-btn-cancel"
+                  onClick={() => navigate('/expenses')}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="expense-btn-save expense-btn-submit"
+                  disabled={submitting || uploading}
+                >
+                  {submitting ? (
+                    <><Loader2 size={18} className="spin" /> Đang lưu…</>
+                  ) : isEdit ? (
+                    <><Check size={18} /> Cập nhật</>
+                  ) : (
+                    <><Plus size={18} /> Tạo phiếu chi</>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32 }}>
-            <button
-              type="button"
-              className="btn btn--secondary"
-              onClick={() => navigate('/expenses')}
-              style={{ padding: '14px 28px', fontSize: 15, borderRadius: 12, border: '1px solid var(--line-3)', background: 'transparent', fontWeight: 600, color: 'var(--ink-2)' }}
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="expense-btn-save"
-              disabled={submitting || uploading}
-            >
-              {submitting ? (
-                <><Loader2 size={18} className="spin" /> Đang lưu…</>
-              ) : isEdit ? (
-                <><Check size={18} /> Cập nhật</>
-              ) : (
-                <><Plus size={18} /> Tạo phiếu chi</>
-              )}
-            </button>
           </div>
         </form>
       </div>

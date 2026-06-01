@@ -1,12 +1,15 @@
 /* ============================================================================
  * Profit Hero + Partner cards + Calc breakdown
+ * Refactored to match Dashboard (.dash-wf) design language:
+ * - Tighter spacing, smaller fonts, consistent 14px border-radius
+ * - Deeper green palette (#005A2D) matching dashboard sidebar/theme
  * ========================================================================== */
 .profit-layout {
   display: grid;
   /* Right column needs ~320px minimum to fit "17.500.000 ₫"-class numbers
      next to their labels without clipping. */
   grid-template-columns: minmax(0, 1.4fr) minmax(340px, 1fr);
-  gap: 24px;
+  gap: 20px;
   align-items: start;
 }
 @media (max-width: 1100px) {
@@ -16,9 +19,9 @@
 .profit-hero {
   background: linear-gradient(135deg, #005A2D 0%, #00813F 100%);
   color: #fff;
-  border-radius: 18px;
-  padding: 32px;
-  margin-bottom: 22px;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
   position: relative;
   overflow: hidden;
 }
@@ -33,19 +36,19 @@
 }
 .profit-hero__label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: 600;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   position: relative;
   z-index: 1;
 }
 .profit-hero__value {
   font-family: var(--font-display);
-  font-size: 52px;
-  font-weight: 600;
+  font-size: 34px;
+  font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1;
   position: relative;
@@ -53,68 +56,68 @@
 }
 .profit-hero__currency {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 22px;
   color: rgba(255, 255, 255, 0.8);
   margin-left: 6px;
   font-weight: 500;
 }
 .profit-hero__sub {
-  margin-top: 14px;
-  font-size: 13px;
+  margin-top: 12px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.8);
   position: relative;
   z-index: 1;
 }
 
-.partner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.partner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 900px) { .partner-grid { grid-template-columns: 1fr; } }
 
 .partner-card {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 22px;
+  border-radius: 14px;
+  padding: 16px;
   position: relative;
   overflow: hidden;
 }
-.partner-card--primary { border-color: var(--accent); }
-.partner-card__head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.partner-card--primary { border-color: #005A2D; }
+.partner-card__head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .partner-card__info { flex: 1; min-width: 0; }
 .partner-card__avatar {
-  width: 48px; height: 48px;
+  width: 36px; height: 36px;
   border-radius: 50%;
   display: grid; place-items: center;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 18px;
+  font-size: 14px;
   color: #fff;
   flex-shrink: 0;
 }
 .partner-card__avatar--phung,
-.partner-card__avatar--primary { background: linear-gradient(135deg, #4DC678, #008B3E); }
+.partner-card__avatar--primary { background: linear-gradient(135deg, #005A2D, #00813F); }
 .partner-card__avatar--thuong,
 .partner-card__avatar--secondary { background: linear-gradient(135deg, #6E9DCB, #3D6FA3); }
-.partner-card__name { font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 2px; color: var(--ink); }
-.partner-card__role { font-size: 12px; color: var(--ink-3); }
-.partner-card__pct { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--accent); letter-spacing: -0.02em; }
-.partner-card__amount { font-family: var(--font-display); font-size: 32px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; margin-bottom: 6px; color: var(--ink); }
-.partner-card__amount-label { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 8px; }
+.partner-card__name { font-family: var(--font-display); font-size: 14px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 2px; color: var(--ink); }
+.partner-card__role { font-size: 11.5px; color: var(--ink-3); }
+.partner-card__pct { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--accent); letter-spacing: -0.02em; }
+.partner-card__amount { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.035em; line-height: 1; margin-bottom: 6px; color: var(--ink); }
+.partner-card__amount-label { font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px; }
 
-.calc-breakdown { background: #fff; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-.calc-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.calc-breakdown { background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.calc-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
 .calc-row:last-child { border-bottom: none; }
 .calc-row--total { background: var(--surface-2); font-weight: 700; }
 .calc-row--final {
-  background: linear-gradient(180deg, var(--accent-soft), #fff);
-  border-top: 2px solid var(--accent);
+  background: linear-gradient(180deg, #E7F2EC, #fff);
+  border-top: 2px solid #005A2D;
 }
-.calc-row__label { font-size: 14px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.calc-row__label { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .calc-row__label--bold { color: var(--ink); font-weight: 600; }
 .calc-row__op { font-family: var(--font-mono); font-weight: 700; color: var(--ink-3); width: 16px; display: inline-block; text-align: center; flex-shrink: 0; }
-.calc-row__value { font-family: var(--font-display); font-size: 16px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; flex-shrink: 0; }
+.calc-row__value { font-family: var(--font-display); font-size: 14px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; flex-shrink: 0; }
 .calc-row__value--neg { color: var(--danger); }
-.calc-row__value--positive { color: var(--accent); }
-.calc-row--final .calc-row__value { font-size: 22px; color: var(--accent); }
+.calc-row__value--positive { color: #005A2D; }
+.calc-row--final .calc-row__value { font-size: 18px; color: #005A2D; }
 
 .profit-history-scroll {
   max-height: 420px;

@@ -114,7 +114,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="fade-up" style={{ paddingBottom: 40 }}>
+    <div className="fade-up users-admin-page" style={{ paddingBottom: 40 }}>
       <UserTable
         users={users}
         filtered={filtered}

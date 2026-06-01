@@ -9,7 +9,6 @@ import { Panel, Btn, KPI } from '../../../components/UI';
 import { getInitials, avatarColorById } from '../../../lib/avatar';
 import { formatCurrency, formatDate } from '../../../lib/format';
 import { downloadCSV } from '../../../lib/csv';
-import { PENALTY_STATUS_LABELS } from '@nepocorp/shared';
 import type { Driver, PenaltyReason, Truck } from '@nepocorp/shared';
 import type { PenaltyRow } from '../../../hooks/usePenalties';
 import { useSalaryPeriod } from '../../../hooks/useQueries';
@@ -136,9 +135,18 @@ export function PenaltyTable({
   const driversOver90 = driverDetails.filter(d => d.streakDays >= 90).length;
   const driversOver6m = driverDetails.filter(d => d.streakDays >= 180).length;
 
-  const filteredPenalties = logDriverFilter
+  const driverFiltered = logDriverFilter
     ? penalties.filter(p => p.driverId === logDriverFilter)
     : penalties;
+
+  const filteredPenalties = logFilter === 'pending'
+    ? driverFiltered.filter(p => p.status === 'ACTIVE')
+    : logFilter === 'deducted'
+      ? driverFiltered.filter(p => p.status === 'CANCELED')
+      : driverFiltered;
+
+  const pendingCount = driverFiltered.filter(p => p.status === 'ACTIVE').length;
+  const deductedCount = driverFiltered.filter(p => p.status === 'CANCELED').length;
 
   return (
     <>
@@ -480,9 +488,9 @@ export function PenaltyTable({
                   className={`penalty-chip${logFilter === f ? ' active' : ''}`}
                   onClick={() => setLogFilter(f)}
                 >
-                  {f === 'all' ? 'Tất cả' : f === 'pending' ? 'Chờ duyệt' : 'Đã khấu trừ'}
+                  {f === 'all' ? 'Tất cả' : f === 'pending' ? 'Chờ duyệt' : 'Đã hủy'}
                   <span className="count">
-                    {f === 'all' ? filteredPenalties.length : 0}
+                    {f === 'all' ? driverFiltered.length : f === 'pending' ? pendingCount : deductedCount}
                   </span>
                 </button>
               ))}
@@ -524,79 +532,55 @@ export function PenaltyTable({
               </div>
             </div>
           ) : (
-            <div className="table-wrap">
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Tài xế</th>
-                      <th>Mã lệnh</th>
-                      <th>Lý do vi phạm</th>
-                      <th className="num">Số tiền phạt</th>
-                      <th>Ngày ghi nhận</th>
-                      <th>Trạng thái</th>
-                      {canCancel && <th style={{ width: 44 }} />}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPenalties.map(p => (
-                      <tr key={p.id} style={p.status === 'CANCELED' ? { opacity: 0.5 } : undefined}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{
-                              width: 28, height: 28, borderRadius: '50%', background: 'var(--danger-soft)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', flexShrink: 0,
-                            }}>
-                              {getInitials(p.driverName || 'T')}
-                            </div>
-                            <div className="row-strong">{p.driverName || 'Tài xế'}</div>
-                          </div>
-                        </td>
-                        <td>
-                          {p.tripId && p.tripCode
-                             ? <a href={`/trips/${p.tripId}`} onClick={(e) => { e.preventDefault(); navigate(`/trips/${p.tripId}`); }} style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: 12 }}>{p.tripCode}</a>
-                            : <span style={{ color: 'var(--ink-3)' }}>—</span>}
-                        </td>
-                        <td style={{ color: 'var(--ink-2)', maxWidth: 240 }}>
-                          {p.reasonText || p.customReason || '—'}
-                        </td>
-                        <td className="num">
-                          <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(Number(p.amount))}</strong>
-                        </td>
-                        <td style={{ color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{formatDate(p.date)}</td>
-                        <td>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                            padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600,
-                            background: p.status === 'ACTIVE' ? 'var(--success-soft)' : 'var(--bg-3)',
-                            color: p.status === 'ACTIVE' ? 'var(--success)' : 'var(--fg-3)',
-                          }}>
-                            {p.status === 'ACTIVE' ? '●' : '○'} {PENALTY_STATUS_LABELS[p.status]}
-                          </span>
-                        </td>
-                        {canCancel && (
-                          <td>
-                            {p.status !== 'CANCELED' && (
-                              <button
-                                className="penalty-row-act"
-                                style={{ color: 'var(--danger)' }}
-                                aria-label="Hủy kỷ luật"
-                                onClick={() => onCancelPenalty(p)}
-                              >
-                                <XCircle size={14} />
-                              </button>
-                            )}
-                          </td>
+            <>
+              <div className="plog-list">
+                {filteredPenalties.map(p => {
+                  const pac = avatarColorById(p.driverId ?? 0);
+                  const canceled = p.status === 'CANCELED';
+                  return (
+                    <div key={p.id} className={`plog-item${canceled ? ' plog-item--canceled' : ''}`}>
+                      <div className="plog-avatar" style={{ background: pac.bg, color: pac.fg }}>
+                        {getInitials(p.driverName || 'T')}
+                      </div>
+                      <div className="plog-body">
+                        <div className="plog-name">{p.driverName || 'Tài xế'}</div>
+                        <div className="plog-meta">
+                          <span className="plog-reason">{p.reasonText || p.customReason || '—'}</span>
+                          <span className="plog-sep">·</span>
+                          <span className="plog-date">{formatDate(p.date)}</span>
+                          {p.tripId && p.tripCode && (
+                            <>
+                              <span className="plog-sep">·</span>
+                              <a
+                                href={`/trips/${p.tripId}`}
+                                onClick={(e) => { e.preventDefault(); navigate(`/trips/${p.tripId}`); }}
+                                className="plog-trip"
+                              >{p.tripCode}</a>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="plog-right">
+                        <span className="plog-amount">-{formatCurrency(Number(p.amount))}</span>
+                        {canCancel && !canceled && (
+                          <button
+                            className="penalty-row-act"
+                            style={{ color: 'var(--danger)', marginTop: 2 }}
+                            aria-label="Hủy kỷ luật"
+                            onClick={() => onCancelPenalty(p)}
+                          >
+                            <XCircle size={13} />
+                          </button>
                         )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               <div className="penalty-table-foot">
                 <span>Đang hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filteredPenalties.length}</strong> biên bản</span>
               </div>
-            </div>
+            </>
           )}
         </Panel>
 

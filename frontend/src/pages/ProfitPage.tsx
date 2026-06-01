@@ -140,8 +140,8 @@ export default function ProfitPage() {
               </div>
             </div>
 
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={16} style={{ color: 'var(--brand)' }} />
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Users size={14} style={{ color: 'var(--brand)' }} />
               Phân chia theo tỷ lệ cổ phần
             </h3>
 
@@ -163,7 +163,7 @@ export default function ProfitPage() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'nowrap' }}>
                           <span className="partner-card__role">{isPrimary ? 'Đối tác chính' : 'Đối tác góp vốn'}</span>
-                          <div className="partner-card__pct" style={{ marginLeft: 'auto', fontSize: 16 }}>
+                          <div className="partner-card__pct" style={{ marginLeft: 'auto' }}>
                             {partner.percentage}%
                           </div>
                         </div>
@@ -201,8 +201,8 @@ export default function ProfitPage() {
 
           {/* Row 1, Col 2: Operating breakdown */}
           <div>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TrendingUp size={16} style={{ color: 'var(--brand)' }} />
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <TrendingUp size={14} style={{ color: 'var(--brand)' }} />
               Diễn giải kế toán
             </h3>
 
@@ -299,20 +299,20 @@ export default function ProfitPage() {
               <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
                 <button
                   className="btn btn--secondary"
-                  style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
+                  style={{ height: 38, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
                   onClick={handlePreview}
                   disabled={previewing}
                 >
-                  <Eye size={16} />
+                  <Eye size={14} />
                   {previewing ? 'Đang tính...' : 'Xem trước'}
                 </button>
                 <button
                   className="btn btn--primary"
-                  style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
+                  style={{ height: 38, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
                   onClick={handleDistributeProfit}
                   disabled={distributing}
                 >
-                  <CheckSquare size={16} />
+                  <CheckSquare size={14} />
                   {distributing ? 'Đang xử lý...' : 'Chốt & phân bổ'}
                 </button>
               </div>

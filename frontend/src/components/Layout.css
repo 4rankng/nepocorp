@@ -250,12 +250,12 @@
 /* legacy sidebar section labels */
 .sidebar-section-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--sb-text-muted);
-  padding: 16px 12px 6px;
+  padding: 20px 12px 8px;
 }
 
 /* collapsible section toggle */
@@ -287,12 +287,12 @@
 /* wireframe-canonical section label */
 .nav-section-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.55);
-  margin: 16px 12px 6px;
-  font-weight: 600;
+  margin: 20px 12px 8px;
+  font-weight: 700;
 }
 
 /* legacy sidebar item */
