@@ -10,6 +10,7 @@ import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI
 import { ActionBtns } from '../components/config/ActionBtns';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
+import { useCatalogs } from '../hooks/useCatalogs';
 import { TrailerType } from '@nepocorp/shared';
 import type { Truck as TruckType, Driver } from '@nepocorp/shared';
 
@@ -83,19 +84,16 @@ const StatusDot = memo(function StatusDot({ status }: { status: string }) {
  * was visually cramped and easy to miss when toggled. Modal gives the form
  * proper breathing room, focused labels, and an obvious save/cancel footer.
  */
-function TruckFormModal({ saving, item, onsave, oncancel, isOpen }: {
-  saving: boolean; item?: TruckType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
+function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpen }: {
+  saving: boolean; item?: TruckType; trailers: Array<{ id: number; licensePlate: string; type: string }>; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
 }) {
   const [plate, setPlate] = useState(item?.licensePlate || '');
-  const [trailerPlate, setTrailerPlate] = useState(item?.trailerPlateNumber || '');
-  const [trailerType, setTrailerType] = useState<string>(item?.trailerType || TrailerType.FT40);
+  const [currentTrailerId, setCurrentTrailerId] = useState<number | null>(item?.currentTrailerId ?? null);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
-  // Reset fields whenever the modal is re-opened for a different item.
   useEffect(() => {
     if (isOpen) {
       setPlate(item?.licensePlate || '');
-      setTrailerPlate(item?.trailerPlateNumber || '');
-      setTrailerType(item?.trailerType || TrailerType.FT40);
+      setCurrentTrailerId(item?.currentTrailerId ?? null);
       setStatus(item?.status || 'ACTIVE');
     }
   }, [isOpen, item?.id]);
@@ -103,8 +101,7 @@ function TruckFormModal({ saving, item, onsave, oncancel, isOpen }: {
     if (!plate.trim()) return;
     onsave({
       licensePlate: plate.trim(),
-      trailerPlateNumber: trailerPlate.trim() || null,
-      trailerType: trailerType as TrailerType,
+      currentTrailerId,
       status,
     });
   };
@@ -140,27 +137,21 @@ function TruckFormModal({ saving, item, onsave, oncancel, isOpen }: {
             autoFocus
           />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="trailer-plate" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Biển số rơ-moóc
-            </label>
-            <input
-              id="trailer-plate"
-              className="input"
-              value={trailerPlate}
-              onChange={e => setTrailerPlate(e.target.value)}
-              placeholder="VD: 70C-56789"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="trailer-type" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Loại
-            </label>
-            <select id="trailer-type" className="input" value={trailerType} onChange={e => setTrailerType(e.target.value)}>
-              {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
+        <div className="field">
+          <label htmlFor="trailer-select" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            Rơ-moóc hiện tại
+          </label>
+          <select
+            id="trailer-select"
+            className="input"
+            value={currentTrailerId ?? ''}
+            onChange={e => setCurrentTrailerId(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">— Không có —</option>
+            {trailers.map(t => (
+              <option key={t.id} value={t.id}>{t.licensePlate} ({TRAILER_TYPE_LABELS[t.type] || t.type})</option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label htmlFor="truck-status" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
@@ -287,9 +278,10 @@ function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen }: {
 
 // ─── Card Components ─────────────────────────────────────────────────────────
 
-function TruckCard({ trucks, driverByTruck, crud }: {
+function TruckCard({ trucks, driverByTruck, trailers, crud }: {
   trucks: TruckType[];
   driverByTruck: Map<number, Driver>;
+  trailers: Array<{ id: number; licensePlate: string; type: string }>;
   crud: ReturnType<typeof useCRUD>;
 }) {
   const active = trucks.filter(t => t.status === 'ACTIVE').length;
@@ -376,6 +368,7 @@ function TruckCard({ trucks, driverByTruck, crud }: {
         isOpen={crud.showAddForm || crud.editingId != null}
         saving={crud.saving}
         item={crud.editingId != null ? trucks.find(t => t.id === crud.editingId) : undefined}
+        trailers={trailers}
         onsave={d => {
           if (crud.editingId != null) crud.doUpdate(crud.editingId, d);
           else crud.doCreate(d);
@@ -508,8 +501,10 @@ function DriverCard({ drivers, truckMap, crud }: {
 export default function FleetPage() {
   const queryClient = useQueryClient();
   const { data: fleetData } = useFleetData();
+  const { data: catalog } = useCatalogs();
   const trucks = fleetData?.trucks ?? [];
   const drivers = fleetData?.drivers ?? [];
+  const trailers = catalog?.trailers ?? [];
 
   const invalidateFleet = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['fleet'] });
@@ -518,7 +513,7 @@ export default function FleetPage() {
   const truckCrud = useCRUD('/trucks', invalidateFleet);
   const driverCrud = useCRUD('/drivers', invalidateFleet);
 
-  const { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, assignedDrivers, activeDrivers, readyToRun } = useMemo(() => {
+  const { truckMap, driverByTruck, activeTrucks, maintTrucks, assignedDrivers, activeDrivers, readyToRun } = useMemo(() => {
     const truckMap = new Map<number, TruckType>();
     trucks.forEach(t => truckMap.set(t.id, t));
 
@@ -527,16 +522,17 @@ export default function FleetPage() {
 
     const activeTrucks = trucks.filter(t => t.status === 'ACTIVE').length;
     const maintTrucks = trucks.filter(t => t.status === 'MAINTENANCE').length;
-    const ft40 = trucks.filter(t => t.trailerType === TrailerType.FT40).length;
-    const ft20 = trucks.filter(t => t.trailerType === TrailerType.FT20).length;
     const assignedDrivers = drivers.filter(d => d.assignedTruckId).length;
     const activeDrivers = drivers.filter(d => d.status === 'ACTIVE').length;
     const readyToRun = trucks.filter(t =>
       t.status === 'ACTIVE' && driverByTruck.has(t.id),
     ).length;
 
-    return { truckMap, driverByTruck, activeTrucks, maintTrucks, ft40, ft20, assignedDrivers, activeDrivers, readyToRun };
+    return { truckMap, driverByTruck, activeTrucks, maintTrucks, assignedDrivers, activeDrivers, readyToRun };
   }, [trucks, drivers]);
+
+  const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
+  const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
 
   return (
     <div className="fleet-page fade-up">
@@ -627,7 +623,7 @@ export default function FleetPage() {
       </div>
 
       {/* Trucks */}
-      <TruckCard trucks={trucks} driverByTruck={driverByTruck} crud={truckCrud} />
+      <TruckCard trucks={trucks} driverByTruck={driverByTruck} trailers={trailers} crud={truckCrud} />
 
       {/* Drivers full width */}
       <DriverCard drivers={drivers} truckMap={truckMap} crud={driverCrud} />

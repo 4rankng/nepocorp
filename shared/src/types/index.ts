@@ -1,6 +1,6 @@
 import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, CustomerStatus, PenaltyStatus,
+  TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -52,7 +52,18 @@ export interface Truck {
   licensePlate: string;
   trailerPlateNumber: string | null;
   trailerType: TrailerType | null;
+  currentTrailerId: number | null;
   status: TruckStatus;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface Trailer {
+  id: number;
+  licensePlate: string;
+  type: TrailerType;
+  status: TrailerStatus;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -129,6 +140,7 @@ export interface Trip {
   truckId: number;
   driverId: number;
   routeId: number;
+  trailerId: number | null;
   trailerType: TrailerType | null;
   cargoTypeId: number;
   containerCount: number | null;
@@ -352,6 +364,7 @@ export interface TripDetail extends Trip {
   legs: TripLeg[];
   driver?: Driver;
   truck?: Truck;
+  trailer?: Trailer;
   route?: Route;
   customer?: Customer;
   cargoType?: CargoType;

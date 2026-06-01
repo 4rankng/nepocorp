@@ -57,7 +57,18 @@ export async function createTrip(data: {
     if (!truck) {
       throw new ApiError(400, 'Xe đầu kéo không tồn tại');
     }
-    const trailerType = truck.trailerType || '40FT';
+    let trailerId: number | null = null;
+    let trailerType = truck.trailerType || '40FT';
+
+    if (truck.currentTrailerId) {
+      const [trailer] = await tx.select().from(s.trailers)
+        .where(eq(s.trailers.id, truck.currentTrailerId))
+        .limit(1);
+      if (trailer) {
+        trailerId = trailer.id;
+        trailerType = trailer.type;
+      }
+    }
 
     // Look up road allowance base for snapshotted column
     const [allowance] = await tx.select().from(s.roadAllowances).where(
@@ -101,6 +112,7 @@ export async function createTrip(data: {
       createdBy: data.createdBy ?? null,
       customerId: data.customerId,
       routeId: data.routeId,
+      trailerId,
       trailerType,
       truckId: data.truckId,
       driverId: data.driverId,
@@ -536,17 +548,30 @@ export async function reassignTrip(tripId: number, data: { truckId: number; driv
     // raw postgres FK constraint error ("insert or update on table trips
     // violates foreign key constraint trips_truck_id_trucks_id_fk") leaks into
     // the UI as an unfriendly red banner. Catch the bad id at the API edge.
-    const [truck] = await tx.select({ id: s.trucks.id, trailerType: s.trucks.trailerType }).from(s.trucks)
+    const [newTruck] = await tx.select({ id: s.trucks.id, trailerType: s.trucks.trailerType, currentTrailerId: s.trucks.currentTrailerId }).from(s.trucks)
       .where(and(eq(s.trucks.id, data.truckId), isNull(s.trucks.deletedAt))).limit(1);
-    if (!truck) throw new ApiError(400, 'Xe đầu kéo không tồn tại hoặc đã bị xóa');
+    if (!newTruck) throw new ApiError(400, 'Xe đầu kéo không tồn tại hoặc đã bị xóa');
     const [driver] = await tx.select({ id: s.drivers.id }).from(s.drivers)
       .where(and(eq(s.drivers.id, data.driverId), isNull(s.drivers.deletedAt))).limit(1);
     if (!driver) throw new ApiError(400, 'Tài xế không tồn tại hoặc đã bị xóa');
 
-    const trailerType = truck.trailerType || trip.trailerType;
+    let trailerId: number | null = null;
+    let trailerType = newTruck.trailerType || trip.trailerType || '40FT';
+
+    if (newTruck.currentTrailerId) {
+      const [trailer] = await tx.select().from(s.trailers)
+        .where(eq(s.trailers.id, newTruck.currentTrailerId))
+        .limit(1);
+      if (trailer) {
+        trailerId = trailer.id;
+        trailerType = trailer.type;
+      }
+    }
+
     const [updated] = await tx.update(s.trips).set({
       truckId: data.truckId,
       driverId: data.driverId,
+      trailerId,
       trailerType,
       updatedAt: new Date(),
     }).where(eq(s.trips.id, tripId)).returning();
@@ -566,7 +591,8 @@ const TRIP_RELATION_FIELDS = {
   routeDistance: s.routes.distanceKm,
   routeIsMountain: s.routes.isMountain,
   routeFixedFuelAllowance: s.routes.fixedFuelAllowance,
-  trailerLicensePlate: s.trucks.trailerPlateNumber,
+  trailerLicensePlate: s.trailers.licensePlate,
+  trailerId: s.trips.trailerId,
   trailerType: s.trips.trailerType,
 };
 
@@ -574,7 +600,8 @@ const TRIP_RELATION_JOINS = (query: any) => query
   .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
   .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
   .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
-  .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id));
+  .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+  .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id));
 
 /** Shape flat joined rows into nested relation objects. */
 function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; photoUrls?: string[] }) {
@@ -585,6 +612,11 @@ function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; 
     truck: item.truckPlate ? { id: item.truckId, licensePlate: item.truckPlate } : null,
     route: item.routeName ? { id: item.routeId, name: item.routeName, distanceKm: item.routeDistance, isMountain: item.routeIsMountain, fixedFuelAllowance: item.routeFixedFuelAllowance } : null,
     trailerType: item.trailerType || '40FT',
+    trailer: item.trailerId ? {
+      id: item.trailerId,
+      licensePlate: item.trailerLicensePlate ?? null,
+      type: item.trailerType || '40FT',
+    } : undefined,
     ...extras,
   };
 }

@@ -45,6 +45,12 @@ export enum TruckStatus {
   INACTIVE = 'INACTIVE',
 }
 
+export enum TrailerStatus {
+  ACTIVE = 'ACTIVE',
+  MAINTENANCE = 'MAINTENANCE',
+  INACTIVE = 'INACTIVE',
+}
+
 export enum DriverStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -89,6 +95,17 @@ export enum PenaltyStatus {
 export const PENALTY_STATUS_LABELS: Record<PenaltyStatus, string> = {
   [PenaltyStatus.ACTIVE]: 'Hiệu lực',
   [PenaltyStatus.CANCELED]: 'Đã hủy',
+};
+
+export const TRAILER_STATUS_LABELS: Record<TrailerStatus, string> = {
+  [TrailerStatus.ACTIVE]: 'Hoạt động',
+  [TrailerStatus.MAINTENANCE]: 'Bảo trì',
+  [TrailerStatus.INACTIVE]: 'Ngưng hoạt động',
+};
+
+export const TRAILER_TYPE_LABELS: Record<TrailerType, string> = {
+  [TrailerType.FT20]: '20FT',
+  [TrailerType.FT40]: '40FT',
 };
 
 export * from './api-paths';

@@ -2,6 +2,7 @@ import {
   pgTable, serial, varchar, text, integer, boolean, timestamp,
   jsonb, numeric, date, pgEnum, uniqueIndex, index,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // Enums
 export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'COMPLETED', 'LOCKED', 'CANCELED']);
@@ -16,6 +17,7 @@ export const customerStatusEnum = pgEnum('customer_status', ['ACTIVE', 'LOCKED']
 export const tripPhotoTypeEnum = pgEnum('trip_photo_type', ['CONTAINER', 'SEAL', 'OTHER']);
 export const penaltyStatusEnum = pgEnum('penalty_status', ['ACTIVE', 'CANCELED']);
 export const vehicleComponentEnum = pgEnum('vehicle_component', ['TRUCK', 'TRAILER']);
+export const trailerStatusEnum = pgEnum('trailer_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
 
 
 // ─── Config tables ───────────────────────────────────────────────────────────
@@ -42,10 +44,21 @@ export const trucks = pgTable('trucks', {
   licensePlate: varchar('license_plate', { length: 20 }).unique().notNull(),
   trailerPlateNumber: varchar('trailer_plate_number', { length: 20 }),
   trailerType: trailerTypeEnum('trailer_type'),
+  currentTrailerId: integer('current_trailer_id').references(() => trailers.id),
   status: truckStatusEnum('status').default('ACTIVE'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
+});
+
+export const trailers = pgTable('trailers', {
+  id: serial('id').primaryKey(),
+  licensePlate: varchar('license_plate', { length: 20 }).notNull().unique(),
+  type: trailerTypeEnum('type').notNull(),
+  status: trailerStatusEnum('status').default('ACTIVE').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).default(sql`now()`).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).default(sql`now()`).notNull(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
 });
 
 export const drivers = pgTable('drivers', {
@@ -154,6 +167,7 @@ export const trips = pgTable('trips', {
   truckId: integer('truck_id').references(() => trucks.id).notNull(),
   driverId: integer('driver_id').references(() => drivers.id).notNull(),
   routeId: integer('route_id').references(() => routes.id).notNull(),
+  trailerId: integer('trailer_id').references(() => trailers.id),
   trailerType: trailerTypeEnum('trailer_type'),
   cargoTypeId: integer('cargo_type_id').references(() => cargoTypes.id).notNull(),
   containerCount: integer('container_count').default(1),

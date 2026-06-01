@@ -14,6 +14,10 @@ export interface RouteOption extends SelectOption {
   distanceKm?: number;
 }
 
+export interface TruckOption extends SelectOption {
+  currentTrailerId: number | null;
+}
+
 export interface TrailerTypeOption {
   value: string;
   label: string;
@@ -22,9 +26,10 @@ export interface TrailerTypeOption {
 export interface TripOptions {
   customers: SelectOption[];
   routes: RouteOption[];
-  trucks: SelectOption[];
+  trucks: TruckOption[];
   trailerTypes: TrailerTypeOption[];
   drivers: SelectOption[];
+  trailers: SelectOption[];
   cargoTypes: SelectOption[];
   pricingTables: PricingTable[];
   loading: boolean;
@@ -32,10 +37,11 @@ export interface TripOptions {
 
 interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }>;
-  trucks: Array<{ id: number; licensePlate: string }>;
+  trucks: Array<{ id: number; licensePlate: string; currentTrailerId: number | null }>;
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
+  trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
 }
 
 export function useTripOptions(): TripOptions {
@@ -65,9 +71,10 @@ export function useTripOptions(): TripOptions {
         name: r.name,
         distanceKm: r.distanceKm ?? undefined,
       })) ?? [],
-    trucks: catalog?.trucks.map((t) => ({ id: t.id, label: t.licensePlate })) ?? [],
+    trucks: catalog?.trucks.map((t) => ({ id: t.id, label: t.licensePlate, currentTrailerId: t.currentTrailerId ?? null })) ?? [],
     trailerTypes: [{ value: '20FT', label: '20FT' }, { value: '40FT', label: '40FT' }],
     drivers: catalog?.drivers.map((d) => ({ id: d.id, label: d.name })) ?? [],
+    trailers: catalog?.trailers?.map((t) => ({ id: t.id, label: t.licensePlate })) ?? [],
     cargoTypes: catalog?.cargoTypes.map((c) => ({ id: c.id, label: c.name })) ?? [],
     pricingTables: pricingQuery.data ?? [],
     loading: bootstrapQuery.isLoading || pricingQuery.isLoading,

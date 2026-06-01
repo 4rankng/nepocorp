@@ -37,6 +37,7 @@ const DriversConfigPage = lazy(() => import('./pages/config/DriversConfigPage'))
 const FuelConfigPage = lazy(() => import('./pages/config/FuelConfigPage'));
 const CapTableConfigPage = lazy(() => import('./pages/config/CapTableConfigPage'));
 const CustomersConfigPage = lazy(() => import('./pages/config/CustomersConfigPage'));
+const TrailersConfigPage = lazy(() => import('./pages/config/TrailersConfigPage'));
 const ManagementFeesConfigPage = lazy(() => import('./pages/config/ManagementFeesConfigPage'));
 const SalaryPeriodConfigPage = lazy(() => import('./pages/config/SalaryPeriodConfigPage'));
 const SupplierListPage = lazy(() => import('./pages/SupplierListPage'));
@@ -111,8 +112,9 @@ function AppRoutes() {
           <Route path="/routes" element={<Navigate to="/config/routes" replace />} />
           <Route path="/trucks" element={<Navigate to="/fleet" replace />} />
           <Route path="/drivers" element={<Navigate to="/fleet" replace />} />
-          <Route path="/trailers" element={<Navigate to="/fleet" replace />} />
+          <Route path="/trailers" element={<Navigate to="/config/trailers" replace />} />
           <Route path="/config" element={adminOnly(page(<ConfigPage />))} />
+          <Route path="/config/trailers" element={adminOnly(page(<TrailersConfigPage />))} />
           <Route path="/config/trucks" element={adminOnly(page(<TrucksConfigPage />))} />
           <Route path="/config/routes" element={adminOnly(page(<RoutesConfigPage />))} />
           <Route path="/config/cargo-types" element={adminOnly(page(<CargoTypesConfigPage />))} />

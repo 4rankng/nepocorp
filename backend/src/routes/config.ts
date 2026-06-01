@@ -4,7 +4,7 @@ import * as s from '../db/schema';
 import { eq, isNull, sql, and, desc } from 'drizzle-orm';
 // auth + Casbin applied at mount point in index.ts
 import {
-  customerSchema, truckSchema, routeSchema,
+  customerSchema, truckSchema, trailerSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
   fuelConfigSchema, penaltyReasonSchema, driverSchema,
   managementFeeSchema, capTableSchema,
@@ -57,7 +57,37 @@ router.get('/pricing', async (req: Request, res: Response) => {
 // ─── CRUD routes ─────────────────────────────────────────────────────────────
 
 router.use('/customers', createCrudRouter(s.customers, customerSchema, { searchableField: 'name' }));
-router.use('/trucks', createCrudRouter(s.trucks, truckSchema, { searchableField: 'licensePlate' }));
+router.use('/trucks', createCrudRouter(s.trucks, truckSchema, {
+  searchableField: 'licensePlate',
+  beforeCreate: async (_id, data) => {
+    if (data.currentTrailerId) {
+      const [trailer] = await db.select().from(s.trailers)
+        .where(eq(s.trailers.id, data.currentTrailerId)).limit(1);
+      if (trailer) {
+        data.trailerPlateNumber = trailer.licensePlate;
+        data.trailerType = trailer.type;
+      }
+    }
+    return data;
+  },
+  beforeUpdate: async (_id, data) => {
+    if (data.currentTrailerId !== undefined) {
+      if (data.currentTrailerId) {
+        const [trailer] = await db.select().from(s.trailers)
+          .where(eq(s.trailers.id, data.currentTrailerId)).limit(1);
+        if (trailer) {
+          data.trailerPlateNumber = trailer.licensePlate;
+          data.trailerType = trailer.type;
+        }
+      } else {
+        data.trailerPlateNumber = null;
+        data.trailerType = null;
+      }
+    }
+    return data;
+  },
+}));
+router.use('/trailers', createCrudRouter(s.trailers, trailerSchema, { searchableField: 'licensePlate' }));
 router.use('/routes', createCrudRouter(s.routes, routeSchema, { searchableField: 'name' }));
 router.use('/cargo-types', createCrudRouter(s.cargoTypes, cargoTypeSchema));
 router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSchema));

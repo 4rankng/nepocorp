@@ -27,6 +27,7 @@ export default function ConfigPage() {
     customers,
     routes,
     trucks,
+    trailers,
     cargoTypes,
     pricingTables,
     managementFees,
@@ -42,6 +43,7 @@ export default function ConfigPage() {
       { queryKey: ['cfg-count', 'customers'],          queryFn: () => api.get<ListResponse>('/customers?limit=1'),          staleTime: 60_000 },
       { queryKey: ['cfg-count', 'routes'],             queryFn: () => api.get<ListResponse>('/routes?limit=1'),             staleTime: 60_000 },
       { queryKey: ['cfg-count', 'trucks'],             queryFn: () => api.get<ListResponse>('/trucks?limit=1'),             staleTime: 60_000 },
+      { queryKey: ['cfg-count', 'trailers'],            queryFn: () => api.get<ListResponse>('/trailers?limit=1'),            staleTime: 60_000 },
       { queryKey: ['cfg-count', 'cargo-types'],        queryFn: () => api.get<ListResponse>('/cargo-types?limit=1'),        staleTime: 60_000 },
       { queryKey: ['cfg-count', 'pricing-tables'],     queryFn: () => api.get<ListResponse>('/pricing-tables?limit=1'),     staleTime: 60_000 },
       { queryKey: ['cfg-count', 'management-fees'],    queryFn: () => api.get<ListResponse>('/management-fees?limit=1'),    staleTime: 60_000 },
@@ -147,6 +149,16 @@ export default function ConfigPage() {
           <p className="setting-card__desc">Biển số các đầu kéo kéo container đang vận hành, định mức mặc định và lịch bảo dưỡng đầu xe.</p>
           <div className="setting-card__foot">
             <span className="setting-card__status"><span className="dot"></span>{countLabel(trucks.data?.total, 'xe')}</span>
+            <span className="setting-card__action">Sửa {CHEVRON}</span>
+          </div>
+        </button>
+
+        <button className="setting-card" onClick={() => navigate('/config/trailers')}>
+          <div className="setting-card__icon"><Truck size={20} /></div>
+          <h3 className="setting-card__title">Rơ-moóc</h3>
+          <p className="setting-card__desc">Danh sách rơ-moóc, loại rơ-moóc và thông tin đăng kiểm.</p>
+          <div className="setting-card__foot">
+            <span className="setting-card__status"><span className="dot"></span>{countLabel(trailers.data?.total, 'rơ-moóc')}</span>
             <span className="setting-card__action">Sửa {CHEVRON}</span>
           </div>
         </button>

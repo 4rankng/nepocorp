@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
-  TrailerType, TruckStatus, DriverStatus, CustomerStatus,
+  TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
 } from '../constants';
 
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
@@ -181,7 +181,14 @@ export const truckSchema = z.object({
   licensePlate: z.string().min(1),
   trailerPlateNumber: z.string().optional().nullable(),
   trailerType: z.nativeEnum(TrailerType).optional().nullable(),
+  currentTrailerId: z.number().optional().nullable(),
   status: z.nativeEnum(TruckStatus).optional().default(TruckStatus.ACTIVE),
+});
+
+export const trailerSchema = z.object({
+  licensePlate: z.string().min(1),
+  type: z.nativeEnum(TrailerType),
+  status: z.nativeEnum(TrailerStatus).optional().default(TrailerStatus.ACTIVE),
 });
 
 export const routeSchema = z.object({
@@ -320,6 +327,7 @@ export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type CustomerInput = z.infer<typeof customerSchema>;
 export type TruckInput = z.infer<typeof truckSchema>;
+export type TrailerInput = z.infer<typeof trailerSchema>;
 export type RouteInput = z.infer<typeof routeSchema>;
 export type CargoTypeInput = z.infer<typeof cargoTypeSchema>;
 export type PricingTableInput = z.infer<typeof pricingTableSchema>;

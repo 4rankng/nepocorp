@@ -250,6 +250,18 @@ export function useTripForm(options: TripOptions): UseTripFormReturn {
   const [customerReference, setCustomerReference] = useState("");
   const [containerCount, setContainerCount] = useState("1");
 
+  useEffect(() => {
+    if (truckId && options?.trucks) {
+      const selectedTruck = options.trucks.find(t => t.id === Number(truckId));
+      if (selectedTruck?.currentTrailerId && options?.trailers) {
+        const trailer = options.trailers.find(t => t.id === selectedTruck.currentTrailerId);
+        if (trailer && !trailerType) {
+          setTrailerType(trailer.label.includes('20') ? '20FT' : '40FT');
+        }
+      }
+    }
+  }, [truckId]);
+
   // Legs sub-hook
   const { legs, addLeg, removeLeg, updateLeg } = useTripLegs(options.routes, routeId);
 

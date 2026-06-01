@@ -9,6 +9,7 @@ export interface CatalogData {
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
+  trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
 }
 
 export function useCatalogs() {

@@ -15,7 +15,7 @@ import { cacheGet } from '../lib/redis';
  */
 export async function getBootstrapData() {
   return cacheGet('catalogs:bootstrap', 60, async () => {
-    const [customersList, trucksList, driversList, routesList, cargoTypesList, expenseCategoriesList, suppliersList] = await Promise.all([
+    const [customersList, trucksList, driversList, routesList, cargoTypesList, expenseCategoriesList, suppliersList, trailersList] = await Promise.all([
       db.select().from(s.customers).where(isNull(s.customers.deletedAt)),
       db.select().from(s.trucks).where(isNull(s.trucks.deletedAt)),
       db.select().from(s.drivers).where(isNull(s.drivers.deletedAt)),
@@ -23,6 +23,7 @@ export async function getBootstrapData() {
       db.select().from(s.cargoTypes).where(isNull(s.cargoTypes.deletedAt)),
       db.select().from(s.expenseCategories).where(isNull(s.expenseCategories.deletedAt)),
       db.select().from(s.suppliers).where(isNull(s.suppliers.deletedAt)),
+      db.select().from(s.trailers).where(isNull(s.trailers.deletedAt)),
     ]);
 
     return {
@@ -33,6 +34,7 @@ export async function getBootstrapData() {
       cargoTypes: cargoTypesList,
       expenseCategories: expenseCategoriesList.filter(c => c.status === 'ACTIVE'),
       suppliers: suppliersList.filter(s => s.status === 'ACTIVE'),
+      trailers: trailersList.filter(t => t.status === 'ACTIVE'),
     };
   });
 }
