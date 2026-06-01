@@ -196,3 +196,18 @@
     display: none;
   }
 }
+
+/* ==========================================================================
+   Trip Edit Page — Form column layout
+   ========================================================================== */
+
+/* Form column spacing (used by TripEditPage) */
+.tc-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .tc-form-col { gap: 12px; }
+}

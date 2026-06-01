@@ -44,7 +44,7 @@ export function PhotoUploader({
   const otherPhotos = photos.filter((p) => p.type === "OTHER");
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 0 }}>
       <div style={{ marginBottom: 14 }}>
         <span className="typo-eyebrow">Xác thực chứng từ & Ảnh đính kèm</span>
       </div>
@@ -65,12 +65,11 @@ export function PhotoUploader({
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-        {/* Container slot */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
         <div style={{
           border: "1px solid var(--border-2)",
           borderRadius: "var(--radius-md)",
-          padding: 12,
+          padding: 14,
           background: "var(--bg-1)",
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-1)", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
@@ -78,7 +77,7 @@ export function PhotoUploader({
             {requiresPhotos && containerPhotos.length === 0 && <span style={{ color: "var(--danger)", fontSize: 10 }}>Chưa có *</span>}
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
             {containerPhotos.map((photo, i) => {
               const globalIdx = photos.findIndex((p) => p.url === photo.url);
               return (
@@ -102,11 +101,10 @@ export function PhotoUploader({
           </label>
         </div>
 
-        {/* Seal slot */}
         <div style={{
           border: "1px solid var(--border-2)",
           borderRadius: "var(--radius-md)",
-          padding: 12,
+          padding: 14,
           background: "var(--bg-1)",
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-1)", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
@@ -114,7 +112,7 @@ export function PhotoUploader({
             {requiresPhotos && sealPhotos.length === 0 && <span style={{ color: "var(--danger)", fontSize: 10 }}>Chưa có *</span>}
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
             {sealPhotos.map((photo, i) => {
               const globalIdx = photos.findIndex((p) => p.url === photo.url);
               return (
@@ -139,18 +137,17 @@ export function PhotoUploader({
         </div>
       </div>
 
-      {/* Other photos slot */}
       <div style={{
         border: "1px solid var(--border-2)",
         borderRadius: "var(--radius-md)",
-        padding: 12,
+        padding: 14,
         background: "var(--bg-1)",
       }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-1)", marginBottom: 8 }}>
           Ảnh đính kèm khác
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
           {otherPhotos.map((photo, i) => {
             const globalIdx = photos.findIndex((p) => p.url === photo.url);
             return (

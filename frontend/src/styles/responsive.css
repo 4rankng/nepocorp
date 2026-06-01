@@ -730,11 +730,6 @@
   .calc-row__value { font-size: 14px !important; }
   .calc-row--final .calc-row__value { font-size: 18px !important; }
 
-  /* TripEdit page — the inline 3-col grid (legs | form | P&L) was forcing
-     three skinny columns at 320px, causing per-character text wrapping in
-     the column headers. Collapse to single column on phones. */
-  .te-edit-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
-
   /* Eyebrow labels — drop the 0.1em letter-spacing on phones so headers like
      "HÀNH TRÌNH CHI TIẾT (CHẶNG ĐƯỜNG)" don't wrap to 3 lines next to a
      button on the same row. */

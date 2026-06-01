@@ -234,6 +234,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pageTitle = getPageTitle(location.pathname);
   const activeSection = navItems.find(i => i.key === activeKey)?.section;
 
+  // Update browser tab title on route change
+  useEffect(() => {
+    document.title = `${pageTitle} · NEPOCORP`;
+  }, [pageTitle]);
+
+  // Announce page changes to screen readers
+  const [ariaLiveMsg, setAriaLiveMsg] = useState('');
+  useEffect(() => {
+    setAriaLiveMsg(`Đã chuyển đến ${pageTitle}`);
+  }, [pageTitle]);
+
   const navRef = useRef<HTMLElement>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   // Track only the nav's own clientHeight — changes only on real window/sidebar resize,
@@ -306,6 +317,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <button
           className="sidebar-section-label sidebar-section-toggle"
           onClick={() => toggleSection(sectionName)}
+          aria-expanded={!isCollapsed}
         >
           <span>{label}</span>
           <ChevronDown
@@ -323,6 +335,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className={`sidebar-item ${isActive ? 'active' : ''}`}
               onClick={() => handleNavigate(item.path)}
               title={item.label}
+              aria-label={item.label}
             >
               <IconC size={16} />
               <span className="sidebar-item-label">{item.label}</span>
@@ -347,6 +360,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`app ${!sidebarOpen ? 'sidebar-closed' : ''}`}>
+      <a href="#main-content" className="skip-link">Bỏ qua đến nội dung chính</a>
+      {/* Screen reader live region for route changes */}
+      <div aria-live="polite" aria-atomic="true" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>{ariaLiveMsg}</div>
       <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
@@ -366,7 +382,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="sidebar-footer" ref={userMenuRef}>
-          <button className="sidebar-user" onClick={toggleUserMenu}>
+          <button className="sidebar-user" onClick={toggleUserMenu} aria-expanded={userMenuOpen} aria-label="Menu người dùng">
             <div className="avatar">
               <User size={18} />
             </div>
@@ -557,7 +573,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <div className="app-body">
+        <div className="app-body" id="main-content">
           {children}
         </div>
       </div>

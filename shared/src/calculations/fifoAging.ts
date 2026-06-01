@@ -33,7 +33,12 @@ export function computeFifoAging(
     const debit = typeof entry.debit === 'number' ? entry.debit : parseFloat(entry.debit || '0');
     const credit = typeof entry.credit === 'number' ? entry.credit : parseFloat(entry.credit || '0');
 
-    if (debit > 0 && entry.timestamp) {
+    // Previously a missing timestamp dropped the debit on the floor —
+    // it still showed up in the running balance but never made it into
+    // an aging bucket, so totals didn't reconcile. Fall back to "now"
+    // (the reference date) so the debt lands in the current bucket and
+    // sum-of-buckets matches total outstanding.
+    if (debit > 0) {
       let debitRemaining = debit;
       if (unappliedCredit > 0) {
         const apply = Math.min(unappliedCredit, debitRemaining);
@@ -41,7 +46,8 @@ export function computeFifoAging(
         debitRemaining -= apply;
       }
       if (debitRemaining > 0) {
-        openInvoices.push({ ts: entry.timestamp, open: debitRemaining });
+        const ts = entry.timestamp ?? referenceDate.toISOString();
+        openInvoices.push({ ts, open: debitRemaining });
       }
     }
 

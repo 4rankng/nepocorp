@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
-import { PageHeader, Panel, StatusPill, Btn, KPI } from '../components/UI';
+import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI';
 import { ActionBtns } from '../components/config/ActionBtns';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
@@ -76,133 +76,212 @@ const StatusDot = memo(function StatusDot({ status }: { status: string }) {
   return <StatusPill variant={variant} dot>{label}</StatusPill>;
 });
 
-// ─── Inline edit row actions ─────────────────────────────────────────────────
+// ─── Forms (modal-based) ─────────────────────────────────────────────────────
 
-function EditActions({ saving, isedit, onsave, oncancel }: {
-  saving: boolean; isedit: boolean; onsave: () => void; oncancel: () => void;
-}) {
-  return (
-    <div className="fleet-edit-actions">
-      <button className="btn btn--primary btn--sm" disabled={saving} onClick={onsave}>
-        {saving ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
-        {isedit ? 'Cập nhật' : 'Thêm'}
-      </button>
-      <button className="btn btn--ghost btn--sm" onClick={oncancel}>
-        <X size={12} /> Hủy
-      </button>
-    </div>
-  );
-}
-
-// ─── Forms ────────────────────────────────────────────────────────────────────
-
-function TruckForm({ saving, item, onsave, oncancel }: {
-  saving: boolean; item?: TruckType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+/**
+ * TruckForm rendered inside a Modal — the previous tr-based inline edit row
+ * was visually cramped and easy to miss when toggled. Modal gives the form
+ * proper breathing room, focused labels, and an obvious save/cancel footer.
+ */
+function TruckFormModal({ saving, item, onsave, oncancel, isOpen }: {
+  saving: boolean; item?: TruckType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
 }) {
   const [plate, setPlate] = useState(item?.licensePlate || '');
   const [trailerPlate, setTrailerPlate] = useState(item?.trailerPlateNumber || '');
   const [trailerType, setTrailerType] = useState<string>(item?.trailerType || TrailerType.FT40);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
-  const handleSave = () => { if (!plate.trim()) return; onsave({ licensePlate: plate.trim(), trailerPlateNumber: trailerPlate.trim() || null, trailerType: trailerType as TrailerType, status }); };
+  // Reset fields whenever the modal is re-opened for a different item.
+  useEffect(() => {
+    if (isOpen) {
+      setPlate(item?.licensePlate || '');
+      setTrailerPlate(item?.trailerPlateNumber || '');
+      setTrailerType(item?.trailerType || TrailerType.FT40);
+      setStatus(item?.status || 'ACTIVE');
+    }
+  }, [isOpen, item?.id]);
+  const handleSave = () => {
+    if (!plate.trim()) return;
+    onsave({
+      licensePlate: plate.trim(),
+      trailerPlateNumber: trailerPlate.trim() || null,
+      trailerType: trailerType as TrailerType,
+      status,
+    });
+  };
   return (
-    <tr className="fleet-edit-row">
-      <td className="num" />
-      <td>
-        <input
-          className="input input--sm"
-          value={plate}
-          onChange={e => setPlate(e.target.value)}
-          placeholder="VD: 60C-12345"
-          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
-          autoFocus
-        />
-      </td>
-      <td>
-        <div className="fleet-edit-pair">
+    <Modal
+      isOpen={isOpen}
+      title={item ? `Sửa xe ${item.licensePlate}` : 'Thêm xe đầu kéo'}
+      onClose={oncancel}
+      onConfirm={handleSave}
+      footer={
+        <>
+          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
+            <X size={14} /> Hủy
+          </button>
+          <button className="btn btn--primary btn--sm" disabled={saving || !plate.trim()} onClick={handleSave}>
+            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {item ? 'Cập nhật' : 'Thêm xe'}
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="field">
+          <label htmlFor="truck-plate" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            Biển số xe đầu kéo <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
           <input
-            className="input input--sm"
-            value={trailerPlate}
-            onChange={e => setTrailerPlate(e.target.value)}
-            placeholder="VD: 70C-56789"
-            onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
+            id="truck-plate"
+            className="input"
+            value={plate}
+            onChange={e => setPlate(e.target.value)}
+            placeholder="VD: 60C-12345"
+            autoFocus
           />
-          <select className="input input--sm fleet-edit-select-sm" value={trailerType} onChange={e => setTrailerType(e.target.value)}>
-            {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="trailer-plate" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+              Biển số rơ-moóc
+            </label>
+            <input
+              id="trailer-plate"
+              className="input"
+              value={trailerPlate}
+              onChange={e => setTrailerPlate(e.target.value)}
+              placeholder="VD: 70C-56789"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="trailer-type" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+              Loại
+            </label>
+            <select id="trailer-type" className="input" value={trailerType} onChange={e => setTrailerType(e.target.value)}>
+              {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="field">
+          <label htmlFor="truck-status" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            Trạng thái
+          </label>
+          <select id="truck-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
+            {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
-      </td>
-      <td />
-      <td>
-        <select className="input input--sm" value={status} onChange={e => setStatus(e.target.value)}>
-          {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-      </td>
-      <td>
-        <EditActions saving={saving} isedit={!!item} onsave={handleSave} oncancel={oncancel} />
-      </td>
-    </tr>
+      </div>
+    </Modal>
   );
 }
 
-function DriverForm({ saving, item, trucks, onsave, oncancel }: {
-  saving: boolean; item?: Driver; trucks: TruckType[]; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen }: {
+  saving: boolean; item?: Driver; trucks: TruckType[]; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
 }) {
   const [name, setName] = useState(item?.name || '');
   const [phone, setPhone] = useState(item?.phone || '');
   const [baseSalary, setBaseSalary] = useState<string | number>(item?.baseSalary || '');
   const [truckId, setTruckId] = useState<number>(item?.assignedTruckId || 0);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
+  useEffect(() => {
+    if (isOpen) {
+      setName(item?.name || '');
+      setPhone(item?.phone || '');
+      setBaseSalary(item?.baseSalary || '');
+      setTruckId(item?.assignedTruckId || 0);
+      setStatus(item?.status || 'ACTIVE');
+    }
+  }, [isOpen, item?.id]);
   const handleSave = () => {
     if (!name.trim()) return;
-    onsave({ name: name.trim(), phone: phone.trim() || undefined, baseSalary: baseSalary ? Number(baseSalary) : undefined, assignedTruckId: truckId || null, status });
+    onsave({
+      name: name.trim(),
+      phone: phone.trim() || undefined,
+      baseSalary: baseSalary ? Number(baseSalary) : undefined,
+      assignedTruckId: truckId || null,
+      status,
+    });
   };
   return (
-    <tr className="fleet-edit-row">
-      <td className="num" />
-      <td>
-        <input
-          className="input input--sm"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="Họ và tên"
-          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
-          autoFocus
-        />
-      </td>
-      <td>
-        <input
-          className="input input--sm"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          placeholder="0912..."
-          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
-        />
-      </td>
-      <td>
-        <select className="input input--sm" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
-          <option value={0}>— Chưa phân —</option>
-          {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
-        </select>
-      </td>
-      <td>
-        <input
-          className="input input--sm"
-          type="number"
-          value={baseSalary}
-          onChange={e => setBaseSalary(e.target.value)}
-          placeholder="0"
-          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') oncancel(); }}
-        />
-      </td>
-      <td>
-        <select className="input input--sm" value={status} onChange={e => setStatus(e.target.value)}>
-          {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-      </td>
-      <td>
-        <EditActions saving={saving} isedit={!!item} onsave={handleSave} oncancel={oncancel} />
-      </td>
-    </tr>
+    <Modal
+      isOpen={isOpen}
+      title={item ? `Sửa tài xế ${item.name}` : 'Thêm tài xế'}
+      onClose={oncancel}
+      onConfirm={handleSave}
+      footer={
+        <>
+          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
+            <X size={14} /> Hủy
+          </button>
+          <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={handleSave}>
+            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {item ? 'Cập nhật' : 'Thêm tài xế'}
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="field">
+          <label htmlFor="driver-name" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            Họ và tên <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input
+            id="driver-name"
+            className="input"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="VD: Nguyễn Văn A"
+            autoFocus
+          />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="driver-phone" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+              Số điện thoại
+            </label>
+            <input
+              id="driver-phone"
+              className="input"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              placeholder="0912..."
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="driver-salary" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+              Lương cơ bản (VND)
+            </label>
+            <input
+              id="driver-salary"
+              className="input"
+              type="number"
+              value={baseSalary}
+              onChange={e => setBaseSalary(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="driver-truck" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+              Xe phân công
+            </label>
+            <select id="driver-truck" className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
+              <option value={0}>— Chưa phân —</option>
+              {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="driver-status" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+              Trạng thái
+            </label>
+            <select id="driver-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
+              {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -249,40 +328,34 @@ function TruckCard({ trucks, driverByTruck, crud }: {
             </tr>
           </thead>
           <tbody>
-            {crud.showAddForm && !crud.editingId && (
-              <TruckForm saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />
-            )}
-            {trucks.length === 0 && !crud.showAddForm && (
+            {trucks.length === 0 && (
               <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
             )}
-            {trucks.map((t, i) => crud.editingId === t.id
-              ? <TruckForm key={`edit-${t.id}`} saving={crud.saving} item={t} onsave={d => crud.doUpdate(t.id, d)} oncancel={crud.cancelForm} />
-              : (
-                <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(t.id)}>
-                  <td className="num">{i + 1}</td>
-                  <td><Plate plate={t.licensePlate} tag="VN" /></td>
-                  <td>
-                    {t.trailerPlateNumber
-                      ? <span className="fleet-pair"><Plate plate={t.trailerPlateNumber} tag="RM" /> <TypeChip type={t.trailerType ?? TrailerType.FT40} /></span>
-                      : <span className="fleet-unassigned">—</span>
-                    }
-                  </td>
-                  <td>
-                    {driverByTruck.has(t.id)
-                      ? (
-                        <span className="fleet-assigned">
-                          <AvatarInitials name={driverByTruck.get(t.id)!.name} />
-                          <span className="name">{driverByTruck.get(t.id)!.name}</span>
-                        </span>
-                      )
-                      : <span className="fleet-unassigned">— Chưa phân —</span>
-                    }
-                  </td>
-                  <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
-                  <td onClick={e => e.stopPropagation()}><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
-                </tr>
-              ),
-            )}
+            {trucks.map((t, i) => (
+              <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(t.id)}>
+                <td className="num">{i + 1}</td>
+                <td><Plate plate={t.licensePlate} tag="VN" /></td>
+                <td>
+                  {t.trailerPlateNumber
+                    ? <span className="fleet-pair"><Plate plate={t.trailerPlateNumber} tag="RM" /> <TypeChip type={t.trailerType ?? TrailerType.FT40} /></span>
+                    : <span className="fleet-unassigned">—</span>
+                  }
+                </td>
+                <td>
+                  {driverByTruck.has(t.id)
+                    ? (
+                      <span className="fleet-assigned">
+                        <AvatarInitials name={driverByTruck.get(t.id)!.name} />
+                        <span className="name">{driverByTruck.get(t.id)!.name}</span>
+                      </span>
+                    )
+                    : <span className="fleet-unassigned">— Chưa phân —</span>
+                  }
+                </td>
+                <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
+                <td onClick={e => e.stopPropagation()}><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -298,6 +371,17 @@ function TruckCard({ trucks, driverByTruck, crud }: {
         <span>Hoạt động {active} · Bảo trì {maint}</span>
       </div>
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
+      <TruckFormModal
+        key={crud.editingId ?? (crud.showAddForm ? 'add' : 'closed')}
+        isOpen={crud.showAddForm || crud.editingId != null}
+        saving={crud.saving}
+        item={crud.editingId != null ? trucks.find(t => t.id === crud.editingId) : undefined}
+        onsave={d => {
+          if (crud.editingId != null) crud.doUpdate(crud.editingId, d);
+          else crud.doCreate(d);
+        }}
+        oncancel={crud.cancelForm}
+      />
     </Panel>
   );
 }
@@ -354,45 +438,39 @@ function DriverCard({ drivers, truckMap, crud }: {
             </tr>
           </thead>
           <tbody>
-            {crud.showAddForm && !crud.editingId && (
-              <DriverForm saving={crud.saving} trucks={[...truckMap.values()]} onsave={crud.doCreate} oncancel={crud.cancelForm} />
-            )}
-            {drivers.length === 0 && !crud.showAddForm && (
+            {drivers.length === 0 && (
               <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
             )}
-            {filteredDrivers.map((d, i) => crud.editingId === d.id
-              ? <DriverForm key={`edit-${d.id}`} saving={crud.saving} item={d} trucks={[...truckMap.values()]} onsave={dd => crud.doUpdate(d.id, dd)} oncancel={crud.cancelForm} />
-              : (
-                <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(d.id)}>
-                  <td className="num">{i + 1}</td>
-                  <td>
-                    <span className="fleet-assigned">
-                      <AvatarInitials name={d.name} />
-                      <span className="name">{d.name}</span>
-                    </span>
-                  </td>
-                  <td><span className="fleet-phone">{d.phone || '—'}</span></td>
-                  <td>
-                    {d.assignedTruckId && truckMap.has(d.assignedTruckId)
-                      ? (
-                        <span className="fleet-pair">
-                          {truckMap.get(d.assignedTruckId)!.licensePlate}
-                        </span>
-                      )
-                      : <span className="fleet-unassigned">— Chưa phân —</span>
-                    }
-                  </td>
-                  <td>
-                    {d.baseSalary
-                      ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">VNĐ</span></span>
-                      : <span className="fleet-salary empty">—</span>
-                    }
-                  </td>
-                  <td style={styles.centerAlign}><StatusDot status={d.status} /></td>
-                  <td onClick={e => e.stopPropagation()}><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
-                </tr>
-              ),
-            )}
+            {filteredDrivers.map((d, i) => (
+              <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(d.id)}>
+                <td className="num">{i + 1}</td>
+                <td>
+                  <span className="fleet-assigned">
+                    <AvatarInitials name={d.name} />
+                    <span className="name">{d.name}</span>
+                  </span>
+                </td>
+                <td><span className="fleet-phone">{d.phone || '—'}</span></td>
+                <td>
+                  {d.assignedTruckId && truckMap.has(d.assignedTruckId)
+                    ? (
+                      <span className="fleet-pair">
+                        {truckMap.get(d.assignedTruckId)!.licensePlate}
+                      </span>
+                    )
+                    : <span className="fleet-unassigned">— Chưa phân —</span>
+                  }
+                </td>
+                <td>
+                  {d.baseSalary
+                    ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">VNĐ</span></span>
+                    : <span className="fleet-salary empty">—</span>
+                  }
+                </td>
+                <td style={styles.centerAlign}><StatusDot status={d.status} /></td>
+                <td onClick={e => e.stopPropagation()}><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -409,6 +487,18 @@ function DriverCard({ drivers, truckMap, crud }: {
         <span>Hiển thị {filteredDrivers.length}/{drivers.length}</span>
       </div>
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
+      <DriverFormModal
+        key={crud.editingId ?? (crud.showAddForm ? 'add' : 'closed')}
+        isOpen={crud.showAddForm || crud.editingId != null}
+        saving={crud.saving}
+        item={crud.editingId != null ? drivers.find(d => d.id === crud.editingId) : undefined}
+        trucks={[...truckMap.values()]}
+        onsave={dd => {
+          if (crud.editingId != null) crud.doUpdate(crud.editingId, dd);
+          else crud.doCreate(dd);
+        }}
+        oncancel={crud.cancelForm}
+      />
     </Panel>
   );
 }
@@ -510,7 +600,7 @@ export default function FleetPage() {
               <span style={styles.dotSuccess} />
               <span style={styles.textSuccess}>{activeDrivers} đang làm</span>
               <span style={styles.textMuted}>·</span>
-              <span>{assignedDrivers} đã phân xe</span>
+              <span>{assignedDrivers}/{activeDrivers} đã phân xe</span>
             </span>
           }
         />

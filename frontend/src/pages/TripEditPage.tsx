@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
-import { PageHeader, useConfirm } from '../components/UI';
+import { useConfirm } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
 import { useTripDetail } from '../hooks/useQueries';
 import { FuelMode, LoadingType, TripStatus } from '@nepocorp/shared';
@@ -26,7 +26,6 @@ export default function TripEditPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
-  // Form states
   const [legs, setLegs] = useState<FormLeg[]>([]);
   const [fuelMode, setFuelMode] = useState<FuelMode>(FuelMode.AUTO);
   const [fuelLitersOverride, setFuelLitersOverride] = useState('');
@@ -87,11 +86,31 @@ export default function TripEditPage() {
         loadingType: leg.loadingType,
       })));
     } else {
+      // Route names come in two flavours from the seed:
+      //   "Hà Nội → Hải Phòng" (canonical arrow) and
+      //   "Hà Nội - Hải Phòng" (dash). Earlier we only split on "→", which
+      //   meant the dash variant collapsed the whole name into `origin` and
+      //   left `destination` empty — see BUG-T11 in QA notes. Try the arrow
+      //   first, then fall back to a generous dash split.
+      const name = trip.route?.name ?? '';
+      const splitRoute = (raw: string): [string, string] => {
+        const arrow = raw.split('→');
+        if (arrow.length === 2) return [arrow[0].trim(), arrow[1].trim()];
+        // " - " (with spaces) is the most common dash convention; fall back
+        // to plain "-" if no spaces. Either way, only split on the FIRST
+        // occurrence so destinations like "TP. Hồ Chí Minh" aren't sliced.
+        const idx = raw.indexOf(' - ');
+        if (idx >= 0) return [raw.slice(0, idx).trim(), raw.slice(idx + 3).trim()];
+        const dash = raw.indexOf('-');
+        if (dash >= 0) return [raw.slice(0, dash).trim(), raw.slice(dash + 1).trim()];
+        return [raw.trim(), ''];
+      };
+      const [originGuess, destGuess] = splitRoute(name);
       setLegs([{
         id: Math.random().toString(),
         sequence: 1,
-        origin: trip.route?.name.split('→')[0]?.trim() || '',
-        destination: trip.route?.name.split('→')[1]?.trim() || '',
+        origin: originGuess,
+        destination: destGuess,
         km: '',
         loadingType: LoadingType.HANG,
       }]);
@@ -279,102 +298,138 @@ export default function TripEditPage() {
 
   return (
     <div className="fade-up">
-      <PageHeader
-        title="Cập nhật số liệu lệnh vận chuyển"
-        description={`${trip.customer?.name ?? ''} · ${trip.route?.name ?? ''}`}
-        onBack={() => navigate(`/trips/${trip.id}`)}
-      />
+      <header className="tc-page-head">
+        <button className="tc-back-btn" onClick={() => navigate(`/trips/${trip.id}`)} aria-label="Quay lại">
+          <ArrowLeft size={18} />
+        </button>
+        <div className="tc-title-wrap">
+          <h1 className="tc-page-title">Cập nhật số liệu</h1>
+          <p className="tc-page-sub">{trip.customer?.name ?? ''} · {trip.route?.name ?? ''}</p>
+        </div>
+      </header>
 
       {error && (
         <div style={{
+          margin: '0 28px 8px',
           padding: '12px 16px',
           background: 'var(--danger-soft)',
           color: 'var(--danger-text)',
           borderRadius: 'var(--radius-md)',
           fontSize: 13,
-          marginBottom: 20,
           border: '1px solid rgba(220,38,38,0.12)',
         }}>
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        {/* 3-column grid on desktop: legs | form fields | sticky P&L.
-            Class also lets responsive.css collapse to 1-col on mobile so the
-            three columns don't try to fit side-by-side in a 320px viewport. */}
-        <div className="te-edit-grid" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.5fr 1fr', gap: 16, alignItems: 'start', marginBottom: 20 }}>
-          {/* Col 1 — Route legs */}
-          <TripLegFields
-            legs={legs}
-            addLeg={handleAddLeg}
-            removeLeg={handleRemoveLeg}
-            updateLeg={handleUpdateLeg}
-          />
-
-          {/* Col 2 — Fuel, allowances, photos, notes */}
-          <div className="panel" style={{ padding: '20px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '8px 12px', background: 'var(--bg-3)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Số cont:</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-1)' }}>{trip.containerCount ?? 1}</span>
-              {(trip.containerCount ?? 1) > 1 && (
-                <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>({trip.containerCount ?? 1} cont × đơn giá)</span>
-              )}
+      <form id="trip-edit-form" onSubmit={handleSubmit}>
+        <div className="tc-content">
+          <div className="tc-form-col">
+            <div className="tc-card">
+              <div className="tc-card-head">
+                <div className="tc-card-num">1</div>
+                <div className="tc-card-text">
+                  <div className="tc-card-title">Hành trình</div>
+                  <div className="tc-card-sub">Thông tin chặng đường</div>
+                </div>
+              </div>
+              <div className="tc-card-body">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '8px 12px', background: 'var(--bg-3)', borderRadius: 'var(--radius-md)' }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Số cont:</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-1)' }}>{trip.containerCount ?? 1}</span>
+                  {(trip.containerCount ?? 1) > 1 && (
+                    <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>({trip.containerCount ?? 1} cont × đơn giá)</span>
+                  )}
+                </div>
+                <TripLegFields
+                  legs={legs}
+                  addLeg={handleAddLeg}
+                  removeLeg={handleRemoveLeg}
+                  updateLeg={handleUpdateLeg}
+                />
+              </div>
             </div>
 
-            <FuelConfigurator
-              fuelMode={fuelMode}
-              onFuelModeChange={setFuelMode}
-              fuelLitersOverride={fuelLitersOverride}
-              onFuelLitersOverrideChange={setFuelLitersOverride}
-              fuelSupplementLiters={fuelSupplementLiters}
-              onFuelSupplementLitersChange={setFuelSupplementLiters}
-              fuelSupplementReason={fuelSupplementReason}
-              onFuelSupplementReasonChange={setFuelSupplementReason}
-            />
+            <div className="tc-card">
+              <div className="tc-card-head">
+                <div className="tc-card-num">2</div>
+                <div className="tc-card-text">
+                  <div className="tc-card-title">Nhiên liệu</div>
+                  <div className="tc-card-sub">Chế độ tính và bổ sung</div>
+                </div>
+              </div>
+              <div className="tc-card-body">
+                <FuelConfigurator
+                  fuelMode={fuelMode}
+                  onFuelModeChange={setFuelMode}
+                  fuelLitersOverride={fuelLitersOverride}
+                  onFuelLitersOverrideChange={setFuelLitersOverride}
+                  fuelSupplementLiters={fuelSupplementLiters}
+                  onFuelSupplementLitersChange={setFuelSupplementLiters}
+                  fuelSupplementReason={fuelSupplementReason}
+                  onFuelSupplementReasonChange={setFuelSupplementReason}
+                />
+              </div>
+            </div>
 
-            <div style={{ borderTop: '1px solid var(--border-2)', margin: '4px 0 20px' }} />
+            <div className="tc-card">
+              <div className="tc-card-head">
+                <div className="tc-card-num">3</div>
+                <div className="tc-card-text">
+                  <div className="tc-card-title">Chi phí & Doanh thu</div>
+                  <div className="tc-card-sub">VéBOT, phụ cấp, lương tài xế</div>
+                </div>
+              </div>
+              <div className="tc-card-body">
+                <AllowanceConfigurator
+                  tollsDiscount={tollsDiscount}
+                  onTollsDiscountChange={setTollsDiscount}
+                  tollsAddition={tollsAddition}
+                  onTollsAdditionChange={setTollsAddition}
+                  tollsStations={tollsStations}
+                  onTollsStationsChange={setTollsStations}
+                  hasReturnCargo={hasReturnCargo}
+                  onHasReturnCargoChange={setHasReturnCargo}
+                  driverSalary={driverSalary}
+                  onDriverSalaryChange={setDriverSalary}
+                  revenue={revenue}
+                  onRevenueChange={setRevenue}
+                  suggestedPrice={suggestedPrice}
+                />
+              </div>
+            </div>
 
-            <AllowanceConfigurator
-              tollsDiscount={tollsDiscount}
-              onTollsDiscountChange={setTollsDiscount}
-              tollsAddition={tollsAddition}
-              onTollsAdditionChange={setTollsAddition}
-              tollsStations={tollsStations}
-              onTollsStationsChange={setTollsStations}
-              hasReturnCargo={hasReturnCargo}
-              onHasReturnCargoChange={setHasReturnCargo}
-              driverSalary={driverSalary}
-              onDriverSalaryChange={setDriverSalary}
-              revenue={revenue}
-              onRevenueChange={setRevenue}
-              suggestedPrice={suggestedPrice}
-            />
-
-            <div style={{ borderTop: '1px solid var(--border-2)', margin: '4px 0 20px' }} />
-
-            <PhotoUploader
-              photos={mapUrlsToPhotos(photoUrls)}
-              onPhotosChange={(updatedPhotos) => setPhotoUrls(updatedPhotos.map(p => p.url))}
-              requiresPhotos={!!trip.cargoType?.requiresPhotos}
-              uploading={uploading}
-              onUpload={handlePhotoUpload}
-            />
-
-            <div className="field" style={{ marginTop: 4 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>Ghi chú chuyến đi</label>
-              <textarea
-                className="input"
-                style={{ minHeight: 80, resize: 'vertical', width: '100%' }}
-                placeholder="Ghi chú chi tiết chuyến đi, các sự cố phát sinh..."
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-              />
+            <div className="tc-card">
+              <div className="tc-card-head">
+                <div className="tc-card-num">4</div>
+                <div className="tc-card-text">
+                  <div className="tc-card-title">Ảnh & Ghi chú</div>
+                  <div className="tc-card-sub">Ảnh cont, seal và ghi chú</div>
+                </div>
+              </div>
+              <div className="tc-card-body">
+                <PhotoUploader
+                  photos={mapUrlsToPhotos(photoUrls)}
+                  onPhotosChange={(updatedPhotos) => setPhotoUrls(updatedPhotos.map(p => p.url))}
+                  requiresPhotos={!!trip.cargoType?.requiresPhotos}
+                  uploading={uploading}
+                  onUpload={handlePhotoUpload}
+                />
+                <div className="field" style={{ marginTop: 16 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>Ghi chú chuyến đi</label>
+                  <textarea
+                    className="input"
+                    style={{ minHeight: 80, resize: 'vertical', width: '100%' }}
+                    placeholder="Ghi chú chi tiết chuyến đi, các sự cố phát sinh..."
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Col 3 — Live P&L (sticky) */}
-          <div style={{ position: 'sticky', top: 24 }}>
+          <aside className="tc-rail">
             <TotalsPanel
               legs={legs}
               fuelMode={fuelMode}
@@ -390,32 +445,42 @@ export default function TripEditPage() {
               mountainFixedAllowance={trip.route?.fixedFuelAllowance ? Number(trip.route.fixedFuelAllowance) : null}
               roadAllowanceBase={Number(trip.roadAllowanceBaseApplied || 0)}
             />
-          </div>
-        </div>
-
-        {/* Submit Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-          <button
-            type="submit"
-            className="btn btn--primary"
-            disabled={submitting || uploading}
-          >
-            {submitting ? (
-              <><Loader2 size={16} className="spin" /> Đang lưu...</>
-            ) : (
-              <><Save size={16} /> Lưu cập nhật</>
-            )}
-          </button>
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => navigate(`/trips/${trip.id}`)}
-            disabled={submitting}
-          >
-            Hủy bỏ
-          </button>
+          </aside>
         </div>
       </form>
+
+      <div className="tc-action-bar">
+        <div className="tc-action-bar__status">
+          <div className="tc-action-bar__status-icon">
+            <Save size={16} />
+          </div>
+          <div>
+            <div className="tc-action-bar__status-main">Cập nhật số liệu</div>
+            <div className="tc-action-bar__status-sub">Lệnh vận chuyển #{trip.id}</div>
+          </div>
+        </div>
+        <div className="tc-action-bar__spacer" />
+        <button
+          type="button"
+          className="btn btn--secondary"
+          onClick={() => navigate(`/trips/${trip.id}`)}
+          disabled={submitting}
+        >
+          Hủy bỏ
+        </button>
+        <button
+          type="submit"
+          form="trip-edit-form"
+          className="btn btn--primary"
+          disabled={submitting || uploading}
+        >
+          {submitting ? (
+            <><Loader2 size={16} className="spin" /> Đang lưu...</>
+          ) : (
+            <><Save size={16} /> Lưu cập nhật</>
+          )}
+        </button>
+      </div>
 
       {confirmDialog}
     </div>

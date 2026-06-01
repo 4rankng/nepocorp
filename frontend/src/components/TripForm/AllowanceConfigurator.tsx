@@ -32,14 +32,14 @@ export function AllowanceConfigurator({
   suggestedPrice,
 }: AllowanceConfiguratorProps) {
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 0 }}>
       <div style={{ marginBottom: 14 }}>
         <span className="typo-eyebrow">Chi phí đường bộ & Doanh thu</span>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>Tăng vé theo lệnh (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tăng vé theo lệnh (VNĐ)</label>
           <input
             className="input"
             type="number"
@@ -50,7 +50,7 @@ export function AllowanceConfigurator({
           />
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>Giảm vé QL5 (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Giảm vé QL5 (VNĐ)</label>
           <input
             className="input"
             type="number"
@@ -62,9 +62,9 @@ export function AllowanceConfigurator({
         </div>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "center", marginBottom: 12 }}>
+      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "center", marginBottom: 16 }}>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>Số trạm thu phí (Trạm)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Số trạm thu phí (Trạm)</label>
           <input
             className="input"
             type="number"
@@ -87,9 +87,9 @@ export function AllowanceConfigurator({
         </div>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>Lương sản lượng tài xế (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lương sản lượng tài xế (VNĐ)</label>
           <input
             className="input"
             type="number"
@@ -100,7 +100,7 @@ export function AllowanceConfigurator({
           />
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>Doanh thu chuyến (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu chuyến (VNĐ)</label>
           <input
             className="input"
             type="number"

@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { db } from './db';
 import * as schema from './db/schema';
 import { Role } from '@nepocorp/shared';
-import { eq } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
 async function seed() {
   const passwordHash = await bcrypt.hash('admin123', 10);
@@ -122,9 +122,23 @@ async function seed() {
     console.log('✅ No penalty reason typo found, skipping fix.');
   }
 
-  // Seed cap table (CAP1)
+  // Seed cap table (CAP1, CAP2)
+  // Previous version did insert-only-if-empty, so an earlier broken seed run
+  // (5 rows all "Ông Thương" 0%) couldn't be corrected without manual SQL.
+  // Now we detect bad seed data (all rows have 0% or only one partner) and
+  // reset to the canonical 60/40 split.
   const existingCap = await db.select().from(schema.capTableHistory);
-  if (existingCap.length === 0) {
+  const distinctPartners = new Set(existingCap.map(r => r.partnerName));
+  const hasNonZeroPct = existingCap.some(r => parseFloat(r.percentage as any) > 0);
+  const needsReset =
+    existingCap.length === 0 ||
+    distinctPartners.size < 2 ||
+    !hasNonZeroPct;
+  if (needsReset) {
+    if (existingCap.length > 0) {
+      await db.delete(schema.capTableHistory);
+      console.log(`⚠️  Cap table had ${existingCap.length} stale row(s) — clearing and reseeding.`);
+    }
     const now = new Date();
     await db.insert(schema.capTableHistory).values([
       {
@@ -142,7 +156,67 @@ async function seed() {
     ]);
     console.log('✅ Cap table seeded! (60/40 split)');
   } else {
-    console.log('✅ Cap table already exists, skipping.');
+    console.log(`✅ Cap table OK (${existingCap.length} row(s), ${distinctPartners.size} partner(s)), skipping.`);
+  }
+
+  // Backfill ledger entries for UNPAID expenses that never posted (PAY1)
+  // -------------------------------------------------------------------
+  // We've seen UNPAID expenses created via API end up in `expenses` but
+  // miss the matching `ledger` row (entityType=VENDOR), so /payables
+  // displays 0đ even though the company genuinely owes the supplier.
+  // For every UNPAID, non-deleted expense, ensure a VENDOR_EXPENSE
+  // ledger row exists; if not, post one.
+  const unpaidExpenses = await db.select({
+    id: schema.expenses.id,
+    supplierId: schema.expenses.supplierId,
+    amount: schema.expenses.amount,
+    categoryId: schema.expenses.categoryId,
+    createdAt: schema.expenses.createdAt,
+  }).from(schema.expenses)
+    .where(eq(schema.expenses.paymentStatus, 'UNPAID'));
+
+  let backfilledLedger = 0;
+  for (const exp of unpaidExpenses) {
+    const amount = parseFloat(exp.amount as any);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    const existingLedger = await db.select({ id: schema.ledger.id })
+      .from(schema.ledger)
+      .where(and(
+        eq(schema.ledger.entityType, 'VENDOR'),
+        eq(schema.ledger.entityId, exp.supplierId),
+        eq(schema.ledger.credit, exp.amount as any),
+      ))
+      .limit(1);
+    if (existingLedger.length > 0) continue;
+    // Compute running balance for this vendor and post the entry directly
+    // (skip the LedgerService since we're outside its tx contract).
+    const [lastEntry] = await db.select({ balance: schema.ledger.balance })
+      .from(schema.ledger)
+      .where(and(
+        eq(schema.ledger.entityType, 'VENDOR'),
+        eq(schema.ledger.entityId, exp.supplierId),
+      ))
+      .orderBy(desc(schema.ledger.id))
+      .limit(1);
+    const prevBalance = lastEntry ? parseFloat(lastEntry.balance as any) : 0;
+    // Vendor: credit increases payable balance.
+    const newBalance = prevBalance + amount;
+    await db.insert(schema.ledger).values({
+      txnType: 'VENDOR_EXPENSE',
+      entityType: 'VENDOR',
+      entityId: exp.supplierId,
+      debit: '0',
+      credit: String(amount),
+      balance: String(newBalance),
+      timestamp: exp.createdAt ?? new Date(),
+      note: `Backfill: chi phí #${exp.id}`,
+    } as any);
+    backfilledLedger++;
+  }
+  if (backfilledLedger > 0) {
+    console.log(`✅ Backfilled ${backfilledLedger} VENDOR ledger entr${backfilledLedger === 1 ? 'y' : 'ies'} for orphan UNPAID expenses.`);
+  } else {
+    console.log('✅ No orphan UNPAID expenses found, ledger is in sync.');
   }
 
   process.exit(0);

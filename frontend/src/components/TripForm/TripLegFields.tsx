@@ -23,7 +23,7 @@ export function TripLegFields({ legs, addLeg, removeLeg, updateLeg }: TripLegFie
   const totalKm = legs.reduce((sum, leg) => sum + (Number(leg.km) || 0), 0);
 
   return (
-    <div className="panel" style={{ padding: "20px 24px", display: "flex", flexDirection: "column" }}>
+    <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <span className="typo-eyebrow">Hành trình chi tiết (Chặng đường)</span>
         <button
@@ -146,6 +146,6 @@ export function TripLegFields({ legs, addLeg, removeLeg, updateLeg }: TripLegFie
         <span>Tổng số chặng: <strong>{legs.length}</strong></span>
         <span>Tổng cự ly: <strong>{totalKm.toLocaleString("vi-VN")} Km</strong></span>
       </div>
-    </div>
+    </>
   );
 }

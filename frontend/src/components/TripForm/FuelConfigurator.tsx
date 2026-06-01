@@ -25,13 +25,13 @@ export function FuelConfigurator({
   const isSupplementActive = Number(fuelSupplementLiters) > 0;
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 0 }}>
       <div style={{ marginBottom: 14 }}>
         <span className="typo-eyebrow">Định mức & Bổ sung dầu</span>
       </div>
 
-      <div className="field" style={{ marginBottom: 12 }}>
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>Chế độ dầu</label>
+      <div className="field" style={{ marginBottom: 16 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Chế độ dầu</label>
         <select
           className="input"
           style={{
@@ -51,8 +51,8 @@ export function FuelConfigurator({
       </div>
 
       {fuelMode === FuelMode.FLAT_RATE && (
-        <div className="field" style={{ marginBottom: 12 }}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>Số lít dầu khoán (Thực tế áp dụng)</label>
+        <div className="field" style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Số lít dầu khoán (Thực tế áp dụng)</label>
           <input
             className="input"
             type="number"
@@ -65,9 +65,9 @@ export function FuelConfigurator({
         </div>
       )}
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>Số lít bổ sung</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Số lít bổ sung</label>
           <input
             className="input"
             type="number"
@@ -78,7 +78,7 @@ export function FuelConfigurator({
           />
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 4 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>
             Lý do bổ sung {isSupplementActive && <span style={{ color: "var(--danger)" }}>*</span>}
           </label>
           <input

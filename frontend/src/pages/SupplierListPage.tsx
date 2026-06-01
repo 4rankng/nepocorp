@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
-import { PageHeader, KPI, FilterPill, StatusPill } from '../components/UI';
+import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
 import type { Supplier, PaginatedResponse } from '@nepocorp/shared';
 import { CONFIG } from '@nepocorp/shared';
 import { useSuppliers } from '../hooks/useQueries';
@@ -17,8 +17,8 @@ const STATUS_LABELS: Record<string, string> = {
   INACTIVE: 'Ngừng hoạt động',
 };
 
-function SupplierForm({ item, saving, onsave, oncancel }: {
-  item?: Supplier; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+function SupplierFormModal({ item, saving, onsave, oncancel, isOpen }: {
+  item?: Supplier; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
 }) {
   const [name, setName] = useState(item?.name || '');
   const [contactPerson, setContactPerson] = useState(item?.contactPerson || '');
@@ -27,48 +27,83 @@ function SupplierForm({ item, saving, onsave, oncancel }: {
   const [note, setNote] = useState(item?.note || '');
   const [status, setStatus] = useState<string>(item?.status || 'ACTIVE');
 
+  useEffect(() => {
+    if (isOpen) {
+      setName(item?.name || '');
+      setContactPerson(item?.contactPerson || '');
+      setPhone(item?.phone || '');
+      setTaxCode(item?.taxCode || '');
+      setNote(item?.note || '');
+      setStatus(item?.status || 'ACTIVE');
+    }
+  }, [isOpen, item?.id]);
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onsave({
+      name: name.trim(),
+      contactPerson: contactPerson.trim() || undefined,
+      phone: phone.trim() || undefined,
+      taxCode: taxCode.trim() || undefined,
+      note: note.trim() || undefined,
+      status,
+    });
+  };
+  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 } as const;
+
   return (
-    <tr>
-      <td colSpan={6} style={{ background: 'var(--accent-soft)', padding: '12px 16px' }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 2, minWidth: 160 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Tên nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span></label>
-            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên..." style={{ width: '100%' }} />
+    <Modal
+      isOpen={isOpen}
+      title={item ? `Sửa nhà cung cấp — ${item.name}` : 'Thêm nhà cung cấp'}
+      onClose={oncancel}
+      onConfirm={handleSave}
+      footer={
+        <>
+          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
+            <X size={14} /> Hủy
+          </button>
+          <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={handleSave}>
+            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {item ? 'Cập nhật' : 'Thêm nhà cung cấp'}
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="field">
+          <label htmlFor="supp-name" style={labelStyle}>
+            Tên nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input id="supp-name" className="input" value={name} onChange={e => setName(e.target.value)} placeholder="VD: Garage Auto 123" autoFocus />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="supp-tax" style={labelStyle}>Mã số thuế</label>
+            <input id="supp-tax" className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312..." />
           </div>
-          <div style={{ flex: 1, minWidth: 120 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Người liên hệ</label>
-            <input className="input" value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Anh Tuấn · KT" style={{ width: '100%' }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 110 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Điện thoại</label>
-            <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." style={{ width: '100%' }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 120 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Mã số thuế</label>
-            <input className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312..." style={{ width: '100%' }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 160 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Trạng thái</label>
-            <select className="input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: '100%' }}>
+          <div className="field">
+            <label htmlFor="supp-status" style={labelStyle}>Trạng thái</label>
+            <select id="supp-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
-          <div style={{ flex: 2, minWidth: 160 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Ghi chú</label>
-            <input className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú..." style={{ width: '100%' }} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="supp-contact" style={labelStyle}>Người liên hệ</label>
+            <input id="supp-contact" className="input" value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Anh Tuấn · Kế toán" />
           </div>
-          <div style={{ display: 'flex', gap: 6, paddingBottom: 4 }}>
-            <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={() => onsave({ name: name.trim(), contactPerson: contactPerson.trim() || undefined, phone: phone.trim() || undefined, taxCode: taxCode.trim() || undefined, note: note.trim() || undefined, status })}>
-              {saving ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
-              {item ? 'Cập nhật' : 'Thêm'}
-            </button>
-            <button className="btn btn--ghost btn--sm" onClick={oncancel}>
-              <X size={12} /> Hủy
-            </button>
+          <div className="field">
+            <label htmlFor="supp-phone" style={labelStyle}>Điện thoại</label>
+            <input id="supp-phone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." />
           </div>
         </div>
-      </td>
-    </tr>
+        <div className="field">
+          <label htmlFor="supp-note" style={labelStyle}>Ghi chú</label>
+          <input id="supp-note" className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú thêm..." />
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -255,9 +290,6 @@ export default function SupplierListPage() {
               </tr>
             </thead>
             <tbody>
-              {showAddForm && !editingId && (
-                <SupplierForm saving={saving} onsave={doCreate} oncancel={() => setShowAddForm(false)} />
-              )}
               {loading && (
                 <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
@@ -270,12 +302,10 @@ export default function SupplierListPage() {
                   <button className="btn btn--secondary btn--sm" style={{ marginTop: 8 }} onClick={() => refetchSuppliers()}>Thử lại</button>
                 </td></tr>
               )}
-              {!loading && filtered.length === 0 && !showAddForm && (
+              {!loading && filtered.length === 0 && (
                 <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
               )}
-              {filtered.map(s => editingId === s.id
-                ? <SupplierForm key={`edit-${s.id}`} item={s} saving={saving} onsave={d => doUpdate(s.id, d)} oncancel={() => setEditingId(null)} />
-                : (
+              {filtered.map(s => (
                   <tr key={s.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
                     onClick={() => { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
@@ -323,8 +353,7 @@ export default function SupplierListPage() {
                       )}
                     </td>
                   </tr>
-                )
-              )}
+              ))}
             </tbody>
           </table>
         </div>
@@ -341,6 +370,18 @@ export default function SupplierListPage() {
           </div>
         </div>
       </div>
+
+      <SupplierFormModal
+        key={editingId ?? (showAddForm ? 'add' : 'closed')}
+        isOpen={showAddForm || editingId != null}
+        saving={saving}
+        item={editingId != null ? suppliers.find(s => s.id === editingId) : undefined}
+        onsave={d => {
+          if (editingId != null) doUpdate(editingId, d);
+          else doCreate(d);
+        }}
+        oncancel={() => { setEditingId(null); setShowAddForm(false); }}
+      />
     </div>
   );
 }

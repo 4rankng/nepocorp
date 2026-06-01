@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, ArrowLeft, HelpCircle, X } from 'lucide-react';
 
@@ -221,6 +221,7 @@ export function Btn({
   const iconOnly = !children && icon ? ' btn--icon' : '';
   return (
     <button
+      type="button"
       className={`btn btn--${variant}${sizeClass}${iconOnly} ${className}`}
       {...rest}
     >
@@ -330,10 +331,16 @@ interface FormGroupProps {
 }
 
 export function FormGroup({ label, helpText, error, children, style }: FormGroupProps) {
+  const fieldId = useId();
   return (
     <div className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>{label}</label>
-      {children}
+      <label htmlFor={fieldId} style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>{label}</label>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, { id: fieldId });
+        }
+        return child;
+      })}
       {error && (
         <span style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2 }}>{error}</span>
       )}
@@ -364,6 +371,8 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: M
     <div
       style={{ ...STYLE_OVERLAY, background: 'rgba(10,10,10,0.4)', zIndex: 1000 }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
     >
       <div
         style={{

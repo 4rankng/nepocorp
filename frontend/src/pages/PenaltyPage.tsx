@@ -541,7 +541,9 @@ export default function PenaltyPage() {
           variant="warn"
           meta={
             <span className="penalty-kpi-meta">
-              <span>{streakLeader} dẫn đầu</span>
+              {longestStreak > 0
+                ? <span>{streakLeader} dẫn đầu</span>
+                : <span style={{ opacity: 0.7 }}>Chưa có dữ liệu chuỗi an toàn</span>}
             </span>
           }
         />

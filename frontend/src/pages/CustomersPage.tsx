@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
-import { PageHeader, KPI, FilterPill, StatusPill } from '../components/UI';
+import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
 import { formatCurrency, formatCompact } from '../lib/format';
 import type { Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
@@ -26,10 +26,14 @@ function riskDot(debt: number | null, limit: number | null) {
   return 'low';
 }
 
-// ─── Inline Form ──────────────────────────────────────────────────────────────
+// ─── Modal-based Form ────────────────────────────────────────────────────────
+//
+// Was an inline <tr> form that swapped in for the row. The row-replacement
+// looked cramped (5 fields squeezed into one table cell) and made it easy to
+// miss that edit mode had even opened. Modal gives proper breathing room.
 
-function CustomerForm({ item, saving, onsave, oncancel }: {
-  item?: Customer; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
+  item?: Customer; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
 }) {
   const [name, setName] = useState(item?.name || '');
   const [taxCode, setTaxCode] = useState((item as any)?.taxCode || (item as any)?.tax_code || '');
@@ -38,48 +42,84 @@ function CustomerForm({ item, saving, onsave, oncancel }: {
   const [creditLimit, setCreditLimit] = useState((item as any)?.creditLimit || (item as any)?.credit_limit || '');
   const [status, setStatus] = useState<string>(item?.status || CustomerStatus.ACTIVE);
 
+  useEffect(() => {
+    if (isOpen) {
+      setName(item?.name || '');
+      setTaxCode((item as any)?.taxCode || (item as any)?.tax_code || '');
+      setContactPerson((item as any)?.contactPerson || (item as any)?.contact_person || '');
+      setPhone(item?.phone || '');
+      setCreditLimit((item as any)?.creditLimit || (item as any)?.credit_limit || '');
+      setStatus(item?.status || CustomerStatus.ACTIVE);
+    }
+  }, [isOpen, item?.id]);
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onsave({
+      name: name.trim(),
+      taxCode: taxCode.trim() || undefined,
+      contactPerson: contactPerson.trim() || undefined,
+      phone: phone.trim() || undefined,
+      creditLimit: creditLimit ? Number(creditLimit) : undefined,
+      status,
+    });
+  };
+
+  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 } as const;
+
   return (
-    <tr>
-      <td colSpan={5} style={{ background: 'var(--accent-soft)', padding: '12px 16px' }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 2, minWidth: 160 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Tên khách hàng</label>
-            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên..." style={{ width: '100%' }} />
+    <Modal
+      isOpen={isOpen}
+      title={item ? `Sửa khách hàng — ${item.name}` : 'Thêm khách hàng'}
+      onClose={oncancel}
+      onConfirm={handleSave}
+      footer={
+        <>
+          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
+            <X size={14} /> Hủy
+          </button>
+          <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={handleSave}>
+            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {item ? 'Cập nhật' : 'Thêm khách hàng'}
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="field">
+          <label htmlFor="cust-name" style={labelStyle}>
+            Tên khách hàng <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input id="cust-name" className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Tên công ty hoặc cá nhân" autoFocus />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="cust-tax" style={labelStyle}>Mã số thuế</label>
+            <input id="cust-tax" className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312..." />
           </div>
-          <div style={{ flex: 1, minWidth: 120 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>MST</label>
-            <input className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312..." style={{ width: '100%' }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 120 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Người liên hệ</label>
-            <input className="input" value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Anh Tuấn · KT" style={{ width: '100%' }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 110 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Điện thoại</label>
-            <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." style={{ width: '100%' }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 120 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Hạn mức TD</label>
-            <input className="input" type="number" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="0" style={{ width: '100%' }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 100 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Trạng thái</label>
-            <select className="input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: '100%' }}>
+          <div className="field">
+            <label htmlFor="cust-status" style={labelStyle}>Trạng thái</label>
+            <select id="cust-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
-          <div style={{ display: 'flex', gap: 6, paddingBottom: 4 }}>
-            <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={() => onsave({ name: name.trim(), taxCode: taxCode.trim() || undefined, contactPerson: contactPerson.trim() || undefined, phone: phone.trim() || undefined, creditLimit: creditLimit ? Number(creditLimit) : undefined, status })}>
-              {saving ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
-              {item ? 'Cập nhật' : 'Thêm'}
-            </button>
-            <button className="btn btn--ghost btn--sm" onClick={oncancel}>
-              <X size={12} /> Hủy
-            </button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="cust-contact" style={labelStyle}>Người liên hệ</label>
+            <input id="cust-contact" className="input" value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Anh Tuấn · Kế toán" />
+          </div>
+          <div className="field">
+            <label htmlFor="cust-phone" style={labelStyle}>Điện thoại</label>
+            <input id="cust-phone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." />
           </div>
         </div>
-      </td>
-    </tr>
+        <div className="field">
+          <label htmlFor="cust-credit" style={labelStyle}>Hạn mức tín dụng (VND)</label>
+          <input id="cust-credit" className="input" type="number" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="0" />
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -343,9 +383,6 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {showAddForm && !editingId && (
-                <CustomerForm saving={saving} onsave={doCreate} oncancel={() => setShowAddForm(false)} />
-              )}
               {loading && (
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
@@ -358,12 +395,10 @@ export default function CustomersPage() {
                   <button className="btn btn--secondary btn--sm" style={{ marginTop: 8 }} onClick={() => refetchCustomers()}>Thử lại</button>
                 </td></tr>
               )}
-              {!loading && filtered.length === 0 && !showAddForm && (
+              {!loading && filtered.length === 0 && (
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
               )}
-              {filtered.map(c => editingId === c.id
-                ? <CustomerForm key={`edit-${c.id}`} item={c} saving={saving} onsave={d => doUpdate(c.id, d)} oncancel={() => setEditingId(null)} />
-                : (
+              {filtered.map(c => (
                   <tr key={c.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
                     onClick={() => { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
@@ -418,8 +453,7 @@ export default function CustomersPage() {
                       )}
                     </td>
                   </tr>
-                )
-              )}
+              ))}
             </tbody>
           </table>
         </div>
@@ -437,6 +471,19 @@ export default function CustomersPage() {
           </div>
         </div>
       </div>
+
+      {/* Customer add/edit modal */}
+      <CustomerFormModal
+        key={editingId ?? (showAddForm ? 'add' : 'closed')}
+        isOpen={showAddForm || editingId != null}
+        saving={saving}
+        item={editingId != null ? customers.find(c => c.id === editingId) : undefined}
+        onsave={d => {
+          if (editingId != null) doUpdate(editingId, d);
+          else doCreate(d);
+        }}
+        oncancel={() => { setEditingId(null); setShowAddForm(false); }}
+      />
     </div>
   );
 }
