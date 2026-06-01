@@ -3,6 +3,7 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
   Download, Filter, CheckCircle, Save, X, Loader2,
+  Pencil, Trash2,
 } from 'lucide-react';
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
@@ -74,6 +75,55 @@ const StatusDot = memo(function StatusDot({ status }: { status: string }) {
   const label = TRUCK_STATUS[status] || DRIVER_STATUS[status] || status;
   return <StatusPill variant={variant} dot>{label}</StatusPill>;
 });
+
+// ─── DetailModal — shared view dialog with edit/delete actions ────────────────
+
+function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleting, itemId }: {
+  isOpen: boolean;
+  title: string;
+  onClose: () => void;
+  details: Array<{ label: string; value: React.ReactNode }>;
+  onEdit: () => void;
+  onDelete: () => void;
+  deleting: number | null;
+  itemId: number;
+}) {
+  return (
+    <Modal
+      isOpen={isOpen}
+      title={title}
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn--ghost btn--sm" onClick={onClose}>
+            <X size={14} /> Đóng
+          </button>
+          <button className="btn btn--primary btn--sm" onClick={onEdit}>
+            <Pencil size={13} /> Sửa
+          </button>
+          <button
+            className="btn btn--ghost btn--sm"
+            style={{ color: 'var(--danger)' }}
+            disabled={deleting === itemId}
+            onClick={onDelete}
+          >
+            {deleting === itemId ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />}
+            Xóa
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {details.map((d, i) => (
+          <div key={i}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>{d.label}</div>
+            <div style={{ fontSize: 14, color: 'var(--ink)' }}>{d.value}</div>
+          </div>
+        ))}
+      </div>
+    </Modal>
+  );
+}
 
 // ─── Forms (modal-based) ─────────────────────────────────────────────────────
 
@@ -370,6 +420,7 @@ function TrailerCard({ trailers, trucks, crud }: {
   trucks: TruckType[];
   crud: ReturnType<typeof useCRUD>;
 }) {
+  const [viewingId, setViewingId] = useState<number | null>(null);
   // Build reverse lookup: trailerId → truck plate, so we can show which đầu
   // kéo each rơ-moóc is currently coupled to.
   const truckByTrailer = useMemo(() => {
@@ -411,12 +462,11 @@ function TrailerCard({ trailers, trucks, crud }: {
                 <th>Loại</th>
                 <th>Đầu kéo đang ghép</th>
                 <th className="center">Trạng thái</th>
-                <th className="actions">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {trailers.length === 0 && (
-                <tr><td colSpan={6} style={styles.emptyRow}>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</td></tr>
+                <tr><td colSpan={5} style={styles.emptyRow}>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</td></tr>
               )}
               {trailers.map((t, i) => {
                 const coupledTruck = truckByTrailer.get(t.id);
@@ -424,10 +474,10 @@ function TrailerCard({ trailers, trucks, crud }: {
                   <tr
                     key={t.id}
                     style={{ cursor: 'pointer' }}
-                    onClick={() => crud.setEditingId(t.id)}
+                    onClick={() => setViewingId(t.id)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(t.id); } }}
+                    onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setViewingId(t.id); } }}
                   >
                     <td className="num">{i + 1}</td>
                     <td><Plate plate={t.licensePlate} tag="RM" /></td>
@@ -439,9 +489,6 @@ function TrailerCard({ trailers, trucks, crud }: {
                       }
                     </td>
                     <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
-                    <td onClick={e => e.stopPropagation()}>
-                      <ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} />
-                    </td>
                   </tr>
                 );
               })}
@@ -467,7 +514,7 @@ function TrailerCard({ trailers, trucks, crud }: {
           {trailers.map((t, i) => {
             const coupledTruck = truckByTrailer.get(t.id);
             return (
-              <div key={t.id} className="m-card" onClick={() => crud.setEditingId(t.id)}>
+              <div key={t.id} className="m-card" onClick={() => setViewingId(t.id)}>
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '2px 5px', borderRadius: 4, fontSize: 10, letterSpacing: '0.5px' }}>RM</span>
@@ -503,6 +550,26 @@ function TrailerCard({ trailers, trucks, crud }: {
         </div>
       </div>
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
+      <DetailModal
+        isOpen={viewingId != null}
+        title={viewingId != null ? `Rơ-moóc ${trailers.find(t => t.id === viewingId)?.licensePlate ?? ''}` : ''}
+        onClose={() => setViewingId(null)}
+        itemId={viewingId ?? 0}
+        deleting={crud.deleting}
+        onEdit={() => { const id = viewingId; setViewingId(null); if (id != null) crud.setEditingId(id); }}
+        onDelete={() => { const id = viewingId; setViewingId(null); if (id != null) crud.doDelete(id); }}
+        details={(() => {
+          const t = viewingId != null ? trailers.find(x => x.id === viewingId) : null;
+          if (!t) return [];
+          const coupledTruck = truckByTrailer.get(t.id);
+          return [
+            { label: 'Biển số rơ-moóc', value: <Plate plate={t.licensePlate} tag="RM" /> },
+            { label: 'Loại', value: <TypeChip type={t.type} /> },
+            { label: 'Đầu kéo đang ghép', value: coupledTruck ? <Plate plate={coupledTruck.licensePlate} tag="VN" /> : <span className="fleet-unassigned">— Chưa ghép —</span> },
+            { label: 'Trạng thái', value: <StatusDot status={t.status} /> },
+          ];
+        })()}
+      />
       <TrailerFormModal
         key={crud.editingId ?? (crud.showAddForm ? 'add' : 'closed')}
         isOpen={crud.showAddForm || crud.editingId != null}
@@ -526,6 +593,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
   trailers: Array<{ id: number; licensePlate: string; type: string }>;
   crud: ReturnType<typeof useCRUD>;
 }) {
+  const [viewingId, setViewingId] = useState<number | null>(null);
   const active = trucks.filter(t => t.status === 'ACTIVE').length;
   const maint = trucks.filter(t => t.status === 'MAINTENANCE').length;
 
@@ -559,15 +627,14 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                 <th>Rơ-moóc</th>
                 <th>Tài xế gán</th>
                 <th className="center">Trạng thái</th>
-                <th className="actions">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {trucks.length === 0 && (
-                <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
+                <tr><td colSpan={5} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
               )}
               {trucks.map((t, i) => (
-                <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(t.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(t.id); } }}>
+                <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => setViewingId(t.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setViewingId(t.id); } }}>
                   <td className="num">{i + 1}</td>
                   <td><Plate plate={t.licensePlate} tag="VN" /></td>
                   <td>
@@ -592,7 +659,6 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                     }
                   </td>
                   <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
-                  <td onClick={e => e.stopPropagation()}><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -619,7 +685,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
             const trailer = t.currentTrailerId ? trailers.find(x => x.id === t.currentTrailerId) : null;
             const driver = driverByTruck.get(t.id);
             return (
-              <div key={t.id} className="m-card" onClick={() => crud.setEditingId(t.id)}>
+              <div key={t.id} className="m-card" onClick={() => setViewingId(t.id)}>
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '2px 5px', borderRadius: 4, fontSize: 10, letterSpacing: '0.5px' }}>VN</span>
@@ -636,7 +702,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                   <span className="m-card__row-value">{driver ? driver.name : '— Chưa phân —'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
-                  <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); crud.setEditingId(t.id); }}>Sửa</button>
+                  <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); setViewingId(t.id); }}>Xem</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(t.id); }}>Xóa</button>
                 </div>
               </div>
@@ -652,6 +718,27 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
         </div>
       </div>
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
+      <DetailModal
+        isOpen={viewingId != null}
+        title={viewingId != null ? `Xe đầu kéo ${trucks.find(t => t.id === viewingId)?.licensePlate ?? ''}` : ''}
+        onClose={() => setViewingId(null)}
+        itemId={viewingId ?? 0}
+        deleting={crud.deleting}
+        onEdit={() => { const id = viewingId; setViewingId(null); if (id != null) crud.setEditingId(id); }}
+        onDelete={() => { const id = viewingId; setViewingId(null); if (id != null) crud.doDelete(id); }}
+        details={(() => {
+          const t = viewingId != null ? trucks.find(x => x.id === viewingId) : null;
+          if (!t) return [];
+          const tr = t.currentTrailerId ? trailers.find(x => x.id === t.currentTrailerId) : null;
+          const driver = driverByTruck.get(t.id);
+          return [
+            { label: 'Biển số xe đầu', value: <Plate plate={t.licensePlate} tag="VN" /> },
+            { label: 'Rơ-moóc', value: tr ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span> : <span className="fleet-unassigned">—</span> },
+            { label: 'Tài xế gán', value: driver ? <span className="fleet-assigned"><AvatarInitials name={driver.name} /><span className="name">{driver.name}</span></span> : <span className="fleet-unassigned">— Chưa phân —</span> },
+            { label: 'Trạng thái', value: <StatusDot status={t.status} /> },
+          ];
+        })()}
+      />
       <TruckFormModal
         key={crud.editingId ?? (crud.showAddForm ? 'add' : 'closed')}
         isOpen={crud.showAddForm || crud.editingId != null}
@@ -673,6 +760,7 @@ function DriverCard({ drivers, truckMap, crud }: {
   truckMap: Map<number, TruckType>;
   crud: ReturnType<typeof useCRUD>;
 }) {
+  const [viewingId, setViewingId] = useState<number | null>(null);
   const [driverSearch, setDriverSearch] = useState('');
   const totalSalary = drivers.reduce((s, d) => s + (d.baseSalary ? Number(d.baseSalary) : 0), 0);
   const unassigned = drivers.filter(d => !d.assignedTruckId).length;

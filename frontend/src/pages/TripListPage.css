@@ -420,16 +420,6 @@
 .trip-list-page .right { text-align: right; justify-self: end; }
 .trip-list-page .center { text-align: center; justify-self: center; }
 
-/* Sticky actions column (right) */
-.trip-list-page .table-head .col-act,
-.trip-list-page .table-row .col-act {
-  position: sticky; right: 0; z-index: 5;
-  box-shadow: -8px 0 12px -10px rgba(16,33,26,.18);
-}
-.trip-list-page .table-head .col-act { background: var(--surface-2); }
-.trip-list-page .table-row .col-act { background: var(--surface); }
-.trip-list-page .table-row:hover .col-act { background: var(--tbl-green-050); }
-
 .trip-list-page .table-row {
   display: grid;
   grid-template-columns: minmax(160px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
@@ -591,13 +581,6 @@
   color: var(--brand);
 }
 
-.trip-list-page .km-val {
-  font-family: var(--font-mono);
-  font-weight: 600; font-size: 13.5px;
-  text-align: right;
-  color: var(--ink);
-}
-.trip-list-page .km-unit { font-size: 11px; color: var(--ink-3); font-weight: 600; margin-left: 2px; }
 .trip-list-page .km-empty { font-size: 13px; color: var(--ink-3); opacity: 0.6; text-align: right; }
 
 .trip-list-page .cons-cell { min-width: 0; }

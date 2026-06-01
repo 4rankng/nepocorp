@@ -108,6 +108,32 @@ export default function ExpenseListPage() {
   const hasFilters = supplierId || categoryId || truckId || dateFrom || dateTo;
   const kpiTotal = splitKpi(stats.totalAmount);
 
+  const renderStatusBadge = (status: string) => status === 'PAID' ? (
+    <span className="expense-status expense-status--paid">
+      <span className="expense-status__dot" /> Đã trả
+    </span>
+  ) : (
+    <span className="expense-status expense-status--unpaid">
+      <span className="expense-status__dot" /> Ghi nợ
+    </span>
+  );
+
+  const renderEmptyState = () => (
+    <div className="expense-empty">
+      <div className="expense-empty__icon">
+        <Receipt size={28} />
+      </div>
+      <p className="expense-empty__text">Chưa có khoản chi phí nào.</p>
+    </div>
+  );
+
+  const renderLoadingState = () => (
+    <div className="expense-loading">
+      <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
+      <p>Đang tải…</p>
+    </div>
+  );
+
   return (
     <div className="fade-up">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
@@ -238,17 +264,9 @@ export default function ExpenseListPage() {
       <div className="mobile-only mobile-table-wrap">
         <div className="m-card-list">
           {isLoading ? (
-            <div className="expense-loading">
-              <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-              <p>Đang tải…</p>
-            </div>
+            renderLoadingState()
           ) : expenses.length === 0 ? (
-            <div className="expense-empty">
-              <div className="expense-empty__icon">
-                <Receipt size={28} />
-              </div>
-              <p className="expense-empty__text">Chưa có khoản chi phí nào.</p>
-            </div>
+            renderEmptyState()
           ) : (
             expenses.map(e => (
               <div
@@ -261,15 +279,7 @@ export default function ExpenseListPage() {
                   <span className="m-card__title">
                     {(e.supplier?.name) || '—'}
                   </span>
-                  {e.paymentStatus === 'PAID' ? (
-                    <span className="expense-status expense-status--paid">
-                      <span className="expense-status__dot" /> Đã trả
-                    </span>
-                  ) : (
-                    <span className="expense-status expense-status--unpaid">
-                      <span className="expense-status__dot" /> Ghi nợ
-                    </span>
-                  )}
+                  {renderStatusBadge(e.paymentStatus)}
                 </div>
                 <div className="m-card__meta">
                   {formatDate(e.expenseDate)}
@@ -325,21 +335,11 @@ export default function ExpenseListPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="expense-loading">
-                    <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-                    <p>Đang tải…</p>
-                  </td>
+                  <td colSpan={8}>{renderLoadingState()}</td>
                 </tr>
               ) : expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={8}>
-                    <div className="expense-empty">
-                      <div className="expense-empty__icon">
-                        <Receipt size={28} />
-                      </div>
-                      <p className="expense-empty__text">Chưa có khoản chi phí nào.</p>
-                    </div>
-                  </td>
+                  <td colSpan={8}>{renderEmptyState()}</td>
                 </tr>
               ) : (
                 expenses.map(e => (
@@ -361,15 +361,7 @@ export default function ExpenseListPage() {
                       {formatCurrency(e.amount)}
                     </td>
                     <td>
-                      {e.paymentStatus === 'PAID' ? (
-                        <span className="expense-status expense-status--paid">
-                          <span className="expense-status__dot" /> Đã trả
-                        </span>
-                      ) : (
-                        <span className="expense-status expense-status--unpaid">
-                          <span className="expense-status__dot" /> Ghi nợ
-                        </span>
-                      )}
+                      {renderStatusBadge(e.paymentStatus)}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <ChevronRight size={14} style={{ color: 'var(--ink-4)' }} />
