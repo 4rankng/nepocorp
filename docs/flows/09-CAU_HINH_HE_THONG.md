@@ -57,6 +57,7 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 | GET/POST/PUT/DELETE | `/fleet/trucks[/:id]` | CRUD xe đầu kéo (kèm trailer_plate_number + trailer_type) |
 | GET/POST/PUT/DELETE | `/drivers[/:id]` | CRUD tài xế |
 | GET/PUT | `/config/cap-table` | Xem/cập nhật cổ phần |
+| GET | `/catalog/fuel-price-history` | Lịch sử giá nhiên liệu (append-only, sắp xếp giảm theo ngày) |
 
 ---
 
@@ -175,6 +176,7 @@ Cảng/Bãi ──────────────────────�
 
 Tuyến + Xe.trailerType ──→ Tiền đi đường ──→ Tính chi phí
 Tuyến + Xe ────────────→ Định mức NL ──────→ Tính chi phí
+Lịch sử giá NL ────────→ Đề xuất giá ──────→ Nhập liệu chuyến (fuelActualUnitPrice)
 Cổ phần ────→ Phân bổ lợi nhuận
 Phí QL ─────→ Trừ P&L
 ```
@@ -310,3 +312,12 @@ Loại rơ-moóc là trường trên bảng `trucks` (`trailer_type`), dùng là
 |-------|---------|----------------|----------|-------------------|---------|
 | TC-CH-029 | MANAGER không xóa | MANAGER | Vào sub-page bất kỳ | Nút xóa bị ẩn/vô hiệu | High |
 | TC-CH-030 | ACCOUNTANT chỉ đọc | ACCOUNTANT | Vào sub-page bất kỳ | Không có nút Tạo/Sửa/Xóa | High |
+
+### 5.14 Lịch sử giá nhiên liệu (TC-CH-031 → TC-CH-034)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-CH-031 | Cập nhật giá → ghi lịch sử | ADMIN, `/config/fuel` | Đổi đơn giá từ 28.760 → 27.650 → Lưu | Bảng lịch sử hiện dòng mới: 27.650 VNĐ, ngày hôm nay, người thay đổi | High |
+| TC-CH-032 | Append-only — không sửa/xóa | Có lịch sử giá | Thử sửa/xóa dòng trong bảng lịch sử | Không có nút sửa/xóa, chỉ đọc | High |
+| TC-CH-033 | Đề xuất giá trên chuyến | Có lịch sử: 28.760 (1/5), 27.650 (15/5) | Mở form nhập liệu chuyến, ngày xuất phát 20/5 → nhấn **Đề xuất** | Tự điền 27.650 (giá hiệu lực gần nhất trước 20/5) | High |
+| TC-CH-034 | Giá cấu hình đồng bộ dòng mới nhất | Có lịch sử 3 dòng | Xem giá cấu hình hiện tại | Giá cấu hình = giá dòng cuối cùng trong lịch sử | High |

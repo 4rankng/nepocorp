@@ -69,7 +69,7 @@
 | Mục | Nguồn |
 |-----|-------|
 | I. Doanh thu vận tải | Σ customer_price |
-| II. Chi phí nhiên liệu | Σ fuel_cost |
+| II. Chi phí nhiên liệu | Σ fuel_cost (dùng `fuelActualUnitPrice` khi có, ngược lại `fuelPriceApplied`) |
 | Chi phí cầu đường | Σ toll_cost |
 | Công lương tài xế | Σ driver_pay |
 | Chi phí bốc xếp | Σ loading_cost |
@@ -121,6 +121,7 @@
     ├─ Gọi API /api/financial/profit-loss?month=X&year=Y
     │   ├─ Lọc trips theo kỳ
     │   ├─ Tính từng khoản thu/chi bằng round2dp()
+    │   │   └─ Chi phí nhiên liệu: dùng fuelActualUnitPrice (nếu có) thay vì fuelPriceApplied
     │   └─ Group by vehicle cho per-truck breakdown
     │       └─ Phân tách chi phí bảo dưỡng: vehicle_component=TRUCK vs TRAILER
     │
@@ -314,6 +315,16 @@
 | TC-DB-063 | Chuyến không có chi phí | COMPLETED chỉ có customer_price, costs=null | Xem Dashboard | CP = 0, LN = customer_price | Medium |
 | TC-DB-064 | Đổi tháng nhanh liên tục | ADMIN | Click đổi tháng 5 lần nhanh | Không crash, đúng kỳ cuối | Low |
 | TC-DB-065 | Session hết hạn | Token hết hạn | Thử đổi kỳ trên `/finance` | Redirect /login, không crash | Medium |
+
+### 5.10 Báo cáo chênh lệch giá nhiên liệu (TC-DB-066 → TC-DB-070)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-DB-066 | Báo cáo variance với giá thực tế | 3 chuyến: 2 có `fuelActualUnitPrice` khác giá cấu hình, 1 không có | Truy cập báo cáo fuel-variance tháng đó | Bảng tổng hợp: tổng chênh lệch, 2 chuyến điều chỉnh, chênh lệch TB đúng | High |
+| TC-DB-067 | Lọc theo tháng/năm | Dữ liệu nhiều tháng | Chọn tháng 3/2026 | Chỉ hiện chuyến trong T3/2026 | High |
+| TC-DB-068 | P&L phản ánh giá thực tế | Chuyến: fuelLiters=100L, fuelPriceApplied=28760, fuelActualUnitPrice=27650 | Xem P&L | Chi phí nhiên liệu = 100×27650 = 2,765,000 (không phải 2,876,000) | High |
+| TC-DB-069 | Chênh lệch = 0 khi không có giá thực tế | Chuyến chỉ có `fuelPriceApplied`, không có `fuelActualUnitPrice` | Xem báo cáo variance | Chuyến không xuất hiện trong bảng chi tiết (không điều chỉnh) | High |
+| TC-DB-070 | Bảng chi tiết đúng công thức | Chuyến: 200L, giá cấu hình 28760, giá thực tế 27650 | Xem bảng chi tiết | Chi phí theo cấu hình=5,752,000; chi phí thực tế=5,530,000; chênh lệch=−222,000 | High |
 
 ---
 

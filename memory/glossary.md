@@ -30,7 +30,11 @@ Hot cache (most common): `CLAUDE.md` · Full domain rules: `CONTEXT.md`
 | Khoán | FLAT_RATE mode | `FuelMode.FLAT_RATE` | Accountant manually enters total liters |
 | Bổ sung | Supplement | `fuelSupplementLiters` | Extra fuel for breakdowns/repairs, additive on top |
 | Chuyến núi | Mountain route | — | Fixed fuel allowance from route record (e.g. Mộc Châu 240L) |
-| Giá nhiên liệu | Fuel unit price | `fuelPriceApplied` | Configurable, used to calculate fuel cost |
+| Giá nhiên liệu | Fuel unit price | `fuelPriceApplied` | Configurable, snapshotted at trip creation, used to calculate fuel cost |
+| Giá nhiên liệu thực tế | Actual fuel price | `fuelActualUnitPrice` | Price actually paid at pump, entered per trip by accountant |
+| Chênh lệch giá dầu | Fuel price variance | `fuelPriceVariance` | (L × actual price) − (L × config price). Only when `fuelActualUnitPrice` is set |
+| Lịch sử giá nhiên liệu | Fuel price history | `fuel_price_history` table | Append-only audit trail of unit price changes with effective dates |
+| Đề xuất giá | Price suggestion | — | System looks up effective price from history by trip departure date |
 | Lít | Liters | — | Fuel quantity unit |
 
 ### Road & Allowances

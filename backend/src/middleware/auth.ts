@@ -22,7 +22,10 @@ declare global {
 }
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  let token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token && typeof req.query.token === 'string') {
+    token = req.query.token;
+  }
   if (!token) return res.status(401).json({ error: 'Token không hợp lệ' });
   try {
     const payload = jwt.verify(token, config.jwtSecret) as AuthUser & { jti?: string };

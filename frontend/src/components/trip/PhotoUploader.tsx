@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
+import { getAuthenticatedPhotoUrl } from "../../lib/api";
 
 export type PhotoType = "CONTAINER" | "SEAL" | "OTHER";
 
@@ -91,7 +92,7 @@ export function PhotoUploader({ requiresPhotos, tripId }: PhotoUploaderProps) {
               const globalIdx = photos.findIndex((p) => p.url === photo.url);
               return (
                 <div key={photo.url} style={{ width: 64, height: 64, borderRadius: "var(--radius-sm)", border: "1px solid var(--border-1)", position: "relative", overflow: "hidden" }}>
-                  <img src={photo.url} alt="Container" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={getAuthenticatedPhotoUrl(photo.url)} alt="Container" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <button type="button" onClick={() => handleRemovePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                     <X size={8} />
                   </button>
@@ -126,7 +127,7 @@ export function PhotoUploader({ requiresPhotos, tripId }: PhotoUploaderProps) {
               const globalIdx = photos.findIndex((p) => p.url === photo.url);
               return (
                 <div key={photo.url} style={{ width: 64, height: 64, borderRadius: "var(--radius-sm)", border: "1px solid var(--border-1)", position: "relative", overflow: "hidden" }}>
-                  <img src={photo.url} alt="Seal" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={getAuthenticatedPhotoUrl(photo.url)} alt="Seal" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <button type="button" onClick={() => handleRemovePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                     <X size={8} />
                   </button>
@@ -161,7 +162,7 @@ export function PhotoUploader({ requiresPhotos, tripId }: PhotoUploaderProps) {
             const globalIdx = photos.findIndex((p) => p.url === photo.url);
             return (
               <div key={photo.url} style={{ width: 64, height: 64, borderRadius: "var(--radius-sm)", border: "1px solid var(--border-1)", position: "relative", overflow: "hidden" }}>
-                <img src={photo.url} alt="Other" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={getAuthenticatedPhotoUrl(photo.url)} alt="Other" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <button type="button" onClick={() => handleRemovePhoto(globalIdx)} style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                   <X size={8} />
                 </button>

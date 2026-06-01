@@ -5,7 +5,7 @@ import {
   Truck, User, MapPin, Calendar, FileText, Fuel, Banknote,
   Route as RouteIcon, Image as ImageIcon, Shuffle, FilePen, X,
 } from 'lucide-react';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, getAuthenticatedPhotoUrl } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import type { TripDetail } from '@nepocorp/shared';
 import {
@@ -491,7 +491,7 @@ export default function TripDetailPage() {
               {validPhotos.map((url, i) => (
                 <a
                   key={i}
-                  href={url}
+                  href={getAuthenticatedPhotoUrl(url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -504,7 +504,7 @@ export default function TripDetailPage() {
                   }}
                 >
                   <img
-                    src={url}
+                    src={getAuthenticatedPhotoUrl(url)}
                     alt={`Ảnh ${i + 1}`}
                     loading="lazy"
                     onError={(e) => {

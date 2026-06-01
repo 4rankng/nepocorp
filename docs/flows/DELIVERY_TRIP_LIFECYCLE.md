@@ -103,7 +103,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   - **Các container** (tùy chọn): mỗi dòng gồm Loại container (dropdown từ danh mục — VD: 20'DC, 40'HC), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng.
 - **Hệ thống tự động:**
   - Tra giá cước từ bảng giá theo Khách hàng × Tuyến đường × Ngày
-  - Snapshot (chụp) các định mức hiện hành: giá nhiên liệu, định mức có tải/không tải, tiền đường, phí trạm
+  - Snapshot (chụp) các định mức hiện hành: giá nhiên liệu, định mức có tải/không tải, tiền đường, phí trạm. Giá nhiên liệu snapshot từ `fuel_config.unitPrice` hiện hành; hệ thống cũng có thể đề xuất giá từ `fuel_price_history` theo ngày xuất phát.
   - Sinh mã chuyến tự động: `TRP-YYYYMM-NNNN`
 - **Kết quả:** Chuyến có trạng thái `CREATED`, xuất hiện trong hàng đợi Điều vận
 
@@ -270,7 +270,7 @@ Thu nhập phạt            (+) Phạt tài xế
 ─────────────────────────────────────
 Tổng doanh thu
 
-Chi phí nhiên liệu      (−) Xăng dầu
+Chi phí nhiên liệu      (−) Xăng dầu (dùng giá thực tế nếu có, ngược lại giá cấu hình)
 Chi phí đi đường        (−) Cầu đường, trạm thu phí
 Lương tài xế            (−) Lương chuyến
 ─────────────────────────────────────
@@ -338,7 +338,7 @@ LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý
 
 | Danh mục | Mô tả | Sử dụng khi |
 |----------|-------|-------------|
-| Định mức dầu | Định mức có tải/không tải (lit/100km), giá nhiên liệu | Tính chi phí nhiên liệu |
+| Định mức dầu | Định mức có tải/không tải (lit/100km), giá nhiên liệu, lịch sử giá (append-only) | Tính chi phí nhiên liệu, đề xuất giá theo ngày xuất phát |
 | Tiền đi đường | Mức phụ cấp theo Tuyến × Loại ro-mooc | Tính chi phí đường bộ |
 | Bảng giá cước | Giá theo Khách hàng × Tuyến đường | Tự động điền doanh thu khi tạo chuyến |
 | Tuyến đường | Tên, km, núi/đồng bằng, phụ cấp nhiên liệu fixed | Tạo chuyến, tra giá |
@@ -405,6 +405,7 @@ Sau khi xe hoàn thành chuyến đi, Kế toán nhập số liệu thực tế.
 | 2 | Nhấn vào chuyến → **"Chỉnh sửa"** | `/trips/:id/edit` | |
 | 3 | Cập nhật **chặng thực tế** | Km thực tế, có thể thêm/xóa chặng | Tổng km cập nhật |
 | 4 | Kiểm tra **nhiên liệu** | Xem tổng tự tính hoặc nhập tay nếu KHOÁN | |
+| 4a | Nhập **Đơn giá thực tế** (tùy chọn) | Giá thực mua tại trạm (VNĐ/lít). Nút **Đề xuất** tra giá hiệu lực từ lịch sử theo ngày xuất phát. Để trống → dùng giá cấu hình snapshot. Chỉ nhập được trước khi khóa chuyến. | Hệ thống tính lại `totalFuelCost` và `fuelPriceVariance` |
 | 5 | Nhập **chi phí đi đường** | Số trạm × phí/trạm, giảm trừ, cộng thêm | |
 | 6 | Cập nhật **doanh thu** (nếu cần) | Nếu giá thực tế khác bảng giá → ghi đè | Hệ thống lưu giá gốc + giá ghi đè |
 | 7 | **Cập nhật/bổ sung container** | Loại container (dropdown), Số container (text), Số seal (text) | Nhập được bởi Kế toán, Giám đốc hoặc Giao nhận |
@@ -679,6 +680,16 @@ Lái xe cố gắng truy cập bất kỳ trang quản lý nào → tự động
 - [ ] Chuyến cũ (đã tạo) → định mức không thay đổi (snapshot tại thời điểm tạo)
 - [ ] Thêm tuyến đường → tạo chuyến → chọn được tuyến mới
 - [ ] CRUD đầy đủ: Thêm → Sửa → Xóa mỗi loại danh mục
+
+### 7.8a Test Điều chỉnh giá nhiên liệu
+
+- [ ] **Nhập giá thực tế:** Mở form nhập liệu chuyến → nhập `fuelActualUnitPrice` khác `fuelPriceApplied` → `totalFuelCost` tính theo giá thực tế
+- [ ] **Đề xuất giá:** Nhấn nút **Đề xuất** → hệ thống tra `fuel_price_history` theo ngày xuất phát → tự điền giá hiệu lực
+- [ ] **Để trống giá thực tế:** Không nhập → `totalFuelCost` tính theo `fuelPriceApplied` (giá cấu hình snapshot)
+- [ ] **Chênh lệch hiển thị:** Khi có giá thực tế → `fuelPriceVariance` hiển thị trên thẻ chuyến
+- [ ] **Tính lại khi đổi giá:** Đổi `fuelActualUnitPrice` → `totalFuelCost`, `totalCost`, `grossProfit` tự cập nhật
+- [ ] **Khóa chuyến:** Chuyến LOCKED → không thể nhập/sửa giá thực tế
+- [ ] **Chuyến cũ:** Chuyến tạo trước khi có tính năng → để trống `fuelActualUnitPrice` → dùng giá cấu hình như cũ
 
 ### 7.9 Test Upload ảnh
 

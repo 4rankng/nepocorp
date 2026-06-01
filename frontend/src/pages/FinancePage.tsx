@@ -264,8 +264,8 @@ export default function FinancePage() {
                       const cx = padL + i * xStep + xStep / 2;
                       const rev = d['Doanh thu'] as number;
                       const gp = d['LN gộp'] as number;
-                      const revH = (rev / niceMax) * plotH;
-                      const gpH = (gp / niceMax) * plotH;
+                      const revH = Math.max(0, (rev / niceMax) * plotH);
+                      const gpH = Math.max(0, (gp / niceMax) * plotH);
                       return (
                         <g key={i}>
                           <rect x={cx - barW - 1} y={padT + plotH - revH} width={barW} height={revH} fill="#3b82f6" rx={2} />

@@ -108,3 +108,16 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
+
+export function getAuthenticatedPhotoUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('/api/photos/') || url.includes('/api/photos/')) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}token=${encodeURIComponent(token)}`;
+    }
+  }
+  return url;
+}
+

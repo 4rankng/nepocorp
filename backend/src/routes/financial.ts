@@ -182,18 +182,18 @@ router.get('/reports/receivables-aging', requireRoles(Role.ADMIN, Role.MANAGER, 
   res.json(await getCustomerAgingList());
 }));
 
-// Profit distribution — ADMIN/MANAGER only
-router.get('/reports/distribution-history', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (_req: Request, res: Response) => {
+// Profit distribution — ADMIN/MANAGER/ACCOUNTANT
+router.get('/reports/distribution-history', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (_req: Request, res: Response) => {
   res.json(await getDistributionHistory());
 }));
 
-router.post('/reports/distribute-profit/preview', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+router.post('/reports/distribute-profit/preview', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const { quarter, year } = req.body;
   if (!quarter || !year) return res.status(400).json({ error: 'Cần nhập quý và năm' });
   res.json(await previewDistribution(quarter, year));
 }));
 
-router.post('/reports/distribute-profit', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+router.post('/reports/distribute-profit', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const { quarter, year } = req.body;
   if (!quarter || !year) return res.status(400).json({ error: 'Cần nhập quý và năm' });
   res.status(201).json(await distributeProfit(quarter, year));
