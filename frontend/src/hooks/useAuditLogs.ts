@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
 export interface AuditEntry {
@@ -17,14 +17,19 @@ export interface AuditEntry {
 
 export type Category = 'all' | 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
 
-export function useAuditLogs(page: number, pageSize: number, filter: Category, search: string) {
-  return useQuery<{ items: AuditEntry[]; total: number }>({
-    queryKey: ['audit-logs', page, pageSize, filter, search],
-    queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
+export function useAuditLogs(pageSize: number, filter: Category, search: string) {
+  return useInfiniteQuery<{ items: AuditEntry[]; total: number }>({
+    queryKey: ['audit-logs', pageSize, filter, search],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = new URLSearchParams({ page: String(pageParam), limit: String(pageSize) });
       if (filter !== 'all') params.set('category', filter);
       if (search.trim()) params.set('search', search.trim());
       return api.get<{ items: AuditEntry[]; total: number }>(`/audit-logs?${params}`);
     },
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedItems = allPages.reduce((sum, page) => sum + page.items.length, 0);
+      return loadedItems < lastPage.total ? allPages.length + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 }

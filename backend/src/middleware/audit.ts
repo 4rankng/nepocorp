@@ -6,6 +6,16 @@ import { resolveAuditEvent } from '../services/audit-registry';
 
 function extractEntityType(path: string): string | null {
   const parts = path.replace('/api/', '').split('/');
+  
+  if (parts.length >= 2 && parts[0] === 'forwarder' && parts[1] === 'me') {
+    if (parts.length > 2) {
+      if (parts[2] === 'trips' && parts[4] === 'containers') return 'container-instances';
+      if (parts[2] === 'expenses' && parts[4] === 'photos') return 'expense-photos';
+      return parts[2];
+    }
+    return 'forwarder';
+  }
+
   if (parts.length >= 1) return parts[0];
   return null;
 }

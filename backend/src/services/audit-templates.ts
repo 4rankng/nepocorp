@@ -27,6 +27,18 @@ const ENTITY_LABELS: Record<string, string> = {
   suppliers: 'nhà cung cấp',
   'expense-categories': 'danh mục chi phí',
   'salary-periods': 'cấu hình kỳ lương',
+  upload: 'chứng từ đính kèm',
+  trailers: 'rơ moóc',
+  'container-types': 'loại container',
+  ports: 'cảng/nơi giao nhận',
+  'forwarder-expense-types': 'loại phí hộ',
+  'road-config': 'cấu hình đi đường',
+  'advance-requests': 'yêu cầu tạm ứng',
+  'advance-settlements': 'quyết toán tạm ứng',
+  'expense-photos': 'hình ảnh chi phí hộ',
+  'container-instances': 'thông tin container',
+  notifications: 'thông báo',
+  forwarder: 'nhân viên điều phối',
 };
 
 interface TemplateContext {

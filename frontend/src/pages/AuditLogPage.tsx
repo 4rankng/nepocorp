@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { getInitials } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import {
@@ -120,24 +120,39 @@ const PAGE_SIZE = 10;
 export default function AuditLogPage() {
   const [filter, setFilter] = useState<Category>('all');
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [selectedEntry, setSelectedEntry] = useState<NormalizedEntry | null>(null);
   const [copied, setCopied] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
-  const { data, isLoading: loading } = useAuditLogs(page, PAGE_SIZE, filter, search);
-  const rawEntries: AuditEntry[] = data?.items ?? [];
+  const { 
+    data, 
+    isLoading: loading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage
+  } = useAuditLogs(PAGE_SIZE, filter, search);
+  
+  const rawEntries: AuditEntry[] = useMemo(() => data?.pages.flatMap(p => p.items) ?? [], [data]);
   const entries = useMemo(() => rawEntries.map(normalizeEntry), [rawEntries]);
-  const total = data?.total ?? 0;
+  const total = data?.pages[0]?.total ?? 0;
 
   useEffect(() => {
-    setPage(1);
     setSelectedEntry(null);
   }, [filter, search]);
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback((node: HTMLTableRowElement | null) => {
+    if (loading || isFetchingNextPage) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage) {
+        fetchNextPage();
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   // Aggregated KPIs
   const todayCount = total;
@@ -403,7 +418,6 @@ fontSize: 13,
               className={`filter-pill${isActive ? ' is-active' : ''}`}
               onClick={() => {
                 setFilter(cat.key);
-                setPage(1);
               }}
             >
               <Icon size={14} />
@@ -425,7 +439,6 @@ fontSize: 13,
             value={search}
             onChange={e => {
               setSearch(e.target.value);
-              setPage(1);
             }}
           />
         </div>
@@ -463,7 +476,8 @@ fontSize: 13,
                     const isSelected = selectedEntry?.id === entry.id;
                     return (
                       <tr
-                        key={entry.id}
+                        key={`${entry.id}-${idx}`}
+                        ref={idx === entries.length - 1 ? lastElementRef : null}
                         onClick={() => setSelectedEntry(entry)}
                         style={{
                           cursor: 'pointer',
@@ -471,7 +485,7 @@ fontSize: 13,
                           transition: 'background 0.2s',
                         }}
                       >
-                        <td className="num">{(page - 1) * PAGE_SIZE + idx + 1}</td>
+                        <td className="num">{idx + 1}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: 12, color: 'var(--ink)', fontWeight: 500 }}>
                             {formatTime(entry.timestamp)}
@@ -521,12 +535,19 @@ fontSize: 13,
                     );
                   })
                 )}
+                {isFetchingNextPage && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', padding: 16, color: 'var(--ink-3)' }}>
+                      Đang tải thêm...
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
 
           {/* Footer showing count */}
-          {totalPages > 0 && (
+          {total > 0 && (
             <div
               style={{
                 padding: '12px 16px',
@@ -539,7 +560,7 @@ fontSize: 13,
                 color: 'var(--ink-3)',
               }}
             >
-              <span>Hiển thị {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} trong tổng số {total} bản ghi</span>
+              <span>Hiển thị {entries.length} trong tổng số {total} bản ghi</span>
             </div>
           )}
         </Panel>
@@ -565,30 +586,7 @@ fontSize: 13,
         )}
       </div>
 
-      {/* ── Pagination ── */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 20 }}>
-          <button
-            className="btn btn--secondary btn--sm"
-            disabled={page <= 1}
-            onClick={() => setPage(p => p - 1)}
-          >
-            <ChevronLeft size={14} />
-            Trước
-          </button>
-          <span style={{ fontSize: 13, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-            {page} / {totalPages}
-          </span>
-          <button
-            className="btn btn--secondary btn--sm"
-            disabled={page >= totalPages}
-            onClick={() => setPage(p => p + 1)}
-          >
-            Tiếp
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      )}
+      {/* ── Pagination removed for Infinite Scroll ── */}
     </div>
   );
 }
