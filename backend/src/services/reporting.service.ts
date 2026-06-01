@@ -2,7 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, sql, gte, lte, ne, inArray } from 'drizzle-orm';
 import { TripStatus } from '@nepocorp/shared';
-import { getReceivablesSummary as _getReceivablesSummary, getTopOverdueCustomer } from './receivables.service';
+import { getReceivablesSummary as _getReceivablesSummary, getTopOverdueCustomer } from './aging.service';
 import { resolveSalaryPeriodDateRange, resolveQuarterDateRange } from './salary-period.service';
 import { cacheGet } from '../lib/redis';
 import { ApiError } from '../errors';
