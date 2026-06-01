@@ -1,7 +1,7 @@
 # Cấu hình hệ thống
 
 > Tài liệu QA testing & Hướng dẫn sử dụng — Quản lý cấu hình toàn hệ thống
-> **Route:** `/config` (hub) + 12 sub-pages
+> **Route:** `/config` (hub) + 13 sub-pages
 > **Roles:** ADMIN (CRUD), MANAGER (view + limited edit), ACCOUNTANT (view only), DRIVER (no access)
 
 ---
@@ -10,9 +10,9 @@
 
 ### 1.1 Mô tả
 
-Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 11 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
+Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 13 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
 
-### 1.2 11 Sub-pages
+### 1.2 13 Sub-pages
 
 | # | Tên | Route | Mô tả |
 |---|-----|-------|-------|
@@ -27,6 +27,8 @@ Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ l
 | 9 | Loại hàng hóa | `/config/cargo-types` | Phân loại hàng hóa |
 | 10 | Bảng giá cước | `/config/pricing-tables` | Giá cước theo tuyến × loại hàng |
 | 11 | Phí quản lý | `/config/management-fees` | Tỷ lệ phí QL trừ P&L |
+| 12 | Loại container | `/config/container-types` | Danh mục loại container (20'DC, 20'OT, 20'RF, 40'DC, 40'HC...) |
+| 13 | Cảng / Bãi | `/config/ports` | Danh mục cảng, bãi (chủ yếu tại Hải Phòng) |
 
 ### 1.3 Phân quyền
 
@@ -49,6 +51,8 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 | GET/POST/PUT/DELETE | `/catalog/cargo-types[/:id]` | CRUD loại hàng |
 | GET/POST/PUT/DELETE | `/catalog/pricing-tables[/:id]` | CRUD bảng giá cước |
 | GET/POST/PUT/DELETE | `/catalog/management-fees[/:id]` | CRUD phí quản lý |
+| GET/POST/PUT/DELETE | `/catalog/container-types[/:id]` | CRUD loại container |
+| GET/POST/PUT/DELETE | `/catalog/ports[/:id]` | CRUD cảng/bãi |
 | GET/POST/PUT/DELETE | `/catalog/route-configs[/:id]` | CRUD tuyến đường |
 | GET/POST/PUT/DELETE | `/fleet/trucks[/:id]` | CRUD xe đầu kéo (kèm trailer_plate_number + trailer_type) |
 | GET/POST/PUT/DELETE | `/drivers[/:id]` | CRUD tài xế |
@@ -60,7 +64,7 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 
 ### 2.1 Hub `/config`
 
-11 thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ 11. MANAGER ẩn Cổ phần. ACCOUNTANT chỉ xem. DRIVER không thấy menu.
+13 thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ 13. MANAGER ẩn Cổ phần. ACCOUNTANT chỉ xem. DRIVER không thấy menu.
 
 ### 2.2 Định mức nhiên liệu `/config/fuel`
 
@@ -118,6 +122,22 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 
 **Trường:** Tên phí (bắt buộc, duy nhất), Tỷ lệ % (0 < x <= 100), Mô tả, Trạng thái.
 
+### 2.13 Loại container `/config/container-types`
+
+**Trường:** Mã loại (bắt buộc, duy nhất — VD: `20DC`, `40HC`), Tên hiển thị (bắt buộc — VD: 20'DC, 40'HC), Kích thước nhóm (20FT/40FT — dùng để validate phù hợp với rơ-mooc), Trạng thái (active/inactive).
+
+**Dữ liệu mẫu:** 20'DC (Dry Container), 20'OT (Open Top), 20'RF (Reefer), 40'DC, 40'HC (High Cube).
+
+**Ràng buộc:** Không xóa loại đang dùng trong chuyến. Kích thước nhóm dùng để cảnh báo: rơ-mooc 20FT chỉ nên chở container nhóm 20FT.
+
+### 2.14 Cảng / Bãi `/config/ports`
+
+**Trường:** Tên (bắt buộc, duy nhất — VD: Cảng Đình Vũ, Bãi ICD NL), Địa chỉ, Ghi chú, Trạng thái (active/inactive).
+
+**Sử dụng:** Khi nhập chặng (trip legs), trường origin/destination hiển thị **combobox** — dropdown chọn từ danh mục Cảng/Bãi, đồng thời cho phép nhập text tự do nếu điểm chưa có trong danh mục. Mục mới nhập sẽ được gợi ý thêm vào danh mục.
+
+**Ràng buộc:** Không xóa cảng/bãi đang dùng trong chặng chuyến.
+
 ---
 
 ## 3. Luồng nghiệp vụ
@@ -131,6 +151,8 @@ Loại hàng hóa ───────┘                    │
 Xe đầu kéo ─────────────────────────────→ Chuyến đi (loại rơ-mooc tự tra từ xe)
 Tài xế ─────────────────────────────────→ Chuyến đi
 Khách hàng ─────────────────────────────→ Chuyến đi
+Loại container ────────────────────────→ Container trong chuyến
+Cảng/Bãi ─────────────────────────────→ Chặng chuyến (origin/destination dropdown)
 
 Tuyến + Xe.trailerType ──→ Tiền đi đường ──→ Tính chi phí
 Tuyến + Xe ────────────→ Định mức NL ──────→ Tính chi phí
@@ -140,7 +162,7 @@ Phí QL ─────→ Trừ P&L
 
 ### 3.2 Thứ tự thiết lập
 
-1. Cổ phần → 2. Người dùng → 3. Khách hàng → 4. Loại hàng → 5. Tuyến đường → 6. Xe đầu kéo (+ biển số/loại rơ-mooc ghép cặp) → 7. Bảng giá cước → 8. Định mức NL → 9. Tiền đi đường → 10. Lý do phạt → 11. Phí quản lý
+1. Cổ phần → 2. Người dùng → 3. Khách hàng → 4. Loại hàng → 5. Tuyến đường → 6. Xe đầu kéo (+ biển số/loại rơ-mooc ghép cặp) → 7. Loại container → 8. Cảng/Bãi → 9. Bảng giá cước → 10. Định mức NL → 11. Tiền đi đường → 12. Lý do phạt → 13. Phí quản lý
 
 ---
 

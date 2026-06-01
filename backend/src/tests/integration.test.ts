@@ -20,6 +20,7 @@ import driverRoutes from '../routes/driver';
 import { authMiddleware } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
 import { initEnforcer } from '../casbin/enforcer';
+import { globalErrorHandler } from '../middleware/errorHandler';
 
 const app = express();
 app.use(express.json());
@@ -29,6 +30,7 @@ app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRo
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
 app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
+app.use(globalErrorHandler);
 
 let server: http.Server;
 let baseUrl: string;
@@ -44,6 +46,7 @@ let cargoTypeId: number;
 let driverUserId: number;
 let truckId2: number;
 let driverId2: number;
+let adminUserId: number;
 
 before(async () => {
   // Initialize Casbin enforcer before tests (required by casbinAuthz middleware)
@@ -87,6 +90,7 @@ before(async () => {
   routeId = rte.id;
   cargoTypeId = crg.id;
   driverUserId = drvUser.id;
+  adminUserId = adm.id;
 
   // Ensure fuelConfig exists
   let [flCfg] = await db.select().from(s.fuelConfig).limit(1);
@@ -458,17 +462,17 @@ test('T4.7 — State-Machine: Transition matrices, photo gates, and lock validat
 
   // Test invalid transition CREATED -> COMPLETED (should fail)
   await assert.rejects(
-    tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.ADMIN),
+    tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, adminUserId, Role.ADMIN),
     /Chỉ có thể hoàn thành chuyến đi đang chạy/
   );
 
   // Test valid transition CREATED -> IN_TRANSIT
-  let updated = await tripService.transitionTripStatus(trip.id, TripStatus.IN_TRANSIT, 1, Role.ADMIN);
+  let updated = await tripService.transitionTripStatus(trip.id, TripStatus.IN_TRANSIT, adminUserId, Role.ADMIN);
   assert.strictEqual(updated.status, TripStatus.IN_TRANSIT);
 
   // Test invalid transition IN_TRANSIT -> COMPLETED with zero uploaded photos
   await assert.rejects(
-    tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.ADMIN),
+    tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, adminUserId, Role.ADMIN),
     /Cần tải lên ít nhất 1 ảnh/
   );
 
@@ -477,11 +481,11 @@ test('T4.7 — State-Machine: Transition matrices, photo gates, and lock validat
     tripId: trip.id,
     type: 'CONTAINER',
     storageKey: 'mock-trip-container-photo.jpg',
-    uploadedBy: 1,
+    uploadedBy: adminUserId,
   });
 
   // Test valid transition IN_TRANSIT -> COMPLETED (photo uploaded)
-  updated = await tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.ADMIN);
+  updated = await tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, adminUserId, Role.ADMIN);
   assert.strictEqual(updated.status, TripStatus.COMPLETED);
 
   // Test zero-revenue lock guard (should fail with 422 unless confirmed)

@@ -146,7 +146,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 ### 4.14 Loại Container & Cảng/Bãi (Container Types & Ports/Depots)
 
 * **Loại container:** Danh mục **cấu hình được** do người dùng tự khai báo trong Cấu hình hệ thống. Mỗi loại có: mã (VD: `20DC`, `40HC`), tên hiển thị (VD: 20'DC, 40'HC), kích thước nhóm (20FT/40FT) dùng để validate phù hợp với rơ-mooc, và trạng thái. Dữ liệu mẫu: 20'DC (Dry Container), 20'OT (Open Top), 20'RF (Reefer), 40'DC, 40'HC (High Cube)...
-* **Cảng / Bãi:** Danh mục cấu hình các cảng và bãi (chủ yếu tại Hải Phòng). Mỗi cảng/bãi có: tên (VD: Cảng Đình Vũ, Cảng Nam Hải, Bãi ICD NL), địa chỉ, và trạng thái. Danh mục có thể do người dùng tự khai báo hoặc cập nhật.
+* **Cảng / Bãi:** Danh mục cấu hình các cảng và bãi (chủ yếu tại Hải Phòng). Mỗi cảng/bãi có: tên (VD: Cảng Đình Vũ, Cảng Nam Hải, Bãi ICD NL), địa chỉ, ghi chú, và trạng thái. Danh mục có thể do người dùng tự khai báo hoặc cập nhật.
 * **Sử dụng trong chặng (Trip Legs):** Khi kế toán nhập chặng chi tiết (điểm đi, điểm đến), trường origin/destination hỗ trợ **combobox** — dropdown chọn từ danh mục Cảng/Bãi, đồng thời cho phép nhập text tự do nếu điểm chưa có trong danh mục. Mục mới nhập sẽ được gợi ý thêm vào danh mục.
 
 ### 4.15 Chi phí vận hành, Nhà cung cấp & Công nợ phải trả

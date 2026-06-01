@@ -91,7 +91,8 @@ router.post('/advance-settlements', asyncHandler(async (req: Request, res: Respo
   const forwarder = await getForwarderByUserId(req.user!.userId);
   const parsed = createAdvanceSettlementSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
-  const result = await createAdvanceSettlement(forwarder.id, parsed.data);
+    const { note, ...rest } = parsed.data;
+    const result = await createAdvanceSettlement(forwarder.id, { ...rest, note: note ?? undefined });
   res.status(201).json(result);
 }));
 

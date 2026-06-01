@@ -7,6 +7,7 @@ async function resetAndSeed() {
 
   // Clear tables in correct order (respecting foreign keys)
   await db.delete(s.tripLegs);
+  await db.delete(s.tripPhotos).catch(() => {});
   await db.delete(s.trips);
   await db.delete(s.ledger);
   await db.delete(s.penalties);
@@ -28,7 +29,7 @@ async function resetAndSeed() {
   console.log('🔄 Running fresh seed...');
 
   // Run the new modular seed
-  require('./seed');
+  await import('./seed');
 }
 
 resetAndSeed().catch(err => {

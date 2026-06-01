@@ -61,6 +61,8 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'debt', label: 'Công nợ phải thu', path: '/debt', icon: Receipt, section: 'financials' },
         { key: 'payables', label: 'Công nợ phải trả', path: '/payables', icon: Receipt, section: 'financials' },
         { key: 'expenses', label: 'Chi phí vận hành', path: '/expenses', icon: FileText, section: 'financials' },
+        { key: 'advances', label: 'Tạm ứng', path: '/advances', icon: Wallet, section: 'financials' },
+        { key: 'settlements', label: 'Phiếu thanh toán', path: '/settlements', icon: FileText, section: 'financials' },
 
         { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'admin' },
         { key: 'suppliers', label: 'Nhà cung cấp', path: '/suppliers', icon: Store, section: 'admin' },
@@ -80,6 +82,8 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
     case 'FORWARDER':
       return [
         { key: 'my-forwarder-trips', label: 'Chuyến đi', path: '/my-forwarder-trips', icon: Package, section: 'operations' },
+        { key: 'my-advances', label: 'Tạm ứng', path: '/my-advances', icon: Wallet, section: 'operations' },
+        { key: 'my-settlements', label: 'Phiếu thanh toán', path: '/my-settlements', icon: FileText, section: 'operations' },
       ];
     default:
       return [];
@@ -119,6 +123,10 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/my-trips')) return 'Lệnh của tôi';
   if (pathname.startsWith('/my-earnings')) return 'Thu nhập';
   if (pathname.startsWith('/my-forwarder-trips')) return 'Chuyến đi';
+  if (pathname.startsWith('/my-advances')) return 'Tạm ứng';
+  if (pathname.startsWith('/my-settlements')) return 'Phiếu thanh toán';
+  if (pathname.startsWith('/advances')) return 'Quản lý tạm ứng';
+  if (pathname.startsWith('/settlements')) return 'Quản lý phiếu thanh toán';
   return 'NEPO';
 }
 

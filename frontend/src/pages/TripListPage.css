@@ -291,6 +291,10 @@
   border-radius: 16px;
   overflow: hidden;
 }
+/* Scroll wrapper — only head + rows scroll; footer stays pinned */
+.trip-list-page .table-scroll-body {
+  overflow-x: auto;
+}
 .trip-list-page .table-head {
   display: grid;
   grid-template-columns: 38px 1.8fr 0.8fr 1.7fr 72px 1.5fr 1.35fr 122px 62px;
@@ -298,6 +302,7 @@
   gap: 14px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
+  min-width: 960px;
 }
 .trip-list-page .table-head > div {
   font-size: 10.5px; letter-spacing: 1.3px;
@@ -319,6 +324,7 @@
   border-bottom: 1px solid var(--line);
   transition: background 120ms ease;
   cursor: pointer;
+  min-width: 960px;
 }
 .trip-list-page .table-row:hover { background: var(--surface-2); }
 .trip-list-page .table-row:last-of-type { border-bottom: none; }
@@ -396,7 +402,6 @@
   gap: 4px;
   width: 100%;
   min-width: 0;
-  overflow: hidden;
 }
 .trip-list-page .route-point {
   font-size: 13px;
@@ -410,9 +415,6 @@
 .trip-list-page .route-destination {
   color: var(--ink);
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   min-width: 0;
 }
 .trip-list-page .route-arrow-right {

@@ -58,7 +58,7 @@ Trang danh sách chuyến đi — xem, tìm kiếm, lọc trạng thái, sắp x
 
 ### 2.2 Tìm kiếm
 
-Gõ vào ô tìm kiếm → lọc real-time theo: mã chuyến, tuyến (origin → destination), tên KH, tên tài xế. Không phân biệt hoa/thường. Bấm X để xóa.
+Gõ vào ô tìm kiếm → lọc real-time theo: mã chuyến, tuyến (origin → destination), tên KH, tên tài xế, số container. Không phân biệt hoa/thường. Bấm X để xóa.
 
 ### 2.3 Lọc trạng thái
 

@@ -680,37 +680,39 @@ export default function TripListPage() {
 
       {/* ── TABLE ────────────────────────────────────────────────────── */}
       <div className="table-card">
-        <div className="table-head">
-          {tableInstance.getHeaderGroups().map(headerGroup => (
-            <React.Fragment key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <div key={header.id} className={header.column.id === 'route' ? 'col-route' : header.column.id === 'km' || header.column.id === 'road' || header.column.id === 'actions' ? 'right' : ''}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </div>
-              ))}
-            </React.Fragment>
-          ))}
-        </div>
+        <div className="table-scroll-body">
+          <div className="table-head">
+            {tableInstance.getHeaderGroups().map(headerGroup => (
+              <React.Fragment key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <div key={header.id} className={header.column.id === 'route' ? 'col-route' : header.column.id === 'km' || header.column.id === 'road' || header.column.id === 'actions' ? 'right' : ''}>
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
 
-        {loading ? (
-          <div className="table-empty">Đang tải danh sách chuyến đi…</div>
-        ) : filteredTrips.length === 0 ? (
-          <div className="table-empty">Không tìm thấy chuyến đi nào.</div>
-        ) : (
-          tableInstance.getRowModel().rows.map(row => (
-            <div
-              key={row.id}
-              className="table-row"
-              onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
-            >
-              {row.getVisibleCells().map(cell => (
-                <div key={cell.id} className={cell.column.id === 'route' ? 'col-route' : cell.column.id === 'km' || cell.column.id === 'road' || cell.column.id === 'actions' ? 'right' : ''}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </div>
-              ))}
-            </div>
-          ))
-        )}
+          {loading ? (
+            <div className="table-empty">Đang tải danh sách chuyến đi…</div>
+          ) : filteredTrips.length === 0 ? (
+            <div className="table-empty">Không tìm thấy chuyến đi nào.</div>
+          ) : (
+            tableInstance.getRowModel().rows.map(row => (
+              <div
+                key={row.id}
+                className="table-row"
+                onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
+              >
+                {row.getVisibleCells().map(cell => (
+                  <div key={cell.id} className={cell.column.id === 'route' ? 'col-route' : cell.column.id === 'km' || cell.column.id === 'road' || cell.column.id === 'actions' ? 'right' : ''}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
 
         {/* ── MOBILE CARDS ─────────────────────────────────────────── */}
         <div className="trip-mobile-list">

@@ -34,15 +34,17 @@ export default function FuelConfigPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    setError(null);
     try {
       await api.put('/fuel-config', {
-        loaded_norm: Number(form.loadedNorm),
-        empty_norm: Number(form.emptyNorm),
+        loadedNorm: Number(form.loadedNorm),
+        emptyNorm: Number(form.emptyNorm),
         supplement: Number(form.supplement) || 0,
-        unit_price: Number(form.unitPrice),
-        warning_threshold: form.warningThreshold ? Number(form.warningThreshold) : 37,
-        critical_threshold: form.criticalThreshold ? Number(form.criticalThreshold) : 40,
+        unitPrice: Number(form.unitPrice),
+        warningThreshold: form.warningThreshold ? Number(form.warningThreshold) : 37,
+        criticalThreshold: form.criticalThreshold ? Number(form.criticalThreshold) : 40,
       });
+      navigate('/config');
     } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
   };
 

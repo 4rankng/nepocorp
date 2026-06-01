@@ -334,7 +334,7 @@ LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý
 
 ### 3.9 Cấu hình hệ thống
 
-**Trang:** `/config` — 12 danh mục cấu hình
+**Trang:** `/config` — 13 danh mục cấu hình
 
 | Danh mục | Mô tả | Sử dụng khi |
 |----------|-------|-------------|

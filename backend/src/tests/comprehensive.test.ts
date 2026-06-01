@@ -23,6 +23,7 @@ import financialRoutes from '../routes/financial';
 import driverRoutes from '../routes/driver';
 import { authMiddleware } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
+import { globalErrorHandler } from '../middleware/errorHandler';
 
 const app = express();
 app.use(express.json());
@@ -31,6 +32,7 @@ app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRo
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
 app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
+app.use(globalErrorHandler);
 
 let server: http.Server;
 let baseUrl: string;
@@ -45,6 +47,7 @@ let truckId: number;
 let routeId: number;
 let cargoTypeId: number;
 let driverUserId: number;
+let adminUserId: number;
 let tripId: number;
 let allTrucks: any[];
 let allDrivers: any[];
@@ -76,6 +79,7 @@ before(async () => {
   routeId = rte.id;
   cargoTypeId = crg.id;
   driverUserId = drvUser.id;
+  adminUserId = adm.id;
 
   // Cancel stale IN_TRANSIT trips left from previous test runs / seed data
   // so that free trucks/drivers are always available for this test run.
@@ -265,7 +269,7 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     tripId,
     type: 'CONTAINER',
     storageKey: 'mock-e2e-dispatch-container.jpg',
-    uploadedBy: 1,
+    uploadedBy: adminUserId,
   });
 
   // 6. Submit actual operational figures (IN_TRANSIT -> COMPLETED)

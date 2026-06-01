@@ -10,13 +10,13 @@
 
 ### 1.1 Mô tả
 
-Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò FORWARDER. Nhân viên giao nhận xem danh sách chuyến đi, nhập số container/seal, ghi nhận chi phí phát sinh (nâng hạ, hải quan, cân xe, kiểm tra). Khác với Lái xe (chỉ đọc), FORWARDER có thao tác ghi (tạo container, tạo/xóa chi phí).
+Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò FORWARDER. Nhân viên giao nhận xem danh sách chuyến đi, nhập số container/seal (loại container từ danh mục, số container, số seal — nhập text), ghi nhận chi phí phát sinh (nâng hạ, hải quan, cân xe, kiểm tra). Khác với Lái xe (chỉ đọc), FORWARDER có thao tác ghi (tạo container, tạo/xóa chi phí). Lưu ý: Kế toán và Giám đốc cũng có thể nhập container/seal từ form chuyến đi chính (không chỉ qua Forwarder Portal).
 
 ### 1.2 Nguyên tắc
 
 | Nguyên tắc | Chi tiết |
 |-----------|----------|
-| **Đọc + Ghi** | FORWARDER có thể tạo container/seal và chi phí phát sinh |
+| **Đọc + Ghi** | FORWARDER có thể tạo container/seal và chi phí phát sinh. Kế toán/Giám đốc cũng nhập được container/seal từ form chính. |
 | **Xóa có điều kiện** | Chỉ xóa được chi phí do chính mình tạo (ownership check) |
 | **Xem tất cả chuyến** | FORWARDER xem danh sách mọi chuyến (không giới hạn theo phân công) |
 | **Không xem tài chính** | API loại trừ các trường revenue, totalCost, grossProfit, totalFuelCost |
@@ -123,9 +123,9 @@ FORWARDER mở /my-forwarder-trips
 
 ```
 FORWARDER click "Thêm" ở phần Container/Seal
-→ Điền form (container_number, seal_number, notes)
+→ Điền form (containerTypeId, container_number, seal_number, notes)
 → POST /api/forwarder/me/trips/:tripId/containers
-→ Schema validation: tripContainerSchema (containerNumber bắt buộc)
+→ Schema validation: tripContainerSchema (containerTypeId + containerNumber bắt buộc)
 → Insert vào trip_containers, createdBy = forwarder user.id
 → 201 Created, container xuất hiện trong danh sách
 ```

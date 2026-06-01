@@ -25,6 +25,10 @@ const DriverEarningsPage = lazy(() => import('./pages/DriverEarningsPage'));
 const DriverPenaltyPage = lazy(() => import('./pages/DriverPenaltyPage'));
 const ForwarderTripsPage = lazy(() => import('./pages/ForwarderTripsPage'));
 const ForwarderTripDetailPage = lazy(() => import('./pages/ForwarderTripDetailPage'));
+const ForwarderAdvancesPage = lazy(() => import('./pages/ForwarderAdvancesPage'));
+const ForwarderSettlementsPage = lazy(() => import('./pages/ForwarderSettlementsPage'));
+const AdminAdvancesPage = lazy(() => import('./pages/AdminAdvancesPage'));
+const AdminSettlementsPage = lazy(() => import('./pages/AdminSettlementsPage'));
 const DispatchPage = lazy(() => import('./pages/DispatchPage'));
 const ProfitPage = lazy(() => import('./pages/ProfitPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
@@ -114,6 +118,8 @@ function AppRoutes() {
           <Route path="/debt" element={adminOnly(page(<DebtListPage />))} />
           <Route path="/debt/:id" element={adminOnly(page(<DebtDetailPage />))} />
           <Route path="/penalties" element={adminOnly(page(<PenaltyPage />))} />
+          <Route path="/advances" element={adminOnly(page(<AdminAdvancesPage />))} />
+          <Route path="/settlements" element={adminOnly(page(<AdminSettlementsPage />))} />
           <Route path="/my-penalties" element={driverOnly(page(<DriverPenaltyPage />))} />
           <Route path="/customers" element={adminOnly(page(<CustomersPage />))} />
           <Route path="/routes" element={<Navigate to="/config/routes" replace />} />
@@ -151,6 +157,8 @@ function AppRoutes() {
           <Route path="/my-earnings" element={driverOnly(page(<DriverEarningsPage />))} />
           <Route path="/my-forwarder-trips" element={forwarderOnly(page(<ForwarderTripsPage />))} />
           <Route path="/my-forwarder-trips/:id" element={forwarderOnly(page(<ForwarderTripDetailPage />))} />
+          <Route path="/my-advances" element={forwarderOnly(page(<ForwarderAdvancesPage />))} />
+          <Route path="/my-settlements" element={forwarderOnly(page(<ForwarderSettlementsPage />))} />
           <Route
             path="*"
             element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />}
