@@ -160,6 +160,49 @@
 
 ---
 
+## 4.4 Báo cáo chênh lệch giá nhiên liệu (Fuel Price Variance)
+
+> Báo cáo tổng hợp chênh lệch giữa giá cấu hình và giá thực tế mua nhiên liệu theo từng chuyến.
+
+### 4.4.1 Bảng tổng hợp
+
+| Cột | Mô tả |
+|-----|-------|
+| Tháng | Bộ lọc tháng/năm |
+| Tổng chênh lệch | Σ fuelPriceVariance của tất cả chuyến có giá thực tế trong kỳ |
+| Số chuyến điều chỉnh | Số chuyến có `fuelActualUnitPrice` khác `fuelPriceApplied` |
+| Chênh lệch TB/chuyến | Tổng chênh lệch / Số chuyến điều chỉnh |
+
+### 4.4.2 Bảng chi tiết
+
+| Cột | Mô tả |
+|-----|-------|
+| Mã chuyến | Link đến chi tiết chuyến |
+| Ngày xuất phát | departureDate |
+| Giá cấu hình | fuelPriceApplied (VNĐ/lít) |
+| Giá thực tế | fuelActualUnitPrice (VNĐ/lít) |
+| Số lít | fuelLiters |
+| Chi phí theo giá cấu hình | fuelLiters × fuelPriceApplied |
+| Chi phí thực tế | fuelLiters × fuelActualUnitPrice |
+| Chênh lệch | fuelPriceVariance |
+
+### 4.4.3 Phân quyền
+
+| Role | Xem báo cáo |
+|------|------------|
+| ADMIN | Đầy đủ |
+| MANAGER | Đầy đủ |
+| ACCOUNTANT | Đầy đủ |
+| DRIVER | Không truy cập |
+
+### 4.4.4 API Endpoint
+
+| Method | Path | Mô tả |
+|--------|------|-------|
+| GET | `/api/reports/fuel-variance?month=M&year=YYYY` | Tổng hợp + chi tiết chênh lệch giá nhiên liệu theo kỳ |
+
+---
+
 ## 5. QA Test Checklist
 
 ### 5.1 Dashboard — KPI Cards (TC-DB-001 → TC-DB-010)

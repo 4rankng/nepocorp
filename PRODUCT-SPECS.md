@@ -60,7 +60,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### 4.3 Chi phí nhiên liệu
 
-* Kế toán nhập **số lít dầu**; hệ thống tự nhân với **đơn giá cấu hình** để tính chi phí dầu. Đơn giá có thể thay đổi bởi kế toán.
+* Kế toán nhập **số lít dầu**; hệ thống tự nhân với **đơn giá** để tính chi phí dầu. Mặc định dùng **đơn giá cấu hình** (được snapshot khi tạo chuyến). Kế toán có thể nhập **đơn giá thực tế** (giá thực mua tại trạm) nếu khác với giá cấu hình — khi đó chi phí = L dầu × đơn giá thực tế (xem §4.3.1).
 * **Tiêu thụ bình quân (TTBQ)** = Số lít dầu / km × 100. Tự động đối chiếu với định mức để cảnh báo.
 * **Định mức nhiên liệu:**
     * Hàng (đầy): 43L/100km
@@ -72,6 +72,20 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
     1. **AUTO:** Hệ thống tự tính L dầu từ km từng chặng × định mức (hàng/vỏ), hoặc dùng định mức cố định nếu là tuyến đèo đốc.
     2. **KHOÁN (FLAT_RATE):** Kế toán nhập thủ công tổng L dầu, ghi đè toàn bộ tính toán tự động.
     3. **Bổ sung (Supplement):** L dầu cộng thêm do xe hỏng, đi sửa,... — cộng vào kết quả của cả 2 chế độ trên.
+
+### 4.3.1 Điều chỉnh giá nhiên liệu theo thực tế
+
+* **Vấn đề:** Giá nhiên liệu biến động theo thời gian. Giá cấu hình tại thời điểm kế toán nhập (VD: 28.760 VNĐ/lít) có thể khác với giá thực tế khi lái xe đổ dầu (VD: 27.650 VNĐ/lít). Chênh lệch làm sai chi phí chuyến, công nợ NCC nhiên liệu và báo cáo P&L.
+* **Giải pháp 2 tầng:**
+    1. **Lịch sử giá nhiên liệu** (`fuel_price_history`): Hệ thống tự ghi lại mọi thay đổi đơn giá kèm ngày hiệu lực. Cung cấp audit trail và đề xuất giá hiệu lực theo ngày xuất phát chuyến.
+    2. **Giá thực tế theo chuyến** (`fuelActualUnitPrice`): Kế toán nhập giá thực mua cho từng chuyến. Khi có giá thực tế → hệ thống tính `chi phí dầu = L dầu × giá thực tế` (thay vì giá cấu hình). Chênh lệch (`fuelPriceVariance = chi phí thực tế − chi phí theo giá cấu hình`) được theo dõi cho báo cáo.
+* **Luồng nghiệp vụ:**
+    1. Khi mở form nhập liệu chuyến, hệ thống **đề xuất** giá hiệu lực từ bảng lịch sử giá theo ngày xuất phát.
+    2. Kế toán chấp nhận đề xuất hoặc nhập giá khác. Nếu để trống → dùng giá cấu hình (hành vi hiện tại).
+    3. Hệ thống tính lại `totalFuelCost`, `totalCost`, `grossProfit` khi giá thực tế thay đổi.
+    4. Chênh lệch hiển thị trên thẻ chuyến và tổng hợp trong báo cáo P&L.
+* **Ràng buộc:** Chỉ được nhập/sửa giá thực tế khi chuyến chưa khóa (trạng thái Mới tạo, Đang chạy, Hoàn thành). Chuyến đã chốt — giá bất biến. Chuyến cũ (trước khi có tính năng này) để trống giá thực tế → dùng giá cấu hình snapshotted như hiện tại.
+* **Cập nhật giá cấu hình:** Mỗi lần kế toán thay đổi đơn giá trong Cấu hình hệ thống, hệ thống tự ghi một dòng mới vào bảng `fuel_price_history` (append-only, không sửa/xóa). Giá cấu hình hiện tại luôn đồng bộ với dòng mới nhất trong lịch sử.
 
 ### 4.4 Tiền đi đường (Road Allowance)
 
@@ -89,7 +103,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### 4.6 Tổng chi phí (Total Cost)
 
-* **Công thức (theo chuyến):** `Tổng chi phí = Chi phí dầu (lít × đơn giá) + Tiền đi đường + Lương sản lượng`.
+* **Công thức (theo chuyến):** `Tổng chi phí = Chi phí dầu (lít × đơn giá thực tế hoặc đơn giá cấu hình) + Tiền đi đường + Lương sản lượng`.
 * Phạt kỷ luật **không** tính vào tổng chi phí — đây là khoản trừ lương tài xế, không phải chi phí công ty.
 * **Hai tầng:** thẻ **từng chuyến** giữ nguyên công thức trên (`computeTripTotals` không đổi). Ở **báo cáo lãi lỗ theo tháng**, Tổng chi phí bao gồm **TẤT CẢ chi phí** = Σ chi phí các chuyến + Σ chi phí vận hành/bảo dưỡng theo xe (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — xem §4.14). Chi phí bảo dưỡng là theo xe/tháng, không tính vào từng chuyến.
 
@@ -214,6 +228,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 8. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Nhà cung cấp và Hạng mục chi phí (một lần/định kỳ, số ngày nhắc gia hạn).
 9. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Loại container (thêm/sửa/xóa: 20'DC, 20'OT, 20'RF, 40'DC, 40'HC...). Mỗi loại có mã, tên hiển thị, kích thước nhóm (20FT/40FT) và trạng thái.
 10. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Cảng/Bãi (thêm/sửa/xóa). Khi nhập chặng (trip legs), có thể chọn từ dropdown hoặc nhập mới — mục mới được gợi ý thêm vào danh mục.
+11. **[Kế toán]** Tôi muốn xem lịch sử thay đổi đơn giá nhiên liệu theo thời gian, và khi nhập liệu chuyến hệ thống đề xuất giá hiệu lực theo ngày xuất phát.
 
 ### MODULE 9: CHI PHÍ VẬN HÀNH & CÔNG NỢ PHẢI TRẢ
 1. **[Kế toán]** Tôi muốn ghi nhận chi phí phát sinh (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ), gắn Nhà cung cấp và (tùy chọn) một xe, đánh dấu chi phí thuộc đầu kéo hay rơ-mooc (`vehicle_component`), đính ảnh hóa đơn.
@@ -237,7 +252,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | 6 | **Loại hàng hóa** | Tên loại, có yêu cầu upload ảnh không | VD: Chè (yêu cầu ảnh) |
 | 7 | **Tiền đi đường chuẩn** | Tiền chuẩn theo Tuyến đường × Loại rơ-mooc (20FT/40FT) | ~38×2 = 76 dòng |
 | 8 | **Định mức nhiên liệu** | Định mức hàng/vỏ (cấu hình được), bổ sung/chuyến, đèo đốc theo tuyến | Cấu hình + theo tuyến |
-| 9 | **Đơn giá nhiên liệu** | Đơn giá 1 lít dầu (hiện tại 18.730 VNĐ) | 1 giá, có thể cập nhật |
+| 9 | **Đơn giá nhiên liệu** | Đơn giá 1 lít dầu (hiện tại 18.730 VNĐ), có lịch sử giá theo ngày hiệu lực | 1 giá hiện tại + bảng lịch sử |
 | 10 | **Cổ đông & Tỷ lệ vốn** | Tên, tỷ lệ %, ngày hiệu lực | Ông Thương 29.55%, Ông Phụng 70.45% |
 | 11 | **Danh mục kỷ luật** | Lý do vi phạm + số tiền phạt mặc định | VD: "Thiếu hóa đơn dầu - 100.000đ" |
 | 12 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán, Công nợ NCC) | Các cột: ID, date, txn_type, credit, debit, balance |
@@ -245,6 +260,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | 14 | **Hạng mục chi phí** | Tên, một lần/định kỳ (is_renewable), số ngày nhắc trước (mặc định 30) | Sửa chữa, Phụ tùng, Vật tư, Bảo hiểm, Đăng kiểm, Phí đường bộ |
 | 15 | **Loại container** | Mã loại, tên hiển thị, kích thước nhóm (20FT/40FT), trạng thái | 20'DC, 20'OT, 20'RF, 40'DC, 40'HC... |
 | 16 | **Cảng / Bãi** | Tên, địa chỉ, ghi chú, trạng thái | Cảng Đình Vũ, Cảng Nam Hải, Bãi ICD NL... |
+| 17 | **Lịch sử giá nhiên liệu** | Đơn giá, ngày hiệu lực, người thay đổi, ghi chú — append-only | Tự ghi khi cập nhật đơn giá cấu hình |
 
 ---
 
@@ -270,12 +286,14 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Chế độ nhập nhiên liệu | Select (AUTO / KHOÁN) | Có | AUTO: tổng L dầu từ các chặng. KHOÁN: nhập tổng L dầu bằng tay (ghi đè). |
 | Dầu bổ sung | Number | Không | L dầu thêm do xe hỏng, đi sửa... (cộng thêm vào cả 2 chế độ) |
 | Lý do bổ sung | Text | Không | Bắt buộc nếu có dầu bổ sung |
+| **Đơn giá thực tế** | Number | Không | Giá thực mua tại trạm (VNĐ/lít). Để trống → dùng đơn giá cấu hình. Hệ thống đề xuất giá hiệu lực từ lịch sử theo ngày xuất phát. Chỉ nhập trước khi khóa chuyến. |
 | Giảm vé QL5 | Number | Không | Mặc định 0 |
 | Tăng vé theo lệnh | Number | Không | Mặc định 0 |
 | Số trạm | Number | Không | Mặc định 0, nhân với 55.000 |
 | Chuyến về có hàng | Checkbox | Không | Nếu tích → + 300.000 VNĐ tiền đi đường |
 | Lương sản lượng | Number | Có | Thu nhập lái xe cho chuyến này |
-| Doanh thu | Number | Có | Tự động tra từ bảng giá khi tạo chuyến (Customer × Route). Kế toán có thể ghi đè; hệ thống ghi nhận giá gốc, giá ghi đè, người thay đổi và thời điểm. |
+| Doanh thu trả hàng | Number | Có | Doanh thu tiêu chuẩn trả hàng/container (tra từ bảng giá khi tạo chuyến, có thể ghi đè; hệ thống ghi nhận giá gốc, giá ghi đè, người thay đổi và thời điểm). |
+| Doanh thu kết hợp đóng hàng | Number | Không | Doanh thu bổ sung từ kết hợp đóng hàng trong chuyến (mặc định 0). |
 | Ghi chú/diễn giải | Text | Không | |
 | **Các container** | Dynamic rows | Không | Cập nhật/bổ sung: Loại container (dropdown), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng. |
 | Ảnh xác nhận hàng hóa | Upload + Text | Có (tất cả) | Bắt buộc upload ảnh cho tất cả loại hàng khi hoàn thành. Chuyến chè bắt buộc có ảnh Container **và** Seal. Bên cạnh ảnh, có thể nhập số container/seal bằng text. |
@@ -285,7 +303,9 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Trường | Công thức |
 | :--- | :--- |
 | Tổng L dầu | AUTO: tổng L từ các chặng + bổ sung. KHOÁN: L nhập tay + bổ sung. |
-| Chi phí dầu | Tổng L dầu × Đơn giá cấu hình |
+| Chi phí dầu | Tổng L dầu × Đơn giá thực tế (nếu có) hoặc Đơn giá cấu hình |
+| Chênh lệch giá dầu | Chi phí dầu (thực tế) − (Tổng L dầu × Đơn giá cấu hình). Chỉ hiển thị khi có đơn giá thực tế |
 | Tiền đi đường thực tế | Tiền chuẩn - Giảm vé + Tăng vé - (Số trạm × 55.000) [+ 300.000 nếu về có hàng] |
 | Tổng chi phí | Chi phí dầu + Tiền đi đường + Lương sản lượng |
-| Lợi nhuận gộp | Doanh thu - Tổng chi phí |
+| Doanh thu chuyến | Doanh thu trả hàng + Doanh thu kết hợp đóng hàng |
+| Lợi nhuận gộp | Doanh thu chuyến - Tổng chi phí |

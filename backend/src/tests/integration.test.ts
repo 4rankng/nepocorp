@@ -561,3 +561,36 @@ test('T4.8 — Vendor Payment: Overpay confirmation required (422)', async () =>
   assert.ok(payRes2.data.id, 'Response should return the created ledger entry');
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// T4.9 — Expense Category Validation
+// ─────────────────────────────────────────────────────────────────────────────
+test('T4.9 — Expense Category: Create and update recurring and non-recurring categories', async () => {
+  // 1. Create a non-recurring category with reminderLeadDays: null (should succeed)
+  const catRes1 = await testFetch('/api/expense-categories', {
+    method: 'POST',
+    token: adminToken,
+    body: JSON.stringify({
+      name: 'Non-recurring Category Test',
+      isRenewable: false,
+      reminderLeadDays: null,
+      status: 'ACTIVE',
+    }),
+  });
+  assert.strictEqual(catRes1.status, 201, 'Should successfully create a non-recurring category with reminderLeadDays: null');
+  assert.ok(catRes1.data.id);
+  assert.strictEqual(catRes1.data.reminderLeadDays, null, 'Should store reminderLeadDays as null in database');
+
+  // 2. Try creating a category with reminderLeadDays: 0 (should fail 400 validation due to positive check)
+  const catRes2 = await testFetch('/api/expense-categories', {
+    method: 'POST',
+    token: adminToken,
+    body: JSON.stringify({
+      name: 'Failed Category Test',
+      isRenewable: false,
+      reminderLeadDays: 0,
+      status: 'ACTIVE',
+    }),
+  });
+  assert.strictEqual(catRes2.status, 400, 'Should fail to create a category with non-positive reminderLeadDays');
+});
+

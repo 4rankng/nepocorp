@@ -245,7 +245,7 @@ getPnlReport(month, year)
 ## 6. Ghi chú & Lưu ý quan trọng
 
 - **Tổng chi phí bao gồm TẤT CẢ chi phí** ở tầng P&L (chuyến + bảo dưỡng). Thẻ từng chuyến vẫn chỉ là dầu + tiền đi đường + lương — `computeTripTotals` không đổi.
-- **Không đếm trùng:** nhiên liệu mua nợ **ngoài phạm vi** — chi phí dầu đã tính theo chuyến.
+- **Không đếm trùng:** nhiên liệu mua nợ **ngoài phạm vi hiện tại** — chi phí dầu đã tính theo chuyến (dùng giá cấu hình hoặc giá thực tế qua §4.3.1). Khi tích hợp **fuel-on-credit** (Phase 2), giá thực tế từ chuyến (`fuelActualUnitPrice`) sẽ là cơ sở để tạo phiếu chi phí NCC nhiên liệu, đảm bảo công nợ phải trả khớp số tiền thực mua.
 - **Phí đường bộ** (phí bảo trì đường bộ năm, theo xe) **khác** **Tiền đi đường** (vé cầu đường mỗi chuyến). Không nhầm.
 - **Chi phí rơ-mooc tính vào lãi gộp đầu kéo ghép cặp** — mỗi đầu kéo và rơ-mooc ghép thành cặp cố định; hệ thống tự tra cặp khi tổng hợp P&L. Chỉ chi phí để trống (không gắn xe) mới là chi phí chung công ty. Phân loại `vehicle_component` (TRUCK/TRAILER) dùng cho báo cáo phân tách, không ảnh hưởng tính lãi gộp.
 - **Không phân bổ (no amortization):** chi phí định kỳ ghi toàn bộ vào tháng thanh toán; chỉ nhắc gia hạn, không trải đều.

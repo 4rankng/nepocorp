@@ -165,6 +165,8 @@ export interface Trip {
   totalRoadAllowance: string | null;
   totalCost: string | null;
   revenue: string | null;
+  revenueEmptyReturn: string | null;
+  revenueCombine: string | null;
   grossProfit: string | null;
   revenueOriginal: string | null;
   revenueOverriddenBy: number | null;
@@ -484,6 +486,8 @@ export interface UpdateTripFiguresRequest {
   hasReturnCargo?: boolean;
   driverSalary?: number;
   revenue?: number;
+  revenueEmptyReturn?: number;
+  revenueCombine?: number;
   notes?: string;
   photoUrls?: string[];
 }

@@ -77,7 +77,9 @@ export const updateTripFiguresSchema = z.object({
   tollsStations: z.coerce.number().int().nonnegative().optional(),
   hasReturnCargo: z.boolean().optional(),
   driverSalary: nonNegNumeric.optional(),
-  revenue: positiveNumeric.optional(),
+  revenue: nonNegNumeric.optional(),
+  revenueEmptyReturn: nonNegNumeric.optional(),
+  revenueCombine: nonNegNumeric.optional(),
   notes: z.string().optional(),
   photoUrls: z.array(z.string()).optional(),
   version: z.number().int().optional(),
@@ -301,7 +303,7 @@ export const supplierSchema = z.object({
 export const expenseCategorySchema = z.object({
   name: z.string().min(1),
   isRenewable: z.boolean().optional().default(false),
-  reminderLeadDays: z.number().int().positive().optional().default(30),
+  reminderLeadDays: z.number().int().positive().nullable().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
 });
 

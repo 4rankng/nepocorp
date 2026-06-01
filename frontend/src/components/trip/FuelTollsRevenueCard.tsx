@@ -63,19 +63,10 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </div>
       </div>
 
-      <div className="tc-form-row tc-form-row--three" style={{ marginTop: 16 }}>
+      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Lương sản lượng tài xế</label>
           <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850,000" prefix="VNĐ" mono type="number" />
-        </div>
-        <div className="field">
-          <label>Doanh thu chuyến</label>
-          <InputWithPrefix value={form.revenue} onChange={form.setRevenue} placeholder="4,200,000" prefix="VNĐ" mono type="number" />
-          {form.suggestedPrice !== null && (
-            <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
-              Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} VNĐ{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} VNĐ` : ''}
-            </div>
-          )}
         </div>
         <CheckboxCard
           checked={form.hasReturnCargo}
@@ -84,6 +75,22 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           description="Áp dụng định mức chuyến đôi"
           id="cb-return"
         />
+      </div>
+
+      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
+        <div className="field">
+          <label>Doanh thu trả hàng</label>
+          <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4,200,000" prefix="VNĐ" mono type="number" />
+          {form.suggestedPrice !== null && (
+            <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
+              Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} VNĐ{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} VNĐ` : ''}
+            </div>
+          )}
+        </div>
+        <div className="field">
+          <label>Doanh thu kết hợp đóng hàng</label>
+          <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2,000,000" prefix="VNĐ" mono type="number" />
+        </div>
       </div>
     </CardSection>
   );

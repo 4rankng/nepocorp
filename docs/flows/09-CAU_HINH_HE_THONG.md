@@ -66,11 +66,30 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 
 13 thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ 13. MANAGER ẩn Cổ phần. ACCOUNTANT chỉ xem. DRIVER không thấy menu.
 
-### 2.2 Định mức nhiên liệu `/config/fuel`
+### 2.2 Định mức & Đơn giá nhiên liệu `/config/fuel`
+
+**Phần 1 — Định mức nhiên liệu:**
 
 **Trường:** Loại xe (bắt buộc), Tuyến đường (bắt buộc), Định mức L/100km (>0), Ghi chú.
 
 **Ràng buộc:** Cặp (loại xe + tuyến) duy nhất. Không xóa khi đang dùng trong chuyến.
+
+**Phần 2 — Đơn giá nhiên liệu:**
+
+**Trường:** Đơn giá (VNĐ/lít, >0).
+
+**Hành vi:** Kế toán nhập đơn giá mới → hệ thống tự động ghi một dòng vào **Bảng lịch sử giá** bên dưới với ngày hiệu lực = hôm nay, người thay đổi = user hiện tại. Bảng lịch sử là append-only — không sửa/xóa.
+
+**Bảng lịch sử giá nhiên liệu** (hiển thị bên dưới trường đơn giá):
+
+| Cột | Mô tả |
+|-----|-------|
+| Ngày hiệu lực | Ngày đơn giá bắt đầu áp dụng |
+| Đơn giá (VNĐ/lít) | Giá nhiên liệu |
+| Người thay đổi | Họ tên user cập nhật |
+| Ghi chú | Lý do thay đổi (tùy chọn) |
+
+**Sử dụng trong chuyến:** Khi kế toán nhập liệu chuyến (Pha 2), trường "Đơn giá thực tế" có nút **Đề xuất** — hệ thống tra bảng lịch sử để tìm giá hiệu lực tại ngày xuất phát của chuyến và tự điền. Kế toán có thể chấp nhận hoặc nhập giá khác.
 
 ### 2.3 Tiền đi đường `/config/road-allowances`
 

@@ -9,8 +9,10 @@ export function AllowanceSection() {
     tollsStations, setTollsStations,
     hasReturnCargo, setHasReturnCargo,
     driverSalary, setDriverSalary,
-    revenue, setRevenue,
+    revenueEmptyReturn, setRevenueEmptyReturn,
+    revenueCombine, setRevenueCombine,
     suggestedPrice,
+    containerCount,
   } = form;
 
   return (
@@ -69,7 +71,7 @@ export function AllowanceSection() {
         </div>
       </div>
 
-      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lương sản lượng tài xế (VNĐ)</label>
           <input
@@ -82,26 +84,41 @@ export function AllowanceSection() {
           />
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu chuyến (VNĐ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu trả hàng (VNĐ)</label>
           <input
             className="input"
             type="number"
             placeholder="VD: 4200000"
-            value={revenue}
-            onChange={(e) => setRevenue(e.target.value)}
+            value={revenueEmptyReturn}
+            onChange={(e) => setRevenueEmptyReturn(e.target.value)}
             style={{ width: "100%" }}
           />
           {suggestedPrice !== null && (
             <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
-              Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString("vi-VN")} VNĐ
-              {revenue && Number(revenue) !== suggestedPrice && (
+              Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString("vi-VN")} VNĐ{Number(containerCount) > 1 ? ` × ${containerCount} cont = ${(suggestedPrice * Number(containerCount)).toLocaleString("vi-VN")} VNĐ` : ''}
+              {revenueEmptyReturn && Number(revenueEmptyReturn) !== suggestedPrice * Number(containerCount) && (
                 <span style={{ color: "var(--warning)", marginLeft: 8 }}>
-                  Giá đã điều chỉnh so với bảng giá
+                  Giá đã điều chỉnh
                 </span>
               )}
             </div>
           )}
         </div>
+      </div>
+
+      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="field">
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu kết hợp đóng hàng (VNĐ)</label>
+          <input
+            className="input"
+            type="number"
+            placeholder="VD: 2000000"
+            value={revenueCombine}
+            onChange={(e) => setRevenueCombine(e.target.value)}
+            style={{ width: "100%" }}
+          />
+        </div>
+        <div className="field" />
       </div>
     </div>
   );

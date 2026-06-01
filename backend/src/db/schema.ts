@@ -207,6 +207,8 @@ export const trips = pgTable('trips', {
   totalRoadAllowance: numeric('total_road_allowance', { precision: 15, scale: 0 }),
   totalCost: numeric('total_cost', { precision: 15, scale: 0 }),
   revenue: numeric('revenue', { precision: 15, scale: 0 }),
+  revenueEmptyReturn: numeric('revenue_empty_return', { precision: 15, scale: 0 }).default('0'),
+  revenueCombine: numeric('revenue_combine', { precision: 15, scale: 0 }).default('0'),
   grossProfit: numeric('gross_profit', { precision: 15, scale: 0 }),
   revenueOriginal: numeric('revenue_original', { precision: 15, scale: 0 }),
   revenueOverriddenBy: integer('revenue_overridden_by'),

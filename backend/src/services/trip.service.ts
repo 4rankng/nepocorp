@@ -135,6 +135,8 @@ export async function createTrip(data: {
       // nhiên liệu" even when liters were entered manually.
       fuelMode: data.fuelMode ?? FuelMode.AUTO,
       revenue: String(revenue),
+      revenueEmptyReturn: String(revenue),
+      revenueCombine: '0',
       revenueOriginal: String(revenue),
 
       // Snapshots
@@ -170,6 +172,8 @@ export async function updateTripFigures(
     hasReturnCargo?: boolean;
     driverSalary?: number;
     revenue?: number;
+    revenueEmptyReturn?: number;
+    revenueCombine?: number;
     notes?: string;
     expectedVersion?: number;
     userId?: number;
@@ -268,12 +272,21 @@ export async function updateTripFigures(
       }
     }
 
-    const revenue = data.revenue !== undefined ? data.revenue : Number(trip.revenue || 0);
+    const revenueEmptyReturn = data.revenueEmptyReturn !== undefined ? data.revenueEmptyReturn : Number(trip.revenueEmptyReturn || 0);
+    const revenueCombine = data.revenueCombine !== undefined ? data.revenueCombine : Number(trip.revenueCombine || 0);
+    const revenue = data.revenueEmptyReturn !== undefined || data.revenueCombine !== undefined
+      ? (revenueEmptyReturn + revenueCombine)
+      : (data.revenue !== undefined ? data.revenue : Number(trip.revenue || 0));
+
     let revenueOriginal = Number(trip.revenueOriginal || 0);
     let revenueOverriddenBy = trip.revenueOverriddenBy;
     let revenueOverriddenAt = trip.revenueOverriddenAt ? new Date(trip.revenueOverriddenAt) : null;
 
-    if (data.revenue !== undefined && data.revenue !== Number(trip.revenue || 0)) {
+    if (
+      (data.revenue !== undefined && data.revenue !== Number(trip.revenue || 0)) ||
+      (data.revenueEmptyReturn !== undefined && data.revenueEmptyReturn !== Number(trip.revenueEmptyReturn || 0)) ||
+      (data.revenueCombine !== undefined && data.revenueCombine !== Number(trip.revenueCombine || 0))
+    ) {
       revenueOriginal = revenueOriginal || Number(trip.revenue || 0);
       revenueOverriddenBy = data.userId ?? null;
       revenueOverriddenAt = new Date();
@@ -345,6 +358,8 @@ export async function updateTripFigures(
       totalRoadAllowance: String(totals.totalRoadAllowance),
       totalCost: String(totals.totalCost),
       revenue: String(revenue),
+      revenueEmptyReturn: String(revenueEmptyReturn),
+      revenueCombine: String(revenueCombine),
       grossProfit: String(totals.grossProfit),
       revenueOriginal: String(revenueOriginal),
       revenueOverriddenBy,
@@ -649,7 +664,8 @@ export async function getTrips(filters: TripListFilters) {
     status: s.trips.status, departureDate: s.trips.departureDate,
     fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
     totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
-    totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
+    totalCost: s.trips.totalCost, revenue: s.trips.revenue, revenueEmptyReturn: s.trips.revenueEmptyReturn,
+    revenueCombine: s.trips.revenueCombine, grossProfit: s.trips.grossProfit,
     hasReturnCargo: s.trips.hasReturnCargo, driverSalary: s.trips.driverSalary, notes: s.trips.notes,
     createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt,
     ...TRIP_RELATION_FIELDS,
@@ -675,7 +691,8 @@ export async function getTripById(id: number) {
     fuelSupplementReason: s.trips.fuelSupplementReason, fuelPriceApplied: s.trips.fuelPriceApplied,
     tollsDiscount: s.trips.tollsDiscount, tollsAddition: s.trips.tollsAddition, tollsStations: s.trips.tollsStations,
     totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
-    totalCost: s.trips.totalCost, revenue: s.trips.revenue, grossProfit: s.trips.grossProfit,
+    totalCost: s.trips.totalCost, revenue: s.trips.revenue, revenueEmptyReturn: s.trips.revenueEmptyReturn,
+    revenueCombine: s.trips.revenueCombine, grossProfit: s.trips.grossProfit,
     revenueOriginal: s.trips.revenueOriginal, revenueOverriddenBy: s.trips.revenueOverriddenBy,
     revenueOverriddenAt: s.trips.revenueOverriddenAt, hasReturnCargo: s.trips.hasReturnCargo,
     driverSalary: s.trips.driverSalary, notes: s.trips.notes,

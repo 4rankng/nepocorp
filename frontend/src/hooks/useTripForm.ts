@@ -85,6 +85,10 @@ export interface UseTripFormReturn {
   setDriverSalary: (v: string) => void;
   revenue: string;
   setRevenue: (v: string) => void;
+  revenueEmptyReturn: string;
+  setRevenueEmptyReturn: (v: string) => void;
+  revenueCombine: string;
+  setRevenueCombine: (v: string) => void;
 
   notes: string;
   setNotes: (v: string) => void;
@@ -287,7 +291,28 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [tollsStations, setTollsStations] = useState(isEditMode && existingTrip?.tollsStations != null ? String(existingTrip.tollsStations) : "");
   const [hasReturnCargo, setHasReturnCargo] = useState(isEditMode && existingTrip ? !!existingTrip.hasReturnCargo : false);
   const [driverSalary, setDriverSalary] = useState(isEditMode && existingTrip?.driverSalary ? String(existingTrip.driverSalary) : "");
-  const [revenue, setRevenue] = useState(isEditMode && existingTrip?.revenue ? String(existingTrip.revenue) : "");
+  const [revenueEmptyReturn, setRevenueEmptyReturn] = useState(() => {
+    if (isEditMode && existingTrip) {
+      if (existingTrip.revenueEmptyReturn) return String(existingTrip.revenueEmptyReturn);
+      if (existingTrip.revenue && (!existingTrip.revenueCombine || Number(existingTrip.revenueCombine) === 0)) {
+        return String(existingTrip.revenue);
+      }
+    }
+    return "";
+  });
+  const [revenueCombine, setRevenueCombine] = useState(() => {
+    if (isEditMode && existingTrip) {
+      return existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : "0";
+    }
+    return "0";
+  });
+  const [revenue, setRevenue] = useState("");
+
+  useEffect(() => {
+    const emptyReturn = Number(revenueEmptyReturn) || 0;
+    const combine = Number(revenueCombine) || 0;
+    setRevenue(String(emptyReturn + combine));
+  }, [revenueEmptyReturn, revenueCombine]);
   const [notes, setNotes] = useState(isEditMode && existingTrip?.notes ? existingTrip.notes : "");
 
   const [submitting, setSubmitting] = useState(false);
@@ -311,7 +336,14 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     setTollsStations(existingTrip.tollsStations != null ? String(existingTrip.tollsStations) : '');
     setHasReturnCargo(!!existingTrip.hasReturnCargo);
     setDriverSalary(existingTrip.driverSalary ? String(existingTrip.driverSalary) : '');
-    setRevenue(existingTrip.revenue ? String(existingTrip.revenue) : '');
+    if (existingTrip.revenueEmptyReturn) {
+      setRevenueEmptyReturn(String(existingTrip.revenueEmptyReturn));
+    } else if (existingTrip.revenue && (!existingTrip.revenueCombine || Number(existingTrip.revenueCombine) === 0)) {
+      setRevenueEmptyReturn(String(existingTrip.revenue));
+    } else {
+      setRevenueEmptyReturn('');
+    }
+    setRevenueCombine(existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : '0');
     setNotes(existingTrip.notes || '');
     setPhotoUrls(existingTrip.photoUrls || []);
 
@@ -377,11 +409,12 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   useEffect(() => {
     if (pricingQuery.data !== undefined && !isEditMode) {
       const count = resolveContainerCount(containerCount);
-      setRevenue((prev) => {
+      setRevenueEmptyReturn((prev) => {
         if (!prev || prev === "0") return String(pricingQuery.data!.price * count);
         if (Number(prev) === pricingQuery.data!.price) return String(pricingQuery.data!.price * count);
         return prev;
       });
+      setRevenueCombine("0");
     }
   }, [pricingQuery.data, containerCount, isEditMode]);
 
@@ -577,6 +610,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             hasReturnCargo: hasReturnCargo,
             driverSalary: driverSalary ? Number(driverSalary) : 0,
             revenue: revenue ? Number(revenue) : undefined,
+            revenueEmptyReturn: revenueEmptyReturn ? Number(revenueEmptyReturn) : 0,
+            revenueCombine: revenueCombine ? Number(revenueCombine) : 0,
             notes: notes.trim() || undefined,
           };
 
@@ -652,6 +687,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             hasReturnCargo: hasReturnCargo,
             driverSalary: driverSalary ? Number(driverSalary) : 0,
             revenue: revenue ? Number(revenue) : undefined,
+            revenueEmptyReturn: revenueEmptyReturn ? Number(revenueEmptyReturn) : 0,
+            revenueCombine: revenueCombine ? Number(revenueCombine) : 0,
             notes: notes.trim() || undefined,
             photoUrls,
           };
@@ -681,7 +718,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
       hasOptionalData, legs, fuelMode, fuelLitersOverride,
       fuelSupplementLiters, fuelSupplementReason, tollsDiscount,
       tollsAddition, tollsStations, hasReturnCargo, driverSalary,
-      revenue, notes, photoUrls,
+      revenue, revenueEmptyReturn, revenueCombine, notes, photoUrls,
     ],
   );
 
@@ -706,6 +743,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     hasReturnCargo, setHasReturnCargo,
     driverSalary, setDriverSalary,
     revenue, setRevenue,
+    revenueEmptyReturn, setRevenueEmptyReturn,
+    revenueCombine, setRevenueCombine,
     notes, setNotes,
     photoUrls, uploadPhotos, removePhoto,
     suggestedPrice,

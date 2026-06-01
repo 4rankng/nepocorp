@@ -50,7 +50,7 @@ function ExpenseCategoryForm({ saving, item, onsave, oncancel }: {
           onsave({
             name: name.trim(),
             isRenewable,
-            reminderLeadDays: isRenewable ? reminderLeadDays : 0,
+            reminderLeadDays: isRenewable ? reminderLeadDays : null,
             status,
           });
         }}
