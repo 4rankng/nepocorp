@@ -114,6 +114,17 @@
   margin-left: 46px;
 }
 
+/* ============================================================================
+ * Expense list filter toolbar — desktop defaults
+ * ========================================================================== */
+.expense-filters {
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow: auto;
+}
+.expense-filters__select { font-size: 12.5px; min-width: 120px; }
+.expense-filters__date { font-size: 12.5px; width: auto; min-width: 130px; }
+
 
 /* ============================================================================
  * TABLET  ≤ 1023px — sidebar collapses, KPI grid → 2 col

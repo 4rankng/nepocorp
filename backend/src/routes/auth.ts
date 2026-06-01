@@ -106,6 +106,7 @@ router.post('/users', authMiddleware, casbinAuthz('users'), asyncHandler(async (
     username: data.username,
     email: data.email,
     phone: data.phone,
+    fullName: data.fullName,
     password: data.password,
     role: data.role,
     status: data.status,

@@ -150,7 +150,12 @@ backup:
 
 ## restore: Restore latest backup from OneDrive to local dev DB
 restore:
-	@BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/nepocorp_db_backup" && \
+	@echo "🐳 Starting DB container..." && \
+	docker compose -f docker-compose.dev.yml up -d --wait db 2>/dev/null || \
+		docker-compose -f docker-compose.dev.yml up -d db && \
+	echo "⏳ Waiting for DB to be ready..." && \
+	until docker exec nepo-db pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done && \
+	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/nepocorp_db_backup" && \
 	LATEST=$$(ls -t "$$BACKUP_DIR"/nepo_pg_backup_*.sql.gz 2>/dev/null | head -1) && \
 	if [ -z "$$LATEST" ]; then echo "❌ No backup files found in $$BACKUP_DIR"; exit 1; fi && \
 	echo "📂 Using backup: $$LATEST" && \
@@ -159,11 +164,11 @@ restore:
 	gunzip -k -f "$$LATEST" && \
 	SQL_FILE="$${LATEST%.gz}" && \
 	echo "🗑️  Terminating active connections and recreating local database..." && \
-	docker exec nepocorp-db-1 psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'nepocorp' AND pid <> pg_backend_pid();" && \
-	docker exec nepocorp-db-1 psql -U postgres -c "DROP DATABASE IF EXISTS nepocorp;" && \
-	docker exec nepocorp-db-1 psql -U postgres -c "CREATE DATABASE nepocorp;" && \
+	docker exec nepo-db psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'nepocorp' AND pid <> pg_backend_pid();" && \
+	docker exec nepo-db psql -U postgres -c "DROP DATABASE IF EXISTS nepocorp;" && \
+	docker exec nepo-db psql -U postgres -c "CREATE DATABASE nepocorp;" && \
 	echo "📥 Restoring backup into local database..." && \
-	docker exec -i nepocorp-db-1 psql -U postgres -d nepocorp < "$$SQL_FILE" && \
+	docker exec -i nepo-db psql -U postgres -d nepocorp < "$$SQL_FILE" && \
 	rm -f "$$SQL_FILE" && \
 	echo "✅ Restore complete!"
 

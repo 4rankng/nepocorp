@@ -10,6 +10,8 @@ import {
 } from '../services/forwarder.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { tripContainerSchema, tripExpenseSchema } from '@nepocorp/shared';
+import { createAdvanceRequest, listAdvanceRequests, createAdvanceSettlement, listAdvanceSettlements } from '../services/advance.service';
+import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@nepocorp/shared';
 
 const router = Router();
 
@@ -59,6 +61,38 @@ router.delete('/expenses/:id', asyncHandler(async (req: Request, res: Response) 
   if (result === null) return res.status(404).json({ error: 'Không tìm thấy chi phí' });
   if (result === 'FORBIDDEN') return res.status(403).json({ error: 'Không có quyền xóa chi phí này' });
   res.json({ success: true });
+}));
+
+// ── Advance Requests ──
+
+router.get('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const items = await listAdvanceRequests({ requesterId: forwarder.id });
+  res.json({ items });
+}));
+
+router.post('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const parsed = createAdvanceRequestSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  const result = await createAdvanceRequest(forwarder.id, parsed.data);
+  res.status(201).json(result);
+}));
+
+// ── Advance Settlements ──
+
+router.get('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const items = await listAdvanceSettlements({ forwarderId: forwarder.id });
+  res.json({ items });
+}));
+
+router.post('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const parsed = createAdvanceSettlementSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  const result = await createAdvanceSettlement(forwarder.id, parsed.data);
+  res.status(201).json(result);
 }));
 
 export default router;

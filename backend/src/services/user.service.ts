@@ -38,6 +38,7 @@ export async function createUser(data: {
   username?: string;
   email?: string;
   phone?: string;
+  fullName?: string;
   password: string;
   role: string;
   status?: string;
@@ -47,6 +48,7 @@ export async function createUser(data: {
     username: data.username || null,
     email: data.email || null,
     phone: data.phone || null,
+    fullName: data.fullName || null,
     passwordHash,
     role: data.role as any,
     status: data.status ?? 'ACTIVE',

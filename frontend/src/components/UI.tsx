@@ -380,27 +380,18 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm, max
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   const portalTarget = usePortalTarget();
   if (!isOpen || !portalTarget) return null;
+  // Forward maxWidth via CSS variable so mobile overrides (max-width: 100%) win.
+  const cssVars = { ['--modal-max-w' as string]: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth };
   return createPortal(
     <div
       className="modal"
-      style={{ ...STYLE_OVERLAY, background: 'rgba(10,10,10,0.4)', zIndex: 1000 }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
         className="modal__content"
-        style={{
-          background: '#fff',
-          border: '1px solid var(--line)',
-          borderRadius: 18,
-          boxShadow: 'var(--sh-lg)',
-          width: '100%',
-          maxWidth: maxWidth,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
+        style={cssVars}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal__head">

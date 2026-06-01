@@ -13,6 +13,7 @@ import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import * as financialService from '../services/financial.service';
 import { getPayablesSummary } from '../services/payables.service';
 import { getCustomerAgingList } from '../services/receivables.service';
+import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement } from '../services/advance.service';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 
@@ -228,6 +229,52 @@ router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Ro
 
 router.get('/reports/payables-summary', asyncHandler(async (_req: Request, res: Response) => {
   res.json(await getPayablesSummary());
+}));
+
+// ─── Advance Requests (admin) ─────────────────────────────────────────────────
+
+router.get('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
+  const status = req.query.status as string | undefined;
+  const items = await listAdvanceRequests({ status });
+  res.json({ items });
+}));
+
+router.post('/advance-requests/:id/approve', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const result = await approveAdvanceRequest(id, req.user!.userId);
+  res.json(result);
+}));
+
+router.post('/advance-requests/:id/reject', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const result = await rejectAdvanceRequest(id, req.user!.userId);
+  res.json(result);
+}));
+
+// ─── Advance Settlements (admin) ──────────────────────────────────────────────
+
+router.get('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {
+  const status = req.query.status as string | undefined;
+  const items = await listAdvanceSettlements({ status });
+  res.json({ items });
+}));
+
+router.post('/advance-settlements/:id/check', requireRoles(Role.ADMIN, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const result = await checkAdvanceSettlement(id, req.user!.userId);
+  res.json(result);
+}));
+
+router.post('/advance-settlements/:id/approve', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const result = await approveAdvanceSettlement(id, req.user!.userId);
+  res.json(result);
+}));
+
+router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const result = await rejectAdvanceSettlement(id, req.user!.userId);
+  res.json(result);
 }));
 
 export default router;

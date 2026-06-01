@@ -4,6 +4,7 @@ import { ArrowLeft, Truck, Calendar, MapPin, Package, Trash2, Loader2, AlertCirc
 import { formatDate, formatCurrency } from '../lib/format';
 import { TRIP_STATUS_LABELS, FORWARDER_EXPENSE_TYPE_LABELS, type TripStatus, type ForwarderExpenseType } from '@nepocorp/shared';
 import { StatusPill, Panel, FormGroup } from '../components/UI';
+import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
@@ -14,12 +15,6 @@ function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 's
     case 'CANCELED': return 'danger';
     default: return 'neutral';
   }
-}
-
-function loadingTypeLabel(t: string) {
-  if (t === 'HANG') return 'Có hàng';
-  if (t === 'VO') return 'Vỏ rỗng';
-  return t;
 }
 
 export default function ForwarderTripDetailPage() {
@@ -330,62 +325,21 @@ export default function ForwarderTripDetailPage() {
         )}
       </div>
 
-      {/* Route Legs */}
-      {legs.length > 0 && (
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <div style={{ padding: '4px 20px 12px', borderBottom: '1px solid var(--border-1)' }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Hành trình ({legs.length} chặng)
-            </span>
-          </div>
-          <div style={{ padding: '8px 20px' }}>
-            {legs.map((leg: any, idx: number) => (
-              <div key={leg.id} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 12,
-                padding: '10px 0',
-                borderBottom: idx < legs.length - 1 ? '1px solid var(--border-1)' : 'none',
-              }}>
-                <div style={{
-                  width: 24, height: 24, borderRadius: '50%',
-                  background: 'var(--brand-soft)', color: 'var(--brand)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2,
-                }}>
-                  {leg.sequence}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-1)' }}>
-                    {leg.origin} → {leg.destination}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 3, display: 'flex', gap: 12 }}>
-                    <span>{leg.km} km</span>
-                    <span style={{
-                      padding: '1px 8px', borderRadius: 20,
-                      background: leg.loadingType === 'HANG' ? 'var(--brand-soft)' : 'var(--bg-2)',
-                      color: leg.loadingType === 'HANG' ? 'var(--brand)' : 'var(--fg-3)',
-                      fontSize: 11, fontWeight: 600,
-                    }}>
-                      {loadingTypeLabel(leg.loadingType)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <TripLegsPanel legs={legs} />
 
-      {/* Notes */}
-      {trip.notes && (
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <div style={{ padding: '12px 20px' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-              Ghi chú
-            </div>
-            <p style={{ fontSize: 13, color: 'var(--fg-2)', margin: 0, lineHeight: 1.6 }}>{trip.notes}</p>
+      {/* Ghi chú */}
+      <div className="panel" style={{ marginBottom: 16 }}>
+        <div style={{ padding: '12px 20px' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+            Ghi chú
           </div>
+          {trip.notes ? (
+            <p style={{ fontSize: 13, color: 'var(--fg-2)', margin: 0, lineHeight: 1.6 }}>{trip.notes}</p>
+          ) : (
+            <p style={{ fontSize: 13, color: 'var(--fg-3)', margin: 0, fontStyle: 'italic' }}>Không có ghi chú</p>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

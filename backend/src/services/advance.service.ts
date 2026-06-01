@@ -1,0 +1,278 @@
+import { db } from '../db';
+import * as s from '../db/schema';
+import { eq, and, desc, inArray, sql } from 'drizzle-orm';
+import { TxnType } from '@nepocorp/shared';
+import { LedgerService } from './ledger.service';
+
+export class AdvanceError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = 'AdvanceError';
+  }
+}
+
+async function enrichWithNames(rows: any[]): Promise<any[]> {
+  if (rows.length === 0) return rows;
+  const userIds = new Set<number>();
+  rows.forEach(r => {
+    if (r.requesterId) userIds.add(r.requesterId);
+    if (r.approvedBy) userIds.add(r.approvedBy);
+    if (r.forwarderId) userIds.add(r.forwarderId);
+    if (r.checkedBy) userIds.add(r.checkedBy);
+  });
+  if (userIds.size === 0) return rows;
+  const users = await db.select({ id: s.users.id, fullName: s.users.fullName })
+    .from(s.users).where(inArray(s.users.id, [...userIds]));
+  const nameMap = new Map(users.map(u => [u.id, u.fullName]));
+  return rows.map(r => ({
+    ...r,
+    requesterName: nameMap.get(r.requesterId) ?? null,
+    approverName: nameMap.get(r.approvedBy) ?? null,
+    forwarderName: nameMap.get(r.forwarderId) ?? null,
+    checkerName: nameMap.get(r.checkedBy) ?? null,
+  }));
+}
+
+async function enrichSettlementWithRequests(settlement: any): Promise<any> {
+  const links = await db.select()
+    .from(s.advanceSettlementRequests)
+    .where(eq(s.advanceSettlementRequests.settlementId, settlement.id));
+  const requestIds = links.map(l => l.advanceRequestId);
+  let linkedRequests: any[] = [];
+  if (requestIds.length > 0) {
+    linkedRequests = await db.select()
+      .from(s.advanceRequests)
+      .where(inArray(s.advanceRequests.id, requestIds));
+  }
+  return { ...settlement, linkedRequests };
+}
+
+export async function createAdvanceRequest(
+  requesterId: number,
+  data: { amount: number; reason: string },
+) {
+  const [inserted] = await db.insert(s.advanceRequests).values({
+    requesterId,
+    amount: String(data.amount),
+    reason: data.reason,
+    status: 'PENDING',
+  }).returning();
+  const [enriched] = await enrichWithNames([inserted]);
+  return enriched;
+}
+
+export async function listAdvanceRequests(filters?: { requesterId?: number; status?: string }) {
+  const conditions = [];
+  if (filters?.requesterId) conditions.push(eq(s.advanceRequests.requesterId, filters.requesterId));
+  if (filters?.status) conditions.push(eq(s.advanceRequests.status, filters.status as any));
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const rows = await db.select()
+    .from(s.advanceRequests)
+    .where(where)
+    .orderBy(desc(s.advanceRequests.createdAt));
+  return enrichWithNames(rows);
+}
+
+export async function getAdvanceRequest(id: number) {
+  const [row] = await db.select()
+    .from(s.advanceRequests)
+    .where(eq(s.advanceRequests.id, id));
+  if (!row) return null;
+  const [enriched] = await enrichWithNames([row]);
+  return enriched;
+}
+
+export async function approveAdvanceRequest(id: number, approvedBy: number) {
+  return db.transaction(async (tx) => {
+    const [request] = await tx.select()
+      .from(s.advanceRequests)
+      .where(eq(s.advanceRequests.id, id))
+      .for('update');
+    if (!request) throw new AdvanceError(404, 'Advance request not found');
+    if (request.status !== 'PENDING') {
+      throw new AdvanceError(400, `Cannot approve request with status ${request.status}`);
+    }
+
+    const [user] = await tx.select({ fullName: s.users.fullName })
+      .from(s.users)
+      .where(eq(s.users.id, request.requesterId));
+    const requesterName = user?.fullName ?? `#${request.requesterId}`;
+
+    const now = new Date();
+    const [updated] = await tx.update(s.advanceRequests)
+      .set({ status: 'APPROVED', approvedBy, approvedAt: now, updatedAt: now })
+      .where(eq(s.advanceRequests.id, id))
+      .returning();
+
+    await LedgerService.postEntry(tx, {
+      txnType: TxnType.FORWARDER_ADVANCE,
+      txnId: request.id,
+      entityType: 'FORWARDER',
+      entityId: request.requesterId,
+      debit: 0,
+      credit: Number(request.amount),
+      note: `Tạm ứng cho ${requesterName}`,
+    });
+
+    const [enriched] = await enrichWithNames([updated]);
+    return enriched;
+  });
+}
+
+export async function rejectAdvanceRequest(id: number, rejectedBy: number) {
+  const [request] = await db.select()
+    .from(s.advanceRequests)
+    .where(eq(s.advanceRequests.id, id));
+  if (!request) throw new AdvanceError(404, 'Advance request not found');
+  if (request.status !== 'PENDING') {
+    throw new AdvanceError(400, `Cannot reject request with status ${request.status}`);
+  }
+
+  const now = new Date();
+  const [updated] = await db.update(s.advanceRequests)
+    .set({ status: 'REJECTED', approvedBy: rejectedBy, approvedAt: now, updatedAt: now })
+    .where(eq(s.advanceRequests.id, id))
+    .returning();
+  const [enriched] = await enrichWithNames([updated]);
+  return enriched;
+}
+
+export async function createAdvanceSettlement(
+  forwarderId: number,
+  data: { totalExpenseAmount: number; refundAmount?: number; note?: string; advanceRequestIds: number[] },
+) {
+  if (!data.advanceRequestIds || data.advanceRequestIds.length === 0) {
+    throw new AdvanceError(400, 'At least one advance request ID is required');
+  }
+
+  const requests = await db.select()
+    .from(s.advanceRequests)
+    .where(inArray(s.advanceRequests.id, data.advanceRequestIds));
+
+  if (requests.length !== data.advanceRequestIds.length) {
+    throw new AdvanceError(400, 'One or more advance requests not found');
+  }
+
+  for (const req of requests) {
+    if (req.requesterId !== forwarderId) {
+      throw new AdvanceError(400, `Advance request #${req.id} does not belong to this forwarder`);
+    }
+    if (req.status !== 'APPROVED') {
+      throw new AdvanceError(400, `Advance request #${req.id} must have status APPROVED`);
+    }
+  }
+
+  return db.transaction(async (tx) => {
+    const [settlement] = await tx.insert(s.advanceSettlements).values({
+      forwarderId,
+      totalExpenseAmount: String(data.totalExpenseAmount),
+      refundAmount: String(data.refundAmount ?? 0),
+      status: 'PENDING',
+      note: data.note ?? null,
+    }).returning();
+
+    await tx.insert(s.advanceSettlementRequests).values(
+      data.advanceRequestIds.map(advanceRequestId => ({
+        settlementId: settlement.id,
+        advanceRequestId,
+      })),
+    );
+
+    return enrichSettlementWithRequests(settlement);
+  });
+}
+
+export async function listAdvanceSettlements(filters?: { forwarderId?: number; status?: string }) {
+  const conditions = [];
+  if (filters?.forwarderId) conditions.push(eq(s.advanceSettlements.forwarderId, filters.forwarderId));
+  if (filters?.status) conditions.push(eq(s.advanceSettlements.status, filters.status as any));
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const rows = await db.select()
+    .from(s.advanceSettlements)
+    .where(where)
+    .orderBy(desc(s.advanceSettlements.createdAt));
+
+  const enriched = await enrichWithNames(rows);
+  const withRequests = await Promise.all(enriched.map(r => enrichSettlementWithRequests(r)));
+  return withRequests;
+}
+
+export async function getAdvanceSettlement(id: number) {
+  const [row] = await db.select()
+    .from(s.advanceSettlements)
+    .where(eq(s.advanceSettlements.id, id));
+  if (!row) return null;
+  const [enriched] = await enrichWithNames([row]);
+  return enrichSettlementWithRequests(enriched);
+}
+
+export async function checkAdvanceSettlement(id: number, checkedBy: number) {
+  const [settlement] = await db.select()
+    .from(s.advanceSettlements)
+    .where(eq(s.advanceSettlements.id, id));
+  if (!settlement) throw new AdvanceError(404, 'Advance settlement not found');
+  if (settlement.status !== 'PENDING') {
+    throw new AdvanceError(400, `Cannot check settlement with status ${settlement.status}`);
+  }
+
+  const now = new Date();
+  const [updated] = await db.update(s.advanceSettlements)
+    .set({ status: 'CHECKED_BY_ACCOUNTANT', checkedBy, checkedAt: now, updatedAt: now })
+    .where(eq(s.advanceSettlements.id, id))
+    .returning();
+  const [enriched] = await enrichWithNames([updated]);
+  return enrichSettlementWithRequests(enriched);
+}
+
+export async function approveAdvanceSettlement(id: number, approvedBy: number) {
+  return db.transaction(async (tx) => {
+    const [settlement] = await tx.select()
+      .from(s.advanceSettlements)
+      .where(eq(s.advanceSettlements.id, id))
+      .for('update');
+    if (!settlement) throw new AdvanceError(404, 'Advance settlement not found');
+    if (settlement.status !== 'CHECKED_BY_ACCOUNTANT') {
+      throw new AdvanceError(400, `Cannot approve settlement with status ${settlement.status}`);
+    }
+
+    const now = new Date();
+    const [updated] = await tx.update(s.advanceSettlements)
+      .set({ status: 'APPROVED', approvedBy, approvedAt: now, updatedAt: now })
+      .where(eq(s.advanceSettlements.id, id))
+      .returning();
+
+    const totalAmount = Number(settlement.totalExpenseAmount) + Number(settlement.refundAmount);
+    await LedgerService.postEntry(tx, {
+      txnType: TxnType.FORWARDER_SETTLEMENT,
+      txnId: settlement.id,
+      entityType: 'FORWARDER',
+      entityId: settlement.forwarderId,
+      debit: totalAmount,
+      credit: 0,
+      note: `Thanh toán tạm ứng #${settlement.id}`,
+    });
+
+    const [enriched] = await enrichWithNames([updated]);
+    return enrichSettlementWithRequests(enriched);
+  });
+}
+
+export async function rejectAdvanceSettlement(id: number, rejectedBy: number) {
+  const [settlement] = await db.select()
+    .from(s.advanceSettlements)
+    .where(eq(s.advanceSettlements.id, id));
+  if (!settlement) throw new AdvanceError(404, 'Advance settlement not found');
+  if (settlement.status !== 'PENDING' && settlement.status !== 'CHECKED_BY_ACCOUNTANT') {
+    throw new AdvanceError(400, `Cannot reject settlement with status ${settlement.status}`);
+  }
+
+  const now = new Date();
+  const [updated] = await db.update(s.advanceSettlements)
+    .set({ status: 'REJECTED', approvedBy: rejectedBy, approvedAt: now, updatedAt: now })
+    .where(eq(s.advanceSettlements.id, id))
+    .returning();
+  const [enriched] = await enrichWithNames([updated]);
+  return enrichSettlementWithRequests(enriched);
+}

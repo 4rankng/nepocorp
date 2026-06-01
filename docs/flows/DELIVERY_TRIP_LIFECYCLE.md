@@ -100,6 +100,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   - Các chặng (origin, destination, km, loại xếp hàng: hàng/vỏ)
   - Chế độ nhiên liệu (TỰ ĐỘNG hoặc KHOÁN)
   - Doanh thu (tự động tra bảng giá, có thể ghi đè)
+  - **Các container** (tùy chọn): mỗi dòng gồm Loại container (dropdown từ danh mục — VD: 20'DC, 40'HC), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng.
 - **Hệ thống tự động:**
   - Tra giá cước từ bảng giá theo Khách hàng × Tuyến đường × Ngày
   - Snapshot (chụp) các định mức hiện hành: giá nhiên liệu, định mức có tải/không tải, tiền đường, phí trạm
@@ -122,7 +123,8 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   - Số liệu nhiên liệu thực tế
   - Thu phí đường bộ thực tế
   - Doanh thu cuối cùng
-  - Ảnh bốc xếp (bắt buộc nếu hàng hóa yêu cầu — vd: chè)
+  - **Cập nhật/bổ sung container** (Loại container, Số container nhập tay, Số seal nhập tay — nhập được bởi Kế toán, Giám đốc hoặc Giao nhận)
+  - Ảnh bốc xếp (bắt buộc nếu hàng hóa yêu cầu — vd: chè). Bên cạnh ảnh, có thể nhập số container/seal bằng text.
 - **Điều kiện chuyển trạng thái:**
   - Phải có ít nhất 1 ảnh
   - Nếu loại hàng yêu cầu ảnh: phải có cả ảnh CONTAINER và SEAL
@@ -345,6 +347,8 @@ LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý
 | Tài xế | Tên, SĐT, lương cơ bản, xe phân công | Điều vận, tính lương |
 | Khách hàng | Tên, MST, liên hệ, hạn mức tín dụng | Tạo chuyến, công nợ |
 | Loại hàng hóa | Phân loại hàng (vd: chè yêu cầu ảnh) | Tạo chuyến, validation ảnh |
+| Loại container | Mã, tên hiển thị, kích thước nhóm (20FT/40FT), trạng thái | Nhập container trong chuyến (20'DC, 20'OT, 20'RF, 40'DC, 40'HC...) |
+| Cảng / Bãi | Tên, địa chỉ, ghi chú, trạng thái | Chọn điểm đi/đến trong chặng (combobox: dropdown + nhập mới) |
 | Cổ đông | Tên, tỷ lệ sở hữu, ngày hiệu lực | Phân bổ lợi nhuận |
 | Lý do phạt | Nội dung vi phạm, mức tiền mặc định | Tạo phạt |
 | Phí quản lý | Số tiền phí theo tháng/năm | Báo cáo P&L |

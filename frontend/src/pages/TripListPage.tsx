@@ -296,11 +296,14 @@ export default function TripListPage() {
       header: 'Chuyến · Mã',
       cell: ({ row }) => {
         const trip = row.original;
+        const customerName = trip.customer?.name ?? '—';
         return (
           <Link to={`/trips/${trip.id}`} className="trip-col" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }} onClick={(e) => e.stopPropagation()}>
-            <div className="trip-name" style={{ color: 'var(--brand)', fontWeight: 600 }}>{trip.customer?.name ?? '—'}</div>
+            <div className="trip-name" title={customerName} style={{ color: 'var(--brand)', fontWeight: 600 }}>
+              {customerName}
+            </div>
             <div className="trip-meta">
-              <span className="trip-id" style={{ color: 'var(--ink)' }}>{buildTripCode(trip)}</span>
+              <span className="trip-id">{buildTripCode(trip)}</span>
               <span className="trip-meta-sep">·</span>
               <span>{formatDayMonth(trip.departureDate)}</span>
             </div>
@@ -324,29 +327,30 @@ export default function TripListPage() {
     }),
     columnHelper.accessor((row) => row.route?.name ?? '', {
       id: 'route',
-      header: 'Tuyến · Khách hàng',
+      header: 'Tuyến',
       cell: ({ row }) => {
         const trip = row.original;
         const route = splitRoute(trip.route?.name);
         const containerTag = trip.trailerType ?? '40FT';
         return (
-          <div className="route-cust">
-            <div className="route-line">
+          <div className="route-cell-flex">
+            <div className="route-points-row">
               {route ? (
                 <>
-                  {route.from}
-                  <span className="arr"><ArrowRight size={12} /></span>
-                  {route.to}
+                  <span className="route-point route-origin">{route.from}</span>
+                  <span className="route-arrow-right">
+                    <ArrowRight size={12} />
+                  </span>
+                  <span className="route-point route-destination">{route.to}</span>
                 </>
               ) : (
-                trip.route?.name ?? '—'
+                <span className="route-point route-destination">{trip.route?.name ?? '—'}</span>
               )}
             </div>
-            <div className="cust-line">
-              {trip.customer?.name ?? '—'}
+            <div className="route-tags-row">
               <span className="container-tag">{containerTag}</span>
               {(trip.containerCount ?? 1) > 1 && (
-                <span className="container-tag" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>×{trip.containerCount ?? 1}</span>
+                <span className="container-tag multiplier">×{trip.containerCount ?? 1}</span>
               )}
             </div>
           </div>

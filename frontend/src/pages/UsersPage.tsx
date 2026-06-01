@@ -54,7 +54,7 @@ export default function UsersPage() {
 
   const { total, staffCount, driverCount, inactiveCount, filtered, paginated } = useMemo(() => {
     const total        = users.length;
-    const staffCount   = users.filter(u => u.role !== Role.DRIVER).length;
+    const staffCount   = users.filter(u => [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT].includes(u.role)).length;
     const driverCount  = users.filter(u => u.role === Role.DRIVER).length;
     const inactiveCount = users.filter(u => u.status !== 'ACTIVE').length;
 

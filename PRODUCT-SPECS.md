@@ -128,9 +128,12 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * Kế toán có thể nhập lý do mới; hệ thống kiểm tra trùng lặp khi nhập.
 * Phạt kỷ luật là khoản **thu nhập khác** của công ty, đồng thời là khoản trừ lương tài xế.
 
-### 4.12 Ảnh xác nhận chuyến (Cargo Photo Evidence)
+### 4.12 Container, Seal & Ảnh xác nhận chuyến
 
-* **Tất cả loại hàng hóa** đều yêu cầu upload ảnh khi hoàn thành chuyến. Kế toán thực hiện upload. *(Pete xác nhận: "tất cả đều yêu cầu chụp ảnh")*
+* **Theo dõi container theo chuyến:** Mỗi chuyến đi có thể chở nhiều container (VD: 2×20FT hoặc 1×40FT). Mỗi container được ghi nhận riêng biệt với 3 thông tin: **Loại container** (từ danh mục cấu hình), **Số container** và **Số seal**.
+* **Nhập liệu kép (text + ảnh):** Số container và số seal được nhập **bằng text** (nhập tay) **và/hoặc** upload ảnh. Kế toán, Giám đốc và Giao nhận đều có thể nhập.
+* **Loại container (Container Type):** Danh mục cấu hình do người dùng tự khai báo (VD: 20'DC, 20'OT, 20'RF, 40'DC, 40'HC...). Mỗi container trong chuyến chọn loại từ danh mục này. Khác với loại rơ-mooc (20FT/40FT) — một rơ-mooc 40FT có thể chở 1 container 40'HC hoặc 2 container 20'DC.
+* **Ảnh xác nhận:** Tất cả loại hàng hóa đều yêu cầu upload ảnh khi hoàn thành chuyến. Kế toán thực hiện upload. *(Pete xác nhận: "tất cả đều yêu cầu chụp ảnh")*
 * Trường `requires_photos` trên bảng **Loại hàng hóa** vẫn giữ để cấu hình mức độ bắt buộc theo từng loại hàng trong tương lai.
 * **Chuyến chè (Special Cargo: Tea):** Đặc biệt yêu cầu ảnh Container **và** Seal (niêm phong). Không điều chỉnh thêm tiền đi đường.
 
@@ -138,9 +141,15 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 * 1 xe có thể có nhiều lái xe được phân công.
 * **Rơ-mooc ghép cặp cố định:** Mỗi đầu kéo ghép với một rơ-mooc cố định — biển số và loại rơ-mooc (20FT/40FT) lưu trực tiếp trên bảng xe đầu kéo. Không có bảng rơ-mooc riêng. Khi tạo chuyến, hệ thống tự tra loại rơ-mooc từ xe được chọn để tính tiền đi đường chuẩn. *(Pete xác nhận 31/5)*
-* **Đa container:** 1 chuyến xe có thể chở nhiều container (VD: 2 container 20ft). *(Pete xác nhận: "có thể 1 chuyến chạy 2 cont 20'")*
+* **Đa container:** 1 chuyến xe có thể chở nhiều container (VD: 2 container 20ft hoặc 1 container 40ft). Mỗi container có **loại riêng** (20'DC, 40'HC...), **số container** và **số seal** — không phải chỉ đếm số lượng. *(Pete xác nhận: "có thể 1 chuyến chạy 2 cont 20'")*
 
-### 4.14 Chi phí vận hành, Nhà cung cấp & Công nợ phải trả
+### 4.14 Loại Container & Cảng/Bãi (Container Types & Ports/Depots)
+
+* **Loại container:** Danh mục **cấu hình được** do người dùng tự khai báo trong Cấu hình hệ thống. Mỗi loại có: mã (VD: `20DC`, `40HC`), tên hiển thị (VD: 20'DC, 40'HC), kích thước nhóm (20FT/40FT) dùng để validate phù hợp với rơ-mooc, và trạng thái. Dữ liệu mẫu: 20'DC (Dry Container), 20'OT (Open Top), 20'RF (Reefer), 40'DC, 40'HC (High Cube)...
+* **Cảng / Bãi:** Danh mục cấu hình các cảng và bãi (chủ yếu tại Hải Phòng). Mỗi cảng/bãi có: tên (VD: Cảng Đình Vũ, Cảng Nam Hải, Bãi ICD NL), địa chỉ, và trạng thái. Danh mục có thể do người dùng tự khai báo hoặc cập nhật.
+* **Sử dụng trong chặng (Trip Legs):** Khi kế toán nhập chặng chi tiết (điểm đi, điểm đến), trường origin/destination hỗ trợ **combobox** — dropdown chọn từ danh mục Cảng/Bãi, đồng thời cho phép nhập text tự do nếu điểm chưa có trong danh mục. Mục mới nhập sẽ được gợi ý thêm vào danh mục.
+
+### 4.15 Chi phí vận hành, Nhà cung cấp & Công nợ phải trả
 
 * **Phạm vi:** ghi nhận chi phí vận hành ngoài chuyến đi — sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — gắn với Nhà cung cấp và (tùy chọn) một xe.
 * **Nhà cung cấp (NCC):** danh mục mọi bên nhận tiền (gara, trạm lốp, cửa hàng phụ tùng, công ty bảo hiểm, trung tâm đăng kiểm, đơn vị thu phí đường bộ). **Bắt buộc** trên mọi khoản chi phí. Không có trường "phân loại" (phân loại nằm ở hạng mục từng khoản chi).
@@ -168,8 +177,9 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 ### MODULE 2: GHI NHẬN CHUYẾN ĐI & CHI PHÍ
 1. **[Kế toán]** Tôi muốn nhập số liệu thực tế cho chuyến đi: km, số lít dầu, loại tải (hàng/vỏ), điều chỉnh vé đường, số trạm, lương sản lượng, doanh thu.
 2. **[Kế toán]** Tôi muốn hệ thống tự động tính: chi phí nhiên liệu (lít × đơn giá), tiền đi đường, tổng chi phí, lợi nhuận gộp.
-3. **[Kế toán]** Tôi muốn upload ảnh container/seal đối với chuyến chở chè khi đóng chuyến.
-4. **[Kế toán]** Tôi muốn thêm ghi chú/diễn giải cho chuyến đi.
+3. **[Kế toán/Giám đốc/Giao nhận]** Tôi muốn nhập danh sách container cho chuyến: loại container (từ danh mục), số container (nhập text), số seal (nhập text). Có thể nhập ở cả bước tạo chuyến và bước hoàn thành.
+4. **[Kế toán]** Tôi muốn upload ảnh container/seal đối với chuyến chở chè khi đóng chuyến. Bên cạnh ảnh, có thể nhập số container/seal bằng text.
+5. **[Kế toán]** Tôi muốn thêm ghi chú/diễn giải cho chuyến đi.
 
 ### MODULE 3: KIỂM SOÁT NHIÊN LIỆU & TIỀN ĐI ĐƯỜNG
 1. **[Hệ thống]** Tự động tính TTBQ (liters/km × 100) và hiển thị trên chi tiết chuyến đi. Đối chiếu định mức và cảnh báo hoãn sang giai đoạn sau.
@@ -202,6 +212,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 6. **[Kế toán]** Tôi muốn nhập phí quản lý hàng tháng.
 7. **[Kế toán]** Tôi muốn quản lý danh mục lý do vi phạm kỷ luật.
 8. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Nhà cung cấp và Hạng mục chi phí (một lần/định kỳ, số ngày nhắc gia hạn).
+9. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Loại container (thêm/sửa/xóa: 20'DC, 20'OT, 20'RF, 40'DC, 40'HC...). Mỗi loại có mã, tên hiển thị, kích thước nhóm (20FT/40FT) và trạng thái.
+10. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Cảng/Bãi (thêm/sửa/xóa). Khi nhập chặng (trip legs), có thể chọn từ dropdown hoặc nhập mới — mục mới được gợi ý thêm vào danh mục.
 
 ### MODULE 9: CHI PHÍ VẬN HÀNH & CÔNG NỢ PHẢI TRẢ
 1. **[Kế toán]** Tôi muốn ghi nhận chi phí phát sinh (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ), gắn Nhà cung cấp và (tùy chọn) một xe, đánh dấu chi phí thuộc đầu kéo hay rơ-mooc (`vehicle_component`), đính ảnh hóa đơn.
@@ -231,6 +243,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | 12 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán, Công nợ NCC) | Các cột: ID, date, txn_type, credit, debit, balance |
 | 13 | **Nhà cung cấp** | Tên, người liên hệ, SĐT, mã số thuế, ghi chú, trạng thái | Gara, trạm lốp, phụ tùng, bảo hiểm, đăng kiểm... |
 | 14 | **Hạng mục chi phí** | Tên, một lần/định kỳ (is_renewable), số ngày nhắc trước (mặc định 30) | Sửa chữa, Phụ tùng, Vật tư, Bảo hiểm, Đăng kiểm, Phí đường bộ |
+| 15 | **Loại container** | Mã loại, tên hiển thị, kích thước nhóm (20FT/40FT), trạng thái | 20'DC, 20'OT, 20'RF, 40'DC, 40'HC... |
+| 16 | **Cảng / Bãi** | Tên, địa chỉ, ghi chú, trạng thái | Cảng Đình Vũ, Cảng Nam Hải, Bãi ICD NL... |
 
 ---
 
@@ -246,12 +260,13 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Lái xe | Select | Có | Theo xe được phân công |
 | Loại hàng hóa | Select | Có | Từ danh mục (VD: Chè, Container rỗng, Hàng tổng hợp...) |
 | Ngày xuất phát | Date | Có | |
+| **Các container** | Dynamic rows | Không | Mỗi dòng: Loại container (dropdown từ danh mục — VD: 20'DC, 40'HC), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng. VD: 2×20'DC hoặc 1×40'HC. |
 
 ### Pha 2 — Kế toán nhập số liệu thực tế (trạng thái: Hoàn thành)
 
 | Trường | Loại | Bắt buộc | Ghi chú |
 | :--- | :--- | :--- | :--- |
-| **Các chặng (Trip Legs)** | Dynamic rows | Có | Kế toán nhập từng chặng: điểm đi, điểm đến, số km, loại tải (hàng/vỏ). Hệ thống tự tính L dầu mỗi chặng theo định mức. |
+| **Các chặng (Trip Legs)** | Dynamic rows | Có | Kế toán nhập từng chặng: điểm đi, điểm đến (combobox — dropdown Cảng/Bãi hoặc nhập text tự do), số km, loại tải (hàng/vỏ). Hệ thống tự tính L dầu mỗi chặng theo định mức. |
 | Chế độ nhập nhiên liệu | Select (AUTO / KHOÁN) | Có | AUTO: tổng L dầu từ các chặng. KHOÁN: nhập tổng L dầu bằng tay (ghi đè). |
 | Dầu bổ sung | Number | Không | L dầu thêm do xe hỏng, đi sửa... (cộng thêm vào cả 2 chế độ) |
 | Lý do bổ sung | Text | Không | Bắt buộc nếu có dầu bổ sung |
@@ -262,7 +277,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Lương sản lượng | Number | Có | Thu nhập lái xe cho chuyến này |
 | Doanh thu | Number | Có | Tự động tra từ bảng giá khi tạo chuyến (Customer × Route). Kế toán có thể ghi đè; hệ thống ghi nhận giá gốc, giá ghi đè, người thay đổi và thời điểm. |
 | Ghi chú/diễn giải | Text | Không | |
-| Ảnh xác nhận hàng hóa | Upload | Có (tất cả) | Bắt buộc cho tất cả loại hàng khi hoàn thành chuyến. Chuyến chè bắt buộc có ảnh Container **và** Seal. |
+| **Các container** | Dynamic rows | Không | Cập nhật/bổ sung: Loại container (dropdown), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng. |
+| Ảnh xác nhận hàng hóa | Upload + Text | Có (tất cả) | Bắt buộc upload ảnh cho tất cả loại hàng khi hoàn thành. Chuyến chè bắt buộc có ảnh Container **và** Seal. Bên cạnh ảnh, có thể nhập số container/seal bằng text. |
 
 ### Tự động tính toán (read-only)
 

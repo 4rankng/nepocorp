@@ -109,7 +109,7 @@ export function UserTable({
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(245, 158, 11, 0.1)', color: 'rgb(217, 119, 6)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
               Văn phòng
             </span>
-            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Admin & Kế toán</span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Admin · Quản lý · Kế toán</span>
           </div>
           <div className="kpi__watermark" aria-hidden="true"><UserCog size={72} /></div>
         </div>

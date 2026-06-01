@@ -127,12 +127,11 @@ export default function ExpenseListPage() {
         <KPI label="Đã thanh toán" value={`${stats.paidCount}`} unit="phiếu" variant="success" meta={formatCompact(stats.paidAmount)} />
       </div>
 
-      <div className="toolbar" style={{ flexWrap: 'nowrap', gap: 8, overflow: 'auto' }}>
+      <div className="toolbar expense-filters">
         <select
-          className="input"
+          className="input expense-filters__select"
           value={supplierId}
           onChange={e => { setSupplierId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
-          style={{ fontSize: 12.5, minWidth: 120 }}
         >
           <option value="">Tất cả NCC</option>
           {suppliers.map(s => (
@@ -141,10 +140,9 @@ export default function ExpenseListPage() {
         </select>
 
         <select
-          className="input"
+          className="input expense-filters__select"
           value={categoryId}
           onChange={e => { setCategoryId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
-          style={{ fontSize: 12.5, minWidth: 120 }}
         >
           <option value="">Tất cả hạng mục</option>
           {categories.map(c => (
@@ -153,10 +151,9 @@ export default function ExpenseListPage() {
         </select>
 
         <select
-          className="input"
+          className="input expense-filters__select"
           value={truckId}
           onChange={e => { setTruckId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
-          style={{ fontSize: 12.5, minWidth: 110 }}
         >
           <option value="">Tất cả xe</option>
           {trucks.map(t => (
@@ -166,23 +163,21 @@ export default function ExpenseListPage() {
 
         <input
           type="date"
-          className="input"
+          className="input expense-filters__date"
           value={dateFrom}
           onChange={e => { setDateFrom(e.target.value); setPage(1); }}
-          style={{ fontSize: 12.5, width: 'auto', minWidth: 130 }}
           placeholder="Từ ngày"
         />
         <input
           type="date"
-          className="input"
+          className="input expense-filters__date"
           value={dateTo}
           onChange={e => { setDateTo(e.target.value); setPage(1); }}
-          style={{ fontSize: 12.5, width: 'auto', minWidth: 130 }}
           placeholder="Đến ngày"
         />
 
         {hasFilters && (
-          <button className="btn btn--ghost btn--sm" onClick={resetFilters}>
+          <button className="btn btn--ghost btn--sm expense-filters__reset" onClick={resetFilters}>
             Xóa bộ lọc
           </button>
         )}

@@ -48,3 +48,112 @@ export function useDeleteForwarderExpense() {
     },
   });
 }
+
+// ── Advance Requests (forwarder) ──────────────────────────────────────────────
+
+export function useForwarderAdvanceRequests() {
+  return useQuery({
+    queryKey: ['forwarder-advance-requests'],
+    queryFn: () => forwarderClient.getAdvanceRequests(),
+  });
+}
+
+export function useCreateAdvanceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { amount: number; reason: string }) =>
+      forwarderClient.createAdvanceRequest(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['forwarder-advance-requests'] });
+    },
+  });
+}
+
+// ── Advance Settlements (forwarder) ──────────────────────────────────────────
+
+export function useForwarderSettlements() {
+  return useQuery({
+    queryKey: ['forwarder-settlements'],
+    queryFn: () => forwarderClient.getAdvanceSettlements(),
+  });
+}
+
+export function useCreateAdvanceSettlement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { totalExpenseAmount: number; refundAmount?: number; note?: string; advanceRequestIds: number[] }) =>
+      forwarderClient.createAdvanceSettlement(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['forwarder-settlements'] });
+      qc.invalidateQueries({ queryKey: ['forwarder-advance-requests'] });
+    },
+  });
+}
+
+// ── Admin: Advance Requests ──────────────────────────────────────────────────
+
+export function useAdminAdvanceRequests(filters?: { status?: string }) {
+  return useQuery({
+    queryKey: ['admin-advance-requests', filters],
+    queryFn: () => forwarderClient.listAllAdvanceRequests(filters),
+  });
+}
+
+export function useApproveAdvanceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.approveAdvanceRequest(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-advance-requests'] });
+    },
+  });
+}
+
+export function useRejectAdvanceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.rejectAdvanceRequest(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-advance-requests'] });
+    },
+  });
+}
+
+// ── Admin: Advance Settlements ──────────────────────────────────────────────
+
+export function useAdminSettlements(filters?: { status?: string }) {
+  return useQuery({
+    queryKey: ['admin-settlements', filters],
+    queryFn: () => forwarderClient.listAllAdvanceSettlements(filters),
+  });
+}
+
+export function useCheckSettlement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.checkAdvanceSettlement(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-settlements'] });
+    },
+  });
+}
+
+export function useApproveSettlement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.approveAdvanceSettlement(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-settlements'] });
+    },
+  });
+}
+
+export function useRejectSettlement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.rejectAdvanceSettlement(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-settlements'] });
+    },
+  });
+}

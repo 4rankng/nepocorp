@@ -79,6 +79,13 @@ export const FINANCIAL = {
   PENALTY_CANCEL: (id: number) => `/penalties/${id}/cancel`,
   EXPENSES: '/expenses',
   EXPENSE: (id: number) => `/expenses/${id}`,
+  ADVANCE_REQUESTS: '/advance-requests',
+  ADVANCE_REQUEST_APPROVE: (id: number) => `/advance-requests/${id}/approve`,
+  ADVANCE_REQUEST_REJECT: (id: number) => `/advance-requests/${id}/reject`,
+  ADVANCE_SETTLEMENTS: '/advance-settlements',
+  ADVANCE_SETTLEMENT_CHECK: (id: number) => `/advance-settlements/${id}/check`,
+  ADVANCE_SETTLEMENT_APPROVE: (id: number) => `/advance-settlements/${id}/approve`,
+  ADVANCE_SETTLEMENT_REJECT: (id: number) => `/advance-settlements/${id}/reject`,
 } as const;
 
 // ─── Reports ────────────────────────────────────────────────────────────────────
@@ -108,6 +115,8 @@ export const FORWARDER = {
   EXPENSES: '/forwarder/me/expenses',
   EXPENSE: (id: number) => `/forwarder/me/expenses/${id}`,
   FORWARDER_EXPENSES: '/forwarder-expenses',
+  ADVANCE_REQUESTS: '/forwarder/me/advance-requests',
+  ADVANCE_SETTLEMENTS: '/forwarder/me/advance-settlements',
 } as const;
 
 // ─── Notifications ──────────────────────────────────────────────────────────────

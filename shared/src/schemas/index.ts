@@ -42,6 +42,8 @@ const nonNegNumeric = z.union([z.number(), z.string()]).transform((val, ctx) => 
   return num;
 });
 
+const fullNameField = z.string().max(255).or(z.literal('')).optional();
+
 // ─── Trip ────────────────────────────────────────────────────────────────────
 
 export const tripLegSchema = z.object({
@@ -134,6 +136,7 @@ export const loginSchema = z.object({
 export const createUserSchema = z.object({
   username: z.string().min(2).optional(),
   email: z.string().email().optional(),
+  fullName: fullNameField,
   phone: z.string().min(6).optional(),
   password: z.string().min(6),
   role: z.nativeEnum(Role),
@@ -147,14 +150,14 @@ export const updateUserSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
   password: z.string().min(6).optional(),
   username: z.string().min(1).max(100).optional(),
-  fullName: z.string().max(255).or(z.literal('')).optional(),
+  fullName: fullNameField,
   email: z.string().email().or(z.literal('')).optional(),
   phone: z.string().min(6).or(z.literal('')).optional(),
 });
 
 export const updateProfileSchema = z.object({
   username: z.string().min(1, 'Tên đăng nhập không được để trống').max(100).optional(),
-  fullName: z.string().max(255).or(z.literal('')).optional(),
+  fullName: fullNameField,
   email: z.string().email('Email không hợp lệ').or(z.literal('')).optional(),
   phone: z.string().min(6, 'Số điện thoại quá ngắn').or(z.literal('')).optional(),
 }).refine(data => data.username || data.fullName !== undefined || data.email || data.phone, {

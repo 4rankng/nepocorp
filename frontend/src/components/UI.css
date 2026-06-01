@@ -666,8 +666,30 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 /* ============================================================================
- * Modal (classes mirror inline styles in <Modal/> so responsive.css can override)
+ * Modal — desktop defaults; phone bottom-sheet override lives in responsive.css
  * ========================================================================== */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(10, 10, 10, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal__content {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--sh-lg);
+  width: 100%;
+  max-width: var(--modal-max-w, 540px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100vh - 48px);
+}
 .modal__head {
   padding: 18px 22px;
   border-bottom: 1px solid var(--line);
@@ -725,6 +747,7 @@ tbody tr:last-child td { border-bottom: none; }
   box-shadow: var(--sh-drawer);
   transform: translateX(100%);
   visibility: hidden;
+  pointer-events: none;
   /* hide immediately on open, delay hide until after slide-out finishes */
   transition: transform 0.32s var(--ease-drawer), visibility 0s 0.32s;
   z-index: var(--z-modal);
@@ -735,6 +758,7 @@ tbody tr:last-child td { border-bottom: none; }
 .drawer.is-open {
   transform: translateX(0);
   visibility: visible;
+  pointer-events: auto;
   transition: transform 0.32s var(--ease-drawer), visibility 0s 0s;
 }
 .drawer__head {
