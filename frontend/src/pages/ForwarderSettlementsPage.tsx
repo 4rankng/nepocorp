@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { FileText, Loader2, Plus, X, Check } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
+import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill, FormGroup } from '../components/UI';
 import { useForwarderSettlements, useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
@@ -89,15 +90,9 @@ export default function ForwarderSettlementsPage() {
   const totalRefund = Number(refundAmount) || 0;
   const balance = totalAdvance - totalExpense - totalRefund;
 
-  /** Group selected expenses by type for breakdown display */
   const expenseBreakdown = useMemo(() => {
-    const groups = new Map<string, number>();
-    for (const exp of unlinkedExpenses) {
-      if (!selectedExpenseIds.has(exp.id)) continue;
-      const label = expenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType;
-      groups.set(label, (groups.get(label) ?? 0) + Number(exp.amount));
-    }
-    return groups;
+    const selected = unlinkedExpenses.filter(e => selectedExpenseIds.has(e.id));
+    return groupExpensesByType(selected, expenseTypeOptions);
   }, [unlinkedExpenses, selectedExpenseIds, expenseTypeOptions]);
 
   function toggleRequest(id: number) {
@@ -323,11 +318,7 @@ export default function ForwarderSettlementsPage() {
 
               {/* Expense breakdown by category */}
               {s.linkedExpenses && s.linkedExpenses.length > 0 && (() => {
-                const groups = new Map<string, number>();
-                for (const exp of s.linkedExpenses) {
-                  const label = expenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType;
-                  groups.set(label, (groups.get(label) ?? 0) + Number(exp.amount));
-                }
+                const groups = groupExpensesByType(s.linkedExpenses, expenseTypeOptions);
                 return (
                   <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                     <span style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>Chi phí theo hạng mục:</span>

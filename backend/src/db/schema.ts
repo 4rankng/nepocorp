@@ -505,6 +505,7 @@ export const settlementExpenses = pgTable('settlement_expenses', {
   tripExpenseId: integer('trip_expense_id').references(() => tripExpenses.id).notNull(),
 }, (table) => [
   uniqueIndex('settlement_expense_unique_idx').on(table.settlementId, table.tripExpenseId),
+  uniqueIndex('settlement_expense_trip_expense_uniq_idx').on(table.tripExpenseId),
 ]);
 
 // ─── Audit ───────────────────────────────────────────────────────────────────

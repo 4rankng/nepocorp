@@ -101,15 +101,6 @@ export const PENALTY_STATUS_LABELS: Record<PenaltyStatus, string> = {
   [PenaltyStatus.CANCELED]: 'Đã hủy',
 };
 
-/** @deprecated Use string codes from forwarder_expense_types config table instead. */
-export enum ForwarderExpenseType {
-  LIFTING = 'LIFTING',
-  CUSTOMS = 'CUSTOMS',
-  WEIGHING = 'WEIGHING',
-  INSPECTION = 'INSPECTION',
-  OTHER = 'OTHER',
-}
-
 /** Default seeds for forwarder_expense_types config table (code → Vietnamese name). */
 export const FORWARDER_EXPENSE_TYPE_DEFAULTS: Record<string, string> = {
   LIFTING: 'Nâng hạ',
@@ -131,14 +122,6 @@ export enum AdvanceSettlementStatus {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
 }
-
-export const FORWARDER_EXPENSE_TYPE_LABELS: Record<ForwarderExpenseType, string> = {
-  [ForwarderExpenseType.LIFTING]: 'Nâng hạ',
-  [ForwarderExpenseType.CUSTOMS]: 'Hải quan',
-  [ForwarderExpenseType.WEIGHING]: 'Cân xe',
-  [ForwarderExpenseType.INSPECTION]: 'Kiểm tra',
-  [ForwarderExpenseType.OTHER]: 'Khác',
-};
 
 export const ADVANCE_REQUEST_STATUS_LABELS: Record<AdvanceRequestStatus, string> = {
   [AdvanceRequestStatus.PENDING]: 'Chờ duyệt',

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FileText, Loader2, Check, X as XIcon, ClipboardCheck } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
+import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import {
@@ -116,11 +117,7 @@ export default function AdminSettlementsPage() {
                 )}
 
                 {s.linkedExpenses && s.linkedExpenses.length > 0 && (() => {
-                  const groups = new Map<string, number>();
-                  for (const exp of s.linkedExpenses) {
-                    const label = expenseTypeOptions.find((t: any) => t.code === exp.expenseType)?.name || exp.expenseType;
-                    groups.set(label, (groups.get(label) ?? 0) + Number(exp.amount));
-                  }
+                  const groups = groupExpensesByType(s.linkedExpenses, expenseTypeOptions);
                   return (
                     <div style={{ marginTop: 6 }}>
                       <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>Chi phí theo hạng mục: </span>
