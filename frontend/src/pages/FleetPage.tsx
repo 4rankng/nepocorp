@@ -8,7 +8,6 @@ import {
 import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI';
-import { ActionBtns } from '../components/config/ActionBtns';
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
 import { api } from '../lib/api';
@@ -805,15 +804,14 @@ function DriverCard({ drivers, truckMap, crud }: {
                 <th>Xe phân công</th>
                 <th>Lương CB</th>
                 <th className="center">Trạng thái</th>
-                <th className="actions">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {drivers.length === 0 && (
-                <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
+                <tr><td colSpan={6} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
               )}
               {filteredDrivers.map((d, i) => (
-                <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(d.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(d.id); } }}>
+                <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => setViewingId(d.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setViewingId(d.id); } }}>
                   <td className="num">{i + 1}</td>
                   <td>
                     <span className="fleet-assigned">
@@ -839,7 +837,6 @@ function DriverCard({ drivers, truckMap, crud }: {
                     }
                   </td>
                   <td style={styles.centerAlign}><StatusDot status={d.status} /></td>
-                  <td onClick={e => e.stopPropagation()}><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -866,7 +863,7 @@ function DriverCard({ drivers, truckMap, crud }: {
           {filteredDrivers.map((d, i) => {
             const truck = d.assignedTruckId && truckMap.has(d.assignedTruckId) ? truckMap.get(d.assignedTruckId)! : null;
             return (
-              <div key={d.id} className="m-card" onClick={() => crud.setEditingId(d.id)}>
+              <div key={d.id} className="m-card" onClick={() => setViewingId(d.id)}>
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <AvatarInitials name={d.name} />
@@ -890,7 +887,7 @@ function DriverCard({ drivers, truckMap, crud }: {
                   </div>
                 ) : null}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
-                  <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); crud.setEditingId(d.id); }}>Sửa</button>
+                  <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); setViewingId(d.id); }}>Xem</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(d.id); }}>Xóa</button>
                 </div>
               </div>
@@ -911,6 +908,27 @@ function DriverCard({ drivers, truckMap, crud }: {
         </div>
       </div>
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
+      <DetailModal
+        isOpen={viewingId != null}
+        title={viewingId != null ? `Tài xế ${drivers.find(d => d.id === viewingId)?.name ?? ''}` : ''}
+        onClose={() => setViewingId(null)}
+        itemId={viewingId ?? 0}
+        deleting={crud.deleting}
+        onEdit={() => { const id = viewingId; setViewingId(null); if (id != null) crud.setEditingId(id); }}
+        onDelete={() => { const id = viewingId; setViewingId(null); if (id != null) crud.doDelete(id); }}
+        details={(() => {
+          const d = viewingId != null ? drivers.find(x => x.id === viewingId) : null;
+          if (!d) return [];
+          const truck = d.assignedTruckId && truckMap.has(d.assignedTruckId) ? truckMap.get(d.assignedTruckId)! : null;
+          return [
+            { label: 'Họ và tên', value: <span className="fleet-assigned"><AvatarInitials name={d.name} /><span className="name">{d.name}</span></span> },
+            { label: 'Số điện thoại', value: d.phone || '—' },
+            { label: 'Xe phân công', value: truck ? <Plate plate={truck.licensePlate} tag="VN" /> : <span className="fleet-unassigned">— Chưa phân —</span> },
+            { label: 'Lương cơ bản', value: d.baseSalary ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">đ</span></span> : <span className="fleet-salary empty">—</span> },
+            { label: 'Trạng thái', value: <StatusDot status={d.status} /> },
+          ];
+        })()}
+      />
       <DriverFormModal
         key={crud.editingId ?? (crud.showAddForm ? 'add' : 'closed')}
         isOpen={crud.showAddForm || crud.editingId != null}
