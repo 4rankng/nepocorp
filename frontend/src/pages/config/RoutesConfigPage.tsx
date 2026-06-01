@@ -1,49 +1,172 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
-import { PageHeader , useConfirm } from '../../components/UI';
+import { PageHeader, useConfirm, Modal } from '../../components/UI';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Route as RouteType, RoadAllowance, PaginatedResponse } from '@nepocorp/shared';
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="field"><label>{label} {children}</label></div>;
-}
-
-function RouteInlineAdd({ saving, item, onsave, oncancel }: {
-  saving: boolean; item?: RouteType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+/**
+ * RouteFormModal — replaces the tr-based inline add form, which was visually
+ * cramped (6 fields squeezed into a single flex row) and hid the
+ * route-config fields the trip-creation tooltip is promising. The modal
+ * gives each field its own row with grouping (basic info / pricing
+ * defaults), proper labels, and a clear save/cancel footer.
+ */
+function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
+  isOpen: boolean; saving: boolean; item?: RouteType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
-  const [name, setName] = useState(item?.name || '');
-  const [distance, setDistance] = useState(item?.distanceKm?.toString() || '');
-  const [isMountain, setIsMountain] = useState(item?.isMountain || false);
-  const [fuelAllowance, setFuelAllowance] = useState(item?.fixedFuelAllowance || '');
+  const [name, setName] = useState('');
+  const [distance, setDistance] = useState('');
+  const [isMountain, setIsMountain] = useState(false);
+  const [fuelAllowance, setFuelAllowance] = useState('');
+  const [tollsStations, setTollsStations] = useState('');
+  const [driverSalary, setDriverSalary] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setName(item?.name || '');
+      setDistance(item?.distanceKm?.toString() || '');
+      setIsMountain(item?.isMountain || false);
+      setFuelAllowance(item?.fixedFuelAllowance || '');
+      setTollsStations(item?.tollsStations?.toString() || '');
+      setDriverSalary(item?.driverSalary || '');
+    }
+  }, [isOpen, item?.id]);
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onsave({
+      name: name.trim(),
+      distanceKm: distance ? Number(distance) : undefined,
+      isMountain,
+      fixedFuelAllowance: fuelAllowance || null,
+      tollsStations: tollsStations ? Number(tollsStations) : null,
+      driverSalary: driverSalary || null,
+    });
+  };
+
+  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 } as const;
+  const hintStyle = { fontSize: 11, color: 'var(--fg-3)', marginTop: 4 } as const;
+  const sectionLabelStyle = {
+    fontSize: 10.5, fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase' as const,
+    letterSpacing: '0.08em', marginBottom: 8, marginTop: 4,
+  };
+
   return (
-    <>
-      <div style={{ flex: 2, minWidth: 160 }}>
-        <Field label="Tên tuyến"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="VD: TP.HCM - Bình Dương" /></Field>
+    <Modal
+      isOpen={isOpen}
+      title={item ? `Sửa tuyến — ${item.name}` : 'Thêm tuyến đường mới'}
+      onClose={oncancel}
+      onConfirm={handleSave}
+      footer={
+        <>
+          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
+            <X size={14} /> Hủy
+          </button>
+          <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={handleSave}>
+            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {item ? 'Cập nhật' : 'Thêm tuyến'}
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div>
+          <div style={sectionLabelStyle}>Thông tin cơ bản</div>
+          <div className="field" style={{ marginBottom: 14 }}>
+            <label htmlFor="route-name" style={labelStyle}>
+              Tên tuyến <span style={{ color: 'var(--danger)' }}>*</span>
+            </label>
+            <input
+              id="route-name"
+              className="input"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="VD: Hà Nội - Hải Phòng"
+              autoFocus
+            />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field">
+              <label htmlFor="route-distance" style={labelStyle}>Khoảng cách (km)</label>
+              <input
+                id="route-distance"
+                className="input"
+                type="number"
+                value={distance}
+                onChange={e => setDistance(e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div className="field">
+              <label style={labelStyle}>Loại địa hình</label>
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                padding: '9px 12px', border: '1px solid var(--line)',
+                borderRadius: 'var(--radius-md)', background: isMountain ? 'var(--warning-soft, #fef3c7)' : 'transparent',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={isMountain}
+                  onChange={e => setIsMountain(e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: 'pointer' }}
+                />
+                <Mountain size={14} />
+                <span style={{ fontSize: 13 }}>Tuyến leo núi</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+          <div style={sectionLabelStyle}>Định mức tự điền cho lệnh vận chuyển</div>
+          <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '0 0 12px' }}>
+            Các giá trị này sẽ được dùng để gợi ý khi tạo / sửa lệnh trên tuyến này.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field">
+              <label htmlFor="route-fuel" style={labelStyle}>Định mức dầu (lít)</label>
+              <input
+                id="route-fuel"
+                className="input"
+                type="number"
+                step="0.01"
+                value={fuelAllowance}
+                onChange={e => setFuelAllowance(e.target.value)}
+                placeholder="0"
+              />
+              <p style={hintStyle}>Định mức cố định riêng cho tuyến (vd. tuyến núi). Để trống để dùng định mức chung.</p>
+            </div>
+            <div className="field">
+              <label htmlFor="route-stations" style={labelStyle}>Số trạm thu phí</label>
+              <input
+                id="route-stations"
+                className="input"
+                type="number"
+                value={tollsStations}
+                onChange={e => setTollsStations(e.target.value)}
+                placeholder="0"
+              />
+              <p style={hintStyle}>Số trạm BOT trên tuyến · trừ vào tiền đường.</p>
+            </div>
+          </div>
+          <div className="field" style={{ marginTop: 12 }}>
+            <label htmlFor="route-salary" style={labelStyle}>Lương sản lượng tài xế (VNĐ / chuyến)</label>
+            <input
+              id="route-salary"
+              className="input"
+              type="number"
+              value={driverSalary}
+              onChange={e => setDriverSalary(e.target.value)}
+              placeholder="VD: 500000"
+            />
+            <p style={hintStyle}>Mức lương khoán cho 1 chuyến trên tuyến này. Để trống nếu tính theo công thức chung.</p>
+          </div>
+        </div>
       </div>
-      <div style={{ flex: 1, minWidth: 100 }}>
-        <Field label="Khoảng cách (km)"><input className="input" type="number" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0" /></Field>
-      </div>
-      <div style={{ flex: 1, minWidth: 120, display: 'flex', alignItems: 'center', paddingBottom: 4 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
-          <input type="checkbox" checked={isMountain} onChange={e => setIsMountain(e.target.checked)} style={{ width: 15, height: 15 }} />
-          <Mountain size={14} /> Leo núi
-        </label>
-      </div>
-      <div style={{ flex: 1, minWidth: 140 }}>
-        <Field label="NL khoán (lít)"><input className="input" type="number" value={fuelAllowance} onChange={e => setFuelAllowance(e.target.value)} placeholder="0" /></Field>
-      </div>
-      <div style={{ display: 'flex', gap: 6, paddingBottom: 4, alignItems: 'flex-end' }}>
-        <button className="btn btn--primary btn--sm" disabled={saving} onClick={() => { if (!name.trim()) return; onsave({ name: name.trim(), distanceKm: distance ? Number(distance) : undefined, isMountain: isMountain, fixedFuelAllowance: fuelAllowance || null }); }}>
-          {saving ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
-          {item ? 'Cập nhật' : 'Thêm'}
-        </button>
-        <button className="btn btn--ghost btn--sm" onClick={oncancel}><X size={12} /> Hủy</button>
-      </div>
-    </>
+    </Modal>
   );
 }
 
@@ -162,15 +285,21 @@ export default function RoutesConfigPage() {
         </div>
       </div>
 
-      {crud.showAddForm && !crud.editingId && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ background: 'var(--brand-soft)', borderRadius: 8, padding: '12px 16px' }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <RouteInlineAdd saving={crud.saving} onsave={crud.doCreate} oncancel={crud.cancelForm} />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal-based create/edit — was an inline tr form earlier; the cramped
+          layout hid the toll-station / fuel-allowance / driver-salary fields
+          that the trip-creation tip refers to, so users couldn't configure
+          them. Modal exposes them clearly with section grouping + hints. */}
+      <RouteFormModal
+        key={crud.editingId ?? (crud.showAddForm ? 'add' : 'closed')}
+        isOpen={crud.showAddForm || crud.editingId != null}
+        saving={crud.saving}
+        item={crud.editingId != null ? routes.find(r => r.id === crud.editingId) : undefined}
+        onsave={d => {
+          if (crud.editingId != null) crud.doUpdate(crud.editingId, d);
+          else crud.doCreate(d);
+        }}
+        oncancel={crud.cancelForm}
+      />
 
       <div className="table-wrap">
         <div className="toolbar">
@@ -188,33 +317,22 @@ export default function RoutesConfigPage() {
           <table>
             <thead>
               <tr>
-                <th>Tuyến đường</th><th className="num">KM</th><th>Loại</th><th className="num">Chuẩn 20ft</th>
+                <th>Tuyến đường</th><th className="num">KM</th><th>Loại</th>
+                <th className="num">Trạm thu phí</th><th className="num">Lương SL</th>
+                <th className="num">Chuẩn 20ft</th>
                 <th className="num">Chuẩn 40ft</th><th className="num">Sử dụng {monthLabel}</th><th style={{ width: 80 }}></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>}
               {filtered.map(r => {
-                if (crud.editingId === r.id) {
-                  return (
-                    <tr key={`edit-${r.id}`}>
-                      <td colSpan={7} style={{ padding: 0 }}>
-                        <div style={{ background: 'var(--brand-soft)', padding: '12px 16px' }}>
-                          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                            <RouteInlineAdd saving={crud.saving} item={r} onsave={d => crud.doUpdate(r.id, d)} oncancel={crud.cancelForm} />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                }
                 const prices = routePriceMap.get(r.id);
                 const trips = routeTripStats.get(r.id) || 0;
                 return (
                   <tr key={r.id}>
                     <td>
                       <div className="row-strong">{r.name}</div>
-                      {r.fixedFuelAllowance && <div className="row-meta">NL khoán: {r.fixedFuelAllowance} L</div>}
+                      {r.fixedFuelAllowance && <div className="row-meta">Định mức dầu: {r.fixedFuelAllowance} L</div>}
                     </td>
                     <td className="num">{r.distanceKm != null ? `${r.distanceKm}` : '—'}</td>
                     <td>
@@ -222,6 +340,8 @@ export default function RoutesConfigPage() {
                         ? <span className="pill pill--warn"><span className="dot" />Tuyến núi</span>
                         : <span className="pill pill--neutral">Đồng bằng</span>}
                     </td>
+                    <td className="num">{r.tollsStations != null ? r.tollsStations : '—'}</td>
+                    <td className="num">{r.driverSalary ? formatCurrency(Number(r.driverSalary)) : '—'}</td>
                     <td className="num">{prices?.ft20 ? formatCurrency(prices.ft20) : '—'}</td>
                     <td className="num">{prices?.ft40 ? formatCurrency(prices.ft40) : '—'}</td>
                     <td className="num">

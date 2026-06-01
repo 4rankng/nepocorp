@@ -32,37 +32,42 @@ export function KpiCards({ derived, prevPnlReport, lockedTrips, currentMonth, cu
 
   return (
     <div className="kpi-grid">
+      {/* Revenue */}
       <div className="kpi" onClick={() => navigate('/finance')}>
         <div className="kpi__top">
           <span className="kpi__label">Doanh thu {String(currentMonth).padStart(2, '0')}/{currentYear}</span>
         </div>
         <div className="kpi__value">{kpiRevenue.num}<span className="kpi__value-unit">{kpiRevenue.suffix && ` ${kpiRevenue.suffix}`} ₫</span></div>
-        <div className={`kpi__meta ${prevPnlReport ? (isRevUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
-          {(lockedTrips ?? 0) > 0 && <><strong>{lockedTrips}</strong> chuyến ĐÃ CHỐT · </>}
-          {prevPnlReport && (
-            <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              {isRevUp
-                ? <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>
-                : <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>
-              }
-            </svg>
+        <div className="kpi__meta">
+          {(lockedTrips ?? 0) > 0 && (
+            <span style={{ whiteSpace: 'nowrap' }}><strong>{lockedTrips}</strong> chuyến</span>
           )}
-          <strong>{revenueMoM}</strong> so với tháng trước
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap', color: prevPnlReport ? (isRevUp ? 'var(--accent)' : 'var(--danger)') : 'inherit', fontWeight: 600 }}>
+            {prevPnlReport && (
+              <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                {isRevUp ? <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></> : <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>}
+              </svg>
+            )}
+            {revenueMoM} vs T.trước
+          </span>
         </div>
         <div className="kpi__watermark" aria-hidden="true">
           <svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
       </div>
 
+      {/* Costs */}
       <div className="kpi" onClick={() => navigate('/finance')}>
         <div className="kpi__top">
           <span className="kpi__label">Tổng chi phí</span>
         </div>
         <div className="kpi__value">{kpiCosts.num}<span className="kpi__value-unit">{kpiCosts.suffix && ` ${kpiCosts.suffix}`} ₫</span></div>
         <div className="kpi__meta">
-          {((costs / (revenue || 1)) * 100).toFixed(1)}% doanh thu
+          <span style={{ whiteSpace: 'nowrap' }}>{((costs / (revenue || 1)) * 100).toFixed(1)}% doanh thu</span>
           {prevPnlReport && (
-            <> · <span style={{ color: isCostUp ? 'var(--warning)' : 'var(--success)', fontWeight: 600 }}>{costsMoM} so với tháng trước</span></>
+            <span style={{ whiteSpace: 'nowrap', color: isCostUp ? 'var(--warning)' : 'var(--accent)', fontWeight: 600 }}>
+              {costsMoM} vs T.trước
+            </span>
           )}
         </div>
         <div className="kpi__watermark" aria-hidden="true">
@@ -70,34 +75,37 @@ export function KpiCards({ derived, prevPnlReport, lockedTrips, currentMonth, cu
         </div>
       </div>
 
+      {/* Gross profit */}
       <div className="kpi kpi--success" onClick={() => navigate('/finance')}>
         <div className="kpi__top">
           <span className="kpi__label">Lợi nhuận gộp</span>
         </div>
         <div className="kpi__value">{kpiGross.num}<span className="kpi__value-unit">{kpiGross.suffix && ` ${kpiGross.suffix}`} ₫</span></div>
-        <div className={`kpi__meta ${prevPnlReport ? (isGrossUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
-          {prevPnlReport && (
-            <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              {isGrossUp
-                ? <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>
-                : <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>
-              }
-            </svg>
-          )}
-          <strong>{grossMoM}</strong> · biên {((grossProfit / (revenue || 1)) * 100).toFixed(1)}%
+        <div className="kpi__meta">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap', color: prevPnlReport ? (isGrossUp ? 'var(--accent)' : 'var(--danger)') : 'inherit', fontWeight: 600 }}>
+            {prevPnlReport && (
+              <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                {isGrossUp ? <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></> : <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>}
+              </svg>
+            )}
+            {grossMoM}
+          </span>
+          <span style={{ whiteSpace: 'nowrap' }}>biên {((grossProfit / (revenue || 1)) * 100).toFixed(1)}%</span>
         </div>
         <div className="kpi__watermark" aria-hidden="true">
           <svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         </div>
       </div>
 
+      {/* Net profit */}
       <div className="kpi kpi--accent" onClick={() => navigate('/profit')}>
         <div className="kpi__top">
           <span className="kpi__label">Lợi nhuận ròng</span>
         </div>
         <div className="kpi__value">{kpiNet.num}<span className="kpi__value-unit">{kpiNet.suffix && ` ${kpiNet.suffix}`} ₫</span></div>
         <div className="kpi__meta">
-          Sau phí QL · <span style={styles.brandBold}>Phân chia →</span>
+          <span style={{ whiteSpace: 'nowrap' }}>Sau phí QL</span>
+          <span style={{ whiteSpace: 'nowrap', color: 'var(--brand)', fontWeight: 600 }}>Phân chia →</span>
         </div>
         <div className="kpi__watermark" aria-hidden="true">
           <svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>

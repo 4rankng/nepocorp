@@ -386,10 +386,28 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
         distanceKm: existingTrip.route.distanceKm ?? undefined,
         isMountain: existingTrip.route.isMountain,
         fixedFuelAllowance: existingTrip.route.fixedFuelAllowance,
+        tollsStations: existingTrip.route.tollsStations ?? undefined,
+        driverSalary: existingTrip.route.driverSalary ?? undefined,
       };
     }
     return null;
   }, [routeId, options.routes, isEditMode, existingTrip]);
+
+  useEffect(() => {
+    if (!selectedRouteData) return;
+    if (isEditMode && existingTrip && existingTrip.routeId === selectedRouteData.id) {
+      return;
+    }
+    if (selectedRouteData.tollsStations != null) {
+      setTollsStations(String(selectedRouteData.tollsStations));
+    }
+    if (selectedRouteData.fixedFuelAllowance != null) {
+      setFuelLitersOverride(String(selectedRouteData.fixedFuelAllowance));
+    }
+    if (selectedRouteData.driverSalary != null) {
+      setDriverSalary(String(selectedRouteData.driverSalary));
+    }
+  }, [selectedRouteData, isEditMode, existingTrip]);
 
   const estimatedFuelCost = useMemo(() => {
     if (fuelMode === FuelMode.FLAT_RATE) {

@@ -14,6 +14,8 @@ export interface RouteOption extends SelectOption {
   distanceKm?: number;
   isMountain?: boolean;
   fixedFuelAllowance?: string | null;
+  tollsStations?: number | null;
+  driverSalary?: string | null;
 }
 
 export interface TruckOption extends SelectOption {
@@ -45,7 +47,7 @@ interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }>;
   trucks: Array<{ id: number; licensePlate: string; currentTrailerId: number | null }>;
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
-  routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null }>;
+  routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null; tollsStations: number | null; driverSalary: string | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
   trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
 }
@@ -78,6 +80,8 @@ export function useTripOptions(): TripOptions {
         distanceKm: r.distanceKm ?? undefined,
         isMountain: r.isMountain,
         fixedFuelAllowance: r.fixedFuelAllowance,
+        tollsStations: r.tollsStations,
+        driverSalary: r.driverSalary,
       })) ?? [],
     trucks: catalog?.trucks.map((t) => ({ id: t.id, label: t.licensePlate, currentTrailerId: t.currentTrailerId ?? null })) ?? [],
     trailerTypes: [{ value: '20FT', label: '20FT' }, { value: '40FT', label: '40FT' }],

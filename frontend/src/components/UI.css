@@ -335,8 +335,10 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   color: var(--ink-3);
   display: flex;
   align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   margin-top: auto;
+  line-height: 1.3;
 }
 .kpi__meta--up { color: var(--accent); font-weight: 600; }
 .kpi__meta--down { color: var(--danger); font-weight: 600; }
@@ -359,6 +361,7 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 .kpi--success .kpi__watermark { color: var(--accent);  opacity: 0.13; }
 .kpi--accent .kpi__watermark  { color: var(--brand);   opacity: 0.12; }
 .kpi--info .kpi__watermark    { color: var(--info);    opacity: 0.13; }
+
 
 /* legacy stat-card for backward compat */
 .stat-card {
