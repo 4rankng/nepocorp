@@ -30,9 +30,12 @@ const router = Router();
 // ─── Ledger ──────────────────────────────────────────────────────────────────
 
 router.get('/ledger', asyncHandler(async (req: Request, res: Response) => {
+  const entityTypeVal = (req.query.entityType || req.query.entity_type) as string;
+  const entityIdVal = (req.query.entityId || req.query.entity_id) as string;
+
   const result = await LedgerService.getEntries({
-    entityType: req.query.entity_type as string,
-    entityId: req.query.entity_id ? parseInt(req.query.entity_id as string) : undefined,
+    entityType: entityTypeVal,
+    entityId: entityIdVal ? parseInt(entityIdVal, 10) : undefined,
     page: parseInt(req.query.page as string) || 1,
     limit: parseInt(req.query.limit as string) || 50,
   });
@@ -40,8 +43,8 @@ router.get('/ledger', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.get('/ledger/balances', asyncHandler(async (req: Request, res: Response) => {
-  const entityType = req.query.entity_type as string;
-  if (!entityType) return res.status(400).json({ error: 'entity_type is required' });
+  const entityType = (req.query.entityType || req.query.entity_type) as string;
+  if (!entityType) return res.status(400).json({ error: 'entityType is required' });
   res.json(await financialService.getEntityBalances(entityType));
 }));
 

@@ -30,15 +30,21 @@ async function invalidateReportCaches(invalidatePnl?: boolean) {
 
 // List trips with filters
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const truckIdVal = (req.query.truckId || req.query.truck_id) as string;
+  const driverIdVal = (req.query.driverId || req.query.driver_id) as string;
+  const customerIdVal = (req.query.customerId || req.query.customer_id) as string;
+  const dateFromVal = (req.query.dateFrom || req.query.date_from) as string;
+  const dateToVal = (req.query.dateTo || req.query.date_to) as string;
+
   res.json(await tripService.getTrips({
     page: parseInt(req.query.page as string) || 1,
     limit: parseInt(req.query.limit as string) || 50,
     status: req.query.status as string,
-    truckId: req.query.truck_id ? parseInt(req.query.truck_id as string) : undefined,
-    driverId: req.query.driver_id ? parseInt(req.query.driver_id as string) : undefined,
-    customerId: req.query.customer_id ? parseInt(req.query.customer_id as string) : undefined,
-    dateFrom: req.query.date_from as string,
-    dateTo: req.query.date_to as string,
+    truckId: truckIdVal ? parseInt(truckIdVal, 10) : undefined,
+    driverId: driverIdVal ? parseInt(driverIdVal, 10) : undefined,
+    customerId: customerIdVal ? parseInt(customerIdVal, 10) : undefined,
+    dateFrom: dateFromVal,
+    dateTo: dateToVal,
   }));
 }));
 

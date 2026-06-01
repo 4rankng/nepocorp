@@ -72,8 +72,8 @@ export function useTripCosts(month: number, year: number) {
       const res = await tripClient.listTrips({
         status: 'LOCKED',
         limit: 100,
-        date_from: salaryPeriodQuery.data!.start,
-        date_to: salaryPeriodQuery.data!.end,
+        dateFrom: salaryPeriodQuery.data!.start,
+        dateTo: salaryPeriodQuery.data!.end,
       });
       return res.items;
     },
@@ -95,8 +95,8 @@ export function useMonthlyTrips(year: number, month: number) {
     queryFn: async () => {
       const res = await tripClient.listTrips({
         limit: 100,
-        date_from: salaryPeriodQuery.data!.start,
-        date_to: salaryPeriodQuery.data!.end,
+        dateFrom: salaryPeriodQuery.data!.start,
+        dateTo: salaryPeriodQuery.data!.end,
       });
       return res.items;
     },

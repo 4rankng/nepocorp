@@ -21,7 +21,7 @@ export interface CustomerAging {
 export const financialClient = {
   getLedgerEntries: async (params?: { entityType?: string; limit?: number }) => {
     const qs = new URLSearchParams();
-    if (params?.entityType) qs.set('entity_type', params.entityType);
+    if (params?.entityType) qs.set('entityType', params.entityType);
     if (params?.limit) qs.set('limit', String(params.limit));
     const query = qs.toString() ? `?${qs.toString()}` : '';
     return api.get<PaginatedResponse<LedgerEntry>>(`${FINANCIAL.LEDGER}${query}`);
