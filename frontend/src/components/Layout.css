@@ -664,10 +664,18 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
-.topbar-date strong {
-  color: var(--ink);
+.topbar-date__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.topbar-date__period {
+  font-size: 10.5px;
   font-family: var(--font-mono);
-  font-weight: 600;
+  color: var(--ink-2);
+  font-weight: 500;
+  line-height: 1;
 }
 .topbar-date__nav {
   display: inline-flex;

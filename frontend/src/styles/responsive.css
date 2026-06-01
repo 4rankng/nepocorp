@@ -181,7 +181,6 @@
     padding: 8px;
   }
   .topbar-date { padding: 5px 8px; font-size: 12px; gap: 5px; }
-  .topbar-date__label { display: none; }
   .topbar-date__sep { display: none; }
 
   /* ── Sticky table headers ── */

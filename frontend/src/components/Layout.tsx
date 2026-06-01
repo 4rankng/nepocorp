@@ -33,6 +33,7 @@ import { ROLE_LABELS } from '@nepocorp/shared';
 import type { Role } from '@nepocorp/shared';
 import { useUnreadCount } from '../hooks/useNotificationQueries';
 import { MonthProvider, useMonth } from '../hooks/useMonth';
+import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 import { NotificationDrawer } from './NotificationDrawer';
 
 interface NavItem {
@@ -143,18 +144,21 @@ const errorBoxStyle: React.CSSProperties = {
 /** Navigable month chip in the topbar — reads from MonthProvider */
 function MonthNavigator() {
   const { month, year, goPrev, goNext } = useMonth();
-  const dateLabel = new Date(year, month - 1, 1).toLocaleDateString('vi-VN', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-  });
+  const { data: period } = useSalaryPeriod(month, year);
+
+  const periodLabel = period
+    ? `${period.start.slice(8, 10)}/${period.start.slice(5, 7)} - ${period.end.slice(8, 10)}/${period.end.slice(5, 7)}`
+    : null;
 
   return (
     <span className="topbar-date">
       <button className="topbar-date__nav" onClick={goPrev} aria-label="Tháng trước">
         <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
       </button>
-      <span className="topbar-date__label">Tháng {month}</span>
-      <span className="topbar-date__sep">·</span>
-      <strong>{dateLabel}</strong>
+      <span className="topbar-date__body">
+        <span className="topbar-date__label">Tháng {month}</span>
+        {periodLabel && <span className="topbar-date__period">{periodLabel}</span>}
+      </span>
       <button className="topbar-date__nav" onClick={goNext} aria-label="Tháng sau">
         <ChevronRight size={14} />
       </button>
