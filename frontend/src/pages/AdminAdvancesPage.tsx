@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Loader2, Wallet, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import {
   ADVANCE_REQUEST_STATUS_LABELS,
   AdvanceRequestStatus,
 } from '@nepocorp/shared';
-import { KPI, PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
 import {
   useAdminAdvanceRequests,
   useApproveAdvanceRequest,
@@ -34,6 +34,34 @@ const TABS: { key: StatusFilter; label: string }[] = [
   { key: AdvanceRequestStatus.APPROVED, label: 'Đã duyệt' },
   { key: AdvanceRequestStatus.REJECTED, label: 'Từ chối' },
 ];
+
+/* ── Compact KPI card — matches dashboard .wf-kpi proportions ─────────── */
+
+interface AdvKPIProps {
+  label: string;
+  value: number;
+  meta: string;
+  variant: 'warn' | 'success' | 'danger';
+  active?: boolean;
+  hasItems?: boolean;
+  onClick: () => void;
+}
+
+function AdvKPI({ label, value, meta, variant, active = false, hasItems = false, onClick }: AdvKPIProps) {
+  return (
+    <div
+      className={`adv-kpi adv-kpi--${variant}${active ? ' is-active' : ''}${hasItems ? ' has-items' : ''}`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+    >
+      <div className="adv-kpi__label">{label}</div>
+      <div className="adv-kpi__value">{value}</div>
+      <div className="adv-kpi__meta">{meta}</div>
+    </div>
+  );
+}
 
 /* ── Desktop grid row ──────────────────────────────────────────────────── */
 
@@ -247,29 +275,30 @@ export default function AdminAdvancesPage() {
       />
 
       {/* ── KPI strip ─────────────────────────────────────────────────── */}
-      <div className="kpi-grid cols-3">
-        <KPI
+      <div className="adv-kpi-row">
+        <AdvKPI
           label="Chờ duyệt"
           value={stats.counts.PENDING}
-          variant="warn"
-          icon={Clock}
           meta={`${formatCompact(stats.totals.PENDING)} ₫`}
+          variant="warn"
+          active={statusFilter === AdvanceRequestStatus.PENDING}
+          hasItems={stats.counts.PENDING > 0}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.PENDING ? '' : AdvanceRequestStatus.PENDING)}
         />
-        <KPI
+        <AdvKPI
           label="Đã duyệt"
           value={stats.counts.APPROVED}
-          variant="success"
-          icon={CheckCircle2}
           meta={`${formatCompact(stats.totals.APPROVED)} ₫`}
+          variant="success"
+          active={statusFilter === AdvanceRequestStatus.APPROVED}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.APPROVED ? '' : AdvanceRequestStatus.APPROVED)}
         />
-        <KPI
+        <AdvKPI
           label="Từ chối"
           value={stats.counts.REJECTED}
-          variant="danger"
-          icon={XCircle}
           meta={`${formatCompact(stats.totals.REJECTED)} ₫`}
+          variant="danger"
+          active={statusFilter === AdvanceRequestStatus.REJECTED}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.REJECTED ? '' : AdvanceRequestStatus.REJECTED)}
         />
       </div>
@@ -298,6 +327,7 @@ export default function AdminAdvancesPage() {
           <div className="adv-empty">
             <Wallet size={32} className="adv-empty-icon" />
             <div className="adv-empty-text">Không có yêu cầu tạm ứng nào</div>
+            <div className="adv-empty-hint">Giao nhận có thể gửi yêu cầu từ ứng dụng di động</div>
           </div>
         ) : (
           <>

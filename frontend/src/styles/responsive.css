@@ -187,9 +187,9 @@
   thead.sticky-header { position: relative; }
 
   /* ── Page header ── */
-  .page-title { font-size: 19px; line-height: 1.2; margin-bottom: 2px; }
+  .page-title { font-size: 18px; line-height: 1.2; margin-bottom: 2px; }
   .page-subtitle { font-size: 12px; line-height: 1.4; }
-  .page-header { flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 14px; }
+  .page-header { flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
   .page-header .page-actions,
   .page-actions { flex-wrap: wrap; width: 100%; gap: 8px; }
   .page-actions .btn,
