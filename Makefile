@@ -113,11 +113,11 @@ push-frontend:
 deploy: deploy-backend deploy-frontend
 
 ## deploy-backend: Pull & restart backend on droplet + run migrations
-deploy-backend:
+deploy-backend: push-backend
 	$(MAKE) -C backend deploy
 
 ## deploy-frontend: Pull & restart frontend on droplet
-deploy-frontend:
+deploy-frontend: push-frontend
 	$(MAKE) -C frontend deploy
 
 ## prod-migrate: Apply all Drizzle SQL migrations to production DB

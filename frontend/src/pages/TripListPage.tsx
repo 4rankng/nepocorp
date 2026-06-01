@@ -102,27 +102,37 @@ export default function TripListPage() {
   }, [statusFilter, month, year, truckFilter, customerFilter, searchQuery]);
 
   // ── Derived data ──────────────────────────────────────────────────────
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+  
+  const baseTrips = useMemo(() => {
+    return trips.filter((trip) => {
+      const dep = trip.departureDate;
+      if (salaryPeriod) {
+        if (!dep || dep < salaryPeriod.start || dep > salaryPeriod.end) return false;
+      } else {
+        if (!dep?.startsWith(monthKey)) return false;
+      }
+      return true;
+    });
+  }, [trips, salaryPeriod, monthKey]);
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {
-      all: trips.length,
+      all: baseTrips.length,
       [TripStatus.CREATED]: 0,
       [TripStatus.IN_TRANSIT]: 0,
       [TripStatus.COMPLETED]: 0,
       [TripStatus.LOCKED]: 0,
       [TripStatus.CANCELED]: 0,
     };
-    for (const t of trips) counts[t.status] = (counts[t.status] ?? 0) + 1;
+    for (const t of baseTrips) counts[t.status] = (counts[t.status] ?? 0) + 1;
     return counts;
-  }, [trips]);
+  }, [baseTrips]);
 
   const filteredTrips = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return trips.filter((trip) => {
+    return baseTrips.filter((trip) => {
       if (statusFilter && trip.status !== statusFilter) return false;
-      if (salaryPeriod) {
-        const dep = trip.departureDate;
-        if (!dep || dep < salaryPeriod.start || dep > salaryPeriod.end) return false;
-      }
       if (truckFilter && trip.truck?.licensePlate !== truckFilter) return false;
       if (customerFilter && String(trip.customerId) !== customerFilter) return false;
       if (q) {
@@ -135,7 +145,7 @@ export default function TripListPage() {
       }
       return true;
     });
-  }, [trips, statusFilter, truckFilter, customerFilter, searchQuery, salaryPeriod]);
+  }, [baseTrips, statusFilter, truckFilter, customerFilter, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTrips.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -147,19 +157,13 @@ export default function TripListPage() {
   pageRangeRef.current = pageRange;
 
   // ── Hero metrics (selected month) ──────────────────────────────────────
-  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-  const monthTrips = useMemo(
-    () => trips.filter((t) => t.departureDate?.startsWith(monthKey)),
-    [trips, monthKey],
-  );
-
   const heroSummary = useMemo(() => {
     let km = 0;
     let fuel = 0;
     let road = 0;
     let revenue = 0;
     let missingFuel = 0;
-    for (const t of monthTrips) {
+    for (const t of baseTrips) {
       km += Number(t.route?.distanceKm ?? 0);
       const f = t.fuelLiters ? Number(t.fuelLiters) : 0;
       if (f) fuel += f;
@@ -169,7 +173,7 @@ export default function TripListPage() {
     }
     const avgPer100 = km > 0 && fuel > 0 ? (fuel / km) * 100 : 0;
     return { km, fuel, road, revenue, missingFuel, avgPer100 };
-  }, [monthTrips]);
+  }, [baseTrips]);
 
   // Status breakdown for breakdown bar (all trips, not just this month)
   const breakdownPct = (statusCounts.all || 0) === 0
@@ -185,19 +189,19 @@ export default function TripListPage() {
   // Distinct trucks + customers for dropdowns
   const truckOptions = useMemo(() => {
     const set = new Set<string>();
-    for (const t of trips) {
+    for (const t of baseTrips) {
       if (t.truck?.licensePlate) set.add(t.truck.licensePlate);
     }
     return Array.from(set).sort();
-  }, [trips]);
+  }, [baseTrips]);
 
   const customerOptions = useMemo(() => {
     const map = new Map<number, string>();
-    for (const t of trips) {
+    for (const t of baseTrips) {
       if (t.customer?.name) map.set(t.customerId, t.customer.name);
     }
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], 'vi'));
-  }, [trips]);
+  }, [baseTrips]);
 
   // ── Actions ───────────────────────────────────────────────────────────
   const handleExport = () => {
@@ -480,7 +484,7 @@ export default function TripListPage() {
             <div className="hero-eyebrow">Sổ chuyến · {todayLabel}</div>
             <h1 className="hero-h1">Sổ chuyến đi</h1>
             <div className="hero-sub">
-              {trips.length} chuyến đã ghi nhận
+              {baseTrips.length} chuyến đã ghi nhận
               {statusCounts[TripStatus.COMPLETED] > 0 && (
                 <span title="Chờ khóa: chuyến đã hoàn thành, chờ kế toán xác nhận khóa sổ kế toán"> · {statusCounts[TripStatus.COMPLETED]} chờ khóa</span>
               )}
@@ -530,7 +534,7 @@ export default function TripListPage() {
               {heroSummary.km.toLocaleString('vi-VN')}
               <span className="metric-unit">km</span>
             </div>
-            <div className="metric-delta delta-flat">{monthTrips.length} chuyến tháng này</div>
+            <div className="metric-delta delta-flat">{baseTrips.length} chuyến tháng này</div>
           </div>
           <div className="metric">
             <div className="metric-label">Tổng dầu tiêu thụ</div>

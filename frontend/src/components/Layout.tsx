@@ -177,29 +177,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const unreadCount = unreadData?.count ?? 0;
 
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const topbarRef = useRef<HTMLElement>(null);
-
-  // Hide topbar on scroll-down, reveal on scroll-up or back at top
-  useEffect(() => {
-    const scroller = document.getElementById('main-content');
-    if (!scroller) return;
-    let lastY = 0;
-    const onScroll = () => {
-      const y = scroller.scrollTop;
-      const el = topbarRef.current;
-      if (!el) return;
-      if (y <= 0) {
-        el.classList.remove('topbar--hidden');
-      } else if (y > lastY) {
-        el.classList.add('topbar--hidden');
-      } else {
-        el.classList.remove('topbar--hidden');
-      }
-      lastY = y;
-    };
-    scroller.addEventListener('scroll', onScroll, { passive: true });
-    return () => scroller.removeEventListener('scroll', onScroll);
-  }, []);
 
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
@@ -606,7 +583,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <MonthProvider>
       <div className="app-main">
-        <header className="topbar" ref={topbarRef}>
+        <header className="topbar">
           <button
             className="topbar__toggle"
             aria-label="Ẩn / hiện menu"

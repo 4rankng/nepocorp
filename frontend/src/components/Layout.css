@@ -551,12 +551,6 @@
           backdrop-filter: blur(14px) saturate(140%);
   transition: transform 220ms var(--ease), opacity 220ms var(--ease), margin-top 220ms var(--ease);
 }
-.topbar--hidden {
-  transform: translateY(-100%);
-  margin-top: calc(-1 * var(--topbar-h));
-  opacity: 0;
-  pointer-events: none;
-}
 .topbar-divider { width: 1px; height: 20px; background: var(--line); margin: 0 6px; }
 
 /* Wireframe topbar classes */
