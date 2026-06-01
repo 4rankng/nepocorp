@@ -23,6 +23,8 @@ const DriverTripsPage = lazy(() => import('./pages/DriverTripsPage'));
 const DriverTripDetailPage = lazy(() => import('./pages/DriverTripDetailPage'));
 const DriverEarningsPage = lazy(() => import('./pages/DriverEarningsPage'));
 const DriverPenaltyPage = lazy(() => import('./pages/DriverPenaltyPage'));
+const ForwarderTripsPage = lazy(() => import('./pages/ForwarderTripsPage'));
+const ForwarderTripDetailPage = lazy(() => import('./pages/ForwarderTripDetailPage'));
 const DispatchPage = lazy(() => import('./pages/DispatchPage'));
 const ProfitPage = lazy(() => import('./pages/ProfitPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
@@ -69,11 +71,16 @@ function AppRoutes() {
   );
 
   const isDriver = user?.role === Role.DRIVER;
+  const isForwarder = user?.role === Role.FORWARDER;
   const isAdmin = user?.role === Role.ADMIN;
   const driverHome = '/my-trips';
+  const forwarderHome = '/my-forwarder-trips';
   const adminHome = '/dashboard';
-  const adminOnly = (el: ReactElement) => (isDriver ? <Navigate to={driverHome} replace /> : el);
-  const driverOnly = (el: ReactElement) => (isDriver ? el : <Navigate to={adminHome} replace />);
+  const isPortalUser = isDriver || isForwarder;
+  const portalHome = isDriver ? driverHome : forwarderHome;
+  const adminOnly = (el: ReactElement) => (isPortalUser ? <Navigate to={portalHome} replace /> : el);
+  const driverOnly = (el: ReactElement) => (isDriver ? el : <Navigate to={isForwarder ? forwarderHome : adminHome} replace />);
+  const forwarderOnly = (el: ReactElement) => (isForwarder ? el : <Navigate to={isDriver ? driverHome : adminHome} replace />);
   const superAdminOnly = (el: ReactElement) => (isAdmin ? el : <Navigate to={adminHome} replace />);
 
   // Wrap each page in its own ErrorBoundary so a crash in one route
@@ -91,10 +98,10 @@ function AppRoutes() {
       <Layout>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-          <Route path="/" element={<Navigate to={isDriver ? driverHome : adminHome} replace />} />
+          <Route path="/" element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />} />
           <Route
             path="/dashboard"
-            element={isDriver ? <Navigate to={driverHome} replace /> : page(<DashboardPage />)}
+            element={isPortalUser ? <Navigate to={portalHome} replace /> : page(<DashboardPage />)}
           />
           <Route path="/dispatch" element={adminOnly(page(<DispatchPage />))} />
           <Route path="/fleet" element={adminOnly(page(<FleetPage />))} />
@@ -142,9 +149,11 @@ function AppRoutes() {
           <Route path="/my-trips" element={driverOnly(page(<DriverTripsPage />))} />
           <Route path="/my-trips/:id" element={driverOnly(page(<DriverTripDetailPage />))} />
           <Route path="/my-earnings" element={driverOnly(page(<DriverEarningsPage />))} />
+          <Route path="/my-forwarder-trips" element={forwarderOnly(page(<ForwarderTripsPage />))} />
+          <Route path="/my-forwarder-trips/:id" element={forwarderOnly(page(<ForwarderTripDetailPage />))} />
           <Route
             path="*"
-            element={<Navigate to={isDriver ? driverHome : adminHome} replace />}
+            element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />}
           />
             </Routes>
           </Suspense>

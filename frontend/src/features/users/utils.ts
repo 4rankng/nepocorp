@@ -35,6 +35,7 @@ export const ROLE_PILL: Record<Role, { cls: string; label: string }> = {
   [Role.MANAGER]:    { cls: 'pill pill--warn',    label: 'Quản lý' },
   [Role.ACCOUNTANT]: { cls: 'pill pill--neutral', label: 'Kế toán' },
   [Role.DRIVER]:     { cls: 'pill pill--success', label: 'Tài xế' },
+  [Role.FORWARDER]:  { cls: 'pill pill--info',    label: 'Giao nhận' },
 };
 
 export const AVATAR_COLORS: Record<Role, { bg: string; color: string }> = {
@@ -42,6 +43,7 @@ export const AVATAR_COLORS: Record<Role, { bg: string; color: string }> = {
   [Role.MANAGER]:    { bg: 'var(--warning-soft)', color: 'var(--warning)' },
   [Role.ACCOUNTANT]: { bg: 'var(--warning-soft)', color: 'var(--warning)' },
   [Role.DRIVER]:     { bg: 'var(--success-soft)', color: 'var(--success)' },
+  [Role.FORWARDER]:  { bg: 'var(--info-soft)',     color: 'var(--info)' },
 };
 
 export type FilterKey = 'all' | Role;

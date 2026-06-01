@@ -7,7 +7,7 @@ export interface LedgerPostRequest {
   txnType: TxnType;
   txnId?: number;
   receiptId?: string;
-  entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR';
+  entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER';
   entityId: number;
   debit: number;
   credit: number;
@@ -22,7 +22,8 @@ export class LedgerService {
     if (type === 'CUSTOMER') return 1;
     if (type === 'DRIVER') return 2;
     if (type === 'VENDOR') return 3;
-    return 4;
+    if (type === 'FORWARDER') return 4;
+    return 5;
   }
 
   /**
@@ -36,7 +37,7 @@ export class LedgerService {
   /**
    * Acquire sorted locks for multiple entities to prevent deadlocks
    */
-  static async lockEntities(tx: any, entities: { entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR'; entityId: number }[]) {
+  static async lockEntities(tx: any, entities: { entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }[]) {
     // Sort entities globally to prevent deadlocks
     const sorted = [...entities].sort((a, b) => {
       const aKey = this.getEntityTypeKey(a.entityType);
@@ -72,7 +73,7 @@ export class LedgerService {
     let newBalance = prevBalance;
     if (request.entityType === 'CUSTOMER') {
       newBalance = prevBalance + request.debit - request.credit;
-    } else if (request.entityType === 'DRIVER' || request.entityType === 'VENDOR') {
+    } else if (request.entityType === 'DRIVER' || request.entityType === 'VENDOR' || request.entityType === 'FORWARDER') {
       newBalance = prevBalance + request.credit - request.debit;
     }
 

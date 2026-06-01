@@ -31,15 +31,16 @@ Mọi tài liệu được viết bằng **tiếng Việt**.
 | 10 | [Quản trị Hệ thống](./10-QUAN_TRI_HE_THONG.md) | Quản lý tài khoản người dùng, nhật ký hoạt động | `/users`, `/audit-logs` |
 | 11 | [Cổng thông tin Lái xe](./11-LAI_XE_MOBILE.md) | Lệnh vận chuyển, chi tiết chuyến, thu nhập, phạt (mobile-first) | `/my-trips`, `/my-trips/:id`, `/my-earnings`, `/my-penalties` |
 | 12 | [Chi phí, NCC & Công nợ phải trả](./12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md) | Danh mục Nhà cung cấp, hạng mục chi phí (một lần/định kỳ), nhập phiếu chi phí, công nợ phải trả, nhắc gia hạn | `/suppliers`, `/expenses`, `/payables`, `/payables/:id` |
+| 13 | [Nhân viên giao nhận & Tạm ứng](./13-GIAO_NHAN_VA_TAM_UNG.md) | Xem chuyến, nhập container/seal, ghi chi phí phát sinh, tạm ứng (Phase 2/3) | `/my-forwarder-trips`, `/my-forwarder-trips/:id` |
 
 ---
 
 ## Độ phủ
 
-### Routes (33/33)
+### Routes (42/42)
 
 <details>
-<summary>✅ Đã phủ toàn bộ 33 routes</summary>
+<summary>✅ Đã phủ toàn bộ 42 routes</summary>
 
 | Route | Trang | Tài liệu |
 |-------|-------|----------|
@@ -70,20 +71,29 @@ Mọi tài liệu được viết bằng **tiếng Việt**.
 | `/config/cap-table` | CapTableConfigPage | 09 |
 | `/config/customers` | CustomersConfigPage | 09 |
 | `/config/management-fees` | ManagementFeesConfigPage | 09 |
+| `/config/expense-categories` | ExpenseCategoriesConfigPage | 12 |
+| `/suppliers` | SupplierListPage | 12 |
+| `/expenses` | ExpenseListPage | 12 |
+| `/expenses/new` | ExpenseEntryPage (create) | 12 |
+| `/expenses/:id/edit` | ExpenseEntryPage (edit) | 12 |
+| `/payables` | PayableListPage | 12 |
+| `/payables/:id` | PayableDetailPage | 12 |
 | `/users` | UsersPage | 10 |
 | `/audit-logs` | AuditLogPage | 10 |
 | `/my-trips` | DriverTripsPage | 11 |
 | `/my-trips/:id` | DriverTripDetailPage | 11 |
 | `/my-earnings` | DriverEarningsPage | 11 |
 | `/my-penalties` | DriverPenaltyPage | 11 |
+| `/my-forwarder-trips` | ForwarderTripsPage | 13 |
+| `/my-forwarder-trips/:id` | ForwarderTripDetailPage | 13 |
 
 </details>
 
-### API Endpoints (93/93)
+### API Endpoints (109/109)
 
 Mỗi tài liệu liệt kê đầy đủ các API endpoint liên quan kèm method, path, request body, response, auth requirements, và error codes.
 
-### Vai trò (4/4)
+### Vai trò (5/5)
 
 | Vai trò | Tài liệu chính | Tài liệu tham khảo |
 |---------|---------------|-------------------|
@@ -91,6 +101,7 @@ Mỗi tài liệu liệt kê đầy đủ các API endpoint liên quan kèm meth
 | MANAGER | 00, 01-09 | 10 |
 | ACCOUNTANT | 00, 01-09 | 10 (chỉ xem user list) |
 | DRIVER | 00, 11 | — |
+| FORWARDER | 00, 13 | — |
 
 ---
 
@@ -142,3 +153,4 @@ Mỗi tài liệu có phần QA Test Checklist được chia thành:
 | Giám đốc (MANAGER) | `giamdoc` | `admin123` | `/dashboard` |
 | Kế toán (ACCOUNTANT) | `ketoan` | `admin123` | `/dashboard` |
 | Lái xe (DRIVER) | `laixe` | `admin123` | `/my-trips` |
+| Nhân viên giao nhận (FORWARDER) | `giaonhan` | `admin123` | `/my-forwarder-trips` |

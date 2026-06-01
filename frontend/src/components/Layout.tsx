@@ -22,6 +22,7 @@ import {
   Layers,
   FileText,
   Store,
+  Package,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -30,6 +31,8 @@ import { Modal, FormGroup } from './UI';
 import { useBadgeCounts } from '../hooks/useQueries';
 import { ROLE_LABELS } from '@nepocorp/shared';
 import type { Role } from '@nepocorp/shared';
+import { useUnreadCount } from '../hooks/useNotificationQueries';
+import { NotificationDrawer } from './NotificationDrawer';
 
 interface NavItem {
   key: string;
@@ -74,6 +77,10 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'my-earnings', label: 'Thu nhập', path: '/my-earnings', icon: DollarSign, section: 'operations' },
         { key: 'my-penalties', label: 'Kỷ luật', path: '/my-penalties', icon: AlertTriangle, section: 'operations' },
       ];
+    case 'FORWARDER':
+      return [
+        { key: 'my-forwarder-trips', label: 'Chuyến đi', path: '/my-forwarder-trips', icon: Package, section: 'operations' },
+      ];
     default:
       return [];
   }
@@ -111,6 +118,7 @@ function getPageTitle(pathname: string): string {
   if (pathname === '/audit-logs') return 'Nhật ký người dùng';
   if (pathname.startsWith('/my-trips')) return 'Lệnh của tôi';
   if (pathname.startsWith('/my-earnings')) return 'Thu nhập';
+  if (pathname.startsWith('/my-forwarder-trips')) return 'Chuyến đi';
   return 'NEPO';
 }
 
@@ -129,6 +137,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -566,9 +577,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <button className="icon-btn help-btn" aria-label="Trợ giúp">
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </button>
-            <button className="icon-btn notification-btn" aria-label="Thông báo">
+            <button className="icon-btn notification-btn" aria-label="Thông báo" onClick={() => setNotifOpen(true)}>
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-              <span className="badge">5</span>
+              {unreadCount > 0 && (
+                <span className="badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+              )}
             </button>
           </div>
         </header>
@@ -577,6 +590,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      <NotificationDrawer isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
     </div>
   );
 }

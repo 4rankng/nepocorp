@@ -1,0 +1,291 @@
+/* ============================================================================
+ * users.css — Scoped styles for the Users page
+ * ========================================================================== */
+
+/* ── User avatars with role-colored ring ────────────────────────────────── */
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  border: 2px solid transparent;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.user-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Role-colored ring variants */
+.user-avatar--admin {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.user-avatar--manager {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.user-avatar--accountant {
+  border-color: var(--ink-3);
+  background: var(--surface-3);
+  color: var(--ink-2);
+}
+
+.user-avatar--driver {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.user-avatar--forwarder {
+  border-color: var(--info);
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+/* ── User name column ───────────────────────────────────────────────────── */
+
+.user-name {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+
+.user-name__you {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.user-handle {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+/* ── Contact info rows ──────────────────────────────────────────────────── */
+
+.user-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.user-contact__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.user-contact__row svg {
+  width: 13px;
+  height: 13px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+/* ── Role filter pill color variants (active state uses role color) ──── */
+
+.filter-pill--admin.is-active {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.filter-pill--manager.is-active {
+  background: var(--warning);
+  border-color: var(--warning);
+}
+
+.filter-pill--accountant.is-active {
+  background: var(--ink-2);
+  border-color: var(--ink-2);
+}
+
+.filter-pill--driver.is-active {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.filter-pill--forwarder.is-active {
+  background: var(--info);
+  border-color: var(--info);
+}
+
+/* ── Premium table overrides for users ──────────────────────────────────── */
+
+.users-table-wrap {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.users-table-wrap:hover {
+  box-shadow: var(--sh);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* ── Mobile card enhancements ───────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+    border-width: 2.5px;
+  }
+
+  .users-mobile-card {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .users-mobile-card:last-child {
+    border-bottom: none;
+  }
+
+  .users-mobile-card__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .users-mobile-card__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .users-mobile-card__name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .users-mobile-card__handle {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    margin-top: 1px;
+  }
+
+  .users-mobile-card__role {
+    flex-shrink: 0;
+  }
+
+  .users-mobile-card__details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    padding-left: 52px;
+  }
+
+  .users-mobile-card__detail {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  .users-mobile-card__detail svg {
+    width: 12px;
+    height: 12px;
+    color: var(--ink-4);
+  }
+
+  .users-mobile-card__actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .users-mobile-card__action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: background 0.12s var(--ease), color 0.12s var(--ease), border-color 0.12s var(--ease);
+  }
+
+  .users-mobile-card__action-btn:hover {
+    background: #fff;
+    color: var(--ink);
+    border-color: var(--line-2);
+  }
+
+  .users-mobile-card__action-btn--danger {
+    color: var(--danger);
+    border-color: var(--danger-soft);
+  }
+
+  .users-mobile-card__action-btn--danger:hover {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-color: var(--danger-soft);
+  }
+}
+
+/* ── Empty state for users ──────────────────────────────────────────────── */
+
+.users-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.users-empty__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  color: var(--ink-3);
+}
+
+.users-empty__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.users-empty__desc {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 0;
+}

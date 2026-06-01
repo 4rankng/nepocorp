@@ -43,6 +43,7 @@
 | **Giám đốc** | `MANAGER` | `giamdoc` / `admin123` | `/dashboard` | Quản lý vận hành, tài chính, điều vận, phân bổ lợi nhuận |
 | **Kế toán** | `ACCOUNTANT` | `ketoan` / `admin123` | `/dashboard` | Tạo/sửa chuyến, ghi nhận thanh toán, công nợ |
 | **Lái xe** | `DRIVER` | `laixe` / `admin123` | `/my-trips` | Xem lịch trình, thu nhập, phạt (chỉ đọc) |
+| **Nhân viên giao nhận** | `FORWARDER` | `giaonhan` / `admin123` | `/my-forwarder-trips` | Xem chuyến, nhập container/seal, ghi chi phí phát sinh |
 
 ### 1.3 API Endpoints liên quan
 
@@ -84,6 +85,7 @@
 6. Nếu thành công, hệ thống chuyển hướng đến trang chủ theo vai trò:
    - ADMIN/MANAGER/ACCOUNTANT → `/dashboard`
    - DRIVER → `/my-trips`
+   - FORWARDER → `/my-forwarder-trips`
 
 **Mẹo nhanh:** Click chip tài khoản demo trên trang đăng nhập để tự động điền thông tin.
 
@@ -204,6 +206,12 @@ Authorization: Bearer <token>
 | Thu nhập | `/my-earnings` | DollarSign | Chi tiết thu nhập |
 | Phạt | `/my-penalties` | AlertTriangle | Nhật ký vi phạm |
 
+#### Sidebar Nhân viên giao nhận (FORWARDER)
+
+| Menu | Route | Icon | Mô tả |
+|------|-------|------|-------|
+| Chuyến đi | `/my-forwarder-trips` | Package | Danh sách chuyến, nhập container/seal, chi phí phát sinh |
+
 ### 2.5 Topbar
 
 | Thành phần | Mô tả |
@@ -256,13 +264,22 @@ Người dùng truy cập URL
      │
      └── CÓ → Kiểm tra vai trò
                │
-               ├── DRIVER truy cập route admin (VD: /finance, /debt, /users)
-               │   → Redirect về /my-trips
-               │
-               ├── ADMIN/MANAGER/ACCOUNTANT truy cập route driver (VD: /my-trips, /my-earnings)
-               │   → Redirect về /dashboard
-               │
-               └── Vai trò phù hợp → Render trang
+                ├── DRIVER truy cập route admin (VD: /finance, /debt, /users)
+                │   → Redirect về /my-trips
+                │
+                ├── FORWARDER truy cập route admin (VD: /finance, /debt, /users)
+                │   → Redirect về /my-forwarder-trips
+                │
+                ├── ADMIN/MANAGER/ACCOUNTANT truy cập route portal (VD: /my-trips, /my-forwarder-trips)
+                │   → Redirect về /dashboard
+                │
+                ├── DRIVER truy cập route FORWARDER (VD: /my-forwarder-trips)
+                │   → Redirect về /my-trips
+                │
+                ├── FORWARDER truy cập route DRIVER (VD: /my-trips)
+                │   → Redirect về /my-forwarder-trips
+                │
+                └── Vai trò phù hợp → Render trang
 ```
 
 ### 3.3 Luồng phân quyền Backend (Casbin)
@@ -352,6 +369,14 @@ Request → cors() → express.json() → express.static()
 | `maps` | ✅ | — | — | Google Maps API |
 | `photos` | ✅ | — | — | Xem ảnh (chỉ chuyến được phân) |
 
+#### FORWARDER (Nhân viên giao nhận) — Portal đọc + ghi
+
+| Resource | Read | Write | Delete | Mô tả |
+|----------|------|-------|--------|-------|
+| `forwarder_portal` | ✅ | ✅ | — | Xem chuyến, nhập container/seal/chi phí |
+| `maps` | ✅ | — | — | Google Maps API |
+| `photos` | ✅ | — | — | Xem ảnh |
+
 ### 4.2 HTTP Method → Casbin Action Mapping
 
 | HTTP Method | Casbin Action | Mô tả |
@@ -369,6 +394,7 @@ Request → cors() → express.json() → express.static()
 | Tất cả (chưa đăng nhập) | Auth check | → `/login` |
 | `/dashboard`, `/dispatch`, `/fleet`, `/trips/*`, `/finance`, `/profit`, `/debt/*`, `/penalties`, `/customers`, `/config/*`, `/users`, `/audit-logs` | `adminOnly()` | DRIVER → `/my-trips` |
 | `/my-trips`, `/my-trips/:id`, `/my-earnings`, `/my-penalties` | `driverOnly()` | Non-DRIVER → `/dashboard` |
+| `/my-forwarder-trips`, `/my-forwarder-trips/:id` | `forwarderOnly()` | Non-FORWARDER → trang chủ tương ứng |
 | `/` | Role-based redirect | DRIVER → `/my-trips`, khác → `/dashboard` |
 | `/routes` | Legacy redirect | → `/config/routes` |
 | `/trucks`, `/drivers`, `/trailers` | Legacy redirect | → `/fleet` |
@@ -404,7 +430,7 @@ Request → cors() → express.json() → express.static()
 | `email` | string | ⚠️ | Email hợp lệ |
 | `phone` | string | ⚠️ | Tối thiểu 6 ký tự |
 | `password` | string | ✅ | Tối thiểu 6 ký tự |
-| `role` | enum | ✅ | `ADMIN` \| `MANAGER` \| `ACCOUNTANT` \| `DRIVER` |
+| `role` | enum | ✅ | `ADMIN` \| `MANAGER` \| `ACCOUNTANT` \| `DRIVER` \| `FORWARDER` |
 | `status` | enum | — | `ACTIVE` \| `INACTIVE`, mặc định `ACTIVE` |
 
 ### 4.7 Error Response Format
@@ -484,6 +510,15 @@ Request → cors() → express.json() → express.static()
 | TC-0022 | Route 404 catch-all | Đã đăng nhập ADMIN | 1. Truy cập `/page-khong-ton-tai` | Redirect về `/dashboard` | Medium |
 | TC-0023 | Legacy URL redirect | Đã đăng nhập | 1. Truy cập `/trucks` | Redirect về `/fleet` | Low |
 | TC-0024 | Legacy URL /routes | Đã đăng nhập | 1. Truy cập `/routes` | Redirect về `/config/routes` | Low |
+| TC-0034 | FORWARDER truy cập /my-forwarder-trips | Đăng nhập bằng `giaonhan` | 1. Truy cập /my-forwarder-trips | Hiển thị danh sách chuyến | High |
+| TC-0035 | FORWARDER truy cập /dashboard | Đăng nhập bằng `giaonhan` | 1. Truy cập /dashboard trực tiếp | Redirect về /my-forwarder-trips | High |
+| TC-0036 | FORWARDER truy cập /finance | Đăng nhập bằng `giaonhan` | 1. Truy cập /finance trực tiếp | Redirect về /my-forwarder-trips | High |
+| TC-0037 | FORWARDER truy cập /my-trips (driver) | Đăng nhập bằng `giaonhan` | 1. Truy cập /my-trips | Redirect về /my-forwarder-trips | High |
+| TC-0038 | ADMIN truy cập /my-forwarder-trips | Đăng nhập bằng `admin` | 1. Truy cập /my-forwarder-trips | Redirect về /dashboard | High |
+| TC-0039 | DRIVER truy cập /my-forwarder-trips | Đăng nhập bằng `laixe` | 1. Truy cập /my-forwarder-trips | Redirect về /my-trips | High |
+| TC-0040 | FORWARDER gọi API admin | Đăng nhập bằng `giaonhan` | 1. Gọi GET /api/trips | 403 Forbidden | High |
+| TC-0041 | FORWARDER sidebar đúng | Đăng nhập bằng `giaonhan` | 1. Xem sidebar | Chỉ hiện 1 menu "Chuyến đi" | High |
+| TC-0042 | Route 404 catch-all FORWARDER | Đăng nhập bằng `giaonhan` | 1. Truy cập /page-khong-ton-tai | Redirect về /my-forwarder-trips | Medium |
 
 ### 5.4 Edge Cases & Error Handling
 
@@ -508,6 +543,7 @@ Request → cors() → express.json() → express.static()
 | TC-0031 | Trang đăng nhập mobile | Mở trên mobile (375px) | 1. Xem trang đăng nhập | Layout responsive, form sử dụng đúng | Medium |
 | TC-0032 | Sidebar mobile toggle | Đã đăng nhập, mobile | 1. Click hamburger menu | Sidebar slide in/out | Medium |
 | TC-0033 | DRIVER portal mobile | Đăng nhập DRIVER trên mobile | 1. Xem sidebar driver | Sidebar driver hiển thị đúng 3 menu items | High |
+| TC-0043 | FORWARDER portal mobile | Đăng nhập FORWARDER trên mobile | 1. Xem sidebar forwarder | Sidebar forwarder hiển thị đúng 1 menu item | High |
 
 ---
 

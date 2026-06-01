@@ -100,6 +100,24 @@ export const DRIVER = {
   PENALTIES: '/driver/me/penalties',
 } as const;
 
+// ─── Forwarder portal ───────────────────────────────────────────────────────────
+export const FORWARDER = {
+  TRIPS: '/forwarder/me/trips',
+  TRIP_DETAIL: (id: number) => `/forwarder/me/trips/${id}`,
+  CONTAINERS: (tripId: number) => `/forwarder/me/trips/${tripId}/containers`,
+  EXPENSES: '/forwarder/me/expenses',
+  EXPENSE: (id: number) => `/forwarder/me/expenses/${id}`,
+  FORWARDER_EXPENSES: '/forwarder-expenses',
+} as const;
+
+// ─── Notifications ──────────────────────────────────────────────────────────────
+export const NOTIFICATIONS = {
+  LIST: '/notifications',
+  UNREAD_COUNT: '/notifications/unread-count',
+  MARK_READ: (id: number) => `/notifications/${id}/read`,
+  MARK_ALL_READ: '/notifications/read-all',
+} as const;
+
 // ─── System ─────────────────────────────────────────────────────────────────────
 export const SYSTEM = {
   UPLOAD: '/upload',

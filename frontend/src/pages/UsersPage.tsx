@@ -6,6 +6,7 @@ import { useUserMutations } from '../features/users/hooks/useUserMutations';
 import { UserTable } from '../features/users/components/UserTable';
 import { AddPanel, EditPanel } from '../features/users/components/UserForm';
 import type { UserRow, FilterKey } from '../features/users/utils';
+import '../features/users/users.css';
 
 export default function UsersPage() {
   const { user: me } = useAuth();

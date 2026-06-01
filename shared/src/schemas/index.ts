@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
+  ForwarderExpenseType, AdvanceRequestStatus, AdvanceSettlementStatus,
 } from '../constants';
 
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
@@ -323,6 +324,34 @@ export const vendorPaymentSchema = z.object({
   confirmOverpay: z.boolean().optional(),
 });
 
+// ─── Forwarder ──────────────────────────────────────────────────────────────
+
+export const tripContainerSchema = z.object({
+  tripId: z.coerce.number().int().positive(),
+  containerNumber: z.string().min(1, 'Số container không được để trống'),
+  sealNumber: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+export const tripExpenseSchema = z.object({
+  tripId: z.coerce.number().int().positive(),
+  expenseType: z.nativeEnum(ForwarderExpenseType),
+  amount: positiveNumeric,
+  note: z.string().optional().nullable(),
+});
+
+export const createAdvanceRequestSchema = z.object({
+  amount: positiveNumeric,
+  reason: z.string().min(1, 'Lý do tạm ứng không được để trống'),
+});
+
+export const createAdvanceSettlementSchema = z.object({
+  totalExpenseAmount: nonNegNumeric,
+  refundAmount: nonNegNumeric.optional().default(0),
+  note: z.string().optional().nullable(),
+  advanceRequestIds: z.array(z.coerce.number().int().positive()).min(1, 'Phải chọn ít nhất 1 yêu cầu tạm ứng'),
+});
+
 // ─── Inferred types ──────────────────────────────────────────────────────────
 
 export type CreateTripInput = z.infer<typeof createTripSchema>;
@@ -351,3 +380,7 @@ export type SupplierInput = z.infer<typeof supplierSchema>;
 export type ExpenseCategoryInput = z.infer<typeof expenseCategorySchema>;
 export type ExpenseInput = z.infer<typeof expenseSchema>;
 export type VendorPaymentInput = z.infer<typeof vendorPaymentSchema>;
+export type TripContainerInput = z.infer<typeof tripContainerSchema>;
+export type TripExpenseInput = z.infer<typeof tripExpenseSchema>;
+export type CreateAdvanceRequestInput = z.infer<typeof createAdvanceRequestSchema>;
+export type CreateAdvanceSettlementInput = z.infer<typeof createAdvanceSettlementSchema>;

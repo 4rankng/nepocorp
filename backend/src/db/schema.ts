@@ -7,8 +7,8 @@ import {
 export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'COMPLETED', 'LOCKED', 'CANCELED']);
 export const fuelModeEnum = pgEnum('fuel_mode', ['AUTO', 'FLAT_RATE']);
 export const loadingTypeEnum = pgEnum('loading_type', ['HANG', 'VO']);
-export const roleEnum = pgEnum('role', ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER']);
-export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT']);
+export const roleEnum = pgEnum('role', ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER', 'FORWARDER']);
+export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT', 'FORWARDER_ADVANCE', 'FORWARDER_SETTLEMENT']);
 export const trailerTypeEnum = pgEnum('trailer_type', ['20FT', '40FT']);
 export const truckStatusEnum = pgEnum('truck_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
 export const driverStatusEnum = pgEnum('driver_status', ['ACTIVE', 'INACTIVE']);
@@ -17,6 +17,14 @@ export const tripPhotoTypeEnum = pgEnum('trip_photo_type', ['CONTAINER', 'SEAL',
 export const penaltyStatusEnum = pgEnum('penalty_status', ['ACTIVE', 'CANCELED']);
 export const vehicleComponentEnum = pgEnum('vehicle_component', ['TRUCK', 'TRAILER']);
 export const trailerStatusEnum = pgEnum('trailer_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
+export const forwarderExpenseTypeEnum = pgEnum('forwarder_expense_type', ['LIFTING', 'CUSTOMS', 'WEIGHING', 'INSPECTION', 'OTHER']);
+export const advanceRequestStatusEnum = pgEnum('advance_request_status', ['PENDING', 'APPROVED', 'REJECTED']);
+export const advanceSettlementStatusEnum = pgEnum('advance_settlement_status', ['PENDING', 'CHECKED_BY_ACCOUNTANT', 'APPROVED', 'REJECTED']);
+export const notificationTypeEnum = pgEnum('notification_type', [
+  'TRIP_CREATED', 'TRIP_DISPATCHED', 'TRIP_IN_TRANSIT', 'TRIP_COMPLETED',
+  'TRIP_LOCKED', 'TRIP_CANCELED', 'PAYMENT_RECEIVED', 'PENALTY_CREATED',
+  'PENALTY_CANCELED', 'OVERDUE_PAYMENT', 'SALARY_PERIOD_CLOSING', 'SYSTEM_ANNOUNCEMENT',
+]);
 
 
 // ─── Config tables ───────────────────────────────────────────────────────────
@@ -361,6 +369,67 @@ export const expensePhotos = pgTable('expense_photos', {
   uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
 });
 
+// ─── Forwarder ──────────────────────────────────────────────────────────────────
+
+export const tripContainers = pgTable('trip_containers', {
+  id: serial('id').primaryKey(),
+  tripId: integer('trip_id').references(() => trips.id).notNull(),
+  containerNumber: varchar('container_number', { length: 50 }).notNull(),
+  sealNumber: varchar('seal_number', { length: 50 }),
+  notes: text('notes'),
+  createdBy: integer('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('trip_containers_trip_id_idx').on(table.tripId),
+]);
+
+export const tripExpenses = pgTable('trip_expenses', {
+  id: serial('id').primaryKey(),
+  tripId: integer('trip_id').references(() => trips.id).notNull(),
+  forwarderId: integer('forwarder_id').references(() => users.id).notNull(),
+  expenseType: forwarderExpenseTypeEnum('expense_type').notNull(),
+  amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
+  note: text('note'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('trip_expenses_trip_id_idx').on(table.tripId),
+]);
+
+export const advanceRequests = pgTable('advance_requests', {
+  id: serial('id').primaryKey(),
+  requesterId: integer('requester_id').references(() => users.id).notNull(),
+  amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
+  reason: text('reason').notNull(),
+  status: advanceRequestStatusEnum('status').default('PENDING').notNull(),
+  approvedBy: integer('approved_by').references(() => users.id),
+  approvedAt: timestamp('approved_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const advanceSettlements = pgTable('advance_settlements', {
+  id: serial('id').primaryKey(),
+  forwarderId: integer('forwarder_id').references(() => users.id).notNull(),
+  totalExpenseAmount: numeric('total_expense_amount', { precision: 15, scale: 0 }).notNull(),
+  refundAmount: numeric('refund_amount', { precision: 15, scale: 0 }).default('0').notNull(),
+  status: advanceSettlementStatusEnum('status').default('PENDING').notNull(),
+  checkedBy: integer('checked_by').references(() => users.id),
+  checkedAt: timestamp('checked_at'),
+  approvedBy: integer('approved_by').references(() => users.id),
+  approvedAt: timestamp('approved_at'),
+  note: text('note'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const advanceSettlementRequests = pgTable('advance_settlement_requests', {
+  id: serial('id').primaryKey(),
+  settlementId: integer('settlement_id').references(() => advanceSettlements.id).notNull(),
+  advanceRequestId: integer('advance_request_id').references(() => advanceRequests.id).notNull(),
+}, (table) => [
+  uniqueIndex('adv_settlement_req_unique_idx').on(table.settlementId, table.advanceRequestId),
+]);
+
 // ─── Audit ───────────────────────────────────────────────────────────────────
 
 export const auditLogs = pgTable('audit_logs', {
@@ -410,6 +479,23 @@ export const routeDistanceCache = pgTable('route_distance_cache', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   uniqueIndex('route_distance_cache_uniq_idx').on(table.originCleaned, table.destinationCleaned),
+]);
+
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  type: notificationTypeEnum('type').notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  relatedEntityType: varchar('related_entity_type', { length: 50 }),
+  relatedEntityId: integer('related_entity_id'),
+  isRead: boolean('is_read').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('notifications_user_unread_idx').on(table.userId, table.isRead),
+  index('notifications_user_created_idx').on(table.userId, table.createdAt),
 ]);
 
 

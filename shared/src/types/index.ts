@@ -1,6 +1,7 @@
 import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
+  ForwarderExpenseType, AdvanceRequestStatus, AdvanceSettlementStatus,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -271,6 +272,20 @@ export interface AuditLog {
   createdAt: string;
 }
 
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export interface Notification {
+  id: number;
+  userId: number;
+  type: string;
+  title: string;
+  message: string;
+  relatedEntityType: string | null;
+  relatedEntityId: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
 // ─── Vendor & Expense ───────────────────────────────────────────────────────────
 
 export interface Supplier {
@@ -360,6 +375,70 @@ export interface VendorPaymentRequest {
   amount: number;
   date: string;
   confirmOverpay?: boolean;
+}
+
+// ─── Forwarder ────────────────────────────────────────────────────────────────────
+
+export interface TripContainer {
+  id: number;
+  tripId: number;
+  containerNumber: string;
+  sealNumber: string | null;
+  notes: string | null;
+  createdBy: number;
+  createdAt: string;
+}
+
+export interface TripExpense {
+  id: number;
+  tripId: number;
+  forwarderId: number;
+  expenseType: ForwarderExpenseType;
+  amount: string;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface TripExpenseWithRefs extends TripExpense {
+  forwarderName?: string | null;
+  tripCode?: string | null;
+}
+
+export interface AdvanceRequest {
+  id: number;
+  requesterId: number;
+  amount: string;
+  reason: string;
+  status: AdvanceRequestStatus;
+  approvedBy: number | null;
+  approvedAt: string | null;
+  createdAt: string;
+}
+
+export interface AdvanceRequestWithRefs extends AdvanceRequest {
+  requesterName?: string | null;
+  approverName?: string | null;
+}
+
+export interface AdvanceSettlement {
+  id: number;
+  forwarderId: number;
+  totalExpenseAmount: string;
+  refundAmount: string;
+  status: AdvanceSettlementStatus;
+  checkedBy: number | null;
+  checkedAt: string | null;
+  approvedBy: number | null;
+  approvedAt: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface AdvanceSettlementWithRefs extends AdvanceSettlement {
+  forwarderName?: string | null;
+  checkerName?: string | null;
+  approverName?: string | null;
+  linkedRequests?: AdvanceRequest[];
 }
 
 // ─── API types ───────────────────────────────────────────────────────────────

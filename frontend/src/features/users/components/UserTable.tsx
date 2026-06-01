@@ -1,6 +1,6 @@
 import {
   Users, ShieldCheck, UserCog, Lock, Plus, Pencil, Trash2,
-  Loader2, KeyRound,
+  Loader2, KeyRound, Mail, Phone, Search, UserX,
 } from 'lucide-react';
 import { formatDate } from '../../../lib/format';
 import { Role, ROLE_LABELS } from '../utils';
@@ -27,6 +27,22 @@ interface UserTableProps {
   onAdd: () => void;
 }
 
+const AVATAR_CLS: Record<Role, string> = {
+  [Role.ADMIN]: 'user-avatar--admin',
+  [Role.MANAGER]: 'user-avatar--manager',
+  [Role.ACCOUNTANT]: 'user-avatar--accountant',
+  [Role.DRIVER]: 'user-avatar--driver',
+  [Role.FORWARDER]: 'user-avatar--forwarder',
+};
+
+const ROLE_FILTER_CLS: Record<string, string> = {
+  [Role.ADMIN]: 'filter-pill--admin',
+  [Role.MANAGER]: 'filter-pill--manager',
+  [Role.ACCOUNTANT]: 'filter-pill--accountant',
+  [Role.DRIVER]: 'filter-pill--driver',
+  [Role.FORWARDER]: 'filter-pill--forwarder',
+};
+
 export function UserTable({
   users, filtered, total, staffCount, driverCount, inactiveCount,
   filter, search, canManage, deleting, currentUserId,
@@ -36,9 +52,9 @@ export function UserTable({
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Tài khoản người dùng</h1>
+          <h1 className="page-title">Quản lý <em>người dùng</em></h1>
           <p className="page-subtitle">
-            {total} tài khoản · {staffCount} nhân sự văn phòng · {driverCount} tài xế
+            {total} tài khoản · {staffCount} nhân sự · {driverCount} tài xế
           </p>
         </div>
         {canManage && (
@@ -56,25 +72,37 @@ export function UserTable({
 
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
         <div className="kpi">
-          <div className="kpi__top"><span className="kpi__label">Tổng tài khoản</span></div>
+          <div className="kpi__top">
+            <span className="kpi__label">Tổng tài khoản</span>
+            <div className="kpi__icon"><Users size={18} /></div>
+          </div>
           <div className="kpi__value">{total}</div>
           <div className="kpi__meta kpi__meta--up">Đang hoạt động trong hệ thống</div>
           <div className="kpi__watermark" aria-hidden="true"><Users size={72} /></div>
         </div>
         <div className="kpi kpi--warn">
-          <div className="kpi__top"><span className="kpi__label">Nhân sự văn phòng</span></div>
+          <div className="kpi__top">
+            <span className="kpi__label">Nhân sự văn phòng</span>
+            <div className="kpi__icon"><UserCog size={18} /></div>
+          </div>
           <div className="kpi__value">{staffCount}</div>
           <div className="kpi__meta">Admin · Quản lý · Kế toán</div>
           <div className="kpi__watermark" aria-hidden="true"><UserCog size={72} /></div>
         </div>
         <div className="kpi kpi--success">
-          <div className="kpi__top"><span className="kpi__label">Tài xế</span></div>
+          <div className="kpi__top">
+            <span className="kpi__label">Tài xế</span>
+            <div className="kpi__icon"><ShieldCheck size={18} /></div>
+          </div>
           <div className="kpi__value">{driverCount}</div>
           <div className="kpi__meta">Có quyền xem lệnh chạy xe</div>
           <div className="kpi__watermark" aria-hidden="true"><ShieldCheck size={72} /></div>
         </div>
         <div className="kpi kpi--danger">
-          <div className="kpi__top"><span className="kpi__label">Bị khoá / Ngưng</span></div>
+          <div className="kpi__top">
+            <span className="kpi__label">Bị khoá / Ngưng</span>
+            <div className="kpi__icon"><Lock size={18} /></div>
+          </div>
           <div className="kpi__value">{inactiveCount}</div>
           <div className="kpi__meta">Không thể đăng nhập</div>
           <div className="kpi__watermark" aria-hidden="true"><Lock size={72} /></div>
@@ -83,22 +111,22 @@ export function UserTable({
 
       <div className="toolbar">
         {(['all', ...Object.values(Role)] as FilterKey[]).map(f => {
-          const label = f === 'all'
-            ? `Tất cả · ${total}`
-            : `${ROLE_LABELS[f as Role]} · ${users.filter(u => u.role === f).length}`;
+          const count = f === 'all' ? total : users.filter(u => u.role === f).length;
+          const label = f === 'all' ? 'Tất cả' : ROLE_LABELS[f as Role];
           return (
             <button
               key={f}
-              className={`filter-pill${filter === f ? ' is-active' : ''}`}
+              className={`filter-pill${filter === f ? ' is-active' : ''} ${ROLE_FILTER_CLS[f] || ''}`}
               onClick={() => onFilterChange(f)}
             >
-              {label}
+              <span>{label}</span>
+              <span className="filter-pill__count">{count}</span>
             </button>
           );
         })}
         <div className="toolbar__spacer" />
         <div className="toolbar__search">
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <Search size={14} />
           <input
             type="text"
             placeholder="Tìm theo username, email, SĐT..."
@@ -143,8 +171,6 @@ export function UserTable({
   );
 }
 
-// ── Mobile Card List ──────────────────────────────────────────────────────
-
 function MobileCardList({ filtered, canManage, deleting, currentUserId, total, onEdit, onDelete }: {
   filtered: UserRow[];
   canManage: boolean;
@@ -158,65 +184,59 @@ function MobileCardList({ filtered, canManage, deleting, currentUserId, total, o
     <div className="mobile-only mobile-table-wrap">
       <div className="m-card-list">
         {filtered.length === 0 ? (
-          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Không tìm thấy tài khoản nào</div>
+          <div className="users-empty">
+            <div className="users-empty__icon"><UserX size={24} /></div>
+            <p className="users-empty__title">Không tìm thấy tài khoản</p>
+            <p className="users-empty__desc">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+          </div>
         ) : (
           filtered.map(u => {
             const pill = ROLE_PILL[u.role] || { cls: 'pill pill--neutral', label: u.role };
-            const avatarCol = AVATAR_COLORS[u.role] ?? AVATAR_COLORS[Role.DRIVER];
             const isMe = u.id === currentUserId;
             return (
-              <div key={u.id} className="m-card" style={{ cursor: 'default' }}>
-                <div className="m-card__top">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                      background: avatarCol.bg, color: avatarCol.color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 13, fontWeight: 700,
-                    }}>
-                      {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
-                    </div>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
-                        {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--brand)', fontWeight: 500 }}>(bạn)</span>}
-                      </div>
-                      {u.username && <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>@{u.username}</div>}
-                      {u.email && <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{u.email}</div>}
-                    </div>
+              <div key={u.id} className="m-card users-mobile-card" style={{ cursor: 'default' }}>
+                <div className="users-mobile-card__header">
+                  <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
+                    {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
                   </div>
-                  <span className={pill.cls} style={{ flexShrink: 0 }}><span className="dot" />{pill.label}</span>
+                  <div className="users-mobile-card__info">
+                    <div className="users-mobile-card__name">
+                      {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
+                      {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>(bạn)</span>}
+                    </div>
+                    {u.username && <div className="users-mobile-card__handle">@{u.username}</div>}
+                  </div>
+                  <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
                 </div>
-                <div className="m-card__row" style={{ marginTop: 6 }}>
-                  <span className="m-card__row-label">Trạng thái</span>
+                <div className="users-mobile-card__details">
                   <UserStatusBadge status={u.status} />
-                </div>
-                {u.phone && (
-                  <div className="m-card__row">
-                    <span className="m-card__row-label">SĐT</span>
-                    <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>{u.phone}</span>
-                  </div>
-                )}
-                <div className="m-card__row">
-                  <span className="m-card__row-label">Ngày tạo</span>
-                  <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{formatDate(u.createdAt)}</span>
+                  {u.email && (
+                    <span className="users-mobile-card__detail">
+                      <Mail size={12} /> {u.email}
+                    </span>
+                  )}
+                  {u.phone && (
+                    <span className="users-mobile-card__detail">
+                      <Phone size={12} /> {u.phone}
+                    </span>
+                  )}
+                  <span className="users-mobile-card__detail" style={{ color: 'var(--ink-4)' }}>
+                    {formatDate(u.createdAt)}
+                  </span>
                 </div>
                 {canManage && (
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 8 }}>
-                    <button
-                      className="btn btn--ghost btn--sm"
-                      style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                      onClick={() => onEdit(u)}
-                    >
+                  <div className="users-mobile-card__actions">
+                    <button className="users-mobile-card__action-btn" onClick={() => onEdit(u)}>
                       <Pencil size={12} /> Sửa
                     </button>
                     <button
-                      className="btn btn--ghost btn--sm"
-                      style={{ display: 'flex', alignItems: 'center', gap: 4, color: isMe ? 'var(--ink-3)' : 'var(--danger)' }}
+                      className="users-mobile-card__action-btn users-mobile-card__action-btn--danger"
                       disabled={!!deleting || isMe}
                       onClick={() => !isMe && onDelete(u.id)}
+                      style={{ opacity: isMe ? 0.4 : 1 }}
                     >
-                      {deleting === u.id ? <Loader2 size={12} className="spin" /> : <Trash2 size={12} />} Xoá
+                      {deleting === u.id ? <Loader2 size={12} className="spin" /> : <Trash2 size={12} />}
+                      Xoá
                     </button>
                   </div>
                 )}
@@ -232,8 +252,6 @@ function MobileCardList({ filtered, canManage, deleting, currentUserId, total, o
   );
 }
 
-// ── Desktop Table ─────────────────────────────────────────────────────────
-
 function DesktopTable({ filtered, canManage, deleting, currentUserId, total, onEdit, onDelete }: {
   filtered: UserRow[];
   canManage: boolean;
@@ -244,9 +262,9 @@ function DesktopTable({ filtered, canManage, deleting, currentUserId, total, onE
   onDelete: (id: number) => void;
 }) {
   return (
-    <div className="desktop-only table-wrap">
+    <div className="desktop-only users-table-wrap">
       <div className="table-scroll">
-        <table>
+        <table className="tt-table" style={{ minWidth: 900 }}>
           <thead>
             <tr>
               <th>Tài khoản</th>
@@ -260,40 +278,50 @@ function DesktopTable({ filtered, canManage, deleting, currentUserId, total, onE
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={canManage ? 6 : 5} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>
-                  Không tìm thấy tài khoản nào
+                <td colSpan={canManage ? 6 : 5}>
+                  <div className="users-empty">
+                    <div className="users-empty__icon"><UserX size={24} /></div>
+                    <p className="users-empty__title">Không tìm thấy tài khoản</p>
+                    <p className="users-empty__desc">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                  </div>
                 </td>
               </tr>
             )}
             {filtered.map(u => {
               const pill = ROLE_PILL[u.role] || { cls: 'pill pill--neutral', label: u.role };
-              const avatarCol = AVATAR_COLORS[u.role] ?? AVATAR_COLORS[Role.DRIVER];
               const isMe = u.id === currentUserId;
               return (
                 <tr key={u.id}>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                        background: avatarCol.bg, color: avatarCol.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 13, fontWeight: 700,
-                      }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
                         {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="row-strong">
+                        <div className="user-name">
                           {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
-                          {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>(bạn)</span>}
+                          {isMe && <span className="user-name__you">(bạn)</span>}
                         </div>
-                        {u.username && <div className="row-meta">@{u.username}</div>}
+                        {u.username && <div className="user-handle">@{u.username}</div>}
                       </div>
                     </div>
                   </td>
                   <td>
-                    {u.email && <div style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{u.email}</div>}
-                    {u.phone && <div className="row-meta">{u.phone}</div>}
-                    {!u.email && !u.phone && <span style={{ color: 'var(--ink-3)' }}>—</span>}
+                    <div className="user-contact">
+                      {u.email && (
+                        <div className="user-contact__row">
+                          <Mail size={13} />
+                          <span>{u.email}</span>
+                        </div>
+                      )}
+                      {u.phone && (
+                        <div className="user-contact__row">
+                          <Phone size={13} />
+                          <span>{u.phone}</span>
+                        </div>
+                      )}
+                      {!u.email && !u.phone && <span style={{ color: 'var(--ink-3)' }}>—</span>}
+                    </div>
                   </td>
                   <td><span className={pill.cls}><span className="dot" />{pill.label}</span></td>
                   <td><UserStatusBadge status={u.status} /></td>
@@ -332,7 +360,7 @@ function DesktopTable({ filtered, canManage, deleting, currentUserId, total, onE
       </div>
       <div className="table-foot">
         <span>
-          Đang hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> trên <strong style={{ fontFamily: 'var(--font-mono)' }}>{total}</strong> tài khoản
+          Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> / <strong style={{ fontFamily: 'var(--font-mono)' }}>{total}</strong> tài khoản
         </span>
       </div>
     </div>

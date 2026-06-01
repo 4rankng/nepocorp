@@ -25,3 +25,15 @@ p, ACCOUNTANT, photos, read
 p, DRIVER, driver_portal, read
 p, DRIVER, maps, read
 p, DRIVER, photos, read
+p, FORWARDER, forwarder_portal, read
+p, FORWARDER, forwarder_portal, write
+p, FORWARDER, maps, read
+p, FORWARDER, photos, read
+p, MANAGER, notifications, read
+p, MANAGER, notifications, write
+p, ACCOUNTANT, notifications, read
+p, ACCOUNTANT, notifications, write
+p, DRIVER, notifications, read
+p, DRIVER, notifications, write
+p, FORWARDER, notifications, read
+p, FORWARDER, notifications, write

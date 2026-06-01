@@ -1,8 +1,9 @@
 // backend/src/routes/financial.ts
 import { Router } from 'express';
-import { Role } from '@nepocorp/shared';
+import { Role, NotificationType } from '@nepocorp/shared';
 import { requireRoles } from '../middleware/casbin';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { emitNotification } from '../services/notification.service';
 import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendorPaymentSchema } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
@@ -85,6 +86,12 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
     payments: data.payments.map((p: any) => ({ tripId: p.tripId, amount: p.amount })),
   });
   await cacheInvalidate('reports:dashboard');
+  emitNotification({
+    type: NotificationType.PAYMENT_RECEIVED,
+    title: 'Thanh toán nhận được',
+    message: `Thanh toán từ khách hàng ID ${data.customerId} đã được ghi nhận`,
+    relatedEntityType: 'payments',
+  });
   res.status(201).json({ ok: true });
 }));
 
@@ -120,6 +127,14 @@ router.post('/penalties', asyncHandler(async (req: Request, res: Response) => {
     date: data.date,
   });
   await cacheInvalidatePattern('reports:pnl:*');
+  emitNotification({
+    type: NotificationType.PENALTY_CREATED,
+    title: 'Phạt mới',
+    message: `Phạt cho tài xế ID ${data.driverId} đã được tạo`,
+    relatedEntityType: 'penalties',
+    relatedEntityId: penalty.id,
+    targetDriverId: data.driverId,
+  });
   res.status(201).json(penalty);
 }));
 
@@ -128,6 +143,14 @@ router.post('/penalties/:id/cancel', requireRoles(Role.ADMIN, Role.MANAGER), asy
   const { reason } = req.body || {};
   const penalty = await financialService.cancelPenalty(id, reason);
   await cacheInvalidatePattern('reports:pnl:*');
+  emitNotification({
+    type: NotificationType.PENALTY_CANCELED,
+    title: 'Hủy phạt',
+    message: `Phạt ID ${id} đã được hủy`,
+    relatedEntityType: 'penalties',
+    relatedEntityId: id,
+    targetDriverId: penalty.driverId,
+  });
   res.json(penalty);
 }));
 

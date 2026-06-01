@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TripStatus } from '@nepocorp/shared';
+import { TripStatus, NotificationType } from '@nepocorp/shared';
 import { createTripSchema, updateTripFiguresSchema, createAdjustmentSchema } from '@nepocorp/shared';
 import * as tripService from '../services/trip.service';
 import * as financialService from '../services/financial.service';
@@ -8,6 +8,7 @@ import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { emitNotification } from '../services/notification.service';
 
 // Audit event registrations — declared once at module load, matched by middleware
 registerAuditEvent('POST', '/api/trips', AuditEvent.TRIP_CREATED);
@@ -49,6 +50,14 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     createdBy: req.user!.userId,
   });
   await invalidateReportCaches();
+  emitNotification({
+    type: NotificationType.TRIP_CREATED,
+    title: 'Chuyến mới được tạo',
+    message: `Chuyến ${trip.tripCode} đã được tạo`,
+    relatedEntityType: 'trips',
+    relatedEntityId: trip.id,
+    targetDriverId: trip.driverId,
+  });
   res.status(201).json(trip);
 }));
 
@@ -92,6 +101,14 @@ router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) =>
     req.user!.role,
   );
   await invalidateReportCaches();
+  emitNotification({
+    type: NotificationType.TRIP_DISPATCHED,
+    title: 'Chuyến được điều phối',
+    message: `Chuyến ${trip.tripCode} đã được điều phối`,
+    relatedEntityType: 'trips',
+    relatedEntityId: trip.id,
+    targetDriverId: trip.driverId,
+  });
   res.json(trip);
 }));
 
@@ -107,6 +124,13 @@ router.post('/:id/lock', asyncHandler(async (req: Request, res: Response) => {
     confirmZeroRevenue,
   );
   await invalidateReportCaches(true);
+  emitNotification({
+    type: NotificationType.TRIP_LOCKED,
+    title: 'Chuyến đã khóa',
+    message: `Chuyến ${trip.tripCode} đã được khóa`,
+    relatedEntityType: 'trips',
+    relatedEntityId: id,
+  });
   res.json(trip);
 }));
 
@@ -120,6 +144,14 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
     req.user!.role,
   );
   await invalidateReportCaches();
+  emitNotification({
+    type: NotificationType.TRIP_CANCELED,
+    title: 'Chuyến đã hủy',
+    message: `Chuyến ${trip.tripCode} đã bị hủy`,
+    relatedEntityType: 'trips',
+    relatedEntityId: id,
+    targetDriverId: trip.driverId,
+  });
   res.json(trip);
 }));
 

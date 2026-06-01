@@ -21,6 +21,7 @@ export enum Role {
   MANAGER = 'MANAGER',
   ACCOUNTANT = 'ACCOUNTANT',
   DRIVER = 'DRIVER',
+  FORWARDER = 'FORWARDER',
 }
 
 export enum TxnType {
@@ -32,6 +33,8 @@ export enum TxnType {
   DRIVER_SALARY = 'DRIVER_SALARY',
   VENDOR_EXPENSE = 'VENDOR_EXPENSE',
   VENDOR_PAYMENT = 'VENDOR_PAYMENT',
+  FORWARDER_ADVANCE = 'FORWARDER_ADVANCE',
+  FORWARDER_SETTLEMENT = 'FORWARDER_SETTLEMENT',
 }
 
 export enum TrailerType {
@@ -75,6 +78,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   [Role.MANAGER]: 'Quản lý',
   [Role.ACCOUNTANT]: 'Kế toán',
   [Role.DRIVER]: 'Tài xế',
+  [Role.FORWARDER]: 'Giao nhận',
 };
 
 export const FUEL_MODE_LABELS: Record<FuelMode, string> = {
@@ -97,6 +101,48 @@ export const PENALTY_STATUS_LABELS: Record<PenaltyStatus, string> = {
   [PenaltyStatus.CANCELED]: 'Đã hủy',
 };
 
+export enum ForwarderExpenseType {
+  LIFTING = 'LIFTING',
+  CUSTOMS = 'CUSTOMS',
+  WEIGHING = 'WEIGHING',
+  INSPECTION = 'INSPECTION',
+  OTHER = 'OTHER',
+}
+
+export enum AdvanceRequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export enum AdvanceSettlementStatus {
+  PENDING = 'PENDING',
+  CHECKED_BY_ACCOUNTANT = 'CHECKED_BY_ACCOUNTANT',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export const FORWARDER_EXPENSE_TYPE_LABELS: Record<ForwarderExpenseType, string> = {
+  [ForwarderExpenseType.LIFTING]: 'Nâng hạ',
+  [ForwarderExpenseType.CUSTOMS]: 'Hải quan',
+  [ForwarderExpenseType.WEIGHING]: 'Cân xe',
+  [ForwarderExpenseType.INSPECTION]: 'Kiểm tra',
+  [ForwarderExpenseType.OTHER]: 'Khác',
+};
+
+export const ADVANCE_REQUEST_STATUS_LABELS: Record<AdvanceRequestStatus, string> = {
+  [AdvanceRequestStatus.PENDING]: 'Chờ duyệt',
+  [AdvanceRequestStatus.APPROVED]: 'Đã duyệt',
+  [AdvanceRequestStatus.REJECTED]: 'Từ chối',
+};
+
+export const ADVANCE_SETTLEMENT_STATUS_LABELS: Record<AdvanceSettlementStatus, string> = {
+  [AdvanceSettlementStatus.PENDING]: 'Chờ xử lý',
+  [AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT]: 'KT đã kiểm tra',
+  [AdvanceSettlementStatus.APPROVED]: 'Đã duyệt',
+  [AdvanceSettlementStatus.REJECTED]: 'Từ chối',
+};
+
 export const TRAILER_STATUS_LABELS: Record<TrailerStatus, string> = {
   [TrailerStatus.ACTIVE]: 'Hoạt động',
   [TrailerStatus.MAINTENANCE]: 'Bảo trì',
@@ -106,6 +152,37 @@ export const TRAILER_STATUS_LABELS: Record<TrailerStatus, string> = {
 export const TRAILER_TYPE_LABELS: Record<TrailerType, string> = {
   [TrailerType.FT20]: '20FT',
   [TrailerType.FT40]: '40FT',
+};
+
+// ─── Notification ───────────────────────────────────────────────────────────
+export enum NotificationType {
+  TRIP_CREATED = 'TRIP_CREATED',
+  TRIP_DISPATCHED = 'TRIP_DISPATCHED',
+  TRIP_IN_TRANSIT = 'TRIP_IN_TRANSIT',
+  TRIP_COMPLETED = 'TRIP_COMPLETED',
+  TRIP_LOCKED = 'TRIP_LOCKED',
+  TRIP_CANCELED = 'TRIP_CANCELED',
+  PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
+  PENALTY_CREATED = 'PENALTY_CREATED',
+  PENALTY_CANCELED = 'PENALTY_CANCELED',
+  OVERDUE_PAYMENT = 'OVERDUE_PAYMENT',
+  SALARY_PERIOD_CLOSING = 'SALARY_PERIOD_CLOSING',
+  SYSTEM_ANNOUNCEMENT = 'SYSTEM_ANNOUNCEMENT',
+}
+
+export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
+  [NotificationType.TRIP_CREATED]: 'Chuyến mới',
+  [NotificationType.TRIP_DISPATCHED]: 'Chuyến đã điều phối',
+  [NotificationType.TRIP_IN_TRANSIT]: 'Chuyến đang chạy',
+  [NotificationType.TRIP_COMPLETED]: 'Chuyến hoàn thành',
+  [NotificationType.TRIP_LOCKED]: 'Chuyến đã khóa',
+  [NotificationType.TRIP_CANCELED]: 'Chuyến đã hủy',
+  [NotificationType.PAYMENT_RECEIVED]: 'Thanh toán nhận được',
+  [NotificationType.PENALTY_CREATED]: 'Phạt mới',
+  [NotificationType.PENALTY_CANCELED]: 'Hủy phạt',
+  [NotificationType.OVERDUE_PAYMENT]: 'Thanh toán quá hạn',
+  [NotificationType.SALARY_PERIOD_CLOSING]: 'Sắp chốt kỳ lương',
+  [NotificationType.SYSTEM_ANNOUNCEMENT]: 'Thông báo hệ thống',
 };
 
 export * from './api-paths';
