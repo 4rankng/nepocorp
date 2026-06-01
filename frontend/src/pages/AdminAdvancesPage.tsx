@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Wallet, Loader2, Check, X as XIcon } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ADVANCE_REQUEST_STATUS_LABELS, type AdvanceRequestStatus } from '@nepocorp/shared';
+import { ADVANCE_REQUEST_STATUS_LABELS } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import {
   useAdminAdvanceRequests,
   useApproveAdvanceRequest,
   useRejectAdvanceRequest,
 } from '../hooks/useQueries';
+import { advanceRequestStatusVariant } from '../lib/status-variants';
 
 const tabs = [
   { key: '', label: 'Tất cả' },
@@ -15,15 +16,6 @@ const tabs = [
   { key: 'APPROVED', label: 'Đã duyệt' },
   { key: 'REJECTED', label: 'Từ chối' },
 ];
-
-function advanceStatusVariant(status: AdvanceRequestStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
-  switch (status) {
-    case 'PENDING': return 'warn';
-    case 'APPROVED': return 'success';
-    case 'REJECTED': return 'danger';
-    default: return 'neutral';
-  }
-}
 
 export default function AdminAdvancesPage() {
   const [statusFilter, setStatusFilter] = useState('');
@@ -87,7 +79,7 @@ export default function AdminAdvancesPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Wallet size={16} style={{ color: 'var(--fg-3)' }} />
                     <strong>{req.requesterName || `Đối tác #${req.requesterId}`}</strong>
-                    <StatusPill variant={advanceStatusVariant(req.status)}>
+                    <StatusPill variant={advanceRequestStatusVariant(req.status)}>
                       {ADVANCE_REQUEST_STATUS_LABELS[req.status]}
                     </StatusPill>
                   </div>

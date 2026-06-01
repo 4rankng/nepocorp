@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill, FormGroup } from '../components/UI';
 import { useForwarderSettlements, useForwarderAdvanceRequests, useCreateAdvanceSettlement } from '../hooks/useQueries';
+import { advanceSettlementStatusVariant } from '../lib/status-variants';
 
 interface LinkedRequest {
   id: number;
@@ -38,16 +39,6 @@ interface AdvanceRequest {
   reason: string;
   status: string;
   createdAt: string;
-}
-
-function settlementStatusVariant(status: AdvanceSettlementStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
-  switch (status) {
-    case 'PENDING': return 'warn';
-    case 'CHECKED_BY_ACCOUNTANT': return 'info';
-    case 'APPROVED': return 'success';
-    case 'REJECTED': return 'danger';
-    default: return 'neutral';
-  }
 }
 
 export default function ForwarderSettlementsPage() {
@@ -252,7 +243,7 @@ export default function ForwarderSettlementsPage() {
                     Tạo ngày {formatDate(s.createdAt)}
                   </div>
                 </div>
-                <StatusPill variant={settlementStatusVariant(s.status)}>
+                <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
                   {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status] || s.status}
                 </StatusPill>
               </div>

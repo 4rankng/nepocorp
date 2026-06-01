@@ -1,19 +1,11 @@
 import { useState } from 'react';
 import { Wallet, Loader2, Plus, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ADVANCE_REQUEST_STATUS_LABELS, type AdvanceRequestStatus } from '@nepocorp/shared';
+import { ADVANCE_REQUEST_STATUS_LABELS } from '@nepocorp/shared';
 import type { AdvanceRequestWithRefs } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill, FormGroup } from '../components/UI';
 import { useForwarderAdvanceRequests, useCreateAdvanceRequest } from '../hooks/useQueries';
-
-function advanceStatusVariant(status: AdvanceRequestStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
-  switch (status) {
-    case 'PENDING': return 'warn';
-    case 'APPROVED': return 'success';
-    case 'REJECTED': return 'danger';
-    default: return 'neutral';
-  }
-}
+import { advanceRequestStatusVariant } from '../lib/status-variants';
 
 export default function ForwarderAdvancesPage() {
   const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests();
@@ -63,14 +55,14 @@ export default function ForwarderAdvancesPage() {
 
       <div style={{ marginBottom: 16 }}>
         {!showForm ? (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+          <button className="btn btn--primary" onClick={() => setShowForm(true)}>
             <Plus size={16} /> Tạo yêu cầu
           </button>
         ) : (
           <Panel>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <strong>Tạo yêu cầu tạm ứng</strong>
-              <button className="btn btn-ghost" onClick={() => { setShowForm(false); setForm({ amount: '', reason: '' }); }}>
+              <button className="btn btn--ghost" onClick={() => { setShowForm(false); setForm({ amount: '', reason: '' }); }}>
                 <X size={16} />
               </button>
             </div>
@@ -101,7 +93,7 @@ export default function ForwarderAdvancesPage() {
                   required
                 />
               </FormGroup>
-              <button className="btn btn-primary" type="submit" disabled={createAdvanceRequest.isPending}>
+              <button className="btn btn--primary" type="submit" disabled={createAdvanceRequest.isPending}>
                 {createAdvanceRequest.isPending ? <Loader2 size={16} className="spin" /> : <Wallet size={16} />}
                 Gửi yêu cầu
               </button>
@@ -128,7 +120,7 @@ export default function ForwarderAdvancesPage() {
                   <div style={{ fontSize: 18, fontWeight: 600 }}>{formatCurrency(Number(req.amount))}</div>
                   <div style={{ marginTop: 4, color: 'var(--fg-2)' }}>{req.reason}</div>
                 </div>
-                <StatusPill variant={advanceStatusVariant(req.status)}>
+                <StatusPill variant={advanceRequestStatusVariant(req.status)}>
                   {ADVANCE_REQUEST_STATUS_LABELS[req.status] || req.status}
                 </StatusPill>
               </div>

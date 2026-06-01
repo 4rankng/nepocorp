@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileText, Loader2, Check, X as XIcon, ClipboardCheck } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@nepocorp/shared';
+import { ADVANCE_SETTLEMENT_STATUS_LABELS } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import {
   useAdminSettlements,
@@ -9,6 +9,7 @@ import {
   useApproveSettlement,
   useRejectSettlement,
 } from '../hooks/useQueries';
+import { advanceSettlementStatusVariant } from '../lib/status-variants';
 
 const tabs = [
   { key: '', label: 'Tất cả' },
@@ -17,16 +18,6 @@ const tabs = [
   { key: 'APPROVED', label: 'Đã duyệt' },
   { key: 'REJECTED', label: 'Từ chối' },
 ];
-
-function settlementStatusVariant(status: AdvanceSettlementStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
-  switch (status) {
-    case 'PENDING': return 'warn';
-    case 'CHECKED_BY_ACCOUNTANT': return 'info';
-    case 'APPROVED': return 'success';
-    case 'REJECTED': return 'danger';
-    default: return 'neutral';
-  }
-}
 
 export default function AdminSettlementsPage() {
   const [statusFilter, setStatusFilter] = useState('');
@@ -89,7 +80,7 @@ export default function AdminSettlementsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <FileText size={16} style={{ color: 'var(--fg-3)' }} />
                     <strong>{s.forwarderName || `Đối tác #${s.forwarderId}`}</strong>
-                    <StatusPill variant={settlementStatusVariant(s.status)}>
+                    <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
                       {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status]}
                     </StatusPill>
                   </div>
