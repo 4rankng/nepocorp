@@ -13,6 +13,14 @@
   box-shadow: var(--sh-sm);
 }
 
+/* Highlight active KPI filter with an outline ring */
+.adv-page .kpi--clickable.kpi--warn:focus,
+.adv-page .kpi--clickable.kpi--success:focus,
+.adv-page .kpi--clickable.kpi--danger:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 /* ── Desktop grid header ──────────────────────────────────────────────── */
 .adv-page .adv-grid-head {
   display: grid;
@@ -245,7 +253,10 @@
   /* Hide desktop grid, show mobile cards */
   .adv-page .adv-grid-head,
   .adv-page .adv-grid-row { display: none; }
-  .adv-page .adv-cards { display: block; }
+  .adv-page .adv-cards {
+    display: block;
+    padding: 10px;
+  }
 
   /* Panel becomes transparent wrapper for cards */
   .adv-page .adv-panel {
@@ -254,5 +265,22 @@
     border-radius: 0;
     overflow: visible;
     box-shadow: none;
+  }
+
+  /* Toolbar stays readable without panel backdrop */
+  .adv-page .adv-panel .toolbar {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    margin-bottom: 8px;
+  }
+
+  /* KPI grid tighter on mobile */
+  .adv-page .kpi-grid {
+    margin-bottom: 12px;
+  }
+
+  .adv-page .adv-footer {
+    padding-left: 6px;
   }
 }

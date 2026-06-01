@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
-import { formatCurrency, formatDate } from '../lib/format';
+import { Loader2, Wallet, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import {
   ADVANCE_REQUEST_STATUS_LABELS,
   AdvanceRequestStatus,
@@ -178,7 +178,7 @@ function AdvanceMobileCard({
             Duyệt
           </button>
           <button
-            className="btn btn--secondary btn--danger"
+            className="btn btn--danger"
             onClick={() => rejectMutation.mutate(req.id)}
             disabled={isApproving || isRejecting}
           >
@@ -252,24 +252,24 @@ export default function AdminAdvancesPage() {
           label="Chờ duyệt"
           value={stats.counts.PENDING}
           variant="warn"
-          icon={Wallet}
-          meta={formatCurrency(stats.totals.PENDING)}
+          icon={Clock}
+          meta={`${formatCompact(stats.totals.PENDING)} ₫`}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.PENDING ? '' : AdvanceRequestStatus.PENDING)}
         />
         <KPI
           label="Đã duyệt"
           value={stats.counts.APPROVED}
           variant="success"
-          icon={Wallet}
-          meta={formatCurrency(stats.totals.APPROVED)}
+          icon={CheckCircle2}
+          meta={`${formatCompact(stats.totals.APPROVED)} ₫`}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.APPROVED ? '' : AdvanceRequestStatus.APPROVED)}
         />
         <KPI
           label="Từ chối"
           value={stats.counts.REJECTED}
           variant="danger"
-          icon={Wallet}
-          meta={formatCurrency(stats.totals.REJECTED)}
+          icon={XCircle}
+          meta={`${formatCompact(stats.totals.REJECTED)} ₫`}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.REJECTED ? '' : AdvanceRequestStatus.REJECTED)}
         />
       </div>
