@@ -8,6 +8,7 @@ To prevent context bloat, you must operate in micro-iterations. **Never test the
 - Application URL: http://localhost:7173/
 - Product Specifications: `PRODUCT-SPECS.md`
 - Business Flows: `docs/flows`
+- QA Checklist: `docs/qa/test-checklist.md`
 
 **Test Accounts (Role-Based):**
 1. Role: Director (giamdoc) | Username: quan | Password: admin123

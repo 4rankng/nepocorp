@@ -11,6 +11,7 @@ function extractEntityType(path: string): string | null {
     if (parts.length > 2) {
       if (parts[2] === 'trips' && parts[4] === 'containers') return 'container-instances';
       if (parts[2] === 'expenses' && parts[4] === 'photos') return 'expense-photos';
+      if (parts[2] === 'expenses') return 'trip-expenses';
       return parts[2];
     }
     return 'forwarder';

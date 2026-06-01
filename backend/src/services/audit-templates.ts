@@ -36,6 +36,8 @@ const ENTITY_LABELS: Record<string, string> = {
   'advance-requests': 'yêu cầu tạm ứng',
   'advance-settlements': 'quyết toán tạm ứng',
   'expense-photos': 'hình ảnh chi phí hộ',
+  'trip-expenses': 'chi phí hộ',
+  'forwarder-expenses': 'chi phí hộ',
   'container-instances': 'thông tin container',
   notifications: 'thông báo',
   forwarder: 'nhân viên điều phối',
