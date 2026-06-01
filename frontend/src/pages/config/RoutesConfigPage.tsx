@@ -7,6 +7,7 @@ import { formatCurrency } from '../../lib/format';
 import { PageHeader, useConfirm, Modal } from '../../components/UI';
 import { LocationAutocomplete } from '../../components/LocationAutocomplete';
 import { calculateRoute } from '../../lib/maps';
+import { LeafletMap } from '../../components/shared/LeafletMap';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Route as RouteType, RoadAllowance, PaginatedResponse } from '@nepocorp/shared';
 import { LoadingType } from '@nepocorp/shared';
@@ -28,7 +29,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
   const [tollsStations, setTollsStations] = useState('');
   const [driverSalary, setDriverSalary] = useState('');
   
-  type DefaultLeg = { id: string; origin: string; destination: string; km: string; loadingType: LoadingType };
+  type DefaultLeg = { id: string; origin: string; destination: string; km: string; loadingType: LoadingType; polylinePath?: string | null };
   const [defaultLegs, setDefaultLegs] = useState<DefaultLeg[]>([]);
 
   useEffect(() => {
@@ -41,13 +42,27 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
       setDriverSalary(item?.driverSalary || '');
       
       if (item?.defaultLegs && Array.isArray(item.defaultLegs)) {
-        setDefaultLegs(item.defaultLegs.map(l => ({
+        const mapped = item.defaultLegs.map(l => ({
           id: Math.random().toString(),
           origin: l.origin,
           destination: l.destination,
           km: l.km.toString(),
-          loadingType: l.loadingType as LoadingType
-        })));
+          loadingType: l.loadingType as LoadingType,
+          polylinePath: null as string | null
+        }));
+        setDefaultLegs(mapped);
+        
+        // Fetch polylines dynamically
+        mapped.forEach(async (leg) => {
+          if (leg.origin && leg.destination && leg.origin !== leg.destination) {
+            try {
+              const res = await calculateRoute(leg.origin, leg.destination);
+              if (res.polylinePath) {
+                setDefaultLegs(prev => prev.map(l => l.id === leg.id ? { ...l, polylinePath: res.polylinePath } : l));
+              }
+            } catch (e) {}
+          }
+        });
       } else {
         setDefaultLegs([]);
       }
@@ -58,7 +73,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
     if (!name.trim()) return;
     onsave({
       name: name.trim(),
-      distanceKm: distance ? Number(distance) : undefined,
+      distanceKm: distance && Number(distance) > 0 ? Number(distance) : undefined,
       isMountain,
       fixedFuelAllowance: fuelAllowance || null,
       tollsStations: tollsStations ? Number(tollsStations) : null,
@@ -73,13 +88,13 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
   };
 
   const addLeg = () => {
-    setDefaultLegs([...defaultLegs, { id: Math.random().toString(), origin: '', destination: '', km: '', loadingType: LoadingType.HANG }]);
+    setDefaultLegs([...defaultLegs, { id: Math.random().toString(), origin: '', destination: '', km: '', loadingType: LoadingType.HANG, polylinePath: null }]);
   };
   
   const updateLeg = async (id: string, field: keyof DefaultLeg, val: string) => {
     setDefaultLegs(prev => prev.map(l => l.id === id ? { ...l, [field]: val } : l));
     
-    // Auto-calculate distance
+    // Auto-calculate distance & route polyline
     if (field === 'origin' || field === 'destination') {
       const legToUpdate = defaultLegs.find(l => l.id === id);
       if (legToUpdate) {
@@ -89,7 +104,11 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
           try {
             const result = await calculateRoute(origin, destination);
             if (result.km !== null) {
-              setDefaultLegs(prev => prev.map(l => l.id === id ? { ...l, km: String(result.km) } : l));
+              setDefaultLegs(prev => prev.map(l => l.id === id ? {
+                ...l,
+                km: String(result.km),
+                polylinePath: result.polylinePath
+              } : l));
             }
           } catch (e) {}
         }
@@ -271,6 +290,28 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
               </div>
             ))}
           </div>
+
+          {/* Live Map in RouteFormModal */}
+          <div style={{ marginTop: 12 }}>
+            <div style={sectionLabelStyle}>Bản đồ trực quan</div>
+            {defaultLegs.some(l => l.polylinePath) ? (
+              <LeafletMap legs={defaultLegs} height="240px" />
+            ) : (
+              <div style={{
+                height: '240px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--bg-2)',
+                borderRadius: 'var(--radius-lg, 12px)',
+                border: '1px dashed var(--line)',
+                color: 'var(--fg-3)',
+                fontSize: '13px'
+              }}>
+                Nhập địa điểm cho các chặng để trực quan hóa lộ trình trên bản đồ
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Modal>
@@ -281,6 +322,8 @@ export default function RoutesConfigPage() {
   const navigate = useNavigate();
   const [routeFilter, setRouteFilter] = useState<'all' | 'plain' | 'mountain'>('all');
   const [search, setSearch] = useState('');
+  const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
+  const [selectedRouteLegs, setSelectedRouteLegs] = useState<any[]>([]);
 
   const fetchData = useCallback(async () => {
     const qs = search ? `?search=${encodeURIComponent(search)}&limit=100` : '?limit=100';
@@ -303,6 +346,33 @@ export default function RoutesConfigPage() {
   });
 
   const routes = data?.routes ?? [];
+
+  const selectedRoute = useMemo(() => {
+    return routes.find(r => r.id === selectedRouteId);
+  }, [routes, selectedRouteId]);
+
+  useEffect(() => {
+    if (selectedRoute && selectedRoute.defaultLegs && Array.isArray(selectedRoute.defaultLegs)) {
+      const legs = selectedRoute.defaultLegs.map(l => ({
+        ...l,
+        polylinePath: null as string | null
+      }));
+      setSelectedRouteLegs(legs);
+      
+      legs.forEach(async (leg, idx) => {
+        if (leg.origin && leg.destination && leg.origin !== leg.destination) {
+          try {
+            const res = await calculateRoute(leg.origin, leg.destination);
+            if (res.polylinePath) {
+              setSelectedRouteLegs(prev => prev.map((l, i) => i === idx ? { ...l, polylinePath: res.polylinePath } : l));
+            }
+          } catch (e) {}
+        }
+      });
+    } else {
+      setSelectedRouteLegs([]);
+    }
+  }, [selectedRoute]);
 
   const routeTripStats = useMemo(() => {
     const stats = new Map<number, number>();
@@ -408,72 +478,238 @@ export default function RoutesConfigPage() {
         oncancel={crud.cancelForm}
       />
 
-      <div className="table-wrap">
-        <div className="toolbar">
-          {(['all', 'plain', 'mountain'] as const).map(f => {
-            const labels = { all: `Tất cả · ${totalCount}`, plain: `Đồng bằng · ${totalCount - mountainCount}`, mountain: `Tuyến núi · ${mountainCount}` };
-            return <button key={f} className={`filter-pill${routeFilter === f ? ' is-active' : ''}`} onClick={() => setRouteFilter(f)}>{labels[f]}</button>;
-          })}
-          <div className="toolbar__spacer" />
-          <div className="toolbar__search">
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Tìm tuyến đường…" value={search} onChange={e => setSearch(e.target.value)} />
+      <div className="routes-config-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: selectedRoute ? '1fr 380px' : '1fr',
+        gap: '20px',
+        alignItems: 'start',
+        transition: 'grid-template-columns 0.3s ease'
+      }}>
+        <div className="table-wrap" style={{ margin: 0 }}>
+          <div className="toolbar">
+            {(['all', 'plain', 'mountain'] as const).map(f => {
+              const labels = { all: `Tất cả · ${totalCount}`, plain: `Đồng bằng · ${totalCount - mountainCount}`, mountain: `Tuyến núi · ${mountainCount}` };
+              return <button key={f} className={`filter-pill${routeFilter === f ? ' is-active' : ''}`} onClick={() => setRouteFilter(f)}>{labels[f]}</button>;
+            })}
+            <div className="toolbar__spacer" />
+            <div className="toolbar__search">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" placeholder="Tìm tuyến đường…" value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ padding: '6px 12px 8px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 12 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Nhấn vào một hàng để xem chi tiết và chỉnh sửa tuyến đường
+          </div>
+          <div className="table-scroll">
+            <table className="routes-table">
+              <thead>
+                <tr>
+                  <th>Tuyến đường</th><th className="num">KM</th><th>Loại</th>
+                  <th className="num">Trạm thu phí</th><th className="num">Lương SL</th>
+                  <th className="num">Chuẩn 20ft</th>
+                  <th className="num">Chuẩn 40ft</th><th className="num">Sử dụng {monthLabel}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>}
+                {filtered.map(r => {
+                  const prices = routePriceMap.get(r.id);
+                  const trips = routeTripStats.get(r.id) || 0;
+                  const isSelected = selectedRouteId === r.id;
+                  return (
+                    <tr
+                      key={r.id}
+                      onClick={() => setSelectedRouteId(isSelected ? null : r.id)}
+                      style={{
+                        cursor: 'pointer',
+                        background: isSelected ? 'var(--bg-2)' : undefined,
+                        borderLeft: isSelected ? '3px solid var(--primary)' : undefined,
+                      }}
+                    >
+                      <td data-label="Tuyến đường">
+                        <div className="row-strong">{r.name}</div>
+                        {r.fixedFuelAllowance && <div className="row-meta">Định mức dầu: {r.fixedFuelAllowance} L</div>}
+                      </td>
+                      <td className="num" data-label="KM">{r.distanceKm != null ? `${r.distanceKm}` : '—'}</td>
+                      <td data-label="Loại">
+                        {r.isMountain
+                          ? <span className="pill pill--warn"><span className="dot" />Tuyến núi</span>
+                          : <span className="pill pill--neutral">Đồng bằng</span>}
+                      </td>
+                      <td className="num" data-label="Trạm">{r.tollsStations != null ? r.tollsStations : '—'}</td>
+                      <td className="num" data-label="Lương SL">{r.driverSalary ? formatCurrency(Number(r.driverSalary)) : '—'}</td>
+                      <td className="num" data-label="20ft">{prices?.ft20 ? formatCurrency(prices.ft20) : '—'}</td>
+                      <td className="num" data-label="40ft">{prices?.ft40 ? formatCurrency(prices.ft40) : '—'}</td>
+                      <td className="num" data-label={`Dùng ${monthLabel}`}>
+                        {trips > 0 ? <strong style={{ color: 'var(--success)' }}>{trips}</strong> : <span style={{ color: 'var(--ink-3)' }}>0</span>}
+                      </td>
+
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="table-foot">
+            <span>Đang hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> trên <strong style={{ fontFamily: 'var(--font-mono)' }}>{totalCount}</strong> tuyến đường</span>
           </div>
         </div>
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Tuyến đường</th><th className="num">KM</th><th>Loại</th>
-                <th className="num">Trạm thu phí</th><th className="num">Lương SL</th>
-                <th className="num">Chuẩn 20ft</th>
-                <th className="num">Chuẩn 40ft</th><th className="num">Sử dụng {monthLabel}</th><th style={{ width: 80 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>}
-              {filtered.map(r => {
-                const prices = routePriceMap.get(r.id);
-                const trips = routeTripStats.get(r.id) || 0;
-                return (
-                  <tr key={r.id}>
-                    <td>
-                      <div className="row-strong">{r.name}</div>
-                      {r.fixedFuelAllowance && <div className="row-meta">Định mức dầu: {r.fixedFuelAllowance} L</div>}
-                    </td>
-                    <td className="num">{r.distanceKm != null ? `${r.distanceKm}` : '—'}</td>
-                    <td>
-                      {r.isMountain
-                        ? <span className="pill pill--warn"><span className="dot" />Tuyến núi</span>
-                        : <span className="pill pill--neutral">Đồng bằng</span>}
-                    </td>
-                    <td className="num">{r.tollsStations != null ? r.tollsStations : '—'}</td>
-                    <td className="num">{r.driverSalary ? formatCurrency(Number(r.driverSalary)) : '—'}</td>
-                    <td className="num">{prices?.ft20 ? formatCurrency(prices.ft20) : '—'}</td>
-                    <td className="num">{prices?.ft40 ? formatCurrency(prices.ft40) : '—'}</td>
-                    <td className="num">
-                      {trips > 0 ? <strong style={{ color: 'var(--success)' }}>{trips}</strong> : <span style={{ color: 'var(--ink-3)' }}>0</span>}
-                    </td>
-                    <td>
-                      <div className="row-actions">
-                        <button className="row-action" title="Sửa" onClick={() => crud.setEditingId(r.id)}><Pencil size={13} /></button>
-                        <button className="row-action" title="Xóa" disabled={crud.deleting === r.id} onClick={() => crud.doDelete(r.id)}>
-                          {crud.deleting === r.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} style={{ color: 'var(--danger)' }} />}
-                        </button>
+
+        {selectedRoute && (
+          <div className="card sticky-card" style={{
+            position: 'sticky',
+            top: '20px',
+            background: 'var(--bg-1)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: 'var(--shadow-md)',
+            animation: 'slide-left 0.3s ease-out'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--fg-1)', margin: 0 }}>
+                Chi tiết tuyến đường
+              </h3>
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <button
+                  className="btn btn--ghost btn--icon btn--sm"
+                  title="Sửa tuyến"
+                  onClick={() => { crud.setEditingId(selectedRoute.id); setSelectedRouteId(null); }}
+                  style={{ color: 'var(--primary)' }}
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  className="btn btn--ghost btn--icon btn--sm"
+                  title="Xóa tuyến"
+                  disabled={crud.deleting === selectedRoute.id}
+                  onClick={async () => {
+                    const ok = await confirm(`Xóa tuyến "${selectedRoute.name}"?`, { confirmLabel: 'Xóa', variant: 'danger' });
+                    if (ok) { setSelectedRouteId(null); crud.doDelete(selectedRoute.id); }
+                  }}
+                  style={{ color: 'var(--danger)' }}
+                >
+                  {crud.deleting === selectedRoute.id ? <Loader2 size={15} className="spin" /> : <Trash2 size={15} />}
+                </button>
+                <div style={{ width: 1, height: 16, background: 'var(--line)', margin: '0 2px' }} />
+                <button
+                  className="btn btn--ghost btn--icon btn--sm"
+                  title="Đóng"
+                  onClick={() => setSelectedRouteId(null)}
+                  style={{ color: 'var(--fg-3)' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>
+                {selectedRoute.name}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className="pill pill--neutral">
+                  {selectedRoute.distanceKm ? `${selectedRoute.distanceKm} km` : '— km'}
+                </span>
+                {selectedRoute.isMountain ? (
+                  <span className="pill pill--warn"><span className="dot" />Tuyến núi</span>
+                ) : (
+                  <span className="pill pill--neutral">Đồng bằng</span>
+                )}
+              </div>
+            </div>
+
+            {/* Map Visualization */}
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--fg-3)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Bản đồ tuyến đường
+              </div>
+              {selectedRouteLegs.length > 0 ? (
+                <LeafletMap legs={selectedRouteLegs} height="220px" />
+              ) : (
+                <div style={{
+                  height: '220px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--bg-2)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px dashed var(--line)',
+                  color: 'var(--fg-3)',
+                  fontSize: '13px'
+                }}>
+                  Chưa khai báo chặng để hiển thị bản đồ
+                </div>
+              )}
+            </div>
+
+            {/* Configuration default values */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--bg-2)', padding: '12px', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: 'var(--fg-3)' }}>Định mức dầu:</span>
+                <strong style={{ color: 'var(--fg-1)' }}>
+                  {selectedRoute.fixedFuelAllowance ? `${selectedRoute.fixedFuelAllowance} L` : 'Theo công thức'}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: 'var(--fg-3)' }}>Trạm thu phí:</span>
+                <strong style={{ color: 'var(--fg-1)' }}>
+                  {selectedRoute.tollsStations != null ? `${selectedRoute.tollsStations} trạm` : '—'}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span style={{ color: 'var(--fg-3)' }}>Lương sản lượng:</span>
+                <strong style={{ color: 'var(--fg-1)' }}>
+                  {selectedRoute.driverSalary ? formatCurrency(Number(selectedRoute.driverSalary)) : 'Theo công thức'}
+                </strong>
+              </div>
+            </div>
+
+            {/* Default legs itinerary */}
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--fg-3)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Lộ trình chi tiết ({selectedRouteLegs.length})
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                {selectedRouteLegs.length === 0 ? (
+                  <div style={{ fontSize: '13px', color: 'var(--fg-3)', fontStyle: 'italic' }}>Chưa cấu hình chặng mặc định.</div>
+                ) : (
+                  selectedRouteLegs.map((leg, i) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      background: 'var(--bg-2)',
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      borderLeft: `3px solid ${['#10B981', '#06B6D4', '#3B82F6', '#8B5CF6'][i % 4]}`
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--fg-2)' }}>Chặng {i + 1}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--fg-3)' }}>
+                          {leg.km} km · {leg.loadingType === 'HANG' ? 'Có hàng' : 'Vỏ rỗng'}
+                        </span>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="table-foot">
-          <span>Đang hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> trên <strong style={{ fontFamily: 'var(--font-mono)' }}>{totalCount}</strong> tuyến đường</span>
-        </div>
+                      <div style={{ fontSize: '12px', color: 'var(--fg-1)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: 'var(--success)' }}>●</span> {leg.origin}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--fg-1)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: 'var(--danger)' }}>●</span> {leg.destination}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', marginTop: 12 }}>{crud.error}</div>}
-    {confirmDialog}
+      {confirmDialog}
     </div>
   );
 }

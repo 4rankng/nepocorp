@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Search, ChevronRight, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
+import { splitKpi } from '../features/dashboard/utils';
 import { KPI, PageHeader, StatusPill } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
@@ -104,6 +105,7 @@ export default function ExpenseListPage() {
   }, [expenseData]);
 
   const hasFilters = supplierId || categoryId || truckId || dateFrom || dateTo;
+  const kpiTotal = splitKpi(stats.totalAmount);
 
   return (
     <div className="fade-up">
@@ -120,7 +122,7 @@ export default function ExpenseListPage() {
       />
 
       <div className="kpi-grid">
-        <KPI label="Tổng chi phí" value={formatCompact(stats.totalAmount)} />
+        <KPI label="Tổng chi phí" value={kpiTotal.num} unit={kpiTotal.suffix ? `${kpiTotal.suffix} đ` : 'đ'} />
         <KPI label="Chưa thanh toán" value={`${stats.unpaidCount}`} unit="phiếu" variant="warn" meta={formatCompact(stats.unpaidAmount)} />
         <KPI label="Đã thanh toán" value={`${stats.paidCount}`} unit="phiếu" variant="success" meta={formatCompact(stats.paidAmount)} />
       </div>

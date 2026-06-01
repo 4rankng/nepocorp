@@ -666,6 +666,42 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 /* ============================================================================
+ * Modal (classes mirror inline styles in <Modal/> so responsive.css can override)
+ * ========================================================================== */
+.modal__head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.modal__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.modal__body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  overscroll-behavior: contain;
+}
+.modal__foot {
+  padding: 14px 22px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
  * Drawer
  * ========================================================================== */
 .drawer-overlay {

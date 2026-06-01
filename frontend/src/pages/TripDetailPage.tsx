@@ -206,13 +206,13 @@ export default function TripDetailPage() {
   return (
     <div className="fade-up">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ minWidth: 0 }}>
-          <h1 style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--fg-1)', margin: 0 }}>
+      <div className="page-header trip-detail-header">
+        <div className="page-header-main" style={{ minWidth: 0 }}>
+          <h1 className="page-title trip-detail-title">
             <button className="btn btn--ghost btn--icon btn--sm" onClick={() => navigate('/trips')} aria-label="Quay lại">
               <ArrowLeft size={16} />
             </button>
-            Lệnh vận chuyển
+            <span>Lệnh vận chuyển</span>
             <StatusPill variant={
               trip.status === TripStatus.CANCELED ? 'danger' :
               trip.status === TripStatus.LOCKED ? 'success' :
@@ -222,12 +222,12 @@ export default function TripDetailPage() {
               {TRIP_STATUS_LABELS[trip.status]}
             </StatusPill>
           </h1>
-          <p style={{ marginTop: 4, fontSize: 13, color: 'var(--fg-3)', marginLeft: 46 }}>
+          <p className="page-subtitle trip-detail-subtitle">
             {trip.customer?.name ?? '—'} &middot; {trip.route?.name ?? '—'}
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div className="page-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {canDispatch && (
             <button
               className="btn btn--primary btn--sm"

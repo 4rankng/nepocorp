@@ -382,12 +382,14 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm, max
   if (!isOpen || !portalTarget) return null;
   return createPortal(
     <div
+      className="modal"
       style={{ ...STYLE_OVERLAY, background: 'rgba(10,10,10,0.4)', zIndex: 1000 }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
+        className="modal__content"
         style={{
           background: '#fff',
           border: '1px solid var(--line)',
@@ -401,40 +403,21 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm, max
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          style={{
-            padding: '18px 22px',
-            borderBottom: '1px solid var(--line)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.02em' }}>
-            {title}
-          </h3>
+        <div className="modal__head">
+          <h3 className="modal__title">{title}</h3>
           <button
-            className="btn btn--ghost btn--icon btn--sm"
+            className="btn btn--ghost btn--icon btn--sm modal__close"
             onClick={onClose}
             aria-label="Đóng"
           >
             <X size={16} aria-hidden="true" />
           </button>
         </div>
-        <div style={{ padding: '20px 22px', overflowY: 'auto', maxHeight: 'calc(100vh - 200px)', overscrollBehavior: 'contain' }}>
+        <div className="modal__body">
           {children}
         </div>
         {footer && (
-          <div
-            style={{
-              padding: '14px 22px',
-              borderTop: '1px solid var(--line)',
-              background: '#fff',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 8,
-            }}
-          >
+          <div className="modal__foot">
             {footer}
           </div>
         )}
