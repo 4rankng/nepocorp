@@ -1,9 +1,11 @@
 import React from "react";
 import { FuelMode } from "@nepocorp/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
+import { useFuelConfig } from '../../hooks/useQueries';
 
 export function FuelSection() {
   const form = useTripFormContext();
+  const { data: fuelConfig } = useFuelConfig();
   const {
     fuelMode, setFuelMode,
     fuelLitersOverride, setFuelLitersOverride,
@@ -57,7 +59,7 @@ export function FuelSection() {
 
       <div className="field" style={{ marginBottom: 16 }}>
         <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>
-          Đơn giá thực tế (VND/lít)
+          Đơn giá thực tế (đ/lít)
         </label>
         <input
           className="input"
@@ -68,7 +70,7 @@ export function FuelSection() {
           style={{ width: "100%" }}
         />
         <p style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
-          Giá cấu hình áp dụng: {Number(form.fuelPriceApplied || 0).toLocaleString('vi-VN')} VND/lít
+          Giá cấu hình áp dụng: {(fuelConfig ? Number(fuelConfig.unitPrice) : 0).toLocaleString('vi-VN')} đ/lít
         </p>
       </div>
 

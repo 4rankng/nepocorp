@@ -48,12 +48,12 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
 
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
-          <label>Đơn giá nhiên liệu thực tế (VNĐ/lít)</label>
+          <label>Đơn giá nhiên liệu thực tế (₫/lít)</label>
           <InputWithPrefix
             value={form.fuelActualUnitPrice}
             onChange={form.setFuelActualUnitPrice}
             placeholder="Để trống = dùng giá cấu hình"
-            prefix="VNĐ"
+            prefix="₫"
             type="number"
             mono
           />

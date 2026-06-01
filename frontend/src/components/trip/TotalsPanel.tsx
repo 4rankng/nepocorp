@@ -33,7 +33,7 @@ export function TotalsPanel() {
       fuelEmptyNorm: 25,
       fuelPerTripSupplement: 3,
       fuelUnitPrice: fuelConfig ? Number(fuelConfig.unitPrice) : 25000,
-      fuelActualUnitPrice: fuelActualUnitPrice ? Number(fuelActualUnitPrice) : null,
+      fuelActualUnitPrice: fuelActualUnitPrice !== '' ? Number(fuelActualUnitPrice) : null,
       isMountainRoute,
       mountainFixedAllowance,
       roadAllowanceBase: roadAllowanceBaseApplied ?? 0,

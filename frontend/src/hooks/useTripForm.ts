@@ -299,11 +299,11 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [hasReturnCargo, setHasReturnCargo] = useState(isEditMode && existingTrip ? !!existingTrip.hasReturnCargo : false);
   const [driverSalary, setDriverSalary] = useState(isEditMode && existingTrip?.driverSalary ? String(existingTrip.driverSalary) : "");
   const [roadAllowanceOverride, setRoadAllowanceOverride] = useState(
-    isEditMode && existingTrip?.roadAllowanceOverride ? String(existingTrip.roadAllowanceOverride) : ""
+    isEditMode && existingTrip?.roadAllowanceOverride != null ? String(existingTrip.roadAllowanceOverride) : ""
   );
   const [fuelActualUnitPrice, setFuelActualUnitPrice] = useState(
-    isEditMode && existingTrip && (existingTrip as any).fuelActualUnitPrice
-      ? String((existingTrip as any).fuelActualUnitPrice) : ""
+    isEditMode && existingTrip && existingTrip.fuelActualUnitPrice != null
+      ? String(existingTrip.fuelActualUnitPrice) : ""
   );
   const [revenueEmptyReturn, setRevenueEmptyReturn] = useState(() => {
     if (isEditMode && existingTrip) {
@@ -359,7 +359,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }
     setRevenueCombine(existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : '0');
     setNotes(existingTrip.notes || '');
-    setFuelActualUnitPrice((existingTrip as any).fuelActualUnitPrice ? String((existingTrip as any).fuelActualUnitPrice) : '');
+    setFuelActualUnitPrice(existingTrip.fuelActualUnitPrice != null ? String(existingTrip.fuelActualUnitPrice) : '');
     setPhotoUrls(existingTrip.photoUrls || []);
 
     if (existingTrip.legs && existingTrip.legs.length > 0) {
@@ -628,18 +628,17 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             revenueEmptyReturn: revenueEmptyReturn ? Number(revenueEmptyReturn) : 0,
             revenueCombine: revenueCombine ? Number(revenueCombine) : 0,
             notes: notes.trim() || undefined,
-            roadAllowanceOverride: roadAllowanceOverride ? Number(roadAllowanceOverride) : null,
-            fuelActualUnitPrice: fuelActualUnitPrice ? Number(fuelActualUnitPrice) : null,
+            roadAllowanceOverride: roadAllowanceOverride !== '' ? Number(roadAllowanceOverride) : null,
+            fuelActualUnitPrice: fuelActualUnitPrice !== '' ? Number(fuelActualUnitPrice) : null,
           };
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
           await api.put(endpoint, payload);
           // Invalidate trip list + detail + monthly aggregates so caches don't go stale.
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['trips'] }),
-            queryClient.invalidateQueries({ queryKey: ['trip', existingTrip.id] }),
-            queryClient.invalidateQueries({ queryKey: ['trip-adjustments'] }),
-          ]);
+          // Fire-and-forget: don't block the UI on refetches.
+          queryClient.invalidateQueries({ queryKey: ['trips'] });
+          queryClient.invalidateQueries({ queryKey: ['trip', existingTrip.id] });
+          queryClient.invalidateQueries({ queryKey: ['trip-adjustments'] });
           return existingTrip.id;
         }
 
@@ -714,7 +713,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             revenueCombine: revenueCombine ? Number(revenueCombine) : 0,
             notes: notes.trim() || undefined,
             photoUrls,
-            fuelActualUnitPrice: fuelActualUnitPrice ? Number(fuelActualUnitPrice) : null,
+            fuelActualUnitPrice: fuelActualUnitPrice !== '' ? Number(fuelActualUnitPrice) : null,
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }

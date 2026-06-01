@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Save, Loader2 } from 'lucide-react';
 import { Clock, User } from 'lucide-react';
 import { api } from '../../lib/api';
@@ -9,6 +10,7 @@ import type { FuelConfig, FuelPriceHistory } from '@nepocorp/shared';
 
 export default function FuelConfigPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [form, setForm] = useState({
     loadedNorm: '', emptyNorm: '', supplement: '', unitPrice: '',
     warningThreshold: '37', criticalThreshold: '40',
@@ -50,6 +52,9 @@ export default function FuelConfigPage() {
         warningThreshold: form.warningThreshold ? Number(form.warningThreshold) : 37,
         criticalThreshold: form.criticalThreshold ? Number(form.criticalThreshold) : 40,
       });
+      // Invalidate TanStack caches so other pages (TripEdit, TotalsPanel) see the new price.
+      queryClient.invalidateQueries({ queryKey: ['fuel-config'] });
+      queryClient.invalidateQueries({ queryKey: ['cfg-count', 'fuel-config'] });
       navigate('/config');
     } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
   };
@@ -116,7 +121,7 @@ export default function FuelConfigPage() {
               <thead>
                 <tr>
                   <th>Ngày hiệu lực</th>
-                  <th className="num">Đơn giá (VNĐ/lít)</th>
+                  <th className="num">Đơn giá (₫/lít)</th>
                   <th>Người thay đổi</th>
                   <th>Ghi chú</th>
                 </tr>

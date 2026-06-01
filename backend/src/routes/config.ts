@@ -15,7 +15,7 @@ import {
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
 import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice } from '../services/config.service';
-import { cacheGet, cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
+import { cacheInvalidatePattern } from '../lib/redis';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -115,7 +115,6 @@ router.get('/fuel-config', asyncHandler(async (_req: Request, res: Response) => 
 router.put('/fuel-config', asyncHandler(async (req: Request, res: Response) => {
   const data = fuelConfigSchema.parse(req.body);
   const { result, status } = await upsertFuelConfig(data, req.user!.userId);
-  await cacheInvalidate('config:fuel-price-history');
   res.status(status).json(result);
 }));
 

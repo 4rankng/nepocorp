@@ -116,6 +116,7 @@ export async function upsertFuelConfig(data: {
     });
   }
   await cacheInvalidate('config:fuel');
+  await cacheInvalidate('config:fuel-price-history');
   return { result, status };
 }
 

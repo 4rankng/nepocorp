@@ -138,7 +138,7 @@ export function PenaltyFormDrawer({
             );
           })()}
         </FormGroup>
-        <FormGroup label="Số tiền khấu trừ (VND) *">
+        <FormGroup label="Số tiền khấu trừ (đ) *">
           <input className="input" type="number" placeholder="0" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
         </FormGroup>
         <FormGroup label="Ngày vi phạm *">

@@ -85,9 +85,10 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     }
   }
 
-  const effectiveFuelPrice = input.fuelActualUnitPrice || input.fuelUnitPrice;
+  // Use nullish coalescing — `0` is a valid numeric price, not "missing".
+  const effectiveFuelPrice = input.fuelActualUnitPrice ?? input.fuelUnitPrice;
   const totalFuelCost = Math.round(totalFuelLiters * effectiveFuelPrice);
-  const fuelPriceVariance = input.fuelActualUnitPrice
+  const fuelPriceVariance = input.fuelActualUnitPrice != null
     ? Math.round(totalFuelLiters * input.fuelActualUnitPrice) - Math.round(totalFuelLiters * input.fuelUnitPrice)
     : 0;
 

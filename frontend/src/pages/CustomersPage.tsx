@@ -115,7 +115,7 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
           </div>
         </div>
         <div className="field">
-          <label htmlFor="cust-credit" style={labelStyle}>Hạn mức tín dụng (VND)</label>
+          <label htmlFor="cust-credit" style={labelStyle}>Hạn mức tín dụng (đ)</label>
           <input id="cust-credit" className="input" type="number" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="0" />
         </div>
       </div>

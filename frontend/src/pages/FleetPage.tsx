@@ -238,7 +238,7 @@ function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen }: {
           </div>
           <div className="field">
             <label htmlFor="driver-salary" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Lương cơ bản (VND)
+              Lương cơ bản (đ)
             </label>
             <input
               id="driver-salary"

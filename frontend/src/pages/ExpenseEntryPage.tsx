@@ -9,7 +9,7 @@ import { useToast } from '../components/shared/Toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FINANCIAL, CONFIG } from '@nepocorp/shared';
 import { expenseSchema } from '@nepocorp/shared';
-import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory, Trailer } from '@nepocorp/shared';
+import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@nepocorp/shared';
 
 type FormState = {
   expenseDate: string;
@@ -56,13 +56,7 @@ export default function ExpenseEntryPage() {
 
   const { data: catalogData } = useCatalogs();
   const trucks = catalogData?.trucks ?? [];
-
-  const { data: trailersData } = useQuery({
-    queryKey: ['trailers'],
-    queryFn: () => api.get<{ items: Trailer[] }>('/trailers?limit=200'),
-    staleTime: 5 * 60 * 1000,
-  });
-  const trailers = trailersData?.items ?? [];
+  const trailers = catalogData?.trailers ?? [];
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -534,7 +528,6 @@ export default function ExpenseEntryPage() {
                   >
                     <option value="">Chọn rơ-moóc…</option>
                     {trailers
-                      .filter(t => t.status === 'ACTIVE')
                       .map(t => (
                         <option key={t.id} value={t.id}>{t.licensePlate}</option>
                       ))}

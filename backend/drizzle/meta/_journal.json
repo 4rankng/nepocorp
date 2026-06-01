@@ -134,6 +134,13 @@
       "when": 1780305109915,
       "tag": "0018_high_titania",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1780308000000,
+      "tag": "0019_drop_expenses_truck_fk",
+      "breakpoints": true
     }
   ]
 }

@@ -406,7 +406,7 @@ export default function DebtDetailPage() {
           </div>
           <div className="field">
             <label htmlFor="pay-amount" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Số tiền nhận (VND) <span style={{ color: 'var(--danger)' }}>*</span>
+              Số tiền nhận (đ) <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <input
               id="pay-amount"

@@ -46,7 +46,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
         .where(eq(s.expenses.id, payload.entityId))
         .limit(1);
       if (expense) {
-        const amt = Number(expense.amount).toLocaleString('vi-VN') + ' VNĐ';
+        const amt = Number(expense.amount).toLocaleString('vi-VN') + ' ₫';
         return `chi phí ${expense.categoryName} với số tiền ${amt} (Nhà cung cấp: ${expense.supplierName}${expense.truckPlate ? `, Xe: ${expense.truckPlate}` : ''})`;
       }
     } catch {}
@@ -68,7 +68,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
         .where(eq(s.penalties.id, payload.entityId))
         .limit(1);
       if (penalty) {
-        const amt = Number(penalty.amount).toLocaleString('vi-VN') + ' VNĐ';
+        const amt = Number(penalty.amount).toLocaleString('vi-VN') + ' ₫';
         const reason = penalty.reasonText || penalty.customReason || 'Không rõ lý do';
         return `tài xế ${penalty.driverName} với số tiền ${amt} (Lý do: ${reason}${penalty.tripCode ? `, Chuyến: ${penalty.tripCode}` : ''})`;
       }
@@ -82,7 +82,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
       try {
         const [supplier] = await db.select({ name: s.suppliers.name })
           .from(s.suppliers).where(eq(s.suppliers.id, Number(body.supplierId))).limit(1);
-        const amt = Number(body.amount).toLocaleString('vi-VN') + ' VNĐ';
+        const amt = Number(body.amount).toLocaleString('vi-VN') + ' ₫';
         return `cho nhà cung cấp ${supplier?.name || `ID ${body.supplierId}`} với số tiền ${amt}${body.receiptId ? ` (Số hóa đơn: ${body.receiptId})` : ''}`;
       } catch {}
     }
@@ -102,7 +102,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
           }
         }
         const totalAmt = body.payments.reduce((sum: number, p: any) => sum + Number(p?.amount || 0), 0);
-        const amtStr = totalAmt > 0 ? ` số tiền ${totalAmt.toLocaleString('vi-VN')} VNĐ` : '';
+        const amtStr = totalAmt > 0 ? ` số tiền ${totalAmt.toLocaleString('vi-VN')} ₫` : '';
         return `từ khách hàng ${customer?.name || `ID ${body.customerId}`}${amtStr}${tripDetail}${body.receiptId ? ` (Số hóa đơn: ${body.receiptId})` : ''}`;
       } catch {}
     }
@@ -116,7 +116,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
         const [trip] = await db.select({ tripCode: s.trips.tripCode })
           .from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
         if (trip?.tripCode) {
-          const amt = Number(body.amount).toLocaleString('vi-VN') + ' VNĐ';
+          const amt = Number(body.amount).toLocaleString('vi-VN') + ' ₫';
           return `cho chuyến ${trip.tripCode} với số tiền điều chỉnh ${amt}${body.note ? ` (Ghi chú: ${body.note})` : ''}`;
         }
       } catch {}

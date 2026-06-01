@@ -22,6 +22,27 @@ declare global {
 }
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Token không hợp lệ' });
+  try {
+    const payload = jwt.verify(token, config.jwtSecret) as AuthUser & { jti?: string };
+    if (payload.jti && await isTokenBlacklisted(payload.jti)) {
+      return res.status(401).json({ error: 'Token đã bị thu hồi' });
+    }
+    req.user = payload;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token hết hạn hoặc không hợp lệ' });
+  }
+}
+
+/**
+ * Auth middleware for routes that serve static assets (e.g., <img src> tags)
+ * which cannot set Authorization headers. Accepts JWT via `?token=` query param
+ * in addition to the standard Bearer header. Scoped narrowly to avoid exposing
+ * tokens in URL logs/Referer on general API routes.
+ */
+export async function assetAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   let token = req.headers.authorization?.replace('Bearer ', '');
   if (!token && typeof req.query.token === 'string') {
     token = req.query.token;

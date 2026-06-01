@@ -377,20 +377,20 @@ export default function TripDetailPage() {
             }
             return null;
           })()}
-          {infoRow(<Fuel size={16} />, 'Đơn giá cấu hình', trip.fuelPriceApplied ? `${Number(trip.fuelPriceApplied).toLocaleString('vi-VN')} VNĐ/lít` : '—')}
-          {(trip as any).fuelActualUnitPrice && Number((trip as any).fuelActualUnitPrice) > 0 && (() => {
-            const actualPrice = Number((trip as any).fuelActualUnitPrice);
+          {infoRow(<Fuel size={16} />, 'Đơn giá cấu hình', trip.fuelPriceApplied ? `${Number(trip.fuelPriceApplied).toLocaleString('vi-VN')} ₫/lít` : '—')}
+          {trip.fuelActualUnitPrice != null && Number(trip.fuelActualUnitPrice) > 0 && (() => {
+            const actualPrice = Number(trip.fuelActualUnitPrice);
             const configPrice = Number(trip.fuelPriceApplied || 0);
             const liters = Number(trip.fuelLiters || 0);
             const variance = Math.round(liters * actualPrice) - Math.round(liters * configPrice);
             return (
               <>
-                {infoRow(<Fuel size={16} />, 'Đơn giá thực tế', `${actualPrice.toLocaleString('vi-VN')} VNĐ/lít`)}
+                {infoRow(<Fuel size={16} />, 'Đơn giá thực tế', `${actualPrice.toLocaleString('vi-VN')} ₫/lít`)}
                 {variance !== 0 && infoRow(
                   <Fuel size={16} />,
                   'Chênh lệch giá nhiên liệu',
                   <span style={{ color: variance < 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
-                    {variance > 0 ? '+' : ''}{variance.toLocaleString('vi-VN')} VNĐ ({variance < 0 ? 'tiết kiệm' : 'thêm chi phí'})
+                    {variance > 0 ? '+' : ''}{variance.toLocaleString('vi-VN')} ₫ ({variance < 0 ? 'tiết kiệm' : 'thêm chi phí'})
                   </span>,
                 )}
               </>

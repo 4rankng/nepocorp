@@ -360,7 +360,11 @@ export const expenses = pgTable('expenses', {
   expenseDate: date('expense_date').notNull(),
   supplierId: integer('supplier_id').references(() => suppliers.id).notNull(),
   categoryId: integer('category_id').references(() => expenseCategories.id).notNull(),
-  truckId: integer('truck_id').references(() => trucks.id),
+  // `truck_id` is polymorphic — holds either `trucks.id` (when vehicle_component='TRUCK'),
+  // `trailers.id` (when vehicle_component='TRAILER'), or null (company-wide expense).
+  // No FK constraint because Postgres can't enforce a polymorphic reference; integrity
+  // is maintained by the create/update service paths.
+  truckId: integer('truck_id'),
   vehicleComponent: vehicleComponentEnum('vehicle_component').default('TRUCK'),
   amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
   paymentStatus: varchar('payment_status', { length: 20 }).notNull(),

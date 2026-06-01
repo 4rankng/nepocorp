@@ -3,7 +3,7 @@ import cors from 'cors';
 import { config } from './config';
 import { client as dbClient } from './db';
 import { initEnforcer } from './casbin/enforcer';
-import { authMiddleware } from './middleware/auth';
+import { authMiddleware, assetAuthMiddleware } from './middleware/auth';
 import { casbinAuthz } from './middleware/casbin';
 import { auditLogMiddleware } from './middleware/audit';
 import { globalErrorHandler } from './middleware/errorHandler';
@@ -64,7 +64,7 @@ app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRo
 app.use('/api/forwarder/me', authMiddleware, casbinAuthz('forwarder_portal'), forwarderRoutes);
 app.use('/api/forwarder-expenses', authMiddleware, casbinAuthz('financial'), forwarderAdminRoutes);
 app.use('/api/maps', authMiddleware, casbinAuthz('maps'), mapsRoutes);
-app.use('/api/photos', authMiddleware, casbinAuthz('photos'), photosRouter);
+app.use('/api/photos', assetAuthMiddleware, casbinAuthz('photos'), photosRouter);
 app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);
 app.use('/api/notifications', authMiddleware, casbinAuthz('notifications'), notificationRoutes);
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);

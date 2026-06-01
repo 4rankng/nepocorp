@@ -316,6 +316,10 @@ export const expenseCategorySchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
 });
 
+// Date columns reject the empty string — normalise "" → null so the form can submit
+// blank optional dates without forcing the client to strip them.
+const optionalDate = z.string().optional().nullable().transform((v) => (v === '' ? null : v));
+
 export const expenseSchema = z.object({
   expenseDate: z.string().min(1),
   supplierId: z.coerce.number().int().positive(),
@@ -324,8 +328,8 @@ export const expenseSchema = z.object({
   vehicleComponent: z.enum(['TRUCK', 'TRAILER']).optional().default('TRUCK'),
   amount: positiveNumeric,
   paymentStatus: z.enum(['PAID', 'UNPAID']),
-  validFrom: z.string().optional().nullable(),
-  validTo: z.string().optional().nullable(),
+  validFrom: optionalDate,
+  validTo: optionalDate,
   receiptId: z.string().optional(),
   note: z.string().optional(),
 });
