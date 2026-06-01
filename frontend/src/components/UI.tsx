@@ -27,6 +27,16 @@ const FLEX_ROW: React.CSSProperties = {
   gap: 8,
 };
 
+/* ─── Portal target helper ──────────────────────────────────────────────── */
+
+function usePortalTarget() {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setTarget(document.body);
+  }, []);
+  return target;
+}
+
 /* ─── Global confirm shortcuts ──────────────────────────────────────────────
  * Canonical keyboard pattern for any dialog/modal/drawer that asks the user
  * to confirm or cancel something:
@@ -368,7 +378,8 @@ interface ModalProps {
 
 export function Modal({ isOpen, title, onClose, children, footer, onConfirm, maxWidth = 540 }: ModalProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
-  if (!isOpen) return null;
+  const portalTarget = usePortalTarget();
+  if (!isOpen || !portalTarget) return null;
   return createPortal(
     <div
       style={{ ...STYLE_OVERLAY, background: 'rgba(10,10,10,0.4)', zIndex: 1000 }}
@@ -429,7 +440,7 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm, max
         )}
       </div>
     </div>,
-    document.body,
+    portalTarget,
   );
 }
 
@@ -447,7 +458,8 @@ interface DrawerProps {
 
 export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onConfirm }: DrawerProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
-
+  const portalTarget = usePortalTarget();
+  if (!portalTarget) return null;
   return createPortal(
     <>
       <div
@@ -479,7 +491,7 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onC
         {footer && <div className="drawer__foot">{footer}</div>}
       </aside>
     </>,
-    document.body,
+    portalTarget,
   );
 }
 

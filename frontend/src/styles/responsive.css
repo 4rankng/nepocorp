@@ -115,7 +115,6 @@
 
   /* Tables: horizontal scroll wrap to prevent layout overflow */
   .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .table-scroll table { min-width: 600px; }
 
   /* Modal full-screen on small viewports */
   .modal__content,
@@ -416,7 +415,9 @@
   /* Wrap the pills section into a horizontally-scrollable sub-row when a
      .toolbar contains a mix of pills + search. */
   .toolbar > .filter-pill { flex: 0 0 auto !important; }
-  .toolbar > div[style*="flex: 1"] { display: none !important; }
+  .toolbar > div[style*="flex: 1"],
+  .toolbar > .toolbar__spacer,
+  .toolbar > .toolbar-spacer { display: none !important; }
   .toolbar > div:has(input) { width: 100% !important; order: 99 !important; }
   .filter-tabs::-webkit-scrollbar,
   .dispatch-page .filter-tabs::-webkit-scrollbar,
@@ -636,9 +637,7 @@
   .page-header .btn,
   .page-header .btn-primary { flex: 1 1 auto !important; justify-content: center !important; }
 
-  /* ── Toolbar / Search bar wrap fix ── */
-  .toolbar { flex-wrap: wrap !important; gap: 10px !important; }
-  .toolbar > * { flex: 1 1 100% !important; }
+
 
   /* ── Hide non-essential icons on mobile to save space ── */
   .topbar .icon-btn:not(.sidebar-toggle):not(.notification-btn) { display: none !important; }

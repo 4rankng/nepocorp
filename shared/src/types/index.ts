@@ -77,6 +77,7 @@ export interface Route {
   fixedFuelAllowance: string | null;
   tollsStations: number | null;
   driverSalary: string | null;
+  defaultLegs: Array<{ origin: string; destination: string; km: number; loadingType: 'HANG' | 'VO' }> | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -319,6 +320,7 @@ export interface ExpenseWithRefs extends Expense {
   supplier?: Supplier;
   category?: ExpenseCategory;
   truck?: { id: number; licensePlate: string };
+  trailer?: { id: number; licensePlate: string; type: string };
 }
 
 export interface PayableSummary {

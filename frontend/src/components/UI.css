@@ -386,9 +386,7 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   gap: 10px;
   padding: 12px;
   background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 12px 12px 0 0;
-  border-bottom: none;
+  border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
 .toolbar > .grow,
@@ -489,7 +487,7 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 .table-wrap {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 0 0 12px 12px;
+  border-radius: 12px;
   overflow: hidden;
 }
 .table-wrap--standalone {
