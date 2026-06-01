@@ -394,17 +394,16 @@
 .trip-list-page .table-scroll-body {
   overflow-x: auto;
 }
-/* Grid: trip | truck | route | km | loại | số cont | tiêu hao | tiền đường | status | actions
-   10 slots. Actions hard-pinned right. Numeric columns get fixed pixel widths
-   so they don't squeeze; flexible text columns are fr-based. */
+/* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | status
+   7 slots — KM merged into route, Loại cont + Số cont merged into Container. */
 .trip-list-page .table-head {
   display: grid;
-  grid-template-columns: minmax(160px, 1.4fr) 110px minmax(180px, 1.6fr) 56px 64px minmax(110px, 0.9fr) minmax(140px, 1fr) 100px 110px;
+  grid-template-columns: minmax(160px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
   padding: 13px 16px;
   gap: 12px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
-  min-width: 1210px;
+  min-width: 900px;
   align-items: center;
   position: sticky;
   top: 0;
@@ -433,15 +432,15 @@
 
 .trip-list-page .table-row {
   display: grid;
-  grid-template-columns: minmax(160px, 1.4fr) 110px minmax(180px, 1.6fr) 56px 64px minmax(110px, 0.9fr) minmax(140px, 1fr) 100px 110px;
+  grid-template-columns: minmax(160px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
   padding: 14px 16px;
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid var(--line);
   transition: background 120ms ease;
   cursor: pointer;
-  min-width: 1210px;
-  height: 64px;                   /* wireframe fixed row height */
+  min-width: 900px;
+  min-height: 58px;
 }
 .trip-list-page .table-row:hover { background: var(--tbl-green-050); }
 .trip-list-page .table-row:last-of-type { border-bottom: none; }
@@ -472,19 +471,29 @@
 /* Lead with trip code (the canonical identifier); customer name follows in
    a less-loud second line. Single-line truncation with tooltip on hover. */
 .trip-list-page .trip-name {
-  font-size: 13.5px; font-weight: 700; line-height: 1.35;
+  font-size: 13px; font-weight: 700; line-height: 1.35;
   color: var(--ink);
+  display: flex; align-items: center; gap: 5px;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
+.trip-list-page .trip-date {
+  font-size: 11px; font-weight: 500;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.trip-list-page .trip-customer {
+  font-size: 11.5px; color: var(--ink-2);
+  margin-top: 3px;
+  font-weight: 500;
+  line-height: 1.35;
+  word-break: break-word;
+}
+/* Keep old .trip-meta for any remaining uses */
 .trip-list-page .trip-meta {
   font-size: 11px; color: var(--ink-3);
   margin-top: 2px;
   display: flex; align-items: center; gap: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .trip-list-page .trip-id {
   font-family: var(--font-mono);
@@ -561,6 +570,10 @@
   gap: 6px;
   margin-top: 3px;
 }
+
+/* KM shown inline after destination — styles defined near bottom of file */
+
+/* Merged container cell — styles defined near bottom of file */
 
 .trip-list-page .container-tag {
   display: inline-block;
@@ -739,6 +752,41 @@
   font-size: 13px;
 }
 
+/* ── Container merged cell (type + number in one column) ─────────── */
+.trip-list-page .container-merged-cell {
+  min-width: 0;
+}
+.trip-list-page .container-numbers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+.trip-list-page .container-numbers-list span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trip-list-page .container-numbers-more {
+  color: var(--ink-3);
+  font-size: 10.5px;
+}
+
+/* ── Route KM inline ──────────────────────────────────────────────── */
+.trip-list-page .route-km-inline {
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ── Column-specific sizing ────────────────────────────────────────── */
+.trip-list-page .col-consumption {
+  min-width: 110px;
+}
+
 /* ── Infinite scroll sentinel ─────────────────────────────────────────── */
 .trip-list-page .infinite-sentinel {
   padding: 16px 20px;
@@ -826,15 +874,11 @@
 @media (max-width: 980px) {
   .trip-list-page .table-head,
   .trip-list-page .table-row {
-    /* 6 visible cols: trip | truck | km | loại | tiêu hao | status */
-    grid-template-columns: minmax(140px, 1.4fr) 100px 60px minmax(80px, 0.8fr) minmax(120px, 1fr) 100px;
+    /* 5 visible cols: trip | truck | route | container | status */
+    grid-template-columns: minmax(140px, 1.4fr) 100px minmax(140px, 1.2fr) minmax(120px, 1fr) 100px 90px;
     min-width: unset;
     gap: 10px;
   }
-  .trip-list-page .table-head .col-route,
-  .trip-list-page .table-row .col-route,
-  .trip-list-page .table-head .col-numbers,
-  .trip-list-page .table-row .col-numbers,
   .trip-list-page .table-head .col-road,
   .trip-list-page .table-row .col-road { display: none; }
 }

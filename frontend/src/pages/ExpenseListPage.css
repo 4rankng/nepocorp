@@ -1,0 +1,472 @@
+/* ============================================================================
+ * Expense List Page — Refined Design
+ * Polished KPI cards, filter bar, and data table
+ * ========================================================================== */
+
+/* ── KPI Cards ──────────────────────────────────────────────────────────── */
+
+.expense-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.expense-kpi-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px 24px;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
+}
+
+.expense-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  border-color: var(--line-2);
+}
+
+/* Variant: total (default) */
+.expense-kpi-card--total {
+  background: #fff;
+}
+
+/* Variant: unpaid */
+.expense-kpi-card--unpaid {
+  background: #fff;
+  border-color: rgba(245, 166, 35, 0.25);
+}
+
+/* Variant: paid */
+.expense-kpi-card--paid {
+  background: #fff;
+  border-color: rgba(0, 177, 79, 0.25);
+}
+
+.expense-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.expense-kpi-label__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.expense-kpi-card--total .expense-kpi-label__icon {
+  background: var(--surface-3);
+  color: var(--ink-2);
+}
+
+.expense-kpi-card--unpaid .expense-kpi-label__icon {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.expense-kpi-card--paid .expense-kpi-label__icon {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.expense-kpi-value {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.expense-kpi-value-unit {
+  font-size: 16px;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+.expense-kpi-meta {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.expense-kpi-card--unpaid .expense-kpi-meta {
+  color: var(--warning-text);
+}
+
+.expense-kpi-card--paid .expense-kpi-meta {
+  color: var(--accent);
+}
+
+/* ── Filter Bar ─────────────────────────────────────────────────────────── */
+
+.expense-filter-bar {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  transition: box-shadow 0.2s ease;
+}
+
+.expense-filter-bar:focus-within {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.expense-filter-bar__select,
+.expense-filter-bar__date {
+  height: 36px;
+  padding: 0 32px 0 12px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238B919B' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  min-width: 150px;
+}
+
+.expense-filter-bar__select:hover,
+.expense-filter-bar__date:hover {
+  background: #fff;
+  border-color: var(--line-2);
+}
+
+.expense-filter-bar__select:focus,
+.expense-filter-bar__date:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.expense-filter-bar__date {
+  min-width: 140px;
+  padding-right: 12px;
+  background-image: none;
+}
+
+.expense-filter-bar__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--line-2);
+  flex-shrink: 0;
+}
+
+.expense-filter-bar__reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px dashed var(--line-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.expense-filter-bar__reset:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+/* ── Data Table ─────────────────────────────────────────────────────────── */
+
+.expense-table-wrap {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.expense-table-scroll {
+  overflow-x: auto;
+}
+
+.expense-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 860px;
+}
+
+.expense-table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, var(--surface-2) 0%, rgba(247, 248, 250, 0.8) 100%);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.expense-table thead th.num {
+  text-align: right;
+}
+
+.expense-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--ink);
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+
+.expense-table tbody td.num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.expense-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.expense-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(0, 177, 79, 0.03) 0%, rgba(0, 177, 79, 0.01) 100%);
+}
+
+.expense-table tbody tr:hover td {
+  color: var(--ink);
+}
+
+.expense-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Zebra striping — very subtle */
+.expense-table tbody tr:nth-child(even) {
+  background: rgba(247, 248, 250, 0.4);
+}
+
+.expense-table tbody tr:nth-child(even):hover {
+  background: linear-gradient(90deg, rgba(0, 177, 79, 0.03) 0%, rgba(0, 177, 79, 0.015) 100%);
+}
+
+/* ── Amount Cell ────────────────────────────────────────────────────────── */
+
+.expense-amount {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
+}
+
+.expense-amount--unpaid {
+  color: var(--danger);
+}
+
+.expense-amount--paid {
+  color: var(--accent);
+}
+
+/* ── Status Badge ───────────────────────────────────────────────────────── */
+
+.expense-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.expense-status--unpaid {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+  border: 1px solid rgba(245, 166, 35, 0.15);
+}
+
+.expense-status--paid {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid rgba(0, 177, 79, 0.15);
+}
+
+.expense-status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.expense-status--unpaid .expense-status__dot {
+  background: var(--warning);
+  box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.2);
+}
+
+.expense-status--paid .expense-status__dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 177, 79, 0.2);
+}
+
+/* ── Plate Tag ──────────────────────────────────────────────────────────── */
+
+.expense-plate {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 2px 8px;
+  background: var(--surface-3);
+  color: var(--ink);
+  border-radius: 6px;
+  display: inline-block;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--line);
+}
+
+/* ── Table Footer / Pagination ──────────────────────────────────────────── */
+
+.expense-table-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.expense-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.expense-page-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.expense-page-btn:hover:not(:disabled) {
+  background: #fff;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.expense-page-btn.is-active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.expense-page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Empty / Loading States ─────────────────────────────────────────────── */
+
+.expense-empty {
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.expense-empty__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--surface-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: var(--ink-3);
+}
+
+.expense-empty__text {
+  font-size: 14px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.expense-loading {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .expense-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .expense-filter-bar {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .expense-filter-bar__select,
+  .expense-filter-bar__date {
+    min-width: 0;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .expense-filter-bar__divider {
+    display: none;
+  }
+}

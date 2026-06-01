@@ -9,7 +9,7 @@ import {
 import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
 import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
-import { formatCurrency as formatVND } from '../lib/format';
+import { formatCurrency as formatVND, formatNumber } from '../lib/format';
 import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
 import type { CapTableHistory } from '@nepocorp/shared';
@@ -133,7 +133,7 @@ export default function ProfitPage() {
             <div className="profit-hero">
               <div className="profit-hero__label">Lợi nhuận ròng để phân chia · T{selectedMonth} / {selectedYear}</div>
               <div className="profit-hero__value">
-                {formatVND(netProfit)}
+                {formatNumber(netProfit)}<span className="profit-hero__currency">₫</span>
               </div>
               <div className="profit-hero__sub">
                 Sau khi trừ phí quản lý {formatVND(report?.managementFee || 0)} · Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã khóa
@@ -374,27 +374,19 @@ export default function ProfitPage() {
           {history.length > 0 && (
             <Card title="Lịch sử phân phối" subtitle="Các lần phân chia lợi nhuận đã thực hiện">
               <div className="profit-history-scroll">
-                <div className="table-scroll">
-                  <table style={{ width: '100%', fontSize: 12.5 }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
-                        <th style={{ textAlign: 'left', paddingBottom: 6 }}>Kỳ</th>
-                        <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
-                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền</th>
-                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Ngày phân chia</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {history.map((d: any) => (
-                        <tr key={d.id} style={{ borderBottom: '1px solid var(--border-3)' }}>
-                          <td style={{ padding: '6px 0', fontWeight: 600 }}>Q{d.quarter}/{d.year}</td>
-                          <td style={{ padding: '6px 0' }}>{d.partnerName}</td>
-                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 600 }}>{formatVND(Number(d.amount))}</td>
-                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)', fontSize: 11 }}>{new Date(d.createdAt).toLocaleDateString('vi-VN')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="profit-history-list">
+                  {history.map((d: any) => (
+                    <div key={d.id} className="profit-history-item">
+                      <div className="profit-history-item__top">
+                        <span className="profit-history-item__period">Q{d.quarter}/{d.year}</span>
+                        <span className="profit-history-item__partner">{d.partnerName}</span>
+                      </div>
+                      <div className="profit-history-item__bottom">
+                        <span className="profit-history-item__amount">{formatVND(Number(d.amount))}</span>
+                        <span className="profit-history-item__date">{new Date(d.createdAt).toLocaleDateString('vi-VN')}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </Card>

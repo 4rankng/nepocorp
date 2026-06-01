@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, Receipt, AlertTriangle, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import { splitKpi } from '../features/dashboard/utils';
-import { KPI, PageHeader, StatusPill } from '../components/UI';
+import { PageHeader } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery } from '@tanstack/react-query';
 import { FINANCIAL, CONFIG } from '@nepocorp/shared';
 import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@nepocorp/shared';
+import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;
 
@@ -115,21 +116,61 @@ export default function ExpenseListPage() {
         title="Chi phí phát sinh"
         description={`${total} khoản chi phí`}
         action={
-          <button className="btn btn--primary btn--sm" onClick={() => navigate('/expenses/new')} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate('/expenses/new'); } }}>
-            <Plus size={14} /> Thêm phiếu chi
+          <button className="btn btn--primary" onClick={() => navigate('/expenses/new')} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate('/expenses/new'); } }}>
+            <Plus size={15} /> Thêm phiếu chi
           </button>
         }
       />
 
-      <div className="kpi-grid">
-        <KPI label="Tổng chi phí" value={kpiTotal.num} unit={kpiTotal.suffix ? ` ${kpiTotal.suffix} ₫` : '₫'} />
-        <KPI label="Chưa thanh toán" value={`${stats.unpaidCount}`} unit="phiếu" variant="warn" meta={formatCompact(stats.unpaidAmount)} />
-        <KPI label="Đã thanh toán" value={`${stats.paidCount}`} unit="phiếu" variant="success" meta={formatCompact(stats.paidAmount)} />
+      {/* ── KPI Cards ────────────────────────────────────────────────── */}
+      <div className="expense-kpi-grid">
+        <div className="expense-kpi-card expense-kpi-card--total">
+          <div className="expense-kpi-label">
+            <span className="expense-kpi-label__icon">
+              <Receipt size={14} />
+            </span>
+            Tổng chi phí
+          </div>
+          <div className="expense-kpi-value">
+            {kpiTotal.num}
+            {kpiTotal.suffix && <span className="expense-kpi-value-unit">{kpiTotal.suffix} ₫</span>}
+            {!kpiTotal.suffix && <span className="expense-kpi-value-unit">₫</span>}
+          </div>
+        </div>
+
+        <div className="expense-kpi-card expense-kpi-card--unpaid">
+          <div className="expense-kpi-label">
+            <span className="expense-kpi-label__icon">
+              <AlertTriangle size={14} />
+            </span>
+            Chưa thanh toán
+          </div>
+          <div className="expense-kpi-value">
+            {stats.unpaidCount}
+            <span className="expense-kpi-value-unit">phiếu</span>
+          </div>
+          <div className="expense-kpi-meta">{formatCompact(stats.unpaidAmount)}</div>
+        </div>
+
+        <div className="expense-kpi-card expense-kpi-card--paid">
+          <div className="expense-kpi-label">
+            <span className="expense-kpi-label__icon">
+              <CheckCircle2 size={14} />
+            </span>
+            Đã thanh toán
+          </div>
+          <div className="expense-kpi-value">
+            {stats.paidCount}
+            <span className="expense-kpi-value-unit">phiếu</span>
+          </div>
+          <div className="expense-kpi-meta">{formatCompact(stats.paidAmount)}</div>
+        </div>
       </div>
 
-      <div className="toolbar expense-filters">
+      {/* ── Filter Bar ───────────────────────────────────────────────── */}
+      <div className="expense-filter-bar">
         <select
-          className="input expense-filters__select"
+          className="expense-filter-bar__select"
           value={supplierId}
           onChange={e => { setSupplierId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
         >
@@ -140,7 +181,7 @@ export default function ExpenseListPage() {
         </select>
 
         <select
-          className="input expense-filters__select"
+          className="expense-filter-bar__select"
           value={categoryId}
           onChange={e => { setCategoryId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
         >
@@ -151,7 +192,7 @@ export default function ExpenseListPage() {
         </select>
 
         <select
-          className="input expense-filters__select"
+          className="expense-filter-bar__select"
           value={truckId}
           onChange={e => { setTruckId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
         >
@@ -161,32 +202,35 @@ export default function ExpenseListPage() {
           ))}
         </select>
 
+        <div className="expense-filter-bar__divider" />
+
         <input
           type="date"
-          className="input expense-filters__date"
+          className="expense-filter-bar__date"
           value={dateFrom}
           onChange={e => { setDateFrom(e.target.value); setPage(1); }}
           placeholder="Từ ngày"
         />
         <input
           type="date"
-          className="input expense-filters__date"
+          className="expense-filter-bar__date"
           value={dateTo}
           onChange={e => { setDateTo(e.target.value); setPage(1); }}
           placeholder="Đến ngày"
         />
 
         {hasFilters && (
-          <button className="btn btn--ghost btn--sm expense-filters__reset" onClick={resetFilters}>
-            Xóa bộ lọc
+          <button className="expense-filter-bar__reset" onClick={resetFilters}>
+            <X size={12} /> Xóa bộ lọc
           </button>
         )}
       </div>
 
       {error && (
-        <div className="panel" style={{ padding: 16, color: 'var(--danger)', marginBottom: 20 }}>
-          {error}
-          <button className="btn btn--secondary btn--sm" style={{ marginLeft: 12 }} onClick={() => refetch()}>Thử lại</button>
+        <div className="panel" style={{ padding: 16, color: 'var(--danger)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, background: 'var(--danger-soft)', border: '1px solid rgba(227,36,52,0.2)', borderRadius: 12 }}>
+          <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>{error}</span>
+          <button className="btn btn--secondary btn--sm" onClick={() => refetch()}>Thử lại</button>
         </div>
       )}
 
@@ -194,13 +238,16 @@ export default function ExpenseListPage() {
       <div className="mobile-only mobile-table-wrap">
         <div className="m-card-list">
           {isLoading ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
+            <div className="expense-loading">
               <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
               <p>Đang tải…</p>
             </div>
           ) : expenses.length === 0 ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
-              Chưa có khoản chi phí nào.
+            <div className="expense-empty">
+              <div className="expense-empty__icon">
+                <Receipt size={28} />
+              </div>
+              <p className="expense-empty__text">Chưa có khoản chi phí nào.</p>
             </div>
           ) : (
             expenses.map(e => (
@@ -214,9 +261,15 @@ export default function ExpenseListPage() {
                   <span className="m-card__title">
                     {(e.supplier?.name) || '—'}
                   </span>
-                  <StatusPill variant={e.paymentStatus === 'PAID' ? 'success' : 'warn'}>
-                    {e.paymentStatus === 'PAID' ? 'Đã trả' : 'Ghi nợ'}
-                  </StatusPill>
+                  {e.paymentStatus === 'PAID' ? (
+                    <span className="expense-status expense-status--paid">
+                      <span className="expense-status__dot" /> Đã trả
+                    </span>
+                  ) : (
+                    <span className="expense-status expense-status--unpaid">
+                      <span className="expense-status__dot" /> Ghi nợ
+                    </span>
+                  )}
                 </div>
                 <div className="m-card__meta">
                   {formatDate(e.expenseDate)}
@@ -224,7 +277,7 @@ export default function ExpenseListPage() {
                 </div>
                 <div className="m-card__row">
                   <span className="m-card__row-label">Số tiền</span>
-                  <span className="m-card__row-value" style={{ fontWeight: 700, color: 'var(--danger)' }}>
+                  <span className={`m-card__row-value expense-amount expense-amount--${e.paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
                     {formatCurrency(e.amount)}
                   </span>
                 </div>
@@ -232,10 +285,12 @@ export default function ExpenseListPage() {
                   <div className="m-card__row">
                     <span className="m-card__row-label">Xe</span>
                     <span className="m-card__row-value">
-                      {e.vehicleComponent === 'TRAILER'
-                        ? ((e as any).trailer?.licensePlate || '—')
-                        : (e.truck?.licensePlate || '—')
-                      }
+                      <span className="expense-plate">
+                        {e.vehicleComponent === 'TRAILER'
+                          ? ((e as any).trailer?.licensePlate || '—')
+                          : (e.truck?.licensePlate || '—')
+                        }
+                      </span>
                     </span>
                   </div>
                 )}
@@ -252,9 +307,9 @@ export default function ExpenseListPage() {
       </div>
 
       {/* Desktop table */}
-      <div className="desktop-only table-wrap">
-        <div className="table-scroll">
-          <table>
+      <div className="desktop-only expense-table-wrap">
+        <div className="expense-table-scroll">
+          <table className="expense-table">
             <thead>
               <tr>
                 <th>Ngày</th>
@@ -264,21 +319,26 @@ export default function ExpenseListPage() {
                 <th>Thành phần</th>
                 <th className="num">Số tiền</th>
                 <th>Trạng thái</th>
-                <th style={{ width: 48 }}></th>
+                <th style={{ width: 40 }}></th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                  <td colSpan={8} className="expense-loading">
                     <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
                     <p>Đang tải…</p>
                   </td>
                 </tr>
               ) : expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
-                    Chưa có khoản chi phí nào.
+                  <td colSpan={8}>
+                    <div className="expense-empty">
+                      <div className="expense-empty__icon">
+                        <Receipt size={28} />
+                      </div>
+                      <p className="expense-empty__text">Chưa có khoản chi phí nào.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -286,34 +346,33 @@ export default function ExpenseListPage() {
                   <tr
                     key={e.id}
                     onClick={() => navigate(`/expenses/${e.id}/edit`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/expenses/${e.id}/edit`); } }}
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--surface-2)')}
-                    onMouseLeave={ev => (ev.currentTarget.style.background = '')}
                   >
-                    <td style={{ whiteSpace: 'nowrap' }}>{formatDate(e.expenseDate)}</td>
+                    <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-2)' }}>{formatDate(e.expenseDate)}</td>
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>
-                    <td>{e.category?.name || '—'}</td>
+                    <td style={{ color: 'var(--ink-2)' }}>{e.category?.name || '—'}</td>
                     <td>
-                      {/* Show trailer plate when vehicleComponent='TRAILER' so
-                          rơ-moóc expenses don't display the đầu kéo plate
-                          (which they did before because the backend was
-                          storing trailer id in truck_id column). */}
                       {e.vehicleComponent === 'TRAILER'
-                        ? (e.trailer?.licensePlate || <span style={{ color: 'var(--fg-3)' }}>—</span>)
-                        : (e.truck?.licensePlate || <span style={{ color: 'var(--fg-3)' }}>—</span>)
+                        ? (e.trailer?.licensePlate ? <span className="expense-plate">{e.trailer.licensePlate}</span> : <span style={{ color: 'var(--ink-4)' }}>—</span>)
+                        : (e.truck?.licensePlate ? <span className="expense-plate">{e.truck.licensePlate}</span> : <span style={{ color: 'var(--ink-4)' }}>—</span>)
                       }
                     </td>
-                    <td>{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.vehicleComponent === 'TRUCK' ? 'Đầu kéo' : ''}</td>
-                    <td className="num typo-mono" style={{ fontWeight: 700, color: 'var(--danger)' }}>
+                    <td style={{ color: 'var(--ink-2)' }}>{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.vehicleComponent === 'TRUCK' ? 'Đầu kéo' : ''}</td>
+                    <td className={`num expense-amount expense-amount--${e.paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
                       {formatCurrency(e.amount)}
                     </td>
                     <td>
-                      <StatusPill variant={e.paymentStatus === 'PAID' ? 'success' : 'warn'}>
-                        {e.paymentStatus === 'PAID' ? 'Đã trả' : 'Ghi nợ'}
-                      </StatusPill>
+                      {e.paymentStatus === 'PAID' ? (
+                        <span className="expense-status expense-status--paid">
+                          <span className="expense-status__dot" /> Đã trả
+                        </span>
+                      ) : (
+                        <span className="expense-status expense-status--unpaid">
+                          <span className="expense-status__dot" /> Ghi nợ
+                        </span>
+                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
+                      <ChevronRight size={14} style={{ color: 'var(--ink-4)' }} />
                     </td>
                   </tr>
                 ))
@@ -323,7 +382,7 @@ export default function ExpenseListPage() {
         </div>
 
         {/* Pagination */}
-        <div className="table-foot">
+        <div className="expense-table-foot">
           <span>
             Đang hiển thị{' '}
             <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>
@@ -331,17 +390,21 @@ export default function ExpenseListPage() {
             </strong>{' '}
             trên <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{total}</strong> phiếu
           </span>
-          <div className="pagination">
-            <button className="page-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
+          <div className="expense-pagination">
+            <button className="expense-page-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+              <ChevronLeft size={14} />
+            </button>
             {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
               const p = i + 1;
               return (
-                <button key={p} className={`page-btn${p === page ? ' is-active' : ''}`} onClick={() => setPage(p)}>
+                <button key={p} className={`expense-page-btn${p === page ? ' is-active' : ''}`} onClick={() => setPage(p)}>
                   {p}
                 </button>
               );
             })}
-            <button className="page-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>›</button>
+            <button className="expense-page-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+              <ChevronRight size={14} />
+            </button>
           </div>
         </div>
       </div>

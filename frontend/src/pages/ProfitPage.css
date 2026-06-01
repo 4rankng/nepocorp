@@ -123,3 +123,60 @@
   max-height: 420px;
   overflow-y: auto;
 }
+
+/* ── History cards (replaces old table — no horizontal scroll) ─── */
+.profit-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.profit-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.profit-history-item__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.profit-history-item__period {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 10px;
+  color: #005A2D;
+  background: #E7F2EC;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+.profit-history-item__partner {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profit-history-item__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.profit-history-item__amount {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: #005A2D;
+}
+.profit-history-item__date {
+  font-size: 11px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}

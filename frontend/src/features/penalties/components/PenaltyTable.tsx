@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMonth } from '../../../hooks/useMonth';
 import {
   Shield, ShieldCheck, Download, Plus, Eye, FileText,
   Zap, Trophy, Users, AlertTriangle, Clock,
@@ -57,17 +58,7 @@ export function PenaltyTable({
   const [logFilter, setLogFilter] = useState<'all' | 'pending' | 'deducted'>('all');
   const [logDriverFilter, setLogDriverFilter] = useState<number | null>(null);
 
-  const nowDate = new Date();
-  const [selMonth, setSelMonth] = useState(nowDate.getMonth() + 1);
-  const [selYear, setSelYear] = useState(nowDate.getFullYear());
-  const goMonth = (delta: number) => {
-    let m = selMonth + delta;
-    let y = selYear;
-    if (m > 12) { m = 1; y++; }
-    if (m < 1) { m = 12; y--; }
-    if (y > nowDate.getFullYear() || (y === nowDate.getFullYear() && m > nowDate.getMonth() + 1)) return;
-    setSelMonth(m); setSelYear(y);
-  };
+  const { month: selMonth, year: selYear } = useMonth();
 
   const { data: salaryPeriod, isLoading: periodLoading } = useSalaryPeriod(selMonth, selYear);
   const prevMonthNum = selMonth === 1 ? 12 : selMonth - 1;
@@ -184,25 +175,6 @@ export function PenaltyTable({
             Lập biên bản
           </Btn>
         </div>
-      </div>
-
-      {/* ── Month selector ──────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, marginTop: -4 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-3)' }}>Kỳ thống kê:</span>
-        <button className="btn btn--ghost btn--icon btn--sm" onClick={() => goMonth(-1)} aria-label="Tháng trước">
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-1)', minWidth: 90, textAlign: 'center' }}>
-          Tháng {selMonth} / {selYear}
-        </span>
-        <button
-          className="btn btn--ghost btn--icon btn--sm"
-          onClick={() => goMonth(1)}
-          disabled={selYear === nowDate.getFullYear() && selMonth >= nowDate.getMonth() + 1}
-          aria-label="Tháng sau"
-        >
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
       </div>
 
       {/* ── KPI strip (4 cards) ──────────────────────────────────────────── */}

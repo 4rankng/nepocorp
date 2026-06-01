@@ -232,14 +232,12 @@ export default function TripListPage() {
         const tripCode = buildTripCode(trip);
         return (
           <Link to={`/trips/${trip.id}`} className="trip-col" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }} onClick={(e) => e.stopPropagation()}>
-            <div className="trip-name" title={tripCode}>
+            <div className="trip-name">
               <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
-            </div>
-            <div className="trip-meta" title={customerName}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customerName}</span>
               <span className="trip-meta-sep">·</span>
-              <span>{formatDayMonth(trip.departureDate)}</span>
+              <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
             </div>
+            <div className="trip-customer" title={customerName}>{customerName}</div>
           </Link>
         );
       }
@@ -265,6 +263,7 @@ export default function TripListPage() {
         const trip = row.original;
         const route = splitRoute(trip.route?.name);
         const fullRoute = trip.route?.name ?? '';
+        const km = Number(trip.route?.distanceKm ?? 0);
         return (
           <div className="route-cell-flex" title={fullRoute}>
             {route ? (
@@ -273,7 +272,10 @@ export default function TripListPage() {
                   <span className="route-origin">{route.from}</span>
                   <span className="route-arrow-right"><ArrowRight size={11} /></span>
                 </div>
-                <div className="route-destination">{route.to}</div>
+                <div className="route-destination">
+                  {route.to}
+                  {km > 0 && <span className="route-km-inline"> · {km.toLocaleString('vi-VN')}km</span>}
+                </div>
               </>
             ) : (
               <div className="route-destination">{fullRoute || '—'}</div>
@@ -287,77 +289,38 @@ export default function TripListPage() {
         );
       }
     }),
-    columnHelper.accessor((row) => Number(row.route?.distanceKm ?? 0), {
-      id: 'km',
-      header: 'KM',
-      cell: ({ row }) => {
-        const trip = row.original;
-        const km = Number(trip.route?.distanceKm ?? 0);
-        return (
-          <div className={km > 0 ? 'km-val' : 'km-empty'}>
-            {km > 0 ? (
-              <>
-                {km.toLocaleString('vi-VN')}
-                <span className="km-unit"> km</span>
-              </>
-            ) : (
-              '—'
-            )}
-          </div>
-        );
-      }
-    }),
     columnHelper.display({
-      id: 'containerType',
-      header: 'Loại cont',
+      id: 'container',
+      header: 'Container',
       cell: ({ row }) => {
         const trip = row.original;
-        const containers: Array<{ containerTypeCode: string | null; containerTypeName: string | null }>
+        const containers: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>
           = (trip as any).containers ?? [];
         const codes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
-        if (codes.length > 0) {
-          return (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        const allNumbers = containers.map(c => c.containerNumber).join(', ');
+
+        if (codes.length === 0 && !trip.trailerType) {
+          return <div className="km-empty">—</div>;
+        }
+        return (
+          <div className="container-merged-cell" title={allNumbers || undefined}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
               {codes.map((code, i) => (
                 <span key={i} className="container-tag">{code}</span>
               ))}
+              {codes.length === 0 && trip.trailerType && (
+                <span className="container-tag">{trip.trailerType}</span>
+              )}
             </div>
-          );
-        }
-        if (trip.trailerType) {
-          return <span className="container-tag">{trip.trailerType}</span>;
-        }
-        return <div className="km-empty">—</div>;
-      }
-    }),
-    columnHelper.display({
-      id: 'containerNumbers',
-      header: 'Số cont',
-      cell: ({ row }) => {
-        const containers: Array<{ containerNumber: string }> = (row.original as any).containers ?? [];
-        if (containers.length === 0) {
-          return <div className="km-empty">—</div>;
-        }
-        const allNumbers = containers.map(c => c.containerNumber).join(', ');
-        return (
-          <div
-            title={allNumbers}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-              fontSize: 11.5,
-              fontFamily: 'var(--font-mono)',
-              minWidth: 0,
-            }}
-          >
-            {containers.slice(0, 2).map((c, i) => (
-              <span key={i} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {c.containerNumber}
-              </span>
-            ))}
-            {containers.length > 2 && (
-              <span style={{ color: 'var(--ink-3)', fontSize: 10.5 }}>+{containers.length - 2} nữa</span>
+            {containers.length > 0 && (
+              <div className="container-numbers-list">
+                {containers.slice(0, 2).map((c, i) => (
+                  <span key={i}>{c.containerNumber}</span>
+                ))}
+                {containers.length > 2 && (
+                  <span className="container-numbers-more">+{containers.length - 2}</span>
+                )}
+              </div>
             )}
           </div>
         );
@@ -649,15 +612,11 @@ export default function TripListPage() {
             {tableInstance.getHeaderGroups().map(headerGroup => (
               <React.Fragment key={headerGroup.id}>
                 {headerGroup.headers.map(header => {
-                  const rightCols = new Set(['km']);
-                  const centerCols = new Set(['status']);
                   let cls = '';
-                  if (header.column.id === 'actions') cls = 'col-act right';
-                  else if (header.column.id === 'route') cls = 'col-route';
-                  else if (header.column.id === 'containerNumbers') cls = 'col-numbers';
+                  if (header.column.id === 'route') cls = 'col-route';
+                  else if (header.column.id === 'consumption') cls = 'col-consumption';
                   else if (header.column.id === 'road') cls = 'col-road right';
-                  else if (rightCols.has(header.column.id)) cls = 'right';
-                  else if (centerCols.has(header.column.id)) cls = 'center';
+                  else if (header.column.id === 'status') cls = 'center';
                   return (
                     <div key={header.id} className={cls}>
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -680,15 +639,11 @@ export default function TripListPage() {
                 onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
               >
                 {row.getVisibleCells().map(cell => {
-                  const rightCols = new Set(['km']);
-                  const centerCols = new Set(['status']);
                   let cls = '';
-                  if (cell.column.id === 'actions') cls = 'col-act right';
-                  else if (cell.column.id === 'route') cls = 'col-route';
-                  else if (cell.column.id === 'containerNumbers') cls = 'col-numbers';
+                  if (cell.column.id === 'route') cls = 'col-route';
+                  else if (cell.column.id === 'consumption') cls = 'col-consumption';
                   else if (cell.column.id === 'road') cls = 'col-road right';
-                  else if (rightCols.has(cell.column.id)) cls = 'right';
-                  else if (centerCols.has(cell.column.id)) cls = 'center';
+                  else if (cell.column.id === 'status') cls = 'center';
                   return (
                     <div key={cell.id} className={cls}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
