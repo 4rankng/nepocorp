@@ -5,7 +5,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, isNull, desc, and, lte } from 'drizzle-orm';
-import { cacheGet } from '../lib/redis';
+import { cacheGet, cacheInvalidate } from '../lib/redis';
 
 // ─── Bootstrap ──────────────────────────────────────────────────────────────────
 
@@ -58,4 +58,41 @@ export async function getPricing(customerId: number, routeId: number, date: stri
     .limit(1);
 
   return { price: pricing ? Number(pricing.price) : 0 };
+}
+
+export async function getFuelConfig(): Promise<any> {
+  const row = await cacheGet('config:fuel', 300, async () => {
+    const [r] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
+    return r || null;
+  });
+  return row;
+}
+
+export async function upsertFuelConfig(data: {
+  loadedNorm: number;
+  emptyNorm: number;
+  supplement?: number;
+  unitPrice: number;
+  warningThreshold: number;
+  criticalThreshold: number;
+}): Promise<any> {
+  const values = {
+    loadedNorm: String(data.loadedNorm),
+    emptyNorm: String(data.emptyNorm),
+    supplement: String(data.supplement ?? 0),
+    unitPrice: String(data.unitPrice),
+    warningThreshold: String(data.warningThreshold),
+    criticalThreshold: String(data.criticalThreshold),
+    updatedAt: new Date(),
+  };
+  const [existing] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
+  if (existing) {
+    const [updated] = await db.update(s.fuelConfig).set(values).where(eq(s.fuelConfig.id, existing.id)).returning();
+    await cacheInvalidate('config:fuel');
+    return { result: updated, status: 200 };
+  } else {
+    const [created] = await db.insert(s.fuelConfig).values(values).returning();
+    await cacheInvalidate('config:fuel');
+    return { result: created, status: 201 };
+  }
 }
