@@ -121,7 +121,7 @@ export function AllowanceSection() {
           )}
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lương kết hợp (đ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tiền kết hợp (đ)</label>
           <InputWithPrefix
             value={driverSalary}
             onChange={setDriverSalary}

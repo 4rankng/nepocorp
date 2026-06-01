@@ -33,8 +33,8 @@ export function LeafletMap({
         attributionControl: false,
       }).setView([16.047079, 108.206230], 6); // Centered on Vietnam
 
-      // Dark Theme Tiles
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      // CartoDB Voyager — clean, readable light theme
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
       }).addTo(map);
 
