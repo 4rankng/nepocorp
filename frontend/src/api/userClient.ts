@@ -26,7 +26,7 @@ export const userClient = {
   },
 
   updateUser: async (id: number, data: unknown) => {
-    return api.put<any>(AUTH.USER(id), data);
+    return api.patch<any>(AUTH.USER(id), data);
   },
 
   deleteUser: async (id: number) => {
