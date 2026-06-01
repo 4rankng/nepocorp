@@ -70,3 +70,19 @@
   .pnl-head .pnl-head__yoy, .pnl-head .pnl-head__pct { display: none; }
 }
 .pnl-head__amount, .pnl-head__yoy, .pnl-head__pct { text-align: right; }
+
+@media (max-width: 640px) {
+  .finance-charts-row {
+    flex-direction: column;
+  }
+  .finance-charts-row > .panel {
+    flex: 1 1 auto !important;
+    min-width: 0;
+  }
+  .finance-revenue-chart {
+    height: 260px !important;
+  }
+  .finance-chart-xlabel {
+    display: none;
+  }
+}

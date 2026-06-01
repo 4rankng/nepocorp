@@ -291,97 +291,151 @@ export function PenaltyTable({
             </div>
           </div>
         </div>
-        <div className="table-wrap">
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th style={{ width: 48, textAlign: 'center' }}>#</th>
-                  <th>Tài xế</th>
-                  <th>Chuỗi an toàn</th>
-                  <th>Vi phạm {scoreFilter === '90d' ? '90N' : scoreFilter.toUpperCase()}</th>
-                  <th>Phạt YTD</th>
-                  <th style={{ textAlign: 'center' }}>Mức</th>
-                  <th style={{ textAlign: 'right', width: 100 }}>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {driverDetails.map((d, idx) => {
-                  const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
-                  const ac = avatarColorById(d.id);
-                  const streakPct = Math.min(100, (d.streakDays / 180) * 100);
-                  const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'bad';
-                  const moneyClass = d.fineYTD === 0 ? 'zero' : '';
-                  const gc = getGradeClass(d.grade);
-                  return (
-                    <tr key={d.id}>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className={`penalty-rank ${rankClass}`}>{idx + 1}</span>
-                      </td>
-                      <td>
-                        <span className="penalty-driver-cell">
-                          <span className="penalty-driver-mini" style={{ background: ac.bg, color: ac.fg }}>
-                            {getInitials(d.name)}
-                          </span>
-                          <span className="penalty-driver-info">
-                            <div className="name">{d.name}</div>
-                            <div className="role">
-                              {d.truckPlate || 'Chưa phân xe'} · {formatTenure(d.createdAt)}
-                            </div>
-                          </span>
-                        </span>
-                      </td>
-                      <td>
-                        <span className="penalty-streak">
-                          <span className="penalty-streak-num">
-                            {d.streakDays}<span className="unit">ngày</span>
-                          </span>
-                          <span className="penalty-streak-bar">
-                            <span
-                              className={`fill ${idx === 0 ? 'gold' : ''}`}
-                              style={{ width: `${streakPct}%` }}
-                            />
-                          </span>
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`penalty-violation-count ${vClass}`}>
-                          <span className="dot" />
-                          {d.violationsInPeriod} vụ
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`penalty-money ${moneyClass}`}>
-                          {d.fineYTD > 0 ? formatCurrency(d.fineYTD) : `0`}<span className="unit">đ</span>
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className={`penalty-grade ${gc}`}>{d.grade}</span>
-                      </td>
-                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button className="penalty-row-act" aria-label="Xem chi tiết" onClick={() => setLogDriverFilter(d.id)}>
-                          <Eye size={14} />
-                        </button>
-                        <button className="penalty-row-act primary" aria-label="Lập biên bản" onClick={() => onOpenDrawer(d.id)}>
-                          <FileText size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className="mobile-only mobile-table-wrap">
+          <div className="m-card-list">
+            {driverDetails.map((d, idx) => {
+              const ac = avatarColorById(d.id);
+              const gc = getGradeClass(d.grade);
+              const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'bad';
+              return (
+                <div key={d.id} className="m-card">
+                  <div className="m-card__top">
+                    <span className="m-card__title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="penalty-driver-mini" style={{ background: ac.bg, color: ac.fg, width: 28, height: 28, fontSize: 11 }}>{getInitials(d.name)}</span>
+                      {d.name}
+                    </span>
+                    <span className={`penalty-grade ${gc}`}>{d.grade}</span>
+                  </div>
+                  <div className="m-card__meta">
+                    <span>{d.truckPlate || 'Chưa phân xe'}</span>
+                  </div>
+                  <div className="m-card__row">
+                    <span className="m-card__row-label">Chuỗi an toàn</span>
+                    <span className="m-card__row-value" style={{ color: d.streakDays >= 90 ? 'var(--success)' : 'var(--ink)' }}>{d.streakDays} ngày</span>
+                  </div>
+                  <div className="m-card__row">
+                    <span className="m-card__row-label">Vi phạm</span>
+                    <span className={`m-card__row-value ${vClass === 'zero' ? 'm-card__row-value--success' : vClass === 'bad' ? 'm-card__row-value--danger' : ''}`}>{d.violationsInPeriod} vụ</span>
+                  </div>
+                  {d.fineYTD > 0 && (
+                    <div className="m-card__row">
+                      <span className="m-card__row-label">Phạt YTD</span>
+                      <span className="m-card__row-value m-card__row-value--danger">{formatCurrency(d.fineYTD)} đ</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                    <button className="penalty-row-act" aria-label="Xem chi tiết" onClick={() => setLogDriverFilter(d.id)}>
+                      <Eye size={14} />
+                    </button>
+                    <button className="penalty-row-act primary" aria-label="Lập biên bản" onClick={() => onOpenDrawer(d.id)}>
+                      <FileText size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="penalty-table-foot">
+            <div className="legend">
+              <span>TB: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
+              <span style={{ opacity: 0.5 }}>·</span>
+              <span>{driversOver90} đạt 90 ngày</span>
+            </div>
           </div>
         </div>
-        <div className="penalty-table-foot">
-          <div className="legend">
-            <span>TB chuỗi an toàn: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
-            <span style={{ opacity: 0.5 }}>·</span>
-            <span>{driversOver90} tài xế đạt mốc 90 ngày</span>
-            <span style={{ opacity: 0.5 }}>·</span>
-            <span>{driversOver6m} tài xế vượt 6 tháng</span>
+        <div className="desktop-only">
+          <div className="table-wrap">
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ width: 48, textAlign: 'center' }}>#</th>
+                    <th>Tài xế</th>
+                    <th>Chuỗi an toàn</th>
+                    <th>Vi phạm {scoreFilter === '90d' ? '90N' : scoreFilter.toUpperCase()}</th>
+                    <th>Phạt YTD</th>
+                    <th style={{ textAlign: 'center' }}>Mức</th>
+                    <th style={{ textAlign: 'right', width: 100 }}>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {driverDetails.map((d, idx) => {
+                    const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+                    const ac = avatarColorById(d.id);
+                    const streakPct = Math.min(100, (d.streakDays / 180) * 100);
+                    const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'bad';
+                    const moneyClass = d.fineYTD === 0 ? 'zero' : '';
+                    const gc = getGradeClass(d.grade);
+                    return (
+                      <tr key={d.id}>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`penalty-rank ${rankClass}`}>{idx + 1}</span>
+                        </td>
+                        <td>
+                          <span className="penalty-driver-cell">
+                            <span className="penalty-driver-mini" style={{ background: ac.bg, color: ac.fg }}>
+                              {getInitials(d.name)}
+                            </span>
+                            <span className="penalty-driver-info">
+                              <div className="name">{d.name}</div>
+                              <div className="role">
+                                {d.truckPlate || 'Chưa phân xe'} · {formatTenure(d.createdAt)}
+                              </div>
+                            </span>
+                          </span>
+                        </td>
+                        <td>
+                          <span className="penalty-streak">
+                            <span className="penalty-streak-num">
+                              {d.streakDays}<span className="unit">ngày</span>
+                            </span>
+                            <span className="penalty-streak-bar">
+                              <span
+                                className={`fill ${idx === 0 ? 'gold' : ''}`}
+                                style={{ width: `${streakPct}%` }}
+                              />
+                            </span>
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`penalty-violation-count ${vClass}`}>
+                            <span className="dot" />
+                            {d.violationsInPeriod} vụ
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`penalty-money ${moneyClass}`}>
+                            {d.fineYTD > 0 ? formatCurrency(d.fineYTD) : `0`}<span className="unit">đ</span>
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`penalty-grade ${gc}`}>{d.grade}</span>
+                        </td>
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button className="penalty-row-act" aria-label="Xem chi tiết" onClick={() => setLogDriverFilter(d.id)}>
+                            <Eye size={14} />
+                          </button>
+                          <button className="penalty-row-act primary" aria-label="Lập biên bản" onClick={() => onOpenDrawer(d.id)}>
+                            <FileText size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <span>Hiển thị {drivers.length}/{drivers.length}</span>
+          <div className="penalty-table-foot">
+            <div className="legend">
+              <span>TB chuỗi an toàn: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
+              <span style={{ opacity: 0.5 }}>·</span>
+              <span>{driversOver90} tài xế đạt mốc 90 ngày</span>
+              <span style={{ opacity: 0.5 }}>·</span>
+              <span>{driversOver6m} tài xế vượt 6 tháng</span>
+            </div>
+            <span>Hiển thị {drivers.length}/{drivers.length}</span>
+          </div>
         </div>
       </Panel>
 

@@ -83,6 +83,8 @@ export const updateTripFiguresSchema = z.object({
   revenue: nonNegNumeric.optional(),
   revenueEmptyReturn: nonNegNumeric.optional(),
   revenueCombine: nonNegNumeric.optional(),
+  twoPointDeliveryBonus: nonNegNumeric.optional(),
+  vehicleShiftAllowance: nonNegNumeric.optional(),
   notes: z.string().optional(),
   photoUrls: z.array(z.string()).optional(),
   version: z.number().int().optional(),

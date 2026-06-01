@@ -232,19 +232,26 @@ export default function TripListPage() {
 
   // ── Actions ───────────────────────────────────────────────────────────
   const handleExport = () => {
-    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Dầu (L)', 'Tiền đi đường', 'Doanh thu', 'Trạng thái'];
-    const rows = filteredTrips.map((t) => [
-      buildTripCode(t),
-      t.customer?.name ?? '',
-      t.route?.name ?? '',
-      t.truck?.licensePlate ?? '',
-      t.departureDate ?? '',
-      Number(t.route?.distanceKm ?? 0) || '',
-      t.fuelLiters ?? '',
-      t.totalRoadAllowance ?? '',
-      t.revenue ?? '',
-      TRIP_STATUS_LABELS[t.status],
-    ]);
+    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Tiền đi đường', 'Doanh thu', 'Trạng thái'];
+    const rows = filteredTrips.map((t) => {
+      const containers = ((t as any).containers ?? []) as Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>;
+      const typeCodes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
+      const numbers = containers.map(c => c.containerNumber).join(', ');
+      return [
+        buildTripCode(t),
+        t.customer?.name ?? '',
+        t.route?.name ?? '',
+        t.truck?.licensePlate ?? '',
+        t.departureDate ?? '',
+        Number(t.route?.distanceKm ?? 0) || '',
+        typeCodes,
+        numbers,
+        t.fuelLiters ?? '',
+        t.totalRoadAllowance ?? '',
+        t.revenue ?? '',
+        TRIP_STATUS_LABELS[t.status],
+      ];
+    });
     downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
   };
 
@@ -370,6 +377,48 @@ export default function TripListPage() {
               </>
             ) : (
               '—'
+            )}
+          </div>
+        );
+      }
+    }),
+    // Loại container — distinct container_type codes from trip_containers
+    columnHelper.display({
+      id: 'containerType',
+      header: 'Loại cont',
+      cell: ({ row }) => {
+        const containers: Array<{ containerTypeCode: string | null; containerTypeName: string | null }>
+          = (row.original as any).containers ?? [];
+        if (containers.length === 0) {
+          return <div className="km-empty">—</div>;
+        }
+        const codes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
+        if (codes.length === 0) return <div className="km-empty">—</div>;
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {codes.map((code, i) => (
+              <span key={i} className="container-tag">{code}</span>
+            ))}
+          </div>
+        );
+      }
+    }),
+    // Số container — comma-separated numbers from trip_containers
+    columnHelper.display({
+      id: 'containerNumbers',
+      header: 'Số cont',
+      cell: ({ row }) => {
+        const containers: Array<{ containerNumber: string }> = (row.original as any).containers ?? [];
+        if (containers.length === 0) {
+          return <div className="km-empty">—</div>;
+        }
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 12, fontFamily: 'var(--font-mono)' }}>
+            {containers.slice(0, 3).map((c, i) => (
+              <span key={i} title={c.containerNumber}>{c.containerNumber}</span>
+            ))}
+            {containers.length > 3 && (
+              <span style={{ color: 'var(--fg-3)', fontSize: 11 }}>+{containers.length - 3} cont nữa</span>
             )}
           </div>
         );

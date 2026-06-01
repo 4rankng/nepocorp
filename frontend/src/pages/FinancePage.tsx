@@ -171,7 +171,7 @@ export default function FinancePage() {
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>Chọn kỳ báo cáo:</span>
         <select
           className="input"
-          style={{ width: 140, height: 34, fontSize: 13 }}
+          style={{ minWidth: 110, height: 34, fontSize: 13, flex: '1 1 auto' }}
           value={month}
           onChange={e => setMonth(Number(e.target.value))}
         >
@@ -181,7 +181,7 @@ export default function FinancePage() {
         </select>
         <select
           className="input"
-          style={{ width: 110, height: 34, fontSize: 13 }}
+          style={{ minWidth: 90, height: 34, fontSize: 13, flex: '1 1 auto' }}
           value={year}
           onChange={e => setYear(Number(e.target.value))}
         >
@@ -206,7 +206,7 @@ export default function FinancePage() {
       )}
 
       {/* ── Charts ──────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3">
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3 finance-charts-row">
         {/* Revenue trend */}
         <div className="panel" style={{ padding: '16px 20px', flex: '2 1 400px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
@@ -235,7 +235,7 @@ export default function FinancePage() {
               <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh để xem xu hướng doanh thu hàng tháng</div>
             </div>
           ) : (
-            <div style={{ width: '100%', height: 220 }}>
+            <div className="finance-revenue-chart" style={{ width: '100%', height: 220 }}>
               {(() => {
                 const w = 600;
                 const h = 220;
@@ -250,7 +250,7 @@ export default function FinancePage() {
                 const barW = Math.min(16, (xStep - 6) / 2);
                 const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => niceMax * t);
                 return (
-                  <svg aria-hidden="true" width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Xu hướng doanh thu">
+                  <svg aria-hidden="true" className="finance-revenue-svg" width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Xu hướng doanh thu">
                     {ticks.map((tv, i) => {
                       const y = padT + plotH - (tv / niceMax) * plotH;
                       return (
@@ -270,7 +270,7 @@ export default function FinancePage() {
                         <g key={i}>
                           <rect x={cx - barW - 1} y={padT + plotH - revH} width={barW} height={revH} fill="#3b82f6" rx={2} />
                           <rect x={cx + 1} y={padT + plotH - gpH} width={barW} height={gpH} fill="#10b981" rx={2} />
-                          <text x={cx} y={h - padB + 16} textAnchor="middle" fontSize="11" fill="var(--fg-3)">{d.name as string}</text>
+                          <text className="finance-chart-xlabel" x={cx} y={h - padB + 16} textAnchor="middle" fontSize="11" fill="var(--fg-3)">{d.name as string}</text>
                         </g>
                       );
                     })}

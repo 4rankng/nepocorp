@@ -13,7 +13,7 @@ import {
   FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   parseThreshold,
 } from '@nepocorp/shared';
-import { Panel, StatusPill, useConfirm, Drawer } from '../components/UI';
+import { Panel, StatusPill, useConfirm, Drawer, Modal } from '../components/UI';
 import { useTripDetail, useTripAdjustments, useTrucksAndDrivers, useFuelConfig } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '../components/shared/Spinner';
@@ -598,41 +598,48 @@ export default function TripDetailPage() {
       )}
 
       {/* Reassign Modal */}
-      {showReassign && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(9,9,11,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--z-modal)' as any, padding: 24 }}
-          onClick={() => setShowReassign(false)}>
-          <div style={{ width: '100%', maxWidth: 440 }} onClick={e => e.stopPropagation()}>
-            <Panel title="Phân xe lại" action={
-              <button className="btn btn--ghost btn--icon btn--sm" onClick={() => setShowReassign(false)}><X size={16} /></button>
-            }>
-              {reassignError && <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 13 }}>{reassignError}</div>}
-              <div className="field">
-                <label>Xe đầu kéo</label>
-                <select className="input" value={reassignTruckId} onChange={e => setReassignTruckId(e.target.value)}>
-                  <option value="">-- Chọn xe --</option>
-                  {reassignTrucks.map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label>Tài xế</label>
-                <select className="input" value={reassignDriverId} onChange={e => setReassignDriverId(e.target.value)}>
-                  <option value="">-- Chọn tài xế --</option>
-                  {reassignDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </div>
-              <button
-                className="btn btn--primary"
-                style={{ width: '100%', marginTop: 8 }}
-                disabled={reassignLoading || !reassignTruckId || !reassignDriverId}
-                onClick={handleReassign}
-              >
-                {reassignLoading ? <Loader2 size={14} className="spin" /> : <Shuffle size={14} />}
-                Xác nhận phân xe lại
-              </button>
-            </Panel>
+      <Modal
+        isOpen={showReassign}
+        title="Phân xe lại"
+        onClose={() => setShowReassign(false)}
+        onConfirm={handleReassign}
+        maxWidth={440}
+        footer={
+          <>
+            <button className="btn btn--ghost btn--sm" onClick={() => setShowReassign(false)}>
+              <X size={14} /> Hủy
+            </button>
+            <button
+              className="btn btn--primary btn--sm"
+              disabled={reassignLoading || !reassignTruckId || !reassignDriverId}
+              onClick={handleReassign}
+            >
+              {reassignLoading ? <Loader2 size={14} className="spin" /> : <Shuffle size={14} />}
+              Xác nhận phân xe lại
+            </button>
+          </>
+        }
+      >
+        {reassignError && (
+          <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 13 }}>
+            {reassignError}
           </div>
+        )}
+        <div className="field">
+          <label>Xe đầu kéo</label>
+          <select className="input" value={reassignTruckId} onChange={e => setReassignTruckId(e.target.value)}>
+            <option value="">-- Chọn xe --</option>
+            {reassignTrucks.map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
+          </select>
         </div>
-      )}
+        <div className="field">
+          <label>Tài xế</label>
+          <select className="input" value={reassignDriverId} onChange={e => setReassignDriverId(e.target.value)}>
+            <option value="">-- Chọn tài xế --</option>
+            {reassignDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </div>
+      </Modal>
 
       {/* Adjustment Drawer */}
       <Drawer isOpen={showAdjust} onClose={() => setShowAdjust(false)} title="Hóa đơn điều chỉnh">

@@ -7,7 +7,10 @@
   gap: 10px;
   margin-bottom: 22px;
 }
-@media (max-width: 900px) { .aging-buckets { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) {
+  .aging-buckets { grid-template-columns: repeat(2, 1fr); }
+  .aging-buckets > .bucket:first-child { grid-column: 1 / -1; }
+}
 
 .bucket {
   background: #fff;

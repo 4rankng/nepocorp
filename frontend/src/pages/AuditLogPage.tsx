@@ -6,7 +6,7 @@ import {
   Truck, Settings, DollarSign, LogIn, ChevronLeft, ChevronRight,
   Globe, Terminal, Copy, Check, Info, ShieldAlert,
 } from 'lucide-react';
-import { Panel, KPI } from '../components/UI';
+import { Panel, KPI, Drawer } from '../components/UI';
 import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditLogs';
 import { useAuth } from '../hooks/useAuth';
 
@@ -171,6 +171,150 @@ export default function AuditLogPage() {
     navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const renderDetailContent = (entry: NormalizedEntry | null) => {
+    if (!entry) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 380, color: 'var(--ink-3)', padding: 20, textAlign: 'center' }}>
+          <ShieldAlert size={36} style={{ color: 'var(--info)', opacity: 0.6, marginBottom: 12 }} />
+          <h4 style={{ margin: '0 0 6px 0', fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
+            Thanh tra Hoạt động
+          </h4>
+          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, maxWidth: 220 }}>
+            Chọn một dòng bất kỳ bên bảng để xem phân tích dữ liệu chi tiết của yêu cầu.
+          </p>
+          <div style={{ width: '100%', borderTop: '1px solid var(--line)', marginTop: 24, paddingTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
+              <span>Phân bổ hoạt động nhóm</span>
+            </div>
+            <div className="audit-bar">
+              <div className="audit-bar__seg audit-bar__seg--trip" style={{ width: `${filter === 'trip' || filter === 'all' ? 40 : 0}%` }} title="Chuyến đi" />
+              <div className="audit-bar__seg audit-bar__seg--config" style={{ width: `${filter === 'config' || filter === 'all' ? 25 : 0}%` }} title="Cấu hình" />
+              <div className="audit-bar__seg audit-bar__seg--finance" style={{ width: `${filter === 'finance' || filter === 'all' ? 20 : 0}%` }} title="Tài chính" />
+              <div className="audit-bar__seg audit-bar__seg--penalty" style={{ width: `${filter === 'penalty' || filter === 'all' ? 10 : 0}%` }} title="Kỷ luật" />
+              <div className="audit-bar__seg audit-bar__seg--auth" style={{ width: `${filter === 'auth' || filter === 'all' ? 5 : 0}%` }} title="Xác thực" />
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px', marginTop: 12, fontSize: 11 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7c3aed' }} /> Chuyến đi
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--info)' }} /> Cấu hình
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' }} /> Tài chính
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)' }} /> Kỷ luật
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-3)' }} /> Xác thực
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }} className="fade-up">
+        <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+            <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 42, height: 42, fontSize: 14 }}>
+              {getInitials(entry.userName)}
+            </div>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>
+                {entry.userName}
+              </h3>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className={`audit-dot ${categoryDotClass(entry.category)}`} style={{ width: 8, height: 8 }} />
+                {ACTION_LABELS[entry.action] || entry.action}
+              </div>
+            </div>
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
+            {entry.message}
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: 12, background: 'var(--surface-2)', padding: 12, borderRadius: 8 }}>
+          <div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
+              Thời gian
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)' }}>
+              {formatExactTime(entry.timestamp)}
+            </div>
+          </div>
+          {isAdmin && (
+            <div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
+                Địa chỉ IP
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Globe size={12} style={{ color: 'var(--info)' }} />
+                {entry.ipAddress || 'Mạng nội bộ'}
+              </div>
+            </div>
+          )}
+          {isAdmin && entry.method && (
+            <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8, borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 4 }}>
+              <span className={`audit-method audit-method--${entry.method}`}>
+                {entry.method}
+              </span>
+              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
+                {entry.path}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {isAdmin && (
+          entry.payload && Object.keys(entry.payload).length > 0 ? (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 180 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Terminal size={12} />
+                  Chi tiết tham số (JSON)
+                </div>
+                <button
+                  className="btn btn--secondary btn--sm"
+                  style={{ padding: '2px 8px', fontSize: 11, height: 24 }}
+                  onClick={() => handleCopyPayload(entry.payload)}
+                >
+                  {copied ? <Check size={11} /> : <Copy size={11} />}
+                  {copied ? 'Đã chép!' : 'Sao chép'}
+                </button>
+              </div>
+              <pre
+                style={{
+                  flex: 1,
+                  background: 'var(--surface-3)',
+                  border: '1px solid var(--line-2)',
+                  borderRadius: 6,
+                  padding: 10,
+                  fontSize: 11,
+                  color: 'var(--ink)',
+                  fontFamily: 'var(--font-mono)',
+                  overflow: 'auto',
+                  maxHeight: 220,
+                  margin: 0,
+                }}
+              >
+                {JSON.stringify(entry.payload, null, 2)}
+              </pre>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--ink-3)', fontSize: 12, padding: 20 }}>
+              <Info size={24} style={{ marginBottom: 6, color: 'var(--line-2)' }} />
+              Không có tham số chi tiết đi kèm sự kiện này
+            </div>
+          )
+        )}
+      </div>
+    );
   };
 
   return (
@@ -400,153 +544,25 @@ export default function AuditLogPage() {
           )}
         </Panel>
 
-        {/* Right Column: Interactive Details Pane — ADMIN only */}
-        {isAdmin && <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Right Column: Interactive Details Pane — ADMIN only (desktop) */}
+        {isAdmin && <div className="desktop-only" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Panel style={{ flex: 1, minHeight: 460, position: 'relative' }}>
-            {selectedEntry ? (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }} className="fade-up">
-                {/* Header detail */}
-                <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                    <div className={`avatar-ring ${avatarColor(selectedEntry.userName)}`} style={{ width: 42, height: 42, fontSize: 14 }}>
-                      {getInitials(selectedEntry.userName)}
-                    </div>
-                    <div>
-                      <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>
-                        {selectedEntry.userName}
-                      </h3>
-                      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span className={`audit-dot ${categoryDotClass(selectedEntry.category)}`} style={{ width: 8, height: 8 }} />
-                        {ACTION_LABELS[selectedEntry.action] || selectedEntry.action}
-                      </div>
-                    </div>
-                  </div>
-                  <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
-                    {selectedEntry.message}
-                  </p>
-                </div>
-
-                {/* Technical Meta */}
-                <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: 12, background: 'var(--surface-2)', padding: 12, borderRadius: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
-                      Thời gian
-                    </div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)' }}>
-                      {formatExactTime(selectedEntry.timestamp)}
-                    </div>
-                  </div>
-                  {isAdmin && (
-                    <div>
-                      <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
-                        Địa chỉ IP
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Globe size={12} style={{ color: 'var(--info)' }} />
-                        {selectedEntry.ipAddress || 'Mạng nội bộ'}
-                      </div>
-                    </div>
-                  )}
-                  {isAdmin && selectedEntry.method && (
-                    <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8, borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 4 }}>
-                      <span className={`audit-method audit-method--${selectedEntry.method}`}>
-                        {selectedEntry.method}
-                      </span>
-                      <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
-                        {selectedEntry.path}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Payload JSON Inspector — ADMIN only */}
-                {isAdmin && (
-                  selectedEntry.payload && Object.keys(selectedEntry.payload).length > 0 ? (
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 180 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <Terminal size={12} />
-                          Chi tiết tham số (JSON)
-                        </div>
-                        <button
-                          className="btn btn--secondary btn--sm"
-                          style={{ padding: '2px 8px', fontSize: 11, height: 24 }}
-                          onClick={() => handleCopyPayload(selectedEntry.payload)}
-                        >
-                          {copied ? <Check size={11} /> : <Copy size={11} />}
-                          {copied ? 'Đã chép!' : 'Sao chép'}
-                        </button>
-                      </div>
-                      <pre
-                        style={{
-                          flex: 1,
-                          background: 'var(--surface-3)',
-                          border: '1px solid var(--line-2)',
-                          borderRadius: 6,
-                          padding: 10,
-                          fontSize: 11,
-                          color: 'var(--ink)',
-                          fontFamily: 'var(--font-mono)',
-                          overflow: 'auto',
-                          maxHeight: 220,
-                          margin: 0,
-                        }}
-                      >
-                        {JSON.stringify(selectedEntry.payload, null, 2)}
-                      </pre>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--ink-3)', fontSize: 12, padding: 20 }}>
-                      <Info size={24} style={{ marginBottom: 6, color: 'var(--line-2)' }} />
-                      Không có tham số chi tiết đi kèm sự kiện này
-                    </div>
-                  )
-                )}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 380, color: 'var(--ink-3)', padding: 20, textAlign: 'center' }}>
-                <ShieldAlert size={36} style={{ color: 'var(--info)', opacity: 0.6, marginBottom: 12 }} />
-                <h4 style={{ margin: '0 0 6px 0', fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
-                  Thanh tra Hoạt động
-                </h4>
-                <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, maxWidth: 220 }}>
-                  Chọn một dòng bất kỳ bên bảng để xem phân tích dữ liệu chi tiết của yêu cầu.
-                </p>
-
-                {/* Default stats bar */}
-                <div style={{ width: '100%', borderTop: '1px solid var(--line)', marginTop: 24, paddingTop: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
-                    <span>Phân bổ hoạt động nhóm</span>
-                  </div>
-                  <div className="audit-bar">
-                    <div className="audit-bar__seg audit-bar__seg--trip" style={{ width: `${filter === 'trip' || filter === 'all' ? 40 : 0}%` }} title="Chuyến đi" />
-                    <div className="audit-bar__seg audit-bar__seg--config" style={{ width: `${filter === 'config' || filter === 'all' ? 25 : 0}%` }} title="Cấu hình" />
-                    <div className="audit-bar__seg audit-bar__seg--finance" style={{ width: `${filter === 'finance' || filter === 'all' ? 20 : 0}%` }} title="Tài chính" />
-                    <div className="audit-bar__seg audit-bar__seg--penalty" style={{ width: `${filter === 'penalty' || filter === 'all' ? 10 : 0}%` }} title="Kỷ luật" />
-                    <div className="audit-bar__seg audit-bar__seg--auth" style={{ width: `${filter === 'auth' || filter === 'all' ? 5 : 0}%` }} title="Xác thực" />
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px', marginTop: 12, fontSize: 11 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7c3aed' }} /> Chuyến đi
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--info)' }} /> Cấu hình
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' }} /> Tài chính
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)' }} /> Kỷ luật
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-3)' }} /> Xác thực
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+            {renderDetailContent(selectedEntry)}
           </Panel>
         </div>}
+
+        {isAdmin && (
+          <div className="mobile-only">
+            <Drawer
+              isOpen={!!selectedEntry}
+              onClose={() => setSelectedEntry(null)}
+              title="Chi tiết hoạt động"
+              subtitle={selectedEntry ? `${selectedEntry.userName} — ${formatExactTime(selectedEntry.timestamp)}` : ''}
+            >
+              {renderDetailContent(selectedEntry)}
+            </Drawer>
+          </div>
+        )}
       </div>
 
       {/* ── Pagination ── */}

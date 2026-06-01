@@ -22,6 +22,8 @@ export interface ComputeTripTotalsInput {
   returnCargoBonus: number;
   revenue: number;
   driverSalary: number;
+  twoPointDeliveryBonus: number;
+  vehicleShiftAllowance: number;
   roadAllowanceOverride?: number | null;
 }
 
@@ -107,7 +109,7 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
       ? input.roadAllowanceOverride
       : computedRoadAllowance;
 
-  const totalCost = totalFuelCost + totalRoadAllowance + input.driverSalary;
+  const totalCost = totalFuelCost + totalRoadAllowance + input.driverSalary + input.twoPointDeliveryBonus + input.vehicleShiftAllowance;
   const grossProfit = input.revenue - totalCost;
 
   return {

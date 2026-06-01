@@ -326,13 +326,9 @@ export default function ExpenseEntryPage() {
   }
 
   return (
-    <div className="fade-up relative min-h-[calc(100vh-64px)] p-4 md:p-8 overflow-hidden">
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
-      {/* Decorative blobs */}
-      <div className="absolute top-0 right-10 w-72 h-72 rounded-full mix-blend-multiply opacity-50 blur-3xl animate-blob" style={{ background: 'rgba(0,177,79,0.15)' }} />
-      <div className="absolute bottom-20 left-10 w-96 h-96 rounded-full mix-blend-multiply opacity-50 blur-3xl animate-blob animation-delay-2000" style={{ background: 'rgba(30,91,184,0.1)' }} />
+    <div className="fade-up" style={{ minHeight: 'calc(100vh - 64px)', padding: '16px 16px 32px' }}>
 
-      <div className="relative max-w-4xl mx-auto">
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <PageHeader
           title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
           description={isEdit ? `Chi phí ${id}` : 'Nhập thông tin chi phí phát sinh'}
@@ -385,7 +381,7 @@ export default function ExpenseEntryPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <label className="expense-label" style={{ marginBottom: 0 }}>Nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span></label>
                   {!showNewSupplier && (
-                    <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                    <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', fontWeight: 600, minHeight: 36, borderRadius: 6 }}>
                       <Plus size={14} /> Thêm mới
                     </button>
                   )}
@@ -432,7 +428,7 @@ export default function ExpenseEntryPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <label className="expense-label" style={{ marginBottom: 0 }}>Hạng mục <span style={{ color: 'var(--danger)' }}>*</span></label>
                   {!showNewCategory && (
-                    <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                    <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', fontWeight: 600, minHeight: 36, borderRadius: 6 }}>
                       <Plus size={14} /> Thêm mới
                     </button>
                   )}
@@ -635,7 +631,7 @@ export default function ExpenseEntryPage() {
                       type="button"
                       onClick={() => removePhoto(idx)}
                       style={{
-                        position: 'absolute', top: 6, right: 6, width: 28, height: 28,
+                        position: 'absolute', top: 6, right: 6, width: 32, height: 32,
                         borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none',
                         color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         cursor: 'pointer', transition: 'all 0.2s ease', backdropFilter: 'blur(4px)'

@@ -611,6 +611,7 @@ tbody tr:last-child td { border-bottom: none; }
   letter-spacing: 0.05em;
   white-space: nowrap;
   line-height: 1.4;
+  flex-shrink: 0;
 }
 .pill .dot {
   width: 5px;

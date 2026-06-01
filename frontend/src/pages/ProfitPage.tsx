@@ -118,7 +118,7 @@ export default function ProfitPage() {
             <div style={{ display: 'flex', gap: 6 }}>
               <select
                 className="input"
-                style={{ width: 115, height: 36 }}
+                style={{ minWidth: 100, height: 36, flex: '0 1 auto' }}
                 value={selectedMonth}
                 onChange={e => setSelectedMonth(Number(e.target.value))}
               >
@@ -128,7 +128,7 @@ export default function ProfitPage() {
               </select>
               <select
                 className="input"
-                style={{ width: 125, height: 36 }}
+                style={{ minWidth: 95, height: 36, flex: '0 1 auto' }}
                 value={selectedYear}
                 onChange={e => setSelectedYear(Number(e.target.value))}
               >

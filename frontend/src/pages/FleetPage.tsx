@@ -401,61 +401,106 @@ function TrailerCard({ trailers, trucks, crud }: {
           </button>
         </div>
       </div>
-      <div className="table-scroll">
-        <table className="tt-table">
-          <thead>
-            <tr>
-              <th className="num">#</th>
-              <th>Biển số rơ-moóc</th>
-              <th>Loại</th>
-              <th>Đầu kéo đang ghép</th>
-              <th className="center">Trạng thái</th>
-              <th className="actions">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {trailers.length === 0 && (
-              <tr><td colSpan={6} style={styles.emptyRow}>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</td></tr>
-            )}
-            {trailers.map((t, i) => {
-              const coupledTruck = truckByTrailer.get(t.id);
-              return (
-                <tr
-                  key={t.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => crud.setEditingId(t.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(t.id); } }}
-                >
-                  <td className="num">{i + 1}</td>
-                  <td><Plate plate={t.licensePlate} tag="RM" /></td>
-                  <td><TypeChip type={t.type} /></td>
-                  <td>
-                    {coupledTruck
-                      ? <span className="fleet-pair"><Plate plate={coupledTruck.licensePlate} tag="VN" /></span>
-                      : <span className="fleet-unassigned">— Chưa ghép —</span>
-                    }
-                  </td>
-                  <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
-                  <td onClick={e => e.stopPropagation()}>
-                    <ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <div className="table-foot">
-        <div className="fleet-legend">
-          <span><strong style={styles.fontMono}>{ft40}</strong> × 40FT</span>
-          <span style={styles.dotSep}>·</span>
-          <span><strong style={styles.fontMono}>{ft20}</strong> × 20FT</span>
-          <span style={styles.dotSep}>·</span>
-          <span>{active} đang hoạt động</span>
+      <div className="desktop-only">
+        <div className="table-scroll">
+          <table className="tt-table">
+            <thead>
+              <tr>
+                <th className="num">#</th>
+                <th>Biển số rơ-moóc</th>
+                <th>Loại</th>
+                <th>Đầu kéo đang ghép</th>
+                <th className="center">Trạng thái</th>
+                <th className="actions">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trailers.length === 0 && (
+                <tr><td colSpan={6} style={styles.emptyRow}>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</td></tr>
+              )}
+              {trailers.map((t, i) => {
+                const coupledTruck = truckByTrailer.get(t.id);
+                return (
+                  <tr
+                    key={t.id}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => crud.setEditingId(t.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(t.id); } }}
+                  >
+                    <td className="num">{i + 1}</td>
+                    <td><Plate plate={t.licensePlate} tag="RM" /></td>
+                    <td><TypeChip type={t.type} /></td>
+                    <td>
+                      {coupledTruck
+                        ? <span className="fleet-pair"><Plate plate={coupledTruck.licensePlate} tag="VN" /></span>
+                        : <span className="fleet-unassigned">— Chưa ghép —</span>
+                      }
+                    </td>
+                    <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
+                    <td onClick={e => e.stopPropagation()}>
+                      <ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-        <span>Hiển thị {trailers.length}</span>
+        <div className="table-foot">
+          <div className="fleet-legend">
+            <span><strong style={styles.fontMono}>{ft40}</strong> × 40FT</span>
+            <span style={styles.dotSep}>·</span>
+            <span><strong style={styles.fontMono}>{ft20}</strong> × 20FT</span>
+            <span style={styles.dotSep}>·</span>
+            <span>{active} đang hoạt động</span>
+          </div>
+          <span>Hiển thị {trailers.length}</span>
+        </div>
+      </div>
+      <div className="mobile-only mobile-table-wrap">
+        <div className="m-card-list">
+          {trailers.length === 0 && (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>Chưa có rơ-moóc nào</div>
+          )}
+          {trailers.map((t, i) => {
+            const coupledTruck = truckByTrailer.get(t.id);
+            return (
+              <div key={t.id} className="m-card" onClick={() => crud.setEditingId(t.id)}>
+                <div className="m-card__top">
+                  <span className="m-card__title">
+                    <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '2px 5px', borderRadius: 4, fontSize: 10, letterSpacing: '0.5px' }}>RM</span>
+                    {t.licensePlate}
+                  </span>
+                  <StatusDot status={t.status} />
+                </div>
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Loại</span>
+                  <span><TypeChip type={t.type} /></span>
+                </div>
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Đầu kéo ghép</span>
+                  <span className="m-card__row-value">{coupledTruck ? coupledTruck.licensePlate : '— Chưa ghép —'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                  <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); crud.setEditingId(t.id); }}>Sửa</button>
+                  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(t.id); }}>Xóa</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="table-foot">
+          <div className="fleet-legend">
+            <span><strong style={styles.fontMono}>{ft40}</strong> × 40FT</span>
+            <span style={styles.dotSep}>·</span>
+            <span><strong style={styles.fontMono}>{ft20}</strong> × 20FT</span>
+            <span style={styles.dotSep}>·</span>
+            <span>{active} đang hoạt động</span>
+          </div>
+          <span>Hiển thị {trailers.length}</span>
+        </div>
       </div>
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
       <TrailerFormModal
@@ -504,64 +549,107 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
           </button>
         </div>
       </div>
-      <div className="table-scroll">
-        <table className="tt-table">
-          <thead>
-            <tr>
-              <th className="num">#</th>
-              <th>Biển số xe đầu</th>
-              <th>Rơ-moóc</th>
-              <th>Tài xế gán</th>
-              <th className="center">Trạng thái</th>
-              <th className="actions">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {trucks.length === 0 && (
-              <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
-            )}
-            {trucks.map((t, i) => (
-              <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(t.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(t.id); } }}>
-                <td className="num">{i + 1}</td>
-                <td><Plate plate={t.licensePlate} tag="VN" /></td>
-                <td>
-                  {(() => {
-                    const tr = t.currentTrailerId ? trailers.find(x => x.id === t.currentTrailerId) : null;
-                    return tr
-                      ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span>
-                      : t.trailerPlateNumber
-                        ? <span className="fleet-pair"><Plate plate={t.trailerPlateNumber} tag="RM" /> <TypeChip type={t.trailerType ?? TrailerType.FT40} /></span>
-                        : <span className="fleet-unassigned">—</span>;
-                  })()}
-                </td>
-                <td>
-                  {driverByTruck.has(t.id)
-                    ? (
-                      <span className="fleet-assigned">
-                        <AvatarInitials name={driverByTruck.get(t.id)!.name} />
-                        <span className="name">{driverByTruck.get(t.id)!.name}</span>
-                      </span>
-                    )
-                    : <span className="fleet-unassigned">— Chưa phân —</span>
-                  }
-                </td>
-                <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
-                <td onClick={e => e.stopPropagation()}><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
+      <div className="desktop-only">
+        <div className="table-scroll">
+          <table className="tt-table">
+            <thead>
+              <tr>
+                <th className="num">#</th>
+                <th>Biển số xe đầu</th>
+                <th>Rơ-moóc</th>
+                <th>Tài xế gán</th>
+                <th className="center">Trạng thái</th>
+                <th className="actions">Thao tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="table-foot">
-        <div className="fleet-legend">
-          <span className="fleet-legend-item">
-            <span className="fleet-legend-swatch" style={styles.swatchSuccess} /> Hoạt động
-          </span>
-          <span className="fleet-legend-item">
-            <span className="fleet-legend-swatch" style={styles.swatchWarning} /> Bảo trì
-          </span>
+            </thead>
+            <tbody>
+              {trucks.length === 0 && (
+                <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
+              )}
+              {trucks.map((t, i) => (
+                <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(t.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(t.id); } }}>
+                  <td className="num">{i + 1}</td>
+                  <td><Plate plate={t.licensePlate} tag="VN" /></td>
+                  <td>
+                    {(() => {
+                      const tr = t.currentTrailerId ? trailers.find(x => x.id === t.currentTrailerId) : null;
+                      return tr
+                        ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span>
+                        : t.trailerPlateNumber
+                          ? <span className="fleet-pair"><Plate plate={t.trailerPlateNumber} tag="RM" /> <TypeChip type={t.trailerType ?? TrailerType.FT40} /></span>
+                          : <span className="fleet-unassigned">—</span>;
+                    })()}
+                  </td>
+                  <td>
+                    {driverByTruck.has(t.id)
+                      ? (
+                        <span className="fleet-assigned">
+                          <AvatarInitials name={driverByTruck.get(t.id)!.name} />
+                          <span className="name">{driverByTruck.get(t.id)!.name}</span>
+                        </span>
+                      )
+                      : <span className="fleet-unassigned">— Chưa phân —</span>
+                    }
+                  </td>
+                  <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
+                  <td onClick={e => e.stopPropagation()}><ActionBtns id={t.id} deleting={crud.deleting} onedit={() => crud.setEditingId(t.id)} ondelete={() => crud.doDelete(t.id)} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <span>Hoạt động {active} · Bảo trì {maint}</span>
+        <div className="table-foot">
+          <div className="fleet-legend">
+            <span className="fleet-legend-item">
+              <span className="fleet-legend-swatch" style={styles.swatchSuccess} /> Hoạt động
+            </span>
+            <span className="fleet-legend-item">
+              <span className="fleet-legend-swatch" style={styles.swatchWarning} /> Bảo trì
+            </span>
+          </div>
+          <span>Hoạt động {active} · Bảo trì {maint}</span>
+        </div>
+      </div>
+      <div className="mobile-only mobile-table-wrap">
+        <div className="m-card-list">
+          {trucks.length === 0 && (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>Chưa có dữ liệu</div>
+          )}
+          {trucks.map((t, i) => {
+            const trailer = t.currentTrailerId ? trailers.find(x => x.id === t.currentTrailerId) : null;
+            const driver = driverByTruck.get(t.id);
+            return (
+              <div key={t.id} className="m-card" onClick={() => crud.setEditingId(t.id)}>
+                <div className="m-card__top">
+                  <span className="m-card__title">
+                    <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '2px 5px', borderRadius: 4, fontSize: 10, letterSpacing: '0.5px' }}>VN</span>
+                    {t.licensePlate}
+                  </span>
+                  <StatusDot status={t.status} />
+                </div>
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Rơ-moóc</span>
+                  <span className="m-card__row-value">{trailer ? trailer.licensePlate : '—'}</span>
+                </div>
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Tài xế</span>
+                  <span className="m-card__row-value">{driver ? driver.name : '— Chưa phân —'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                  <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); crud.setEditingId(t.id); }}>Sửa</button>
+                  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(t.id); }}>Xóa</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="table-foot">
+          <div className="fleet-legend">
+            <span className="fleet-legend-item"><span className="fleet-legend-swatch" style={styles.swatchSuccess} /> Hoạt động</span>
+            <span className="fleet-legend-item"><span className="fleet-legend-swatch" style={styles.swatchWarning} /> Bảo trì</span>
+          </div>
+          <span>Hoạt động {active} · Bảo trì {maint}</span>
+        </div>
       </div>
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
       <TruckFormModal
@@ -618,67 +706,121 @@ function DriverCard({ drivers, truckMap, crud }: {
           </button>
         </div>
       </div>
-      <div className="table-scroll">
-        <table className="tt-table">
-          <thead>
-            <tr>
-              <th className="num">#</th>
-              <th>Tên tài xế</th>
-              <th>SĐT</th>
-              <th>Xe phân công</th>
-              <th>Lương CB</th>
-              <th className="center">Trạng thái</th>
-              <th className="actions">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {drivers.length === 0 && (
-              <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
-            )}
-            {filteredDrivers.map((d, i) => (
-              <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(d.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(d.id); } }}>
-                <td className="num">{i + 1}</td>
-                <td>
-                  <span className="fleet-assigned">
-                    <AvatarInitials name={d.name} />
-                    <span className="name">{d.name}</span>
-                  </span>
-                </td>
-                <td><span className="fleet-phone">{d.phone || '—'}</span></td>
-                <td>
-                  {d.assignedTruckId && truckMap.has(d.assignedTruckId)
-                    ? (
-                      <span className="fleet-pair">
-                        {truckMap.get(d.assignedTruckId)!.licensePlate}
-                      </span>
-                    )
-                    : <span className="fleet-unassigned">— Chưa phân —</span>
-                  }
-                </td>
-                <td>
-                  {d.baseSalary
-                    ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">đ</span></span>
-                    : <span className="fleet-salary empty">—</span>
-                  }
-                </td>
-                <td style={styles.centerAlign}><StatusDot status={d.status} /></td>
-                <td onClick={e => e.stopPropagation()}><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
+      <div className="desktop-only">
+        <div className="table-scroll">
+          <table className="tt-table">
+            <thead>
+              <tr>
+                <th className="num">#</th>
+                <th>Tên tài xế</th>
+                <th>SĐT</th>
+                <th>Xe phân công</th>
+                <th>Lương CB</th>
+                <th className="center">Trạng thái</th>
+                <th className="actions">Thao tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="table-foot">
-        <div className="fleet-legend">
-          <span>Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString('vi-VN')} đ</strong></span>
-          {unassigned > 0 && (
-            <>
-              <span style={styles.dotSep}>·</span>
-              <span>{unassigned} tài xế chưa được phân xe</span>
-            </>
-          )}
+            </thead>
+            <tbody>
+              {drivers.length === 0 && (
+                <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
+              )}
+              {filteredDrivers.map((d, i) => (
+                <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(d.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(d.id); } }}>
+                  <td className="num">{i + 1}</td>
+                  <td>
+                    <span className="fleet-assigned">
+                      <AvatarInitials name={d.name} />
+                      <span className="name">{d.name}</span>
+                    </span>
+                  </td>
+                  <td><span className="fleet-phone">{d.phone || '—'}</span></td>
+                  <td>
+                    {d.assignedTruckId && truckMap.has(d.assignedTruckId)
+                      ? (
+                        <span className="fleet-pair">
+                          {truckMap.get(d.assignedTruckId)!.licensePlate}
+                        </span>
+                      )
+                      : <span className="fleet-unassigned">— Chưa phân —</span>
+                    }
+                  </td>
+                  <td>
+                    {d.baseSalary
+                      ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">đ</span></span>
+                      : <span className="fleet-salary empty">—</span>
+                    }
+                  </td>
+                  <td style={styles.centerAlign}><StatusDot status={d.status} /></td>
+                  <td onClick={e => e.stopPropagation()}><ActionBtns id={d.id} deleting={crud.deleting} onedit={() => crud.setEditingId(d.id)} ondelete={() => crud.doDelete(d.id)} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <span>Hiển thị {filteredDrivers.length}/{drivers.length}</span>
+        <div className="table-foot">
+          <div className="fleet-legend">
+            <span>Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString('vi-VN')} đ</strong></span>
+            {unassigned > 0 && (
+              <>
+                <span style={styles.dotSep}>·</span>
+                <span>{unassigned} tài xế chưa được phân xe</span>
+              </>
+            )}
+          </div>
+          <span>Hiển thị {filteredDrivers.length}/{drivers.length}</span>
+        </div>
+      </div>
+      <div className="mobile-only mobile-table-wrap">
+        <div className="m-card-list">
+          {filteredDrivers.length === 0 && (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>Chưa có dữ liệu</div>
+          )}
+          {filteredDrivers.map((d, i) => {
+            const truck = d.assignedTruckId && truckMap.has(d.assignedTruckId) ? truckMap.get(d.assignedTruckId)! : null;
+            return (
+              <div key={d.id} className="m-card" onClick={() => crud.setEditingId(d.id)}>
+                <div className="m-card__top">
+                  <span className="m-card__title">
+                    <AvatarInitials name={d.name} />
+                    <span style={{ marginLeft: 6 }}>{d.name}</span>
+                  </span>
+                  <StatusDot status={d.status} />
+                </div>
+                {d.phone && (
+                  <div className="m-card__meta">
+                    <span>{d.phone}</span>
+                  </div>
+                )}
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Xe phân công</span>
+                  <span className="m-card__row-value">{truck ? truck.licensePlate : '— Chưa phân —'}</span>
+                </div>
+                {d.baseSalary ? (
+                  <div className="m-card__row">
+                    <span className="m-card__row-label">Lương CB</span>
+                    <span className="m-card__row-value">{Number(d.baseSalary).toLocaleString('vi-VN')} đ</span>
+                  </div>
+                ) : null}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                  <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); crud.setEditingId(d.id); }}>Sửa</button>
+                  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(d.id); }}>Xóa</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="table-foot">
+          <div className="fleet-legend">
+            <span>Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString('vi-VN')} đ</strong></span>
+            {unassigned > 0 && (
+              <>
+                <span style={styles.dotSep}>·</span>
+                <span>{unassigned} tài xế chưa được phân xe</span>
+              </>
+            )}
+          </div>
+          <span>Hiển thị {filteredDrivers.length}/{drivers.length}</span>
+        </div>
       </div>
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
       <DriverFormModal

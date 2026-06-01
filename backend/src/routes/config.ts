@@ -113,16 +113,19 @@ router.get('/road-config', asyncHandler(async (_req: Request, res: Response) => 
 }));
 
 router.put('/road-config', asyncHandler(async (req: Request, res: Response) => {
-  const { tollPerStation, returnCargoBonus } = req.body as { tollPerStation: string; returnCargoBonus: string };
+  const { tollPerStation, returnCargoBonus, defaultDriverSalary, twoPointDeliveryBonus, vehicleShiftDefault } = req.body as {
+    tollPerStation: string; returnCargoBonus: string;
+    defaultDriverSalary?: string; twoPointDeliveryBonus?: string; vehicleShiftDefault?: string;
+  };
   const [existing] = await db.select().from(s.roadConfig).limit(1);
   if (existing) {
     const [updated] = await db.update(s.roadConfig)
-      .set({ tollPerStation, returnCargoBonus, updatedAt: new Date() })
+      .set({ tollPerStation, returnCargoBonus, defaultDriverSalary, twoPointDeliveryBonus, vehicleShiftDefault, updatedAt: new Date() })
       .where(eq(s.roadConfig.id, existing.id))
       .returning();
     return res.json(updated);
   }
-  const [created] = await db.insert(s.roadConfig).values({ tollPerStation, returnCargoBonus }).returning();
+  const [created] = await db.insert(s.roadConfig).values({ tollPerStation, returnCargoBonus, defaultDriverSalary, twoPointDeliveryBonus, vehicleShiftDefault }).returning();
   res.status(201).json(created);
 }));
 

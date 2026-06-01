@@ -505,6 +505,7 @@
   border-radius: 99px;
   text-transform: uppercase;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .trip-list-page .status-pill .sd { width: 6px; height: 6px; border-radius: 50%; }
 .trip-list-page .pill-moi { background: var(--d-blue-bg); color: var(--d-blue); }

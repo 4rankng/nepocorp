@@ -130,6 +130,9 @@ export interface RoadConfig {
   id: number;
   tollPerStation: string;
   returnCargoBonus: string;
+  defaultDriverSalary: string;
+  twoPointDeliveryBonus: string;
+  vehicleShiftDefault: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -186,6 +189,8 @@ export interface Trip {
   revenue: string | null;
   revenueEmptyReturn: string | null;
   revenueCombine: string | null;
+  twoPointDeliveryBonus: string;
+  vehicleShiftAllowance: string;
   grossProfit: string | null;
   revenueOriginal: string | null;
   revenueOverriddenBy: number | null;
@@ -535,6 +540,8 @@ export interface UpdateTripFiguresRequest {
   revenue?: number;
   revenueEmptyReturn?: number;
   revenueCombine?: number;
+  twoPointDeliveryBonus?: number;
+  vehicleShiftAllowance?: number;
   notes?: string;
   photoUrls?: string[];
 }

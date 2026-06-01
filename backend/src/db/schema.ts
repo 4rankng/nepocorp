@@ -220,6 +220,8 @@ export const trips = pgTable('trips', {
   revenue: numeric('revenue', { precision: 15, scale: 0 }),
   revenueEmptyReturn: numeric('revenue_empty_return', { precision: 15, scale: 0 }).default('0'),
   revenueCombine: numeric('revenue_combine', { precision: 15, scale: 0 }).default('0'),
+  twoPointDeliveryBonus: numeric('two_point_delivery_bonus', { precision: 15, scale: 0 }).default('0'),
+  vehicleShiftAllowance: numeric('vehicle_shift_allowance', { precision: 15, scale: 0 }).default('0'),
   grossProfit: numeric('gross_profit', { precision: 15, scale: 0 }),
   revenueOriginal: numeric('revenue_original', { precision: 15, scale: 0 }),
   revenueOverriddenBy: integer('revenue_overridden_by'),
@@ -499,6 +501,9 @@ export const roadConfig = pgTable('road_config', {
   id: serial('id').primaryKey(),
   tollPerStation: numeric('toll_per_station', { precision: 15, scale: 0 }).notNull(),
   returnCargoBonus: numeric('return_cargo_bonus', { precision: 15, scale: 0 }).notNull(),
+  defaultDriverSalary: numeric('default_driver_salary', { precision: 15, scale: 0 }).default('400000'),
+  twoPointDeliveryBonus: numeric('two_point_delivery_bonus', { precision: 15, scale: 0 }).default('200000'),
+  vehicleShiftDefault: numeric('vehicle_shift_default', { precision: 15, scale: 0 }).default('200000'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

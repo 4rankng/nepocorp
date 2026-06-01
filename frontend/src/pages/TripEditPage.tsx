@@ -220,14 +220,8 @@ export default function TripEditPage() {
             <aside className="tc-rail">
               <TotalsPanel />
 
-              {/*
-                Action panel sits directly under the live totals card on the rail
-                instead of a fixed bottom bar. Easier to associate "what I'm
-                saving" with "what it'll cost/earn", and avoids the bottom bar
-                covering content on short screens.
-              */}
               <div
-                className="tc-rail-actions"
+                className="tc-rail-actions desktop-only"
                 style={{
                   marginTop: 12,
                   padding: 14,
@@ -289,6 +283,40 @@ export default function TripEditPage() {
         </form>
 
         {confirmDialog}
+
+        <div className="mobile-only" style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'var(--surface)',
+          borderTop: '1px solid var(--line)',
+          padding: '12px 16px',
+          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+          display: 'flex',
+          gap: 8,
+          zIndex: 40,
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
+        }}>
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={() => navigate(`/trips/${trip.id}`)}
+            disabled={submitting}
+            style={{ flex: 1, justifyContent: 'center', minHeight: 44 }}
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            form="trip-edit-form"
+            className="btn btn--primary"
+            disabled={submitting || uploading}
+            style={{ flex: 2, justifyContent: 'center', minHeight: 44 }}
+          >
+            {submitting ? <><Loader2 size={16} className="spin" /> Đang lưu…</> : <><Save size={16} /> Lưu</>}
+          </button>
+        </div>
       </div>
     </TripFormProvider>
   );

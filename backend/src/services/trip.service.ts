@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, or, isNull, sql, desc, lte, gte } from 'drizzle-orm';
+import { eq, and, or, isNull, sql, desc, lte, gte, inArray } from 'drizzle-orm';
 import { TripStatus, FuelMode, TxnType, LoadingType, Role } from '@nepocorp/shared';
 import type { TripLegInput } from '@nepocorp/shared';
 import { computeTripTotals } from '@nepocorp/shared';
@@ -94,6 +94,7 @@ export async function createTrip(data: {
     const fuelSupplementNormApplied = fuelCfg ? Number(fuelCfg.supplement) : 0;
     const tollPerStationApplied = roadCfg ? Number(roadCfg.tollPerStation) : 0;
     const returnCargoBonusApplied = roadCfg ? Number(roadCfg.returnCargoBonus) : 0;
+    const defaultDriverSalary = roadCfg ? Number(roadCfg.defaultDriverSalary || 0) : 0;
 
     // 3. Atomic tripCode generation
     const departureDate = new Date(data.departureDate);
@@ -137,6 +138,8 @@ export async function createTrip(data: {
       revenue: String(revenue),
       revenueEmptyReturn: String(revenue),
       revenueCombine: '0',
+      twoPointDeliveryBonus: '0',
+      vehicleShiftAllowance: '0',
       revenueOriginal: String(revenue),
 
       // Snapshots
@@ -176,6 +179,8 @@ export async function updateTripFigures(
     revenue?: number;
     revenueEmptyReturn?: number;
     revenueCombine?: number;
+    twoPointDeliveryBonus?: number;
+    vehicleShiftAllowance?: number;
     notes?: string;
     expectedVersion?: number;
     userId?: number;
@@ -296,6 +301,8 @@ export async function updateTripFigures(
     }
 
     const driverSalary = data.driverSalary !== undefined ? data.driverSalary : Number(trip.driverSalary || 0);
+    const twoPointDeliveryBonus = data.twoPointDeliveryBonus !== undefined ? data.twoPointDeliveryBonus : Number(trip.twoPointDeliveryBonus || 0);
+    const vehicleShiftAllowance = data.vehicleShiftAllowance !== undefined ? data.vehicleShiftAllowance : Number(trip.vehicleShiftAllowance || 0);
 
     // 4. Compute Totals using pure shared function
     const totalsInput = {
@@ -319,6 +326,8 @@ export async function updateTripFigures(
       returnCargoBonus: returnCargoBonusApplied,
       revenue,
       driverSalary,
+      twoPointDeliveryBonus,
+      vehicleShiftAllowance,
       roadAllowanceOverride: data.roadAllowanceOverride ?? null,
     };
 
@@ -363,6 +372,8 @@ export async function updateTripFigures(
       revenue: String(revenue),
       revenueEmptyReturn: String(revenueEmptyReturn),
       revenueCombine: String(revenueCombine),
+      twoPointDeliveryBonus: String(twoPointDeliveryBonus),
+      vehicleShiftAllowance: String(vehicleShiftAllowance),
       grossProfit: String(totals.grossProfit),
       revenueOriginal: String(revenueOriginal),
       revenueOverriddenBy,
@@ -679,7 +690,41 @@ export async function getTrips(filters: TripListFilters) {
 
   const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(s.trips).where(and(...conditions));
 
-  return { items: items.map((item: any) => shapeTripRelations(item)), total: Number(countRow?.count ?? 0), page, pageSize: limit };
+  // Batch-load container instances for this page so the list can show
+  // "Loại container" + "Số container" columns (Pete's request 2026-06).
+  // One extra query keyed by the page's trip ids — keeps the main JOIN small.
+  const tripIds = items.map((it: any) => it.id);
+  const containersByTrip = new Map<number, Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>>();
+  if (tripIds.length > 0) {
+    const containerRows = await db.select({
+      tripId: s.tripContainers.tripId,
+      containerNumber: s.tripContainers.containerNumber,
+      containerTypeCode: s.containerTypes.code,
+      containerTypeName: s.containerTypes.name,
+    }).from(s.tripContainers)
+      .leftJoin(s.containerTypes, eq(s.tripContainers.containerTypeId, s.containerTypes.id))
+      .where(inArray(s.tripContainers.tripId, tripIds))
+      .orderBy(s.tripContainers.id);
+    for (const row of containerRows) {
+      const list = containersByTrip.get(row.tripId) || [];
+      list.push({
+        containerNumber: row.containerNumber,
+        containerTypeCode: row.containerTypeCode,
+        containerTypeName: row.containerTypeName,
+      });
+      containersByTrip.set(row.tripId, list);
+    }
+  }
+
+  return {
+    items: items.map((item: any) => ({
+      ...shapeTripRelations(item),
+      containers: containersByTrip.get(item.id) ?? [],
+    })),
+    total: Number(countRow?.count ?? 0),
+    page,
+    pageSize: limit,
+  };
 }
 
 export async function getTripById(id: number) {

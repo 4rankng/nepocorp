@@ -81,12 +81,12 @@ export default function DispatchPage() {
       <div className="section-head"><div className="section-title"><h2>Đơn hàng cần điều vận</h2><span className="count">{pendingTrips.length} đơn</span></div></div>
       <div className="orders-card">
         <div className="orders-toolbar">
-          <div className="o-tools">
+          <div className="o-tools desktop-only">
             <button type="button" className="pill-btn" disabled title="Sắp ra mắt"><Filter size={13} /> Lọc</button>
             <button type="button" className="pill-btn" disabled title="Sắp ra mắt"><ArrowUpDown size={13} /> Sắp xếp: Ngày xuất phát</button>
             <button type="button" className="pill-btn" disabled title="Sắp ra mắt"><Sparkles size={13} /> Tự động đề xuất xe</button>
           </div>
-          <div className="o-tools"><button type="button" className="pill-btn" disabled title="Sắp ra mắt"><Download size={13} /> Xuất CSV</button></div>
+          <div className="o-tools desktop-only"><button type="button" className="pill-btn" disabled title="Sắp ra mắt"><Download size={13} /> Xuất CSV</button></div>
         </div>
         {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Tài xế đề xuất</div><div className="right">Thao tác</div></div>}
         {pendingTrips.length === 0 ? (

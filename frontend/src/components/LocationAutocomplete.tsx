@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fetchPlaceSuggestions, PlaceSuggestion } from '../lib/maps';
 import { useClickOutside } from '../hooks/useClickOutside';
+import { api } from '../lib/api';
 
 interface LocationAutocompleteProps {
   value: string;
@@ -11,6 +13,21 @@ interface LocationAutocompleteProps {
   required?: boolean;
 }
 
+interface PortRow {
+  id: number;
+  name: string;
+  code: string | null;
+  city: string | null;
+  address: string | null;
+}
+
+interface MergedSuggestion {
+  key: string;
+  description: string;
+  source: 'port' | 'place';
+  hint?: string;          // shown under description (e.g. port code, city)
+}
+
 export function LocationAutocomplete({
   value,
   onChange,
@@ -19,9 +36,9 @@ export function LocationAutocomplete({
   style,
   required,
 }: LocationAutocompleteProps) {
-  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [sessionToken, setSessionToken] = useState(() => Math.random().toString(36).substring(2, 15));
   const wrapperRef = useRef<HTMLDivElement>(null);
   const closeDropdown = useCallback(() => setIsOpen(false), []);
@@ -34,37 +51,101 @@ export function LocationAutocomplete({
 
   useClickOutside(wrapperRef, closeDropdown, { escapeKey: true });
 
-  // Fetch suggestions with debounce
+  // Ports catalog (Cảng / Bãi Hải Phòng — Pete's config catalog)
+  // Cached for 5 min; fires once per session for all autocomplete inputs.
+  const { data: portsRes } = useQuery<{ items: PortRow[] }>({
+    queryKey: ['ports-catalog'],
+    queryFn: () => api.get('/ports?limit=200'),
+    staleTime: 5 * 60 * 1000,
+  });
+  const ports: PortRow[] = portsRes?.items ?? [];
+
+  // Local fuzzy match against the ports catalog. We always show matching ports
+  // FIRST so HP-area users can pick the canonical name in one tap. Google Places
+  // results follow underneath as the fallback for off-catalog locations.
+  const portMatches = useMemo<MergedSuggestion[]>(() => {
+    const q = value.trim().toLowerCase();
+    if (!q) {
+      // Empty query: show all ports on focus so user can browse the catalog.
+      return ports.slice(0, 8).map((p) => ({
+        key: `port-${p.id}`,
+        description: p.name,
+        source: 'port',
+        hint: [p.code, p.city].filter(Boolean).join(' · '),
+      }));
+    }
+    return ports
+      .filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.code ?? '').toLowerCase().includes(q) ||
+        (p.address ?? '').toLowerCase().includes(q),
+      )
+      .slice(0, 6)
+      .map((p) => ({
+        key: `port-${p.id}`,
+        description: p.name,
+        source: 'port',
+        hint: [p.code, p.city].filter(Boolean).join(' · '),
+      }));
+  }, [ports, value]);
+
+  // Fetch place suggestions with debounce (only for queries ≥3 chars)
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (value.trim().length >= 3) {
         setLoading(true);
         const results = await fetchPlaceSuggestions(value, sessionToken);
-        // Only show suggestions if we have matches that aren't exactly the current value
         if (results.length > 0 && !(results.length === 1 && results[0].description === value)) {
-          setSuggestions(results);
-          if (isFocused) setIsOpen(true);
+          setPlaceSuggestions(results);
         } else {
-          setSuggestions([]);
-          setIsOpen(false);
+          setPlaceSuggestions([]);
         }
         setLoading(false);
       } else {
-        setSuggestions([]);
-        setIsOpen(false);
+        setPlaceSuggestions([]);
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [value, sessionToken, isFocused]);
+  }, [value, sessionToken]);
 
-  const handleSelect = (suggestion: PlaceSuggestion) => {
+  // Merge port matches + Google Places (deduping by description)
+  const allSuggestions = useMemo<MergedSuggestion[]>(() => {
+    const seen = new Set<string>();
+    const out: MergedSuggestion[] = [];
+    for (const p of portMatches) {
+      const k = p.description.toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        out.push(p);
+      }
+    }
+    for (const s of placeSuggestions) {
+      const k = s.description.toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        out.push({
+          key: `place-${s.placeId}`,
+          description: s.description,
+          source: 'place',
+        });
+      }
+    }
+    return out;
+  }, [portMatches, placeSuggestions]);
+
+  // Open/close the dropdown whenever the merged list changes and we have focus.
+  useEffect(() => {
+    if (!isFocused) return;
+    setIsOpen(allSuggestions.length > 0);
+  }, [allSuggestions, isFocused]);
+
+  const handleSelect = (suggestion: MergedSuggestion) => {
     onChange(suggestion.description);
     setIsOpen(false);
-    setSuggestions([]);
+    setPlaceSuggestions([]);
     refreshSessionToken();
   };
-
 
   return (
     <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
@@ -76,7 +157,8 @@ export function LocationAutocomplete({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => {
           setIsFocused(true);
-          if (suggestions.length > 0 && value.trim().length >= 3) setIsOpen(true);
+          // Show port catalog immediately on focus, even with empty input.
+          if (allSuggestions.length > 0) setIsOpen(true);
         }}
         onBlur={() => {
           // Delay blur to allow click on suggestion
@@ -85,8 +167,8 @@ export function LocationAutocomplete({
         required={required}
         autoComplete="off"
       />
-      
-      {isOpen && suggestions.length > 0 && (
+
+      {isOpen && allSuggestions.length > 0 && (
         <ul
           style={{
             position: 'absolute',
@@ -97,34 +179,63 @@ export function LocationAutocomplete({
             padding: 0,
             margin: '4px 0 0 0',
             listStyle: 'none',
-            background: 'var(--bg-1)',
-            border: '1px solid var(--border-2)',
-            borderRadius: 'var(--radius-md)',
+            background: 'var(--bg-1, #fff)',
+            border: '1px solid var(--border-2, var(--line))',
+            borderRadius: 'var(--radius-md, 10px)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             zIndex: 100,
-            maxHeight: 200,
+            maxHeight: 240,
             overflowY: 'auto',
           }}
         >
-          {suggestions.map((s) => (
+          {allSuggestions.map((s) => (
             <li
-              key={s.placeId}
+              key={s.key}
               onClick={() => handleSelect(s)}
               style={{
                 padding: '8px 12px',
                 cursor: 'pointer',
                 fontSize: 13,
-                borderBottom: '1px solid var(--border-1)',
-                color: 'var(--fg-1)',
+                borderBottom: '1px solid var(--border-1, var(--line))',
+                color: 'var(--fg-1, var(--ink))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLLIElement).style.background = 'var(--bg-2)';
+                (e.currentTarget as HTMLLIElement).style.background = 'var(--bg-2, var(--surface-2))';
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLLIElement).style.background = 'transparent';
               }}
             >
-              {s.description}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {s.description}
+                </div>
+                {s.hint && (
+                  <div style={{ fontSize: 11, color: 'var(--fg-3, var(--ink-3))', marginTop: 1 }}>
+                    {s.hint}
+                  </div>
+                )}
+              </div>
+              {s.source === 'port' && (
+                <span
+                  style={{
+                    fontSize: 9,
+                    padding: '2px 6px',
+                    borderRadius: 999,
+                    background: 'rgba(16,185,129,0.15)',
+                    color: '#059669',
+                    fontWeight: 700,
+                    letterSpacing: 0.3,
+                    flexShrink: 0,
+                  }}
+                >
+                  CẢNG/BÃI
+                </span>
+              )}
             </li>
           ))}
         </ul>

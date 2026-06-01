@@ -8,7 +8,7 @@ import { AlertTriangle, Phone, Building2, ArrowLeft, X, CreditCard, Download, Fi
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
-import { useConfirm } from '../components/UI';
+import { useConfirm, Modal } from '../components/UI';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
@@ -365,101 +365,63 @@ export default function PayableDetailPage() {
       </section>
 
       {/* Payment Modal */}
-      {showPaymentModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 100,
-        }}>
-          <div style={{
-            background: 'var(--surface)', borderRadius: 12, padding: 24,
-            width: '100%', maxWidth: 440, boxShadow: 'var(--sh-lg)',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Ghi thanh toán</h3>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--fg-3)' }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label htmlFor="payment-amount" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
-                Số tiền (đ) *
-              </label>
-              <input
-                id="payment-amount"
-                type="number" spellCheck={false}
-                value={paymentAmount}
-                onChange={e => setPaymentAmount(e.target.value)}
-                placeholder="Nhập số tiền"
-                style={{
-                  width: '100%', padding: '8px 12px', borderRadius: 8,
-                  border: '1px solid var(--line)', fontSize: 14,
-                  background: 'var(--bg-1)', color: 'var(--fg-1)',
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label htmlFor="payment-date" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
-                Ngày *
-              </label>
-              <input
-                id="payment-date"
-                type="date"
-                value={paymentDate}
-                onChange={e => setPaymentDate(e.target.value)}
-                style={{
-                  width: '100%', padding: '8px 12px', borderRadius: 8,
-                  border: '1px solid var(--line)', fontSize: 14,
-                  background: 'var(--bg-1)', color: 'var(--fg-1)',
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <label htmlFor="payment-receipt-id" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
-                Mã biên lai *
-              </label>
-              <input
-                id="payment-receipt-id"
-                type="text" spellCheck={false}
-                value={paymentReceiptId}
-                onChange={e => setPaymentReceiptId(e.target.value)}
-                placeholder="VD: PT-20260531-01"
-                style={{
-                  width: '100%', padding: '8px 12px', borderRadius: 8,
-                  border: '1px solid var(--line)', fontSize: 14,
-                  background: 'var(--bg-1)', color: 'var(--fg-1)',
-                }}
-              />
-              <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
-                Bắt buộc để đối chiếu sao kê ngân hàng / phiếu chi.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                className="btn btn--secondary"
-                onClick={() => setShowPaymentModal(false)}
-                disabled={submitting}
-              >
-                Hủy
-              </button>
-              <button
-                className="btn btn--primary"
-                onClick={() => handlePaymentSubmit(false)}
-                disabled={submitting || !paymentAmount || !paymentDate || !paymentReceiptId.trim()}
-              >
-                {submitting ? 'Đang ghi…' : 'Xác nhận'}
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={showPaymentModal}
+        title="Ghi thanh toán"
+        onClose={() => setShowPaymentModal(false)}
+        onConfirm={() => handlePaymentSubmit(false)}
+        maxWidth={440}
+        footer={
+          <>
+            <button className="btn btn--secondary" onClick={() => setShowPaymentModal(false)} disabled={submitting}>
+              Hủy
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={() => handlePaymentSubmit(false)}
+              disabled={submitting || !paymentAmount || !paymentDate || !paymentReceiptId.trim()}
+            >
+              {submitting ? 'Đang ghi…' : 'Xác nhận'}
+            </button>
+          </>
+        }
+      >
+        <div className="field">
+          <label htmlFor="payment-amount">Số tiền (đ) *</label>
+          <input
+            id="payment-amount"
+            type="number"
+            className="input"
+            value={paymentAmount}
+            onChange={e => setPaymentAmount(e.target.value)}
+            placeholder="Nhập số tiền"
+          />
         </div>
-      )}
+        <div className="field">
+          <label htmlFor="payment-date">Ngày *</label>
+          <input
+            id="payment-date"
+            type="date"
+            className="input"
+            value={paymentDate}
+            onChange={e => setPaymentDate(e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="payment-receipt-id">Mã biên lai *</label>
+          <input
+            id="payment-receipt-id"
+            type="text"
+            className="input"
+            value={paymentReceiptId}
+            onChange={e => setPaymentReceiptId(e.target.value)}
+            placeholder="VD: PT-20260531-01"
+          />
+          <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+            Bắt buộc để đối chiếu sao kê ngân hàng / phiếu chi.
+          </p>
+        </div>
+      </Modal>
       {confirmDialog}
     </div>
   );

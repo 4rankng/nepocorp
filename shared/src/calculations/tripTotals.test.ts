@@ -25,7 +25,9 @@ const defaultBaseInput: ComputeTripTotalsInput = {
   hasReturnCargo: true,
   returnCargoBonus: 300000,
   revenue: 4000000,
-  driverSalary: 800000
+  driverSalary: 800000,
+  twoPointDeliveryBonus: 0,
+  vehicleShiftAllowance: 0,
 };
 
 test('round2dp boundary correctness', () => {
@@ -201,4 +203,18 @@ test('round2dp x.xx5 boundary within computeTripTotals', () => {
   assert.strictEqual(result.totalFuelLiters, 4.95);
   // fuelCost = 4.95 * 20000 = 99000
   assert.strictEqual(result.totalFuelCost, 99000);
+});
+
+test('twoPointDeliveryBonus and vehicleShiftAllowance included in totalCost', () => {
+  const input = {
+    ...defaultBaseInput,
+    twoPointDeliveryBonus: 200000,
+    vehicleShiftAllowance: 350000,
+  };
+
+  const result = computeTripTotals(input);
+
+  // totalCost = 1692000 (fuel) + 1640000 (road) + 800000 (salary) + 200000 + 350000 = 4682000
+  assert.strictEqual(result.totalCost, 4682000);
+  assert.strictEqual(result.grossProfit, 4000000 - 4682000);
 });
