@@ -19,7 +19,7 @@ export function useForwarderTripDetail(id: number) {
 export function useCreateForwarderContainer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ tripId, data }: { tripId: number; data: { containerNumber: string; sealNumber?: string; notes?: string } }) =>
+    mutationFn: ({ tripId, data }: { tripId: number; data: { containerTypeId?: number; containerNumber: string; sealNumber?: string; notes?: string } }) =>
       forwarderClient.createContainer(tripId, data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['forwarder-trip-detail', variables.tripId] });
@@ -81,12 +81,20 @@ export function useForwarderSettlements() {
 export function useCreateAdvanceSettlement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { totalExpenseAmount: number; refundAmount?: number; note?: string; advanceRequestIds: number[] }) =>
+    mutationFn: (data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) =>
       forwarderClient.createAdvanceSettlement(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['forwarder-settlements'] });
       qc.invalidateQueries({ queryKey: ['forwarder-advance-requests'] });
+      qc.invalidateQueries({ queryKey: ['forwarder-unlinked-expenses'] });
     },
+  });
+}
+
+export function useUnlinkedExpenses() {
+  return useQuery({
+    queryKey: ['forwarder-unlinked-expenses'],
+    queryFn: () => forwarderClient.getUnlinkedExpenses(),
   });
 }
 

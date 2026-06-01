@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
-  ForwarderExpenseType, AdvanceRequestStatus, AdvanceSettlementStatus,
+  AdvanceRequestStatus, AdvanceSettlementStatus,
 } from '../constants';
 
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
@@ -387,9 +387,15 @@ export const tripContainerBatchSchema = z.object({
 
 export const tripExpenseSchema = z.object({
   tripId: z.coerce.number().int().positive(),
-  expenseType: z.nativeEnum(ForwarderExpenseType),
+  expenseType: z.string().min(1, 'Loại chi phí không được để trống'),
   amount: positiveNumeric,
   note: z.string().optional().nullable(),
+});
+
+export const forwarderExpenseTypeSchema = z.object({
+  code: z.string().min(1).max(50),
+  name: z.string().min(1, 'Tên loại chi phí không được để trống').max(100),
+  status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
 });
 
 export const createAdvanceRequestSchema = z.object({
@@ -398,9 +404,10 @@ export const createAdvanceRequestSchema = z.object({
 });
 
 export const createAdvanceSettlementSchema = z.object({
-  totalExpenseAmount: nonNegNumeric,
+  totalExpenseAmount: nonNegNumeric.optional(),
   refundAmount: nonNegNumeric.optional().default(0),
   note: z.string().optional().nullable(),
+  tripExpenseIds: z.array(z.coerce.number().int().positive()).optional(),
   advanceRequestIds: z.array(z.coerce.number().int().positive()).min(1, 'Phải chọn ít nhất 1 yêu cầu tạm ứng'),
 });
 

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import multer from 'multer';
 import {
   getForwarderByUserId,
   getForwarderTrips,
@@ -7,11 +8,29 @@ import {
   createTripContainer,
   createTripExpense,
   deleteTripExpense,
+  listUnlinkedTripExpenses,
+  addExpensePhoto,
+  getExpensePhotos,
+  deleteExpensePhoto,
 } from '../services/forwarder.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { tripContainerSchema, tripExpenseSchema } from '@nepocorp/shared';
 import { createAdvanceRequest, listAdvanceRequests, createAdvanceSettlement, listAdvanceSettlements } from '../services/advance.service';
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@nepocorp/shared';
+import { storageService } from '../services/storage.service';
+import sharp from 'sharp';
+
+const expensePhotoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const MAX_IMAGE_DIMENSION = 1600;
+
+function sniffImageType(buffer: Buffer): string | null {
+  if (buffer.length < 12) return null;
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return 'image/png';
+  if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+      buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) return 'image/webp';
+  return null;
+}
 
 const router = Router();
 
@@ -64,6 +83,14 @@ router.delete('/expenses/:id', asyncHandler(async (req: Request, res: Response) 
   res.json({ success: true });
 }));
 
+// ── Unlinked Trip Expenses (for settlement form) ──
+
+router.get('/unlinked-expenses', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const items = await listUnlinkedTripExpenses(forwarder.id);
+  res.json({ items });
+}));
+
 // ── Advance Requests ──
 
 router.get('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
@@ -95,6 +122,54 @@ router.post('/advance-settlements', asyncHandler(async (req: Request, res: Respo
     const { note, ...rest } = parsed.data;
     const result = await createAdvanceSettlement(forwarder.id, { ...rest, note: note ?? undefined });
   res.status(201).json(result);
+}));
+
+// ── Expense Photos ──
+
+router.get('/expenses/:id/photos', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const expenseId = parseInt(req.params.id as string, 10);
+  const photos = await getExpensePhotos(expenseId);
+  res.json({ items: photos });
+}));
+
+router.post('/expenses/:id/photos', expensePhotoUpload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
+
+  const expenseId = parseInt(req.params.id as string, 10);
+
+  // Validate image type
+  const mime = sniffImageType(file.buffer);
+  if (!mime) return res.status(400).json({ error: 'Định dạng file không được hỗ trợ' });
+
+  // Process: strip EXIF, downscale
+  let processedBuffer: Buffer;
+  let ext: string;
+  if (mime === 'image/png') {
+    processedBuffer = await sharp(file.buffer).rotate().resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true }).png().toBuffer();
+    ext = '.png';
+  } else {
+    processedBuffer = await sharp(file.buffer).rotate().resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+    ext = '.jpg';
+  }
+
+  const storageKey = `expense-photos/${expenseId}/${Date.now()}${ext}`;
+  await storageService.upload(processedBuffer, storageKey);
+  const photo = await addExpensePhoto(expenseId, storageKey, forwarder.id);
+  res.status(201).json(photo);
+}));
+
+router.delete('/expense-photos/:id', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const photoId = parseInt(req.params.id as string, 10);
+  const result = await deleteExpensePhoto(photoId, forwarder.id);
+  if (result === null) return res.status(404).json({ error: 'Không tìm thấy ảnh' });
+  if (result === 'FORBIDDEN') return res.status(403).json({ error: 'Không có quyền xóa ảnh này' });
+  // Try to remove from storage (best-effort)
+  try { await storageService.delete(result.storageKey); } catch {}
+  res.json({ success: true });
 }));
 
 export default router;

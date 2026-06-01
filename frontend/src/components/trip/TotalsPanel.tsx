@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { DollarSign, Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp } from "lucide-react";
+import { DollarSign, Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 import { computeTripTotals } from "@nepocorp/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
@@ -48,12 +48,15 @@ export function TotalsPanel() {
       returnCargoBonus: returnCargoBonusApplied ?? 0,
       revenue: revenue ? Number(revenue) : 0,
       driverSalary: driverSalary ? Number(driverSalary) : 0,
+      twoPointDeliveryBonus: Number(form.twoPointDeliveryBonus) || 0,
+      vehicleShiftAllowance: Number(form.vehicleShiftAllowance) || 0,
     });
   }, [
     legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
     isMountainRoute, mountainFixedAllowance, roadAllowanceBaseApplied,
     tollsDiscount, tollsAddition, tollsStations, tollPerStationApplied, returnCargoBonusApplied,
     hasReturnCargo, revenue, driverSalary, fuelConfig, fuelActualUnitPrice,
+    form.twoPointDeliveryBonus, form.vehicleShiftAllowance,
   ]);
 
   const fmt = (v: number) => Math.abs(Math.round(v)).toLocaleString("vi-VN");
@@ -81,10 +84,13 @@ export function TotalsPanel() {
   const revenueNum = Number(revenue) || (revenueEmpty + revenueComb);
   const isProfitPositive = totals.grossProfit >= 0;
 
-  const totalCost = totals.totalFuelCost + totals.totalRoadAllowance + (Number(driverSalary) || 0);
+  const twoPointAmount = Number(form.twoPointDeliveryBonus) || 0;
+  const vehicleShiftAmount = Number(form.vehicleShiftAllowance) || 0;
+  const totalCost = totals.totalCost;
   const fuelPct = totalCost > 0 ? (totals.totalFuelCost / totalCost) * 100 : 0;
   const roadPct = totalCost > 0 ? (totals.totalRoadAllowance / totalCost) * 100 : 0;
   const salaryPct = totalCost > 0 ? ((Number(driverSalary) || 0) / totalCost) * 100 : 0;
+  const otherPct = totalCost > 0 ? ((twoPointAmount + vehicleShiftAmount) / totalCost) * 100 : 0;
 
   return (
     <div className="tc-summary-card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -121,6 +127,7 @@ export function TotalsPanel() {
           <div style={{ width: `${fuelPct}%`, background: "#3B82F6" }} title={`Dầu: ${fuelPct.toFixed(0)}%`} />
           <div style={{ width: `${roadPct}%`, background: "#F59E0B" }} title={`Đường bộ: ${roadPct.toFixed(0)}%`} />
           <div style={{ width: `${salaryPct}%`, background: "#10B981" }} title={`Lương tài: ${salaryPct.toFixed(0)}%`} />
+          {otherPct > 0 && <div style={{ width: `${otherPct}%`, background: "#8B5CF6" }} title={`Khác: ${otherPct.toFixed(0)}%`} />}
         </div>
         <div style={{ display: "flex", gap: 12, fontSize: 10, color: "rgba(255,255,255,0.6)" }}>
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -132,6 +139,11 @@ export function TotalsPanel() {
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981" }} /> Lương tài
           </span>
+          {otherPct > 0 && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#8B5CF6" }} /> Khác
+            </span>
+          )}
         </div>
       </div>
 
@@ -234,6 +246,26 @@ export function TotalsPanel() {
             −{fmt(Number(driverSalary) || 0)}
           </span>
         </div>
+        {twoPointAmount > 0 && (
+          <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
+            <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
+              <MapPin size={13} style={{ color: "#8B5CF6" }} /> Trả hàng 2 điểm
+            </span>
+            <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
+              −{fmt(twoPointAmount)}
+            </span>
+          </div>
+        )}
+        {vehicleShiftAmount > 0 && (
+          <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
+            <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
+              <Clock size={13} style={{ color: "#F97316" }} /> Lưu ca xe
+            </span>
+            <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
+              −{fmt(vehicleShiftAmount)}
+            </span>
+          </div>
+        )}
 
         <div
           className="tc-summary-row tc-summary-row--total"

@@ -1,7 +1,7 @@
 import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
-  ForwarderExpenseType, AdvanceRequestStatus, AdvanceSettlementStatus,
+  AdvanceRequestStatus, AdvanceSettlementStatus,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -445,7 +445,7 @@ export interface TripExpense {
   id: number;
   tripId: number;
   forwarderId: number;
-  expenseType: ForwarderExpenseType;
+  expenseType: string;
   amount: string;
   note: string | null;
   createdAt: string;

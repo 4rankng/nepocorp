@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { db } from './db';
 import * as schema from './db/schema';
-import { Role } from '@nepocorp/shared';
+import { Role, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@nepocorp/shared';
 import { eq, and, desc } from 'drizzle-orm';
 
 async function seed() {
@@ -266,6 +266,21 @@ async function seed() {
     console.log(`✅ Hai Phong ports/yards seeded! (${newPorts.length} new)`);
   } else {
     console.log('✅ Ports already exist, skipping.');
+  }
+
+  // ─── Forwarder expense types (user-configurable) ─────────────────────────
+  const fetSeeds = Object.entries(FORWARDER_EXPENSE_TYPE_DEFAULTS).map(([code, name]) => ({ code, name }));
+  const existingFets = await db.select({ code: schema.forwarderExpenseTypes.code })
+    .from(schema.forwarderExpenseTypes);
+  const existingFetCodes = new Set(existingFets.map(f => f.code));
+  const newFets = fetSeeds.filter(f => !existingFetCodes.has(f.code));
+  if (newFets.length > 0) {
+    for (const fet of newFets) {
+      await db.insert(schema.forwarderExpenseTypes).values(fet).onConflictDoNothing();
+    }
+    console.log(`✅ Forwarder expense types seeded! (${newFets.length} new)`);
+  } else {
+    console.log('✅ Forwarder expense types already exist, skipping.');
   }
 
   process.exit(0);

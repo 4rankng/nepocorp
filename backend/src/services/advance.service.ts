@@ -44,7 +44,28 @@ async function enrichSettlementWithRequests(settlement: any): Promise<any> {
       .from(s.advanceRequests)
       .where(inArray(s.advanceRequests.id, requestIds));
   }
-  return { ...settlement, linkedRequests };
+
+  // Also fetch linked trip expenses with breakdown by type
+  const expenseLinks = await db.select()
+    .from(s.settlementExpenses)
+    .where(eq(s.settlementExpenses.settlementId, settlement.id));
+  const expenseIds = expenseLinks.map(l => l.tripExpenseId);
+  let linkedExpenses: any[] = [];
+  if (expenseIds.length > 0) {
+    linkedExpenses = await db.select({
+      id: s.tripExpenses.id,
+      tripId: s.tripExpenses.tripId,
+      expenseType: s.tripExpenses.expenseType,
+      amount: s.tripExpenses.amount,
+      note: s.tripExpenses.note,
+      createdAt: s.tripExpenses.createdAt,
+      tripCode: s.trips.tripCode,
+    }).from(s.tripExpenses)
+      .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+      .where(inArray(s.tripExpenses.id, expenseIds));
+  }
+
+  return { ...settlement, linkedRequests, linkedExpenses };
 }
 
 export async function createAdvanceRequest(
@@ -149,7 +170,7 @@ export async function rejectAdvanceRequest(id: number, rejectedBy: number) {
 
 export async function createAdvanceSettlement(
   forwarderId: number,
-  data: { totalExpenseAmount: number; refundAmount?: number; note?: string; advanceRequestIds: number[] },
+  data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] },
 ) {
   if (!data.advanceRequestIds || data.advanceRequestIds.length === 0) {
     throw new AdvanceError(400, 'At least one advance request ID is required');
@@ -185,9 +206,46 @@ export async function createAdvanceSettlement(
       throw new AdvanceError(400, `Yêu cầu tạm ứng đã được liên kết với phiếu thanh toán khác: ${dupIds}`);
     }
 
+    // Validate and auto-calculate from trip expenses if provided
+    let totalExpenseAmount = data.totalExpenseAmount ?? 0;
+    let tripExpenseRows: any[] = [];
+
+    if (data.tripExpenseIds && data.tripExpenseIds.length > 0) {
+      tripExpenseRows = await tx.select()
+        .from(s.tripExpenses)
+        .where(inArray(s.tripExpenses.id, data.tripExpenseIds));
+
+      if (tripExpenseRows.length !== data.tripExpenseIds.length) {
+        throw new AdvanceError(400, 'Một hoặc nhiều chi phí không tồn tại');
+      }
+
+      // Validate ownership — all expenses must belong to this forwarder
+      for (const exp of tripExpenseRows) {
+        if (exp.forwarderId !== forwarderId) {
+          throw new AdvanceError(400, `Chi phí #${exp.id} không thuộc về bạn`);
+        }
+      }
+
+      // Check that none are already linked to another non-rejected settlement
+      const alreadyLinked = await tx.select({ tripExpenseId: s.settlementExpenses.tripExpenseId })
+        .from(s.settlementExpenses)
+        .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
+        .where(and(
+          inArray(s.settlementExpenses.tripExpenseId, data.tripExpenseIds),
+          notInArray(s.advanceSettlements.status, ['REJECTED']),
+        ));
+      if (alreadyLinked.length > 0) {
+        const dupIds = alreadyLinked.map(l => l.tripExpenseId).join(', ');
+        throw new AdvanceError(400, `Chi phí đã được liên kết với phiếu thanh toán khác: ${dupIds}`);
+      }
+
+      // Auto-calculate total from selected expenses
+      totalExpenseAmount = tripExpenseRows.reduce((sum, exp) => sum + Number(exp.amount), 0);
+    }
+
     const [settlement] = await tx.insert(s.advanceSettlements).values({
       forwarderId,
-      totalExpenseAmount: String(data.totalExpenseAmount),
+      totalExpenseAmount: String(totalExpenseAmount),
       refundAmount: String(data.refundAmount ?? 0),
       status: 'PENDING',
       note: data.note ?? null,
@@ -199,6 +257,16 @@ export async function createAdvanceSettlement(
         advanceRequestId,
       })),
     );
+
+    // Link trip expenses to settlement
+    if (data.tripExpenseIds && data.tripExpenseIds.length > 0) {
+      await tx.insert(s.settlementExpenses).values(
+        data.tripExpenseIds.map(tripExpenseId => ({
+          settlementId: settlement.id,
+          tripExpenseId,
+        })),
+      );
+    }
 
     return enrichSettlementWithRequests(settlement);
   });

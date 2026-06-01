@@ -2,7 +2,7 @@ import { db } from '../db';
 // Extract the transaction type so listTripContainers can accept both db and tx.
 type Tx = Parameters<typeof db.transaction>[0] extends (tx: infer T) => any ? T : never;
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, inArray } from 'drizzle-orm';
+import { eq, and, isNull, desc, inArray, notInArray } from 'drizzle-orm';
 
 export class NoForwarderProfileError extends Error {
   status = 404;
@@ -221,7 +221,7 @@ export async function createTripExpense(data: {
   const [inserted] = await db.insert(s.tripExpenses).values({
     tripId: data.tripId,
     forwarderId: data.forwarderId,
-    expenseType: data.expenseType as any,
+    expenseType: data.expenseType,
     amount: data.amount,
     note: data.note,
   }).returning();
@@ -238,15 +238,38 @@ export async function deleteTripExpense(expenseId: number, forwarderId: number) 
   return 'DELETED';
 }
 
-export async function listTripExpenses(filters?: {
-  tripId?: number;
-  forwarderId?: number;
-  expenseType?: string;
-}) {
+/**
+ * List trip expenses belonging to a forwarder that are NOT yet linked to a
+ * non-rejected settlement. Used in the settlement form for expense selection.
+ */
+export async function listUnlinkedTripExpenses(forwarderId: number) {
+  // Get all expense IDs already linked to non-rejected settlements
+  const linked = await db.select({ tripExpenseId: s.settlementExpenses.tripExpenseId })
+    .from(s.settlementExpenses)
+    .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
+    .where(notInArray(s.advanceSettlements.status, ['REJECTED']));
+  const linkedIds = new Set(linked.map(l => l.tripExpenseId));
+
+  const rows = await db.select({
+    id: s.tripExpenses.id,
+    tripId: s.tripExpenses.tripId,
+    expenseType: s.tripExpenses.expenseType,
+    amount: s.tripExpenses.amount,
+    note: s.tripExpenses.note,
+    createdAt: s.tripExpenses.createdAt,
+    tripCode: s.trips.tripCode,
+  }).from(s.tripExpenses)
+    .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+    .where(eq(s.tripExpenses.forwarderId, forwarderId))
+    .orderBy(desc(s.tripExpenses.createdAt));
+
+  return rows.filter(r => !linkedIds.has(r.id));
+}
+export async function listTripExpenses(filters?: { tripId?: number; forwarderId?: number; expenseType?: string }) {
   const conditions = [];
   if (filters?.tripId) conditions.push(eq(s.tripExpenses.tripId, filters.tripId));
   if (filters?.forwarderId) conditions.push(eq(s.tripExpenses.forwarderId, filters.forwarderId));
-  if (filters?.expenseType) conditions.push(eq(s.tripExpenses.expenseType, filters.expenseType as any));
+  if (filters?.expenseType) conditions.push(eq(s.tripExpenses.expenseType, filters.expenseType));
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -265,4 +288,41 @@ export async function listTripExpenses(filters?: {
     .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
     .where(where)
     .orderBy(desc(s.tripExpenses.createdAt));
+}
+
+// ─── Trip Expense Photos ──────────────────────────────────────────────────────
+
+export async function addExpensePhoto(tripExpenseId: number, storageKey: string, uploadedBy: number | null) {
+  const [inserted] = await db.insert(s.tripExpensePhotos).values({
+    tripExpenseId,
+    storageKey,
+    uploadedBy,
+  }).returning();
+  return inserted;
+}
+
+export async function getExpensePhotos(tripExpenseId: number) {
+  return db.select({
+    id: s.tripExpensePhotos.id,
+    storageKey: s.tripExpensePhotos.storageKey,
+    uploadedAt: s.tripExpensePhotos.uploadedAt,
+  }).from(s.tripExpensePhotos)
+    .where(eq(s.tripExpensePhotos.tripExpenseId, tripExpenseId))
+    .orderBy(desc(s.tripExpensePhotos.uploadedAt));
+}
+
+export async function deleteExpensePhoto(photoId: number, forwarderId: number) {
+  // Verify the photo belongs to an expense owned by this forwarder
+  const [photo] = await db.select({
+    id: s.tripExpensePhotos.id,
+    storageKey: s.tripExpensePhotos.storageKey,
+    forwarderId: s.tripExpenses.forwarderId,
+  }).from(s.tripExpensePhotos)
+    .innerJoin(s.tripExpenses, eq(s.tripExpensePhotos.tripExpenseId, s.tripExpenses.id))
+    .where(eq(s.tripExpensePhotos.id, photoId))
+    .limit(1);
+  if (!photo) return null;
+  if (photo.forwarderId !== forwarderId) return 'FORBIDDEN';
+  await db.delete(s.tripExpensePhotos).where(eq(s.tripExpensePhotos.id, photoId));
+  return { deleted: true, storageKey: photo.storageKey };
 }

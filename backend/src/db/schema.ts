@@ -17,7 +17,8 @@ export const tripPhotoTypeEnum = pgEnum('trip_photo_type', ['CONTAINER', 'SEAL',
 export const penaltyStatusEnum = pgEnum('penalty_status', ['ACTIVE', 'CANCELED']);
 export const vehicleComponentEnum = pgEnum('vehicle_component', ['TRUCK', 'TRAILER']);
 export const trailerStatusEnum = pgEnum('trailer_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
-export const forwarderExpenseTypeEnum = pgEnum('forwarder_expense_type', ['LIFTING', 'CUSTOMS', 'WEIGHING', 'INSPECTION', 'OTHER']);
+// NOTE: forwarder_expense_type pgEnum removed — replaced by forwarder_expense_types config table.
+// trip_expenses.expense_type is now varchar(50) referencing config codes.
 export const advanceRequestStatusEnum = pgEnum('advance_request_status', ['PENDING', 'APPROVED', 'REJECTED']);
 export const advanceSettlementStatusEnum = pgEnum('advance_settlement_status', ['PENDING', 'CHECKED_BY_ACCOUNTANT', 'APPROVED', 'REJECTED']);
 export const notificationTypeEnum = pgEnum('notification_type', [
@@ -412,6 +413,16 @@ export const ports = pgTable('ports', {
   deletedAt: timestamp('deleted_at'),
 });
 
+export const forwarderExpenseTypes = pgTable('forwarder_expense_types', {
+  id: serial('id').primaryKey(),
+  code: varchar('code', { length: 50 }).notNull().unique(), // e.g. "LIFTING", "CUSTOMS"
+  name: varchar('name', { length: 100 }).notNull(),         // Vietnamese label e.g. "Nâng hạ"
+  status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
 // ─── Forwarder ──────────────────────────────────────────────────────────────────
 
 export const tripContainers = pgTable('trip_containers', {
@@ -437,13 +448,21 @@ export const tripExpenses = pgTable('trip_expenses', {
   id: serial('id').primaryKey(),
   tripId: integer('trip_id').references(() => trips.id).notNull(),
   forwarderId: integer('forwarder_id').references(() => users.id).notNull(),
-  expenseType: forwarderExpenseTypeEnum('expense_type').notNull(),
+  expenseType: varchar('expense_type', { length: 50 }).notNull(),
   amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
   note: text('note'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   index('trip_expenses_trip_id_idx').on(table.tripId),
 ]);
+
+export const tripExpensePhotos = pgTable('trip_expense_photos', {
+  id: serial('id').primaryKey(),
+  tripExpenseId: integer('trip_expense_id').references(() => tripExpenses.id).notNull(),
+  storageKey: varchar('storage_key', { length: 255 }).notNull(),
+  uploadedBy: integer('uploaded_by'),
+  uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
+});
 
 export const advanceRequests = pgTable('advance_requests', {
   id: serial('id').primaryKey(),
@@ -478,6 +497,14 @@ export const advanceSettlementRequests = pgTable('advance_settlement_requests', 
   advanceRequestId: integer('advance_request_id').references(() => advanceRequests.id).notNull(),
 }, (table) => [
   uniqueIndex('adv_settlement_req_unique_idx').on(table.settlementId, table.advanceRequestId),
+]);
+
+export const settlementExpenses = pgTable('settlement_expenses', {
+  id: serial('id').primaryKey(),
+  settlementId: integer('settlement_id').references(() => advanceSettlements.id).notNull(),
+  tripExpenseId: integer('trip_expense_id').references(() => tripExpenses.id).notNull(),
+}, (table) => [
+  uniqueIndex('settlement_expense_unique_idx').on(table.settlementId, table.tripExpenseId),
 ]);
 
 // ─── Audit ───────────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ export interface CatalogData {
   trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
   containerTypes: Array<{ id: number; code: string; name: string }>;
   ports: Array<{ id: number; name: string; code: string | null; city: string | null }>;
+  forwarderExpenseTypes: Array<{ id: number; code: string; name: string }>;
 }
 
 export function useCatalogs() {

@@ -9,6 +9,7 @@ import {
   useApproveSettlement,
   useRejectSettlement,
 } from '../hooks/useQueries';
+import { useCatalogs } from '../hooks/useCatalogs';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 
 const tabs = [
@@ -27,6 +28,8 @@ export default function AdminSettlementsPage() {
   const checkMutation = useCheckSettlement();
   const approveMutation = useApproveSettlement();
   const rejectMutation = useRejectSettlement();
+  const { data: catalogs } = useCatalogs();
+  const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
   return (
     <div>
@@ -111,6 +114,24 @@ export default function AdminSettlementsPage() {
                     ))}
                   </div>
                 )}
+
+                {s.linkedExpenses && s.linkedExpenses.length > 0 && (() => {
+                  const groups = new Map<string, number>();
+                  for (const exp of s.linkedExpenses) {
+                    const label = expenseTypeOptions.find((t: any) => t.code === exp.expenseType)?.name || exp.expenseType;
+                    groups.set(label, (groups.get(label) ?? 0) + Number(exp.amount));
+                  }
+                  return (
+                    <div style={{ marginTop: 6 }}>
+                      <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>Chi phí theo hạng mục: </span>
+                      {[...groups.entries()].map(([label, amount]) => (
+                        <span key={label} style={{ fontSize: 12, display: 'inline-block', padding: '2px 8px', background: 'var(--bg-2)', borderRadius: 4, marginRight: 6, marginTop: 4 }}>
+                          {label}: {formatCurrency(amount)}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 {s.checkedBy && (
                   <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>

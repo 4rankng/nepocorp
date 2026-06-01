@@ -23,7 +23,7 @@ export const forwarderClient = {
     return api.get<any>(FORWARDER.TRIP_DETAIL(id));
   },
 
-  createContainer: async (tripId: number, data: { containerNumber: string; sealNumber?: string; notes?: string }) => {
+  createContainer: async (tripId: number, data: { containerTypeId?: number; containerNumber: string; sealNumber?: string; notes?: string }) => {
     return api.post(FORWARDER.CONTAINERS(tripId), data);
   },
 
@@ -45,8 +45,12 @@ export const forwarderClient = {
   getAdvanceSettlements: async () => {
     return api.get<{ items: any[] }>(FORWARDER.ADVANCE_SETTLEMENTS);
   },
-  createAdvanceSettlement: async (data: { totalExpenseAmount: number; refundAmount?: number; note?: string; advanceRequestIds: number[] }) => {
+  createAdvanceSettlement: async (data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) => {
     return api.post(FORWARDER.ADVANCE_SETTLEMENTS, data);
+  },
+
+  getUnlinkedExpenses: async () => {
+    return api.get<{ items: any[] }>(FORWARDER.UNLINKED_EXPENSES);
   },
 
   listAllAdvanceRequests: async (filters?: { status?: string }) => {

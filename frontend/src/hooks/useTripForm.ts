@@ -84,6 +84,10 @@ export interface UseTripFormReturn {
   setHasReturnCargo: (v: boolean) => void;
   driverSalary: string;
   setDriverSalary: (v: string) => void;
+  twoPointDeliveryBonus: string;
+  setTwoPointDeliveryBonus: (v: string) => void;
+  vehicleShiftAllowance: string;
+  setVehicleShiftAllowance: (v: string) => void;
   roadAllowanceOverride: string;
   setRoadAllowanceOverride: (v: string) => void;
   fuelActualUnitPrice: string;
@@ -122,6 +126,8 @@ export interface UseTripFormReturn {
   roadAllowanceBaseApplied?: number;
   tollPerStationApplied?: number;
   returnCargoBonusApplied?: number;
+  twoPointDeliveryDefault?: number;
+  vehicleShiftDefault?: number;
   isEditMode: boolean;
   selectedRouteData: RouteOption | null;
 }
@@ -305,6 +311,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [tollsStations, setTollsStations] = useState(isEditMode && existingTrip?.tollsStations != null ? String(existingTrip.tollsStations) : "");
   const [hasReturnCargo, setHasReturnCargo] = useState(isEditMode && existingTrip ? !!existingTrip.hasReturnCargo : false);
   const [driverSalary, setDriverSalary] = useState(isEditMode && existingTrip?.driverSalary ? String(existingTrip.driverSalary) : "");
+  const [twoPointDeliveryBonus, setTwoPointDeliveryBonus] = useState(isEditMode && existingTrip?.twoPointDeliveryBonus && Number(existingTrip.twoPointDeliveryBonus) > 0 ? String(existingTrip.twoPointDeliveryBonus) : "");
+  const [vehicleShiftAllowance, setVehicleShiftAllowance] = useState(isEditMode && existingTrip?.vehicleShiftAllowance && Number(existingTrip.vehicleShiftAllowance) > 0 ? String(existingTrip.vehicleShiftAllowance) : "");
   const [roadAllowanceOverride, setRoadAllowanceOverride] = useState(
     isEditMode && existingTrip?.roadAllowanceOverride != null ? String(existingTrip.roadAllowanceOverride) : ""
   );
@@ -357,6 +365,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     setTollsStations(existingTrip.tollsStations != null ? String(existingTrip.tollsStations) : '');
     setHasReturnCargo(!!existingTrip.hasReturnCargo);
     setDriverSalary(existingTrip.driverSalary ? String(existingTrip.driverSalary) : '');
+    setTwoPointDeliveryBonus(existingTrip.twoPointDeliveryBonus && Number(existingTrip.twoPointDeliveryBonus) > 0 ? String(existingTrip.twoPointDeliveryBonus) : '');
+    setVehicleShiftAllowance(existingTrip.vehicleShiftAllowance && Number(existingTrip.vehicleShiftAllowance) > 0 ? String(existingTrip.vehicleShiftAllowance) : '');
     if (existingTrip.revenueEmptyReturn) {
       setRevenueEmptyReturn(String(existingTrip.revenueEmptyReturn));
     } else if (existingTrip.revenue && (!existingTrip.revenueCombine || Number(existingTrip.revenueCombine) === 0)) {
@@ -473,6 +483,14 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }
     if (selectedRouteData.driverSalary != null) {
       setDriverSalary(String(selectedRouteData.driverSalary));
+    } else if (roadConfig?.defaultDriverSalary && Number(roadConfig.defaultDriverSalary) > 0) {
+      setDriverSalary(String(roadConfig.defaultDriverSalary));
+    }
+    if (roadConfig?.twoPointDeliveryBonus && Number(roadConfig.twoPointDeliveryBonus) > 0) {
+      setTwoPointDeliveryBonus(String(roadConfig.twoPointDeliveryBonus));
+    }
+    if (roadConfig?.vehicleShiftDefault && Number(roadConfig.vehicleShiftDefault) > 0) {
+      setVehicleShiftAllowance(String(roadConfig.vehicleShiftDefault));
     }
   }, [selectedRouteData, isEditMode, existingTrip]);
 
@@ -498,8 +516,10 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
       (Number(revenue) || 0) -
       estimatedFuelCost -
       estimatedTollCost -
-      (Number(driverSalary) || 0),
-    [revenue, estimatedFuelCost, estimatedTollCost, driverSalary],
+      (Number(driverSalary) || 0) -
+      (Number(twoPointDeliveryBonus) || 0) -
+      (Number(vehicleShiftAllowance) || 0),
+    [revenue, estimatedFuelCost, estimatedTollCost, driverSalary, twoPointDeliveryBonus, vehicleShiftAllowance],
   );
 
   const requiredFieldsFilled = useMemo(() => {
@@ -640,6 +660,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             tollsStations: tollsStations ? Number(tollsStations) : 0,
             hasReturnCargo: hasReturnCargo,
             driverSalary: driverSalary ? Number(driverSalary) : 0,
+            twoPointDeliveryBonus: twoPointDeliveryBonus ? Number(twoPointDeliveryBonus) : 0,
+            vehicleShiftAllowance: vehicleShiftAllowance ? Number(vehicleShiftAllowance) : 0,
             revenue: revenue ? Number(revenue) : undefined,
             revenueEmptyReturn: revenueEmptyReturn ? Number(revenueEmptyReturn) : 0,
             revenueCombine: revenueCombine ? Number(revenueCombine) : 0,
@@ -730,6 +752,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             tollsStations: tollsStations ? Number(tollsStations) : 0,
             hasReturnCargo: hasReturnCargo,
             driverSalary: driverSalary ? Number(driverSalary) : 0,
+            twoPointDeliveryBonus: twoPointDeliveryBonus ? Number(twoPointDeliveryBonus) : 0,
+            vehicleShiftAllowance: vehicleShiftAllowance ? Number(vehicleShiftAllowance) : 0,
             revenue: revenue ? Number(revenue) : undefined,
             revenueEmptyReturn: revenueEmptyReturn ? Number(revenueEmptyReturn) : 0,
             revenueCombine: revenueCombine ? Number(revenueCombine) : 0,
@@ -792,6 +816,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     tollsStations, setTollsStations,
     hasReturnCargo, setHasReturnCargo,
     driverSalary, setDriverSalary,
+    twoPointDeliveryBonus, setTwoPointDeliveryBonus,
+    vehicleShiftAllowance, setVehicleShiftAllowance,
     roadAllowanceOverride, setRoadAllowanceOverride,
     fuelActualUnitPrice, setFuelActualUnitPrice,
     revenue, setRevenue,
@@ -818,6 +844,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     returnCargoBonusApplied: isEditMode && existingTrip?.returnCargoBonusApplied
       ? Number(existingTrip.returnCargoBonusApplied)
       : roadConfig ? Number(roadConfig.returnCargoBonus) : undefined,
+    twoPointDeliveryDefault: roadConfig?.twoPointDeliveryBonus ? Number(roadConfig.twoPointDeliveryBonus) : undefined,
+    vehicleShiftDefault: roadConfig?.vehicleShiftDefault ? Number(roadConfig.vehicleShiftDefault) : undefined,
     isEditMode,
     selectedRouteData,
   };

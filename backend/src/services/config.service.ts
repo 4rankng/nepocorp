@@ -15,7 +15,7 @@ import { cacheGet, cacheInvalidate } from '../lib/redis';
  */
 export async function getBootstrapData() {
   return cacheGet('catalogs:bootstrap', 60, async () => {
-    const [customersList, trucksList, driversList, routesList, cargoTypesList, expenseCategoriesList, suppliersList, trailersList, containerTypesList, portsList] = await Promise.all([
+    const [customersList, trucksList, driversList, routesList, cargoTypesList, expenseCategoriesList, suppliersList, trailersList, containerTypesList, portsList, forwarderExpenseTypesList] = await Promise.all([
       db.select().from(s.customers).where(isNull(s.customers.deletedAt)),
       db.select().from(s.trucks).where(isNull(s.trucks.deletedAt)),
       db.select().from(s.drivers).where(isNull(s.drivers.deletedAt)),
@@ -26,6 +26,7 @@ export async function getBootstrapData() {
       db.select().from(s.trailers).where(isNull(s.trailers.deletedAt)),
       db.select().from(s.containerTypes).where(isNull(s.containerTypes.deletedAt)),
       db.select().from(s.ports).where(isNull(s.ports.deletedAt)),
+      db.select().from(s.forwarderExpenseTypes).where(isNull(s.forwarderExpenseTypes.deletedAt)),
     ]);
 
     return {
@@ -39,6 +40,7 @@ export async function getBootstrapData() {
       trailers: trailersList.filter(t => t.status === 'ACTIVE'),
       containerTypes: containerTypesList,
       ports: portsList,
+      forwarderExpenseTypes: forwarderExpenseTypesList.filter(t => t.status === 'ACTIVE'),
     };
   });
 }

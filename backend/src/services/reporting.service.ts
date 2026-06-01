@@ -34,7 +34,7 @@ export const monthDateRange = calendarMonthDateRange;
  * Resolve salary-period-aware date range for a given month/year.
  * Returns { start, end } where start is inclusive and end is exclusive (next day).
  */
-async function salaryPeriodDateRange(year: number, month: number) {
+async function salaryPeriodDateRange(month: number, year: number) {
   const resolved = await resolveSalaryPeriodDateRange(month, year);
   // Convert inclusive end to exclusive end for SQL comparisons
   // Uses local date arithmetic to avoid toISOString() timezone shift
@@ -50,7 +50,7 @@ export async function getDashboardStats() {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
-    const { start: monthStart, end: monthEnd } = await salaryPeriodDateRange(year, month);
+    const { start: monthStart, end: monthEnd } = await salaryPeriodDateRange(month, year);
 
     const [
       [stats],
@@ -118,7 +118,7 @@ export async function getDashboardStats() {
  */
 export async function getPnlReport(month: number, year: number) {
   return cacheGet(`reports:pnl:${month}:${year}`, 120, async () => {
-    const { start: tripStart, end: tripEnd } = await salaryPeriodDateRange(year, month);
+    const { start: tripStart, end: tripEnd } = await salaryPeriodDateRange(month, year);
     const dateFilter = month
       ? and(gte(s.trips.departureDate, tripStart), sql`${s.trips.departureDate} < ${tripEnd}`)
       : gte(s.trips.departureDate, tripStart);

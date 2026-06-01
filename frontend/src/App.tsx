@@ -46,6 +46,7 @@ const CustomersConfigPage = lazy(() => import('./pages/config/CustomersConfigPag
 const TrailersConfigPage = lazy(() => import('./pages/config/TrailersConfigPage'));
 const ManagementFeesConfigPage = lazy(() => import('./pages/config/ManagementFeesConfigPage'));
 const SalaryPeriodConfigPage = lazy(() => import('./pages/config/SalaryPeriodConfigPage'));
+const TripExpenseConfigPage = lazy(() => import('./pages/config/TripExpenseConfigPage'));
 const SupplierListPage = lazy(() => import('./pages/SupplierListPage'));
 const ExpenseListPage = lazy(() => import('./pages/ExpenseListPage'));
 const ExpenseEntryPage = lazy(() => import('./pages/ExpenseEntryPage'));
@@ -55,6 +56,7 @@ const PayableDetailPage = lazy(() => import('./pages/PayableDetailPage'));
 const ExpenseCategoriesConfigPage = lazy(() => import('./pages/config/ExpenseCategoriesConfigPage'));
 const ContainerTypesConfigPage = lazy(() => import('./pages/config/ContainerTypesConfigPage'));
 const PortsConfigPage = lazy(() => import('./pages/config/PortsConfigPage'));
+const ForwarderExpenseTypesConfigPage = lazy(() => import('./pages/config/ForwarderExpenseTypesConfigPage'));
 
 function PageLoader() {
   return (
@@ -139,6 +141,7 @@ function AppRoutes() {
           <Route path="/config/penalty-reasons" element={adminOnly(page(<PenaltyReasonsConfigPage />))} />
           <Route path="/config/drivers" element={adminOnly(page(<DriversConfigPage />))} />
           <Route path="/config/fuel" element={adminOnly(page(<FuelConfigPage />))} />
+          <Route path="/config/trip-expense" element={adminOnly(page(<TripExpenseConfigPage />))} />
           <Route path="/config/cap-table" element={adminOnly(page(<CapTableConfigPage />))} />
           <Route path="/config/customers" element={adminOnly(page(<CustomersConfigPage />))} />
           <Route path="/config/management-fees" element={adminOnly(page(<ManagementFeesConfigPage />))} />
@@ -146,6 +149,7 @@ function AppRoutes() {
           <Route path="/config/expense-categories" element={adminOnly(page(<ExpenseCategoriesConfigPage />))} />
           <Route path="/config/container-types" element={adminOnly(page(<ContainerTypesConfigPage />))} />
           <Route path="/config/ports" element={adminOnly(page(<PortsConfigPage />))} />
+          <Route path="/config/forwarder-expense-types" element={adminOnly(page(<ForwarderExpenseTypesConfigPage />))} />
           <Route path="/suppliers" element={adminOnly(page(<SupplierListPage />))} />
           <Route path="/expenses" element={adminOnly(page(<ExpenseListPage />))} />
           <Route path="/expenses/new" element={adminOnly(page(<ExpenseEntryPage />))} />

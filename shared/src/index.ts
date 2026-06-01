@@ -4,7 +4,7 @@ export {
   PenaltyStatus, PENALTY_STATUS_LABELS, TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   ForwarderExpenseType, AdvanceRequestStatus, AdvanceSettlementStatus,
-  FORWARDER_EXPENSE_TYPE_LABELS, ADVANCE_REQUEST_STATUS_LABELS, ADVANCE_SETTLEMENT_STATUS_LABELS,
+  FORWARDER_EXPENSE_TYPE_LABELS, FORWARDER_EXPENSE_TYPE_DEFAULTS, ADVANCE_REQUEST_STATUS_LABELS, ADVANCE_SETTLEMENT_STATUS_LABELS,
   NotificationType, NOTIFICATION_TYPE_LABELS,
   CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS,
 } from './constants';
@@ -36,7 +36,7 @@ export {
   managementFeeSchema, capTableSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
-  tripContainerSchema, tripContainerBatchSchema, tripExpenseSchema,
+  tripContainerSchema, tripContainerBatchSchema, tripExpenseSchema, forwarderExpenseTypeSchema,
   createAdvanceRequestSchema, createAdvanceSettlementSchema,
   containerTypeSchema, portSchema,
 } from './schemas';

@@ -11,6 +11,7 @@ import {
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, portSchema,
+  forwarderExpenseTypeSchema,
 } from '@nepocorp/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
@@ -85,6 +86,7 @@ router.use('/routes', createCrudRouter(s.routes, routeSchema, { searchableField:
 router.use('/cargo-types', createCrudRouter(s.cargoTypes, cargoTypeSchema));
 router.use('/container-types', createCrudRouter(s.containerTypes, containerTypeSchema, { searchableField: 'name' }));
 router.use('/ports', createCrudRouter(s.ports, portSchema, { searchableField: 'name' }));
+router.use('/forwarder-expense-types', createCrudRouter(s.forwarderExpenseTypes, forwarderExpenseTypeSchema, { searchableField: 'name' }));
 router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSchema));
 router.use('/road-allowances', createCrudRouter(s.roadAllowances, roadAllowanceSchema));
 router.use('/penalty-reasons', createCrudRouter(s.penaltyReasons, penaltyReasonSchema));

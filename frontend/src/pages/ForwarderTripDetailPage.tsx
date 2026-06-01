@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck, Calendar, MapPin, Package, Trash2, Loader2, AlertCircle, Plus, DollarSign } from 'lucide-react';
+import { ArrowLeft, Truck, Calendar, MapPin, Package, Trash2, Loader2, AlertCircle, Plus, DollarSign, Camera, X } from 'lucide-react';
 import { formatDate, formatCurrency } from '../lib/format';
-import { TRIP_STATUS_LABELS, FORWARDER_EXPENSE_TYPE_LABELS, type TripStatus, type ForwarderExpenseType } from '@nepocorp/shared';
+import { api } from '../lib/api';
+import { FORWARDER } from '@nepocorp/shared';
+import { TRIP_STATUS_LABELS, type TripStatus } from '@nepocorp/shared';
 import { StatusPill, Panel, FormGroup } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
@@ -31,16 +33,41 @@ export default function ForwarderTripDetailPage() {
 
   const { data: catalogs } = useCatalogs();
   const containerTypeOptions = catalogs?.containerTypes ?? [];
+  const forwarderExpenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
   const [showContainerForm, setShowContainerForm] = useState(false);
   const [containerForm, setContainerForm] = useState({ containerTypeId: '', containerNumber: '', sealNumber: '', notes: '' });
 
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expenseForm, setExpenseForm] = useState<{ expenseType: string; amount: string; note: string }>({
-    expenseType: 'LIFTING',
+    expenseType: '',
     amount: '',
     note: '',
   });
+
+  // Expense photo state: maps expenseId → photo URLs
+  const [expensePhotos, setExpensePhotos] = useState<Record<number, string[]>>({});
+  const [uploadingExpenseId, setUploadingExpenseId] = useState<number | null>(null);
+
+  async function loadExpensePhotos(expenseId: number) {
+    try {
+      const res = await api.get<{ items: Array<{ id: number; storageKey: string }> }>(`/forwarder/me/expenses/${expenseId}/photos`);
+      const urls = res.items.map((p: any) => `/api/photos/${p.storageKey}`);
+      setExpensePhotos(prev => ({ ...prev, [expenseId]: urls }));
+    } catch { /* ignore */ }
+  }
+
+  async function handleUploadPhoto(expenseId: number, file: File) {
+    setUploadingExpenseId(expenseId);
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      await api.post(`/forwarder/me/expenses/${expenseId}/photos`, form);
+      await loadExpensePhotos(expenseId);
+    } finally {
+      setUploadingExpenseId(null);
+    }
+  }
 
   if (loading) return (
     <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
@@ -79,10 +106,10 @@ export default function ForwarderTripDetailPage() {
 
   const handleAddExpense = () => {
     const amount = parseFloat(expenseForm.amount);
-    if (!amount || amount <= 0) return;
+    if (!expenseForm.expenseType || !amount || amount <= 0) return;
     createExpenseMut.mutate(
       { tripId, expenseType: expenseForm.expenseType, amount, note: expenseForm.note || undefined },
-      { onSuccess: () => { setExpenseForm({ expenseType: 'LIFTING', amount: '', note: '' }); setShowExpenseForm(false); } },
+      { onSuccess: () => { setExpenseForm({ expenseType: '', amount: '', note: '' }); setShowExpenseForm(false); } },
     );
   };
 
@@ -294,8 +321,9 @@ export default function ForwarderTripDetailPage() {
                   value={expenseForm.expenseType}
                   onChange={e => setExpenseForm(f => ({ ...f, expenseType: e.target.value }))}
                 >
-                  {Object.entries(FORWARDER_EXPENSE_TYPE_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
+                  <option value="">-- Chọn loại --</option>
+                  {forwarderExpenseTypeOptions.map(t => (
+                    <option key={t.code} value={t.code}>{t.name}</option>
                   ))}
                 </select>
               </FormGroup>
@@ -320,7 +348,7 @@ export default function ForwarderTripDetailPage() {
               <button
                 className="btn btn--primary btn--sm"
                 onClick={handleAddExpense}
-                disabled={createExpenseMut.isPending || !expenseForm.amount || parseFloat(expenseForm.amount) <= 0}
+                disabled={createExpenseMut.isPending || !expenseForm.expenseType || !expenseForm.amount || parseFloat(expenseForm.amount) <= 0}
               >
                 {createExpenseMut.isPending ? 'Đang lưu…' : 'Lưu'}
               </button>
@@ -335,28 +363,71 @@ export default function ForwarderTripDetailPage() {
         ) : (
           <div style={{ padding: '4px 0' }}>
             {expenses.map((exp: any) => (
-              <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', borderBottom: '1px solid var(--border-1)' }}>
-                <DollarSign size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <span style={{ fontWeight: 600, fontSize: 13 }}>
-                    {FORWARDER_EXPENSE_TYPE_LABELS[exp.expenseType as ForwarderExpenseType] || exp.expenseType}
+              <div key={exp.id} style={{ padding: '10px 20px', borderBottom: '1px solid var(--border-1)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <DollarSign size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>
+                      {forwarderExpenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType}
+                    </span>
+                    {exp.note && (
+                      <span style={{ color: 'var(--fg-3)', fontSize: 12, marginLeft: 8 }}>{exp.note}</span>
+                    )}
+                  </div>
+                  <span style={{ fontWeight: 600, fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+                    {formatCurrency(exp.amount)}
                   </span>
-                  {exp.note && (
-                    <span style={{ color: 'var(--fg-3)', fontSize: 12, marginLeft: 8 }}>{exp.note}</span>
-                  )}
+                  {/* Photo upload button */}
+                  <label
+                    className="icon-btn"
+                    title="Thêm ảnh hóa đơn"
+                    style={{ color: 'var(--fg-3)', opacity: 0.7, padding: 4, cursor: 'pointer' }}
+                  >
+                    {uploadingExpenseId === exp.id
+                      ? <Loader2 size={14} className="spin" />
+                      : <Camera size={14} />
+                    }
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUploadPhoto(exp.id, file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                  <button
+                    className="icon-btn"
+                    onClick={() => handleDeleteExpense(exp.id)}
+                    disabled={deleteExpenseMut.isPending}
+                    title="Xóa chi phí"
+                    style={{ color: 'var(--danger)', opacity: 0.6, padding: 4 }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
-                <span style={{ fontWeight: 600, fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
-                  {formatCurrency(exp.amount)}
-                </span>
-                <button
-                  className="icon-btn"
-                  onClick={() => handleDeleteExpense(exp.id)}
-                  disabled={deleteExpenseMut.isPending}
-                  title="Xóa chi phí"
-                  style={{ color: 'var(--danger)', opacity: 0.6, padding: 4 }}
-                >
-                  <Trash2 size={14} />
-                </button>
+                {/* Photo thumbnails */}
+                {expensePhotos[exp.id] && expensePhotos[exp.id].length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8, paddingLeft: 26 }}>
+                    {expensePhotos[exp.id].map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={url}
+                          alt={`Hóa đơn ${i + 1}`}
+                          style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border-1)' }}
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {/* Load photos on first render */}
+                {!expensePhotos[exp.id] && (
+                  <span style={{ fontSize: 11, color: 'var(--fg-3)', paddingLeft: 26, marginTop: 4, display: 'inline-block', cursor: 'pointer' }} onClick={() => loadExpensePhotos(exp.id)}>
+                    Xem ảnh hóa đơn
+                  </span>
+                )}
               </div>
             ))}
           </div>

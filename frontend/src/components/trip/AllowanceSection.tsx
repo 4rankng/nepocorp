@@ -11,6 +11,9 @@ export function AllowanceSection() {
     tollsStations, setTollsStations,
     hasReturnCargo, setHasReturnCargo,
     driverSalary, setDriverSalary,
+    twoPointDeliveryBonus, setTwoPointDeliveryBonus,
+    vehicleShiftAllowance, setVehicleShiftAllowance,
+    twoPointDeliveryDefault, vehicleShiftDefault,
     revenueEmptyReturn, setRevenueEmptyReturn,
     revenueCombine, setRevenueCombine,
     suggestedPrice,
@@ -118,7 +121,7 @@ export function AllowanceSection() {
           )}
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lương sản lượng tài xế (đ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lương kết hợp (đ)</label>
           <InputWithPrefix
             value={driverSalary}
             onChange={setDriverSalary}
@@ -128,6 +131,35 @@ export function AllowanceSection() {
             type="money"
             style={{ width: "100%" }}
           />
+        </div>
+      </div>
+
+      <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+        <div className="field">
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Trả hàng 2 điểm (đ)</label>
+          <InputWithPrefix
+            value={twoPointDeliveryBonus}
+            onChange={setTwoPointDeliveryBonus}
+            placeholder={twoPointDeliveryDefault ? twoPointDeliveryDefault.toLocaleString("vi-VN") : "VD: 200.000"}
+            prefix="đ"
+            mono
+            type="money"
+            style={{ width: "100%" }}
+          />
+          <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>Để trống = không có</div>
+        </div>
+        <div className="field">
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lưu ca xe (đ)</label>
+          <InputWithPrefix
+            value={vehicleShiftAllowance}
+            onChange={setVehicleShiftAllowance}
+            placeholder={vehicleShiftDefault ? vehicleShiftDefault.toLocaleString("vi-VN") : "VD: 200.000"}
+            prefix="đ"
+            mono
+            type="money"
+            style={{ width: "100%" }}
+          />
+          <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>Chi phí lưu xe qua đêm (200k-400k/ngày)</div>
         </div>
       </div>
 

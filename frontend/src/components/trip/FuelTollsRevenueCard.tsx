@@ -84,7 +84,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
 
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
-          <label>Lương sản lượng tài xế</label>
+          <label>Lương kết hợp</label>
           <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850.000" prefix="đ" mono type="money" />
         </div>
         <CheckboxCard
@@ -94,6 +94,17 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           description="Áp dụng định mức chuyến đôi"
           id="cb-return"
         />
+      </div>
+
+      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
+        <div className="field">
+          <label>Trả hàng 2 điểm (đ)</label>
+          <InputWithPrefix value={form.twoPointDeliveryBonus} onChange={form.setTwoPointDeliveryBonus} placeholder="200.000" prefix="đ" mono type="money" />
+        </div>
+        <div className="field">
+          <label>Lưu ca xe (đ)</label>
+          <InputWithPrefix value={form.vehicleShiftAllowance} onChange={form.setVehicleShiftAllowance} placeholder="200.000" prefix="đ" mono type="money" />
+        </div>
       </div>
 
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>

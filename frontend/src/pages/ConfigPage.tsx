@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import {
   Users, Truck, MapPin, Package, DollarSign, Route,
-  AlertTriangle, UserCheck, Fuel, Building, Calendar, Tags, Container, Anchor,
+  AlertTriangle, UserCheck, Fuel, Building, Calendar, Tags, Container, Anchor, Settings,
 } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { api } from '../lib/api';
@@ -36,6 +36,7 @@ export default function ConfigPage() {
     fuelConfig,
     containerTypes,
     ports,
+    forwarderExpenseTypes,
   ] = useQueries({
     queries: [
       { queryKey: ['cfg-count', 'penalty-reasons'],    queryFn: () => api.get<ListResponse>('/penalty-reasons?limit=1'),    staleTime: 60_000 },
@@ -54,6 +55,7 @@ export default function ConfigPage() {
       { queryKey: ['cfg-count', 'fuel-config'],        queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
       { queryKey: ['cfg-count', 'container-types'],    queryFn: () => api.get<ListResponse>('/container-types?limit=1'),   staleTime: 60_000 },
       { queryKey: ['cfg-count', 'ports'],              queryFn: () => api.get<ListResponse>('/ports?limit=1'),              staleTime: 60_000 },
+      { queryKey: ['cfg-count', 'forwarder-expense-types'], queryFn: () => api.get<ListResponse>('/forwarder-expense-types?limit=1'), staleTime: 60_000 },
     ],
   });
 
@@ -93,6 +95,16 @@ export default function ConfigPage() {
           <p className="setting-card__desc">Tiền chuẩn theo tuyến × loại rơ-mooc. Quy tắc: − vé QL5, + chuyến về có hàng, − phí/trạm.</p>
           <div className="setting-card__foot">
             <span className="setting-card__status"><span className="dot"></span>{countLabel(roadAllowances.data?.total, 'tuyến')}</span>
+            <span className="setting-card__action">Sửa {CHEVRON}</span>
+          </div>
+        </button>
+
+        <button className="setting-card" onClick={() => navigate('/config/trip-expense')}>
+          <div className="setting-card__icon"><Settings size={20} /></div>
+          <h3 className="setting-card__title">Chi phí chuyến đi</h3>
+          <p className="setting-card__desc">Lương kết hợp, trả hàng 2 điểm, lưu ca xe, tiền trạm BOT, thưởng chuyến về có hàng.</p>
+          <div className="setting-card__foot">
+            <span className="setting-card__status"><span className="dot" style={{ background: '#10B981' }}></span>5 mục</span>
             <span className="setting-card__action">Sửa {CHEVRON}</span>
           </div>
         </button>
@@ -233,6 +245,16 @@ export default function ConfigPage() {
           <p className="setting-card__desc">Danh mục các cảng và bãi container tại khu vực Hải Phòng, dùng làm điểm đi / điểm đến trong chuyến hàng.</p>
           <div className="setting-card__foot">
             <span className="setting-card__status"><span className="dot"></span>{countLabel(ports.data?.total, 'cảng/bãi')}</span>
+            <span className="setting-card__action">Sửa {CHEVRON}</span>
+          </div>
+        </button>
+
+        <button className="setting-card" onClick={() => navigate('/config/forwarder-expense-types')}>
+          <div className="setting-card__icon"><Tags size={20} /></div>
+          <h3 className="setting-card__title">Loại chi phí giao nhận</h3>
+          <p className="setting-card__desc">Danh mục các khoản chi phí phát sinh do nhân viên giao nhận nhập (nâng hạ, hải quan, cân xe, kiểm tra…).</p>
+          <div className="setting-card__foot">
+            <span className="setting-card__status"><span className="dot"></span>{countLabel(forwarderExpenseTypes.data?.total, 'loại')}</span>
             <span className="setting-card__action">Sửa {CHEVRON}</span>
           </div>
         </button>

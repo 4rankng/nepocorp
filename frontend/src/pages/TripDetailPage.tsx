@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, Play, Pencil, Lock, XCircle,
   Truck, User, MapPin, Calendar, FileText, Fuel, Banknote,
-  Route as RouteIcon, Image as ImageIcon, Shuffle, FilePen, X,
+  Route as RouteIcon, Image as ImageIcon, Shuffle, FilePen, X, Clock,
 } from 'lucide-react';
 import { api, ApiError, getAuthenticatedPhotoUrl } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -442,6 +442,8 @@ export default function TripDetailPage() {
             </div>
           )}
           {infoRow(<User size={16} />, 'Lương tài xế', formatCurrency(trip.driverSalary))}
+          {Number(trip.twoPointDeliveryBonus) > 0 && infoRow(<MapPin size={16} />, 'Trả hàng 2 điểm', formatCurrency(trip.twoPointDeliveryBonus))}
+          {Number(trip.vehicleShiftAllowance) > 0 && infoRow(<Clock size={16} />, 'Lưu ca xe', formatCurrency(trip.vehicleShiftAllowance))}
         </Panel>
       </div>
 

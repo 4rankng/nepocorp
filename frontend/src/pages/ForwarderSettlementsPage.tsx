@@ -3,7 +3,8 @@ import { FileText, Loader2, Plus, X, Check } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill, FormGroup } from '../components/UI';
-import { useForwarderSettlements, useForwarderAdvanceRequests, useCreateAdvanceSettlement } from '../hooks/useQueries';
+import { useForwarderSettlements, useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
+import { useCatalogs } from '../hooks/useCatalogs';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 
 interface LinkedRequest {
@@ -12,6 +13,16 @@ interface LinkedRequest {
   reason: string;
   status: string;
   createdAt: string;
+}
+
+interface LinkedExpense {
+  id: number;
+  tripId: number;
+  expenseType: string;
+  amount: string;
+  note: string | null;
+  createdAt: string;
+  tripCode: string | null;
 }
 
 interface Settlement {
@@ -30,6 +41,7 @@ interface Settlement {
   checkerName?: string;
   approverName?: string;
   linkedRequests?: LinkedRequest[];
+  linkedExpenses?: LinkedExpense[];
 }
 
 interface AdvanceRequest {
@@ -43,31 +55,62 @@ interface AdvanceRequest {
 
 export default function ForwarderSettlementsPage() {
   const [showForm, setShowForm] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [expenseAmount, setExpenseAmount] = useState('');
+  const [selectedRequestIds, setSelectedRequestIds] = useState<Set<number>>(new Set());
+  const [selectedExpenseIds, setSelectedExpenseIds] = useState<Set<number>>(new Set());
   const [refundAmount, setRefundAmount] = useState('0');
   const [note, setNote] = useState('');
 
   const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError } = useForwarderSettlements();
   const { data: requestsData } = useForwarderAdvanceRequests();
+  const { data: unlinkedData } = useUnlinkedExpenses();
+  const { data: catalogs } = useCatalogs();
   const createSettlement = useCreateAdvanceSettlement();
 
   const settlements = (settlementsData?.items ?? settlementsData ?? []) as Settlement[];
   const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequest[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
+  const unlinkedExpenses = (unlinkedData?.items ?? []) as Array<{
+    id: number; tripId: number; expenseType: string; amount: string; note: string | null; createdAt: string; tripCode: string | null;
+  }>;
+  const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
   const totalAdvance = useMemo(() => {
     return approvedRequests
-      .filter(r => selectedIds.has(r.id))
+      .filter(r => selectedRequestIds.has(r.id))
       .reduce((sum, r) => sum + Number(r.amount), 0);
-  }, [approvedRequests, selectedIds]);
+  }, [approvedRequests, selectedRequestIds]);
 
-  const totalExpense = Number(expenseAmount) || 0;
+  const totalExpense = useMemo(() => {
+    return unlinkedExpenses
+      .filter(e => selectedExpenseIds.has(e.id))
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+  }, [unlinkedExpenses, selectedExpenseIds]);
+
   const totalRefund = Number(refundAmount) || 0;
   const balance = totalAdvance - totalExpense - totalRefund;
 
+  /** Group selected expenses by type for breakdown display */
+  const expenseBreakdown = useMemo(() => {
+    const groups = new Map<string, number>();
+    for (const exp of unlinkedExpenses) {
+      if (!selectedExpenseIds.has(exp.id)) continue;
+      const label = expenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType;
+      groups.set(label, (groups.get(label) ?? 0) + Number(exp.amount));
+    }
+    return groups;
+  }, [unlinkedExpenses, selectedExpenseIds, expenseTypeOptions]);
+
   function toggleRequest(id: number) {
-    setSelectedIds(prev => {
+    setSelectedRequestIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleExpense(id: number) {
+    setSelectedExpenseIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -77,20 +120,21 @@ export default function ForwarderSettlementsPage() {
 
   function resetForm() {
     setShowForm(false);
-    setSelectedIds(new Set());
-    setExpenseAmount('');
+    setSelectedRequestIds(new Set());
+    setSelectedExpenseIds(new Set());
     setRefundAmount('0');
     setNote('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (selectedIds.size === 0) return;
+    if (selectedRequestIds.size === 0) return;
     await createSettlement.mutateAsync({
       totalExpenseAmount: totalExpense,
       refundAmount: totalRefund,
       note: note || undefined,
-      advanceRequestIds: Array.from(selectedIds),
+      advanceRequestIds: Array.from(selectedRequestIds),
+      tripExpenseIds: selectedExpenseIds.size > 0 ? Array.from(selectedExpenseIds) : undefined,
     });
     resetForm();
   }
@@ -130,18 +174,15 @@ export default function ForwarderSettlementsPage() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              <FormGroup label="Chọn tạm ứng đã duyệt">
+              {/* Step 1: Select advance requests */}
+              <FormGroup label="Bước 1: Chọn tạm ứng đã duyệt">
                 {approvedRequests.length === 0 ? (
                   <p style={{ color: 'var(--fg-3)', fontSize: 14 }}>Không có tạm ứng nào đã duyệt</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {approvedRequests.map(r => (
                       <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(r.id)}
-                          onChange={() => toggleRequest(r.id)}
-                        />
+                        <input type="checkbox" checked={selectedRequestIds.has(r.id)} onChange={() => toggleRequest(r.id)} />
                         <span style={{ flex: 1 }}>
                           <span style={{ fontWeight: 500 }}>{formatCurrency(Number(r.amount))}</span>
                           <span style={{ color: 'var(--fg-3)', marginLeft: 8 }}>- {r.reason}</span>
@@ -153,27 +194,54 @@ export default function ForwarderSettlementsPage() {
                 )}
               </FormGroup>
 
-              <FormGroup label="Tổng tiền tạm ứng">
-                <input
-                  type="text"
-                  value={formatCurrency(totalAdvance)}
-                  readOnly
-                  style={{ background: 'var(--bg-2)', width: '100%' }}
-                  className="input"
-                />
+              {/* Step 2: Select trip expenses */}
+              <FormGroup label="Bước 2: Chọn chi phí phát sinh">
+                {unlinkedExpenses.length === 0 ? (
+                  <p style={{ color: 'var(--fg-3)', fontSize: 14 }}>Không có chi phí nào chưa thanh toán</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {unlinkedExpenses.map(exp => (
+                      <label key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
+                        <span style={{ flex: 1 }}>
+                          <span style={{ fontWeight: 500 }}>
+                            {expenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType}
+                          </span>
+                          {exp.tripCode && (
+                            <span style={{ color: 'var(--fg-3)', marginLeft: 8, fontSize: 12 }}>({exp.tripCode})</span>
+                          )}
+                          {exp.note && (
+                            <span style={{ color: 'var(--fg-3)', marginLeft: 8, fontSize: 12 }}>{exp.note}</span>
+                          )}
+                        </span>
+                        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(Number(exp.amount))}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </FormGroup>
 
-              <FormGroup label="Tổng chi phí">
-                <input
-                  type="number"
-                  value={expenseAmount}
-                  onChange={e => setExpenseAmount(e.target.value)}
-                  placeholder="Nhập tổng chi phí"
-                  className="input"
-                  style={{ width: '100%' }}
-                  min={0}
-                />
-              </FormGroup>
+              {/* Summary: auto-calculated totals */}
+              <div style={{ background: 'var(--bg-2)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 14 }}>
+                  <div><span style={{ color: 'var(--fg-3)' }}>Tổng tạm ứng:</span> <strong>{formatCurrency(totalAdvance)}</strong></div>
+                  <div><span style={{ color: 'var(--fg-3)' }}>Tổng chi phí:</span> <strong>{formatCurrency(totalExpense)}</strong></div>
+                </div>
+
+                {/* Breakdown by category */}
+                {expenseBreakdown.size > 0 && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>Chi tiết theo hạng mục:</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                      {[...expenseBreakdown.entries()].map(([label, amount]) => (
+                        <span key={label} style={{ fontSize: 12, padding: '2px 8px', background: 'var(--bg-3, var(--bg))', borderRadius: 4 }}>
+                          {label}: {formatCurrency(amount)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <FormGroup label="Tiền hoàn lại">
                 <input
@@ -214,7 +282,7 @@ export default function ForwarderSettlementsPage() {
                 <button
                   type="submit"
                   className="btn btn--primary"
-                  disabled={selectedIds.size === 0 || !expenseAmount || createSettlement.isPending}
+                  disabled={selectedRequestIds.size === 0 || createSettlement.isPending}
                 >
                   {createSettlement.isPending ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
                   Gửi phiếu thanh toán
@@ -252,6 +320,27 @@ export default function ForwarderSettlementsPage() {
                 <div><span style={{ color: 'var(--fg-3)' }}>Tổng chi phí:</span> <strong>{formatCurrency(Number(s.totalExpenseAmount))}</strong></div>
                 <div><span style={{ color: 'var(--fg-3)' }}>Tiền hoàn lại:</span> <strong>{formatCurrency(Number(s.refundAmount))}</strong></div>
               </div>
+
+              {/* Expense breakdown by category */}
+              {s.linkedExpenses && s.linkedExpenses.length > 0 && (() => {
+                const groups = new Map<string, number>();
+                for (const exp of s.linkedExpenses) {
+                  const label = expenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType;
+                  groups.set(label, (groups.get(label) ?? 0) + Number(exp.amount));
+                }
+                return (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>Chi phí theo hạng mục:</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                      {[...groups.entries()].map(([label, amount]) => (
+                        <span key={label} style={{ fontSize: 12, padding: '2px 8px', background: 'var(--bg-2)', borderRadius: 4 }}>
+                          {label}: {formatCurrency(amount)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {s.linkedRequests && s.linkedRequests.length > 0 && (
                 <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>

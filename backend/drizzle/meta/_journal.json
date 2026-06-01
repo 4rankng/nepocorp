@@ -162,6 +162,27 @@
       "when": 1780313826421,
       "tag": "0022_cool_hydra",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1780315019282,
+      "tag": "0023_fast_the_captain",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1780320000000,
+      "tag": "0024_add_missing_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1780315389086,
+      "tag": "0025_strange_sauron",
+      "breakpoints": true
     }
   ]
 }

@@ -101,6 +101,7 @@ export const PENALTY_STATUS_LABELS: Record<PenaltyStatus, string> = {
   [PenaltyStatus.CANCELED]: 'Đã hủy',
 };
 
+/** @deprecated Use string codes from forwarder_expense_types config table instead. */
 export enum ForwarderExpenseType {
   LIFTING = 'LIFTING',
   CUSTOMS = 'CUSTOMS',
@@ -108,6 +109,15 @@ export enum ForwarderExpenseType {
   INSPECTION = 'INSPECTION',
   OTHER = 'OTHER',
 }
+
+/** Default seeds for forwarder_expense_types config table (code → Vietnamese name). */
+export const FORWARDER_EXPENSE_TYPE_DEFAULTS: Record<string, string> = {
+  LIFTING: 'Nâng hạ',
+  CUSTOMS: 'Hải quan',
+  WEIGHING: 'Cân xe',
+  INSPECTION: 'Kiểm tra',
+  OTHER: 'Khác',
+};
 
 export enum AdvanceRequestStatus {
   PENDING = 'PENDING',

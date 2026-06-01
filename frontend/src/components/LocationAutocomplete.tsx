@@ -63,30 +63,37 @@ export function LocationAutocomplete({
   // Local fuzzy match against the ports catalog. We always show matching ports
   // FIRST so HP-area users can pick the canonical name in one tap. Google Places
   // results follow underneath as the fallback for off-catalog locations.
+  //
+  // Behaviour:
+  //   • Empty query → show top 8 ports (browse the whole catalog)
+  //   • Query that matches at least 1 port → show matching ports (up to 6)
+  //   • Query that matches no port → STILL show the top 8 ports as
+  //     "browse catalog" fallback, so destination fields with prefilled
+  //     non-port values like "Chè Ngọc Thanh, Phù Ninh, Phú Thọ" still
+  //     give the user a one-tap way to switch to a catalog entry.
   const portMatches = useMemo<MergedSuggestion[]>(() => {
     const q = value.trim().toLowerCase();
+    const allAsSuggestions = (rows: PortRow[]) => rows.map((p) => ({
+      key: `port-${p.id}`,
+      description: p.name,
+      source: 'port' as const,
+      hint: [p.code, p.city].filter(Boolean).join(' · '),
+    }));
     if (!q) {
-      // Empty query: show all ports on focus so user can browse the catalog.
-      return ports.slice(0, 8).map((p) => ({
-        key: `port-${p.id}`,
-        description: p.name,
-        source: 'port',
-        hint: [p.code, p.city].filter(Boolean).join(' · '),
-      }));
+      return allAsSuggestions(ports.slice(0, 8));
     }
-    return ports
-      .filter((p) =>
-        p.name.toLowerCase().includes(q) ||
-        (p.code ?? '').toLowerCase().includes(q) ||
-        (p.address ?? '').toLowerCase().includes(q),
-      )
-      .slice(0, 6)
-      .map((p) => ({
-        key: `port-${p.id}`,
-        description: p.name,
-        source: 'port',
-        hint: [p.code, p.city].filter(Boolean).join(' · '),
-      }));
+    const matched = ports.filter((p) =>
+      p.name.toLowerCase().includes(q) ||
+      (p.code ?? '').toLowerCase().includes(q) ||
+      (p.address ?? '').toLowerCase().includes(q),
+    );
+    if (matched.length > 0) {
+      return allAsSuggestions(matched.slice(0, 6));
+    }
+    // Nothing in the catalog matches — fall back to top 8 so user can still
+    // browse and pick a canonical port instead of being stuck with the
+    // prefilled free-text value.
+    return allAsSuggestions(ports.slice(0, 8));
   }, [ports, value]);
 
   // Fetch place suggestions with debounce (only for queries ≥3 chars)
