@@ -2,7 +2,12 @@ import React, { useState, useId } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 interface CardSectionProps {
-  number: number;
+  /**
+   * Optional section number badge. Pass `undefined` to hide the badge when
+   * this card is nested inside another section and the parent already
+   * provides numbering (otherwise users see two "2" badges side-by-side).
+   */
+  number?: number;
   title: string;
   subtitle?: string;
   badge?: 'required' | 'optional';
@@ -30,7 +35,7 @@ export function CardSection({
   // visual drift between the two modes.
   const headContent = (
     <>
-      <span className="tc-card-num">{number}</span>
+      {number != null && <span className="tc-card-num">{number}</span>}
       <div className="tc-card-text">
         <div className="tc-card-title">{title}</div>
         {subtitle && <div className="tc-card-sub">{subtitle}</div>}

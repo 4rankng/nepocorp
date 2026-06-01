@@ -1,0 +1,244 @@
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../../lib/api';
+import { formatCompact } from '../../../lib/format';
+import type { TripDetail, CapTableHistory } from '@nepocorp/shared';
+import { TripStatus, parseThreshold } from '@nepocorp/shared';
+import {
+  useDashboardStats,
+  usePnlReport,
+  useMonthlyTrips,
+  useCreatedTrips,
+  useYearlyPnl,
+  useFuelConfig,
+  useRenewalReminders,
+  type PnlReport,
+  type ExtendedDashboardStats,
+} from '../../../hooks/useQueries';
+import { CATEGORY_COLORS, FALLBACK_COLORS, buildPieSlices } from '../utils';
+
+const EMPTY_TRIPS: TripDetail[] = [];
+const EMPTY_CREATED: TripDetail[] = [];
+const EMPTY_YEARLY: (PnlReport | null)[] = [];
+
+export interface FuelWarning {
+  tripId: number;
+  code: string;
+  driver: string;
+  ttbq: number;
+  critical: boolean;
+}
+
+export interface DerivedData {
+  revenue: number;
+  costs: number;
+  grossProfit: number;
+  netProfit: number;
+  displayTrucks: Array<{ plate: string; trips: number; profit: number; driver: string }>;
+  maxTruckProfit: number;
+  displayRoutes: Array<{ name: string; trips: number; profit: number; meta: string }>;
+  fuelCost: number;
+  roadCost: number;
+  driverCost: number;
+  mgmtCost: number;
+  slicesWithPct: Array<{ label: string; value: number; color: string; pct: number }>;
+  conicGradient: string;
+  totalPie: number;
+  prevRevenue: number;
+  prevCosts: number;
+  prevGross: number;
+}
+
+export interface ReceivablesSummary {
+  buckets: Array<{ range: string; label: string; count: number; amount: number }>;
+  totalOutstanding: number;
+  totalCustomers: number;
+  overdueCustomers: number;
+}
+
+export function useDashboardData() {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const { data: stats, isLoading: loading } = useDashboardStats();
+  const { data: pnlReport } = usePnlReport(currentMonth, currentYear);
+  const { data: prevPnlReport } = usePnlReport(currentMonth, currentYear - 1);
+  const { data: allTrips = EMPTY_TRIPS } = useMonthlyTrips(currentYear, currentMonth);
+  const { data: createdTrips = EMPTY_CREATED } = useCreatedTrips();
+  const { data: fuelConfig } = useFuelConfig();
+  const { data: renewalReminders = [] } = useRenewalReminders();
+  const { data: receivablesSummary } = useQuery({
+    queryKey: ['receivables-summary'],
+    queryFn: () => api.get<ReceivablesSummary>('/reports/receivables-summary').catch(() => null),
+    staleTime: 2 * 60 * 1000,
+  });
+  const { data: thisYearRaw = EMPTY_YEARLY } = useYearlyPnl(currentYear);
+  const { data: lastYearRaw = EMPTY_YEARLY } = useYearlyPnl(currentYear - 1);
+
+  const yearlySeries = useMemo(() => {
+    const out: Array<{ revenue: number; grossProfit: number }> = [];
+    for (let i = 11; i >= 0; i--) {
+      let m = currentMonth - i;
+      let yArr = thisYearRaw;
+      while (m <= 0) { m += 12; yArr = lastYearRaw; }
+      const r: any = yArr[m - 1];
+      out.push({
+        revenue: Number(r?.totalRevenue ?? 0),
+        grossProfit: Number(r?.grossProfit ?? 0),
+      });
+    }
+    return out;
+  }, [thisYearRaw, lastYearRaw, currentMonth]);
+
+  const topOverdueCustomer = stats?.topOverdueCustomer ?? null;
+  const topShareholder = stats?.topShareholder ?? null;
+
+  const fuelWarnings = useMemo((): FuelWarning[] => {
+    if (!fuelConfig || allTrips.length === 0) return [];
+    const warnThreshold = parseThreshold(fuelConfig.warningThreshold, 0);
+    const critThreshold = parseThreshold(fuelConfig.criticalThreshold, 0);
+    if (!warnThreshold) return [];
+    const flagged: FuelWarning[] = [];
+    for (const t of allTrips) {
+      const trip: TripDetail = t;
+      const totalKm = trip.legs?.reduce((s: number, l: any) => s + Number(l.km), 0) ?? 0;
+      const totalLiters = Number(trip.fuelLiters) || 0;
+      if (totalKm <= 0 || totalLiters <= 0) continue;
+      const ttbq = (totalLiters / totalKm) * 100;
+      if (ttbq > warnThreshold) {
+        flagged.push({
+          tripId: trip.id,
+          code: trip.tripCode ?? `#${trip.id}`,
+          driver: trip.driver?.name ?? '—',
+          ttbq,
+          critical: critThreshold > 0 && ttbq > critThreshold,
+        });
+      }
+    }
+    return flagged.sort((a, b) => b.ttbq - a.ttbq).slice(0, 5);
+  }, [fuelConfig, allTrips]);
+
+  const derived = useMemo((): DerivedData | null => {
+    if (!stats) return null;
+
+    const revenue = stats.revenue ?? 0;
+    const costs = stats.costs ?? 0;
+    const grossProfit = stats.grossProfit ?? 0;
+    const managementFee = pnlReport?.managementFee ?? 0;
+    const otherIncome = pnlReport?.otherIncome ?? 0;
+    const netProfit = pnlReport?.netProfit ?? (grossProfit - managementFee + otherIncome);
+
+    const sortedTrucks = pnlReport?.trucks
+      ? [...pnlReport.trucks].sort((a, b) => b.profit - a.profit).slice(0, 5)
+      : [];
+
+    const routeMap = new Map<string, { name: string; trips: number; profit: number }>();
+    allTrips.forEach((t: TripDetail) => {
+      if (!t.route || !t.route.name) return;
+      if (t.status !== 'LOCKED') return;
+      const name = t.route.name;
+      const profVal = parseFloat(t.grossProfit as string || '0');
+      const existing = routeMap.get(name) || { name, trips: 0, profit: 0 };
+      existing.trips++;
+      existing.profit += profVal;
+      routeMap.set(name, existing);
+    });
+    const sortedRoutes = Array.from(routeMap.values())
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 5);
+
+    const displayTrucks = sortedTrucks.map(t => ({
+      plate: t.plate,
+      trips: t.trips,
+      profit: t.profit,
+      driver: `Đầu kéo · ${t.trips} chuyến`
+    }));
+
+    const maxTruckProfit = Math.max(...displayTrucks.map(t => t.profit), 1);
+
+    const avgRevenuePerTrip = pnlReport?.tripCount ? pnlReport.totalRevenue / pnlReport.tripCount : 0;
+
+    const displayRoutes = sortedRoutes.map(r => ({
+      name: r.name,
+      trips: r.trips,
+      profit: r.profit,
+      meta: r.trips > 0 && avgRevenuePerTrip > 0
+        ? `${r.trips} chuyến · biên ${Math.round((r.profit / (r.trips * avgRevenuePerTrip)) * 100)}%`
+        : `${r.trips} chuyến`,
+    }));
+
+    const lockedTrips = allTrips.filter((t: TripDetail) => t.status === TripStatus.LOCKED);
+    const realFuelCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
+    const realRoadCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
+    const realDriverCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driverSalary || '0'), 0);
+    const mgmtCost = pnlReport?.managementFee ?? 0;
+    const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
+    const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);
+    const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.25);
+    const driverCost = hasRealCosts ? realDriverCost  : Math.round(costs * 0.20);
+
+    let fallbackIdx = 0;
+
+    const pieSlices: Array<{ label: string; value: number; color: string }> = [
+      { label: 'Nhiên liệu', value: fuelCost, color: 'var(--brand)' },
+      { label: 'Lương lái xe', value: driverCost, color: 'var(--info)' },
+      { label: 'Tiền đi đường', value: roadCost, color: 'var(--warning)' },
+      { label: 'Phí quản lý', value: mgmtCost, color: '#E07D2E' },
+    ];
+
+    const categoryBreakdown = pnlReport?.categoryBreakdown ?? [];
+    for (const cat of categoryBreakdown) {
+      const amount = parseFloat(cat.total) || 0;
+      if (amount > 0.5) {
+        const color = CATEGORY_COLORS[cat.categoryName] ?? FALLBACK_COLORS[fallbackIdx++ % FALLBACK_COLORS.length];
+        pieSlices.push({ label: cat.categoryName, value: amount, color });
+      }
+    }
+
+    const { slicesWithPct, conicGradient, totalPie } = buildPieSlices(pieSlices);
+
+    const prevRevenue = prevPnlReport?.totalRevenue ?? 0;
+    const prevCosts = prevPnlReport?.totalCosts ?? 0;
+    const prevGross = prevPnlReport?.grossProfit ?? 0;
+
+    return {
+      revenue, costs, grossProfit, netProfit,
+      displayTrucks, maxTruckProfit, displayRoutes,
+      fuelCost, roadCost, driverCost, mgmtCost,
+      slicesWithPct, conicGradient, totalPie,
+      prevRevenue, prevCosts, prevGross,
+    };
+  }, [stats, pnlReport, prevPnlReport, allTrips]);
+
+  const createdTripsCount = createdTrips.length;
+
+  const formattedRevenue = formatCompact(derived?.revenue ?? 0);
+  const formattedCosts = formatCompact(derived?.costs ?? 0);
+  const formattedTotalPie = formatCompact(derived?.totalPie ?? 1);
+  const formattedGross = formatCompact(derived?.grossProfit ?? 0);
+  const formattedNet = formatCompact(derived?.netProfit ?? 0);
+
+  return {
+    currentMonth,
+    currentYear,
+    stats,
+    loading,
+    pnlReport,
+    prevPnlReport,
+    createdTrips,
+    createdTripsCount,
+    renewalReminders,
+    receivablesSummary,
+    yearlySeries,
+    topOverdueCustomer,
+    topShareholder,
+    fuelWarnings,
+    derived,
+    formattedRevenue,
+    formattedCosts,
+    formattedTotalPie,
+    formattedGross,
+    formattedNet,
+  };
+}

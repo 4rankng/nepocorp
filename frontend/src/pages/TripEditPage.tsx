@@ -135,7 +135,14 @@ export default function TripEditPage() {
                     </select>
                   </div>
 
-                  <JourneyLegsCard />
+                  {/*
+                    Embedded as a sub-card inside section 1 "Hành trình".
+                    Pass number={null} so the JourneyLegsCard doesn't render
+                    its own "2" badge — the outer card already owns the
+                    section number for this page (and the next sibling card
+                    is also "2", which was confusing users).
+                  */}
+                  <JourneyLegsCard number={null} />
                 </div>
               </div>
 

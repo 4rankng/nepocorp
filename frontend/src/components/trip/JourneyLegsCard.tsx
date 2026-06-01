@@ -7,16 +7,24 @@ import { useTripFormContext } from '../../hooks/useTripFormContext';
 interface JourneyLegsCardProps {
   collapsible?: boolean;
   defaultCollapsed?: boolean;
+  /**
+   * Section number to display in the corner badge. Defaults to 2 since this
+   * card is section #2 inside TripCreatePage. When embedded as a sub-card
+   * (e.g. nested inside another section on TripEditPage), pass `null` to
+   * suppress the number — otherwise the page ends up with two "2" badges
+   * side-by-side, which confuses users.
+   */
+  number?: number | null;
 }
 
-export function JourneyLegsCard({ collapsible, defaultCollapsed }: JourneyLegsCardProps) {
+export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: JourneyLegsCardProps) {
   const form = useTripFormContext();
   const { legs, addLeg, removeLeg, updateLeg } = form;
   const totalKm = legs.reduce((sum, leg) => sum + (Number(leg.km) || 0), 0);
 
   return (
     <CardSection
-      number={2}
+      number={number != null ? number : undefined}
       title="Hành trình chi tiết"
       subtitle="Khai báo các chặng đường, cự ly và tải trọng"
       badge="optional"

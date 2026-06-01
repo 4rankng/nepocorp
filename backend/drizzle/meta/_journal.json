@@ -85,6 +85,13 @@
       "when": 1780286963299,
       "tag": "0011_certain_randall_flagg",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780287532772,
+      "tag": "0012_lethal_lilandra",
+      "breakpoints": true
     }
   ]
 }

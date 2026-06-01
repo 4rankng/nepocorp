@@ -93,6 +93,8 @@ export const routes = pgTable('routes', {
   distanceKm: integer('distance_km'),
   isMountain: boolean('is_mountain').default(false),
   fixedFuelAllowance: numeric('fixed_fuel_allowance', { precision: 10, scale: 2 }),
+  tollsStations: integer('tolls_stations'),
+  driverSalary: numeric('driver_salary', { precision: 15, scale: 0 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

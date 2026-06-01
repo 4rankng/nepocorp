@@ -196,6 +196,8 @@ export const routeSchema = z.object({
   distanceKm: positiveNumeric.optional(),
   isMountain: z.boolean().optional().default(false),
   fixedFuelAllowance: nonNegNumeric.nullable().optional(),
+  tollsStations: nonNegNumeric.nullable().optional(),
+  driverSalary: nonNegNumeric.nullable().optional(),
 });
 
 export const cargoTypeSchema = z.object({

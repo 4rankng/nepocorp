@@ -75,6 +75,8 @@ export interface Route {
   distanceKm: number | null;
   isMountain: boolean;
   fixedFuelAllowance: string | null;
+  tollsStations: number | null;
+  driverSalary: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
