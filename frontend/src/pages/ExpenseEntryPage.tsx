@@ -210,12 +210,16 @@ export default function ExpenseEntryPage() {
     setErrors({});
     setPageError('');
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       expenseDate: form.expenseDate,
       supplierId: Number(form.supplierId),
       categoryId: Number(form.categoryId),
       truckId: form.truckId ? Number(form.truckId) : null,
-      vehicleComponent: form.truckId ? form.vehicleComponent : null,
+      // Schema rejects explicit `null` for vehicleComponent (enum + default).
+      // For company-wide expenses (no truck), omit the field entirely so the
+      // default kicks in. Was previously sending null and the page silently
+      // failed validation without surfacing an error to the user.
+      ...(form.truckId ? { vehicleComponent: form.vehicleComponent } : {}),
       amount: form.amount,
       paymentStatus: form.paymentStatus,
       validFrom: showValidityFields && form.validFrom ? form.validFrom : null,
@@ -228,7 +232,7 @@ export default function ExpenseEntryPage() {
 
     if (expenseType !== 'COMPANY' && !form.truckId) {
       setErrors(prev => ({ ...prev, truckId: 'Vui lòng chọn biển số' }));
-      setTimeout(() => document.querySelector<HTMLElement>('[name="truckId"]')?.focus(), 0);
+      setTimeout(() => document.getElementById('truckId')?.focus(), 0);
       return;
     }
 
@@ -243,29 +247,49 @@ export default function ExpenseEntryPage() {
         expenseDate: 'Vui lòng chọn ngày chi',
         paymentStatus: 'Vui lòng chọn trạng thái thanh toán',
       };
+      // Some validation errors don't map to a visible field (e.g.
+      // vehicleComponent when no truck is selected). Track which fields
+      // are visible on screen so we can promote orphan errors to a page
+      // banner instead of silently swallowing them.
+      const VISIBLE_FIELDS = new Set([
+        'expenseDate', 'supplierId', 'categoryId', 'amount',
+        'paymentStatus', 'truckId', 'validFrom', 'validTo',
+        'receiptId', 'note',
+      ]);
       const fieldErrors: Record<string, string> = {};
+      const orphanIssues: string[] = [];
       for (const issue of result.error.issues) {
         const field = issue.path[0]?.toString();
-        if (field && !fieldErrors[field]) {
+        if (!field) { orphanIssues.push(issue.message); continue; }
+        if (!VISIBLE_FIELDS.has(field)) {
+          orphanIssues.push(`${field}: ${issue.message}`);
+          continue;
+        }
+        if (!fieldErrors[field]) {
           fieldErrors[field] = FRIENDLY[field] ?? issue.message;
         }
       }
       setErrors(fieldErrors);
+      if (orphanIssues.length > 0) {
+        setPageError(orphanIssues.join(' · '));
+      }
       const firstErrorField = result.error.issues[0]?.path[0]?.toString();
       if (firstErrorField) {
-        setTimeout(() => document.querySelector<HTMLElement>(`[name="${firstErrorField}"]`)?.focus(), 0);
+        setTimeout(() => document.getElementById(firstErrorField)?.focus(), 0);
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       return;
     }
 
     if (showValidityFields && !form.validFrom) {
       setErrors(prev => ({ ...prev, validFrom: 'Trường bắt buộc khi hạng mục có tính gia hạn' }));
-      setTimeout(() => document.querySelector<HTMLElement>('[name="validFrom"]')?.focus(), 0);
+      setTimeout(() => document.getElementById('validFrom')?.focus(), 0);
       return;
     }
     if (showValidityFields && !form.validTo) {
       setErrors(prev => ({ ...prev, validTo: 'Trường bắt buộc khi hạng mục có tính gia hạn' }));
-      setTimeout(() => document.querySelector<HTMLElement>('[name="validTo"]')?.focus(), 0);
+      setTimeout(() => document.getElementById('validTo')?.focus(), 0);
       return;
     }
 
@@ -329,6 +353,7 @@ export default function ExpenseEntryPage() {
                 <input
                   type="date"
                   name="expenseDate"
+                  id="expenseDate"
                   className="expense-input"
                   value={form.expenseDate}
                   onChange={e => set('expenseDate', e.target.value)}
@@ -340,6 +365,7 @@ export default function ExpenseEntryPage() {
                 <label className="expense-label">Trạng thái thanh toán <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <select
                   name="paymentStatus"
+                  id="paymentStatus"
                   className="expense-input"
                   value={form.paymentStatus}
                   onChange={e => set('paymentStatus', e.target.value as 'PAID' | 'UNPAID')}
@@ -364,6 +390,7 @@ export default function ExpenseEntryPage() {
                     <input
                       type="text"
                       name="newSupplierName"
+                      id="newSupplierName"
                       className="expense-input"
                       style={{ flex: 1 }}
                       placeholder="Tên nhà cung cấp…"
@@ -382,6 +409,7 @@ export default function ExpenseEntryPage() {
                 ) : (
                   <select
                     name="supplierId"
+                    id="supplierId"
                     className="expense-input"
                     value={form.supplierId}
                     onChange={e => set('supplierId', e.target.value ? Number(e.target.value) : '')}
@@ -409,6 +437,7 @@ export default function ExpenseEntryPage() {
                     <input
                       type="text"
                       name="newCategoryName"
+                      id="newCategoryName"
                       className="expense-input"
                       style={{ flex: 1 }}
                       placeholder="Tên hạng mục…"
@@ -427,6 +456,7 @@ export default function ExpenseEntryPage() {
                 ) : (
                   <select
                     name="categoryId"
+                    id="categoryId"
                     className="expense-input"
                     value={form.categoryId}
                     onChange={e => set('categoryId', e.target.value ? Number(e.target.value) : '')}
@@ -467,6 +497,7 @@ export default function ExpenseEntryPage() {
                   <label className="expense-label">Biển số xe <span style={{ color: 'var(--danger)' }}>*</span></label>
                   <select
                     name="truckId"
+                    id="truckId"
                     className="expense-input"
                     value={form.truckId}
                     onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
@@ -485,6 +516,7 @@ export default function ExpenseEntryPage() {
                   <label className="expense-label">Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span></label>
                   <select
                     name="truckId"
+                    id="truckId"
                     className="expense-input"
                     value={form.truckId}
                     onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
@@ -506,6 +538,7 @@ export default function ExpenseEntryPage() {
                   <input
                     type="text"
                     name="amount"
+                    id="amount"
                     inputMode="numeric"
                     className="expense-input"
                     value={form.amount ? formatAmountDisplay(form.amount) : ''}
@@ -527,6 +560,7 @@ export default function ExpenseEntryPage() {
                     <input
                       type="date"
                       name="validFrom"
+                      id="validFrom"
                       className="expense-input"
                       value={form.validFrom}
                       onChange={e => set('validFrom', e.target.value)}
@@ -538,6 +572,7 @@ export default function ExpenseEntryPage() {
                     <input
                       type="date"
                       name="validTo"
+                      id="validTo"
                       className="expense-input"
                       value={form.validTo}
                       onChange={e => set('validTo', e.target.value)}
@@ -552,6 +587,7 @@ export default function ExpenseEntryPage() {
                 <input
                   type="text"
                   name="receiptId"
+                  id="receiptId"
                   className="expense-input"
                   value={form.receiptId}
                   onChange={e => set('receiptId', e.target.value)}
@@ -564,6 +600,7 @@ export default function ExpenseEntryPage() {
                 <input
                   type="text"
                   name="note"
+                  id="note"
                   className="expense-input"
                   value={form.note}
                   onChange={e => set('note', e.target.value)}

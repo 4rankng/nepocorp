@@ -11,6 +11,7 @@ import { useToast } from '../components/shared/Toast';
 interface CustomerDebtInfo {
   customerId: number;
   customerName: string;
+  contactInfo: string | null;
   totalOutstanding: number;
   aging: {
     current: number;
@@ -25,7 +26,11 @@ interface CustomerDebtInfo {
 function classifyRisk(totalOutstanding: number, aging: CustomerAging['aging'], maxOverdueDays: number): 'high' | 'med' | 'low' {
   if (totalOutstanding <= 0) return 'low';
   if (aging.over90 > 0 || totalOutstanding > 100_000_000) return 'high';
-  if (maxOverdueDays > 30) return 'med';
+  // Use aging buckets (not maxOverdueDays) to avoid float-vs-floor mismatch:
+  // computeFifoAging uses raw float ageDays (30.5 → d30), but maxOverdueDays
+  // uses Math.floor (30.5 → 30). Checking the bucket amounts directly ensures
+  // the risk dot is consistent with the aging bar shown in the UI.
+  if (aging.d30 > 0 || aging.d60 > 0) return 'med';
   return 'low';
 }
 
@@ -45,6 +50,7 @@ export default function DebtListPage() {
     return rawCustomers.map(c => ({
       customerId: c.customerId,
       customerName: c.customerName,
+      contactInfo: c.contactInfo,
       totalOutstanding: c.totalOutstanding,
       aging: c.aging,
       maxOverdueDays: c.maxOverdueDays,
@@ -111,7 +117,8 @@ export default function DebtListPage() {
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       result = result.filter(d =>
-        d.customerName.toLowerCase().includes(q)
+        d.customerName.toLowerCase().includes(q) ||
+        (d.contactInfo && d.contactInfo.toLowerCase().includes(q))
       );
     }
 
@@ -240,6 +247,9 @@ export default function DebtListPage() {
                     </div>
                     {d.totalOutstanding > 0 && (
                       <>
+                        {d.contactInfo && (
+                          <div className="m-card__meta">{d.contactInfo}</div>
+                        )}
                         <div className="aging-bar" style={{ height: 5, borderRadius: 3, overflow: 'hidden', display: 'flex', marginTop: 8, marginBottom: 4 }}>
                           <div className="aging-bar__seg aging-bar__seg--ok"  style={{ width: `${pctCurrent}%` }} />
                           <div className="aging-bar__seg aging-bar__seg--t1"  style={{ width: `${pct30}%` }} />
@@ -271,6 +281,7 @@ export default function DebtListPage() {
                 <tr>
                   <th>Khách hàng</th>
                   <th className="num">Tổng nợ</th>
+                  <th>Thông tin liên hệ</th>
                   <th>Phân bổ tuổi nợ</th>
                   <th className="num" style={{ textAlign: 'center' }}>Quá hạn lớn nhất</th>
                   <th style={{ width: 48 }}></th>
@@ -307,6 +318,10 @@ export default function DebtListPage() {
                         color: d.totalOutstanding > 0 ? 'var(--danger)' : 'var(--success)'
                       }}>
                         {formatCurrency(d.totalOutstanding)}
+                      </td>
+
+                      <td style={{ fontSize: 13, color: 'var(--fg-2)' }}>
+                        {d.contactInfo || <span style={{ color: 'var(--fg-3)' }}>—</span>}
                       </td>
 
                       <td style={{ verticalAlign: 'middle' }}>
@@ -346,7 +361,7 @@ export default function DebtListPage() {
 
                 {filteredDebts.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--fg-3)' }}>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--fg-3)' }}>
                       Không tìm thấy dữ liệu công nợ thỏa mãn bộ lọc.
                     </td>
                   </tr>

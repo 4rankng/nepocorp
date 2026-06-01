@@ -25,6 +25,7 @@ import { TRIPS, REPORTS, CONFIG, FINANCIAL } from '@nepocorp/shared';
 export interface CustomerAging {
   customerId: number;
   customerName: string;
+  contactInfo: string | null;
   totalOutstanding: number;
   aging: { current: number; d30: number; d60: number; over90: number };
   maxOverdueDays: number;

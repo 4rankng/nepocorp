@@ -149,11 +149,12 @@ export async function getCustomerAgingList() {
 
   const customerIds = [...byCustomer.keys()];
   const customers = customerIds.length > 0
-    ? await db.select({ id: s.customers.id, name: s.customers.name })
+    ? await db.select({ id: s.customers.id, name: s.customers.name, contactInfo: s.customers.contactInfo })
         .from(s.customers)
         .where(inArray(s.customers.id, customerIds))
     : [];
   const nameMap = new Map(customers.map(c => [c.id, c.name]));
+  const contactMap = new Map(customers.map(c => [c.id, c.contactInfo]));
 
   const now = new Date();
   const result = [];
@@ -170,6 +171,7 @@ export async function getCustomerAgingList() {
       result.push({
         customerId,
         customerName: nameMap.get(customerId) || `Khách hàng #${customerId}`,
+        contactInfo: contactMap.get(customerId) || null,
         totalOutstanding,
         aging,
         maxOverdueDays,

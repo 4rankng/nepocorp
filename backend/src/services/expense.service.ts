@@ -148,7 +148,10 @@ export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInpu
     updateValues.truckId = data.truckId;
     updateValues.vehicleComponent = data.truckId ? (data.vehicleComponent ?? 'TRUCK') : null;
   } else if (data.vehicleComponent !== undefined) {
-    updateValues.vehicleComponent = data.vehicleComponent;
+    // Enforce the same invariant as createExpense: vehicleComponent must be
+    // null when no truck is linked. Without this guard, a caller could set
+    // vehicleComponent='TRAILER' on a company-level expense (truckId=null).
+    updateValues.vehicleComponent = updateValues.truckId === null ? null : data.vehicleComponent;
   }
   if (data.amount !== undefined) updateValues.amount = data.amount;
   if (data.paymentStatus !== undefined) updateValues.paymentStatus = data.paymentStatus;

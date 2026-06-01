@@ -110,6 +110,13 @@ export default function TripEditPage() {
     }
   }, [trip]);
 
+  // When the user changes the route selector, use the selected route's config
+  // for the totals preview instead of the original trip.route data.
+  const selectedRoute = useMemo(() => {
+    if (!routeId) return trip.route ?? null;
+    return catalogData?.routes.find(r => r.id === Number(routeId)) ?? trip.route ?? null;
+  }, [routeId, catalogData?.routes, trip.route]);
+
   const handleAddLeg = () => {
     setLegs(prev => {
       const nextSequence = prev.length + 1;
@@ -455,8 +462,8 @@ export default function TripEditPage() {
               hasReturnCargo={hasReturnCargo}
               driverSalary={driverSalary}
               revenue={revenue}
-              isMountainRoute={trip.route?.isMountain}
-              mountainFixedAllowance={trip.route?.fixedFuelAllowance ? Number(trip.route.fixedFuelAllowance) : null}
+              isMountainRoute={selectedRoute?.isMountain}
+              mountainFixedAllowance={selectedRoute?.fixedFuelAllowance ? Number(selectedRoute.fixedFuelAllowance) : null}
               roadAllowanceBase={Number(trip.roadAllowanceBaseApplied || 0)}
             />
           </aside>

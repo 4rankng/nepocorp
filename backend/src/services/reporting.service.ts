@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql, gte, lte, ne } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, gte, lte, ne, inArray } from 'drizzle-orm';
 import { TripStatus } from '@nepocorp/shared';
 import { getReceivablesSummary as _getReceivablesSummary, getTopOverdueCustomer } from './receivables.service';
 import { resolveSalaryPeriodDateRange, resolveQuarterDateRange } from './salary-period.service';
@@ -169,7 +169,7 @@ export async function getPnlReport(month: number, year: number) {
         vehicleComponent: s.expenses.vehicleComponent,
         total: sql<string>`coalesce(sum(${s.expenses.amount}::numeric), 0)`,
       }).from(s.expenses).where(
-        and(isNull(s.expenses.deletedAt), sql`${s.expenses.truckId} IN (${sql.join(truckIds.map(id => sql`${id}`), sql`, `)})`, expenseDateFilter)
+        and(isNull(s.expenses.deletedAt), inArray(s.expenses.truckId, truckIds), expenseDateFilter)
       ).groupBy(s.expenses.truckId, s.expenses.vehicleComponent);
 
       for (const row of componentRows) {

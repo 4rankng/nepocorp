@@ -206,12 +206,48 @@ export async function updateTripFigures(
 
     // 3. Resolve snapshotted rates from trip row (set at creation time).
     // If any snapshot is null, the trip was created before config was enforced.
-    const fuelPriceApplied = Number(trip.fuelPriceApplied || 0);
-    const fuelLoadedNormApplied = Number(trip.fuelLoadedNormApplied || 0);
-    const fuelEmptyNormApplied = Number(trip.fuelEmptyNormApplied || 0);
-    const fuelSupplementNormApplied = Number((trip as any).fuelSupplementNormApplied || 0);
-    const tollPerStationApplied = Number(trip.tollPerStationApplied || 0);
-    const returnCargoBonusApplied = Number(trip.returnCargoBonusApplied || 0);
+    let fuelPriceApplied = Number(trip.fuelPriceApplied || 0);
+    let fuelLoadedNormApplied = Number(trip.fuelLoadedNormApplied || 0);
+    let fuelEmptyNormApplied = Number(trip.fuelEmptyNormApplied || 0);
+    let fuelSupplementNormApplied = Number((trip as any).fuelSupplementNormApplied || 0);
+    let tollPerStationApplied = Number(trip.tollPerStationApplied || 0);
+    let returnCargoBonusApplied = Number(trip.returnCargoBonusApplied || 0);
+
+    // If snapshotted fuel rates are all zero, the trip was created before fuel
+    // config was available. Re-fetch live config so the update computes correct
+    // costs instead of permanently zero fuel calculations.
+    if (fuelPriceApplied === 0 && fuelLoadedNormApplied === 0 && fuelEmptyNormApplied === 0) {
+      const [liveFuelCfg] = await tx.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
+      if (liveFuelCfg) {
+        fuelPriceApplied = Number(liveFuelCfg.unitPrice);
+        fuelLoadedNormApplied = Number(liveFuelCfg.loadedNorm);
+        fuelEmptyNormApplied = Number(liveFuelCfg.emptyNorm);
+        fuelSupplementNormApplied = Number(liveFuelCfg.supplement);
+      }
+    }
+
+    // Same for road config: if toll/bonus snapshots are zero, re-fetch live config.
+    if (tollPerStationApplied === 0 && returnCargoBonusApplied === 0) {
+      const [liveRoadCfg] = await tx.select().from(s.roadConfig).limit(1);
+      if (liveRoadCfg) {
+        tollPerStationApplied = Number(liveRoadCfg.tollPerStation);
+        returnCargoBonusApplied = Number(liveRoadCfg.returnCargoBonus);
+      }
+    }
+
+    // If roadAllowanceBase is zero and we have a route+trailerType, try to resolve it.
+    if (roadAllowanceBaseApplied === 0 && trip.trailerType) {
+      const [liveAllowance] = await tx.select().from(s.roadAllowances).where(
+        and(
+          eq(s.roadAllowances.routeId, finalRouteId),
+          eq(s.roadAllowances.trailerType, trip.trailerType),
+          isNull(s.roadAllowances.deletedAt)
+        )
+      ).limit(1);
+      if (liveAllowance) {
+        roadAllowanceBaseApplied = Number(liveAllowance.baseAmount);
+      }
+    }
 
     const revenue = data.revenue !== undefined ? data.revenue : Number(trip.revenue || 0);
     let revenueOriginal = Number(trip.revenueOriginal || 0);

@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config';
+import { client as dbClient } from './db';
 import { initEnforcer } from './casbin/enforcer';
 import { authMiddleware } from './middleware/auth';
 import { casbinAuthz } from './middleware/casbin';
@@ -67,8 +68,23 @@ app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 // ── Global error handler (MUST be last) ────────────────────────────────────
 app.use(globalErrorHandler);
 
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
   console.log(`NEPO API running on port ${config.port} [${config.nodeEnv}]`);
 });
+
+// ── Graceful shutdown (tsx watch sends SIGTERM on restart) ─────────────────
+let shuttingDown = false;
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`\n${signal} received — shutting down…`);
+
+  server.close();           // stop accepting new connections
+  await dbClient.end();     // drain Postgres pool
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));
 
 export default app;
