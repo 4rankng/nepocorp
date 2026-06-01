@@ -5,7 +5,7 @@ import { db } from '../db';
 import { users } from '../db/schema';
 import { eq, or } from 'drizzle-orm';
 import { config } from '../config';
-import { loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@nepocorp/shared';
+import { Role, loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@nepocorp/shared';
 import { authMiddleware } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
 import { blacklistToken } from '../lib/redis';
@@ -123,9 +123,9 @@ router.post('/change-password', authMiddleware, async (req: Request, res: Respon
 
 // ─── User management (admin) ─────────────────────────────────────────────────
 
-router.get('/users', authMiddleware, casbinAuthz('users'), async (_req: Request, res: Response) => {
+router.get('/users', authMiddleware, casbinAuthz('users'), async (req: Request, res: Response) => {
   try {
-    res.json(await userService.listUsers());
+    res.json(await userService.listUsers(req.user?.role));
   } catch {
     res.status(500).json({ error: 'Lỗi máy chủ' });
   }
@@ -134,7 +134,7 @@ router.get('/users', authMiddleware, casbinAuthz('users'), async (_req: Request,
 router.post('/users', authMiddleware, casbinAuthz('users'), async (req: Request, res: Response) => {
   try {
     const data = createUserSchema.parse(req.body);
-    if (req.user?.role !== 'ADMIN' && data.role === 'ADMIN') {
+    if (req.user?.role !== Role.ADMIN && data.role === Role.ADMIN) {
       return res.status(403).json({ error: 'Chỉ quản trị viên mới có thể gán vai trò ADMIN' });
     }
     const created = await userService.createUser({
@@ -156,7 +156,7 @@ router.post('/users', authMiddleware, casbinAuthz('users'), async (req: Request,
 router.patch('/users/:id', authMiddleware, casbinAuthz('users'), async (req: Request, res: Response) => {
   try {
     const data = updateUserSchema.parse(req.body);
-    if (req.user?.role !== 'ADMIN' && data.role === 'ADMIN') {
+    if (req.user?.role !== Role.ADMIN && data.role === Role.ADMIN) {
       return res.status(403).json({ error: 'Chỉ quản trị viên mới có thể gán vai trò ADMIN' });
     }
     const updated = await userService.updateUser(Number(req.params.id), {

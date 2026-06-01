@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db';
 import { users, drivers } from '../db/schema';
 import { eq, isNull, sql } from 'drizzle-orm';
+import { Role } from '@nepocorp/shared';
 import { ApiError } from '../errors';
 import { getEnforcer } from '../casbin/enforcer';
 
@@ -23,10 +24,13 @@ export async function verifyPassword(userId: number, password: string): Promise<
   if (!valid) throw new ApiError(401, 'Mật khẩu hiện tại không đúng');
 }
 
-/** List all active users. */
-export async function listUsers() {
+/** List all active users. Non-ADMIN requesters cannot see ADMIN accounts. */
+export async function listUsers(requesterRole?: string) {
   const items = await db.select(USER_FIELDS).from(users).where(isNull(users.deletedAt));
-  return { items, total: items.length };
+  const filtered = requesterRole !== Role.ADMIN
+    ? items.filter(u => u.role !== Role.ADMIN)
+    : items;
+  return { items: filtered, total: filtered.length };
 }
 
 /** Create a new user with hashed password. */
