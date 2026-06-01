@@ -105,6 +105,27 @@ router.use('/drivers', createCrudRouter(s.drivers, driverSchema, {
   searchableField: 'name',
 }));
 
+// Road config — singleton GET/PUT
+router.get('/road-config', asyncHandler(async (_req: Request, res: Response) => {
+  const [row] = await db.select().from(s.roadConfig).limit(1);
+  if (!row) return res.json(null);
+  res.json(row);
+}));
+
+router.put('/road-config', asyncHandler(async (req: Request, res: Response) => {
+  const { tollPerStation, returnCargoBonus } = req.body as { tollPerStation: string; returnCargoBonus: string };
+  const [existing] = await db.select().from(s.roadConfig).limit(1);
+  if (existing) {
+    const [updated] = await db.update(s.roadConfig)
+      .set({ tollPerStation, returnCargoBonus, updatedAt: new Date() })
+      .where(eq(s.roadConfig.id, existing.id))
+      .returning();
+    return res.json(updated);
+  }
+  const [created] = await db.insert(s.roadConfig).values({ tollPerStation, returnCargoBonus }).returning();
+  res.status(201).json(created);
+}));
+
 // Fuel config — singleton GET/PUT
 router.get('/fuel-config', asyncHandler(async (_req: Request, res: Response) => {
   const row = await getFuelConfig();

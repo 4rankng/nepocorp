@@ -76,6 +76,9 @@ before(async () => {
   }
   if (!drvr) {
     [drvr] = await db.insert(s.drivers).values({ name: 'Lái xe E2E', userId: drvUser?.id ?? null }).returning();
+  } else if (!drvr.userId && drvUser) {
+    await db.update(s.drivers).set({ userId: drvUser.id }).where(eq(s.drivers.id, drvr.id));
+    drvr.userId = drvUser.id;
   }
   if (!rte) {
     [rte] = await db.insert(s.routes).values({ name: 'Hà Nội - Hải Phòng' }).returning();

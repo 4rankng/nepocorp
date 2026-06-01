@@ -220,6 +220,54 @@ async function seed() {
     console.log('✅ No orphan UNPAID expenses found, ledger is in sync.');
   }
 
+  // ─── Container types (Pete's request: 20DC/20OT/20RF/40DC/40HC) ────────────
+  const containerTypeSeeds = [
+    { code: '20DC',  name: "20'DC",  notes: 'Container khô tiêu chuẩn 20 feet' },
+    { code: '20OT',  name: "20'OT",  notes: 'Container mở nóc (Open Top) 20 feet' },
+    { code: '20RF',  name: "20'RF",  notes: 'Container lạnh (Reefer) 20 feet' },
+    { code: '40DC',  name: "40'DC",  notes: 'Container khô tiêu chuẩn 40 feet' },
+    { code: '40HC',  name: "40'HC",  notes: 'Container khô cao (High Cube) 40 feet' },
+    { code: '40RF',  name: "40'RF",  notes: 'Container lạnh (Reefer) 40 feet' },
+    { code: '45HC',  name: "45'HC",  notes: 'Container khô cao 45 feet' },
+  ];
+  const existingCtTypes = await db.select({ code: schema.containerTypes.code })
+    .from(schema.containerTypes);
+  const existingCtCodes = new Set(existingCtTypes.map(c => c.code));
+  const newCtTypes = containerTypeSeeds.filter(c => !existingCtCodes.has(c.code));
+  if (newCtTypes.length > 0) {
+    for (const ct of newCtTypes) {
+      await db.insert(schema.containerTypes).values(ct).onConflictDoNothing();
+    }
+    console.log(`✅ Container types seeded! (${newCtTypes.length} new)`);
+  } else {
+    console.log('✅ Container types already exist, skipping.');
+  }
+
+  // ─── Hai Phong ports/yards (Pete's request) ────────────────────────────────
+  // Starter set of common ICDs and terminals in the Hai Phong area.
+  const portSeeds = [
+    { name: 'Cảng Hải Phòng',                    code: 'HPH',  city: 'Hải Phòng', address: 'Quận Hồng Bàng, Hải Phòng' },
+    { name: 'Cảng Đình Vũ',                      code: 'DVU',  city: 'Hải Phòng', address: 'Đông Hải 2, Hải An, Hải Phòng' },
+    { name: 'Cảng Lạch Huyện (HICT)',            code: 'HICT', city: 'Hải Phòng', address: 'Cát Hải, Hải Phòng' },
+    { name: 'Cảng Tân Cảng 128 Hải Phòng',       code: 'TC128', city: 'Hải Phòng', address: 'Hùng Vương, Hồng Bàng, Hải Phòng' },
+    { name: 'Cảng Tân Vũ',                       code: 'TVU',  city: 'Hải Phòng', address: 'Đông Hải 2, Hải An, Hải Phòng' },
+    { name: 'Cảng Nam Hải Đình Vũ',              code: 'NHDV', city: 'Hải Phòng', address: 'Đông Hải 2, Hải An, Hải Phòng' },
+    { name: 'Cảng VIP Greenport',                code: 'VIPG', city: 'Hải Phòng', address: 'Đông Hải 2, Hải An, Hải Phòng' },
+    { name: 'ICD Hoàng Thành',                   code: 'HTHA', city: 'Hải Phòng', address: 'An Dương, Hải Phòng' },
+  ];
+  const existingPorts = await db.select({ code: schema.ports.code })
+    .from(schema.ports);
+  const existingPortCodes = new Set(existingPorts.map(p => p.code));
+  const newPorts = portSeeds.filter(p => !existingPortCodes.has(p.code));
+  if (newPorts.length > 0) {
+    for (const p of newPorts) {
+      await db.insert(schema.ports).values(p).onConflictDoNothing();
+    }
+    console.log(`✅ Hai Phong ports/yards seeded! (${newPorts.length} new)`);
+  } else {
+    console.log('✅ Ports already exist, skipping.');
+  }
+
   process.exit(0);
 }
 

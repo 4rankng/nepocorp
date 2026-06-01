@@ -78,7 +78,7 @@ export default function AdminAdvancesPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Wallet size={16} style={{ color: 'var(--fg-3)' }} />
-                    <strong>{req.requesterName || `Đối tác #${req.requesterId}`}</strong>
+                    <strong>{req.requesterName || `Đối tác ${req.requesterId}`}</strong>
                     <StatusPill variant={advanceRequestStatusVariant(req.status)}>
                       {ADVANCE_REQUEST_STATUS_LABELS[req.status as AdvanceRequestStatus]}
                     </StatusPill>

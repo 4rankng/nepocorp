@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { TripStatus, NotificationType } from '@nepocorp/shared';
-import { createTripSchema, updateTripFiguresSchema, createAdjustmentSchema } from '@nepocorp/shared';
+import { createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema } from '@nepocorp/shared';
 import * as tripService from '../services/trip.service';
 import * as financialService from '../services/financial.service';
+import { listTripContainers, batchUpsertTripContainers } from '../services/forwarder.service';
 import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
@@ -192,6 +193,29 @@ router.post('/:id/adjustment', asyncHandler(async (req: Request, res: Response) 
   });
   await invalidateReportCaches(true);
   res.status(201).json({ ok: true });
+}));
+
+// ─── Container instances per trip (accessible to ADMIN/MANAGER/ACCOUNTANT) ────
+// The /api/trips route is already gated by casbin via the parent router mount,
+// so authorisation is consistent with the rest of the trip endpoints.
+
+// List container instances for a trip
+router.get('/:id/containers', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.id as string, 10);
+  const items = await listTripContainers(tripId);
+  res.json({ items });
+}));
+
+// Batch upsert container instances. Body shape: { containers: [...] }
+// Inserts new rows, updates rows by id, deletes existing rows whose id
+// is not in the incoming list.
+router.put('/:id/containers', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.id as string, 10);
+  const parsed = tripContainerBatchSchema.parse(req.body);
+  const userId = req.user?.userId ?? null;
+  const items = await batchUpsertTripContainers(tripId, userId, parsed.containers);
+  await invalidateReportCaches();
+  res.json({ items });
 }));
 
 export default router;

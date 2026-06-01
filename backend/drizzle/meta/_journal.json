@@ -141,6 +141,20 @@
       "when": 1780308000000,
       "tag": "0019_drop_expenses_truck_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1780320000000,
+      "tag": "0020_trip_containers_weight_and_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1780310752624,
+      "tag": "0021_crazy_morph",
+      "breakpoints": true
     }
   ]
 }

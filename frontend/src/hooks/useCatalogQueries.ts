@@ -5,6 +5,7 @@ import type {
   Truck as TruckType,
   Driver as DriverType,
   FuelConfig,
+  RoadConfig,
   SalaryPeriodRange,
   CapTableHistory,
 } from '@nepocorp/shared';
@@ -32,6 +33,14 @@ export function useFuelConfig() {
   return useQuery<FuelConfig | null>({
     queryKey: ['fuel-config'],
     queryFn: () => configClient.getFuelConfig(),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useRoadConfig() {
+  return useQuery<RoadConfig | null>({
+    queryKey: ['road-config'],
+    queryFn: () => configClient.getRoadConfig(),
     staleTime: 10 * 60 * 1000,
   });
 }

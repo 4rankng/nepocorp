@@ -5,6 +5,7 @@ import { FuelMode, LoadingType, TripStatus } from "@nepocorp/shared";
 export type { FuelMode } from "@nepocorp/shared";
 import type { PricingTable, TripDetail, PaginatedResponse } from "@nepocorp/shared";
 import { tripClient } from "../api/tripClient";
+import { configClient } from "../api/configClient";
 
 import type { TripOptions, RouteOption } from "./useTripOptions";
 import { calculateRoute } from "../lib/maps";
@@ -276,6 +277,12 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const { options, mode = 'create', existingTrip } = params;
   const isEditMode = mode === 'edit';
   const queryClient = useQueryClient();
+
+  const { data: roadConfig } = useQuery({
+    queryKey: ['road-config'],
+    queryFn: () => configClient.getRoadConfig(),
+    staleTime: 10 * 60 * 1000,
+  });
 
   const lastTripId = useRef<number | null>(null);
 
@@ -590,8 +597,17 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
           return;
         }
         for (const leg of legs) {
-          if (!leg.origin.trim() || !leg.destination.trim() || !leg.km || isNaN(Number(leg.km)) || Number(leg.km) <= 0) {
-            setError(`Chặng số ${leg.sequence} thông tin chưa hợp lệ (Km phải là số lớn hơn 0).`);
+          // Origin + destination are still required (DB enforces .min(1)). Km is
+          // now optional / allowed to be 0 so accountants can save partial drafts
+          // before the actual mileage is known. Backend matches: km uses
+          // `nonNegNumeric` in shared/src/schemas/index.ts.
+          if (!leg.origin.trim() || !leg.destination.trim()) {
+            setError(`Chặng số ${leg.sequence}: cần điền cả điểm đi và điểm đến.`);
+            return;
+          }
+          const kmRaw = (leg.km ?? '').toString().trim();
+          if (kmRaw !== '' && (isNaN(Number(kmRaw)) || Number(kmRaw) < 0)) {
+            setError(`Chặng số ${leg.sequence}: Số km phải là số không âm.`);
             return;
           }
         }
@@ -660,17 +676,23 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
         const trip = await api.post<{ id: number }>("/trips", createPayload);
 
         if (hasOptionalData) {
-          const legsToSubmit = legs.filter((leg) => leg.km.trim() !== "");
+          // On create, submit any leg that has at least origin OR destination
+          // filled in (not just non-empty km). Km is allowed to be 0 — backend
+          // schema is nonNegNumeric, matching the edit-mode rule.
+          const legsToSubmit = legs.filter(
+            (leg) => leg.origin.trim() !== '' || leg.destination.trim() !== '' || leg.km.trim() !== '',
+          );
           for (const leg of legsToSubmit) {
+            const kmRaw = (leg.km ?? '').toString().trim();
+            const kmNum = kmRaw === '' ? 0 : Number(kmRaw);
             if (
               !leg.origin.trim() ||
               !leg.destination.trim() ||
-              !leg.km ||
-              Number.isNaN(Number(leg.km)) ||
-              Number(leg.km) <= 0
+              Number.isNaN(kmNum) ||
+              kmNum < 0
             ) {
               throw new Error(
-                `Chặng số ${leg.sequence} chưa hợp lệ (Km phải lớn hơn 0).`,
+                `Chặng số ${leg.sequence} chưa hợp lệ (cần Điểm đi + Điểm đến; Km phải là số không âm).`,
               );
             }
           }
@@ -790,8 +812,12 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     tripStatus: isEditMode ? existingTrip?.status : undefined,
     version: isEditMode && existingTrip ? String(existingTrip.version) : undefined,
     roadAllowanceBaseApplied: isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : undefined,
-    tollPerStationApplied: isEditMode && existingTrip?.tollPerStationApplied ? Number(existingTrip.tollPerStationApplied) : undefined,
-    returnCargoBonusApplied: isEditMode && existingTrip?.returnCargoBonusApplied ? Number(existingTrip.returnCargoBonusApplied) : undefined,
+    tollPerStationApplied: isEditMode && existingTrip?.tollPerStationApplied
+      ? Number(existingTrip.tollPerStationApplied)
+      : roadConfig ? Number(roadConfig.tollPerStation) : undefined,
+    returnCargoBonusApplied: isEditMode && existingTrip?.returnCargoBonusApplied
+      ? Number(existingTrip.returnCargoBonusApplied)
+      : roadConfig ? Number(roadConfig.returnCargoBonus) : undefined,
     isEditMode,
     selectedRouteData,
   };

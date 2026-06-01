@@ -432,7 +432,7 @@ export default function TripDetailPage() {
                   <span>Tăng vé theo lệnh: <strong style={{ color: 'var(--success)' }}>+{formatCurrency(trip.tollsAddition)}</strong></span>
                 )}
                 {Number(trip.tollsStations) > 0 && (() => {
-                  const rate = Number(trip.tollPerStationApplied || 55000);
+                  const rate = Number(trip.tollPerStationApplied || 0);
                   return <span>Số trạm (trừ): {trip.tollsStations} trạm × {rate.toLocaleString('vi-VN')} = <strong>{formatCurrency(Number(trip.tollsStations) * rate)}</strong></span>;
                 })()}
                 {trip.hasReturnCargo && (

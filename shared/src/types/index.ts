@@ -126,6 +126,14 @@ export interface FuelConfig {
   deletedAt: string | null;
 }
 
+export interface RoadConfig {
+  id: number;
+  tollPerStation: string;
+  returnCargoBonus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface FuelPriceHistory {
   id: number;
   unitPrice: string;

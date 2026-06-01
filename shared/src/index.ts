@@ -11,7 +11,7 @@ export {
 
 export type {
   User, UserPublic, Driver, Customer, Truck, Trailer, Route, CargoType,
-  PricingTable, RoadAllowance, FuelConfig, FuelPriceHistory, PenaltyReason,
+  PricingTable, RoadAllowance, FuelConfig, FuelPriceHistory, PenaltyReason, RoadConfig,
   Trip, TripLeg, TripDetail, LedgerEntry, Penalty,
   CapTableHistory, Distribution, ManagementFee, AuditLog, Notification,
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
@@ -36,7 +36,7 @@ export {
   managementFeeSchema, capTableSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
-  tripContainerSchema, tripExpenseSchema,
+  tripContainerSchema, tripContainerBatchSchema, tripExpenseSchema,
   createAdvanceRequestSchema, createAdvanceSettlementSchema,
   containerTypeSchema, portSchema,
 } from './schemas';

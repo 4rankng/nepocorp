@@ -79,7 +79,7 @@ export default function AdminSettlementsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <FileText size={16} style={{ color: 'var(--fg-3)' }} />
-                    <strong>{s.forwarderName || `Đối tác #${s.forwarderId}`}</strong>
+                    <strong>{s.forwarderName || `Đối tác ${s.forwarderId}`}</strong>
                     <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
                       {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status as AdvanceSettlementStatus]}
                     </StatusPill>
@@ -105,7 +105,7 @@ export default function AdminSettlementsPage() {
                     <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>Yêu cầu tạm ứng: </span>
                     {s.linkedRequests.map((req: any, i: number) => (
                       <span key={req.id} style={{ fontSize: 12, marginRight: 8 }}>
-                        #{req.id} ({formatCurrency(req.amount)})
+                        Yêu cầu {req.id} ({formatCurrency(req.amount)})
                         {i < s.linkedRequests.length - 1 && ','}
                       </span>
                     ))}
@@ -114,12 +114,12 @@ export default function AdminSettlementsPage() {
 
                 {s.checkedBy && (
                   <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
-                    Kiểm tra bởi: {s.checkerName || `#${s.checkedBy}`} — {s.checkedAt && formatDate(s.checkedAt)}
+                    Kiểm tra bởi: {s.checkerName || `ID: ${s.checkedBy}`} — {s.checkedAt && formatDate(s.checkedAt)}
                   </div>
                 )}
                 {s.approvedBy && (
                   <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 2 }}>
-                    Duyệt bởi: {s.approverName || `#${s.approvedBy}`} — {s.approvedAt && formatDate(s.approvedAt)}
+                    Duyệt bởi: {s.approverName || `ID: ${s.approvedBy}`} — {s.approvedAt && formatDate(s.approvedAt)}
                   </div>
                 )}
 

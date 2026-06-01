@@ -334,19 +334,17 @@ export default function TripListPage() {
         const containerTag = trip.trailerType ?? '40FT';
         return (
           <div className="route-cell-flex">
-            <div className="route-points-row">
-              {route ? (
-                <>
-                  <span className="route-point route-origin">{route.from}</span>
-                  <span className="route-arrow-right">
-                    <ArrowRight size={12} />
-                  </span>
-                  <span className="route-point route-destination">{route.to}</span>
-                </>
-              ) : (
-                <span className="route-point route-destination">{trip.route?.name ?? '—'}</span>
-              )}
-            </div>
+            {route ? (
+              <>
+                <div className="route-origin-row">
+                  <span className="route-origin">{route.from}</span>
+                  <span className="route-arrow-right"><ArrowRight size={11} /></span>
+                </div>
+                <div className="route-destination">{route.to}</div>
+              </>
+            ) : (
+              <div className="route-destination">{trip.route?.name ?? '—'}</div>
+            )}
             <div className="route-tags-row">
               <span className="container-tag">{containerTag}</span>
               {(trip.containerCount ?? 1) > 1 && (

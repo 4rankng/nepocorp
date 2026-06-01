@@ -365,7 +365,22 @@ export const tripContainerSchema = z.object({
   containerTypeId: z.coerce.number().int().positive().optional().nullable(),
   containerNumber: z.string().min(1, 'Số container không được để trống'),
   sealNumber: z.string().optional().nullable(),
+  cargoWeightKg: nonNegNumeric.optional().nullable(),
   notes: z.string().optional().nullable(),
+});
+
+// Batch upsert payload used by the trip-edit form: the client sends the full
+// desired list of container instances for a trip, and the backend reconciles
+// (insert new, update existing by id, delete the rest).
+export const tripContainerBatchSchema = z.object({
+  containers: z.array(z.object({
+    id: z.coerce.number().int().positive().optional(),
+    containerTypeId: z.coerce.number().int().positive().optional().nullable(),
+    containerNumber: z.string().min(1, 'Số container không được để trống'),
+    sealNumber: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
+    cargoWeightKg: nonNegNumeric.optional().nullable(),
+    notes: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
+  })),
 });
 
 export const tripExpenseSchema = z.object({

@@ -27,7 +27,7 @@ export function useDispatchMutations(pendingTrips: NormalizedTrip[]) {
     setActionLoading(tripId);
     try {
       await tripClient.dispatchTrip(tripId);
-      const code = trip?.tripCode || `#${tripId}`;
+      const code = trip?.tripCode || String(tripId);
       addToast('success', `Đã xuất phát chuyến ${code}`);
       await queryClient.invalidateQueries({ queryKey: ['dispatch'] });
     } catch (err) {

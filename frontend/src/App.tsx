@@ -88,6 +88,7 @@ function AppRoutes() {
   const driverOnly = (el: ReactElement) => (isDriver ? el : <Navigate to={isForwarder ? forwarderHome : adminHome} replace />);
   const forwarderOnly = (el: ReactElement) => (isForwarder ? el : <Navigate to={isDriver ? driverHome : adminHome} replace />);
   const superAdminOnly = (el: ReactElement) => (isAdmin ? el : <Navigate to={adminHome} replace />);
+  const managerOrAdminOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
 
   // Wrap each page in its own ErrorBoundary so a crash in one route
   // doesn't block navigation to other routes.
@@ -151,8 +152,8 @@ function AppRoutes() {
           <Route path="/expenses/:id/edit" element={adminOnly(page(<ExpenseEntryPage />))} />
           <Route path="/payables" element={adminOnly(page(<PayableListPage />))} />
           <Route path="/payables/:id" element={adminOnly(page(<PayableDetailPage />))} />
-          <Route path="/users" element={adminOnly(page(<UsersPage />))} />
-          <Route path="/audit-logs" element={adminOnly(page(<AuditLogPage />))} />
+          <Route path="/users" element={managerOrAdminOnly(page(<UsersPage />))} />
+          <Route path="/audit-logs" element={managerOrAdminOnly(page(<AuditLogPage />))} />
           <Route path="/audit-log" element={<Navigate to="/audit-logs" replace />} />
           <Route path="/admin/audit-logs" element={<Navigate to="/audit-logs" replace />} />
           <Route path="/admin/audit-log" element={<Navigate to="/audit-logs" replace />} />

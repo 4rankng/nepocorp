@@ -114,7 +114,7 @@ export default function ForwarderTripDetailPage() {
               {TRIP_STATUS_LABELS[trip.status as TripStatus] || trip.status}
             </StatusPill>
             {trip.tripCode && (
-              <span style={{ fontSize: 12, color: 'var(--fg-3)', fontFamily: 'var(--font-mono)' }}>#{trip.tripCode}</span>
+              <span style={{ fontSize: 12, color: 'var(--fg-3)', fontFamily: 'var(--font-mono)' }}>{trip.tripCode}</span>
             )}
           </div>
           {trip.customerName && (

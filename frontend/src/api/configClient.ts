@@ -4,6 +4,7 @@ import type {
   Truck,
   Driver,
   FuelConfig, FuelPriceHistory,
+  RoadConfig,
   SalaryPeriodRange,
   CapTableHistory,
   Supplier,
@@ -51,6 +52,10 @@ export const configClient = {
 
   getFuelConfig: async () => {
     return api.get<FuelConfig | null>(CONFIG.FUEL_CONFIG);
+  },
+
+  getRoadConfig: async () => {
+    return api.get<RoadConfig | null>(CONFIG.ROAD_CONFIG);
   },
 
   getSalaryPeriodResolve: async (month: number, year: number) => {

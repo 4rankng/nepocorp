@@ -1,6 +1,7 @@
 import React from "react";
 import { computeRoadAllowance } from "@nepocorp/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
+import { InputWithPrefix } from "./InputWithPrefix";
 
 export function AllowanceSection() {
   const form = useTripFormContext();
@@ -27,8 +28,8 @@ export function AllowanceSection() {
       tollsDiscount: Number(tollsDiscount) || 0,
       tollsAddition: Number(tollsAddition) || 0,
       tollsStations: Number(tollsStations) || 0,
-      tollPerStation: tollPerStationApplied ?? 55000,
-      returnCargoBonus: returnCargoBonusApplied ?? 300000,
+      tollPerStation: tollPerStationApplied ?? 0,
+      returnCargoBonus: returnCargoBonusApplied ?? 0,
       hasReturnCargo,
     });
   }, [roadAllowanceBaseApplied, tollsDiscount, tollsAddition, tollsStations, hasReturnCargo, tollPerStationApplied, returnCargoBonusApplied]);
@@ -42,23 +43,25 @@ export function AllowanceSection() {
       <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tăng vé theo lệnh (đ)</label>
-          <input
-            className="input"
-            type="number"
-            placeholder="VD: 150000"
+          <InputWithPrefix
             value={tollsAddition}
-            onChange={(e) => setTollsAddition(e.target.value)}
+            onChange={setTollsAddition}
+            placeholder="VD: 150.000"
+            prefix="đ"
+            mono
+            type="money"
             style={{ width: "100%" }}
           />
         </div>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Giảm vé QL5 (đ)</label>
-          <input
-            className="input"
-            type="number"
-            placeholder="VD: 40000"
+          <InputWithPrefix
             value={tollsDiscount}
-            onChange={(e) => setTollsDiscount(e.target.value)}
+            onChange={setTollsDiscount}
+            placeholder="VD: 40.000"
+            prefix="đ"
+            mono
+            type="money"
             style={{ width: "100%" }}
           />
         </div>
@@ -84,7 +87,9 @@ export function AllowanceSection() {
               onChange={(e) => setHasReturnCargo(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: "var(--brand)", cursor: "pointer" }}
             />
-            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--fg-1)" }}>Chuyến về có hàng (+300k)</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--fg-1)" }}>
+              Chuyến về có hàng{returnCargoBonusApplied != null ? ` (+${(returnCargoBonusApplied / 1000).toFixed(0)}k)` : ''}
+            </span>
           </label>
         </div>
       </div>
@@ -92,12 +97,13 @@ export function AllowanceSection() {
       <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Điều chỉnh tiền đi đường (đ)</label>
-          <input
-            className="input"
-            type="number"
-            placeholder="Để trống = tự tính"
+          <InputWithPrefix
             value={roadAllowanceOverride}
-            onChange={(e) => setRoadAllowanceOverride(e.target.value)}
+            onChange={setRoadAllowanceOverride}
+            placeholder="Để trống = tự tính"
+            prefix="đ"
+            mono
+            type="money"
             style={{ width: "100%" }}
           />
           {computedRoadAllowanceHint !== null && (
@@ -113,12 +119,13 @@ export function AllowanceSection() {
         </div>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Lương sản lượng tài xế (đ)</label>
-          <input
-            className="input"
-            type="number"
-            placeholder="VD: 850000"
+          <InputWithPrefix
             value={driverSalary}
-            onChange={(e) => setDriverSalary(e.target.value)}
+            onChange={setDriverSalary}
+            placeholder="VD: 850.000"
+            prefix="đ"
+            mono
+            type="money"
             style={{ width: "100%" }}
           />
         </div>
@@ -127,12 +134,13 @@ export function AllowanceSection() {
       <div className="row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu trả hàng (đ)</label>
-          <input
-            className="input"
-            type="number"
-            placeholder="VD: 4200000"
+          <InputWithPrefix
             value={revenueEmptyReturn}
-            onChange={(e) => setRevenueEmptyReturn(e.target.value)}
+            onChange={setRevenueEmptyReturn}
+            placeholder="VD: 4.200.000"
+            prefix="đ"
+            mono
+            type="money"
             style={{ width: "100%" }}
           />
           {suggestedPrice !== null && (
@@ -148,12 +156,13 @@ export function AllowanceSection() {
         </div>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu kết hợp đóng hàng (đ)</label>
-          <input
-            className="input"
-            type="number"
-            placeholder="VD: 2000000"
+          <InputWithPrefix
             value={revenueCombine}
-            onChange={(e) => setRevenueCombine(e.target.value)}
+            onChange={setRevenueCombine}
+            placeholder="VD: 2.000.000"
+            prefix="đ"
+            mono
+            type="money"
             style={{ width: "100%" }}
           />
         </div>

@@ -163,7 +163,7 @@ export function PenaltyTable({
             const headers = ['Tài xế', 'Mã lệnh', 'Lý do', 'Số tiền', 'Ngày'];
             const rows = filteredPenalties.map(p => [
               p.driverName || '—',
-              p.tripId ? `#${p.tripId}` : '—',
+              p.tripId ? String(p.tripId) : '—',
               p.reasonText || p.customReason || '—',
               p.amount,
               p.date,

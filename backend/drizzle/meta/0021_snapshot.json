@@ -1,6 +1,6 @@
 {
-  "id": "1c72023a-eb2b-43d6-a262-1912070faaec",
-  "prevId": "8dcbc192-dfe9-4589-9b55-53166b99223b",
+  "id": "a5feee11-c906-4eaf-b725-e1f083447db0",
+  "prevId": "c7b464fe-5928-40c6-8c87-54c0d1b98371",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1717,7 +1717,7 @@
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": false,
-          "default": "'H\u1ea3i Ph\u00f2ng'"
+          "default": "'Hải Phòng'"
         },
         "notes": {
           "name": "notes",
@@ -1749,7 +1749,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "ports_code_unique": {
+          "name": "ports_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2463,6 +2471,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "cargo_weight_kg": {
+          "name": "cargo_weight_kg",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "notes": {
           "name": "notes",
           "type": "text",
@@ -2473,10 +2487,17 @@
           "name": "created_by",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,

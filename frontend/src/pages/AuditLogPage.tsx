@@ -188,15 +188,20 @@ export default function AuditLogPage() {
             className="btn btn--secondary"
             disabled={entries.length === 0}
             onClick={() => {
-              const headers = ['#', 'Thời gian', 'Người dùng', 'Hành động', 'Nội dung', 'Địa chỉ IP'];
-              const rows = entries.map((e, i) => [
-                i + 1,
-                formatExactTime(e.timestamp),
-                e.userName,
-                ACTION_LABELS[e.action] || e.action,
-                e.message,
-                e.ipAddress || 'Không rõ',
-              ]);
+              const headers = isAdmin
+                ? ['#', 'Thời gian', 'Người dùng', 'Hành động', 'Nội dung', 'Địa chỉ IP']
+                : ['#', 'Thời gian', 'Người dùng', 'Hành động', 'Nội dung'];
+              const rows = entries.map((e, i) => {
+                const base = [
+                  i + 1,
+                  formatExactTime(e.timestamp),
+                  e.userName,
+                  ACTION_LABELS[e.action] || e.action,
+                  e.message,
+                ];
+                if (isAdmin) base.push(e.ipAddress || 'Không rõ');
+                return base;
+              });
               downloadCSV(`nhat-ky-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
             }}
           >

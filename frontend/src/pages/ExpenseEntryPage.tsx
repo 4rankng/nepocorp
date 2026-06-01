@@ -335,7 +335,7 @@ export default function ExpenseEntryPage() {
       <div className="relative max-w-4xl mx-auto">
         <PageHeader
           title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
-          description={isEdit ? `Chi phí #${id}` : 'Nhập thông tin chi phí phát sinh'}
+          description={isEdit ? `Chi phí ${id}` : 'Nhập thông tin chi phí phát sinh'}
           onBack={() => navigate('/expenses')}
         />
 

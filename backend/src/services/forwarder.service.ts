@@ -1,6 +1,8 @@
 import { db } from '../db';
+// Extract the transaction type so listTripContainers can accept both db and tx.
+type Tx = Parameters<typeof db.transaction>[0] extends (tx: infer T) => any ? T : never;
 import * as s from '../db/schema';
-import { eq, and, isNull, desc } from 'drizzle-orm';
+import { eq, and, isNull, desc, inArray } from 'drizzle-orm';
 
 export class NoForwarderProfileError extends Error {
   status = 404;
@@ -108,18 +110,105 @@ export async function createTripContainer(data: {
   containerTypeId?: number | null;
   containerNumber: string;
   sealNumber: string | null;
+  cargoWeightKg?: string | number | null;
   notes: string | null;
-  createdBy: number;
+  createdBy: number | null;
 }) {
   const [inserted] = await db.insert(s.tripContainers).values({
     tripId: data.tripId,
     containerTypeId: data.containerTypeId ?? null,
     containerNumber: data.containerNumber,
     sealNumber: data.sealNumber,
+    cargoWeightKg: data.cargoWeightKg != null ? String(data.cargoWeightKg) : null,
     notes: data.notes,
     createdBy: data.createdBy,
   }).returning();
   return inserted;
+}
+
+// ─── Trip-container management (used by accountant/manager via trip edit) ─────
+
+export async function listTripContainers(tripId: number, tx?: Tx) {
+  const rows = await (tx ?? db).select({
+    id: s.tripContainers.id,
+    tripId: s.tripContainers.tripId,
+    containerTypeId: s.tripContainers.containerTypeId,
+    containerTypeCode: s.containerTypes.code,
+    containerTypeName: s.containerTypes.name,
+    containerNumber: s.tripContainers.containerNumber,
+    sealNumber: s.tripContainers.sealNumber,
+    cargoWeightKg: s.tripContainers.cargoWeightKg,
+    notes: s.tripContainers.notes,
+    createdBy: s.tripContainers.createdBy,
+    createdAt: s.tripContainers.createdAt,
+    updatedAt: s.tripContainers.updatedAt,
+  }).from(s.tripContainers)
+    .leftJoin(s.containerTypes, eq(s.tripContainers.containerTypeId, s.containerTypes.id))
+    .where(eq(s.tripContainers.tripId, tripId))
+    .orderBy(s.tripContainers.id);
+  return rows;
+}
+
+/**
+ * Batch upsert/reconcile the container instances for a trip.
+ *
+ * The client sends the desired full list. We:
+ *   • UPDATE rows whose id matches an existing row
+ *   • INSERT rows without an id
+ *   • DELETE existing rows whose id is not in the incoming list
+ *
+ * Wrapped in a single transaction so partial failures don't leave the trip
+ * with a half-written container set.
+ */
+export async function batchUpsertTripContainers(
+  tripId: number,
+  userId: number | null,
+  containers: Array<{
+    id?: number;
+    containerTypeId?: number | null;
+    containerNumber: string;
+    sealNumber?: string | null;
+    cargoWeightKg?: string | number | null;
+    notes?: string | null;
+  }>,
+) {
+  return db.transaction(async (tx) => {
+    const existing = await tx.select({ id: s.tripContainers.id })
+      .from(s.tripContainers)
+      .where(eq(s.tripContainers.tripId, tripId));
+    const existingIds = new Set(existing.map(r => r.id));
+    const incomingIds = new Set(containers.filter(c => c.id).map(c => c.id as number));
+
+    // Deletes: existing - incoming
+    const toDelete = [...existingIds].filter(id => !incomingIds.has(id));
+    if (toDelete.length > 0) {
+      await tx.delete(s.tripContainers).where(inArray(s.tripContainers.id, toDelete));
+    }
+
+    // Upserts
+    for (const c of containers) {
+      const payload = {
+        containerTypeId: c.containerTypeId ?? null,
+        containerNumber: c.containerNumber,
+        sealNumber: c.sealNumber ?? null,
+        cargoWeightKg: c.cargoWeightKg != null ? String(c.cargoWeightKg) : null,
+        notes: c.notes ?? null,
+        updatedAt: new Date(),
+      };
+      if (c.id && existingIds.has(c.id)) {
+        await tx.update(s.tripContainers)
+          .set(payload)
+          .where(eq(s.tripContainers.id, c.id));
+      } else {
+        await tx.insert(s.tripContainers).values({
+          tripId,
+          createdBy: userId,
+          ...payload,
+        });
+      }
+    }
+    return listTripContainers(tripId, tx);
+  });
 }
 
 export async function createTripExpense(data: {

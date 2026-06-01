@@ -237,7 +237,7 @@ export default function ForwarderSettlementsPage() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <FileText size={16} style={{ color: 'var(--brand)' }} />
-                    <span style={{ fontWeight: 600 }}>#{s.id}</span>
+                    <span style={{ fontWeight: 600 }}>Mã {s.id}</span>
                   </div>
                   <div style={{ fontSize: 14, color: 'var(--fg-3)', marginTop: 4 }}>
                     Tạo ngày {formatDate(s.createdAt)}
@@ -259,7 +259,7 @@ export default function ForwarderSettlementsPage() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
                     {s.linkedRequests.map(r => (
                       <span key={r.id} style={{ fontSize: 12, padding: '2px 8px', background: 'var(--bg-2)', borderRadius: 4 }}>
-                        #{r.id} — {formatCurrency(Number(r.amount))}
+                        Mã {r.id} — {formatCurrency(Number(r.amount))}
                       </span>
                     ))}
                   </div>

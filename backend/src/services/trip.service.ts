@@ -324,22 +324,18 @@ export async function updateTripFigures(
 
     const totals = computeTripTotals(totalsInput);
 
-    // 5. If still IN_TRANSIT when actuals are submitted, auto-complete.
-    // This was previously a leak in the route handler — now the state machine
-    // owns this transition decision. Guard with photo requirement (same as
-    // transitionTripStatus).
+    // 5. If still IN_TRANSIT when actuals are submitted, auto-complete
+    //    only when photos are already present. Otherwise, save actuals but
+    //    leave the trip IN_TRANSIT — the user can upload photos and complete
+    //    from the trip detail page.
     if (trip.status === TripStatus.IN_TRANSIT) {
       const photos = await tx.select({ id: s.tripPhotos.id })
         .from(s.tripPhotos).where(eq(s.tripPhotos.tripId, tripId)).limit(1);
-      if (photos.length === 0) {
-        throw new ApiError(
-          400,
-          'Cần tải lên ít nhất 1 ảnh trước khi hoàn thành chuyến đi',
-        );
+      if (photos.length > 0) {
+        await tx.update(s.trips)
+          .set({ status: TripStatus.COMPLETED, updatedAt: new Date() })
+          .where(eq(s.trips.id, tripId));
       }
-      await tx.update(s.trips)
-        .set({ status: TripStatus.COMPLETED, updatedAt: new Date() })
-        .where(eq(s.trips.id, tripId));
     }
 
         // 6. Update derived fields and increment version

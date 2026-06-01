@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { DollarSign, Clock, Users, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { DollarSign, Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp } from "lucide-react";
 import { computeTripTotals } from "@nepocorp/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
@@ -11,8 +11,11 @@ export function TotalsPanel() {
     legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
     tollsDiscount, tollsAddition, tollsStations,
     hasReturnCargo, driverSalary, revenue,
+    revenueEmptyReturn, revenueCombine,
     selectedRouteData, roadAllowanceBaseApplied, fuelActualUnitPrice,
+    roadAllowanceOverride, tollPerStationApplied, returnCargoBonusApplied,
   } = form;
+  const [showRoadBreakdown, setShowRoadBreakdown] = useState(true);
 
   const isMountainRoute = selectedRouteData?.isMountain ?? false;
   const mountainFixedAllowance = selectedRouteData?.fixedFuelAllowance ? Number(selectedRouteData.fixedFuelAllowance) : null;
@@ -40,22 +43,42 @@ export function TotalsPanel() {
       tollsDiscount: tollsDiscount ? Number(tollsDiscount) : 0,
       tollsAddition: tollsAddition ? Number(tollsAddition) : 0,
       tollsStations: tollsStations ? Number(tollsStations) : 0,
-      tollPerStation: 55000,
+      tollPerStation: tollPerStationApplied ?? 0,
       hasReturnCargo,
-      returnCargoBonus: 300000,
+      returnCargoBonus: returnCargoBonusApplied ?? 0,
       revenue: revenue ? Number(revenue) : 0,
       driverSalary: driverSalary ? Number(driverSalary) : 0,
     });
   }, [
     legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
     isMountainRoute, mountainFixedAllowance, roadAllowanceBaseApplied,
-    tollsDiscount, tollsAddition, tollsStations,
+    tollsDiscount, tollsAddition, tollsStations, tollPerStationApplied, returnCargoBonusApplied,
     hasReturnCargo, revenue, driverSalary, fuelConfig, fuelActualUnitPrice,
   ]);
 
   const fmt = (v: number) => Math.abs(Math.round(v)).toLocaleString("vi-VN");
+  const fmtSigned = (v: number) => (v >= 0 ? '+' : '−') + fmt(v);
 
-  const revenueNum = Number(revenue) || 0;
+  // Road-allowance breakdown — what makes up "Tiền đi đường thực nhận"
+  const roadBreakdown = useMemo(() => {
+    const base = Number(roadAllowanceBaseApplied) || 0;
+    const discount = Number(tollsDiscount) || 0;
+    const addition = Number(tollsAddition) || 0;
+    const stations = Number(tollsStations) || 0;
+    const perStation = Number(tollPerStationApplied) || 0;
+    const stationCost = stations * perStation;
+    const returnBonus = hasReturnCargo ? (Number(returnCargoBonusApplied) || 0) : 0;
+    const overrideRaw = roadAllowanceOverride !== '' && roadAllowanceOverride != null
+      ? Number(roadAllowanceOverride)
+      : null;
+    const overridden = overrideRaw != null && Number.isFinite(overrideRaw);
+    return { base, discount, addition, stations, perStation, stationCost, returnBonus, overrideRaw, overridden };
+  }, [roadAllowanceBaseApplied, tollsDiscount, tollsAddition, tollsStations, tollPerStationApplied, returnCargoBonusApplied, hasReturnCargo, roadAllowanceOverride]);
+
+  // Revenue split — used by accountant when reviewing combined trips.
+  const revenueEmpty = Number(revenueEmptyReturn) || 0;
+  const revenueComb = Number(revenueCombine) || 0;
+  const revenueNum = Number(revenue) || (revenueEmpty + revenueComb);
   const isProfitPositive = totals.grossProfit >= 0;
 
   const totalCost = totals.totalFuelCost + totals.totalRoadAllowance + (Number(driverSalary) || 0);
@@ -73,6 +96,20 @@ export function TotalsPanel() {
           {fmt(revenueNum)}
           <span className="tc-summary-card__currency" style={{ fontSize: 13, marginLeft: 4 }}>đ</span>
         </div>
+        {(revenueEmpty > 0 || revenueComb > 0) && (
+          <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.6)", display: "flex", flexDirection: "column", gap: 2 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>DT trả hàng</span>
+              <span className="mono">{fmt(revenueEmpty)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>+ DT kết hợp đóng hàng</span>
+              <span className="mono" style={{ color: revenueComb > 0 ? "#10B981" : undefined }}>
+                {revenueComb > 0 ? "+" : ""}{fmt(revenueComb)}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 16 }}>
@@ -107,14 +144,88 @@ export function TotalsPanel() {
             −{fmt(totals.totalFuelCost)}
           </span>
         </div>
-        <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
+        <div
+          className="tc-summary-row"
+          style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 13, cursor: "pointer", userSelect: "none" }}
+          onClick={() => setShowRoadBreakdown(v => !v)}
+          role="button"
+          aria-expanded={showRoadBreakdown}
+          title="Bấm để xem chi tiết"
+        >
           <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
             <DollarSign size={13} style={{ color: "#F59E0B" }} /> Tiền đi đường thực nhận
+            {showRoadBreakdown ? <ChevronUp size={12} style={{ opacity: 0.6 }} /> : <ChevronDown size={12} style={{ opacity: 0.6 }} />}
+            {roadBreakdown.overridden && (
+              <span style={{
+                fontSize: 9,
+                padding: '1px 6px',
+                borderRadius: 999,
+                background: 'rgba(245,158,11,0.18)',
+                color: '#FBBF24',
+                fontWeight: 600,
+                letterSpacing: 0.3,
+              }}>
+                ĐÃ ĐIỀU CHỈNH
+              </span>
+            )}
           </span>
           <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
             −{fmt(totals.totalRoadAllowance)}
           </span>
         </div>
+
+        {showRoadBreakdown && (
+          <div
+            style={{
+              fontSize: 11,
+              color: "rgba(255,255,255,0.62)",
+              paddingLeft: 22,
+              marginBottom: 8,
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+              borderLeft: "1px dashed rgba(255,255,255,0.18)",
+              marginLeft: 6,
+              paddingTop: 2,
+              paddingBottom: 2,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Định mức tuyến</span>
+              <span className="mono">{fmt(roadBreakdown.base)}</span>
+            </div>
+            {roadBreakdown.addition > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>+ Vé tăng theo lệnh</span>
+                <span className="mono" style={{ color: "#10B981" }}>+{fmt(roadBreakdown.addition)}</span>
+              </div>
+            )}
+            {roadBreakdown.discount > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>− Giảm vé QL5</span>
+                <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.discount)}</span>
+              </div>
+            )}
+            {roadBreakdown.stations > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>− Trạm BOT ({roadBreakdown.stations} × {fmt(roadBreakdown.perStation)})</span>
+                <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.stationCost)}</span>
+              </div>
+            )}
+            {roadBreakdown.returnBonus > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>+ Chuyển về có hàng</span>
+                <span className="mono" style={{ color: "#10B981" }}>+{fmt(roadBreakdown.returnBonus)}</span>
+              </div>
+            )}
+            {roadBreakdown.overridden && (
+              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4, borderTop: "1px dashed rgba(255,255,255,0.18)", marginTop: 2 }}>
+                <span style={{ color: "#FBBF24" }}>Đã điều chỉnh tay</span>
+                <span className="mono" style={{ color: "#FBBF24", fontWeight: 700 }}>{fmt(roadBreakdown.overrideRaw!)}</span>
+              </div>
+            )}
+          </div>
+        )}
         <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
           <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
             <Users size={13} style={{ color: "#10B981" }} /> Lương tài xế

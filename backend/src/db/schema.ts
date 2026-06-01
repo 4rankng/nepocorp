@@ -401,7 +401,7 @@ export const containerTypes = pgTable('container_types', {
 export const ports = pgTable('ports', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),   // e.g. "Cảng Hải Phòng"
-  code: varchar('code', { length: 20 }),              // e.g. "HPH"
+  code: varchar('code', { length: 20 }).unique(),     // e.g. "HPH"
   address: text('address'),
   city: varchar('city', { length: 100 }).default('Hải Phòng'),
   notes: text('notes'),
@@ -418,9 +418,15 @@ export const tripContainers = pgTable('trip_containers', {
   containerTypeId: integer('container_type_id').references(() => containerTypes.id),
   containerNumber: varchar('container_number', { length: 50 }).notNull(),
   sealNumber: varchar('seal_number', { length: 50 }),
+  // Cargo weight in kilograms. Added 2026-06 per Pete's request to capture
+  // trọng lượng hàng per container; report aggregations can sum/avg as needed.
+  cargoWeightKg: numeric('cargo_weight_kg', { precision: 10, scale: 2 }),
   notes: text('notes'),
-  createdBy: integer('created_by').references(() => users.id).notNull(),
+  // createdBy is nullable now because the row may also be filled in by
+  // accountant/manager via the trip edit form (not just forwarder during receipt).
+  createdBy: integer('created_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('trip_containers_trip_id_idx').on(table.tripId),
 ]);

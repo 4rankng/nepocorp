@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { ApiError } from '../lib/api';
+import { TripStatus } from '@nepocorp/shared';
 import { useConfirm } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
 import { useTripDetail } from '../hooks/useQueries';
@@ -13,6 +14,7 @@ import { AllowanceSection } from '../components/trip/AllowanceSection';
 import { TotalsPanel } from '../components/trip/TotalsPanel';
 import { PhotoUploader } from '../components/trip/PhotoUploader';
 import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
+import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
 import type { TripOptions } from '../hooks/useTripOptions';
 
 export default function TripEditPage() {
@@ -62,6 +64,16 @@ export default function TripEditPage() {
     }
   };
 
+  // Bounce the user off the edit page if the trip can't actually be edited
+  // (LOCKED or CANCELED). Without this guard the form lets you fill in
+  // everything and only fails at submit time with "Chuyến đi đã chốt hoặc đã
+  // hủy, không thể sửa" — confusing because the page looked editable.
+  useEffect(() => {
+    if (trip && (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED)) {
+      navigate(`/trips/${trip.id}`, { replace: true });
+    }
+  }, [trip, navigate]);
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
@@ -72,6 +84,10 @@ export default function TripEditPage() {
   }
 
   if (!trip) return null;
+  if (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED) {
+    // useEffect above will redirect; render nothing in the meantime to avoid a flash.
+    return null;
+  }
 
   return (
     <TripFormProvider form={form}>
@@ -162,6 +178,22 @@ export default function TripEditPage() {
                 <div className="tc-card-head">
                   <div className="tc-card-num">4</div>
                   <div className="tc-card-text">
+                    <div className="tc-card-title">Chi tiết container</div>
+                    <div className="tc-card-sub">Số container, số seal, loại cont, trọng lượng — nhập tay từng cont</div>
+                  </div>
+                </div>
+                <div className="tc-card-body">
+                  <ContainerInstancesCard
+                    tripId={trip.id}
+                    expectedCount={trip.containerCount ?? 1}
+                  />
+                </div>
+              </div>
+
+              <div className="tc-card">
+                <div className="tc-card-head">
+                  <div className="tc-card-num">5</div>
+                  <div className="tc-card-text">
                     <div className="tc-card-title">Ảnh & Ghi chú</div>
                     <div className="tc-card-sub">Ảnh cont, seal và ghi chú</div>
                   </div>
@@ -187,68 +219,74 @@ export default function TripEditPage() {
 
             <aside className="tc-rail">
               <TotalsPanel />
+
+              {/*
+                Action panel sits directly under the live totals card on the rail
+                instead of a fixed bottom bar. Easier to associate "what I'm
+                saving" with "what it'll cost/earn", and avoids the bottom bar
+                covering content on short screens.
+              */}
+              <div
+                className="tc-rail-actions"
+                style={{
+                  marginTop: 12,
+                  padding: 14,
+                  border: '1px solid var(--line)',
+                  borderRadius: 14,
+                  background: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                }}
+              >
+                {error ? (
+                  <div
+                    role="alert"
+                    style={{
+                      padding: '10px 12px',
+                      background: 'var(--danger-soft)',
+                      borderRadius: 8,
+                      color: 'var(--danger)',
+                      fontSize: 12.5,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, marginBottom: 2 }}>Không lưu được</div>
+                    <div>{error}</div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: 'var(--fg-3)', lineHeight: 1.4 }}>
+                    <div style={{ fontWeight: 600, color: 'var(--fg-2)' }}>Cập nhật số liệu</div>
+                    <div>Lệnh vận chuyển {trip.tripCode || trip.id}</div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  form="trip-edit-form"
+                  className="btn btn--primary"
+                  disabled={submitting || uploading}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  {submitting ? (
+                    <><Loader2 size={16} className="spin" /> Đang lưu…</>
+                  ) : (
+                    <><Save size={16} /> Lưu cập nhật</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--secondary"
+                  onClick={() => navigate(`/trips/${trip.id}`)}
+                  disabled={submitting}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  Hủy bỏ
+                </button>
+              </div>
             </aside>
           </div>
         </form>
-
-        <div className="tc-action-bar">
-          {error ? (
-            <div
-              className="tc-action-bar__status"
-              role="alert"
-              style={{ color: 'var(--danger)', maxWidth: '60%' }}
-            >
-              <div
-                className="tc-action-bar__status-icon"
-                style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}
-              >
-                !
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="tc-action-bar__status-main" style={{ color: 'var(--danger)' }}>
-                  Không lưu được
-                </div>
-                <div
-                  className="tc-action-bar__status-sub"
-                  style={{ color: 'var(--danger)', whiteSpace: 'normal', lineHeight: 1.35 }}
-                >
-                  {error}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="tc-action-bar__status">
-              <div className="tc-action-bar__status-icon">
-                <Save size={16} />
-              </div>
-              <div>
-                <div className="tc-action-bar__status-main">Cập nhật số liệu</div>
-                <div className="tc-action-bar__status-sub">Lệnh vận chuyển #{trip.id}</div>
-              </div>
-            </div>
-          )}
-          <div className="tc-action-bar__spacer" />
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => navigate(`/trips/${trip.id}`)}
-            disabled={submitting}
-          >
-            Hủy bỏ
-          </button>
-          <button
-            type="submit"
-            form="trip-edit-form"
-            className="btn btn--primary"
-            disabled={submitting || uploading}
-          >
-            {submitting ? (
-              <><Loader2 size={16} className="spin" /> Đang lưu…</>
-            ) : (
-              <><Save size={16} /> Lưu cập nhật</>
-            )}
-          </button>
-        </div>
 
         {confirmDialog}
       </div>

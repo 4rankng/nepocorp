@@ -54,7 +54,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
             onChange={form.setFuelActualUnitPrice}
             placeholder="Để trống = dùng giá cấu hình"
             prefix="₫"
-            type="number"
+            type="money"
             mono
           />
         </div>
@@ -70,11 +70,11 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
       <div className="tc-form-row tc-form-row--three">
         <div className="field">
           <label>Tăng vé theo lệnh</label>
-          <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="150,000" prefix="đ" mono type="number" />
+          <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="150.000" prefix="đ" mono type="money" />
         </div>
         <div className="field">
           <label>Giảm vé QL5</label>
-          <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="40,000" prefix="đ" mono type="number" />
+          <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="40.000" prefix="đ" mono type="money" />
         </div>
         <div className="field">
           <label>Số trạm thu phí</label>
@@ -85,7 +85,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Lương sản lượng tài xế</label>
-          <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850,000" prefix="đ" mono type="number" />
+          <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850.000" prefix="đ" mono type="money" />
         </div>
         <CheckboxCard
           checked={form.hasReturnCargo}
@@ -99,7 +99,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Doanh thu trả hàng</label>
-          <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4,200,000" prefix="đ" mono type="number" />
+          <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4.200.000" prefix="đ" mono type="money" />
           {form.suggestedPrice !== null && (
             <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
               Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} đ{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} đ` : ''}
@@ -108,7 +108,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </div>
         <div className="field">
           <label>Doanh thu kết hợp đóng hàng</label>
-          <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2,000,000" prefix="đ" mono type="number" />
+          <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2.000.000" prefix="đ" mono type="money" />
         </div>
       </div>
     </CardSection>

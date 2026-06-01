@@ -90,7 +90,7 @@ export default function ConfigPage() {
         <button className="setting-card" onClick={() => navigate('/config/road-allowances')}>
           <div className="setting-card__icon"><Route size={20} /></div>
           <h3 className="setting-card__title">Tiền đi đường</h3>
-          <p className="setting-card__desc">Tiền chuẩn theo tuyến × loại rơ-mooc. Quy tắc: − vé QL5, + chuyến về có hàng (300K), − 55K/trạm.</p>
+          <p className="setting-card__desc">Tiền chuẩn theo tuyến × loại rơ-mooc. Quy tắc: − vé QL5, + chuyến về có hàng, − phí/trạm.</p>
           <div className="setting-card__foot">
             <span className="setting-card__status"><span className="dot"></span>{countLabel(roadAllowances.data?.total, 'tuyến')}</span>
             <span className="setting-card__action">Sửa {CHEVRON}</span>
