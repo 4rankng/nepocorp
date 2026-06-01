@@ -28,7 +28,8 @@ router.get('/trips/:id', asyncHandler(async (req: Request, res: Response) => {
 
 router.post('/trips/:tripId/containers', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = await getForwarderByUserId(req.user!.userId);
-  const parsed = tripContainerSchema.safeParse(req.body);
+  const tripId = parseInt(req.params.tripId as string, 10);
+  const parsed = tripContainerSchema.safeParse({ ...req.body, tripId });
   if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
   const container = await createTripContainer({
     ...parsed.data,

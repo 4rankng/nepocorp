@@ -252,9 +252,146 @@
   font-size: 32px;
 }
 
+/* ── Icon Input ─────────────────────────────────────────────────────────────── */
+
+.icon-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--line-2);
+  border-radius: 10px;
+  height: 40px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.icon-input:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.12);
+}
+
+.icon-input__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 12px;
+  color: var(--ink-4);
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.icon-input__field {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0 12px;
+  height: 100%;
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+  font-family: inherit;
+}
+
+.icon-input__field::placeholder {
+  color: var(--ink-4);
+}
+
+.icon-input__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 12px;
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+/* Valid state — green border */
+.icon-input--valid {
+  border-color: color-mix(in srgb, var(--success) 50%, var(--line-2));
+}
+
+.icon-input--valid:focus-within {
+  border-color: var(--success);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+/* Error state — red border */
+.icon-input--error {
+  border-color: var(--danger);
+}
+
+.icon-input--error:focus-within {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+/* ── Form Inner Cards ──────────────────────────────────────────────────────── */
+
+/* Widen drawer to fit two-column card layout */
+.drawer:has(.users-form-cards) {
+  max-width: 700px;
+}
+
+/* Desktop: cards side by side */
+.users-form-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.users-form-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Reset form-group spacing inside cards (card gap handles it) */
+.users-form-card .form-group {
+  margin-bottom: 0;
+}
+
+/* ── Password Toggle ──────────────────────────────────────────────────────── */
+
+.pw-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  transition: color 0.12s ease;
+}
+
+.pw-toggle:hover {
+  color: var(--ink-2);
+}
+
+/* ── Error Banner ──────────────────────────────────────────────────────────── */
+
+.users-error-banner {
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
 /* ── Mobile card enhancements ───────────────────────────────────────────── */
 
 @media (max-width: 640px) {
+  /* Stack form cards vertically on mobile */
+  .users-form-cards {
+    grid-template-columns: 1fr;
+  }
+
   .user-avatar {
     width: 40px;
     height: 40px;
@@ -364,4 +501,150 @@
     color: var(--danger);
     border-color: var(--danger-soft);
   }
+}
+
+/* ─── Premium Enhancements & Dynamic Interactions ─── */
+
+/* Pulse green animation for the active online user badge */
+@keyframes pulse-green {
+  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 177, 79, 0.6); opacity: 0.8; }
+  70% { transform: scale(1); box-shadow: 0 0 0 4px rgba(0, 177, 79, 0); opacity: 1; }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 177, 79, 0); opacity: 0.8; }
+}
+
+/* Kebab button & dropdown styling */
+.kebab-btn {
+  background: none;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.kebab-btn:hover {
+  background: var(--surface-3) !important;
+  color: var(--ink) !important;
+}
+
+.users-mobile-card__dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 100;
+  background: #ffffff;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  min-width: 130px;
+  padding: 4px;
+}
+
+.users-mobile-card__dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--ink);
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.users-mobile-card__dropdown button:hover {
+  background: var(--surface-2) !important;
+  color: var(--ink) !important;
+}
+
+.users-mobile-card__dropdown button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Clear search button styling */
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  z-index: 2;
+}
+
+.search-clear-btn:hover {
+  background: var(--surface-3);
+  color: var(--ink-2);
+}
+
+.users-table-panel .toolbar__search input {
+  padding-right: 28px !important;
+}
+
+/* KPI Premium Styling overrides */
+.kpi-grid .kpi {
+  background: #ffffff;
+  border: 1px solid var(--line-2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
+}
+
+.kpi-grid .kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+  border-color: var(--line);
+}
+
+.kpi-grid .kpi .kpi__value {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.04em;
+  margin: 4px 0 6px 0;
+  line-height: 1;
+}
+
+.kpi-grid .kpi .kpi__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-grid .kpi.kpi--warn .kpi__icon {
+  background: rgba(245, 158, 11, 0.12);
+  color: rgb(217, 119, 6);
+}
+
+.kpi-grid .kpi.kpi--success .kpi__icon {
+  background: rgba(16, 185, 129, 0.12);
+  color: rgb(5, 150, 105);
+}
+
+.kpi-grid .kpi.kpi--danger .kpi__icon {
+  background: rgba(239, 68, 68, 0.12);
+  color: rgb(220, 38, 38);
 }

@@ -39,6 +39,9 @@ out/
 .fusebox/
 .dynamodb/
 .tern-port
+# Python
+__pycache__/
+*.pyc
 # AI tool directories
 .claude/
 .kilo/

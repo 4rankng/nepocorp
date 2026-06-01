@@ -1,4 +1,4 @@
-.PHONY: dev stop down setup seed migrate generate build clean logs \
+.PHONY: dev stop down setup seed migrate generate build e2etest clean logs \
         push push-backend push-frontend \
         deploy deploy-backend deploy-frontend deploy-infra \
         backup restore adminer-on adminer-off
@@ -64,6 +64,10 @@ build: ## Build shared + backend + frontend
 	cd shared && npx tsc
 	cd backend && npx tsc
 	cd frontend && npx vite build
+
+# ─── E2E Tests ──────────────────────────────────────────────────────────────────
+e2etest: ## Run E2E tests (requires make dev running)
+	@bash e2e/run_all.sh $(ARGS)
 
 # ─── Teardown ──────────────────────────────────────────────────────────────────
 stop: ## Stop backend/frontend (keep db)

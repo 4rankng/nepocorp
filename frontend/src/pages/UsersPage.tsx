@@ -26,12 +26,39 @@ export default function UsersPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
 
-  const { total, staffCount, driverCount, inactiveCount, filtered } = useMemo(() => {
+  // Sorting and pagination state
+  const [sortBy, setSortBy] = useState<'name' | 'role' | 'status' | 'date' | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const handleFilterChange = (f: FilterKey) => {
+    setFilter(f);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (s: string) => {
+    setSearch(s);
+    setCurrentPage(1);
+  };
+
+  const handleSort = (field: 'name' | 'role' | 'status' | 'date') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const { total, staffCount, driverCount, inactiveCount, filtered, paginated } = useMemo(() => {
     const total        = users.length;
     const staffCount   = users.filter(u => u.role !== Role.DRIVER).length;
     const driverCount  = users.filter(u => u.role === Role.DRIVER).length;
     const inactiveCount = users.filter(u => u.status !== 'ACTIVE').length;
-    const filtered = users
+
+    let filtered = users
       .filter(u => filter === 'all' || u.role === filter)
       .filter(u => {
         if (!search) return true;
@@ -41,8 +68,36 @@ export default function UsersPage() {
           || (u.email || '').toLowerCase().includes(q)
           || (u.phone || '').includes(q);
       });
-    return { total, staffCount, driverCount, inactiveCount, filtered };
-  }, [users, filter, search]);
+
+    if (sortBy) {
+      filtered = [...filtered].sort((a, b) => {
+        let valA: any = '';
+        let valB: any = '';
+        if (sortBy === 'name') {
+          valA = (a.fullName || a.username || '').toLowerCase();
+          valB = (b.fullName || b.username || '').toLowerCase();
+        } else if (sortBy === 'role') {
+          valA = a.role;
+          valB = b.role;
+        } else if (sortBy === 'status') {
+          valA = a.status;
+          valB = b.status;
+        } else if (sortBy === 'date') {
+          valA = new Date(a.createdAt).getTime();
+          valB = new Date(b.createdAt).getTime();
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginated = filtered.slice(startIndex, startIndex + pageSize);
+
+    return { total, staffCount, driverCount, inactiveCount, filtered, paginated };
+  }, [users, filter, search, sortBy, sortOrder, currentPage]);
 
   const openEdit = (u: UserRow) => { clearPanelError(); setEditingUser(u); setShowAdd(false); };
   const openAdd  = () => { clearPanelError(); setShowAdd(true); setEditingUser(null); };
@@ -62,6 +117,7 @@ export default function UsersPage() {
       <UserTable
         users={users}
         filtered={filtered}
+        paginated={paginated}
         total={total}
         staffCount={staffCount}
         driverCount={driverCount}
@@ -71,11 +127,17 @@ export default function UsersPage() {
         canManage={canManage}
         deleting={deleting}
         currentUserId={me?.userId}
-        onFilterChange={setFilter}
-        onSearchChange={setSearch}
+        onFilterChange={handleFilterChange}
+        onSearchChange={handleSearchChange}
         onEdit={openEdit}
         onDelete={doDelete}
         onAdd={openAdd}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
       />
 
       <AddPanel

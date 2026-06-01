@@ -1,7 +1,9 @@
 import {
   Users, ShieldCheck, UserCog, Lock, Plus, Pencil, Trash2,
-  Loader2, KeyRound, Mail, Phone, Search, UserX,
+  Loader2, KeyRound, Mail, Phone, Search, UserX, MoreVertical, X,
+  ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { formatDate } from '../../../lib/format';
 import { Role, ROLE_LABELS, ROLE_PILL, FilterKey } from '../utils';
 import type { UserRow } from '../utils';
@@ -10,6 +12,7 @@ import { UserStatusBadge } from './UserStatusBadge';
 interface UserTableProps {
   users: UserRow[];
   filtered: UserRow[];
+  paginated: UserRow[];
   total: number;
   staffCount: number;
   driverCount: number;
@@ -24,6 +27,14 @@ interface UserTableProps {
   onEdit: (u: UserRow) => void;
   onDelete: (id: number) => void;
   onAdd: () => void;
+  // Sort props
+  sortBy: 'name' | 'role' | 'status' | 'date' | null;
+  sortOrder: 'asc' | 'desc';
+  onSort: (field: 'name' | 'role' | 'status' | 'date') => void;
+  // Pagination props
+  currentPage: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }
 
 const AVATAR_CLS: Record<Role, string> = {
@@ -43,9 +54,11 @@ const ROLE_FILTER_CLS: Record<string, string> = {
 };
 
 export function UserTable({
-  users, filtered, total, staffCount, driverCount, inactiveCount,
+  users, filtered, paginated, total, staffCount, driverCount, inactiveCount,
   filter, search, canManage, deleting, currentUserId,
   onFilterChange, onSearchChange, onEdit, onDelete, onAdd,
+  sortBy, sortOrder, onSort,
+  currentPage, pageSize, onPageChange,
 }: UserTableProps) {
   return (
     <>
@@ -78,7 +91,12 @@ export function UserTable({
             <div className="kpi__icon"><Users size={18} /></div>
           </div>
           <div className="kpi__value">{total}</div>
-          <div className="kpi__meta kpi__meta--up">Đang hoạt động</div>
+          <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <span className="kpi__meta--up" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--brand-soft)', color: 'var(--brand)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+              +0 mới
+            </span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Đang hoạt động tốt</span>
+          </div>
           <div className="kpi__watermark" aria-hidden="true"><Users size={72} /></div>
         </div>
         <div className="kpi kpi--warn">
@@ -87,7 +105,12 @@ export function UserTable({
             <div className="kpi__icon"><UserCog size={18} /></div>
           </div>
           <div className="kpi__value">{staffCount}</div>
-          <div className="kpi__meta">Admin · Quản lý · Kế toán</div>
+          <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(245, 158, 11, 0.1)', color: 'rgb(217, 119, 6)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+              Văn phòng
+            </span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Admin & Kế toán</span>
+          </div>
           <div className="kpi__watermark" aria-hidden="true"><UserCog size={72} /></div>
         </div>
         <div className="kpi kpi--success">
@@ -96,7 +119,12 @@ export function UserTable({
             <div className="kpi__icon"><ShieldCheck size={18} /></div>
           </div>
           <div className="kpi__value">{driverCount}</div>
-          <div className="kpi__meta">Có quyền xem lệnh chạy xe</div>
+          <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(16, 185, 129, 0.1)', color: 'rgb(5, 150, 105)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+              Hiện trường
+            </span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Có quyền app tài xế</span>
+          </div>
           <div className="kpi__watermark" aria-hidden="true"><ShieldCheck size={72} /></div>
         </div>
         <div className="kpi kpi--danger">
@@ -105,7 +133,18 @@ export function UserTable({
             <div className="kpi__icon"><Lock size={18} /></div>
           </div>
           <div className="kpi__value">{inactiveCount}</div>
-          <div className="kpi__meta">Không thể đăng nhập</div>
+          <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            {inactiveCount > 0 ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(239, 68, 68, 0.1)', color: 'rgb(220, 38, 38)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                Cần kiểm tra
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(107, 114, 128, 0.1)', color: 'rgb(107, 114, 128)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                An toàn
+              </span>
+            )}
+            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Không thể truy cập</span>
+          </div>
           <div className="kpi__watermark" aria-hidden="true"><Lock size={72} /></div>
         </div>
       </div>
@@ -124,35 +163,48 @@ export function UserTable({
                 onClick={() => onFilterChange(f)}
               >
                 <span>{label}</span>
-                <span className="filter-pill__count">{count}</span>
+                {filter === f && <span className="filter-pill__count">{count}</span>}
               </button>
             );
           })}
           <div className="toolbar__spacer" />
-          <div className="toolbar__search">
+          <div className="toolbar__search" style={{ position: 'relative' }}>
             <Search size={14} />
             <input
               type="text"
               placeholder="Tìm theo username, email, SĐT..."
               value={search}
               onChange={e => onSearchChange(e.target.value)}
+              style={{ paddingRight: search ? '28px' : '10px' }}
             />
+            {search && (
+              <button
+                className="search-clear-btn"
+                onClick={() => onSearchChange('')}
+                title="Xóa tìm kiếm"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Desktop table */}
         <DesktopTable
-          filtered={filtered}
+          filtered={paginated}
           canManage={canManage}
           deleting={deleting}
           currentUserId={currentUserId}
           onEdit={onEdit}
           onDelete={onDelete}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={onSort}
         />
 
         {/* Mobile cards */}
         <MobileCardList
-          filtered={filtered}
+          filtered={paginated}
           canManage={canManage}
           deleting={deleting}
           currentUserId={currentUserId}
@@ -161,11 +213,68 @@ export function UserTable({
         />
 
         {/* Footer */}
-        <div className="table-foot">
-          <span>
-            Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> / <strong style={{ fontFamily: 'var(--font-mono)' }}>{total}</strong> tài khoản
-          </span>
-        </div>
+        {(() => {
+          const totalPages = Math.ceil(filtered.length / pageSize);
+          const startIdx = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+          const endIdx = Math.min(filtered.length, currentPage * pageSize);
+          return (
+            <div className="table-foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <span>
+                Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{startIdx}-{endIdx}</strong> trong số <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> tài khoản
+              </span>
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <button
+                    className="btn-page"
+                    disabled={currentPage === 1}
+                    onClick={() => onPageChange(currentPage - 1)}
+                    style={{
+                      padding: '4px 8px', border: '1px solid var(--line-2)', borderRadius: 6,
+                      background: currentPage === 1 ? 'var(--surface-2)' : '#fff',
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: 12,
+                      color: currentPage === 1 ? 'var(--ink-4)' : 'var(--ink-2)'
+                    }}
+                  >
+                    Trước
+                  </button>
+                  {Array.from({ length: totalPages }).map((_, idx) => {
+                    const page = idx + 1;
+                    return (
+                      <button
+                        key={page}
+                        className={`btn-page${currentPage === page ? ' is-active' : ''}`}
+                        onClick={() => onPageChange(page)}
+                        style={{
+                          width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          borderRadius: 6, border: currentPage === page ? '1px solid var(--brand)' : '1px solid var(--line-2)',
+                          background: currentPage === page ? 'var(--brand)' : '#fff',
+                          color: currentPage === page ? '#fff' : 'var(--ink)',
+                          fontWeight: currentPage === page ? '600' : 'normal',
+                          cursor: 'pointer', fontSize: 12
+                        }}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                  <button
+                    className="btn-page"
+                    disabled={currentPage === totalPages}
+                    onClick={() => onPageChange(currentPage + 1)}
+                    style={{
+                      padding: '4px 8px', border: '1px solid var(--line-2)', borderRadius: 6,
+                      background: currentPage === totalPages ? 'var(--surface-2)' : '#fff',
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: 12,
+                      color: currentPage === totalPages ? 'var(--ink-4)' : 'var(--ink-2)'
+                    }}
+                  >
+                    Sau
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Permission notice */}
@@ -186,13 +295,19 @@ export function UserTable({
 
 /* ── Desktop table (inside panel) ─────────────────────────────────────────── */
 
-function DesktopTable({ filtered, canManage, deleting, currentUserId, onEdit, onDelete }: {
+function DesktopTable({
+  filtered, canManage, deleting, currentUserId, onEdit, onDelete,
+  sortBy, sortOrder, onSort,
+}: {
   filtered: UserRow[];
   canManage: boolean;
   deleting: number | null;
   currentUserId?: number;
   onEdit: (u: UserRow) => void;
   onDelete: (id: number) => void;
+  sortBy: 'name' | 'role' | 'status' | 'date' | null;
+  sortOrder: 'asc' | 'desc';
+  onSort: (field: 'name' | 'role' | 'status' | 'date') => void;
 }) {
   return (
     <div className="desktop-only">
@@ -200,11 +315,31 @@ function DesktopTable({ filtered, canManage, deleting, currentUserId, onEdit, on
         <table className="tt-table" style={{ minWidth: 900 }}>
           <thead>
             <tr>
-              <th>Tài khoản</th>
+              <th onClick={() => onSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Tài khoản
+                  {sortBy === 'name' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
+                </div>
+              </th>
               <th>Liên hệ</th>
-              <th>Vai trò</th>
-              <th>Trạng thái</th>
-              <th>Ngày tạo</th>
+              <th onClick={() => onSort('role')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Vai trò
+                  {sortBy === 'role' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
+                </div>
+              </th>
+              <th onClick={() => onSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Trạng thái
+                  {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
+                </div>
+              </th>
+              <th onClick={() => onSort('date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Ngày tạo
+                  {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
+                </div>
+              </th>
               {canManage && <th style={{ width: 80 }}></th>}
             </tr>
           </thead>
@@ -257,7 +392,7 @@ function DesktopTable({ filtered, canManage, deleting, currentUserId, onEdit, on
                     </div>
                   </td>
                   <td><span className={pill.cls}><span className="dot" />{pill.label}</span></td>
-                  <td><UserStatusBadge status={u.status} /></td>
+                  <td><UserStatusBadge status={u.status} isMe={isMe} userId={u.id} /></td>
                   <td style={{ color: 'var(--ink-3)', fontSize: 12.5, whiteSpace: 'nowrap' }}>
                     {formatDate(u.createdAt)}
                   </td>
@@ -305,6 +440,16 @@ function MobileCardList({ filtered, canManage, deleting, currentUserId, onEdit, 
   onEdit: (u: UserRow) => void;
   onDelete: (id: number) => void;
 }) {
+  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    if (activeMenuId === null) return;
+    const handleClose = () => setActiveMenuId(null);
+    document.addEventListener('click', handleClose);
+    return () => document.removeEventListener('click', handleClose);
+  }, [activeMenuId]);
+
   return (
     <div className="mobile-only">
       {filtered.length === 0 ? (
@@ -318,7 +463,7 @@ function MobileCardList({ filtered, canManage, deleting, currentUserId, onEdit, 
           const pill = ROLE_PILL[u.role] || { cls: 'pill pill--neutral', label: u.role };
           const isMe = u.id === currentUserId;
           return (
-            <div key={u.id} className="m-card users-mobile-card" style={{ cursor: 'default' }}>
+            <div key={u.id} className="m-card users-mobile-card" style={{ cursor: 'default', position: 'relative' }}>
               <div className="users-mobile-card__header">
                 <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
                   {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
@@ -326,44 +471,69 @@ function MobileCardList({ filtered, canManage, deleting, currentUserId, onEdit, 
                 <div className="users-mobile-card__info">
                   <div className="users-mobile-card__name">
                     {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
-                    {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>(bạn)</span>}
+                    {isMe && <span className="user-name__you">(bạn)</span>}
                   </div>
                   {u.username && <div className="users-mobile-card__handle">@{u.username}</div>}
                 </div>
-                <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
+                  {canManage && (
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        className="kebab-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(activeMenuId === u.id ? null : u.id);
+                        }}
+                        style={{
+                          background: 'none', border: 'none', width: 28, height: 28, borderRadius: '50%',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'var(--ink-3)', transition: 'background 0.2s, color 0.2s', padding: 0
+                        }}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      {activeMenuId === u.id && (
+                        <div className="users-mobile-card__dropdown" style={{
+                          position: 'absolute', right: 0, top: '100%', zIndex: 100,
+                          background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
+                          boxShadow: '0 4px 14px rgba(10,10,10,0.06)', overflow: 'hidden', minWidth: 120,
+                        }} onClick={(e) => e.stopPropagation()}>
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
+                            onClick={() => { setActiveMenuId(null); onEdit(u); }}>
+                            <Pencil size={13} /> Sửa
+                          </button>
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)' }}
+                            disabled={!!deleting || isMe}
+                            onClick={() => { setActiveMenuId(null); !isMe && onDelete(u.id); }}
+                            style={{ opacity: isMe ? 0.4 : 1 }}>
+                            {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="users-mobile-card__details">
-                <UserStatusBadge status={u.status} />
-                {u.email && (
-                  <span className="users-mobile-card__detail">
-                    <Mail size={12} /> {u.email}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px 12px', flexWrap: 'wrap' }}>
+                  <UserStatusBadge status={u.status} isMe={isMe} userId={u.id} />
+                  {u.email && (
+                    <span className="users-mobile-card__detail">
+                      <Mail size={12} /> {u.email}
+                    </span>
+                  )}
+                  {u.phone && (
+                    <span className="users-mobile-card__detail">
+                      <Phone size={12} /> {u.phone}
+                    </span>
+                  )}
+                  <span className="users-mobile-card__detail" style={{ color: 'var(--ink-4)' }}>
+                    {formatDate(u.createdAt)}
                   </span>
-                )}
-                {u.phone && (
-                  <span className="users-mobile-card__detail">
-                    <Phone size={12} /> {u.phone}
-                  </span>
-                )}
-                <span className="users-mobile-card__detail" style={{ color: 'var(--ink-4)' }}>
-                  {formatDate(u.createdAt)}
-                </span>
-              </div>
-              {canManage && (
-                <div className="users-mobile-card__actions">
-                  <button className="users-mobile-card__action-btn" onClick={() => onEdit(u)}>
-                    <Pencil size={12} /> Sửa
-                  </button>
-                  <button
-                    className="users-mobile-card__action-btn users-mobile-card__action-btn--danger"
-                    disabled={!!deleting || isMe}
-                    onClick={() => !isMe && onDelete(u.id)}
-                    style={{ opacity: isMe ? 0.4 : 1 }}
-                  >
-                    {deleting === u.id ? <Loader2 size={12} className="spin" /> : <Trash2 size={12} />}
-                    Xoá
-                  </button>
                 </div>
-              )}
+              </div>
             </div>
           );
         })

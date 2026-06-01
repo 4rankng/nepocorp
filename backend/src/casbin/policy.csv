@@ -27,6 +27,7 @@ p, DRIVER, maps, read
 p, DRIVER, photos, read
 p, FORWARDER, forwarder_portal, read
 p, FORWARDER, forwarder_portal, write
+p, FORWARDER, forwarder_portal, delete
 p, FORWARDER, maps, read
 p, FORWARDER, photos, read
 p, MANAGER, notifications, read
