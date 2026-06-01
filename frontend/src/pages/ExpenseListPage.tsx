@@ -113,7 +113,7 @@ export default function ExpenseListPage() {
         title="Chi phí phát sinh"
         description={`${total} khoản chi phí`}
         action={
-          <button className="btn btn--primary btn--sm" onClick={() => navigate('/expenses/new')}>
+          <button className="btn btn--primary btn--sm" onClick={() => navigate('/expenses/new')} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate('/expenses/new'); } }}>
             <Plus size={14} /> Thêm phiếu chi
           </button>
         }
@@ -199,7 +199,7 @@ export default function ExpenseListPage() {
           {isLoading ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
               <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-              <p>Đang tải...</p>
+              <p>Đang tải…</p>
             </div>
           ) : expenses.length === 0 ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
@@ -210,7 +210,7 @@ export default function ExpenseListPage() {
               <div
                 key={e.id}
                 className="m-card"
-                onClick={() => navigate(`/expenses/${e.id}/edit`)}
+                onClick={() => navigate(`/expenses/${e.id}/edit`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/expenses/${e.id}/edit`); } }}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="m-card__top">
@@ -263,7 +263,7 @@ export default function ExpenseListPage() {
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                     <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-                    <p>Đang tải...</p>
+                    <p>Đang tải…</p>
                   </td>
                 </tr>
               ) : expenses.length === 0 ? (
@@ -276,7 +276,7 @@ export default function ExpenseListPage() {
                 expenses.map(e => (
                   <tr
                     key={e.id}
-                    onClick={() => navigate(`/expenses/${e.id}/edit`)}
+                    onClick={() => navigate(`/expenses/${e.id}/edit`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/expenses/${e.id}/edit`); } }}
                     style={{ cursor: 'pointer' }}
                     onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={ev => (ev.currentTarget.style.background = '')}

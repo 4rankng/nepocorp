@@ -470,7 +470,7 @@ export default function PenaltyPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, marginTop: -4 }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-3)' }}>Kỳ thống kê:</span>
         <button className="btn btn--ghost btn--icon btn--sm" onClick={() => goMonth(-1)} aria-label="Tháng trước">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-1)', minWidth: 90, textAlign: 'center' }}>
           Tháng {selMonth} / {selYear}
@@ -481,7 +481,7 @@ export default function PenaltyPage() {
           disabled={selYear === nowDate.getFullYear() && selMonth >= nowDate.getMonth() + 1}
           aria-label="Tháng sau"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
 

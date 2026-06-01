@@ -176,7 +176,7 @@ export default function TripDetailPage() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
         <Spinner size={20} />
-        <span style={{ fontSize: 14 }}>Đang tải dữ liệu...</span>
+        <span style={{ fontSize: 14 }}>Đang tải dữ liệu…</span>
       </div>
     );
   }
@@ -629,7 +629,7 @@ export default function TripDetailPage() {
         </div>
         <div className="field">
           <label>Lý do điều chỉnh *</label>
-          <textarea className="input" rows={3} placeholder="Mô tả lý do..." value={adjustNote} onChange={e => setAdjustNote(e.target.value)} style={{ resize: 'vertical' }} />
+          <textarea className="input" rows={3} placeholder="Mô tả lý do…" value={adjustNote} onChange={e => setAdjustNote(e.target.value)} style={{ resize: 'vertical' }} />
         </div>
         <div className="field">
           <label>Mã biên bản thỏa thuận *</label>

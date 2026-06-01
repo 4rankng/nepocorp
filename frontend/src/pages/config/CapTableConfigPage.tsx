@@ -15,7 +15,7 @@ function CapTableForm({ saving, item, onsave, oncancel }: {
   return (
     <InlineForm colSpan={5}>
       <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Tên cổ đông"><input className="input" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="Nhập tên cổ đông..." /></Field>
+        <Field label="Tên cổ đông"><input className="input" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="Nhập tên cổ đông…" /></Field>
       </div>
       <div style={{ flex: 1, minWidth: 130 }}>
         <Field label="Số vốn góp (₫)"><input className="input" type="number" step="1000000" value={contributionAmount} onChange={e => setContributionAmount(e.target.value)} placeholder="0" /></Field>

@@ -95,7 +95,7 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div className="field">
             <label htmlFor="cust-tax" style={labelStyle}>Mã số thuế</label>
-            <input id="cust-tax" className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312..." />
+            <input id="cust-tax" className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312…" />
           </div>
           <div className="field">
             <label htmlFor="cust-status" style={labelStyle}>Trạng thái</label>
@@ -111,7 +111,7 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
           </div>
           <div className="field">
             <label htmlFor="cust-phone" style={labelStyle}>Điện thoại</label>
-            <input id="cust-phone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." />
+            <input id="cust-phone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912…" />
           </div>
         </div>
         <div className="field">
@@ -311,7 +311,7 @@ export default function CustomersPage() {
           <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }} />
           <input
             type="text"
-            placeholder="Tìm theo tên, MST..."
+            placeholder="Tìm theo tên, MST…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '7px 11px 7px 32px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 12.5 }}
@@ -323,7 +323,7 @@ export default function CustomersPage() {
       <div className="mobile-only mobile-table-wrap">
         <div className="m-card-list">
           {loading ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải...</div>
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải…</div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
@@ -386,7 +386,7 @@ export default function CustomersPage() {
               {loading && (
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-                  <p style={{ fontSize: 13 }}>Đang tải...</p>
+                  <p style={{ fontSize: 13 }}>Đang tải…</p>
                 </td></tr>
               )}
               {error && (
@@ -400,7 +400,7 @@ export default function CustomersPage() {
               )}
               {filtered.map(c => (
                   <tr key={c.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
-                    onClick={() => { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); }}
+                    onClick={() => { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null);} } }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >

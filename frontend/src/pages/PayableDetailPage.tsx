@@ -386,11 +386,12 @@ export default function PayableDetailPage() {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
+              <label htmlFor="payment-amount" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
                 Số tiền (VNĐ) *
               </label>
               <input
-                type="number"
+                id="payment-amount"
+                type="number" spellCheck={false}
                 value={paymentAmount}
                 onChange={e => setPaymentAmount(e.target.value)}
                 placeholder="Nhập số tiền"
@@ -403,10 +404,11 @@ export default function PayableDetailPage() {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
+              <label htmlFor="payment-date" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
                 Ngày *
               </label>
               <input
+                id="payment-date"
                 type="date"
                 value={paymentDate}
                 onChange={e => setPaymentDate(e.target.value)}
@@ -419,11 +421,12 @@ export default function PayableDetailPage() {
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
+              <label htmlFor="payment-receipt-id" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--fg-2)' }}>
                 Mã biên lai *
               </label>
               <input
-                type="text"
+                id="payment-receipt-id"
+                type="text" spellCheck={false}
                 value={paymentReceiptId}
                 onChange={e => setPaymentReceiptId(e.target.value)}
                 placeholder="VD: PT-20260531-01"
@@ -451,7 +454,7 @@ export default function PayableDetailPage() {
                 onClick={() => handlePaymentSubmit(false)}
                 disabled={submitting || !paymentAmount || !paymentDate || !paymentReceiptId.trim()}
               >
-                {submitting ? 'Đang ghi...' : 'Xác nhận'}
+                {submitting ? 'Đang ghi…' : 'Xác nhận'}
               </button>
             </div>
           </div>

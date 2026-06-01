@@ -26,7 +26,7 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed }: JourneyLegsCa
       {legs.length === 0 ? (
         <div className="tc-journey-empty">
           <div className="tc-journey-empty__illustration">
-            <svg width="60" height="40" viewBox="0 0 60 40">
+            <svg aria-hidden="true" width="60" height="40" viewBox="0 0 60 40">
               <circle cx="8" cy="32" r="4" fill="#16A34A" />
               <path d="M8 28 Q 15 8, 30 20 T 52 8" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="3,3" fill="none" />
               <circle cx="52" cy="8" r="4" fill="#DC2626" />

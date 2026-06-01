@@ -175,7 +175,7 @@ export default function DebtListPage() {
               ]);
               downloadCSV(`cong-no-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất báo cáo
             </button>
           </div>
@@ -231,7 +231,7 @@ export default function DebtListPage() {
           <Search size={14} style={{ color: 'var(--fg-3)' }} />
           <input
             type="text"
-            placeholder="Tìm khách hàng..."
+            placeholder="Tìm khách hàng…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -265,7 +265,7 @@ export default function DebtListPage() {
                 const pct60     = totalAging > 0 ? (d.aging.d60    / totalAging) * 100 : 0;
                 const pct90     = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
                 return (
-                  <div key={d.customer.id} className="m-card" onClick={() => navigate(`/debt/${d.customer.id}`)}>
+                  <div key={d.customer.id} className="m-card" onClick={() => navigate(`/debt/${d.customer.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/debt/${d.customer.id}`); } }}>
                     <div className="m-card__top">
                       <span className="m-card__title">
                         <span className={`risk-dot risk-dot--${d.riskClass}`} />
@@ -328,7 +328,7 @@ export default function DebtListPage() {
                   return (
                     <tr
                       key={d.customer.id}
-                      onClick={() => navigate(`/debt/${d.customer.id}`)}
+                      onClick={() => navigate(`/debt/${d.customer.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/debt/${d.customer.id}`); } }}
                       style={{ cursor: 'pointer' }}
                     >
                       <td>

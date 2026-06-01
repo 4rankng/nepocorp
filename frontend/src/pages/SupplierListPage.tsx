@@ -3,6 +3,7 @@ import {
   Users, UserCheck, Plus, Download, Search,
   MoreHorizontal, Pencil, Trash2, X, Save, Loader2,
 } from 'lucide-react';
+import { useConfirm } from '../components/UI';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
@@ -79,7 +80,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen }: {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div className="field">
             <label htmlFor="supp-tax" style={labelStyle}>Mã số thuế</label>
-            <input id="supp-tax" className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312..." />
+            <input id="supp-tax" className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312…" />
           </div>
           <div className="field">
             <label htmlFor="supp-status" style={labelStyle}>Trạng thái</label>
@@ -95,12 +96,12 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen }: {
           </div>
           <div className="field">
             <label htmlFor="supp-phone" style={labelStyle}>Điện thoại</label>
-            <input id="supp-phone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." />
+            <input id="supp-phone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912…" />
           </div>
         </div>
         <div className="field">
           <label htmlFor="supp-note" style={labelStyle}>Ghi chú</label>
-          <input id="supp-note" className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú thêm..." />
+          <input id="supp-note" className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú thêm…" />
         </div>
       </div>
     </Modal>
@@ -119,6 +120,7 @@ export default function SupplierListPage() {
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
 
   const pageSize = 10;
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const { data: suppliersData, isLoading: loading, error: queryError, refetch: refetchSuppliers } = useSuppliers(page, search);
   const suppliers = suppliersData?.items ?? [];
@@ -165,6 +167,7 @@ export default function SupplierListPage() {
   }
 
   async function doDelete(id: number) {
+    if (!await confirm('Bạn có chắc chắn muốn xóa?', { variant: 'danger' })) return;
     setDeleting(id);
     try {
       await api.delete(CONFIG.SUPPLIER(id));
@@ -228,7 +231,7 @@ export default function SupplierListPage() {
           <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }} />
           <input
             type="text"
-            placeholder="Tìm theo tên..."
+            placeholder="Tìm theo tên…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '7px 11px 7px 32px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 12.5 }}
@@ -239,7 +242,7 @@ export default function SupplierListPage() {
       <div className="mobile-only mobile-table-wrap">
         <div className="m-card-list">
           {loading ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải...</div>
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải…</div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
@@ -293,7 +296,7 @@ export default function SupplierListPage() {
               {loading && (
                 <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-                  <p style={{ fontSize: 13 }}>Đang tải...</p>
+                  <p style={{ fontSize: 13 }}>Đang tải…</p>
                 </td></tr>
               )}
               {error && (
@@ -307,7 +310,7 @@ export default function SupplierListPage() {
               )}
               {filtered.map(s => (
                   <tr key={s.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
-                    onClick={() => { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); }}
+                    onClick={() => { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null);} } }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
@@ -382,6 +385,7 @@ export default function SupplierListPage() {
         }}
         oncancel={() => { setEditingId(null); setShowAddForm(false); }}
       />
+    {confirmDialog}
     </div>
   );
 }

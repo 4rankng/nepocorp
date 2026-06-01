@@ -82,7 +82,7 @@ export default function PayableListPage() {
               ]);
               downloadCSV(`cong-no-phai-tra-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất báo cáo
             </button>
           </div>
@@ -125,7 +125,7 @@ export default function PayableListPage() {
           <Search size={14} style={{ color: 'var(--fg-3)' }} />
           <input
             type="text"
-            placeholder="Tìm nhà cung cấp..."
+            placeholder="Tìm nhà cung cấp…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -159,7 +159,7 @@ export default function PayableListPage() {
                 const pct60 = totalAging > 0 ? (d.aging.d60 / totalAging) * 100 : 0;
                 const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
                 return (
-                  <div key={d.supplier.id} className="m-card" onClick={() => navigate(`/payables/${d.supplier.id}`)}>
+                  <div key={d.supplier.id} className="m-card" onClick={() => navigate(`/payables/${d.supplier.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/payables/${d.supplier.id}`); } }}>
                     <div className="m-card__top">
                       <span className="m-card__title">{d.supplier.name}</span>
                       <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value`} style={{ fontSize: 13.5 }}>
@@ -213,7 +213,7 @@ export default function PayableListPage() {
                 {filteredPayables.map(d => (
                   <tr
                     key={d.supplier.id}
-                    onClick={() => navigate(`/payables/${d.supplier.id}`)}
+                    onClick={() => navigate(`/payables/${d.supplier.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/payables/${d.supplier.id}`); } }}
                     style={{ cursor: 'pointer' }}
                   >
                     <td>

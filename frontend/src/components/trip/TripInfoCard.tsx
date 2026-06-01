@@ -39,14 +39,14 @@ export function TripInfoCard(props: TripInfoCardProps) {
 
   const sel = (value: string, onChange: (v: string) => void, options: SelectOption[], placeholder: string) => (
     <select className="input" style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)} disabled={props.loading}>
-      <option value="">{props.loading ? 'Đang tải...' : placeholder}</option>
+      <option value="">{props.loading ? 'Đang tải…' : placeholder}</option>
       {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
     </select>
   );
 
   const selStatic = (value: string, onChange: (v: string) => void, options: TrailerTypeOption[], placeholder: string) => (
     <select className="input" style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)} disabled={props.loading}>
-      <option value="">{props.loading ? 'Đang tải...' : placeholder}</option>
+      <option value="">{props.loading ? 'Đang tải…' : placeholder}</option>
       {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );

@@ -272,7 +272,7 @@ export default function AuditLogPage() {
           <Search size={14} />
           <input
             type="text"
-            placeholder="Tìm tên, nội dung, hành động..."
+            placeholder="Tìm tên, nội dung, hành động…"
             value={search}
             onChange={e => {
               setSearch(e.target.value);

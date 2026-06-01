@@ -406,7 +406,7 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: M
             onClick={onClose}
             aria-label="Đóng"
           >
-            <X size={16} />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
         <div style={{ padding: '20px 22px', overflowY: 'auto', maxHeight: 'calc(100vh - 200px)', overscrollBehavior: 'contain' }}>

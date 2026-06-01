@@ -103,7 +103,7 @@ export default function SalaryPeriodConfigPage() {
             </select>
           </Field>
           <button className="btn btn--primary" onClick={saveDefault} disabled={saving} style={{ height: 38 }}>
-            {saving ? 'Đang lưu...' : 'Lưu mặc định'}
+            {saving ? 'Đang lưu…' : 'Lưu mặc định'}
           </button>
         </div>
         {defaultConfig && (

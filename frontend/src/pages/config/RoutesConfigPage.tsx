@@ -4,12 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
-import { PageHeader } from '../../components/UI';
+import { PageHeader , useConfirm } from '../../components/UI';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Route as RouteType, RoadAllowance, PaginatedResponse } from '@nepocorp/shared';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="field"><label>{label}</label>{children}</div>;
+  return <div className="field"><label>{label} {children}</label></div>;
 }
 
 function RouteInlineAdd({ saving, item, onsave, oncancel }: {
@@ -105,6 +105,7 @@ export default function RoutesConfigPage() {
   }, [data?.allowances]);
 
   const crud = useCRUD('/routes', async () => { await refetch(); });
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const now = new Date();
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getFullYear()).slice(-2)}`;
@@ -145,7 +146,7 @@ export default function RoutesConfigPage() {
           <div className="kpi__top"><span className="kpi__label">Đang sử dụng {monthLabel}</span></div>
           <div className="kpi__value">{usedThisMonth}<span className="kpi__value-unit">/{totalCount}</span></div>
           <div className="kpi__meta">{totalCount > 0 ? Math.round((usedThisMonth / totalCount) * 100) : 0}% tuyến có chuyến</div>
-          <div className="kpi__watermark" aria-hidden="true"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div className="kpi__watermark" aria-hidden="true"><svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
         </div>
         <div className="kpi kpi--warn">
           <div className="kpi__top"><span className="kpi__label">Tuyến núi</span></div>
@@ -179,8 +180,8 @@ export default function RoutesConfigPage() {
           })}
           <div className="toolbar__spacer" />
           <div className="toolbar__search">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Tìm tuyến đường..." value={search} onChange={e => setSearch(e.target.value)} />
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="Tìm tuyến đường…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
         <div className="table-scroll">
@@ -245,6 +246,7 @@ export default function RoutesConfigPage() {
         </div>
       </div>
       {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', marginTop: 12 }}>{crud.error}</div>}
+    {confirmDialog}
     </div>
   );
 }

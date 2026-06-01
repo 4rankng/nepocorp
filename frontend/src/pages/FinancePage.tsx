@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
@@ -159,7 +159,7 @@ export default function FinancePage() {
               ];
               downloadCSV(`bao-cao-lai-lo-${String(month).padStart(2, '0')}-${String(year).slice(-2)}.csv`, headers, rows);
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất Excel
             </button>
           </div>
@@ -226,7 +226,7 @@ export default function FinancePage() {
             <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
           ) : revenueChartData.every(d => d['Doanh thu'] === 0 && d['LN gộp'] === 0) ? (
             <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 8 }}>
-              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
+              <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
                 <line x1="3" y1="20" x2="21" y2="20"/>
                 <line x1="6" y1="20" x2="6" y2="14"/><line x1="10" y1="20" x2="10" y2="8"/>
                 <line x1="14" y1="20" x2="14" y2="11"/><line x1="18" y1="20" x2="18" y2="4"/>
@@ -250,7 +250,7 @@ export default function FinancePage() {
                 const barW = Math.min(16, (xStep - 6) / 2);
                 const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => niceMax * t);
                 return (
-                  <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Xu hướng doanh thu">
+                  <svg aria-hidden="true" width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Xu hướng doanh thu">
                     {ticks.map((tv, i) => {
                       const y = padT + plotH - (tv / niceMax) * plotH;
                       return (
@@ -308,7 +308,7 @@ export default function FinancePage() {
                 });
                 return (
                   <>
-                    <svg width={180} height={180} role="img" aria-label="Cơ cấu chi phí">
+                    <svg aria-hidden="true" width={180} height={180} role="img" aria-label="Cơ cấu chi phí">
                       {arcs.map((a, i) => <path key={i} d={a.path} fill={a.fill} />)}
                     </svg>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
@@ -327,7 +327,7 @@ export default function FinancePage() {
             </div>
           ) : (
             <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 8 }}>
-              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
+              <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
                 <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
                 <path d="M22 12A10 10 0 0 0 12 2v10z"/>
               </svg>
@@ -345,7 +345,7 @@ export default function FinancePage() {
             Top xe theo lợi nhuận – {String(month).padStart(2, '0')}/{String(year).slice(-2)}
           </div>
           <div style={{ height: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 8 }}>
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
+            <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
               <rect x="1" y="3" width="15" height="13" rx="2"/>
               <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
               <circle cx="5.5" cy="18.5" r="2.5"/>
@@ -371,7 +371,7 @@ export default function FinancePage() {
             const barTrackW = 400 - plateW - valW - gap;
             const zeroX = minProfit < 0 ? plateW + (Math.abs(minProfit) / totalRange) * barTrackW : plateW;
             return (
-              <svg width="100%" height={svgH} viewBox={`0 0 400 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
+              <svg aria-hidden="true" width="100%" height={svgH} viewBox={`0 0 400 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
                 {topTrucks.map((t, i) => {
                   const val = t['LN gộp'];
                   const isNegative = val < 0;
@@ -564,13 +564,11 @@ export default function FinancePage() {
               ? <> Sau khi kết chuyển chia cổ đông: {activeCapTable.map((p, i) => <span key={i}>{i > 0 ? ' và ' : ''}<strong>{formatRawNumber(netProfit * p.pct / 100)} ₫</strong> cho {p.name} ({p.pct}%)</span>)}.</>
               : ' Chưa cấu hình bảng cổ phần.'
             }{' '}
-            <a
-              href="#"
-              onClick={(e) => { e.preventDefault(); navigate('/profit'); }}
+            <Link to='/profit'
               style={{ color: 'var(--brand)', fontWeight: 600, textDecoration: 'none' }}
             >
               Xem chi tiết cổ phần →
-            </a>
+            </Link>
           </p>
 
           {/* Per-truck breakdown table */}

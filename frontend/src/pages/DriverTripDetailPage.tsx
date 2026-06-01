@@ -82,7 +82,7 @@ export default function DriverTripDetailPage() {
   if (loading) return (
     <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
       <Loader2 size={24} className="spin" style={{ display: 'inline-block' }} />
-      <p style={{ marginTop: 12 }}>Đang tải...</p>
+      <p style={{ marginTop: 12 }}>Đang tải…</p>
     </div>
   );
 

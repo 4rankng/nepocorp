@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
@@ -739,9 +739,9 @@ export default function DispatchPage() {
         {pendingTrips.length > 0 && (
           <div className="orders-foot">
             <span>Hiển thị {pendingTrips.length} đơn hàng</span>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigate('/trips'); }}>
+            <Link to='/trips'>
               Lịch sử điều vận →
-            </a>
+            </Link>
           </div>
         )}
       </div>

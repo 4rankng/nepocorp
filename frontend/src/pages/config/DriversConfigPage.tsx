@@ -24,7 +24,7 @@ function DriverForm({ saving, item, onsave, oncancel, truckList }: {
         <Field label="Tên tài xế"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Họ và tên" /></Field>
       </div>
       <div style={{ flex: 1, minWidth: 130 }}>
-        <Field label="SĐT"><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912..." /></Field>
+        <Field label="SĐT"><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912…" /></Field>
       </div>
       <div style={{ flex: 1, minWidth: 130 }}>
         <Field label="Lương CB"><input className="input" type="number" value={baseSalary} onChange={e => setBaseSalary(e.target.value)} placeholder="0" /></Field>

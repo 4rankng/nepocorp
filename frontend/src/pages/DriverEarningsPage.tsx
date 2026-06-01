@@ -53,7 +53,7 @@ export default function DriverEarningsPage() {
     <Panel>
       <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
         <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
-        <p style={{ marginTop: 8 }}>Đang tải dữ liệu thu nhập...</p>
+        <p style={{ marginTop: 8 }}>Đang tải dữ liệu thu nhập…</p>
       </div>
     </Panel>
   );

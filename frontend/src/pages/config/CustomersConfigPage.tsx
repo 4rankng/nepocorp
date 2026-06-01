@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { useConfirm } from '../../components/UI';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
@@ -11,7 +12,7 @@ import type { Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="field"><label>{label}</label>{children}</div>;
+  return <div className="field"><label>{label} {children}</label></div>;
 }
 
 function CustomerForm({ saving, item, onsave, oncancel }: {
@@ -22,10 +23,10 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
   return (
     <InlineForm colSpan={7}>
       <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Tên khách hàng"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên..." /></Field>
+        <Field label="Tên khách hàng"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên…" /></Field>
       </div>
       <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Liên hệ"><input className="input" value={contactInfo} onChange={e => setContactInfo(e.target.value)} placeholder="SĐT, email..." /></Field>
+        <Field label="Liên hệ"><input className="input" value={contactInfo} onChange={e => setContactInfo(e.target.value)} placeholder="SĐT, email…" /></Field>
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => onsave({ name: name.trim(), contactInfo: contactInfo.trim() || undefined })} />
     </InlineForm>
@@ -68,6 +69,7 @@ export default function CustomersConfigPage() {
   const customerTripStats = data?.customerTripStats ?? new Map<number, { trips: number; revenue: number }>();
 
   const crud = useCRUD('/customers', async () => { await refetch(); });
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const now = new Date();
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getFullYear()).slice(-2)}`;
@@ -124,7 +126,7 @@ export default function CustomersConfigPage() {
             });
             downloadCSV('khach-hang.csv', headers, rows);
           }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Xuất Excel
           </button>
           <button className="btn btn--primary" onClick={() => crud.setShowAddForm(true)}>
@@ -144,19 +146,19 @@ export default function CustomersConfigPage() {
           <div className="kpi__top"><span className="kpi__label">Đang hoạt động</span></div>
           <div className="kpi__value">{activeCount}<span className="kpi__value-unit">/{totalCount}</span></div>
           <div className="kpi__meta">{totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0}% hoạt động đều</div>
-          <div className="kpi__watermark" aria-hidden="true"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div>
+          <div className="kpi__watermark" aria-hidden="true"><svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div>
         </div>
         <div className="kpi kpi--warn">
           <div className="kpi__top"><span className="kpi__label">Top 4 chiếm</span></div>
           <div className="kpi__value">{top4Pct}<span className="kpi__value-unit">%</span></div>
           <div className="kpi__meta">{top4Pct > 60 ? 'Rủi ro tập trung cao' : 'Doanh thu tháng này'}</div>
-          <div className="kpi__watermark" aria-hidden="true"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+          <div className="kpi__watermark" aria-hidden="true"><svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
         </div>
         <div className="kpi kpi--danger">
           <div className="kpi__top"><span className="kpi__label">Tạm khoá</span></div>
           <div className="kpi__value">{lockedCount}</div>
           <div className="kpi__meta">Do nợ quá hạn</div>
-          <div className="kpi__watermark" aria-hidden="true"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div className="kpi__watermark" aria-hidden="true"><svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
         </div>
       </div>
 
@@ -168,8 +170,8 @@ export default function CustomersConfigPage() {
           })}
           <div className="toolbar__spacer" />
           <div className="toolbar__search">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Tìm theo tên, MST..." value={search} onChange={e => setSearch(e.target.value)} />
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="Tìm theo tên, MST…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
         <div className="table-scroll">
@@ -232,6 +234,7 @@ export default function CustomersConfigPage() {
         </div>
       </div>
       {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', marginTop: 12 }}>{crud.error}</div>}
+    {confirmDialog}
     </div>
   );
 }

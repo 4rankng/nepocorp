@@ -79,7 +79,7 @@
 | III. Lợi nhuận gộp | Doanh thu − Tổng chi phí |
 | Biên lợi nhuận | LN / Doanh thu × 100% |
 
-**Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần.
+**Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần. Bảng con phân tách chi phí bảo dưỡng theo **đầu kéo** vs **rơ-mooc** (dựa trên `vehicle_component` của phiếu chi phí).
 
 ---
 
@@ -122,8 +122,9 @@
     │   ├─ Lọc trips theo kỳ
     │   ├─ Tính từng khoản thu/chi bằng round2dp()
     │   └─ Group by vehicle cho per-truck breakdown
+    │       └─ Phân tách chi phí bảo dưỡng: vehicle_component=TRUCK vs TRAILER
     │
-    └─ Render: Bar chart + Pie chart + Income statement + Per-truck table
+    └─ Render: Bar chart + Pie chart + Income statement + Per-truck table (với sub-row đầu kéo/rơ-mooc)
 ```
 
 ---

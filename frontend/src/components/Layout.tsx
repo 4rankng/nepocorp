@@ -438,7 +438,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <>
             <button className="btn btn--secondary btn--sm" onClick={() => setProfileModalOpen(false)}>Hủy</button>
             <button className="btn btn--primary btn--sm" onClick={handleSaveProfile} disabled={profileSaving}>
-              {profileSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+              {profileSaving ? 'Đang lưu…' : 'Lưu thay đổi'}
             </button>
           </>
         }
@@ -494,7 +494,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <>
             <button className="btn btn--secondary btn--sm" onClick={() => setPasswordModalOpen(false)}>Hủy</button>
             <button className="btn btn--primary btn--sm" onClick={handleChangePassword} disabled={passwordSaving}>
-              {passwordSaving ? 'Đang lưu...' : 'Đổi mật khẩu'}
+              {passwordSaving ? 'Đang lưu…' : 'Đổi mật khẩu'}
             </button>
           </>
         }
@@ -543,31 +543,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             title="Ẩn / hiện menu (⌘B)"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
 
           <nav className="topbar__breadcrumb" aria-label="Breadcrumb">
             <span>NEPO</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
             <strong>{pageTitle}</strong>
           </nav>
 
           <div className="topbar__search">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Tìm chuyến đi, khách hàng, xe..." />
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="Tìm chuyến đi, khách hàng, xe…" />
             <kbd>⌘ K</kbd>
           </div>
 
           <div className="topbar__actions">
             <div className="date-chip">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <span>Tháng {new Date().getMonth() + 1} · <strong>{new Date().toLocaleDateString('vi-VN')}</strong></span>
             </div>
             <button className="icon-btn" aria-label="Trợ giúp">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </button>
             <button className="icon-btn" aria-label="Thông báo">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
               <span className="badge">5</span>
             </button>
           </div>

@@ -278,7 +278,7 @@ export default function TripEditPage() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
         <Spinner size={20} />
-        <span style={{ fontSize: 14 }}>Đang tải dữ liệu...</span>
+        <span style={{ fontSize: 14 }}>Đang tải dữ liệu…</span>
       </div>
     );
   }
@@ -409,7 +409,7 @@ export default function TripEditPage() {
                   <textarea
                     className="input"
                     style={{ minHeight: 80, resize: 'vertical', width: '100%' }}
-                    placeholder="Ghi chú chi tiết chuyến đi, các sự cố phát sinh..."
+                    placeholder="Ghi chú chi tiết chuyến đi, các sự cố phát sinh…"
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
                   />
@@ -464,7 +464,7 @@ export default function TripEditPage() {
           disabled={submitting || uploading}
         >
           {submitting ? (
-            <><Loader2 size={16} className="spin" /> Đang lưu...</>
+            <><Loader2 size={16} className="spin" /> Đang lưu…</>
           ) : (
             <><Save size={16} /> Lưu cập nhật</>
           )}

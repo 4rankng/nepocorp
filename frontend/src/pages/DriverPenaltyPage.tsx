@@ -57,7 +57,7 @@ export default function DriverPenaltyPage() {
   // Only show the loading banner while the period query is in flight.
   // If the query finished with no period defined for current month, we still
   // want to render the safe/violation banner using monthPenalties=[] (the
-  // memo handles that). Previously this stuck on "Đang tải..." forever when
+  // memo handles that). Previously this stuck on "Đang tải…" forever when
   // no period existed for the current month.
   const isLoadingPeriod = periodLoading;
 
@@ -133,7 +133,7 @@ export default function DriverPenaltyPage() {
           </div>
           <div className="kpi__meta">Trừ vào lương tháng</div>
           <div className="kpi__watermark" aria-hidden="true">
-            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
         </div>
 
@@ -175,7 +175,7 @@ export default function DriverPenaltyPage() {
       {loading ? (
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
           <Loader2 size={24} className="spin" style={{ display: 'inline-block' }} />
-          <p style={{ marginTop: 12 }}>Đang tải...</p>
+          <p style={{ marginTop: 12 }}>Đang tải…</p>
         </div>
       ) : filteredPenalties.length === 0 ? (
         <Card style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--fg-3)' }}>

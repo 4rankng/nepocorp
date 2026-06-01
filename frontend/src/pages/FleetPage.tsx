@@ -244,7 +244,7 @@ function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen }: {
               className="input"
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              placeholder="0912..."
+              placeholder="0912…"
             />
           </div>
           <div className="field">
@@ -332,7 +332,7 @@ function TruckCard({ trucks, driverByTruck, crud }: {
               <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
             )}
             {trucks.map((t, i) => (
-              <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(t.id)}>
+              <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(t.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(t.id); } }}>
                 <td className="num">{i + 1}</td>
                 <td><Plate plate={t.licensePlate} tag="VN" /></td>
                 <td>
@@ -442,7 +442,7 @@ function DriverCard({ drivers, truckMap, crud }: {
               <tr><td colSpan={7} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
             )}
             {filteredDrivers.map((d, i) => (
-              <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(d.id)}>
+              <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => crud.setEditingId(d.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); crud.setEditingId(d.id); } }}>
                 <td className="num">{i + 1}</td>
                 <td>
                   <span className="fleet-assigned">

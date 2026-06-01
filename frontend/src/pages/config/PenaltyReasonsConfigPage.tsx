@@ -20,7 +20,7 @@ function PenaltyReasonForm({ saving, item, onsave, oncancel, existingReasons }: 
     <InlineForm colSpan={4}>
       <div style={{ flex: 3, minWidth: 200 }}>
         <Field label="Lý do phạt">
-          <input className="input" value={reason} onChange={e => setReason(e.target.value)} placeholder="Mô tả lý do..."
+          <input className="input" value={reason} onChange={e => setReason(e.target.value)} placeholder="Mô tả lý do…"
             style={isDuplicate ? { borderColor: 'var(--danger)' } : undefined} />
           {isDuplicate && <span style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, display: 'block' }}>Lý do này đã tồn tại trong danh mục.</span>}
         </Field>

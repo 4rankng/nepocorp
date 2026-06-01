@@ -61,7 +61,7 @@ Form nhập:
 1. **Ngày** (bắt buộc)
 2. **Nhà cung cấp** (bắt buộc, từ danh mục)
 3. **Hạng mục** (bắt buộc, từ danh mục)
-4. **Xe** — chọn xe đầu kéo **hoặc** rơ-mooc, **hoặc để trống** (chi phí chung). Khi chọn rơ-mooc, P&L tự gộp vào lãi gộp của đầu kéo ghép cặp.
+4. **Xe** — chọn xe đầu kéo, **hoặc để trống** (chi phí chung). Khi chọn xe, đánh dấu chi phí thuộc **đầu kéo** hay **rơ-mooc** (dropdown `vehicle_component`: "Đầu kéo" / "Rơ-mooc", mặc định "Đầu kéo"). Chi phí rơ-mooc tự gộp vào lãi gộp của đầu kéo ghép cặp; phân loại chỉ dùng cho báo cáo phân tách.
 5. **Số tiền** (bắt buộc, VND)
 6. **Trạng thái:** Trả ngay (PAID) / Ghi nợ (UNPAID)
 7. **Hiệu lực từ – đến** (`valid_from`/`valid_to`) — **chỉ hiện khi hạng mục là định kỳ**
@@ -85,7 +85,7 @@ Widget liệt kê xe có bảo hiểm/đăng kiểm/phí đường bộ **sắp 
 ### 3.1 Tạo phiếu chi phí — Ghi nợ (UNPAID)
 
 ```
-POST /api/expenses { expenseDate, supplierId, categoryId, truckId?|trailerId?, amount, paymentStatus: "UNPAID", validFrom?, validTo?, note? }
+POST /api/expenses { expenseDate, supplierId, categoryId, truckId?, vehicleComponent?: "TRUCK"|"TRAILER", amount, paymentStatus: "UNPAID", validFrom?, validTo?, note? }
   → BE: Transaction + Advisory Lock trên VENDOR:supplierId
   → INSERT expenses
   → LedgerService.postEntry: VENDOR_EXPENSE, credit = amount → balance = prev + credit − debit (tăng nợ)
@@ -96,6 +96,7 @@ POST /api/expenses { expenseDate, supplierId, categoryId, truckId?|trailerId?, a
 
 ```
 POST /api/expenses { ..., paymentStatus: "PAID" }
+  → vehicleComponent chỉ có khi truckId != null, mặc định "TRUCK"
   → INSERT expenses
   → KHÔNG tạo dòng sổ cái (hệ thống không có tài khoản tiền mặt)
   → Vẫn được tính vào P&L tháng thanh toán
@@ -123,9 +124,10 @@ PUT/DELETE /api/expenses/:id
 ```
 getPnlReport(month, year)
   → Per-truck: Tổng chi phí xe = Σ chi phí chuyến của xe
-                                + Σ bảo dưỡng gắn đầu kéo đó trong tháng
-                                + Σ bảo dưỡng gắn rơ-mooc ghép cặp với xe đó trong tháng
+                                + Σ bảo dưỡng gắn đầu kéo đó trong tháng (vehicle_component='TRUCK')
+                                + Σ bảo dưỡng gắn rơ-mooc ghép cặp với xe đó trong tháng (vehicle_component='TRAILER')
               Lãi gộp xe = Doanh thu − Tổng chi phí xe
+              (Báo cáo phân tách: chi phí đầu kéo vs rơ-mooc trong từng xe)
   → Company-level: Σ chi phí không gắn xe (để trống)
   → Lãi ròng = Σ Lãi gộp xe − Phí quản lý − Chi phí chung + Thu nhập khác
 ```
@@ -157,11 +159,13 @@ getPnlReport(month, year)
 
 ### 4.4 Quy về P&L theo loại gắn xe
 
-| Phiếu gắn | Quy về |
-|-----------|--------|
-| Xe đầu kéo | Trừ vào **Lãi gộp** của chính xe đó |
-| Rơ-mooc | Trừ vào **Lãi gộp của đầu kéo ghép cặp** — đầu kéo và rơ-mooc ghép cố định, tính chung |
-| Không gắn xe | **Chi phí chung công ty** (trừ ở Lãi ròng) |
+| Phiếu gắn | vehicle_component | Quy về |
+|-----------|-------------------|--------|
+| Xe đầu kéo | `TRUCK` (mặc định) | Trừ vào **Lãi gộp** của chính xe đó |
+| Xe đầu kéo | `TRAILER` | Trừ vào **Lãi gộp của đầu kéo ghép cặp** — rơ-mooc ghép cố định, tính chung |
+| Không gắn xe | — | **Chi phí chung công ty** (trừ ở Lãi ròng) |
+
+> **Lưu ý:** Cả `TRUCK` và `TRAILER` đều gộp vào lãi gộp của cùng một đầu kéo. Phân loại `vehicle_component` chỉ để báo cáo phân tách chi tiết (VD: "xe A tốn 50M sửa đầu kéo + 20M thay lốp rơ-mooc").
 
 ---
 
@@ -174,7 +178,8 @@ getPnlReport(month, year)
 | TC-CP-001 | Tạo NCC | ketoan | /suppliers → Thêm → lưu | NCC xuất hiện trong danh sách | High |
 | TC-CP-002 | Tạo hạng mục một lần | ketoan | /config → Hạng mục CP → thêm "Sửa chữa" (is_renewable off) | Lưu thành công, không hỏi ngày hiệu lực | High |
 | TC-CP-003 | Tạo hạng mục định kỳ | ketoan | Thêm "Bảo hiểm" (is_renewable on, lead 30) | Lưu thành công | High |
-| TC-CP-004 | Phiếu Ghi nợ gắn đầu kéo | Có NCC + hạng mục | /expenses → nhập, UNPAID, chọn xe X | 1 dòng VENDOR_EXPENSE credit, số dư NCC tăng | High |
+| TC-CP-004 | Phiếu Ghi nợ gắn đầu kéo | Có NCC + hạng mục | /expenses → nhập, UNPAID, chọn xe X, vehicle_component=TRUCK | 1 dòng VENDOR_EXPENSE credit, số dư NCC tăng, vehicle_component ghi TRUCK | High |
+| TC-CP-004b | Phiếu gắn rơ-mooc | Có NCC + xe có trailer | /expenses → nhập, chọn xe X, vehicle_component=TRAILER | Lưu thành công, P&L gộp vào xe X, báo cáo phân tách hiển thị "Rơ-mooc" | High |
 | TC-CP-005 | Phiếu Trả ngay | Có NCC | Nhập PAID | Không tạo dòng sổ cái; vẫn vào P&L | High |
 | TC-CP-006 | Phiếu định kỳ có hạn | Hạng mục định kỳ | Nhập Bảo hiểm, valid_to = +1 năm, ảnh hóa đơn | Lưu thành công, hiện trên nhắc gia hạn khi tới gần | High |
 | TC-CP-007 | Phiếu không gắn xe | — | Nhập phiếu để trống xe | Lưu thành công (chi phí chung) | Medium |
@@ -186,7 +191,8 @@ getPnlReport(month, year)
 |-------|---------|----------|-------------------|---------|
 | TC-CP-020 | Thiếu NCC | Tạo phiếu không chọn NCC | Lỗi validation | High |
 | TC-CP-021 | Thiếu hạng mục/số tiền | Bỏ trống | Lỗi validation | High |
-| TC-CP-022 | Gắn cả đầu kéo và rơ-mooc | Chọn cả hai | Bị chặn (chỉ một) | Medium |
+| TC-CP-022 | vehicle_component khi không chọn xe | Không chọn xe, chọn vehicle_component=TRAILER | vehicle_component bị ẩn hoặc bỏ qua (chỉ hiện khi có xe) | Medium |
+| TC-CP-022b | Mặc định TRUCK khi chọn xe | Chọn xe, không đổi vehicle_component | Lưu vehicle_component='TRUCK' tự động | Medium |
 | TC-CP-023 | Hạng mục định kỳ thiếu valid_to | is_renewable on, bỏ trống ngày | Lỗi validation | Medium |
 | TC-CP-024 | Số tiền ≤ 0 | Nhập 0 | Lỗi validation | Medium |
 
@@ -219,8 +225,8 @@ getPnlReport(month, year)
 
 | TC-ID | Tiêu đề | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------|-------------------|---------|
-| TC-CP-060 | Bảo dưỡng đầu kéo vào lãi gộp | Phiếu gắn xe X trong tháng | /finance: lãi gộp xe X giảm đúng số tiền | High |
-| TC-CP-061 | Chi phí rơ-mooc vào lãi gộp đầu kéo cặp | Phiếu gắn rơ-mooc R1 (ghép cặp đầu kéo X) | Trừ vào lãi gộp của xe X; không trừ ở chi phí chung | High |
+| TC-CP-060 | Bảo dưỡng đầu kéo vào lãi gộp | Phiếu gắn xe X, vehicle_component=TRUCK trong tháng | /finance: lãi gộp xe X giảm đúng số tiền | High |
+| TC-CP-061 | Chi phí rơ-mooc vào lãi gộp đầu kéo cặp | Phiếu gắn xe X, vehicle_component=TRAILER | Trừ vào lãi gộp của xe X; không trừ ở chi phí chung; báo cáo phân tách hiện "Rơ-mooc" | High |
 | TC-CP-062 | Chi phí chung vào lãi ròng | Phiếu không gắn xe | Trừ ở dòng chi phí chung | Medium |
 | TC-CP-063 | Lát cắt cơ cấu chi phí | Có nhiều hạng mục | Pie chart hiện lát sửa chữa/phụ tùng/bảo hiểm/đăng kiểm/phí đường bộ | Medium |
 | TC-CP-064 | Nhắc gia hạn sắp tới hạn | Bảo hiểm valid_to trong 30 ngày | Dashboard hiện cảnh báo | High |
@@ -241,7 +247,7 @@ getPnlReport(month, year)
 - **Tổng chi phí bao gồm TẤT CẢ chi phí** ở tầng P&L (chuyến + bảo dưỡng). Thẻ từng chuyến vẫn chỉ là dầu + tiền đi đường + lương — `computeTripTotals` không đổi.
 - **Không đếm trùng:** nhiên liệu mua nợ **ngoài phạm vi** — chi phí dầu đã tính theo chuyến.
 - **Phí đường bộ** (phí bảo trì đường bộ năm, theo xe) **khác** **Tiền đi đường** (vé cầu đường mỗi chuyến). Không nhầm.
-- **Chi phí rơ-mooc tính vào lãi gộp đầu kéo ghép cặp** — mỗi đầu kéo và rơ-mooc ghép thành cặp cố định; hệ thống tự tra cặp khi tổng hợp P&L. Chỉ chi phí để trống (không gắn xe) mới là chi phí chung công ty.
+- **Chi phí rơ-mooc tính vào lãi gộp đầu kéo ghép cặp** — mỗi đầu kéo và rơ-mooc ghép thành cặp cố định; hệ thống tự tra cặp khi tổng hợp P&L. Chỉ chi phí để trống (không gắn xe) mới là chi phí chung công ty. Phân loại `vehicle_component` (TRUCK/TRAILER) dùng cho báo cáo phân tách, không ảnh hưởng tính lãi gộp.
 - **Không phân bổ (no amortization):** chi phí định kỳ ghi toàn bộ vào tháng thanh toán; chỉ nhắc gia hạn, không trải đều.
 - Sổ cái VENDOR dùng chung bảng `ledger`, `entity_type='VENDOR'`, append-only.
 - Tài khoản test: xem [README](./README.md) (ketoan / admin123).

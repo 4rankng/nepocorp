@@ -42,36 +42,37 @@ export default function LoginPage() {
           <p className="sub">Nhập thông tin tài khoản của bạn</p>
 
           <div className="field">
-            <label>Tên đăng nhập / Số điện thoại</label>
+            <label htmlFor="username-input">Tên đăng nhập / Số điện thoại</label>
             <div className="input-icon">
               <User size={16} />
               <input
+                id="username-input"
                 className="input"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder="Nhập tên đăng nhập hoặc số điện thoại..."
+                placeholder="Nhập tên đăng nhập hoặc số điện thoại…"
                 autoCapitalize="none"
               />
             </div>
           </div>
 
           <div className="field">
-            <label>Mật khẩu</label>
+            <label htmlFor="password-input">Mật khẩu</label>
             <div className="input-icon" style={{ position: 'relative' }}>
               <Lock size={16} />
               <input
+                id="password-input"
                 className="input"
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu..."
+                placeholder="Nhập mật khẩu…"
                 style={{ paddingRight: 40 }}
               />
               <button
                 type="button"
-                className="password-toggle"
-                onClick={() => setShowPw(v => !v)}
-                aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                onClick={() => setShowPw(!showPw)}
+                style={{ position: 'absolute', right: 12, top: 9, background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer' }}
               >
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -89,7 +90,7 @@ export default function LoginPage() {
             type="submit"
             disabled={!username || !password || submitting}
           >
-            {submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {submitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
           </button>
 
 

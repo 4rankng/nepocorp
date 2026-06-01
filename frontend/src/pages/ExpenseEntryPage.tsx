@@ -262,7 +262,7 @@ export default function ExpenseEntryPage() {
     return (
       <div className="fade-up" style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
         <Loader2 size={24} className="spin" />
-        <p style={{ marginTop: 12 }}>Đang tải...</p>
+        <p style={{ marginTop: 12 }}>Đang tải…</p>
       </div>
     );
   }
@@ -313,7 +313,7 @@ export default function ExpenseEntryPage() {
                   value={form.supplierId}
                   onChange={e => set('supplierId', e.target.value ? Number(e.target.value) : '')}
                 >
-                  <option value="">Chọn nhà cung cấp...</option>
+                  <option value="">Chọn nhà cung cấp…</option>
                   {suppliers.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -337,7 +337,7 @@ export default function ExpenseEntryPage() {
                       type="text"
                       className="input"
                       style={{ flex: 1 }}
-                      placeholder="Tên nhà cung cấp..."
+                      placeholder="Tên nhà cung cấp…"
                       value={newSupplierName}
                       onChange={e => setNewSupplierName(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSupplier(); } if (e.key === 'Escape') { setShowNewSupplier(false); setNewSupplierName(''); } }}
@@ -359,7 +359,7 @@ export default function ExpenseEntryPage() {
                   value={form.categoryId}
                   onChange={e => set('categoryId', e.target.value ? Number(e.target.value) : '')}
                 >
-                  <option value="">Chọn hạng mục...</option>
+                  <option value="">Chọn hạng mục…</option>
                   {categories.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -383,7 +383,7 @@ export default function ExpenseEntryPage() {
                       type="text"
                       className="input"
                       style={{ flex: 1 }}
-                      placeholder="Tên hạng mục..."
+                      placeholder="Tên hạng mục…"
                       value={newCategoryName}
                       onChange={e => setNewCategoryName(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } if (e.key === 'Escape') { setShowNewCategory(false); setNewCategoryName(''); } }}
@@ -457,7 +457,7 @@ export default function ExpenseEntryPage() {
                   className="input"
                   value={form.receiptId}
                   onChange={e => set('receiptId', e.target.value)}
-                  placeholder="Nhập mã biên lai..."
+                  placeholder="Nhập mã biên lai…"
                 />
               </FormGroup>
 
@@ -467,7 +467,7 @@ export default function ExpenseEntryPage() {
                   className="input"
                   value={form.note}
                   onChange={e => set('note', e.target.value)}
-                  placeholder="Ghi chú thêm..."
+                  placeholder="Ghi chú thêm…"
                 />
               </FormGroup>
             </div>
@@ -514,7 +514,7 @@ export default function ExpenseEntryPage() {
                 }}
               >
                 {uploading ? (
-                  <><Loader2 size={14} className="spin" style={{ marginRight: 6 }} /> Đang tải...</>
+                  <><Loader2 size={14} className="spin" style={{ marginRight: 6 }} /> Đang tải…</>
                 ) : (
                   <><Upload size={14} style={{ marginRight: 6 }} /> Thêm ảnh hóa đơn</>
                 )}
@@ -545,7 +545,7 @@ export default function ExpenseEntryPage() {
               disabled={submitting || uploading}
             >
               {submitting ? (
-                <><Loader2 size={14} className="spin" /> Đang lưu...</>
+                <><Loader2 size={14} className="spin" /> Đang lưu…</>
               ) : isEdit ? (
                 'Cập nhật'
               ) : (

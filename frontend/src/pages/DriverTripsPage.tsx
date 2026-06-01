@@ -34,7 +34,7 @@ export default function DriverTripsPage() {
     <Panel>
       <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
         <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
-        <p style={{ marginTop: 8 }}>Đang tải danh sách lệnh...</p>
+        <p style={{ marginTop: 8 }}>Đang tải danh sách lệnh…</p>
       </div>
     </Panel>
   );
@@ -70,7 +70,7 @@ export default function DriverTripsPage() {
               transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
               animationDelay: `${idx * 40}ms`,
             }}
-            onClick={() => navigate(`/my-trips/${trip.id}`)}
+            onClick={() => navigate(`/my-trips/${trip.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/my-trips/${trip.id}`); } }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px -8px rgba(9,9,11,0.08)';
               (e.currentTarget as HTMLDivElement).style.borderColor = '#D4D4D8';

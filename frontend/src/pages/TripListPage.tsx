@@ -461,7 +461,7 @@ export default function TripListPage() {
               type="button"
               className="action-btn"
               title="Sửa"
-              onClick={() => navigate(`/trips/${trip.id}/edit`)}
+              onClick={() => navigate(`/trips/${trip.id}/edit`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${trip.id}/edit`); } }}
             >
               <Pencil size={14} />
             </button>
@@ -515,7 +515,7 @@ export default function TripListPage() {
             <button
               type="button"
               className="btn-d btn-d--primary"
-              onClick={() => navigate('/trips/new')}
+              onClick={() => navigate('/trips/new')} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate('/trips/new'); } }}
             >
               <Plus size={15} strokeWidth={2.4} />
               Thêm chuyến
@@ -697,7 +697,7 @@ export default function TripListPage() {
             <div
               key={row.id}
               className="table-row"
-              onClick={() => navigate(`/trips/${row.original.id}`)}
+              onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
             >
               {row.getVisibleCells().map(cell => (
                 <div key={cell.id} className={cell.column.id === 'route' ? 'col-route' : cell.column.id === 'km' || cell.column.id === 'road' || cell.column.id === 'actions' ? 'right' : ''}>
@@ -728,7 +728,7 @@ export default function TripListPage() {
                 <div
                   key={trip.id}
                   className="trip-mcard"
-                  onClick={() => navigate(`/trips/${trip.id}`)}
+                  onClick={() => navigate(`/trips/${trip.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${trip.id}`); } }}
                 >
                   <div className="trip-mcard__top">
                     <div className="left">
