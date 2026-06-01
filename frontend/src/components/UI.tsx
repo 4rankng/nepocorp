@@ -363,9 +363,10 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   onConfirm?: () => void;
+  maxWidth?: number | string;
 }
 
-export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: ModalProps) {
+export function Modal({ isOpen, title, onClose, children, footer, onConfirm, maxWidth = 540 }: ModalProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   if (!isOpen) return null;
   return createPortal(
@@ -382,7 +383,7 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: M
           borderRadius: 18,
           boxShadow: 'var(--sh-lg)',
           width: '100%',
-          maxWidth: 540,
+          maxWidth: maxWidth,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',

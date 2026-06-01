@@ -26,6 +26,8 @@ export function LocationAutocomplete({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const closeDropdown = useCallback(() => setIsOpen(false), []);
 
+  const [isFocused, setIsFocused] = useState(false);
+
   const refreshSessionToken = useCallback(() => {
     setSessionToken(Math.random().toString(36).substring(2, 15));
   }, []);
@@ -41,7 +43,7 @@ export function LocationAutocomplete({
         // Only show suggestions if we have matches that aren't exactly the current value
         if (results.length > 0 && !(results.length === 1 && results[0].description === value)) {
           setSuggestions(results);
-          setIsOpen(true);
+          if (isFocused) setIsOpen(true);
         } else {
           setSuggestions([]);
           setIsOpen(false);
@@ -54,7 +56,7 @@ export function LocationAutocomplete({
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [value, sessionToken]);
+  }, [value, sessionToken, isFocused]);
 
   const handleSelect = (suggestion: PlaceSuggestion) => {
     onChange(suggestion.description);
@@ -73,7 +75,12 @@ export function LocationAutocomplete({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => {
+          setIsFocused(true);
           if (suggestions.length > 0 && value.trim().length >= 3) setIsOpen(true);
+        }}
+        onBlur={() => {
+          // Delay blur to allow click on suggestion
+          setTimeout(() => setIsFocused(false), 200);
         }}
         required={required}
         autoComplete="off"

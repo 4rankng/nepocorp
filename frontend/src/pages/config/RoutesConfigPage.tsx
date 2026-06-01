@@ -5,6 +5,8 @@ import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain } from 
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { PageHeader, useConfirm, Modal } from '../../components/UI';
+import { LocationAutocomplete } from '../../components/LocationAutocomplete';
+import { calculateRoute } from '../../lib/maps';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Route as RouteType, RoadAllowance, PaginatedResponse } from '@nepocorp/shared';
 import { LoadingType } from '@nepocorp/shared';
@@ -74,8 +76,25 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
     setDefaultLegs([...defaultLegs, { id: Math.random().toString(), origin: '', destination: '', km: '', loadingType: LoadingType.HANG }]);
   };
   
-  const updateLeg = (id: string, field: keyof DefaultLeg, val: string) => {
-    setDefaultLegs(defaultLegs.map(l => l.id === id ? { ...l, [field]: val } : l));
+  const updateLeg = async (id: string, field: keyof DefaultLeg, val: string) => {
+    setDefaultLegs(prev => prev.map(l => l.id === id ? { ...l, [field]: val } : l));
+    
+    // Auto-calculate distance
+    if (field === 'origin' || field === 'destination') {
+      const legToUpdate = defaultLegs.find(l => l.id === id);
+      if (legToUpdate) {
+        const origin = field === 'origin' ? val : legToUpdate.origin;
+        const destination = field === 'destination' ? val : legToUpdate.destination;
+        if (origin && destination && origin !== destination) {
+          try {
+            const result = await calculateRoute(origin, destination);
+            if (result.km !== null) {
+              setDefaultLegs(prev => prev.map(l => l.id === id ? { ...l, km: String(result.km) } : l));
+            }
+          } catch (e) {}
+        }
+      }
+    }
   };
   
   const removeLeg = (id: string) => {
@@ -93,6 +112,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
     <Modal
       isOpen={isOpen}
       title={item ? `Sửa tuyến — ${item.name}` : 'Thêm tuyến đường mới'}
+      maxWidth={1000}
       onClose={oncancel}
       onConfirm={handleSave}
       footer={
@@ -107,64 +127,119 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
         </>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '70vh', overflowY: 'auto', padding: '0 4px' }}>
-        <div>
-          <div style={sectionLabelStyle}>Thông tin cơ bản</div>
-          <div className="field" style={{ marginBottom: 14 }}>
-            <label htmlFor="route-name" style={labelStyle}>
-              Tên tuyến <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <input
-              id="route-name"
-              className="input"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="VD: Hà Nội - Hải Phòng"
-              autoFocus
-            />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="field">
-              <label htmlFor="route-distance" style={labelStyle}>Khoảng cách (km)</label>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-8 items-start">
+        
+        {/* COLUMN 1: Basic Info & Fuel/Salary */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Basic Info */}
+          <div>
+            <div style={sectionLabelStyle}>Thông tin cơ bản</div>
+            <div className="field" style={{ marginBottom: 14 }}>
+              <label htmlFor="route-name" style={labelStyle}>
+                Tên tuyến <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
               <input
-                id="route-distance"
+                id="route-name"
                 className="input"
-                type="number"
-                value={distance}
-                onChange={e => setDistance(e.target.value)}
-                placeholder="0"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="VD: Hà Nội - Hải Phòng"
+                autoFocus
               />
             </div>
-            <div className="field">
-              <label style={labelStyle}>Loại địa hình</label>
-              <label style={{
-                display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-                padding: '9px 12px', border: '1px solid var(--line)',
-                borderRadius: 'var(--radius-md)', background: isMountain ? 'var(--warning-soft, #fef3c7)' : 'transparent',
-              }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="field">
+                <label htmlFor="route-distance" style={labelStyle}>Khoảng cách (km)</label>
                 <input
-                  type="checkbox"
-                  checked={isMountain}
-                  onChange={e => setIsMountain(e.target.checked)}
-                  style={{ width: 16, height: 16, cursor: 'pointer' }}
+                  id="route-distance"
+                  className="input"
+                  type="number"
+                  value={distance}
+                  onChange={e => setDistance(e.target.value)}
+                  placeholder="0"
                 />
-                <Mountain size={14} />
-                <span style={{ fontSize: 13 }}>Tuyến leo núi</span>
-              </label>
+              </div>
+              <div className="field">
+                <label style={labelStyle}>Loại địa hình</label>
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                  padding: '9px 12px', border: '1px solid var(--line)',
+                  borderRadius: 'var(--radius-md)', background: isMountain ? 'var(--warning-soft, #fef3c7)' : 'transparent',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={isMountain}
+                    onChange={e => setIsMountain(e.target.checked)}
+                    style={{ width: 16, height: 16, cursor: 'pointer' }}
+                  />
+                  <Mountain size={14} />
+                  <span style={{ fontSize: 13 }}>Tuyến leo núi</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Fuel & Salary */}
+          <div style={{ borderTop: '1px solid var(--line)', paddingTop: 20 }}>
+            <div style={sectionLabelStyle}>Định mức nhiên liệu & Tiền lương</div>
+            <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '0 0 12px' }}>
+              Các giá trị này sẽ được dùng để gợi ý khi tạo / sửa lệnh trên tuyến này.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="field">
+                <label htmlFor="route-fuel" style={labelStyle}>Định mức dầu (lít)</label>
+                <input
+                  id="route-fuel"
+                  className="input"
+                  type="number"
+                  step="0.01"
+                  value={fuelAllowance}
+                  onChange={e => setFuelAllowance(e.target.value)}
+                  placeholder="0"
+                />
+                <p style={hintStyle}>Định mức cố định riêng cho tuyến (vd. tuyến núi).</p>
+              </div>
+              <div className="field">
+                <label htmlFor="route-stations" style={labelStyle}>Số trạm thu phí</label>
+                <input
+                  id="route-stations"
+                  className="input"
+                  type="number"
+                  value={tollsStations}
+                  onChange={e => setTollsStations(e.target.value)}
+                  placeholder="0"
+                />
+                <p style={hintStyle}>Trừ vào tiền đường.</p>
+              </div>
+            </div>
+            <div className="field" style={{ marginTop: 12 }}>
+              <label htmlFor="route-salary" style={labelStyle}>Lương sản lượng tài xế (VNĐ / chuyến)</label>
+              <input
+                id="route-salary"
+                className="input"
+                type="number"
+                value={driverSalary}
+                onChange={e => setDriverSalary(e.target.value)}
+                placeholder="VD: 500000"
+              />
+              <p style={hintStyle}>Mức lương khoán cho 1 chuyến trên tuyến này. Để trống nếu tính theo công thức chung.</p>
             </div>
           </div>
         </div>
-        
-        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+
+        {/* COLUMN 2: Default Legs */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <div style={{ ...sectionLabelStyle, margin: 0 }}>Hành trình chi tiết (Mặc định)</div>
+            <div>
+              <div style={{ ...sectionLabelStyle, margin: 0 }}>Hành trình chi tiết (Mặc định)</div>
+              <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '4px 0 0' }}>
+                Khai báo sẵn các chặng để tự động điền khi tạo lệnh.
+              </p>
+            </div>
             <button type="button" className="btn btn--secondary btn--sm" onClick={addLeg} style={{ height: 26, padding: '0 8px' }}>
               <Plus size={14} /> Thêm chặng
             </button>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '0 0 12px' }}>
-            Khai báo sẵn các chặng để tự động điền khi tạo lệnh vận chuyển trên tuyến này.
-          </p>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {defaultLegs.length === 0 ? (
@@ -172,65 +247,29 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
                 <span style={{ color: 'var(--fg-3)', fontSize: 13 }}>Chưa có chặng mặc định</span>
               </div>
             ) : defaultLegs.map((leg, i) => (
-              <div key={leg.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 70px 100px 30px', gap: 8, alignItems: 'center', background: 'var(--bg-2)', padding: '8px', borderRadius: 'var(--radius-md)' }}>
-                <input className="input input--sm" placeholder="Điểm đi" value={leg.origin} onChange={e => updateLeg(leg.id, 'origin', e.target.value)} />
-                <input className="input input--sm" placeholder="Điểm đến" value={leg.destination} onChange={e => updateLeg(leg.id, 'destination', e.target.value)} />
-                <input className="input input--sm" type="number" placeholder="Km" value={leg.km} onChange={e => updateLeg(leg.id, 'km', e.target.value)} />
-                <select className="input input--sm" value={leg.loadingType} onChange={e => updateLeg(leg.id, 'loadingType', e.target.value)}>
-                  <option value={LoadingType.HANG}>Có hàng</option>
-                  <option value={LoadingType.VO}>Vỏ rỗng</option>
-                </select>
-                <button type="button" className="btn btn--ghost btn--icon btn--sm" onClick={() => removeLeg(leg.id)} style={{ color: 'var(--danger)' }}>
-                  <Trash2 size={14} />
-                </button>
+              <div key={leg.id} className="flex flex-wrap lg:grid lg:grid-cols-[1fr_1fr_70px_100px_30px] gap-2 items-center p-2 rounded-md" style={{ background: 'var(--bg-2)' }}>
+                <div className="flex-1 min-w-[140px]">
+                  <LocationAutocomplete className="input input--sm w-full" placeholder="Điểm đi" value={leg.origin} onChange={val => updateLeg(leg.id, 'origin', val)} />
+                </div>
+                <div className="flex-1 min-w-[140px]">
+                  <LocationAutocomplete className="input input--sm w-full" placeholder="Điểm đến" value={leg.destination} onChange={val => updateLeg(leg.id, 'destination', val)} />
+                </div>
+                <div className="w-[70px] shrink-0">
+                  <input className="input input--sm w-full" type="number" placeholder="Km" value={leg.km} onChange={e => updateLeg(leg.id, 'km', e.target.value)} />
+                </div>
+                <div className="w-[100px] shrink-0">
+                  <select className="input input--sm w-full" value={leg.loadingType} onChange={e => updateLeg(leg.id, 'loadingType', e.target.value)}>
+                    <option value={LoadingType.HANG}>Có hàng</option>
+                    <option value={LoadingType.VO}>Vỏ rỗng</option>
+                  </select>
+                </div>
+                <div className="w-[30px] shrink-0 flex justify-center">
+                  <button type="button" className="btn btn--ghost btn--icon btn--sm" onClick={() => removeLeg(leg.id)} style={{ color: 'var(--danger)' }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
-          <div style={sectionLabelStyle}>Định mức nhiên liệu & Tiền lương</div>
-          <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '0 0 12px' }}>
-            Các giá trị này sẽ được dùng để gợi ý khi tạo / sửa lệnh trên tuyến này.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="field">
-              <label htmlFor="route-fuel" style={labelStyle}>Định mức dầu (lít)</label>
-              <input
-                id="route-fuel"
-                className="input"
-                type="number"
-                step="0.01"
-                value={fuelAllowance}
-                onChange={e => setFuelAllowance(e.target.value)}
-                placeholder="0"
-              />
-              <p style={hintStyle}>Định mức cố định riêng cho tuyến (vd. tuyến núi). Để trống để dùng định mức chung.</p>
-            </div>
-            <div className="field">
-              <label htmlFor="route-stations" style={labelStyle}>Số trạm thu phí</label>
-              <input
-                id="route-stations"
-                className="input"
-                type="number"
-                value={tollsStations}
-                onChange={e => setTollsStations(e.target.value)}
-                placeholder="0"
-              />
-              <p style={hintStyle}>Số trạm BOT trên tuyến · trừ vào tiền đường.</p>
-            </div>
-          </div>
-          <div className="field" style={{ marginTop: 12 }}>
-            <label htmlFor="route-salary" style={labelStyle}>Lương sản lượng tài xế (VNĐ / chuyến)</label>
-            <input
-              id="route-salary"
-              className="input"
-              type="number"
-              value={driverSalary}
-              onChange={e => setDriverSalary(e.target.value)}
-              placeholder="VD: 500000"
-            />
-            <p style={hintStyle}>Mức lương khoán cho 1 chuyến trên tuyến này. Để trống nếu tính theo công thức chung.</p>
           </div>
         </div>
       </div>

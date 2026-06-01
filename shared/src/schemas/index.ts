@@ -201,7 +201,7 @@ export const routeSchema = z.object({
   defaultLegs: z.array(z.object({
     origin: z.string(),
     destination: z.string(),
-    km: z.coerce.number().int().nonnegative(),
+    km: z.coerce.number().nonnegative(),
     loadingType: z.enum([LoadingType.HANG, LoadingType.VO]),
   })).optional().nullable(),
 });

@@ -57,23 +57,17 @@ export async function createExpense(tx: any, data: ExpenseCreateInput, userId?: 
     throw new ApiError(400, 'Chi phí có thời hạn cần ngày hết hạn (validTo)');
   }
 
-  // Route the incoming `truckId` into the correct FK column based on
-  // `vehicleComponent`. Pete's requirement: tách chi phí sửa chữa / đăng
-  // kiểm / thay lốp theo đầu kéo vs rơ-moóc, which only works if the
-  // trailer expense actually lands in `trailer_id` (otherwise the row
-  // looks correct in the form but the list shows the wrong vehicle plate
-  // — see expense list bug where vehicleComponent=TRAILER but xe column
-  // still showed truck plate because both tables share id=1).
-  const isTrailer = data.truckId != null && data.vehicleComponent === 'TRAILER';
-  const truckIdToInsert = isTrailer ? null : (data.truckId ?? null);
-  const trailerIdToInsert = isTrailer ? data.truckId : null;
-
+  // The expenses table only has truck_id (no trailer_id column yet) —
+  // we discriminate truck vs rơ-moóc via the vehicleComponent enum. The
+  // ID column holds either trucks.id or trailers.id depending on
+  // vehicleComponent. (FK constraint nominally points at trucks; in
+  // practice trailer IDs land here too and the join-by-component logic
+  // in the list query handles the lookup.)
   const [expense] = await tx.insert(s.expenses).values({
     expenseDate: data.expenseDate,
     supplierId: data.supplierId,
     categoryId: data.categoryId,
-    truckId: truckIdToInsert,
-    trailerId: trailerIdToInsert,
+    truckId: data.truckId ?? null,
     vehicleComponent: data.truckId ? (data.vehicleComponent ?? 'TRUCK') : null,
     amount: data.amount,
     paymentStatus: data.paymentStatus,
@@ -157,13 +151,7 @@ export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInpu
   if (data.supplierId !== undefined) updateValues.supplierId = data.supplierId;
   if (data.categoryId !== undefined) updateValues.categoryId = data.categoryId;
   if (data.truckId !== undefined) {
-    // Mirror createExpense's column-routing logic: trailer IDs go into
-    // trailer_id, not truck_id. Without this, switching an expense from
-    // ĐẦU KÉO → RƠ-MOÓC during edit would leave the trailer id in the
-    // truck_id column and the list view would render the wrong plate.
-    const isTrailer = data.truckId != null && data.vehicleComponent === 'TRAILER';
-    updateValues.truckId = isTrailer ? null : data.truckId;
-    updateValues.trailerId = isTrailer ? data.truckId : null;
+    updateValues.truckId = data.truckId;
     updateValues.vehicleComponent = data.truckId ? (data.vehicleComponent ?? 'TRUCK') : null;
   } else if (data.vehicleComponent !== undefined) {
     // Enforce the same invariant as createExpense: vehicleComponent must be
@@ -279,10 +267,23 @@ export async function listExpenses(database: any, filters: ExpenseListFilters) {
         id: s.trucks.id,
         licensePlate: s.trucks.licensePlate,
       },
+      // Join trailer on the same id column, gated by vehicleComponent so we
+      // only get a hit when the expense is actually for a rơ-moóc. The
+      // expenses table doesn't have a separate trailer_id column yet, so
+      // the truck_id field stores trailer.id when vehicleComponent='TRAILER'
+      // — that's the source of Pete's bug ("xe column shows đầu kéo plate
+      // even on rơ-moóc expenses"). With this conditional join, the list
+      // can pick the right plate.
+      trailer: {
+        id: s.trailers.id,
+        licensePlate: s.trailers.licensePlate,
+        type: s.trailers.type,
+      },
     }).from(s.expenses)
       .leftJoin(s.suppliers, eq(s.expenses.supplierId, s.suppliers.id))
       .leftJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
-      .leftJoin(s.trucks, eq(s.expenses.truckId, s.trucks.id))
+      .leftJoin(s.trucks, and(eq(s.expenses.truckId, s.trucks.id), eq(s.expenses.vehicleComponent, 'TRUCK')))
+      .leftJoin(s.trailers, and(eq(s.expenses.truckId, s.trailers.id), eq(s.expenses.vehicleComponent, 'TRAILER')))
       .where(where)
       .orderBy(desc(s.expenses.expenseDate), desc(s.expenses.id))
       .limit(pageSize)
@@ -332,10 +333,16 @@ export async function getExpense(database: any, id: number) {
       id: s.trucks.id,
       licensePlate: s.trucks.licensePlate,
     },
+    trailer: {
+      id: s.trailers.id,
+      licensePlate: s.trailers.licensePlate,
+      type: s.trailers.type,
+    },
   }).from(s.expenses)
     .leftJoin(s.suppliers, eq(s.expenses.supplierId, s.suppliers.id))
     .leftJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
-    .leftJoin(s.trucks, eq(s.expenses.truckId, s.trucks.id))
+    .leftJoin(s.trucks, and(eq(s.expenses.truckId, s.trucks.id), eq(s.expenses.vehicleComponent, 'TRUCK')))
+    .leftJoin(s.trailers, and(eq(s.expenses.truckId, s.trailers.id), eq(s.expenses.vehicleComponent, 'TRAILER')))
     .where(and(eq(s.expenses.id, id), isNull(s.expenses.deletedAt)))
     .limit(1);
   return row ?? null;

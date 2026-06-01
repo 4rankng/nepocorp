@@ -231,16 +231,21 @@ export default function ExpenseListPage() {
                     {formatCurrency(e.amount)}
                   </span>
                 </div>
-                {e.truck && (
+                {(e.truck || (e as any).trailer) && (
                   <div className="m-card__row">
                     <span className="m-card__row-label">Xe</span>
-                    <span className="m-card__row-value">{e.truck.licensePlate}</span>
+                    <span className="m-card__row-value">
+                      {e.vehicleComponent === 'TRAILER'
+                        ? ((e as any).trailer?.licensePlate || '—')
+                        : (e.truck?.licensePlate || '—')
+                      }
+                    </span>
                   </div>
                 )}
                 {e.vehicleComponent && (
                   <div className="m-card__row">
                     <span className="m-card__row-label">Thành phần</span>
-                    <span className="m-card__row-value">{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.truck ? 'Đầu kéo' : ''}</span>
+                    <span className="m-card__row-value">{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : 'Đầu kéo'}</span>
                   </div>
                 )}
               </div>
@@ -291,8 +296,17 @@ export default function ExpenseListPage() {
                     <td style={{ whiteSpace: 'nowrap' }}>{formatDate(e.expenseDate)}</td>
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>
                     <td>{e.category?.name || '—'}</td>
-                    <td>{e.truck?.licensePlate || <span style={{ color: 'var(--fg-3)' }}>—</span>}</td>
-                    <td>{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.truck ? 'Đầu kéo' : ''}</td>
+                    <td>
+                      {/* Show trailer plate when vehicleComponent='TRAILER' so
+                          rơ-moóc expenses don't display the đầu kéo plate
+                          (which they did before because the backend was
+                          storing trailer id in truck_id column). */}
+                      {e.vehicleComponent === 'TRAILER'
+                        ? (e.trailer?.licensePlate || <span style={{ color: 'var(--fg-3)' }}>—</span>)
+                        : (e.truck?.licensePlate || <span style={{ color: 'var(--fg-3)' }}>—</span>)
+                      }
+                    </td>
+                    <td>{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.vehicleComponent === 'TRUCK' ? 'Đầu kéo' : ''}</td>
                     <td className="num typo-mono" style={{ fontWeight: 700, color: 'var(--danger)' }}>
                       {formatCurrency(e.amount)}
                     </td>
