@@ -24,10 +24,6 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
   return rest;
 }
 
-/**
- * Pull a human-readable identifier out of a response/request body so audit
- * messages can read "khóa chuyến TRP-202606-0086" instead of raw numeric IDs.
- */
 function extractEntityKey(
   entityType: string | null,
   responseBody: Record<string, unknown> | null,
@@ -45,11 +41,9 @@ function extractEntityKey(
 
   switch (entityType) {
     case 'trips':
-      return pick(responseBody, 'tripCode')
-        || pick(requestBody, 'tripCode');
+      return pick(responseBody, 'tripCode') || pick(requestBody, 'tripCode');
     case 'trucks':
-      return pick(responseBody, 'licensePlate')
-        || pick(requestBody, 'licensePlate');
+      return pick(responseBody, 'licensePlate') || pick(requestBody, 'licensePlate');
     case 'customers':
     case 'routes':
     case 'cargo-types':
@@ -57,30 +51,24 @@ function extractEntityKey(
     case 'penalty-reasons':
     case 'suppliers':
     case 'expense-categories':
-      return pick(responseBody, 'name')
-        || pick(requestBody, 'name');
+      return pick(responseBody, 'name') || pick(requestBody, 'name');
     case 'cap-table':
-      return pick(responseBody, 'partnerName')
-        || pick(requestBody, 'partnerName');
+      return pick(responseBody, 'partnerName') || pick(requestBody, 'partnerName');
     case 'reports': {
       const quarter = pick(responseBody, 'quarter') || pick(requestBody, 'quarter');
       const year = pick(responseBody, 'year') || pick(requestBody, 'year');
-      if (quarter && year) {
-        return `Quý ${quarter}/${year}`;
-      }
+      if (quarter && year) return `Quý ${quarter}/${year}`;
       return undefined;
     }
     case 'payments':
     case 'adjustments':
     case 'penalties': {
-      const tripRef = pick(responseBody, 'tripCode')
-        || pick(requestBody, 'tripCode');
+      const tripRef = pick(responseBody, 'tripCode') || pick(requestBody, 'tripCode');
       if (tripRef) return `cho chuyến ${tripRef}`;
       return undefined;
     }
     default:
-      return pick(responseBody, 'name', 'code')
-        || pick(requestBody, 'name', 'code');
+      return pick(responseBody, 'name', 'code') || pick(requestBody, 'name', 'code');
   }
 }
 
@@ -90,8 +78,12 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
   }
 
   const fullPath = (req.originalUrl || req.url || '').split('?')[0];
+  const isLoginPath = fullPath.includes('/login');
 
-  // Intercept res.json to capture the response body for entity key extraction
+  // Capture the response body for entity key extraction by intercepting res.json.
+  // This is a lighter touch than the previous approach of monkey-patching both
+  // res.json AND res.end — we only intercept res.json and use res.on('finish')
+  // for the actual audit write trigger.
   let capturedBody: Record<string, unknown> | null = null;
   const originalJson = res.json.bind(res);
   res.json = function (body: any) {
@@ -101,18 +93,14 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
     return originalJson(body);
   };
 
-  const isLoginPath = fullPath.includes('/login');
-
-  const originalEnd = res.end;
-  res.end = function (...args: any[]) {
+  // Use res.on('finish') instead of monkey-patching res.end.
+  // The 'finish' event fires after the response is sent to the client,
+  // so the audit write never delays the response.
+  res.on('finish', () => {
     const event = resolveAuditEvent(req.method, fullPath);
     const entityType = extractEntityType(fullPath);
     const entityId = extractEntityId(fullPath, req.body as Record<string, unknown>);
-    const entityKey = extractEntityKey(
-      entityType,
-      capturedBody,
-      req.body as Record<string, unknown>,
-    );
+    const entityKey = extractEntityKey(entityType, capturedBody, req.body as Record<string, unknown>);
 
     if (res.statusCode < 400 && req.user) {
       emitAudit({
@@ -163,8 +151,7 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
         },
       });
     }
-    return (originalEnd as any).apply(res, args);
-  };
+  });
 
   next();
 }
