@@ -42,16 +42,12 @@
   animation: toast-exit var(--t-spring, 300ms) var(--ease-spring, ease-out) forwards;
 }
 
-.toast--success { border-left: 4px solid var(--success); }
 .toast--success .toast__icon { color: var(--success); }
 
-.toast--error { border-left: 4px solid var(--danger); }
 .toast--error .toast__icon { color: var(--danger); }
 
-.toast--warning { border-left: 4px solid var(--warning); }
 .toast--warning .toast__icon { color: var(--warning); }
 
-.toast--info { border-left: 4px solid var(--info); }
 .toast--info .toast__icon { color: var(--info); }
 
 .toast__icon {

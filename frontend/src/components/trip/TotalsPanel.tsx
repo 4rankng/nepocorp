@@ -196,7 +196,6 @@ export function TotalsPanel() {
               display: "flex",
               flexDirection: "column",
               gap: 3,
-              borderLeft: "1px dashed rgba(255,255,255,0.18)",
               marginLeft: 6,
               paddingTop: 2,
               paddingBottom: 2,

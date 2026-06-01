@@ -23,8 +23,8 @@ Legend: `[ ]` pending · `[~]` in progress · `[x]` Passed · `[!]` Bug found (s
 ## 2. User Admin (flows/10) — **Known issue starter**
 
 - [x] **2.1** Director `/users` loads list (NOT stuck on "Đang tải…") — PASSED 2026-06-02. API returns `{items, total}`, 7 accounts render, no persistent loading text. Known issue was already fixed.
-- [ ] **2.2** Director creates new user
-- [ ] **2.3** Director edits existing user
+- [x] **2.2** Director creates new user — PASSED iter 03 (under phung; iter 02 false-bug withdrawn, see iteration files)
+- [x] **2.3** Director edits existing user — PASSED iter 04 (under phung; PATCH /api/auth/users/:id fires, row updates)
 - [ ] **2.4** Director soft-deletes a user
 - [ ] **2.5** Accountant `/users` → API 403 (or hidden in sidebar)
 - [ ] **2.6** Director `/audit-logs` infinite-scroll loads pages
@@ -157,3 +157,6 @@ Legend: `[ ]` pending · `[~]` in progress · `[x]` Passed · `[!]` Bug found (s
 | # | Date | Item | Bugs Found | Status |
 |---|------|------|------------|--------|
 | 01 | 2026-06-02 | 2.1 Director /users hang | 0 (regression pass) | Passed |
+| 02 | 2026-06-02 | 2.2 Director creates new user | 1 (parked) | Parked — env anomaly mid-test; quan demoted to FORWARDER. Retry under phung. |
+| 03 | 2026-06-02 | 2.2 RETRY under phung | 0 (false-bug withdrawn) | Passed |
+| 04 | 2026-06-02 | 2.3 Director edits user | 0 | Passed |

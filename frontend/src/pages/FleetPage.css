@@ -265,7 +265,6 @@
 }
 
 .fleet-page .fleet-edit-row td:first-child {
-  border-left: 3px solid var(--accent);
   border-radius: 0;
 }
 

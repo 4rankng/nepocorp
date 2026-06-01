@@ -524,7 +524,6 @@ export default function RoutesConfigPage() {
                       style={{
                         cursor: 'pointer',
                         background: isSelected ? 'var(--bg-2)' : undefined,
-                        borderLeft: isSelected ? '3px solid var(--primary)' : undefined,
                       }}
                     >
                       <td data-label="Tuyến đường">
@@ -685,8 +684,7 @@ export default function RoutesConfigPage() {
                       gap: '4px',
                       background: 'var(--bg-2)',
                       padding: '8px 10px',
-                      borderRadius: 'var(--radius-sm)',
-                      borderLeft: `3px solid ${['#10B981', '#06B6D4', '#3B82F6', '#8B5CF6'][i % 4]}`
+                      borderRadius: 'var(--radius-sm)'
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--fg-2)' }}>Chặng {i + 1}</span>

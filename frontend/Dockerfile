@@ -5,21 +5,19 @@ RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app
 
-# Copy workspace root files
+# Copy only manifests first — pnpm install layer is cached until lock file changes
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-
-# Copy shared package (Vite resolves @nepocorp/shared via alias to ../shared/src)
 COPY shared/package.json shared/package.json
+COPY frontend/package.json frontend/package.json
+
+# Install all workspace dependencies (cached unless lock file changes)
+RUN pnpm install --frozen-lockfile
+
+# Copy source after install — code changes don't bust the install cache
 COPY shared/tsconfig.json shared/tsconfig.json
 COPY shared/src shared/src
 
-# Copy frontend package
-COPY frontend/package.json frontend/package.json
-
-# Install all workspace dependencies
-RUN pnpm install --frozen-lockfile
-
-# Build shared first
+# Build shared first (Vite resolves @nepocorp/shared via alias to ../shared/src)
 RUN cd shared && pnpm build
 
 # Copy frontend source

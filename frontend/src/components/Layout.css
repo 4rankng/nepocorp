@@ -776,10 +776,6 @@
   background: var(--surface-3);
 }
 
-.notif-item--unread {
-  border-left: 3px solid var(--accent);
-  padding-left: 8px;
-}
 
 .notif-item--read {
   opacity: 0.65;
