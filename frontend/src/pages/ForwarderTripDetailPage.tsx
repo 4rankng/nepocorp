@@ -67,6 +67,7 @@ export default function ForwarderTripDetailPage() {
       {
         tripId,
         data: {
+          containerTypeId: containerForm.containerTypeId ? Number(containerForm.containerTypeId) : undefined,
           containerNumber: containerForm.containerNumber,
           sealNumber: containerForm.sealNumber || undefined,
           notes: containerForm.notes || undefined,

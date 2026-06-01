@@ -295,7 +295,7 @@ export default function AuditLogPage() {
                   border: '1px solid var(--line-2)',
                   borderRadius: 6,
                   padding: 10,
-                  fontSize: 11,
+fontSize: 13,
                   color: 'var(--ink)',
                   fontFamily: 'var(--font-mono)',
                   overflow: 'auto',

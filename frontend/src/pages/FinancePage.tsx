@@ -239,7 +239,7 @@ export default function FinancePage() {
               {(() => {
                 const w = 600;
                 const h = 220;
-                const padL = 44, padR = 8, padT = 8, padB = 36;
+                const padL = 54, padR = 8, padT = 8, padB = 36;
                 const plotW = w - padL - padR, plotH = h - padT - padB;
                 const max = Math.max(
                   1,
@@ -256,7 +256,7 @@ export default function FinancePage() {
                       return (
                         <g key={i}>
                           <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="var(--line)" strokeDasharray={i === 0 ? undefined : '2 4'} />
-                          <text x={padL - 6} y={y + 4} textAnchor="end" fontSize="11" fill="var(--fg-3)">{compactNum(tv)}</text>
+                          <text x={padL - 6} y={y + 4} textAnchor="end" fontSize="14" fill="var(--fg-3)">{compactNum(tv)}</text>
                         </g>
                       );
                     })}
@@ -270,7 +270,7 @@ export default function FinancePage() {
                         <g key={i}>
                           <rect x={cx - barW - 1} y={padT + plotH - revH} width={barW} height={revH} fill="#3b82f6" rx={2} />
                           <rect x={cx + 1} y={padT + plotH - gpH} width={barW} height={gpH} fill="#10b981" rx={2} />
-                          <text className="finance-chart-xlabel" x={cx} y={h - padB + 16} textAnchor="middle" fontSize="11" fill="var(--fg-3)">{d.name as string}</text>
+                          <text className="finance-chart-xlabel" x={cx} y={h - padB + 16} textAnchor="middle" fontSize="13" fill="var(--fg-3)">{d.name as string}</text>
                         </g>
                       );
                     })}
@@ -365,8 +365,8 @@ export default function FinancePage() {
             const minProfit = Math.min(...topTrucks.map(t => t['LN gộp']), 0);
             const totalRange = maxProfit - minProfit;
             const svgH = Math.max(120, topTrucks.length * 36);
-            const plateW = 90;
-            const valW = 90;
+            const plateW = 80;
+            const valW = 80;
             const gap = 8;
             const barTrackW = 400 - plateW - valW - gap;
             const zeroX = minProfit < 0 ? plateW + (Math.abs(minProfit) / totalRange) * barTrackW : plateW;
@@ -381,7 +381,7 @@ export default function FinancePage() {
                   const labelX = isNegative ? zeroX + 6 : zeroX + w + 6;
                   return (
                     <g key={i} transform={`translate(0, ${i * 36})`}>
-                      <text x={0} y={16} fontSize={12} fill="var(--fg-2)">{t.name}</text>
+                      <text x={0} y={16} fontSize={11} fill="var(--fg-2)">{t.name}</text>
                       <rect x={barX} y={4} width={w} height={20} fill={fill} rx={3} />
                       {/* Zero axis line if we have negative profits */}
                       {minProfit < 0 && (
@@ -390,7 +390,7 @@ export default function FinancePage() {
                       <text
                         x={labelX}
                         y={19}
-                        fontSize={11}
+                        fontSize={10}
                         fill={isNegative ? 'var(--danger)' : 'var(--fg-2)'}
                         textAnchor="start"
                         fontWeight={isNegative ? 600 : 400}

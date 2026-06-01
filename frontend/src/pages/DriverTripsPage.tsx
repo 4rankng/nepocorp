@@ -47,7 +47,7 @@ export default function DriverTripsPage() {
     <div>
       <PageHeader title="Lệnh của tôi" description="Danh sách lệnh vận chuyển đã nhận" />
       <div className="empty-state">
-        <img src="/assets/illustrations/empty-trips.svg" alt="No trips" />
+        <img src="/assets/illustrations/empty-trips.svg" alt="No trips" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         <h3 className="empty-state-title">Chưa có lệnh vận chuyển nào</h3>
         <p className="empty-state-desc">
           Bạn chưa được phân công lệnh vận chuyển nào. Khi có chuyến đi mới, thông tin chi tiết sẽ xuất hiện tại đây.

@@ -551,6 +551,7 @@
 
   /* ── Debt detail page ── */
   .dd-header { flex-wrap: wrap; align-items: center; gap: 12px; }
+  .dd-avatar { display: none; }
   .dd-meta { flex: 1 1 100%; min-width: 0; }
   .dd-meta h1 { font-size: 18px; line-height: 1.25; word-break: keep-all; }
   .dd-actions { flex: 1 1 100%; }
@@ -577,7 +578,7 @@
   .setting-card__title { font-size: 14px; margin: 0; }
   .setting-card__desc { display: none; }
   .setting-card__foot { padding-top: 0; margin-left: auto; flex-shrink: 0; }
-  .setting-card__foot > *:not(:last-child) { display: none; }
+  .setting-card__foot > *:not(:last-child):not(:first-child) { display: none; }
 
   /* ── Routes config page ── */
   .routes-config-grid { grid-template-columns: 1fr; }

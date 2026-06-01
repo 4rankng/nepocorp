@@ -110,9 +110,9 @@ export default function DriverTripDetailPage() {
             <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg-1)', margin: 0 }}>
               {trip.routeName || 'Lệnh vận chuyển'}
             </h1>
-            <StatusPill variant={tripStatusVariant(trip.status)}>
+            <span style={{ flexShrink: 0 }}><StatusPill variant={tripStatusVariant(trip.status)}>
               {TRIP_STATUS_LABELS[trip.status] || trip.status}
-            </StatusPill>
+            </StatusPill></span>
           </div>
           {trip.customerName && (
             <p style={{ fontSize: 13, color: 'var(--fg-3)', margin: '4px 0 0' }}>{trip.customerName}</p>

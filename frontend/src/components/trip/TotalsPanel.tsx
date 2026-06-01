@@ -208,7 +208,7 @@ export function TotalsPanel() {
             )}
             {roadBreakdown.stations > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>− Trạm BOT ({roadBreakdown.stations} × {fmt(roadBreakdown.perStation)})</span>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>− Trạm BOT ({roadBreakdown.stations} × {fmt(roadBreakdown.perStation)})</span>
                 <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.stationCost)}</span>
               </div>
             )}

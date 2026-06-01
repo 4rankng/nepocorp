@@ -2,8 +2,27 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" href="/assets/favicon.avif" type="image/avif" />
+
+    <!-- ─── PWA / Add to Home Screen ──────────────────────────────────────── -->
+    <!-- Standalone display when launched from home screen (no browser chrome) -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#00B14F" />
+    <meta name="color-scheme" content="light" />
+
+    <!-- iOS Safari: "Add to Home Screen" standalone mode.
+         When Pete taps Share → Add to Home Screen and re-opens the icon,
+         iOS reads these tags to launch full-screen without the Safari URL bar
+         and bottom toolbar. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="NEPO" />
+    <link rel="apple-touch-icon" href="/assets/logo-192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/assets/logo-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/logo-512.png" />
+
     <link rel="stylesheet" href="/fonts/fonts.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

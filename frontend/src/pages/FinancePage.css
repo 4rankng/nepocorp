@@ -86,3 +86,11 @@
     display: none;
   }
 }
+@media (max-width: 420px) {
+  .finance-revenue-svg text {
+    font-size: 10px !important;
+  }
+  .finance-charts-row > .panel {
+    padding: 12px 14px !important;
+  }
+}

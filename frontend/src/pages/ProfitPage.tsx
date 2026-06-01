@@ -304,7 +304,7 @@ export default function ProfitPage() {
                 <FormGroup label="Chọn Quý">
                   <select
                     className="input"
-                    style={{ width: 120 }}
+                    style={{ minWidth: 120, flex: '1 1 auto' }}
                     value={selectedQuarter}
                     onChange={e => { setSelectedQuarter(Number(e.target.value)); setPreview(null); }}
                   >
@@ -314,7 +314,7 @@ export default function ProfitPage() {
                 <FormGroup label="Năm quyết toán">
                   <select
                     className="input"
-                    style={{ width: 120 }}
+                    style={{ minWidth: 120, flex: '1 1 auto' }}
                     value={distQuarterYear}
                     onChange={e => { setDistQuarterYear(Number(e.target.value)); setPreview(null); }}
                   >
@@ -325,7 +325,7 @@ export default function ProfitPage() {
               <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
                 <button
                   className="btn btn--secondary"
-                  style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8 }}
+                  style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
                   onClick={handlePreview}
                   disabled={previewing}
                 >
@@ -334,7 +334,7 @@ export default function ProfitPage() {
                 </button>
                 <button
                   className="btn btn--primary"
-                  style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8 }}
+                  style={{ height: 40, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
                   onClick={handleDistributeProfit}
                   disabled={distributing}
                 >

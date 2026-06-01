@@ -307,7 +307,7 @@ export default function CustomersPage() {
         <FilterPill active={filter === 'active'} onClick={() => setFilter('active')}>Hoạt động · {activeCount}</FilterPill>
         <FilterPill active={filter === 'locked'} onClick={() => setFilter('locked')}>Tạm khoá · {lockedCount}</FilterPill>
         <div style={{ flex: 1 }} />
-        <div style={{ position: 'relative', width: 240 }}>
+        <div style={{ position: 'relative', width: 240, maxWidth: '100%' }}>
           <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }} />
           <input
             type="text"

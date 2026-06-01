@@ -201,11 +201,12 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
                 <button
                   type="button"
                   className="btn btn--ghost btn--icon btn--sm"
+                  style={{ minWidth: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                   onClick={() => removeRow(row._key)}
                   aria-label="Xoá dòng"
                   title="Xoá cont"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={16} />
                 </button>
               </div>
 
@@ -271,7 +272,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 14 }}>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 14, flexWrap: 'wrap' }}>
         <button
           type="button"
           className="btn btn--secondary btn--sm"
