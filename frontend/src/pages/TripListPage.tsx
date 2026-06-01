@@ -417,7 +417,7 @@ export default function TripListPage() {
     }),
     columnHelper.accessor((row) => Number(row.totalRoadAllowance ?? 0), {
       id: 'road',
-      header: 'Tiền đi đường',
+      header: 'Tiền đường',
       cell: ({ row }) => {
         const trip = row.original;
         const road = Number(trip.totalRoadAllowance ?? 0);

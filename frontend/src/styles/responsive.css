@@ -277,6 +277,24 @@
     white-space: nowrap;
   }
 
+  /* Expense filter toolbar wraps into 2-col grid on phone */
+  .expense-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    overflow: visible;
+  }
+  .expense-filters__select,
+  .expense-filters__date {
+    min-width: 0;
+    width: 100%;
+    font-size: 14px;
+  }
+  .expense-filters__reset {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
   /* ── Modal: bottom-sheet on phones ── */
   .modal {
     padding: 0;

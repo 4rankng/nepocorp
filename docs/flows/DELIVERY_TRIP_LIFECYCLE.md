@@ -391,8 +391,9 @@ Quản lý 3 loại thực thể trong 1 trang:
 | 10 | Chọn **Chế độ nhiên liệu** | TỰ ĐỘNG (tính theo định mức) hoặc KHOÁN (nhập tay) | |
 | 11 | **Doanh thu** | Tự động tra bảng giá. Nếu muốn ghi đè → nhập giá mới | Badge "Giá tự động: X VNĐ" hoặc "Ghi đè" |
 | 12 | Nhập **Mã tham chiếu** khách hàng (nếu có) | | |
-| 13 | **Tải ảnh** (nếu cần) | Ảnh CONTAINER, SEAL, hoặc OTHER | |
-| 14 | Nhấn **"Tạo chuyến"** | | ✅ Chuyến CREATED, mã `TRP-YYYYMM-NNNN` sinh tự động |
+| 13 | **Nhập thông tin container** (tùy chọn) | Mỗi dòng: Loại container (dropdown), Số container (text), Số seal (text). Thêm/xóa dòng. | VD: 2×20'DC hoặc 1×40'HC |
+| 14 | **Tải ảnh** (nếu cần) | Ảnh CONTAINER, SEAL, hoặc OTHER | |
+| 15 | Nhấn **"Tạo chuyến"** | | ✅ Chuyến CREATED, mã `TRP-YYYYMM-NNNN` sinh tự động |
 
 ### 4.3 Nhập số liệu thực tế chuyến
 
@@ -406,8 +407,9 @@ Sau khi xe hoàn thành chuyến đi, Kế toán nhập số liệu thực tế.
 | 4 | Kiểm tra **nhiên liệu** | Xem tổng tự tính hoặc nhập tay nếu KHOÁN | |
 | 5 | Nhập **chi phí đi đường** | Số trạm × phí/trạm, giảm trừ, cộng thêm | |
 | 6 | Cập nhật **doanh thu** (nếu cần) | Nếu giá thực tế khác bảng giá → ghi đè | Hệ thống lưu giá gốc + giá ghi đè |
-| 7 | **Tải ảnh** | Ảnh CONTAINER, SEAL (bắt buộc nếu hàng yêu cầu) | |
-| 8 | Nhấn **"Lưu"** | | ✅ Chuyến chuyển sang COMPLETED (nếu đủ ảnh) |
+| 7 | **Cập nhật/bổ sung container** | Loại container (dropdown), Số container (text), Số seal (text) | Nhập được bởi Kế toán, Giám đốc hoặc Giao nhận |
+| 8 | **Tải ảnh** | Ảnh CONTAINER, SEAL (bắt buộc nếu hàng yêu cầu). Bên cạnh ảnh, có thể nhập số cont/seal bằng text. | |
+| 9 | Nhấn **"Lưu"** | | ✅ Chuyến chuyển sang COMPLETED (nếu đủ ảnh) |
 
 > **Lưu ý về ảnh:** Nếu loại hàng hóa có `requiresPhotos = true` (vd: chè), phải tải lên ít nhất 1 ảnh CONTAINER và 1 ảnh SEAL mới chuyển sang COMPLETED được.
 

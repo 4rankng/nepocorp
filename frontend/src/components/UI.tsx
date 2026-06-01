@@ -381,7 +381,7 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm, max
   const portalTarget = usePortalTarget();
   if (!isOpen || !portalTarget) return null;
   // Forward maxWidth via CSS variable so mobile overrides (max-width: 100%) win.
-  const cssVars = { ['--modal-max-w' as string]: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth };
+  const cssVars = { '--modal-max-w': typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth } as React.CSSProperties;
   return createPortal(
     <div
       className="modal"
