@@ -102,10 +102,11 @@ export default function FinancePage() {
 
     const costPieData = [
       { name: 'Nhiên liệu', value: fuelCost, fill: '#3b82f6' },
-      { name: 'Tiền đường', value: roadCost, fill: '#f59e0b' },
+      { name: 'Tiền đi đường', value: roadCost, fill: '#f59e0b' },
       { name: 'Lương lái xe', value: driverCost, fill: '#10b981' },
       { name: 'Bảo dưỡng', value: maintenanceCost, fill: '#ef4444' },
-    ].filter(d => d.value > 0);
+      { name: 'Phí quản lý', value: mgmtFee, fill: '#E07D2E' },
+    ].filter(d => d.value > 0.5);
 
     const categoryBreakdown: Array<{ categoryName: string; total: number }> =
       (report?.categoryBreakdown ?? []).map(c => ({

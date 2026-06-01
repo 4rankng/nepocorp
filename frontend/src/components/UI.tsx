@@ -212,6 +212,7 @@ interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export function Btn({
   variant = 'secondary',
   size = 'md',
+  type = 'button',
   icon,
   children,
   className = '',
@@ -221,7 +222,7 @@ export function Btn({
   const iconOnly = !children && icon ? ' btn--icon' : '';
   return (
     <button
-      type="button"
+      type={type}
       className={`btn btn--${variant}${sizeClass}${iconOnly} ${className}`}
       {...rest}
     >
@@ -408,7 +409,7 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm }: M
             <X size={16} />
           </button>
         </div>
-        <div style={{ padding: '20px 22px', overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
+        <div style={{ padding: '20px 22px', overflowY: 'auto', maxHeight: 'calc(100vh - 200px)', overscrollBehavior: 'contain' }}>
           {children}
         </div>
         {footer && (

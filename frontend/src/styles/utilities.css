@@ -21,6 +21,12 @@
 .spin { animation: spin 0.8s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .fade-up, .fade-up-1, .fade-up-2, .fade-up-3, .fade-up-4, .fade-up-5 { animation: none; }
+  .spin { animation: none !important; }
+  .panel, .kpi, .kpi:hover, .panel:hover { transform: none !important; transition: none !important; }
+  .drawer { transition: none !important; }
+  .sidebar-overlay { transition: none !important; }
+  .btn--primary::after { transition: none !important; }
+  .kpi__watermark { animation: none !important; }
 }
 
 @media (max-width: 640px) {

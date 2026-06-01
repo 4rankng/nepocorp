@@ -56,7 +56,7 @@ export async function getReceivablesSummary() {
     let unappliedCredit = 0;
 
     for (const entry of entries) {
-      if (entry.debit > 0 && entry.timestamp) {
+      if (entry.debit > 0) {
         let debitRemaining = entry.debit;
         // Offset against any carried-forward prepayment first
         if (unappliedCredit > 0) {
@@ -66,7 +66,7 @@ export async function getReceivablesSummary() {
         }
         if (debitRemaining > 0) {
           openInvoices.push({
-            epochMs: entry.timestamp.getTime(),
+            epochMs: entry.timestamp ? entry.timestamp.getTime() : now,
             open: debitRemaining,
           });
         }

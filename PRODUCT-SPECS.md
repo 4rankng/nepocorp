@@ -95,7 +95,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### 4.7 Lợi nhuận
 
-* **Lợi nhuận gộp (Gross Profit):** = Tổng Doanh thu các chuyến − **Tổng chi phí xe**, tính theo từng **xe đầu kéo**, theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó **hoặc rơ-mooc ghép cặp với xe đó** trong tháng (sửa chữa đầu kéo/rơ-mooc, bảo hiểm/đăng kiểm/phí đường bộ của cả cặp). Mỗi đầu kéo và rơ-mooc **ghép thành cặp cố định** — chi phí rơ-mooc tính chung vào chi phí của đầu kéo ghép cặp.
+* **Lợi nhuận gộp (Gross Profit):** = Tổng Doanh thu các chuyến − **Tổng chi phí xe**, tính theo từng **xe đầu kéo**, theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó **hoặc rơ-mooc ghép cặp với xe đó** trong tháng (sửa chữa đầu kéo/rơ-mooc, bảo hiểm/đăng kiểm/phí đường bộ của cả cặp). Mỗi đầu kéo và rơ-mooc **ghép thành cặp cố định** — chi phí rơ-mooc tính chung vào chi phí của đầu kéo ghép cặp. Mỗi phiếu chi phí gắn xe đánh dấu thuộc **đầu kéo** hay **rơ-mooc** (`vehicle_component: 'TRUCK' | 'TRAILER'`), cho phép báo cáo phân tách chi phí sửa chữa/đăng kiểm/thay lốp theo thành phần xe *(Pete xác nhận 1/6)*.
 * **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **Chi phí không gắn xe (chi phí chung)** + Thu nhập khác.
 * **Phí quản lý:** Khoản cố định hàng tháng cho toàn công ty. Kế toán nhập thủ công. *(Mức cụ thể do Giám đốc ấn định — tạm thời placeholder 24.000.000 VNĐ/tháng; sẽ xác nhận chính thức sau.)*
 * **Thu nhập khác (Other Income):** Ghi nhận doanh thu phạt kỷ luật. Lương tài xế ghi nhận đầy đủ, không trừ phạt.
@@ -145,7 +145,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * **Phạm vi:** ghi nhận chi phí vận hành ngoài chuyến đi — sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — gắn với Nhà cung cấp và (tùy chọn) một xe.
 * **Nhà cung cấp (NCC):** danh mục mọi bên nhận tiền (gara, trạm lốp, cửa hàng phụ tùng, công ty bảo hiểm, trung tâm đăng kiểm, đơn vị thu phí đường bộ). **Bắt buộc** trên mọi khoản chi phí. Không có trường "phân loại" (phân loại nằm ở hạng mục từng khoản chi).
 * **Hạng mục chi phí:** danh mục **cấu hình được** (người dùng tự thêm). Mỗi hạng mục là **một lần** hoặc **định kỳ** (`is_renewable`); hạng mục định kỳ có `reminder_lead_days` (mặc định 30 ngày).
-* **Chi phí phát sinh:** một khoản chi = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một **xe đầu kéo** (tùy chọn, có thể để trống → chi phí chung). Khi chi phí liên quan đến rơ-mooc (VD: thay lốp), kế toán chọn đầu kéo ghép cặp — không có trường rơ-mooc riêng. Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → ghi nhận nhiều lần.
+* **Chi phí phát sinh:** một khoản chi = một hạng mục + một số tiền. Gắn NCC (bắt buộc) + một **xe đầu kéo** (tùy chọn, có thể để trống → chi phí chung). Khi chọn xe, kế toán đánh dấu chi phí thuộc **đầu kéo** hay **rơ-mooc** qua trường `vehicle_component` (`'TRUCK'` | `'TRAILER'`, mặc định `'TRUCK'`). Chi phí rơ-mooc vẫn gộp vào lãi gộp của đầu kéo ghép cặp — phân loại chỉ dùng cho báo cáo phân tách (sửa chữa, đăng kiểm, thay lốp). Đính được ảnh hóa đơn. Hóa đơn nhiều khoản → ghi nhận nhiều lần. *(Pete xác nhận 1/6: "chi phí sửa chữa và đăng kiểm, thay lốp nên tách theo rơ-mooc và đầu kéo")*
 * **Trạng thái thanh toán:**
     * **Trả ngay (PAID):** chỉ ghi cho P&L, không phát sinh công nợ (hệ thống không có tài khoản tiền mặt).
     * **Ghi nợ (UNPAID):** tạo bản ghi Sổ cái `entity_type='VENDOR'` (credit = số tiền) → phát sinh **công nợ phải trả**.
@@ -204,11 +204,11 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 8. **[Kế toán/Quản lý]** Tôi muốn quản lý danh mục Nhà cung cấp và Hạng mục chi phí (một lần/định kỳ, số ngày nhắc gia hạn).
 
 ### MODULE 9: CHI PHÍ VẬN HÀNH & CÔNG NỢ PHẢI TRẢ
-1. **[Kế toán]** Tôi muốn ghi nhận chi phí phát sinh (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ), gắn Nhà cung cấp và (tùy chọn) một xe, đính ảnh hóa đơn.
+1. **[Kế toán]** Tôi muốn ghi nhận chi phí phát sinh (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ), gắn Nhà cung cấp và (tùy chọn) một xe, đánh dấu chi phí thuộc đầu kéo hay rơ-mooc (`vehicle_component`), đính ảnh hóa đơn.
 2. **[Kế toán]** Tôi muốn chọn trạng thái Trả ngay hoặc Ghi nợ; phiếu Ghi nợ tự phát sinh công nợ phải trả cho NCC.
 3. **[Kế toán/Quản lý]** Tôi muốn xem danh sách công nợ phải trả theo NCC kèm tuổi nợ (0–30/31–60/61–90/90+) và xuất sao kê NCC.
 4. **[Kế toán]** Tôi muốn ghi nhận thanh toán cho NCC (giảm tổng số dư, FIFO).
-5. **[Quản lý]** Tôi muốn lợi nhuận gộp theo xe đã trừ chi phí bảo dưỡng của xe đó (bao gồm chi phí rơ-mooc ghép cặp), và lợi nhuận ròng đã trừ chi phí chung (không gắn xe).
+5. **[Quản lý]** Tôi muốn lợi nhuận gộp theo xe đã trừ chi phí bảo dưỡng của xe đó (bao gồm chi phí rơ-mooc ghép cặp), và lợi nhuận ròng đã trừ chi phí chung (không gắn xe). Báo cáo phân tách chi phí đầu kéo vs rơ-mooc.
 6. **[Quản lý/Kế toán]** Tôi muốn Dashboard nhắc khi bảo hiểm/đăng kiểm/phí đường bộ của xe sắp tới hạn hoặc đã quá hạn.
 
 ---

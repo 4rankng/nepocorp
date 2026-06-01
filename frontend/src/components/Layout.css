@@ -185,7 +185,7 @@
   color: var(--sb-text-muted);
   cursor: pointer;
   border-radius: 6px;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -244,6 +244,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px 12px 12px;
+  overscroll-behavior: contain;
 }
 
 /* legacy sidebar section labels */
@@ -573,9 +574,9 @@
   border-radius: 10px;
   width: 280px;
   color: var(--ink-3);
-  transition: background 120ms var(--ease), border-color 120ms var(--ease);
+  transition: background 120ms var(--ease), border-color 120ms var(--ease), box-shadow 120ms var(--ease);
 }
-.topbar-search:focus-within { background: #fff; border-color: var(--line-2); }
+.topbar-search:focus-within { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .topbar-search input {
   flex: 1;
   border: none;

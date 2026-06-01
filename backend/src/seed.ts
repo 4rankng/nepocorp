@@ -145,13 +145,13 @@ async function seed() {
         partnerName: 'Ông Thương',
         contributionAmount: '0',
         percentage: '60.00',
-        effectiveDate: new Date(now.getFullYear(), 0, 1),
+        effectiveDate: `${now.getFullYear()}-01-01`,
       },
       {
         partnerName: 'Bà Hạnh',
         contributionAmount: '0',
         percentage: '40.00',
-        effectiveDate: new Date(now.getFullYear(), 0, 1),
+        effectiveDate: `${now.getFullYear()}-01-01`,
       },
     ]);
     console.log('✅ Cap table seeded! (60/40 split)');

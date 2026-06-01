@@ -259,6 +259,15 @@ export async function recordVendorPayment(input: VendorPaymentInput) {
       note: input.note || 'Thanh toán nhà cung cấp',
     });
 
+    const newBalance = currentBalance - paymentAmount;
+    if (newBalance <= 0) {
+      const updated = await tx.update(s.expenses)
+        .set({ paymentStatus: 'PAID', updatedAt: new Date() })
+        .where(and(eq(s.expenses.supplierId, input.supplierId), eq(s.expenses.paymentStatus, 'UNPAID')))
+        .returning({ id: s.expenses.id });
+      console.log(`[vendor-pay] Reconciled ${updated.length} UNPAID→PAID expenses for supplier ${input.supplierId} (balance ${newBalance})`);
+    }
+
     return {
       ...posted,
       ...(wouldOverpay ? {

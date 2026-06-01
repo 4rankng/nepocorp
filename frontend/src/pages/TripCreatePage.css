@@ -20,7 +20,7 @@
   display: grid;
   place-items: center;
   color: var(--fg-2);
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), transform var(--t-fast);
   flex-shrink: 0;
 }
 .tc-back-btn:hover {
@@ -242,7 +242,7 @@
   border: 1px solid var(--border-1);
   border-radius: 8px;
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), border-color var(--t-fast);
 }
 .tc-checkbox-card:hover {
   background: var(--surface);
@@ -289,7 +289,7 @@
   font-size: 13px;
   font-weight: var(--fw-semibold);
   color: var(--fg-2);
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -319,7 +319,7 @@
   font-size: var(--fs-xs);
   color: var(--fg-2);
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
 }
 .tc-route-chip:hover {
   background: var(--accent-soft);
@@ -369,7 +369,7 @@
   padding: 28px 20px;
   text-align: center;
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), border-color var(--t-fast);
 }
 .tc-upload-zone:hover {
   background: var(--accent-soft);
@@ -529,7 +529,7 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
 }
 .tc-check-item--done .tc-check-item__dot {
   background: var(--accent);

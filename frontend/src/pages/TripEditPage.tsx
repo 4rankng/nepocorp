@@ -92,20 +92,9 @@ export default function TripEditPage() {
       //   meant the dash variant collapsed the whole name into `origin` and
       //   left `destination` empty — see BUG-T11 in QA notes. Try the arrow
       //   first, then fall back to a generous dash split.
-      const name = trip.route?.name ?? '';
-      const splitRoute = (raw: string): [string, string] => {
-        const arrow = raw.split('→');
-        if (arrow.length === 2) return [arrow[0].trim(), arrow[1].trim()];
-        // " - " (with spaces) is the most common dash convention; fall back
-        // to plain "-" if no spaces. Either way, only split on the FIRST
-        // occurrence so destinations like "TP. Hồ Chí Minh" aren't sliced.
-        const idx = raw.indexOf(' - ');
-        if (idx >= 0) return [raw.slice(0, idx).trim(), raw.slice(idx + 3).trim()];
-        const dash = raw.indexOf('-');
-        if (dash >= 0) return [raw.slice(0, dash).trim(), raw.slice(dash + 1).trim()];
-        return [raw.trim(), ''];
-      };
-      const [originGuess, destGuess] = splitRoute(name);
+      const parts = (trip.route?.name || '').split(/\s*[-→]\s*/).filter(Boolean);
+      const originGuess = parts[0]?.trim() || '';
+      const destGuess = parts.length > 1 ? parts[parts.length - 1].trim() : '';
       setLegs([{
         id: Math.random().toString(),
         sequence: 1,

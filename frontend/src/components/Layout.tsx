@@ -573,9 +573,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <div className="app-body" id="main-content">
+        <main className="app-body" id="main-content">
           {children}
-        </div>
+        </main>
       </div>
     </div>
   );

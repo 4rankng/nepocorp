@@ -399,7 +399,7 @@ export default function TripDetailPage() {
             }
             return null;
           })()}
-          {infoRow(<MapPin size={16} />, 'Tiền đường', formatCurrency(trip.totalRoadAllowance))}
+          {infoRow(<MapPin size={16} />, 'Tiền đi đường', formatCurrency(trip.totalRoadAllowance))}
           {(Number(trip.tollsDiscount) > 0 || Number(trip.tollsAddition) > 0 || Number(trip.tollsStations) > 0 || trip.hasReturnCargo) && (
             <div style={{ padding: '6px 0 10px', borderBottom: '1px solid var(--border-1)' }}>
               <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>

@@ -156,7 +156,7 @@
   justify-content: center;
   cursor: pointer;
   color: var(--fg-3);
-  transition: all 0.2s;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
   background: var(--bg-2);
 }
 .photo-upload:hover {

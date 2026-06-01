@@ -232,7 +232,7 @@ export default function TripListPage() {
 
   // ── Actions ───────────────────────────────────────────────────────────
   const handleExport = () => {
-    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Dầu (L)', 'Tiền đường', 'Doanh thu', 'Trạng thái'];
+    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Dầu (L)', 'Tiền đi đường', 'Doanh thu', 'Trạng thái'];
     const rows = filteredTrips.map((t) => [
       buildTripCode(t),
       t.customer?.name ?? '',
@@ -413,7 +413,7 @@ export default function TripListPage() {
     }),
     columnHelper.accessor((row) => Number(row.totalRoadAllowance ?? 0), {
       id: 'road',
-      header: 'Tiền đường',
+      header: 'Tiền đi đường',
       cell: ({ row }) => {
         const trip = row.original;
         const road = Number(trip.totalRoadAllowance ?? 0);
@@ -577,12 +577,12 @@ export default function TripListPage() {
             </div>
           </div>
           <div className="metric">
-            <div className="metric-label">Tổng giá trị lệnh</div>
+            <div className="metric-label">Tổng giá trị lệnh <span style={{ fontWeight: 400, fontSize: '0.85em', opacity: 0.7 }}>(tất cả trạng thái)</span></div>
             <div className="metric-value d-mono">
               {formatMoney(heroSummary.revenue)}
               <span className="metric-unit">₫</span>
             </div>
-            <div className="metric-delta delta-flat">Tháng {now.getMonth() + 1}</div>
+            <div className="metric-delta delta-flat">Tháng {now.getMonth() + 1} · bao gồm tất cả trạng thái chuyến</div>
           </div>
         </div>
       </section>
@@ -781,7 +781,7 @@ export default function TripListPage() {
                       )}
                     </div>
                     <div className="mm">
-                      <span className="lab">Tiền đường</span>
+                      <span className="lab">Tiền đi đường</span>
                       <span className={road > 0 ? 'val' : 'val empty'}>
                         {road > 0 ? `${formatMoney(road)} ₫` : '—'}
                       </span>

@@ -51,7 +51,7 @@
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
-  transition: all 120ms var(--ease);
+  transition: background 120ms var(--ease), color 120ms var(--ease), box-shadow 120ms var(--ease);
 }
 
 .penalty-seg button.active {
@@ -348,7 +348,7 @@
   display: inline-grid;
   place-items: center;
   color: var(--ink-3);
-  transition: all 120ms var(--ease);
+  transition: background 120ms var(--ease), color 120ms var(--ease), border-color 120ms var(--ease);
 }
 
 .penalty-row-act:hover {
@@ -376,7 +376,7 @@
   font-weight: 600;
   color: var(--ink-3);
   cursor: pointer;
-  transition: all 120ms var(--ease);
+  transition: background 120ms var(--ease), color 120ms var(--ease), border-color 120ms var(--ease);
   font-family: inherit;
 }
 

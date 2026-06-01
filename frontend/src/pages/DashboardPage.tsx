@@ -353,13 +353,13 @@ export default function DashboardPage() {
     const categoryBreakdown = pnlReport?.categoryBreakdown ?? [];
     for (const cat of categoryBreakdown) {
       const amount = parseFloat(cat.total) || 0;
-      if (amount > 0) {
+      if (amount > 0.5) {
         const color = CATEGORY_COLORS[cat.categoryName] ?? FALLBACK_COLORS[fallbackIdx++ % FALLBACK_COLORS.length];
         pieSlices.push({ label: cat.categoryName, value: amount, color });
       }
     }
 
-    const visibleSlices = pieSlices.filter(sl => sl.value > 0);
+    const visibleSlices = pieSlices.filter(sl => sl.value > 0.5);
 
     const totalPie = visibleSlices.reduce((s, sl) => s + sl.value, 0) || 1;
     const p = (v: number) => Math.round((v / totalPie) * 100);
