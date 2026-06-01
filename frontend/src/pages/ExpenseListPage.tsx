@@ -122,7 +122,7 @@ export default function ExpenseListPage() {
       />
 
       <div className="kpi-grid">
-        <KPI label="Tổng chi phí" value={kpiTotal.num} unit={kpiTotal.suffix ? `${kpiTotal.suffix} đ` : 'đ'} />
+        <KPI label="Tổng chi phí" value={kpiTotal.num} unit={kpiTotal.suffix ? ` ${kpiTotal.suffix} ₫` : '₫'} />
         <KPI label="Chưa thanh toán" value={`${stats.unpaidCount}`} unit="phiếu" variant="warn" meta={formatCompact(stats.unpaidAmount)} />
         <KPI label="Đã thanh toán" value={`${stats.paidCount}`} unit="phiếu" variant="success" meta={formatCompact(stats.paidAmount)} />
       </div>
