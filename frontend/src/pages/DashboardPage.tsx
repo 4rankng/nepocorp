@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCompact } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
@@ -46,6 +46,9 @@ const DeltaPill: React.FC<DeltaProps> = ({ mom, suffix = '', flatLabel = '0%' })
 
 interface ChartProps { months: string[]; revenue: number[]; gross: number[]; }
 function RevenueChart({ months, revenue, gross }: ChartProps) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const activeIdx = hoverIdx ?? (revenue.length - 1);
+
   const W = 760, H = 280;
   const mL = 46, mR = 18, mT = 14, mB = 30;
   const pW = W - mL - mR, pH = H - mT - mB;
@@ -63,18 +66,22 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
 
   const gridValues = [0, yMax / 4, yMax / 2, (3 * yMax) / 4, yMax];
 
-  const li = revenue.length - 1;
-  const lx = X(li);
-  const ly = Y(revenue[li] || 0);
-  const lyGp = Y(gross[li] || 0);
+  const ax = X(activeIdx);
+  const ay = Y(revenue[activeIdx] || 0);
+  const ayGp = Y(gross[activeIdx] || 0);
 
   // Tooltip dimensions — shows month + both series values
   const tw = 168, th = 72;
-  const tx = Math.min(W - mR - tw, Math.max(mL, lx - tw / 2));
-  const ty = Math.max(mT, Math.min(ly, lyGp) - th - 12);
+  const tx = Math.min(W - mR - tw, Math.max(mL, ax - tw / 2));
+  const ty = Math.max(mT, Math.min(ay, ayGp) - th - 12);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} xmlns="http://www.w3.org/2000/svg">
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      xmlns="http://www.w3.org/2000/svg"
+      onMouseLeave={() => setHoverIdx(null)}
+      style={{ display: 'block' }}
+    >
       <defs>
         <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#005A2D" stopOpacity={0.16} />
@@ -93,17 +100,18 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
         </g>
       ))}
       {months.map((m, i) => (
-        <text key={i} x={X(i)} y={H - 10} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="10" fill="#8A988F">
+        <text key={i} x={X(i)} y={H - 10} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="10"
+              fill={i === activeIdx ? '#005A2D' : '#8A988F'} fontWeight={i === activeIdx ? '700' : '400'}>
           {m}
         </text>
       ))}
       <path d={areaPath(revenue)} fill="url(#gRev)" />
       <path d={path(gross)} fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       <path d={path(revenue)} fill="none" stroke="#005A2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      {/* last point markers */}
-      <line x1={lx} y1={mT} x2={lx} y2={mT + pH} stroke="#005A2D" strokeWidth="1" strokeDasharray="3 4" opacity={0.45} />
-      <circle cx={lx} cy={lyGp} r="3.5" fill="#fff" stroke="#2563EB" strokeWidth="2" />
-      <circle cx={lx} cy={ly} r="4" fill="#fff" stroke="#005A2D" strokeWidth="2.6" />
+      {/* active point crosshair */}
+      <line x1={ax} y1={mT} x2={ax} y2={mT + pH} stroke="#005A2D" strokeWidth="1" strokeDasharray="3 4" opacity={0.45} />
+      <circle cx={ax} cy={ayGp} r="3.5" fill="#fff" stroke="#2563EB" strokeWidth="2" />
+      <circle cx={ax} cy={ay} r="4" fill="#fff" stroke="#005A2D" strokeWidth="2.6" />
       {/* Tooltip card */}
       <rect x={tx} y={ty} width={tw} height={th} rx="8" fill="#fff"
             stroke="#E2E8E5" strokeWidth="1"
@@ -111,7 +119,7 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
       {/* Month header */}
       <text x={tx + tw / 2} y={ty + 15} textAnchor="middle"
             fontFamily="JetBrains Mono, monospace" fontSize="10" fontWeight="600" fill="#6B7B73">
-        {months[li]}
+        {months[activeIdx]}
       </text>
       {/* Divider */}
       <line x1={tx + 10} y1={ty + 20} x2={tx + tw - 10} y2={ty + 20} stroke="#EEF1EF" strokeWidth="1" />
@@ -122,7 +130,7 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
       </text>
       <text x={tx + tw - 10} y={ty + 38.5} textAnchor="end"
             fontFamily="JetBrains Mono, monospace" fontSize="10" fontWeight="700" fill="#005A2D">
-        {(revenue[li] || 0).toFixed(1).replace('.', ',')} Tr
+        {(revenue[activeIdx] || 0).toFixed(1).replace('.', ',')} Tr
       </text>
       {/* Gross profit row */}
       <circle cx={tx + 16} cy={ty + 56} r="4" fill="#2563EB" />
@@ -131,8 +139,26 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
       </text>
       <text x={tx + tw - 10} y={ty + 59.5} textAnchor="end"
             fontFamily="JetBrains Mono, monospace" fontSize="10" fontWeight="700" fill="#2563EB">
-        {(gross[li] || 0).toFixed(1).replace('.', ',')} Tr
+        {(gross[activeIdx] || 0).toFixed(1).replace('.', ',')} Tr
       </text>
+      {/* Invisible hit areas — one per month column, rendered last so they sit on top */}
+      {months.map((_, i) => {
+        const cx = X(i);
+        const left  = i === 0 ? mL : (X(i - 1) + cx) / 2;
+        const right = i === months.length - 1 ? W - mR : (cx + X(i + 1)) / 2;
+        return (
+          <rect
+            key={i}
+            x={left}
+            y={mT}
+            width={right - left}
+            height={pH}
+            fill="transparent"
+            style={{ cursor: 'crosshair' }}
+            onMouseEnter={() => setHoverIdx(i)}
+          />
+        );
+      })}
     </svg>
   );
 }
