@@ -1,6 +1,7 @@
 .PHONY: dev stop down setup seed migrate generate build e2etest clean logs \
         push push-backend push-frontend \
         deploy deploy-backend deploy-frontend deploy-infra \
+        prod-migrate prod-migrate-file \
         backup restore adminer-on adminer-off
 
 # ─── Ports ─────────────────────────────────────────────────────────────────────
@@ -119,6 +120,36 @@ deploy-backend:
 deploy-frontend:
 	$(MAKE) -C frontend deploy
 
+## prod-migrate: Apply all Drizzle SQL migrations to production DB
+prod-migrate:
+	@echo "==> Applying migrations on production..."
+	@for f in backend/drizzle/*.sql; do \
+		basename=$$(basename "$$f"); \
+		echo "  Copying $$basename..."; \
+		scp "$$f" root@$(PROD_SERVER):/tmp/$$basename; \
+		ssh root@$(PROD_SERVER) "docker cp /tmp/$$basename nepocorp-postgres-1:/tmp/$$basename"; \
+		echo "  Applying $$basename..."; \
+		ssh root@$(PROD_SERVER) "docker exec nepocorp-postgres-1 psql -U nepocorp -d nepocorp \
+			-v ON_ERROR_STOP=1 --single-transaction -f /tmp/$$basename" \
+			&& echo "  ✅ $$basename" \
+			|| echo "  ⚠️  $$basename skipped (already applied)"; \
+		ssh root@$(PROD_SERVER) "rm -f /tmp/$$basename"; \
+	done
+	@echo "==> Restarting backend..."
+	ssh root@$(PROD_SERVER) "docker restart nepocorp-backend-1"
+	@echo "==> ✅ All migrations applied"
+
+## prod-migrate-file: Apply a single migration file (make prod-migrate-file FILE=0022_cool_hydra.sql)
+prod-migrate-file:
+	@test -n "$(FILE)" || (echo "Usage: make prod-migrate-file FILE=0022_cool_hydra.sql" && exit 1)
+	@echo "==> Applying $(FILE) on production..."
+	scp backend/drizzle/$(FILE) root@$(PROD_SERVER):/tmp/$(FILE)
+	ssh root@$(PROD_SERVER) "docker cp /tmp/$(FILE) nepocorp-postgres-1:/tmp/$(FILE)"
+	ssh root@$(PROD_SERVER) "docker exec nepocorp-postgres-1 psql -U nepocorp -d nepocorp \
+		-v ON_ERROR_STOP=1 --single-transaction -f /tmp/$(FILE)"
+	ssh root@$(PROD_SERVER) "rm -f /tmp/$(FILE)"
+	@echo "==> ✅ $(FILE) applied"
+
 ## deploy-infra: Restart infra services (postgres, redis) on droplet
 deploy-infra:
 	@echo "Restarting infrastructure services on production..."
@@ -200,6 +231,8 @@ help: ## Show this help
 	@echo "  \033[36mdeploy-backend\033[0m Pull & restart backend + run migrations"
 	@echo "  \033[36mdeploy-frontend\033[0m Pull & restart frontend on droplet"
 	@echo "  \033[36mdeploy-infra  \033[0m Restart infra services (postgres, redis)"
+	@echo "  \033[36mprod-migrate  \033[0m Apply all SQL migrations to production DB"
+	@echo "  \033[36mprod-migrate-file \033[0m Apply single migration (FILE=xxx.sql)"
 	@echo "  \033[36mbackup        \033[0m Dump production DB → OneDrive"
 	@echo "  \033[36mrestore       \033[0m Restore latest backup to local dev DB"
 	@echo "  \033[36madminer-on    \033[0m Enable adminer on production"
