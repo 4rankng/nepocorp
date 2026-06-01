@@ -484,17 +484,21 @@ export default function DashboardPage() {
             <span className="kpi__label">Doanh thu {String(currentMonth).padStart(2, '0')}/{currentYear}</span>
           </div>
           <div className="kpi__value">{kpiRevenue.num}<span className="kpi__value-unit">{kpiRevenue.suffix && ` ${kpiRevenue.suffix}`} ₫</span></div>
-          <div className={`kpi__meta ${prevPnlReport ? (isRevUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`}>
-            {(stats?.lockedTrips ?? 0) > 0 && <><strong>{stats?.lockedTrips}</strong> chuyến ĐÃ CHỐT · </>}
-            {prevPnlReport && (
-              <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                {isRevUp
-                  ? <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>
-                  : <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>
-                }
-              </svg>
+          <div className={`kpi__meta ${prevPnlReport ? (isRevUp ? 'kpi__meta--up' : 'kpi__meta--down') : ''}`} style={{ flexWrap: 'wrap' }}>
+            {(stats?.lockedTrips ?? 0) > 0 && (
+              <span style={{ whiteSpace: 'nowrap' }}><strong>{stats?.lockedTrips}</strong> chuyến ĐÃ CHỐT</span>
             )}
-            <strong>{revenueMoM}</strong> so với tháng trước
+            <span style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              {prevPnlReport && (
+                <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  {isRevUp
+                    ? <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>
+                    : <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>
+                  }
+                </svg>
+              )}
+              <strong>{revenueMoM}</strong> so với tháng trước
+            </span>
           </div>
           <div className="kpi__watermark" aria-hidden="true">
             <svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -506,10 +510,10 @@ export default function DashboardPage() {
             <span className="kpi__label">Tổng chi phí</span>
           </div>
           <div className="kpi__value">{kpiCosts.num}<span className="kpi__value-unit">{kpiCosts.suffix && ` ${kpiCosts.suffix}`} ₫</span></div>
-          <div className="kpi__meta">
-            {((costs / (revenue || 1)) * 100).toFixed(1)}% doanh thu
+          <div className="kpi__meta" style={{ flexWrap: 'wrap' }}>
+            <span style={{ whiteSpace: 'nowrap' }}>{((costs / (revenue || 1)) * 100).toFixed(1)}% doanh thu</span>
             {prevPnlReport && (
-              <> · <span style={{ color: isCostUp ? 'var(--warning)' : 'var(--success)', fontWeight: 600 }}>{costsMoM} so với tháng trước</span></>
+              <span style={{ whiteSpace: 'nowrap', color: isCostUp ? 'var(--warning)' : 'var(--success)', fontWeight: 600 }}>{costsMoM} so với tháng trước</span>
             )}
           </div>
           <div className="kpi__watermark" aria-hidden="true">

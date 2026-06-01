@@ -52,7 +52,7 @@ async function migrateTrailers() {
       const trucksUpdated = await tx.execute(sql`
         UPDATE trucks SET current_trailer_id = tr.id
         FROM trailers tr
-        WHERE trucks.trailer_plate_number = tr."licensePlate"
+        WHERE trucks.trailer_plate_number = tr."license_plate"
           AND trucks.current_trailer_id IS NULL
       `);
       console.log(`Updated currentTrailerId on ${trucksUpdated.count} trucks.`);
