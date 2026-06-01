@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { PageHeader, Panel, KPI } from '../components/UI';
 import { useSalaryPeriod, useDriverEarnings, useDriverPenalties } from '../hooks/useQueries';
+import { useMonth } from '../hooks/useMonth';
 
 interface EarningsSummary {
   baseSalary: string;
@@ -21,12 +21,8 @@ interface PenaltyEntry {
   reasonText: string | null;
 }
 
-const MONTHS_VN = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-
 export default function DriverEarningsPage() {
-  const now = new Date();
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
+  const { month, year } = useMonth();
 
   const { data: period } = useSalaryPeriod(month, year);
   const { data: earnings, isLoading: earningsLoading, error: earningsError } = useDriverEarnings(month, year);
@@ -35,19 +31,6 @@ export default function DriverEarningsPage() {
   const penalties: PenaltyEntry[] = Array.isArray(penaltiesData) ? penaltiesData : (penaltiesData as any)?.items ?? [];
   const loading = earningsLoading || penaltiesLoading;
   const error = earningsError ? 'Không thể tải dữ liệu thu nhập' : null;
-
-  const periodOptions = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      return {
-        month: d.getMonth() + 1,
-        year: d.getFullYear(),
-        label: `${MONTHS_VN[d.getMonth()]}/${d.getFullYear()}`,
-      };
-    });
-  }, []);
-
-  const periodKey = `${year}-${String(month).padStart(2, '0')}`;
 
   if (loading) return (
     <Panel>
@@ -76,31 +59,6 @@ export default function DriverEarningsPage() {
         title="Thu nhập"
         description="Tổng hợp thu nhập và khấu trừ"
       />
-
-      {/* Period selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <select
-          className="input"
-          value={periodKey}
-          onChange={(e) => {
-            const [y, m] = e.target.value.split('-').map(Number);
-            setYear(y);
-            setMonth(m);
-          }}
-          style={{ width: 160 }}
-        >
-          {periodOptions.map(o => (
-            <option key={`${o.year}-${String(o.month).padStart(2, '0')}`} value={`${o.year}-${String(o.month).padStart(2, '0')}`}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        {period && (
-          <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>
-            ({formatDate(period.start)} — {formatDate(period.end)})
-          </span>
-        )}
-      </div>
 
       {/* Net income hero card */}
       <div className="panel fade-up earnings-hero" style={{

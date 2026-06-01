@@ -13,6 +13,7 @@ import { formatCurrency as formatVND } from '../lib/format';
 import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
 import type { CapTableHistory } from '@nepocorp/shared';
+import { useMonth } from '../hooks/useMonth';
 
 interface DistributionResult {
   quarter: number;
@@ -40,8 +41,7 @@ export default function ProfitPage() {
   const { toast: showToast } = useToast();
 
   const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
+  const { month: selectedMonth, year: selectedYear } = useMonth();
 
   const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.ceil((now.getMonth() + 1) / 3));
   const [distQuarterYear, setDistQuarterYear] = useState<number>(now.getFullYear());
@@ -113,32 +113,6 @@ export default function ProfitPage() {
       <PageHeader
         title="Phân chia lợi nhuận"
         description="Báo cáo phân bổ lợi nhuận ròng giữa các đối tác góp vốn."
-        action={
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <select
-                className="input"
-                style={{ minWidth: 100, height: 36, flex: '0 1 auto' }}
-                value={selectedMonth}
-                onChange={e => setSelectedMonth(Number(e.target.value))}
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
-                ))}
-              </select>
-              <select
-                className="input"
-                style={{ minWidth: 95, height: 36, flex: '0 1 auto' }}
-                value={selectedYear}
-                onChange={e => setSelectedYear(Number(e.target.value))}
-              >
-                {[2024, 2025, 2026, 2027].map(y => (
-                  <option key={y} value={y}>Năm {y}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        }
       />
 
       {error && (

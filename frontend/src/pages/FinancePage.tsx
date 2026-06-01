@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
@@ -6,20 +6,8 @@ import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
 import { usePnlReport, useYearlyPnl, useTripCosts, useCapTable, type PnlReport } from '../hooks/useQueries';
+import { useMonth } from '../hooks/useMonth';
 import type { TripDetail, CapTableHistory } from '@nepocorp/shared';
-
-const MONTHS = [
-  'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4',
-  'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8',
-  'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
-];
-
-const YEARS = [2024, 2025, 2026, 2027];
-
-function now() {
-  const d = new Date();
-  return { month: d.getMonth() + 1, year: d.getFullYear() };
-}
 
 function formatRawNumber(num: number | string | null): string {
   return formatNumber(num);
@@ -42,9 +30,7 @@ const EMPTY_YEARLY: (PnlReport | null)[] = [];
 
 export default function FinancePage() {
   const navigate = useNavigate();
-  const { month: cm, year: cy } = now();
-  const [month, setMonth] = useState(cm);
-  const [year, setYear] = useState(cy);
+  const { month, year } = useMonth();
 
   const { data: report, isLoading: loading, error: queryError } = usePnlReport(month, year);
 
@@ -166,38 +152,13 @@ export default function FinancePage() {
         }
       />
 
-      {/* Period Selection Bar */}
-      <div className="fade-up-2" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, rowGap: 8, marginBottom: 20 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>Chọn kỳ báo cáo:</span>
-        <select
-          className="input"
-          style={{ minWidth: 110, height: 34, fontSize: 13, flex: '1 1 auto' }}
-          value={month}
-          onChange={e => setMonth(Number(e.target.value))}
+      {report && (
+        <span className="fade-up-2" style={{ fontSize: 13, color: 'var(--fg-3)', display: 'inline-block', marginBottom: 16, cursor: 'help' }}
+          title="Chốt sổ: chuyến đã chuyển trạng thái 'Đã khóa' trong kỳ — doanh thu và chi phí được ghi nhận vào sổ kế toán"
         >
-          {MONTHS.map((label, i) => (
-            <option key={i} value={i + 1}>{label}</option>
-          ))}
-        </select>
-        <select
-          className="input"
-          style={{ minWidth: 90, height: 34, fontSize: 13, flex: '1 1 auto' }}
-          value={year}
-          onChange={e => setYear(Number(e.target.value))}
-        >
-          {YEARS.map(y => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-        {report && (
-          <span
-            style={{ fontSize: 13, color: 'var(--fg-3)', marginLeft: 8, cursor: 'help' }}
-            title="Chốt sổ: chuyến đã chuyển trạng thái 'Đã khóa' trong kỳ — doanh thu và chi phí được ghi nhận vào sổ kế toán"
-          >
-            Ghi nhận <strong>{report.tripCount}</strong> chuyến đã khóa trong kỳ
-          </span>
-        )}
-      </div>
+          Ghi nhận <strong>{report.tripCount}</strong> chuyến đã khóa trong kỳ
+        </span>
+      )}
 
       {error && (
         <div style={{ padding: '12px 20px', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 8, color: 'var(--danger)', marginBottom: 20 }}>

@@ -1,0 +1,130 @@
+/* ============================================================================
+ * Payables Summary Card (Space-efficient redesign)
+ * ========================================================================== */
+.payables-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--bg-1, #fff);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 18px;
+  gap: 12px;
+  margin-bottom: 20px;
+  box-shadow: var(--sh-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.payables-summary-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  padding: 2px 4px;
+}
+
+.payables-summary-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: var(--line);
+}
+
+.payables-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.payables-summary-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.payables-summary-dot--total { background: var(--accent); }
+.payables-summary-dot--current { background: var(--success); }
+.payables-summary-dot--d30 { background: var(--warning); }
+.payables-summary-dot--d60 { background: #D97706; }
+.payables-summary-dot--over90 { background: var(--danger); }
+
+.payables-summary-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.payables-summary-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.payables-summary-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.payables-summary-unit {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.payables-summary-count {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .payables-summary-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  
+  .payables-summary-item:nth-child(even):not(:last-child)::after {
+    display: none;
+  }
+  
+  .payables-summary-item:first-child {
+    grid-column: span 2;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  
+  .payables-summary-item:first-child::after {
+    display: none;
+  }
+}
+
+/* ============================================================================
+ * Transparent Payables Toolbar Override
+ * ========================================================================== */
+.payables-toolbar.toolbar {
+  background: transparent;
+  border: none;
+  padding: 0 0 12px 0;
+  margin-top: -4px;
+}
+
+.payables-toolbar.toolbar .toolbar__search {
+  background: #fff;
+  width: 320px;
+}
+
+

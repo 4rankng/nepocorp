@@ -163,3 +163,234 @@
 .aging-bar__seg--t2 { background: #D97706; }
 .aging-bar__seg--t3 { background: #DD5A1F; }
 .aging-bar__seg--t4 { background: var(--danger); }
+
+
+/* ============================================================================
+ * Wireframe redesign — ported from /wireframe/nepo-dashboard.html
+ * Scoped to .dash-wf so it can't bleed into other pages or existing widgets.
+ * ========================================================================== */
+.dash-wf {
+  --wf-bg: #EFF2F0;
+  --wf-card: #FFFFFF;
+  --wf-border: #E5E9E7;
+  --wf-border-2: #DCE2DF;
+  --wf-ink: #0E1F16;
+  --wf-ink-2: #56655C;
+  --wf-ink-3: #8A988F;
+  --wf-green: #005A2D;
+  --wf-green-700: #0A6E3A;
+  --wf-green-500: #16A34A;
+  --wf-green-soft: #E7F2EC;
+  --wf-blue: #2563EB;
+  --wf-blue-soft: #E8EFFD;
+  --wf-amber: #C2780B;
+  --wf-amber-soft: #FBF1DE;
+  --wf-red: #C7372F;
+  --wf-shadow: 0 1px 2px rgba(14, 31, 22, 0.04), 0 1px 1px rgba(14, 31, 22, 0.03);
+  --wf-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--wf-ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+/* Safety net: any SVG inside the dashboard that's missing width/height attrs
+   defaults to the browser's intrinsic SVG size (300×150 or full container),
+   which leaks a giant icon onto the chart card. Force a small default for
+   every SVG; explicit overrides for the chart + donut come below. */
+.dash-wf svg {
+  width: 16px !important;
+  height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+/* Chart SVG fills the card body — opt out of the safety net. */
+.dash-wf .wf-chart .body svg {
+  width: 100% !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: block;
+}
+/* Cost donut — fixed 118px. */
+.dash-wf .wf-donut svg {
+  width: 118px !important;
+  height: 118px !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+.dash-wf .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dash-wf .lbl {
+  font-family: var(--font-mono); text-transform: uppercase;
+  letter-spacing: 0.08em; font-size: 10.5px; font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.dash-wf .wf-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.dash-wf .wf-head h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin: 0; }
+.dash-wf .wf-head .wf-sum { margin-top: 6px; color: var(--wf-ink-2); font-size: 13px; max-width: 640px; }
+.dash-wf .wf-head .wf-sum b { color: var(--wf-ink); font-weight: 700; }
+.dash-wf .wf-head .wf-sum .pos { color: var(--wf-green-500); font-weight: 700; }
+.dash-wf .wf-head .wf-sum .neg { color: var(--wf-red); font-weight: 700; }
+.dash-wf .wf-head .wf-acts { display: flex; gap: 9px; flex: 0 0 auto; }
+.dash-wf .wf-btn {
+  height: 38px; padding: 0 15px; border-radius: 10px;
+  font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid var(--wf-border-2); background: #fff; color: var(--wf-ink);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.dash-wf .wf-btn svg { width: 15px; height: 15px; }
+.dash-wf .wf-btn:hover { border-color: var(--wf-ink-3); }
+.dash-wf .wf-btn--primary { background: var(--wf-green); border-color: var(--wf-green); color: #fff; box-shadow: 0 2px 6px rgba(0, 90, 45, 0.22); }
+.dash-wf .wf-btn--primary:hover { background: var(--wf-green-700); border-color: var(--wf-green-700); }
+
+.dash-wf .wf-card {
+  background: var(--wf-card);
+  border: 1px solid var(--wf-border);
+  border-radius: var(--wf-radius);
+  box-shadow: var(--wf-shadow);
+  /* Containment — children that overflow (long text, large icons, SVG
+     tooltips) get clipped at the card boundary instead of bleeding into
+     neighbouring cards. */
+  overflow: hidden;
+  min-width: 0;
+  position: relative;
+}
+.dash-wf .wf-card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 0; }
+.dash-wf .wf-card-h .ttl { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.dash-wf .wf-card-h .sub { font-size: 11.5px; color: var(--wf-ink-3); margin-top: 2px; }
+.dash-wf .wf-link {
+  font-size: 12px; font-weight: 600; color: var(--wf-green); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+  background: none; border: 0; padding: 0;
+}
+.dash-wf .wf-link svg { width: 13px; height: 13px; }
+.dash-wf .wf-link:hover { color: var(--wf-green-700); }
+
+.dash-wf .wf-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.dash-wf .wf-kpi {
+  background: var(--wf-card); border: 1px solid var(--wf-border);
+  border-radius: var(--wf-radius); box-shadow: var(--wf-shadow);
+  padding: 14px 16px; position: relative; overflow: hidden;
+}
+.dash-wf .wf-kpi .row1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dash-wf .wf-kpi .delta {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 20px;
+  white-space: nowrap;
+}
+.dash-wf .wf-kpi .delta.up { color: var(--wf-green-700); background: var(--wf-green-soft); }
+.dash-wf .wf-kpi .delta.down { color: var(--wf-red); background: #FBE5E3; }
+.dash-wf .wf-kpi .delta.flat { color: var(--wf-ink-2); background: var(--wf-bg); }
+.dash-wf .wf-kpi .delta.warn { color: var(--wf-amber); background: var(--wf-amber-soft); }
+.dash-wf .wf-kpi .val { font-family: var(--font-mono); font-size: 25px; font-weight: 700; letter-spacing: -0.03em; margin-top: 9px; line-height: 1; }
+.dash-wf .wf-kpi .val i { font-style: normal; font-size: 15px; color: var(--wf-ink-3); font-weight: 500; margin-left: 1px; }
+.dash-wf .wf-kpi .foot { font-size: 11.5px; color: var(--wf-ink-2); margin-top: 7px; }
+
+.dash-wf .wf-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
+  gap: 16px;                    /* slightly wider gap so cards never visually touch */
+  align-items: start;
+  position: relative;
+}
+.dash-wf .wf-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+/* Force every direct grid child to clamp to its column track — without this
+   a long route name or wide donut SVG can spill across the gap into the
+   neighbouring column. */
+.dash-wf .wf-grid > .wf-col { overflow: hidden; }
+
+.dash-wf .wf-chart .body { padding: 8px 8px 6px; }
+.dash-wf .wf-legend { display: flex; gap: 16px; padding: 10px 12px 0; }
+.dash-wf .wf-legend .li { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--wf-ink-2); font-weight: 500; }
+.dash-wf .wf-legend .sw { width: 14px; height: 3px; border-radius: 2px; }
+.dash-wf .wf-chart svg { display: block; width: 100%; height: auto; }
+
+.dash-wf .wf-sub2 { display: flex; flex-direction: column; gap: 14px; }
+
+.dash-wf .wf-vlist { padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px; }
+.dash-wf .wf-vrow { display: grid; grid-template-columns: 90px 1fr 42px; align-items: center; gap: 11px; }
+/* Override the global `.plate` pill (UI.css gives it a dark bg + white text);
+   inside the dashboard's "Lợi nhuận theo xe" widget we want bare mono text. */
+.dash-wf .wf-vrow .plate {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wf-ink);
+  background: transparent;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-wf .wf-vrow .bar { height: 7px; border-radius: 5px; background: var(--wf-bg); overflow: hidden; }
+.dash-wf .wf-vrow .bar i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--wf-green), var(--wf-green-500)); }
+.dash-wf .wf-vrow .pct { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--wf-ink-2); text-align: right; }
+
+.dash-wf .wf-rlist { padding: 8px 8px 8px; display: flex; flex-direction: column; }
+.dash-wf .wf-rrow { display: flex; align-items: center; gap: 11px; padding: 8px; border-radius: 9px; }
+.dash-wf .wf-rrow:hover { background: var(--wf-bg); }
+.dash-wf .wf-rrow .rk { width: 20px; height: 20px; border-radius: 6px; background: var(--wf-green-soft); color: var(--wf-green-700); font-family: var(--font-mono); font-size: 11px; font-weight: 700; display: grid; place-items: center; flex: 0 0 auto; }
+.dash-wf .wf-rrow .rt { font-size: 12.5px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-wf .wf-rrow .rv { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--wf-green-700); }
+
+.dash-wf .wf-fleet .body { padding: 12px 16px 15px; }
+.dash-wf .wf-seg { display: flex; height: 9px; border-radius: 6px; overflow: hidden; margin-bottom: 13px; gap: 2px; }
+.dash-wf .wf-seg i { display: block; height: 100%; border-radius: 3px; }
+.dash-wf .wf-fstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+.dash-wf .wf-fstat { padding: 9px 10px; border: 1px solid var(--wf-border); border-radius: 10px; background: var(--wf-card); }
+.dash-wf .wf-fstat .v { font-family: var(--font-mono); font-size: 20px; font-weight: 700; line-height: 1; display: flex; align-items: center; gap: 6px; }
+.dash-wf .wf-fstat .v .pip { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.dash-wf .wf-fstat .k { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 9px; font-weight: 600; color: var(--wf-ink-3); margin-top: 6px; }
+.dash-wf .wf-util { display: flex; align-items: center; gap: 11px; margin-top: 13px; }
+.dash-wf .wf-util .track { flex: 1; height: 8px; border-radius: 5px; background: var(--wf-bg); overflow: hidden; }
+.dash-wf .wf-util .track i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--wf-green), var(--wf-green-500)); }
+.dash-wf .wf-util .pct { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--wf-green-700); }
+.dash-wf .wf-util .cap { font-size: 11px; color: var(--wf-ink-3); }
+
+.dash-wf .wf-cost .body { padding: 14px 16px 16px; display: flex; align-items: center; gap: 18px; }
+.dash-wf .wf-donut { flex: 0 0 auto; position: relative; width: 118px; height: 118px; }
+.dash-wf .wf-donut .ctr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.dash-wf .wf-donut .ctr .big { font-family: var(--font-mono); font-size: 18px; font-weight: 700; line-height: 1; }
+.dash-wf .wf-donut .ctr .sm { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 9.5px; font-weight: 600; color: var(--wf-ink-3); margin-top: 4px; }
+.dash-wf .wf-clegend { flex: 1; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.dash-wf .wf-crow { display: flex; align-items: center; gap: 9px; font-size: 12px; }
+.dash-wf .wf-crow .sw { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
+.dash-wf .wf-crow .nm { flex: 1; color: var(--wf-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-wf .wf-crow .pc { font-family: var(--font-mono); font-weight: 600; color: var(--wf-ink); }
+
+.dash-wf .wf-att .body { padding: 6px 8px 8px; }
+.dash-wf .wf-arow { display: flex; align-items: center; gap: 11px; padding: 9px 8px; border-radius: 10px; }
+.dash-wf .wf-arow:hover { background: var(--wf-bg); }
+.dash-wf .wf-arow .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; flex: 0 0 auto; }
+.dash-wf .wf-arow .ic svg { width: 15px; height: 15px; }
+.dash-wf .wf-ic-ok { background: var(--wf-green-soft); color: var(--wf-green-700); }
+.dash-wf .wf-ic-info { background: var(--wf-blue-soft); color: var(--wf-blue); }
+.dash-wf .wf-ic-cal { background: var(--wf-amber-soft); color: var(--wf-amber); }
+.dash-wf .wf-ic-warn { background: #FBE5E3; color: var(--wf-red); }
+.dash-wf .wf-arow .tx { flex: 1; min-width: 0; }
+.dash-wf .wf-arow .tx .t { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-wf .wf-arow .tx .s { font-size: 11px; color: var(--wf-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.dash-wf .wf-arow .go { flex: 0 0 auto; }
+.dash-wf .wf-minibtn { height: 30px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--wf-border-2); background: #fff; font-family: var(--font-body); font-weight: 600; font-size: 11.5px; cursor: pointer; color: var(--wf-ink); }
+.dash-wf .wf-minibtn.green { background: var(--wf-green); border-color: var(--wf-green); color: #fff; }
+.dash-wf .wf-minibtn:hover { filter: brightness(0.98); }
+.dash-wf .wf-divider { height: 1px; background: var(--wf-border); margin: 2px 8px; }
+
+@media (max-width: 1180px) {
+  .dash-wf .wf-grid { grid-template-columns: 1fr; }
+  .dash-wf .wf-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .dash-wf .wf-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dash-wf .wf-kpi .val { font-size: 21px; }
+  .dash-wf .wf-fstats { grid-template-columns: 1fr 1fr; }
+}

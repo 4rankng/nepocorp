@@ -56,10 +56,7 @@ export interface ReceivablesSummary {
   overdueCustomers: number;
 }
 
-export function useDashboardData() {
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
+export function useDashboardData(currentMonth: number, currentYear: number) {
 
   const { data: stats, isLoading: loading } = useDashboardStats();
   const { data: pnlReport } = usePnlReport(currentMonth, currentYear);

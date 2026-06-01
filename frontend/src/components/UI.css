@@ -452,18 +452,25 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 11px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12));
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
   font-size: 12.5px;
   color: var(--ink-2);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 120ms var(--ease), border-color 120ms var(--ease), color 120ms var(--ease);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease), transform 120ms var(--ease);
 }
-.filter-pill:hover { border-color: var(--line-2); background: #fff; color: var(--ink); }
+.filter-pill:hover {
+  border-color: var(--line-2);
+  background: rgba(255,255,255,0.2);
+  color: var(--ink);
+  transform: translateY(-1px) scale(1.02);
+}
 .filter-pill.is-active {
   background: var(--ink);
   color: #fff;

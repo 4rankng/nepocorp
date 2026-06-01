@@ -32,6 +32,7 @@ import { useBadgeCounts } from '../hooks/useQueries';
 import { ROLE_LABELS } from '@nepocorp/shared';
 import type { Role } from '@nepocorp/shared';
 import { useUnreadCount } from '../hooks/useNotificationQueries';
+import { MonthProvider, useMonth } from '../hooks/useMonth';
 import { NotificationDrawer } from './NotificationDrawer';
 
 interface NavItem {
@@ -138,6 +139,28 @@ const errorBoxStyle: React.CSSProperties = {
   fontSize: 13,
   marginBottom: 16,
 };
+
+/** Navigable month chip in the topbar — reads from MonthProvider */
+function MonthNavigator() {
+  const { month, year, goPrev, goNext } = useMonth();
+  const dateLabel = new Date(year, month - 1, 1).toLocaleDateString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+
+  return (
+    <span className="topbar-date">
+      <button className="topbar-date__nav" onClick={goPrev} aria-label="Tháng trước">
+        <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
+      </button>
+      <span className="topbar-date__label">Tháng {month}</span>
+      <span className="topbar-date__sep">·</span>
+      <strong>{dateLabel}</strong>
+      <button className="topbar-date__nav" onClick={goNext} aria-label="Tháng sau">
+        <ChevronRight size={14} />
+      </button>
+    </span>
+  );
+}
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, updateUser } = useAuth();
@@ -554,6 +577,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </Modal>
 
+      <MonthProvider>
       <div className="app-main">
         <header className="topbar">
           <button
@@ -578,10 +602,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="topbar__actions">
-            <span className="topbar-date">
-              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span className="topbar-date__long">Tháng {new Date().getMonth() + 1} · </span><strong>{new Date().toLocaleDateString('vi-VN')}</strong>
-            </span>
+            <MonthNavigator />
             <button className="icon-btn help-btn" aria-label="Trợ giúp">
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </button>
@@ -600,6 +621,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       <NotificationDrawer isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
+      </MonthProvider>
     </div>
   );
 }

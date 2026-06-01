@@ -6,6 +6,7 @@ import type { PayableSummary } from '@nepocorp/shared';
 import { Search, ChevronRight } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { usePayablesSummary } from '../hooks/useQueries';
+import { splitKpi } from '../features/dashboard/utils';
 
 interface PayablesResponse {
   items: PayableSummary[];
@@ -63,11 +64,17 @@ export default function PayableListPage() {
     return result;
   }, [payables, search]);
 
+  const kpiTotal = splitKpi(totals.total);
+  const kpiCurrent = splitKpi(totals.current);
+  const kpiD30 = splitKpi(totals.d30);
+  const kpiD60 = splitKpi(totals.d60);
+  const kpiOver90 = splitKpi(totals.over90);
+
   return (
     <div className="fade-up">
       <PageHeader
         title="Công nợ phải trả"
-        description={`Tổng nợ: ${formatCurrency(totals.total)} • ${totals.supplierCount} nhà cung cấp • cập nhật vừa xong`}
+        description={`Tổng nợ: ${formatCurrency(totals.total)} • ${totals.supplierCount} NCC • cập nhật vừa xong`}
         action={
           <div className="page-actions">
             <button className="btn btn--secondary btn--sm" onClick={() => {
@@ -89,37 +96,81 @@ export default function PayableListPage() {
         }
       />
 
-      {/* KPI strip */}
-      <div className="aging-buckets">
-        <div className="bucket">
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--ok"></span>Tổng nợ</div>
-          <div className="bucket__value">{formatCompact(totals.total)} ₫</div>
-          <div className="bucket__count">{totals.supplierCount} nhà cung cấp</div>
+      {/* Redesigned Compact KPI Strip */}
+      <div className="payables-summary-bar">
+        <div className="payables-summary-item">
+          <div className="payables-summary-header">
+            <span className="payables-summary-dot payables-summary-dot--total"></span>
+            <span className="payables-summary-label">Tổng nợ</span>
+          </div>
+          <div className="payables-summary-main">
+            <span className="payables-summary-value">
+              {kpiTotal.num}
+              <span className="payables-summary-unit">{kpiTotal.suffix && `${kpiTotal.suffix}`} ₫</span>
+            </span>
+            <span className="payables-summary-count">{totals.supplierCount} NCC</span>
+          </div>
         </div>
-        <div className="bucket">
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--ok"></span>0–30 ngày</div>
-          <div className="bucket__value">{formatCompact(totals.current)} ₫</div>
-          <div className="bucket__count">{totals.currentCount} NCC</div>
+
+        <div className="payables-summary-item">
+          <div className="payables-summary-header">
+            <span className="payables-summary-dot payables-summary-dot--current"></span>
+            <span className="payables-summary-label">0–30 ngày</span>
+          </div>
+          <div className="payables-summary-main">
+            <span className="payables-summary-value">
+              {kpiCurrent.num}
+              <span className="payables-summary-unit">{kpiCurrent.suffix && `${kpiCurrent.suffix}`} ₫</span>
+            </span>
+            <span className="payables-summary-count">{totals.currentCount} NCC</span>
+          </div>
         </div>
-        <div className="bucket">
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--t1"></span>31–60 ngày</div>
-          <div className="bucket__value">{formatCompact(totals.d30)} ₫</div>
-          <div className="bucket__count">{totals.d30Count} NCC</div>
+
+        <div className="payables-summary-item">
+          <div className="payables-summary-header">
+            <span className="payables-summary-dot payables-summary-dot--d30"></span>
+            <span className="payables-summary-label">31–60 ngày</span>
+          </div>
+          <div className="payables-summary-main">
+            <span className="payables-summary-value">
+              {kpiD30.num}
+              <span className="payables-summary-unit">{kpiD30.suffix && `${kpiD30.suffix}`} ₫</span>
+            </span>
+            <span className="payables-summary-count">{totals.d30Count} NCC</span>
+          </div>
         </div>
-        <div className="bucket">
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--t2"></span>61–90 ngày</div>
-          <div className="bucket__value">{formatCompact(totals.d60)} ₫</div>
-          <div className="bucket__count">{totals.d60Count} NCC</div>
+
+        <div className="payables-summary-item">
+          <div className="payables-summary-header">
+            <span className="payables-summary-dot payables-summary-dot--d60"></span>
+            <span className="payables-summary-label">61–90 ngày</span>
+          </div>
+          <div className="payables-summary-main">
+            <span className="payables-summary-value">
+              {kpiD60.num}
+              <span className="payables-summary-unit">{kpiD60.suffix && `${kpiD60.suffix}`} ₫</span>
+            </span>
+            <span className="payables-summary-count">{totals.d60Count} NCC</span>
+          </div>
         </div>
-        <div className="bucket">
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--t4"></span>Trên 90 ngày</div>
-          <div className="bucket__value">{formatCompact(totals.over90)} ₫</div>
-          <div className="bucket__count">{totals.over90Count} NCC</div>
+
+        <div className="payables-summary-item">
+          <div className="payables-summary-header">
+            <span className="payables-summary-dot payables-summary-dot--over90"></span>
+            <span className="payables-summary-label">Trên 90 ngày</span>
+          </div>
+          <div className="payables-summary-main">
+            <span className="payables-summary-value">
+              {kpiOver90.num}
+              <span className="payables-summary-unit">{kpiOver90.suffix && `${kpiOver90.suffix}`} ₫</span>
+            </span>
+            <span className="payables-summary-count">{totals.over90Count} NCC</span>
+          </div>
         </div>
       </div>
 
       {/* Filter toolbar */}
-      <div className="toolbar">
+      <div className="toolbar payables-toolbar">
         <div className="toolbar__spacer" />
         <div className="toolbar__search">
           <Search size={14} style={{ color: 'var(--fg-3)' }} />

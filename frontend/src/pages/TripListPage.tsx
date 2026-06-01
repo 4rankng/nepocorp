@@ -29,6 +29,7 @@ import { downloadCSV } from '../lib/csv';
 import { TripStatus, TRIP_STATUS_LABELS, parseThreshold } from '@nepocorp/shared';
 import type { TripDetail } from '@nepocorp/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
+import { useMonth } from '../hooks/useMonth';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 type StatusFilter = '' | TripStatus;
@@ -40,11 +41,6 @@ const STATUS_PILL_CLASS: Record<TripStatus, string> = {
   [TripStatus.LOCKED]: 'pill-chot',
   [TripStatus.CANCELED]: 'pill-huy',
 };
-
-const VN_MONTHS = [
-  'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-  'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
-];
 
 // Default threshold for "warn" consumption (L/100km) — overridden by fuel config when loaded
 const DEFAULT_WARN_THRESHOLD = 37;
@@ -85,15 +81,13 @@ export default function TripListPage() {
     : DEFAULT_WARN_THRESHOLD;
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
-  const [monthYearFilter, setMonthYearFilter] = useState<string>('');
   const [truckFilter, setTruckFilter] = useState<string>('');
   const [customerFilter, setCustomerFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const { month, year } = useMonth();
 
-  // Resolve salary period for the selected month filter
-  const filterMonth = monthYearFilter ? parseInt(monthYearFilter.split('-')[1]) : 0;
-  const filterYear = monthYearFilter ? parseInt(monthYearFilter.split('-')[0]) : 0;
-  const { data: salaryPeriod } = useSalaryPeriod(filterMonth, filterYear);
+  // Resolve salary period for the global month
+  const { data: salaryPeriod } = useSalaryPeriod(month, year);
   const selectedRef = useRef<Set<number>>(new Set());
   const [selectedVersion, setSelectedVersion] = useState(0);
   const selected = selectedRef.current;
@@ -105,7 +99,7 @@ export default function TripListPage() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, monthYearFilter, truckFilter, customerFilter, searchQuery]);
+  }, [statusFilter, month, year, truckFilter, customerFilter, searchQuery]);
 
   // ── Derived data ──────────────────────────────────────────────────────
   const statusCounts = useMemo(() => {
@@ -125,7 +119,7 @@ export default function TripListPage() {
     const q = searchQuery.trim().toLowerCase();
     return trips.filter((trip) => {
       if (statusFilter && trip.status !== statusFilter) return false;
-      if (monthYearFilter && salaryPeriod) {
+      if (salaryPeriod) {
         const dep = trip.departureDate;
         if (!dep || dep < salaryPeriod.start || dep > salaryPeriod.end) return false;
       }
@@ -141,7 +135,7 @@ export default function TripListPage() {
       }
       return true;
     });
-  }, [trips, statusFilter, monthYearFilter, truckFilter, customerFilter, searchQuery, salaryPeriod]);
+  }, [trips, statusFilter, truckFilter, customerFilter, searchQuery, salaryPeriod]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTrips.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -152,9 +146,8 @@ export default function TripListPage() {
   const pageRangeRef = useRef<TripDetail[]>([]);
   pageRangeRef.current = pageRange;
 
-  // ── Hero metrics (current month) ──────────────────────────────────────
-  const now = new Date();
-  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  // ── Hero metrics (selected month) ──────────────────────────────────────
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
   const monthTrips = useMemo(
     () => trips.filter((t) => t.departureDate?.startsWith(monthKey)),
     [trips, monthKey],
@@ -206,18 +199,6 @@ export default function TripListPage() {
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], 'vi'));
   }, [trips]);
 
-  const monthOptions = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => {
-      const d = new Date();
-      d.setDate(1); // Set to 1st of the month to avoid month-end rollover (e.g., May 31 -> April 31 rolls over to May 1)
-      d.setMonth(d.getMonth() - i);
-      return {
-        value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-        label: `${VN_MONTHS[d.getMonth()]}/${d.getFullYear()}`,
-      };
-    });
-  }, []);
-
   // ── Actions ───────────────────────────────────────────────────────────
   const handleExport = () => {
     const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Tiền đi đường', 'Doanh thu', 'Trạng thái'];
@@ -264,41 +245,20 @@ export default function TripListPage() {
   const columnHelper = createColumnHelper<TripDetail>();
 
   const columns = useMemo(() => [
-    columnHelper.display({
-      id: 'select',
-      header: () => (
-        <div
-          className={`cb${allVisibleSelected ? ' checked' : ''}`}
-          onClick={toggleSelectAll}
-          role="checkbox"
-          aria-checked={allVisibleSelected}
-          tabIndex={0}
-        />
-      ),
-      cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <div
-            className={`cb${selected.has(row.original.id) ? ' checked' : ''}`}
-            onClick={() => toggleSelected(row.original.id)}
-            role="checkbox"
-            aria-checked={selected.has(row.original.id)}
-          />
-        </div>
-      )
-    }),
     columnHelper.accessor((row) => row.customer?.name ?? '', {
       id: 'trip',
       header: 'Chuyến · Mã',
       cell: ({ row }) => {
         const trip = row.original;
         const customerName = trip.customer?.name ?? '—';
+        const tripCode = buildTripCode(trip);
         return (
           <Link to={`/trips/${trip.id}`} className="trip-col" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }} onClick={(e) => e.stopPropagation()}>
-            <div className="trip-name" title={customerName} style={{ color: 'var(--brand)', fontWeight: 600 }}>
-              {customerName}
+            <div className="trip-name" title={tripCode}>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
             </div>
-            <div className="trip-meta">
-              <span className="trip-id">{buildTripCode(trip)}</span>
+            <div className="trip-meta" title={customerName}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customerName}</span>
               <span className="trip-meta-sep">·</span>
               <span>{formatDayMonth(trip.departureDate)}</span>
             </div>
@@ -326,9 +286,9 @@ export default function TripListPage() {
       cell: ({ row }) => {
         const trip = row.original;
         const route = splitRoute(trip.route?.name);
-        const containerTag = trip.trailerType ?? '40FT';
+        const fullRoute = trip.route?.name ?? '';
         return (
-          <div className="route-cell-flex">
+          <div className="route-cell-flex" title={fullRoute}>
             {route ? (
               <>
                 <div className="route-origin-row">
@@ -338,14 +298,13 @@ export default function TripListPage() {
                 <div className="route-destination">{route.to}</div>
               </>
             ) : (
-              <div className="route-destination">{trip.route?.name ?? '—'}</div>
+              <div className="route-destination">{fullRoute || '—'}</div>
             )}
-            <div className="route-tags-row">
-              <span className="container-tag">{containerTag}</span>
-              {(trip.containerCount ?? 1) > 1 && (
-                <span className="container-tag multiplier">×{trip.containerCount ?? 1}</span>
-              )}
-            </div>
+            {(trip.containerCount ?? 1) > 1 && (
+              <div className="route-tags-row">
+                <span className="container-tag multiplier">×{trip.containerCount ?? 1} cont</span>
+              </div>
+            )}
           </div>
         );
       }
@@ -370,28 +329,29 @@ export default function TripListPage() {
         );
       }
     }),
-    // Loại container — distinct container_type codes from trip_containers
     columnHelper.display({
       id: 'containerType',
       header: 'Loại cont',
       cell: ({ row }) => {
+        const trip = row.original;
         const containers: Array<{ containerTypeCode: string | null; containerTypeName: string | null }>
-          = (row.original as any).containers ?? [];
-        if (containers.length === 0) {
-          return <div className="km-empty">—</div>;
-        }
+          = (trip as any).containers ?? [];
         const codes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
-        if (codes.length === 0) return <div className="km-empty">—</div>;
-        return (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {codes.map((code, i) => (
-              <span key={i} className="container-tag">{code}</span>
-            ))}
-          </div>
-        );
+        if (codes.length > 0) {
+          return (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {codes.map((code, i) => (
+                <span key={i} className="container-tag">{code}</span>
+              ))}
+            </div>
+          );
+        }
+        if (trip.trailerType) {
+          return <span className="container-tag">{trip.trailerType}</span>;
+        }
+        return <div className="km-empty">—</div>;
       }
     }),
-    // Số container — comma-separated numbers from trip_containers
     columnHelper.display({
       id: 'containerNumbers',
       header: 'Số cont',
@@ -400,13 +360,26 @@ export default function TripListPage() {
         if (containers.length === 0) {
           return <div className="km-empty">—</div>;
         }
+        const allNumbers = containers.map(c => c.containerNumber).join(', ');
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 12, fontFamily: 'var(--font-mono)' }}>
-            {containers.slice(0, 3).map((c, i) => (
-              <span key={i} title={c.containerNumber}>{c.containerNumber}</span>
+          <div
+            title={allNumbers}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              fontSize: 11.5,
+              fontFamily: 'var(--font-mono)',
+              minWidth: 0,
+            }}
+          >
+            {containers.slice(0, 2).map((c, i) => (
+              <span key={i} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {c.containerNumber}
+              </span>
             ))}
-            {containers.length > 3 && (
-              <span style={{ color: 'var(--fg-3)', fontSize: 11 }}>+{containers.length - 3} cont nữa</span>
+            {containers.length > 2 && (
+              <span style={{ color: 'var(--ink-3)', fontSize: 10.5 }}>+{containers.length - 2} nữa</span>
             )}
           </div>
         );
@@ -456,7 +429,6 @@ export default function TripListPage() {
       cell: ({ row }) => {
         const trip = row.original;
         const road = Number(trip.totalRoadAllowance ?? 0);
-        const isCanceled = trip.status === TripStatus.CANCELED;
         return (
           <div className={road > 0 ? 'money' : 'money-empty'}>
             {road > 0 ? (
@@ -464,10 +436,8 @@ export default function TripListPage() {
                 {formatMoney(road)}
                 <span className="money-unit"> ₫</span>
               </>
-            ) : isCanceled ? (
-              '— hủy'
             ) : (
-              '— chưa có'
+              '—'
             )}
           </div>
         );
@@ -482,40 +452,13 @@ export default function TripListPage() {
         return (
           <div className="status-cell">
             <span className={`status-pill ${pillClass}`}>
-              <span className="sd" />
               {TRIP_STATUS_LABELS[trip.status]}
             </span>
           </div>
         );
       }
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: 'Thao tác',
-      cell: ({ row }) => {
-        const trip = row.original;
-        return (
-          <div className="actions" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="action-btn"
-              title="Sửa"
-              onClick={() => navigate(`/trips/${trip.id}/edit`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${trip.id}/edit`); } }}
-            >
-              <Pencil size={14} />
-            </button>
-            <Link
-              to={`/trips/${trip.id}`}
-              className="action-btn"
-              title="Chi tiết"
-            >
-              <Eye size={14} />
-            </Link>
-          </div>
-        );
-      }
     })
-  ], [selectedVersion, navigate]);
+  ], [selectedVersion, navigate, warnThreshold]);
 
   const tableInstance = useReactTable({
     data: pageRange,
@@ -523,8 +466,8 @@ export default function TripListPage() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // Today human-friendly
-  const todayLabel = `${VN_MONTHS[now.getMonth()]}/${now.getFullYear()}`;
+  // Month label for hero section
+  const todayLabel = `Tháng ${month}/${year}`;
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
@@ -621,95 +564,103 @@ export default function TripListPage() {
               {formatMoney(heroSummary.revenue)}
               <span className="metric-unit">₫</span>
             </div>
-            <div className="metric-delta delta-flat">Tháng {now.getMonth() + 1} · bao gồm tất cả trạng thái chuyến</div>
+            <div className="metric-delta delta-flat">Tháng {month} · bao gồm tất cả trạng thái chuyến</div>
           </div>
         </div>
       </section>
 
       {/* ── FILTERS ──────────────────────────────────────────────────── */}
-      <div className="filters-bar">
-        <div className="seg-tabs">
-          <button
-            type="button"
-            className={`stab${statusFilter === '' ? ' active' : ''}`}
-            onClick={() => setStatusFilter('')}
-          >
-            Tất cả <span className="stc">{statusCounts.all}</span>
-          </button>
-          <button
-            type="button"
-            className={`stab${statusFilter === TripStatus.CREATED ? ' active' : ''}`}
-            onClick={() => setStatusFilter(TripStatus.CREATED)}
-          >
-            Mới tạo <span className="stc">{statusCounts[TripStatus.CREATED]}</span>
-          </button>
-          <button
-            type="button"
-            className={`stab${statusFilter === TripStatus.IN_TRANSIT ? ' active' : ''}`}
-            onClick={() => setStatusFilter(TripStatus.IN_TRANSIT)}
-          >
-            Đang chạy <span className="stc">{statusCounts[TripStatus.IN_TRANSIT]}</span>
-          </button>
-          <button
-            type="button"
-            className={`stab warn${statusFilter === TripStatus.COMPLETED ? ' active' : ''}`}
-            onClick={() => setStatusFilter(TripStatus.COMPLETED)}
-          >
-            Hoàn thành <span className="stc">{statusCounts[TripStatus.COMPLETED]}</span>
-          </button>
-          <button
-            type="button"
-            className={`stab${statusFilter === TripStatus.LOCKED ? ' active' : ''}`}
-            onClick={() => setStatusFilter(TripStatus.LOCKED)}
-          >
-            Đã khóa <span className="stc">{statusCounts[TripStatus.LOCKED]}</span>
-          </button>
-          <button
-            type="button"
-            className={`stab alert${statusFilter === TripStatus.CANCELED ? ' active' : ''}`}
-            onClick={() => setStatusFilter(TripStatus.CANCELED)}
-          >
-            Đã hủy <span className="stc">{statusCounts[TripStatus.CANCELED]}</span>
-          </button>
+      <div className="filters-card">
+        <div className="filters-row-top">
+          <div className="status-tabs">
+            <button
+              className={`stab-pill${statusFilter === '' ? ' active' : ''}`}
+              onClick={() => setStatusFilter('')}
+            >
+              <span className="stab-dot" style={{ '--dot': '#0F1A14' } as React.CSSProperties} />
+              Tất cả
+              <span className="stab-count">{statusCounts.all}</span>
+            </button>
+            <button
+              className={`stab-pill${statusFilter === TripStatus.CREATED ? ' active' : ''}${statusCounts[TripStatus.CREATED] === 0 ? ' zero' : ''}`}
+              onClick={() => setStatusFilter(TripStatus.CREATED)}
+            >
+              <span className="stab-dot" style={{ '--dot': '#9AA4AD' } as React.CSSProperties} />
+              Mới tạo
+              <span className="stab-count">{statusCounts[TripStatus.CREATED]}</span>
+            </button>
+            <button
+              className={`stab-pill${statusFilter === TripStatus.IN_TRANSIT ? ' active' : ''}${statusCounts[TripStatus.IN_TRANSIT] === 0 ? ' zero' : ''}`}
+              onClick={() => setStatusFilter(TripStatus.IN_TRANSIT)}
+            >
+              <span className="stab-dot" style={{ '--dot': '#1D9F5B' } as React.CSSProperties} />
+              Đang chạy
+              <span className="stab-count">{statusCounts[TripStatus.IN_TRANSIT]}</span>
+            </button>
+            <button
+              className={`stab-pill${statusFilter === TripStatus.COMPLETED ? ' active' : ''}${statusCounts[TripStatus.COMPLETED] === 0 ? ' zero' : ''}`}
+              onClick={() => setStatusFilter(TripStatus.COMPLETED)}
+            >
+              <span className="stab-dot" style={{ '--dot': '#2D7FF9' } as React.CSSProperties} />
+              Hoàn thành
+              <span className="stab-count">{statusCounts[TripStatus.COMPLETED]}</span>
+            </button>
+            <button
+              className={`stab-pill${statusFilter === TripStatus.LOCKED ? ' active' : ''}${statusCounts[TripStatus.LOCKED] === 0 ? ' zero' : ''}`}
+              onClick={() => setStatusFilter(TripStatus.LOCKED)}
+            >
+              <span className="stab-dot" style={{ '--dot': '#E0A106' } as React.CSSProperties} />
+              Đã khóa
+              <span className="stab-count">{statusCounts[TripStatus.LOCKED]}</span>
+            </button>
+            <button
+              className={`stab-pill${statusFilter === TripStatus.CANCELED ? ' active' : ''}${statusCounts[TripStatus.CANCELED] === 0 ? ' zero' : ''}`}
+              onClick={() => setStatusFilter(TripStatus.CANCELED)}
+            >
+              <span className="stab-dot" style={{ '--dot': '#E0533D' } as React.CSSProperties} />
+              Đã hủy
+              <span className="stab-count">{statusCounts[TripStatus.CANCELED]}</span>
+            </button>
+          </div>
         </div>
 
-        <div className="divider-v" />
+        <div className="filters-divider" />
 
-        <label className="dropdown">
-          <select value={monthYearFilter} onChange={(e) => setMonthYearFilter(e.target.value)}>
-            <option value="">Tất cả thời gian</option>
-            {monthOptions.map((m) => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
-        </label>
+        <div className="filters-row-bottom">
+          <div className="filters-search">
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder="Tìm theo mã chuyến, KH, biển số"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <label className={`filter-pill${truckFilter ? ' has-value' : ''}`}>
+            <div className="filter-lbl-wrap">
+              <span className="filter-lbl-cap">Phương tiện</span>
+              <select value={truckFilter} onChange={(e) => setTruckFilter(e.target.value)}>
+                <option value="">Tất cả xe</option>
+                {truckOptions.map((plate) => (
+                  <option key={plate} value={plate}>{plate}</option>
+                ))}
+              </select>
+            </div>
+            <svg className="filter-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </label>
 
-        <label className="dropdown">
-          <select value={truckFilter} onChange={(e) => setTruckFilter(e.target.value)}>
-            <option value="">Tất cả xe</option>
-            {truckOptions.map((plate) => (
-              <option key={plate} value={plate}>{plate}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className="dropdown">
-          <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)}>
-            <option value="">Tất cả khách hàng</option>
-            {customerOptions.map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
-        </label>
-
-        <div className="table-search">
-          <Search size={14} />
-          <input
-            type="text"
-            placeholder="Tìm theo mã chuyến, KH, biển số…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <label className={`filter-pill${customerFilter ? ' has-value' : ''}`}>
+            <div className="filter-lbl-wrap">
+              <span className="filter-lbl-cap">Khách hàng</span>
+              <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)}>
+                <option value="">Tất cả khách hàng</option>
+                {customerOptions.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </div>
+            <svg className="filter-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </label>
         </div>
       </div>
 
@@ -719,11 +670,22 @@ export default function TripListPage() {
           <div className="table-head">
             {tableInstance.getHeaderGroups().map(headerGroup => (
               <React.Fragment key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <div key={header.id} className={header.column.id === 'route' ? 'col-route' : header.column.id === 'km' || header.column.id === 'road' || header.column.id === 'actions' ? 'right' : ''}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </div>
-                ))}
+                {headerGroup.headers.map(header => {
+                  const rightCols = new Set(['km']);
+                  const centerCols = new Set(['status']);
+                  let cls = '';
+                  if (header.column.id === 'actions') cls = 'col-act right';
+                  else if (header.column.id === 'route') cls = 'col-route';
+                  else if (header.column.id === 'containerNumbers') cls = 'col-numbers';
+                  else if (header.column.id === 'road') cls = 'col-road right';
+                  else if (rightCols.has(header.column.id)) cls = 'right';
+                  else if (centerCols.has(header.column.id)) cls = 'center';
+                  return (
+                    <div key={header.id} className={cls}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </div>
+                  );
+                })}
               </React.Fragment>
             ))}
           </div>
@@ -739,11 +701,22 @@ export default function TripListPage() {
                 className="table-row"
                 onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
               >
-                {row.getVisibleCells().map(cell => (
-                  <div key={cell.id} className={cell.column.id === 'route' ? 'col-route' : cell.column.id === 'km' || cell.column.id === 'road' || cell.column.id === 'actions' ? 'right' : ''}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </div>
-                ))}
+                {row.getVisibleCells().map(cell => {
+                  const rightCols = new Set(['km']);
+                  const centerCols = new Set(['status']);
+                  let cls = '';
+                  if (cell.column.id === 'actions') cls = 'col-act right';
+                  else if (cell.column.id === 'route') cls = 'col-route';
+                  else if (cell.column.id === 'containerNumbers') cls = 'col-numbers';
+                  else if (cell.column.id === 'road') cls = 'col-road right';
+                  else if (rightCols.has(cell.column.id)) cls = 'right';
+                  else if (centerCols.has(cell.column.id)) cls = 'center';
+                  return (
+                    <div key={cell.id} className={cls}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </div>
+                  );
+                })}
               </div>
             ))
           )}
@@ -789,7 +762,6 @@ export default function TripListPage() {
                       </div>
                     </div>
                     <span className={`status-pill ${pillClass}`}>
-                      <span className="sd" />
                       {TRIP_STATUS_LABELS[trip.status]}
                     </span>
                   </div>
@@ -806,9 +778,6 @@ export default function TripListPage() {
                     )}
                   </div>
 
-                  {/* Container chips + numbers — Pete's request to surface
-                      "loại cont" + "số cont" inline on the mobile card too,
-                      not just the desktop table. */}
                   {tripContainers.length > 0 && (
                     <div className="trip-mcard__containers" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
