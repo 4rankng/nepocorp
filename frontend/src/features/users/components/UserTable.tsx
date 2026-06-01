@@ -3,8 +3,7 @@ import {
   Loader2, KeyRound, Mail, Phone, Search, UserX,
 } from 'lucide-react';
 import { formatDate } from '../../../lib/format';
-import { Role, ROLE_LABELS } from '../utils';
-import { ROLE_PILL, AVATAR_COLORS, FilterKey } from '../utils';
+import { Role, ROLE_LABELS, ROLE_PILL, FilterKey } from '../utils';
 import type { UserRow } from '../utils';
 import { UserStatusBadge } from './UserStatusBadge';
 
@@ -50,6 +49,7 @@ export function UserTable({
 }: UserTableProps) {
   return (
     <>
+      {/* ── Page header ─────────────────────────────────────────────────── */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Quản lý <em>người dùng</em></h1>
@@ -70,6 +70,7 @@ export function UserTable({
         )}
       </div>
 
+      {/* ── KPI grid ────────────────────────────────────────────────────── */}
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
         <div className="kpi">
           <div className="kpi__top">
@@ -77,7 +78,7 @@ export function UserTable({
             <div className="kpi__icon"><Users size={18} /></div>
           </div>
           <div className="kpi__value">{total}</div>
-          <div className="kpi__meta kpi__meta--up">Đang hoạt động trong hệ thống</div>
+          <div className="kpi__meta kpi__meta--up">Đang hoạt động</div>
           <div className="kpi__watermark" aria-hidden="true"><Users size={72} /></div>
         </div>
         <div className="kpi kpi--warn">
@@ -109,53 +110,65 @@ export function UserTable({
         </div>
       </div>
 
-      <div className="toolbar">
-        {(['all', ...Object.values(Role)] as FilterKey[]).map(f => {
-          const count = f === 'all' ? total : users.filter(u => u.role === f).length;
-          const label = f === 'all' ? 'Tất cả' : ROLE_LABELS[f as Role];
-          return (
-            <button
-              key={f}
-              className={`filter-pill${filter === f ? ' is-active' : ''} ${ROLE_FILTER_CLS[f] || ''}`}
-              onClick={() => onFilterChange(f)}
-            >
-              <span>{label}</span>
-              <span className="filter-pill__count">{count}</span>
-            </button>
-          );
-        })}
-        <div className="toolbar__spacer" />
-        <div className="toolbar__search">
-          <Search size={14} />
-          <input
-            type="text"
-            placeholder="Tìm theo username, email, SĐT..."
-            value={search}
-            onChange={e => onSearchChange(e.target.value)}
-          />
+      {/* ── Unified panel: toolbar + table + footer ─────────────────────── */}
+      <div className="users-table-panel">
+        {/* Filter toolbar */}
+        <div className="toolbar">
+          {(['all', ...Object.values(Role)] as FilterKey[]).map(f => {
+            const count = f === 'all' ? total : users.filter(u => u.role === f).length;
+            const label = f === 'all' ? 'Tất cả' : ROLE_LABELS[f as Role];
+            return (
+              <button
+                key={f}
+                className={`filter-pill${filter === f ? ' is-active' : ''} ${ROLE_FILTER_CLS[f] || ''}`}
+                onClick={() => onFilterChange(f)}
+              >
+                <span>{label}</span>
+                <span className="filter-pill__count">{count}</span>
+              </button>
+            );
+          })}
+          <div className="toolbar__spacer" />
+          <div className="toolbar__search">
+            <Search size={14} />
+            <input
+              type="text"
+              placeholder="Tìm theo username, email, SĐT..."
+              value={search}
+              onChange={e => onSearchChange(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Desktop table */}
+        <DesktopTable
+          filtered={filtered}
+          canManage={canManage}
+          deleting={deleting}
+          currentUserId={currentUserId}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+
+        {/* Mobile cards */}
+        <MobileCardList
+          filtered={filtered}
+          canManage={canManage}
+          deleting={deleting}
+          currentUserId={currentUserId}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+
+        {/* Footer */}
+        <div className="table-foot">
+          <span>
+            Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> / <strong style={{ fontFamily: 'var(--font-mono)' }}>{total}</strong> tài khoản
+          </span>
         </div>
       </div>
 
-      <MobileCardList
-        filtered={filtered}
-        canManage={canManage}
-        deleting={deleting}
-        currentUserId={currentUserId}
-        total={total}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-
-      <DesktopTable
-        filtered={filtered}
-        canManage={canManage}
-        deleting={deleting}
-        currentUserId={currentUserId}
-        total={total}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-
+      {/* Permission notice */}
       {!canManage && (
         <div style={{
           marginTop: 20, padding: '12px 16px',
@@ -171,98 +184,18 @@ export function UserTable({
   );
 }
 
-function MobileCardList({ filtered, canManage, deleting, currentUserId, total, onEdit, onDelete }: {
-  filtered: UserRow[];
-  canManage: boolean;
-  deleting: number | null;
-  currentUserId?: number;
-  total: number;
-  onEdit: (u: UserRow) => void;
-  onDelete: (id: number) => void;
-}) {
-  return (
-    <div className="mobile-only mobile-table-wrap">
-      <div className="m-card-list">
-        {filtered.length === 0 ? (
-          <div className="users-empty">
-            <div className="users-empty__icon"><UserX size={24} /></div>
-            <p className="users-empty__title">Không tìm thấy tài khoản</p>
-            <p className="users-empty__desc">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
-          </div>
-        ) : (
-          filtered.map(u => {
-            const pill = ROLE_PILL[u.role] || { cls: 'pill pill--neutral', label: u.role };
-            const isMe = u.id === currentUserId;
-            return (
-              <div key={u.id} className="m-card users-mobile-card" style={{ cursor: 'default' }}>
-                <div className="users-mobile-card__header">
-                  <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
-                    {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div className="users-mobile-card__info">
-                    <div className="users-mobile-card__name">
-                      {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
-                      {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>(bạn)</span>}
-                    </div>
-                    {u.username && <div className="users-mobile-card__handle">@{u.username}</div>}
-                  </div>
-                  <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
-                </div>
-                <div className="users-mobile-card__details">
-                  <UserStatusBadge status={u.status} />
-                  {u.email && (
-                    <span className="users-mobile-card__detail">
-                      <Mail size={12} /> {u.email}
-                    </span>
-                  )}
-                  {u.phone && (
-                    <span className="users-mobile-card__detail">
-                      <Phone size={12} /> {u.phone}
-                    </span>
-                  )}
-                  <span className="users-mobile-card__detail" style={{ color: 'var(--ink-4)' }}>
-                    {formatDate(u.createdAt)}
-                  </span>
-                </div>
-                {canManage && (
-                  <div className="users-mobile-card__actions">
-                    <button className="users-mobile-card__action-btn" onClick={() => onEdit(u)}>
-                      <Pencil size={12} /> Sửa
-                    </button>
-                    <button
-                      className="users-mobile-card__action-btn users-mobile-card__action-btn--danger"
-                      disabled={!!deleting || isMe}
-                      onClick={() => !isMe && onDelete(u.id)}
-                      style={{ opacity: isMe ? 0.4 : 1 }}
-                    >
-                      {deleting === u.id ? <Loader2 size={12} className="spin" /> : <Trash2 size={12} />}
-                      Xoá
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-      <div className="table-foot">
-        <span>Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> / <strong style={{ fontFamily: 'var(--font-mono)' }}>{total}</strong> tài khoản</span>
-      </div>
-    </div>
-  );
-}
+/* ── Desktop table (inside panel) ─────────────────────────────────────────── */
 
-function DesktopTable({ filtered, canManage, deleting, currentUserId, total, onEdit, onDelete }: {
+function DesktopTable({ filtered, canManage, deleting, currentUserId, onEdit, onDelete }: {
   filtered: UserRow[];
   canManage: boolean;
   deleting: number | null;
   currentUserId?: number;
-  total: number;
   onEdit: (u: UserRow) => void;
   onDelete: (id: number) => void;
 }) {
   return (
-    <div className="desktop-only users-table-wrap">
+    <div className="desktop-only">
       <div className="table-scroll">
         <table className="tt-table" style={{ minWidth: 900 }}>
           <thead>
@@ -358,11 +291,83 @@ function DesktopTable({ filtered, canManage, deleting, currentUserId, total, onE
           </tbody>
         </table>
       </div>
-      <div className="table-foot">
-        <span>
-          Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> / <strong style={{ fontFamily: 'var(--font-mono)' }}>{total}</strong> tài khoản
-        </span>
-      </div>
+    </div>
+  );
+}
+
+/* ── Mobile card list (inside panel) ──────────────────────────────────────── */
+
+function MobileCardList({ filtered, canManage, deleting, currentUserId, onEdit, onDelete }: {
+  filtered: UserRow[];
+  canManage: boolean;
+  deleting: number | null;
+  currentUserId?: number;
+  onEdit: (u: UserRow) => void;
+  onDelete: (id: number) => void;
+}) {
+  return (
+    <div className="mobile-only">
+      {filtered.length === 0 ? (
+        <div className="users-empty">
+          <div className="users-empty__icon"><UserX size={24} /></div>
+          <p className="users-empty__title">Không tìm thấy tài khoản</p>
+          <p className="users-empty__desc">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+        </div>
+      ) : (
+        filtered.map(u => {
+          const pill = ROLE_PILL[u.role] || { cls: 'pill pill--neutral', label: u.role };
+          const isMe = u.id === currentUserId;
+          return (
+            <div key={u.id} className="m-card users-mobile-card" style={{ cursor: 'default' }}>
+              <div className="users-mobile-card__header">
+                <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
+                  {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
+                </div>
+                <div className="users-mobile-card__info">
+                  <div className="users-mobile-card__name">
+                    {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
+                    {isMe && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>(bạn)</span>}
+                  </div>
+                  {u.username && <div className="users-mobile-card__handle">@{u.username}</div>}
+                </div>
+                <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
+              </div>
+              <div className="users-mobile-card__details">
+                <UserStatusBadge status={u.status} />
+                {u.email && (
+                  <span className="users-mobile-card__detail">
+                    <Mail size={12} /> {u.email}
+                  </span>
+                )}
+                {u.phone && (
+                  <span className="users-mobile-card__detail">
+                    <Phone size={12} /> {u.phone}
+                  </span>
+                )}
+                <span className="users-mobile-card__detail" style={{ color: 'var(--ink-4)' }}>
+                  {formatDate(u.createdAt)}
+                </span>
+              </div>
+              {canManage && (
+                <div className="users-mobile-card__actions">
+                  <button className="users-mobile-card__action-btn" onClick={() => onEdit(u)}>
+                    <Pencil size={12} /> Sửa
+                  </button>
+                  <button
+                    className="users-mobile-card__action-btn users-mobile-card__action-btn--danger"
+                    disabled={!!deleting || isMe}
+                    onClick={() => !isMe && onDelete(u.id)}
+                    style={{ opacity: isMe ? 0.4 : 1 }}
+                  >
+                    {deleting === u.id ? <Loader2 size={12} className="spin" /> : <Trash2 size={12} />}
+                    Xoá
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }

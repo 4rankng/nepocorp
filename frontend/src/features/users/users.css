@@ -14,13 +14,8 @@
   justify-content: center;
   font-size: 14px;
   font-weight: 700;
-  border: 2px solid transparent;
+  border: 2.5px solid transparent;
   transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
-}
-
-.user-avatar:hover {
-  transform: scale(1.08);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Role-colored ring variants */
@@ -100,48 +95,135 @@
   flex-shrink: 0;
 }
 
-/* ── Role filter pill color variants (active state uses role color) ──── */
+/* ── Filter pills with subtle role-colored tints ───────────────────────── */
 
-.filter-pill--admin.is-active {
-  background: var(--danger);
-  border-color: var(--danger);
+.filter-pill--admin {
+  --fp-color: var(--danger);
+  --fp-soft: var(--danger-soft);
+}
+.filter-pill--manager {
+  --fp-color: var(--warning);
+  --fp-soft: var(--warning-soft);
+}
+.filter-pill--accountant {
+  --fp-color: var(--ink-2);
+  --fp-soft: var(--surface-3);
+}
+.filter-pill--driver {
+  --fp-color: var(--success);
+  --fp-soft: var(--success-soft);
+}
+.filter-pill--forwarder {
+  --fp-color: var(--info);
+  --fp-soft: var(--info-soft);
 }
 
-.filter-pill--manager.is-active {
-  background: var(--warning);
-  border-color: var(--warning);
+/* Inactive state: subtle tinted border hint */
+.filter-pill[class*="filter-pill--"] {
+  border-color: color-mix(in srgb, var(--fp-color) 20%, transparent);
 }
 
-.filter-pill--accountant.is-active {
-  background: var(--ink-2);
-  border-color: var(--ink-2);
+.filter-pill[class*="filter-pill--"]:hover {
+  background: var(--fp-soft);
+  border-color: color-mix(in srgb, var(--fp-color) 40%, transparent);
+  color: var(--fp-color);
 }
 
-.filter-pill--driver.is-active {
-  background: var(--success);
-  border-color: var(--success);
+/* Active state: solid role color */
+.filter-pill[class*="filter-pill--"].is-active {
+  background: var(--fp-color);
+  border-color: var(--fp-color);
+  color: #fff;
 }
 
-.filter-pill--forwarder.is-active {
-  background: var(--info);
-  border-color: var(--info);
+.filter-pill[class*="filter-pill--"].is-active .filter-pill__count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
-/* ── Premium table overrides for users ──────────────────────────────────── */
+/* ── Users table panel (unified wrapper) ────────────────────────────────── */
 
-.users-table-wrap {
+.users-table-panel {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-.users-table-wrap:hover {
+.users-table-panel:hover {
   box-shadow: var(--sh);
   border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Toolbar inside the panel — flush with top, no bottom border */
+.users-table-panel .toolbar {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 14px;
+  background: rgba(247, 248, 250, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Override .tt-table for users — no row cursor (non-clickable rows) */
+.users-table-panel .tt-table tbody tr {
+  cursor: default;
+}
+
+.users-table-panel .tt-table tbody tr:hover {
+  background: rgba(0, 177, 79, 0.03);
+  transform: none;
+}
+
+/* Better row spacing inside the panel */
+.users-table-panel .tt-table thead th {
+  padding: 12px 16px;
+}
+
+.users-table-panel .tt-table tbody td {
+  padding: 12px 16px;
+}
+
+/* Table footer inside panel */
+.users-table-panel .table-foot {
+  border-top: 1px solid var(--line);
+  padding: 10px 16px;
+  background: rgba(247, 248, 250, 0.6);
+}
+
+/* ── Empty state for users ──────────────────────────────────────────────── */
+
+.users-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.users-empty__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  color: var(--ink-3);
+}
+
+.users-empty__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.users-empty__desc {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 0;
 }
 
 /* ── Mobile card enhancements ───────────────────────────────────────────── */
@@ -256,36 +338,4 @@
     color: var(--danger);
     border-color: var(--danger-soft);
   }
-}
-
-/* ── Empty state for users ──────────────────────────────────────────────── */
-
-.users-empty {
-  padding: 48px 24px;
-  text-align: center;
-}
-
-.users-empty__icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: var(--surface-3);
-  display: grid;
-  place-items: center;
-  margin: 0 auto 16px;
-  color: var(--ink-3);
-}
-
-.users-empty__title {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0 0 6px;
-}
-
-.users-empty__desc {
-  font-size: 13px;
-  color: var(--ink-3);
-  margin: 0;
 }
