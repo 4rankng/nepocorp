@@ -78,16 +78,16 @@ export default function UsersPage() {
         onAdd={openAdd}
       />
 
-      {showAdd && (
-        <AddPanel
-          saving={saving}
-          error={panelError}
-          onClose={closeAdd}
-          onSave={doCreate}
-        />
-      )}
+      <AddPanel
+        isOpen={showAdd}
+        saving={saving}
+        error={panelError}
+        onClose={closeAdd}
+        onSave={doCreate}
+      />
       {editingUser && (
         <EditPanel
+          isOpen={!!editingUser}
           user={editingUser}
           isMe={editingUser.id === me?.userId}
           saving={saving}
