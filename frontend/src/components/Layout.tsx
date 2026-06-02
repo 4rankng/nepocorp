@@ -23,6 +23,7 @@ import {
   FileText,
   Store,
   Package,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -419,6 +420,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <strong>NEPOCORP</strong>
             <span>Logistics System</span>
           </div>
+          <button
+            type="button"
+            className="sidebar-close"
+            aria-label="Đóng menu"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <nav className="sidebar-nav" ref={navRef as React.RefObject<HTMLElement>}>

@@ -467,6 +467,140 @@ The `/expenses/new` form was already mobile-clean — single-column layout, 10 f
 
 ---
 
+## Pass 17 — `/config` hub + `/config/container-types` + `/config/ports` + `/config/fuel` + `/config/cap-table` + `/config/pricing-tables`
+
+**Login:** accountant `anh` / `admin123`. Verified via 390×844 iframe.
+
+### 17a — `/config` hub (ConfigPage)
+
+**Issues at 390×844 (before):**
+
+1. **Long titles with `&` wrapped to 2 lines.** "Khách hàng & Đối tác", "Tuyến đường & Cự ly", and "Thông tin công ty & Cổ phần" all wrapped because the foot column (status badge + "Sửa >" link) consumed ~130px on the right side. With `gap: 12px` + `padding: 12px 14px` + `36px` icon, title got only ~190px of the 360px card width — not enough for the ampersand-titled tiles.
+
+2. **Stray `border-top` on `.setting-card__foot`.** Desktop rule defines `padding-top: 12px; border-top: 1px solid var(--line)` — the mobile rule reset `padding-top: 0` but kept the border. Result: every compact list row had a thin 1px line floating above the foot pill area on the right side.
+
+3. **Redundant "Sửa" / "Xem" word on 17 of 18 tiles.** The chevron alone communicates "go in"; the word adds 30px of horizontal pressure per row, which was the difference between a 1-line title and a 2-line wrap.
+
+**Fix (CSS only):**
+
+Replaced the existing `.setting-card` mobile block in `responsive.css` (lines 651–663) with a tighter version:
+- Icon shrunk `36×36` → `34×34`, border-radius `10` → `9`.
+- Card padding `12 14` → `11 14`, gap `12` → `10`, min-height `56` → `58` (so 2-line titles don't stretch the row beyond a uniform height).
+- Title: `flex: 1; min-width: 0; line-height: 1.3` + `display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden` (allows wrap but caps at 2 lines).
+- Foot: `border-top: 0` (removes the stray line), `gap: 6`, `flex-shrink: 0`.
+- Status badge: `white-space: nowrap; max-width: 110px; overflow: hidden; text-overflow: ellipsis`.
+- Action: `gap: 0; font-size: 0` to hide the "Sửa"/"Xem" word — chevron alone remains. SVG sized to `14×14`.
+
+**Verification:**
+- Mobile (390): "Khách hàng & Đối tác" and "Tuyến đường & Cự ly" now single-line. "Thông tin công ty & Cổ phần" still wraps to 2 lines but cleanly (line-height tightened). ~10 tiles visible above the fold vs ~8 before.
+- Desktop (>640): unchanged (flex-direction column, action text "Sửa" present at 12px, border-top 1px solid restored).
+
+### 17b — `/config/container-types` (ContainerTypesConfigPage)
+
+**Issue at 390×844 (before):**
+
+The `ContainerRow` component used `useState(hovered)` + `onMouseEnter`/`onMouseLeave` to gate `style={{ opacity: hovered ? 1 : 0 }}` on the edit/delete buttons. On mobile (no hover state), the actions were **permanently invisible** — users couldn't edit or delete any container type from the list view. The `Plus` "Thêm mới" button worked, but existing rows were read-only on phone.
+
+**Fix (CSS + JSX):**
+
+- Created new `frontend/src/pages/config/config-list.css` with a base `.cfg-row` class system: hover-reveal actions on desktop (`opacity: 0` → `:hover` → `1`), always-visible actions on mobile.
+- Refactored `ContainerRow` in `ContainerTypesConfigPage.tsx`: removed `useState(hovered)` + `onMouseEnter/Leave` handlers and the inline `opacity: hovered ? 1 : 0`. Replaced inline-styled elements with `.cfg-row__code`, `.cfg-row__name`, `.cfg-row__notes`, `.cfg-row__actions`, `.cfg-row__delete` classes.
+- Added `onClick={handleRowClick}` to the row that calls `onEdit()` unless the click target is inside the actions ref (which has its own buttons with own handlers). Added `role="button"`, `tabIndex={0}`, `onKeyDown` for keyboard accessibility.
+- Imported `./config-list.css` at the top of the page.
+
+**Verification:**
+- Mobile (390): edit pencil + delete trash icons visible on every row. Whole row is tappable to open the edit modal (same shape as Pass 14 customer/supplier card pattern).
+- Desktop (>640): actions still hidden until row hover. CSS `:hover` background + opacity reveal preserves the original feel.
+
+### 17c — `/config/ports` (PortsConfigPage)
+
+**Same hover-only invisibility bug as 17b**, plus a wider row (code + name + city + address columns).
+
+**Fix:**
+
+- Same `PortRow` refactor: removed `useState(hovered)` + inline opacity, added `cfg-row cfg-row--port` classes + `onClick` handler + a11y props.
+- Added `cfg-row__name--wide` modifier (220px on desktop) and `cfg-row__city` (100px), still inside `config-list.css`.
+- In the mobile media query in `config-list.css`: `.cfg-row { flex-wrap: wrap }` plus `.cfg-row--port .cfg-row__name--wide { width: auto; flex: 1 }` (so the name takes the remaining space on row 1 next to the code chip) and `.cfg-row--port .cfg-row__city, .cfg-row--port .cfg-row__notes { flex-basis: 100%; padding-left: 66px }` (so city + address each get their own indented row beneath the name). Actions naturally wrap to row 4 on the right.
+
+**Verification:**
+- Mobile (390): each port is a 4-row "card" (chip + name on row 1, city on row 2, address on row 3, edit/delete buttons right-aligned on row 4). No horizontal scroll — every column visible without sideways panning.
+- Desktop (>640): single-row 5-column layout unchanged (chip 52px + name 220px + city 100px + address flex:1 + hover-actions).
+
+### 17d — `/config/fuel` (FuelConfigPage) — VERIFICATION ONLY
+
+Already mobile-clean. The page is a vertical stack of titled sections (Cấu hình tính nhiên liệu, Ngưỡng cảnh báo tiêu hao) with full-width form fields. Inputs render at ~46px height with comfortable touch targets, labels stay single-line at 13px, threshold rows have leading emoji indicators (⚠️ yellow / 🔴 red) that align cleanly at 390px. No fix needed.
+
+### 17e — `/config/cap-table` (CapTableConfigPage) — VERIFICATION ONLY
+
+Uses the shared `CrudTable` scaffold. At 390×844: "+ Thêm mới" button renders full-width (toolbar's `flex: 1` left slot is empty), and the 4-column table (#/TÊN CỔ ĐÔNG/HIỆN TẠI badge/SỐ VỐN) scrolls horizontally with the existing `.tt-table` 480px min-width and fade affordance. Each cap-holder row has a "HIỆN TẠI" badge inline with the name. Acceptable — falls inside the existing table-scroll pattern. No fix needed.
+
+### 17f — `/config/pricing-tables` (PricingTablesConfigPage) — VERIFICATION ONLY
+
+Same `CrudTable` scaffold. 5-column table (#/KHÁCH HÀNG/TUYẾN ĐƯỜNG/GIÁ/Thao tác). Horizontal scrolls within the existing pattern. No fix needed beyond what 17a's hub-level cleanup already gave. (If pricing-tables ever grows beyond ~20 customers, a row → card collapse on phone would be a worthwhile follow-up.)
+
+**Files changed (Pass 17):**
+- `frontend/src/styles/responsive.css` — rewrote `.setting-card` mobile block (~12 → ~22 lines)
+- `frontend/src/pages/config/ContainerTypesConfigPage.tsx` — refactored `ContainerRow` (removed hover state, added classes + click handler), added `useRef` import, added CSS import
+- `frontend/src/pages/config/PortsConfigPage.tsx` — same refactor for `PortRow`, added `useRef` import, added CSS import
+- `frontend/src/pages/config/config-list.css` — new file (~75 lines), shared `.cfg-row` system used by both
+
+---
+
+## Pass 18 — `/audit-logs` (AuditLogPage)
+
+**Login:** director `phung` / `admin123`. Verified via 390×844 iframe.
+
+**Issues at 390×844 (before):**
+
+1. **The NỘI DUNG (action + message) column was hidden behind horizontal scroll.** The 4-col table (#/Thời gian/Người dùng/Nội dung) renders at ~700px minimum on desktop. On mobile the row scrolls horizontally and the action label + message — the actually informative content — sits past the right edge. Users on phone saw # + time + user name but no idea what the user *did* without sideways panning every row.
+2. **KPI watermark icons** (lucide Activity/Users/TrendingUp/Clock at 72px) crowded the 4 KPI tiles — same pattern as Routes and Users from Passes 1 & 4.
+3. **The message div had inline `style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}`** — inline beats CSS, so the message couldn't be made to wrap on mobile via a stylesheet override.
+
+**Fix (CSS + JSX):**
+
+- **AuditLogPage.tsx**: added page-scope class `audit-log-page` to the root `<div className="fade-up ...">` (line 336). Replaced the message div's inline style with `<div className="audit-log__msg" title={entry.message}>` so a CSS class can govern the wrap behavior at different breakpoints.
+- **AuditLogPage.css**:
+  - Added a base `.audit-log__msg` rule reproducing the original desktop behavior (12.5px / nowrap / ellipsis / overflow:hidden / max-width: 100%).
+  - New `@media (max-width: 640px)` block:
+    - Hide `.kpi__watermark`, give `.kpi { overflow: hidden }` (scoped to `.audit-log-page`).
+    - Disable horizontal scroll on `.table-scroll` and its right-edge fade.
+    - Transform `<table.table-hover>` into a vertical card list: `thead` hidden, `tbody` becomes a flex column with 8px gap and 8px padding. Each `<tr>` becomes a 2-column CSS grid with `grid-template-areas: "time user" / "content content"`, 12px 14px padding, `border: 1px solid var(--line)`, 12px radius.
+    - Hide the `#` cell (`td:nth-child(1) { display: none }`); time chip goes top-left (`nowrap`), user with avatar goes top-right, message gets the full bottom row with `border-top: 1px solid var(--line)` and `padding-top: 8px`.
+    - `.audit-log__msg` overridden inside the mobile block: `white-space: normal; overflow: visible; text-overflow: clip` — so the message wraps onto multiple lines.
+    - Loading and empty-state rows (the ones with `colspan`) get `display: block; text-align: center` via `tr:has(td[colspan])` so they don't break into the grid layout.
+
+**Verification:**
+- Mobile (390): each log entry is a card showing the time + user on row 1 and the full action label + wrapped message on row 2. No horizontal scroll. The infinite-scroll IntersectionObserver still fires (`lastElementRef` is attached to the last `<tr>` and the grid `<tr>` is still an element). The Drawer (`Drawer` component, `mobile-only`) opens on tap with full JSON payload — already worked, unchanged.
+- Desktop (>640): unchanged. 4-column table renders as before. `.audit-log__msg` keeps the original ellipsis on overflow. KPI watermarks still visible.
+- No `!important` used — the message wrap override on mobile uses class specificity (`.audit-log-page .audit-log__msg`) which is one level higher than the base `.audit-log__msg`.
+
+---
+
+## Pass 19 — Topbar + sidebar drawer (Layout shell)
+
+**Login:** director `phung` / `admin123`. Verified via 390×844 iframe.
+
+**Already in place:** `responsive.css:172-184` already handles the topbar collapse — at ≤640px the breadcrumb and search are hidden, non-notification icon buttons hidden, notification bell bumped to a 40×40 touch target, topbar height fixed at 48px. `responsive.css:138-147` handles the sidebar as a slide-in drawer at ≤1023px (transform translateX(-100%) → 0, plus a sidebar-overlay backdrop).
+
+**Issues at 390×844 (before):**
+
+1. **Hamburger toggle was 36×36** — below Apple's 44px and Google's 48px minimum touch target. Hard to hit consistently with a thumb on a 48px-tall topbar.
+2. **Month-navigator chevrons (`topbar-date__nav`) were 18×18** — well under any acceptable touch target. Users had to pinch-zoom to advance month with confidence.
+3. **No close affordance inside the open drawer.** The drawer covers 248px from the left; the only way to dismiss it was tapping the 142px-wide overlay strip on the right edge or backing out via the system back button. The hamburger that opened it is hidden behind the drawer.
+4. **Topbar padding (`0 12px`) was a touch tight** given the new larger hamburger.
+
+**Fix (CSS + JSX):**
+
+- **Layout.tsx**: imported `X` from lucide-react. Added a `<button className="sidebar-close" aria-label="Đóng menu" onClick={() => setSidebarOpen(false)}><X size={18} /></button>` as a third child of `<div className="sidebar-brand">`, sitting after `.sidebar-brand-logo` and `.sidebar-brand-meta`.
+- **Layout.css**: new `.sidebar-close` rule — `display: none` by default (hidden on desktop), `32×32`, `margin-left: auto`, rounded background `rgba(255,255,255,0.08)` with hover/active darkening. Inside `@media (max-width: 1023px)`: `.sidebar-close { display: inline-flex }` so it appears whenever the sidebar is in drawer mode. Also added `.sidebar-brand-meta { min-width: 0; flex: 1 1 auto }` plus `white-space: nowrap; overflow: hidden; text-overflow: ellipsis` on the strong + span children — without this, adding the close button squeezed the brand-meta column and forced "LOGISTICS SYSTEM" to wrap to two lines.
+- **responsive.css** (inside the existing `@media (max-width: 640px)` block): `.topbar { padding: 0 8px }` (tighter horizontal so the larger touch targets fit). `.topbar__toggle { width: 40px; height: 40px }` + `.topbar__toggle svg { width: 20px; height: 20px }` (hamburger bumped 36→40). `.topbar-date__nav { width: 28px; height: 28px }` + `.topbar-date__nav svg { width: 14px; height: 14px }` (month chevrons bumped 18→28).
+
+**Verification:**
+- Mobile (390): hamburger reads as a 40×40 tap target. Month-nav chevrons are now thumb-comfortable at 28×28. Open drawer header shows `[logo] [NEPOCORP / LOGISTICS SYSTEM stacked] [X]` cleanly on one row each. Tapping X closes the drawer.
+- Desktop (>1023): topbar padding, hamburger size, and date-nav size unchanged (the `@media (max-width: 640px)` overrides don't fire). `.sidebar-close` stays `display: none`. Brand-meta nowrap rule lives inside `@media (max-width: 1023px)` so it doesn't touch desktop either.
+
+---
+
 ## Index — all pages audited
 
 | # | Page | Status | Notes |
@@ -488,3 +622,6 @@ The `/expenses/new` form was already mobile-clean — single-column layout, 10 f
 | 14 | `/customers` + `/suppliers` | ✓ fixed | Cards now tap-to-edit, action row hidden, ~46px per card saved |
 | 15 | `/expenses` + `/expenses/new` | ✓ fixed | Filter bar tightened (-20px); form already mobile-clean |
 | 16 | `/payables` | ✓ verified | Already mobile-clean — cards 66px tappable, page fits in viewport |
+| 17 | `/config` hub + sub-tiles | ✓ fixed | Hub titles wrap fix + chevron-only mobile; container-types & ports rows tap-to-edit, hover-only opacity bug fixed; fuel/cap-table/pricing already mobile-clean |
+| 18 | `/audit-logs` | ✓ fixed | Table → vertical cards; KPI watermarks hidden; inline message style → class to allow mobile wrap |
+| 19 | Topbar + sidebar drawer (Layout) | ✓ fixed | Close X added to drawer; hamburger 36→40; month-nav chevrons 18→28; brand subtitle nowrap |

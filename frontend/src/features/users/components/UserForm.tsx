@@ -167,7 +167,7 @@ export function EditPanel({ isOpen, user, isMe, saving, error, onClose, onSave }
 
       {/* Role & status */}
       <div className="users-form-section__title"><ShieldCheck size={12} /> Quyền & trạng thái</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="row-2">
         <FormGroup label="Vai trò">
           <select className="input" value={role} onChange={e => setRole(e.target.value as Role)}>
             {Object.values(Role).map(r => (
@@ -327,7 +327,7 @@ export function AddPanel({ isOpen, saving, error, onClose, onSave }: AddPanelPro
 
       {/* Role & Password */}
       <div className="users-form-section__title"><ShieldCheck size={12} /> Quyền & Mật khẩu</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="row-2">
         <FormGroup label="Vai trò">
           <select className="input" value={role} onChange={e => setRole(e.target.value as Role)}>
             {Object.values(Role).map(r => (

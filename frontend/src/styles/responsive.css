@@ -170,7 +170,7 @@
   .app-body, .content { padding: 10px 10px 24px; }
 
   /* ── Topbar ── */
-  .topbar { padding: 0 12px; gap: 6px; height: 48px; min-height: 48px; }
+  .topbar { padding: 0 8px; gap: 6px; height: 48px; min-height: 48px; }
   .topbar-search,
   .topbar__search,
   .topbar__breadcrumb { display: none; }
@@ -180,8 +180,14 @@
     min-height: 40px;
     padding: 8px;
   }
+  /* Bump hamburger to a 40px touch target (was 36px) */
+  .topbar__toggle { width: 40px; height: 40px; }
+  .topbar__toggle svg { width: 20px; height: 20px; }
   .topbar-date { padding: 5px 8px; font-size: 12px; gap: 5px; }
   .topbar-date__sep { display: none; }
+  /* Month-nav chevrons were 18×18 — borderline untappable. Bump to 28×28. */
+  .topbar-date__nav { width: 28px; height: 28px; }
+  .topbar-date__nav svg { width: 14px; height: 14px; }
 
   /* ── Sticky table headers ── */
   thead.sticky-header { position: relative; }

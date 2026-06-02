@@ -333,7 +333,7 @@ fontSize: 13,
   };
 
   return (
-    <div className="fade-up" style={{ paddingBottom: 40 }}>
+    <div className="fade-up audit-log-page" style={{ paddingBottom: 40 }}>
       {/* ── Page Header ── */}
       <header className="page-header">
         <div className="page-header-main">
@@ -515,18 +515,7 @@ fontSize: 13,
                                 {ACTION_LABELS[entry.action] || entry.action}
                               </span>
                             </div>
-                            <div
-                              style={{
-                                fontSize: 12.5,
-                                color: 'var(--ink-2)',
-                                lineHeight: 1.4,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '100%',
-                              }}
-                              title={entry.message}
-                            >
+                            <div className="audit-log__msg" title={entry.message}>
                               {entry.message}
                             </div>
                           </div>

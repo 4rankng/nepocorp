@@ -746,6 +746,34 @@
   z-index: var(--z-overlay);
 }
 
+/* Mobile-only close button in the sidebar header.
+ * Hidden on desktop where the sidebar is part of the layout, not a drawer. */
+.sidebar-close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  color: var(--sb-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 120ms var(--ease);
+}
+.sidebar-close:hover { background: rgba(255, 255, 255, 0.16); }
+.sidebar-close:active { background: rgba(255, 255, 255, 0.24); }
+@media (max-width: 1023px) {
+  .sidebar-close { display: inline-flex; }
+  /* Drawer width is 248px — the close button shaves ~40px of brand-meta room.
+   * Constrain the brand-meta so it can shrink, and keep the subtitle on one line. */
+  .sidebar-brand-meta { min-width: 0; flex: 1 1 auto; }
+  .sidebar-brand-meta strong,
+  .sidebar-brand-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
 /* ─── Notification drawer items ─────────────────────────────────────────── */
 .notif-section-label {
   font-size: 11px;
