@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Receipt, Trash2 } from 'lucide-react';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES } from '@nepocorp/shared';
 import type { AncillaryExpenseType } from '@nepocorp/shared';
 import type { TripExpense } from '@nepocorp/shared';
@@ -8,11 +8,15 @@ import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { useAuth } from '../../hooks/useAuth';
 import { useCatalogs } from '../../hooks/useCatalogs';
+import type { CatalogData } from '../../hooks/useCatalogs';
 import { InputWithPrefix } from './InputWithPrefix';
+import { EmptyState } from '../../components/shared';
+import { StatusPill } from '../UI';
 
 interface AncillaryFeesCardProps {
   tripId: number;
   readOnly?: boolean;
+  hideAddButton?: boolean;
 }
 
 const EXPENSE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
@@ -21,6 +25,26 @@ const EXPENSE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
 
 function feeTypeLabel(code: string): string {
   return EXPENSE_TYPE_LABELS[code] ?? code;
+}
+
+// Single source of truth for the markup formula. Changing the multiplier
+// (e.g. to 1.18) or per-type override only requires editing this one helper —
+// previously the same `Math.round(buy * 1.2)` lived in 3 places including
+// the prefill-detection check, which silently produced wrong auto-suggestions
+// when the formula drifted out of sync.
+const MARKUP_MULTIPLIER = 1.2;
+function suggestedSellFor(buyNum: number, hasMarkup: boolean): string {
+  if (!hasMarkup) return String(buyNum);
+  if (!buyNum) return '';
+  return String(Math.round(buyNum * MARKUP_MULTIPLIER));
+}
+
+function resolveMarkupConfig(
+  catalogTypes: CatalogData['forwarderExpenseTypes'] | undefined,
+  code: string,
+): boolean {
+  const fromCatalog = catalogTypes?.find(t => t.code === code)?.defaultMarkup;
+  return fromCatalog ?? (FORWARDER_EXPENSE_TYPE_DEFAULTS[code]?.defaultMarkup ?? false);
 }
 
 const EMPTY_FORM = {
@@ -36,7 +60,7 @@ const EMPTY_FORM = {
   note: '',
 };
 
-export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCardProps) {
+export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = false }: AncillaryFeesCardProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: catalogData } = useCatalogs();
@@ -59,38 +83,33 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
   const expenses: (TripExpense & { supplierName?: string | null })[] = data ?? [];
 
   const handleExpenseTypeChange = (newType: string) => {
-    const currentConfig = catalogData?.forwarderExpenseTypes?.find(t => t.code === newType);
-    const hasMarkup = currentConfig 
-      ? !!currentConfig.defaultMarkup 
-      : (FORWARDER_EXPENSE_TYPE_DEFAULTS[newType]?.defaultMarkup ?? false);
-    
+    const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, newType);
+
     setForm(f => {
       const buyNum = Number(f.buyAmount);
-      const newSell = hasMarkup
-        ? (buyNum ? String(Math.round(buyNum * 1.2)) : '')
-        : f.buyAmount;
       return {
         ...f,
         expenseType: newType as AncillaryExpenseType,
-        sellAmount: newSell,
+        sellAmount: suggestedSellFor(buyNum, hasMarkup),
       };
     });
   };
 
   const handleBuyAmountChange = (val: string) => {
-    const currentConfig = catalogData?.forwarderExpenseTypes?.find(t => t.code === form.expenseType);
-    const hasMarkup = currentConfig 
-      ? !!currentConfig.defaultMarkup 
-      : (FORWARDER_EXPENSE_TYPE_DEFAULTS[form.expenseType]?.defaultMarkup ?? false);
-    
+    const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, form.expenseType);
+
     setForm(f => {
       const buyNum = Number(val);
       const oldBuyNum = Number(f.buyAmount);
+      const oldPrefill = suggestedSellFor(oldBuyNum, hasMarkup);
       // Auto-suggest only if sell amount matches the old prefill or is empty
-      const isPrefilledOrEmpty = !f.sellAmount || Number(f.sellAmount) === Math.round(oldBuyNum * 1.2) || Number(f.sellAmount) === oldBuyNum;
-      const newSell = hasMarkup
-        ? (isPrefilledOrEmpty ? (buyNum ? String(Math.round(buyNum * 1.2)) : '') : f.sellAmount)
-        : val;
+      // — preserves any value the user typed manually.
+      const isPrefilledOrEmpty = !f.sellAmount
+        || Number(f.sellAmount) === Number(oldPrefill)
+        || Number(f.sellAmount) === oldBuyNum;
+      const newSell = isPrefilledOrEmpty
+        ? suggestedSellFor(buyNum, hasMarkup)
+        : f.sellAmount;
       return {
         ...f,
         buyAmount: val,
@@ -160,10 +179,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
   const totalSell = expenses.reduce((s, e) => s + Number(e.sellAmount), 0);
   const totalMargin = totalSell - totalBuy;
 
-  const currentConfig = catalogData?.forwarderExpenseTypes?.find(t => t.code === form.expenseType);
-  const hasMarkup = currentConfig 
-    ? !!currentConfig.defaultMarkup 
-    : (FORWARDER_EXPENSE_TYPE_DEFAULTS[form.expenseType]?.defaultMarkup ?? false);
+  const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, form.expenseType);
 
   const buyVal = Number(form.buyAmount) || 0;
   const sellVal = Number(form.sellAmount) || 0;
@@ -224,22 +240,13 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                           {fee.invoiceDate ?? '—'}
                         </td>
                         <td>
-                          <span
-                            className="pill pill--sm"
-                            style={
-                              fee.approvalStatus === 'APPROVED'
-                                ? { background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
-                                : fee.approvalStatus === 'REJECTED'
-                                ? { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
-                                : { background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
-                            }
-                          >
-                            {fee.approvalStatus === 'APPROVED'
-                              ? 'Đã duyệt'
-                              : fee.approvalStatus === 'REJECTED'
-                              ? 'Từ chối'
-                              : 'Chờ duyệt'}
-                          </span>
+                          {fee.approvalStatus === 'APPROVED' ? (
+                            <StatusPill variant="success">Đã duyệt</StatusPill>
+                          ) : fee.approvalStatus === 'REJECTED' ? (
+                            <StatusPill variant="danger">Từ chối</StatusPill>
+                          ) : (
+                            <StatusPill variant="warn">Chờ duyệt</StatusPill>
+                          )}
                         </td>
                         {!readOnly && (
                           <td style={{ whiteSpace: 'nowrap' }}>
@@ -294,12 +301,14 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
               </table>
             </div>
           ) : (
-            <p style={{ fontSize: 13, color: 'var(--fg-3)', marginBottom: 12 }}>
-              Chưa có chi phí dịch vụ nào.
-            </p>
+            <EmptyState
+              icon={Receipt}
+              title="Chưa có chi phí dịch vụ"
+              description="Thêm phí nâng/hạ, hải quan, cân hàng… để theo dõi lãi dịch vụ cho chuyến này."
+            />
           )}
 
-          {!readOnly && !showForm && (
+          {!readOnly && !showForm && !hideAddButton && (
             <button
               type="button"
               className="btn btn--secondary btn--sm"

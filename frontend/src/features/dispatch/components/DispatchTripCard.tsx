@@ -82,28 +82,16 @@ export function DispatchTripCard({
             onCancel={onCloseReassign}
           />
         ) : (
-          <>
-            <div className="assign-card">
-              <span className="ap">
-                {trip.truckPlate || '—'}
-              </span>
-              <div className="ai">
-                <div className="dn">
-                  {trip.driverName || <span style={{ color: 'var(--fg-3)', fontWeight: 400 }}>Chưa phân tài xế</span>}
-                </div>
+          <div className="assign-card">
+            <span className="ap">
+              {trip.truckPlate || '—'}
+            </span>
+            <div className="ai">
+              <div className="dn">
+                {trip.driverName || <span style={{ color: 'var(--fg-3)', fontWeight: 400 }}>Chưa phân tài xế</span>}
               </div>
             </div>
-            <button
-              type="button"
-              className="swap-btn"
-              title="Đổi xe / tài xế"
-              onClick={onOpenReassign}
-              disabled={dispatching || actionLoadingId === trip.id}
-            >
-              <RefreshCw size={12} />
-              Đổi xe
-            </button>
-          </>
+          </div>
         )}
       </div>
 
@@ -118,18 +106,30 @@ export function DispatchTripCard({
             <div
               className="spin"
               style={{
-                width: 12,
-                height: 12,
+                width: 10,
+                height: 10,
                 border: '2px solid #fff',
                 borderTopColor: 'transparent',
                 borderRadius: '50%',
               }}
             />
           ) : (
-            <Play size={12} fill="currentColor" />
+            <Play size={11} fill="currentColor" />
           )}
           Khởi hành
         </button>
+        {!isEditing && (
+          <button
+            type="button"
+            className="swap-btn"
+            title="Đổi xe / tài xế"
+            onClick={onOpenReassign}
+            disabled={dispatching || actionLoadingId === trip.id}
+          >
+            <RefreshCw size={11} />
+            Đổi xe
+          </button>
+        )}
       </div>
     </div>
   );

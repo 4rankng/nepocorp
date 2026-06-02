@@ -4,7 +4,8 @@ import {
   ArrowLeft, Loader2, Play, Pencil, Lock, XCircle,
   Truck, User, MapPin, Calendar, FileText, Fuel, Banknote,
   Route as RouteIcon, Image as ImageIcon, Shuffle, FilePen, X, Clock,
-  Package,
+  Package, Receipt, TrendingUp, AlertTriangle, Check,
+  Minus, Plus, Hash, AlertCircle,
 } from 'lucide-react';
 import { api, ApiError, getAuthenticatedPhotoUrl } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -24,10 +25,12 @@ import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
 import { tripClient } from '../api/tripClient';
 import { useCatalogs } from '../hooks/useCatalogs';
 
-function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
+type Tone = 'accent' | 'info' | 'warn' | 'danger' | 'neutral';
+
+function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode, tone: Tone = 'neutral') {
   return (
-    <div className="info-row">
-      <span className="info-row__icon">{icon}</span>
+    <div className="info-row info-row--feature">
+      <span className={`info-row__icon info-row__icon--${tone}`}>{icon}</span>
       <div className="info-row__body">
         <div className="info-row__label">{label}</div>
         <div className="info-row__value">{value || '—'}</div>
@@ -220,7 +223,7 @@ export default function TripDetailPage() {
   return (
     <div className="fade-up">
       {/* Header */}
-      <div className="page-header trip-detail-header">
+      <div className="page-header trip-detail-header" style={{ alignItems: 'flex-start' }}>
         <div className="page-header-main" style={{ minWidth: 0 }}>
           <h1 className="page-title trip-detail-title">
             <button className="btn btn--ghost btn--icon btn--sm" onClick={() => navigate('/trips')} aria-label="Quay lại">
@@ -236,9 +239,17 @@ export default function TripDetailPage() {
               {TRIP_STATUS_LABELS[trip.status]}
             </StatusPill>
           </h1>
-          <p className="page-subtitle trip-detail-subtitle">
-            {trip.customer?.name ?? '—'} &middot; {trip.route?.name ?? '—'}
-          </p>
+          <div className="trip-detail-subtitle" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', alignItems: 'center', lineHeight: 1.4 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 500, color: 'var(--fg-2)' }}>
+              <User size={14} style={{ color: 'var(--fg-3)' }} />
+              {trip.customer?.name ?? '—'}
+            </span>
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--border-2)', flexShrink: 0 }} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <RouteIcon size={14} style={{ color: 'var(--fg-3)' }} />
+              {trip.route?.name ?? '—'}
+            </span>
+          </div>
         </div>
 
         <div className="page-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -344,120 +355,124 @@ export default function TripDetailPage() {
         </Panel>
 
         <Panel title="Tài chính">
-          {infoRow(<Banknote size={16} />, 'Doanh thu', formatCurrency(trip.revenue))}
-          {(trip.containerCount ?? 1) > 1 && trip.revenue && (() => {
-            const count = trip.containerCount ?? 1;
-            const unitPrice = Math.floor(Number(trip.revenue) / count);
-            const remainder = Number(trip.revenue) - unitPrice * count;
-            return infoRow(<Banknote size={16} />, 'Đơn giá/cont', `${formatCurrency(String(unitPrice))} × ${count} cont${remainder > 0 ? ` (+${formatCurrency(String(remainder))})` : ''}`);
-          })()}
-          {trip.revenueOriginal && trip.revenue && Number(trip.revenue) !== Number(trip.revenueOriginal) && (
-            // Shorter label ("Giá gốc") so the strikethrough number doesn't wrap
-            // to a second line on narrow screens. The "(trước điều chỉnh)"
-            // context is implied by the strikethrough styling.
-            infoRow(
-              <Banknote size={16} />,
-              'Giá gốc',
-              <span style={{ textDecoration: 'line-through', color: 'var(--fg-3)' }}>
-                {formatCurrency(trip.revenueOriginal)}
-              </span>,
-            )
-          )}
-          {infoRow(<Banknote size={16} />, 'Tổng chi phí', formatCurrency(trip.totalCost))}
-          {infoRow(
-            <Banknote size={16} />,
-            'Lợi nhuận gộp',
-            <span style={{ color: trip.grossProfit && Number(trip.grossProfit) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
-              {formatCurrency(trip.grossProfit)}
-            </span>,
-          )}
-          {infoRow(<Fuel size={16} />, 'Chế độ nhiên liệu', FUEL_MODE_LABELS[trip.fuelMode])}
-          {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuelLiters ? `${Number(trip.fuelLiters).toLocaleString('vi-VN')} lít` : '—')}
-          {(() => {
-            const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
-            const totalLiters = Number(trip.fuelLiters) || 0;
-            if (totalKm > 0 && totalLiters > 0) {
-              const ttbq = (totalLiters / totalKm) * 100;
-              const warnThreshold = fuelConfig ? parseThreshold(fuelConfig.warningThreshold, 0) : 0;
-              const critThreshold = fuelConfig ? parseThreshold(fuelConfig.criticalThreshold, 0) : 0;
-              let badge: React.ReactNode = null;
-              if (critThreshold > 0 && ttbq > critThreshold) {
-                badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--danger)', fontWeight: 600 }}>🔴 Vượt ngưỡng nghiêm trọng ({critThreshold.toFixed(1)})</span>;
-              } else if (warnThreshold > 0 && ttbq > warnThreshold) {
-                const overPct = Math.round(((ttbq - warnThreshold) / warnThreshold) * 100);
-                badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--warning)', fontWeight: 600 }}>⚠️ Vượt ngưỡng {overPct}%</span>;
-              }
-              return infoRow(<Fuel size={16} />, 'TTBQ (L/100km)', <>{ttbq.toFixed(1).replace('.', ',')} L/100km{badge}</>);
-            }
-            return null;
-          })()}
-          {infoRow(<Fuel size={16} />, 'Đơn giá cấu hình', trip.fuelPriceApplied ? `${Number(trip.fuelPriceApplied).toLocaleString('vi-VN')} ₫/lít` : '—')}
-          {trip.fuelActualUnitPrice != null && Number(trip.fuelActualUnitPrice) > 0 && (() => {
-            const actualPrice = Number(trip.fuelActualUnitPrice);
-            const configPrice = Number(trip.fuelPriceApplied || 0);
-            const liters = Number(trip.fuelLiters || 0);
-            const variance = Math.round(liters * actualPrice) - Math.round(liters * configPrice);
-            return (
-              <>
-                {infoRow(<Fuel size={16} />, 'Đơn giá thực tế', `${actualPrice.toLocaleString('vi-VN')} ₫/lít`)}
-                {variance !== 0 && infoRow(
-                  <Fuel size={16} />,
-                  'Chênh lệch giá nhiên liệu',
-                  <span style={{ color: variance < 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
-                    {variance > 0 ? '+' : ''}{variance.toLocaleString('vi-VN')} ₫ ({variance < 0 ? 'tiết kiệm' : 'thêm chi phí'})
+          <div className="grid gap-x-8 gap-y-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+            <div>
+              {infoRow(<Banknote size={16} />, 'Doanh thu', formatCurrency(trip.revenue))}
+              {(trip.containerCount ?? 1) > 1 && trip.revenue && (() => {
+                const count = trip.containerCount ?? 1;
+                const unitPrice = Math.floor(Number(trip.revenue) / count);
+                const remainder = Number(trip.revenue) - unitPrice * count;
+                return infoRow(<Banknote size={16} />, 'Đơn giá/cont', `${formatCurrency(String(unitPrice))} × ${count} cont${remainder > 0 ? ` (+${formatCurrency(String(remainder))})` : ''}`);
+              })()}
+              {trip.revenueOriginal && trip.revenue && Number(trip.revenue) !== Number(trip.revenueOriginal) && (
+                infoRow(
+                  <Banknote size={16} />,
+                  'Giá gốc',
+                  <span style={{ textDecoration: 'line-through', color: 'var(--fg-3)' }}>
+                    {formatCurrency(trip.revenueOriginal)}
                   </span>,
-                )}
-              </>
-            );
-          })()}
-          {(() => {
-            const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
-            const issuedLiters = Number(trip.fuelLiters) || 0;
-            if (computedLiters > 0 && issuedLiters > 0 && Math.abs(issuedLiters - computedLiters) > 0.5) {
-              const diff = issuedLiters - computedLiters;
-              const isOver = diff > 0;
-              return infoRow(
-                <Fuel size={16} />,
-                'So sánh nhiên liệu',
-                <span>
-                  <span style={{ color: 'var(--fg-2)' }}>Phát hành {issuedLiters.toLocaleString('vi-VN')}L</span>
-                  {' · '}
-                  <span style={{ color: 'var(--fg-2)' }}>Tính theo định mức {computedLiters.toLocaleString('vi-VN')}L</span>
-                  {' · '}
-                  <strong style={{ color: isOver ? 'var(--danger)' : 'var(--success)' }}>
-                    {isOver ? '+' : ''}{diff.toLocaleString('vi-VN')}L ({isOver ? 'vượt' : 'tiết kiệm'})
-                  </strong>
+                )
+              )}
+              {infoRow(<Banknote size={16} />, 'Tổng chi phí', formatCurrency(trip.totalCost))}
+              {infoRow(
+                <Banknote size={16} />,
+                'Lợi nhuận gộp',
+                <span style={{ color: trip.grossProfit && Number(trip.grossProfit) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+                  {formatCurrency(trip.grossProfit)}
                 </span>,
-              );
-            }
-            return null;
-          })()}
-          {infoRow(<MapPin size={16} />, 'Tiền đi đường', formatCurrency(trip.totalRoadAllowance))}
-          {(Number(trip.tollsDiscount) > 0 || Number(trip.tollsAddition) > 0 || Number(trip.tollsStations) > 0 || trip.hasReturnCargo) && (
-            <div style={{ padding: '6px 0 10px', borderBottom: '1px solid var(--border-1)' }}>
-              <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Chi tiết tiền đường
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--fg-2)', display: 'flex', flexDirection: 'column', gap: 3, paddingLeft: 12 }}>
-                {Number(trip.tollsDiscount) > 0 && (
-                  <span>Giảm vé QL5: <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(trip.tollsDiscount)}</strong></span>
-                )}
-                {Number(trip.tollsAddition) > 0 && (
-                  <span>Tăng vé theo lệnh: <strong style={{ color: 'var(--success)' }}>+{formatCurrency(trip.tollsAddition)}</strong></span>
-                )}
-                {Number(trip.tollsStations) > 0 && (() => {
-                  const rate = Number(trip.tollPerStationApplied || 0);
-                  return <span>Số trạm (trừ): {trip.tollsStations} trạm × {rate.toLocaleString('vi-VN')} = <strong>{formatCurrency(Number(trip.tollsStations) * rate)}</strong></span>;
-                })()}
-                {trip.hasReturnCargo && (
-                  <span>Chuyến về có hàng: <strong style={{ color: 'var(--success)' }}>+300.000 ₫</strong></span>
-                )}
-              </div>
+              )}
+              {infoRow(<MapPin size={16} />, 'Tiền đi đường', formatCurrency(trip.totalRoadAllowance))}
+              {(Number(trip.tollsDiscount) > 0 || Number(trip.tollsAddition) > 0 || Number(trip.tollsStations) > 0 || trip.hasReturnCargo) && (
+                <div style={{ padding: '6px 0 10px', borderBottom: '1px solid var(--border-1)' }}>
+                  <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Chi tiết tiền đường
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--fg-2)', display: 'flex', flexDirection: 'column', gap: 3, paddingLeft: 12 }}>
+                    {Number(trip.tollsDiscount) > 0 && (
+                      <span>Giảm vé QL5: <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(trip.tollsDiscount)}</strong></span>
+                    )}
+                    {Number(trip.tollsAddition) > 0 && (
+                      <span>Tăng vé theo lệnh: <strong style={{ color: 'var(--success)' }}>+{formatCurrency(trip.tollsAddition)}</strong></span>
+                    )}
+                    {Number(trip.tollsStations) > 0 && (() => {
+                      const rate = Number(trip.tollPerStationApplied || 0);
+                      return <span>Số trạm (trừ): {trip.tollsStations} trạm × {rate.toLocaleString('vi-VN')} = <strong>{formatCurrency(Number(trip.tollsStations) * rate)}</strong></span>;
+                    })()}
+                    {trip.hasReturnCargo && (
+                      <span>Chuyến về có hàng: <strong style={{ color: 'var(--success)' }}>+300.000 ₫</strong></span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {infoRow(<User size={16} />, 'Tiền kết hợp', formatCurrency(trip.driverSalary))}
+              {Number(trip.twoPointDeliveryBonus) > 0 && infoRow(<MapPin size={16} />, 'Trả hàng 2 điểm', formatCurrency(trip.twoPointDeliveryBonus))}
+              {Number(trip.vehicleShiftAllowance) > 0 && infoRow(<Clock size={16} />, 'Lưu ca xe', formatCurrency(trip.vehicleShiftAllowance))}
             </div>
-          )}
-          {infoRow(<User size={16} />, 'Tiền kết hợp', formatCurrency(trip.driverSalary))}
-          {Number(trip.twoPointDeliveryBonus) > 0 && infoRow(<MapPin size={16} />, 'Trả hàng 2 điểm', formatCurrency(trip.twoPointDeliveryBonus))}
-          {Number(trip.vehicleShiftAllowance) > 0 && infoRow(<Clock size={16} />, 'Lưu ca xe', formatCurrency(trip.vehicleShiftAllowance))}
+
+            <div>
+              {infoRow(<Fuel size={16} />, 'Chế độ nhiên liệu', FUEL_MODE_LABELS[trip.fuelMode])}
+              {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuelLiters ? `${Number(trip.fuelLiters).toLocaleString('vi-VN')} lít` : '—')}
+              {(() => {
+                const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
+                const totalLiters = Number(trip.fuelLiters) || 0;
+                if (totalKm > 0 && totalLiters > 0) {
+                  const ttbq = (totalLiters / totalKm) * 100;
+                  const warnThreshold = fuelConfig ? parseThreshold(fuelConfig.warningThreshold, 0) : 0;
+                  const critThreshold = fuelConfig ? parseThreshold(fuelConfig.criticalThreshold, 0) : 0;
+                  let badge: React.ReactNode = null;
+                  if (critThreshold > 0 && ttbq > critThreshold) {
+                    badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--danger)', fontWeight: 600 }}>🔴 Vượt ngưỡng nghiêm trọng ({critThreshold.toFixed(1)})</span>;
+                  } else if (warnThreshold > 0 && ttbq > warnThreshold) {
+                    const overPct = Math.round(((ttbq - warnThreshold) / warnThreshold) * 100);
+                    badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--warning)', fontWeight: 600 }}>⚠️ Vượt ngưỡng {overPct}%</span>;
+                  }
+                  return infoRow(<Fuel size={16} />, 'TTBQ (L/100km)', <>{ttbq.toFixed(1).replace('.', ',')} L/100km{badge}</>);
+                }
+                return null;
+              })()}
+              {infoRow(<Fuel size={16} />, 'Đơn giá cấu hình', trip.fuelPriceApplied ? `${Number(trip.fuelPriceApplied).toLocaleString('vi-VN')} ₫/lít` : '—')}
+              {trip.fuelActualUnitPrice != null && Number(trip.fuelActualUnitPrice) > 0 && (() => {
+                const actualPrice = Number(trip.fuelActualUnitPrice);
+                const configPrice = Number(trip.fuelPriceApplied || 0);
+                const liters = Number(trip.fuelLiters || 0);
+                const variance = Math.round(liters * actualPrice) - Math.round(liters * configPrice);
+                return (
+                  <>
+                    {infoRow(<Fuel size={16} />, 'Đơn giá thực tế', `${actualPrice.toLocaleString('vi-VN')} ₫/lít`)}
+                    {variance !== 0 && infoRow(
+                      <Fuel size={16} />,
+                      'Chênh lệch giá nhiên liệu',
+                      <span style={{ color: variance < 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+                        {variance > 0 ? '+' : ''}{variance.toLocaleString('vi-VN')} ₫ ({variance < 0 ? 'tiết kiệm' : 'thêm chi phí'})
+                      </span>,
+                    )}
+                  </>
+                );
+              })()}
+              {(() => {
+                const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
+                const issuedLiters = Number(trip.fuelLiters) || 0;
+                if (computedLiters > 0 && issuedLiters > 0 && Math.abs(issuedLiters - computedLiters) > 0.5) {
+                  const diff = issuedLiters - computedLiters;
+                  const isOver = diff > 0;
+                  return infoRow(
+                    <Fuel size={16} />,
+                    'So sánh nhiên liệu',
+                    <span>
+                      <span style={{ color: 'var(--fg-2)' }}>Phát hành {issuedLiters.toLocaleString('vi-VN')}L</span>
+                      {' · '}
+                      <span style={{ color: 'var(--fg-2)' }}>Tính theo định mức {computedLiters.toLocaleString('vi-VN')}L</span>
+                      {' · '}
+                      <strong style={{ color: isOver ? 'var(--danger)' : 'var(--success)' }}>
+                        {isOver ? '+' : ''}{diff.toLocaleString('vi-VN')}L ({isOver ? 'vượt' : 'tiết kiệm'})
+                      </strong>
+                    </span>,
+                  );
+                }
+                return null;
+              })()}
+            </div>
+          </div>
         </Panel>
       </div>
 

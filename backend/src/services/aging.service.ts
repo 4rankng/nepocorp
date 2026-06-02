@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, sql, inArray } from 'drizzle-orm';
+import { eq, sql, inArray, like } from 'drizzle-orm';
 import { computeFifoAging } from '@nepocorp/shared';
 import type { PayableSummary } from '@nepocorp/shared';
 
@@ -167,9 +167,43 @@ export async function getTopOverdueCustomer(): Promise<{ name: string; balance: 
   return topOverdue;
 }
 
-export async function getCustomerAgingList() {
+export async function getCustomerAgingList(opts: { search?: string } = {}) {
   const grouped = await fetchLedgerGrouped({ entityType: 'CUSTOMER', invertSigns: false });
-  const results = computeEntityResults(grouped, { entityType: 'CUSTOMER', invertSigns: false });
+  let results = computeEntityResults(grouped, { entityType: 'CUSTOMER', invertSigns: false });
+
+  // Container-number / name search: if provided, narrow customer IDs to those
+  // whose customer name OR linked trips' containers (trip_containers or
+  // trip_expenses.container_number) match the query. Matches the test guide's
+  // expectation that "/debt" supports lookup by container.
+  if (opts.search && opts.search.trim()) {
+    const q = opts.search.trim();
+    const escaped = q.replace(/[%_]/g, '\\$&');
+    const pattern = `%${escaped}%`;
+    const ids = new Set<number>();
+
+    // Name + contact match — case-insensitive
+    const byName = await db.select({ id: s.customers.id }).from(s.customers)
+      .where(sql`lower(${s.customers.name}) like lower(${pattern}) OR lower(coalesce(${s.customers.contactInfo}, '')) like lower(${pattern})`);
+    byName.forEach(r => ids.add(r.id));
+
+    // Container match via trip_containers
+    const byContainer = await db
+      .select({ customerId: s.trips.customerId })
+      .from(s.tripContainers)
+      .innerJoin(s.trips, eq(s.tripContainers.tripId, s.trips.id))
+      .where(like(s.tripContainers.containerNumber, pattern));
+    byContainer.forEach(r => ids.add(r.customerId));
+
+    // Container match via trip_expenses.container_number
+    const byFeeContainer = await db
+      .select({ customerId: s.trips.customerId })
+      .from(s.tripExpenses)
+      .innerJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+      .where(like(s.tripExpenses.containerNumber, pattern));
+    byFeeContainer.forEach(r => ids.add(r.customerId));
+
+    results = results.filter(r => ids.has(r.entityId));
+  }
 
   const customerIds = results.map(r => r.entityId);
   const customers = customerIds.length > 0

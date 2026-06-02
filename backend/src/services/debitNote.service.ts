@@ -122,7 +122,8 @@ export async function getDebitNoteData(
 }
 
 export async function buildDebitNoteXlsx(data: DebitNoteData): Promise<Buffer> {
-  const ExcelJS = await import('exceljs');
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as any).default ?? ExcelJSMod;
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Giấy báo nợ');
 
@@ -142,7 +143,7 @@ export async function buildDebitNoteXlsx(data: DebitNoteData): Promise<Buffer> {
   const headerRow = ws.getRow(6);
   headerRow.values = ['Mã chuyến', 'Ngày', 'Diễn giải', 'ĐVT', 'Số tiền (VNĐ)'];
   headerRow.font = { bold: true };
-  headerRow.eachCell(cell => {
+  headerRow.eachCell((cell: any) => {
     cell.border = { bottom: { style: 'thin' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
   });

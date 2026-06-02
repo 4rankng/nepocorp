@@ -187,8 +187,9 @@ router.get('/reports/receivables-summary', asyncHandler(async (_req: Request, re
   res.json(await getReceivablesSummary());
 }));
 
-router.get('/reports/receivables-aging', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (_req: Request, res: Response) => {
-  res.json(await getCustomerAgingList());
+router.get('/reports/receivables-aging', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+  res.json(await getCustomerAgingList({ search }));
 }));
 
 // Profit distribution — ADMIN/MANAGER/ACCOUNTANT
@@ -339,9 +340,13 @@ router.get('/finance/debit-note/:customerId/export', asyncHandler(async (req: Re
   const data = await getDebitNoteData(customerId, { mode, month, year, tripIds });
   const buffer = await buildDebitNoteXlsx(data);
 
-  const safeName = data.customer.name.replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').trim().replace(/\s+/g, '-');
+  // ASCII fallback for legacy clients; RFC 5987 filename* with UTF-8 for modern clients
+  // so Vietnamese diacritics in the customer name don't violate the header's ASCII requirement.
+  const friendly = data.customer.name.replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').trim().replace(/\s+/g, '-');
+  const asciiFallback = `giay-bao-no-${friendly.replace(/[^\x20-\x7E]/g, '_')}-T${month}-${year}.xlsx`;
+  const utf8Encoded = encodeURIComponent(`giay-bao-no-${friendly}-T${month}-${year}.xlsx`);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename="giay-bao-no-${safeName}-T${month}-${year}.xlsx"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${asciiFallback}"; filename*=UTF-8''${utf8Encoded}`);
   res.send(buffer);
 }));
 

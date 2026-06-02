@@ -308,9 +308,10 @@ export default function DebtDetailPage() {
                   style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
                   onClick={() => {
                     setShowExportMenu(false);
+                    const mode = customer.debitNoteMode === 'PER_BATCH' ? 'PER_BATCH' : 'MONTHLY';
                     const now = new Date();
                     const params = new URLSearchParams({
-                      mode: 'MONTHLY',
+                      mode,
                       month: String(now.getMonth() + 1),
                       year: String(now.getFullYear()),
                     });
@@ -321,6 +322,9 @@ export default function DebtDetailPage() {
                 >
                   <Receipt size={14} style={{ color: '#7c3aed' }} />
                   Giấy báo nợ (.xlsx)
+                  <span style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 'auto' }}>
+                    {customer.debitNoteMode === 'PER_BATCH' ? 'Theo lô' : 'Theo tháng'}
+                  </span>
                 </button>
               </div>
             )}

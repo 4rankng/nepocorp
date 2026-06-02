@@ -716,15 +716,39 @@ export async function getTrips(filters: TripListFilters) {
   const page = Math.max(1, filters.page ?? 1);
   const limit = Math.min(100, filters.limit ?? 50);
 
-  const conditions = [isNull(s.trips.deletedAt)];
-  if (filters.status) conditions.push(eq(s.trips.status, filters.status as TripStatus));
-  if (filters.truckId) conditions.push(eq(s.trips.truckId, filters.truckId));
-  if (filters.driverId) conditions.push(eq(s.trips.driverId, filters.driverId));
-  if (filters.customerId) conditions.push(eq(s.trips.customerId, filters.customerId));
-  if (filters.dateFrom) conditions.push(gte(s.trips.departureDate, filters.dateFrom));
-  if (filters.dateTo) conditions.push(lte(s.trips.departureDate, filters.dateTo));
+  // Count predicates skip the expensive EXISTS subqueries (container_number
+  // on trip_containers / trip_expenses) so the total-row-count query stays
+  // cheap on the full table. The list query still uses the full OR — and
+  // it's bounded by LIMIT 50 so the per-row EXISTS probes are fine.
+  const countConditions: any[] = [isNull(s.trips.deletedAt)];
+  const conditions = [...countConditions];
+  if (filters.status) {
+    const c = eq(s.trips.status, filters.status as TripStatus);
+    conditions.push(c); countConditions.push(c);
+  }
+  if (filters.truckId) {
+    const c = eq(s.trips.truckId, filters.truckId);
+    conditions.push(c); countConditions.push(c);
+  }
+  if (filters.driverId) {
+    const c = eq(s.trips.driverId, filters.driverId);
+    conditions.push(c); countConditions.push(c);
+  }
+  if (filters.customerId) {
+    const c = eq(s.trips.customerId, filters.customerId);
+    conditions.push(c); countConditions.push(c);
+  }
+  if (filters.dateFrom) {
+    const c = gte(s.trips.departureDate, filters.dateFrom);
+    conditions.push(c); countConditions.push(c);
+  }
+  if (filters.dateTo) {
+    const c = lte(s.trips.departureDate, filters.dateTo);
+    conditions.push(c); countConditions.push(c);
+  }
   if (filters.search) {
     const term = `%${filters.search}%`;
+    // List: full predicates (5 ILIKE + 2 EXISTS for container cross-refs)
     conditions.push(
       or(
         sql`${s.trips.tripCode} ILIKE ${term}`,
@@ -734,6 +758,20 @@ export async function getTrips(filters: TripListFilters) {
         sql`${s.routes.name} ILIKE ${term}`,
         sql`${s.trips.customerReference} ILIKE ${term}`,
         sql`EXISTS (SELECT 1 FROM ${s.tripContainers} WHERE ${s.tripContainers.tripId} = ${s.trips.id} AND ${s.tripContainers.containerNumber} ILIKE ${term})`,
+        sql`EXISTS (SELECT 1 FROM ${s.tripExpenses} WHERE ${s.tripExpenses.tripId} = ${s.trips.id} AND ${s.tripExpenses.containerNumber} ILIKE ${term})`,
+      )!
+    );
+    // Count: simple ILIKE only — accepts an approximate page count while
+    // searching, but the dominant cost (correlated EXISTS on every row) is
+    // avoided. Page count is corrected on the next non-search fetch.
+    countConditions.push(
+      or(
+        sql`${s.trips.tripCode} ILIKE ${term}`,
+        sql`${s.trips.id}::text ILIKE ${term}`,
+        sql`${s.customers.name} ILIKE ${term}`,
+        sql`${s.trucks.licensePlate} ILIKE ${term}`,
+        sql`${s.routes.name} ILIKE ${term}`,
+        sql`${s.trips.customerReference} ILIKE ${term}`,
       )!
     );
   }
@@ -755,10 +793,16 @@ export async function getTrips(filters: TripListFilters) {
     .orderBy(desc(s.trips.departureDate), desc(s.trips.id))
     .limit(limit).offset((page - 1) * limit);
 
-  const countQuery = filters.search
-    ? TRIP_RELATION_JOINS(db.select({ count: sql<number>`count(*)` }).from(s.trips))
-    : db.select({ count: sql<number>`count(*)` }).from(s.trips);
-  const [countRow] = await countQuery.where(and(...conditions));
+  // Count uses the simpler ILIKE-only conditions (no relation joins needed
+  // since none of the simple ILIKE columns are in joined tables). Falls back
+  // to the full conditions if the search term is empty.
+  const [countRow] = filters.search
+    ? await db.select({ count: sql<number>`count(*)` })
+        .from(s.trips)
+        .where(and(...countConditions))
+    : await db.select({ count: sql<number>`count(*)` })
+        .from(s.trips)
+        .where(and(...conditions));
 
   // Batch-load container instances for this page so the list can show
   // "Loại container" + "Số container" columns (Pete's request 2026-06).

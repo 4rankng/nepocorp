@@ -74,7 +74,8 @@ export const financialClient = {
     }>(REPORTS.PAYABLES_SUMMARY);
   },
 
-  getCustomerAging: async () => {
-    return api.get<{ customers: CustomerAging[] }>(REPORTS.RECEIVABLES_AGING);
+  getCustomerAging: async (search?: string) => {
+    const qs = search && search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
+    return api.get<{ customers: CustomerAging[] }>(`${REPORTS.RECEIVABLES_AGING}${qs}`);
   },
 };

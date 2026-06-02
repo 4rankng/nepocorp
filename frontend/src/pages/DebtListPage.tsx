@@ -40,10 +40,10 @@ function classifyRisk(totalOutstanding: number, aging: CustomerAging['aging'], m
 export default function DebtListPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { data, isLoading: loading, error: queryError } = useCustomerAging();
+  const [search, setSearch] = useState('');
+  const { data, isLoading: loading, error: queryError } = useCustomerAging(search);
   const rawCustomers = data?.customers ?? [];
   const error = queryError ? (queryError as any).message : null;
-  const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk'>(
     searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
   );
@@ -120,16 +120,10 @@ export default function DebtListPage() {
       result = result.filter(d => d.riskClass === 'high' && d.totalOutstanding > 0);
     }
 
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      result = result.filter(d =>
-        d.customerName.toLowerCase().includes(q) ||
-        (d.contactInfo && d.contactInfo.toLowerCase().includes(q))
-      );
-    }
+    // Search is server-side now (name/contactInfo/container) — no further client filter needed.
 
     return result;
-  }, [customerDebts, search, filterMode]);
+  }, [customerDebts, filterMode]);
 
   return (
     <div className="fade-up debt-list-page">

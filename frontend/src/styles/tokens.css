@@ -180,6 +180,11 @@
   --tracking-normal: 0;
   --tracking-wide:  0.03em;
   --tracking-wider:  0.08em;
+  --tracking-eyebrow: 0.08em;
+
+  /* Hero display numbers (28-32px, used for revenue / profit metrics) */
+  --fs-display: 28px;
+  --fs-display-lg: 32px;
 
   /* --- Z-index scale --- */
   --z-base: 0;

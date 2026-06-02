@@ -88,7 +88,7 @@ export default function DispatchPage() {
           </div>
           <div className="o-tools desktop-only"><button type="button" className="pill-btn" disabled title="Sắp ra mắt"><Download size={13} /> Xuất CSV</button></div>
         </div>
-        {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Tài xế đề xuất</div><div className="right">Thao tác</div></div>}
+        {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Tài xế</div><div className="right">Thao tác</div></div>}
         {pendingTrips.length === 0 ? (
           <div className="orders-empty"><div className="ico"><CheckCircle2 size={32} /></div><div className="title">Không có đơn hàng nào chờ khởi hành</div><div>Tất cả các chuyến đi đã xuất phát hoặc chưa tạo.</div></div>
         ) : pendingTrips.map((trip) => (

@@ -4,10 +4,10 @@ import type { LedgerEntry, CustomerStatement, SupplierStatement } from '@nepocor
 
 export type { CustomerAging };
 
-export function useCustomerAging() {
+export function useCustomerAging(search?: string) {
   return useQuery<{ customers: CustomerAging[] }>({
-    queryKey: ['customer-aging'],
-    queryFn: () => financialClient.getCustomerAging(),
+    queryKey: ['customer-aging', search ?? ''],
+    queryFn: () => financialClient.getCustomerAging(search),
     staleTime: 2 * 60 * 1000,
   });
 }

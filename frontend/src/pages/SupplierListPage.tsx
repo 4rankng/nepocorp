@@ -9,7 +9,8 @@ import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
 import type { Supplier, Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CONFIG } from '@nepocorp/shared';
-import { useSuppliers, useCustomers } from '../hooks/useQueries';
+import { useSuppliers } from '../hooks/useQueries';
+import { useCatalogs } from '../hooks/useCatalogs';
 
 type FilterKey = 'all' | 'active' | 'inactive';
 
@@ -142,8 +143,10 @@ export default function SupplierListPage() {
   const { data: suppliersData, isLoading: loading, error: queryError, refetch: refetchSuppliers } = useSuppliers(page, search);
   const suppliers = suppliersData?.items ?? [];
   const total = suppliersData?.total ?? 0;
-  const { data: customersData } = useCustomers(1, '');
-  const allCustomers = customersData?.items ?? [];
+  // Use the bootstrap catalog for the full active-customer list (not the
+  // paginated /customers endpoint which only returns page 1 by default).
+  const { data: catalogData } = useCatalogs();
+  const allCustomers = catalogData?.customers ?? [];
   const customerLookup = useMemo(() => {
     const map = new Map<number, string>();
     for (const c of allCustomers) map.set(c.id, c.name);
@@ -413,7 +416,7 @@ export default function SupplierListPage() {
         isOpen={showAddForm || editingId != null}
         saving={saving}
         item={editingId != null ? suppliers.find(s => s.id === editingId) : undefined}
-        customers={allCustomers}
+        customers={allCustomers as unknown as Customer[]}
         onsave={d => {
           if (editingId != null) doUpdate(editingId, d);
           else doCreate(d);

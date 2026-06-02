@@ -6,7 +6,7 @@ import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 
 export interface CustomerStatementData {
-  customer: { id: number; name: string; contactInfo: string | null };
+  customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null };
   ledgerRows: any[];
   totalOutstanding: number;
   unpaidTrips: Array<{ tripId: number; date: string; outstanding: number; note: string }>;
@@ -126,7 +126,7 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return {
-    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo },
+    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: (customer as any).debitNoteMode ?? 'MONTHLY' },
     ledgerRows,
     totalOutstanding,
     unpaidTrips,
@@ -244,7 +244,8 @@ export function exportSupplierStatementHtml(
 }
 
 async function buildStatementXlsx(config: StatementExportConfig, dateStr: string, writable: import('stream').Writable): Promise<void> {
-  const ExcelJS = await import('exceljs');
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as any).default ?? ExcelJSMod;
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(config.sheetName);
 

@@ -14,9 +14,9 @@ import { cacheInvalidate } from '../../lib/redis';
 export interface CrudRouterOptions {
   searchableField?: string;
   beforeCreate?: (data: any, req: Request) => Promise<any> | any;
-  afterCreate?: (item: any, req: Request) => Promise<void> | void;
+  afterCreate?: (item: any, data: any, req: Request) => Promise<void> | void;
   beforeUpdate?: (id: number, data: any, req: Request) => Promise<any> | any;
-  afterUpdate?: (item: any, req: Request) => Promise<void> | void;
+  afterUpdate?: (item: any, data: any, req: Request) => Promise<void> | void;
   beforeDelete?: (id: number, req: Request) => Promise<void> | void;
   afterDelete?: (id: number, req: Request) => Promise<void> | void;
 }
@@ -70,7 +70,7 @@ export function createCrudRouter(
     }
     const [item] = await db.insert(table).values(data).returning();
     if (afterCreate) {
-      await afterCreate(item, req);
+      await afterCreate(item, data, req);
     }
     await cacheInvalidate('catalogs:bootstrap');
     res.status(201).json(item);
@@ -94,7 +94,7 @@ export function createCrudRouter(
     const [item] = await db.update(table).set({ ...data, updatedAt: new Date() }).where(eq(table.id, id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     if (afterUpdate) {
-      await afterUpdate(item, req);
+      await afterUpdate(item, data, req);
     }
     await cacheInvalidate('catalogs:bootstrap');
     res.json(item);

@@ -749,6 +749,21 @@ tbody tr:last-child td { border-bottom: none; }
 .pill--neutral { background: var(--surface-3); color: var(--ink-2); }
 .pill--neutral .dot { background: var(--ink-3); }
 
+/* Pill size + solid variants — for header-level status emphasis */
+.pill--md { font-size: 12px; padding: 5px 12px; letter-spacing: 0.04em; }
+.pill--md .dot { width: 6px; height: 6px; }
+.pill--solid { color: #fff; text-transform: none; letter-spacing: 0.01em; font-weight: 600; }
+.pill--solid.pill--success { background: var(--accent); }
+.pill--solid.pill--success .dot { background: rgba(255, 255, 255, 0.85); }
+.pill--solid.pill--warn { background: var(--warning); }
+.pill--solid.pill--warn .dot { background: rgba(255, 255, 255, 0.85); }
+.pill--solid.pill--danger { background: var(--danger); }
+.pill--solid.pill--danger .dot { background: rgba(255, 255, 255, 0.85); }
+.pill--solid.pill--info { background: var(--info); }
+.pill--solid.pill--info .dot { background: rgba(255, 255, 255, 0.85); }
+.pill--solid.pill--neutral { background: var(--ink); color: #fff; }
+.pill--solid.pill--neutral .dot { background: rgba(255, 255, 255, 0.7); }
+
 /* Legacy badge classes (keep tonal scale) */
 .badge {
   display: inline-flex; align-items: center; gap: 6px;

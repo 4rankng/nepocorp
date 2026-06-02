@@ -29,13 +29,14 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { queryAuditLogs } from '../services/audit-query.service';
 
 // Keep customer.linkedSupplierId ↔ supplier.linkedCustomerId mirrored.
-// Called after a customer create/update. Clears any stale inverse pointer
-// to this customer and sets the new inverse when a linkedSupplierId is set.
-async function mirrorCustomerLink(customer: any) {
+// Called after a customer/supplier create/update. Inspects the *request patch*
+// (data) — not the RETURNING row — so writes that don't touch the link
+// field short-circuit and skip the extra UPDATEs.
+async function mirrorCustomerLink(customer: any, data: any) {
   if (customer == null || customer.id == null) return;
-  if (!('linkedSupplierId' in customer)) return; // partial update untouched
+  if (data == null || !('linkedSupplierId' in data)) return; // not in this patch
   const customerId = customer.id as number;
-  const newSupplierId = customer.linkedSupplierId as number | null;
+  const newSupplierId = data.linkedSupplierId as number | null;
 
   // Clear any other supplier still pointing back at this customer
   const staleCond = newSupplierId == null
@@ -52,11 +53,11 @@ async function mirrorCustomerLink(customer: any) {
   }
 }
 
-async function mirrorSupplierLink(supplier: any) {
+async function mirrorSupplierLink(supplier: any, data: any) {
   if (supplier == null || supplier.id == null) return;
-  if (!('linkedCustomerId' in supplier)) return;
+  if (data == null || !('linkedCustomerId' in data)) return;
   const supplierId = supplier.id as number;
-  const newCustomerId = supplier.linkedCustomerId as number | null;
+  const newCustomerId = data.linkedCustomerId as number | null;
 
   const staleCond = newCustomerId == null
     ? eq(s.customers.linkedSupplierId, supplierId)
