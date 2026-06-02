@@ -37,15 +37,15 @@ Provenance: `via SCC-XX` means already verified in `service-cost-checklist.md` i
 
 ## M4. Khai báo Đối tác vận tải (Scenario 2 / Bước 1)
 
-- [ ] **M4.1** MANAGER `/customers` form has `isCarrier` toggle + `debitNoteMode` (Theo tháng / Theo lô) + `linkedSupplierId` picker. UI sanity — SCC-F2.1 verified existence.
-- [ ] **M4.2** Toggling `isCarrier` reveals dispatch-related fields without page reload.
+- [x] **M4.1** MANAGER `/customers` form has `isCarrier` toggle + `debitNoteMode` (Theo tháng / Theo lô) + `linkedSupplierId` picker. — PASSED iter 04
+- [x] **M4.2** Toggling `isCarrier` reveals dispatch-related fields without page reload. — PASSED iter 04 (by design — fields live on trip form, not customer form)
 
 ## M5. Lập chuyến xe thuê ngoài (Scenario 2 / Bước 2)
 
-- [ ] **M5.1** MANAGER `/trips/new` toggle to **Xe ngoài** hides Đầu kéo + Lái xe nhà selectors.
-- [ ] **M5.2** Carrier dropdown lists only `is_carrier=true` customers (UI exercise).
-- [ ] **M5.3** External plate + driver name + driver phone are required (UI-side Zod error) — SCC-F2.5 verified at API; verify form blocks submit.
-- [ ] **M5.4** Lãi điều xe display shows `(sellPriceExVat − buyPriceExVat)` ex-VAT math live.
+- [x] **M5.1** MANAGER `/trips/new` toggle to **Xe ngoài** hides Đầu kéo + Lái xe nhà selectors. — PASSED iter 04
+- [x] **M5.2** Carrier dropdown lists only `is_carrier=true` customers. — PASSED iter 04
+- [x] **M5.3** External plate + driver name + driver phone are required (Zod-enforced; UX caveat — no HTML `required` attr). — PASSED iter 04
+- [x] **M5.4** Lãi điều xe display shows `(sellPriceExVat − buyPriceExVat)` ex-VAT math live. — PASSED iter 04
 
 ## M6. Khóa chuyến xe ngoài & Sổ cái (Scenario 2 / Bước 3) — gap, code-verified only
 

@@ -494,7 +494,7 @@ export default function TripDetailPage() {
         subtitle="Phí nâng/hạ, hải quan, cân hàng…"
         style={{ marginTop: 20 }}
       >
-        <AncillaryFeesCard tripId={trip.id} readOnly />
+        <AncillaryFeesCard tripId={trip.id} readOnly={trip.status === 'LOCKED' || trip.status === 'CANCELED'} />
       </Panel>
 
       {/* Trip legs */}
