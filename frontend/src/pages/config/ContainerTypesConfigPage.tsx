@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Loader2, Package, Save, X } from 'lucide-react';
@@ -7,6 +7,7 @@ import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { ContainerType } from '@nepocorp/shared';
 import type { PaginatedResponse } from '@nepocorp/shared';
+import './config-list.css';
 
 /* ─── Modal form ────────────────────────────────────────────────────── */
 
@@ -90,70 +91,33 @@ function ContainerRow({ ct, deleting, onEdit, onDelete }: {
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   const isDeleting = deleting === ct.id;
+  const actionsRef = useRef<HTMLDivElement>(null);
+
+  const handleRowClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (actionsRef.current && actionsRef.current.contains(e.target as Node)) return;
+    onEdit();
+  };
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '10px 16px',
-        borderBottom: '1px solid var(--line)',
-        background: hovered ? 'var(--surface-2)' : 'transparent',
-        transition: 'background 0.1s',
-      }}
+      className="cfg-row"
+      role="button"
+      tabIndex={0}
+      onClick={handleRowClick}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onEdit(); } }}
     >
       {/* Code chip */}
-      <span style={{
-        flexShrink: 0,
-        width: 56,
-        textAlign: 'center',
-        background: 'var(--accent-soft)',
-        color: 'var(--accent-2)',
-        fontFamily: 'var(--font-mono)',
-        fontWeight: 700,
-        fontSize: 11,
-        letterSpacing: '0.06em',
-        borderRadius: 5,
-        padding: '3px 0',
-      }}>
-        {ct.code}
-      </span>
+      <span className="cfg-row__code">{ct.code}</span>
 
       {/* Name */}
-      <span style={{
-        width: 100,
-        flexShrink: 0,
-        fontWeight: 600,
-        fontSize: 13,
-        color: 'var(--ink)',
-      }}>
-        {ct.name}
-      </span>
+      <span className="cfg-row__name">{ct.name}</span>
 
       {/* Notes */}
-      <span style={{
-        flex: 1,
-        fontSize: 13,
-        color: 'var(--ink-3)',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}>
-        {ct.notes || ''}
-      </span>
+      <span className="cfg-row__notes">{ct.notes || ''}</span>
 
-      {/* Actions — only visible on hover */}
-      <div style={{
-        display: 'flex',
-        gap: 2,
-        opacity: hovered ? 1 : 0,
-        transition: 'opacity 0.1s',
-      }}>
+      {/* Actions — visible on hover (desktop) or always (mobile) */}
+      <div ref={actionsRef} className="cfg-row__actions">
         <button
           className="btn btn--ghost btn--icon btn--sm"
           onClick={onEdit}
@@ -162,13 +126,10 @@ function ContainerRow({ ct, deleting, onEdit, onDelete }: {
           <Pencil size={12} />
         </button>
         <button
-          className="btn btn--ghost btn--icon btn--sm"
+          className="btn btn--ghost btn--icon btn--sm cfg-row__delete"
           onClick={onDelete}
           disabled={isDeleting}
           title="Xóa"
-          style={{ color: 'var(--ink-3)' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--danger)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-3)')}
         >
           {isDeleting ? <Loader2 size={12} className="spin" /> : <Trash2 size={12} />}
         </button>

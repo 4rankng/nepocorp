@@ -177,28 +177,28 @@ export default function DebtListPage() {
       </div>
 
       {/* Filter toolbar matching the wireframe */}
-      <div className="toolbar">
+      <div className="filter-bar">
         <button
-          className={`filter-pill ${filterMode === 'all' ? 'is-active' : ''}`}
+          className={`filter-tab${filterMode === 'all' ? ' is-active' : ''}`}
           onClick={() => setFilterMode('all')}
         >
           Tất cả <strong>· {customerDebts.length}</strong>
         </button>
         <button
-          className={`filter-pill ${filterMode === 'overdue' ? 'is-active' : ''}`}
+          className={`filter-tab${filterMode === 'overdue' ? ' is-active' : ''}`}
           onClick={() => setFilterMode('overdue')}
         >
-          Quá hạn <strong style={{ color: 'var(--danger)' }}>· {totals.overdueCount}</strong>
+          Quá hạn <strong style={{ color: filterMode === 'overdue' ? '#fff' : 'var(--danger)' }}>· {totals.overdueCount}</strong>
         </button>
         <button
-          className={`filter-pill ${filterMode === 'high-risk' ? 'is-active' : ''}`}
+          className={`filter-tab${filterMode === 'high-risk' ? ' is-active' : ''}`}
           onClick={() => setFilterMode('high-risk')}
         >
-          Rủi ro cao <strong style={{ color: 'var(--warning)' }}>· {totals.highRiskCount}</strong>
+          Rủi ro cao <strong style={{ color: filterMode === 'high-risk' ? '#fff' : 'var(--warning)' }}>· {totals.highRiskCount}</strong>
         </button>
-        <div className="toolbar__spacer" />
-        <div className="toolbar__search">
-          <Search size={14} style={{ color: 'var(--fg-3)' }} />
+        <div className="filter-bar__spacer" />
+        <div className="filter-bar__search">
+          <Search size={14} />
           <input
             type="text"
             placeholder="Tìm khách hàng…"

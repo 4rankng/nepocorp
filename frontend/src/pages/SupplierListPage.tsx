@@ -6,7 +6,7 @@ import {
 import { useConfirm } from '../components/UI';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
-import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
+import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
 import type { Supplier, PaginatedResponse } from '@nepocorp/shared';
 import { CONFIG } from '@nepocorp/shared';
 import { useSuppliers } from '../hooks/useQueries';
@@ -222,19 +222,18 @@ export default function SupplierListPage() {
         />
       </div>
 
-      <div className="toolbar">
-        <FilterPill active={filter === 'all'} onClick={() => setFilter('all')}>Tất cả · {total}</FilterPill>
-        <FilterPill active={filter === 'active'} onClick={() => setFilter('active')}>Hoạt động · {activeCount}</FilterPill>
-        <FilterPill active={filter === 'inactive'} onClick={() => setFilter('inactive')}>Ngừng HD · {inactiveCount}</FilterPill>
-        <div style={{ flex: 1 }} />
-        <div style={{ position: 'relative', width: 240, maxWidth: '100%' }}>
-          <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }} />
+      <div className="filter-bar">
+        <button className={`filter-tab${filter === 'all' ? ' is-active' : ''}`} onClick={() => setFilter('all')}>Tất cả · {total}</button>
+        <button className={`filter-tab${filter === 'active' ? ' is-active' : ''}`} onClick={() => setFilter('active')}>Hoạt động · {activeCount}</button>
+        <button className={`filter-tab${filter === 'inactive' ? ' is-active' : ''}`} onClick={() => setFilter('inactive')}>Ngừng HD · {inactiveCount}</button>
+        <div className="filter-bar__spacer" />
+        <div className="filter-bar__search">
+          <Search size={14} />
           <input
             type="text"
             placeholder="Tìm theo tên…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '7px 11px 7px 32px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 12.5 }}
           />
         </div>
       </div>

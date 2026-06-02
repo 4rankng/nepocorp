@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { db } from './db';
 import * as schema from './db/schema';
 import { Role, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@nepocorp/shared';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 
 async function seed() {
   const passwordHash = await bcrypt.hash('admin123', 10);
@@ -22,6 +22,45 @@ async function seed() {
   console.log('✅ Users seeded!');
   for (const u of users) {
     console.log(`  ${u.username} / admin123 (${u.role})`);
+  }
+
+  // ─── Drivers — linked to user accounts via user_id ─────────────────────
+  // The driver portal (/my-trips, /my-earnings, etc.) relies on
+  // drivers.user_id pointing to users.id. Without this link, getDriverByUserId()
+  // throws NoDriverProfileError (404) and the portal is unusable.
+  //
+  // Look up user IDs by email since onConflictDoNothing() may have no-oped.
+  const userAccounts = await db.select({ id: schema.users.id, email: schema.users.email })
+    .from(schema.users)
+    .where(isNull(schema.users.deletedAt));
+  const userByEmail = new Map(userAccounts.map(u => [u.email, u.id]));
+
+  const driverSeeds = [
+    { userId: userByEmail.get('laixe@nepo.vn') ?? null, name: 'Phạm Văn Hùng',  phone: '0900000003', assignedTruckId: 1, baseSalary: '5000000', status: 'ACTIVE' as const },
+    { userId: null,                                     name: 'Nguyễn Văn Lái',  phone: '0912000001', assignedTruckId: 2, baseSalary: '4500000', status: 'ACTIVE' as const },
+    { userId: null,                                     name: 'Trần Văn Tài',   phone: '0912000002', assignedTruckId: 3, baseSalary: '4500000', status: 'ACTIVE' as const },
+    { userId: null,                                     name: 'Lê Văn Phương',  phone: '0912000003', assignedTruckId: 4, baseSalary: '5000000', status: 'ACTIVE' as const },
+  ];
+
+  // Use onConflictDoNothing with a unique constraint on (name) if it exists,
+  // otherwise check by name before inserting to stay idempotent.
+  const existingDrivers = await db.select({ name: schema.drivers.name })
+    .from(schema.drivers);
+  const existingDriverNames = new Set(existingDrivers.map(d => d.name));
+
+  let driverCount = 0;
+  for (const driver of driverSeeds) {
+    if (existingDriverNames.has(driver.name)) continue;
+    await db.insert(schema.drivers).values(driver);
+    driverCount++;
+  }
+  if (driverCount > 0) {
+    console.log(`✅ Drivers seeded! (${driverCount} new)`);
+    for (const d of driverSeeds) {
+      console.log(`  ${d.name}${d.userId ? ` ← user_id=${d.userId}` : ''}`);
+    }
+  } else {
+    console.log('✅ Drivers already exist, skipping.');
   }
 
   const categories = [

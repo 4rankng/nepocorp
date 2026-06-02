@@ -1,0 +1,96 @@
+/* ============================================================================
+ * Shared config list row — used by container types, ports, and similar pages
+ * with an inline list (NOT the CrudTable scaffold).
+ *
+ * Desktop: actions reveal on row hover. Mobile: actions always visible and the
+ * whole row is tap-to-edit.
+ * ========================================================================== */
+
+.cfg-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  transition: background 0.1s var(--ease);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+.cfg-row:hover { background: var(--surface-2); }
+.cfg-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.cfg-row__code {
+  flex-shrink: 0;
+  width: 56px;
+  text-align: center;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  border-radius: 5px;
+  padding: 3px 0;
+}
+.cfg-row__code--empty { background: transparent; }
+
+.cfg-row__name {
+  width: 100px;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cfg-row__name--wide { width: 220px; }
+
+.cfg-row__city {
+  width: 100px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfg-row__notes {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfg-row__actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.1s var(--ease);
+}
+.cfg-row:hover .cfg-row__actions,
+.cfg-row:focus-within .cfg-row__actions { opacity: 1; }
+
+.cfg-row__delete { color: var(--ink-3); }
+.cfg-row__delete:hover { color: var(--danger); }
+
+/* ── Mobile (≤640px): always show actions, tighten layout ── */
+@media (max-width: 640px) {
+  .cfg-row {
+    gap: 10px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+  }
+  .cfg-row__actions { opacity: 1; margin-left: auto; }
+  /* Port row has extra columns — let name flex and hide city on phone */
+  .cfg-row--port .cfg-row__name--wide { width: auto; flex: 1; min-width: 0; }
+  .cfg-row--port .cfg-row__city,
+  .cfg-row--port .cfg-row__notes { flex-basis: 100%; padding-left: 66px; }
+}
