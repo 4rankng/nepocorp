@@ -7,6 +7,8 @@ export {
   FORWARDER_EXPENSE_TYPE_DEFAULTS, ADVANCE_REQUEST_STATUS_LABELS, ADVANCE_SETTLEMENT_STATUS_LABELS,
   NotificationType, NOTIFICATION_TYPE_LABELS,
   CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS,
+  CarrierType, SettlementMethod, ApprovalStatus, DebitNoteMode,
+  CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
 } from './constants';
 
 export type {
@@ -22,6 +24,7 @@ export type {
   TripContainer, TripExpense, TripExpenseWithRefs,
   AdvanceRequest, AdvanceRequestWithRefs, AdvanceSettlement, AdvanceSettlementWithRefs,
   ContainerType, Port,
+  DebtOffset,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -39,6 +42,7 @@ export {
   tripContainerSchema, tripContainerBatchSchema, tripExpenseSchema, forwarderExpenseTypeSchema,
   createAdvanceRequestSchema, createAdvanceSettlementSchema,
   containerTypeSchema, portSchema,
+  debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
 } from './schemas';
 
 export type {
@@ -54,6 +58,7 @@ export type {
   TripContainerInput, TripExpenseInput,
   CreateAdvanceRequestInput, CreateAdvanceSettlementInput,
   ContainerTypeInput, PortInput,
+  AncillaryExpenseType,
 } from './schemas';
 
 export { round2dp } from './calculations/round';

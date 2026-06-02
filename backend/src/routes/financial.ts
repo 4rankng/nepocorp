@@ -14,6 +14,8 @@ import * as financialService from '../services/financial.service';
 import { getPayablesSummary } from '../services/payables.service';
 import { getCustomerAgingList } from '../services/receivables.service';
 import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement } from '../services/advance.service';
+import { getDualEntities, createDebtOffset, approveDebtOffset, listDebtOffsets } from '../services/debtOffset.service';
+import { debtOffsetSchema } from '@nepocorp/shared';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 
@@ -284,5 +286,35 @@ router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.MAN
   const result = await rejectAdvanceSettlement(id, req.user!.userId);
   res.json(result);
 }));
+
+// ─── Debt Offsets ─────────────────────────────────────────────────────────────
+
+router.get('/finance/dual-entities', asyncHandler(async (_req: Request, res: Response) => {
+  res.json(await getDualEntities());
+}));
+
+router.get('/finance/debt-offsets', asyncHandler(async (req: Request, res: Response) => {
+  const customerId = req.query.customerId ? Number(req.query.customerId) : undefined;
+  const supplierId = req.query.supplierId ? Number(req.query.supplierId) : undefined;
+  res.json(await listDebtOffsets({ customerId, supplierId }));
+}));
+
+router.post('/finance/debt-offsets', asyncHandler(async (req: Request, res: Response) => {
+  const data = debtOffsetSchema.parse(req.body);
+  const result = await createDebtOffset({
+    ...data,
+    createdBy: req.user!.userId,
+  });
+  res.status(201).json(result);
+}));
+
+router.post('/finance/debt-offsets/:id/approve',
+  requireRoles(Role.ADMIN, Role.MANAGER),
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id as string, 10);
+    const result = await approveDebtOffset(id, req.user!.userId, req.user!.role);
+    res.json(result);
+  }),
+);
 
 export default router;
