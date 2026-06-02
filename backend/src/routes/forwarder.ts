@@ -69,7 +69,8 @@ router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
   const expense = await createTripExpense({
     ...parsed.data,
     forwarderId: forwarder.id,
-    amount: String(parsed.data.amount),
+    buyAmount: String(parsed.data.buyAmount),
+    sellAmount: String(parsed.data.sellAmount ?? 0),
     note: parsed.data.note ?? null,
   });
   res.status(201).json(expense);

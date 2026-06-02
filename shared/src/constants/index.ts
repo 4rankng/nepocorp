@@ -35,6 +35,28 @@ export enum TxnType {
   VENDOR_PAYMENT = 'VENDOR_PAYMENT',
   FORWARDER_ADVANCE = 'FORWARDER_ADVANCE',
   FORWARDER_SETTLEMENT = 'FORWARDER_SETTLEMENT',
+  EXTERNAL_CARRIER_COST = 'EXTERNAL_CARRIER_COST',
+}
+
+export enum CarrierType {
+  OWN = 'OWN',
+  EXTERNAL = 'EXTERNAL',
+}
+
+export enum SettlementMethod {
+  COMPANY_DIRECT = 'COMPANY_DIRECT',
+  FORWARDER_ADVANCE = 'FORWARDER_ADVANCE',
+}
+
+export enum ApprovalStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export enum DebitNoteMode {
+  MONTHLY = 'MONTHLY',
+  PER_BATCH = 'PER_BATCH',
 }
 
 export enum TrailerType {
@@ -101,13 +123,16 @@ export const PENALTY_STATUS_LABELS: Record<PenaltyStatus, string> = {
   [PenaltyStatus.CANCELED]: 'Đã hủy',
 };
 
-/** Default seeds for forwarder_expense_types config table (code → Vietnamese name). */
-export const FORWARDER_EXPENSE_TYPE_DEFAULTS: Record<string, string> = {
-  LIFTING: 'Nâng hạ',
-  CUSTOMS: 'Hải quan',
-  WEIGHING: 'Cân xe',
-  INSPECTION: 'Kiểm tra',
-  OTHER: 'Khác',
+/** Default seeds for forwarder_expense_types config table. */
+export const FORWARDER_EXPENSE_TYPE_DEFAULTS: Record<string, { name: string; defaultMarkup: boolean; billingLabel: string }> = {
+  LIFTING:        { name: 'Phí nâng container',        defaultMarkup: false, billingLabel: 'Phí nâng container' },
+  LOWERING:       { name: 'Phí hạ container',           defaultMarkup: false, billingLabel: 'Phí hạ container' },
+  WEIGHING:       { name: 'Phí cân hàng',               defaultMarkup: false, billingLabel: 'Phí cân hàng' },
+  CUSTOMS:        { name: 'Phí làm tờ khai hải quan',   defaultMarkup: true,  billingLabel: 'Phí hải quan' },
+  INFRASTRUCTURE: { name: 'Phí kết cấu hạ tầng',        defaultMarkup: false, billingLabel: 'Phí hạ tầng' },
+  INSPECTION:     { name: 'Phí kiểm hóa tại cảng',      defaultMarkup: false, billingLabel: 'Phí kiểm hóa' },
+  INSPECTION_SVC: { name: 'Phí phục vụ kiểm hóa',       defaultMarkup: true,  billingLabel: 'Phí phục vụ kiểm hóa' },
+  OTHER:          { name: 'Phí chi hộ khác',             defaultMarkup: false, billingLabel: 'Chi phí khác' },
 };
 
 export enum AdvanceRequestStatus {
@@ -122,6 +147,22 @@ export enum AdvanceSettlementStatus {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
 }
+
+export const CARRIER_TYPE_LABELS: Record<CarrierType, string> = {
+  [CarrierType.OWN]: 'Xe nhà',
+  [CarrierType.EXTERNAL]: 'Xe ngoài',
+};
+
+export const SETTLEMENT_METHOD_LABELS: Record<SettlementMethod, string> = {
+  [SettlementMethod.COMPANY_DIRECT]: 'Công ty trả trực tiếp',
+  [SettlementMethod.FORWARDER_ADVANCE]: 'Chi hộ tạm ứng',
+};
+
+export const APPROVAL_STATUS_LABELS: Record<ApprovalStatus, string> = {
+  [ApprovalStatus.PENDING]: 'Chờ duyệt',
+  [ApprovalStatus.APPROVED]: 'Đã duyệt',
+  [ApprovalStatus.REJECTED]: 'Từ chối',
+};
 
 export const ADVANCE_REQUEST_STATUS_LABELS: Record<AdvanceRequestStatus, string> = {
   [AdvanceRequestStatus.PENDING]: 'Chờ duyệt',

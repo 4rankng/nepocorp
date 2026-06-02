@@ -240,7 +240,7 @@ export async function createAdvanceSettlement(
       }
 
       // Auto-calculate total from selected expenses
-      totalExpenseAmount = tripExpenseRows.reduce((sum, exp) => sum + Number(exp.amount), 0);
+      totalExpenseAmount = tripExpenseRows.reduce((sum, exp) => sum + Number(exp.buyAmount), 0);
     }
 
     const [settlement] = await tx.insert(s.advanceSettlements).values({

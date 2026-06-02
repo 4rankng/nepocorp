@@ -43,6 +43,9 @@ export interface Customer {
   contactInfo: string | null;
   creditLimit: string | null;
   status: CustomerStatus;
+  isCarrier: boolean;
+  debitNoteMode: 'MONTHLY' | 'PER_BATCH';
+  linkedSupplierId: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -206,6 +209,13 @@ export interface Trip {
   fuelFixedAllowanceApplied: string | null;
   tollPerStationApplied: string | null;
   returnCargoBonusApplied: string | null;
+  vatRate: string;
+  carrierType: 'OWN' | 'EXTERNAL';
+  externalCarrierId: number | null;
+  externalFreightCost: string | null;
+  externalPlateNumber: string | null;
+  externalDriverName: string | null;
+  externalDriverPhone: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -445,16 +455,39 @@ export interface TripContainer {
 export interface TripExpense {
   id: number;
   tripId: number;
-  forwarderId: number;
+  forwarderId: number | null;
   expenseType: string;
-  amount: string;
+  buyAmount: string;
+  sellAmount: string;
+  settlementMethod: 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE';
+  supplierId: number | null;
+  invoiceNumber: string | null;
+  invoiceDate: string | null;
+  declarationNumber: string | null;
+  containerNumber: string | null;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   note: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface TripExpenseWithRefs extends TripExpense {
   forwarderName?: string | null;
   tripCode?: string | null;
+}
+
+export interface DebtOffset {
+  id: number;
+  customerId: number;
+  supplierId: number;
+  amount: string;
+  offsetDate: string;
+  note: string | null;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdBy: number | null;
+  approvedBy: number | null;
+  approvedAt: string | null;
+  createdAt: string;
 }
 
 export interface AdvanceRequest {
@@ -633,6 +666,8 @@ export interface PnlTruck {
   profit: number;
   trips: number;
   maintenanceExpenses: number;
+  serviceMargin?: number;
+  externalMargin?: number;
 }
 
 export interface PnlReport {
@@ -650,6 +685,9 @@ export interface PnlReport {
   maintenanceByComponent: Record<number, { truck: number; trailer: number }>;
   companyExpenses: number;
   categoryBreakdown: Array<{ categoryName: string; total: string }>;
+  serviceMarginTotal?: number;
+  externalMarginTotal?: number;
+  externalTripsCount?: number;
 }
 
 // ─── Salary Period ─────────────────────────────────────────────────────────────

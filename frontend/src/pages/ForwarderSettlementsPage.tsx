@@ -20,7 +20,7 @@ interface LinkedExpense {
   id: number;
   tripId: number;
   expenseType: string;
-  amount: string;
+  buyAmount: string;
   note: string | null;
   createdAt: string;
   tripCode: string | null;
@@ -71,7 +71,7 @@ export default function ForwarderSettlementsPage() {
   const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequest[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
   const unlinkedExpenses = (unlinkedData?.items ?? []) as Array<{
-    id: number; tripId: number; expenseType: string; amount: string; note: string | null; createdAt: string; tripCode: string | null;
+    id: number; tripId: number; expenseType: string; buyAmount: string; note: string | null; createdAt: string; tripCode: string | null;
   }>;
   const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
@@ -84,7 +84,7 @@ export default function ForwarderSettlementsPage() {
   const totalExpense = useMemo(() => {
     return unlinkedExpenses
       .filter(e => selectedExpenseIds.has(e.id))
-      .reduce((sum, e) => sum + Number(e.amount), 0);
+      .reduce((sum, e) => sum + Number(e.buyAmount), 0);
   }, [unlinkedExpenses, selectedExpenseIds]);
 
   const totalRefund = Number(refundAmount) || 0;
@@ -209,7 +209,7 @@ export default function ForwarderSettlementsPage() {
                             <span style={{ color: 'var(--fg-3)', marginLeft: 8, fontSize: 12 }}>{exp.note}</span>
                           )}
                         </span>
-                        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(Number(exp.amount))}</span>
+                        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(Number(exp.buyAmount))}</span>
                       </label>
                     ))}
                   </div>

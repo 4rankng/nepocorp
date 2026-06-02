@@ -338,7 +338,7 @@ async function seed() {
   }
 
   // ─── Forwarder expense types (user-configurable) ─────────────────────────
-  const fetSeeds = Object.entries(FORWARDER_EXPENSE_TYPE_DEFAULTS).map(([code, name]) => ({ code, name }));
+  const fetSeeds = Object.entries(FORWARDER_EXPENSE_TYPE_DEFAULTS).map(([code, meta]) => ({ code, name: meta.name }));
   const existingFets = await db.select({ code: schema.forwarderExpenseTypes.code })
     .from(schema.forwarderExpenseTypes);
   const existingFetCodes = new Set(existingFets.map(f => f.code));

@@ -65,6 +65,13 @@ export const createTripSchema = z.object({
   customerReference: z.string().optional(),
   containerCount: z.coerce.number().int().min(1).max(10).optional(),
   fuelMode: z.nativeEnum(FuelMode).optional(),
+  vatRate: z.number().min(0).max(0.5).optional().default(0),
+  carrierType: z.enum(['OWN', 'EXTERNAL']).optional().default('OWN'),
+  externalCarrierId: z.number().int().positive().optional(),
+  externalFreightCost: z.number().positive().optional(),
+  externalPlateNumber: z.string().max(20).optional(),
+  externalDriverName: z.string().max(100).optional(),
+  externalDriverPhone: z.string().max(20).optional(),
 });
 
 export const updateTripFiguresSchema = z.object({
@@ -89,6 +96,13 @@ export const updateTripFiguresSchema = z.object({
   photoUrls: z.array(z.string()).optional(),
   version: z.number().int().optional(),
   routeId: z.coerce.number().int().positive().optional(),
+  vatRate: z.number().min(0).max(0.5).optional(),
+  carrierType: z.enum(['OWN', 'EXTERNAL']).optional(),
+  externalCarrierId: z.number().int().positive().optional(),
+  externalFreightCost: z.number().positive().optional(),
+  externalPlateNumber: z.string().max(20).optional(),
+  externalDriverName: z.string().max(100).optional(),
+  externalDriverPhone: z.string().max(20).optional(),
 }).superRefine((data, ctx) => {
   if (data.fuelSupplementLiters && data.fuelSupplementLiters > 0) {
     if (!data.fuelSupplementReason || data.fuelSupplementReason.trim() === '') {
@@ -385,17 +399,54 @@ export const tripContainerBatchSchema = z.object({
   })),
 });
 
+export const ANCILLARY_EXPENSE_TYPES = [
+  'LIFTING', 'LOWERING', 'WEIGHING', 'CUSTOMS',
+  'INFRASTRUCTURE', 'INSPECTION', 'INSPECTION_SVC', 'OTHER',
+] as const;
+
+export type AncillaryExpenseType = typeof ANCILLARY_EXPENSE_TYPES[number];
+
 export const tripExpenseSchema = z.object({
   tripId: z.coerce.number().int().positive(),
-  expenseType: z.string().min(1, 'Loại chi phí không được để trống'),
-  amount: positiveNumeric,
-  note: z.string().optional().nullable(),
+  expenseType: z.enum(ANCILLARY_EXPENSE_TYPES),
+  buyAmount: z.number().positive(),
+  sellAmount: z.number().min(0).optional().default(0),
+  settlementMethod: z.enum(['COMPANY_DIRECT', 'FORWARDER_ADVANCE']).default('FORWARDER_ADVANCE'),
+  supplierId: z.number().int().positive().optional(),
+  invoiceNumber: z.string().max(50).optional(),
+  invoiceDate: z.string().optional(),
+  declarationNumber: z.string().max(50).optional(),
+  containerNumber: z.string().max(20).optional(),
+  note: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.expenseType === 'CUSTOMS' && !data.declarationNumber) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['declarationNumber'],
+      message: 'Số tờ khai là bắt buộc cho phí hải quan',
+    });
+  }
+  if (data.settlementMethod === 'COMPANY_DIRECT' && !data.supplierId) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['supplierId'],
+      message: 'Nhà cung cấp là bắt buộc khi chọn công ty trả trực tiếp',
+    });
+  }
 });
 
 export const forwarderExpenseTypeSchema = z.object({
   code: z.string().min(1).max(50),
   name: z.string().min(1, 'Tên loại chi phí không được để trống').max(100),
   status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
+});
+
+export const debtOffsetSchema = z.object({
+  customerId: z.number().int().positive(),
+  supplierId: z.number().int().positive(),
+  offsetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày không hợp lệ'),
+  note: z.string().optional(),
+  // NOTE: no `amount` field — server computes min(arBalance, apBalance)
 });
 
 export const createAdvanceRequestSchema = z.object({
@@ -441,6 +492,7 @@ export type ExpenseInput = z.infer<typeof expenseSchema>;
 export type VendorPaymentInput = z.infer<typeof vendorPaymentSchema>;
 export type TripContainerInput = z.infer<typeof tripContainerSchema>;
 export type TripExpenseInput = z.infer<typeof tripExpenseSchema>;
+export type DebtOffsetInput = z.infer<typeof debtOffsetSchema>;
 export type CreateAdvanceRequestInput = z.infer<typeof createAdvanceRequestSchema>;
 export type CreateAdvanceSettlementInput = z.infer<typeof createAdvanceSettlementSchema>;
 export type ContainerTypeInput = z.infer<typeof containerTypeSchema>;

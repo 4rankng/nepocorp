@@ -213,16 +213,30 @@ export async function batchUpsertTripContainers(
 
 export async function createTripExpense(data: {
   tripId: number;
-  forwarderId: number;
+  forwarderId: number | null;
   expenseType: string;
-  amount: string;
+  buyAmount: string;
+  sellAmount?: string;
+  settlementMethod?: string;
+  supplierId?: number;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  declarationNumber?: string;
+  containerNumber?: string;
   note: string | null;
 }) {
   const [inserted] = await db.insert(s.tripExpenses).values({
     tripId: data.tripId,
     forwarderId: data.forwarderId,
     expenseType: data.expenseType,
-    buyAmount: data.amount,
+    buyAmount: data.buyAmount,
+    sellAmount: data.sellAmount ?? '0',
+    settlementMethod: data.settlementMethod ?? 'FORWARDER_ADVANCE',
+    supplierId: data.supplierId ?? null,
+    invoiceNumber: data.invoiceNumber ?? null,
+    invoiceDate: data.invoiceDate ?? null,
+    declarationNumber: data.declarationNumber ?? null,
+    containerNumber: data.containerNumber ?? null,
     note: data.note,
   }).returning();
   return inserted;
