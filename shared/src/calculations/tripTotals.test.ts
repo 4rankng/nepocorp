@@ -218,3 +218,87 @@ test('twoPointDeliveryBonus and vehicleShiftAllowance included in totalCost', ()
   assert.strictEqual(result.totalCost, 4682000);
   assert.strictEqual(result.grossProfit, 4000000 - 4682000);
 });
+
+// ── A4 extension tests ──────────────────────────────────────────────────────
+
+const BASE_A4 = {
+  legs: [{ sequence: 1, km: 100, loadingType: 'HANG' as const }],
+  fuelMode: 'AUTO' as const,
+  fuelLitersOverride: null,
+  fuelSupplementLiters: 0,
+  fuelLoadedNorm: 43,
+  fuelEmptyNorm: 25,
+  fuelPerTripSupplement: 3,
+  fuelUnitPrice: 20000,
+  isMountainRoute: false,
+  mountainFixedAllowance: null,
+  roadAllowanceBase: 500000,
+  tollsDiscount: 0,
+  tollsAddition: 0,
+  tollsStations: 0,
+  tollPerStation: 55000,
+  hasReturnCargo: false,
+  returnCargoBonus: 300000,
+  revenue: 10800000,   // 10,000,000 ex-VAT at 8%
+  driverSalary: 800000,
+  twoPointDeliveryBonus: 0,
+  vehicleShiftAllowance: 0,
+  roadAllowanceOverride: null,
+};
+
+test('backward-compat: vatRate=0 (default) — freightExVat equals revenue', () => {
+  const r = computeTripTotals(BASE_A4);
+  assert.strictEqual(r.freightExVat, BASE_A4.revenue);
+  assert.strictEqual(r.serviceMargin, 0);
+  assert.strictEqual(r.externalMargin, 0);
+  // existing AUTO fuel calculation: 100km HANG @ 43L/100 = 43L + 3 supplement = 46L
+  assert.strictEqual(r.totalFuelLiters, 46);
+  assert.strictEqual(r.totalFuelCost, 920000);
+});
+
+test('OWN trip with 8% VAT: freightExVat = revenue / 1.08', () => {
+  const r = computeTripTotals({ ...BASE_A4, vatRate: 0.08 });
+  assert.strictEqual(r.freightExVat, 10000000);  // 10800000 / 1.08
+});
+
+test('OWN trip with ancillary fees: serviceMargin included in grossProfit', () => {
+  const r = computeTripTotals({
+    ...BASE_A4,
+    vatRate: 0.08,
+    ancillaryFees: [
+      { buyAmount: 540000, sellAmount: 540000, vatRate: 0.08 },   // at-cost: margin 0
+      { buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 },  // markup: margin 500000 ex-VAT
+    ],
+  });
+  // buy ex-vat: 500000 + 500000 = 1000000; sell ex-vat: 500000 + 1000000 = 1500000
+  assert.strictEqual(r.totalServiceBuy, 1000000);
+  assert.strictEqual(r.totalServiceSell, 1500000);
+  assert.strictEqual(r.serviceMargin, 500000);
+});
+
+test('EXTERNAL trip: totalCost = externalFreightCost, margin computed ex-VAT', () => {
+  const r = computeTripTotals({
+    ...BASE_A4,
+    vatRate: 0.08,
+    carrierType: 'EXTERNAL',
+    externalFreightCost: 5400000,  // 5000000 ex-VAT
+    revenue: 10800000,             // 10000000 ex-VAT
+  });
+  assert.strictEqual(r.externalFreightExVat, 5000000);
+  assert.strictEqual(r.externalMargin, 5000000);   // 10000000 - 5000000
+  assert.strictEqual(r.totalCost, 5400000);        // incl-VAT stored for AP
+  assert.strictEqual(r.grossProfit, 5000000);      // externalMargin + serviceMargin(0)
+  assert.strictEqual(r.totalFuelCost, 920000);     // still computed but not in totalCost
+});
+
+test('EXTERNAL trip with service fees: grossProfit includes serviceMargin', () => {
+  const r = computeTripTotals({
+    ...BASE_A4,
+    vatRate: 0.08,
+    carrierType: 'EXTERNAL',
+    externalFreightCost: 5400000,
+    ancillaryFees: [{ buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 }],
+  });
+  assert.strictEqual(r.serviceMargin, 500000);
+  assert.strictEqual(r.grossProfit, 5500000);  // 5000000 + 500000
+});

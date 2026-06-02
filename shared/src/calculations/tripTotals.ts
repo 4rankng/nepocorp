@@ -25,6 +25,14 @@ export interface ComputeTripTotalsInput {
   twoPointDeliveryBonus: number;
   vehicleShiftAllowance: number;
   roadAllowanceOverride?: number | null;
+  vatRate?: number;                    // default 0 (no VAT change for existing trips)
+  carrierType?: 'OWN' | 'EXTERNAL';   // default 'OWN'
+  externalFreightCost?: number;        // incl-VAT; only used when carrierType='EXTERNAL'
+  ancillaryFees?: Array<{
+    buyAmount: number;                 // incl-VAT cost to company
+    sellAmount: number;               // incl-VAT billed to customer
+    vatRate?: number;                  // per-fee VAT rate, default 0.080
+  }>;
 }
 
 export interface ComputeTripTotalsOutput {
@@ -36,6 +44,12 @@ export interface ComputeTripTotalsOutput {
   totalRoadAllowance: number;
   totalCost: number;
   grossProfit: number;
+  freightExVat: number;        // revenue / (1 + vatRate); equals revenue when vatRate=0
+  serviceMargin: number;       // Σ(sellExVat − buyExVat) across ancillary fees; 0 when none
+  totalServiceBuy: number;     // Σ buyAmount ex-VAT (cost component)
+  totalServiceSell: number;    // Σ sellAmount ex-VAT (revenue component)
+  externalMargin: number;      // freightExVat − externalFreightExVat; 0 for OWN trips
+  externalFreightExVat: number; // externalFreightCost/(1+vatRate); 0 for OWN trips
 }
 
 export function computeRoadAllowance(params: {
@@ -109,8 +123,43 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
       ? input.roadAllowanceOverride
       : computedRoadAllowance;
 
-  const totalCost = totalFuelCost + totalRoadAllowance + input.driverSalary + input.twoPointDeliveryBonus + input.vehicleShiftAllowance;
-  const grossProfit = input.revenue - totalCost;
+  const vatRate = input.vatRate ?? 0;
+  const carrierType = input.carrierType ?? 'OWN';
+
+  // Freight ex-VAT (for P&L; AR uses incl-VAT)
+  const freightExVat = vatRate > 0
+    ? Math.round(input.revenue / (1 + vatRate))
+    : input.revenue;
+
+  // Ancillary service margin
+  const fees = input.ancillaryFees ?? [];
+  let totalServiceBuyExVat = 0;
+  let totalServiceSellExVat = 0;
+  for (const fee of fees) {
+    const feeVat = fee.vatRate ?? 0.080;
+    totalServiceBuyExVat  += feeVat > 0 ? Math.round(fee.buyAmount  / (1 + feeVat)) : fee.buyAmount;
+    totalServiceSellExVat += feeVat > 0 ? Math.round(fee.sellAmount / (1 + feeVat)) : fee.sellAmount;
+  }
+  const serviceMargin = totalServiceSellExVat - totalServiceBuyExVat;
+
+  let totalCost: number;
+  let grossProfit: number;
+  let externalMargin = 0;
+  let externalFreightExVat = 0;
+
+  if (carrierType === 'EXTERNAL') {
+    const extCost = input.externalFreightCost ?? 0;
+    externalFreightExVat = vatRate > 0 ? Math.round(extCost / (1 + vatRate)) : extCost;
+    externalMargin = freightExVat - externalFreightExVat;
+    // For external trips: cost = external freight only (no fuel/allowance/salary)
+    totalCost = extCost;
+    grossProfit = externalMargin + serviceMargin;
+  } else {
+    // OWN trip: existing formula
+    totalCost = totalFuelCost + totalRoadAllowance + input.driverSalary
+      + input.twoPointDeliveryBonus + input.vehicleShiftAllowance;
+    grossProfit = freightExVat - totalCost + serviceMargin;
+  }
 
   return {
     totalFuelLiters,
@@ -121,5 +170,11 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     totalRoadAllowance,
     totalCost,
     grossProfit,
+    freightExVat,
+    serviceMargin,
+    totalServiceBuy: totalServiceBuyExVat,
+    totalServiceSell: totalServiceSellExVat,
+    externalMargin,
+    externalFreightExVat,
   };
 }
