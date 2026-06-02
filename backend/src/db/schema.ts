@@ -190,6 +190,7 @@ export const penaltyReasons = pgTable('penalty_reasons', {
   id: serial('id').primaryKey(),
   reasonText: text('reason_text').notNull(),
   defaultAmount: numeric('default_amount', { precision: 15, scale: 0 }).notNull(),
+  severity: text('severity').notNull().default('mid'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

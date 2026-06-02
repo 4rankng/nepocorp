@@ -295,6 +295,7 @@ export const fuelPriceHistorySchema = z.object({
 export const penaltyReasonSchema = z.object({
   reasonText: z.string().min(1),
   defaultAmount: nonNegNumeric,
+  severity: z.enum(['low', 'mid', 'high']).default('mid'),
 });
 
 export const driverSchema = z.object({

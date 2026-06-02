@@ -153,6 +153,7 @@ export interface PenaltyReason {
   id: number;
   reasonText: string;
   defaultAmount: string;
+  severity: 'low' | 'mid' | 'high';
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
