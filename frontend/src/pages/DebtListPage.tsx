@@ -12,6 +12,7 @@ interface CustomerDebtInfo {
   customerId: number;
   customerName: string;
   contactInfo: string | null;
+  linkedSupplierId: number | null;
   totalOutstanding: number;
   aging: {
     current: number;
@@ -51,6 +52,7 @@ export default function DebtListPage() {
       customerId: c.customerId,
       customerName: c.customerName,
       contactInfo: c.contactInfo,
+      linkedSupplierId: c.linkedSupplierId ?? null,
       totalOutstanding: c.totalOutstanding,
       aging: c.aging,
       maxOverdueDays: c.maxOverdueDays,
@@ -240,6 +242,11 @@ export default function DebtListPage() {
                       <span className="m-card__title">
                         <span className={`risk-dot risk-dot--${d.riskClass}`} />
                         {d.customerName}
+                        {d.linkedSupplierId != null && (
+                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
+                            2 chiều
+                          </span>
+                        )}
                       </span>
                       <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value debt-list-page__amount`}>
                         {formatCurrency(d.totalOutstanding)}
@@ -302,9 +309,14 @@ export default function DebtListPage() {
                       style={{ cursor: 'pointer' }}
                     >
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, color: 'var(--fg-1)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--fg-1)' }}>
                           <span className={`risk-dot risk-dot--${d.riskClass}`} />
                           {d.customerName}
+                          {d.linkedSupplierId != null && (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em' }}>
+                              2 chiều
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 16 }}>
                           {d.totalOutstanding > 0

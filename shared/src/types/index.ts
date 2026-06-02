@@ -657,6 +657,20 @@ export interface CustomerStatement {
   unpaidTrips: UnpaidTrip[];
 }
 
+export interface DebtOffset {
+  id: number;
+  customerId: number;
+  supplierId: number;
+  amount: string;
+  offsetDate: string;
+  note: string | null;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdBy: number | null;
+  approvedBy: number | null;
+  approvedAt: string | null;
+  createdAt: string;
+}
+
 // ─── Reports ────────────────────────────────────────────────────────────────────
 
 export interface PnlTruck {

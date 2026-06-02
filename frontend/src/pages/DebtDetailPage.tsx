@@ -64,6 +64,8 @@ export default function DebtDetailPage() {
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showOffsetModal, setShowOffsetModal] = useState(false);
+  const [showOffsetHistory, setShowOffsetHistory] = useState(false);
 
   // Payment modal state — was missing entirely (BUG: no way to record
   // a payment from the debt detail page even though /api/payments/receive
@@ -74,6 +76,36 @@ export default function DebtDetailPage() {
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState('');
   const queryClient = useQueryClient();
+
+  // ── Linked supplier data (dual-entity customers) ─────────────────────────
+  // The customer statement doesn't expose linkedSupplierId directly, so we
+  // carry it via the /finance/dual-entities call. However, to keep this
+  // page self-contained we instead read it from the customer-aging cache,
+  // or fall back to fetching the supplier statement once we know the id.
+  // We derive linkedSupplierId from a lightweight dual-entity check.
+  const customerId = id ? Number(id) : undefined;
+  const { data: dualEntities } = useQuery<Array<{
+    customerId: number; supplierId: number; arBalance: number; apBalance: number;
+  }>>({
+    queryKey: ['dual-entities'],
+    queryFn: () => api.get('/finance/dual-entities'),
+    staleTime: 2 * 60 * 1000,
+  });
+  const dualEntity = dualEntities?.find(e => e.customerId === customerId);
+  const linkedSupplierId = dualEntity?.supplierId ?? null;
+
+  // Fetch supplier statement only when this customer has a linked supplier
+  const { data: supplierStatement } = useSupplierStatement(linkedSupplierId ?? undefined);
+  const apBalance = supplierStatement?.totalOutstanding ?? dualEntity?.apBalance ?? 0;
+  const arBalance = statement?.totalOutstanding ?? 0;
+
+  // Offset history
+  const { data: offsetHistory = [] } = useQuery<DebtOffset[]>({
+    queryKey: ['debt-offsets', customerId],
+    queryFn: () => api.get(`/finance/debt-offsets?customerId=${customerId}`),
+    enabled: !!customerId && !!linkedSupplierId,
+    staleTime: 60 * 1000,
+  });
 
   // ── Derived data ────────────────────────────────────────────────────────
 
@@ -343,6 +375,79 @@ export default function DebtDetailPage() {
         </div>
       </section>
 
+      {/* ── AP Card (dual-entity customers) ────────────────────────────── */}
+      {linkedSupplierId != null && (
+        <section style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            {/* AP balance card */}
+            <div style={{ flex: '1 1 220px', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 16px', background: '#fff7ed' }}>
+              <h3 style={{ fontSize: 12, fontWeight: 600, color: '#9a3412', marginBottom: 4 }}>
+                Công nợ phải trả (NCC liên kết)
+              </h3>
+              <p style={{ fontSize: 22, fontWeight: 800, color: '#c2410c', margin: 0 }}>
+                {formatCurrency(apBalance)}
+              </p>
+              <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+                Số ròng: {formatCurrency(arBalance - apBalance)}
+              </p>
+            </div>
+
+            {/* Offset button */}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button
+                className="btn btn--secondary"
+                style={{ borderColor: '#f97316', color: '#ea580c', gap: 6 }}
+                onClick={() => setShowOffsetModal(true)}
+              >
+                <ArrowLeftRight size={14} />
+                Đối trừ công nợ
+              </button>
+            </div>
+          </div>
+
+          {/* Offset history */}
+          {offsetHistory.length > 0 && (
+            <div style={{ marginTop: 12, border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
+              <button
+                style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '10px 14px', background: 'var(--bg-2)', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}
+                onClick={() => setShowOffsetHistory(v => !v)}
+              >
+                {showOffsetHistory ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                Lịch sử đối trừ ({offsetHistory.length})
+              </button>
+              {showOffsetHistory && (
+                <div className="table-scroll">
+                  <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-2)' }}>
+                        <th style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--fg-3)' }}>Ngày</th>
+                        <th style={{ padding: '6px 12px', textAlign: 'right', fontWeight: 600, color: 'var(--fg-3)' }}>Số tiền</th>
+                        <th style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--fg-3)' }}>Trạng thái</th>
+                        <th style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--fg-3)' }}>Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {offsetHistory.map(o => (
+                        <tr key={o.id} style={{ borderTop: '1px solid var(--line)' }}>
+                          <td style={{ padding: '7px 12px' }}>{formatDate(o.offsetDate)}</td>
+                          <td style={{ padding: '7px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                            {formatCurrency(Number(o.amount))}
+                          </td>
+                          <td style={{ padding: '7px 12px', textAlign: 'center' }}>
+                            <OffsetStatusBadge status={o.approvalStatus} />
+                          </td>
+                          <td style={{ padding: '7px 12px', color: 'var(--fg-3)' }}>{o.note || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* ── Ledger Card ─────────────────────────────────────────────────── */}
       <section className="dd-ledger">
         <div className="dd-ledger-head">
@@ -458,11 +563,37 @@ export default function DebtDetailPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Debt offset modal */}
+      {linkedSupplierId != null && (
+        <DebtOffsetModal
+          isOpen={showOffsetModal}
+          customerId={customerId!}
+          supplierId={linkedSupplierId}
+          arBalance={arBalance}
+          apBalance={apBalance}
+          onClose={() => setShowOffsetModal(false)}
+        />
+      )}
     </div>
   );
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
+
+function OffsetStatusBadge({ status }: { status: DebtOffset['approvalStatus'] }) {
+  const styles: Record<DebtOffset['approvalStatus'], { label: string; color: string; bg: string; border: string }> = {
+    PENDING:  { label: 'Chờ duyệt', color: '#92400e', bg: '#fffbeb', border: '#fde68a' },
+    APPROVED: { label: 'Đã duyệt',  color: '#14532d', bg: '#f0fdf4', border: '#bbf7d0' },
+    REJECTED: { label: 'Từ chối',   color: '#7f1d1d', bg: '#fef2f2', border: '#fecaca' },
+  };
+  const s = styles[status] ?? styles.PENDING;
+  return (
+    <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: s.bg, border: `1px solid ${s.border}`, borderRadius: 4, padding: '2px 6px' }}>
+      {s.label}
+    </span>
+  );
+}
 
 function LedgerRow({ row }: { row: LedgerEntry }) {
   const debit = parseFloat(row.debit) || 0;
