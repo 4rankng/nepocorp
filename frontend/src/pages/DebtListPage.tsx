@@ -126,7 +126,7 @@ export default function DebtListPage() {
   }, [customerDebts, search, filterMode]);
 
   return (
-    <div className="fade-up">
+    <div className="fade-up debt-list-page">
       <PageHeader
         title="Công nợ phải thu"
         description={`Tổng nợ: ${formatCurrency(totals.total)} • ${rawCustomers.length} khách hàng • cập nhật vừa xong`}
@@ -241,7 +241,7 @@ export default function DebtListPage() {
                         <span className={`risk-dot risk-dot--${d.riskClass}`} />
                         {d.customerName}
                       </span>
-                      <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value`} style={{ fontSize: 13.5 }}>
+                      <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value debt-list-page__amount`}>
                         {formatCurrency(d.totalOutstanding)}
                       </span>
                     </div>

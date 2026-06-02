@@ -612,3 +612,24 @@
   .dispatch-page .hero-h1 { font-size: 22px; }
   .dispatch-page .hero-top { flex-direction: column; gap: 14px; }
 }
+
+/* ── Mobile Pass 12 (2026-06-02) ──
+   Featured "utilization" metric spans full width so its progress bar is
+   visible at usable size; remaining 4 metrics fall into a clean 2x2 below.
+   Tighten vcard padding so the 9-truck fleet grid doesn't waste vertical
+   real estate. */
+@media (max-width: 640px) {
+  .dispatch-page .metrics > .metric.featured {
+    grid-column: 1 / -1;
+  }
+  .dispatch-page .metrics > .metric.featured .metric-value {
+    font-size: 22px;
+  }
+  .dispatch-page .vcard {
+    padding: 12px 14px 10px;
+    border-radius: 12px;
+  }
+  .dispatch-page .vcard-top { margin-bottom: 8px; }
+  .dispatch-page .v-driver-row { margin-bottom: 6px; }
+  .dispatch-page .fleet-grid { gap: 8px; margin-bottom: 18px; }
+}

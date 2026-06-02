@@ -792,10 +792,15 @@
 }
 
 @media (max-width: 640px) {
-  .penalty-page .penalty-card-head {
-    flex-direction: column;
-    align-items: flex-start;
+  /* Head padding/flex is handled globally in responsive.css for both
+     penalty and fleet pages. Tighten the icon + inner gap here. */
+  .penalty-page .penalty-card-lead {
     gap: 10px;
+  }
+  .penalty-page .penalty-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
   }
   .penalty-page .penalty-head-tools {
     width: 100%;
@@ -822,5 +827,63 @@
   .penalty-row-act {
     min-width: 36px;
     min-height: 36px;
+  }
+
+  /* Tighten row paddings — at 390px the 20px horizontal eats 12% of
+     the row and forces middle-column wrap for long reason text. */
+  .penalty-page .plog-item {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .penalty-page .penalty-vio-type-row {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .penalty-page .penalty-vio-type-fine .amt {
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  /* Empty state: stats row was inline-flex with 3 stats + 2 vertical
+     dividers — wraps poorly. Switch to a 3-column grid so each stat
+     gets equal width, and hide the now-meaningless vertical dividers.
+     Action buttons go full-width stacked. */
+  .penalty-page .penalty-empty-log {
+    padding: 28px 16px;
+  }
+  .penalty-page .penalty-empty-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 10px 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .penalty-page .penalty-empty-divider {
+    display: none;
+  }
+  .penalty-page .penalty-empty-stat .val {
+    font-size: 14px;
+  }
+  .penalty-page .penalty-empty-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  .penalty-page .penalty-empty-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Footer: stack the two halves on mobile so the right-side "Hiển thị X/Y"
+     doesn't collide with the legend chips. */
+  .penalty-page .penalty-table-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 14px;
+  }
+  .penalty-page .penalty-table-foot .legend {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }

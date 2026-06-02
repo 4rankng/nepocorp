@@ -236,7 +236,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="fade-up">
+    <div className="fade-up customers-page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
       <PageHeader
@@ -328,7 +328,7 @@ export default function CustomersPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(c => (
-              <div key={c.id} className="m-card">
+              <div key={c.id} className="m-card" onClick={() => { setEditingId(c.id); setShowAddForm(false); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setEditingId(c.id); setShowAddForm(false); } }}>
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
@@ -355,8 +355,8 @@ export default function CustomersPage() {
                     <span className="m-card__row-value">{formatCurrency((c as any).creditLimit || c.creditLimit)}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
-                  <button className="btn btn--ghost btn--sm" onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
+                <div className="m-card-edit-row">
+                  <button className="btn btn--ghost btn--sm" onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setShowAddForm(false); }}>
                     Sửa
                   </button>
                 </div>

@@ -200,3 +200,14 @@
     border-radius: 0 0 12px 12px;
   }
 }
+
+/* Shared action row used by CustomersPage + SupplierListPage mobile cards.
+   Desktop: right-aligned button row. On mobile, callers can scope-hide it
+   via a page-class selector (see responsive.css) when the whole card is
+   made tappable as a shortcut to the edit form. */
+.m-card-edit-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}

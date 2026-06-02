@@ -135,7 +135,7 @@ export default function ExpenseListPage() {
   );
 
   return (
-    <div className="fade-up">
+    <div className="fade-up expense-list-page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
       <PageHeader

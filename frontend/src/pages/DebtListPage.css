@@ -50,3 +50,27 @@
   color: var(--ink);
 }
 .bucket__count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+
+/* ============================================================================
+ * Mobile (≤640px) — page-scoped tweaks
+ * ========================================================================== */
+@media (max-width: 640px) {
+  /* Cancel the first-child full-row carve-out at narrow widths;
+     prefer a balanced 2x2 grid so all 4 aging buckets fit in 2 rows. */
+  .debt-list-page .aging-buckets {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .debt-list-page .aging-buckets > .bucket:first-child {
+    grid-column: auto;
+  }
+  /* Primary debt amount in mobile cards — bump from inline-styled 13.5
+     to a punchier 15px monospace so the number reads as the headline. */
+  .debt-list-page .m-card .debt-list-page__amount {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+}

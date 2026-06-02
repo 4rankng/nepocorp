@@ -398,7 +398,7 @@
    7 slots — KM merged into route, Loại cont + Số cont merged into Container. */
 .trip-list-page .table-head {
   display: grid;
-  grid-template-columns: minmax(160px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
+  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
   padding: 13px 16px;
   gap: 12px;
   background: var(--surface-2);
@@ -422,7 +422,7 @@
 
 .trip-list-page .table-row {
   display: grid;
-  grid-template-columns: minmax(160px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
+  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
   padding: 14px 16px;
   gap: 12px;
   align-items: center;
@@ -770,6 +770,25 @@
   min-width: 110px;
 }
 
+/* ── Sticky status column ─────────────────────────────────────────── */
+/* Rows need explicit bg so the sticky cell can inherit it (including hover state) */
+.trip-list-page .table-row {
+  background: var(--surface);
+}
+.trip-list-page .col-status {
+  position: sticky;
+  right: 0;
+  background: inherit;
+  z-index: 1;
+}
+.trip-list-page .table-head .col-status {
+  z-index: 11;
+}
+/* Safety net: explicitly match hover so GPU compositing can't lag */
+.trip-list-page .table-row:hover .col-status {
+  background: var(--tbl-green-050);
+}
+
 /* ── Infinite scroll sentinel ─────────────────────────────────────────── */
 .trip-list-page .infinite-sentinel {
   padding: 16px 20px;
@@ -858,7 +877,7 @@
   .trip-list-page .table-head,
   .trip-list-page .table-row {
     /* 5 visible cols: trip | truck | route | container | status */
-    grid-template-columns: minmax(140px, 1.4fr) 100px minmax(140px, 1.2fr) minmax(120px, 1fr) 100px 90px;
+    grid-template-columns: minmax(200px, 1.4fr) 100px minmax(140px, 1.2fr) minmax(120px, 1fr) 100px 90px;
     min-width: unset;
     gap: 10px;
   }

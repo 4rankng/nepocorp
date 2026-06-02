@@ -470,3 +470,33 @@
     display: none;
   }
 }
+
+/* ── Pass 15 mobile tweaks (2026-06-02) ──
+   The 3-select + date + reset filter bar was 150px tall on phone with
+   3 wrap rows of 36px controls. Tighten to ~110px by shrinking the
+   controls and padding. Page-scoped so it doesn't affect any other page
+   that reuses .expense-filter-bar styles. */
+@media (max-width: 640px) {
+  .expense-list-page .expense-filter-bar {
+    padding: 10px;
+    gap: 6px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .expense-list-page .expense-filter-bar__select,
+  .expense-list-page .expense-filter-bar__date {
+    height: 32px;
+    font-size: 12.5px;
+    padding: 0 28px 0 10px;
+    background-size: 14px 14px;
+    background-position: right 8px center;
+  }
+  .expense-list-page .expense-filter-bar__date {
+    padding-right: 10px;
+  }
+  .expense-list-page .expense-filter-bar__reset {
+    height: 32px;
+    padding: 0 11px;
+    font-size: 11.5px;
+  }
+}

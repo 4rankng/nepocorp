@@ -316,6 +316,17 @@
   }
 }
 
+/* Action row at bottom of each mobile m-card (trucks/trailers/drivers).
+   On desktop renders inline buttons aligned to the right. The class
+   replaces inline `style={{ display: 'flex' ... }}` so a mobile media
+   query can hide it without inline-style fighting back. */
+.fleet-page .fleet-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 @media (max-width: 640px) {
   .fleet-page .fleet-mini-search {
     width: 140px;
@@ -332,5 +343,24 @@
   .fleet-page .fleet-mini-search {
     width: 100%;
     flex: 1;
+  }
+
+  /* ── Pass 13 mobile tweaks (2026-06-02) ── */
+
+  /* Hide the per-card Sửa/Xem/Xóa action row on phone — tapping the
+     whole card opens the DetailModal which already has Edit + Delete
+     in its footer. Saves ~46px per card across 17 cards (~780px scroll). */
+  .fleet-page .fleet-card-actions {
+    display: none;
+  }
+  /* Shrink the panel-head icon for the 3 fleet panels (trucks / trailers /
+     drivers) — matches the penalty-page mobile sizing. */
+  .fleet-page .fleet-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+  .fleet-page .fleet-card-lead {
+    gap: 10px;
   }
 }

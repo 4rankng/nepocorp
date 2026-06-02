@@ -233,7 +233,7 @@ export default function TripListPage() {
         return (
           <Link to={`/trips/${trip.id}`} className="trip-col" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }} onClick={(e) => e.stopPropagation()}>
             <div className="trip-name">
-              <span style={{ fontFamily: 'var(--font-mono)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{tripCode}</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
               <span className="trip-meta-sep">·</span>
               <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
             </div>
@@ -616,7 +616,7 @@ export default function TripListPage() {
                   if (header.column.id === 'route') cls = 'col-route';
                   else if (header.column.id === 'consumption') cls = 'col-consumption';
                   else if (header.column.id === 'road') cls = 'col-road right';
-                  else if (header.column.id === 'status') cls = 'center';
+                  else if (header.column.id === 'status') cls = 'col-status center';
                   return (
                     <div key={header.id} className={cls}>
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -643,7 +643,7 @@ export default function TripListPage() {
                   if (cell.column.id === 'route') cls = 'col-route';
                   else if (cell.column.id === 'consumption') cls = 'col-consumption';
                   else if (cell.column.id === 'road') cls = 'col-road right';
-                  else if (cell.column.id === 'status') cls = 'center';
+                  else if (cell.column.id === 'status') cls = 'col-status center';
                   return (
                     <div key={cell.id} className={cls}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

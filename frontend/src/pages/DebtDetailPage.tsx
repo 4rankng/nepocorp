@@ -107,7 +107,7 @@ export default function DebtDetailPage() {
 
   if (error || !statement) {
     return (
-      <div>
+      <div className="debt-detail-page">
         <div className="dd-header">
           <button className="dd-back" onClick={() => navigate('/debt')}>
             <ArrowLeft size={20} />
@@ -184,7 +184,7 @@ export default function DebtDetailPage() {
   };
 
   return (
-    <div>
+    <div className="debt-detail-page">
       {/* ── Customer Header ─────────────────────────────────────────────── */}
       <div className="dd-header">
         <button className="dd-back" onClick={() => navigate('/debt')}>

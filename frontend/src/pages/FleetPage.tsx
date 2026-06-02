@@ -529,7 +529,7 @@ function TrailerCard({ trailers, trucks, crud }: {
                   <span className="m-card__row-label">Đầu kéo ghép</span>
                   <span className="m-card__row-value">{coupledTruck ? coupledTruck.licensePlate : '— Chưa ghép —'}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                <div className="fleet-card-actions">
                   <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); crud.setEditingId(t.id); }}>Sửa</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(t.id); }}>Xóa</button>
                 </div>
@@ -700,7 +700,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                   <span className="m-card__row-label">Tài xế</span>
                   <span className="m-card__row-value">{driver ? driver.name : '— Chưa phân —'}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                <div className="fleet-card-actions">
                   <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); setViewingId(t.id); }}>Xem</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(t.id); }}>Xóa</button>
                 </div>
@@ -886,7 +886,7 @@ function DriverCard({ drivers, truckMap, crud }: {
                     <span className="m-card__row-value">{Number(d.baseSalary).toLocaleString('vi-VN')} đ</span>
                   </div>
                 ) : null}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
+                <div className="fleet-card-actions">
                   <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); setViewingId(d.id); }}>Xem</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(d.id); }}>Xóa</button>
                 </div>

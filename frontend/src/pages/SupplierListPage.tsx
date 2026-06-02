@@ -177,7 +177,7 @@ export default function SupplierListPage() {
   }
 
   return (
-    <div className="fade-up">
+    <div className="fade-up suppliers-page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
       <PageHeader
@@ -247,7 +247,7 @@ export default function SupplierListPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(s => (
-              <div key={s.id} className="m-card">
+              <div key={s.id} className="m-card" onClick={() => { setEditingId(s.id); setShowAddForm(false); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setEditingId(s.id); setShowAddForm(false); } }}>
                 <div className="m-card__top">
                   <span className="m-card__title">{s.name}</span>
                   <StatusPill variant={s.status === 'ACTIVE' ? 'success' : 'danger'}>
@@ -265,8 +265,8 @@ export default function SupplierListPage() {
                     MST {s.taxCode}
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
-                  <button className="btn btn--ghost btn--sm" onClick={() => { setEditingId(s.id); setShowAddForm(false); }}>
+                <div className="m-card-edit-row">
+                  <button className="btn btn--ghost btn--sm" onClick={(e) => { e.stopPropagation(); setEditingId(s.id); setShowAddForm(false); }}>
                     Sửa
                   </button>
                 </div>

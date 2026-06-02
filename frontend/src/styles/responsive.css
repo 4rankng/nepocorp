@@ -825,6 +825,16 @@
   /* ── Misc layout helpers ── */
   .typo-eyebrow { letter-spacing: 0.04em; font-size: 10.5px; }
 
+  /* ── Pass 14 — /customers + /suppliers (2026-06-02) ──
+     Both pages render one "Sửa" button in a 38px-tall action row at the
+     bottom of every mobile card. Hide that row and make the whole card
+     tappable as the shortcut to the edit form. JSX already wires the
+     click handler with stopPropagation on the inner button. */
+  .customers-page .m-card,
+  .suppliers-page .m-card { cursor: pointer; }
+  .customers-page .m-card-edit-row,
+  .suppliers-page .m-card-edit-row { display: none; }
+
 } /* end PHONE ≤ 640px */
 
 
